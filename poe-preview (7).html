@@ -1,0 +1,2966 @@
+<!DOCTYPE html><html lang="zh-Hant" class="scroll-smooth"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>李煜詞探索 - 探索南唐後主的生平與詞作</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#F3F4F6',
+                        dark: {
+                            primary: '#5D5CDE',
+                            secondary: '#374151',
+                        }
+                    },
+                    typography: {
+                        DEFAULT: {
+                            css: {
+                                maxWidth: '100%',
+                            },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.5.0/dist/full.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        .poem-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .poem-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .poem-line {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .poem-line:hover {
+            color: #5D5CDE;
+            transform: translateX(5px);
+        }
+        /* 註釋詞語使用不同的顏色背景 */
+        .annotated-word {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 0 2px;
+            border-radius: 2px;
+            background-color: rgba(93, 92, 222, 0.1); /* 默認顏色-淡紫 */
+        }
+        .annotated-word:hover {
+            background-color: rgba(93, 92, 222, 0.25);
+            font-weight: bold;
+        }
+        .dark .annotated-word {
+            background-color: rgba(143, 144, 232, 0.15);
+        }
+        .dark .annotated-word:hover {
+            background-color: rgba(143, 144, 232, 0.3);
+        }
+        
+        /* 基於數據屬性設置不同類型的背景色 */
+        .annotated-word[data-type="literary"] {
+            background-color: rgba(79, 209, 197, 0.15); /* 文學典故-淡青 */
+        }
+        .annotated-word[data-type="literary"]:hover {
+            background-color: rgba(79, 209, 197, 0.3);
+        }
+        
+        .annotated-word[data-type="cultural"] {
+            background-color: rgba(236, 168, 78, 0.15); /* 文化背景-淡橙 */
+        }
+        .annotated-word[data-type="cultural"]:hover {
+            background-color: rgba(236, 168, 78, 0.3);
+        }
+        
+        .annotated-word[data-type="rare"] {
+            background-color: rgba(110, 132, 238, 0.15); /* 罕見詞-淡藍 */
+        }
+        .annotated-word[data-type="rare"]:hover {
+            background-color: rgba(110, 132, 238, 0.3);
+        }
+        
+        .annotated-word[data-type="special"] {
+            background-color: rgba(219, 112, 214, 0.15); /* 特殊含義-淡紫紅 */
+        }
+        .annotated-word[data-type="special"]:hover {
+            background-color: rgba(219, 112, 214, 0.3);
+        }
+        
+        /* 暗色模式下的顏色調整 */
+        .dark .annotated-word[data-type="literary"] {
+            background-color: rgba(79, 209, 197, 0.2);
+        }
+        .dark .annotated-word[data-type="literary"]:hover {
+            background-color: rgba(79, 209, 197, 0.35);
+        }
+        
+        .dark .annotated-word[data-type="cultural"] {
+            background-color: rgba(236, 168, 78, 0.2);
+        }
+        .dark .annotated-word[data-type="cultural"]:hover {
+            background-color: rgba(236, 168, 78, 0.35);
+        }
+        
+        .dark .annotated-word[data-type="rare"] {
+            background-color: rgba(110, 132, 238, 0.2);
+        }
+        .dark .annotated-word[data-type="rare"]:hover {
+            background-color: rgba(110, 132, 238, 0.35);
+        }
+        
+        .dark .annotated-word[data-type="special"] {
+            background-color: rgba(219, 112, 214, 0.2);
+        }
+        .dark .annotated-word[data-type="special"]:hover {
+            background-color: rgba(219, 112, 214, 0.35);
+        }
+        .annotation-info {
+            display: block;
+            font-size: 12px;
+            margin: 8px 0;
+            font-style: italic;
+            color: #666;
+        }
+        .dark .annotation-info {
+            color: #aaa;
+        }
+        .stanza-break {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+        }
+        .dark .stanza-break {
+            background: linear-gradient(to right, transparent, #4b5563, transparent);
+        }
+        
+        /* 移除提示氣泡效果 */
+        .annotation-info {
+            display: block;
+            font-size: 12px;
+            margin: 8px 0;
+            font-style: italic;
+            color: #666;
+        }
+        .dark .annotation-info {
+            color: #aaa;
+        }
+        .timeline-item {
+            transition: transform 0.3s ease;
+        }
+        .timeline-item:hover {
+            transform: scale(1.02);
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #5D5CDE;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #5D5CDE;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .dark .tooltip .tooltiptext {
+            background-color: #8F90E8;
+            color: #1F2937;
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .wave {
+            animation-name: wave-animation;
+            animation-duration: 2.5s;
+            animation-iteration-count: infinite;
+            transform-origin: 70% 70%;
+            display: inline-block;
+        }
+        @keyframes wave-animation {
+            0% { transform: rotate( 0.0deg) }
+            10% { transform: rotate(14.0deg) }
+            20% { transform: rotate(-8.0deg) }
+            30% { transform: rotate(14.0deg) }
+            40% { transform: rotate(-4.0deg) }
+            50% { transform: rotate(10.0deg) }
+            60% { transform: rotate( 0.0deg) }
+            100% { transform: rotate( 0.0deg) }
+        }
+        .dark .dark-invert {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="#" class="flex items-center space-x-2">
+                <span class="text-2xl font-bold text-primary dark:text-primary">李煜詞探索</span>
+            </a>
+            <nav class="hidden md:flex space-x-8">
+                <a href="#home" class="text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">首頁</a>
+                <a href="#biography" class="text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">生平</a>
+                <a href="#poems" class="text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">詞作</a>
+                <a href="#context" class="text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">歷史背景</a>
+                <a href="#quiz" class="text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">知識測驗</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                </button>
+                <button id="mobileMenuToggle" class="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+            <a href="#home" class="block py-2 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">首頁</a>
+            <a href="#biography" class="block py-2 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">生平</a>
+            <a href="#poems" class="block py-2 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">詞作</a>
+            <a href="#context" class="block py-2 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">歷史背景</a>
+            <a href="#quiz" class="block py-2 text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary">知識測驗</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="py-16 md:py-24 px-4 bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800">
+            <div class="container mx-auto max-w-6xl">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex-1 text-center md:text-left">
+                        <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                            <span class="text-primary">李煜</span>詞探索之旅
+                        </h1>
+                        <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8">
+                            與南唐後主一同走過他的人生故事，感受他詞作中的情感與意境
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                            <button id="explorePoems" class="px-6 py-3 bg-primary text-white rounded-lg shadow-md hover:bg-opacity-90 transition-all">
+                                探索詞作
+                            </button>
+                            <a href="#biography" class="px-6 py-3 border border-primary text-primary dark:text-primary rounded-lg hover:bg-primary hover:bg-opacity-10 transition-all">
+                                了解生平
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex justify-center md:justify-end relative">
+                        <div class="w-64 h-64 md:w-80 md:h-80 bg-primary bg-opacity-10 dark:bg-opacity-20 rounded-full flex items-center justify-center relative animate-float">
+                            <div class="absolute w-full h-full rounded-full border-2 border-dashed border-primary animate-spin" style="animation-duration: 30s;"></div>
+                            <div class="text-center p-6">
+                                <p class="text-xl md:text-2xl font-bold text-primary mb-2">李煜</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">937-978</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">南唐後主</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">詞人</p>
+                                <p class="mt-4 text-xs text-primary italic">"人生若只如初見"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Biography Section -->
+        <section id="biography" class="py-16 px-4 bg-white dark:bg-gray-900">
+            <div class="container mx-auto max-w-6xl">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-4">李煜生平</h2>
+                    <p class="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                        從王子到皇帝，再到亡國之君的人生軌跡
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <!-- Timeline Line -->
+                    <div class="absolute left-0 md:left-1/2 transform md:-translate-x-1/2 h-full w-1 bg-primary bg-opacity-20 dark:bg-opacity-30"></div>
+                    
+                    <!-- Timeline Items -->
+                    <div class="space-y-12">
+                        <!-- Item 1 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-right">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">937年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        李煜出生，《南唐書》記載：「後主名煜，字重光，元宗第六子，初名從嘉。母曰光穆皇后鍾氏。」據記載他「廣顙豐頰駢齒，一目重瞳子」，具有奇特的外貌特徵。
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                1
+                            </div>
+                            <div class="md:w-5/12"></div>
+                        </div>
+
+                        <!-- Item 2 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12"></div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                2
+                            </div>
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-left">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">955年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        18歲的李煜娶周娥皇（大周后）為妻，周娥皇19歲，通書史，善歌舞，尤工琵琶。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item 3 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-right">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">959年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        22歲，南唐向後周稱臣，國勢日漸衰弱。
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                3
+                            </div>
+                            <div class="md:w-5/12"></div>
+                        </div>
+
+                        <!-- Item 4 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12"></div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                4
+                            </div>
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-left">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">961年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        宋朝建立，趙匡胤代周稱帝，北宋開國。南唐處境更為艱難。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item 5 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-right">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">962年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        25歲，父親李璟去世，李煜意外繼位為皇帝，史稱南唐後主。《南唐書》記載：「居喪哀毀，幾不勝。」他對父親極為孝順，喪期間哀痛過度，幾乎無法承受。
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                5
+                            </div>
+                            <div class="md:w-5/12"></div>
+                        </div>
+
+                        <!-- Item 6 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12"></div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                6
+                            </div>
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-left">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">965年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        28歲，次子仲宣去世，年僅四歲。不久後，深受李煜寵愛的大周后因悲傷過度而病逝，年僅29歲。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item 7 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-right">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">966年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        29歲，母親鍾氏去世。李煜命人為大周后塑像，並為其作《衣昭惠周后誄》。
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                7
+                            </div>
+                            <div class="md:w-5/12"></div>
+                        </div>
+
+                        <!-- Item 8 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12"></div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                8
+                            </div>
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-left">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">972年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        娶小周后（大周后之妹）為皇后。小周后同樣受到李煜的寵愛。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item 9 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-right">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">975年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        宋太祖派遣內臣持詔，召李煜入朝。李煜辭以疾病，並說：「臣事大朝，冀全宗祀。不意如是，今有死而已。」
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                9
+                            </div>
+                            <div class="md:w-5/12"></div>
+                        </div>
+
+                        <!-- Item 10 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12"></div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                10
+                            </div>
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-left">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">976年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        39歲，宋軍攻陷金陵（今南京），南唐滅亡。李煜與小周后一起被押送至開封，被封為「違命侯」。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item 11 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-right">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">976年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        宋太祖去世，宋太宗即位，改封李煜為「隴西郡公」，待遇有所改善。
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                11
+                            </div>
+                            <div class="md:w-5/12"></div>
+                        </div>
+
+                        <!-- Item 12 -->
+                        <div class="timeline-item relative flex flex-col md:flex-row items-center md:justify-between">
+                            <div class="md:w-5/12"></div>
+                            <div class="z-10 flex items-center justify-center w-8 h-8 bg-primary rounded-full shadow-md text-white text-sm">
+                                12
+                            </div>
+                            <div class="md:w-5/12 mb-4 md:mb-0 md:text-left">
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                    <h3 class="text-xl font-bold mb-2 text-primary">978年</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">
+                                        41歲，七月七日（一說八日），李煜去世，被贈太師，追封吳王，葬於洛陽北邙山。關於其死因，有病逝與被毒死兩種說法。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Relationship Map Section -->
+        <section id="relationships" class="py-16 px-4 bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800">
+            <div class="container mx-auto max-w-6xl">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-4">李煜的人物關係圖</h2>
+                    <p class="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                        探索李煜與家族、皇室、文臣及北宋權貴間的複雜關係網絡
+                    </p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 md:p-8 mb-8 overflow-hidden">
+                    <div id="relationship-map" class="w-full h-[600px] overflow-hidden">
+                        <svg id="relationship-svg" width="100%" height="100%" class="mx-auto"></svg>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-bold mb-4 text-primary">家族關係</h3>
+                        <ul class="space-y-3 text-gray-700 dark:text-gray-300">
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>李昪（烈祖）</strong>：李煜的祖父，南唐開國君主（937-943在位）</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>李璟（元宗）</strong>：李煜的父親，南唐第二位君主（943-961在位）</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-pink-100 dark:bg-pink-900 text-pink-600 dark:text-pink-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>鍾氏（光穆皇后）</strong>：李煜的母親，於966年去世</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>仲寓</strong>：李煜長子，南唐亡國後被封為郢州刺史，於994年去世，年僅37歲</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>仲宣</strong>：李煜次子，四歲時因驚嚇意外去世，是大周后喪子悲痛而亡的導因</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-bold mb-4 text-primary">婚姻關係</h3>
+                        <ul class="space-y-3 text-gray-700 dark:text-gray-300">
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>周娥皇（大周后/昭惠國后）</strong>：李煜的第一任皇后，955年（18歲時）與李煜結婚。通書史，善歌舞，尤工琵琶，復原了唐代失傳名曲《霓裳羽衣曲》，965年因子仲宣早夭而悲痛過度病逝，年僅29歲</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>小周后（國后）</strong>：大周后之妹，972年被立為皇后，受到李煜極大寵愛。南唐亡國後與李煜同被押送至開封，在李煜死後因悲痛過度而亡</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-bold mb-4 text-primary">政治關係</h3>
+                        <ul class="space-y-3 text-gray-700 dark:text-gray-300">
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>趙匡胤（宋太祖）</strong>：北宋開國皇帝，滅亡南唐並俘虜李煜，封其為「違命侯」。曾感嘆：「李煜若以作詩詞工夫治國家，豈為吾所俘也！」</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>趙光義（宋太宗）</strong>：宋太祖之弟，繼位後改封李煜為「隴西郡公」。據傳因猜忌李煜詞中「小樓昨夜又東風」、「恰似一江春水向東流」等流露思國之情的句子，而賜「牽機藥」毒死李煜</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>徐鉉</strong>：南唐舊臣，撰寫了李煜的墓誌銘，記載其「太平興國三年秋七月八日遘疾，薨于京師里之第」</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="inline-block w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 flex-shrink-0 mr-3 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <span><strong>潘慎修</strong>：南唐舊臣，當宋真宗詢問李煜是否愚昧懦弱時，回答：「煜或懵理若此，何以享國十餘年？」(原文：「先是，江南旧臣多言李煜暗懦，事多过实。真宗一日以问慎修，对曰：煜或懵理若此，何以享国十馀年？」)</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Historical Context Section -->
+        <section id="context" class="py-16 px-4 bg-white dark:bg-gray-900">
+            <div class="container mx-auto max-w-6xl">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-4">歷史背景</h2>
+                    <p class="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                        了解五代十國與南唐歷史，更深入理解李煜詞作的時代背景
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold mb-4 text-primary">五代十國概況</h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            五代十國（907年-979年）是中國歷史上的一段分裂時期，位於唐朝滅亡與北宋建立之間。「五代」指的是相繼在中原地區建立的五個朝代：後梁、後唐、後晉、後漢和後周；「十國」則是指同時期在南方和北方邊緣地區建立的地方政權。
+                        </p>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            這一時期的特點是：
+                        </p>
+                        <ul class="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-2 mb-4">
+                            <li>政權更替頻繁，五代十國共有53年的歷史，五代的平均存在時間僅約10.6年</li>
+                            <li>軍閥割據，軍事將領掌握了政治權力</li>
+                            <li>邊疆民族勢力增強，如契丹（後來的遼）對中原地區構成威脅</li>
+                            <li>南方經濟文化相對繁榮，藝術創作蓬勃發展</li>
+                        </ul>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            在這樣的時代背景下，南唐成為南方十國中最為重要的政權之一，而李煜的命運也與這段歷史緊密相連。
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold mb-4 text-primary">南唐歷史</h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            南唐（937年-975年）是五代十國時期建立於江南地區的政權，定都金陵（今南京）。南唐是十國中最具文化氣息的國家，被視為唐朝文化的延續者。
+                        </p>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            南唐經歷了三位統治者：
+                        </p>
+                        <ul class="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-2 mb-4">
+                            <li><strong>李昪（烈祖，937-943年在位）</strong>：南唐開國君主，原為吳國節度使</li>
+                            <li><strong>李璟（元宗，943-961年在位）</strong>：南唐第二任君主，李昪長子，李煜之父</li>
+                            <li><strong>李煜（後主，961-975年在位）</strong>：南唐最後一位君主，李璟第六子</li>
+                        </ul>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            南唐在李璟時期實力達到頂峰，但在北方的後周和後來的北宋的壓力下，國勢逐漸衰弱。李煜繼位後，更加專注於藝術創作而非國事，最終在976年被宋太祖趙匡胤滅國，李煜被俘虜並送往汴京（今開封）。
+                        </p>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            南唐的滅亡標誌著五代十國時期的結束，中國再次進入統一的時代。這段歷史對於理解李煜詞作中所表達的情感尤為重要。
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold mb-4 text-primary">周氏姐妹與李煜</h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            李煜的婚姻生活是理解其詞作的重要背景。根據《南唐書》記載，他先後娶了周氏姐妹為妻：
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-primary mb-2">大周后（昭惠國后）</h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                    《南唐書》記載：「後主昭惠國后周氏，小名娥皇。司徒宗之女，十九歲來歸。通書史，善歌舞，尤工琵琶。嘗為壽元宗前，元宗歎其工，以燒槽琵琶賜之。至於採戲奕棋，靡不妙絕。」
+                                </p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                    她的藝術才華非凡，「創為高髻纖裳及首翹鬢朶之妝，人皆效之」，影響了當時的審美潮流。大周后還有深厚的音樂造詣，「嘗雪夜酣燕，舉杯請後主起舞，後主曰：『汝能創為新聲則可矣。』後即命箋綴譜，喉無滯音，筆無停思，俄頃譜成，所謂〈邀醉舞破〉也。又有〈恨來遲破〉，亦后所製。」
+                                </p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    更難能可貴的是，「唐盛時〈霓裳羽衣〉，最為大曲，亂離之後，絕不復傳。后得殘譜以琵琶奏之，於是開元天寶之遺音复傳於世。」她成功復原了唐代失傳已久的名曲《霓裳羽衣曲》，為中國古代音樂保存做出了重要貢獻。
+                                </p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-primary mb-2">小周后（國后）</h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                    《南唐書》記載：「後主國后周氏，昭惠后妹也。昭惠卒，未幾，後主居聖尊后喪，故中宮久虛。開寶元年，始議立后為繼室。」
+                                </p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                    小周后早年就與李煜有接觸：「后少以戚里，間入宮掖，聖尊后甚愛之，故立焉，被寵過於昭惠。」她受到李煜母親鍾氏的喜愛，並在婚後得到李煜極大的寵愛，甚至超過了大周后。
+                                </p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    「時後主於群花間作亭，雕鏤華麗，而極迫小，僅容二人，每與后酣飲其中。」這表明李煜與小周后的感情親密非常。南唐亡國後，「國亡，從後主北遷，封鄭國夫人。太平興國二年，後主殂，后悲哀不自勝，亦卒。」小周后與李煜同甘共苦，在李煜去世後因悲痛過度而亡，展現了深厚的感情。
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
+                            <h4 class="font-bold text-primary mb-2">家庭悲劇與創作影響</h4>
+                            <p class="text-gray-700 dark:text-gray-300 mb-2">
+                                根據《南唐書》記載，李煜與大周后有兩個兒子：仲寓和仲宣。特別是次子仲宣：「三歲，誦《孝經》不遺一字。宮中燕侍合禮，如在朝廷，昭惠后尤愛之。」但不幸的是：「宋乾德二年，仲宣才四歲。一日戲佛像前，有大琉璃燈為貓觸墮地，劃然作聲，仲宣因驚癎得疾，竟卒。」
+                            </p>
+                            <p class="text-gray-700 dark:text-gray-300">
+                                仲宣的夭折對大周后打擊極大，「時昭惠已疾甚，聞仲宣夭，悲哀更遽，數日而絕。」大周后因悲痛過度而亡，年僅29歲。面對愛子和愛妃相繼離世，李煜悲痛欲絕：「後主哀甚，自製誅刻之石，與后所愛金屑檀槽琵琶同葬。又作書燔之與訣，自稱鰥夫煜，其辭數千言，皆極酸楚。」這些家庭悲劇深深影響了李煜的心靈和創作風格。
+                            </p>
+                        </div>
+                        <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
+                            <h4 class="font-bold text-primary mb-2">大周后的最後時光</h4>
+                            <p class="text-gray-700 dark:text-gray-300 mb-2">
+                                《南唐書》記載大周后臨終時的情景令人動容：「未幾，後臥疾，已革，猶不亂。親取元宗所賜燒槽琵琶，及平時約臂玉環，為後主別。乃沐浴妝澤，自內含玉，卒於瑤光殿，年二十九。」即使在彌留之際，大周后仍保持著鎮定與優雅，親手整理遺物，沐浴更衣，展現了一位宮廷女性的堅毅與尊嚴。
+                            </p>
+                        </div>
+                        <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <h4 class="font-bold text-primary mb-2">李煜的《衣昭惠周后誄》與深情</h4>
+                            <p class="text-gray-700 dark:text-gray-300 mb-2">
+                                李煜為大周后所寫的《衣昭惠周后誄》，真摯地表達了他對愛妃的深情摯愛：「俛仰同心，綢繆是道。執子之手，與子偕老。今也如何？不終往告。嗚呼哀哉。」這段文字引用了《詩經》中「執子之手，與子偕老」的經典誓言，表達了李煜原本期待與大周后白頭偕老的願望，如今卻因大周后的早逝而化為泡影的悲痛。
+                            </p>
+                            <p class="text-gray-700 dark:text-gray-300 mb-2">
+                                誄文中對大周后復原《霓裳羽衣曲》的貢獻也給予高度讚揚：「霓裳舊曲，韜音淪世。失味齊音，猶傷孔氏。故國遺聲，忍乎湮墜？我稽其美，爾揚其秘。程度余律，重新雅制。」這段文字肯定了大周后在中國古代音樂保存方面的卓越貢獻，將一度失傳的唐代名曲重新整理演奏，使「故國遺聲」得以傳承。
+                            </p>
+                            <p class="text-gray-700 dark:text-gray-300">
+                                在誄文的結尾，李煜表達了對亡妻的思念與追尋：「萬物無心，風煙若故。惟日惟月，以陰以雨。事則依然，人乎何所？悄悄房櫳，孰堪其處。嗚呼哀哉！杳杳香魂，茫茫天步。抆血撫櫬，邀子何所？苟雲路之可窮，冀傳情於方士。嗚呼哀哉！」這段文字表達了萬物依舊但人已不在的悲痛，以及李煜希望能追隨大周后靈魂的渴望，情感真摯動人。這種對大周后的深情厚愛也反映在他後期的詞作中，為其注入了深刻的情感力量。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold mb-4 text-primary">李煜之死與相關史料</h3>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">
+                            根據《南唐書》記載，李煜死於太平興國三年（978年），時年41歲，這一說法得到多種史料支持：
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-primary mb-2">《南唐書》記載</h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                   「太平興國三年六月辛卯殂，年四十二。是日，七夕也，後主蓋以是日生。贈太師，追封吳王，葬洛陽北邙山。」
+                                </p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    《南唐書》將李煜的死亡日期明確記載為太平興國三年（978年）的七夕節。宋朝廷賜死後官銜「太師」，並追封為「吳王」，葬於洛陽北邙山。
+                                </p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-primary mb-2">小周后的命運</h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                    《南唐書》關於小周后的記載也佐證了李煜的死亡時間：「國亡，從後主北遷，封鄭國夫人。太平興國二年，後主殂，后悲哀不自勝，亦卒。」
+                                </p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    這段記載顯示小周后在李煜去世後因悲傷過度而亡，體現了兩人之間的深厚感情。然而此處記載李煜死於太平興國二年，與前文記載的三年有所出入，這種歷史文獻中的不一致是常見現象。
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-bold text-primary mb-2">死因爭議</h4>
+                            <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <p class="text-gray-700 dark:text-gray-300 mb-4">
+                                    關於李煜的死因，歷史上有兩種不同說法：
+                                </p>
+                                <ul class="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-2 mb-4">
+                                    <li><strong>疾病說</strong>：南唐舊臣徐鉉所撰墓誌銘記載，李煜於「太平興國三年秋七月八日遘疾，薨于京師里之第」，即因病去世。</li>
+                                    <li><strong>毒殺說</strong>：南北宋之交王銍的《默記》中記載，李煜是被宋太宗派人賜「牽機藥」而死。據說李煜的詞作如「小樓昨夜又東風」及「一江春水向東流」流傳後，引起宋太宗猜忌，認為這些詞中含有對故國的思念之情，故而被毒死。</li>
+                                </ul>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    雖然歷史學家普遍認為疾病說更可信（徐鉉的墓誌銘是李煜死後最早的記錄），但「李煜被毒死」的傳說在明代以後廣泛流傳，反映了人們對這位天才詞人兼亡國之君的同情。也有學者指出，《南唐書》記載李煜死於七夕這一天，恰是他的生日，這種首尾呼應更增添了李煜生平的悲劇色彩。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-primary mb-2">李煜兒子仲寓的晚年</h4>
+                            <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <p class="text-gray-700 dark:text-gray-300 mb-2">
+                                    《南唐書》記載李煜的長子仲寓在父親死後的生活：「居後主喪，哀毀踰制。太宗臨朝，遣使勞問。終喪，賜積珍坊第一區。久之，自言族大家貧，求治郡，拜郢州刺史。在郡以寬簡為治，吏民安之。淳化五年八月，卒，年三十七。」
+                                </p>
+                                <p class="text-gray-700 dark:text-gray-300">
+                                    仲寓在父親去世後悲痛過度，宋太宗甚至派人慰問。後來仲寓被任命為郢州刺史，以寬容簡明的方式治理地方，頗受民眾愛戴。他於淳化五年（994年）八月去世，年僅三十七歲。"子正言好學，早卒。於是後主之後遂絕。"李煜的後代至此斷絕，為這位才華橫溢的亡國之君畫上了最後的句點。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Poems Section -->
+        <section id="poems" class="py-16 px-4 bg-gray-50 dark:bg-gray-800">
+            <div class="container mx-auto max-w-6xl">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-4">李煜詞作精選</h2>
+                    <p class="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                        從花前月下的豔情到亡國之痛的悲涼，李煜的詞作展現了其人生不同階段的情感變化
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 虞美人 -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">虞美人</h3>
+                            <p class="text-sm opacity-80">亡國之後的代表作</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span>春花</span><span>秋月</span><span class="annotated-word" data-type="special" data-annotation="何時結束，表達美好事物無盡的感慨">何時了</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>往事</span><span class="annotated-word" data-type="literary" data-annotation="表示往事如煙，難以計數">知多少</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="cultural" data-annotation="指詞人在汴京（今開封）的住所">小樓</span><span>昨夜</span><span class="annotated-word" data-type="rare" data-annotation="又一次，表示東風年年吹拂">又</span><span class="annotated-word" data-type="special" data-annotation="春風，暗示春天的來臨">東風</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="cultural" data-annotation="已滅亡的南唐">故國</span><span class="annotated-word" data-type="literary" data-annotation="禁不住，忍不住">不堪</span><span>回首</span>、<span>月明中</span>。
+                                </p>
+
+                                <div class="stanza-break"></div>
+
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="rare" data-annotation="精美的欄杆">雕闌</span><span class="annotated-word" data-type="cultural" data-annotation="玉石砌成的台階，形容宮殿的華麗">玉砌</span><span class="annotated-word" data-type="special" data-annotation="應該還在，表示建築依然存在">應猶在</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>只是</span><span class="annotated-word" data-type="literary" data-annotation="紅潤的面容，指年輕時的容貌">朱顏</span><span class="annotated-word" data-type="rare" data-annotation="變化，衰老">改</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="cultural" data-annotation="問你，自問">問君</span><span>能有</span><span class="annotated-word" data-type="rare" data-annotation="多少">幾多</span><span>愁</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>恰似</span><span>一江</span><span class="annotated-word" data-type="literary" data-annotation="春天的江水，生機勃勃">春水</span>、<span class="annotated-word" data-type="special" data-annotation="不停地往東流淌，象徵無休止的愁緒">向東流</span>。
+                                </p>
+                                
+                                <div class="annotation-info">
+                                    提示：將滑鼠游標移至帶有底色標記的詞彙上可查看註釋
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：此詞作於李煜被俘後北送汴京（今開封），被封為「違命侯」期間。詞中抒發了亡國之痛與對故國的深切懷念。這首詞被視為李煜最著名的作品，也是中國文學史上最著名的詞作之一。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>詞中的「春花秋月」和「雕闌玉砌」等意象有什麼象徵意義？它們如何反映詞人的心境？</li>
+                                    <li>分析「小樓昨夜又東風」一句中「又」字的運用效果。</li>
+                                    <li>「問君能有幾多愁，恰似一江春水向東流」為什麼能成為千古名句？它在表達方式上有何獨特之處？</li>
+                                    <li>比較《虞美人》上下兩闋的情感變化，分析詞人如何從具體景物過渡到深沉的感慨。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 破陣子 -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">破陣子</h3>
+                            <p class="text-sm opacity-80">亡國之痛的直接抒發</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="cultural" data-annotation="四十年指南唐國祚從937年立國到李煜975年被俘的時間">四十年</span><span class="annotated-word" data-type="rare" data-annotation="來：以來">來</span><span class="annotated-word" data-type="literary" data-annotation="家國：指國家">家國</span>，<span class="annotated-word" data-type="special" data-annotation="形容南唐疆域的廣闊">三千里</span><span class="annotated-word" data-type="cultural" data-annotation="土地和河山">地山河</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="literary" data-annotation="形容高大華麗的宮殿樓閣">鳳閣龍樓</span><span class="annotated-word" data-type="special" data-annotation="直通天空，形容非常高">連霄漢</span>，<span class="annotated-word" data-type="cultural" data-annotation="比喻華美的宮殿建築，如美玉般的樹木">玉樹瓊枝</span><span class="annotated-word" data-type="rare" data-annotation="如同山間的藤蘿，形容宮殿的雄偉壯觀">作煙蘿</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="rare" data-annotation="幾曾：幾時曾經">幾曾</span><span class="annotated-word" data-type="literary" data-annotation="干戈：兵器，指戰爭">識干戈</span>？
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="literary" data-annotation="一旦：突然間">一旦</span><span class="annotated-word" data-type="cultural" data-annotation="淪為臣子和俘虜">歸為臣虜</span>，<span class="annotated-word" data-type="rare" data-annotation="沈腰：腰肢消瘦，化用沈約之典">沈腰</span><span class="annotated-word" data-type="cultural" data-annotation="鬢髮蒼白，化用潘岳之典">潘鬢</span><span class="annotated-word" data-type="special" data-annotation="憔悴、消瘦">消磨</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="literary" data-annotation="尤其是">最是</span><span class="annotated-word" data-type="rare" data-annotation="倉促、匆忙">倉惶</span><span class="annotated-word" data-type="cultural" data-annotation="離開宗廟，指失去國家">辭廟</span><span class="annotated-word" data-type="special" data-annotation="那一天">日</span>，<span class="annotated-word" data-type="cultural" data-annotation="掌管宮廷音樂的機構">教坊</span><span class="annotated-word" data-type="rare" data-annotation="依然、仍然">猶</span><span class="annotated-word" data-type="literary" data-annotation="演奏">奏</span><span class="annotated-word" data-type="special" data-annotation="離別之曲">別離歌</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-type="literary" data-annotation="流淚">垂淚</span><span class="annotated-word" data-type="rare" data-annotation="面對">對</span><span class="annotated-word" data-type="cultural" data-annotation="宮中的女子">宮娥</span>。
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：此詞可能作於李煜被俘後北送汴京期間。詞中直接抒發了亡國的痛苦，表達了對昔日繁華與今日淒涼的強烈對比，以及對命運無常的感慨。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>詞中的「幾曾識干戈」一句反映了李煜怎樣的人生經歷和遺憾？</li>
+                                    <li>詞中有哪些對比手法的運用？這些對比表達了詞人怎樣的感慨？</li>
+                                    <li>「最是倉惶辭廟日，教坊猶奏別離歌」一句中的「猶」字有何深意？</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 相見歡 -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">相見歡</h3>
+                            <p class="text-sm opacity-80">寫離愁別恨的經典之作</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="沉默不語">無言</span><span class="annotated-word" data-annotation="獨自一人">獨</span><span>上</span><span class="annotated-word" data-annotation="西邊的樓閣，這裡泛指高樓">西樓</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="月亮彎曲像鉤子一樣，指農曆月初或月末的月亮">月如鉤</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="寂靜無聲">寂寞</span><span class="annotated-word" data-annotation="梧桐樹，古典詩詞中常與悲秋、思念相連">梧桐</span><span class="annotated-word" data-annotation="幽深的庭院">深院</span>、<span class="annotated-word" data-annotation="包圍、籠罩著清冷的秋景">鎖清秋</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="剪刀難以剪斷，表示愁緒無法排解">剪不斷</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="想要理清卻越理越亂，表示思緒紛亂">理還亂</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>是</span><span class="annotated-word" data-annotation="離別之愁，思鄉之情">離愁</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="另外是一種特別的">別是一般</span><span>滋味</span>、<span>在心頭</span>。
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：這首詞可能作於李煜被俘後北送汴京期間，表達了他對故國的思念之情。全詞寫景與抒情相結合，表達了一種難以排解的離愁別恨。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>詞中如何通過自然景物來烘托詞人的心情？這些意象有何作用？</li>
+                                    <li>「剪不斷，理還亂」這一表達有何特點？它如何刻畫了詞人的心境？</li>
+                                    <li>「別是一般滋味在心頭」為何能成為千古名句？這句話傳達了怎樣的情感體驗？</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 浪淘沙 -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">浪淘沙</h3>
+                            <p class="text-sm opacity-80">闡述人生無常的代表作</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span>簾外</span><span class="annotated-word" data-annotation="細雨淅瀝瀝地下著，形容雨聲">雨潺潺</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="春天的氣息">春意</span><span class="annotated-word" data-annotation="衰退、減少的樣子">闌珊</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="絲綢做的被子">羅衾</span><span class="annotated-word" data-annotation="無法忍受、抵擋">不耐</span><span class="annotated-word" data-annotation="凌晨時分，約清晨三點至五點">五更</span><span>寒</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>夢裡</span><span class="annotated-word" data-annotation="不清楚、不意識到">不知</span><span class="annotated-word" data-annotation="自己的身份，暗指自己是客人(俘虜)">身是客</span>，<span class="annotated-word" data-annotation="片刻、一會兒">一晌</span><span class="annotated-word" data-annotation="貪婪地享受歡樂">貪歡</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>獨自</span><span class="annotated-word" data-annotation="不要">莫</span><span class="annotated-word" data-annotation="倚靠欄杆遠望">憑欄</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>無限</span><span class="annotated-word" data-annotation="河山國土">江山</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="分離、離別的時候">別時</span><span>容易</span><span class="annotated-word" data-annotation="相見、見面的時候">見時</span><span>難</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span>流水</span><span>落花</span><span class="annotated-word" data-annotation="春天逝去，暗喻美好時光的消逝">春去也</span>，<span class="annotated-word" data-annotation="既指仙境與人間，也指生死相隔的兩個世界">天上人間</span>。
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：此詞可能作於李煜被俘後北送汴京期間。詞中表達了對故國的思念和對命運的感慨，流露出對人生短暫、世事無常的領悟。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>「夢裡不知身是客，一晌貪歡」與「獨自莫憑欄，無限江山」兩句如何形成對比？這種對比反映了詞人怎樣的心理狀態？</li>
+                                    <li>詞中出現了哪些與時間相關的意象？它們傳達了詞人什麼樣的感慨？</li>
+                                    <li>「天上人間」一詞在此處有何深層含義？為何詞人用這個詞來結束全詞？</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 清平樂 -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">清平樂</h3>
+                            <p class="text-sm opacity-80">表達離愁別恨的經典之作</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="自從分別以來">別來</span><span class="annotated-word" data-annotation="春天已過一半">春半</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="看到的一切">触目</span><span class="annotated-word" data-annotation="內心柔弱的部分，形容極度悲傷">柔腸斷</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="台階之下">砌下</span><span class="annotated-word" data-annotation="掉落的梅花">落梅</span><span class="annotated-word" data-annotation="像雪一樣紛亂">如雪亂</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="拂去">拂了</span><span class="annotated-word" data-annotation="滿身">一身</span><span class="annotated-word" data-annotation="又，還是">還</span><span class="annotated-word" data-annotation="滿身都是">滿</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="大雁">雁</span><span class="annotated-word" data-annotation="帶來">來</span><span class="annotated-word" data-annotation="消息，信件">音信</span><span class="annotated-word" data-annotation="沒有依據">無憑</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="路途遙遠">路遙</span><span class="annotated-word" data-annotation="回鄉的夢">歸夢</span><span class="annotated-word" data-annotation="無法實現">難成</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="離別的悲傷">离恨</span><span class="annotated-word" data-annotation="正像">恰如</span><span class="annotated-word" data-annotation="春天的野草">春草</span>，
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="越走">更行</span><span class="annotated-word" data-annotation="越遠">更遠</span><span class="annotated-word" data-annotation="仍然繼續生長">還生</span>。
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：這首詞可能作於李煜被俘後北送汴京期間。詞中通過對景物的描述，表達了詞人深沉的離別之愁，特別是最後兩句「离恨恰如春草，更行更遠還生」成為了千古傳誦的名句。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>「拂了一身還滿」一句運用了怎樣的表現手法？它表達了詞人怎樣的情感？</li>
+                                    <li>詞中的「落梅」、「春草」等自然意象有何象徵意義？</li>
+                                    <li>為什麼「离恨恰如春草，更行更遠還生」成為千古名句？它在表達方式上有何特點？</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 烏夜啼 (其一) -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">烏夜啼 (其一)</h3>
+                            <p class="text-sm opacity-80">悲秋之作</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="昨天晚上">昨夜</span><span class="annotated-word" data-annotation="又有風又有雨">風兼雨</span>，<span class="annotated-word" data-annotation="窗簾和帳幔">簾幃</span><span class="annotated-word" data-annotation="形容風吹的聲音">颯颯</span><span class="annotated-word" data-annotation="秋天的聲音，指秋風聲">秋聲</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="蠟燭將要燃盡">燭殘</span><span class="annotated-word" data-annotation="漏壺的水滴完了，指時間已晚">漏斷</span><span class="annotated-word" data-annotation="經常，多次">頻</span><span class="annotated-word" data-annotation="傾斜枕頭，表示翻來覆去難以入睡">欹枕</span>，<span class="annotated-word" data-annotation="起身坐著">起坐</span><span class="annotated-word" data-annotation="心情無法平靜">不能平</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="世間的事情">世事</span><span class="annotated-word" data-annotation="隨意地，任意地">漫</span><span class="annotated-word" data-annotation="如同流水一般隨波逐流">隨流水</span>，<span class="annotated-word" data-annotation="計算起來">算來</span><span class="annotated-word" data-annotation="人生如夢，短暫而虛幻">一夢浮生</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="醉酒的境界，借酒消愁">醉鄉</span><span class="annotated-word" data-annotation="道路平穩">路穩</span><span class="annotated-word" data-annotation="應該，適合">宜</span><span class="annotated-word" data-annotation="經常，多次">頻到</span>，<span class="annotated-word" data-annotation="除此之外的路途">此外</span><span class="annotated-word" data-annotation="不值得，難以忍受">不堪行</span>。
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：這首詞可能作於李煜被俘後北送汴京期間。詞中通過描繪秋夜的情景，表達了詞人內心的孤獨和對人生無常的感慨，並流露出借酒消愁的意願。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>「世事漫隨流水，算來一夢浮生」這句表達了詞人怎樣的人生感悟？</li>
+                                    <li>詞中的「醉鄉路穩宜頻到，此外不堪行」反映了詞人面對困境的什麼態度？</li>
+                                    <li>詞人為何會輾轉難眠？這與他的處境有何關係？</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 烏夜啼 (其二) -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">烏夜啼 (其二)</h3>
+                            <p class="text-sm opacity-80">哀嘆生命短暫的名作</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="樹林中的花朵">林花</span><span class="annotated-word" data-annotation="凋謝了">謝了</span><span class="annotated-word" data-annotation="春天的紅色花朵，暗示美好事物">春紅</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="形容時間過得非常快">太匆匆</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="無可奈何">無奈</span><span class="annotated-word" data-annotation="早晨">朝來</span><span class="annotated-word" data-annotation="冷雨">寒雨</span>、<span class="annotated-word" data-annotation="傍晚">晚來</span><span class="annotated-word" data-annotation="大風">風</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="如胭脂般紅的淚水，指悲傷的眼淚">胭脂淚</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="互相陪伴">相留</span><span class="annotated-word" data-annotation="沉醉，指借酒消愁">醉</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="何時，什麼時候">几時</span><span class="annotated-word" data-annotation="重新，再次，指重返故國">重</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="本來就是">自是</span><span class="annotated-word" data-annotation="人的一生">人生</span><span class="annotated-word" data-annotation="永久的遺憾">長恨</span>、<span class="annotated-word" data-annotation="江水永遠向東流，比喻無法改變的規律">水長東</span>。
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：這首詞可能作於李煜被俘後北送汴京期間。詞中通過描繪春花的凋謝和風雨的無情，表達了詞人對生命短暫和命運無常的感慨，以及對故國的深深思念。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>詞中的首句「林花謝了春紅」與末句「水長東」間有什麼聯繫？它們共同揭示了怎樣的人生哲理？</li>
+                                    <li>「胭脂淚」、「相留醉」兩句如何表現詞人的情感？</li>
+                                    <li>「自是人生長恨、水長東」為何能成為千古名句？它的藝術魅力在哪裡？</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 玉樓春 -->
+                    <div class="poem-card bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="bg-primary text-white p-4">
+                            <h3 class="text-xl font-bold">玉樓春</h3>
+                            <p class="text-sm opacity-80">早期宮廷風華的代表作</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4 space-y-2 poem-content">
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="剛剛完成晚上的梳妝打扮">晚妝初了</span><span class="annotated-word" data-annotation="肌膚白皙如雪">明肌雪</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="春天的宮殿">春殿</span><span class="annotated-word" data-annotation="宮中的美女們">嬪娥</span><span class="annotated-word" data-annotation="像魚兒一般一個接一個地排列，形容整齊有序">魚貫列</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="一種樂器，象徵高貴">鳳簫</span><span class="annotated-word" data-annotation="吹奏，聲音時斷時續">吹斷</span><span class="annotated-word" data-annotation="水霧繚繞的地方，指環境幽靜">水云間</span>，<span class="annotated-word" data-annotation="再次演奏">重按</span><span class="annotated-word" data-annotation="指《霓裳羽衣曲》，唐代著名宮廷樂舞">霓裳</span><span class="annotated-word" data-annotation="歌聲傳遍整個宮殿">歌遍徹</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="迎著風">臨風</span><span class="annotated-word" data-annotation="誰更加">誰更</span><span class="annotated-word" data-annotation="散發香氣的香粉">飄香屑</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="醉酒的狀態下">醉</span><span class="annotated-word" data-annotation="拍打">拍</span><span class="annotated-word" data-annotation="欄杆">闌干</span><span class="annotated-word" data-annotation="情感特別深刻">情味切</span>。
+                                </p>
+                                <p class="poem-line">
+                                    <span class="annotated-word" data-annotation="返回的時候">歸時</span><span class="annotated-word" data-annotation="不要">休</span><span class="annotated-word" data-annotation="點燃">放</span><span class="annotated-word" data-annotation="燭火的紅光">燭花紅</span>，<span class="annotated-word" data-annotation="等待">待</span><span class="annotated-word" data-annotation="騎馬踏行">踏馬蹄</span><span class="annotated-word" data-annotation="清澈的月光下">清夜月</span>。
+                                </p>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p>創作背景：這首詞可能作於李煜在位期間，描繪了南唐宮廷中的華麗場景和歌舞活動。詞中充滿了對宮廷生活的讚美和對美麗夜色的欣賞，展現了李煜早期作品的風華與雅致。</p>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h4 class="text-sm font-bold text-primary mb-2">思考題：</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-5">
+                                    <li>這首詞與李煜亡國後的詞作風格有何不同？為什麼會有這樣的差異？</li>
+                                    <li>「歸時休放燭花紅，待踏馬蹄清夜月」一句表達了作者怎樣的審美情趣？</li>
+                                    <li>比較李煜早期與晚期的詞作風格，談談歷史環境對文學創作的影響。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                
+                <!-- 王國維對李煜詞的評價 -->
+                <div class="mt-16 bg-gray-50 dark:bg-gray-800 p-8 rounded-lg">
+                    <h3 class="text-2xl font-bold mb-6 text-center">歷代對李煜的評價</h3>
+                    
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold mb-4 text-primary text-center">李煜其人</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                <h5 class="font-bold text-primary mb-3">相貌與才華</h5>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>煜字重光，初名從嘉，景第六子也。煜為人仁孝，善屬文，工書畫，而豐額駢齒，一目重瞳子。</p>
+                                    <p class="text-sm mt-1">---- 歐陽脩《新五代史》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>後主自少俊邁，喜肄儒學，工詩，能屬文，曉悟音律。姿儀風雅，舉止儒措，宛若士人。</p>
+                                    <p class="text-sm mt-1">---- 龍袞《江南野史》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>幼而好古，為文有漢魏風。</p>
+                                    <p class="text-sm mt-1">---- 陳彭年《江南別錄》</p>
+                                </blockquote>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                <h5 class="font-bold text-primary mb-3">為政風格</h5>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>先是，江南旧臣多言李煜暗懦，事多过实。真宗一日以问慎修，对曰：「煜或懵理若此，何以享国十馀年？」</p>
+                                    <p class="text-sm mt-1">---- 《宋史·潘慎修傳》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>煜性驕侈，好聲色，又喜浮圖，為高談，不恤政事。</p>
+                                    <p class="text-sm mt-1">---- 歐陽修《新五代史·南唐世家》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>後主天性純孝，孜孜儒學，虛懷接下，賓對大臣，傾奉中國，惟恐不及。但以著述勤於政事，至於書畫皆盡精妙。然頗耽竺乾之教，果於自信，所以奸邪得計。</p>
+                                    <p class="text-sm mt-1">---- 鄭文寶《江表志》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>後主天資純孝……專以愛民為急，蠲賦息役，以裕民力。尊事中原，不憚卑屈，境內賴以少安者十有五年。</p>
+                                    <p class="text-sm mt-1">---- 陸游《南唐書》</p>
+                                </blockquote>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <h4 class="text-xl font-bold mb-4 text-primary text-center">文學成就評價</h4>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                <h5 class="font-bold text-primary mb-3">才能與命運</h5>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>李煜若以作詩詞工夫治國家，豈為吾所俘也！</p>
+                                    <p class="text-sm mt-1">---- 宋太祖趙匡胤</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>作個才人真絕代，可憐薄命作君王。</p>
+                                    <p class="text-sm mt-1">---- 郭麐《南唐雜詠》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>李重光風流才子，誤作人主，至有入宋牽機之恨。其所作之詞，一字一珠，非他家所能及也。</p>
+                                    <p class="text-sm mt-1">---- 余懷《玉琴齋詞·序》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>南唐皇帝李煜先生詞學的造詣，空前絕後，用在填詞上的精力，遠超過用在治國上。</p>
+                                    <p class="text-sm mt-1">---- 柏楊《濁世人間》</p>
+                                </blockquote>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                <h5 class="font-bold text-primary mb-3">詞風與地位</h5>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>花間之詞，如古玉器，貴重而不適用；宋詞適用而少質重，李後主兼有其美，更饒煙水迷離之致。</p>
+                                    <p class="text-sm mt-1">---- 納蘭性德《淥水亭雜識》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>後主詞如生馬駒，不受控捉。毛嬙西施，天下美婦人也。嚴妝佳，淡妝亦佳，粗服亂頭，不掩國色。飛卿，嚴妝也；端己，淡妝也；後主則粗服亂頭矣。</p>
+                                    <p class="text-sm mt-1">---- 周濟《介存齋論詞雜著》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>男中李後主，女中李易安，極是當行本色。</p>
+                                    <p class="text-sm mt-1">---- 沈謙</p>
+                                </blockquote>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                <h5 class="font-bold text-primary mb-3">王國維的評價</h5>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>溫飛卿之詞，句秀也；韋端己之詞，骨秀也；李重光之詞，神秀也。</p>
+                                    <p class="text-sm mt-1">---- 王國維《人間詞話》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>詞至李後主而眼界始大，感慨遂深，遂變伶工之詞而為士大夫之詞。周介存置諸溫、韋之下，可謂顛倒黑白矣。</p>
+                                    <p class="text-sm mt-1">---- 王國維《人間詞話》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>詞人者，不失其赤子之心者也。故生於深宮之中，長於婦人之手，是後主為人君所短處，亦即為詞人所長處。</p>
+                                    <p class="text-sm mt-1">---- 王國維《人間詞話》</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>尼採謂一切文字，余愛以血書者，後主之詞，真所謂以血書者也。宋道君皇帝《燕山亭》詞，亦略似之。然道君不過自道身世之感，後主則儼有釋迦、基督擔荷人類罪惡之意，其大小固不同矣。</p>
+                                    <p class="text-sm mt-1">---- 王國維《人間詞話》</p>
+                                </blockquote>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-xl font-bold mb-4 text-primary text-center">現代學者評價</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>南唐李後主雖多才多藝，但不抓政治，終於亡國。</p>
+                                    <p class="text-sm mt-1">---- 毛澤東</p>
+                                </blockquote>
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>無言獨對如鉤月，爭解離腸結？淚珠日夕洗年華，應恨託身偏在帝王家。江南憶昔危城墜，故國原無罪。倉皇辭廟最悽然，只為妨他一統礙他眠。</p>
+                                    <p class="text-sm mt-1">---- 鄭超麟《虞美人·哀李重光》</p>
+                                </blockquote>
+                            </div>
+                            
+                            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+                                <blockquote class="italic border-l-4 border-primary pl-4 py-2 mb-4">
+                                    <p>李後主的詞是他對生活的敏銳而真切的體驗，無論是享樂的歡愉，還是悲哀的痛苦，他都全身心的投入其間。我們有的人活過一生，既沒有好好的體會過快樂，也沒有好好的體驗過悲哀，因為他從來沒有以全部的心靈感情投注入某一件事，這是人生的遺憾。</p>
+                                    <p class="text-sm mt-1">---- 葉嘉瑩《唐宋名家詞賞析》</p>
+                                </blockquote>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quiz Section -->
+        <section id="quiz" class="py-16 px-4 bg-gray-50 dark:bg-gray-800">
+            <div class="container mx-auto max-w-3xl">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-4">知識測驗</h2>
+                    <p class="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                        測試一下你對李煜及其詞作的了解程度
+                    </p>
+                </div>
+
+                <div id="quiz-container" class="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6">
+                    <div id="quiz-start" class="text-center py-8">
+                        <h3 class="text-xl font-bold mb-4">準備好開始測驗了嗎？</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
+                            這個測驗包含20道關於李煜生平和詞作的問題，測試你的理解程度。
+                        </p>
+                        <button id="start-quiz" class="px-6 py-3 bg-primary text-white rounded-lg shadow-md hover:bg-opacity-90 transition-all">
+                            開始測驗
+                        </button>
+                    </div>
+
+                    <div id="quiz-questions" class="hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400" id="quiz-progress">問題 <span id="current-question">1</span>/20</div>
+                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400" id="quiz-score">得分: <span id="score">0</span>/20</div>
+                        </div>
+
+                        <div id="question-container" class="mb-6">
+                            <h3 id="question" class="text-lg font-bold mb-4">問題載入中...</h3>
+                            <div id="options" class="space-y-3">
+                                <!-- Options will be inserted here by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div id="feedback" class="hidden p-4 rounded-lg mb-6">
+                            <!-- Feedback will be inserted here by JavaScript -->
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button id="next-question" class="hidden px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-opacity-90 transition-all">
+                                下一題
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="quiz-results" class="hidden text-center py-8">
+                        <h3 class="text-xl font-bold mb-4">測驗結果</h3>
+                        <p class="text-3xl font-bold text-primary mb-6">
+                            <span id="final-score">0</span>/20
+                        </p>
+                        <p id="result-message" class="text-gray-600 dark:text-gray-400 mb-6">
+                            <!-- Result message will be inserted here by JavaScript -->
+                        </p>
+                        <button id="restart-quiz" class="px-6 py-3 bg-primary text-white rounded-lg shadow-md hover:bg-opacity-90 transition-all">
+                            重新測驗
+                        </button>
+                        <button id="review-material" class="px-6 py-3 ml-4 border border-primary text-primary dark:text-primary rounded-lg hover:bg-primary hover:bg-opacity-10 transition-all">
+                            回顧資料
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Poem Details Modal -->
+    <div id="poem-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-auto m-4">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 id="modal-title" class="text-xl font-bold">詞作詳解</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div id="modal-content">
+                    <!-- Content will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Annotation Tooltip -->
+    <div id="annotation-tooltip" class="fixed z-50 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg max-w-xs hidden border border-gray-200 dark:border-gray-700">
+        <!-- Annotation text will be inserted here by JavaScript -->
+    </div>
+
+    <footer class="bg-gray-800 dark:bg-gray-950 text-white py-8 px-4">
+        <div class="container mx-auto max-w-6xl">
+            <div class="text-center mb-6">
+                <h4 class="text-xl font-bold mb-4">資料來源</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    <div class="bg-gray-700 dark:bg-gray-800 p-4 rounded-lg">
+                        <h5 class="font-semibold text-primary mb-2">史書文獻</h5>
+                        <ul class="text-sm text-gray-300 space-y-1 list-none pl-0">
+                            <li>《南唐書》(馬令、陳彭年、鄭文寶等)</li>
+                            <li>《宋史·潘慎修傳》</li>
+                            <li>《新五代史》(歐陽脩)</li>
+                            <li>《江南別錄》(陳彭年)</li>
+                            <li>《王銍默記》(王銍)</li>
+                            <li>陸游《南唐書》</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-700 dark:bg-gray-800 p-4 rounded-lg">
+                        <h5 class="font-semibold text-primary mb-2">唐宋時期與近現代文獻</h5>
+                        <ul class="text-sm text-gray-300 space-y-1 list-none pl-0">
+                            <li>《江南野史》(龍袞)</li>
+                            <li>《江表志》(鄭文寶)</li>
+                            <li>《李重光墓誌銘》(徐鉉)</li>
+                            <li>《李煜衣昭惠周后誄》(李煜)</li>
+                            <li>王國維《人間詞話》</li>
+                            <li>葉嘉瑩《唐宋名家詞賞析》</li>
+                            <li>郭麐《南唐雜詠》</li>
+                            <li>余懷《玉琴齋詞·序》</li>
+                            <li>周濟《介存齋論詞雜著》</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400">
+                <p class="text-sm">本網站致力於為中學生提供優質的李煜詞學習資源，幫助學生更好地理解李煜詞作的藝術價值和歷史意義。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.2/dist/d3.min.js"></script>
+    <script>
+        // 人物關係圖
+        document.addEventListener('DOMContentLoaded', function() {
+            // 確保DOM完全加載後才執行圖表繪製
+            createRelationshipGraph();
+        });
+        
+        function createRelationshipGraph() {
+            // 檢查SVG是否存在
+            const svg = d3.select("#relationship-svg");
+            if (svg.empty()) {
+                console.error("SVG element not found!");
+                return;
+            }
+            
+            // 獲取容器大小 - 確保正確獲取容器尺寸
+            const container = document.getElementById("relationship-map");
+            const width = container.clientWidth || 800;
+            const height = container.clientHeight || 600;
+            
+            // 明確設置SVG尺寸以確保正確渲染
+            svg.attr("width", width)
+               .attr("height", height);
+            
+            // 設置邊界內距
+            const padding = 60;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // 定義預設位置分組
+            const positions = {
+                center: { x: centerX, y: centerY },
+                top: { x: centerX, y: padding + 70 },
+                bottom: { x: centerX, y: height - padding - 70 },
+                left: { x: padding + 100, y: centerY },
+                right: { x: width - padding - 100, y: centerY },
+                topLeft: { x: padding + 110, y: padding + 110 },
+                topRight: { x: width - padding - 110, y: padding + 110 },
+                bottomLeft: { x: padding + 110, y: height - padding - 110 },
+                bottomRight: { x: width - padding - 110, y: height - padding - 110 },
+                midTopLeft: { x: centerX - 150, y: centerY - 120 },
+                midTopRight: { x: centerX + 150, y: centerY - 120 },
+                midBottomLeft: { x: centerX - 150, y: centerY + 120 },
+                midBottomRight: { x: centerX + 150, y: centerY + 120 }
+            };
+            
+            // 定義節點數據 - 包含李煜及其關係人物並設置初始位置
+            const nodes = [
+                { id: "liyu", name: "李煜", group: "self", desc: "南唐後主 (937-978)", x: positions.center.x, y: positions.center.y },
+                { id: "libi", name: "李昪", group: "family", desc: "祖父，南唐開國君主", x: positions.top.x - 70, y: positions.top.y },
+                { id: "lijing", name: "李璟", group: "family", desc: "父親，南唐第二位君主", x: positions.top.x + 80, y: positions.top.y },
+                { id: "zhongshi", name: "鍾氏", group: "family", desc: "母親，光穆皇后", x: positions.topRight.x, y: positions.topRight.y },
+                { id: "dazhou", name: "周娥皇", group: "spouse", desc: "第一任皇后 (大周后)", x: positions.right.x, y: positions.right.y - 60 },
+                { id: "xiaozhou", name: "小周后", group: "spouse", desc: "第二任皇后", x: positions.right.x, y: positions.right.y + 60 },
+                { id: "zhongyu", name: "仲寓", group: "children", desc: "長子", x: positions.bottomRight.x, y: positions.bottomRight.y },
+                { id: "zhongxuan", name: "仲宣", group: "children", desc: "次子 (4歲夭折)", x: positions.midBottomRight.x, y: positions.midBottomRight.y },
+                { id: "zhaokt", name: "趙匡胤", group: "politics", desc: "宋太祖，滅南唐", x: positions.bottom.x - 70, y: positions.bottom.y },
+                { id: "zhaogy", name: "趙光義", group: "politics", desc: "宋太宗", x: positions.bottom.x + 80, y: positions.bottom.y },
+                { id: "xuxian", name: "徐鉉", group: "other", desc: "南唐舊臣", x: positions.left.x, y: positions.left.y - 60 },
+                { id: "pansx", name: "潘慎修", group: "other", desc: "南唐舊臣", x: positions.left.x, y: positions.left.y + 60 }
+            ];
+            
+            // 定義連接關係
+            const links = [
+                { source: "liyu", target: "libi", type: "family", desc: "祖孫" },
+                { source: "liyu", target: "lijing", type: "family", desc: "父子" },
+                { source: "liyu", target: "zhongshi", type: "family", desc: "母子" },
+                { source: "liyu", target: "dazhou", type: "spouse", desc: "夫妻" },
+                { source: "liyu", target: "xiaozhou", type: "spouse", desc: "夫妻" },
+                { source: "liyu", target: "zhongyu", type: "family", desc: "父子" },
+                { source: "liyu", target: "zhongxuan", type: "family", desc: "父子" },
+                { source: "dazhou", target: "zhongxuan", type: "family", desc: "母子" },
+                { source: "dazhou", target: "xiaozhou", type: "family", desc: "姐妹" },
+                { source: "liyu", target: "zhaokt", type: "politics", desc: "俘虜關係" },
+                { source: "liyu", target: "zhaogy", type: "politics", desc: "死因爭議" },
+                { source: "liyu", target: "xuxian", type: "other", desc: "君臣/撰墓誌銘" },
+                { source: "liyu", target: "pansx", type: "other", desc: "君臣" },
+                { source: "lijing", target: "libi", type: "family", desc: "父子" }
+            ];
+            
+            // SVG容器大小已在前面定义，這裡使用之前的width和height變量
+            
+            // 檢查當前主題是否為暗模式
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            
+            // 根據主題設置顏色
+            const colors = {
+                self: isDarkMode ? "#8F90E8" : "#5D5CDE",
+                family: isDarkMode ? "#48BB78" : "#38A169",
+                spouse: isDarkMode ? "#F687B3" : "#D53F8C",
+                children: isDarkMode ? "#68D391" : "#38A169",
+                politics: isDarkMode ? "#F6AD55" : "#ED8936",
+                other: isDarkMode ? "#90CDF4" : "#4299E1"
+            };
+            
+            // 連接線顏色
+            const linkColors = {
+                family: isDarkMode ? "#4B5563" : "#9CA3AF",
+                spouse: isDarkMode ? "#EC4899" : "#DB2777",
+                politics: isDarkMode ? "#F59E0B" : "#D97706",
+                other: isDarkMode ? "#60A5FA" : "#3B82F6"
+            };
+            
+            // 文字顏色
+            const textColor = isDarkMode ? "#F3F4F6" : "#1F2937";
+            
+            // 創建力導向圖佈局 - 增強初始分佈和拖動靈活性
+            const simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links)
+                    .id(d => d.id)
+                    .distance(180)) // 設置適中的連接線距離
+                .force('charge', d3.forceManyBody().strength(-300)) // 較弱的排斥力，使初始佈局更合理
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(50)) // 適當的碰撞半徑避免節點重疊
+                .force('x', d3.forceX().x(d => d.x).strength(0.5)) // 強制節點靠近它們的初始位置
+                .force('y', d3.forceY().y(d => d.y).strength(0.5)); // 強制節點靠近它們的初始位置
+            
+            // 創建連接線元素
+            const link = svg.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter()
+                .append('line')
+                .attr('stroke', d => linkColors[d.type] || "#999")
+                .attr('stroke-width', 1.5)
+                .attr('stroke-opacity', 0.6);
+            
+            // 創建節點分組
+            const node = svg.append('g')
+                .selectAll('.node')
+                .data(nodes)
+                .enter()
+                .append('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+            
+            // 創建節點邊框效果
+            node.append('circle')
+                .attr('r', d => d.id === "liyu" ? 40 : 34)
+                .attr('fill', 'none')
+                .attr('stroke', d => colors[d.group] || "#999")
+                .attr('stroke-width', 3)
+                .attr('stroke-opacity', 0.5)
+                .attr('class', 'node-highlight')
+                .style('pointer-events', 'none');
+                
+            // 在節點分組中添加圓形 - 美化樣式，加大尺寸確保文字不會超出
+            node.append('circle')
+                .attr('r', d => d.id === "liyu" ? 36 : 30)
+                .attr('fill', d => {
+                    // 創建漸變色
+                    const color = d3.color(colors[d.group] || "#999");
+                    return d3.interpolateRgb(color.brighter(0.2), color.darker(0.2))(0.5);
+                })
+                .attr('stroke', isDarkMode ? "#4B5563" : "#E5E7EB")
+                .attr('stroke-width', 2)
+                .attr('filter', 'url(#drop-shadow)')
+                .attr('class', 'node-circle');
+                
+            // 定義陰影濾鏡
+            const defs = svg.append("defs");
+            const filter = defs.append("filter")
+                .attr("id", "drop-shadow")
+                .attr("height", "130%");
+            
+            filter.append("feGaussianBlur")
+                .attr("in", "SourceAlpha")
+                .attr("stdDeviation", 2)
+                .attr("result", "blur");
+                
+            filter.append("feOffset")
+                .attr("in", "blur")
+                .attr("dx", 1)
+                .attr("dy", 1)
+                .attr("result", "offsetBlur");
+                
+            const feMerge = filter.append("feMerge");
+            feMerge.append("feMergeNode")
+                .attr("in", "offsetBlur");
+            feMerge.append("feMergeNode")
+                .attr("in", "SourceGraphic");
+            
+            // 在節點分組中添加姓名標籤 - 放入圓形內部，居中對齊
+            node.append('text')
+                .attr('text-anchor', 'middle') // 文字水平居中
+                .attr('dominant-baseline', 'middle') // 文字垂直居中
+                .text(d => d.name)
+                .attr('fill', textColor)
+                .style('font-size', d => d.id === "liyu" ? '16px' : '14px')
+                .style('font-weight', d => d.id === "liyu" ? 'bold' : 'normal')
+                .attr('class', 'name-text');
+            
+            // 添加描述文字 - 放在圓形下方並居中，增加與圓形的間距
+            node.append('text')
+                .attr('text-anchor', 'middle') // 文字水平居中
+                .attr('y', d => d.id === "liyu" ? 60 : 54) // 增加距離圓形底部的垂直距離
+                .text(d => d.desc) // 簡化身份描述
+                .attr('fill', isDarkMode ? '#9CA3AF' : '#6B7280')
+                .style('font-size', '12px')
+                .style('font-style', 'italic') // 使用斜體進一步區分
+                .style('font-weight', 'normal')
+                .style('letter-spacing', '0.5px') // 增加字間距提高可讀性
+                .attr('class', 'desc-text');
+                
+            // 添加節點互動性
+            node.on('mouseover', function(event, d) {
+                // 突出顯示當前節點
+                d3.select(this).select('.node-circle')
+                    .transition().duration(200)
+                    .attr('r', d => d.id === "liyu" ? 40 : 34);
+                
+                // 突出顯示相關連接線，非相關連接線變淡
+                link.transition().duration(200)
+                    .attr('stroke-opacity', l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.1)
+                    .attr('stroke-width', l => (l.source.id === d.id || l.target.id === d.id) ? 2.5 : 0.5);
+                
+                // 變淡不相連的節點圓形
+                node.selectAll('.node-circle')
+                    .transition().duration(200)
+                    .attr('opacity', n => isConnected(d, n) || n.id === "liyu" ? 1 : 0.15);
+                
+                // 變淡不相連的節點邊框
+                node.selectAll('.node-highlight')
+                    .transition().duration(200)
+                    .attr('opacity', n => isConnected(d, n) || n.id === "liyu" ? 1 : 0.15);
+                
+                // 突出顯示當前節點邊框
+                d3.select(this).select('.node-highlight')
+                    .transition().duration(200)
+                    .attr('stroke-opacity', 0.8)
+                    .attr('r', d => d.id === "liyu" ? 44 : 38)
+                    .attr('opacity', 1);
+                
+                // 變淡不相連的節點文字
+                node.selectAll('.name-text')
+                    .transition().duration(200)
+                    .attr('opacity', n => isConnected(d, n) || n.id === "liyu" ? 1 : 0.15);
+                
+                // 變淡不相連的節點描述
+                node.selectAll('.desc-text')
+                    .transition().duration(200)
+                    .attr('opacity', n => isConnected(d, n) || n.id === "liyu" ? 1 : 0.15);
+                
+                // 高亮顯示相關的連接線標籤，非相關連接線標籤變淡
+                linkText.transition().duration(200)
+                    .attr('opacity', l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.1);
+            })
+            .on('mouseout', function() {
+                // 恢復所有節點圓形的正常狀態
+                d3.select(this).select('.node-circle')
+                    .transition().duration(200)
+                    .attr('r', d => d.id === "liyu" ? 36 : 30);
+                
+                // 恢復所有連接線的正常狀態
+                link.transition().duration(200)
+                    .attr('stroke-opacity', 0.6)
+                    .attr('stroke-width', 1.5);
+                
+                // 恢復所有節點圓形的不透明度
+                node.selectAll('.node-circle')
+                    .transition().duration(200)
+                    .attr('opacity', 1);
+                
+                // 恢復所有節點邊框的不透明度
+                node.selectAll('.node-highlight')
+                    .transition().duration(200)
+                    .attr('stroke-opacity', 0.5)
+                    .attr('r', d => d.id === "liyu" ? 40 : 34)
+                    .attr('opacity', 1);
+                
+                // 恢復所有節點文字的不透明度
+                node.selectAll('.name-text')
+                    .transition().duration(200)
+                    .attr('opacity', 1);
+                
+                // 恢復所有節點描述的不透明度
+                node.selectAll('.desc-text')
+                    .transition().duration(200)
+                    .attr('opacity', 1);
+                
+                // 恢復所有連接線標籤的不透明度
+                linkText.transition().duration(200)
+                    .attr('opacity', 1);
+            })
+            .on('click', function(event, d) {
+                // 顯示詳細信息浮窗
+                event.stopPropagation(); // 防止事件冒泡
+                
+                // 如果已有浮窗則先移除
+                svg.selectAll('.info-card').remove();
+                
+                // 創建詳細信息卡片
+                const infoCard = svg.append('g')
+                    .attr('class', 'info-card')
+                    .attr('transform', `translate(${d.x + 40}, ${d.y - 80})`);
+                
+                // 卡片背景
+                infoCard.append('rect')
+                    .attr('width', 200)
+                    .attr('height', 120)
+                    .attr('fill', isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)')
+                    .attr('stroke', isDarkMode ? '#6B7280' : '#D1D5DB')
+                    .attr('stroke-width', 1)
+                    .attr('rx', 8)
+                    .attr('ry', 8)
+                    .attr('filter', 'url(#drop-shadow)');
+                
+                // 卡片標題
+                infoCard.append('text')
+                    .attr('x', 15)
+                    .attr('y', 25)
+                    .text(d.name)
+                    .attr('fill', isDarkMode ? '#F3F4F6' : '#1F2937')
+                    .style('font-size', '16px')
+                    .style('font-weight', 'bold');
+                
+                // 卡片內容
+                infoCard.append('text')
+                    .attr('x', 15)
+                    .attr('y', 50)
+                    .text(d.desc)
+                    .attr('fill', isDarkMode ? '#D1D5DB' : '#4B5563')
+                    .style('font-size', '14px');
+                
+                // 根據人物類型顯示額外信息
+                let extraInfo = "";
+                if (d.group === "self") {
+                    extraInfo = "南唐末代君主，精通詞、書、畫、音樂";
+                } else if (d.group === "family") {
+                    extraInfo = "李煜的家族成員";
+                } else if (d.group === "spouse") {
+                    extraInfo = "李煜的妻子，深受寵愛";
+                } else if (d.group === "politics") {
+                    extraInfo = "與李煜有政治關係的人物";
+                } else {
+                    extraInfo = "與李煜有密切關係的人物";
+                }
+                
+                infoCard.append('text')
+                    .attr('x', 15)
+                    .attr('y', 75)
+                    .text(extraInfo)
+                    .attr('fill', isDarkMode ? '#D1D5DB' : '#4B5563')
+                    .style('font-size', '13px')
+                    .style('font-style', 'italic');
+                
+                // 關閉按鈕
+                const closeButton = infoCard.append('g')
+                    .attr('transform', 'translate(175, 20)')
+                    .style('cursor', 'pointer');
+                
+                closeButton.append('circle')
+                    .attr('r', 10)
+                    .attr('fill', isDarkMode ? '#4B5563' : '#E5E7EB');
+                
+                closeButton.append('text')
+                    .attr('x', 0)
+                    .attr('y', 4)
+                    .attr('text-anchor', 'middle')
+                    .text('×')
+                    .attr('fill', isDarkMode ? '#F3F4F6' : '#1F2937')
+                    .style('font-size', '16px')
+                    .style('font-weight', 'bold');
+                
+                closeButton.on('click', function() {
+                    infoCard.remove();
+                });
+                
+                // 添加關係計數
+                const relationships = links.filter(l => l.source.id === d.id || l.target.id === d.id);
+                infoCard.append('text')
+                    .attr('x', 15)
+                    .attr('y', 100)
+                    .text(`關係數量: ${relationships.length}`)
+                    .attr('fill', isDarkMode ? '#D1D5DB' : '#4B5563')
+                    .style('font-size', '13px');
+            });
+            
+            // 檢查兩個節點是否相連
+            function isConnected(a, b) {
+                if (a.id === b.id) return true; // 自身連接
+                return links.some(l => 
+                    (l.source.id === a.id && l.target.id === b.id) || 
+                    (l.source.id === b.id && l.target.id === a.id)
+                );
+            }
+            
+            // 添加關係描述標籤 - 更好的防止重疊
+            const linkText = svg.append('g')
+                .selectAll('.link-text-group')
+                .data(links)
+                .enter()
+                .append('g')
+                .attr('class', 'link-text-group');
+                
+            // 添加背景矩形，增加文字可讀性
+            linkText.append('rect')
+                .attr('fill', isDarkMode ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.9)')
+                .attr('rx', 4)
+                .attr('ry', 4)
+                .attr('stroke', isDarkMode ? '#4B5563' : '#E5E7EB')
+                .attr('stroke-width', 0.5)
+                .attr('width', d => d.desc.length * 10 + 10)
+                .attr('height', 18)
+                .attr('x', d => (d.source.x + d.target.x) / 2 - (d.desc.length * 5 + 5))
+                .attr('y', d => (d.source.y + d.target.y) / 2 - 9);
+                
+            // 添加文本，更加清晰
+            linkText.append('text')
+                .attr('fill', isDarkMode ? '#F3F4F6' : '#1F2937')
+                .attr('font-size', '11px')
+                .attr('font-weight', 'bold')
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .attr('x', d => (d.source.x + d.target.x) / 2)
+                .attr('y', d => (d.source.y + d.target.y) / 2)
+                .text(d => d.desc);
+            
+            // 監聽暗色模式變化，更新視覺效果
+            const darkModeObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.target === document.documentElement && 
+                        mutation.attributeName === 'class') {
+                        // 如果暗色模式狀態變化，重新繪製圖表
+                        svg.selectAll('*').remove();
+                        createRelationshipGraph();
+                    }
+                });
+            });
+            
+            darkModeObserver.observe(document.documentElement, { attributes: true });
+            
+            // 定義模擬運算每一幀更新的操作
+            simulation.on('tick', () => {
+                // 更新連接線位置
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                // 更新節點位置
+                node
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+                
+                // 更新連接線文字位置 - 更新整個分組而不只是文本
+                linkText.each(function(d) {
+                    const rectWidth = d.desc.length * 10 + 10;
+                    const x = (d.source.x + d.target.x) / 2 - rectWidth / 2;
+                    const y = (d.source.y + d.target.y) / 2 - 9;
+                    
+                    // 更新背景矩形位置
+                    d3.select(this).select('rect')
+                        .attr('x', x)
+                        .attr('y', y);
+                    
+                    // 更新文本位置
+                    d3.select(this).select('text')
+                        .attr('x', (d.source.x + d.target.x) / 2)
+                        .attr('y', (d.source.y + d.target.y) / 2);
+                });
+            });
+            
+            // 拖拽開始
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+            
+            // 拖拽中 - 添加拖動時的限制處理
+            function dragged(event, d) {
+                // 限制節點不超出容器範圍，用於拖動過程中
+                const padding = 50; // 邊界內距
+                const minX = padding;
+                const maxX = width - padding;
+                const minY = padding;
+                const maxY = height - padding;
+                
+                // 設置節點位置，但確保不超出邊界
+                d.fx = Math.max(minX, Math.min(maxX, event.x));
+                d.fy = Math.max(minY, Math.min(maxY, event.y));
+            }
+            
+            // 拖拽結束 - 限制節點不超出容器範圍並保持固定位置
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                
+                // 限制節點不超出容器範圍
+                const padding = 50; // 邊界內距
+                const minX = padding;
+                const maxX = width - padding;
+                const minY = padding;
+                const maxY = height - padding;
+                
+                // 保持節點位置固定，不釋放回彈力佈局
+                // 但確保位置不超出容器範圍
+                d.fx = Math.max(minX, Math.min(maxX, d.x));
+                d.fy = Math.max(minY, Math.min(maxY, d.y));
+            }
+            
+            // 添加標題說明和指示
+            svg.append('text')
+                .attr('x', 20)
+                .attr('y', 30)
+                .attr('fill', textColor)
+                .style('font-size', '18px')
+                .style('font-weight', 'bold')
+                .text('互動式人物關係網絡');
+                
+            svg.append('text')
+                .attr('x', 20)
+                .attr('y', 50)
+                .attr('fill', isDarkMode ? '#9CA3AF' : '#6B7280')
+                .style('font-size', '14px')
+                .text('提示：可拖動節點調整位置');
+            
+            // 添加圖例
+            const legend = svg.append('g')
+                .attr('class', 'legend')
+                .attr('transform', `translate(${width - 170}, 20)`);
+            
+            const legendData = [
+                { color: colors.self, label: "李煜" },
+                { color: colors.family, label: "家族" },
+                { color: colors.spouse, label: "配偶" },
+                { color: colors.politics, label: "政治關係" },
+                { color: colors.other, label: "其他" }
+            ];
+            
+            legend.selectAll('rect')
+                .data(legendData)
+                .enter()
+                .append('rect')
+                .attr('x', 0)
+                .attr('y', (d, i) => i * 20)
+                .attr('width', 12)
+                .attr('height', 12)
+                .attr('fill', d => d.color);
+            
+            legend.selectAll('text')
+                .data(legendData)
+                .enter()
+                .append('text')
+                .attr('x', 20)
+                .attr('y', (d, i) => i * 20 + 10)
+                .attr('fill', textColor)
+                .style('font-size', '12px')
+                .text(d => d.label);
+        }
+
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        
+        // Check if user prefers dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        // Listen for changes in user preference
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        darkModeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        mobileMenuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('#mobileMenu a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                mobileMenu.classList.add('hidden');
+                // 如果是頁內錨點鏈接，防止默認行為並手動滾動
+                if (link.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+        
+        // 統一處理所有導航鏈接和按鈕
+        function handleNavigation(targetId) {
+            try {
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    // 平滑滾動到目標位置
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 100, // 減去頭部導航的高度
+                        behavior: 'smooth'
+                    });
+                    return true;
+                }
+            } catch (error) {
+                console.error('Navigation error:', error);
+            }
+            return false;
+        }
+        
+        // 修復所有主導航欄的錨點鏈接
+        document.querySelectorAll('nav a, #mobileMenu a').forEach(link => {
+            if (link.getAttribute('href') && link.getAttribute('href').startsWith('#')) {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    if (!handleNavigation(targetId)) {
+                        // 如果導航失敗，重置URL
+                        history.replaceState(null, '', window.location.pathname);
+                    }
+                });
+            }
+        });
+        
+        // 首頁的"探索詞作"按鈕
+        const exploreButton = document.getElementById('explorePoems');
+        if (exploreButton) {
+            exploreButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!handleNavigation('#poems')) {
+                    // 如果導航失敗，嘗試直接滾動
+                    window.scrollTo(0, document.getElementById('poems').offsetTop - 100);
+                }
+            });
+        }
+        
+        // 首頁的"瞭解生平"按鈕
+        const biographyButtons = document.querySelectorAll('a[href="#biography"]');
+        biographyButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!handleNavigation('#biography')) {
+                    // 如果導航失敗，嘗試直接滾動
+                    const biographySection = document.getElementById('biography');
+                    if (biographySection) {
+                        window.scrollTo({
+                            top: biographySection.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+        
+        // 處理Quiz結果頁面的"回顧資料"按鈕
+        const reviewButton = document.getElementById('review-material');
+        if (reviewButton) {
+            reviewButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const quizResults = document.getElementById('quiz-results');
+                const quizStart = document.getElementById('quiz-start');
+                
+                if (quizResults) quizResults.classList.add('hidden');
+                if (quizStart) quizStart.classList.remove('hidden');
+                
+                handleNavigation('#biography');
+            });
+        }
+
+        // 詞中字詞注釋
+        const annotatedWords = document.querySelectorAll('.annotated-word');
+        const annotationTooltip = document.getElementById('annotation-tooltip');
+        
+        annotatedWords.forEach(word => {
+            word.addEventListener('mouseenter', (e) => {
+                const annotation = word.getAttribute('data-annotation');
+                annotationTooltip.textContent = annotation;
+                
+                // 給注釋詞增加樣式
+                word.classList.add('text-primary', 'font-bold');
+                
+                // 定位提示框
+                const rect = word.getBoundingClientRect();
+                const tooltipWidth = annotationTooltip.offsetWidth || 200; // 預設寬度
+                
+                // 確保不超出視窗左側
+                let leftPos = Math.max(10, rect.left);
+                // 確保不超出視窗右側
+                if (leftPos + tooltipWidth > window.innerWidth - 10) {
+                    leftPos = window.innerWidth - tooltipWidth - 10;
+                }
+                
+                annotationTooltip.style.left = `${leftPos}px`;
+                
+                // 如果上方空間足夠，就顯示在上方，否則顯示在下方
+                const tooltipHeight = annotationTooltip.offsetHeight || 50; // 預設高度
+                if (rect.top > tooltipHeight + 20) {
+                    annotationTooltip.style.top = `${rect.top - tooltipHeight - 10}px`;
+                } else {
+                    annotationTooltip.style.top = `${rect.bottom + 10}px`;
+                }
+                
+                // 顯示提示框
+                annotationTooltip.classList.remove('hidden');
+            });
+            
+            word.addEventListener('mouseleave', () => {
+                // 隱藏提示框
+                annotationTooltip.classList.add('hidden');
+                
+                // 移除高亮樣式
+                word.classList.remove('text-primary', 'font-bold');
+            });
+            
+            // 處理觸摸設備
+            word.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // 防止預設行為
+                const annotation = word.getAttribute('data-annotation');
+                annotationTooltip.textContent = annotation;
+                
+                // 給注釋詞增加樣式
+                word.classList.add('text-primary', 'font-bold');
+                
+                // 位置計算與上面的邏輯相同
+                const rect = word.getBoundingClientRect();
+                const tooltipWidth = annotationTooltip.offsetWidth || 200;
+                
+                let leftPos = Math.max(10, rect.left);
+                if (leftPos + tooltipWidth > window.innerWidth - 10) {
+                    leftPos = window.innerWidth - tooltipWidth - 10;
+                }
+                
+                annotationTooltip.style.left = `${leftPos}px`;
+                
+                const tooltipHeight = annotationTooltip.offsetHeight || 50;
+                if (rect.top > tooltipHeight + 20) {
+                    annotationTooltip.style.top = `${rect.top - tooltipHeight - 10}px`;
+                } else {
+                    annotationTooltip.style.top = `${rect.bottom + 10}px`;
+                }
+                
+                // 顯示提示框
+                annotationTooltip.classList.remove('hidden');
+                
+                // 點擊其他區域時隱藏提示框和移除高亮樣式
+                const hideTooltip = () => {
+                    annotationTooltip.classList.add('hidden');
+                    word.classList.remove('text-primary', 'font-bold');
+                    document.removeEventListener('touchstart', hideTooltip);
+                };
+                
+                // 延遲一下再綁定事件，以防止立即隱藏
+                setTimeout(() => {
+                    document.addEventListener('touchstart', hideTooltip);
+                }, 100);
+            });
+        });
+
+        // Modal functionality
+        const poemModal = document.getElementById('poem-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalContent = document.getElementById('modal-content');
+        const closeModal = document.getElementById('close-modal');
+        const readPoemBtns = document.querySelectorAll('.read-poem-btn');
+        
+        // 防止頁面滾動位置丟失
+        let scrollPosition = 0;
+        
+        // Poem data
+        const poems = {
+            '虞美人': {
+                title: '虞美人',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>春花秋月何時了。</p>
+                        <p>往事知多少。</p>
+                        <p>小樓昨夜又東風。</p>
+                        <p>故國不堪回首、月明中。</p>
+                        <p>雕闌玉砌應猶在。</p>
+                        <p>只是朱顏改。</p>
+                        <p>問君能有幾多愁。</p>
+                        <p>恰似一江春水、向東流。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>春花秋月</strong>：春天的花朵和秋天的月亮，代表美好的事物和時光。</p>
+                        <p>2. <strong>小樓</strong>：指詞人在汴京（今開封）的住所。</p>
+                        <p>3. <strong>東風</strong>：春風，暗示春天的來臨。</p>
+                        <p>4. <strong>故國</strong>：指已滅亡的南唐。</p>
+                        <p>5. <strong>雕闌玉砌</strong>：精美的欄杆和台階，形容宮殿的華麗。</p>
+                        <p>6. <strong>朱顏</strong>：紅潤的面容，指年輕時的容貌。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《虞美人》是李煜最著名的詞作之一，也是中國文學史上的經典之作。詞作分上下兩闋，上闋描寫詞人望見春花秋月，想起往事，在東風吹拂的夜晚，不忍回首故國的情景；下闋則從物是人非的感慨，過渡到對自己無盡愁緒的表達。</p>
+                        <p>詞的開頭「春花秋月何時了」一句，以設問的方式表達對美好事物永無止境的感慨，同時也暗示了詞人對過去歲月的緬懷。「往事知多少」一句，表明往事如煙，難以計數，顯示出詞人對往昔豐富經歷的追憶。</p>
+                        <p>「小樓昨夜又東風」中的「又」字極有韻味，表明東風年年吹拂，而詞人卻身在異地，感受到的是愁緒萬千。「故國不堪回首、月明中」一句，直接表達了詞人對故國的深切思念，月光下的回憶更加清晰而傷感。</p>
+                        <p>下闋開頭「雕闌玉砌應猶在。只是朱顏改」，以物是人非的對比，暗示時間的無情流逝，人事的滄桑變化。最後兩句「問君能有幾多愁。恰似一江春水、向東流」成為千古名句，用江水向東流的意象，比喻愁緒如同長江春水，無休止地向東流淌，既壯闊又源源不絕。</p>
+                        <p>全詞以景抒情，情景交融，語言優美而又蘊含深意，充分展現了李煜的詞作藝術成就。這首詞之所以能夠流傳千古，正是因為它不僅表達了詞人個人的亡國之痛，也觸及了人類共通的情感體驗----對逝去時光的懷念，對失落家園的思念，以及面對命運變遷時的無奈與悲哀。</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞作於李煜被俘後北送汴京（今開封），被封為「違命侯」期間。當時，李煜已經失去了國家、地位和自由，身處異鄉，備受監視。詞中抒發了亡國之痛與對故國的深切懷念，被視為李煜最著名的作品，也是中國文學史上最著名的詞作之一。</p>
+                    <p class="mt-2">據傳，這首詞中的「故國不堪回首」和「一江春水向東流」等句，因表達了李煜對南唐的思念之情，被宋太宗視為對北宋的不忠，從而引起了太宗的猜忌，可能與李煜最終的悲劇命運有關。</p>
+                </div>`
+            },
+            '破陣子': {
+                title: '破陣子',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>四十年來家國，三千里地山河。</p>
+                        <p>鳳閣龍樓連霄漢，玉樹瓊枝作煙蘿。</p>
+                        <p>幾曾識干戈？</p>
+                        <p>一旦歸為臣虜，沈腰潘鬢消磨。</p>
+                        <p>最是倉惶辭廟日，教坊猶奏別離歌。</p>
+                        <p>垂淚對宮娥。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>四十年來家國</strong>：李煜生於937年，南唐亡於975年，前後將近40年。</p>
+                        <p>2. <strong>三千里地山河</strong>：形容南唐疆域遼闊。</p>
+                        <p>3. <strong>鳳閣龍樓</strong>：形容宮殿的高大華麗。</p>
+                        <p>4. <strong>玉樹瓊枝</strong>：美玉般的樹和珍貴的枝條，形容宮殿的華麗。</p>
+                        <p>5. <strong>煙蘿</strong>：形容山中雲霧繚繞的景象，這裡比喻宮殿的雄偉壯觀。</p>
+                        <p>6. <strong>干戈</strong>：兵器，這裡指戰爭。</p>
+                        <p>7. <strong>沈腰潘鬢</strong>：沈約和潘岳都是晉代文人，這裡借用他們的名字，形容腰肢消瘦、鬢髮蒼白。</p>
+                        <p>8. <strong>辭廟</strong>：離開宗廟，指離開京城、失去國家。</p>
+                        <p>9. <strong>教坊</strong>：掌管宮廷音樂的機構。</p>
+                        <p>10. <strong>宮娥</strong>：宮中女子。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《破陣子》是李煜亡國後的代表作之一，詞中直接抒發了亡國的痛苦，表達了對昔日繁華與今日淒涼的強烈對比，以及對命運無常的感慨。</p>
+                        <p>詞的開頭「四十年來家國，三千里地山河」，回顧了南唐的歷史與疆域，「鳳閣龍樓連霄漢，玉樹瓊枝作煙蘿」則描繪了南唐宮殿的壯麗景象。「幾曾識干戈」一句，表明詞人在位時未曾經歷過戰爭，暗示了他對戰爭的陌生和不諳軍事的遺憾。</p>
+                        <p>下闋「一旦歸為臣虜，沈腰潘鬢消磨」描述了詞人淪為俘虜後的落魄形象，身體消瘦、頭髮蒼白，反映了亡國後的悲慘處境。「最是倉惶辭廟日，教坊猶奏別離歌」回憶了離開金陵時的倉促與悲涼，連宮廷樂師還在演奏離別的曲子，這種音樂與離別的情境形成了強烈的反差。「垂淚對宮娥」一句，描述了詞人最後離開時與宮女們告別的情景，流露出深深的傷感。</p>
+                        <p>整首詞語言直白樸素，沒有華麗的修辭，卻因其真情實感而震撼人心。這首詞與李煜的其他亡國詞作如《虞美人》相比，更加直接地表達了亡國之痛，是李煜個人悲劇命運的真實寫照，也是中國歷史上罕見的由亡國之君親自撰寫的心靈告白。</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞可能作於李煜被俘後北送汴京期間。當時，李煜已經失去了國家和自由，成為了北宋的俘虜。詞中直接抒發了亡國的痛苦，回憶了南唐的繁華和自己離開金陵時的悲涼情景，表達了對命運無常的感慨。</p>
+                </div>`
+            },
+            '相見歡': {
+                title: '相見歡',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>無言獨上西樓。</p>
+                        <p>月如鉤。</p>
+                        <p>寂寞梧桐深院、鎖清秋。</p>
+                        <p>剪不斷。</p>
+                        <p>理還亂。</p>
+                        <p>是離愁。</p>
+                        <p>別是一般滋味、在心頭。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>西樓</strong>：西邊的樓閣，這裡泛指高樓。</p>
+                        <p>2. <strong>月如鉤</strong>：形容月亮彎曲如鉤的形狀，指農曆月初或月末的月亮。</p>
+                        <p>3. <strong>梧桐</strong>：常綠喬木，在古典詩詞中常與悲秋、思念等情感相連。</p>
+                        <p>4. <strong>鎖清秋</strong>：「鎖」有封閉、禁錮之意，這裡形容秋天的清冷寂寞之感籠罩著庭院。</p>
+                        <p>5. <strong>離愁</strong>：離別之愁。</p>
+                        <p>6. <strong>別是一般滋味</strong>：是另一種特別的滋味。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《相見歡》是李煜最著名的詞作之一，也是表達離愁別恨的經典之作。全詞通過描寫詞人獨自登樓望月的情景，抒發了難以排解的離別之愁。</p>
+                        <p>詞的開頭「無言獨上西樓。月如鉤」簡潔地勾勒出詞人孤獨登樓、望見彎月的畫面。「無言」二字點明了詞人心情的沉重，無法言表的愁緒已經塞滿了胸臆。「寂寞梧桐深院、鎖清秋」一句，將梧桐樹、深院與秋天的蕭瑟氣息結合起來，營造出一種幽深寂寞的氛圍，與詞人的心境相呼應。</p>
+                        <p>下闋「剪不斷。理還亂。是離愁」三句短促而有力，通過「剪不斷」和「理還亂」的對比，生動地表現了詞人試圖排解卻無法擺脫的離愁。「是離愁」一句，明確點明了愁緒的源頭是離別之情。</p>
+                        <p>最後一句「別是一般滋味、在心頭」成為千古名句，表達了這種離愁別恨有著特殊的味道，深藏在心底，難以言表。這種滋味既苦澀又甜美，既痛苦又珍貴，是一種複雜而深刻的情感體驗。</p>
+                        <p>這首詞的語言非常凝練，僅用短短七句話，就將人生離別的愁緒表達得淋漓盡致。全詞以景抒情，借景物描寫烘托出詞人的內心世界，通過細膩的情感描寫，觸及了人類共通的情感體驗。正如後人評價：「七情所至，淺嘗者説破，深嘗者説不破。破之淺，不破之深。『別是一般滋味在心頭』句妙。」</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞可能作於李煜被俘後北送汴京期間，表達了他對故國的思念之情。當時，李煜已經失去了國家和自由，身處異鄉，懷念著遠方的故土和親人。全詞寫景與抒情相結合，通過獨上西樓、望月的情景，表達了一種難以排解的離愁別恨。</p>
+                </div>`
+            },
+            '浪淘沙': {
+                title: '浪淘沙',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>簾外雨潺潺。</p>
+                        <p>春意闌珊。</p>
+                        <p>羅衾不耐五更寒。</p>
+                        <p>夢裡不知身是客，一晌貪歡。</p>
+                        <p>獨自莫憑欄。</p>
+                        <p>無限江山。</p>
+                        <p>別時容易見時難。</p>
+                        <p>流水落花春去也，天上人間。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>潺潺</strong>：形容水流的聲音。</p>
+                        <p>2. <strong>闌珊</strong>：衰退、減少的樣子。</p>
+                        <p>3. <strong>羅衾</strong>：絲綢做的被子。</p>
+                        <p>4. <strong>五更</strong>：古代計時單位，大約相當於凌晨三點至五點。</p>
+                        <p>5. <strong>一晌</strong>：片刻、短暫的時間。</p>
+                        <p>6. <strong>憑欄</strong>：倚靠欄杆。</p>
+                        <p>7. <strong>天上人間</strong>：既指仙境與人間，也指生死相隔的兩個世界。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《浪淘沙》是李煜亡國後的代表作之一，詞中表達了對故國的思念和對命運的感慨，流露出對人生短暫、世事無常的領悟。</p>
+                        <p>詞的開頭「簾外雨潺潺。春意闌珊」描繪了一個雨天的場景，春天將盡，雨聲不絕，營造出一種淒涼的氛圍。「羅衾不耐五更寒」表明即使有絲綢的被子也抵擋不住凌晨的寒冷，暗示詞人處境的孤獨與艱難。「夢裡不知身是客，一晌貪歡」是全詞的點睛之筆，詞人在夢中忘記了自己已經亡國，短暫地回到了過去的美好時光，但這種快樂只是短暫的幻影。</p>
+                        <p>下闋「獨自莫憑欄。無限江山」勸誡自己不要獨自倚靠欄杆遠望，因為那只會勾起對無盡江山的思念。「別時容易見時難」感嘆離別容易，相見卻很困難，表達了對故國難以再見的悲痛。「流水落花春去也，天上人間」以流水和落花象徵春天的消逝，暗喻南唐的滅亡，而「天上人間」既指仙境與人間的距離，也暗示了生死相隔，表達了永恆的分離之意。</p>
+                        <p>全詞語言優美流暢，情感真摯動人，通過對比的手法（夢中與現實、分別與相見、人間與天上）深化了詞的主題。這首詞不僅表達了李煜個人的亡國之痛，也觸及了人類共通的情感體驗----對逝去時光的懷念和對命運無常的感慨。</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞可能作於李煜被俘後北送汴京期間。當時，李煜已經失去了國家和自由，身處異鄉，懷念著遠方的故土。詞中以春雨、夢境和流水落花等意象，表達了對故國的思念和對人生無常的感慨。</p>
+                </div>`
+            },
+            '清平樂': {
+                title: '清平樂',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>別來春半。</p>
+                        <p>触目柔腸斷。</p>
+                        <p>砌下落梅如雪亂。</p>
+                        <p>拂了一身還滿。</p>
+                        <p>雁來音信無憑。</p>
+                        <p>路遙歸夢難成。</p>
+                        <p>离恨恰如春草，</p>
+                        <p>更行更遠還生。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>別來春半</strong>：自從分別以來，已經過了半個春天。</p>
+                        <p>2. <strong>触目柔腸斷</strong>：看到的東西都觸動柔腸，使人悲傷。</p>
+                        <p>3. <strong>砌</strong>：臺階。</p>
+                        <p>4. <strong>雁來音信無憑</strong>：傳說大雁可以帶信，這裡說雁帶來的消息沒有憑據。</p>
+                        <p>5. <strong>路遙歸夢難成</strong>：因為路途遙遠，所以在夢中都難以回到故鄉。</p>
+                        <p>6. <strong>离恨</strong>：離別的悲傷。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《清平樂》是李煜表達離愁別恨的經典之作，全詞通過描繪春天的景象和詞人的思鄉之情，表達了深沉的離別之愁。</p>
+                        <p>詞的開頭「別來春半。触目柔腸斷」簡潔地點明了時間（分別後已過半個春天）和詞人的情感狀態（見物傷情）。「砌下落梅如雪亂。拂了一身還滿」描繪了階下落梅如雪般紛亂的景象，即使拂去身上的梅花，很快又會滿身，這一意象生動地表現了詞人內心的愁緒如梅花般紛亂且揮之不去。</p>
+                        <p>下闋「雁來音信無憑。路遙歸夢難成」表達了詞人期望得到故鄉消息卻無從證實，想要在夢中回歸故土卻因路途遙遠而難以實現的無奈。最後兩句「离恨恰如春草，更行更遠還生」成為千古名句，將離別的愁恨比作春草，即使走得再遠，春草依然會生長，暗示離愁別恨會隨著時間的推移而增長，而非減少。</p>
+                        <p>全詞以景抒情，通過對春天景象的描繪，烘托出詞人的內心世界，語言清新自然，情感真摯動人。尤其是最後兩句，用生動的比喻表達了離愁別恨的特性，既形象又富有哲理，成為中國古典詩詞中表達離愁別恨的經典名句。</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞可能作於李煜被俘後北送汴京期間，表達了他對故國的思念之情。當時，李煜已經失去了國家和自由，身處異鄉，懷念著遠方的故土和親人。全詞通過描繪春天的景象和詞人的思鄉之情，表達了深沉的離別之愁。</p>
+                </div>`
+            },
+            '烏夜啼1': {
+                title: '烏夜啼 (其一)',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>昨夜風兼雨，簾幃颯颯秋聲。</p>
+                        <p>燭殘漏斷頻欹枕，起坐不能平。</p>
+                        <p>世事漫隨流水，算來一夢浮生。</p>
+                        <p>醉鄉路穩宜頻到，此外不堪行。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>簾幃</strong>：門簾和帳幔。</p>
+                        <p>2. <strong>颯颯</strong>：形容風吹的聲音。</p>
+                        <p>3. <strong>漏斷</strong>：漏壺的水滴完了，指時間已晚。</p>
+                        <p>4. <strong>欹枕</strong>：傾斜枕頭，表示輾轉反側，難以入睡。</p>
+                        <p>5. <strong>不能平</strong>：心情不能平靜。</p>
+                        <p>6. <strong>漫</strong>：任意、隨意。</p>
+                        <p>7. <strong>一夢浮生</strong>：人生如夢，短暫而虛幻。</p>
+                        <p>8. <strong>醉鄉</strong>：借酒消愁的境界。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《烏夜啼》是李煜表達秋夜感懷的詞作，全詞通過描繪秋夜風雨的情景，表達了詞人的孤獨和對人生無常的感慨。</p>
+                        <p>詞的開頭「昨夜風兼雨，簾幃颯颯秋聲」描繪了一個風雨交加的秋夜，簾幔被風吹得作響，充滿了秋天的氣息。「燭殘漏斷頻欹枕，起坐不能平」表現了詞人在夜深人靜時難以入睡的情景，蠟燭將盡，更漏聲斷，頻頻傾斜枕頭，顯示出內心的不安與煩躁。</p>
+                        <p>下闋「世事漫隨流水，算來一夢浮生」流露出詞人對人生短暫、世事無常的感慨，認為世間萬物如同流水一般隨波逐流，人生如夢，短暫而虛幻。「醉鄉路穩宜頻到，此外不堪行」表明詞人選擇借酒消愁，因為醉鄉的路途是安穩的，適合經常前往，而其他的路途則不堪行走，暗示現實生活的艱難與痛苦。</p>
+                        <p>全詞以景抒情，通過秋夜風雨和燭殘漏斷的場景，烘托出詞人內心的孤獨和感傷。語言平實而又富有韻味，尤其是下闋的哲理性思考，表達了對人生的深刻領悟，反映了李煜晚年的心境。</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞可能作於李煜被俘後北送汴京期間。當時，李煜已經失去了國家和自由，身處異鄉，內心充滿了孤獨和感傷。詞中通過描繪秋夜的情景，表達了詞人內心的孤獨和對人生無常的感慨，並流露出借酒消愁的意願。</p>
+                </div>`
+            },
+            '烏夜啼2': {
+                title: '烏夜啼 (其二)',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>林花謝了春紅。</p>
+                        <p>太匆匆。</p>
+                        <p>無奈朝來寒雨、晚來風。</p>
+                        <p>胭脂淚。</p>
+                        <p>相留醉。</p>
+                        <p>几時重。</p>
+                        <p>自是人生長恨、水長東。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>春紅</strong>：春天的紅色花朵。</p>
+                        <p>2. <strong>匆匆</strong>：形容時間過得快。</p>
+                        <p>3. <strong>無奈</strong>：沒有辦法，表示無可奈何。</p>
+                        <p>4. <strong>胭脂淚</strong>：如胭脂般紅的淚水，形容悲傷流淚。</p>
+                        <p>5. <strong>相留醉</strong>：互相留下來一起喝酒，借酒消愁。</p>
+                        <p>6. <strong>几時重</strong>：何時能夠重返故國。</p>
+                        <p>7. <strong>自是</strong>：本來就是。</p>
+                        <p>8. <strong>長恨</strong>：長久的遺憾和悲痛。</p>
+                        <p>9. <strong>水長東</strong>：水總是向東流，比喻事物發展的必然趨勢。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《烏夜啼》是李煜表達生命短暫和對故國思念的詞作，全詞通過描繪春花凋謝和風雨無情的景象，表達了詞人對生命短暫和命運無常的感慨。</p>
+                        <p>詞的開頭「林花謝了春紅。太匆匆」簡潔地表達了春天花朵凋謝的迅速，暗示時光飛逝，生命短暫。「無奈朝來寒雨、晚來風」描繪了早晨的寒雨和晚上的大風，這些惡劣的天氣加速了花朵的凋謝，暗示了詞人生活中的困難和阻礙。</p>
+                        <p>下闋「胭脂淚。相留醉。几時重」短短六個字，卻包含了豐富的情感：悲傷的淚水、借酒消愁的意願，以及對何時能重返故國的期盼。最後一句「自是人生長恨、水長東」成為千古名句，表達了人生長久的遺憾如同水向東流一般，無法阻止，暗示了詞人對命運的無奈和對永恆分離的感慨。</p>
+                        <p>全詞語言精煉，情感真摯，以景物變化烘托內心情感，特別是最後一句，將人生的遺憾與自然界的規律相結合，既形象又富有哲理，成為中國古典詩詞中表達人生無常的經典名句。</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞可能作於李煜被俘後北送汴京期間。當時，李煜已經失去了國家和自由，身處異鄉，懷念著遠方的故土。詞中通過描繪春花的凋謝和風雨的無情，表達了詞人對生命短暫和命運無常的感慨，以及對故國的深深思念。</p>
+                </div>`
+            },
+            '玉樓春': {
+                title: '玉樓春',
+                content: `<div class="mb-6">
+                    <div class="text-lg font-bold mb-2">原文</div>
+                    <div class="text-lg mb-4 border-l-4 border-primary pl-4 py-2 bg-gray-50 dark:bg-gray-800">
+                        <p>晚妝初了明肌雪。</p>
+                        <p>春殿嬪娥魚貫列。</p>
+                        <p>鳳簫吹斷水云間，重按霓裳歌遍徹。</p>
+                        <p>臨風誰更飄香屑。</p>
+                        <p>醉拍闌干情味切。</p>
+                        <p>歸時休放燭花紅，待踏馬蹄清夜月。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">注釋</div>
+                    <div class="space-y-2">
+                        <p>1. <strong>晚妝初了</strong>：剛完成晚上的梳妝打扮。</p>
+                        <p>2. <strong>明肌雪</strong>：肌膚白皙如雪。</p>
+                        <p>3. <strong>春殿</strong>：春天的宮殿。</p>
+                        <p>4. <strong>嬪娥</strong>：宮中的美女。</p>
+                        <p>5. <strong>魚貫列</strong>：像魚兒一樣一個接一個地排列。</p>
+                        <p>6. <strong>鳳簫</strong>：一種樂器，簫的一種。</p>
+                        <p>7. <strong>水云間</strong>：水雲之間，形容環境清幽。</p>
+                        <p>8. <strong>霓裳</strong>：指《霓裳羽衣曲》，唐代的著名樂舞。</p>
+                        <p>9. <strong>香屑</strong>：香粉。</p>
+                        <p>10. <strong>闌干</strong>：欄杆。</p>
+                        <p>11. <strong>情味切</strong>：情感特別深切。</p>
+                        <p>12. <strong>燭花紅</strong>：燭光映照下的紅色。</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="text-lg font-bold mb-2">賞析</div>
+                    <div class="space-y-4">
+                        <p>《玉樓春》是李煜早期的詞作，描繪了南唐宮廷中的華麗場景和歌舞活動，展現了李煜作為君王時期的風雅生活。</p>
+                        <p>詞的開頭「晚妝初了明肌雪。春殿嬪娥魚貫列」描繪了宮中美女們盛裝打扮，肌膚如雪，整齊地排列在春天的宮殿中，營造出一種華麗而有序的宮廷場景。「鳳簫吹斷水云間，重按霓裳歌遍徹」描述了宮廷中的音樂演奏場景，鳳簫的聲音在水雲間斷續傳來，《霓裳羽衣曲》被重新演奏，歌聲響徹整個宮殿，展現了南唐宮廷文化的繁榮和李煜對音樂的熱愛。</p>
+                        <p>下闋「臨風誰更飄香屑。醉拍闌干情味切」描繪了宮女們在風中飄散香粉，醉酒後拍打欄杆，情感特別深切的場景，展現了歡樂和情感的交融。「歸時休放燭花紅，待踏馬蹄清夜月」表達了希望在回去時不要點燃蠟燭，而是在清澈的月光下踏著馬蹄歸去，展現了對自然美景的欣賞和浪漫情懷。</p>
+                        <p>全詞語言華麗，意境優美，通過對宮廷生活和歌舞場景的描繪，展現了李煜作為南唐國主時期的風雅生活和審美趣味。這首詞與李煜亡國後的悲涼詞作形成鮮明對比，反映了他人生經歷的巨大變化。</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold mb-2">創作背景</div>
+                    <p>這首詞可能作於李煜在位期間，當時他作為南唐的君主，過著富足、雅致的生活。詞中描繪了南唐宮廷中的華麗場景和歌舞活動，展現了李煜早期作品的風華與雅致，也反映了南唐宮廷文化的繁榮。這首詞與李煜亡國後的悲涼詞作形成鮮明對比，顯示了他人生經歷的巨大變化。</p>
+                </div>`
+            }
+        };
+        
+        readPoemBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault(); // 防止頁面重新導向
+                const poemName = btn.getAttribute('data-poem');
+                const poem = poems[poemName];
+                
+                if (poem) {
+                    // 儲存當前滾動位置
+                    scrollPosition = window.pageYOffset;
+                    
+                    modalTitle.textContent = poem.title;
+                    modalContent.innerHTML = poem.content;
+                    poemModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+        
+        closeModal.addEventListener('click', () => {
+            poemModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            // 恢復滾動位置
+            window.scrollTo(0, scrollPosition);
+        });
+        
+        // Close modal when clicking outside
+        poemModal.addEventListener('click', (e) => {
+            if (e.target === poemModal) {
+                poemModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                // 恢復滾動位置
+                window.scrollTo(0, scrollPosition);
+            }
+        });
+
+        // 「查看更多詞作」按鈕功能
+        const viewMorePoemsBtn = document.getElementById('view-more-poems');
+        if(viewMorePoemsBtn) {
+            viewMorePoemsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // 避免使用alert，而是使用自定義的通知
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-primary text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-500';
+                notification.textContent = '更多李煜詞作正在籌備中，敬請期待！';
+                document.body.appendChild(notification);
+                
+                // 自動消失
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 500);
+                }, 3000);
+            });
+        }
+        
+        // Quiz functionality
+        const quizQuestions = [
+            {
+                question: "李煜在歷史上的政治身份是什麼？",
+                options: ["南宋皇帝", "南唐後主", "吳越國王", "後周將領"],
+                correctAnswer: 1,
+                explanation: "李煜是南唐的最後一位君主，史稱南唐後主。他是五代十國時期南唐王朝的第三位皇帝。"
+            },
+            {
+                question: "李煜的父親是誰，他在南唐歷史上的地位如何？",
+                options: ["李昪，南唐開國皇帝", "李璟，南唐第二位皇帝", "李度，南唐丞相", "趙匡胤，宋太祖"],
+                correctAnswer: 1,
+                explanation: "李煜的父親是李璟，南唐第二位皇帝，史稱元宗。李煜是李璟的第六子，意外繼承皇位。"
+            },
+            {
+                question: "李煜繼位成為南唐皇帝的背景是怎樣的？",
+                options: [
+                    "憑藉軍功奪取皇位",
+                    "長子繼承，順理成章",
+                    "由父親欽點為太子",
+                    "作為第六子，意外繼位"
+                ],
+                correctAnswer: 3,
+                explanation: "李煜作為李璟的第六子，並非第一順位繼承人，但因為各種原因最終意外繼位，成為南唐的最後一位皇帝。"
+            },
+            {
+                question: "五代十國時期，南唐的地理位置和政治地位如何？",
+                options: [
+                    "位於中原地區，是五代中最強盛的政權",
+                    "位於華南地區，是十國中最弱小的政權",
+                    "位於江南地區，是十國中文化最為發達的政權之一",
+                    "位於西北地區，是五代和十國的過渡政權"
+                ],
+                correctAnswer: 2,
+                explanation: "南唐位於今江蘇、安徽、江西等地區，是十國中文化最為發達的政權之一，定都金陵（今南京），被視為唐朝文化的延續者。"
+            },
+            {
+                question: "李煜的婚姻狀況如何？他的皇后們對他有何影響？",
+                options: [
+                    "只娶過一位皇后，感情淡薄",
+                    "先後娶了周氏姐妹為皇后，都深得寵愛",
+                    "多次政治聯姻，皆無感情基礎",
+                    "三次婚姻均不幸福，對其詞作無影響"
+                ],
+                correctAnswer: 1,
+                explanation: "李煜先後娶周娥皇（大周后）和其妹（小周后）為皇后，均深受寵愛。特別是大周后通書史，善歌舞，尤工琵琶，對李煜的藝術創作產生了深遠影響。"
+            },
+            {
+                question: "哪些家庭悲劇對李煜的創作產生了重要影響？",
+                options: [
+                    "無特別家庭悲劇影響其創作",
+                    "與父親關係緊張，影響其早期創作",
+                    "次子早逝及大周后悲傷過度病逝",
+                    "兄弟爭權導致家族分裂"
+                ],
+                correctAnswer: 2,
+                explanation: "李煜28歲時，次子仲宣去世，年僅四歲。不久後，深受李煜寵愛的大周后因悲傷過度而病逝，年僅29歲。這些家庭悲劇深深影響了李煜的心靈和創作風格。"
+            },
+            {
+                question: "南唐最終是如何滅亡的？",
+                options: [
+                    "內部叛亂，權臣篡位",
+                    "被契丹（遼）所滅",
+                    "被宋朝軍隊攻陷金陵",
+                    "李煜主動投降，換取優待"
+                ],
+                correctAnswer: 2,
+                explanation: "975年，宋軍攻陷南唐都城金陵（今南京），南唐滅亡。次年李煜與小周后一起被押送至北宋都城開封，成為北宋的俘虜。"
+            },
+            {
+                question: "南唐亡國後，李煜在北宋的處境如何變化？",
+                options: [
+                    "一直受到優待，生活奢華",
+                    "初期被封為'違命侯'，宋太宗即位後改封為'隴西郡公'",
+                    "被囚禁，生活非常艱難",
+                    "被流放邊疆，終生不得歸"
+                ],
+                correctAnswer: 1,
+                explanation: "李煜被俘後，宋太祖封他為'違命侯'。宋太宗即位後，改封為'隴西郡公'，待遇有所改善，但仍為實質上的囚禁狀態。"
+            },
+            {
+                question: "關於李煜的死因，歷史記載存在什麼爭議？",
+                options: [
+                    "完全無爭議，確定是自然死亡",
+                    "軍事行動中的意外死亡或自殺",
+                    "病逝或被宋太宗賜'牽機藥'毒死",
+                    "因拒絕合作被公開處決"
+                ],
+                correctAnswer: 2,
+                explanation: "關於李煜的死因，史書上主要有兩種說法：一是根據徐鉉墓誌銘的記載，因病去世；二是根據後來王銍《默記》的記載，被宋太宗賜'牽機藥'毒死。"
+            },
+            {
+                question: "李煜作為一個藝術家，他的才華體現在哪些方面？",
+                options: [
+                    "僅擅長作詞",
+                    "詞作與書法兼長",
+                    "詞作、書法與繪畫三方面俱佳",
+                    "詞、書、畫、音樂等多方面皆有成就"
+                ],
+                correctAnswer: 3,
+                explanation: "李煜不僅是著名詞人，還精通書法、繪畫和音樂，是一位多才多藝的藝術家。他對《霓裳羽衣曲》等音樂的改編和推廣也有重要貢獻。"
+            },
+            // 新增的題目
+            {
+                question: "李煜出生於哪一年？他有什麼特殊的外貌特徵？",
+                options: [
+                    "935年，口才出眾",
+                    "937年，一目重瞳子",
+                    "940年，面容俊美",
+                    "943年，身材魁梧"
+                ],
+                correctAnswer: 1,
+                explanation: "根據《南唐書》記載，李煜出生於937年，他有「廣顙豐頰駢齒，一目重瞳子」的特殊外貌特徵，其中「一目重瞳子」被視為帝王之相。"
+            },
+            {
+                question: "大周后(周娥皇)在音樂方面有什麼特殊的成就？",
+                options: [
+                    "創造了全新的音樂體系",
+                    "精通多種外國樂器",
+                    "復原了唐代失傳的《霓裳羽衣曲》",
+                    "為李煜的詞譜寫了上百首曲子"
+                ],
+                correctAnswer: 2,
+                explanation: "《南唐書》記載：「唐盛時〈霓裳羽衣〉，最為大曲，亂離之後，絕不復傳。后得殘譜以琵琶奏之，於是開元天寶之遺音复傳於世。」大周后成功復原了唐代失傳已久的名曲《霓裳羽衣曲》，為中國古代音樂保存做出了重要貢獻。"
+            },
+            {
+                question: "南唐建立的時間是哪一年？由誰建立？",
+                options: [
+                    "907年，李昪",
+                    "923年，李璟",
+                    "937年，李昪",
+                    "943年，李璟"
+                ],
+                correctAnswer: 2,
+                explanation: "南唐建立於937年，由李昪（烈祖）建立，定都金陵（今南京）。南唐是五代十國時期建立於江南地區的政權，是十國中最具文化氣息的國家。"
+            },
+            {
+                question: "關於李煜為政的能力，歷史上有什麼評價？",
+                options: [
+                    "所有史料一致認為他昏庸無能",
+                    "史料評價兩極，有認為他明君治國有方，也有認為他荒淫誤國",
+                    "史料普遍肯定他是治國能手",
+                    "史料對其評價不一，但多稱讚其孝道與愛民"
+                ],
+                correctAnswer: 3,
+                explanation: "史料對李煜評價不一，但多讚揚他的孝道與愛民。《宋史·潘慎修傳》記載，當宋真宗詢問李煜是否暗懦時，南唐舊臣潘慎修回答：「煜或懵理若此，何以享國十餘年？」。陸游《南唐書》則記載：「後主天資純孝……專以愛民為急，蠲賦息役，以裕民力。」"
+            },
+            {
+                question: "王國維在《人間詞話》中對李煜詞的評價是什麼？",
+                options: [
+                    "句秀也",
+                    "骨秀也", 
+                    "神秀也",
+                    "情秀也"
+                ],
+                correctAnswer: 2,
+                explanation: "王國維在《人間詞話》中評價道：「溫飛卿之詞，句秀也；韋端己之詞，骨秀也；李重光之詞，神秀也。」他還說「詞至李後主而眼界始大，感慨遂深，遂變伶工之詞而為士大夫之詞。」顯示了對李煜詞作的極高評價。"
+            },
+            {
+                question: "李煜的長子仲寓在父親死後的命運如何？",
+                options: [
+                    "被宋朝處死",
+                    "被封為郢州刺史，37歲時去世",
+                    "被流放邊疆，終身不得返京",
+                    "被迫出家為僧"
+                ],
+                correctAnswer: 1,
+                explanation: "《南唐書》記載李煜的長子仲寓在父親死後「居後主喪，哀毀踰制」。宋太宗臨朝後，任命他為郢州刺史，他「在郡以寬簡為治，吏民安之」。仲寓於淳化五年（994年）八月去世，年僅三十七歲。"
+            },
+            {
+                question: "李煜被俘後如何對待大周后的記憶？",
+                options: [
+                    "很快便將其忘記",
+                    "為其撰寫了《衣昭惠周后誄》表達思念",
+                    "娶小周后後便不再提起",
+                    "沒有相關史料記載"
+                ],
+                correctAnswer: 1,
+                explanation: "李煜為大周后所寫的《衣昭惠周后誄》，真摯地表達了他對愛妃的深情摯愛：「俛仰同心，綢繆是道。執子之手，與子偕老。今也如何？不終往告。嗚呼哀哉。」引用了《詩經》中「執子之手，與子偕老」的經典誓言，表達了李煜原本期待與大周后白頭偕老的願望。"
+            },
+            {
+                question: "南唐國祚共持續了多少年？",
+                options: [
+                    "約20年",
+                    "約40年",
+                    "約60年",
+                    "約80年"
+                ],
+                correctAnswer: 1,
+                explanation: "南唐從937年李昪建國到975年李煜被俘，國祚共延續了約40年。正如李煜《破陣子》中所言：「四十年來家國，三千里地山河」，直接指出了南唐的存在時間。"
+            },
+            {
+                question: "五代十國具體指的是哪些政權？南唐屬於哪一類？",
+                options: [
+                    "五代指五個大型政權，十國指十個小型政權，南唐屬於五代",
+                    "五代指相繼統治中原的五個朝代，十國指地方政權，南唐屬於十國",
+                    "五代指北方五個政權，十國指南方十個政權，南唐屬於十國",
+                    "五代指短命朝代，十國指長壽政權，南唐屬於十國"
+                ],
+                correctAnswer: 1,
+                explanation: "五代十國（907年-979年）是中國歷史上的分裂時期。「五代」指的是相繼在中原地區建立的五個朝代：後梁、後唐、後晉、後漢和後周；「十國」則是指同時期在南方和北方邊緣地區建立的地方政權，南唐正是其中之一。"
+            },
+            {
+                question: "李煜死後，他的詞作如何得以流傳？",
+                options: [
+                    "小周后整理出版",
+                    "長子仲寓負責保存",
+                    "宋朝皇帝命人收集",
+                    "史料沒有明確記載，但其詞作通過各種方式被收錄到後世詞選中"
+                ],
+                correctAnswer: 3,
+                explanation: "史料中沒有明確記載李煜詞作的保存過程，但是他的詞作因其藝術成就極高而被廣泛傳抄和收錄。後人讚譽「一字一珠，非他家所能及也」，使其作品通過各種詞選和文學彙編流傳至今，成為中國文學史上的重要遺產。"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const startQuizBtn = document.getElementById('start-quiz');
+        const quizStart = document.getElementById('quiz-start');
+        const quizQuestionsContainer = document.getElementById('quiz-questions');
+        const quizResults = document.getElementById('quiz-results');
+        const questionEl = document.getElementById('question');
+        const optionsEl = document.getElementById('options');
+        const feedbackEl = document.getElementById('feedback');
+        const nextQuestionBtn = document.getElementById('next-question');
+        const currentQuestionEl = document.getElementById('current-question');
+        const scoreEl = document.getElementById('score');
+        const finalScoreEl = document.getElementById('final-score');
+        const resultMessageEl = document.getElementById('result-message');
+        const restartQuizBtn = document.getElementById('restart-quiz');
+        const reviewMaterialBtn = document.getElementById('review-material');
+
+        startQuizBtn.addEventListener('click', startQuiz);
+        nextQuestionBtn.addEventListener('click', showNextQuestion);
+        restartQuizBtn.addEventListener('click', startQuiz);
+        
+        // 改進回顧資料按鈕的功能，避免使用window.location.href導致頁面空白
+        reviewMaterialBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            quizResults.classList.add('hidden');
+            quizStart.classList.remove('hidden');
+            
+            // 平滑滾動到生平部分
+            const biographySection = document.getElementById('biography');
+            if (biographySection) {
+                setTimeout(() => {
+                    biographySection.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            }
+        });
+
+        function startQuiz() {
+            try {
+                currentQuestionIndex = 0;
+                score = 0;
+                quizStart.classList.add('hidden');
+                quizResults.classList.add('hidden');
+                quizQuestionsContainer.classList.remove('hidden');
+                scoreEl.textContent = '0';
+                showQuestion(currentQuestionIndex);
+                
+                // 確保頁面滾動到測驗區域
+                const quizElement = document.getElementById('quiz');
+                if (quizElement) {
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: quizElement.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                    }, 100);
+                }
+            } catch (error) {
+                console.error("Quiz initialization error:", error);
+                // 恢復初始狀態
+                if (quizStart) quizStart.classList.remove('hidden');
+                if (quizQuestionsContainer) quizQuestionsContainer.classList.add('hidden');
+            }
+        }
+
+        function showQuestion(index) {
+            const question = quizQuestions[index];
+            currentQuestionEl.textContent = index + 1;
+            questionEl.textContent = question.question;
+            optionsEl.innerHTML = '';
+            feedbackEl.classList.add('hidden');
+            nextQuestionBtn.classList.add('hidden');
+            
+            question.options.forEach((option, i) => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors';
+                button.textContent = option;
+                button.addEventListener('click', () => checkAnswer(i, question.correctAnswer, question.explanation));
+                optionsEl.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selectedIndex, correctIndex, explanation) {
+            const options = optionsEl.querySelectorAll('button');
+            
+            options.forEach((option, i) => {
+                option.disabled = true;
+                if (i === correctIndex) {
+                    option.classList.add('bg-green-100', 'dark:bg-green-900', 'border-green-500');
+                } else if (i === selectedIndex) {
+                    option.classList.add('bg-red-100', 'dark:bg-red-900', 'border-red-500');
+                }
+            });
+            
+            if (selectedIndex === correctIndex) {
+                score++;
+                scoreEl.textContent = score;
+                feedbackEl.innerHTML = `<div class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 p-3 rounded-lg">
+                    <p class="font-bold">正確！</p>
+                    <p>${explanation}</p>
+                </div>`;
+            } else {
+                feedbackEl.innerHTML = `<div class="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 p-3 rounded-lg">
+                    <p class="font-bold">不正確。</p>
+                    <p>${explanation}</p>
+                </div>`;
+            }
+            
+            feedbackEl.classList.remove('hidden');
+            
+            if (currentQuestionIndex < quizQuestions.length - 1) {
+                nextQuestionBtn.classList.remove('hidden');
+            } else {
+                nextQuestionBtn.textContent = '查看結果';
+                nextQuestionBtn.classList.remove('hidden');
+            }
+        }
+
+        function showNextQuestion() {
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < quizQuestions.length) {
+                showQuestion(currentQuestionIndex);
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            quizQuestionsContainer.classList.add('hidden');
+            quizResults.classList.remove('hidden');
+            finalScoreEl.textContent = score;
+            
+            let message = '';
+            const percentage = (score / quizQuestions.length) * 100;
+            
+            if (percentage >= 90) {
+                message = '太棒了！你對李煜的生平和詞作有很深的了解。';
+            } else if (percentage >= 75) {
+                message = '做得好！你對李煜有相當不錯的認識。';
+            } else if (percentage >= 50) {
+                message = '還不錯！繼續學習可以更深入了解李煜。';
+            } else {
+                message = '繼續加油！多閱讀關於李煜的資料可以提高你的知識。';
+            }
+            
+            resultMessageEl.textContent = message;
+        }
+    </script>
+
+
+</body></html>
