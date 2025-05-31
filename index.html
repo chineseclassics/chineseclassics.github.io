@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 添加base標籤，為所有鏈接設置默認目標窗口為當前窗口 -->
-    <base target="_self">
     <title>太虛幻境：書院中文經典數字體驗學習</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,6 +33,7 @@
     <style>
         .app-icon {
             transition: transform 0.2s ease-in-out;
+            cursor: pointer;
         }
         .app-icon:hover {
             transform: scale(1.05);
@@ -42,182 +41,395 @@
         .app-icon:active {
             transform: scale(0.95);
         }
+        
+        .app-container {
+            height: calc(100vh - 64px);
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                height: calc(100vh - 144px);
+            }
+        }
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
-    <header class="py-8 px-4 mb-10 relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-primary/20 to-indigo-900/10 dark:from-indigo-900/30 dark:via-primary/40 dark:to-indigo-900/30"></div>
-        
-        <!-- 裝飾元素 -->
-        <div class="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 border-l-2 border-t-2 border-primary opacity-30 dark:opacity-40"></div>
-        <div class="absolute bottom-0 right-0 w-16 h-16 md:w-24 md:h-24 border-r-2 border-b-2 border-primary opacity-30 dark:opacity-40"></div>
-        
-        <div class="container mx-auto relative z-10">
-            <h1 class="text-3xl md:text-5xl font-bold text-center">
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-primary to-indigo-700 dark:from-indigo-400 dark:via-primary dark:to-indigo-400">太虛幻境</span>
-            </h1>
-            <h2 class="text-xl md:text-2xl font-medium text-gray-700 dark:text-gray-300 text-center mt-2">書院中文經典數字體驗學習</h2>
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button id="homeBtn" class="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="hidden sm:inline">首頁</span>
+                </button>
+                <div class="hidden sm:block text-gray-400 dark:text-gray-600">|</div>
+                <h1 id="currentAppName" class="text-lg font-semibold text-gray-800 dark:text-gray-200">太虛幻境</h1>
+            </div>
             
-            <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4"></div>
+            <div class="flex items-center space-x-2">
+                <button id="appSwitcherBtn" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors">
+                    <i class="fas fa-th"></i>
+                </button>
+            </div>
         </div>
-    </header>
+    </nav>
 
-    <main class="container mx-auto px-4 pb-12">
-        <section class="mb-12">
-            <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-300">互動小程序</h2>
-            
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-                <!-- 長干行旅 -->
-                <a href="https://chineseclassics.github.io/changganxinglv.html" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-indigo-500 to-violet-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-ship text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">長干行旅</p>
-                </a>
-
-                <!-- 點點墨寶：漢字學習 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%BB%9E%E9%BB%9E%E5%A2%A8%E5%AF%B6%E6%BC%A2%E5%AD%97%E5%AD%B8%E7%BF%92" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-paint-brush text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">點點墨寶：漢字學習</p>
-                </a>
-
-                <!-- 《長恨歌》記憶卡牌 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%95%B7%E6%81%A8%E6%AD%8C%E8%A8%98%E6%86%B6%E5%8D%A1%E7%89%8C" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-yellow-500 to-amber-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-memory text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">《長恨歌》記憶卡牌</p>
-                </a>
-
-                <!-- 《雷雨》游戲 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%9B%B7%E9%9B%A8%E6%B8%B8%E6%88%B2" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-cloud-rain text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">《雷雨》游戲</p>
-                </a>
-
-                <!-- 詩詞組句遊戲 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E8%A9%A9%E8%A9%9E%E7%B5%84%E5%8F%A5%E9%81%8A%E6%88%B2" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-puzzle-piece text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">詩詞組句遊戲</p>
-                </a>
-
-                <!-- 刺客之道 1.0 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%88%BA%E5%AE%A2%E4%B9%8B%E9%81%93-1-0" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-user-ninja text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">刺客之道 1.0</p>
-                </a>
-
-                <!-- 《長干行》時光拼圖 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%95%B7%E5%B9%B2%E8%A1%8C%E6%99%82%E5%85%89%E6%8B%BC%E5%9C%96" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-gray-600 to-gray-800 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-hourglass-half text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">《長干行》時光拼圖</p>
-                </a>
-
-                <!-- 南風填詞 -->
-                <a href="https://chineseclassics.github.io/nanfengtianci.html" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-teal-500 to-green-400 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-pencil-alt text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">南風填詞</p>
-                </a>
-
-                <!-- 南風作詩 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%8D%97%E9%A2%A8%E4%BD%9C%E8%A9%A9" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-indigo-400 to-blue-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-feather-alt text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">南風作詩</p>
-                </a>
-
-                <!-- 印章設計 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%8D%B0%E7%AB%A0%E8%A8%AD%E8%A8%88" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-red-600 to-rose-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-stamp text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">印章設計</p>
-                </a>
-
-                <!-- 迷失江南春 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E8%BF%B7%E5%A4%B1%E6%B1%9F%E5%8D%97%E6%98%A5" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-emerald-500 to-lime-400 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-tree text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">迷失江南春</p>
-                </a>
-
-                <!-- 江南落花 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%B1%9F%E5%8D%97%E8%90%BD%E8%8A%B1" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-pink-400 to-rose-300 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-spa text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">江南落花</p>
-                </a>
-
-                <!-- 萬物逍遙 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E8%90%AC%E7%89%A9%E9%80%8D%E9%81%99" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-amber-400 to-yellow-300 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-leaf text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">萬物逍遙</p>
-                </a>
-
-                <!-- 意moji：詩詞意象配對 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%84%8Fmoji%E8%A9%A9%E8%A9%9E%E6%84%8F%E8%B1%A1%E9%85%8D%E5%B0%8D" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-violet-500 to-purple-400 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-icons text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">意moji：詩詞意象配對</p>
-                </a>
-
-                <!-- 成語填字 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%88%80%E8%AA%9E%E5%A1%AB%E5%AD%97" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-cyan-500 to-blue-400 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-font text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">成語填字</p>
-                </a>
-
-                <!-- 月下獨酌 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%9C%88%E4%B8%8B%E7%8D%A8%E9%85%8C" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-slate-600 to-indigo-400 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-moon text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">月下獨酌</p>
-                </a>
-
-                <!-- 狼渚良人殺 -->
-                <a href="https://sites.google.com/isf.edu.hk/aichineseclassics/%E7%8B%BC%E6%B8%9A%E8%89%AF%E4%BA%BA%E6%AE%BA" target="_blank" class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200">
-                    <div class="bg-gradient-to-br from-stone-600 to-stone-500 rounded-2xl p-4 aspect-square flex items-center justify-center shadow-lg">
-                        <i class="fas fa-paw text-white text-4xl"></i>
-                    </div>
-                    <p class="text-center mt-2 font-medium">狼渚良人殺</p>
-                </a>
+    <!-- 主内容区域 -->
+    <main class="pt-16 pb-20 md:pb-4">
+        <!-- 首页视图 -->
+        <div id="homeView">
+            <div class="py-8 px-4 mb-10 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-primary/20 to-indigo-900/10 dark:from-indigo-900/30 dark:via-primary/40 dark:to-indigo-900/30"></div>
+                
+                <div class="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 border-l-2 border-t-2 border-primary opacity-30 dark:opacity-40"></div>
+                <div class="absolute bottom-0 right-0 w-16 h-16 md:w-24 md:h-24 border-r-2 border-b-2 border-primary opacity-30 dark:opacity-40"></div>
+                
+                <div class="container mx-auto relative z-10">
+                    <h1 class="text-3xl md:text-5xl font-bold text-center">
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-primary to-indigo-700 dark:from-indigo-400 dark:via-primary dark:to-indigo-400">太虛幻境</span>
+                    </h1>
+                    <h2 class="text-xl md:text-2xl font-medium text-gray-700 dark:text-gray-300 text-center mt-2">書院中文經典數字體驗學習</h2>
+                    
+                    <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4"></div>
+                </div>
             </div>
-        </section>
 
-        <section>
-            <h2 class="text-2xl font-bold mb-4 text-gray-700 dark:text-gray-300">關於本站</h2>
-            <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-                <p class="mb-3">本網站所有程序由書院中文經典老師開發，歡迎訪問<a href="https://sites.google.com/lms.isf.edu.hk/isf-shuyuan-website/classics/chinese-classics" class="text-primary hover:underline" target="_blank">書院中文經典網站</a>，以及<a href="https://sites.google.com/isf.edu.hk/chineseclassics" class="text-primary hover:underline" target="_blank">中文經典專題學習網站</a>。</p>
+            <div class="container mx-auto px-4 pb-12">
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-300">互動小程序</h2>
+                    
+                    <div id="appGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+                        <!-- 应用图标将通过JavaScript动态生成 -->
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-gray-700 dark:text-gray-300">關於本站</h2>
+                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                        <p class="mb-3">本網站所有程序由書院中文經典老師開發，歡迎訪問<a href="https://sites.google.com/lms.isf.edu.hk/isf-shuyuan-website/classics/chinese-classics" class="text-primary hover:underline" target="_blank">書院中文經典網站</a>，以及<a href="https://sites.google.com/isf.edu.hk/chineseclassics" class="text-primary hover:underline" target="_blank">中文經典專題學習網站</a>。</p>
+                    </div>
+                </section>
             </div>
-        </section>
+        </div>
+
+        <!-- 应用视图 -->
+        <div id="appView" class="hidden">
+            <div id="appContainer" class="app-container w-full relative">
+                <iframe id="appFrame" class="w-full h-full border-0" src="about:blank"></iframe>
+                
+                <!-- 加载状态 -->
+                <div id="loadingState" class="absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p class="text-gray-600 dark:text-gray-400">正在加載應用...</p>
+                    </div>
+                </div>
+                
+                <!-- 错误状态 -->
+                <div id="errorState" class="hidden absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
+                    <div class="text-center max-w-md mx-auto p-6">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">無法載入應用</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">該應用可能不支援嵌入模式</p>
+                        <button id="openInNewTabBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                            在新標籤頁打開
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <footer class="bg-gray-100 dark:bg-gray-800 py-4 text-center text-gray-600 dark:text-gray-400">
-        <div class="container mx-auto">
-            <p>© 2023 太虛幻境：書院中文經典數字體驗學習</p>
+    <!-- 底部导航栏（仅移动端显示） -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
+        <div id="bottomNav" class="flex justify-around items-center">
+            <button class="quick-app-btn flex flex-col items-center p-2 text-gray-600 dark:text-gray-300" onclick="showHome()">
+                <i class="fas fa-home text-lg mb-1"></i>
+                <span class="text-xs">首頁</span>
+            </button>
         </div>
-    </footer>
-    <!-- 使用div和onclick屬性直接處理導航，不需要額外的JavaScript -->
+    </nav>
+
+    <!-- 应用切换器弹窗 -->
+    <div id="appSwitcherModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">選擇應用</h3>
+                    <button id="closeSwitcherBtn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="switcherAppGrid" class="p-4 grid grid-cols-3 sm:grid-cols-4 gap-4">
+                <!-- 应用图标将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 应用数据
+        const apps = [
+            {
+                id: 'changganxinglv',
+                name: '長干行旅',
+                icon: 'fas fa-ship',
+                gradient: 'from-indigo-500 to-violet-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%95%B7%E5%B9%B2%E8%A1%8C%E6%97%85'
+            },
+            {
+                id: 'diandianmobao',
+                name: '點點墨寶：漢字學習',
+                icon: 'fas fa-paint-brush',
+                gradient: 'from-red-500 to-orange-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%BB%9E%E9%BB%9E%E5%A2%A8%E5%AF%B6%E6%BC%A2%E5%AD%97%E5%AD%B8%E7%BF%92'
+            },
+            {
+                id: 'changhenge',
+                name: '《長恨歌》記憶卡牌',
+                icon: 'fas fa-memory',
+                gradient: 'from-yellow-500 to-amber-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%95%B7%E6%81%A8%E6%AD%8C%E8%A8%98%E6%86%B6%E5%8D%A1%E7%89%8C'
+            },
+            {
+                id: 'leiyu',
+                name: '《雷雨》游戲',
+                icon: 'fas fa-cloud-rain',
+                gradient: 'from-blue-500 to-cyan-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%9B%B7%E9%9B%A8%E6%B8%B8%E6%88%B2'
+            },
+            {
+                id: 'shicizuju',
+                name: '詩詞組句遊戲',
+                icon: 'fas fa-puzzle-piece',
+                gradient: 'from-green-500 to-emerald-500',
+                url: 'https://chineseclassics.github.io/shicizuju.html'
+            },
+            {
+                id: 'cikeyishou',
+                name: '刺客之道 1.0',
+                icon: 'fas fa-user-ninja',
+                gradient: 'from-purple-500 to-pink-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%88%BA%E5%AE%A2%E4%B9%8B%E9%81%93-1-0'
+            },
+            {
+                id: 'shiguangpintu',
+                name: '《長干行》時光拼圖',
+                icon: 'fas fa-hourglass-half',
+                gradient: 'from-gray-600 to-gray-800',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%95%B7%E5%B9%B2%E8%A1%8C%E6%99%82%E5%85%89%E6%8B%BC%E5%9C%96'
+            },
+            {
+                id: 'nanfengtianci',
+                name: '南風填詞',
+                icon: 'fas fa-pencil-alt',
+                gradient: 'from-teal-500 to-green-400',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%8D%97%E9%A2%A8%E5%A1%AB%E8%A9%9E'
+            },
+            {
+                id: 'nanfengzuoshi',
+                name: '南風作詩',
+                icon: 'fas fa-feather-alt',
+                gradient: 'from-indigo-400 to-blue-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%8D%97%E9%A2%A8%E4%BD%9C%E8%A9%A9'
+            },
+            {
+                id: 'yinzhangsheji',
+                name: '印章設計',
+                icon: 'fas fa-stamp',
+                gradient: 'from-red-600 to-rose-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%8D%B0%E7%AB%A0%E8%A8%AD%E8%A8%88'
+            },
+            {
+                id: 'mishijiangchun',
+                name: '迷失江南春',
+                icon: 'fas fa-tree',
+                gradient: 'from-emerald-500 to-lime-400',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E8%BF%B7%E5%A4%B1%E6%B1%9F%E5%8D%97%E6%98%A5'
+            },
+            {
+                id: 'jiangluohua',
+                name: '江南落花',
+                icon: 'fas fa-spa',
+                gradient: 'from-pink-400 to-rose-300',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%B1%9F%E5%8D%97%E8%90%BD%E8%8A%B1'
+            },
+            {
+                id: 'wanwuxiaoyao',
+                name: '萬物逍遙',
+                icon: 'fas fa-leaf',
+                gradient: 'from-amber-400 to-yellow-300',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E8%90%AC%E7%89%A9%E9%80%8D%E9%81%99'
+            },
+            {
+                id: 'yimoji',
+                name: '意moji：詩詞意象配對',
+                icon: 'fas fa-icons',
+                gradient: 'from-violet-500 to-purple-400',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%84%8Fmoji%E8%A9%A9%E8%A9%9E%E6%84%8F%E8%B1%A1%E9%85%8D%E5%B0%8D'
+            },
+            {
+                id: 'chengyutianci',
+                name: '成語填字',
+                icon: 'fas fa-font',
+                gradient: 'from-cyan-500 to-blue-400',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%88%90%E8%AA%9E%E5%A1%AB%E5%AD%97'
+            },
+            {
+                id: 'yuexiaduzuo',
+                name: '月下獨酌',
+                icon: 'fas fa-moon',
+                gradient: 'from-slate-600 to-indigo-400',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E6%9C%88%E4%B8%8B%E7%8D%A8%E9%85%8C'
+            },
+            {
+                id: 'langzhuliangrensha',
+                name: '狼渚良人殺',
+                icon: 'fas fa-paw',
+                gradient: 'from-stone-600 to-stone-500',
+                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E7%8B%BC%E6%B8%9A%E8%89%AF%E4%BA%BA%E6%AE%BA'
+            }
+        ];
+
+        // 状态管理
+        let currentApp = null;
+        let currentView = 'home';
+
+        // DOM 元素
+        const homeView = document.getElementById('homeView');
+        const appView = document.getElementById('appView');
+        const appFrame = document.getElementById('appFrame');
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const currentAppName = document.getElementById('currentAppName');
+        const appGrid = document.getElementById('appGrid');
+        const switcherAppGrid = document.getElementById('switcherAppGrid');
+        const appSwitcherModal = document.getElementById('appSwitcherModal');
+        const bottomNav = document.getElementById('bottomNav');
+
+        // 渲染应用图标
+        function renderAppIcon(app, isCompact = false) {
+            const size = isCompact ? 'w-12 h-12' : 'aspect-square';
+            const iconSize = isCompact ? 'text-xl' : 'text-4xl';
+            const textSize = isCompact ? 'text-xs' : 'font-medium';
+            
+            return `
+                <div class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200" 
+                     data-app-id="${app.id}" onclick="openApp('${app.id}')">
+                    <div class="bg-gradient-to-br ${app.gradient} rounded-2xl p-4 ${size} flex items-center justify-center shadow-lg">
+                        <i class="${app.icon} text-white ${iconSize}"></i>
+                    </div>
+                    <p class="text-center mt-2 ${textSize}">${app.name}</p>
+                </div>
+            `;
+        }
+
+        // 渲染应用网格
+        function renderApps() {
+            appGrid.innerHTML = apps.map(app => renderAppIcon(app)).join('');
+            switcherAppGrid.innerHTML = apps.map(app => renderAppIcon(app, true)).join('');
+            
+            // 渲染底部导航栏的快捷应用（前3个）
+            const quickApps = apps.slice(0, 3);
+            const quickNavHTML = quickApps.map(app => `
+                <button class="quick-app-btn flex flex-col items-center p-2 text-gray-600 dark:text-gray-300" 
+                        onclick="openApp('${app.id}')">
+                    <i class="${app.icon} text-lg mb-1"></i>
+                    <span class="text-xs">${app.name.length > 6 ? app.name.substring(0, 6) + '...' : app.name}</span>
+                </button>
+            `).join('');
+            
+            bottomNav.innerHTML = `
+                <button class="quick-app-btn flex flex-col items-center p-2 text-gray-600 dark:text-gray-300" 
+                        onclick="showHome()">
+                    <i class="fas fa-home text-lg mb-1"></i>
+                    <span class="text-xs">首頁</span>
+                </button>
+                ${quickNavHTML}
+            `;
+        }
+
+        // 打开应用
+        function openApp(appId) {
+            const app = apps.find(a => a.id === appId);
+            if (!app) return;
+
+            currentApp = app;
+            currentView = 'app';
+            currentAppName.textContent = app.name;
+
+            // 切换视图
+            homeView.classList.add('hidden');
+            appView.classList.remove('hidden');
+
+            // 显示加载状态
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+
+            // 加载iframe
+            appFrame.src = app.url;
+
+            // 设置iframe错误处理
+            const timeoutId = setTimeout(() => {
+                showError();
+            }, 10000); // 10秒超时
+
+            appFrame.onload = () => {
+                clearTimeout(timeoutId);
+                setTimeout(() => {
+                    loadingState.classList.add('hidden');
+                }, 1000);
+            };
+
+            appFrame.onerror = () => {
+                clearTimeout(timeoutId);
+                showError();
+            };
+
+            // 关闭应用切换器
+            appSwitcherModal.classList.add('hidden');
+        }
+
+        // 显示错误状态
+        function showError() {
+            loadingState.classList.add('hidden');
+            errorState.classList.remove('hidden');
+            
+            document.getElementById('openInNewTabBtn').onclick = () => {
+                window.open(currentApp.url, '_blank');
+            };
+        }
+
+        // 回到首页
+        function showHome() {
+            currentView = 'home';
+            currentAppName.textContent = '太虛幻境';
+            homeView.classList.remove('hidden');
+            appView.classList.add('hidden');
+            appFrame.src = 'about:blank';
+            currentApp = null;
+        }
+
+        // 事件监听
+        document.getElementById('homeBtn').onclick = showHome;
+        
+        document.getElementById('appSwitcherBtn').onclick = () => {
+            appSwitcherModal.classList.remove('hidden');
+        };
+        
+        document.getElementById('closeSwitcherBtn').onclick = () => {
+            appSwitcherModal.classList.add('hidden');
+        };
+
+        // 点击模态框背景关闭
+        appSwitcherModal.onclick = (e) => {
+            if (e.target === appSwitcherModal) {
+                appSwitcherModal.classList.add('hidden');
+            }
+        };
+
+        // 初始化
+        renderApps();
+    </script>
 </body>
 </html>
