@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>長恨歌卡牌記憶遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#FFC107',
+                        dark: {
+                            bg: '#181818',
+                            text: '#E0E0E0',
+                            card: '#252525'
+                        },
+                        light: {
+                            bg: '#FFFFFF',
+                            text: '#333333',
+                            card: '#F5F5F5'
+                        }
+                    },
+                    animation: {
+                        'flip': 'flip 0.6s ease-in-out',
+                        'match-shake': 'matchShake 0.5s ease-in-out',
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        flip: {
+                            '0%': { transform: 'rotateY(0deg)' },
+                            '100%': { transform: 'rotateY(180deg)' },
+                        },
+                        matchShake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '75%': { transform: 'translateX(5px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Ma+Shan+Zheng&display=swap');
+        
+        :root {
+            --primary: #9d2933;          /* 中國紅 */
+            --primary-light: #bc5148;    /* 淺紅色 */
+            --secondary: #e2b13c;        /* 金黃色 */
+            --success: #4a7d58;          /* 翠綠色 */
+            --danger: #9d2933;           /* 中國紅 */
+            --light-bg: #f5f1e8;         /* 米色背景 */
+            --dark-bg: #1a1812;          /* 古典深黑 */
+            --light-text: #3c2f22;       /* 墨色文字 */
+            --dark-text: #e8e1d4;        /* 淺米色文字 */
+            --light-card: #f9f6f1;       /* 紙色卡片 */
+            --dark-card: #2b261e;        /* 深褐色卡片 */
+            --card-back: #9d2933;        /* 中國紅卡背 */
+            --card-back-dark: #8a232d;   /* 深紅色卡背 */
+            --border-color: #d3ad65;     /* 金色邊框 */
+        }
+        
+        body {
+            font-family: 'Noto Serif TC', serif;
+            transition: background-color 0.3s, color 0.3s;
+            background-color: var(--light-bg);
+        }
+        
+        .dark body {
+            background-color: var(--dark-bg);
+        }
+
+        /* 標題樣式 */
+        .chinese-title {
+            font-family: 'Noto Serif TC', serif;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            color: var(--primary);
+            letter-spacing: 0.05em;
+            font-weight: bold;
+        }
+        
+        .dark .chinese-title {
+            color: var(--secondary);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 裝飾性線條 */
+        .decorative-line {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary) 20%, var(--primary) 80%, transparent);
+            margin: 1rem auto;
+            width: 80%;
+            opacity: 0.8;
+        }
+        
+        .dark .decorative-line {
+            background: linear-gradient(90deg, transparent, var(--secondary) 20%, var(--secondary) 80%, transparent);
+        }
+        
+        /* 雲紋裝飾 */
+        .cloud-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            z-index: -1;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+        
+        /* 設置區域 */
+        .setup-container {
+            background-color: var(--light-card);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .dark .setup-container {
+            background-color: var(--dark-card);
+            border-color: var(--border-color);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 難度選擇按鈕 */
+        .difficulty-btn {
+            position: relative;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .difficulty-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.4s ease;
+            z-index: 1;
+        }
+        
+        .difficulty-btn:hover::before {
+            left: 100%;
+        }
+        
+        .difficulty-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .difficulty-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .difficulty-btn span {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* 卡片樣式 */
+        .card {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-front {
+            background-color: var(--card-back);
+            color: white;
+            transform: rotateY(0deg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark .card-front {
+            background-color: var(--card-back-dark);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: var(--light-card);
+            color: var(--light-text);
+            padding: 8px;
+            text-align: center;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border-color);
+            word-wrap: break-word;
+            word-break: normal;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 詩句卡牌特殊樣式 - 豎排版 */
+        .verse-card .card-back {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            padding: 12px 6px;
+            line-height: 1.7;
+            letter-spacing: 2px;
+        }
+
+        .verse-card .card-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 詩句中的逗號變為小圓點 */
+        .verse-card .comma {
+            display: inline-block;
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background-color: var(--light-text);
+            margin: 6px 0;
+        }
+
+        .dark .verse-card .comma {
+            background-color: var(--dark-text);
+        }
+
+        /* 翻譯卡牌靠左對齊 */
+        .description-card .card-back {
+            text-align: left;
+            justify-content: flex-start;
+            padding: 12px 15px;
+            line-height: 1.5;
+        }
+
+        .description-card .card-content {
+            width: 100%;
+        }
+        
+        .dark .card-back {
+            background-color: var(--dark-card);
+            color: var(--dark-text);
+            border-color: var(--border-color);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .matched {
+            animation: matchShake 0.5s;
+            box-shadow: 0 0 15px 5px var(--success);
+            opacity: 0.8;
+        }
+        
+        .timer-bar {
+            height: 8px;
+            background-color: var(--primary);
+            transition: width 0.1s linear;
+            border-radius: 4px;
+        }
+
+        /* 卡片前面的詩字 */
+        .card-front .text-symbol {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 游戲統計 */
+        .stats-item {
+            background-color: var(--light-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark .stats-item {
+            background-color: var(--dark-card);
+            border-color: var(--border-color);
+        }
+        
+        /* 音效開關按鈕 */
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--light-card);
+            color: var(--light-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .dark .sound-toggle {
+            background-color: var(--dark-card);
+            color: var(--dark-text);
+        }
+        
+        .sound-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .sound-toggle:active {
+            transform: scale(0.95);
+        }
+        
+        .sound-muted {
+            position: relative;
+        }
+        
+        .sound-muted::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 2px;
+            background-color: #e74c3c;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            border-radius: 1px;
+        }
+        
+        /* 移動設備適配 */
+        @media (max-width: 640px) {
+            .difficulty-btn {
+                padding: 12px 16px;
+            }
+            
+            .difficulty-btn .text-lg {
+                font-size: 1rem;
+            }
+            
+            .stats-item {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .card-size-easy .card-content {
+                font-size: 0.9rem;
+                line-height: 1.3;
+            }
+            
+            .card-size-medium .card-content {
+                font-size: 0.85rem;
+                line-height: 1.25;
+            }
+            
+            .card-size-hard .card-content {
+                font-size: 0.8rem;
+                line-height: 1.2;
+            }
+            
+            .card-back {
+                padding: 6px;
+            }
+            
+            .card-front .text-symbol {
+                font-size: 1.8rem;
+            }
+
+            .verse-card .card-back {
+                padding: 8px 4px;
+            }
+            
+            .description-card .card-back {
+                padding: 10px 12px;
+            }
+
+            #app {
+                padding: 1rem;
+            }
+            
+            #cards-container {
+                gap: 8px;
+            }
+
+            .chinese-title.text-5xl {
+                font-size: 2rem;
+            }
+
+            .text-lg {
+                font-size: 1rem;
+            }
+            
+            .sound-toggle {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #game-setup {
+                padding: 1rem;
+            }
+            
+            .card-size-easy .card-content,
+            .card-size-medium .card-content,
+            .card-size-hard .card-content {
+                font-size: 0.8rem;
+                line-height: 1.2;
+            }
+            
+            .stats-item {
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+        }
+        
+        /* 根據難度調整卡片內容字體大小 */
+        .card-size-easy .card-content {
+            font-size: 1.1rem;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+        
+        .card-size-medium .card-content {
+            font-size: 1rem;
+            line-height: 1.3;
+            font-weight: 500;
+        }
+        
+        .card-size-hard .card-content {
+            font-size: 0.95rem;
+            line-height: 1.2;
+            font-weight: 500;
+        }
+
+        /* 動畫效果 */
+        @keyframes floatIn {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        .float-in {
+            animation: floatIn 0.8s ease-out forwards;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* 遊戲結束屏幕 */
+        .game-complete {
+            border: 2px solid var(--border-color);
+            background-color: var(--light-card);
+        }
+        
+        .dark .game-complete {
+            background-color: var(--dark-card);
+            border-color: var(--border-color);
+        }
+        
+        .knowledge-box {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark .knowledge-box {
+            border-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 按鈕樣式 */
+        .btn-primary {
+            background-color: var(--primary);
+            border: 1px solid var(--primary-light);
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-secondary {
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            color: var(--light-text);
+            transition: all 0.3s;
+        }
+        
+        .dark .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.05);
+            color: var(--dark-text);
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-300 bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
+    <div id="app" class="container max-w-6xl mx-auto px-4 py-4 sm:py-6">
+        <header class="text-center mb-6 sm:mb-8">
+            <h1 class="chinese-title text-4xl sm:text-5xl font-bold mb-3"><i class="fas fa-book-open text-3xl sm:text-4xl mr-2 sm:mr-3"></i>長恨歌卡牌記憶遊戲</h1>
+            <div class="decorative-line"></div>
+            <p class="text-base sm:text-lg text-gray-700 dark:text-gray-300 mt-3 sm:mt-4"><i class="fas fa-feather-alt mr-2"></i>配對詩句與意境，探索白居易名作</p>
+        </header>
+        
+        <!-- 遊戲設置區 -->
+        <div id="game-setup" class="max-w-xl mx-auto text-center p-6 sm:p-8 setup-container animate-fade-in relative overflow-hidden">
+            <div class="cloud-pattern"></div>
+            <h2 class="chinese-title text-2xl sm:text-3xl font-bold mb-4 sm:mb-6"><i class="fas fa-chess-board mr-2"></i>選擇難度</h2>
+            <div class="decorative-line w-1/2 my-3 sm:my-4"></div>
+            
+            <div class="flex flex-col space-y-4 sm:space-y-5 mb-6 sm:mb-8 mt-4 sm:mt-6">
+                <button data-difficulty="easy" class="difficulty-btn px-6 sm:px-8 py-3 sm:py-4 rounded-lg transition-all duration-300 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white shadow-lg">
+                    <span class="text-lg font-bold"><i class="fas fa-star mr-2"></i>簡單</span>
+                    <span class="block text-sm mt-1 opacity-80">6對卡牌 · 初入詩境</span>
+                </button>
+                
+                <button data-difficulty="medium" class="difficulty-btn px-6 sm:px-8 py-3 sm:py-4 rounded-lg transition-all duration-300 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white shadow-lg">
+                    <span class="text-lg font-bold"><i class="fas fa-star-half-alt mr-2"></i>中等</span>
+                    <span class="block text-sm mt-1 opacity-80">9對卡牌 · 探索詩情</span>
+                </button>
+                
+                <button data-difficulty="hard" class="difficulty-btn px-6 sm:px-8 py-3 sm:py-4 rounded-lg transition-all duration-300 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-lg">
+                    <span class="text-lg font-bold"><i class="fas fa-meteor mr-2"></i>困難</span>
+                    <span class="block text-sm mt-1 opacity-80">12對卡牌 · 長恨全景</span>
+                </button>
+            </div>
+            
+            <div class="mt-5 sm:mt-6 p-3 sm:p-4 bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-5 rounded-lg">
+                <p class="text-sm text-gray-700 dark:text-gray-300 italic">
+                    <i class="fas fa-quote-left text-xs opacity-70 mr-1"></i>在天願作比翼鳥，在地願為連理枝。天長地久有時盡，此恨綿綿無絕期。<i class="fas fa-quote-right text-xs opacity-70 ml-1"></i><br>
+                    <span class="text-xs mt-1 block text-right opacity-80">—— 白居易《長恨歌》</span>
+                </p>
+            </div>
+            
+            <div class="mt-5 sm:mt-6 px-3 sm:px-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-2"></i>通過翻開卡牌，尋找配對的詩句與釋義，提高對《長恨歌》的記憶與理解。
+                </p>
+            </div>
+        </div>
+        
+        <!-- 遊戲區域 -->
+        <div id="game-board" class="hidden">
+            <div class="mb-4 sm:mb-6 flex flex-wrap justify-between items-center gap-2 sm:gap-3">
+                <div class="stats flex flex-wrap gap-1 sm:gap-2">
+                    <div class="stats-item px-2 sm:px-3 py-1 sm:py-2 rounded-lg">
+                        <span class="font-semibold"><i class="fas fa-puzzle-piece mr-1"></i>配對：</span><span id="matches">0</span>/<span id="total-pairs">0</span>
+                    </div>
+                    <div class="stats-item px-2 sm:px-3 py-1 sm:py-2 rounded-lg">
+                        <span class="font-semibold"><i class="fas fa-hand-pointer mr-1"></i>翻牌：</span><span id="moves">0</span>
+                    </div>
+                </div>
+                <div class="timer px-2 sm:px-3 py-1 sm:py-2 stats-item rounded-lg flex items-center">
+                    <span class="font-semibold mr-1 sm:mr-2"><i class="fas fa-hourglass-half mr-1"></i>時間：</span><span id="timer">00:00</span>
+                </div>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 sm:h-2.5 mb-5 sm:mb-8">
+                <div id="timer-bar" class="timer-bar rounded-full" style="width: 100%"></div>
+            </div>
+            <div id="cards-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 mx-auto"></div>
+        </div>
+        
+        <!-- 遊戲結束畫面 -->
+        <div id="game-over" class="hidden max-w-md mx-auto text-center p-5 sm:p-6 game-complete rounded-lg shadow-md animate-fade-in">
+            <div class="relative overflow-hidden">
+                <div class="cloud-pattern"></div>
+                <h2 class="chinese-title text-2xl sm:text-3xl font-bold mb-3 sm:mb-4"><i class="fas fa-flag-checkered mr-2"></i>遊戲結束</h2>
+                <div class="decorative-line w-1/2 my-2 sm:my-3"></div>
+                
+                <div id="result-message" class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">恭喜完成！</div>
+                
+                <div id="game-stats" class="mb-5 sm:mb-6 bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-5 rounded-lg p-3 sm:p-4">
+                    <p class="text-base sm:text-lg mb-2 sm:mb-3 font-semibold"><i class="fas fa-chart-bar mr-2"></i>成績統計</p>
+                    <div class="flex justify-between mb-2 text-sm">
+                        <span><i class="fas fa-puzzle-piece mr-1"></i>總配對數：</span><span id="final-pairs" class="font-medium">0/0</span>
+                    </div>
+                    <div class="flex justify-between mb-2 text-sm">
+                        <span><i class="fas fa-hand-pointer mr-1"></i>總翻牌數：</span><span id="final-moves" class="font-medium">0</span>
+                    </div>
+                    <div class="flex justify-between mb-2 text-sm">
+                        <span><i class="fas fa-clock mr-1"></i>遊戲時間：</span><span id="final-time" class="font-medium">00:00</span>
+                    </div>
+                    <div class="flex justify-between mb-2 text-sm">
+                        <span><i class="fas fa-trophy mr-1"></i>最終得分：</span><span id="final-score" class="font-medium text-primary dark:text-secondary">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span><i class="fas fa-crown mr-1"></i>最高紀錄：</span><span id="high-score" class="font-medium">0</span>
+                    </div>
+                </div>
+                
+                <div id="knowledge-point" class="text-sm italic knowledge-box p-3 sm:p-4 rounded-lg mb-4 sm:mb-5">
+                    <i class="fas fa-lightbulb text-yellow-500 mr-2"></i><span id="knowledge-text"><!-- 動態加入的知識點 --></span>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 sm:space-x-4 mb-3 sm:mb-4">
+                    <button id="play-again" class="btn-primary px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg">
+                        <i class="fas fa-redo-alt mr-2"></i>再玩一次
+                    </button>
+                    <button id="change-difficulty" class="btn-secondary px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg">
+                        <i class="fas fa-sliders-h mr-2"></i>更改難度
+                    </button>
+                </div>
+                
+                <div class="mt-3 sm:mt-4">
+                    <button id="share-button" class="w-full px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white rounded-lg transition-all duration-300 shadow-md">
+                        <span class="flex items-center justify-center">
+                            <i class="fas fa-share-alt h-5 w-5 mr-2"></i>
+                            挑戰朋友
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 音效切換按鈕 -->
+        <button id="sound-toggle" class="sound-toggle" aria-label="切換音效">
+            <i class="fas fa-volume-up"></i>
+        </button>
+    </div>
+
+    <!-- 音效文件的base64編碼 -->
+    <audio id="flip-sound" preload="auto">
+        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+NAwAAAAAAAAAAAAFhpbmcAAAAPAAAAAwAAA2YAlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaW8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw////////////////////////////////////////////AAAAAExhdmYAAAAAAAAAAAAAAAAAAAAAACQAAAAAAAAAAAN2UrY2LAAAAAAAAAAAAAAAAAAAAP/jYMQAEvgiwl9DAAAAO1ALSi19XgNAsFhL5f0JD0DDVZWUMIg8AIBh+A59yeC4EAQBAMAwR8H4fPnz/gQBA5/B8Pn/AgGERJN01LmWlE9ExWSMen+BY5SAorRIqeMUCk7rCpC8iIHaTEQkrZbSK0NlZBUI5aJVvUzM3TXU1/r+8KalA0e025DqhpTSLhnX3Wvt7d3P/+MQxDUXJAKtX4dIAqbWfj7mVMZrH7upvdNYySETTOWmsxmlaZTXZFmCGMxjH5n6w8u3cNMDz3KSoRQ5QHN+r6b91/eGtS2R0ygc4RpDi/T+5a5UneTvib3/7c/+l3utZ/rXd1v/4xDEIxcMArWfn4gCpf6mY9qh5Xve61nP/n9H5/uiSx2NA87UIjJrWT++VnN0KUhobF33X///y3///5/X9P61///9ZTnnf0/Zv2Tf//6/zf6pt4zbQdIr0pKiqZel//xTVTEFNRTMuOTo/+MQxBIAAANIAcAAADk1MDAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=" type="audio/mp3">
+    </audio>
+    <audio id="match-sound" preload="auto">
+        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+NAwAAAAAAAAAAAAFhpbmcAAAAPAAAAAgAACOgA7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u////////////////////////////////////////////////////////////////////////////////////////////////AAAAAExhdmYAAAAAAAAAAAAAAAAAAAAAACQAAAAAAAAAAOjZ0fGOAAAAAAAAAAAAAAAAAAAA//NIwAAACloDXlQAAANAY2JjCRk+ARAgCIJhMqvf/EoFh37/5UCw4jf///iUAILsJhL+JQFh8S/+JfEoDBIiQGCRLzc3Nzf////////+JQZHEQYBh9+JOAgMPwfB8/B8H4fggDw+D4Pg+D5+DwgAAAAAADiJAmJxI1DjTiImdRoy4kCYeDI4aK7hjVNAp4BAEgMBgDAACAARAESgFQBVYBSA7QIAyI0CWA9QQAqJsCyB8EwFBjYkAQgEJAHUAoIAjADBgBtAb6A7UF8D4Lg6ZoBsCQBgwAUwBgwAhAUFA4A4wH4wGBQl0GIYAJQDJwC1QVqArQCRQTCArICAgQMA4QC4gFzA5UFmCgDAQFwAAAMAYQHmwQDCQpgQCAnUVAeDAgIDAHh4yFCWDyAQgFcAKJTGAwCFAFwAshQQBhNABMAFMMA4GQAoJUAfKCMwHQsBEDA+FAIAILAUAJLBAJwAkhwDYFDIDUAGiASDAUYAeAAIoA7YFiQMBAGKAYWAQQDXIJUAzIAAgGgAEBpALKDRolQAooAQACowxIA0YHOChvA4EDQoT1AqA4DwDmMD8wDQKAgEpAFkNgEwfAIFB4YqBBYgQAE5gYCAxiQQ0BBwCLDYEMAEAYmAgiAsgRmAYJAPQGpuBwWDQoGRg0WBQBioIGkCMEPAgKBjQJoKACAI0AjBsHeQKGABQHQIAVCgULAOQeGQBlCQBTAApABDAXvhwaVGSgLGDHw4IADgKA4OMQGHgEAYCGDeIkODCokS4CBED4Kj4wkAgNgCYCgfMRgVMQg6MQA6PAA/MAgBBAAdBZoP6DIx8A85cCo54B006C05cCk2QCcHQCc5cBs0SCMngB0pkAk4MAsxGA4wyCQ+IlheBpKADEPAvOGgcXgFxAMDADMjA7MeAsMdAdPHA4MYApHgJgAFoBgZBJABQxCA1IACTBQRDHIJzIQJDD4PTSCBzGQDjbgNTeAOTWAEzGADSuAGzCACh0BADaQCuFQFw+AQEIqAcCgBYAAKmAFhsAgHgKAUAQCoNAGBIBgVgVA+JQFQ2AgBgDACBoCAEAKBMCYFQNAIAMBIGQPgICcBkBgICQAwJAgAQHwSAaAwMglAUCcBICgIAMCYHgTAcBYDYMAaA8C4GQFAiAoAwFAHAYA4CQDAdAgAYCgKAMBECQTgcCIEAKAOBUDwKAWAsBgEQJASAoCIEgJAQAoBwIASAcBwDQHASAcBgEAEAJAYA0A4EQGAOAgBIB4DgFAIAYAsCIEAKAWBEB4DAEAJAUAsBQB4EgGAQA8BACQFgNAMAoBoEwGgQAMZQEACqAgA4ZwA8TwBcGwA0JQBcDQBcDAAEIQA0GQA0DwAMIQBIIwB0GQAcXAR0DQBMZwA0YwA8UwAMFQAsSQBMawA8JwA4GAAwPAAwTAAkaQAMCQAsGQA0CQAcKQA8XQAMFwAsUQAcPwA8ZQA8PQAcQQAMGwAwMAA8TwBUGAAsQwBMCQA8PwAEAAAA" type="audio/mp3">
+    </audio>
+    <audio id="fail-sound" preload="auto">
+        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+NAwAAAAAAAAAAAAFhpbmcAAAAPAAAAAwAAA3IAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJDX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f///////////////////////////////////////////8AAAAATGFtZQAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAADSwJ5sDQAAAAAAAAAAAAAAAAAAAP/jYMQAEvgiwl9DAAAAO1ALSi19XgNAsFhL5f0JD0DDVZWUMIg8AIBh+A59yeC4EAQBAMAwR8H4fPnz/gQBA5/B8Pn/AgGERJN01LmWlE9ExWSMen+BY5SAorRIqeMUCk7rCpC8iIHaTEQkrZbSK0NlZBUI5aJVvUzM3TXU1/r+8KalA0e025DqhpTSLhnX3Wvt7d3P/+MQxDUXJAKtX4dIAqbWfj7mVMZrH7upvdNYySETTOWmsxmlaZTXZFmCGMxjH5n6w8u3cNMDz3KSoRQ5QHN+r6b91/eGtS2R0ygc4RpDi/T+5a5UneTvib3/7c/+l3utZ/rXd1v/4xDEIxcMArWfn4gCpf6mY9qh5Xve61nP/n9H5/uiSx2NA87UIjJrWT++VnN0KUhobF33X///y3///5/X9P61///9ZTnnf0/Zv2Tf//6/zf6pt4zbQdIr0pKiqZel//xTVTEFNRTMuOTo/+MQxBIAAANIAcAAADk1MDAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=" type="audio/mp3">
+    </audio>
+    <audio id="win-sound" preload="auto">
+        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+NAwAAAAAAAAAAAAFhpbmcAAAAPAAAACQAAH5IAICAgICAgN0BAQEBAQFVgYGBgYGBtgIaGhoaGhrCwsLCwsLDQ0NDQ0NDQ7u7u7u7u7v////////////////////////////////////////8AAAAATGFtZQAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAADSwJ5sDQAAAAAAAAAAAAAAAAAAAP/jSMQAEsQixo87MBUC5O5V66FFQZFGOarMJTEtpQXI9A0+9CiQcZHFMZGSbmz8BgMHf+CEOmf/B2H////+5cH5cHEoWDd3MP4cJDk2p3/w4SHuWf/+MQxCcWVAbR/5mQAH8Pn/+HAQfh3/whc8+CEQRWZhIHGD9/UiQA0REKaXDZFDWZc+Q0Vk2ZbS+ow5/+MKgyM2LQzLTF06ZTFuFlq7c3eRE/JJDlMrJb0+8vLw+JIQNRQBqQD//+MQxCEUdA7N/5iAAYgQYSIgyyN0FjEI5aQ4Y5LFgAmECRYVBFlTFEIEp///vPEoQQqMmI2VYbPk6NlbMzomITEIIhI3FDAmESgUMgUoKpI4fAgfFwcX/Bb+CrgVf4Ff4cP/4xDEMhdUDsn/mhACPz/+lPw4f8OH/y86e///y/6UPkLlCRAb/1JxEjJHRERoT9wuhFQVBUFQVBUfz5+FFQVEQosAAIABhABoCBcRFwARpYWRZG0kGGTqMOiQwiGGP/jEMQrFKQO0feaEAIiACUAWAiYlsZOaE4EjpnUwZg8wYEKDBhhjTiiP///////////N/////nP/+brnTN1u40fPp3+Vu50b9ab//5v/1CqwAmrAuJJDJXU3WJjt//3JzY2Kj/82Z//+MQxC8WLAbd38NQARY1/////////2f//+zedY5PzOQxJl87gXCkaxuWS8iJmkkzfnqpL5dUw8dcdlIlHn6SRZCFPLCkfOqI4rBJ7nO87odjcCYRYd1HxhcACAKBQKP//KpnCphCphRD//+MQxC0WpA7SN8IQA5VQ4w4cLgdJjXFz+eK5Qo4wOA0QEYQABYDfP//SFQgTjgIAFAwSIiQNBokJCQSFQ8VDwsLhsLCwkJBAOBgTAzBQcDBMCkYFAYCgMSAcDgMP+d9////+MQxC8aSA7CPoIQA//USweSm5xbTnWW7VPNS9Ld8t/Ol/+6pOdO59/dVXWZ1S75Bz///f/7r5Bz3Ul9TlKF1KylWWmU3p1RcAXAFmAUxPVYRU2VBKdFDxLZRQCAjCBUlVJwsCP/4xDEHRf8DqY5KhACK3g8WJyVYcCbh4RHCLjhaX/Ku3/UqqQvUpLBSRRQfaRi9SXYpNFh1FAyiLj4SEYRpAoSHVHViZaGo3//1d/0QD8LI2WOZJ1jx4UFNUFQmBAKA4sVNZD/4xDEDheEDqY9MaACKKjYaJ6Vy8KqoOq07HRlXUtS8Kpr+l0lAwDCZMBfWBAKGAYDgJGAIQNxCQNQ8YLiYYMAgOGBotAgNDgMHxYCRg3Wy4aBAcpCRcPEBEZoICxkZFRQRHf/4xDEBxVEHp2ZGdgCUr+FjQcEyRGRaSGR4ZERZ6pHRJRmDkDBTIxg2FBYyHn9PaQ2WFRA2LCwWDDIWDCIWDCYUECwoLGFZ+FxAUZEBMGMFQosUEC4oJMv/////Pb/////+MQxBQYHFaZmZ9oAnf/////+Z/////Zn89mvfmchQbRCDp07WOCIOkRBkFBZLxMJiUlEoyIhKMkjB0QFBIwVD5LcKCQkFBJoGQsMC44cOHDZ/8OHU5YdT58+fPu0zDhw6dJZ9Pv/4xDECRYUPpH1hngCQOCCDggfX+n9P/6n0/p/n+n+d9P+Y9Tn29P/9T/9PTz9P//+n9P+Y9T+pzP//T/p/U5jp9P6fQ4IEuCAggdT+np/+d9PTr7p//p//Onn6f/T+n0+n9T/+MQxA0UXF6h9YZgAv/p9T+3p/9PT+np////6n////b88887T7//////6f9P99P1IUGgcCATAYCAQhAJgMBAIQgGwkSBJsFhIEDYSJAkEgQNAkEDYSDQYIGgfSB8IHwmAAGAQGv/4xDEFhSUZo33hhgCDQPpMBgIBBpgMB4/8wY8xngwYGPMGPMGPOIDHnEBgeDAh5xBsweDBjzf6eYMeZ///Tn+nmnP/Tn+3p/9Of/T//5g+n/OP//Uf+YOf/8R//MHP//yB///+MQxCEVfFKB9YY4An+/3O/3/+Z//u7///u9zudzvf37nc73d++53O////+53O/f/////3f7////vd//d3O93O93d/udzvf/3c7//+53f//6kSFhJFCRZCCQKUgz//y+n/////+oNyD/4xDEKRtUZnH9zIAC/+fNR62uLCSOiYNX0///////T/JWIHiYTvVc///////z1Qp8+eI+fSaIjb////////+YXGEggQIECQYLKhYUEAYGBgcEBScUCAgICAgKPBgYIGFBxQsHCgoODx3/4xDEEh5kbm3/3kAC3BwoODg4cHDhw4ODhwoKDhwoXDhw4ODg4ODf//g4ODg4ODg4ODg4OD//w4ODg4ODBkzklTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=" type="audio/mp3">
+    </audio>
+    <audio id="button-click" preload="auto">
+        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAAEluAkSdyAAAAAAAEgAAAAA/+M4wA7B+8TZaQcAAABBMAAAAABMAAAAAP/jOMASZP2cL54SAAABIQAAAAAIgAAAAP/jQMQiP8qRsCrgZkWvN2u+iBBnZE3VH2+OFQ3UB2/ODjPNDAPWA9aD1Ae/X5x7HUxOvx7+fXxxsrQ6MfVzj69+/H8eTn8eTznPnHu5yQfJzkOvn38cRlwGnxw6sZzg9+OoHUx/+MQxCYQsGLYAZhQALxzg483H5/tP5yxeMnH0CDafjjLO97g0f5wf5xk45AzqD5zjkB17+vNRllTjiJJU84jKP37dXq9yGef/qM//3+/ydBkMfDdxRTEFNRTMuMTAwqqqqqqqqqqq/+MQxCUFyAKgAZBAAKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq" type="audio/mp3">
+    </audio>
+    
+    <script>
+        // 檢測深色模式
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // 檢測環境是否支持localStorage
+        const isStorageAvailable = (function() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return true;
+            } catch (e) {
+                console.log('localStorage不可用，使用內存存儲');
+                return false;
+            }
+        })();
+        
+        // 內存存儲（作為localStorage的後備）
+        const memoryStorage = {
+            data: {},
+            setItem: function(key, value) {
+                this.data[key] = value;
+            },
+            getItem: function(key) {
+                return this.data[key] || null;
+            },
+            removeItem: function(key) {
+                delete this.data[key];
+            }
+        };
+        
+        // 安全的存儲訪問
+        const safeStorage = {
+            setItem: function(key, value) {
+                try {
+                    if (isStorageAvailable) {
+                        localStorage.setItem(key, value);
+                    } else {
+                        memoryStorage.setItem(key, value);
+                    }
+                } catch (e) {
+                    console.log('存儲失敗:', e);
+                }
+            },
+            getItem: function(key) {
+                try {
+                    if (isStorageAvailable) {
+                        return localStorage.getItem(key);
+                    } else {
+                        return memoryStorage.getItem(key);
+                    }
+                } catch (e) {
+                    console.log('讀取失敗:', e);
+                    return null;
+                }
+            },
+            removeItem: function(key) {
+                try {
+                    if (isStorageAvailable) {
+                        localStorage.removeItem(key);
+                    } else {
+                        memoryStorage.removeItem(key);
+                    }
+                } catch (e) {
+                    console.log('刪除失敗:', e);
+                }
+            }
+        };
+        
+        // 遊戲數據
+        const gameData = {
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            totalPairs: 0,
+            moves: 0,
+            startTime: null,
+            gameTimer: null,
+            timerDisplay: null,
+            timerSeconds: 0,
+            maxTime: 180, // 3分鐘
+            difficulty: 'medium',
+            isGameActive: false,
+            soundEnabled: true,
+            highScores: {
+                easy: 0,
+                medium: 0,
+                hard: 0
+            },
+            gameHistory: [],
+            cardData: [
+                { 
+                    verse: "漢皇重色思傾國，御宇多年求不得", 
+                    description: "唐玄宗熱衷於美色，思慕傾國之姿，登基多年都未能找到" 
+                },
+                { 
+                    verse: "楊家有女初長成，養在深閨人未識", 
+                    description: "楊家有位剛剛長大的女兒，一直被養在深閨之中，不為外人所知" 
+                },
+                { 
+                    verse: "天生麗質難自棄，一朝選在君王側", 
+                    description: "楊玉環天生麗質無法被埋沒，有一天被選入宮中陪伴君王" 
+                },
+                { 
+                    verse: "回眸一笑百媚生，六宮粉黛無顏色", 
+                    description: "楊貴妃回眸一笑風情萬種，使後宮所有美女都黯然失色" 
+                },
+                { 
+                    verse: "春寒賜浴華清池，溫泉水滑洗凝脂", 
+                    description: "唐玄宗賜楊貴妃在華清池洗溫泉浴，溫泉水滑潤如洗去凝脂" 
+                },
+                { 
+                    verse: "侍兒扶起嬌無力，始是新承恩澤時", 
+                    description: "宮女扶起嬌弱無力的楊貴妃，這是她剛開始獲得皇帝寵愛的時候" 
+                },
+                { 
+                    verse: "雲鬢花顏金步搖，芙蓉帳暖度春宵", 
+                    description: "楊貴妃雲髻般的發髻，花朵般的容顏，頭上戴著金步搖，在溫暖的芙蓉帳中度過春宵" 
+                },
+                { 
+                    verse: "春宵苦短日高起，從此君王不早朝", 
+                    description: "春夜太短天亮得太快，從此唐玄宗沉迷美色不早朝" 
+                },
+                { 
+                    verse: "後宮佳麗三千人，三千寵愛在一身", 
+                    description: "後宮有三千美女，但所有寵愛都集中在楊貴妃一人身上" 
+                },
+                { 
+                    verse: "金屋妝成嬌侍夜，玉樓宴罷醉和春", 
+                    description: "在金屋梳妝完成嬌媚侍寢，在玉樓宴會後與春同醉" 
+                },
+                { 
+                    verse: "姊妹弟兄皆列土，可憐光彩生門戶", 
+                    description: "楊貴妃的姐妹兄弟都被封官賜地，門戶因此增添了光彩" 
+                },
+                { 
+                    verse: "遂令天下父母心，不重生男重生女", 
+                    description: "這導致天下父母心態改變，不再看重生兒子而更希望生女兒" 
+                },
+                { 
+                    verse: "驪宮高處入青雲，仙樂風飄處處聞", 
+                    description: "華麗的宮殿高聳入雲，仙樂隨風飄揚，四處可聞" 
+                },
+                { 
+                    verse: "漁陽鼙鼓動地來，驚破霓裳羽衣曲", 
+                    description: "安史之亂爆發，叛軍的戰鼓聲驚破了宮中演奏的霓裳羽衣曲" 
+                },
+                { 
+                    verse: "九重城闕煙塵生，千乘萬騎西南行", 
+                    description: "京城煙塵四起，大批人馬隨著唐玄宗向西南方向逃離" 
+                },
+                { 
+                    verse: "六軍不發無奈何，宛轉蛾眉馬前死", 
+                    description: "唐玄宗的軍隊不肯前進，楊貴妃只好在馬前自縊身亡" 
+                },
+                { 
+                    verse: "君王掩面救不得，回看血淚相和流", 
+                    description: "唐玄宗掩面無法救她，回頭看時淚水和血液一起流下" 
+                },
+                { 
+                    verse: "黃埃散漫風蕭索，雲棧縈紆登劍閣", 
+                    description: "黃塵飛揚風聲淒涼，一行人沿著盤旋的山路登上劍閣"
+                },
+                {
+                    verse: "行宮見月傷心色，夜雨聞鈴腸斷聲",
+                    description: "在行宮看到月亮想起傷心事，夜裡聽到雨聲和鈴聲讓人腸斷"
+                },
+                {
+                    verse: "天旋地轉迴龍馭，到此躊躇不能去",
+                    description: "唐玄宗乘坐天子車駕返回，到了馬嵬坡不忍離去"
+                },
+                {
+                    verse: "馬嵬坡下泥土中，不見玉顏空死處",
+                    description: "在馬嵬坡下的泥土中，看不見楊貴妃美麗的容顏，只有她空空的死亡之處"
+                },
+                {
+                    verse: "歸來池苑皆依舊，太液芙蓉未央柳",
+                    description: "回到皇宮，池塘花園都還和從前一樣，太液池的芙蓉和未央宮的柳樹依然如故"
+                },
+                {
+                    verse: "芙蓉如面柳如眉，對此如何不淚垂",
+                    description: "芙蓉花像楊貴妃的臉，柳樹像她的眉毛，面對這些景象怎能不淚如雨下"
+                },
+                {
+                    verse: "春風桃李花開日，秋雨梧桐葉落時",
+                    description: "春風吹拂桃李花開的日子，秋雨打落梧桐葉子的時候，時光流逝"
+                },
+                {
+                    verse: "西宮南內多秋草，落葉滿階紅不掃",
+                    description: "西宮和南宮內長滿了秋草，落葉鋪滿台階卻無人打掃"
+                },
+                {
+                    verse: "遲遲鐘鼓初長夜，耿耿星河欲曙天",
+                    description: "悠長的夜晚鐘鼓聲緩慢，繁星點點一直到天亮"
+                },
+                {
+                    verse: "鴛鴦瓦冷霜華重，翡翠衾寒誰與共",
+                    description: "鴛鴦紋的瓦片冰冷結霜，翡翠色的被褥寒冷無人共枕"
+                },
+                {
+                    verse: "悠悠生死別經年，魂魄不曾來入夢",
+                    description: "生離死別已經多年，她的魂魄卻從未入夢"
+                },
+                {
+                    verse: "臨邛道士鴻都客，能以精誠致魂魄",
+                    description: "來自臨邛的道士是鴻都觀的客人，能用至誠之心招來亡靈"
+                },
+                {
+                    verse: "排空馭氣奔如電，升天入地求之遍",
+                    description: "道士飛升虛空，御風如電，上天入地到處尋找楊貴妃的魂魄"
+                },
+                {
+                    verse: "上窮碧落下黃泉，兩處茫茫皆不見",
+                    description: "從天上到地下到處尋找楊貴妃，兩處都茫茫然看不到她的身影"
+                },
+                {
+                    verse: "忽聞海上有仙山，山在虛無縹緲間",
+                    description: "忽然聽說海上有座仙山，山在虛無縹緲之間"
+                },
+                {
+                    verse: "聞道漢家天子使，九華帳裡夢魂驚",
+                    description: "仙界聽聞唐朝天子派使者來訪，楊貴妃在華麗帳幔中夢中驚醒"
+                },
+                {
+                    verse: "玉容寂寞淚闌干，梨花一枝春帶雨",
+                    description: "楊貴妃寂寞的臉上滿是淚水，如同春天帶雨的梨花枝"
+                },
+                {
+                    verse: "含情凝睇謝君王，一別音容兩渺茫",
+                    description: "楊貴妃含情含淚望著唐玄宗道別，一次分離後聲音容貌都渺茫難尋"
+                },
+                {
+                    verse: "臨別殷勤重寄詞，詞中有誓兩心知",
+                    description: "分別時殷切地再次囑咐，詞中的誓言只有兩人知道"
+                },
+                {
+                    verse: "七月七日長生殿，夜半無人私語時",
+                    description: "每年七夕節，唐玄宗在長生殿深夜獨自與亡靈私語"
+                },
+                {
+                    verse: "在天願作比翼鳥，在地願為連理枝",
+                    description: "在天上願做比翼鳥，在地上願做連理枝，比喻永不分離的愛侶"
+                },
+                {
+                    verse: "天長地久有時盡，此恨綿綿無絕期",
+                    description: "天長地久也有結束的時候，但相思之恨綿綿不絕無盡期"
+                }
+            ],
+            knowledgePoints: [
+                "《長恨歌》是唐代詩人白居易所作的一首長篇敘事詩，描述了唐玄宗與楊貴妃的愛情悲劇。",
+                "白居易（772年-846年）是唐代著名詩人，字樂天，號香山居士，他的詩風平易通俗，被稱為「詩魔」。",
+                "《長恨歌》與《琵琶行》並稱為白居易的兩部代表作。",
+                "唐玄宗李隆基（685年-762年）是唐朝第七位皇帝，在位期間（712年-756年）唐朝達到鼎盛，史稱「開元盛世」。",
+                "楊貴妃（719年-756年）原名楊玉環，是唐玄宗的妃子，被稱為「傾國傾城」的美人，是中國古代四大美女之一。",
+                "安史之亂（755年-763年）由唐朝將領安祿山和史思明發動，這場叛亂導致唐朝由盛轉衰。",
+                "長恨歌中「天長地久有時盡，此恨綿綿無絕期」被譽為千古絕句，表達了深刻的愛情觀。",
+                "唐玄宗與楊貴妃的愛情故事除了《長恨歌》外，還有許多文學作品，如元稹的《連昌宮詞》和陳鴻的《長恨歌傳》。",
+                "「回眸一笑百媚生，六宮粉黛無顏色」是描寫楊貴妃美貌的名句，形象展現了她的傾城之姿。",
+                "《長恨歌》全詩共120句840字，是盛唐時期最著名的長篇敘事詩之一。",
+                "華清池位於今陝西省西安市臨潼區，是唐玄宗為楊貴妃修建的溫泉行宮，也是《長恨歌》中的重要場景。",
+                "馬嵬坡位於今陝西省興平市，是楊貴妃被迫自縊的地方，成為中國文化中愛情悲劇的象徵之一。",
+                "《霓裳羽衣曲》是唐玄宗親自創作的舞曲，據說是受到月宮仙子飄舞的啟發。",
+                "「比翼鳥」和「連理枝」在中國傳統文化中是夫妻恩愛、不離不棄的象徵。",
+                "《長恨歌》中「梨花一枝春帶雨」是中國古典詩詞中最著名的比喻之一，形象地表現了美人垂淚的動人景象。"
+            ]
+        };
+        
+        // 音效系統
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const soundBuffers = {
+            flip: null,
+            match: null, 
+            fail: null,
+            win: null,
+            buttonClick: null
+        };
+        
+        // 元素引用
+        const elements = {
+            gameSetup: document.getElementById('game-setup'),
+            gameBoard: document.getElementById('game-board'),
+            cardsContainer: document.getElementById('cards-container'),
+            gameOver: document.getElementById('game-over'),
+            matches: document.getElementById('matches'),
+            totalPairs: document.getElementById('total-pairs'),
+            moves: document.getElementById('moves'),
+            timer: document.getElementById('timer'),
+            timerBar: document.getElementById('timer-bar'),
+            finalPairs: document.getElementById('final-pairs'),
+            finalMoves: document.getElementById('final-moves'),
+            finalTime: document.getElementById('final-time'),
+            finalScore: document.getElementById('final-score'),
+            resultMessage: document.getElementById('result-message'),
+            playAgain: document.getElementById('play-again'),
+            changeDifficulty: document.getElementById('change-difficulty'),
+            difficultyButtons: document.querySelectorAll('.difficulty-btn'),
+            soundToggle: document.getElementById('sound-toggle')
+        };
+        
+        // 簡化的音效系統 - 適用於受限環境
+        function initSoundSystem() {
+            try {
+                // 嘗試從存儲中讀取音效設置
+                const soundSetting = safeStorage.getItem('chehgame_sound');
+                if (soundSetting !== null) {
+                    gameData.soundEnabled = soundSetting === 'true';
+                }
+                
+                // 更新音效按鈕狀態
+                updateSoundButtonUI();
+                
+                // 預加載音頻元素以確保它們可以播放
+                document.querySelectorAll('audio').forEach(audio => {
+                    // 在用戶交互時嘗試預載入
+                    document.addEventListener('click', function preloadAudio() {
+                        try {
+                            audio.load();  // 嘗試加載音頻
+                            document.removeEventListener('click', preloadAudio);
+                        } catch (e) {
+                            console.log('音頻預加載失敗:', e);
+                        }
+                    }, { once: true });
+                });
+                
+            } catch (e) {
+                console.log('音效系統初始化錯誤:', e);
+                // 默認啟用音效
+                gameData.soundEnabled = true;
+            }
+        }
+        
+        // 更新音效按鈕UI
+        function updateSoundButtonUI() {
+            const soundIcon = elements.soundToggle.querySelector('i');
+            if (gameData.soundEnabled) {
+                soundIcon.className = 'fas fa-volume-up';
+                elements.soundToggle.classList.remove('sound-muted');
+                elements.soundToggle.setAttribute('aria-label', '靜音');
+            } else {
+                soundIcon.className = 'fas fa-volume-mute';
+                elements.soundToggle.classList.add('sound-muted');
+                elements.soundToggle.setAttribute('aria-label', '開啟音效');
+            }
+        }
+        
+        // 切換音效狀態
+        function toggleSound() {
+            gameData.soundEnabled = !gameData.soundEnabled;
+            try {
+                safeStorage.setItem('chehgame_sound', gameData.soundEnabled.toString());
+            } catch (e) {
+                console.log('無法保存音效設置:', e);
+            }
+            updateSoundButtonUI();
+            
+            // 播放按鈕點擊音效
+            if (gameData.soundEnabled) {
+                playSound('buttonClick');
+            }
+        }
+        
+        // 使用 Web Audio API 播放音效
+        function playSound(soundType) {
+            if (!gameData.soundEnabled) return;
+            
+            try {
+                // 檢查音頻上下文狀態
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().catch(err => console.log('無法恢復音頻上下文:', err));
+                    return; // 先不播放音效，等待上下文恢復後再嘗試
+                }
+
+                const buffer = soundBuffers[soundType];
+                if (!buffer) {
+                    console.log(`音效 ${soundType} 尚未載入完成`);
+                    return;
+                }
+                
+                // 創建音源
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                
+                // 設置音量節點（可選）
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 0.5; // 設置音量為原來的 50%
+                
+                // 連接音頻節點
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // 播放音效
+                source.start(0);
+                
+                console.log(`播放音效: ${soundType}`);
+            } catch (error) {
+                console.error(`播放音效 ${soundType} 時出錯:`, error);
+            }
+        }
+        
+        // 初始化遊戲
+        function initGame(difficulty) {
+            // 播放按鈕點擊音效
+            playSound('buttonClick');
+            
+            // 設置難度
+            gameData.difficulty = difficulty;
+            let numPairs;
+            
+            // 根據難度設置對數
+            switch(difficulty) {
+                case 'easy':
+                    numPairs = 6;
+                    gameData.maxTime = 120; // 2分鐘
+                    break;
+                case 'medium':
+                    numPairs = 9;
+                    gameData.maxTime = 180; // 3分鐘
+                    break;
+                case 'hard':
+                    numPairs = 12;
+                    gameData.maxTime = 240; // 4分鐘
+                    break;
+                default:
+                    numPairs = 9;
+                    gameData.maxTime = 180;
+            }
+            
+            // 重設遊戲數據
+            gameData.flippedCards = [];
+            gameData.matchedPairs = 0;
+            gameData.totalPairs = numPairs;
+            gameData.moves = 0;
+            gameData.timerSeconds = 0;
+            gameData.isGameActive = true;
+            clearInterval(gameData.gameTimer);
+            
+            // 更新UI
+            elements.matches.textContent = 0;
+            elements.totalPairs.textContent = numPairs;
+            elements.moves.textContent = 0;
+            elements.timer.textContent = '00:00';
+            elements.timerBar.style.width = '100%';
+            
+            // 隱藏設置屏幕，顯示遊戲板
+            elements.gameSetup.classList.add('hidden');
+            elements.gameBoard.classList.remove('hidden');
+            elements.gameOver.classList.add('hidden');
+            
+            // 創建卡牌
+            createCards(numPairs);
+            
+            // 開始計時器
+            startTimer();
+        }
+        
+        // 處理詩句，將逗號替換為圖形點
+        function formatVerse(verse) {
+            // 分割詩句為兩行
+            const parts = verse.split('，');
+            if (parts.length === 2) {
+                return `${parts[0]}<span class="comma"></span>${parts[1]}`;
+            }
+            return verse;
+        }
+        
+        // 創建卡牌
+        function createCards(numPairs) {
+            elements.cardsContainer.innerHTML = '';
+            const shuffledCards = [];
+            
+            // 從cardData中選擇指定對數的項目
+            const selectedPairs = gameData.cardData
+                .sort(() => 0.5 - Math.random())
+                .slice(0, numPairs);
+            
+            // 為每個詩句創建兩張卡牌 (詩句和解釋)
+            selectedPairs.forEach(pair => {
+                shuffledCards.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    content: pair.verse,
+                    type: 'verse',
+                    pairId: pair.verse
+                });
+                
+                shuffledCards.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    content: pair.description,
+                    type: 'description',
+                    pairId: pair.verse
+                });
+            });
+            
+            // 隨機打亂卡牌順序
+            shuffledCards.sort(() => 0.5 - Math.random());
+            gameData.cards = shuffledCards;
+            
+            // 創建遊戲板網格
+            let gridClass = '';
+            let cardSizeClass = '';
+            
+            // 根據設備和難度調整網格和卡片大小
+            const isSmallScreen = window.innerWidth <= 640;
+            
+            if (isSmallScreen) {
+                // 在小屏幕上使用更緊湊的網格
+                if (numPairs <= 6) {
+                    gridClass = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+                    cardSizeClass = 'aspect-[3/4]';
+                } else if (numPairs <= 9) {
+                    gridClass = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+                    cardSizeClass = 'aspect-[3/4]';
+                } else {
+                    gridClass = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+                    cardSizeClass = 'aspect-[3/4]';
+                }
+            } else {
+                // 在大屏幕上的網格配置
+                if (numPairs <= 6) {
+                    gridClass = 'grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6';
+                    cardSizeClass = 'aspect-[3/4]';
+                } else if (numPairs <= 9) {
+                    gridClass = 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6';
+                    cardSizeClass = 'aspect-[3/3.8]';
+                } else {
+                    gridClass = 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8';
+                    cardSizeClass = 'aspect-[3/3.5]';
+                }
+            }
+            
+            elements.cardsContainer.className = `grid ${gridClass} gap-2 sm:gap-3 mx-auto`;
+            
+            // 渲染卡牌到DOM
+            shuffledCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                // 根據卡牌類型添加特殊類
+                const isVerseCard = card.type === 'verse';
+                const cardTypeClass = isVerseCard ? 'verse-card' : 'description-card';
+                
+                cardElement.className = `card w-full ${cardSizeClass} mb-1 ${cardTypeClass}`;
+                cardElement.dataset.id = card.id;
+                cardElement.dataset.pairId = card.pairId;
+                
+                // 根據難度設置合適的字體大小類別
+                const cardTextSizeClass = `card-size-${gameData.difficulty}`;
+                
+                // 對於詩句卡牌，使用豎排版並格式化詩句
+                let cardContent = card.content;
+                if (isVerseCard) {
+                    cardContent = formatVerse(cardContent);
+                }
+                
+                cardElement.innerHTML = `
+                    <div class="card-inner h-full">
+                        <div class="card-front">
+                            <div class="text-symbol">${card.type === 'verse' ? '詩' : '意'}</div>
+                        </div>
+                        <div class="card-back ${cardTextSizeClass}">
+                            <div class="card-content w-full">${cardContent}</div>
+                        </div>
+                    </div>
+                `;
+                
+                cardElement.addEventListener('click', () => flipCard(cardElement));
+                elements.cardsContainer.appendChild(cardElement);
+            });
+        }
+        
+        // 翻轉卡牌
+        function flipCard(card) {
+            // 如果遊戲未開始、卡牌已翻開或已匹配，則返回
+            if (!gameData.isGameActive || 
+                card.classList.contains('flipped') || 
+                card.classList.contains('matched') ||
+                gameData.flippedCards.length >= 2) {
+                return;
+            }
+            
+            // 播放翻牌音效
+            playSound('flip');
+            
+            // 翻轉卡牌
+            card.classList.add('flipped');
+            gameData.flippedCards.push(card);
+            
+            // 如果翻了兩張卡，檢查是否匹配
+            if (gameData.flippedCards.length === 2) {
+                gameData.moves++;
+                elements.moves.textContent = gameData.moves;
+                
+                const card1 = gameData.flippedCards[0];
+                const card2 = gameData.flippedCards[1];
+                
+                // 檢查匹配
+                if (card1.dataset.pairId === card2.dataset.pairId) {
+                    markAsMatched();
+                } else {
+                    // 不匹配，翻回
+                    setTimeout(() => {
+                        playSound('fail');
+                        resetFlippedCards();
+                    }, 1000);
+                }
+            }
+        }
+        
+        // 標記匹配的卡牌
+        function markAsMatched() {
+            // 播放匹配成功音效
+            playSound('match');
+            
+            gameData.flippedCards.forEach(card => {
+                card.classList.add('matched');
+                setTimeout(() => {
+                    card.style.opacity = '0.7';
+                }, 500);
+            });
+            
+            gameData.matchedPairs++;
+            elements.matches.textContent = gameData.matchedPairs;
+            
+            // 清空已翻開的卡牌
+            gameData.flippedCards = [];
+            
+            // 檢查是否遊戲結束
+            if (gameData.matchedPairs === gameData.totalPairs) {
+                setTimeout(endGame, 500);
+            }
+        }
+        
+        // 重置翻開的卡牌
+        function resetFlippedCards() {
+            gameData.flippedCards.forEach(card => {
+                card.classList.remove('flipped');
+            });
+            gameData.flippedCards = [];
+        }
+        
+        // 開始計時器
+        function startTimer() {
+            gameData.startTime = Date.now();
+            
+            // 更新計時器顯示
+            gameData.gameTimer = setInterval(() => {
+                if (!gameData.isGameActive) return;
+                
+                gameData.timerSeconds++;
+                
+                // 更新時間顯示
+                const minutes = Math.floor(gameData.timerSeconds / 60);
+                const seconds = gameData.timerSeconds % 60;
+                elements.timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                // 更新進度條
+                const percentage = 100 - ((gameData.timerSeconds / gameData.maxTime) * 100);
+                elements.timerBar.style.width = `${Math.max(0, percentage)}%`;
+                
+                // 根據剩餘時間改變顏色
+                if (percentage < 30) {
+                    elements.timerBar.style.backgroundColor = '#F44336'; // 紅色
+                } else if (percentage < 60) {
+                    elements.timerBar.style.backgroundColor = '#FFC107'; // 黃色
+                }
+                
+                // 時間結束
+                if (gameData.timerSeconds >= gameData.maxTime) {
+                    endGame(true);
+                }
+            }, 1000);
+        }
+        
+        // 儲存和讀取分數
+        function saveHighScore(difficulty, score) {
+            // 檢查是否高於現有紀錄
+            if (score > gameData.highScores[difficulty]) {
+                gameData.highScores[difficulty] = score;
+                // 儲存到localStorage
+                try {
+                    localStorage.setItem('chehgame_highscores', JSON.stringify(gameData.highScores));
+                } catch (e) {
+                    console.log('無法儲存分數: ', e);
+                }
+            }
+            return gameData.highScores[difficulty];
+        }
+        
+        function loadHighScores() {
+            try {
+                const scores = localStorage.getItem('chehgame_highscores');
+                if (scores) {
+                    gameData.highScores = JSON.parse(scores);
+                }
+            } catch (e) {
+                console.log('無法讀取分數: ', e);
+            }
+        }
+        
+        // 儲存遊戲記錄
+        function saveGameHistory(gameRecord) {
+            try {
+                // 最多保存10條遊戲記錄
+                gameData.gameHistory.unshift(gameRecord);
+                if (gameData.gameHistory.length > 10) {
+                    gameData.gameHistory.pop();
+                }
+                
+                localStorage.setItem('chehgame_history', JSON.stringify(gameData.gameHistory));
+            } catch (e) {
+                console.log('無法儲存遊戲記錄: ', e);
+            }
+        }
+        
+        function loadGameHistory() {
+            try {
+                const history = localStorage.getItem('chehgame_history');
+                if (history) {
+                    gameData.gameHistory = JSON.parse(history);
+                }
+            } catch (e) {
+                console.log('無法讀取遊戲記錄: ', e);
+            }
+        }
+        
+        // 分享遊戲結果
+        function shareGame(score, difficulty) {
+            playSound('buttonClick');
+            
+            const text = `我在《長恨歌卡牌記憶遊戲》${difficulty === 'easy' ? '簡單' : difficulty === 'medium' ? '中等' : '困難'}難度中獲得了${score}分！來挑戰我吧！`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '長恨歌卡牌記憶遊戲',
+                    text: text,
+                    url: window.location.href
+                }).catch((error) => {
+                    console.log('分享失敗:', error);
+                    // 顯示一個友好的錯誤訊息
+                    alert('分享功能暫時無法使用，請直接複製連結分享。');
+                });
+            } else {
+                // 不支援Web Share API，備用方案
+                const tempInput = document.createElement('textarea');
+                tempInput.value = text + ' ' + window.location.href;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                
+                alert('已複製分享文字，請貼上給您的朋友！');
+            }
+        }
+        
+        // 獲取隨機知識點
+        function getRandomKnowledgePoint() {
+            const randomIndex = Math.floor(Math.random() * gameData.knowledgePoints.length);
+            return gameData.knowledgePoints[randomIndex];
+        }
+        
+        // 結束遊戲
+        function endGame(timeout = false) {
+            gameData.isGameActive = false;
+            clearInterval(gameData.gameTimer);
+            
+            // 播放音效
+            if (timeout || gameData.matchedPairs < gameData.totalPairs) {
+                playSound('fail');
+            } else {
+                playSound('win');
+            }
+            
+            // 顯示所有卡牌
+            if (timeout) {
+                document.querySelectorAll('.card').forEach(card => {
+                    if (!card.classList.contains('matched')) {
+                        card.classList.add('flipped');
+                    }
+                });
+            }
+            
+            // 計算分數
+            const timeBonus = Math.max(0, gameData.maxTime - gameData.timerSeconds);
+            const accuracyBonus = Math.max(1, gameData.totalPairs * 2 / Math.max(1, gameData.moves));
+            let score = Math.round((gameData.matchedPairs * 1000) * accuracyBonus + timeBonus * 10);
+            
+            // 更新遊戲結束屏幕
+            elements.finalPairs.textContent = `${gameData.matchedPairs}/${gameData.totalPairs}`;
+            elements.finalMoves.textContent = gameData.moves;
+            
+            const minutes = Math.floor(gameData.timerSeconds / 60);
+            const seconds = gameData.timerSeconds % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            elements.finalTime.textContent = timeString;
+            
+            elements.finalScore.textContent = score;
+            
+            // 存储遊戲記錄
+            const gameRecord = {
+                date: new Date().toLocaleString(),
+                difficulty: gameData.difficulty,
+                score: score,
+                pairs: `${gameData.matchedPairs}/${gameData.totalPairs}`,
+                moves: gameData.moves,
+                time: timeString,
+                completed: gameData.matchedPairs === gameData.totalPairs
+            };
+            saveGameHistory(gameRecord);
+            
+            // 檢查和更新最高分
+            const highScore = saveHighScore(gameData.difficulty, score);
+            document.getElementById('high-score').textContent = highScore;
+            
+            // 添加知識點
+            const knowledgePoint = getRandomKnowledgePoint();
+            document.getElementById('knowledge-text').textContent = knowledgePoint;
+            
+            // 根據完成情況設置消息
+            if (timeout) {
+                elements.resultMessage.innerHTML = '<i class="fas fa-hourglass-end mr-2"></i>時間到！再接再厲';
+                elements.resultMessage.className = 'text-lg font-semibold mb-3 text-yellow-600 dark:text-yellow-400';
+            } else if (gameData.matchedPairs === gameData.totalPairs) {
+                if (score >= 5000) {
+                    elements.resultMessage.innerHTML = '<i class="fas fa-award mr-2"></i>太棒了！您的記憶力超群！';
+                    elements.resultMessage.className = 'text-lg font-semibold mb-3 text-green-600 dark:text-green-400';
+                } else if (score >= 3000) {
+                    elements.resultMessage.innerHTML = '<i class="fas fa-thumbs-up mr-2"></i>做得好！您對《長恨歌》已有深刻記憶';
+                    elements.resultMessage.className = 'text-lg font-semibold mb-3 text-blue-600 dark:text-blue-400';
+                } else {
+                    elements.resultMessage.innerHTML = '<i class="fas fa-check-circle mr-2"></i>恭喜完成！持續練習能提高記憶';
+                    elements.resultMessage.className = 'text-lg font-semibold mb-3 text-primary';
+                }
+            } else {
+                elements.resultMessage.innerHTML = '<i class="fas fa-redo mr-2"></i>繼續努力！多練習幾次就能成功';
+                elements.resultMessage.className = 'text-lg font-semibold mb-3 text-gray-600 dark:text-gray-400';
+            }
+            
+            // 顯示遊戲結束屏幕
+            setTimeout(() => {
+                elements.gameBoard.classList.add('hidden');
+                elements.gameOver.classList.remove('hidden');
+            }, 1000);
+        }
+        
+        // 事件監聽器
+        function setupEventListeners() {
+            // 難度選擇按鈕
+            elements.difficultyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const difficulty = button.dataset.difficulty;
+                    initGame(difficulty);
+                });
+            });
+            
+            // 再玩一次按鈕
+            elements.playAgain.addEventListener('click', () => {
+                playSound('buttonClick');
+                initGame(gameData.difficulty);
+            });
+            
+            // 更改難度按鈕
+            elements.changeDifficulty.addEventListener('click', () => {
+                playSound('buttonClick');
+                elements.gameOver.classList.add('hidden');
+                elements.gameSetup.classList.remove('hidden');
+            });
+            
+            // 音效切換按鈕
+            elements.soundToggle.addEventListener('click', toggleSound);
+            
+            // 分享按鈕
+            document.getElementById('share-button').addEventListener('click', () => {
+                const score = parseInt(document.getElementById('final-score').textContent, 10);
+                shareGame(score, gameData.difficulty);
+            });
+            
+            // 監聽窗口大小改變以適應不同設備
+            window.addEventListener('resize', handleResize);
+        }
+        
+        // 窗口大小變化處理
+        function handleResize() {
+            if (gameData.isGameActive) {
+                // 如果遊戲正在進行中，可能需要重新調整卡片佈局
+                const numPairs = gameData.totalPairs;
+                createCards(numPairs);
+                
+                // 重新顯示已匹配的卡牌
+                document.querySelectorAll('.card').forEach(card => {
+                    if (gameData.cards.some(c => c.id === card.dataset.id && c.matched)) {
+                        card.classList.add('flipped');
+                        card.classList.add('matched');
+                        card.style.opacity = '0.7';
+                    }
+                });
+            }
+        }
+        
+        // 儲存和讀取分數
+        function saveHighScore(difficulty, score) {
+            // 檢查是否高於現有紀錄
+            if (score > gameData.highScores[difficulty]) {
+                gameData.highScores[difficulty] = score;
+                // 儲存到安全存儲
+                try {
+                    safeStorage.setItem('chehgame_highscores', JSON.stringify(gameData.highScores));
+                } catch (e) {
+                    console.log('無法儲存分數: ', e);
+                }
+            }
+            return gameData.highScores[difficulty];
+        }
+        
+        function loadHighScores() {
+            try {
+                const scores = safeStorage.getItem('chehgame_highscores');
+                if (scores) {
+                    gameData.highScores = JSON.parse(scores);
+                }
+            } catch (e) {
+                console.log('無法讀取分數: ', e);
+            }
+        }
+        
+        // 儲存遊戲記錄
+        function saveGameHistory(gameRecord) {
+            try {
+                // 最多保存10條遊戲記錄
+                gameData.gameHistory.unshift(gameRecord);
+                if (gameData.gameHistory.length > 10) {
+                    gameData.gameHistory.pop();
+                }
+                
+                safeStorage.setItem('chehgame_history', JSON.stringify(gameData.gameHistory));
+            } catch (e) {
+                console.log('無法儲存遊戲記錄: ', e);
+            }
+        }
+        
+        function loadGameHistory() {
+            try {
+                const history = safeStorage.getItem('chehgame_history');
+                if (history) {
+                    gameData.gameHistory = JSON.parse(history);
+                }
+            } catch (e) {
+                console.log('無法讀取遊戲記錄: ', e);
+            }
+        }
+        
+        // 直接音效播放功能 - 不使用Web Audio API
+        function playSound(soundType) {
+            if (!gameData.soundEnabled) return;
+            
+            try {
+                // 直接使用音頻元素播放
+                const audioId = {
+                    'flip': 'flip-sound',
+                    'match': 'match-sound',
+                    'fail': 'fail-sound',
+                    'win': 'win-sound',
+                    'buttonClick': 'button-click'
+                }[soundType];
+                
+                const audioEl = document.getElementById(audioId);
+                if (audioEl) {
+                    audioEl.volume = 0.5;
+                    audioEl.currentTime = 0;
+                    
+                    // 無論如何嘗試播放
+                    try {
+                        audioEl.play();
+                    } catch (e) {
+                        console.log('音效播放失敗:', e);
+                    }
+                }
+            } catch (e) {
+                console.log('音效處理錯誤:', e);
+            }
+        }
+        
+        // 初始化應用
+        function initApp() {
+            // 初始化音效系統
+            initSoundSystem();
+            
+            // 載入高分和遊戲歷史
+            loadHighScores();
+            loadGameHistory();
+            
+            // 設置事件監聽器
+            setupEventListeners();
+            
+            // 檢查URL參數，看是否有指定難度
+            const urlParams = new URLSearchParams(window.location.search);
+            const diffParam = urlParams.get('difficulty');
+            
+            if (diffParam && ['easy', 'medium', 'hard'].includes(diffParam)) {
+                // 自動開始指定難度的遊戲
+                initGame(diffParam);
+            }
+        }
+        
+        // 啟動應用
+        initApp();
+    </script>
+</body>
+</html>
