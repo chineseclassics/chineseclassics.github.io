@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>詩詞摘句</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#9D2933', // 中国传统朱红色
+                        secondary: '#3B7960', // 中国传统青绿色
+                        accent: '#DAA520', // 金色，类似于宣纸的底色
+                        imperial: '#EECFA1', // 淡雅的米色，类似于宣纸
+                        ink: '#1C1C1C', // 墨色
+                    },
+                    fontFamily: {
+                        'song': ['SimSun', 'STSong', 'serif'],
+                        'kai': ['KaiTi', 'SimKai', 'serif'],
+                    }
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+    
+    <!-- 添加动画效果 -->
+    <style>
+        /* 字符按钮点击动画 */
+        @keyframes buttonPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(157, 41, 51, 0.5); }
+            100% { transform: scale(1); }
+        }
+        
+        .animate-click {
+            animation: buttonPulse 0.3s ease-in-out;
+        }
+        
+        /* 正确答案动画 */
+        @keyframes correctAnswer {
+            0% { transform: scale(1); }
+            10% { transform: scale(1.05); }
+            20% { transform: scale(1); }
+            30% { transform: scale(1.05); }
+            40% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            60% { transform: scale(1); }
+        }
+        
+        .animate-correct {
+            animation: correctAnswer 1s ease-in-out;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.7);
+        }
+        
+        /* 错误答案动画 */
+        @keyframes wrongAnswer {
+            0% { transform: translateX(0); }
+            10% { transform: translateX(-5px); }
+            20% { transform: translateX(5px); }
+            30% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            50% { transform: translateX(-5px); }
+            60% { transform: translateX(5px); }
+            70% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+            90% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .animate-wrong {
+            animation: wrongAnswer 0.5s ease-in-out;
+        }
+        
+        /* 分数变化动画 */
+        @keyframes scoreChange {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); color: #DAA520; }
+            100% { transform: scale(1); }
+        }
+        
+        .animate-score {
+            animation: scoreChange 0.8s ease-in-out;
+        }
+        
+        /* 面板淡入动画 */
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    </style>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+        
+        /* 自定义字体样式 - 使用更通用的字体堆栈 */
+        .font-title {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'STHeiti', 'SimHei', 'Heiti SC', 'Noto Sans CJK SC', 'Source Han Sans SC', sans-serif;
+            font-weight: 700;
+        }
+        
+        .font-text {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'STHeiti', 'SimHei', 'Heiti SC', 'Noto Sans CJK SC', 'Source Han Sans SC', sans-serif;
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #9D2933;
+            border-radius: 4px;
+        }
+        
+        /* 中国传统装饰边框 */
+        .border-chinese {
+            border-image: url('https://cdn.jsdelivr.net/gh/ant-design/ant-design@4.10.0/components/style/color/images/colorPalette.less') 30 stretch;
+        }
+        
+        /* 水墨风格背景 */
+        .bg-chinese-light {
+            background-color: #f9f5e9;
+            background-image: 
+                linear-gradient(rgba(249, 245, 233, 0.7), rgba(249, 245, 233, 0.7)),
+                url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239D2933' fill-opacity='0.08' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+        
+        .bg-chinese-dark {
+            background-color: #1a1a1a;
+            background-image: 
+                linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)),
+                url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239D2933' fill-opacity='0.12' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+
+        /* 中国风纸张效果 */
+        .paper-effect {
+            background-color: #f9f5e9;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .paper-effect::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M77 63a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 3a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm-50-3a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 3a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm2-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 3a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm48-3a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 3a6 6 0 1 1 0-12 6 6 0 0 1 0 12z' fill='%23000000' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.5;
+            z-index: 0;
+        }
+        
+        .paper-effect > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .dark .paper-effect {
+            background-color: #2a2a2a;
+        }
+
+        /* 印章效果 */
+        .seal {
+            position: relative;
+        }
+        
+        .seal::after {
+            content: "詩";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'STHeiti', 'SimHei', sans-serif;
+            color: rgba(157, 41, 51, 0.5);
+            font-size: 2.5rem;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            border: 2px solid rgba(157, 41, 51, 0.5);
+            border-radius: 50%;
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+        }
+        
+        /* 毛笔光标效果 - 使用经过Base64编码的内嵌毛笔图标 */
+        .character-btn, 
+        #clearSelection, 
+        #submitPoem, 
+        #nextRound,
+        #adminModeToggle,
+        #saveCustomPoem,
+        button,
+        select,
+        a {
+            cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAF8WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0NDYwLCAyMDIwLzA1LzEyLTE2OjA0OjE3ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMjAtMDgtMDhUMTA6MTA6MDcrMDg6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDIwLTA4LTA4VDEwOjEyOjE5KzA4OjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDIwLTA4LTA4VDEwOjEyOjE5KzA4OjAwIiBkYzpmb3JtYXQ9ImltYWdlL3BuZyIgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjExZDYwN2VkLTM0NzAtNGRhOC1hZTBmLTU2YTRhNmEyNWVkMCIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjE3YmRlN2E4LWZjMmMtM2I0Zi05NWJlLWIyYWZjYzA2YmExNSIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjc1ODRkNTJhLTY5MDUtNGI0OS1iNTBkLTk0OTEwNGU2ZWI1ZCI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6NzU4NGQ1MmEtNjkwNS00YjQ5LWI1MGQtOTQ5MTA0ZTZlYjVkIiBzdEV2dDp3aGVuPSIyMDIwLTA4LTA4VDEwOjEwOjA3KzA4OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MTFkNjA3ZWQtMzQ3MC00ZGE4LWFlMGYtNTZhNGE2YTI1ZWQwIiBzdEV2dDp3aGVuPSIyMDIwLTA4LTA4VDEwOjEyOjE5KzA4OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8L3JkZjpTZXE+IDwveG1wTU06SGlzdG9yeT4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6s3PW0AAAGS0lEQVRYhe2XW2wc1RnHf+fM7M7O7K69u77EMSROY1yTUiUlJCqElqZQXCmKVBrCrYAqSEiAhMQD4oHS9AklXngBISQEVYAXArRRaZuWAiIoUFWlSvNAAoi6SRwIie/r9e7s7F7m8jC21zHeLeqL9H87c77zne87/++c811QVW5kWDeUHuiP5bGzEsxB7NzLXgm8yF5xt57y1r0zGG4+lLrF+UNvtkEPIhLhcxfFT5Y6K98OOF58Y6TlXa+jNOvBLPxYsOeW1xoATZZs5Pl75M+RP4mWNKVadlvQwuWiZrOHVPW9T9VH2b9nIzAA6Jx/ILpRRH4GbEUxPLM5V/cAXm3LXtPO/9Yd6+sKF/xbX4wOb/pDYs9xWA/8+Mujw6LWVWDzBxeLNwzHi+FYYYdv+28B3UFjzVbTiO3oLK0rXfWQUv4vCDR9D+cXhWJhXW2K9qbG3JpGj5sA/T85kQJ2M3OcsgmBnQ3ZrmVEq7/PwtJYrj8Zs9LLW3l5aMPIJT8Cze8M16LJHQqra5d6wuH0WjEi24AO4J++NXRxf+bEbVvTO7uGwhPpBw+mF2/JjKdP6+mdnxnY2gS0AxTyZC70MG//M8nBhkM9Dy5Jnz5QUV8E2AhsSpcCbYNHD84fTh+y4tFHXduevCbRz4iAKt4DJxBjh2fZvyQSjUvU2gwUgIuhTLlHKKFEASzHsYJQpqqyEkh9GsKMoHLDuVXhOPzH7Og7ApkxAI/rAKAjF4+sL9dGPz1/KrjVqxmn4T0P8O56j6qf/3BKy+5/psvNe1y3qCJmYxlxdZtv2wcB9m7fGwU2ASXgjB3PvdPqvbmuPLDmGRG5M0i9FjWX1aWiSybLt3yDhZ8+ghEKzajyZXTHXG+OBJZVzwL0p8f2Ae3V7YTHxhrKIzU5NTQPoFYg56ta0eaHjnH60XpO/KCO/ptixCpiJFsW0frTp6nYfFfs7Fu4KvFEAEZfRaWJPVmQEJ7j3NObOQvQxHIZcLtKhYjBttfV1lY9N3qXEat/JTOe/XD3QAfBLUd8EZEFzCRUAPU6B/+XkZoM9LTnzw+uKxX94pDLXX3p2pnNxqMN09vu5SIg0nj4Xag+D6SCnTlU4GBDrr7Pc/aV6Ww96Tgf7R5qebB3aXB9hk+I6jjyP4kIBsYd0ZpLxejQYxhjIZ5iiYMKgD4gvGfbFgF5GDAAz0/mxsJpY6iISBeXdEZK3qmx7KeEq+gD/8kEUHnddg1uVaEawRiXQ/s1FPX/2P3G3c9XPnEfWFegxPHh7IXyVNLu/VBD7ePMvlAF0NKV3OC7Xut0t2cbn9R0d/uIXDx4+U9/vvOJc2xnTUoiG2bYAgLbDtwcXgcVwqwXHiOw3cuzNTKwLAV9z+S19iQv9Ldk2yZ8/VNvfbbd3zx5x9AjM3kA9G0ZwvB2A9a1Z0BwHLTU1ppL2I/3LPwDBwfb+z+/DP1v5FvDI8mF50cS55rKy9wWwpHLzhnPcbsV0WvSvUGgoihGBKIr1kBoCTC0GnStVNAYQnF3zx0QijMdGp8lZrP0lhUfhJrTGQBvMj2BcM1wXY/A4OTr75y+gvCsPpdZ8cKk0/ysb5d+ZRhjcaH1A0LLVwGUJsbGgbrrIqCaRMZOVZlRu+PfKxvbZoJHXvyZlkd+RaS6mUjDN4l1PUvLz56CQhLgHJCZTVL4GqiI0nA0vbBtjFgNhbE3MRYvksmb53fQev+vady0A3xFBTxnBLBOj5ze3ck9b2HbNcD8TxcYgTwqqKE9i7sG0g+NjBl7+hsWdHa08uLOteTa1qMa4BfTRFz4VhORMBOH3sOMVBGqnMf1k/jjTB0mIEtmdHCTCxgawAj6dMEVQsMGElW0Pfon3Pcp0M0q7vH0kZ+yM3UIcDeA/wFmJLRzcQNZNQGGU/3jw2M3leKB11oGGrJVw2nK9eDdFXZ93s89PpxpWJRVMZFrZ/lKsMCYihxMj51NjPVfbTw+4evKh6/K8M9DqICiXlPh3MTRjsUWqjQDGUH+BF+9XR/5rNbSHQA87QnVdEpEvgCiS+M+u2fH7v4bqgZoA30OAgLaIQB6vf8m+q9fwpcZdwCW+xvg/wHA/4vAjbiM/wJrDSl2bWPqbQAAAABJRU5ErkJggg==") 1 25, auto;
+        }
+        
+        /* 确保鼠标悬停状态下也使用毛笔光标 */
+        .character-btn:hover,
+        button:hover,
+        select:hover,
+        a:hover {
+            cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAF8WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0NDYwLCAyMDIwLzA1LzEyLTE2OjA0OjE3ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMjAtMDgtMDhUMTA6MTA6MDcrMDg6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDIwLTA4LTA4VDEwOjEyOjE5KzA4OjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDIwLTA4LTA4VDEwOjEyOjE5KzA4OjAwIiBkYzpmb3JtYXQ9ImltYWdlL3BuZyIgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjExZDYwN2VkLTM0NzAtNGRhOC1hZTBmLTU2YTRhNmEyNWVkMCIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjE3YmRlN2E4LWZjMmMtM2I0Zi05NWJlLWIyYWZjYzA2YmExNSIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjc1ODRkNTJhLTY5MDUtNGI0OS1iNTBkLTk0OTEwNGU2ZWI1ZCI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6NzU4NGQ1MmEtNjkwNS00YjQ5LWI1MGQtOTQ5MTA0ZTZlYjVkIiBzdEV2dDp3aGVuPSIyMDIwLTA4LTA4VDEwOjEwOjA3KzA4OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MTFkNjA3ZWQtMzQ3MC00ZGE4LWFlMGYtNTZhNGE2YTI1ZWQwIiBzdEV2dDp3aGVuPSIyMDIwLTA4LTA4VDEwOjEyOjE5KzA4OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8L3JkZjpTZXE+IDwveG1wTU06SGlzdG9yeT4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6s3PW0AAAGS0lEQVRYhe2XW2wc1RnHf+fM7M7O7K69u77EMSROY1yTUiUlJCqElqZQXCmKVBrCrYAqSEiAhMQD4oHS9AklXngBISQEVYAXArRRaZuWAiIoUFWlSvNAAoi6SRwIie/r9e7s7F7m8jC21zHeLeqL9H87c77zne87/++c811QVW5kWDeUHuiP5bGzEsxB7NzLXgm8yF5xt57y1r0zGG4+lLrF+UNvtkEPIhLhcxfFT5Y6K98OOF58Y6TlXa+jNOvBLPxYsOeW1xoATZZs5Pl75M+RP4mWNKVadlvQwuWiZrOHVPW9T9VH2b9nIzAA6Jx/ILpRRH4GbEUxPLM5V/cAXm3LXtPO/9Yd6+sKF/xbX4wOb/pDYs9xWA/8+Mujw6LWVWDzBxeLNwzHi+FYYYdv+28B3UFjzVbTiO3oLK0rXfWQUv4vCDR9D+cXhWJhXW2K9qbG3JpGj5sA/T85kQJ2M3OcsgmBnQ3ZrmVEq7/PwtJYrj8Zs9LLW3l5aMPIJT8Cze8M16LJHQqra5d6wuH0WjEi24AO4J++NXRxf+bEbVvTO7uGwhPpBw+mF2/JjKdP6+mdnxnY2gS0AxTyZC70MG//M8nBhkM9Dy5Jnz5QUV8E2AhsSpcCbYNHD84fTh+y4tFHXduevCbRz4iAKt4DJxBjh2fZvyQSjUvU2gwUgIuhTLlHKKFEASzHsYJQpqqyEkh9GsKMoHLDuVXhOPzH7Og7ApkxAI/rAKAjF4+sL9dGPz1/KrjVqxmn4T0P8O56j6qf/3BKy+5/psvNe1y3qCJmYxlxdZtv2wcB9m7fGwU2ASXgjB3PvdPqvbmuPLDmGRG5M0i9FjWX1aWiSybLt3yDhZ8+ghEKzajyZXTHXG+OBJZVzwL0p8f2Ae3V7YTHxhrKIzU5NTQPoFYg56ta0eaHjnH60XpO/KCO/ptixCpiJFsW0frTp6nYfFfs7Fu4KvFEAEZfRaWJPVmQEJ7j3NObOQvQxHIZcLtKhYjBttfV1lY9N3qXEat/JTOe/XD3QAfBLUd8EZEFzCRUAPU6B/+XkZoM9LTnzw+uKxX94pDLXX3p2pnNxqMN09vu5SIg0nj4Xag+D6SCnTlU4GBDrr7Pc/aV6Ww96Tgf7R5qebB3aXB9hk+I6jjyP4kIBsYd0ZpLxejQYxhjIZ5iiYMKgD4gvGfbFgF5GDAAz0/mxsJpY6iISBeXdEZK3qmx7KeEq+gD/8kEUHnddg1uVaEawRiXQ/s1FPX/2P3G3c9XPnEfWFegxPHh7IXyVNLu/VBD7ePMvlAF0NKV3OC7Xut0t2cbn9R0d/uIXDx4+U9/vvOJc2xnTUoiG2bYAgLbDtwcXgcVwqwXHiOw3cuzNTKwLAV9z+S19iQv9Ldk2yZ8/VNvfbbd3zx5x9AjM3kA9G0ZwvB2A9a1Z0BwHLTU1ppL2I/3LPwDBwfb+z+/DP1v5FvDI8mF50cS55rKy9wWwpHLzhnPcbsV0WvSvUGgoihGBKIr1kBoCTC0GnStVNAYQnF3zx0QijMdGp8lZrP0lhUfhJrTGQBvMj2BcM1wXY/A4OTr75y+gvCsPpdZ8cKk0/ysb5d+ZRhjcaH1A0LLVwGUJsbGgbrrIqCaRMZOVZlRu+PfKxvbZoJHXvyZlkd+RaS6mUjDN4l1PUvLz56CQhLgHJCZTVL4GqiI0nA0vbBtjFgNhbE3MRYvksmb53fQev+vady0A3xFBTxnBLBOj5ze3ck9b2HbNcD8TxcYgTwqqKE9i7sG0g+NjBl7+hsWdHa08uLOteTa1qMa4BfTRFz4VhORMBOH3sOMVBGqnMf1k/jjTB0mIEtmdHCTCxgawAj6dMEVQsMGElW0Pfon3Pcp0M0q7vH0kZ+yM3UIcDeA/wFmJLRzcQNZNQGGU/3jw2M3leKB11oGGrJVw2nK9eDdFXZ93s89PpxpWJRVMZFrZ/lKsMCYihxMj51NjPVfbTw+4evKh6/K8M9DqICiXlPh3MTRjsUWqjQDGUH+BF+9XR/5rNbSHQA87QnVdEpEvgCiS+M+u2fH7v4bqgZoA30OAgLaIQB6vf8m+q9fwpcZdwCW+xvg/wHA/4vAjbiM/wJrDSl2bWPqbQAAAABJRU5ErkJggg==") 1 25, pointer;
+        }
+        
+        /* 禁用状态仍然使用默认光标 */
+        .character-btn:disabled {
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-chinese-light dark:bg-chinese-dark text-ink dark:text-gray-200 min-h-screen transition-colors duration-300 font-text">
+    <div class="container mx-auto px-2 py-4 max-w-5xl h-screen flex flex-col">
+        <div class="flex justify-between items-center mb-3">
+            <!-- 左侧得分显示 -->
+            <div class="paper-effect p-2 sm:p-3 rounded-lg border border-secondary/30 flex items-center">
+                <span class="font-kai text-lg sm:text-xl">分數</span>
+                <span id="score" class="text-3xl sm:text-5xl font-bold text-primary ml-2 sm:ml-3">0</span>
+            </div>
+            
+            <!-- 中间标题 - 增强中国风样式 -->
+            <div class="flex-grow flex flex-col items-center justify-center mx-2 relative">
+                <!-- 背景装饰 -->
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-primary/5 dark:bg-primary/10 rounded-full blur-xl -z-10"></div>
+                
+                <!-- 主标题 -->
+                <h1 class="font-title text-3xl sm:text-5xl text-primary relative inline-block text-center px-4 py-1 mb-4">
+                    詩詞摘句
+                    <span class="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary opacity-70"></span>
+                </h1>
+                
+                <!-- 副标题 -->
+                <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 mb-1 font-kai tracking-wider">
+                    中文經典AI實驗室
+                </div>
+                
+                <!-- 墨迹装饰 -->
+                <div class="absolute -bottom-3 -right-8 text-primary/20 text-4xl transform rotate-12 font-kai hidden sm:block">詩</div>
+                <div class="absolute -top-3 -left-8 text-primary/20 text-4xl transform -rotate-12 font-kai hidden sm:block">詞</div>
+            </div>
+            
+            <!-- 右侧倒计时 -->
+            <div class="paper-effect p-2 sm:p-3 rounded-lg border border-secondary/30 bg-primary/10 flex items-center">
+                <span id="timer" class="text-3xl sm:text-5xl font-mono font-bold text-primary">30</span>
+                <span class="font-kai text-lg sm:text-xl ml-1">秒</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center justify-end space-x-2 mb-2">
+            <div id="difficultySelector" class="inline-block paper-effect px-3 py-1 rounded-lg border border-secondary/30 hidden">
+                <span class="font-kai mr-1">難度：</span>
+                <select id="difficultySelect" class="bg-white/80 dark:bg-gray-700/90 rounded-md px-2 py-1 text-sm border-none focus:ring-2 focus:ring-primary">
+                    <option value="easy">簡單</option>
+                    <option value="medium" selected>中等</option>
+                    <option value="hard">困難</option>
+                </select>
+            </div>
+            <button id="soundToggle" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm flex items-center mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                </svg>
+                音效開
+            </button>
+            <button id="adminModeToggle" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md text-sm flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                管理員
+            </button>
+        </div>
+        
+        <div id="adminPanel" class="mb-6 paper-effect p-5 rounded-lg shadow-md hidden border border-secondary/30">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-kai font-semibold">遊戲設置</h2>
+                <div class="flex items-center">
+                    <span class="mr-2 font-kai">模式：</span>
+                    <select id="gameMode" class="bg-white/80 dark:bg-gray-700/90 rounded-md px-2 py-1 text-base border-none focus:ring-2 focus:ring-primary">
+                        <option value="preset" selected>經典詩詞</option>
+                        <option value="custom">自定義詩句</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between mb-3">
+                <span class="mr-2 font-kai">詩詞數據庫：</span>
+                <select id="poemDatabase" class="bg-white/80 dark:bg-gray-700/90 rounded-md px-2 py-1 text-base border-none focus:ring-2 focus:ring-primary">
+                    <option value="default" selected>經典唐詩</option>
+                    <option value="elementary">小學生詩詞</option>
+                </select>
+            </div>
+            
+            <div id="difficultySettings" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="timeLimit" class="block text-lg font-medium mb-2">時間限制 (秒)</label>
+                    <input type="range" id="timeLimit" min="10" max="60" step="5" value="30" class="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between mt-1">
+                        <span>10</span>
+                        <span id="timeLimitValue" class="font-medium text-primary">30</span>
+                        <span>60</span>
+                    </div>
+                </div>
+                <div>
+                    <label for="charCount" class="block text-lg font-medium mb-2">字元數量 (5的倍數)</label>
+                    <input type="range" id="charCount" min="10" max="30" step="5" value="20" class="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between mt-1">
+                        <span>10</span>
+                        <span id="charCountValue" class="font-medium text-primary">20</span>
+                        <span>30</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="customPoemSettings" class="mt-4 hidden">
+                <div class="border-t border-gray-300 dark:border-gray-600 pt-4 mb-3">
+                    <h3 class="text-lg font-medium mb-2">自定義詩句</h3>
+                    <div class="grid grid-cols-1 gap-3">
+                        <div>
+                            <label for="customLine" class="block text-base font-medium mb-1">詩句內容：</label>
+                            <input type="text" id="customLine" placeholder="例如：床前明月光" class="w-full p-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-base">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="customAuthor" class="block text-base font-medium mb-1">作者：</label>
+                                <input type="text" id="customAuthor" placeholder="例如：李白" class="w-full p-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-base">
+                            </div>
+                            <div>
+                                <label for="customPoem" class="block text-base font-medium mb-1">詩名：</label>
+                                <input type="text" id="customPoem" placeholder="例如：靜夜思" class="w-full p-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-base">
+                            </div>
+                        </div>
+                        <button id="saveCustomPoem" class="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors mt-1">保存詩句</button>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium mb-2">已保存的自定義詩句</h3>
+                    <div id="savedPoemsContainer" class="max-h-40 overflow-y-auto bg-white dark:bg-gray-700 p-2 rounded-md">
+                        <p id="noSavedPoems" class="text-gray-500 dark:text-gray-400 text-center py-2">尚未保存任何自定義詩句</p>
+                        <ul id="savedPoemsList" class="hidden"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏消息区域 (结果公布) -->
+        <div id="gameMessage" class="hidden mb-3 paper-effect p-3 rounded-lg border border-secondary/30 text-center">
+            <p class="text-lg font-kai font-bold"></p>
+            <div id="correctAnswer" class="hidden mt-2 text-2xl font-kai font-bold text-primary"></div>
+        </div>
+        
+        <!-- 诗句显示区域 -->
+        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30 seal flex flex-col justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-kai font-semibold mb-2 text-primary">請找出以下詩詞名句：</h2>
+                <div id="poemHint" class="text-lg font-kai p-2 rounded-md shadow-inner mb-2 bg-imperial/30 dark:bg-gray-700/50 border border-secondary/20"></div>
+            </div>
+            
+            <div class="flex-grow flex items-center justify-center my-2">
+                <textarea id="poemDisplay" class="w-full p-3 h-24 rounded-lg shadow-inner bg-imperial/70 dark:bg-gray-700/80 text-3xl font-kai font-bold text-center flex items-center justify-center focus:outline-none" readonly style="resize: none; text-align-last: center;"></textarea>
+            </div>
+        </div>
+        
+        <!-- 汉字选择区域 -->
+        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30 flex-grow">
+            <h2 class="text-lg font-kai font-semibold mb-2 text-primary">點選漢字組成詩句</h2>
+            <div id="charactersGrid" class="grid grid-cols-5 gap-2 max-h-[35vh] overflow-y-auto">
+                <!-- Characters will be inserted here by JavaScript -->
+            </div>
+            
+            <!-- 把按钮移动到选字界面下方并居中布局 -->
+            <div class="flex justify-center space-x-20 mt-6">
+                <button id="clearSelection" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-md transition-colors font-kai shadow-md text-lg">清除選擇</button>
+                <button id="submitPoem" class="bg-secondary hover:bg-secondary/80 text-white px-8 py-3 rounded-md transition-colors font-kai shadow-md text-lg">提交</button>
+            </div>
+        </div>
+        
+        <!-- Custom notification element -->
+        <div id="notification" class="fixed top-4 right-4 left-4 transform transition-transform duration-300 translate-y-[-150%] z-50">
+            <div class="max-w-md mx-auto bg-white dark:bg-gray-800 border-l-4 border-yellow-500 shadow-lg p-4 rounded-r">
+                <div class="flex items-center">
+                    <div class="text-yellow-500 flex-shrink-0">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p id="notificationText" class="text-sm text-gray-700 dark:text-gray-300"></p>
+                    </div>
+                    <div class="ml-auto pl-3">
+                        <button id="closeNotification" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // 音效管理類
+        class SoundManager {
+            constructor() {
+                this.audioContext = null;
+                this.isMuted = false;
+                this.sounds = {};
+                this.init();
+            }
+            
+            init() {
+                try {
+                    // 創建音頻上下文
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.audioContext = new AudioContext();
+                    
+                    // 創建各種音效
+                    this.createSounds();
+                } catch (e) {
+                    console.error('Web Audio API 不支持:', e);
+                }
+            }
+            
+            createSounds() {
+                // 漢字點擊音效 (古箏音色)
+                this.sounds.charClick = {
+                    play: () => this.playTone(600, 0.1, "triangle", 0.3)
+                };
+                
+                // 回答正確音效 (中國傳統樂器音色)
+                this.sounds.correct = {
+                    play: () => {
+                        // 模擬中國傳統樂器的音階
+                        setTimeout(() => this.playTone(523.25, 0.15, "sine", 0.4), 0);   // C5
+                        setTimeout(() => this.playTone(587.33, 0.15, "sine", 0.4), 150); // D5
+                        setTimeout(() => this.playTone(659.25, 0.15, "sine", 0.4), 300); // E5
+                        setTimeout(() => this.playTone(783.99, 0.3, "sine", 0.4), 450);  // G5
+                    }
+                };
+                
+                // 回答錯誤音效
+                this.sounds.wrong = {
+                    play: () => {
+                        setTimeout(() => this.playTone(349.23, 0.2, "sine", 0.4), 0);    // F4
+                        setTimeout(() => this.playTone(329.63, 0.3, "sine", 0.4), 250);  // E4
+                    }
+                };
+                
+                // 時間警告音效
+                this.sounds.timeWarning = {
+                    play: () => {
+                        setTimeout(() => this.playTone(440, 0.1, "sine", 0.2), 0);  
+                        setTimeout(() => this.playTone(440, 0.1, "sine", 0.2), 200);
+                    }
+                };
+                
+                // 時間結束音效
+                this.sounds.timeUp = {
+                    play: () => {
+                        setTimeout(() => this.playTone(523.25, 0.15, "sawtooth", 0.3), 0);    // C5
+                        setTimeout(() => this.playTone(392.00, 0.15, "sawtooth", 0.3), 200);  // G4
+                        setTimeout(() => this.playTone(329.63, 0.3, "sawtooth", 0.3), 400);   // E4
+                    }
+                };
+                
+                // 按鈕點擊音效
+                this.sounds.buttonClick = {
+                    play: () => this.playTone(440, 0.1, "sine", 0.15)
+                };
+                
+                // 新回合開始音效
+                this.sounds.newRound = {
+                    play: () => {
+                        // 類似於中國傳統音樂的五聲音階 (C, D, E, G, A)
+                        setTimeout(() => this.playTone(523.25, 0.15, "sine", 0.3), 0);    // C5
+                        setTimeout(() => this.playTone(587.33, 0.15, "sine", 0.3), 120);   // D5
+                        setTimeout(() => this.playTone(659.25, 0.15, "sine", 0.3), 240);   // E5
+                        setTimeout(() => this.playTone(783.99, 0.15, "sine", 0.3), 360);   // G5
+                        setTimeout(() => this.playTone(880.00, 0.3, "sine", 0.3), 480);    // A5
+                    }
+                };
+            }
+            
+            // 播放音調
+            playTone(frequency, duration, type = "sine", volume = 0.5) {
+                if (this.isMuted || !this.audioContext) return;
+                
+                try {
+                    // 如果音頻上下文被暫停，重啟它
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                    
+                    // 創建振盪器
+                    const oscillator = this.audioContext.createOscillator();
+                    oscillator.type = type;
+                    oscillator.frequency.value = frequency;
+                    
+                    // 創建音量控制
+                    const gainNode = this.audioContext.createGain();
+                    gainNode.gain.value = volume;
+                    
+                    // 連接節點
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    // 設置衰減
+                    gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+                    
+                    // 播放聲音
+                    oscillator.start();
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                } catch (e) {
+                    console.error('播放音效失敗:', e);
+                }
+            }
+            
+            // 切換靜音
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                return this.isMuted;
+            }
+            
+            // 播放指定音效
+            play(soundName) {
+                if (this.isMuted || !this.sounds[soundName]) return;
+                this.sounds[soundName].play();
+            }
+        }
+        
+        // 創建全局音效管理器
+        const soundManager = new SoundManager();
+
+        // 小學生詩詞數據庫 - 從提供的文件中選取的經典詩句
+        const elementaryPoemLines = [
+            // 蘇軾作品
+            { line: "荷盡已無擎雨蓋", author: "蘇軾", poem: "贈刘景文" },
+            { line: "菊殘猶有傲霜枝", author: "蘇軾", poem: "贈刘景文" },
+            { line: "一年好景君須記", author: "蘇軾", poem: "贈刘景文" },
+            { line: "最是橙黃橘綠時", author: "蘇軾", poem: "贈刘景文" },
+            
+            { line: "橫看成嶺側成峰", author: "蘇軾", poem: "題西林壁" },
+            { line: "遠近高低各不同", author: "蘇軾", poem: "題西林壁" },
+            { line: "不識廬山真面目", author: "蘇軾", poem: "題西林壁" },
+            { line: "只緣身在此山中", author: "蘇軾", poem: "題西林壁" },
+            
+            { line: "竹外桃花三兩枝", author: "蘇軾", poem: "惠崇春江晚景" },
+            { line: "春江水暖鴨先知", author: "蘇軾", poem: "惠崇春江晚景" },
+            
+            { line: "欲把西湖比西子", author: "蘇軾", poem: "飲湖上初晴後雨" },
+            { line: "淡妝濃抹總相宜", author: "蘇軾", poem: "飲湖上初晴後雨" },
+            
+            // 王安石作品
+            { line: "墻角數枝梅", author: "王安石", poem: "梅花" },
+            { line: "凌寒獨自開", author: "王安石", poem: "梅花" },
+            { line: "遙知不是雪", author: "王安石", poem: "梅花" },
+            { line: "為有暗香來", author: "王安石", poem: "梅花" },
+            
+            { line: "春風又綠江南岸", author: "王安石", poem: "泊船瓜洲" },
+            { line: "明月何時照我還", author: "王安石", poem: "泊船瓜洲" },
+            
+            { line: "爆竹聲中一歲除", author: "王安石", poem: "元日" },
+            { line: "春風送暖入屠蘇", author: "王安石", poem: "元日" },
+            { line: "千門萬戶曈曈日", author: "王安石", poem: "元日" },
+            { line: "總把新桃換舊符", author: "王安石", poem: "元日" },
+            
+            // 楊萬里作品
+            { line: "接天蓮葉無窮碧", author: "楊萬里", poem: "晓出净慈寺送林子方" },
+            { line: "映日荷花別樣紅", author: "楊萬里", poem: "晓出净慈寺送林子方" },
+            
+            // 陸游作品
+            { line: "王師北定中原日", author: "陸游", poem: "示儿" },
+            { line: "家祭無忘告乃翁", author: "陸游", poem: "示儿" },
+            
+            // 范成大作品
+            { line: "梅子金黃杏子肥", author: "范成大", poem: "四时田园杂兴" },
+            { line: "麥花雪白菜花稀", author: "范成大", poem: "四时田园杂兴" },
+            
+            // 邵雍作品
+            { line: "一去二三里", author: "邵雍", poem: "山村咏怀" },
+            { line: "煙村四五家", author: "邵雍", poem: "山村咏怀" },
+            { line: "亭臺六七座", author: "邵雍", poem: "山村咏怀" },
+            { line: "八九十枝花", author: "邵雍", poem: "山村咏怀" },
+            
+            // 朱熹作品
+            { line: "等閒識得東風面", author: "朱熹", poem: "春日" },
+            { line: "萬紫千紅總是春", author: "朱熹", poem: "春日" },
+            
+            // 林升作品
+            { line: "山外青山樓外樓", author: "林升", poem: "題臨安邸" },
+            { line: "西湖歌舞幾時休", author: "林升", poem: "題臨安邸" },
+            { line: "暖風熏得遊人醉", author: "林升", poem: "題臨安邸" },
+            { line: "直把杭州作汴州", author: "林升", poem: "題臨安邸" },
+            
+            // 葉紹翁作品
+            { line: "春色滿園關不住", author: "葉紹翁", poem: "游园不值" },
+            { line: "一枝紅杏出牆來", author: "葉紹翁", poem: "游园不值" },
+            
+            // 李白作品
+            { line: "床前明月光", author: "李白", poem: "静夜思" },
+            { line: "疑是地上霜", author: "李白", poem: "静夜思" },
+            { line: "舉頭望明月", author: "李白", poem: "静夜思" },
+            { line: "低頭思故鄉", author: "李白", poem: "静夜思" },
+            
+            { line: "李白乘舟將欲行", author: "李白", poem: "赠汪伦" },
+            { line: "忽聞岸上踏歌聲", author: "李白", poem: "赠汪伦" },
+            { line: "桃花潭水深千尺", author: "李白", poem: "赠汪伦" },
+            { line: "不及汪倫送我情", author: "李白", poem: "赠汪伦" },
+            
+            { line: "天門中斷楚江開", author: "李白", poem: "望天門山" },
+            { line: "碧水東流至此回", author: "李白", poem: "望天門山" },
+            { line: "兩岸青山相對出", author: "李白", poem: "望天門山" },
+            { line: "孤帆一片日邊來", author: "李白", poem: "望天門山" },
+            
+            { line: "朝辭白帝彩雲間", author: "李白", poem: "早发白帝城" },
+            { line: "千里江陵一日還", author: "李白", poem: "早发白帝城" },
+            { line: "兩岸猿聲啼不住", author: "李白", poem: "早发白帝城" },
+            { line: "輕舟已過萬重山", author: "李白", poem: "早发白帝城" },
+            
+            { line: "飛流直下三千尺", author: "李白", poem: "望庐山瀑布" },
+            { line: "疑是銀河落九天", author: "李白", poem: "望庐山瀑布" },
+            
+            // 杜甫作品
+            { line: "兩個黃鸝鳴翠柳", author: "杜甫", poem: "绝句" },
+            { line: "一行白鷺上青天", author: "杜甫", poem: "绝句" },
+            { line: "窗含西嶺千秋雪", author: "杜甫", poem: "绝句" },
+            { line: "門泊東吳萬里船", author: "杜甫", poem: "绝句" },
+            
+            { line: "好雨知時節", author: "杜甫", poem: "春夜喜雨" },
+            { line: "當春乃發生", author: "杜甫", poem: "春夜喜雨" },
+            { line: "隨風潛入夜", author: "杜甫", poem: "春夜喜雨" },
+            { line: "潤物細無聲", author: "杜甫", poem: "春夜喜雨" },
+            
+            // 杜牧作品
+            { line: "清明時節雨紛紛", author: "杜牧", poem: "清明" },
+            { line: "路上行人欲斷魂", author: "杜牧", poem: "清明" },
+            { line: "借問酒家何處有", author: "杜牧", poem: "清明" },
+            { line: "牧童遙指杏花村", author: "杜牧", poem: "清明" },
+            
+            { line: "停車坐愛楓林晚", author: "杜牧", poem: "山行" },
+            { line: "霜葉紅於二月花", author: "杜牧", poem: "山行" },
+            
+            // 李商隱作品
+            { line: "夕陽無限好", author: "李商隱", poem: "登樂游原" },
+            { line: "只是近黃昏", author: "李商隱", poem: "登樂游原" },
+            
+            // 白居易作品
+            { line: "離離原上草", author: "白居易", poem: "赋得古原草送别" },
+            { line: "一歲一枯榮", author: "白居易", poem: "赋得古原草送别" },
+            { line: "野火燒不盡", author: "白居易", poem: "赋得古原草送别" },
+            { line: "春風吹又生", author: "白居易", poem: "赋得古原草送别" },
+            
+            // 高適作品
+            { line: "莫愁前路無知己", author: "高適", poem: "别董大" },
+            { line: "天下誰人不識君", author: "高適", poem: "别董大" },
+            
+            // 張繼作品
+            { line: "月落烏啼霜滿天", author: "張繼", poem: "枫桥夜泊" },
+            { line: "江楓漁火對愁眠", author: "張繼", poem: "枫桥夜泊" },
+            { line: "姑蘇城外寒山寺", author: "張繼", poem: "枫桥夜泊" },
+            { line: "夜半鐘聲到客船", author: "張繼", poem: "枫桥夜泊" },
+            
+            // 孟郊作品
+            { line: "誰言寸草心", author: "孟郊", poem: "游子吟" },
+            { line: "報得三春暉", author: "孟郊", poem: "游子吟" },
+            
+            // 劉禹錫作品
+            { line: "舊時王謝堂前燕", author: "劉禹錫", poem: "乌衣巷" },
+            { line: "飛入尋常百姓家", author: "劉禹錫", poem: "乌衣巷" },
+            
+            // 李紳作品
+            { line: "鋤禾日當午", author: "李紳", poem: "悯农" },
+            { line: "汗滴禾下土", author: "李紳", poem: "悯农" },
+            { line: "誰知盤中餐", author: "李紳", poem: "悯农" },
+            { line: "粒粒皆辛苦", author: "李紳", poem: "悯农" },
+            
+            // 崔護作品
+            { line: "人面不知何處去", author: "崔護", poem: "题都城南庄" },
+            { line: "桃花依舊笑春風", author: "崔護", poem: "题都城南庄" },
+            
+            // 柳宗元作品
+            { line: "千山鳥飛絕", author: "柳宗元", poem: "江雪" },
+            { line: "萬徑人蹤滅", author: "柳宗元", poem: "江雪" },
+            { line: "孤舟蓑笠翁", author: "柳宗元", poem: "江雪" },
+            { line: "獨釣寒江雪", author: "柳宗元", poem: "江雪" },
+            
+            // 駱賓王作品
+            { line: "鵝鵝鵝", author: "駱賓王", poem: "咏鹅" },
+            { line: "曲項向天歌", author: "駱賓王", poem: "咏鹅" },
+            { line: "白毛浮綠水", author: "駱賓王", poem: "咏鹅" },
+            { line: "紅掌撥清波", author: "駱賓王", poem: "咏鹅" },
+            
+            // 賀知章作品
+            { line: "碧玉妝成一樹高", author: "賀知章", poem: "咏柳" },
+            { line: "萬條垂下綠絲絡", author: "賀知章", poem: "咏柳" },
+            { line: "不知細葉誰裁出", author: "賀知章", poem: "咏柳" },
+            { line: "二月春風似剪刀", author: "賀知章", poem: "咏柳" },
+            
+            // 王之渙作品
+            { line: "白日依山盡", author: "王之渙", poem: "登鹳雀楼" },
+            { line: "黃河入海流", author: "王之渙", poem: "登鹳雀楼" },
+            { line: "欲窮千里目", author: "王之渙", poem: "登鹳雀楼" },
+            { line: "更上一層樓", author: "王之渙", poem: "登鹳雀楼" },
+            
+            // 孟浩然作品
+            { line: "春眠不覺曉", author: "孟浩然", poem: "春晓" },
+            { line: "處處聞啼鳥", author: "孟浩然", poem: "春晓" },
+            { line: "夜來風雨聲", author: "孟浩然", poem: "春晓" },
+            { line: "花落知多少", author: "孟浩然", poem: "春晓" },
+            
+            // 王維作品
+            { line: "獨在異鄉為異客", author: "王維", poem: "九月九日忆山东兄弟" },
+            { line: "每逢佳節倍思親", author: "王維", poem: "九月九日忆山东兄弟" },
+            
+            { line: "紅豆生南國", author: "王維", poem: "相思" },
+            { line: "春來發幾枝", author: "王維", poem: "相思" },
+            { line: "願君多採擷", author: "王維", poem: "相思" },
+            { line: "此物最相思", author: "王維", poem: "相思" },
+            
+            { line: "勸君更盡一杯酒", author: "王維", poem: "送元二使安西" },
+            { line: "西出陽關無故人", author: "王維", poem: "送元二使安西" },
+            
+            // 靜夏的部分
+            { line: "小松初數尺", author: "王建", poem: "小松" },
+            { line: "未有直生枝", author: "王建", poem: "小松" }
+        ];
+        
+        // 詩詞庫 - 從詩詞庫AI遊戲.docx中導入的詩句
+        const tangPoetryLines = [
+            // 漢樂府《長歌行》
+            { line: "青青園中葵", author: "漢樂府", poem: "長歌行" },
+            { line: "朝露待日晞", author: "漢樂府", poem: "長歌行" },
+            { line: "少壯不努力", author: "漢樂府", poem: "長歌行" },
+            { line: "老大徒傷悲", author: "漢樂府", poem: "長歌行" },
+            
+            // 古詩十九首《庭中有奇樹》
+            { line: "庭中有奇樹", author: "古詩十九首", poem: "庭中有奇樹" },
+            { line: "綠葉發華滋", author: "古詩十九首", poem: "庭中有奇樹" },
+            { line: "此物何足貴", author: "古詩十九首", poem: "庭中有奇樹" },
+            { line: "但感別經時", author: "古詩十九首", poem: "庭中有奇樹" },
+            
+            // 駱賓王《詠鵝》
+            { line: "白毛浮綠水", author: "駱賓王", poem: "詠鵝" },
+            { line: "紅掌撥清波", author: "駱賓王", poem: "詠鵝" },
+            
+            // 賀知章《詠柳》
+            { line: "不知細葉誰裁出", author: "賀知章", poem: "詠柳" },
+            { line: "二月春風似剪刀", author: "賀知章", poem: "詠柳" },
+            
+            // 王之渙《登鸛雀樓》
+            { line: "欲窮千里目", author: "王之渙", poem: "登鸛雀樓" },
+            { line: "更上一層樓", author: "王之渙", poem: "登鸛雀樓" },
+            
+            // 孟浩然《春曉》
+            { line: "夜來風雨聲", author: "孟浩然", poem: "春曉" },
+            { line: "花落知多少", author: "孟浩然", poem: "春曉" },
+            
+            // 王維《九月九日憶山東兄弟》
+            { line: "獨在異鄉為異客", author: "王維", poem: "九月九日憶山東兄弟" },
+            { line: "每逢佳節倍思親", author: "王維", poem: "九月九日憶山東兄弟" },
+            
+            // 王維《相思》
+            { line: "願君多採擷", author: "王維", poem: "相思" },
+            { line: "此物最相思", author: "王維", poem: "相思" },
+            
+            // 王維《送元二使安西》
+            { line: "勸君更盡一杯酒", author: "王維", poem: "送元二使安西" },
+            { line: "西出陽關無故人", author: "王維", poem: "送元二使安西" },
+            
+            // 王維《竹里館》
+            { line: "深林人不知", author: "王維", poem: "竹里館" },
+            { line: "明月來相照", author: "王維", poem: "竹里館" },
+            
+            // 王昌齡《出塞》其一
+            { line: "但使龍城飛將在", author: "王昌齡", poem: "出塞" },
+            { line: "不教胡馬度陰山", author: "王昌齡", poem: "出塞" },
+            
+            // 王昌齡《從軍行》其一
+            { line: "更吹羌笛關山月", author: "王昌齡", poem: "從軍行" },
+            { line: "無那金閨萬里愁", author: "王昌齡", poem: "從軍行" },
+            
+            // 高適《別董大》其一
+            { line: "莫愁前路無知己", author: "高適", poem: "別董大" },
+            { line: "天下誰人不識君", author: "高適", poem: "別董大" },
+            
+            // 李白《靜夜思》
+            { line: "舉頭望明月", author: "李白", poem: "靜夜思" },
+            { line: "低頭思故鄉", author: "李白", poem: "靜夜思" },
+            
+            // 李白《送友人》
+            { line: "浮雲遊子意", author: "李白", poem: "送友人" },
+            { line: "落日故人情", author: "李白", poem: "送友人" },
+            
+            // 李白《贈汪倫》
+            { line: "桃花潭水深千尺", author: "李白", poem: "贈汪倫" },
+            { line: "不及汪倫送我情", author: "李白", poem: "贈汪倫" },
+            
+            // 李白《望廬山瀑布》其二
+            { line: "飛流直下三千尺", author: "李白", poem: "望廬山瀑布" },
+            { line: "疑是銀河落九天", author: "李白", poem: "望廬山瀑布" },
+            
+            // 李白《獨坐敬亭山》
+            { line: "相看兩不厭", author: "李白", poem: "獨坐敬亭山" },
+            { line: "只有敬亭山", author: "李白", poem: "獨坐敬亭山" },
+            
+            // 李白《黃鶴樓送孟浩然之廣陵》
+            { line: "孤帆遠影碧空盡", author: "李白", poem: "黃鶴樓送孟浩然之廣陵" },
+            { line: "唯見長江天際流", author: "李白", poem: "黃鶴樓送孟浩然之廣陵" },
+            
+            // 李白《望天門山》
+            { line: "兩岸青山相對出", author: "李白", poem: "望天門山" },
+            { line: "孤帆一片日邊來", author: "李白", poem: "望天門山" },
+            
+            // 杜甫《客至》
+            { line: "花徑不曾緣客掃", author: "杜甫", poem: "客至" },
+            { line: "蓬門今始為君開", author: "杜甫", poem: "客至" },
+            
+            // 杜甫《春夜喜雨》
+            { line: "隨風潛入夜", author: "杜甫", poem: "春夜喜雨" },
+            { line: "潤物細無聲", author: "杜甫", poem: "春夜喜雨" },
+            { line: "曉看紅濕處", author: "杜甫", poem: "春夜喜雨" },
+            { line: "花重錦官城", author: "杜甫", poem: "春夜喜雨" },
+            
+            // 杜甫《絕句》
+            { line: "兩個黃鸝鳴翠柳", author: "杜甫", poem: "絕句" },
+            { line: "一行白鷺上青天", author: "杜甫", poem: "絕句" },
+            
+            // 張籍《楓橋夜泊》
+            { line: "月落烏啼霜滿天", author: "張籍", poem: "楓橋夜泊" },
+            { line: "江楓漁火對愁眠", author: "張籍", poem: "楓橋夜泊" },
+            
+            // 孟郊《遊子吟》
+            { line: "誰言寸草心", author: "孟郊", poem: "遊子吟" },
+            { line: "報得三春暉", author: "孟郊", poem: "遊子吟" },
+            
+            // 白居易《賦得古原草送別》
+            { line: "野火燒不盡", author: "白居易", poem: "賦得古原草送別" },
+            { line: "春風吹又生", author: "白居易", poem: "賦得古原草送別" },
+            
+            // 白居易《暮江吟》
+            { line: "一道殘陽鋪水中", author: "白居易", poem: "暮江吟" },
+            { line: "半江瑟瑟半江紅", author: "白居易", poem: "暮江吟" },
+            
+            // 白居易《賣炭翁》
+            { line: "可憐身上衣正單", author: "白居易", poem: "賣炭翁" },
+            { line: "心憂炭賤願天寒", author: "白居易", poem: "賣炭翁" },
+            
+            // 白居易《大林寺桃花》
+            { line: "人間四月芳菲盡", author: "白居易", poem: "大林寺桃花" },
+            { line: "山寺桃花始盛開", author: "白居易", poem: "大林寺桃花" },
+            
+            // 賈島《尋隱者不遇》
+            { line: "只在此山中", author: "賈島", poem: "尋隱者不遇" },
+            { line: "雲深不知處", author: "賈島", poem: "尋隱者不遇" },
+            
+            // 杜牧《山行》
+            { line: "停車坐愛楓林晚", author: "杜牧", poem: "山行" },
+            { line: "霜葉紅於二月花", author: "杜牧", poem: "山行" },
+            
+            // 杜牧《江南春》
+            { line: "南朝四百八十寺", author: "杜牧", poem: "江南春" },
+            { line: "多少樓臺煙雨中", author: "杜牧", poem: "江南春" },
+            
+            // 張志和《漁歌子》
+            { line: "青箬笠", author: "張志和", poem: "漁歌子" },
+            { line: "綠蓑衣", author: "張志和", poem: "漁歌子" },
+            { line: "斜風細雨不須歸", author: "張志和", poem: "漁歌子" },
+            
+            // 王安石《梅花》
+            { line: "遙知不是雪", author: "王安石", poem: "梅花" },
+            { line: "為有暗香來", author: "王安石", poem: "梅花" },
+            
+            // 王安石《書湖陰先生壁》其一
+            { line: "一水護田將綠繞", author: "王安石", poem: "書湖陰先生壁" },
+            { line: "兩山排闥送青來", author: "王安石", poem: "書湖陰先生壁" },
+            
+            // 蘇軾《水調歌頭》
+            { line: "但願人長久", author: "蘇軾", poem: "水調歌頭" },
+            { line: "千里共嬋娟", author: "蘇軾", poem: "水調歌頭" },
+            { line: "人有悲歡離合", author: "蘇軾", poem: "水調歌頭" },
+            { line: "月有陰晴圓缺", author: "蘇軾", poem: "水調歌頭" },
+            
+            // 蘇軾《題西林壁》
+            { line: "不識廬山真面目", author: "蘇軾", poem: "題西林壁" },
+            { line: "只緣身在此山中", author: "蘇軾", poem: "題西林壁" },
+            
+            // 蘇軾《飲湖上初晴後雨》
+            { line: "欲把西湖比西子", author: "蘇軾", poem: "飲湖上初晴後雨" },
+            { line: "淡妝濃抹總相宜", author: "蘇軾", poem: "飲湖上初晴後雨" },
+            
+            // 楊萬里《曉出淨慈寺送林子方》其二
+            { line: "接天蓮葉無窮碧", author: "楊萬里", poem: "曉出淨慈寺送林子方" },
+            { line: "映日荷花別樣紅", author: "楊萬里", poem: "曉出淨慈寺送林子方" },
+            
+            // 朱熹《觀書有感》
+            { line: "問渠那得清如許", author: "朱熹", poem: "觀書有感" },
+            { line: "為有源頭活水來", author: "朱熹", poem: "觀書有感" },
+            
+            // 林升《題臨安邸》
+            { line: "暖風薰得遊人醉", author: "林升", poem: "題臨安邸" },
+            { line: "直把杭州作汴州", author: "林升", poem: "題臨安邸" },
+            
+            // 馬致遠《天淨沙·秋思》
+            { line: "枯藤老樹昏鴉", author: "馬致遠", poem: "天淨沙·秋思" },
+            { line: "小橋流水人家", author: "馬致遠", poem: "天淨沙·秋思" },
+            { line: "夕陽西下", author: "馬致遠", poem: "天淨沙·秋思" },
+            { line: "斷腸人在天涯", author: "馬致遠", poem: "天淨沙·秋思" },
+            
+            // 《詩經·關雎》
+            { line: "關關雎鳩", author: "詩經", poem: "關雎" },
+            { line: "在河之洲", author: "詩經", poem: "關雎" },
+            { line: "窈窕淑女", author: "詩經", poem: "關雎" },
+            { line: "君子好逑", author: "詩經", poem: "關雎" },
+            
+            // 《詩經·蒹葭》
+            { line: "蒹葭蒼蒼", author: "詩經", poem: "蒹葭" },
+            { line: "白露為霜", author: "詩經", poem: "蒹葭" },
+            { line: "所謂伊人", author: "詩經", poem: "蒹葭" },
+            { line: "在水一方", author: "詩經", poem: "蒹葭" },
+            
+            // 曹植《七哀詩》
+            { line: "明月照高樓", author: "曹植", poem: "七哀詩" },
+            { line: "流光正徘徊", author: "曹植", poem: "七哀詩" },
+            { line: "願為西南風", author: "曹植", poem: "七哀詩" },
+            { line: "長逝入君懷", author: "曹植", poem: "七哀詩" },
+            
+            // 陶淵明《歸園田居》其一
+            { line: "羈鳥戀舊林", author: "陶淵明", poem: "歸園田居" },
+            { line: "池魚思故淵", author: "陶淵明", poem: "歸園田居" },
+            { line: "久在樊籠裏", author: "陶淵明", poem: "歸園田居" },
+            { line: "復得返自然", author: "陶淵明", poem: "歸園田居" },
+            
+            // 陶淵明《飲酒詩》
+            { line: "採菊東籬下", author: "陶淵明", poem: "飲酒詩" },
+            { line: "悠然見南山", author: "陶淵明", poem: "飲酒詩" },
+            { line: "問君何能爾", author: "陶淵明", poem: "飲酒詩" },
+            { line: "心遠地自偏", author: "陶淵明", poem: "飲酒詩" },
+            
+            // 張若虛《春江花月夜》
+            { line: "春江潮水連海平", author: "張若虛", poem: "春江花月夜" },
+            { line: "海上明月共潮生", author: "張若虛", poem: "春江花月夜" },
+            { line: "江畔何人初見月", author: "張若虛", poem: "春江花月夜" },
+            { line: "江月何年初照人", author: "張若虛", poem: "春江花月夜" },
+            { line: "人生代代無窮已", author: "張若虛", poem: "春江花月夜" },
+            { line: "江月年年只相似", author: "張若虛", poem: "春江花月夜" },
+            { line: "不知江月待何人", author: "張若虛", poem: "春江花月夜" },
+            { line: "但見長江送流水", author: "張若虛", poem: "春江花月夜" },
+            
+            // 李白《蜀道難》
+            { line: "蜀道之難", author: "李白", poem: "蜀道難" },
+            { line: "難於上青天", author: "李白", poem: "蜀道難" },
+            { line: "一夫當關", author: "李白", poem: "蜀道難" },
+            { line: "萬夫莫開", author: "李白", poem: "蜀道難" },
+            { line: "連峰去天不盈尺", author: "李白", poem: "蜀道難" },
+            { line: "枯松倒掛倚絕壁", author: "李白", poem: "蜀道難" },
+            { line: "劍閣崢嶸而崔嵬", author: "李白", poem: "蜀道難" },
+            { line: "所守或匪親", author: "李白", poem: "蜀道難" },
+            
+            // 李白《夢遊天姥吟留別》
+            { line: "安能摧眉折腰事權貴", author: "李白", poem: "夢遊天姥吟留別" },
+            { line: "使我不得開心顏", author: "李白", poem: "夢遊天姥吟留別" },
+            { line: "半壁見海日", author: "李白", poem: "夢遊天姥吟留別" },
+            { line: "空中聞天雞", author: "李白", poem: "夢遊天姥吟留別" },
+            { line: "霓為衣兮風為馬", author: "李白", poem: "夢遊天姥吟留別" },
+            { line: "雲之君兮紛紛而來下", author: "李白", poem: "夢遊天姥吟留別" },
+            { line: "且放白鹿青崖間", author: "李白", poem: "夢遊天姥吟留別" },
+            { line: "須行即騎訪名山", author: "李白", poem: "夢遊天姥吟留別" },
+            
+            // 李白《將進酒》
+            { line: "君不見黃河之水天上來", author: "李白", poem: "將進酒" },
+            { line: "奔流到海不復回", author: "李白", poem: "將進酒" },
+            { line: "天生我材必有用", author: "李白", poem: "將進酒" },
+            { line: "千金散盡還復來", author: "李白", poem: "將進酒" },
+            { line: "古來聖賢皆寂寞", author: "李白", poem: "將進酒" },
+            { line: "惟有飲者留其名", author: "李白", poem: "將進酒" },
+            
+            // 杜甫《登高》
+            { line: "無邊落木蕭蕭下", author: "杜甫", poem: "登高" },
+            { line: "不盡長江滾滾來", author: "杜甫", poem: "登高" },
+            { line: "萬里悲秋常作客", author: "杜甫", poem: "登高" },
+            { line: "百年多病獨登臺", author: "杜甫", poem: "登高" },
+            
+            // 李商隱《無題》
+            { line: "春蠶到死絲方盡", author: "李商隱", poem: "無題" },
+            { line: "蠟炬成灰淚始乾", author: "李商隱", poem: "無題" },
+            { line: "身無彩鳳雙飛翼", author: "李商隱", poem: "無題" },
+            { line: "心有靈犀一點通", author: "李商隱", poem: "無題" },
+            
+            // 白居易《長恨歌》
+            { line: "回眸一笑百媚生", author: "白居易", poem: "長恨歌" },
+            { line: "六宮粉黛無顏色", author: "白居易", poem: "長恨歌" },
+            { line: "在天願作比翼鳥", author: "白居易", poem: "長恨歌" },
+            { line: "在地願為連理枝", author: "白居易", poem: "長恨歌" },
+            { line: "天長地久有時盡", author: "白居易", poem: "長恨歌" },
+            { line: "此恨綿綿無絕期", author: "白居易", poem: "長恨歌" },
+            { line: "春風桃李花開日", author: "白居易", poem: "長恨歌" },
+            { line: "秋雨梧桐葉落時", author: "白居易", poem: "長恨歌" },
+            
+            // 李煜《虞美人》
+            { line: "問君能有幾多愁", author: "李煜", poem: "虞美人" },
+            { line: "恰似一江春水向東流", author: "李煜", poem: "虞美人" },
+            
+            // 辛棄疾《青玉案·元夕》
+            { line: "眾裏尋他千百度", author: "辛棄疾", poem: "青玉案·元夕" },
+            { line: "驀然回首", author: "辛棄疾", poem: "青玉案·元夕" },
+            { line: "那人卻在", author: "辛棄疾", poem: "青玉案·元夕" },
+            { line: "燈火闌珊處", author: "辛棄疾", poem: "青玉案·元夕" },
+            
+            // 文天祥《過零丁洋》
+            { line: "人生自古誰無死", author: "文天祥", poem: "過零丁洋" },
+            { line: "留取丹心照汗青", author: "文天祥", poem: "過零丁洋" },
+            { line: "山河破碎風飄絮", author: "文天祥", poem: "過零丁洋" },
+            { line: "身世浮沉雨打萍", author: "文天祥", poem: "過零丁洋" },
+            
+            // 納蘭性德《木蘭花·擬古決絕詞》
+            { line: "人生若只如初見", author: "納蘭性德", poem: "木蘭花·擬古決絕詞" },
+            { line: "何事秋風悲畫扇", author: "納蘭性德", poem: "木蘭花·擬古決絕詞" },
+            { line: "等閒變卻故人心", author: "納蘭性德", poem: "木蘭花·擬古決絕詞" },
+            { line: "卻道故人心易變", author: "納蘭性德", poem: "木蘭花·擬古決絕詞" },
+            
+            // 李白《宣州謝脁樓餞別校書叔雲》
+            { line: "抽刀斷水水更流", author: "李白", poem: "宣州謝脁樓餞別校書叔雲" },
+            { line: "舉杯消愁愁更愁", author: "李白", poem: "宣州謝脁樓餞別校書叔雲" },
+            { line: "人生在世不稱意", author: "李白", poem: "宣州謝脁樓餞別校書叔雲" },
+            { line: "明朝散髮弄扁舟", author: "李白", poem: "宣州謝脁樓餞別校書叔雲" },
+            
+            // 李賀《雁門太守行》
+            { line: "黑雲壓城城欲摧", author: "李賀", poem: "雁門太守行" },
+            { line: "甲光向日金鱗開", author: "李賀", poem: "雁門太守行" },
+            { line: "報君黃金臺上意", author: "李賀", poem: "雁門太守行" },
+            { line: "提攜玉龍為君死", author: "李賀", poem: "雁門太守行" }
+        ];
+
+        // DOM elements
+        const charactersGrid = document.getElementById('charactersGrid');
+        const poemDisplay = document.getElementById('poemDisplay');
+        const poemHint = document.getElementById('poemHint');
+        const timerElement = document.getElementById('timer');
+        const clearSelectionButton = document.getElementById('clearSelection');
+        const submitButton = document.getElementById('submitPoem');
+        const scoreElement = document.getElementById('score');
+        const gameMessage = document.getElementById('gameMessage');
+        const gameMessageText = gameMessage.querySelector('p');
+        
+        // Notification elements
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        const closeNotification = document.getElementById('closeNotification');
+
+        // Difficulty settings
+        const difficultySettings = {
+            easy: { timeLimit: 45, charCount: 15 },
+            medium: { timeLimit: 30, charCount: 15 },
+            hard: { timeLimit: 15, charCount: 15 }
+        };
+        
+        // Game state variables
+        let timerInterval;
+        let timeLeft = 30;
+        let charCount = 15;
+        let score = 0;
+        let currentPoem;
+        let isGameActive = false;
+        let poemCharacters = [];
+        let shuffledCharacters = [];
+        let currentGameMode = 'preset'; // 'preset' or 'custom'
+        let customPoems = [];
+        
+        // Difficulty settings elements
+        const difficultySelect = document.getElementById('difficultySelect');
+        const timeLimitSlider = document.getElementById('timeLimit');
+        const timeLimitValue = document.getElementById('timeLimitValue');
+        const charCountSlider = document.getElementById('charCount');
+        const charCountValue = document.getElementById('charCountValue');
+        
+        // Custom poem elements
+        const gameMode = document.getElementById('gameMode');
+        const customPoemSettings = document.getElementById('customPoemSettings');
+        const customLineInput = document.getElementById('customLine');
+        const customAuthorInput = document.getElementById('customAuthor');
+        const customPoemInput = document.getElementById('customPoem');
+        const saveCustomPoemButton = document.getElementById('saveCustomPoem');
+        const savedPoemsList = document.getElementById('savedPoemsList');
+        const noSavedPoems = document.getElementById('noSavedPoems');
+
+        // Show notification
+        const showNotification = (message, duration = 3000) => {
+            notificationText.textContent = message;
+            notification.classList.remove('translate-y-[-150%]');
+            notification.classList.add('translate-y-0');
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-y-0');
+                notification.classList.add('translate-y-[-150%]');
+            }, duration);
+        };
+
+        // Close notification manually
+        closeNotification.addEventListener('click', () => {
+            notification.classList.remove('translate-y-0');
+            notification.classList.add('translate-y-[-150%]');
+        });
+
+        // Shuffle array (Fisher-Yates algorithm)
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
+
+        // 詩詞數據庫選項
+        const poemDatabase = document.getElementById('poemDatabase');
+        let activeDatabase = tangPoetryLines; // 默認使用經典唐詩庫
+        
+        // 根據選擇的數據庫選擇詩句
+        const selectRandomPoem = () => {
+            return activeDatabase[Math.floor(Math.random() * activeDatabase.length)];
+        };
+        
+        // 詩詞數據庫切換事件
+        poemDatabase.addEventListener('change', () => {
+            if (poemDatabase.value === 'default') {
+                activeDatabase = tangPoetryLines;
+                showNotification('已切換至經典唐詩數據庫');
+            } else if (poemDatabase.value === 'elementary') {
+                activeDatabase = elementaryPoemLines;
+                showNotification('已切換至小學生詩詞數據庫');
+            }
+            
+            if (isGameActive) {
+                showNotification('數據庫已變更，將在下一輪生效');
+            }
+        });
+
+        // Generate characters for the game
+        const generateGameCharacters = () => {
+            // Reset character arrays
+            poemCharacters = [];
+            shuffledCharacters = [];
+            
+            // Get all characters from the current poem
+            poemCharacters = currentPoem.line.split('');
+            
+            // Create a set of characters for the game based on difficulty
+            const totalChars = charCount;
+            const distractorCount = totalChars - poemCharacters.length;
+            
+            // Create a pool of distractor characters (excluding those in the poem)
+            const allDistractors = [];
+            
+            // Add characters from other poems as distractors
+            tangPoetryLines.forEach(poem => {
+                if (poem.line !== currentPoem.line) {
+                    poem.line.split('').forEach(char => {
+                        // Only add if not already in the poem
+                        if (!poemCharacters.includes(char)) {
+                            allDistractors.push(char);
+                        }
+                    });
+                }
+            });
+            
+            // Shuffle and take the needed number of distractors
+            const shuffledDistractors = shuffleArray([...new Set(allDistractors)]);
+            const selectedDistractors = shuffledDistractors.slice(0, distractorCount);
+            
+            // Combine poem characters with distractors and shuffle
+            shuffledCharacters = shuffleArray([...poemCharacters, ...selectedDistractors]);
+        };
+
+        // Populate the characters grid with the game characters
+        const populateCharactersGrid = () => {
+            charactersGrid.innerHTML = '';
+            
+            shuffledCharacters.forEach(char => {
+                const charButton = document.createElement('button');
+                charButton.textContent = char;
+                charButton.className = 'character-btn bg-imperial/70 dark:bg-gray-700 hover:bg-primary hover:text-white dark:hover:bg-primary border border-secondary/30 dark:border-gray-600 rounded-md p-2 md:p-3 text-xl md:text-2xl font-kai font-bold transition-colors';
+                charButton.dataset.char = char;
+                
+                charButton.addEventListener('click', () => {
+                    if (isGameActive) {
+                        // 播放漢字點擊音效
+                        soundManager.play('charClick');
+                        
+                        // 添加点击动画
+                        charButton.classList.add('animate-click');
+                        setTimeout(() => {
+                            charButton.classList.remove('animate-click');
+                        }, 300);
+                        
+                        poemDisplay.value += char;
+                        // Disable the button after clicking
+                        charButton.disabled = true;
+                        charButton.classList.add('opacity-50', 'cursor-not-allowed');
+                        charButton.classList.remove('hover:bg-primary', 'hover:text-white');
+                    }
+                });
+                
+                charactersGrid.appendChild(charButton);
+            });
+        };
+
+        // Apply difficulty settings
+        const applyDifficultySettings = (difficulty) => {
+            const settings = difficultySettings[difficulty];
+            timeLeft = settings.timeLimit;
+            charCount = settings.charCount;
+            
+            // Update UI
+            timeLimitSlider.value = timeLeft;
+            timeLimitValue.textContent = timeLeft;
+            charCountSlider.value = charCount;
+            charCountValue.textContent = charCount;
+        };
+        
+        // Select a poem based on current game mode
+        const selectPoem = () => {
+            if (currentGameMode === 'preset') {
+                return selectRandomPoem();
+            } else if (currentGameMode === 'custom') {
+                if (customPoems.length === 0) {
+                    showNotification('沒有自定義詩句可用，請先添加詩句或切換到經典唐詩模式', 5000);
+                    return null;
+                }
+                return customPoems[Math.floor(Math.random() * customPoems.length)];
+            }
+            return null;
+        };
+        
+        // Start a new game round
+        const startNewRound = () => {
+            // Reset UI
+            poemDisplay.value = '';
+            gameMessage.classList.add('hidden');
+            
+            // 清除上一輪的綠色文字顏色
+            poemDisplay.classList.remove('text-secondary', 'dark:text-secondary', 'font-bold');
+            
+            // 播放新回合音效
+            soundManager.play('newRound');
+            
+            // Select a new poem based on game mode
+            currentPoem = selectPoem();
+            
+            // If no poem is available, return
+            if (!currentPoem) {
+                return;
+            }
+            
+            // Display the poem hint (author and name) with character count
+            const charCount = currentPoem.line.length;
+            poemHint.innerHTML = `《${currentPoem.poem}》 - ${currentPoem.author} <span class="text-primary font-bold">(${charCount}字)</span>`;
+            
+            // Generate and display characters
+            generateGameCharacters();
+            populateCharactersGrid();
+            
+            // Reset timer based on current difficulty
+            const difficulty = difficultySelect.value;
+            timeLeft = difficultySettings[difficulty].timeLimit;
+            timerElement.textContent = timeLeft;
+            
+            // Start the game
+            isGameActive = true;
+            
+            // Start timer
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                // 如果時間少於10秒，播放警告音效
+                if (timeLeft === 10) {
+                    soundManager.play('timeWarning');
+                }
+                
+                if (timeLeft <= 0) {
+                    endRound(false);
+                }
+            }, 1000);
+        };
+
+        // End the current round
+        const endRound = (success) => {
+            // Stop the timer
+            clearInterval(timerInterval);
+            isGameActive = false;
+            
+            // Hide clear and submit buttons when showing answer
+            clearSelectionButton.parentElement.classList.add('hidden');
+            
+            // Show "Next Round" button in the character area
+            const nextRoundButtonContainer = document.createElement('div');
+            nextRoundButtonContainer.className = 'flex justify-center mt-4';
+            nextRoundButtonContainer.innerHTML = `
+                <button id="nextRoundBtn" class="bg-primary hover:bg-primary/80 text-white px-6 py-2 rounded-md transition-colors font-kai shadow-md text-lg">下一輪</button>
+            `;
+            charactersGrid.parentNode.appendChild(nextRoundButtonContainer);
+            
+            // Add event listener to the new next round button
+            document.getElementById('nextRoundBtn').addEventListener('click', () => {
+                // Play new round sound
+                soundManager.play('newRound');
+                
+                // Remove the next round button container when starting new round
+                nextRoundButtonContainer.remove();
+                // Show clear and submit buttons again
+                clearSelectionButton.parentElement.classList.remove('hidden');
+                startNewRound();
+            });
+            
+            // Update UI based on success/failure
+            gameMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'dark:bg-red-900', 'dark:text-red-200', 'dark:bg-green-900', 'dark:text-green-200', 'animate-fade-in');
+            const correctAnswer = document.getElementById('correctAnswer');
+            
+            if (success) {
+                // 播放正確音效
+                soundManager.play('correct');
+                
+                // 显示答对动画
+                poemDisplay.classList.add('animate-correct');
+                
+                // 将诗句文字变为绿色（与提交按钮相同的颜色）
+                poemDisplay.classList.add('text-secondary', 'dark:text-secondary');
+                poemDisplay.classList.add('font-bold');
+                
+                setTimeout(() => {
+                    poemDisplay.classList.remove('animate-correct');
+                }, 1000);
+                
+                // 更新分数
+                score++;
+                
+                // 添加分数变化动画
+                scoreElement.classList.add('animate-score');
+                scoreElement.textContent = score;
+                setTimeout(() => {
+                    scoreElement.classList.remove('animate-score');
+                }, 800);
+                
+                gameMessage.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200', 'animate-fade-in');
+                gameMessageText.textContent = '恭喜！答對了！';
+                
+                // 显示正确答案
+                correctAnswer.classList.remove('hidden');
+                correctAnswer.textContent = currentPoem.line;
+            } else {
+                // 播放錯誤/時間到音效
+                soundManager.play('timeUp');
+                
+                // 显示答错动画
+                poemDisplay.classList.add('animate-wrong');
+                setTimeout(() => {
+                    poemDisplay.classList.remove('animate-wrong');
+                }, 500);
+                
+                gameMessage.classList.add('bg-red-100', 'text-red-800', 'dark:bg-red-900', 'dark:text-red-200', 'animate-fade-in');
+                gameMessageText.textContent = '時間到！';
+                
+                // 显示正确答案，放大并单独一行
+                correctAnswer.classList.remove('hidden');
+                correctAnswer.textContent = currentPoem.line;
+                correctAnswer.className = 'mt-4 text-4xl font-kai font-bold text-primary py-3 border-t-2 border-primary/30 pt-4';
+            }
+        };
+
+        // Verify if the current input matches the poem
+        const verifyPoem = () => {
+            return poemDisplay.value === currentPoem.line;
+        };
+
+        // Event listeners
+        clearSelectionButton.addEventListener('click', () => {
+            if (isGameActive) {
+                // 播放按鈕點擊音效
+                soundManager.play('buttonClick');
+                
+                poemDisplay.value = '';
+                // Re-enable all character buttons
+                document.querySelectorAll('.character-btn').forEach(btn => {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.classList.add('hover:bg-primary', 'hover:text-white');
+                });
+            }
+        });
+
+        submitButton.addEventListener('click', () => {
+            if (isGameActive) {
+                // 播放按鈕點擊音效
+                soundManager.play('buttonClick');
+                
+                if (poemDisplay.value.trim().length === 0) {
+                    showNotification('請先選擇漢字再提交！');
+                    return;
+                }
+                
+                const isCorrect = verifyPoem();
+                endRound(isCorrect);
+            }
+        });
+
+        // Difficulty select event listener
+        difficultySelect.addEventListener('change', () => {
+            const difficulty = difficultySelect.value;
+            applyDifficultySettings(difficulty);
+            
+            if (isGameActive) {
+                showNotification('難度已變更，將在下一輪生效');
+            }
+        });
+        
+        // Time limit slider event listener
+        timeLimitSlider.addEventListener('input', () => {
+            timeLeft = parseInt(timeLimitSlider.value);
+            timeLimitValue.textContent = timeLeft;
+            
+            if (isGameActive) {
+                showNotification('時間限制已變更，將在下一輪生效');
+            }
+        });
+        
+        // Character count slider event listener
+        charCountSlider.addEventListener('input', () => {
+            charCount = parseInt(charCountSlider.value);
+            charCountValue.textContent = charCount;
+            
+            if (isGameActive) {
+                showNotification('字元數量已變更，將在下一輪生效');
+            }
+        });
+        
+        // Save custom poem
+        const saveCustomPoem = () => {
+            const line = customLineInput.value.trim();
+            const author = customAuthorInput.value.trim();
+            const poem = customPoemInput.value.trim();
+            
+            if (!line) {
+                showNotification('請輸入詩句內容');
+                return;
+            }
+            
+            const newPoem = {
+                line: line,
+                author: author || '未知',
+                poem: poem || '未命名'
+            };
+            
+            // Add to custom poems array
+            customPoems.push(newPoem);
+            
+            // Update UI
+            updateSavedPoemsList();
+            
+            // Clear inputs
+            customLineInput.value = '';
+            customAuthorInput.value = '';
+            customPoemInput.value = '';
+            
+            showNotification('詩句已保存');
+        };
+        
+        // Delete custom poem
+        const deleteCustomPoem = (index) => {
+            customPoems.splice(index, 1);
+            updateSavedPoemsList();
+            showNotification('詩句已刪除');
+        };
+        
+        // Update saved poems list
+        const updateSavedPoemsList = () => {
+            if (customPoems.length === 0) {
+                savedPoemsList.classList.add('hidden');
+                noSavedPoems.classList.remove('hidden');
+                return;
+            }
+            
+            savedPoemsList.innerHTML = '';
+            savedPoemsList.classList.remove('hidden');
+            noSavedPoems.classList.add('hidden');
+            
+            customPoems.forEach((poem, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center py-1 border-b border-gray-200 dark:border-gray-700 last:border-0';
+                
+                const poemInfo = document.createElement('div');
+                poemInfo.className = 'flex-grow';
+                poemInfo.innerHTML = `
+                    <div class="font-medium">${poem.line}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">《${poem.poem}》 - ${poem.author}</div>
+                `;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'ml-2 text-red-500 hover:text-red-700';
+                deleteBtn.innerHTML = `
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                `;
+                deleteBtn.addEventListener('click', () => deleteCustomPoem(index));
+                
+                li.appendChild(poemInfo);
+                li.appendChild(deleteBtn);
+                savedPoemsList.appendChild(li);
+            });
+        };
+        
+        // Game mode change event listener
+        gameMode.addEventListener('change', () => {
+            currentGameMode = gameMode.value;
+            
+            if (currentGameMode === 'custom') {
+                customPoemSettings.classList.remove('hidden');
+                updateSavedPoemsList();
+            } else {
+                customPoemSettings.classList.add('hidden');
+            }
+            
+            if (isGameActive) {
+                showNotification('模式已變更，將在下一輪生效');
+            }
+        });
+        
+        // Save custom poem event listener
+        saveCustomPoemButton.addEventListener('click', saveCustomPoem);
+        
+        // Admin mode toggle
+        const adminModeToggle = document.getElementById('adminModeToggle');
+        const adminPanel = document.getElementById('adminPanel');
+        const difficultySelector = document.getElementById('difficultySelector');
+        let isAdminMode = false;
+        
+        // Toggle admin mode
+        adminModeToggle.addEventListener('click', () => {
+            isAdminMode = !isAdminMode;
+            
+            if (isAdminMode) {
+                // 显示管理面板
+                adminPanel.classList.remove('hidden');
+                difficultySelector.classList.remove('hidden');
+                adminModeToggle.classList.add('bg-primary', 'text-white');
+                adminModeToggle.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                
+                // 根据当前难度更新设置滑块
+                const difficulty = difficultySelect.value;
+                timeLimitSlider.value = difficultySettings[difficulty].timeLimit;
+                timeLimitValue.textContent = difficultySettings[difficulty].timeLimit;
+                charCountSlider.value = difficultySettings[difficulty].charCount;
+                charCountValue.textContent = difficultySettings[difficulty].charCount;
+            } else {
+                adminPanel.classList.add('hidden');
+                difficultySelector.classList.add('hidden');
+                adminModeToggle.classList.remove('bg-primary', 'text-white');
+                adminModeToggle.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+            }
+        });
+        
+        // Enhance characters display
+        const enhanceCharacterDisplay = () => {
+            // Make the characters larger in the grid
+            document.querySelectorAll('.character-btn').forEach(btn => {
+                btn.classList.remove('p-3', 'text-xl');
+                btn.classList.add('p-4', 'text-2xl');
+            });
+        };
+        
+        // 安全添加事件监听器的辅助函数
+        const safeAddEventListener = (elementId, event, handler) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.addEventListener(event, handler);
+            }
+        };
+
+        // 安全地检查和添加所有事件监听器
+        const setupEventListeners = () => {
+            // 现有的事件监听器设置
+            if (clearSelectionButton) {
+                clearSelectionButton.addEventListener('click', () => {
+                    if (isGameActive) {
+                        poemDisplay.value = '';
+                        // Re-enable all character buttons
+                        document.querySelectorAll('.character-btn').forEach(btn => {
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            btn.classList.add('hover:bg-primary', 'hover:text-white');
+                        });
+                    }
+                });
+            }
+
+            if (submitButton) {
+                submitButton.addEventListener('click', () => {
+                    if (isGameActive) {
+                        if (poemDisplay.value.trim().length === 0) {
+                            showNotification('請先選擇漢字再提交！');
+                            return;
+                        }
+                        
+                        const isCorrect = verifyPoem();
+                        endRound(isCorrect);
+                    }
+                });
+            }
+
+            if (difficultySelect) {
+                difficultySelect.addEventListener('change', () => {
+                    const difficulty = difficultySelect.value;
+                    applyDifficultySettings(difficulty);
+                    
+                    if (isGameActive) {
+                        showNotification('難度已變更，將在下一輪生效');
+                    }
+                });
+            }
+
+            if (timeLimitSlider) {
+                timeLimitSlider.addEventListener('input', () => {
+                    timeLeft = parseInt(timeLimitSlider.value);
+                    timeLimitValue.textContent = timeLeft;
+                    
+                    if (isGameActive) {
+                        showNotification('時間限制已變更，將在下一輪生效');
+                    }
+                });
+            }
+
+            if (charCountSlider) {
+                charCountSlider.addEventListener('input', () => {
+                    charCount = parseInt(charCountSlider.value);
+                    charCountValue.textContent = charCount;
+                    
+                    if (isGameActive) {
+                        showNotification('字元數量已變更，將在下一輪生效');
+                    }
+                });
+            }
+
+            if (gameMode) {
+                gameMode.addEventListener('change', () => {
+                    currentGameMode = gameMode.value;
+                    
+                    if (currentGameMode === 'custom') {
+                        customPoemSettings.classList.remove('hidden');
+                        updateSavedPoemsList();
+                    } else {
+                        customPoemSettings.classList.add('hidden');
+                    }
+                    
+                    if (isGameActive) {
+                        showNotification('模式已變更，將在下一輪生效');
+                    }
+                });
+            }
+
+            if (saveCustomPoemButton) {
+                saveCustomPoemButton.addEventListener('click', saveCustomPoem);
+            }
+
+            if (adminModeToggle) {
+                adminModeToggle.addEventListener('click', () => {
+                    isAdminMode = !isAdminMode;
+                    
+                    if (isAdminMode) {
+                        // 显示管理面板
+                        adminPanel.classList.remove('hidden');
+                        difficultySelector.classList.remove('hidden');
+                        adminModeToggle.classList.add('bg-primary', 'text-white');
+                        adminModeToggle.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                        
+                        // 根据当前难度更新设置滑块
+                        const difficulty = difficultySelect.value;
+                        timeLimitSlider.value = difficultySettings[difficulty].timeLimit;
+                        timeLimitValue.textContent = difficultySettings[difficulty].timeLimit;
+                        charCountSlider.value = difficultySettings[difficulty].charCount;
+                        charCountValue.textContent = difficultySettings[difficulty].charCount;
+                    } else {
+                        adminPanel.classList.add('hidden');
+                        difficultySelector.classList.add('hidden');
+                        adminModeToggle.classList.remove('bg-primary', 'text-white');
+                        adminModeToggle.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                    }
+                });
+            }
+
+            if (closeNotification) {
+                closeNotification.addEventListener('click', () => {
+                    notification.classList.remove('translate-y-0');
+                    notification.classList.add('translate-y-[-150%]');
+                });
+            }
+        };
+
+        // 初始化游戏
+        const initGame = () => {
+            console.log("初始化遊戲...");
+            // 設置事件監聽器
+            setupEventListeners();
+            
+            // 應用初始難度設置
+            if (difficultySelect) {
+                applyDifficultySettings(difficultySelect.value);
+            }
+            
+            // 處理音效開關按鈕
+            const soundToggle = document.getElementById('soundToggle');
+            if (soundToggle) {
+                console.log("綁定音效開關按鈕事件");
+                
+                // 移除所有已有的事件監聽器
+                const newSoundToggle = soundToggle.cloneNode(true);
+                soundToggle.parentNode.replaceChild(newSoundToggle, soundToggle);
+                
+                // 添加新的事件監聽器
+                newSoundToggle.addEventListener('click', function() {
+                    // 播放按鍵點擊音效（在靜音前）
+                    soundManager.play('buttonClick');
+                    
+                    // 切換靜音狀態
+                    const isMuted = soundManager.toggleMute();
+                    
+                    // 更新按鈕文字和圖示
+                    if (isMuted) {
+                        newSoundToggle.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                            </svg>
+                            音效關
+                        `;
+                    } else {
+                        newSoundToggle.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                            </svg>
+                            音效開
+                        `;
+                    }
+                });
+            }
+            
+            // 確保管理員按鈕功能正常
+            if (adminModeToggle) {
+                console.log("綁定管理員按鈕事件");
+                // 移除所有已有的事件監聽器
+                const newAdminButton = adminModeToggle.cloneNode(true);
+                adminModeToggle.parentNode.replaceChild(newAdminButton, adminModeToggle);
+                
+                // 重新獲取元素引用
+                const adminModeToggleNew = document.getElementById('adminModeToggle');
+                
+                // 添加新的事件監聽器
+                adminModeToggleNew.addEventListener('click', function() {
+                    // 播放按鈕點擊音效
+                    soundManager.play('buttonClick');
+                    
+                    console.log("管理員按鈕被點擊");
+                    isAdminMode = !isAdminMode;
+                    
+                    if (isAdminMode) {
+                        // 顯示管理面板
+                        adminPanel.classList.remove('hidden');
+                        difficultySelector.classList.remove('hidden');
+                        adminModeToggleNew.classList.add('bg-primary', 'text-white');
+                        adminModeToggleNew.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                        
+                        // 根據當前難度更新設置滑塊
+                        const difficulty = difficultySelect.value;
+                        timeLimitSlider.value = difficultySettings[difficulty].timeLimit;
+                        timeLimitValue.textContent = difficultySettings[difficulty].timeLimit;
+                        charCountSlider.value = difficultySettings[difficulty].charCount;
+                        charCountValue.textContent = difficultySettings[difficulty].charCount;
+                    } else {
+                        adminPanel.classList.add('hidden');
+                        difficultySelector.classList.add('hidden');
+                        adminModeToggleNew.classList.remove('bg-primary', 'text-white');
+                        adminModeToggleNew.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                    }
+                });
+            }
+            
+            startNewRound();
+        };
+
+        // 確保DOM完全加載後初始化遊戲
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGame);
+        } else {
+            initGame();
+        }
+    </script>
+</body>
+</html>
