@@ -960,17 +960,27 @@
                 <div class="tap-animation"></div>
                 <h3 class="text-xl font-bold mb-2">點擊圓點返回桌面</h3>
                 <p class="text-center text-gray-300 mb-6">點擊右下角的圓點即可返回首頁<br>也可以拖動到任意位置</p>
-                <button onclick="closeTutorial()" class="bg-white text-black px-6 py-2 rounded-full font-medium">
+                <button id="closeTutorialBtn" class="bg-white text-black px-6 py-2 rounded-full font-medium">
                     我知道了
                 </button>
             `;
             document.body.appendChild(tutorialOverlay);
+            
+            // 添加事件监听器
+            const closeBtn = document.getElementById('closeTutorialBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeTutorial();
+                });
+            }
         }
 
         // 关闭教程
         function closeTutorial() {
-            if (tutorialOverlay) {
-                tutorialOverlay.remove();
+            if (tutorialOverlay && tutorialOverlay.parentNode) {
+                tutorialOverlay.parentNode.removeChild(tutorialOverlay);
                 tutorialOverlay = null;
             }
             localStorage.setItem('dotTutorialShown', 'true');
