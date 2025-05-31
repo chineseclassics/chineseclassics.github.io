@@ -1,0 +1,3388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>江南落花 - 蘇杭遊學躲避遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B7EA1',         // 青藍色調，代表江南水鄉
+                        secondary: '#E9C46A',       // 溫暖的黃色調，代表秋天的落葉
+                        accent: '#D66853',          // 柔和的紅色調，代表磚牆和亭閣
+                        cherry: '#Ef96AD',          // 櫻花粉色調，更柔和
+                        leaf: '#83B271',            // 柳綠色，江南特色
+                        water: '#7EC8E3',           // 明亮的水色
+                        stone: '#998E7B',           // 青石板路色調
+                        silk: '#F0EDD4',            // 淺米色，代表絲綢
+                        ink: '#27374D',             // 墨色，代表水墨畫
+                        jade: '#9CD08F'             // 玉色，代表玉石飾品
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans TC', 'sans-serif'],
+                        serif: ['Noto Serif TC', 'serif'],
+                    },
+                    backgroundImage: {
+                        'water-pattern': "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='20' viewBox='0 0 100 20'%3E%3Cpath d='M21.184 20c.357-.13.72-.264 1.088-.402l1.768-.661C33.64 15.347 39.647 14 50 14c10.271 0 15.362 1.222 24.629 4.928.955.383 1.869.74 2.75 1.072h6.225c-2.51-.73-5.139-1.691-8.233-2.928C65.888 13.278 60.562 12 50 12c-10.626 0-16.855 1.397-26.66 5.063l-1.767.662c-2.475.923-4.66 1.674-6.724 2.275h6.335zm0-20C13.258 2.892 8.077 4 0 4V2c5.744 0 9.951-.574 14.85-2h6.334zM77.38 0C85.239 2.966 90.502 4 100 4V2c-6.842 0-11.386-.542-16.396-2h-6.225zM0 14c8.44 0 13.718-1.21 22.272-4.402l1.768-.661C33.64 5.347 39.647 4 50 4c10.271 0 15.362 1.222 24.629 4.928C84.112 12.722 89.438 14 100 14v-2c-10.271 0-15.362-1.222-24.629-4.928C65.888 3.278 60.562 2 50 2 39.374 2 33.145 3.397 23.34 7.063l-1.767.662C13.223 10.84 8.163 12 0 12v2z' fill='%237EC8E3' fill-opacity='0.08'/%3E%3C/svg%3E\")",
+                        'chinese-pattern': "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"
+                    }
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&display=swap');
+        
+        body {
+            overscroll-behavior: contain;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        #game-container {
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            max-width: 440px;
+            width: 95%;
+            aspect-ratio: 9/16;
+            margin: 0 auto;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border: 1px solid rgba(0,0,0,0.1);
+            /* 啟用硬體加速 */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        
+        /* 確保在移動設備上填滿可用空間 */
+        @media (max-width: 480px) {
+            #game-container {
+                width: 100%;
+                border-radius: 8px;
+                height: calc(100vh - 16px); /* 減去一點空間防止溢出 */
+                max-height: 100vh;
+                aspect-ratio: auto; /* 移除固定比例，使用高度填充 */
+                margin: 0 auto;
+            }
+            
+            /* 確保遊戲界面在移動設備上填滿整個屏幕 */
+            #game-screen {
+                padding: 0;
+                height: 100vh;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+        
+        #water-surface {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px; /* 減少水面高度 */
+            background: linear-gradient(to bottom, rgba(173, 216, 230, 0.7), rgba(0, 119, 182, 0.8));
+            border-top: 2px solid rgba(255, 255, 255, 0.4);
+            z-index: 2;
+        }
+        
+        #player {
+            position: absolute;
+            z-index: 10;
+            transition: left 0.15s ease-out;
+            font-size: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: bob 3s infinite ease-in-out;
+            will-change: left, transform;
+            transform: translateZ(0); /* 啟用硬體加速 */
+        }
+        
+        .flower {
+            position: absolute;
+            z-index: 5;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+            will-change: top, left; /* 優化花朵位置變化的性能 */
+            transform: translateZ(0); /* 啟用硬體加速 */
+        }
+        
+        .emoji-entity {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            z-index: 5;
+        }
+        
+        .powerup {
+            position: absolute;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 6;
+            animation: powerup-float 2s infinite ease-in-out;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.9)); /* 金色陰影 */
+            font-size: 32px; /* 調整道具尺寸，與花朵一致 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 
+                         0 0 15px rgba(255, 255, 100, 0.8); /* 雙層文字陰影 */
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            will-change: top, left, transform;
+            transform: translateZ(0); /* 啟用硬體加速 */
+        }
+        
+        /* 新的浮動動畫，更加引人注目 */
+        @keyframes powerup-float {
+            0% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.9)); }
+            25% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)); }
+            50% { transform: scale(1.15) translateY(-5px); filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)); }
+            75% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)); }
+            100% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.9)); }
+        }
+        
+        .life-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 4px;
+        }
+        
+        .fadeIn {
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        .fadeOut {
+            animation: fadeOut 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .slideUp {
+            animation: slideUp 0.5s forwards;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .floatText {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(0,0,0,0.7);
+            z-index: 20;
+            pointer-events: none;
+            animation: floatUp 1s forwards;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-60px); opacity: 0; }
+        }
+        
+        .badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 5px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            filter: grayscale(100%);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        
+        .badge.unlocked {
+            filter: grayscale(0%);
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(255, 197, 61, 0.7);
+        }
+        
+        .badge-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            margin-bottom: 5px;
+        }
+        
+        .badge-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0,0,0,0.8) transparent transparent transparent;
+        }
+        
+        .badge:hover .badge-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .question-option {
+            transition: all 0.2s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            padding-left: 1rem;
+        }
+        
+        .question-option:active {
+            transform: scale(0.98);
+        }
+        
+        .bloom {
+            animation: bloom 0.5s forwards;
+        }
+        
+        @keyframes bloom {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(220, 38, 38, 0); }
+            25% { transform: scale(1.3) rotate(5deg); box-shadow: 0 0 25px rgba(220, 38, 38, 0.8); }
+            50% { transform: scale(1.2) rotate(-5deg); box-shadow: 0 0 20px rgba(220, 38, 38, 0.6); }
+            75% { transform: scale(1.1) rotate(3deg); box-shadow: 0 0 15px rgba(220, 38, 38, 0.4); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        
+        .screen-shake {
+            animation: screen-shake 0.5s forwards;
+        }
+        
+        @keyframes screen-shake {
+            0% { transform: translate(0); }
+            10% { transform: translate(-5px, -5px); }
+            20% { transform: translate(5px, 5px); }
+            30% { transform: translate(-5px, 3px); }
+            40% { transform: translate(5px, -3px); }
+            50% { transform: translate(-3px, 5px); }
+            60% { transform: translate(3px, -5px); }
+            70% { transform: translate(-2px, -2px); }
+            80% { transform: translate(2px, 2px); }
+            90% { transform: translate(-1px, 1px); }
+            100% { transform: translate(0); }
+        }
+        
+        .hit-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(220, 38, 38, 0.3);
+            pointer-events: none;
+            z-index: 30;
+            animation: hit-flash 0.5s forwards;
+        }
+        
+        @keyframes hit-flash {
+            0% { opacity: 0; }
+            25% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .floating-bg {
+            position: absolute;
+            z-index: 1;
+            opacity: 0.3;
+            filter: blur(4px);
+            animation: float 15s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(10px) translateX(5px); }
+            50% { transform: translateY(0) translateX(0); }
+            75% { transform: translateY(-10px) translateX(-5px); }
+            100% { transform: translateY(0) translateX(0); }
+        }
+        
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* Boat bobbing animation */
+        @keyframes bob {
+            0% { transform: translateY(0) rotate(-1deg); }
+            50% { transform: translateY(-3px) rotate(1deg); }
+            100% { transform: translateY(0) rotate(-1deg); }
+        }
+        
+        /* Dark mode adjustments */
+        .dark #game-container {
+            background-color: #1a1a2e;
+        }
+        
+        .dark .stats-container {
+            background-color: rgba(20, 20, 40, 0.8);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="font-sans bg-slate-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+    <!-- Dark mode script -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="min-h-screen flex flex-col overflow-hidden">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-center items-center">
+            <div class="text-4xl font-bold text-primary mb-4">江南落花</div>
+            <div class="w-64 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div id="loading-bar" class="h-full bg-primary" style="width: 0%"></div>
+            </div>
+            <div id="loading-text" class="mt-2 text-gray-600 dark:text-gray-400">載入中...</div>
+        </div>
+    
+        <!-- Start Screen -->
+        <div id="start-screen" class="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex flex-col justify-between items-center p-6 hidden">
+            <div class="mt-6 text-center">
+                <h1 class="text-5xl font-bold text-primary mb-2 font-serif">江南落花</h1>
+                <p class="text-xl text-gray-600 dark:text-gray-400 mb-8">蘇杭遊學躲避遊戲</p>
+                
+                <div class="relative w-64 h-64 mx-auto mb-6">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,2 C40,15 10,35 10,60 C10,85 30,98 50,98 C70,98 90,85 90,60 C90,35 60,15 50,2 Z' fill='%23f8c3cd'/%3E%3C/svg%3E" class="absolute w-20 h-20 top-5 left-5 floating-bg" style="animation-delay: -2s">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,2 C30,25 10,40 10,70 C10,90 30,98 50,98 C70,98 90,90 90,70 C90,40 70,25 50,2 Z' fill='%23f4a7b9'/%3E%3C/svg%3E" class="absolute w-16 h-16 bottom-10 right-10 floating-bg" style="animation-delay: -1s">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,2 C20,15 10,35 10,60 C10,85 30,98 50,98 C70,98 90,85 90,60 C90,35 80,15 50,2 Z' fill='%23feeeed'/%3E%3C/svg%3E" class="absolute w-24 h-24 bottom-5 left-20 floating-bg" style="animation-delay: -3s">
+                    
+                    <div class="relative w-full h-full flex justify-center items-center">
+                        <div id="game-preview" class="w-32 h-32 mb-4 flex justify-center items-center" style="font-size: 60px;">🧍</div>
+                    </div>
+                </div>
+
+                <button id="start-button" class="bg-primary hover:bg-primary/80 text-white font-bold py-3 px-12 rounded-full text-xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
+                    開始遊戲
+                </button>
+            </div>
+            
+            <div class="mb-4 text-center">
+                <p class="text-sm text-gray-500 dark:text-gray-400">點擊左右兩側移動船隻 • 收集獎勵 • 挑戰知識問答</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">為蘇杭遊學團特別設計</p>
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="fixed inset-0 flex flex-col items-center hidden">
+            <!-- Game Container with info panels inside - 優化為江南風格 -->
+            <div id="game-container" class="w-full flex-grow bg-gradient-to-b from-water/10 to-water/30 dark:from-ink/40 dark:to-ink/60 relative overflow-hidden bg-water-pattern dark:bg-chinese-pattern border border-water/20 dark:border-primary/20">
+                <!-- 注意：現在不使用Canvas渲染花朵，所以可以移除
+                <canvas id="flowers-canvas" class="absolute inset-0 z-5" style="pointer-events: none; display: none;"></canvas>-->
+                
+                <!-- 裝飾元素：水墨畫風格 -->
+                <div class="absolute top-4 left-2 w-20 h-20 opacity-20 dark:opacity-10 pointer-events-none">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                        <path d="M20,80 C40,95 70,90 90,70 C95,65 95,55 90,50 C85,45 75,45 70,50" stroke="#83B271" stroke-width="1.5" fill="none"/>
+                    </svg>
+                </div>
+                
+                <div class="absolute bottom-20 right-2 w-20 h-20 opacity-15 dark:opacity-10 pointer-events-none">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                        <path d="M10,50 C30,40 70,60 90,50" stroke="#7EC8E3" stroke-width="1" fill="none"/>
+                        <path d="M10,60 C30,50 70,70 90,60" stroke="#7EC8E3" stroke-width="1" fill="none"/>
+                    </svg>
+                </div>
+                
+                <!-- Status Panels inside game window - 优化样式 -->
+                <div class="absolute top-4 left-4 bg-primary/30 dark:bg-water/20 backdrop-blur-sm px-4 py-2 rounded-lg z-20 text-white flex items-center shadow-md border border-white/20">
+                    <i class="fas fa-star text-secondary mr-2 text-lg"></i>
+                    <span id="score" class="font-bold text-xl">0</span>
+                </div>
+                
+                <div id="level-container" class="absolute top-4 right-4 bg-primary/30 dark:bg-water/20 backdrop-blur-sm px-4 py-2 rounded-lg z-20 text-white shadow-md border border-white/20">
+                    <span>級別 <span id="level" class="font-bold text-lg">1</span></span>
+                </div>
+                
+                <div id="lives-container" class="absolute top-16 right-4 bg-accent/30 backdrop-blur-sm px-4 py-2 rounded-lg z-20 text-white flex items-center shadow-md border border-white/20">
+                    <!-- Lives will be added here dynamically -->
+                </div>
+            
+                <!-- 優化水面背景 -->
+                <div class="absolute bottom-0 w-full h-16 bg-gradient-to-b from-water/20 to-water dark:from-primary/30 dark:to-primary z-1"></div>
+                
+                <!-- 優化波浪動畫 -->
+                <div class="absolute bottom-14 w-full">
+                    <div class="w-full h-10 overflow-hidden relative z-0">
+                        <div class="absolute top-0 left-0 w-[200%] h-full" style="animation: wave 15s linear infinite;">
+                            <svg viewBox="0 0 1000 70" preserveAspectRatio="none" class="w-1/2 h-full">
+                                <path d="M0,0 C300,70 400,0 500,30 C600,70 700,30 900,50 L1000,0 L0,0 Z" fill="rgba(126, 200, 227, 0.3)"></path>
+                            </svg>
+                            <svg viewBox="0 0 1000 70" preserveAspectRatio="none" class="w-1/2 h-full">
+                                <path d="M0,0 C300,70 400,0 500,30 C600,70 700,30 900,50 L1000,0 L0,0 Z" fill="rgba(126, 200, 227, 0.3)"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="w-full h-8 overflow-hidden relative z-0">
+                        <div class="absolute top-0 left-0 w-[200%] h-full" style="animation: wave 10s linear reverse infinite;">
+                            <svg viewBox="0 0 1000 50" preserveAspectRatio="none" class="w-1/2 h-full">
+                                <path d="M0,0 C150,50 300,10 500,20 C700,30 800,50 1000,20 L1000,0 L0,0 Z" fill="rgba(126, 200, 227, 0.4)"></path>
+                            </svg>
+                            <svg viewBox="0 0 1000 50" preserveAspectRatio="none" class="w-1/2 h-full">
+                                <path d="M0,0 C150,50 300,10 500,20 C700,30 800,50 1000,20 L1000,0 L0,0 Z" fill="rgba(126, 200, 227, 0.4)"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 水面和小船 -->
+                <div id="water-surface" class="absolute bottom-0 w-full z-2 h-12 bg-gradient-to-b from-water/70 to-water/90 dark:from-primary/60 dark:to-primary/90 border-t border-white/30"></div>
+                <div id="player" class="absolute bottom-8 w-12 h-16 drop-shadow-lg"></div>
+            
+            <!-- 控制欄 - 美化样式 -->
+            <div class="w-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm p-3 flex justify-between items-center z-20 border-t border-white/30 dark:border-gray-600/30">
+                <button id="pause-button" class="p-3 rounded-full bg-primary/10 dark:bg-water/10 hover:bg-primary/20 dark:hover:bg-water/20 border border-primary/30 dark:border-water/30 touch-manipulation transition-colors">
+                    <i class="fas fa-pause text-primary dark:text-water text-lg"></i>
+                </button>
+                
+                <div class="flex flex-wrap justify-center gap-1" style="max-width:240px">
+                    <div id="shield-indicator" class="hidden px-3 py-1 bg-primary/20 dark:bg-water/20 rounded-full text-sm flex items-center border border-primary/30 dark:border-water/30">
+                        <i class="fas fa-shield-alt text-primary dark:text-water mr-1"></i>
+                        <span id="shield-time" class="text-primary dark:text-water">0s</span>
+                    </div>
+                    <div id="magnet-indicator" class="hidden px-3 py-1 bg-purple-500/20 rounded-full text-sm flex items-center border border-purple-500/30">
+                        <i class="fas fa-magnet text-purple-500 mr-1"></i>
+                        <span id="magnet-time">0s</span>
+                    </div>
+                    <div id="time-slow-indicator" class="hidden px-3 py-1 bg-water/20 rounded-full text-sm flex items-center border border-water/30">
+                        <span class="mr-1">⏳</span>
+                        <span id="time-slow-time" class="text-primary dark:text-water">0s</span>
+                    </div>
+                    <div id="double-score-indicator" class="hidden px-3 py-1 bg-secondary/20 rounded-full text-sm flex items-center border border-secondary/30">
+                        <span class="mr-1">2️⃣✖️</span>
+                        <span id="double-score-time" class="text-stone dark:text-secondary">0s</span>
+                    </div>
+                    <div id="mini-boat-indicator" class="hidden px-3 py-1 bg-leaf/20 rounded-full text-sm flex items-center border border-leaf/30">
+                        <span class="mr-1">🚤</span>
+                        <span id="mini-boat-time" class="text-leaf">0s</span>
+                    </div>
+                    <div id="flower-basket-indicator" class="hidden px-3 py-1 bg-stone/20 rounded-full text-sm flex items-center border border-stone/30">
+                        <span class="mr-1">🧺</span>
+                        <span id="flower-basket-time" class="text-stone">0s</span>
+                    </div>
+                    <div id="umbrella-indicator" class="hidden px-3 py-1 bg-accent/20 rounded-full text-sm flex items-center border border-accent/30">
+                        <span class="mr-1">☂️</span>
+                        <span id="umbrella-count" class="text-accent">x0</span>
+                    </div>
+                    <div id="fog-indicator" class="hidden px-3 py-1 bg-gray-400/20 rounded-full text-sm flex items-center border border-gray-400/30">
+                        <span class="mr-1">🌫️</span>
+                        <span id="fog-time" class="text-gray-600 dark:text-gray-300">0s</span>
+                    </div>
+                </div>
+                
+                <button id="mute-button" class="p-3 rounded-full bg-primary/10 dark:bg-water/10 hover:bg-primary/20 dark:hover:bg-water/20 border border-primary/30 dark:border-water/30 touch-manipulation transition-colors">
+                    <i class="fas fa-volume-up text-primary dark:text-water text-lg"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="fixed inset-0 bg-black/70 z-30 flex flex-col justify-center items-center p-6 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold text-center mb-4">遊戲暫停</h2>
+                
+                <div class="space-y-4 mb-6">
+                    <div class="flex justify-between">
+                        <span>分數</span>
+                        <span id="pause-score" class="font-bold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>級別</span>
+                        <span id="pause-level" class="font-bold">1</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>最高分</span>
+                        <span id="pause-highscore" class="font-bold">0</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="resume-button" class="bg-primary hover:bg-primary/80 text-white py-3 rounded-lg font-bold transition-colors">
+                        繼續遊戲
+                    </button>
+                    <button id="restart-button" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 py-3 rounded-lg font-bold transition-colors">
+                        重新開始
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen - 雙階段顯示：詩句和答題 -->
+        <div id="game-over-screen" class="fixed inset-0 bg-black/70 z-30 flex flex-col justify-center items-center p-4 hidden overflow-auto">
+            <!-- 詩句卡片 - 第一階段 -->
+            <div id="poem-card" class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md my-4 overflow-hidden transform transition-all duration-500 ease-in-out">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold text-primary dark:text-water mb-1">遊戲結束</h2>
+                    <p class="text-gray-500 dark:text-gray-400">最終得分: <span id="poem-final-score" class="font-bold text-primary dark:text-water text-xl">0</span></p>
+                </div>
+                
+                <div id="poem-container" class="bg-primary/10 dark:bg-water/10 rounded-xl p-4 mb-4 min-h-[120px] flex flex-col justify-center">
+                    <p id="game-over-poem" class="text-lg font-serif text-center text-stone dark:text-silver leading-relaxed opacity-0"></p>
+                    <p id="poem-author" class="text-right text-sm font-serif text-stone/80 dark:text-silver/80 mt-3 italic opacity-0"></p>
+                </div>
+                
+                <div class="relative h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-5">
+                    <div id="typewriter-progress" class="absolute h-full bg-primary dark:bg-water" style="width: 0%"></div>
+                </div>
+                
+                <button id="continue-to-question-btn" class="w-full bg-primary hover:bg-primary/80 dark:bg-water dark:hover:bg-water/80 text-white py-3 rounded-lg font-bold transition-colors opacity-0" disabled>
+                    繼續到知識問答
+                </button>
+            </div>
+            
+            <!-- 知識問答卡片 - 第二階段 -->
+            <div id="question-card" class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md my-4 max-h-[90vh] overflow-y-auto transform transition-all duration-500 ease-in-out opacity-0 scale-95 hidden">
+                <!-- 知識問答區域 -->
+                <div id="knowledge-question" class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
+                    <h3 class="font-bold text-base mb-2">知識問答挑戰</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">答對問題可以保留當前分數（<span id="final-score" class="font-bold text-primary dark:text-water">0</span>）並繼續遊戲！</p>
+                    <p id="question-text" class="text-base mb-3">問題文本將在這裡顯示</p>
+                    
+                    <div id="question-options" class="space-y-2">
+                        <!-- 選項將在這裡插入 -->
+                    </div>
+                </div>
+                
+                <!-- 初始隱藏繼續按鈕，由答題後的邏輯處理顯示 -->
+                <div class="text-center">
+                    <button id="retry-button" class="hidden w-full bg-primary hover:bg-primary/80 dark:bg-water dark:hover:bg-water/80 text-white py-3 rounded-lg font-bold transition-colors" disabled>
+                        重新開始
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 遊戲道具說明界面 (使用行內JS直接綁定) -->
+        <div id="tutorial-screen" class="fixed inset-0 bg-black/70 z-40 p-4 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto mx-auto my-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">遊戲道具說明</h2>
+                    <button id="close-tutorial" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">在遊戲中您會遇到以下特殊道具，請善加利用！收集這些從空中落下的道具，獲得各種能力！</p>
+                
+                <div class="space-y-3">
+                    <!-- 基本道具 -->
+                    <h3 class="font-bold text-lg text-primary">基本道具</h3>
+                    
+                    <div class="flex items-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">❤️</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-red-700 dark:text-red-400">額外生命</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">增加一條生命，最多可擁有5條生命</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">🛡️</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-blue-700 dark:text-blue-400">護盾</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">獲得5秒無敵狀態，期間不會受到傷害</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">🧲</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-purple-700 dark:text-purple-400">磁鐵</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">8秒內能吸引附近的道具靠近玩家</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">⭐</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-yellow-700 dark:text-yellow-400">積分星星</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">立即獲得20分積分</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 特殊道具 -->
+                    <h3 class="font-bold text-lg text-primary mt-6">特殊道具</h3>
+                    
+                    <div class="flex items-center p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">⏳</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-blue-700 dark:text-blue-400">時間延緩</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">減慢所有花朵的下落速度6秒</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">2️⃣✖️</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-yellow-700 dark:text-yellow-400">雙倍積分</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">10秒內所有得分翻倍</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">🚤</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-green-700 dark:text-green-400">迷你船</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">船隻縮小50%持續8秒，更難被花朵擊中</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">🧺</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-amber-700 dark:text-amber-400">花籃收集</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">6秒內碰到花朵不會受傷，反而獲得雙倍分數</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">☂️</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-red-700 dark:text-red-400">雨傘保護</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">可以彈開最多3朵花而不受傷害</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-gray-100 dark:bg-gray-600/20 rounded-lg">
+                        <div class="text-3xl mr-3">🌫️</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-gray-700 dark:text-gray-400">霧氣迷蒙</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">5秒內讓30%的花朵變得半透明且無害</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 稀有道具 -->
+                    <h3 class="font-bold text-lg text-primary mt-6">稀有道具</h3>
+                    
+                    <div class="flex items-center p-2 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">🪭</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-indigo-700 dark:text-indigo-400">清屏風扇</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">立即清除畫面上所有花朵並獲得加倍積分</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 bg-pink-100 dark:bg-pink-900/20 rounded-lg">
+                        <div class="text-3xl mr-3">🎆</div>
+                        <div>
+                            <h3 class="font-bold text-sm text-pink-700 dark:text-pink-400">煙花爆竹</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">在屏幕頂部爆炸，清除大範圍花朵</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-5">
+                    <button id="start-game-button" class="w-full bg-primary hover:bg-primary/80 text-white py-3 rounded-lg font-bold transition-colors">
+                        開始遊戲
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Achievement Screen -->
+        <div id="achievement-screen" class="fixed inset-0 bg-black/70 z-30 flex flex-col justify-center items-center p-6 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold text-center mb-2">成就徽章</h2>
+                <p class="text-center text-gray-600 dark:text-gray-300 mb-4">收集各種徽章，了解更多江南文化！</p>
+                
+                <div class="grid grid-cols-3 gap-4 mb-6" id="badges-container">
+                    <!-- Badges will be inserted here -->
+                </div>
+                
+                <button id="close-achievements-button" class="w-full bg-primary hover:bg-primary/80 text-white py-3 rounded-lg font-bold transition-colors">
+                    返回遊戲
+                </button>
+            </div>
+        </div>
+        
+        <!-- New Badge Notification -->
+        <div id="badge-notification" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg z-50 flex items-center hidden max-w-[85%]">
+            <div id="new-badge-icon" class="w-12 h-12 mr-3 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-award text-yellow-500 text-xl"></i>
+            </div>
+            <div>
+                <div class="font-bold" id="new-badge-name">新徽章獲得！</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400" id="new-badge-desc">徽章描述</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 優化後的開始遊戲界面，水墨江南風格 -->
+    <div id="new-start-screen" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center bg-water-pattern dark:bg-chinese-pattern">
+        <div class="w-full max-w-md mx-auto px-4 py-4 flex flex-col h-full max-h-screen justify-between relative">
+            <!-- 頂部裝飾元素：江南風格裝飾 -->
+            <div class="absolute top-0 right-0 w-24 h-24 opacity-30 dark:opacity-20 pointer-events-none">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                    <path d="M20,80 C40,95 70,90 90,70 C95,65 95,55 90,50 C85,45 75,45 70,50 C65,55 65,65 70,70 C75,75 85,75 90,70" stroke="#83B271" stroke-width="2" fill="none"/>
+                    <path d="M30,20 C25,30 20,50 30,70" stroke="#83B271" stroke-width="2" fill="none"/>
+                    <path d="M35,15 C30,25 25,45 35,65" stroke="#83B271" stroke-width="1.5" fill="none"/>
+                    <path d="M40,10 C35,20 30,40 40,60" stroke="#83B271" stroke-width="1" fill="none"/>
+                </svg>
+            </div>
+            
+            <div class="absolute top-8 left-2 w-16 h-16 opacity-30 dark:opacity-20 pointer-events-none transform rotate-45">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                    <path d="M10,50 C30,40 70,60 90,50" stroke="#7EC8E3" stroke-width="2" fill="none"/>
+                    <path d="M10,60 C30,50 70,70 90,60" stroke="#7EC8E3" stroke-width="2" fill="none"/>
+                    <path d="M10,70 C30,60 70,80 90,70" stroke="#7EC8E3" stroke-width="2" fill="none"/>
+                </svg>
+            </div>
+            
+            <!-- 頂部區域：標題和動畫 -->
+            <div>
+                <!-- 標題與遊戲預覽集成 -->
+                <div class="relative h-40 rounded-xl overflow-hidden shadow-lg mb-5 bg-gradient-to-b from-water/10 to-water/30 dark:from-ink/40 dark:to-ink/60 border border-water/30 dark:border-primary/30">
+                    <!-- 水墨山水背景 -->
+                    <div class="absolute inset-0 opacity-20">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" class="w-full h-full">
+                            <path d="M0,70 Q40,50 80,70 T160,70 T200,70 L200,100 L0,100 Z" fill="#3B7EA1" opacity="0.3"/>
+                            <path d="M20,50 Q30,20 40,50 T60,50 T80,50" stroke="#27374D" fill="none" stroke-width="0.5"/>
+                            <path d="M120,40 Q140,20 160,40" stroke="#27374D" fill="none" stroke-width="0.5"/>
+                            <path d="M140,60 Q150,50 160,60 T180,60" stroke="#27374D" fill="none" stroke-width="0.7"/>
+                            <!-- 添加硬體加速提示 -->
+                            <g style="transform: translateZ(0);">
+                                <path d="M50,20 Q60,10 70,20" stroke="#27374D" fill="none" stroke-width="0.3"/>
+                            </g>
+                        </svg>
+                    </div>
+                    
+                    <!-- 遊戲預覽動畫 -->
+                    <div class="absolute inset-0 flex justify-center items-center">
+                        <div class="text-5xl animate-bob drop-shadow-md">⛵</div>
+                        <div class="absolute top-8 left-1/4 text-2xl animate-float-flower transform -rotate-12">🌸</div>
+                        <div class="absolute top-0 right-1/3 text-2xl animate-float-flower transform rotate-12 animation-delay-200">🌺</div>
+                        <div class="absolute top-4 left-1/3 text-2xl animate-float-flower animation-delay-500">🌹</div>
+                        <div class="absolute top-10 right-1/4 text-2xl animate-float-flower animation-delay-700">🌻</div>
+                    </div>
+                    
+                    <!-- 標題疊加在動畫上 -->
+                    <div class="absolute inset-0 flex flex-col justify-center items-center bg-gradient-to-b from-transparent via-transparent to-water/50 dark:to-ink/70">
+                        <h1 class="text-4xl font-bold text-primary dark:text-water font-serif drop-shadow-lg">江南落花</h1>
+                        <p class="text-sm text-stone dark:text-silk/80 mt-1 font-serif">蘇杭遊學躲避遊戲</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 中間區域：改進的道具說明 -->
+            <div class="flex-1 flex flex-col justify-center overflow-hidden">
+                <!-- 道具說明 - 優化版，更醒目 -->
+                <div class="bg-white/50 dark:bg-ink/30 backdrop-blur-sm rounded-xl p-4 shadow-md border border-silk/30 dark:border-primary/20">
+                    <h2 class="text-sm font-bold text-primary dark:text-water mb-3 flex items-center border-b border-primary/30 dark:border-water/30 pb-2">
+                        <i class="fas fa-magic mr-2"></i>道具收集指南
+                    </h2>
+                    
+                    <!-- 道具網格，添加視覺吸引力 -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">❤️</div>
+                            <div class="text-[11px] text-center font-medium">生命</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">🛡️</div>
+                            <div class="text-[11px] text-center font-medium">無敵</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">🧲</div>
+                            <div class="text-[11px] text-center font-medium">磁鐵</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">⭐</div>
+                            <div class="text-[11px] text-center font-medium">加分</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">⏳</div>
+                            <div class="text-[11px] text-center font-medium">減緩</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">2️⃣✖️</div>
+                            <div class="text-[11px] text-center font-medium">雙倍</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">🚤</div>
+                            <div class="text-[11px] text-center font-medium">縮小</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">🧺</div>
+                            <div class="text-[11px] text-center font-medium">花籃</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">☂️</div>
+                            <div class="text-[11px] text-center font-medium">雨傘</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">🌫️</div>
+                            <div class="text-[11px] text-center font-medium">迷霧</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">🪭</div>
+                            <div class="text-[11px] text-center font-medium">清屏</div>
+                        </div>
+                        <div class="bg-white/70 dark:bg-gray-800/70 rounded-lg p-1.5 flex flex-col items-center justify-center transform hover:scale-105 transition-all shadow-sm">
+                            <div class="text-xl mb-1">🎆</div>
+                            <div class="text-[11px] text-center font-medium">煙花</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部區域：開始按鈕和簡短遊戲說明 -->
+            <div>
+                <!-- 遊戲簡介 -->
+                <div class="bg-white/50 dark:bg-ink/30 backdrop-blur-sm rounded-xl p-3 mb-4 shadow-md border border-silk/30 dark:border-primary/20">
+                    <p class="text-sm text-center text-stone dark:text-silk/90">點擊屏幕左右兩側移動船隻，躲避紛紛落下的花朵，收集道具獲得高分！</p>
+                </div>
+                
+                <!-- 開始按鈕 -->
+                <button onclick="startGameHandler()" id="main-start-button" class="bg-gradient-to-r from-primary to-primary/70 dark:from-water to-water/70 text-white font-bold py-4 px-6 rounded-full text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center w-full justify-center mb-3">
+                    <i class="fas fa-play-circle mr-2"></i>
+                    開始遊戲
+                </button>
+                
+                <!-- 版權信息 -->
+                <p class="text-xs text-center text-stone/70 dark:text-gray-400 mb-1">為蘇杭遊學團特別設計 © 2023</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 自定義動畫 -->
+    <style>
+        @keyframes bob {
+            0% { transform: translateY(0) rotate(-1deg); }
+            50% { transform: translateY(-5px) rotate(1deg); }
+            100% { transform: translateY(0) rotate(-1deg); }
+        }
+        
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+        }
+        
+        @keyframes float-flower {
+            0% { transform: translateY(-40px) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; transform: translateY(-35px) rotate(5deg); }
+            50% { transform: translateY(20px) rotate(-5deg); }
+            90% { opacity: 1; transform: translateY(60px) rotate(10deg); }
+            100% { transform: translateY(70px) rotate(0deg); opacity: 0; }
+        }
+        
+        .animate-bob {
+            animation: bob 3s infinite ease-in-out;
+        }
+        
+        .animate-fall {
+            animation: fall 3s infinite linear;
+        }
+        
+        .animate-float-flower {
+            animation: float-flower 6s infinite ease-in-out;
+        }
+        
+        .animation-delay-200 {
+            animation-delay: 0.2s;
+        }
+        
+        .animation-delay-500 {
+            animation-delay: 0.5s;
+        }
+        
+        .animation-delay-700 {
+            animation-delay: 0.7s;
+        }
+        
+        .animation-delay-1000 {
+            animation-delay: 1s;
+        }
+    </style>
+
+    <script>
+        // 直接啟動遊戲的處理函數
+        function startGameHandler() {
+            console.log("開始遊戲按鈕被點擊");
+            
+            // 隱藏所有屏幕
+            document.querySelectorAll('#loading-screen, #start-screen, #tutorial-screen, #pause-screen, #game-over-screen, #achievement-screen, #new-start-screen').forEach(screen => {
+                screen.style.display = 'none';
+            });
+            
+            // 顯示遊戲屏幕
+            const gameScreen = document.getElementById('game-screen');
+            if (gameScreen) {
+                gameScreen.style.display = 'flex';
+                console.log("已顯示遊戲屏幕");
+            } else {
+                console.error("無法找到遊戲屏幕元素");
+            }
+            
+            // 隱藏按鈕容器
+            const mainButton = document.getElementById('main-start-button');
+            if (mainButton && mainButton.parentElement) {
+                mainButton.parentElement.style.display = 'none';
+            }
+            
+            // 簡化執行遊戲啟動邏輯 - 直接進行遊戲初始化
+            initGame();
+        }
+        
+        // 確保遊戲相關函數定義
+        // 創建道具函數
+        function createPowerup() {
+            const gameContainer = document.getElementById('game-container');
+            const size = 36; // 調整道具尺寸，接近花朵尺寸(32px)
+            const positionX = Math.random() * (gameState.screenWidth - size);
+            
+            // 道具類型及其配置
+            const powerupTypes = [
+                {
+                    emoji: "❤️",
+                    name: "extra_life",
+                    effect: function() {
+                        // 添加一條生命，最多5條
+                        if (gameState.lives < 5) {
+                            gameState.lives++;
+                            updateLives();
+                            
+                            // 顯示浮動文本
+                            showFloatingText("+1 生命", "#ff5555");
+                            
+                            // 播放收集音效
+                            if (window.gameAudio) {
+                                window.gameAudio.play('powerup');
+                            }
+                        } else {
+                            // 如果生命已滿，獲得額外分數
+                            gameState.score += 50;
+                            updateScore();
+                            showFloatingText("+50 分", "#ffcc00");
+                            
+                            // 播放普通收集音效
+                            if (window.gameAudio) {
+                                window.gameAudio.play('collect');
+                            }
+                        }
+                    }
+                },
+                {
+                    emoji: "🛡️",
+                    name: "shield",
+                    effect: function() {
+                        // 激活護盾
+                        gameState.shieldActive = true;
+                        gameState.shieldTimeLeft = 5; // 5秒護盾，從原本的10秒改為5秒
+                        
+                        // 顯示護盾指示器
+                        const shieldIndicator = document.getElementById('shield-indicator');
+                        shieldIndicator.style.display = 'flex';
+                        document.getElementById('shield-time').textContent = gameState.shieldTimeLeft + 's';
+                        
+                        // 添加視覺效果
+                        const player = document.getElementById('player');
+                        player.style.boxShadow = "0 0 15px rgba(59, 130, 246, 0.7)";
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 開始倒計時
+                        if (!gameState.shieldInterval) {
+                            gameState.shieldInterval = setInterval(function() {
+                                gameState.shieldTimeLeft--;
+                                document.getElementById('shield-time').textContent = gameState.shieldTimeLeft + 's';
+                                
+                                if (gameState.shieldTimeLeft <= 0) {
+                                    // 關閉護盾
+                                    gameState.shieldActive = false;
+                                    shieldIndicator.style.display = 'none';
+                                    player.style.boxShadow = "none";
+                                    clearInterval(gameState.shieldInterval);
+                                    gameState.shieldInterval = null;
+                                }
+                            }, 1000);
+                        }
+                        
+                        showFloatingText("護盾 激活! 5秒", "#3b82f6");
+                    }
+                },
+                {
+                    emoji: "⭐",
+                    name: "bonus_score",
+                    effect: function() {
+                        // 獲得額外分數
+                        const bonusScore = 20;
+                        gameState.score += bonusScore;
+                        updateScore();
+                        
+                        // 顯示浮動文本
+                        showFloatingText("+" + bonusScore + " 分", "#ffcc00");
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('collect');
+                        }
+                    }
+                },
+                {
+                    emoji: "🧲",
+                    name: "magnet",
+                    effect: function() {
+                        // 激活磁鐵
+                        gameState.magnetActive = true;
+                        gameState.magnetTimeLeft = 8; // 8秒
+                        
+                        // 顯示磁鐵指示器
+                        const magnetIndicator = document.getElementById('magnet-indicator');
+                        magnetIndicator.style.display = 'flex';
+                        document.getElementById('magnet-time').textContent = gameState.magnetTimeLeft + 's';
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 開始倒計時
+                        if (!gameState.magnetInterval) {
+                            gameState.magnetInterval = setInterval(function() {
+                                gameState.magnetTimeLeft--;
+                                document.getElementById('magnet-time').textContent = gameState.magnetTimeLeft + 's';
+                                
+                                if (gameState.magnetTimeLeft <= 0) {
+                                    // 關閉磁鐵
+                                    gameState.magnetActive = false;
+                                    magnetIndicator.style.display = 'none';
+                                    clearInterval(gameState.magnetInterval);
+                                    gameState.magnetInterval = null;
+                                }
+                            }, 1000);
+                        }
+                        
+                        showFloatingText("磁鐵效果!", "#a855f7");
+                    }
+                },
+                {
+                    emoji: "⏳",
+                    name: "time_slow",
+                    effect: function() {
+                        // 激活時間減緩
+                        gameState.timeSlowActive = true;
+                        gameState.timeSlowTimeLeft = 6; // 6秒
+                        
+                        // 儲存原始速度
+                        if (!gameState.originalFlowerSpeed) {
+                            gameState.originalFlowerSpeed = {};
+                            gameState.flowers.forEach((flower, index) => {
+                                gameState.originalFlowerSpeed[index] = flower.speed;
+                                flower.speed *= 0.5; // 減半速度
+                            });
+                        }
+                        
+                        // 顯示時間減緩指示器
+                        const timeSlowIndicator = document.getElementById('time-slow-indicator');
+                        timeSlowIndicator.style.display = 'flex';
+                        document.getElementById('time-slow-time').textContent = gameState.timeSlowTimeLeft + 's';
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 開始倒計時
+                        if (!gameState.timeSlowInterval) {
+                            gameState.timeSlowInterval = setInterval(function() {
+                                gameState.timeSlowTimeLeft--;
+                                document.getElementById('time-slow-time').textContent = gameState.timeSlowTimeLeft + 's';
+                                
+                                if (gameState.timeSlowTimeLeft <= 0) {
+                                    // 關閉時間減緩
+                                    gameState.timeSlowActive = false;
+                                    timeSlowIndicator.style.display = 'none';
+                                    
+                                    // 恢復原始速度
+                                    if (gameState.originalFlowerSpeed) {
+                                        gameState.flowers.forEach((flower, index) => {
+                                            if (gameState.originalFlowerSpeed[index]) {
+                                                flower.speed = gameState.originalFlowerSpeed[index];
+                                            }
+                                        });
+                                        gameState.originalFlowerSpeed = null;
+                                    }
+                                    
+                                    clearInterval(gameState.timeSlowInterval);
+                                    gameState.timeSlowInterval = null;
+                                }
+                            }, 1000);
+                        }
+                        
+                        showFloatingText("時間減緩!", "#7ec8e3");
+                    }
+                },
+                {
+                    emoji: "2️⃣✖️",
+                    name: "double_score",
+                    effect: function() {
+                        // 激活雙倍積分
+                        gameState.doubleScoreActive = true;
+                        gameState.doubleScoreTimeLeft = 10; // 10秒雙倍積分
+                        gameState.scoreMultiplier = 2; // 設置分數倍數
+                        
+                        // 顯示雙倍積分指示器
+                        const doubleScoreIndicator = document.getElementById('double-score-indicator');
+                        doubleScoreIndicator.style.display = 'flex';
+                        document.getElementById('double-score-time').textContent = gameState.doubleScoreTimeLeft + 's';
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 開始倒計時
+                        if (!gameState.doubleScoreInterval) {
+                            gameState.doubleScoreInterval = setInterval(function() {
+                                gameState.doubleScoreTimeLeft--;
+                                document.getElementById('double-score-time').textContent = gameState.doubleScoreTimeLeft + 's';
+                                
+                                if (gameState.doubleScoreTimeLeft <= 0) {
+                                    // 關閉雙倍積分
+                                    gameState.doubleScoreActive = false;
+                                    gameState.scoreMultiplier = 1; // 恢復正常積分
+                                    doubleScoreIndicator.style.display = 'none';
+                                    clearInterval(gameState.doubleScoreInterval);
+                                    gameState.doubleScoreInterval = null;
+                                }
+                            }, 1000);
+                        }
+                        
+                        showFloatingText("雙倍積分! 10秒", "#E9C46A");
+                    }
+                },
+                {
+                    emoji: "🚤",
+                    name: "mini_boat",
+                    effect: function() {
+                        // 激活迷你船
+                        gameState.miniBoatActive = true;
+                        gameState.miniBoatTimeLeft = 8; // 8秒迷你船效果
+                        
+                        // 獲取玩家元素
+                        const player = document.getElementById('player');
+                        
+                        // 存儲原始尺寸，稍後恢復用
+                        if (!gameState.originalPlayerSize) {
+                            gameState.originalPlayerSize = {
+                                width: player.offsetWidth || 48,
+                                height: player.offsetHeight || 64,
+                                fontSize: player.style.fontSize || '40px'
+                            };
+                        }
+                        
+                        // 縮小船隻 (50%)
+                        player.style.fontSize = '20px'; // 縮小表情符號大小
+                        player.style.width = (gameState.originalPlayerSize.width / 2) + 'px';
+                        player.style.height = (gameState.originalPlayerSize.height / 2) + 'px';
+                        
+                        // 確保船的位置正確 (調整船的左側位置，讓縮小後的船還在原來的位置中央)
+                        const currentPosition = gameState.playerPosition * gameState.screenWidth;
+                        const newPlayerWidth = player.offsetWidth || 24;
+                        player.style.left = (currentPosition - newPlayerWidth / 2) + 'px';
+                        
+                        // 顯示迷你船指示器
+                        const miniBoatIndicator = document.getElementById('mini-boat-indicator');
+                        miniBoatIndicator.style.display = 'flex';
+                        document.getElementById('mini-boat-time').textContent = gameState.miniBoatTimeLeft + 's';
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 開始倒計時
+                        if (!gameState.miniBoatInterval) {
+                            gameState.miniBoatInterval = setInterval(function() {
+                                gameState.miniBoatTimeLeft--;
+                                document.getElementById('mini-boat-time').textContent = gameState.miniBoatTimeLeft + 's';
+                                
+                                if (gameState.miniBoatTimeLeft <= 0) {
+                                    // 關閉迷你船效果，恢復原始尺寸
+                                    gameState.miniBoatActive = false;
+                                    miniBoatIndicator.style.display = 'none';
+                                    
+                                    // 恢復原始尺寸
+                                    if (gameState.originalPlayerSize) {
+                                        player.style.fontSize = gameState.originalPlayerSize.fontSize;
+                                        player.style.width = gameState.originalPlayerSize.width + 'px';
+                                        player.style.height = gameState.originalPlayerSize.height + 'px';
+                                        
+                                        // 更新位置，確保船還在當前位置的中央
+                                        const currentPosition = gameState.playerPosition * gameState.screenWidth;
+                                        player.style.left = (currentPosition - gameState.originalPlayerSize.width / 2) + 'px';
+                                        
+                                        // 清除原始尺寸
+                                        gameState.originalPlayerSize = null;
+                                    }
+                                    
+                                    clearInterval(gameState.miniBoatInterval);
+                                    gameState.miniBoatInterval = null;
+                                }
+                            }, 1000);
+                        }
+                        
+                        showFloatingText("迷你船! 更難被擊中", "#83B271");
+                    }
+                },
+                {
+                    emoji: "🧺",
+                    name: "flower_basket",
+                    effect: function() {
+                        // 激活花籃收集模式
+                        gameState.flowerBasketActive = true;
+                        gameState.flowerBasketTimeLeft = 6; // 6秒花籃效果
+                        
+                        // 顯示花籃指示器
+                        const flowerBasketIndicator = document.getElementById('flower-basket-indicator');
+                        flowerBasketIndicator.style.display = 'flex';
+                        document.getElementById('flower-basket-time').textContent = gameState.flowerBasketTimeLeft + 's';
+                        
+                        // 為船加上花籃視覺特效
+                        const player = document.getElementById('player');
+                        player.style.boxShadow = "0 0 15px rgba(218, 165, 32, 0.7)";
+                        player.style.filter = "drop-shadow(0 0 8px rgba(218, 165, 32, 0.5))";
+                        
+                        // 修改花朵處理方式 - 在moveFlowers中會用到這個標誌
+                        // 當花籃效果激活時，碰到花朵不會受傷，而是得分
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 開始倒計時
+                        if (!gameState.flowerBasketInterval) {
+                            gameState.flowerBasketInterval = setInterval(function() {
+                                gameState.flowerBasketTimeLeft--;
+                                document.getElementById('flower-basket-time').textContent = gameState.flowerBasketTimeLeft + 's';
+                                
+                                if (gameState.flowerBasketTimeLeft <= 0) {
+                                    // 關閉花籃效果
+                                    gameState.flowerBasketActive = false;
+                                    flowerBasketIndicator.style.display = 'none';
+                                    
+                                    // 移除視覺特效
+                                    player.style.boxShadow = "";
+                                    player.style.filter = "";
+                                    
+                                    clearInterval(gameState.flowerBasketInterval);
+                                    gameState.flowerBasketInterval = null;
+                                }
+                            }, 1000);
+                        }
+                        
+                        showFloatingText("花籃模式! 收集花朵得分", "#998E7B");
+                    }
+                },
+                {
+                    emoji: "☂️",
+                    name: "umbrella",
+                    effect: function() {
+                        // 激活雨傘保護
+                        gameState.umbrellaActive = true;
+                        gameState.umbrellaCount = 3; // 可以彈開3朵花 (從5朵改為3朵)
+                        
+                        // 顯示雨傘指示器
+                        const umbrellaIndicator = document.getElementById('umbrella-indicator');
+                        umbrellaIndicator.style.display = 'flex';
+                        document.getElementById('umbrella-count').textContent = 'x' + gameState.umbrellaCount;
+                        
+                        // 為船加上雨傘視覺特效
+                        const player = document.getElementById('player');
+                        player.style.boxShadow = "0 0 15px rgba(220, 53, 69, 0.5)";
+                        
+                        // 添加雨傘標誌到船上
+                        const umbrellaIcon = document.createElement('div');
+                        umbrellaIcon.id = 'umbrella-icon';
+                        umbrellaIcon.className = 'absolute -top-6 left-1/2 transform -translate-x-1/2 text-xl';
+                        umbrellaIcon.textContent = '☂️';
+                        umbrellaIcon.style.filter = 'drop-shadow(0 0 3px rgba(255, 255, 255, 0.7))';
+                        player.appendChild(umbrellaIcon);
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        showFloatingText("雨傘保護! 可彈開3朵花", "#D66853");
+                    }
+                },
+                {
+                    emoji: "🌫️",
+                    name: "fog",
+                    effect: function() {
+                        // 激活霧氣迷蒙效果
+                        gameState.fogActive = true;
+                        gameState.fogTimeLeft = 5; // 5秒霧氣效果
+                        gameState.foggedFlowers = new Set(); // 存儲被霧化的花朵索引
+                        
+                        // 顯示霧氣指示器
+                        const fogIndicator = document.getElementById('fog-indicator');
+                        fogIndicator.style.display = 'flex';
+                        document.getElementById('fog-time').textContent = gameState.fogTimeLeft + 's';
+                        
+                        // 添加霧氣特效到遊戲容器
+                        const gameContainer = document.getElementById('game-container');
+                        const fogOverlay = document.createElement('div');
+                        fogOverlay.id = 'fog-overlay';
+                        fogOverlay.className = 'absolute inset-0 bg-white/30 dark:bg-gray-800/30 z-25 pointer-events-none';
+                        fogOverlay.style.backdropFilter = 'blur(3px)';
+                        gameContainer.appendChild(fogOverlay);
+                        
+                        // 讓30%的現有花朵變得半透明且無害
+                        gameState.flowers.forEach((flower, index) => {
+                            // 30%的機率讓花朵被霧化
+                            if (Math.random() < 0.3) {
+                                // 將索引添加到霧化集合中
+                                gameState.foggedFlowers.add(index);
+                                
+                                // 使花朵半透明
+                                flower.element.style.opacity = "0.4";
+                                // 添加霧化特效
+                                flower.element.style.filter = "blur(2px)";
+                            }
+                        });
+                        
+                        // 播放收集音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 開始倒計時
+                        if (!gameState.fogInterval) {
+                            gameState.fogInterval = setInterval(function() {
+                                gameState.fogTimeLeft--;
+                                document.getElementById('fog-time').textContent = gameState.fogTimeLeft + 's';
+                                
+                                if (gameState.fogTimeLeft <= 0) {
+                                    // 關閉霧氣效果
+                                    gameState.fogActive = false;
+                                    fogIndicator.style.display = 'none';
+                                    
+                                    // 移除霧氣特效
+                                    const fogOverlay = document.getElementById('fog-overlay');
+                                    if (fogOverlay) {
+                                        fogOverlay.remove();
+                                    }
+                                    
+                                    // 讓所有花朵恢復正常外觀
+                                    gameState.flowers.forEach((flower, index) => {
+                                        if (gameState.foggedFlowers.has(index)) {
+                                            flower.element.style.opacity = "1";
+                                            flower.element.style.filter = "";
+                                        }
+                                    });
+                                    
+                                    // 清空霧化花朵集合
+                                    gameState.foggedFlowers.clear();
+                                    
+                                    clearInterval(gameState.fogInterval);
+                                    gameState.fogInterval = null;
+                                }
+                            }, 1000);
+                        }
+                        
+                        showFloatingText("霧氣迷蒙! 花朵變得無害", "#64748B");
+                    }
+                },
+                {
+                    emoji: "🪭",
+                    name: "fan_clear",
+                    effect: function() {
+                        // 獲取遊戲容器元素
+                        const gameContainer = document.getElementById('game-container');
+                        
+                        // 計算清除的花朵數量和分數獎勵
+                        const flowerCount = gameState.flowers.length;
+                        let totalBonus = 0;
+                        
+                        // 添加風扇特效
+                        const fanEffect = document.createElement('div');
+                        fanEffect.className = 'absolute inset-0 z-30 pointer-events-none';
+                        fanEffect.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                        fanEffect.style.animation = 'fan-swirl 0.5s cubic-bezier(0.215, 0.610, 0.355, 1)';
+                        gameContainer.appendChild(fanEffect);
+                        
+                        // 定義風扇旋轉動畫
+                        const styleElement = document.createElement('style');
+                        styleElement.textContent = `
+                            @keyframes fan-swirl {
+                                0% { transform: scale(0); opacity: 0.8; }
+                                70% { transform: scale(1.5); opacity: 0.6; }
+                                100% { transform: scale(2); opacity: 0; }
+                            }
+                            
+                            @keyframes float-away {
+                                0% { transform: translateY(0) rotate(0); opacity: 1; }
+                                100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+                            }
+                        `;
+                        document.head.appendChild(styleElement);
+                        
+                        // 為每朵花添加飄走動畫
+                        if (flowerCount > 0) {
+                            gameState.flowers.forEach(flower => {
+                                // 為每朵花朵計算加倍分數
+                                totalBonus += flower.score * 2; // 雙倍分數獎勵
+                                
+                                // 添加飄走動畫
+                                flower.element.style.animation = 'float-away 0.8s forwards';
+                                flower.element.style.animationDelay = Math.random() * 0.3 + 's';
+                                flower.element.style.zIndex = '40';
+                            });
+                            
+                            // 播放特殊音效
+                            if (window.gameAudio) {
+                                window.gameAudio.play('powerup');
+                                // 延遲稍微長一點後播放收集音效
+                                setTimeout(() => {
+                                    if (window.gameAudio) window.gameAudio.play('collect');
+                                }, 200);
+                            }
+                            
+                            // 延遲後清除所有花朵
+                            setTimeout(() => {
+                                // 清除所有花朵
+                                gameState.flowers.forEach(flower => {
+                                    flower.element.remove();
+                                });
+                                gameState.flowers = [];
+                                
+                                // 增加分數獎勵
+                                gameState.score += totalBonus;
+                                updateScore();
+                                
+                                // 顯示總分數
+                                showFloatingText("+" + totalBonus + " 分", "#4F46E5");
+                            }, 800);
+                        }
+                        
+                        // 移除風扇特效
+                        setTimeout(() => {
+                            fanEffect.remove();
+                        }, 1000);
+                        
+                        // 根據清除花朵數顯示不同文字
+                        if (flowerCount > 0) {
+                            showFloatingText("清除了 " + flowerCount + " 朵花!", "#4F46E5");
+                        } else {
+                            showFloatingText("清屏風扇已啟動!", "#4F46E5");
+                        }
+                    }
+                },
+                {
+                    emoji: "🎆",
+                    name: "firework",
+                    effect: function() {
+                        // 獲取遊戲容器元素
+                        const gameContainer = document.getElementById('game-container');
+                        
+                        // 創建煙花視覺效果
+                        const firework = document.createElement('div');
+                        firework.className = 'absolute z-30 pointer-events-none';
+                        firework.style.width = '40px';
+                        firework.style.height = '40px';
+                        firework.style.borderRadius = '50%';
+                        
+                        // 放置在屏幕頂部中央
+                        firework.style.left = '50%';
+                        firework.style.top = '20%';
+                        firework.style.transform = 'translate(-50%, -50%)';
+                        
+                        // 煙花樣式
+                        firework.textContent = '🎆';
+                        firework.style.fontSize = '40px';
+                        gameContainer.appendChild(firework);
+                        
+                        // 定義煙花爆炸動畫
+                        const styleElement = document.createElement('style');
+                        styleElement.textContent = `
+                            @keyframes launch {
+                                0% { transform: translate(-50%, 100%) scale(0.7); opacity: 0.7; }
+                                80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                                100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                            }
+                            
+                            @keyframes explode {
+                                0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0px rgba(255, 50, 50, 0.5); }
+                                10% { transform: translate(-50%, -50%) scale(2); box-shadow: 0 0 50px rgba(255, 50, 50, 0.8), 0 0 100px rgba(255, 180, 50, 0.5); }
+                                30% { transform: translate(-50%, -50%) scale(3); box-shadow: 0 0 100px rgba(255, 100, 50, 0.8), 0 0 150px rgba(255, 200, 50, 0.6); }
+                                100% { transform: translate(-50%, -50%) scale(4); opacity: 0; box-shadow: 0 0 200px rgba(255, 150, 50, 0), 0 0 250px rgba(255, 200, 50, 0); }
+                            }
+                            
+                            @keyframes blast-away {
+                                0% { transform: translateY(0); opacity: 1; filter: blur(0px); }
+                                80% { opacity: 0.7; filter: blur(2px); }
+                                100% { transform: translateY(-200px); opacity: 0; filter: blur(3px); }
+                            }
+                        `;
+                        document.head.appendChild(styleElement);
+                        
+                        // 播放發射動畫
+                        firework.style.animation = 'launch 0.5s cubic-bezier(0.215, 0.610, 0.355, 1)';
+                        
+                        // 播放發射聲音
+                        if (window.gameAudio) {
+                            window.gameAudio.play('powerup');
+                        }
+                        
+                        // 爆炸聲和爆炸特效
+                        setTimeout(() => {
+                            // 播放爆炸聲音
+                            if (window.gameAudio) {
+                                window.gameAudio.play('collect');
+                            }
+                            
+                            // 移除發射的煙花圖標
+                            firework.innerHTML = '';
+                            
+                            // 播放爆炸視覺特效
+                            firework.style.backgroundColor = 'rgba(255, 100, 50, 0.9)';
+                            firework.style.animation = 'explode 0.8s forwards';
+                            
+                            // 建立爆炸波及範圍 - 爆炸中心點周圍的圓形區域
+                            const explosionRadius = Math.min(gameState.screenWidth, gameState.screenHeight) * 0.4; // 40%的屏幕范圍
+                            const explosionCenterX = gameState.screenWidth / 2;
+                            const explosionCenterY = gameState.screenHeight * 0.2; // 對應頂部20%位置
+                            
+                            // 記錄爆炸範圍內的花朵
+                            const affectedFlowers = [];
+                            let totalPoints = 0;
+                            
+                            // 檢查每朵花是否在爆炸範圍內
+                            gameState.flowers.forEach((flower, index) => {
+                                const flowerCenterX = flower.x + flower.size / 2;
+                                const flowerCenterY = flower.y + flower.size / 2;
+                                
+                                // 計算花朵中心到爆炸中心的距離
+                                const distance = Math.sqrt(
+                                    Math.pow(flowerCenterX - explosionCenterX, 2) + 
+                                    Math.pow(flowerCenterY - explosionCenterY, 2)
+                                );
+                                
+                                // 如果在爆炸範圍內
+                                if (distance < explosionRadius) {
+                                    affectedFlowers.push(index);
+                                    
+                                    // 添加飄走動畫
+                                    flower.element.style.animation = 'blast-away 0.7s forwards';
+                                    flower.element.style.animationDelay = (distance / explosionRadius * 0.3) + 's';
+                                    
+                                    // 統計得分
+                                    totalPoints += flower.score * 2; // 雙倍得分
+                                }
+                            });
+                            
+                            // 延遲後移除被波及的花朵
+                            setTimeout(() => {
+                                // 從後往前移除，避免index錯位問題
+                                for (let i = gameState.flowers.length - 1; i >= 0; i--) {
+                                    if (affectedFlowers.includes(i)) {
+                                        gameState.flowers[i].element.remove();
+                                        gameState.flowers.splice(i, 1);
+                                    }
+                                }
+                                
+                                // 添加得分
+                                if (totalPoints > 0) {
+                                    gameState.score += totalPoints;
+                                    updateScore();
+                                    
+                                    // 顯示得分信息
+                                    showFloatingText("+" + totalPoints + " 分", "#FFC53D");
+                                }
+                                
+                                // 顯示清除信息
+                                if (affectedFlowers.length > 0) {
+                                    showFloatingText("煙花清除了 " + affectedFlowers.length + " 朵花!", "#E63946");
+                                }
+                            }, 800);
+                        }, 500);
+                        
+                        // 清除爆炸視覺效果
+                        setTimeout(() => {
+                            firework.remove();
+                        }, 1500);
+                    }
+                }
+            ];
+            
+            // 隨機選擇一種道具
+            const powerupType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+            
+            // 創建道具元素
+            const powerup = document.createElement('div');
+            powerup.className = 'powerup';
+            powerup.textContent = powerupType.emoji;
+            powerup.style.width = `${size}px`;
+            powerup.style.height = `${size}px`;
+            powerup.style.left = `${positionX}px`;
+            powerup.style.top = `-${size}px`;
+            
+            gameContainer.appendChild(powerup);
+            
+            // 添加道具到遊戲狀態
+            gameState.powerups.push({
+                element: powerup,
+                x: positionX,
+                y: -size,
+                size: size,
+                speed: 150 + Math.random() * 50, // 比花朵稍慢的速度
+                type: powerupType
+            });
+            
+            // 更新道具統計
+            gameState.stats.powerups++;
+        }
+        
+        // 顯示浮動文本
+        function showFloatingText(text, color) {
+            const player = document.getElementById('player');
+            const gameContainer = document.getElementById('game-container');
+            
+            const floatText = document.createElement('div');
+            floatText.className = 'floatText';
+            floatText.textContent = text;
+            floatText.style.color = color || 'white';
+            
+            // 定位在玩家上方
+            const playerRect = player.getBoundingClientRect();
+            const containerRect = gameContainer.getBoundingClientRect();
+            
+            const leftPos = player.offsetLeft + player.offsetWidth / 2 - 40;
+            const topPos = player.offsetTop - 20;
+            
+            floatText.style.left = `${leftPos}px`;
+            floatText.style.top = `${topPos}px`;
+            
+            gameContainer.appendChild(floatText);
+            
+            // 動畫結束後移除
+            setTimeout(() => {
+                floatText.remove();
+            }, 1000);
+        }
+        
+        function initGame() {
+            console.log("啟動遊戲初始化");
+            
+            // 首先清理可能殘留的元素
+            cleanupGameElements();
+            
+            // 初始化遊戲狀態
+            window.gameState = {
+                isRunning: true,
+                score: 0,
+                lives: 3, // 確保初始生命值為3
+                level: 1,
+                flowerSpeed: 3.0,
+                baseFlowerSpeed: 3.0,
+                flowerFrequency: 1100, // 調整花朵密度：適中的生成頻率
+                powerupFrequency: 7000, // 每7秒掉落一個道具
+                flowers: [],
+                powerups: [],
+                lastFlowerTime: 0,
+                lastPowerupTime: 0,
+                playerPosition: 0.5,
+                lastTimestamp: 0,
+                screenWidth: 0,
+                screenHeight: 0,
+                gameOverCooldown: false,
+                highScore: 0,
+                touchStartX: 0,
+                touchEndX: 0,
+                isMuted: false,
+                
+                // 問題追蹤系統
+                answeredQuestions: [], // 記錄已回答過的問題索引
+                currentQuestionIndex: undefined, // 當前問題的索引
+                
+                // 道具狀態
+                shieldActive: false,
+                shieldTimeLeft: 0,
+                magnetActive: false,
+                magnetTimeLeft: 0,
+                magnetRadius: 100,
+                timeSlowActive: false,
+                timeSlowTimeLeft: 0,
+                doubleScoreActive: false,
+                doubleScoreTimeLeft: 0,
+                scoreMultiplier: 1,
+                miniBoatActive: false,
+                miniBoatTimeLeft: 0,
+                flowerBasketActive: false,
+                flowerBasketTimeLeft: 0,
+                umbrellaActive: false,
+                umbrellaCount: 0,
+                fogActive: false,
+                fogTimeLeft: 0,
+                foggedFlowers: new Set(),
+                
+                badges: [
+                    { id: 'suzhou', name: '蘇州達人', description: '躲避100朵花', icon: '🏯', requirement: 'score', target: 100, unlocked: false, color: '#5D5CDE' },
+                    { id: 'hangzhou', name: '杭州遊客', description: '達到3級', icon: '⛰️', requirement: 'level', target: 3, unlocked: false, color: '#FFC53D' },
+                    { id: 'scholar', name: '文學大師', description: '回答3個問題', icon: '📚', requirement: 'questions', target: 3, unlocked: false, color: '#88bb92' },
+                    { id: 'master', name: '江南巨匠', description: '獲得500分', icon: '🏆', requirement: 'score', target: 500, unlocked: false, color: '#E63946' },
+                    { id: 'collector', name: '收藏家', description: '收集10個寶物', icon: '💎', requirement: 'powerups', target: 10, unlocked: false, color: '#7ec4cf' },
+                    { id: 'survivor', name: '生存專家', description: '連續活30秒', icon: '🛡️', requirement: 'time', target: 30, unlocked: false, color: '#8a7e72' }
+                ],
+                stats: {
+                    powerups: 0,
+                    questionsAnswered: 0,
+                    timeAlive: 0,
+                    correctAnswers: 0
+                }
+            };
+            
+            // 設置容器尺寸
+            const gameContainer = document.getElementById('game-container');
+            window.gameState.screenWidth = gameContainer.offsetWidth;
+            window.gameState.screenHeight = gameContainer.offsetHeight;
+            
+            // 初始化玩家角色
+            const player = document.getElementById('player');
+            const playerEmoji = "⛵";
+            player.textContent = playerEmoji;
+            // 確保設置轉換效果，使移動平滑
+            player.style.transition = 'left 0.15s ease-out';
+            const playerWidth = player.offsetWidth || 48;
+            const leftPosition = (window.gameState.playerPosition * window.gameState.screenWidth) - (playerWidth / 2);
+            player.style.left = `${leftPosition}px`;
+            
+            // 初始化界面
+            const scoreDisplay = document.getElementById('score');
+            const levelDisplay = document.getElementById('level');
+            const livesContainer = document.getElementById('lives-container');
+            
+            scoreDisplay.textContent = '0';
+            levelDisplay.textContent = '1';
+            
+            // 更新生命
+            livesContainer.innerHTML = '';
+            const heartEmoji = "❤️";
+            for (let i = 0; i < Math.min(window.gameState.lives, 3); i++) {
+                const life = document.createElement('span');
+                life.textContent = heartEmoji;
+                life.style.fontSize = '18px';
+                life.style.marginRight = '4px';
+                livesContainer.appendChild(life);
+            }
+            
+            // 添加生命計數文本
+            const counter = document.createElement('span');
+            counter.className = 'text-xs font-bold ml-1 bg-red-500/20 px-2 py-1 rounded-full text-red-600 dark:text-red-400';
+            counter.textContent = window.gameState.lives;
+            livesContainer.appendChild(counter);
+            
+            console.log("初始生命值設置為：", window.gameState.lives);
+            
+            // 初始化音頻
+            initAudio();
+            
+            // 創建初始花朵 - 極小數量的初始花朵
+            console.log("創建初始花朵");
+            for (let i = 0; i < 2; i++) {
+                createFlower();
+            }
+            window.gameState.lastFlowerTime = performance.now();
+            
+            // 測試花朵創建是否成功
+            console.log("初始花朵數量: " + window.gameState.flowers.length);
+            
+            // 定義遊戲循環函數（確保它在全局範圍內）
+            window.gameLoop = function(timestamp) {
+                if (!window.gameState.isRunning) return;
+                
+                // 計算時間差
+                if (!window.gameState.lastTimestamp) {
+                    window.gameState.lastTimestamp = timestamp;
+                }
+                const deltaTime = (timestamp - window.gameState.lastTimestamp) / 1000;
+                window.gameState.lastTimestamp = timestamp;
+                
+                // 更新花朵位置
+                moveFlowers(deltaTime);
+                
+                // 更新道具位置
+                movePowerups(deltaTime);
+                
+                // 創建新花朵
+                if (timestamp - window.gameState.lastFlowerTime > window.gameState.flowerFrequency) {
+                    createFlower();
+                    window.gameState.lastFlowerTime = timestamp;
+                }
+                
+                // 創建新道具
+                if (timestamp - window.gameState.lastPowerupTime > window.gameState.powerupFrequency) {
+                    createPowerup();
+                    window.gameState.lastPowerupTime = timestamp;
+                }
+                
+                // 繼續遊戲循環
+                window.requestAnimationFrame(window.gameLoop);
+            };
+            
+            // 啟動遊戲循環
+            window.requestAnimationFrame(window.gameLoop);
+            
+            // 設置事件監聽器
+            setupControls();
+        }
+        
+        // 初始化Canvas
+        function initCanvas() {
+            const canvas = document.getElementById('flowers-canvas');
+            if (!canvas) {
+                console.error("無法找到flowers-canvas元素");
+                return;
+            }
+            
+            const container = document.getElementById('game-container');
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            
+            // 儲存Canvas上下文供將來使用
+            window.gameState.canvasContext = canvas.getContext('2d');
+            
+            // 確認Canvas上下文是否成功獲取
+            if (!window.gameState.canvasContext) {
+                console.error("無法獲取Canvas上下文");
+                return;
+            }
+            
+            // 進行Canvas測試繪製
+            const ctx = window.gameState.canvasContext;
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, 50, 50);
+            
+            console.log("Canvas初始化完成，尺寸: " + canvas.width + "x" + canvas.height);
+        }
+        
+        // 創建花朵函數 - 改回DOM版本，確保顯示
+        function createFlower() {
+            console.log("創建新花朵 - DOM版本");
+            const flowerEmojis = ['🌸', '🌺', '🌹', '🌷', '🌻', '🌼', '💮', '🏵️'];
+            const flowerEmoji = flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)];
+            const size = 32;
+            const positionX = Math.random() * (window.gameState.screenWidth - size);
+            
+            const score = Math.floor(Math.random() * 3) + 2;
+            
+            // 根據當前級別調整花朵速度 - 溫和的速度增長曲線
+            const baseSpeed = window.gameState.baseFlowerSpeed || 3.0;
+            const levelMultiplier = 1 + Math.min(0.4, ((window.gameState.level || 1) - 1) * 0.08);
+            const randomFactor = 0.85 + Math.random() * 0.3;
+            const finalSpeed = baseSpeed * 100 * levelMultiplier * randomFactor;
+            
+            // 創建實際的DOM元素
+            const gameContainer = document.getElementById('game-container');
+            if (!gameContainer) {
+                console.error("找不到game-container元素，無法創建花朵");
+                return;
+            }
+            
+            // 創建花朵DOM元素
+            const flowerElement = document.createElement('div');
+            flowerElement.className = 'flower';
+            flowerElement.textContent = flowerEmoji;
+            flowerElement.style.width = size + 'px';
+            flowerElement.style.height = size + 'px';
+            flowerElement.style.left = positionX + 'px';
+            flowerElement.style.top = -size + 'px';
+            
+            // 添加到遊戲容器
+            gameContainer.appendChild(flowerElement);
+            
+            // 儲存花朵數據
+            window.gameState.flowers.push({
+                x: positionX,
+                y: -size,
+                size: size,
+                speed: finalSpeed,
+                emoji: flowerEmoji,
+                score: score,
+                element: flowerElement
+            });
+            
+            // 如果需要創建額外的花朵 - 適度調整機率
+            if (Math.random() < 0.25) { // 從35%降低到25%的機率
+                setTimeout(() => {
+                    if (window.gameState.isRunning) {
+                        createFlower();
+                        
+                        // 有時候同時生成多朵花 - 降低機率
+                        if (Math.random() < 0.2) { // 從30%降低到20%的機率
+                            setTimeout(() => {
+                                if (window.gameState.isRunning) {
+                                    createFlower();
+                                }
+                            }, 150); // 略微增加延遲
+                        }
+                    }
+                }, 200); // 增加延遲時間
+            }
+        }
+        
+        // 添加視覺反饋：碰撞動畫和屏幕閃紅
+        function showHitAnimation() {
+            // 1. 添加屏幕紅色閃爍
+            const gameContainer = document.getElementById('game-container');
+            const hitFlash = document.createElement('div');
+            hitFlash.className = 'hit-flash';
+            gameContainer.appendChild(hitFlash);
+            
+            // 自動移除閃爍效果
+            setTimeout(() => {
+                hitFlash.remove();
+            }, 500);
+            
+            // 2. 使船隻閃爍
+            const player = document.getElementById('player');
+            player.classList.add('bloom');
+            
+            // 重置閃爍效果
+            setTimeout(() => {
+                player.classList.remove('bloom');
+            }, 500);
+            
+            // 3. 添加屏幕震動
+            gameContainer.classList.add('screen-shake');
+            setTimeout(() => {
+                gameContainer.classList.remove('screen-shake');
+            }, 500);
+            
+            // 4. 移除音效播放代碼 (已經移至碰撞檢測處理中)
+            // 注意：為確保音效播放，我們在檢測到碰撞時立即播放音效
+            console.log("碰撞視覺效果顯示中...");
+        }
+        
+        // 渲染Canvas中的花朵 - 現在不再需要，DOM版本直接更新元素位置
+        function renderFlowersOnCanvas() {
+            // 已經改為DOM版本，這個函數留空但保留以避免錯誤
+            // 如果需要恢復Canvas渲染，可以取消註釋以下代碼
+            /*
+            if (!window.gameState || !window.gameState.canvasContext) return;
+            
+            const canvas = document.getElementById('flowers-canvas');
+            if (!canvas) return;
+            
+            const ctx = window.gameState.canvasContext;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            */
+        }
+        
+        // 移動花朵函數 - DOM版本
+        function moveFlowers(deltaTime) {
+            // 檢查gameState是否已經初始化
+            if (!window.gameState || !window.gameState.flowers) {
+                console.log("moveFlowers: gameState或flowers未定義");
+                return;
+            }
+            
+            // console.log("移動花朵: " + window.gameState.flowers.length + "朵");
+            
+            for (let i = window.gameState.flowers.length - 1; i >= 0; i--) {
+                // 檢查花朵是否存在
+                if (!window.gameState.flowers[i]) {
+                    console.log("發現無效花朵，移除索引:", i);
+                    if (window.gameState.flowers[i]) {
+                        window.gameState.flowers.splice(i, 1);
+                    }
+                    continue;
+                }
+                
+                const flower = window.gameState.flowers[i];
+                
+                // 移動花朵
+                flower.y += flower.speed * deltaTime;
+                
+                // 更新DOM元素位置
+                flower.element.style.top = `${flower.y}px`;
+                
+                // 檢查是否超出屏幕
+                if (flower.y > gameState.screenHeight) {
+                    // 計算分數 - 考慮雙倍積分
+                    const baseScore = flower.score;
+                    const finalScore = gameState.doubleScoreActive ? baseScore * gameState.scoreMultiplier : baseScore;
+                    gameState.score += finalScore;
+                    updateScore();
+                    
+                    // 移除DOM元素
+                    if (flower.element && flower.element.parentNode) {
+                        flower.element.remove();
+                    }
+                    
+                    // 從數組中移除花朵
+                    gameState.flowers.splice(i, 1);
+                }
+                
+                // 檢查與玩家碰撞 - 使用更簡單的碰撞檢測，提高可靠性
+                const player = document.getElementById('player');
+                if (!player) continue; // 檢查玩家元素是否存在
+                const playerWidth = player.offsetWidth || 48;
+                const playerHeight = player.offsetHeight || 64;
+                const playerX = gameState.playerPosition * gameState.screenWidth - playerWidth / 2;
+                const playerY = gameState.screenHeight - 70;
+                
+                // 檢測是否發生碰撞
+                const collision = playerX < flower.x + flower.size &&
+                                 playerX + playerWidth > flower.x &&
+                                 playerY < flower.y + flower.size &&
+                                 playerY + playerHeight > flower.y;
+                
+                // 只有在碰撞發生時才處理
+                if (collision) {
+                    // 檢查遊戲是否正在運行
+                    if (!gameState.isRunning) {
+                        return; // 如果遊戲已經暫停，不再處理碰撞
+                    }
+                    
+                    // 檢查是否是被霧氣迷蒙影響的花朵
+                    if (gameState.fogActive && gameState.foggedFlowers.has(i)) {
+                        // 被霧化的花朵不會造成傷害，直接穿過
+                        return;
+                    }
+                    
+                    // 檢查是否在護盾模式
+                    if (gameState.shieldActive) {
+                        // 護盾模式時，花朵不會造成傷害，只是消失
+                        flower.element.remove();
+                        gameState.flowers.splice(i, 1);
+                        return;
+                    }
+                    
+                    // 檢查是否有雨傘保護
+                    if (gameState.umbrellaActive && gameState.umbrellaCount > 0) {
+                        // 減少雨傘計數
+                        gameState.umbrellaCount--;
+                        // 更新顯示
+                        document.getElementById('umbrella-count').textContent = 'x' + gameState.umbrellaCount;
+                        
+                        // 添加彈開視覺效果
+                        const bounceEffect = document.createElement('div');
+                        bounceEffect.className = 'absolute z-20 pointer-events-none';
+                        bounceEffect.style.left = `${flower.x}px`;
+                        bounceEffect.style.top = `${flower.y}px`;
+                        bounceEffect.style.fontSize = '24px';
+                        bounceEffect.textContent = '↖️';
+                        bounceEffect.style.animation = 'bounce-away 0.5s forwards';
+                        
+                        // 添加彈開動畫
+                        const style = document.createElement('style');
+                        style.textContent = `
+                            @keyframes bounce-away {
+                                0% { transform: translate(0, 0) scale(1); opacity: 1; }
+                                100% { transform: translate(-40px, -40px) scale(0.5); opacity: 0; }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                        
+                        document.getElementById('game-container').appendChild(bounceEffect);
+                        setTimeout(() => bounceEffect.remove(), 500);
+                        
+                        // 播放彈開音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('collect');
+                        }
+                        
+                        // 顯示彈開文字
+                        showFloatingText("彈開!", "#D66853");
+                        
+                        // 如果是最後一次彈開，移除雨傘效果
+                        if (gameState.umbrellaCount <= 0) {
+                            gameState.umbrellaActive = false;
+                            document.getElementById('umbrella-indicator').style.display = 'none';
+                            
+                            // 移除雨傘視覺效果
+                            player.style.boxShadow = "";
+                            const umbrellaIcon = document.getElementById('umbrella-icon');
+                            if (umbrellaIcon) umbrellaIcon.remove();
+                        }
+                        
+                        // 移除花朵
+                        flower.element.remove();
+                        gameState.flowers.splice(i, 1);
+                        return;
+                    }
+                    
+                    if (gameState.flowerBasketActive) {
+                        // 花籃模式時，碰到花朵不會受傷，反而獲得分數
+                        // 計算得分 (基礎分數 x2)
+                        const bonusScore = flower.score * 2;
+                        
+                        // 如果同時激活雙倍積分，則再乘以積分倍率
+                        const finalScore = gameState.doubleScoreActive ? bonusScore * gameState.scoreMultiplier : bonusScore;
+                        gameState.score += finalScore;
+                        updateScore();
+                        
+                        // 顯示分數浮動文字
+                        showFloatingText("+" + finalScore + " 分", "#DAA520");
+                        
+                        // 播放收集音效而非碰撞音效
+                        if (window.gameAudio) {
+                            window.gameAudio.play('collect');
+                        }
+                        
+                        // 移除花朵
+                        flower.element.remove();
+                        gameState.flowers.splice(i, 1);
+                        return;
+                    }
+                    
+                    // 一般碰撞 - 玩家受傷
+                    
+                    // 播放碰撞音效
+                    if (window.gameAudio) {
+                        window.gameAudio.play('hit');
+                        console.log("優先播放碰撞音效！");
+                    }
+                    
+                    // 備用碰撞音效
+                    const splashSoundBase64 = "UklGRigDAABXQVZFZm10IBAAAAABAAIARKwAABCxAgAEACAAAABkYXRhAAAAAIn/Uf+c/6X/6v8hAEYAFQEEAuYChwMGBHEEswT5BEYF9wWdBhAHaQdSCDEJRgoSC8QL9ws6DDoM0gxODcwNNg5xDo0Olw6sDpwOeA5ADhsOvQ2JDUENuQxLDM8LKwt9CtMJPwmTCO0HMgeYBrQFIgVpBNQDKANvArgBHgGTABsAof8u/9X+kf5R/vv9qv17/Wb9av1q/UX9LP0l/Sn9Mf0p/SH9K/09/UP9Mf0Y/Rf9J/0k/RL97/zZ/Mf8qvyM/Gv8Ufww/Az86/vO+637kvt6+2v7X/tT+077YvuD+7L73PsP/Eb8hPzT/Cr9kP0A/nv+/v6T/y0AtwAnAZwBGQKaAiIDuQNkBBcFvAV0BiMH1AeECDkJ9AmsCmULIQzmDKUNbQ43DwIQzxCgEXQSUBMtFBIV+BXfFssXwBitGZ4afBtjHE4dRh5JH0YgPSElIhQjBST4JO4l4SbYJ9Mo0CnTKtQr1CzSLc4uyi/GMMLRw9TE5MX2xgvIIMk2yk7LZcx+zZrOtc/Q0OrR/tIT1CjVP9ZX12/YhtmY2qXbrdyz3b7exN/L4NPhzeKt43LkMeXw5cjmkud86FzpN+oN69Dr+ey37fTuJvBD8VvycvOJ9Kb1vfbQ9+X49Pn5+vv7/fz+/QD+Af4D/gX+B/4J/gr+DP4O/hD+Ev4U/hb+GP4Z/hn+Gf4a/hr+G/4b/hz+HP4c/h3+Hf4e/h7+Hv4d/h3+Hf4c/hv+Gv4Z/hj+F/4W/hX+FP4T/hL+Ef4Q/g/+Dv4N/gz+C/4K/gj+B/4G/gX+BP4D/gL+Af4A/v/9/v39/P37/fr9+f34/ff99v31/fT98v3x/fD97/3u/e397P3r/er96f3o/ef95v3l/eT94/3i/eH94f3g/eD93/3f/d/93v3e/d793v3e/d793g==";
+                    
+                    // 方法1：使用直接內嵌的Audio對象播放
+                    try {
+                        const hitSound = new Audio("data:audio/wav;base64," + splashSoundBase64);
+                        hitSound.volume = 0.5; // 增加音量到50%
+                        
+                        // 加載並立即播放音效
+                        hitSound.load();
+                        const playPromise = hitSound.play();
+                        
+                        if (playPromise !== undefined) {
+                            playPromise
+                                .then(() => console.log("碰撞音效播放成功"))
+                                .catch(e => {
+                                    console.error("直接播放碰撞音效失敗：", e);
+                                    // 方法3：如果前兩種方法都失敗，嘗試使用備用音效
+                                    playFallbackHitSound();
+                                });
+                        }
+                    } catch (e) {
+                        console.error("音效播放錯誤1：", e);
+                        // 方法2：使用全局音效系統作為備用
+                        playFallbackHitSound();
+                    }
+                    
+                    // 用於播放備用音效的函數
+                    function playFallbackHitSound() {
+                        try {
+                            if (window.gameAudio) {
+                                window.gameAudio.play('hit');
+                                console.log('使用備用方式1播放碰撞音效');
+                            } else {
+                                // 最後的備用方法：使用普通網頁音效API
+                                try {
+                                    const fallbackSound = new Audio();
+                                    fallbackSound.src = "data:audio/wav;base64," + splashSoundBase64; 
+                                    fallbackSound.volume = 0.6;
+                                    
+                                    fallbackSound.oncanplaythrough = function() {
+                                        fallbackSound.play()
+                                            .then(() => console.log("使用備用方式2播放碰撞音效"))
+                                            .catch(e => console.error("備用音效也失敗：", e));
+                                    };
+                                    
+                                    fallbackSound.onerror = function() {
+                                        console.error("備用音效加載失敗");
+                                    };
+                                    
+                                    fallbackSound.load();
+                                } catch (e) {
+                                    console.error("所有音效方法都失敗：", e);
+                                }
+                            }
+                        } catch (e) {
+                            console.error("音效播放錯誤2：", e);
+                        }
+                    }
+                
+                    // 玩家被花朵擊中
+                    gameState.lives--;
+                    console.log("被擊中！剩餘生命：", gameState.lives); // 調試信息
+                    updateLives();
+                    
+                    // 添加視覺反饋：碰撞動畫和屏幕閃紅
+                    showHitAnimation();
+                    
+                    // 移除花朵
+                    flower.element.remove();
+                    gameState.flowers.splice(i, 1);
+                    
+                    // 檢查遊戲是否結束 - 只有生命耗盡才遊戲結束
+                    if (gameState.lives <= 0) {
+                        console.log("生命耗盡，游戲結束"); // 調試信息
+                        gameOver();
+                    } else {
+                        console.log("仍有生命，游戲繼續"); // 調試信息
+                    }
+                }
+            }
+        }
+        
+        // 檢查碰撞函數 - 改進的碰撞檢測，減小碰撞區域以增加準確性
+        function checkCollision(object) {
+            const player = document.getElementById('player');
+            const playerWidth = player.offsetWidth || 48;
+            const playerHeight = player.offsetHeight || 64;
+            const playerX = gameState.playerPosition * gameState.screenWidth - playerWidth / 2;
+            const playerY = gameState.screenHeight - 70;
+            
+            // 實際視覺碰撞區域縮小 - 為物體添加碰撞偏移量
+            const collisionMargin = 8; // 像素偏移量，調整碰撞盒大小
+            
+            // 縮小的玩家碰撞盒
+            const playerCollisionX = playerX + collisionMargin;
+            const playerCollisionY = playerY + collisionMargin;
+            const playerCollisionWidth = playerWidth - (collisionMargin * 2);
+            const playerCollisionHeight = playerHeight - (collisionMargin * 2);
+            
+            // 縮小的物體碰撞盒
+            const objectCollisionX = object.x + collisionMargin;
+            const objectCollisionY = object.y + collisionMargin;
+            const objectCollisionSize = object.size - (collisionMargin * 2);
+            
+            // 使用縮小後的碰撞盒進行檢測
+            return (
+                playerCollisionX < objectCollisionX + objectCollisionSize &&
+                playerCollisionX + playerCollisionWidth > objectCollisionX &&
+                playerCollisionY < objectCollisionY + objectCollisionSize &&
+                playerCollisionY + playerCollisionHeight > objectCollisionY
+            );
+        }
+        
+        // 更新分數和難度調整
+        function updateScore() {
+            document.getElementById('score').textContent = gameState.score;
+            
+            // 檢查級別提升
+            const newLevel = Math.floor(gameState.score / 100) + 1;
+            if (newLevel > gameState.level) {
+                gameState.level = newLevel;
+                document.getElementById('level').textContent = gameState.level;
+                
+                // 隨著級別提升，增加難度，但最多到第5級
+                if (newLevel <= 5) {
+                    // 1. 花朵下落速度提升 - 限制在第5級，使用更溫和的加速
+                    gameState.baseFlowerSpeed = 3.0 + Math.min(4, (newLevel - 1)) * 0.3; // 最多增加到4.2的速度
+                    
+                    // 2. 花朵生成頻率增加 (间隔减小) - 限制在第5級
+                    gameState.flowerFrequency = Math.max(800, 1300 - Math.min(4, (newLevel - 1)) * 100); // 最快到800ms一個花朵
+                }
+                
+                // 顯示等級提升訊息
+                showLevelUpMessage(newLevel);
+            }
+        }
+        
+        // 顯示等級提升訊息
+        function showLevelUpMessage(level) {
+            const gameContainer = document.getElementById('game-container');
+            
+            // 創建提示元素
+            const message = document.createElement('div');
+            message.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary/80 dark:bg-water/80 text-white font-bold py-4 px-6 rounded-lg z-30 text-xl shadow-lg';
+            message.style.animation = 'fadeInOut 2s forwards';
+            message.innerHTML = `
+                <div class="text-center">
+                    <div class="text-2xl mb-1">級別 ${level}</div>
+                    <div class="text-sm font-normal">難度提升！</div>
+                </div>
+            `;
+            
+            gameContainer.appendChild(message);
+            
+            // 動畫結束後移除
+            setTimeout(() => {
+                message.remove();
+            }, 2000);
+        }
+        
+        // 添加逐漸淡入淡出的動畫
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+                30% { transform: translate(-50%, -50%) scale(1); }
+                70% { opacity: 1; }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // 更新生命顯示
+        function updateLives() {
+            const livesContainer = document.getElementById('lives-container');
+            livesContainer.innerHTML = '';
+            const heartEmoji = "❤️";
+            
+            for (let i = 0; i < Math.min(gameState.lives, 3); i++) {
+                const life = document.createElement('span');
+                life.textContent = heartEmoji;
+                life.style.fontSize = '18px';
+                life.style.marginRight = '4px';
+                livesContainer.appendChild(life);
+            }
+            
+            const counter = document.createElement('span');
+            counter.className = 'text-xs font-bold ml-1 bg-red-500/20 px-2 py-1 rounded-full text-red-600 dark:text-red-400';
+            counter.textContent = gameState.lives;
+            livesContainer.appendChild(counter);
+        }
+        
+        // 移動道具函數 - 簡化碰撞檢測及添加磁鐵效果
+        function movePowerups(deltaTime) {
+            for (let i = gameState.powerups.length - 1; i >= 0; i--) {
+                // 檢查道具是否存在且有效
+                if (!gameState.powerups[i] || !gameState.powerups[i].element || !gameState.powerups[i].element.parentNode) {
+                    console.log("發現無效道具，移除索引:", i);
+                    if (gameState.powerups[i]) {
+                        gameState.powerups.splice(i, 1);
+                    }
+                    continue;
+                }
+                
+                const powerup = gameState.powerups[i];
+                
+                // 檢查磁鐵效果是否激活
+                if (gameState.magnetActive) {
+                    // 計算道具與玩家的距離
+                    const player = document.getElementById('player');
+                    const playerWidth = player.offsetWidth || 48;
+                    const playerHeight = player.offsetHeight || 64;
+                    const playerX = gameState.playerPosition * gameState.screenWidth - playerWidth / 2 + playerWidth / 2;
+                    const playerY = gameState.screenHeight - 70 + playerHeight / 2;
+                    
+                    const powerupCenterX = powerup.x + powerup.size / 2;
+                    const powerupCenterY = powerup.y + powerup.size / 2;
+                    
+                    // 計算玩家和道具之間的方向向量
+                    const dx = playerX - powerupCenterX;
+                    const dy = playerY - powerupCenterY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // 如果在磁鐵吸引範圍內（300像素）
+                    if (distance < 300) {
+                        // 調整道具移動方向，向玩家移動，速度隨距離增加
+                        const attractionSpeed = 300 * (1 - Math.min(distance, 250) / 300);
+                        const normalizedDx = dx / distance;
+                        const normalizedDy = dy / distance;
+                        
+                        // 更新道具位置向玩家移動
+                        powerup.x += normalizedDx * attractionSpeed * deltaTime;
+                        powerup.y += normalizedDy * attractionSpeed * deltaTime;
+                    } else {
+                        // 正常下落
+                        powerup.y += powerup.speed * deltaTime;
+                    }
+                } else {
+                    // 正常下落
+                    powerup.y += powerup.speed * deltaTime;
+                }
+                
+                // 更新道具元素位置
+                powerup.element.style.left = `${powerup.x}px`;
+                powerup.element.style.top = `${powerup.y}px`;
+                
+                // 檢查是否超出屏幕
+                if (powerup.y > gameState.screenHeight) {
+                    // 確保元素存在後再移除
+                    if (powerup.element && powerup.element.parentNode) {
+                        powerup.element.remove();
+                    }
+                    gameState.powerups.splice(i, 1);
+                    continue;
+                }
+                
+                // 直接使用簡單碰撞檢測
+                const player = document.getElementById('player');
+                const playerWidth = player.offsetWidth || 48;
+                const playerHeight = player.offsetHeight || 64;
+                const playerX = gameState.playerPosition * gameState.screenWidth - playerWidth / 2;
+                const playerY = gameState.screenHeight - 70;
+                
+                // 檢查碰撞 - 使用與花朵相同的簡單檢測方法
+                if (playerX < powerup.x + powerup.size &&
+                    playerX + playerWidth > powerup.x &&
+                    playerY < powerup.y + powerup.size &&
+                    playerY + playerHeight > powerup.y) {
+                    
+                    // 先播放音效（優先處理音效，確保立即響應）
+                    if (window.gameAudio) {
+                        // 根據道具類型播放不同音效
+                        if (powerup.type.name === 'shield' || 
+                            powerup.type.name === 'magnet' || 
+                            powerup.type.name === 'time_slow' ||
+                            powerup.type.name === 'double_score' ||
+                            powerup.type.name === 'mini_boat' ||
+                            powerup.type.name === 'flower_basket' ||
+                            powerup.type.name === 'umbrella' ||
+                            powerup.type.name === 'fog' ||
+                            powerup.type.name === 'fan_clear' ||
+                            powerup.type.name === 'firework') {
+                            // 特殊道具音效
+                            window.gameAudio.play('powerup');
+                        } else {
+                            // 普通道具音效
+                            window.gameAudio.play('collect');
+                        }
+                    }
+                    
+                    // 處理道具效果
+                    powerup.type.effect();
+                    
+                    // 移除道具
+                    powerup.element.remove();
+                    gameState.powerups.splice(i, 1);
+                }
+            }
+        }
+        
+        // 設置控制 - 確保各種方式的移動一致性
+        function setupControls() {
+            // 左右點擊控制，類似鍵盤方向鍵
+            const gameContainer = document.getElementById('game-container');
+            const player = document.getElementById('player');
+            
+            // 統一移動步長常數，確保所有控制方式使用相同的步長
+            const MOVE_STEP = 0.05; // 標準移動步長
+            
+            // 移動角色的通用函數，確保所有控制方式都經過同一個處理流程
+            function movePlayer(direction) {
+                if (!gameState.isRunning) return;
+                
+                // 根據方向移動船隻
+                if (direction === 'left') {
+                    gameState.playerPosition = Math.max(0.05, gameState.playerPosition - MOVE_STEP);
+                } else if (direction === 'right') {
+                    gameState.playerPosition = Math.min(0.95, gameState.playerPosition + MOVE_STEP);
+                }
+                
+                // 確保動畫平滑效果
+                player.style.transition = 'left 0.15s ease-out';
+                
+                // 更新船位置
+                const playerWidth = player.offsetWidth || 48;
+                const leftPosition = (gameState.playerPosition * gameState.screenWidth) - (playerWidth / 2);
+                player.style.left = `${leftPosition}px`;
+            }
+            
+            // 移動船隻到指定位置，用於點擊/觸碰位置的直接移動
+            function movePlayerToPosition(posX) {
+                if (!gameState.isRunning) return;
+                
+                // 計算相對位置，確保在容器範圍內
+                const containerRect = gameContainer.getBoundingClientRect();
+                const relativePosition = (posX - containerRect.left) / gameState.screenWidth;
+                gameState.playerPosition = Math.max(0.05, Math.min(0.95, relativePosition));
+                
+                // 確保動畫平滑效果
+                player.style.transition = 'left 0.15s ease-out';
+                
+                // 更新船位置
+                const playerWidth = player.offsetWidth || 48;
+                const leftPosition = (gameState.playerPosition * gameState.screenWidth) - (playerWidth / 2);
+                player.style.left = `${leftPosition}px`;
+            }
+            
+            // 觸摸開始 - 檢測左右側點擊
+            gameContainer.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                
+                const touchX = e.touches[0].clientX;
+                const containerRect = gameContainer.getBoundingClientRect();
+                const containerCenter = containerRect.width / 2 + containerRect.left;
+                
+                // 判斷點擊屏幕左側還是右側
+                if (touchX < containerCenter) {
+                    // 左側點擊 - 向左移動
+                    movePlayer('left');
+                } else {
+                    // 右側點擊 - 向右移動
+                    movePlayer('right');
+                }
+                
+                // 視覺反饋
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'absolute bg-white/10 rounded-full z-30';
+                feedbackDiv.style.width = '50px';
+                feedbackDiv.style.height = '50px';
+                feedbackDiv.style.left = `${touchX - 25}px`;
+                feedbackDiv.style.top = `${e.touches[0].clientY - 25}px`;
+                gameContainer.appendChild(feedbackDiv);
+                
+                // 動畫結束後移除
+                setTimeout(() => {
+                    feedbackDiv.remove();
+                }, 200);
+            });
+            
+            // 完全禁用觸摸移動，不需要滑動效果
+            gameContainer.addEventListener('touchmove', (e) => {
+                e.preventDefault(); // 僅阻止默認行為，不再處理滑動
+            });
+            
+            // 觸摸結束事件 - 不需要特殊處理
+            gameContainer.addEventListener('touchend', (e) => {
+                // 不需要特別處理
+            });
+            
+            // 滑鼠點擊 - 直接移動到點擊位置
+            gameContainer.addEventListener('mousedown', (e) => {
+                movePlayerToPosition(e.clientX);
+            });
+            
+            // 鍵盤控制
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'a') {
+                    movePlayer('left');
+                } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                    movePlayer('right');
+                }
+            });
+        }
+        
+        // 新增遊戲清理函數 - 確保所有元素正確清除
+        function cleanupGameElements() {
+            console.log("清理遊戲元素...");
+            
+            // 檢查gameState是否存在，避免"Uncaught ReferenceError: gameState is not defined"錯誤
+            if (!window.gameState) {
+                console.log("gameState不存在，無需清理");
+                return;
+            }
+            
+            // 清理所有花朵
+            if (gameState.flowers) {
+                gameState.flowers.forEach(flower => {
+                    if (flower && flower.element && flower.element.parentNode) {
+                        flower.element.remove();
+                    }
+                });
+                gameState.flowers = [];
+            }
+            
+            // 清理所有道具
+            if (gameState.powerups) {
+                gameState.powerups.forEach(powerup => {
+                    if (powerup && powerup.element && powerup.element.parentNode) {
+                        powerup.element.remove();
+                    }
+                });
+                gameState.powerups = [];
+            }
+            
+            // 清理所有特效元素
+            const gameContainer = document.getElementById('game-container');
+            if (gameContainer) {
+                // 清理浮動文字
+                const floatingTexts = gameContainer.querySelectorAll('.floatText');
+                floatingTexts.forEach(el => el.remove());
+                
+                // 清理霧氣效果
+                const fogOverlay = document.getElementById('fog-overlay');
+                if (fogOverlay) fogOverlay.remove();
+                
+                // 清理雨傘圖標
+                const umbrellaIcon = document.getElementById('umbrella-icon');
+                if (umbrellaIcon) umbrellaIcon.remove();
+                
+                // 清理其他可能的動畫元素
+                const animationElements = gameContainer.querySelectorAll('.bounce-away, .blast-away, .float-away');
+                animationElements.forEach(el => el.remove());
+            }
+            
+            // 確保gameState各屬性存在後再清理計時器
+            if (gameState.shieldInterval) {
+                clearInterval(gameState.shieldInterval);
+                gameState.shieldInterval = null;
+            }
+            if (gameState.magnetInterval) {
+                clearInterval(gameState.magnetInterval);
+                gameState.magnetInterval = null;
+            }
+            if (gameState.timeSlowInterval) {
+                clearInterval(gameState.timeSlowInterval);
+                gameState.timeSlowInterval = null;
+            }
+            if (gameState.doubleScoreInterval) {
+                clearInterval(gameState.doubleScoreInterval);
+                gameState.doubleScoreInterval = null;
+            }
+            if (gameState.miniBoatInterval) {
+                clearInterval(gameState.miniBoatInterval);
+                gameState.miniBoatInterval = null;
+            }
+            if (gameState.flowerBasketInterval) {
+                clearInterval(gameState.flowerBasketInterval);
+                gameState.flowerBasketInterval = null;
+            }
+            if (gameState.fogInterval) {
+                clearInterval(gameState.fogInterval);
+                gameState.fogInterval = null;
+            }
+            
+            // 重置道具狀態指示器 - 檢查元素是否存在
+            const indicators = [
+                'shield-indicator', 'magnet-indicator', 'time-slow-indicator', 
+                'double-score-indicator', 'mini-boat-indicator', 'flower-basket-indicator', 
+                'umbrella-indicator', 'fog-indicator'
+            ];
+            
+            indicators.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.style.display = 'none';
+                }
+            });
+            
+            // 重置玩家樣式
+            const player = document.getElementById('player');
+            if (player) {
+                player.style.boxShadow = "";
+                player.style.filter = "";
+                // 恢復原始大小
+                if (gameState.originalPlayerSize) {
+                    player.style.fontSize = gameState.originalPlayerSize.fontSize || '40px';
+                    player.style.width = (gameState.originalPlayerSize.width || 48) + 'px';
+                    player.style.height = (gameState.originalPlayerSize.height || 64) + 'px';
+                    gameState.originalPlayerSize = null;
+                }
+            }
+            
+            console.log("遊戲元素清理完成");
+        }
+        
+        // 遊戲結束函數 - 先顯示詩句
+        function gameOver() {
+            console.log("游戲結束，最終生命值：", gameState.lives); 
+            
+            // 確保只有在生命值確實為0時才調用遊戲結束
+            if (gameState.lives > 0) {
+                console.error("錯誤：生命值還有剩餘，不應結束遊戲！");
+                // 恢復遊戲狀態，防止錯誤調用
+                gameState.isRunning = true;
+                return; // 直接返回，不顯示問答界面
+            }
+            
+            // 重置遊戲結束處理標記，確保每次死亡都會顯示問答界面
+            if (gameState.gameOverProcessed === undefined) {
+                gameState.gameOverProcessed = false;
+            } else {
+                gameState.gameOverProcessed = false; // 強制重置，確保答題後再次死亡仍會顯示界面
+            }
+            
+            gameState.isRunning = false;
+            
+            // 更新最高分
+            if (gameState.score > gameState.highScore) {
+                gameState.highScore = gameState.score;
+            }
+            
+            // 清理遊戲元素，確保沒有殘留
+            cleanupGameElements();
+            
+            // 播放遊戲結束音效
+            if (window.gameAudio) {
+                window.gameAudio.play('gameover');
+            }
+            
+            // 顯示遊戲結束畫面
+            document.getElementById('game-over-screen').style.display = 'flex';
+            
+            // 確保各元素處於正確的初始狀態
+            const poemCard = document.getElementById('poem-card');
+            const questionCard = document.getElementById('question-card');
+            
+            // 確保詩句卡片是可見的，問答卡片是隱藏的
+            poemCard.classList.remove('hidden');
+            poemCard.style.transform = "scale(1)";
+            poemCard.style.opacity = "1";
+            
+            questionCard.classList.add('hidden');
+            questionCard.style.opacity = "0";
+            questionCard.style.transform = "scale(0.95)";
+            
+            // 顯示詩句階段
+            showPoemStage();
+        }
+        
+        // 詩句顯示階段
+        function showPoemStage() {
+            // 設置得分
+            document.getElementById('poem-final-score').textContent = gameState.score;
+            document.getElementById('final-score').textContent = gameState.score;
+            
+            // 江南相關詩句庫
+            const poems = [
+                {text: "水光瀲滟晴方好，山色空濛雨亦奇。", author: "— 蘇軾《飲湖上初晴後雨》"},
+                {text: "兩岸猿聲啼不住，輕舟已過萬重山。", author: "— 李白《早發白帝城》"},
+                {text: "日出江花紅勝火，春來江水綠如藍。", author: "— 白居易《憶江南》"},
+                {text: "蘇州城外寒山寺，夜半鐘聲到客船。", author: "— 張繼《楓橋夜泊》"},
+                {text: "欲把西湖比西子，淡妝濃抹總相宜。", author: "— 蘇軾《飲湖上初晴後雨》"},
+                {text: "江南好，風景舊曾諳。日出江花紅勝火，春來江水綠如藍。", author: "— 白居易《憶江南》"},
+                {text: "山寺月中尋桂子，郡亭枕上看潮頭。", author: "— 白居易《錢塘湖春行》"},
+                {text: "孤山寺北賈亭西，水面初平雲腳低。", author: "— 林逋《山園小梅》"}
+            ];
+            
+            // 隨機選擇一首詩
+            const randomPoem = poems[Math.floor(Math.random() * poems.length)];
+            
+            // 獲取元素
+            const poemText = document.getElementById('game-over-poem');
+            const poemAuthor = document.getElementById('poem-author');
+            const poemCard = document.getElementById('poem-card');
+            const questionCard = document.getElementById('question-card');
+            const progressBar = document.getElementById('typewriter-progress');
+            const continueButton = document.getElementById('continue-to-question-btn');
+            
+            // 重置元素
+            poemText.textContent = "";
+            poemText.style.opacity = "1";
+            poemAuthor.textContent = "";
+            poemAuthor.style.opacity = "0";
+            progressBar.style.width = "0%";
+            continueButton.style.opacity = "0";
+            continueButton.disabled = true;
+            
+            // 確保問答卡片隱藏
+            questionCard.classList.add('hidden');
+            questionCard.style.opacity = "0";
+            questionCard.style.transform = "scale(0.95)";
+            
+            // 確保詩句卡片顯示
+            poemCard.style.transform = "scale(1)";
+            poemCard.style.opacity = "1";
+            
+            // 打字機效果
+            const poemChars = randomPoem.text.split('');
+            const authorChars = randomPoem.author.split('');
+            let poemCharIndex = 0;
+            let authorCharIndex = 0;
+            let poemDone = false;
+            
+            // 打字機效果間隔，每100ms添加一個字符
+            const typewriterInterval = setInterval(() => {
+                if (!poemDone) {
+                    // 顯示詩句
+                    if (poemCharIndex < poemChars.length) {
+                        poemText.textContent += poemChars[poemCharIndex];
+                        poemCharIndex++;
+                        // 更新進度條
+                        const totalChars = poemChars.length + authorChars.length;
+                        const progress = (poemCharIndex / totalChars) * 100;
+                        progressBar.style.width = `${progress}%`;
+                    } else {
+                        // 詩句完成
+                        poemDone = true;
+                        // 顯示作者，給詩句一點時間停留
+                        setTimeout(() => {
+                            poemAuthor.style.opacity = "1";
+                            const authorInterval = setInterval(() => {
+                                if (authorCharIndex < authorChars.length) {
+                                    poemAuthor.textContent += authorChars[authorCharIndex];
+                                    authorCharIndex++;
+                                    // 更新進度條
+                                    const totalChars = poemChars.length + authorChars.length;
+                                    const progress = ((poemChars.length + authorCharIndex) / totalChars) * 100;
+                                    progressBar.style.width = `${progress}%`;
+                                } else {
+                                    // 全部完成
+                                    clearInterval(authorInterval);
+                                    progressBar.style.width = "100%";
+                                    
+                                    // 顯示繼續按鈕
+                                    setTimeout(() => {
+                                        continueButton.style.opacity = "1";
+                                        continueButton.disabled = false;
+                                    }, 800);
+                                }
+                            }, 100);
+                        }, 800);
+                    }
+                }
+            }, 100);
+            
+            // 點擊繼續按鈕切換到問答界面
+            continueButton.addEventListener('click', showQuestionStage, {once: true});
+            
+            // 安全起見，確保即使出現問題也能進入下一階段
+            setTimeout(() => {
+                clearInterval(typewriterInterval);
+                if (continueButton.disabled) {
+                    // 如果按鈕仍被禁用，自動啟用
+                    progressBar.style.width = "100%";
+                    poemText.textContent = randomPoem.text;
+                    poemAuthor.textContent = randomPoem.author;
+                    poemAuthor.style.opacity = "1";
+                    continueButton.style.opacity = "1";
+                    continueButton.disabled = false;
+                }
+            }, 15000); // 15秒後自動完成
+        }
+        
+        // 問答展示階段
+        function showQuestionStage() {
+            const poemCard = document.getElementById('poem-card');
+            const questionCard = document.getElementById('question-card');
+            
+            // 淡出詩句卡片
+            poemCard.style.transform = "scale(0.95)";
+            poemCard.style.opacity = "0";
+            
+            // 移除已經註冊的事件
+            document.getElementById('continue-to-question-btn').removeEventListener('click', showQuestionStage);
+            
+            // 等待淡出動畫
+            setTimeout(() => {
+                // 隱藏詩句卡片
+                poemCard.classList.add('hidden');
+                
+                // 顯示問答卡片
+                questionCard.classList.remove('hidden');
+                
+                // 延遲少許時間後淡入問答卡片
+                setTimeout(() => {
+                    questionCard.style.opacity = "1";
+                    questionCard.style.transform = "scale(1)";
+                    
+                    // 載入隨機問題
+                    loadRandomQuestion();
+                }, 50);
+            }, 500);
+        }
+        
+        // 載入隨機問題，確保不會重複選擇已答對的問題
+        function loadRandomQuestion() {
+            const questions = [
+                {
+                    question: '蘇堤是由哪位著名詩人在杭州任職期間主持修建的？',
+                    options: ['李白', '杜甫', '白居易', '蘇軾'],
+                    answer: 3,
+                    explanation: '蘇堤是由北宋著名詩人蘇軾（蘇東坡）在杭州擔任知州期間主持修建的，為西湖十景之一。'
+                },
+                {
+                    question: '李賀的《蘇小小墓》描述的墓地位於哪個城市？',
+                    options: ['上海', '蘇州', '杭州', '南京'],
+                    answer: 2,
+                    explanation: '蘇小小墓位於杭州西湖邊，是南朝著名歌妓蘇小小的墓地，李賀有《蘇小小墓》詩描述此處。'
+                },
+                {
+                    question: '《白蛇傳》中白素貞被鎮壓的地方是哪裡？',
+                    options: ['靈隱寺', '雷峰塔', '蘇堤', '斷橋'],
+                    answer: 1,
+                    explanation: '根據《白蛇傳》傳說，白蛇白素貞最終被法海和尚鎮壓在杭州雷峰塔下。'
+                },
+                {
+                    question: '杭州西湖十景之一「斷橋殘雪」中的斷橋位於西湖的哪個方位？',
+                    options: ['東北', '西南', '東南', '西北'],
+                    answer: 0,
+                    explanation: '斷橋位於西湖東北岸，連接白堤和白沙堤。斷橋殘雪是西湖十景之一，以冬季雪後景色著稱。'
+                },
+                {
+                    question: '蘇州園林被稱為哪種藝術的代表？',
+                    options: ['北方園林', '皇家園林', '江南園林', '嶺南園林'],
+                    answer: 2,
+                    explanation: '蘇州園林被公認為江南園林的代表，以小中見大、疊石理水、詩情畫意等特點聞名。'
+                }
+            ];
+            
+            // 創建可選問題的索引數組，排除已回答過的
+            const availableIndices = [];
+            for (let i = 0; i < questions.length; i++) {
+                if (!gameState.answeredQuestions.includes(i)) {
+                    availableIndices.push(i);
+                }
+            }
+            
+            // 如果所有問題都已回答過，則重置答題記錄
+            if (availableIndices.length === 0) {
+                gameState.answeredQuestions = [];
+                for (let i = 0; i < questions.length; i++) {
+                    availableIndices.push(i);
+                }
+                console.log("已回答完所有問題，重置問題庫");
+            }
+            
+            // 從可用問題中隨機選擇一個
+            const randomIndex = Math.floor(Math.random() * availableIndices.length);
+            const questionIndex = availableIndices[randomIndex];
+            const randomQuestion = questions[questionIndex];
+            
+            // 記錄當前問題索引，以便玩家答對後記錄
+            gameState.currentQuestionIndex = questionIndex;
+            
+            console.log("選擇問題 #" + questionIndex + ", 已回答過的問題: " + gameState.answeredQuestions.join(","));
+            
+            // 設置問題內容
+            document.getElementById('question-text').textContent = randomQuestion.question;
+            
+            // 清空選項和確保重試按鈕隱藏
+            const questionOptions = document.getElementById('question-options');
+            questionOptions.innerHTML = '';
+            
+            // 重要：重置重試按鈕狀態，確保它在回答問題前是隱藏的
+            const retryButton = document.getElementById('retry-button');
+            retryButton.style.display = 'none';
+            retryButton.disabled = true;
+            retryButton.textContent = '請選擇答案';
+            retryButton.classList.remove('bg-green-500', 'hover:bg-green-600');
+            retryButton.classList.add('bg-primary', 'hover:bg-primary/80', 'opacity-50', 'cursor-not-allowed');
+            
+            // 添加選項
+            randomQuestion.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'question-option bg-white dark:bg-gray-600 p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors';
+                optionElement.textContent = option;
+                optionElement.dataset.index = index;
+                
+                optionElement.addEventListener('click', function() {
+                    // 防止重複點擊
+                    if (retryButton.style.display === 'block') return;
+                    
+                    // 獲取答案是否正確
+                    const isCorrect = parseInt(this.dataset.index) === randomQuestion.answer;
+                    
+                    // 標記所有選項
+                    document.querySelectorAll('.question-option').forEach(opt => {
+                        opt.classList.remove('bg-white', 'dark:bg-gray-600', 'hover:bg-gray-100', 'dark:hover:bg-gray-500');
+                        opt.classList.add('pointer-events-none');
+                        
+                        if (parseInt(opt.dataset.index) === randomQuestion.answer) {
+                            opt.classList.add('bg-green-100', 'dark:bg-green-800', 'text-green-800', 'dark:text-green-200');
+                        } else if (opt.dataset.index === this.dataset.index && !isCorrect) {
+                            opt.classList.add('bg-red-100', 'dark:bg-red-800', 'text-red-800', 'dark:text-red-200');
+                        } else {
+                            opt.classList.add('bg-gray-100', 'dark:bg-gray-700');
+                        }
+                    });
+                    
+                    // 添加解釋文本
+                    const explanationElement = document.createElement('div');
+                    explanationElement.className = `mt-3 p-2 rounded text-sm ${isCorrect ? 'bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200'}`;
+                    explanationElement.textContent = randomQuestion.explanation;
+                    questionOptions.appendChild(explanationElement);
+                    
+                    // 根據答題結果設置按鈕
+                    if (isCorrect) {
+                        retryButton.textContent = '繼續遊戲 (保留分數)';
+                        retryButton.classList.add('bg-green-500', 'hover:bg-green-600');
+                        retryButton.classList.remove('bg-primary', 'hover:bg-primary/80');
+                        
+                        // 添加鼓勵訊息
+                        const encouragementElement = document.createElement('div');
+                        encouragementElement.className = 'mt-3 text-center text-sm text-green-600 dark:text-green-400 font-bold';
+                        encouragementElement.textContent = '答對了！您將可以保留目前的分數並繼續遊戲！';
+                        questionOptions.appendChild(encouragementElement);
+                    } else {
+                        retryButton.textContent = '重新開始';
+                        
+                        // 添加失敗訊息
+                        const encouragementElement = document.createElement('div');
+                        encouragementElement.className = 'mt-3 text-center text-sm text-red-600 dark:text-red-400 font-bold';
+                        encouragementElement.textContent = '答錯了！您必須重新開始遊戲。';
+                        questionOptions.appendChild(encouragementElement);
+                    }
+                    
+                    // 啟用按鈕 - 確保只有選擇後才顯示
+                    retryButton.disabled = false;
+                    retryButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    retryButton.style.display = 'block';
+                });
+                
+                questionOptions.appendChild(optionElement);
+            });
+        }
+        
+        // 音效系統初始化和實現 - 增強版本確保所有音效都能正確播放
+        function initAudio() {
+            // 創建基礎音效對象
+            window.gameAudio = {
+                // 音效庫 - 使用 Base64 格式的短音效避免需要外部文件
+                sounds: {
+                    // 修正後的碰撞音效 - 水花聲音
+                    hit: "data:audio/wav;base64,UklGRigDAABXQVZFZm10IBAAAAABAAIARKwAABCxAgAEACAAAABkYXRhAAAAAIn/Uf+c/6X/6v8hAEYAFQEEAuYChwMGBHEEswT5BEYF9wWdBhAHaQdSCDEJRgoSC8QL9ws6DDoM0gxODcwNNg5xDo0Olw6sDpwOeA5ADhsOvQ2JDUENuQxLDM8LKwt9CtMJPwmTCO0HMgeYBrQFIgVpBNQDKANvArgBHgGTABsAof8u/9X+kf5R/vv9qv17/Wb9av1q/UX9LP0l/Sn9Mf0p/SH9K/09/UP9Mf0Y/Rf9J/0k/RL97/zZ/Mf8qvyM/Gv8Ufww/Az86/vO+637kvt6+2v7X/tT+077YvuD+7L73PsP/Eb8hPzT/Cr9kP0A/nv+/v6T/y0AtwAnAZwBGQKaAiIDuQNkBBcFvAV0BiMH1AeECDkJ9AmsCmULIQzmDKUNbQ43DwIQzxCgEXQSUBMtFBIV+BXfFssXwBitGZ4afBtjHE4dRh5JH0YgPSElIhQjBST4JO4l4SbYJ9Mo0CnTKtQr1CzSLc4uyi/GMMLRw9TE5MX2xgvIIMk2yk7LZcx+zZrOtc/Q0OrR/tIT1CjVP9ZX12/YhtmY2qXbrdyz3b7exN/L4NPhzeKt43LkMeXw5cjmkud86FzpN+oN69Dr+ey37fTuJvBD8VvycvOJ9Kb1vfbQ9+X49Pn5+vv7/fz+/QD+Af4D/gX+B/4J/gr+DP4O/hD+Ev4U/hb+GP4Z/hn+Gf4a/hr+G/4b/hz+HP4c/h3+Hf4e/h7+Hv4d/h3+Hf4c/hv+Gv4Z/hj+F/4W/hX+FP4T/hL+Ef4Q/g/+Dv4N/gz+C/4K/gj+B/4G/gX+BP4D/gL+Af4A/v/9/v39/P37/fr9+f34/ff99v31/fT98v3x/fD97/3u/e397P3r/er96f3o/ef95v3l/eT94/3i/eH94f3g/eD93/3f/d/93v3e/d793v3e/d793g==",
+                    // 收集道具音效
+                    collect: "data:audio/wav;base64,UklGRrQDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YZADAACBgYGCgoKDg4OEhISFhYWGhoaHh4eIiIiJiYmKioqLi4uMjIyNjY2Ojo6Pj4+QkJCRkZGSkpKTk5OUlJSVlZWWlpaXl5eYmJiZmZmampqbm5ucnJydnZ2enp6fn5+goKChoaGioqKjo6OkpKSlpaWmpqanp6eoqKipqamqqqqrq6usrKytra2urq6vr6+wsLCxsbGysrKzs7O0tLS1tbW2tra3t7e4uLi5ubm6urq7u7u8vLy9vb2+vr6/v7/AwMDBwcHCwsLDw8PExMTFxcXGxsbHx8fIyMjJycnKysrLy8vMzMzNzc3Ozs7Pz8/Q0NDR0dHS0tLT09PU1NTV1dXW1tbX19fY2NjZ2dna2trb29vc3Nzd3d3e3t7f39/g4ODh4eHi4uLj4+Pk5OTl5eXm5ubn5+fo6Ojp6enq6urr6+vs7Ozt7e3u7u7v7+/w8PDx8fHy8vLz8/P09PT19fX29vb39/f4+Pj5+fn6+vr7+/v8/Pz9/f3+/v7///+AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==",
+                    // 獲得道具強化音效
+                    powerup: "data:audio/wav;base64,UklGRsQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YaAGAAAAAP//AADf37+/n59/fz8/Hx8PDwcHAwMBAT8/f3+/v9/f//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAvz9PTw8H7wfPBw8HPwefj7+/399/Pz8fPw8/Bz8HPwd/B/8H/wf/BwcDBwMPAw8DDwMPAw8DDwMPAw8DDwMPAw8DDwMPAw8DDwMPAw8DDwMPAw8DDwMPAw8DDwMPAw8DDwMPAw8DDwMPAz8DPwM/Az8DPwM/Az8DPwM/Az8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Bz8HPwc/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Dz8PPw8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Hz8fPx8/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Jz8nPyc/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPy8/Lz8vPz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/fz9/P38/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v3+/f79/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v4=",
+                    // 游戲結束音效
+                    gameover: "data:audio/wav;base64,UklGRqQDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYADAAB/f4CAgIGBgoKDg4SEhYWGhoeHiIiJiYqKi4uMjI2Njo6Pj5CQkZGSkpOTlJSVlZaWl5eYmJmZmpqbm5ycnZ2enp+foKChoaKio6OkpKWlpqanp6ioqamqqaurra2urq+vsLCxsbKys7O0tLW1tra3t7i4ubm6uru7vLy9vb6+v7/AwMHBwsLDw8TExcXGxsfHyMjJycvLzMzNzc7Oz8/Q0NHR0tLT09TU1dXW1tfX2NjZ2dra29vc3N3d3t7f3+Dg4eHi4uPj5OTl5ebm5+fo6Onp6urr6+zs7e3u7u/v8PDx8fLy8/P09PX19vb39/j4+fn6+vv7/Pz9/f7+/v/+/v7+/v79/fz8+/v6+vn5+Pj39/b29fX09PPz8vLx8fDw7+/u7u3t7Ozr6+rq6eno6Ofn5ubl5eTk4+Pi4uHh4ODf39/e3t3d3Nzb29ra2dnY2NfX1tbV1dTU09PSS0tMS9PU1dbX2Nja2t3d4ODj4+fn6urr6+zs7e3u7u/v8PDx8fLy8/P09PX19vb39/j4+fn6+vv7/Pz9/f7+/v/+/v7+/v79/fz8+/v6+vn5+Pj39/b29fX09PPz8vLx8fDw7+/u7u3t7Ozr6+rq6eno6Ofn5ubl5eTk4+Pi4uHh4ODf39/e3t3d3Nzb29ra2dnY2NfX1tbV1dTU09PS0tHR0NDPz87Ozc3MzMrKycnIyMfHxsbFxcTEw8PCwsHBwMC/v76+vb28vLu7urq5ubS0s7OysrGxsLCvr66urq2trKyqqaiopqaSkoyMjIuLiYmIiIaGhYWDg4KCgYGJiZOTl5eenqOjqKiurbi4vb3Dw8jIzs7U1Nra4ODn5+3t8/P4+P39+/v5+fb29PTx8e/v7Ozq6ufn5eXi4uDg3d3b29jY1tbT09HRzs7MzMnJx8fExMLCv7+9vbq6uLi1tbOzsbGvr6ysqqqoqKWlo6OhoZ+fnJyampiYlpaUlJKSkI+PjY2Li4mJh4eFhYODgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3w=="
+                },
+                
+                // 全新的音效播放系統 - 直接使用Web Audio API合成音效
+                play: function(sound) {
+                    if (gameState.isMuted) return; // 如果靜音則不播放
+                    
+                    try {
+                        // 確保AudioContext存在
+                        if (!this.audioContext) {
+                            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            console.log("創建新的AudioContext");
+                        }
+                        
+                        // 根據不同音效類型使用不同的合成方式
+                        switch(sound) {
+                            case 'hit':
+                                this.playHitSound();
+                                break;
+                            case 'collect':
+                                this.playCollectSound();
+                                break;
+                            case 'powerup':
+                                this.playPowerupSound();
+                                break;
+                            case 'gameover':
+                                this.playGameOverSound();
+                                break;
+                            default:
+                                // 默認音效 - 簡單的嗶聲
+                                this.playBeepSound(440, 0.1);
+                        }
+                    } catch (e) {
+                        console.error(`合成音效失敗:`, e);
+                    }
+                },
+                
+                // 直接合成碰撞音效 - 水花聲
+                playHitSound: function() {
+                    try {
+                        const ctx = this.audioContext;
+                        const duration = 0.3;  // 音效持續時間
+                        
+                        // 創建一個噪音源
+                        const bufferSize = ctx.sampleRate * duration;
+                        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        
+                        // 生成白噪音，模擬水花聲
+                        for (let i = 0; i < bufferSize; i++) {
+                            // 產生衰減的白噪音
+                            data[i] = (Math.random() * 2 - 1) * Math.max(0, 1 - i / bufferSize * 3);
+                        }
+                        
+                        // 創建音源並連接
+                        const noise = ctx.createBufferSource();
+                        noise.buffer = buffer;
+                        
+                        // 創建濾波器，使噪音聽起來更像水聲
+                        const filter = ctx.createBiquadFilter();
+                        filter.type = 'lowpass';
+                        filter.frequency.value = 1000;
+                        
+                        // 音量控制
+                        const gainNode = ctx.createGain();
+                        gainNode.gain.value = 0.3;
+                        
+                        // 連接并播放
+                        noise.connect(filter);
+                        filter.connect(gainNode);
+                        gainNode.connect(ctx.destination);
+                        noise.start();
+                        console.log("播放合成碰撞音效");
+                    } catch (e) {
+                        console.error("合成碰撞音效失敗:", e);
+                    }
+                },
+                
+                // 收集道具音效 - 上升音調
+                playCollectSound: function() {
+                    try {
+                        const ctx = this.audioContext;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        // 設置音調和類型
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.1);
+                        
+                        // 設置音量衰減
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        
+                        // 連接并播放
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.2);
+                        console.log("播放收集音效");
+                    } catch (e) {
+                        console.error("合成收集音效失敗:", e);
+                    }
+                },
+                
+                // 強化道具音效 - 雙音階
+                playPowerupSound: function() {
+                    try {
+                        const ctx = this.audioContext;
+                        const now = ctx.currentTime;
+                        
+                        // 創建兩個振盪器
+                        const osc1 = ctx.createOscillator();
+                        const osc2 = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        // 設置音調
+                        osc1.type = 'triangle';
+                        osc1.frequency.setValueAtTime(400, now);
+                        osc1.frequency.setValueAtTime(600, now + 0.1);
+                        
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(800, now);
+                        osc2.frequency.setValueAtTime(1200, now + 0.1);
+                        
+                        // 設置音量
+                        gain.gain.setValueAtTime(0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                        
+                        // 連接並播放
+                        osc1.connect(gain);
+                        osc2.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc1.start(now);
+                        osc2.start(now);
+                        osc1.stop(now + 0.3);
+                        osc2.stop(now + 0.3);
+                        console.log("播放強化音效");
+                    } catch (e) {
+                        console.error("合成強化音效失敗:", e);
+                    }
+                },
+                
+                // 遊戲結束音效 - 下降音調
+                playGameOverSound: function() {
+                    try {
+                        const ctx = this.audioContext;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        // 設置音調
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(300, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.8);
+                        
+                        // 設置音量
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+                        
+                        // 連接并播放
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 1);
+                        console.log("播放遊戲結束音效");
+                    } catch (e) {
+                        console.error("合成遊戲結束音效失敗:", e);
+                    }
+                },
+                
+                // 通用的嗶聲音效
+                playBeepSound: function(frequency, duration) {
+                    try {
+                        const ctx = this.audioContext;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        // 設置音調
+                        osc.type = 'sine';
+                        osc.frequency.value = frequency || 440;
+                        
+                        // 設置音量
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (duration || 0.1));
+                        
+                        // 連接并播放
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + (duration || 0.1));
+                        console.log("播放通用嗶聲");
+                    } catch (e) {
+                        console.error("合成嗶聲失敗:", e);
+                    }
+                }
+            };
+            
+            // 在初始化后播放一個無聲音效以激活音頻上下文
+            try {
+                const silentAudio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==");
+                silentAudio.volume = 0.01;
+                silentAudio.play().catch(e => console.log("初始化音效系統時靜默音頻播放失敗，這是正常的"));
+            } catch (e) {
+                console.log("音頻系統預熱失敗，可能在第一次點擊時才能播放音效");
+            }
+            
+            console.log("音效系統初始化完成 - 增強版");
+            
+            // 添加靜音按鈕點擊事件
+            const muteButton = document.getElementById('mute-button');
+            if (muteButton) {
+                muteButton.addEventListener('click', function() {
+                    gameState.isMuted = !gameState.isMuted;
+                    const icon = this.querySelector('i');
+                    if (gameState.isMuted) {
+                        icon.classList.remove('fa-volume-up');
+                        icon.classList.add('fa-volume-mute');
+                    } else {
+                        icon.classList.remove('fa-volume-mute');
+                        icon.classList.add('fa-volume-up');
+                        // 播放提示音讓用戶知道音效已開啟
+                        window.gameAudio.play('collect');
+                    }
+                });
+            }
+        }
+        
+        // 遊戲初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化全局空的gameState，防止gameState未定義錯誤
+            window.gameState = {
+                isRunning: false,
+                flowers: [],
+                powerups: []
+            };
+            
+            // 設置按鈕事件
+            document.getElementById('start-button').addEventListener('click', function() {
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('tutorial-screen').style.display = 'flex';
+            });
+            
+            document.getElementById('close-tutorial').addEventListener('click', function() {
+                document.getElementById('tutorial-screen').style.display = 'none';
+                document.getElementById('game-screen').style.display = 'flex';
+                startGameHandler();
+            });
+            
+            document.getElementById('start-game-button').addEventListener('click', function() {
+                document.getElementById('tutorial-screen').style.display = 'none';
+                document.getElementById('game-screen').style.display = 'flex';
+                startGameHandler();
+            });
+            
+            // 重試按鈕事件
+            document.getElementById('retry-button').addEventListener('click', function() {
+                const isCorrectAnswer = this.textContent.includes('繼續遊戲');
+                
+                document.getElementById('game-over-screen').style.display = 'none';
+                
+                // 清理遊戲元素，確保無殘留
+                cleanupGameElements();
+                
+                if (isCorrectAnswer) {
+                    // 答對問題，記錄此問題已被正確回答
+                    if (gameState.currentQuestionIndex !== undefined) {
+                        gameState.answeredQuestions.push(gameState.currentQuestionIndex);
+                        console.log("已答對問題 #" + gameState.currentQuestionIndex + "，添加到已回答列表");
+                        gameState.stats.questionsAnswered++; // 更新已回答問題統計
+                    }
+                    
+                    // 只恢復1條生命繼續遊戲
+                    gameState.lives = 1;
+                    gameState.isRunning = true;
+                    document.getElementById('game-screen').style.display = 'flex';
+                    updateLives();
+                    
+                    // 顯示提示信息
+                    showFloatingText("繼續遊戲！剩餘1條生命", "#ff5555");
+                    
+                    // 重新計算遊戲容器尺寸，確保移動一致性
+                    const gameContainer = document.getElementById('game-container');
+                    gameState.screenWidth = gameContainer.offsetWidth;
+                    gameState.screenHeight = gameContainer.offsetHeight;
+                    
+                    // 確保船隻位置正確並保留過渡動畫
+                    const player = document.getElementById('player');
+                    const playerWidth = player.offsetWidth || 48;
+                    const leftPosition = (gameState.playerPosition * gameState.screenWidth) - (playerWidth / 2);
+                    player.style.transition = 'left 0.15s ease-out'; // 確保動畫過渡效果
+                    player.style.left = `${leftPosition}px`;
+                    
+                    // 重新開始遊戲循環
+                    gameState.lastTimestamp = 0;
+                    window.requestAnimationFrame(window.gameLoop);
+                } else {
+                    // 重新開始遊戲 - 重置問題記錄
+                    gameState.answeredQuestions = [];
+                    gameState.currentQuestionIndex = undefined;
+                    startGameHandler();
+                }
+            });
+            
+            // 加速載入或跳過載入動畫
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('new-start-screen').style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
+
+
