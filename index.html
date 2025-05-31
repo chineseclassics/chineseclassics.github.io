@@ -270,6 +270,52 @@
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <!-- 欢迎弹窗 -->
+    <div id="welcomeModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-80 backdrop-blur-sm opacity-0 transform scale-95 transition-all duration-300 ease-out">
+        <div class="relative bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-3xl max-w-2xl w-full shadow-2xl border-2 border-amber-200 dark:border-gray-600 overflow-hidden">
+            <!-- 装饰性边框 -->
+            <div class="absolute inset-0 bg-gradient-to-br from-amber-100/20 via-transparent to-amber-100/20 pointer-events-none"></div>
+            
+            <!-- 主要内容区域 -->
+            <div class="relative p-8 md:p-12 text-center">
+                <!-- 标题装饰 -->
+                <div class="mb-8">
+                    <div class="w-16 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-4"></div>
+                    <h2 class="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 dark:from-amber-400 dark:via-amber-300 dark:to-amber-400">
+                        太虛幻境
+                    </h2>
+                    <div class="w-16 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-4"></div>
+                </div>
+
+                <!-- 诗词部分 -->
+                <div class="mb-8 space-y-2 text-lg md:text-xl leading-relaxed text-gray-700 dark:text-gray-300 font-serif">
+                    <p class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-300">方寸靈臺入太虛，</p>
+                    <p class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-300">詩魄劍魂幻境居。</p>
+                    <p class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-300">玉屏一點越千載，</p>
+                    <p class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-300">古意今情兩不渝。</p>
+                </div>
+
+                <!-- 分隔线 -->
+                <div class="w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-300 to-transparent mx-auto mb-6"></div>
+
+                <!-- 说明文字 -->
+                <div class="mb-8 text-sm md:text-base leading-relaxed text-gray-600 dark:text-gray-400 font-serif max-w-lg mx-auto">
+                    <p class="mb-3">此「太虛幻境」者，乃師者運心，借數字靈犀，化經典為遊戲而成。</p>
+                    <p class="mb-3">願諸君神遊，悅目啟智，亦得雅趣。</p>
+                    <p>縱代碼茫茫，bug時現，莫謂虛而不實，蓋經典之義理情懷，無關今古，真實不虛。</p>
+                </div>
+
+                <!-- 开始探索按钮 -->
+                <button id="startExploreBtn" class="group relative inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out">
+                    <span class="relative z-10">開始探索</span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                </button>
+            </div>
+
+            <!-- 底部装饰 -->
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400"></div>
+        </div>
+    </div>
     <!-- 顶部导航栏 -->
     <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 fixed top-0 left-0 right-0 z-50">
         <div class="flex items-center justify-between">
@@ -279,7 +325,7 @@
                     <span class="hidden sm:inline">首頁</span>
                 </button>
                 <div class="hidden sm:block text-gray-400 dark:text-gray-600">|</div>
-                <h1 id="currentAppName" class="text-lg font-semibold text-gray-800 dark:text-gray-200">太虛幻境：書院中文經典數字體驗學習</h1>
+                <h1 id="currentAppName" class="text-lg sm:text-lg text-sm font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap overflow-hidden text-ellipsis">太虛幻境：書院中文經典數字體驗學習</h1>
             </div>
             
             <div class="flex items-center space-x-2">
@@ -361,17 +407,15 @@
     <!-- 应用切换器弹窗 -->
     <div id="appSwitcherModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-20 opacity-0 pointer-events-none transition-all duration-300 ease-out">
         <div class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div id="switcherContainer" class="relative bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[70vh] shadow-2xl transform scale-95 transition-all duration-300 ease-out">
-            <!-- 简化的顶部区域，只有关闭按钮 -->
-            <div class="flex justify-end items-center p-4">
-                <button id="closeSwitcherBtn" class="w-10 h-10 rounded-full bg-black bg-opacity-20 hover:bg-opacity-30 text-white hover:text-gray-200 transition-all duration-200 flex items-center justify-center backdrop-blur-sm">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
-            </div>
+        <div id="switcherContainer" class="relative bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[70vh] shadow-2xl transform scale-95 transition-all duration-300 ease-out overflow-hidden">
+            <!-- 浮动的关闭按钮 -->
+            <button id="closeSwitcherBtn" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black bg-opacity-30 hover:bg-opacity-50 text-white hover:text-gray-200 transition-all duration-200 flex items-center justify-center backdrop-blur-sm">
+                <i class="fas fa-times text-sm"></i>
+            </button>
             
             <!-- 应用网格区域 -->
-            <div class="switcher-content">
-                <div id="switcherAppGrid" class="px-6 pb-6 pt-0 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
+            <div class="switcher-content h-full">
+                <div id="switcherAppGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4 h-full">
                     <!-- 应用图标将通过JavaScript动态生成 -->
                 </div>
             </div>
@@ -763,7 +807,8 @@
 
             currentApp = app;
             currentView = 'app';
-            currentAppName.textContent = app.name;
+            // 保持固定标题，不改变文本内容
+            // currentAppName.textContent = app.name;
 
             // 切换视图
             homeView.classList.add('hidden');
@@ -810,7 +855,8 @@
         // 回到首页
         function showHome() {
             currentView = 'home';
-            currentAppName.textContent = '太虛幻境';
+            // 保持固定标题，不改变文本内容
+            // currentAppName.textContent = '太虛幻境';
             homeView.classList.remove('hidden');
             appView.classList.add('hidden');
             appFrame.src = 'about:blank';
@@ -857,8 +903,46 @@
             return window.innerWidth <= 768;
         }
 
+        // 欢迎弹窗控制
+        const welcomeModal = document.getElementById('welcomeModal');
+        const startExploreBtn = document.getElementById('startExploreBtn');
+
+        // 点击开始探索按钮
+        startExploreBtn.onclick = () => {
+            welcomeModal.style.opacity = '0';
+            welcomeModal.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                welcomeModal.style.display = 'none';
+                document.body.style.overflow = ''; // 恢复滚动
+            }, 300);
+        };
+
+        // 页面加载时显示欢迎弹窗
+        document.addEventListener('DOMContentLoaded', () => {
+            // 防止背景滚动
+            document.body.style.overflow = 'hidden';
+            
+            // 延迟300ms显示动画，让页面先渲染
+            setTimeout(() => {
+                welcomeModal.style.opacity = '1';
+                welcomeModal.style.transform = 'scale(1)';
+            }, 300);
+        });
+
+        // 阻止ESC键关闭欢迎弹窗，因为这是首次访问必看的内容
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // 优先处理应用切换器
+                if (appSwitcherModal.classList.contains('switcher-modal-show')) {
+                    hideAppSwitcher();
+                }
+                // 不处理欢迎弹窗的ESC，用户必须点击按钮
+            }
+        });
+
         // 初始化
         renderApps();
     </script>
 </body>
 </html>
+
