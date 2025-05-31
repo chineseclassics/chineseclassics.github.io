@@ -80,17 +80,6 @@
             transform: translateX(-50%) scale(1.2);
         }
         
-        /* 滑动区域 */
-        .swipe-area {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 30px;
-            z-index: 99;
-            background: transparent;
-        }
-        
         /* 首次使用提示 */
         .tutorial-overlay {
             position: fixed;
@@ -104,18 +93,19 @@
             color: white;
         }
         
-        .swipe-animation {
+        .tap-animation {
             width: 60px;
             height: 60px;
             border: 2px solid white;
             border-radius: 50%;
             position: relative;
             margin-bottom: 20px;
-            animation: swipeUp 2s infinite;
+            animation: tapPulse 2s infinite;
+            background: rgba(255, 255, 255, 0.1);
         }
         
-        .swipe-animation::after {
-            content: "↑";
+        .tap-animation::after {
+            content: "🏠";
             position: absolute;
             top: 50%;
             left: 50%;
@@ -123,35 +113,70 @@
             font-size: 24px;
         }
         
-        @keyframes swipeUp {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        @keyframes tapPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
         }
         
-        /* 浮动返回按钮 */
-        .floating-home-btn {
+        /* 浮动圆点按钮 */
+        .floating-dot {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            background: rgba(0, 0, 0, 0.5);
+            width: 50px;
+            height: 50px;
+            background: rgba(93, 92, 222, 0.9);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            z-index: 98;
+            z-index: 150;
             transition: all 0.3s ease;
             transform: scale(0);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
-        .floating-home-btn.show {
+        .floating-dot.show {
             transform: scale(1);
         }
         
-        .floating-home-btn:active {
+        .floating-dot:active {
             transform: scale(0.9);
+            background: rgba(93, 92, 222, 1);
+        }
+        
+        .floating-dot.dragging {
+            transition: none;
+            z-index: 151;
+            transform: scale(1.1);
+        }
+        
+        .floating-dot.edge-hidden {
+            transform: translateX(25px) scale(1);
+            opacity: 0.6;
+        }
+        
+        .floating-dot.edge-hidden.left {
+            transform: translateX(-25px) scale(1);
+        }
+        
+        .floating-dot:hover {
+            background: rgba(93, 92, 222, 1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 圆点图标动画 */
+        .floating-dot-icon {
+            font-size: 20px;
+            transition: transform 0.2s ease;
+        }
+        
+        .floating-dot:active .floating-dot-icon {
+            transform: scale(0.8);
         }
         
         /* 应用详情提示框 */
@@ -775,70 +800,166 @@
             }
         };
 
-        // 手势控制相关
-        let startY = 0;
-        let currentY = 0;
-        let isSwipeActive = false;
-        let homeIndicator = null;
-        let swipeArea = null;
-        let floatingHomeBtn = null;
+        // 浮动圆点相关
+        let floatingDot = null;
         let tutorialOverlay = null;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dotStartX = 0;
+        let dotStartY = 0;
 
         // 检查是否是移动设备
         function isMobile() {
             return window.innerWidth <= 768;
         }
 
-        // 创建移动端UI元素
-        function createMobileElements() {
-            if (!isMobile()) return;
+        // 创建浮动圆点
+        function createFloatingDot() {
+            if (!isMobile() || floatingDot) return;
 
-            // 创建Home指示器
-            if (!homeIndicator) {
-                homeIndicator = document.createElement('div');
-                homeIndicator.className = 'home-indicator';
-                document.body.appendChild(homeIndicator);
-            }
+            floatingDot = document.createElement('button');
+            floatingDot.className = 'floating-dot';
+            floatingDot.innerHTML = '<i class="floating-dot-icon fas fa-home"></i>';
+            
+            // 默认位置：右下角
+            const defaultRight = 20;
+            const defaultBottom = 80;
+            floatingDot.style.right = defaultRight + 'px';
+            floatingDot.style.bottom = defaultBottom + 'px';
+            
+            document.body.appendChild(floatingDot);
 
-            // 创建滑动区域
-            if (!swipeArea) {
-                swipeArea = document.createElement('div');
-                swipeArea.className = 'swipe-area';
-                document.body.appendChild(swipeArea);
-            }
+            // 添加事件监听
+            setupFloatingDotEvents();
+            
+            return floatingDot;
+        }
 
-            // 创建浮动返回按钮
-            if (!floatingHomeBtn) {
-                floatingHomeBtn = document.createElement('button');
-                floatingHomeBtn.className = 'floating-home-btn';
-                floatingHomeBtn.innerHTML = '<i class="fas fa-home"></i>';
-                floatingHomeBtn.onclick = showHome;
-                document.body.appendChild(floatingHomeBtn);
-            }
+        // 设置浮动圆点事件
+        function setupFloatingDotEvents() {
+            if (!floatingDot) return;
 
-            // 隐藏移动端导航栏
-            if (currentView === 'app') {
-                const nav = document.querySelector('nav');
-                const bottomNav = document.querySelector('nav.md\\:hidden');
-                const main = document.querySelector('main');
-                
-                nav.classList.add('mobile-nav-hide');
-                bottomNav.classList.add('mobile-nav-hide');
-                main.style.paddingTop = '0';
-                main.style.paddingBottom = '0';
+            // 触摸/鼠标事件
+            floatingDot.addEventListener('touchstart', handleDotStart, { passive: false });
+            floatingDot.addEventListener('mousedown', handleDotStart);
+            
+            document.addEventListener('touchmove', handleDotMove, { passive: false });
+            document.addEventListener('mousemove', handleDotMove);
+            
+            document.addEventListener('touchend', handleDotEnd);
+            document.addEventListener('mouseup', handleDotEnd);
+        }
+
+        // 圆点拖动开始
+        function handleDotStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            
+            const touch = e.touches ? e.touches[0] : e;
+            dragStartX = touch.clientX;
+            dragStartY = touch.clientY;
+            
+            const rect = floatingDot.getBoundingClientRect();
+            dotStartX = rect.left;
+            dotStartY = rect.top;
+            
+            floatingDot.classList.add('dragging');
+        }
+
+        // 圆点拖动中
+        function handleDotMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const touch = e.touches ? e.touches[0] : e;
+            const deltaX = touch.clientX - dragStartX;
+            const deltaY = touch.clientY - dragStartY;
+            
+            let newX = dotStartX + deltaX;
+            let newY = dotStartY + deltaY;
+            
+            // 边界限制
+            const dotSize = 50;
+            newX = Math.max(0, Math.min(window.innerWidth - dotSize, newX));
+            newY = Math.max(0, Math.min(window.innerHeight - dotSize, newY));
+            
+            floatingDot.style.left = newX + 'px';
+            floatingDot.style.top = newY + 'px';
+            floatingDot.style.right = 'auto';
+            floatingDot.style.bottom = 'auto';
+        }
+
+        // 圆点拖动结束
+        function handleDotEnd(e) {
+            if (!isDragging) return;
+            
+            isDragging = false;
+            floatingDot.classList.remove('dragging');
+            
+            // 检查是否是点击（很小的移动距离）
+            const touch = e.changedTouches ? e.changedTouches[0] : e;
+            const deltaX = Math.abs(touch.clientX - dragStartX);
+            const deltaY = Math.abs(touch.clientY - dragStartY);
+            
+            if (deltaX < 10 && deltaY < 10) {
+                // 这是一个点击，返回首页
+                showHome();
+                // 添加触觉反馈
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+                return;
             }
+            
+            // 自动贴边
+            snapToEdge();
+        }
+
+        // 自动贴边功能
+        function snapToEdge() {
+            if (!floatingDot) return;
+            
+            const rect = floatingDot.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const screenWidth = window.innerWidth;
+            
+            // 判断贴左边还是右边
+            const snapToLeft = centerX < screenWidth / 2;
+            
+            floatingDot.style.transition = 'all 0.3s ease';
+            
+            if (snapToLeft) {
+                floatingDot.style.left = '10px';
+                floatingDot.classList.add('edge-hidden', 'left');
+                floatingDot.classList.remove('edge-hidden');
+                setTimeout(() => floatingDot.classList.add('edge-hidden'), 2000);
+            } else {
+                floatingDot.style.right = '10px';
+                floatingDot.style.left = 'auto';
+                floatingDot.classList.add('edge-hidden');
+                floatingDot.classList.remove('left');
+                setTimeout(() => floatingDot.classList.add('edge-hidden'), 2000);
+            }
+            
+            // 恢复transition
+            setTimeout(() => {
+                if (floatingDot) {
+                    floatingDot.style.transition = '';
+                }
+            }, 300);
         }
 
         // 显示首次使用教程
         function showTutorial() {
-            if (!isMobile() || localStorage.getItem('tutorialShown') === 'true') return;
+            if (!isMobile() || localStorage.getItem('dotTutorialShown') === 'true') return;
 
             tutorialOverlay = document.createElement('div');
             tutorialOverlay.className = 'tutorial-overlay';
             tutorialOverlay.innerHTML = `
-                <div class="swipe-animation"></div>
-                <h3 class="text-xl font-bold mb-2">向上滑動返回桌面</h3>
-                <p class="text-center text-gray-300 mb-6">在應用底部向上滑動即可返回首頁<br>就像iPhone一樣簡單</p>
+                <div class="tap-animation"></div>
+                <h3 class="text-xl font-bold mb-2">點擊圓點返回桌面</h3>
+                <p class="text-center text-gray-300 mb-6">點擊右下角的圓點即可返回首頁<br>也可以拖動到任意位置</p>
                 <button onclick="closeTutorial()" class="bg-white text-black px-6 py-2 rounded-full font-medium">
                     我知道了
                 </button>
@@ -852,101 +973,22 @@
                 tutorialOverlay.remove();
                 tutorialOverlay = null;
             }
-            localStorage.setItem('tutorialShown', 'true');
+            localStorage.setItem('dotTutorialShown', 'true');
         }
 
-        // 设置手势监听
-        function setupGestureListeners() {
-            if (!isMobile()) return;
-
-            // 手势开始
-            function handleStart(e) {
-                if (currentView !== 'app') return;
-                
-                const touch = e.touches ? e.touches[0] : e;
-                startY = touch.clientY;
-                isSwipeActive = true;
-                
-                // 激活Home指示器
-                if (homeIndicator) {
-                    homeIndicator.classList.add('active');
-                }
-            }
-
-            // 手势移动
-            function handleMove(e) {
-                if (!isSwipeActive || currentView !== 'app') return;
-                
-                const touch = e.touches ? e.touches[0] : e;
-                currentY = touch.clientY;
-                const deltaY = startY - currentY;
-                
-                // 只有向上滑动且距离足够时才触发
-                if (deltaY > 50) {
-                    // 显示浮动按钮作为视觉反馈
-                    if (floatingHomeBtn && deltaY > 100) {
-                        floatingHomeBtn.classList.add('show');
-                    }
-                }
-            }
-
-            // 手势结束
-            function handleEnd(e) {
-                if (!isSwipeActive || currentView !== 'app') return;
-                
-                const deltaY = startY - currentY;
-                isSwipeActive = false;
-                
-                // 重置Home指示器
-                if (homeIndicator) {
-                    homeIndicator.classList.remove('active');
-                }
-                
-                // 向上滑动超过阈值则返回首页
-                if (deltaY > 120) {
-                    showHome();
-                    // 添加触觉反馈（如果支持）
-                    if (navigator.vibrate) {
-                        navigator.vibrate(50);
-                    }
-                } else {
-                    // 隐藏浮动按钮
-                    if (floatingHomeBtn) {
-                        floatingHomeBtn.classList.remove('show');
-                    }
-                }
-            }
-
-            // 添加事件监听器
-            if (swipeArea) {
-                // 触摸事件
-                swipeArea.addEventListener('touchstart', handleStart, { passive: true });
-                swipeArea.addEventListener('touchmove', handleMove, { passive: true });
-                swipeArea.addEventListener('touchend', handleEnd, { passive: true });
-                
-                // 鼠标事件（用于桌面测试）
-                swipeArea.addEventListener('mousedown', handleStart);
-                document.addEventListener('mousemove', handleMove);
-                document.addEventListener('mouseup', handleEnd);
+        // 显示浮动圆点
+        function showFloatingDot() {
+            if (floatingDot && isMobile() && currentView === 'app') {
+                floatingDot.classList.add('show');
+                // 延迟显示教程
+                setTimeout(showTutorial, 1000);
             }
         }
 
-        // 更新Home指示器样式
-        function updateHomeIndicator() {
-            if (!homeIndicator || !isMobile()) return;
-            
-            // 根据当前应用背景调整指示器颜色
-            const isDarkApp = currentApp && ['shiguangpintu', 'langzhuliangrensha', 'yuexiaduzuo'].includes(currentApp.id);
-            
-            if (currentView === 'app') {
-                homeIndicator.style.display = 'block';
-                if (isDarkApp) {
-                    homeIndicator.classList.add('light');
-                } else {
-                    homeIndicator.classList.remove('light');
-                }
-            } else {
-                homeIndicator.style.display = 'none';
+        // 隐藏浮动圆点
+        function hideFloatingDot() {
+            if (floatingDot) {
+                floatingDot.classList.remove('show', 'edge-hidden', 'left');
             }
         }
 
@@ -967,11 +1009,9 @@
                     main.style.paddingTop = '0';
                     main.style.paddingBottom = '0';
                     
-                    createMobileElements();
-                    updateHomeIndicator();
-                    
-                    // 首次使用显示教程
-                    setTimeout(showTutorial, 1000);
+                    // 创建并显示浮动圆点
+                    createFloatingDot();
+                    showFloatingDot();
                 }, 100);
             }
         };
@@ -992,30 +1032,29 @@
                 main.style.paddingTop = '';
                 main.style.paddingBottom = '';
                 
-                updateHomeIndicator();
-                
-                // 隐藏浮动按钮
-                if (floatingHomeBtn) {
-                    floatingHomeBtn.classList.remove('show');
-                }
+                // 隐藏浮动圆点
+                hideFloatingDot();
             }
         };
 
         // 窗口大小改变时重新检查
         window.addEventListener('resize', () => {
             if (isMobile()) {
-                createMobileElements();
-                setupGestureListeners();
+                createFloatingDot();
+                if (currentView === 'app') {
+                    showFloatingDot();
+                }
+            } else {
+                hideFloatingDot();
             }
         });
 
         // 初始化
         renderApps();
         
-        // 如果是移动端，设置手势监听
+        // 如果是移动端，创建浮动圆点
         if (isMobile()) {
-            createMobileElements();
-            setupGestureListeners();
+            createFloatingDot();
         }
 
         // 全局函数供HTML调用
