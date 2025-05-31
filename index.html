@@ -48,7 +48,206 @@
         
         @media (max-width: 768px) {
             .app-container {
-                height: calc(100vh - 144px);
+                height: 100vh;
+            }
+            
+            /* 隐藏移动端的导航栏 */
+            .mobile-nav-hide {
+                display: none !important;
+            }
+        }
+        
+        /* Home指示器样式 */
+        .home-indicator {
+            position: fixed;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 134px;
+            height: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        
+        .home-indicator.light {
+            background: rgba(255, 255, 255, 0.6);
+        }
+        
+        .home-indicator.active {
+            background: #5D5CDE;
+            transform: translateX(-50%) scale(1.2);
+        }
+        
+        /* 滑动区域 */
+        .swipe-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            z-index: 99;
+            background: transparent;
+        }
+        
+        /* 首次使用提示 */
+        .tutorial-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        
+        .swipe-animation {
+            width: 60px;
+            height: 60px;
+            border: 2px solid white;
+            border-radius: 50%;
+            position: relative;
+            margin-bottom: 20px;
+            animation: swipeUp 2s infinite;
+        }
+        
+        .swipe-animation::after {
+            content: "↑";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+        }
+        
+        @keyframes swipeUp {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* 浮动返回按钮 */
+        .floating-home-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 98;
+            transition: all 0.3s ease;
+            transform: scale(0);
+        }
+        
+        .floating-home-btn.show {
+            transform: scale(1);
+        }
+        
+        .floating-home-btn:active {
+            transform: scale(0.9);
+        }
+        
+        /* 应用详情提示框 */
+        .app-tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            width: 320px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .app-tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        
+        .app-tooltip.dark {
+            background: #1f2937;
+            border-color: #374151;
+            color: #f9fafb;
+        }
+        
+        .app-tooltip-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #111827;
+        }
+        
+        .app-tooltip.dark .app-tooltip-title {
+            color: #f9fafb;
+        }
+        
+        .app-tooltip-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        
+        .app-tooltip.dark .app-tooltip-subtitle {
+            color: #9ca3af;
+        }
+        
+        .app-tooltip-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .app-tooltip-features li {
+            font-size: 13px;
+            color: #4b5563;
+            margin-bottom: 6px;
+            padding-left: 16px;
+            position: relative;
+        }
+        
+        .app-tooltip.dark .app-tooltip-features li {
+            color: #d1d5db;
+        }
+        
+        .app-tooltip-features li::before {
+            content: "•";
+            color: #5D5CDE;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        .app-tooltip-quote {
+            font-style: italic;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .app-tooltip.dark .app-tooltip-quote {
+            color: #9ca3af;
+            border-top-color: #374151;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .app-tooltip {
+                width: 280px;
+                font-size: 14px;
             }
         }
     </style>
@@ -175,7 +374,20 @@
                 name: '長干行旅',
                 icon: 'fas fa-ship',
                 gradient: 'from-indigo-500 to-violet-500',
-                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E9%95%B7%E5%B9%B2%E8%A1%8C%E6%97%85'
+                url: 'https://chineseclassics.github.io/changganxinglv.html',
+                description: {
+                    title: '長干行旅 - 李白詩歌互動游戲',
+                    subtitle: '基於李白《長干行》的互動角色扮演游戲',
+                    features: [
+                        '雙視角角色扮演：長干少婦或三巴商人',
+                        '管理家庭資源與撰寫詩信傳情',
+                        '駕駛商船躲避險灘與風浪',
+                        '情感羈絆系統：疏離→思念→深愛',
+                        '收集《長干行》15句經典詩句',
+                        '體驗四季變化與唐代生活'
+                    ],
+                    quote: '妾髮初覆額，折花門前劇。郎騎竹馬來，繞床弄青梅。'
+                }
             },
             {
                 id: 'diandianmobao',
@@ -307,6 +519,83 @@
         const appSwitcherModal = document.getElementById('appSwitcherModal');
         const bottomNav = document.getElementById('bottomNav');
 
+        // Tooltip相关变量
+        let currentTooltip = null;
+        let tooltipTimeout = null;
+
+        // 创建tooltip
+        function createTooltip(app, targetElement) {
+            if (!app.description) return;
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'app-tooltip';
+            if (document.documentElement.classList.contains('dark')) {
+                tooltip.classList.add('dark');
+            }
+
+            tooltip.innerHTML = `
+                <div class="app-tooltip-title">${app.description.title}</div>
+                <div class="app-tooltip-subtitle">${app.description.subtitle}</div>
+                <ul class="app-tooltip-features">
+                    ${app.description.features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+                <div class="app-tooltip-quote">${app.description.quote}</div>
+            `;
+
+            document.body.appendChild(tooltip);
+
+            // 计算位置
+            const rect = targetElement.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            let left = rect.left + (rect.width - tooltipRect.width) / 2;
+            let top = rect.bottom + 10;
+
+            // 确保不超出屏幕边界
+            if (left < 10) left = 10;
+            if (left + tooltipRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipRect.width - 10;
+            }
+            if (top + tooltipRect.height > window.innerHeight - 10) {
+                top = rect.top - tooltipRect.height - 10;
+            }
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+
+            // 显示tooltip
+            setTimeout(() => tooltip.classList.add('show'), 10);
+
+            return tooltip;
+        }
+
+        // 隐藏tooltip
+        function hideTooltip() {
+            if (currentTooltip) {
+                currentTooltip.classList.remove('show');
+                setTimeout(() => {
+                    if (currentTooltip && currentTooltip.parentNode) {
+                        currentTooltip.parentNode.removeChild(currentTooltip);
+                    }
+                    currentTooltip = null;
+                }, 300);
+            }
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+                tooltipTimeout = null;
+            }
+        }
+
+        // 显示tooltip
+        function showTooltip(app, targetElement) {
+            hideTooltip();
+            if (app.description) {
+                tooltipTimeout = setTimeout(() => {
+                    currentTooltip = createTooltip(app, targetElement);
+                }, 500); // 0.5秒延迟
+            }
+        }
+
         // 渲染应用图标
         function renderAppIcon(app, isCompact = false) {
             const size = isCompact ? 'w-12 h-12' : 'aspect-square';
@@ -314,8 +603,13 @@
             const textSize = isCompact ? 'text-xs' : 'font-medium';
             
             return `
-                <div class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200" 
-                     data-app-id="${app.id}" onclick="openApp('${app.id}')">
+                <div class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200 relative" 
+                     data-app-id="${app.id}" 
+                     onclick="openApp('${app.id}')"
+                     onmouseenter="handleMouseEnter(event, '${app.id}')"
+                     onmouseleave="handleMouseLeave()"
+                     ontouchstart="handleTouchStart(event, '${app.id}')"
+                     ontouchend="handleTouchEnd()">
                     <div class="bg-gradient-to-br ${app.gradient} rounded-2xl p-4 ${size} flex items-center justify-center shadow-lg">
                         <i class="${app.icon} text-white ${iconSize}"></i>
                     </div>
@@ -323,6 +617,59 @@
                 </div>
             `;
         }
+
+        // 鼠标进入事件
+        function handleMouseEnter(event, appId) {
+            if (isMobile()) return; // 移动端不使用鼠标悬停
+            
+            const app = apps.find(a => a.id === appId);
+            if (app && app.description) {
+                showTooltip(app, event.currentTarget);
+            }
+        }
+
+        // 鼠标离开事件
+        function handleMouseLeave() {
+            if (!isMobile()) {
+                hideTooltip();
+            }
+        }
+
+        // 触摸开始事件（移动端）
+        function handleTouchStart(event, appId) {
+            if (!isMobile()) return;
+            
+            const app = apps.find(a => a.id === appId);
+            if (app && app.description) {
+                event.preventDefault(); // 阻止默认行为
+                
+                // 如果当前已显示tooltip，则隐藏
+                if (currentTooltip) {
+                    hideTooltip();
+                    return;
+                }
+                
+                showTooltip(app, event.currentTarget);
+            }
+        }
+
+        // 触摸结束事件
+        function handleTouchEnd() {
+            // 移动端触摸后不立即隐藏，让用户有时间阅读
+        }
+
+        // 点击其他地方隐藏tooltip
+        document.addEventListener('click', (event) => {
+            if (currentTooltip && !event.target.closest('.app-icon') && !event.target.closest('.app-tooltip')) {
+                hideTooltip();
+            }
+        });
+
+        // 全局函数供HTML调用
+        window.handleMouseEnter = handleMouseEnter;
+        window.handleMouseLeave = handleMouseLeave;
+        window.handleTouchStart = handleTouchStart;
+        window.handleTouchEnd = handleTouchEnd;
 
         // 渲染应用网格
         function renderApps() {
@@ -428,8 +775,251 @@
             }
         };
 
+        // 手势控制相关
+        let startY = 0;
+        let currentY = 0;
+        let isSwipeActive = false;
+        let homeIndicator = null;
+        let swipeArea = null;
+        let floatingHomeBtn = null;
+        let tutorialOverlay = null;
+
+        // 检查是否是移动设备
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        // 创建移动端UI元素
+        function createMobileElements() {
+            if (!isMobile()) return;
+
+            // 创建Home指示器
+            if (!homeIndicator) {
+                homeIndicator = document.createElement('div');
+                homeIndicator.className = 'home-indicator';
+                document.body.appendChild(homeIndicator);
+            }
+
+            // 创建滑动区域
+            if (!swipeArea) {
+                swipeArea = document.createElement('div');
+                swipeArea.className = 'swipe-area';
+                document.body.appendChild(swipeArea);
+            }
+
+            // 创建浮动返回按钮
+            if (!floatingHomeBtn) {
+                floatingHomeBtn = document.createElement('button');
+                floatingHomeBtn.className = 'floating-home-btn';
+                floatingHomeBtn.innerHTML = '<i class="fas fa-home"></i>';
+                floatingHomeBtn.onclick = showHome;
+                document.body.appendChild(floatingHomeBtn);
+            }
+
+            // 隐藏移动端导航栏
+            if (currentView === 'app') {
+                const nav = document.querySelector('nav');
+                const bottomNav = document.querySelector('nav.md\\:hidden');
+                const main = document.querySelector('main');
+                
+                nav.classList.add('mobile-nav-hide');
+                bottomNav.classList.add('mobile-nav-hide');
+                main.style.paddingTop = '0';
+                main.style.paddingBottom = '0';
+            }
+        }
+
+        // 显示首次使用教程
+        function showTutorial() {
+            if (!isMobile() || localStorage.getItem('tutorialShown') === 'true') return;
+
+            tutorialOverlay = document.createElement('div');
+            tutorialOverlay.className = 'tutorial-overlay';
+            tutorialOverlay.innerHTML = `
+                <div class="swipe-animation"></div>
+                <h3 class="text-xl font-bold mb-2">向上滑動返回桌面</h3>
+                <p class="text-center text-gray-300 mb-6">在應用底部向上滑動即可返回首頁<br>就像iPhone一樣簡單</p>
+                <button onclick="closeTutorial()" class="bg-white text-black px-6 py-2 rounded-full font-medium">
+                    我知道了
+                </button>
+            `;
+            document.body.appendChild(tutorialOverlay);
+        }
+
+        // 关闭教程
+        function closeTutorial() {
+            if (tutorialOverlay) {
+                tutorialOverlay.remove();
+                tutorialOverlay = null;
+            }
+            localStorage.setItem('tutorialShown', 'true');
+        }
+
+        // 设置手势监听
+        function setupGestureListeners() {
+            if (!isMobile()) return;
+
+            // 手势开始
+            function handleStart(e) {
+                if (currentView !== 'app') return;
+                
+                const touch = e.touches ? e.touches[0] : e;
+                startY = touch.clientY;
+                isSwipeActive = true;
+                
+                // 激活Home指示器
+                if (homeIndicator) {
+                    homeIndicator.classList.add('active');
+                }
+            }
+
+            // 手势移动
+            function handleMove(e) {
+                if (!isSwipeActive || currentView !== 'app') return;
+                
+                const touch = e.touches ? e.touches[0] : e;
+                currentY = touch.clientY;
+                const deltaY = startY - currentY;
+                
+                // 只有向上滑动且距离足够时才触发
+                if (deltaY > 50) {
+                    // 显示浮动按钮作为视觉反馈
+                    if (floatingHomeBtn && deltaY > 100) {
+                        floatingHomeBtn.classList.add('show');
+                    }
+                }
+            }
+
+            // 手势结束
+            function handleEnd(e) {
+                if (!isSwipeActive || currentView !== 'app') return;
+                
+                const deltaY = startY - currentY;
+                isSwipeActive = false;
+                
+                // 重置Home指示器
+                if (homeIndicator) {
+                    homeIndicator.classList.remove('active');
+                }
+                
+                // 向上滑动超过阈值则返回首页
+                if (deltaY > 120) {
+                    showHome();
+                    // 添加触觉反馈（如果支持）
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                } else {
+                    // 隐藏浮动按钮
+                    if (floatingHomeBtn) {
+                        floatingHomeBtn.classList.remove('show');
+                    }
+                }
+            }
+
+            // 添加事件监听器
+            if (swipeArea) {
+                // 触摸事件
+                swipeArea.addEventListener('touchstart', handleStart, { passive: true });
+                swipeArea.addEventListener('touchmove', handleMove, { passive: true });
+                swipeArea.addEventListener('touchend', handleEnd, { passive: true });
+                
+                // 鼠标事件（用于桌面测试）
+                swipeArea.addEventListener('mousedown', handleStart);
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('mouseup', handleEnd);
+            }
+        }
+
+        // 更新Home指示器样式
+        function updateHomeIndicator() {
+            if (!homeIndicator || !isMobile()) return;
+            
+            // 根据当前应用背景调整指示器颜色
+            const isDarkApp = currentApp && ['shiguangpintu', 'langzhuliangrensha', 'yuexiaduzuo'].includes(currentApp.id);
+            
+            if (currentView === 'app') {
+                homeIndicator.style.display = 'block';
+                if (isDarkApp) {
+                    homeIndicator.classList.add('light');
+                } else {
+                    homeIndicator.classList.remove('light');
+                }
+            } else {
+                homeIndicator.style.display = 'none';
+            }
+        }
+
+        // 修改openApp函数以支持移动端全屏
+        const originalOpenApp = openApp;
+        openApp = function(appId) {
+            originalOpenApp(appId);
+            
+            if (isMobile()) {
+                // 隐藏导航栏，实现全屏
+                setTimeout(() => {
+                    const nav = document.querySelector('nav');
+                    const bottomNav = document.querySelector('nav.md\\:hidden');
+                    const main = document.querySelector('main');
+                    
+                    nav.classList.add('mobile-nav-hide');
+                    bottomNav.classList.add('mobile-nav-hide');
+                    main.style.paddingTop = '0';
+                    main.style.paddingBottom = '0';
+                    
+                    createMobileElements();
+                    updateHomeIndicator();
+                    
+                    // 首次使用显示教程
+                    setTimeout(showTutorial, 1000);
+                }, 100);
+            }
+        };
+
+        // 修改showHome函数
+        const originalShowHome = showHome;
+        showHome = function() {
+            originalShowHome();
+            
+            if (isMobile()) {
+                // 恢复导航栏
+                const nav = document.querySelector('nav');
+                const bottomNav = document.querySelector('nav.md\\:hidden');
+                const main = document.querySelector('main');
+                
+                nav.classList.remove('mobile-nav-hide');
+                bottomNav.classList.remove('mobile-nav-hide');
+                main.style.paddingTop = '';
+                main.style.paddingBottom = '';
+                
+                updateHomeIndicator();
+                
+                // 隐藏浮动按钮
+                if (floatingHomeBtn) {
+                    floatingHomeBtn.classList.remove('show');
+                }
+            }
+        };
+
+        // 窗口大小改变时重新检查
+        window.addEventListener('resize', () => {
+            if (isMobile()) {
+                createMobileElements();
+                setupGestureListeners();
+            }
+        });
+
         // 初始化
         renderApps();
+        
+        // 如果是移动端，设置手势监听
+        if (isMobile()) {
+            createMobileElements();
+            setupGestureListeners();
+        }
+
+        // 全局函数供HTML调用
+        window.closeTutorial = closeTutorial;
     </script>
 </body>
 </html>
