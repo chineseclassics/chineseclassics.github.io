@@ -1687,6 +1687,8 @@
                 // 添加事件監聽
                 char.addEventListener('mousedown', handleCharMouseDown);
                 char.addEventListener('touchstart', handleCharTouchStart);
+                char.addEventListener('touchmove', handleCharTouchMove);
+                char.addEventListener('touchend', handleCharTouchEnd);
                 char.addEventListener('click', selectChar);
                 
                 charContainer.appendChild(char);
@@ -1764,8 +1766,19 @@
             // 在繪圖模式下不處理拖動
             if (isDrawingMode) return;
             
-            e.preventDefault();
-            startDrag(e, this);
+            // 不要立即阻止默認行为，先记录触摸开始时间和位置
+            this.touchStartTime = Date.now();
+            this.touchStartX = e.touches[0].clientX;
+            this.touchStartY = e.touches[0].clientY;
+            this.touchMoved = false;
+            
+            // 延迟启动拖拽，给点击事件留出时间
+            this.dragTimeout = setTimeout(() => {
+                if (!this.touchMoved) {
+                    e.preventDefault();
+                    startDrag(e, this);
+                }
+            }, 150); // 150ms后才开始拖拽
         }
         
         // 更新字符位置
@@ -2037,6 +2050,54 @@
             
             // 更新提示信息
             document.querySelector('.drag-instructions').textContent = '向外拖拽增大字體，向內拖拽縮小字體';
+        }
+        
+        // 移动端触摸移动处理
+        function handleCharTouchMove(e) {
+            // 在繪圖模式下不处理
+            if (isDrawingMode) return;
+            
+            if (!this.touchStartX || !this.touchStartY) return;
+            
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - this.touchStartX);
+            const deltaY = Math.abs(touch.clientY - this.touchStartY);
+            
+            // 如果移动距离超过阈值，标记为已移动并清除拖拽延时
+            if (deltaX > 10 || deltaY > 10) {
+                this.touchMoved = true;
+                if (this.dragTimeout) {
+                    clearTimeout(this.dragTimeout);
+                    this.dragTimeout = null;
+                }
+            }
+        }
+        
+        // 移动端触摸结束处理
+        function handleCharTouchEnd(e) {
+            // 在繪圖模式下不处理
+            if (isDrawingMode) return;
+            
+            // 清除拖拽延时
+            if (this.dragTimeout) {
+                clearTimeout(this.dragTimeout);
+                this.dragTimeout = null;
+            }
+            
+            const touchDuration = Date.now() - (this.touchStartTime || 0);
+            
+            // 如果是短时间的触摸且没有移动，触发选择
+            if (touchDuration < 300 && !this.touchMoved) {
+                // 模拟点击事件来选中字符
+                e.preventDefault();
+                selectChar.call(this, e);
+            }
+            
+            // 重置触摸状态
+            this.touchStartTime = null;
+            this.touchStartX = null;
+            this.touchStartY = null;
+            this.touchMoved = false;
         }
         
         // 結束拖動
