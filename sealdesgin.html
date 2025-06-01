@@ -18,27 +18,49 @@
             font-weight: normal;
             font-style: normal;
         }
+        
+        @font-face {
+            font-family: 'ZiYue Seal';
+            src: url('https://chineseclassics.github.io/files/ZIYueJiuDieYinZhuan-Regular.ttf') format('truetype');
+            font-display: swap;
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'HuaKang Seal';
+            src: url('https://chineseclassics.github.io/files/huakangxinzhuan.ttf') format('truetype');
+            font-display: swap;
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'JiaJin Script';
+            src: url('https://chineseclassics.github.io/files/jiajinwen.ttf') format('truetype');
+            font-display: swap;
+            font-weight: normal;
+            font-style: normal;
+        }
     </style>
     <style>
         :root {
-            --primary-color: #5D5CDE;
-            --seal-color: #d62828;
-        }
-        
-        .dark {
-            --bg-primary: #181818;
-            --text-primary: #e0e0e0;
-            --bg-secondary: #2a2a2a;
-            --border-color: #3a3a3a;
+            --primary-color: #8B4513;
+            --primary-light: #A0522D;
+            --primary-dark: #654321;
+            --seal-color: #B22222;
+            --accent-gold: #D4AF37;
+            --bg-warm: #FAF9F6;
+            --bg-card: #FFFFFF;
+            --text-primary: #2F2F2F;
+            --text-secondary: #666666;
+            --border-light: #E8E6E0;
+            --shadow-soft: rgba(139, 69, 19, 0.1);
         }
         
         body {
             font-family: 'Noto Serif SC', serif;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        
-        .dark body {
-            background-color: var(--bg-primary);
+            background-color: var(--bg-warm);
             color: var(--text-primary);
         }
         
@@ -49,10 +71,6 @@
             width: 400px;
             height: 400px;
             margin: 0 auto;
-        }
-        
-        .dark .seal-container {
-            background-color: var(--bg-secondary);
         }
         
         #sealCanvas {
@@ -70,10 +88,6 @@
             border-color: var(--primary-color);
         }
         
-        .dark .shape-option:hover, .dark .shape-option.selected {
-            border-color: var(--primary-color);
-        }
-        
         .loader {
             border: 4px solid rgba(0, 0, 0, 0.1);
             border-radius: 50%;
@@ -86,29 +100,6 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-        
-        .dark .loader {
-            border-color: rgba(255, 255, 255, 0.1);
-            border-top-color: var(--primary-color);
-        }
-        
-        .dark .bg-white {
-            background-color: var(--bg-secondary);
-        }
-        
-        .dark .text-gray-800, .dark .text-gray-700, .dark .text-gray-600 {
-            color: var(--text-primary);
-        }
-        
-        .dark .border-gray-300 {
-            border-color: var(--border-color);
-        }
-        
-        .dark select, .dark input {
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
-            border-color: var(--border-color);
         }
         
         /* 可拖动字符樣式 */
@@ -140,9 +131,57 @@
         }
         
         .draggable-char.selected {
+            z-index: 10;
+        }
+        
+        /* 陰刻模式下的選中邊框 */
+        .draggable-char.selected.intaglio {
             border-color: rgba(255, 255, 255, 0.8);
             box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-            z-index: 10;
+        }
+        
+        /* 陽刻模式下的選中邊框 */
+        .draggable-char.selected.relief {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 8px var(--shadow-soft);
+        }
+        
+        /* 字体大小调整手柄 */
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-gold);
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: nw-resize;
+            display: none;
+            box-shadow: 0 2px 4px var(--shadow-soft);
+            z-index: 15;
+        }
+        
+        .resize-handle.bottom-right {
+            bottom: -4px;
+            right: -4px;
+        }
+        
+        .resize-handle.top-left {
+            top: -4px;
+            left: -4px;
+        }
+        
+        .draggable-char.selected .resize-handle {
+            display: block;
+        }
+        
+        .resize-handle:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+        }
+        
+        .resize-handle.resizing {
+            background: var(--primary-dark);
+            transform: scale(1.2);
         }
         
         /* 提示信息 */
@@ -162,12 +201,9 @@
         .font-size-controls {
             margin-top: 12px;
             padding: 8px;
-            border-radius: 4px;
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-        
-        .dark .font-size-controls {
-            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background-color: var(--bg-warm);
+            border: 1px solid var(--border-light);
         }
         
         .size-value {
@@ -189,21 +225,11 @@
         
         .font-card.selected {
             border-color: var(--primary-color) !important;
-            background-color: rgba(93, 92, 222, 0.05);
-            box-shadow: 0 4px 12px rgba(93, 92, 222, 0.2);
+            background-color: rgba(139, 69, 19, 0.05);
+            box-shadow: 0 6px 20px var(--shadow-soft);
         }
         
-        .dark .font-card {
-            background-color: var(--bg-secondary);
-        }
-        
-        .dark .font-card.selected {
-            background-color: rgba(93, 92, 222, 0.15);
-        }
-        
-        .dark .font-card:hover {
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
-        }
+
         
         .font-preview {
             line-height: 1.2;
@@ -211,6 +237,49 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        
+        /* 字體選擇容器滾動樣式 */
+        .font-selection-container {
+            scrollbar-width: thin;
+            scrollbar-color: var(--shadow-soft) transparent;
+        }
+        
+        .font-selection-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .font-selection-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .font-selection-container::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+            opacity: 0.4;
+        }
+        
+        .font-selection-container::-webkit-scrollbar-thumb:hover {
+            opacity: 0.7;
+        }
+        
+        /* 刻印方式卡片樣式 */
+        .carving-option {
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .carving-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .carving-option.selected {
+            border-color: var(--primary-color) !important;
+            background-color: rgba(139, 69, 19, 0.05);
+            box-shadow: 0 6px 20px var(--shadow-soft);
+        }
+        
+
         
         /* 繪圖畫布樣式 */
         .canvas-layer {
@@ -247,9 +316,7 @@
             background-color: rgba(0, 0, 0, 0.05);
         }
         
-        .dark .drawing-controls {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
+
         
         /* 切換按鈕樣式 */
         .toggle-switch {
@@ -297,6 +364,127 @@
             transform: translateX(24px);
         }
         
+        /* 自定義滑塊樣式 */
+        .thickness-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 80px;
+            height: 6px;
+            background: linear-gradient(to right, var(--border-light), var(--primary-light));
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .thickness-slider:hover {
+            box-shadow: 0 2px 8px var(--shadow-soft);
+        }
+        
+        /* WebKit 滑塊拇指樣式 */
+        .thickness-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, var(--accent-gold), #B8860B);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+            border: 2px solid white;
+        }
+        
+        .thickness-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.5);
+        }
+        
+        /* Firefox 滑塊樣式 */
+        .thickness-slider::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(to right, var(--border-light), var(--primary-light));
+            border-radius: 3px;
+            border: none;
+        }
+        
+        .thickness-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, var(--accent-gold), #B8860B);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+            border: 2px solid white;
+        }
+        
+        .thickness-slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.5);
+        }
+        
+        /* Edge 滑塊樣式 */
+        .thickness-slider::-ms-track {
+            width: 100%;
+            height: 6px;
+            background: transparent;
+            border-color: transparent;
+            color: transparent;
+        }
+        
+        .thickness-slider::-ms-fill-lower {
+            background: var(--border-light);
+            border-radius: 3px;
+        }
+        
+        .thickness-slider::-ms-fill-upper {
+            background: var(--primary-light);
+            border-radius: 3px;
+        }
+        
+        .thickness-slider::-ms-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, var(--accent-gold), #B8860B);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+            border: 2px solid white;
+        }
+        
+        /* 滑塊容器樣式 */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+        
+        .slider-container:hover {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 8px var(--shadow-soft);
+        }
+        
+        /* 滑塊數值顯示 */
+        .thickness-value {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            min-width: 20px;
+            text-align: center;
+            background: var(--bg-warm);
+            padding: 2px 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border-light);
+        }
+        
         .drawing-mode-label {
             display: flex;
             align-items: center;
@@ -326,13 +514,11 @@
         
         .drawing-status.active {
             display: block;
-            background-color: rgba(93, 92, 222, 0.2);
+            background-color: var(--shadow-soft);
             color: var(--primary-color);
         }
         
-        .dark .drawing-status.active {
-            background-color: rgba(93, 92, 222, 0.3);
-        }
+
         
         /* 專門用於下載的隱藏畫布 */
         #downloadCanvas {
@@ -364,212 +550,234 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-red-700 dark:text-red-500 mb-2">弘立書院印章設計</h1>
-            <p class="text-gray-600 dark:text-gray-400">自定義您的專屬印章設計</p>
+<body class="min-h-screen" style="background-color: var(--bg-warm); color: var(--text-primary);">
+    <div class="container mx-auto px-4 py-3 max-w-7xl h-screen flex flex-col">
+        <header class="text-center mb-4 flex-shrink-0">
+            <h1 class="text-2xl md:text-3xl font-bold mb-2" style="color: var(--primary-dark);">弘立書院印章設計</h1>
+            <p class="text-sm" style="color: var(--text-secondary);">自定義您的專屬印章設計</p>
+            <div class="w-12 h-0.5 mx-auto mt-2 rounded-full" style="background-color: var(--accent-gold);"></div>
         </header>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
             <!-- 左側控制面板 -->
-            <div class="md:col-span-1 bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
-                <div class="mb-4">
-                    <label for="nameInput" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">印章文字</label>
-                    <input id="nameInput" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="輸入您的姓名或文字" value="王大明印">
+            <div class="lg:col-span-1 bg-white shadow-lg rounded-xl p-4 flex flex-col h-full" style="border: 1px solid var(--border-light);">
+                <div class="flex items-center justify-center mb-4">
+                    <div class="text-center">
+                        <h3 class="text-lg font-semibold mb-1" style="color: var(--primary-dark);">設計參數</h3>
+                        <div class="w-12 h-0.5 mx-auto" style="background-color: var(--accent-gold);"></div>
+                    </div>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">字體選擇</label>
-                    <div class="grid grid-cols-1 gap-3">
+                <div class="mb-3">
+                    <label for="nameInput" class="block font-medium mb-2" style="color: var(--text-primary);">印章文字</label>
+                    <input id="nameInput" type="text" class="w-full rounded-md px-3 py-2 text-base" style="border: 1px solid var(--border-light); background-color: var(--bg-card); color: var(--text-primary); outline: none;" placeholder="輸入您的姓名或文字" value="王大明印">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="block font-medium mb-2" style="color: var(--text-primary);">刻印方式</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="carving-option cursor-pointer border-2 border-primary-500 rounded-lg p-2 text-center transition-all duration-200 hover:border-primary-400 selected" data-carving="intaglio">
+                            <div class="carving-preview w-10 h-10 mx-auto mb-1 rounded border-2 flex items-center justify-center text-xs font-bold" style="background-color: #d62828; color: white; border-color: #d62828;">
+                                印
+                            </div>
+                            <span class="text-sm">陰刻</span>
+                            <div class="text-xs text-gray-500 mt-0.5">凹刻・白字紅底</div>
+                        </div>
+                        <div class="carving-option cursor-pointer border-2 border-gray-300 rounded-lg p-2 text-center transition-all duration-200 hover:border-primary-400" data-carving="relief">
+                            <div class="carving-preview w-10 h-10 mx-auto mb-1 rounded border-2 flex items-center justify-center text-xs font-bold" style="background-color: white; color: #d62828; border-color: #d62828;">
+                                印
+                            </div>
+                            <span class="text-sm">陽刻</span>
+                            <div class="text-xs text-gray-500 mt-0.5">凸刻・紅字白底</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 flex flex-col min-h-0">
+                    <label class="block font-medium mb-2" style="color: var(--text-primary);">字體選擇</label>
+                    <div class="font-selection-container flex-1 overflow-y-auto pr-2" style="min-height: 0;">
+                        <div class="grid grid-cols-1 gap-2">
                         <!-- 篆體一卡片 -->
-                        <div class="font-card cursor-pointer border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 transition-all duration-200 hover:border-primary-400" data-font="'ChongXi Seal'">
-                            <div class="font-preview text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2" style="font-family: 'ChongXi Seal';">
+                        <div class="font-card cursor-pointer border-2 border-gray-300 rounded-lg p-3 transition-all duration-200 hover:border-primary-400" data-font="'ChongXi Seal'">
+                            <div class="font-preview text-xl font-bold text-gray-800 mb-1" style="font-family: 'ChongXi Seal';">
                                 王大明印
                             </div>
-                            <div class="font-name text-sm text-gray-600 dark:text-gray-400">
+                            <div class="font-name text-sm text-gray-600">
                                 篆體一
                             </div>
                         </div>
                         
-                        <!-- 落霞孤鶩文楷卡片 -->
-                        <div class="font-card cursor-pointer border-2 border-primary-500 rounded-lg p-4 transition-all duration-200 hover:border-primary-400 selected" data-font="'LXGW WenKai'">
-                            <div class="font-preview text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2" style="font-family: 'LXGW WenKai';">
+                        <!-- 篆體二卡片 -->
+                        <div class="font-card cursor-pointer border-2 border-gray-300 rounded-lg p-3 transition-all duration-200 hover:border-primary-400" data-font="'ZiYue Seal'">
+                            <div class="font-preview text-xl font-bold text-gray-800 mb-1" style="font-family: 'ZiYue Seal';">
                                 王大明印
                             </div>
-                            <div class="font-name text-sm text-gray-600 dark:text-gray-400">
+                            <div class="font-name text-sm text-gray-600">
+                                篆體二
+                            </div>
+                        </div>
+                        
+                        <!-- 篆體三卡片 -->
+                        <div class="font-card cursor-pointer border-2 border-gray-300 rounded-lg p-3 transition-all duration-200 hover:border-primary-400" data-font="'HuaKang Seal'">
+                            <div class="font-preview text-xl font-bold text-gray-800 mb-1" style="font-family: 'HuaKang Seal';">
+                                王大明印
+                            </div>
+                            <div class="font-name text-sm text-gray-600">
+                                篆體三
+                            </div>
+                        </div>
+                        
+                        <!-- 金文卡片 -->
+                        <div class="font-card cursor-pointer border-2 border-gray-300 rounded-lg p-3 transition-all duration-200 hover:border-primary-400" data-font="'JiaJin Script'">
+                            <div class="font-preview text-xl font-bold text-gray-800 mb-1" style="font-family: 'JiaJin Script';">
+                                王大明印
+                            </div>
+                            <div class="font-name text-sm text-gray-600">
+                                金文
+                            </div>
+                        </div>
+                        
+                        <!-- 落霞孤鶩文楷卡片 -->
+                        <div class="font-card cursor-pointer border-2 border-primary-500 rounded-lg p-3 transition-all duration-200 hover:border-primary-400 selected" data-font="'LXGW WenKai'">
+                            <div class="font-preview text-xl font-bold text-gray-800 mb-1" style="font-family: 'LXGW WenKai';">
+                                王大明印
+                            </div>
+                            <div class="font-name text-sm text-gray-600">
                                 落霞孤鶩文楷
                             </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">印章形狀</label>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div class="shape-option rounded-lg p-2 text-center selected" data-shape="square">
-                            <div class="bg-red-600 h-12 w-12 mx-auto mb-1"></div>
-                            <span class="text-sm">方形</span>
-                        </div>
-                        <div class="shape-option rounded-lg p-2 text-center" data-shape="circle">
-                            <div class="bg-red-600 h-12 w-12 rounded-full mx-auto mb-1"></div>
-                            <span class="text-sm">圓形</span>
                         </div>
                     </div>
                 </div>
-                
-                <!-- 繪圖模式控制 -->
-                <div class="mb-4 drawing-controls">
-                    <div class="drawing-mode-label">
-                        <label for="drawingModeToggle" class="block text-gray-700 dark:text-gray-300 font-medium">繪圖模式</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="drawingModeToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        開啟後可在印章上自由繪製
-                    </div>
-                    <div>
-                        <label for="drawingThickness" class="block text-gray-700 dark:text-gray-300 text-sm mb-1">線條粗細</label>
-                        <input id="drawingThickness" type="range" min="1" max="20" value="3" class="w-full" />
-                    </div>
-                    <button id="clearDrawingBtn" class="w-full mt-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-1 px-2 rounded text-sm">
-                        清空繪圖
-                    </button>
-                    <div id="drawingStatus" class="drawing-status">
-                        繪圖模式已啟用
-                    </div>
-                </div>
-                
-                <div id="fontSizeControl" class="mb-4 font-size-controls">
-                    <div class="flex items-center justify-between mb-2">
-                        <label for="fontSizeRange" class="block text-gray-700 dark:text-gray-300 font-medium">
-                            字體大小
-                            <span id="selectedCharInfo" class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400 hidden">
-                                (調整「<span id="selectedCharDisplay"></span>」)
-                            </span>
-                            <span id="globalSizeInfo" class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">
-                                (調整全部)
-                            </span>
-                        </label>
-                        <span id="fontSizeValue" class="size-value">60px</span>
-                    </div>
-                    <input id="fontSizeRange" type="range" min="20" max="120" value="60" class="w-full" />
-                    <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-                        <span>小</span>
-                        <span>大</span>
-                    </div>
-                    <div id="charSelectedTip" class="mt-2 text-sm text-blue-500 dark:text-blue-400 hidden">
-                        點擊印章區域的空白處取消選擇
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="initialLayout" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">初始布局</label>
-                    <select id="initialLayout" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="vertical">垂直排列</option>
-                        <option value="horizontal">水平排列</option>
-                        <option value="circle">環形排列</option>
-                        <option value="random">隨機分佈</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="colorSelect" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">印章顏色</label>
-                    <select id="colorSelect" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="#d62828">傳統紅</option>
-                        <option value="#bc002d">深朱紅</option>
-                        <option value="#9e2a2b">赤紅</option>
-                        <option value="#540b0e">暗紅</option>
-                        <option value="#e76f51">珊瑚紅</option>
-                    </select>
-                </div>
-                
-                <button id="generateBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                    重新生成印章
-                </button>
+
             </div>
             
             <!-- 右側預覽區 -->
-            <div class="md:col-span-2">
-                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">印章預覽 <span id="previewInstructions" class="text-sm text-gray-500">（點擊字符可調整大小）</span></h2>
-                    <div id="sealContainer" class="seal-container rounded-lg flex items-center justify-center">
-                        <div id="loadingIndicator" class="loader hidden"></div>
-                        
-                        <!-- 印章背景層 -->
-                        <div id="sealBackground" class="absolute inset-0 z-10"></div>
-                        
-                        <!-- 顯示繪圖層 -->
-                        <canvas id="displayCanvas" class="canvas-layer"></canvas>
-                        
-                        <!-- 字符層 - 確保這一層在繪圖層上面 -->
-                        <div id="charContainer" class="absolute inset-0 z-30"></div>
-                        
-                        <!-- 繪圖用Canvas層 - 只在繪圖模式下顯示，位於最上層 -->
-                        <canvas id="drawCanvas" class="canvas-layer"></canvas>
-                        
-                        <!-- 下載用的畫布 -->
-                        <canvas id="downloadCanvas"></canvas>
-                        
-                        <div class="drag-instructions z-5">點擊並拖動每個字符來調整位置，點擊選擇後可調整大小</div>
+            <div class="lg:col-span-2 flex flex-col h-full">
+                <div class="bg-white shadow-lg rounded-xl p-4 flex-1 flex flex-col" style="border: 1px solid var(--border-light);">
+                    <div class="flex items-center justify-center mb-3">
+                        <div class="text-center">
+                            <h3 class="text-lg font-semibold mb-1" style="color: var(--primary-dark);">印章預覽</h3>
+                            <div class="w-12 h-0.5 mx-auto" style="background-color: var(--accent-gold);"></div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <button id="resetPositionsBtn" class="w-full bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                            重置字符位置
-                        </button>
-                        <button id="resetSizesBtn" class="w-full bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
-                            重置字符大小
-                        </button>
+                    
+                    <!-- 繪圖控制區 -->
+                    <div class="bg-gray-50 rounded-lg p-3 mb-4" style="border: 1px solid var(--border-light);">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
+                            <div class="text-sm font-medium" style="color: var(--text-primary);">
+                                繪圖工具
+                            </div>
+                            
+                            <div class="flex flex-wrap items-center gap-3 text-sm">
+                                <div class="flex items-center space-x-2">
+                                    <span style="color: var(--text-secondary);">繪圖:</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="drawingModeToggle">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <span style="color: var(--text-secondary);">橡皮擦:</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="eraserModeToggle">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="slider-container">
+                                    <span style="color: var(--text-secondary);">粗細:</span>
+                                    <input id="drawingThickness" type="range" min="1" max="20" value="3" class="thickness-slider" />
+                                    <span id="thicknessValue" class="thickness-value">3</span>
+                                </div>
+                                
+                                <button id="clearDrawingBtn" class="text-white px-3 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-90" style="background-color: var(--text-secondary);">
+                                    清空
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <button id="downloadBtn" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out" style="background-color: var(--primary-color);">
-                        下載印章
-                    </button>
-                    <div id="downloadMessage"></div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">點擊按鈕下載印章設計圖片</p>
+                    
+                    <!-- 印章容器区域 - 居中显示 -->
+                    <div class="flex-1 flex items-center justify-center">
+                        <div id="sealContainer" class="seal-container rounded-lg flex items-center justify-center">
+                            <div id="loadingIndicator" class="loader hidden"></div>
+                            
+                            <!-- 印章背景層 -->
+                            <div id="sealBackground" class="absolute inset-0 z-10"></div>
+                            
+                            <!-- 顯示繪圖層 -->
+                            <canvas id="displayCanvas" class="canvas-layer"></canvas>
+                            
+                            <!-- 字符層 - 確保這一層在繪圖層上面 -->
+                            <div id="charContainer" class="absolute inset-0 z-30"></div>
+                            
+                            <!-- 繪圖用Canvas層 - 只在繪圖模式下顯示，位於最上層 -->
+                            <canvas id="drawCanvas" class="canvas-layer"></canvas>
+                            
+                            <!-- 下載用的畫布 -->
+                            <canvas id="downloadCanvas"></canvas>
+                            
+                            <div class="drag-instructions z-5">點擊並拖動字符調整位置，拖拽右下角藍色圓點調整大小</div>
+                            
+                            <!-- 繪圖狀態指示器 -->
+                            <div id="drawingStatus" class="drawing-status">
+                                繪圖模式已啟用
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 印章預覽底部提示文字 -->
+                    <div class="mt-2 text-center">
+                        <span id="previewInstructions" class="text-sm text-gray-500">點擊字符可調整大小</span>
+                    </div>
+                    
+                    <!-- 操作按钮区域 -->
+                    <div class="mt-4 pt-3 border-t" style="border-color: var(--border-light);">
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <button id="resetPositionsBtn" class="w-full text-white font-medium py-2 px-3 rounded-lg transition-all duration-200 hover:shadow-md transform hover:scale-105 text-sm" style="background-color: var(--text-secondary);">
+                                    重置位置
+                                </button>
+                                <button id="resetSizesBtn" class="w-full text-white font-medium py-2 px-3 rounded-lg transition-all duration-200 hover:shadow-md transform hover:scale-105 text-sm" style="background-color: var(--text-secondary);">
+                                    重置大小
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <button id="downloadBtn" class="w-full text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-light));">
+                                    📥 下載正字印章 (PNG)
+                                </button>
+                                <button id="downloadSvgBtn" class="w-full text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105" style="background: linear-gradient(135deg, var(--accent-gold), #B8860B);">
+                                    ⚡ 下載反字印章 (SVG激光切割)
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="downloadMessage" class="mt-3"></div>
+                        <p class="text-xs mt-2 text-center" style="color: var(--text-secondary);">PNG用於查看效果，SVG反字用於激光切割</p>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <footer class="mt-12 text-center text-gray-600 dark:text-gray-400 text-sm">
+        <footer class="mt-6 text-center text-gray-600 text-xs">
             <p>印章設計生成器 &copy; 2023 | 僅供個人使用</p>
         </footer>
     </div>
 
     <script>
-        // 檢測暗黑模式
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        });
+
         
         // 獲取DOM元素
         const nameInput = document.getElementById('nameInput');
-        const initialLayout = document.getElementById('initialLayout');
-        const fontSizeRange = document.getElementById('fontSizeRange');
-        const fontSizeValue = document.getElementById('fontSizeValue');
-        const colorSelect = document.getElementById('colorSelect');
-        const generateBtn = document.getElementById('generateBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const resetPositionsBtn = document.getElementById('resetPositionsBtn');
         const resetSizesBtn = document.getElementById('resetSizesBtn');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const sealBackground = document.getElementById('sealBackground');
         const charContainer = document.getElementById('charContainer');
-        const selectedCharInfo = document.getElementById('selectedCharInfo');
-        const selectedCharDisplay = document.getElementById('selectedCharDisplay');
-        const globalSizeInfo = document.getElementById('globalSizeInfo');
-        const charSelectedTip = document.getElementById('charSelectedTip');
         const sealContainer = document.getElementById('sealContainer');
         const previewInstructions = document.getElementById('previewInstructions');
         const downloadMessage = document.getElementById('downloadMessage');
@@ -579,6 +787,7 @@
         const displayCanvas = document.getElementById('displayCanvas');
         const downloadCanvas = document.getElementById('downloadCanvas');
         const drawingModeToggle = document.getElementById('drawingModeToggle');
+        const eraserModeToggle = document.getElementById('eraserModeToggle');
         const drawingThickness = document.getElementById('drawingThickness');
         const clearDrawingBtn = document.getElementById('clearDrawingBtn');
         const drawingStatus = document.getElementById('drawingStatus');
@@ -591,6 +800,10 @@
         // 字體卡片相關元素
         const fontCards = document.querySelectorAll('.font-card');
         let currentFont = "'LXGW WenKai'"; // 默認字體
+        
+        // 刻印方式相關元素
+        const carvingOptions = document.querySelectorAll('.carving-option');
+        let currentCarving = 'intaglio'; // 默認陰刻
         
         // 印章形狀選擇
         const shapeOptions = document.querySelectorAll('.shape-option');
@@ -609,7 +822,7 @@
         // 印章參數
         const sealSize = 350;
         const padding = 30;
-        const defaultFontSize = 60;
+        const defaultFontSize = 120;
         
         // 拖動狀態
         let isDragging = false;
@@ -619,9 +832,17 @@
         let targetStartX = 0;
         let targetStartY = 0;
         
+        // 字體大小調整狀態
+        let isResizing = false;
+        let resizeStartX = 0;
+        let resizeStartY = 0;
+        let initialFontSize = 0;
+        let resizeHandleType = 'bottom-right'; // 'top-left' 或 'bottom-right'
+        
         // 繪圖狀態 - 重構
         let isDrawing = false;
         let isDrawingMode = false;
+        let isEraserMode = false;
         let prevX = 0;
         let prevY = 0;
         
@@ -633,9 +854,6 @@
         downloadCanvas.width = sealSize;
         downloadCanvas.height = sealSize;
         
-        // 初始化時設置字體大小顯示
-        fontSizeValue.textContent = `${defaultFontSize}px`;
-        
         // 繪圖事件處理函數 - 完全重寫
         function setDrawingMode(enabled) {
             isDrawingMode = enabled;
@@ -646,9 +864,10 @@
                 sealContainer.classList.add('drawing-mode');
                 drawingStatus.classList.add('active');
                 
-                // 更新說明
-                previewInstructions.textContent = "（繪圖模式：在印章上繪製白色線條）";
-                document.querySelector('.drag-instructions').textContent = '在印章上繪製白色線條';
+                // 根據刻印方式更新說明和繪圖顏色
+                const drawColor = currentCarving === 'intaglio' ? '白色' : '紅色';
+                previewInstructions.textContent = `繪圖模式：在印章上繪製${drawColor}線條`;
+                document.querySelector('.drag-instructions').textContent = `在印章上繪製${drawColor}線條`;
                 
                 // 禁用字符交互，但保持字符顯示
                 charElements.forEach(char => {
@@ -664,8 +883,8 @@
                 drawingStatus.classList.remove('active');
                 
                 // 恢復說明
-                previewInstructions.textContent = "（點擊字符可調整大小）";
-                document.querySelector('.drag-instructions').textContent = '點擊並拖動每個字符來調整位置，點擊選擇後可調整大小';
+                previewInstructions.textContent = "點擊字符可調整大小";
+                document.querySelector('.drag-instructions').textContent = '點擊並拖動字符調整位置，拖拽右下角藍色圓點調整大小';
                 
                 // 啟用字符交互
                 charElements.forEach(char => {
@@ -693,12 +912,26 @@
             prevX = canvasX;
             prevY = canvasY;
             
-            // 繪製一個點
-            drawCtx.beginPath();
-            drawCtx.fillStyle = 'white';
-            const radius = parseInt(drawingThickness.value) / 2;
-            drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
-            drawCtx.fill();
+            if (isEraserMode) {
+                // 橡皮擦模式：擦除內容
+                drawCtx.save();
+                drawCtx.globalCompositeOperation = 'destination-out';
+                drawCtx.beginPath();
+                const radius = parseInt(drawingThickness.value) / 2;
+                drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
+                drawCtx.fill();
+                drawCtx.restore();
+            } else {
+                // 繪圖模式：根據刻印方式選擇繪圖顏色
+                const drawColor = currentCarving === 'intaglio' ? 'white' : '#d62828';
+                
+                // 繪製一個點
+                drawCtx.beginPath();
+                drawCtx.fillStyle = drawColor;
+                const radius = parseInt(drawingThickness.value) / 2;
+                drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
+                drawCtx.fill();
+            }
             
             // 立即更新顯示畫布
             updateDisplayCanvas();
@@ -718,15 +951,33 @@
             const canvasX = (x / rect.width) * drawCanvas.width;
             const canvasY = (y / rect.height) * drawCanvas.height;
             
-            drawCtx.beginPath();
-            drawCtx.strokeStyle = 'white';
-            drawCtx.lineWidth = parseInt(drawingThickness.value);
-            drawCtx.lineCap = 'round';
-            drawCtx.lineJoin = 'round';
-            
-            drawCtx.moveTo(prevX, prevY);
-            drawCtx.lineTo(canvasX, canvasY);
-            drawCtx.stroke();
+            if (isEraserMode) {
+                // 橡皮擦模式：擦除內容
+                drawCtx.save();
+                drawCtx.globalCompositeOperation = 'destination-out';
+                drawCtx.beginPath();
+                drawCtx.lineWidth = parseInt(drawingThickness.value);
+                drawCtx.lineCap = 'round';
+                drawCtx.lineJoin = 'round';
+                
+                drawCtx.moveTo(prevX, prevY);
+                drawCtx.lineTo(canvasX, canvasY);
+                drawCtx.stroke();
+                drawCtx.restore();
+            } else {
+                // 繪圖模式：根據刻印方式選擇繪圖顏色
+                const drawColor = currentCarving === 'intaglio' ? 'white' : '#d62828';
+                
+                drawCtx.beginPath();
+                drawCtx.strokeStyle = drawColor;
+                drawCtx.lineWidth = parseInt(drawingThickness.value);
+                drawCtx.lineCap = 'round';
+                drawCtx.lineJoin = 'round';
+                
+                drawCtx.moveTo(prevX, prevY);
+                drawCtx.lineTo(canvasX, canvasY);
+                drawCtx.stroke();
+            }
             
             prevX = canvasX;
             prevY = canvasY;
@@ -755,12 +1006,26 @@
             prevX = canvasX;
             prevY = canvasY;
             
-            // 繪製一個點
-            drawCtx.beginPath();
-            drawCtx.fillStyle = 'white';
-            const radius = parseInt(drawingThickness.value) / 2;
-            drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
-            drawCtx.fill();
+            if (isEraserMode) {
+                // 橡皮擦模式：擦除內容
+                drawCtx.save();
+                drawCtx.globalCompositeOperation = 'destination-out';
+                drawCtx.beginPath();
+                const radius = parseInt(drawingThickness.value) / 2;
+                drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
+                drawCtx.fill();
+                drawCtx.restore();
+            } else {
+                // 繪圖模式：根據刻印方式選擇繪圖顏色
+                const drawColor = currentCarving === 'intaglio' ? 'white' : '#d62828';
+                
+                // 繪製一個點
+                drawCtx.beginPath();
+                drawCtx.fillStyle = drawColor;
+                const radius = parseInt(drawingThickness.value) / 2;
+                drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
+                drawCtx.fill();
+            }
             
             // 更新顯示畫布
             updateDisplayCanvas();
@@ -781,15 +1046,33 @@
             const canvasX = (x / rect.width) * drawCanvas.width;
             const canvasY = (y / rect.height) * drawCanvas.height;
             
-            drawCtx.beginPath();
-            drawCtx.strokeStyle = 'white';
-            drawCtx.lineWidth = parseInt(drawingThickness.value);
-            drawCtx.lineCap = 'round';
-            drawCtx.lineJoin = 'round';
-            
-            drawCtx.moveTo(prevX, prevY);
-            drawCtx.lineTo(canvasX, canvasY);
-            drawCtx.stroke();
+            if (isEraserMode) {
+                // 橡皮擦模式：擦除內容
+                drawCtx.save();
+                drawCtx.globalCompositeOperation = 'destination-out';
+                drawCtx.beginPath();
+                drawCtx.lineWidth = parseInt(drawingThickness.value);
+                drawCtx.lineCap = 'round';
+                drawCtx.lineJoin = 'round';
+                
+                drawCtx.moveTo(prevX, prevY);
+                drawCtx.lineTo(canvasX, canvasY);
+                drawCtx.stroke();
+                drawCtx.restore();
+            } else {
+                // 繪圖模式：根據刻印方式選擇繪圖顏色
+                const drawColor = currentCarving === 'intaglio' ? 'white' : '#d62828';
+                
+                drawCtx.beginPath();
+                drawCtx.strokeStyle = drawColor;
+                drawCtx.lineWidth = parseInt(drawingThickness.value);
+                drawCtx.lineCap = 'round';
+                drawCtx.lineJoin = 'round';
+                
+                drawCtx.moveTo(prevX, prevY);
+                drawCtx.lineTo(canvasX, canvasY);
+                drawCtx.stroke();
+            }
             
             prevX = canvasX;
             prevY = canvasY;
@@ -818,7 +1101,47 @@
         // 繪圖模式切換事件
         drawingModeToggle.addEventListener('change', function() {
             setDrawingMode(this.checked);
+            
+            // 繪圖模式關閉時，自動關閉橡皮擦模式
+            if (!this.checked && isEraserMode) {
+                eraserModeToggle.checked = false;
+                isEraserMode = false;
+            }
         });
+        
+        // 滑塊數值更新事件
+        const thicknessValue = document.getElementById('thicknessValue');
+        drawingThickness.addEventListener('input', function() {
+            thicknessValue.textContent = this.value;
+        });
+        
+        // 橡皮擦模式切換事件
+        eraserModeToggle.addEventListener('change', function() {
+            isEraserMode = this.checked;
+            
+            // 橡皮擦模式開啟時，自動開啟繪圖模式
+            if (this.checked && !isDrawingMode) {
+                drawingModeToggle.checked = true;
+                setDrawingMode(true);
+            }
+            
+            // 更新提示文字
+            if (isDrawingMode) {
+                updateDrawingModeInstructions();
+            }
+        });
+        
+        // 更新繪圖模式提示文字
+        function updateDrawingModeInstructions() {
+            if (isEraserMode) {
+                previewInstructions.textContent = "橡皮擦模式：在印章上擦除線條";
+                document.querySelector('.drag-instructions').textContent = "在印章上擦除線條";
+            } else {
+                const drawColor = currentCarving === 'intaglio' ? '白色' : '紅色';
+                previewInstructions.textContent = `繪圖模式：在印章上繪製${drawColor}線條`;
+                document.querySelector('.drag-instructions').textContent = `在印章上繪製${drawColor}線條`;
+            }
+        }
         
         // 清空繪圖按鈕事件
         clearDrawingBtn.addEventListener('click', clearDrawing);
@@ -851,6 +1174,28 @@
             });
         });
         
+        // 刻印方式選擇事件
+        carvingOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // 移除所有選項的選中狀態
+                carvingOptions.forEach(opt => opt.classList.remove('selected'));
+                // 添加當前選項的選中狀態
+                option.classList.add('selected');
+                
+                // 更新當前刻印方式
+                currentCarving = option.getAttribute('data-carving');
+                
+                // 重新繪製印章以應用新的刻印方式
+                redrawSealBackground();
+                updateCharsStyle();
+                
+                // 如果處於繪圖模式，更新提示文字
+                if (isDrawingMode) {
+                    updateDrawingModeInstructions();
+                }
+            });
+        });
+        
         // 形狀選擇事件
         shapeOptions.forEach(option => {
             option.addEventListener('click', () => {
@@ -867,34 +1212,9 @@
             generateSeal();
         });
         
-        fontSizeRange.addEventListener('input', () => {
-            // 更新顯示的數值
-            const fontSize = parseInt(fontSizeRange.value);
-            fontSizeValue.textContent = `${fontSize}px`;
-            
-            // 根據選擇狀態調整大小
-            if (selectedCharIndex !== null) {
-                // 只調整選中字符的大小
-                charSizes[selectedCharIndex] = fontSize;
-                updateCharSize(charElements[selectedCharIndex], fontSize);
-            } else {
-                // 調整所有字符的大小
-                charElements.forEach((char, index) => {
-                    charSizes[index] = fontSize;
-                    updateCharSize(char, fontSize);
-                });
-            }
-        });
+
         
-        colorSelect.addEventListener('change', () => {
-            // 當顏色改變時，更新印章背景
-            redrawSealBackground();
-        });
-        
-        initialLayout.addEventListener('change', () => {
-            // 重新基於新的布局安排字符
-            resetCharPositions();
-        });
+
         
         // 點擊印章背景取消選擇
         sealBackground.addEventListener('click', (e) => {
@@ -905,21 +1225,25 @@
         });
         
         // 按鈕事件綁定
-        generateBtn.addEventListener('click', generateSeal);
         resetPositionsBtn.addEventListener('click', resetCharPositions);
         resetSizesBtn.addEventListener('click', resetAllCharSizes);
         downloadBtn.addEventListener('click', downloadSeal);
         
+        // SVG下載按鈕事件
+        const downloadSvgBtn = document.getElementById('downloadSvgBtn');
+        downloadSvgBtn.addEventListener('click', downloadSvgSeal);
+        
         // 等待字體加載完成後初始化
         document.fonts.ready.then(() => {
-            // 嘗試加載崇熙篆體 - 先嘗試HTTPS，後嘗試HTTP
-            async function loadChongXiFont() {
-                const urls = [
+            // 嘗試加載篆體字體
+            async function loadSealFonts() {
+                // 加載篆體一 (崇熙篆體)
+                const chongxiUrls = [
                     'https://chineseclassics.github.io/files/chongxi_seal.otf',
                     'http://chineseclassics.github.io/files/chongxi_seal.otf'
                 ];
                 
-                for (const url of urls) {
+                for (const url of chongxiUrls) {
                     try {
                         console.log(`嘗試從 ${url} 加載崇熙篆體`);
                         const testFont = new FontFace('ChongXi Seal', `url(${url})`);
@@ -939,24 +1263,99 @@
                         document.body.removeChild(testDiv);
                         
                         if (computedStyle.fontFamily.includes('ChongXi Seal')) {
-                            console.log('字體驗證成功');
-                            // 重新生成印章以應用字體
-                            setTimeout(() => {
-                                generateSeal();
-                            }, 300);
-                            return true;
+                            console.log('篆體一驗證成功');
+                            break;
                         }
                     } catch (error) {
-                        console.warn(`從 ${url} 加載字體失敗:`, error);
+                        console.warn(`從 ${url} 加載篆體一失敗:`, error);
                     }
                 }
                 
-                // 所有URL都失敗
-                console.warn('崇熙篆體加載失敗');
-                return false;
+                // 加載篆體二 (子月九疊印篆)
+                try {
+                    console.log('嘗試加載篆體二');
+                    const ziYueFont = new FontFace('ZiYue Seal', `url(https://chineseclassics.github.io/files/ZIYueJiuDieYinZhuan-Regular.ttf)`);
+                    await ziYueFont.load();
+                    document.fonts.add(ziYueFont);
+                    console.log('篆體二加載成功');
+                    
+                    // 測試字體是否真正可用
+                    const testDiv = document.createElement('div');
+                    testDiv.style.fontFamily = "'ZiYue Seal'";
+                    testDiv.style.position = 'absolute';
+                    testDiv.style.visibility = 'hidden';
+                    testDiv.textContent = '測試';
+                    document.body.appendChild(testDiv);
+                    
+                    const computedStyle = window.getComputedStyle(testDiv);
+                    document.body.removeChild(testDiv);
+                    
+                    if (computedStyle.fontFamily.includes('ZiYue Seal')) {
+                        console.log('篆體二驗證成功');
+                    }
+                } catch (error) {
+                    console.warn('篆體二加載失敗:', error);
+                }
+                
+                // 加載篆體三 (華康新篆體)
+                try {
+                    console.log('嘗試加載篆體三');
+                    const huaKangFont = new FontFace('HuaKang Seal', `url(https://chineseclassics.github.io/files/huakangxinzhuan.ttf)`);
+                    await huaKangFont.load();
+                    document.fonts.add(huaKangFont);
+                    console.log('篆體三加載成功');
+                    
+                    // 測試字體是否真正可用
+                    const testDiv = document.createElement('div');
+                    testDiv.style.fontFamily = "'HuaKang Seal'";
+                    testDiv.style.position = 'absolute';
+                    testDiv.style.visibility = 'hidden';
+                    testDiv.textContent = '測試';
+                    document.body.appendChild(testDiv);
+                    
+                    const computedStyle = window.getComputedStyle(testDiv);
+                    document.body.removeChild(testDiv);
+                    
+                    if (computedStyle.fontFamily.includes('HuaKang Seal')) {
+                        console.log('篆體三驗證成功');
+                    }
+                } catch (error) {
+                    console.warn('篆體三加載失敗:', error);
+                }
+                
+                // 加載金文字體
+                try {
+                    console.log('嘗試加載金文字體');
+                    const jinWenFont = new FontFace('JiaJin Script', `url(https://chineseclassics.github.io/files/jiajinwen.ttf)`);
+                    await jinWenFont.load();
+                    document.fonts.add(jinWenFont);
+                    console.log('金文字體加載成功');
+                    
+                    // 測試字體是否真正可用
+                    const testDiv = document.createElement('div');
+                    testDiv.style.fontFamily = "'JiaJin Script'";
+                    testDiv.style.position = 'absolute';
+                    testDiv.style.visibility = 'hidden';
+                    testDiv.textContent = '測試';
+                    document.body.appendChild(testDiv);
+                    
+                    const computedStyle = window.getComputedStyle(testDiv);
+                    document.body.removeChild(testDiv);
+                    
+                    if (computedStyle.fontFamily.includes('JiaJin Script')) {
+                        console.log('金文字體驗證成功');
+                    }
+                } catch (error) {
+                    console.warn('金文字體加載失敗:', error);
+                }
+                
+                // 重新生成印章以應用已加載的字體
+                setTimeout(() => {
+                    generateSeal();
+                }, 300);
             }
             
-            loadChongXiFont();
+            loadSealFonts();
         });
         
         // 初始化（先生成一次，字體加載後會重新生成）
@@ -996,86 +1395,66 @@
             for (let i = 0; i < charCount; i++) {
                 charSizes[i] = defaultFontSize;
             }
-            
-            // 重置字體大小滑塊
-            fontSizeRange.value = defaultFontSize;
-            fontSizeValue.textContent = `${defaultFontSize}px`;
         }
         
-        // 創建字符位置數據
+        // 創建字符位置數據 - 默認使用田字格布局
         function createCharPositions(text) {
             const centerX = sealSize / 2;
             const centerY = sealSize / 2;
-            const radius = (sealSize / 2) - padding * 1.5;
             
             charPositions = [];
             
-            // 根據選擇的布局安排字符
-            const layout = initialLayout.value;
+            // 田字排列（古印排版）- 精確的田字格居中布局
+            // 使用與印章背景相同的邊距，確保一致性
+            const sizeOffset = padding * 0.8; // 與背景邊距一致：24px
             
-            if (layout === 'vertical') {
-                // 垂直佈局
-                const totalHeight = sealSize - padding * 3;
-                const spacing = totalHeight / (text.length > 1 ? text.length : 1);
-                
-                for (let i = 0; i < text.length; i++) {
-                    charPositions.push({
-                        x: centerX,
-                        y: padding * 1.5 + spacing * (i + 0.5),
-                        rotation: 0
-                    });
+            // 印章內部可用區域
+            const innerWidth = sealSize - sizeOffset * 2;  // 302px
+            const innerHeight = sealSize - sizeOffset * 2; // 302px
+            
+            // 田字格：每個格子的大小
+            const cellWidth = innerWidth / 2;   // 151px
+            const cellHeight = innerHeight / 2; // 151px
+            
+            // 計算每個格子的精確中心點
+            const positions = [
+                // 右上角 (第一字)
+                { 
+                    x: sizeOffset + cellWidth + cellWidth / 2,    // 24 + 151 + 75.5 = 250.5
+                    y: sizeOffset + cellHeight / 2                // 24 + 75.5 = 99.5
+                },
+                // 右下角 (第二字)
+                { 
+                    x: sizeOffset + cellWidth + cellWidth / 2,    // 24 + 151 + 75.5 = 250.5
+                    y: sizeOffset + cellHeight + cellHeight / 2   // 24 + 151 + 75.5 = 250.5
+                },
+                // 左上角 (第三字)
+                { 
+                    x: sizeOffset + cellWidth / 2,                // 24 + 75.5 = 99.5
+                    y: sizeOffset + cellHeight / 2                // 24 + 75.5 = 99.5
+                },
+                // 左下角 (第四字)
+                { 
+                    x: sizeOffset + cellWidth / 2,                // 24 + 75.5 = 99.5
+                    y: sizeOffset + cellHeight + cellHeight / 2   // 24 + 151 + 75.5 = 250.5
                 }
-            } 
-            else if (layout === 'horizontal') {
-                // 水平佈局
-                const totalWidth = sealSize - padding * 3;
-                const spacing = totalWidth / (text.length > 1 ? text.length : 1);
-                
-                for (let i = 0; i < text.length; i++) {
-                    charPositions.push({
-                        x: padding * 1.5 + spacing * (i + 0.5),
-                        y: centerY,
-                        rotation: 0
-                    });
-                }
-            } 
-            else if (layout === 'circle') {
-                // 環形佈局
-                for (let i = 0; i < text.length; i++) {
-                    const angle = (i / text.length) * (Math.PI * 2) - (Math.PI / 2);
-                    charPositions.push({
-                        x: centerX + Math.cos(angle) * radius,
-                        y: centerY + Math.sin(angle) * radius,
-                        rotation: angle + (Math.PI / 2)
-                    });
-                }
-            } 
-            else if (layout === 'random') {
-                // 隨機分佈
-                const safeRadius = radius * 0.8; // 确保不会太靠近边缘
-                
-                for (let i = 0; i < text.length; i++) {
-                    // 在印章區域內隨機分佈
-                    let x, y;
-                    
-                    if (currentShape === 'circle') {
-                        // 在圓形區域內隨機分佈
-                        const angle = Math.random() * Math.PI * 2;
-                        const r = Math.random() * safeRadius;
-                        x = centerX + Math.cos(angle) * r;
-                        y = centerY + Math.sin(angle) * r;
-                    } else {
-                        // 在方形區域內隨機分佈
-                        x = padding + Math.random() * (sealSize - padding * 2);
-                        y = padding + Math.random() * (sealSize - padding * 2);
-                    }
-                    
-                    charPositions.push({
-                        x: x,
-                        y: y,
-                        rotation: Math.random() * Math.PI * 0.5 - Math.PI * 0.25 // 轻微随机旋转
-                    });
-                }
+            ];
+            
+            for (let i = 0; i < Math.min(text.length, 4); i++) {
+                charPositions.push({
+                    x: positions[i].x,
+                    y: positions[i].y,
+                    rotation: 0
+                });
+            }
+            
+            // 如果字數超過4個，按順序排列在印章區域內
+            for (let i = 4; i < text.length; i++) {
+                charPositions.push({
+                    x: centerX + (Math.random() - 0.5) * innerWidth * 0.6,
+                    y: centerY + (Math.random() - 0.5) * innerHeight * 0.6,
+                    rotation: 0
+                });
             }
         }
         
@@ -1110,8 +1489,41 @@
                 char.textContent = text[i];
                 char.dataset.index = i;
                 
+                // 創建右下角調整手柄
+                const resizeHandleBottomRight = document.createElement('div');
+                resizeHandleBottomRight.className = 'resize-handle bottom-right';
+                resizeHandleBottomRight.dataset.index = i;
+                
+                // 創建左上角調整手柄
+                const resizeHandleTopLeft = document.createElement('div');
+                resizeHandleTopLeft.className = 'resize-handle top-left';
+                resizeHandleTopLeft.dataset.index = i;
+                
+                // 添加調整手柄事件
+                resizeHandleBottomRight.addEventListener('mousedown', handleResizeMouseDown);
+                resizeHandleBottomRight.addEventListener('touchstart', handleResizeTouchStart);
+                resizeHandleTopLeft.addEventListener('mousedown', handleResizeMouseDown);
+                resizeHandleTopLeft.addEventListener('touchstart', handleResizeTouchStart);
+                
+                // 將手柄添加到字符容器中
+                char.appendChild(resizeHandleBottomRight);
+                char.appendChild(resizeHandleTopLeft);
+                
                 // 設置字符樣式
                 char.style.fontFamily = fontFamily;
+                
+                // 立即應用當前刻印方式的樣式
+                char.classList.add(currentCarving);
+                const color = '#d62828';
+                if (currentCarving === 'intaglio') {
+                    char.style.color = 'white';
+                    char.style.textShadow = '0 0 2px rgba(0,0,0,0.5)';
+                } else {
+                    char.style.color = color;
+                    char.style.textShadow = '0 0 2px rgba(255,255,255,0.5)';
+                }
+                char.style.webkitTextStroke = '';
+                char.style.webkitTextFillColor = '';
                 
                 // 設置字體大小
                 updateCharSize(char, charSizes[i]);
@@ -1145,6 +1557,23 @@
                     unselectChar();
                 }
             });
+            
+            // 添加全局點擊事件，在印章區域外點擊也可以取消選中
+            document.addEventListener('click', function(e) {
+                if (!isDrawingMode && selectedCharIndex !== null) {
+                    // 檢查點擊是否在印章區域外
+                    const sealRect = sealContainer.getBoundingClientRect();
+                    const isInsideSeal = e.clientX >= sealRect.left && 
+                                       e.clientX <= sealRect.right && 
+                                       e.clientY >= sealRect.top && 
+                                       e.clientY <= sealRect.bottom;
+                    
+                    // 如果點擊在印章區域外，取消選中
+                    if (!isInsideSeal) {
+                        unselectChar();
+                    }
+                }
+            });
         }
         
         // 選擇字符
@@ -1162,19 +1591,6 @@
             
             // 保存選中的字符索引
             selectedCharIndex = parseInt(this.dataset.index);
-            
-            // 更新字體大小滑塊值為選中字符的當前大小
-            const fontSize = charSizes[selectedCharIndex];
-            fontSizeRange.value = fontSize;
-            fontSizeValue.textContent = `${fontSize}px`;
-            
-            // 更新UI狀態
-            selectedCharInfo.classList.remove('hidden');
-            globalSizeInfo.classList.add('hidden');
-            charSelectedTip.classList.remove('hidden');
-            
-            // 顯示選中的字符
-            selectedCharDisplay.textContent = this.textContent;
         }
         
         // 取消選擇字符
@@ -1184,11 +1600,6 @@
             
             // 重置選中索引
             selectedCharIndex = null;
-            
-            // 更新UI狀態
-            selectedCharInfo.classList.add('hidden');
-            globalSizeInfo.classList.remove('hidden');
-            charSelectedTip.classList.add('hidden');
         }
         
         // 鼠標按下事件處理
@@ -1222,11 +1633,18 @@
             
             const pos = charPositions[index];
             const fontSize = charSizes[index];
-            const offsetX = fontSize * 0.5; // 半寬度偏移
-            const offsetY = fontSize * 0.5; // 半高度偏移
+            
+            // 字符容器大小，確保有足夠空間
+            const containerSize = fontSize * 1.3;
+            
+            // 字符中心定位：容器左上角 = 中心點 - 容器大小的一半
+            const offsetX = containerSize / 2;
+            const offsetY = containerSize / 2;
             
             charElement.style.left = `${pos.x - offsetX}px`;
             charElement.style.top = `${pos.y - offsetY}px`;
+            charElement.style.width = `${containerSize}px`;
+            charElement.style.height = `${containerSize}px`;
             charElement.style.transform = `rotate(${pos.rotation}rad)`;
         }
         
@@ -1234,53 +1652,66 @@
         function updateCharSize(charElement, fontSize) {
             charElement.style.fontSize = `${fontSize}px`;
             
-            // 更新字符寬高
+            // 獲取字符索引並更新位置
             const index = parseInt(charElement.dataset.index);
-            const sizeFactor = 1.2; // 字符容器比字體大一些
-            
-            charElement.style.width = `${fontSize * sizeFactor}px`;
-            charElement.style.height = `${fontSize * sizeFactor}px`;
-            
-            // 更新位置以適應新的尺寸
             updateCharPosition(charElement, index);
         }
         
         // 更新所有字符的樣式
         function updateCharsStyle() {
+            const color = '#d62828'; // 固定使用紅色
+            
             charElements.forEach(char => {
                 char.style.fontFamily = currentFont;
+                
+                // 移除舊的刻印方式類
+                char.classList.remove('intaglio', 'relief');
+                // 添加當前刻印方式類
+                char.classList.add(currentCarving);
+                
+                // 根據刻印方式設置字符顏色
+                if (currentCarving === 'intaglio') {
+                    // 陰刻：白色字體
+                    char.style.color = 'white';
+                    char.style.textShadow = '0 0 2px rgba(0,0,0,0.5)';
+                    char.style.webkitTextStroke = '';
+                    char.style.webkitTextFillColor = '';
+                } else {
+                    // 陽刻：紅色字體
+                    char.style.color = color;
+                    char.style.textShadow = '0 0 2px rgba(255,255,255,0.5)';
+                    char.style.webkitTextStroke = '';
+                    char.style.webkitTextFillColor = '';
+                }
             });
         }
         
         // 繪製印章背景
         function redrawSealBackground() {
-            const color = colorSelect.value;
-            const shape = currentShape;
+            const color = '#d62828'; // 固定使用紅色
             const centerX = sealSize / 2;
             const centerY = sealSize / 2;
-            const radius = sealSize / 2 - padding;
+            const sizeOffset = padding * 0.8; // 調整邊距
             
             // 設置背景色
             sealBackground.style.background = 'transparent';
             
-            // 根據形狀繪製背景
-            let svgContent = '';
+            // 根據刻印方式選擇填充顏色
+            const fillColor = currentCarving === 'intaglio' ? color : 'white';
+            const strokeColor = currentCarving === 'intaglio' ? 'none' : color;
+            const strokeWidth = currentCarving === 'intaglio' ? 0 : 10; // 加粗陽刻邊框
             
-            if (shape === 'circle') {
-                svgContent = `
-                    <svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}">
-                        <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="${color}" />
-                    </svg>
-                `;
-            } 
-            else {
-                // 默認方形
-                svgContent = `
-                    <svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}">
-                        <rect x="${padding}" y="${padding}" width="${sealSize - padding * 2}" height="${sealSize - padding * 2}" fill="${color}" />
-                    </svg>
-                `;
-            }
+            // 創建簡潔的方形印章
+            const svgContent = `
+                <svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}">
+                    <rect x="${sizeOffset}" y="${sizeOffset}" 
+                          width="${sealSize - sizeOffset * 2}" 
+                          height="${sealSize - sizeOffset * 2}" 
+                          fill="${fillColor}" 
+                          stroke="${strokeColor}" 
+                          stroke-width="${strokeWidth}" />
+                </svg>
+            `;
             
             sealBackground.innerHTML = svgContent;
         }
@@ -1290,11 +1721,33 @@
             // 在繪圖模式下不啟動拖動
             if (isDrawingMode) return;
             
+            const index = parseInt(target.dataset.index);
+            
+            // 檢查是否按住Shift鍵進行大小調整
+            if (e.shiftKey && selectedCharIndex === index) {
+                // 開始字體大小調整
+                isResizing = true;
+                dragTarget = target;
+                
+                if (e.type === 'mousedown') {
+                    resizeStartY = e.clientY;
+                } else {
+                    resizeStartY = e.touches[0].clientY;
+                }
+                
+                initialFontSize = charSizes[index];
+                target.style.cursor = 'ns-resize';
+                
+                // 更新提示信息
+                document.querySelector('.drag-instructions').textContent = '拖拽調整字體大小';
+                
+                return;
+            }
+            
+            // 普通拖動移動位置
             isDragging = true;
             dragTarget = target;
             dragTarget.classList.add('dragging');
-            
-            const index = parseInt(dragTarget.dataset.index);
             
             // 獲取鼠標/觸摸起始位置
             if (e.type === 'mousedown') {
@@ -1320,7 +1773,7 @@
         
         // 拖動移動
         function dragMove(e) {
-            if (!isDragging || !dragTarget) return;
+            if ((!isDragging && !isResizing) || !dragTarget) return;
             
             e.preventDefault();
             
@@ -1333,26 +1786,117 @@
                 clientY = e.touches[0].clientY;
             }
             
-            // 計算移動距離
-            const deltaX = clientX - dragStartX;
-            const deltaY = clientY - dragStartY;
-            
-            // 更新字符位置
             const index = parseInt(dragTarget.dataset.index);
-            charPositions[index].x = targetStartX + deltaX;
-            charPositions[index].y = targetStartY + deltaY;
             
-            // 更新元素位置
-            updateCharPosition(dragTarget, index);
+            if (isResizing) {
+                // 字體大小調整模式 - 根據手柄類型調整方向
+                const deltaX = clientX - resizeStartX;
+                const deltaY = clientY - resizeStartY;
+                
+                // 計算對角線距離變化
+                const diagonalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                let direction;
+                if (resizeHandleType === 'bottom-right') {
+                    // 右下角手柄：右下為增大，左上為縮小
+                    direction = (deltaX + deltaY) > 0 ? 1 : -1;
+                } else {
+                    // 左上角手柄：左上為增大，右下為縮小（與右下角相反）
+                    direction = (deltaX + deltaY) < 0 ? 1 : -1;
+                }
+                
+                const sizeChange = direction * diagonalDistance * 0.3; // 調整敏感度
+                const newSize = Math.max(20, Math.min(200, initialFontSize + sizeChange));
+                
+                // 更新字符大小
+                charSizes[index] = newSize;
+                updateCharSize(dragTarget, newSize);
+                
+            } else if (isDragging) {
+                // 普通拖動移動位置
+                const deltaX = clientX - dragStartX;
+                const deltaY = clientY - dragStartY;
+                
+                // 更新字符位置
+                charPositions[index].x = targetStartX + deltaX;
+                charPositions[index].y = targetStartY + deltaY;
+                
+                // 更新元素位置
+                updateCharPosition(dragTarget, index);
+            }
+        }
+        
+        // 調整手柄鼠標按下事件
+        function handleResizeMouseDown(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 在繪圖模式下不處理調整
+            if (isDrawingMode) return;
+            
+            isResizing = true;
+            dragTarget = this.parentElement;
+            resizeHandleType = this.classList.contains('top-left') ? 'top-left' : 'bottom-right';
+            
+            const index = parseInt(this.dataset.index);
+            
+            // 獲取起始位置
+            resizeStartX = e.clientX;
+            resizeStartY = e.clientY;
+            initialFontSize = charSizes[index];
+            
+            // 添加調整中的樣式
+            this.classList.add('resizing');
+            
+            // 更新提示信息
+            document.querySelector('.drag-instructions').textContent = '向外拖拽增大字體，向內拖拽縮小字體';
+        }
+        
+        // 調整手柄觸摸開始事件
+        function handleResizeTouchStart(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 在繪圖模式下不處理調整
+            if (isDrawingMode) return;
+            
+            isResizing = true;
+            dragTarget = this.parentElement;
+            resizeHandleType = this.classList.contains('top-left') ? 'top-left' : 'bottom-right';
+            
+            const index = parseInt(this.dataset.index);
+            
+            // 獲取起始位置
+            resizeStartX = e.touches[0].clientX;
+            resizeStartY = e.touches[0].clientY;
+            initialFontSize = charSizes[index];
+            
+            // 添加調整中的樣式
+            this.classList.add('resizing');
+            
+            // 更新提示信息
+            document.querySelector('.drag-instructions').textContent = '向外拖拽增大字體，向內拖拽縮小字體';
         }
         
         // 結束拖動
         function endDrag() {
             if (dragTarget) {
                 dragTarget.classList.remove('dragging');
+                
+                // 移除調整手柄的調整中樣式
+                const resizeHandle = dragTarget.querySelector('.resize-handle');
+                if (resizeHandle) {
+                    resizeHandle.classList.remove('resizing');
+                }
+                
+                // 恢復提示信息
+                if (isResizing) {
+                    document.querySelector('.drag-instructions').textContent = '點擊並拖動字符調整位置，拖拽右下角藍色圓點調整大小';
+                }
             }
             
             isDragging = false;
+            isResizing = false;
             dragTarget = null;
         }
         
@@ -1369,22 +1913,29 @@
                 downloadCanvas.height = sealSize;
                 downloadCtx.clearRect(0, 0, sealSize, sealSize);
                 
-                // 1. 首先繪製背景顏色和形狀
-                const color = colorSelect.value;
-                const shape = currentShape;
+                // 1. 首先繪製背景顏色和形狀（簡潔的方形）
+                const color = '#d62828'; // 固定使用紅色
                 const centerX = sealSize / 2;
                 const centerY = sealSize / 2;
-                const radius = sealSize / 2 - padding;
+                const sizeOffset = padding * 0.8;
                 
-                downloadCtx.fillStyle = color;
+                // 根據刻印方式選擇填充顏色
+                const fillColor = currentCarving === 'intaglio' ? color : 'white';
                 
-                if (shape === 'circle') {
-                    downloadCtx.beginPath();
-                    downloadCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                    downloadCtx.fill();
-                } else {
-                    // 方形
-                    downloadCtx.fillRect(padding, padding, sealSize - padding * 2, sealSize - padding * 2);
+                downloadCtx.fillStyle = fillColor;
+                
+                // 創建簡潔的方形印章
+                downloadCtx.fillRect(sizeOffset, sizeOffset, 
+                                   sealSize - sizeOffset * 2, 
+                                   sealSize - sizeOffset * 2);
+                
+                // 如果是陽刻，添加邊框
+                if (currentCarving === 'relief') {
+                    downloadCtx.strokeStyle = color;
+                    downloadCtx.lineWidth = 10; // 加粗陽刻邊框
+                    downloadCtx.strokeRect(sizeOffset, sizeOffset, 
+                                         sealSize - sizeOffset * 2, 
+                                         sealSize - sizeOffset * 2);
                 }
                 
                 // 2. 繪製使用者繪製的內容
@@ -1396,7 +1947,14 @@
                 const text = nameInput.value.trim() || "印";
                 const fontFamily = currentFont;
                 
-                downloadCtx.fillStyle = 'white';
+                // 根據刻印方式設置文字顏色
+                if (currentCarving === 'intaglio') {
+                    // 陰刻：白色字體
+                    downloadCtx.fillStyle = 'white';
+                } else {
+                    // 陽刻：紅色字體
+                    downloadCtx.fillStyle = color;
+                }
                 downloadCtx.textAlign = 'center';
                 downloadCtx.textBaseline = 'middle';
                 
@@ -1475,6 +2033,145 @@
                 downloadMessage.textContent = '';
             }, 5000);
         }
+        
+        // SVG反字下載功能 - 適合激光切割
+        function downloadSvgSeal() {
+            try {
+                // 顯示加載指示器
+                loadingIndicator.classList.remove('hidden');
+                downloadMessage.className = '';
+                downloadMessage.textContent = '';
+                
+                const text = nameInput.value.trim() || "印";
+                const sizeOffset = padding * 0.8;
+                
+                // 獲取字體定義，保持原始字體名稱格式
+                let fontFamily = currentFont;
+                let fontUrl = '';
+                
+                // 根據選擇的字體獲取對應的URL
+                if (fontFamily === "'ChongXi Seal'") {
+                    fontUrl = 'https://chineseclassics.github.io/files/chongxi_seal.otf';
+                } else if (fontFamily === "'ZiYue Seal'") {
+                    fontUrl = 'https://chineseclassics.github.io/files/ZIYueJiuDieYinZhuan-Regular.ttf';
+                } else if (fontFamily === "'HuaKang Seal'") {
+                    fontUrl = 'https://chineseclassics.github.io/files/huakangxinzhuan.ttf';
+                } else if (fontFamily === "'JiaJin Script'") {
+                    fontUrl = 'https://chineseclassics.github.io/files/jiajinwen.ttf';
+                } else if (fontFamily === "'LXGW WenKai'") {
+                    fontUrl = 'https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/lxgwwenkai-regular.woff2';
+                }
+                
+                // 為SVG準備字體名稱（移除引號）
+                const svgFontFamily = fontFamily.replace(/'/g, '');
+                
+                // 創建SVG內容 - 反字設計，適合激光切割
+                let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}" xmlns="http://www.w3.org/2000/svg">
+    <defs>`;
+                
+                // 如果有自定義字體，添加字體定義
+                if (fontUrl) {
+                    svgContent += `
+        <style>
+            @font-face {
+                font-family: '${svgFontFamily}';
+                src: url('${fontUrl}');
+                font-weight: bold;
+            }
+        </style>`;
+                }
+                
+                svgContent += `
+    </defs>
+    
+    <!-- 印章邊框 -->
+    <rect x="${sizeOffset}" y="${sizeOffset}" 
+          width="${sealSize - sizeOffset * 2}" 
+          height="${sealSize - sizeOffset * 2}" 
+          fill="black" 
+          stroke="none" />
+          
+    <!-- 反字文字（鏤空，用於激光切割） -->
+    <g transform="scale(-1,1) translate(-${sealSize},0)">`;
+                
+                // 添加每個字符 - 使用SVG transform進行鏡像
+                for (let i = 0; i < text.length; i++) {
+                    const pos = charPositions[i];
+                    const fontSize = charSizes[i];
+                    
+                    // 轉換旋轉角度為度數
+                    const rotationDeg = pos.rotation * 180 / Math.PI;
+                    
+                    svgContent += `
+        <text x="${pos.x}" y="${pos.y}" 
+              font-family="${svgFontFamily}" 
+              font-size="${fontSize}" 
+              font-weight="bold"
+              text-anchor="middle" 
+              dominant-baseline="central"
+              fill="white"
+              transform="rotate(${rotationDeg} ${pos.x} ${pos.y})">${text[i]}</text>`;
+                }
+                
+                svgContent += `
+    </g>`;
+                
+                // 如果有用戶繪圖，添加繪圖路徑（也需要反向）
+                if (displayCanvas && displayCtx) {
+                    try {
+                        const imageData = displayCtx.getImageData(0, 0, sealSize, sealSize);
+                        if (imageData && imageData.data.some(value => value > 0)) {
+                            svgContent += `
+    <!-- 用戶繪圖內容 - 已鏡像處理 -->
+    <g transform="scale(-1,1) translate(-${sealSize},0)">
+        <!-- 繪圖內容轉換為SVG需要額外處理 -->
+        <!-- 建議：在激光切割前手動添加繪圖路徑 -->
+    </g>`;
+                        }
+                    } catch (error) {
+                        console.warn('無法處理繪圖內容:', error);
+                    }
+                }
+                
+                svgContent += `
+</svg>`;
+                
+                // 創建Blob並下載
+                const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '弘立書院印章_反字_激光切割.svg';
+                
+                // 觸發下載
+                document.body.appendChild(link);
+                link.click();
+                
+                // 清理
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    
+                    // 隱藏加載指示器並顯示成功信息
+                    loadingIndicator.classList.add('hidden');
+                    downloadMessage.className = 'success';
+                    downloadMessage.textContent = 'SVG反字印章已成功下載！字體已鏡像處理，適合激光切割使用。';
+                    
+                    // 5秒後隱藏成功信息
+                    setTimeout(() => {
+                        downloadMessage.className = '';
+                        downloadMessage.textContent = '';
+                    }, 5000);
+                }, 100);
+                
+            } catch (error) {
+                console.error('SVG下載過程錯誤:', error);
+                showDownloadError('SVG下載過程中發生錯誤');
+            }
+        }
     </script>
 </body>
 </html>
+
+
