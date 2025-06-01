@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>弘立書院印章設計</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap">
+    <!-- 加載落霞孤鶩文楷字體 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css">
+    <!-- 加載篆體字體 -->
+    <style>
+        @font-face {
+            font-family: 'ChongXi Seal';
+            src: url('https://chineseclassics.github.io/files/chongxi_seal.otf') format('opentype'),
+                 url('http://chineseclassics.github.io/files/chongxi_seal.otf') format('opentype');
+            font-display: swap;
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+    <style>
+        :root {
+            --primary-color: #5D5CDE;
+            --seal-color: #d62828;
+        }
+        
+        .dark {
+            --bg-primary: #181818;
+            --text-primary: #e0e0e0;
+            --bg-secondary: #2a2a2a;
+            --border-color: #3a3a3a;
+        }
+        
+        body {
+            font-family: 'Noto Serif SC', serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .dark body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        .seal-container {
+            background-color: white;
+            position: relative;
+            overflow: hidden;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;
+        }
+        
+        .dark .seal-container {
+            background-color: var(--bg-secondary);
+        }
+        
+        #sealCanvas {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .shape-option {
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .shape-option:hover, .shape-option.selected {
+            border-color: var(--primary-color);
+        }
+        
+        .dark .shape-option:hover, .dark .shape-option.selected {
+            border-color: var(--primary-color);
+        }
+        
+        .loader {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .dark .loader {
+            border-color: rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary-color);
+        }
+        
+        .dark .bg-white {
+            background-color: var(--bg-secondary);
+        }
+        
+        .dark .text-gray-800, .dark .text-gray-700, .dark .text-gray-600 {
+            color: var(--text-primary);
+        }
+        
+        .dark .border-gray-300 {
+            border-color: var(--border-color);
+        }
+        
+        .dark select, .dark input {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+        
+        /* 可拖动字符樣式 */
+        .draggable-char {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+            text-shadow: 0 0 2px rgba(0,0,0,0.5);
+            border: 2px solid transparent;
+            border-radius: 4px;
+            padding: 4px;
+            pointer-events: auto;
+        }
+        
+        .draggable-char:hover {
+            transform: scale(1.05);
+        }
+        
+        .draggable-char.dragging {
+            opacity: 0.8;
+            z-index: 100;
+        }
+        
+        .draggable-char.selected {
+            border-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+        
+        /* 提示信息 */
+        .drag-instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        /* 字體大小控制區 */
+        .font-size-controls {
+            margin-top: 12px;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark .font-size-controls {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .size-value {
+            display: inline-block;
+            width: 40px;
+            text-align: center;
+        }
+        
+        /* 自定義字體上傳區域 */
+        .font-upload-container {
+            border: 2px dashed #ccc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .font-upload-container:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(93, 92, 222, 0.05);
+        }
+        
+        .dark .font-upload-container {
+            border-color: #555;
+        }
+        
+        .dark .font-upload-container:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(93, 92, 222, 0.1);
+        }
+        
+        /* 自定義字體列表 */
+        .custom-font-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-radius: 0.25rem;
+            background-color: #f3f4f6;
+        }
+        
+        .dark .custom-font-item {
+            background-color: #333;
+        }
+        
+        .custom-font-item .font-name {
+            flex-grow: 1;
+            margin-right: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .remove-font-btn {
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        
+        .remove-font-btn:hover {
+            color: #dc2626;
+        }
+        
+        /* 繪圖畫布樣式 */
+        .canvas-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #drawCanvas {
+            z-index: 40;
+            cursor: crosshair;
+            display: none;
+            background-color: transparent;
+        }
+        
+        #displayCanvas {
+            z-index: 20;
+            pointer-events: none;
+            background-color: transparent;
+        }
+        
+        /* 繪圖模式下的cursor */
+        .drawing-mode {
+            cursor: crosshair !important;
+        }
+        
+        /* 繪圖按鈕和筆畫粗細控制 */
+        .drawing-controls {
+            margin-top: 12px;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark .drawing-controls {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 切換按鈕樣式 */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .drawing-mode-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        #drawingThickness {
+            margin-top: 8px;
+        }
+        
+        /* 清空繪圖按鈕 */
+        #clearDrawingBtn {
+            margin-top: 8px;
+        }
+        
+        /* 當前繪圖狀態指示器 */
+        .drawing-status {
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: center;
+            padding: 2px 4px;
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+        
+        .drawing-status.active {
+            display: block;
+            background-color: rgba(93, 92, 222, 0.2);
+            color: var(--primary-color);
+        }
+        
+        .dark .drawing-status.active {
+            background-color: rgba(93, 92, 222, 0.3);
+        }
+        
+        /* 專門用於下載的隱藏畫布 */
+        #downloadCanvas {
+            display: none;
+            position: absolute;
+            pointer-events: none;
+        }
+        
+        /* 下載訊息 */
+        #downloadMessage {
+            display: none;
+            font-size: 14px;
+            padding: 8px;
+            margin-top: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        #downloadMessage.success {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            display: block;
+        }
+        
+        #downloadMessage.error {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-red-700 dark:text-red-500 mb-2">弘立書院印章設計</h1>
+            <p class="text-gray-600 dark:text-gray-400">自定義您的專屬印章設計</p>
+        </header>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 左側控制面板 -->
+            <div class="md:col-span-1 bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
+                <div class="mb-4">
+                    <label for="nameInput" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">印章文字</label>
+                    <input id="nameInput" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="輸入您的姓名或文字" value="王大明印">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="fontSelect" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">字體選擇</label>
+                    <select id="fontSelect" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="'ChongXi Seal'" selected>崇熙篆體</option>
+                        <option value="'LXGW WenKai'">落霞孤鶩文楷</option>
+                        <option value="serif">仿篆體</option>
+                        <option value="sans-serif">仿隸書</option>
+                        <option value="'Noto Serif SC'">宋體</option>
+                        <option value="Arial">標準</option>
+                    </select>
+                </div>
+                
+                <!-- 自定義字體上傳區域 -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">自定義字體</label>
+                    
+                    <div class="font-upload-container" id="fontUploadArea">
+                        <p class="text-sm mb-2">上傳TTF、OTF、WOFF或WOFF2格式字體文件</p>
+                        <div class="flex items-center">
+                            <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" class="hidden">
+                            <input type="text" id="fontNameInput" placeholder="字體名稱" class="flex-grow border border-gray-300 rounded-l-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <button id="fontUploadBtn" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-bold py-2 px-4 rounded-r-md">瀏覽</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 自定義字體列表 -->
+                    <div id="customFontsList" class="text-sm">
+                        <!-- 動態添加的自定義字體將顯示在這裡 -->
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">印章形狀</label>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div class="shape-option rounded-lg p-2 text-center selected" data-shape="square">
+                            <div class="bg-red-600 h-12 w-12 mx-auto mb-1"></div>
+                            <span class="text-sm">方形</span>
+                        </div>
+                        <div class="shape-option rounded-lg p-2 text-center" data-shape="circle">
+                            <div class="bg-red-600 h-12 w-12 rounded-full mx-auto mb-1"></div>
+                            <span class="text-sm">圓形</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 繪圖模式控制 -->
+                <div class="mb-4 drawing-controls">
+                    <div class="drawing-mode-label">
+                        <label for="drawingModeToggle" class="block text-gray-700 dark:text-gray-300 font-medium">繪圖模式</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="drawingModeToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        開啟後可在印章上自由繪製
+                    </div>
+                    <div>
+                        <label for="drawingThickness" class="block text-gray-700 dark:text-gray-300 text-sm mb-1">線條粗細</label>
+                        <input id="drawingThickness" type="range" min="1" max="20" value="3" class="w-full" />
+                    </div>
+                    <button id="clearDrawingBtn" class="w-full mt-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-1 px-2 rounded text-sm">
+                        清空繪圖
+                    </button>
+                    <div id="drawingStatus" class="drawing-status">
+                        繪圖模式已啟用
+                    </div>
+                </div>
+                
+                <div id="fontSizeControl" class="mb-4 font-size-controls">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="fontSizeRange" class="block text-gray-700 dark:text-gray-300 font-medium">
+                            字體大小
+                            <span id="selectedCharInfo" class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400 hidden">
+                                (調整「<span id="selectedCharDisplay"></span>」)
+                            </span>
+                            <span id="globalSizeInfo" class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">
+                                (調整全部)
+                            </span>
+                        </label>
+                        <span id="fontSizeValue" class="size-value">60px</span>
+                    </div>
+                    <input id="fontSizeRange" type="range" min="20" max="120" value="60" class="w-full" />
+                    <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+                        <span>小</span>
+                        <span>大</span>
+                    </div>
+                    <div id="charSelectedTip" class="mt-2 text-sm text-blue-500 dark:text-blue-400 hidden">
+                        點擊印章區域的空白處取消選擇
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="initialLayout" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">初始布局</label>
+                    <select id="initialLayout" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="vertical">垂直排列</option>
+                        <option value="horizontal">水平排列</option>
+                        <option value="circle">環形排列</option>
+                        <option value="random">隨機分佈</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="colorSelect" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">印章顏色</label>
+                    <select id="colorSelect" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="#d62828">傳統紅</option>
+                        <option value="#bc002d">深朱紅</option>
+                        <option value="#9e2a2b">赤紅</option>
+                        <option value="#540b0e">暗紅</option>
+                        <option value="#e76f51">珊瑚紅</option>
+                    </select>
+                </div>
+                
+                <button id="generateBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                    重新生成印章
+                </button>
+            </div>
+            
+            <!-- 右側預覽區 -->
+            <div class="md:col-span-2">
+                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4">
+                    <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">印章預覽 <span id="previewInstructions" class="text-sm text-gray-500">（點擊字符可調整大小）</span></h2>
+                    <div id="sealContainer" class="seal-container rounded-lg flex items-center justify-center">
+                        <div id="loadingIndicator" class="loader hidden"></div>
+                        
+                        <!-- 印章背景層 -->
+                        <div id="sealBackground" class="absolute inset-0 z-10"></div>
+                        
+                        <!-- 顯示繪圖層 -->
+                        <canvas id="displayCanvas" class="canvas-layer"></canvas>
+                        
+                        <!-- 字符層 - 確保這一層在繪圖層上面 -->
+                        <div id="charContainer" class="absolute inset-0 z-30"></div>
+                        
+                        <!-- 繪圖用Canvas層 - 只在繪圖模式下顯示，位於最上層 -->
+                        <canvas id="drawCanvas" class="canvas-layer"></canvas>
+                        
+                        <!-- 下載用的畫布 -->
+                        <canvas id="downloadCanvas"></canvas>
+                        
+                        <div class="drag-instructions z-5">點擊並拖動每個字符來調整位置，點擊選擇後可調整大小</div>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <button id="resetPositionsBtn" class="w-full bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                            重置字符位置
+                        </button>
+                        <button id="resetSizesBtn" class="w-full bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                            重置字符大小
+                        </button>
+                    </div>
+                    <button id="downloadBtn" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out" style="background-color: var(--primary-color);">
+                        下載印章
+                    </button>
+                    <div id="downloadMessage"></div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">點擊按鈕下載印章設計圖片</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-12 text-center text-gray-600 dark:text-gray-400 text-sm">
+            <p>印章設計生成器 &copy; 2023 | 僅供個人使用</p>
+        </footer>
+    </div>
+
+    <script>
+        // 檢測暗黑模式
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // 獲取DOM元素
+        const nameInput = document.getElementById('nameInput');
+        const fontSelect = document.getElementById('fontSelect');
+        const initialLayout = document.getElementById('initialLayout');
+        const fontSizeRange = document.getElementById('fontSizeRange');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const colorSelect = document.getElementById('colorSelect');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetPositionsBtn = document.getElementById('resetPositionsBtn');
+        const resetSizesBtn = document.getElementById('resetSizesBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const sealBackground = document.getElementById('sealBackground');
+        const charContainer = document.getElementById('charContainer');
+        const selectedCharInfo = document.getElementById('selectedCharInfo');
+        const selectedCharDisplay = document.getElementById('selectedCharDisplay');
+        const globalSizeInfo = document.getElementById('globalSizeInfo');
+        const charSelectedTip = document.getElementById('charSelectedTip');
+        const sealContainer = document.getElementById('sealContainer');
+        const previewInstructions = document.getElementById('previewInstructions');
+        const downloadMessage = document.getElementById('downloadMessage');
+        
+        // 繪圖相關元素 - 完全重構繪圖功能
+        const drawCanvas = document.getElementById('drawCanvas');
+        const displayCanvas = document.getElementById('displayCanvas');
+        const downloadCanvas = document.getElementById('downloadCanvas');
+        const drawingModeToggle = document.getElementById('drawingModeToggle');
+        const drawingThickness = document.getElementById('drawingThickness');
+        const clearDrawingBtn = document.getElementById('clearDrawingBtn');
+        const drawingStatus = document.getElementById('drawingStatus');
+        
+        // 繪圖上下文
+        const drawCtx = drawCanvas.getContext('2d');
+        const displayCtx = displayCanvas.getContext('2d');
+        const downloadCtx = downloadCanvas.getContext('2d');
+        
+        // 自定義字體相關元素
+        const fontFileInput = document.getElementById('fontFileInput');
+        const fontNameInput = document.getElementById('fontNameInput');
+        const fontUploadBtn = document.getElementById('fontUploadBtn');
+        const customFontsList = document.getElementById('customFontsList');
+        
+        // 印章形狀選擇
+        const shapeOptions = document.querySelectorAll('.shape-option');
+        let currentShape = 'square';
+        
+        // 字符數據
+        let charPositions = [];
+        let charSizes = {};
+        
+        // 用於存儲每個字符的dom元素引用
+        let charElements = [];
+        
+        // 自定義字體列表
+        let customFonts = [];
+        
+        // 當前選中的字符
+        let selectedCharIndex = null;
+        
+        // 印章參數
+        const sealSize = 350;
+        const padding = 30;
+        const defaultFontSize = 60;
+        
+        // 拖動狀態
+        let isDragging = false;
+        let dragTarget = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let targetStartX = 0;
+        let targetStartY = 0;
+        
+        // 繪圖狀態 - 重構
+        let isDrawing = false;
+        let isDrawingMode = false;
+        let prevX = 0;
+        let prevY = 0;
+        
+        // 初始化畫布大小
+        drawCanvas.width = sealSize;
+        drawCanvas.height = sealSize;
+        displayCanvas.width = sealSize;
+        displayCanvas.height = sealSize;
+        downloadCanvas.width = sealSize;
+        downloadCanvas.height = sealSize;
+        
+        // 初始化時設置字體大小顯示
+        fontSizeValue.textContent = `${defaultFontSize}px`;
+        
+        // 繪圖事件處理函數 - 完全重寫
+        function setDrawingMode(enabled) {
+            isDrawingMode = enabled;
+            
+            if (enabled) {
+                // 顯示繪圖畫布
+                drawCanvas.style.display = 'block';
+                sealContainer.classList.add('drawing-mode');
+                drawingStatus.classList.add('active');
+                
+                // 更新說明
+                previewInstructions.textContent = "（繪圖模式：在印章上繪製白色線條）";
+                document.querySelector('.drag-instructions').textContent = '在印章上繪製白色線條';
+                
+                // 禁用字符交互，但保持字符顯示
+                charElements.forEach(char => {
+                    char.style.pointerEvents = 'none';
+                });
+                
+                // 清除當前選中狀態
+                unselectChar();
+            } else {
+                // 隱藏繪圖畫布
+                drawCanvas.style.display = 'none';
+                sealContainer.classList.remove('drawing-mode');
+                drawingStatus.classList.remove('active');
+                
+                // 恢復說明
+                previewInstructions.textContent = "（點擊字符可調整大小）";
+                document.querySelector('.drag-instructions').textContent = '點擊並拖動每個字符來調整位置，點擊選擇後可調整大小';
+                
+                // 啟用字符交互
+                charElements.forEach(char => {
+                    char.style.pointerEvents = 'auto';
+                });
+            }
+        }
+        
+        // 繪圖開始
+        function startDrawing(e) {
+            e.preventDefault();
+            
+            if (!isDrawingMode) return;
+            
+            isDrawing = true;
+            
+            const rect = drawCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 計算畫布坐標
+            const canvasX = (x / rect.width) * drawCanvas.width;
+            const canvasY = (y / rect.height) * drawCanvas.height;
+            
+            prevX = canvasX;
+            prevY = canvasY;
+            
+            // 繪製一個點
+            drawCtx.beginPath();
+            drawCtx.fillStyle = 'white';
+            const radius = parseInt(drawingThickness.value) / 2;
+            drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
+            drawCtx.fill();
+            
+            // 立即更新顯示畫布
+            updateDisplayCanvas();
+        }
+        
+        // 繪圖過程
+        function draw(e) {
+            e.preventDefault();
+            
+            if (!isDrawing || !isDrawingMode) return;
+            
+            const rect = drawCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 計算畫布坐標
+            const canvasX = (x / rect.width) * drawCanvas.width;
+            const canvasY = (y / rect.height) * drawCanvas.height;
+            
+            drawCtx.beginPath();
+            drawCtx.strokeStyle = 'white';
+            drawCtx.lineWidth = parseInt(drawingThickness.value);
+            drawCtx.lineCap = 'round';
+            drawCtx.lineJoin = 'round';
+            
+            drawCtx.moveTo(prevX, prevY);
+            drawCtx.lineTo(canvasX, canvasY);
+            drawCtx.stroke();
+            
+            prevX = canvasX;
+            prevY = canvasY;
+            
+            // 更新顯示畫布
+            updateDisplayCanvas();
+        }
+        
+        // 觸摸開始
+        function touchStartDrawing(e) {
+            e.preventDefault();
+            
+            if (!isDrawingMode) return;
+            
+            isDrawing = true;
+            
+            const rect = drawCanvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            // 計算畫布坐標
+            const canvasX = (x / rect.width) * drawCanvas.width;
+            const canvasY = (y / rect.height) * drawCanvas.height;
+            
+            prevX = canvasX;
+            prevY = canvasY;
+            
+            // 繪製一個點
+            drawCtx.beginPath();
+            drawCtx.fillStyle = 'white';
+            const radius = parseInt(drawingThickness.value) / 2;
+            drawCtx.arc(canvasX, canvasY, radius, 0, Math.PI * 2);
+            drawCtx.fill();
+            
+            // 更新顯示畫布
+            updateDisplayCanvas();
+        }
+        
+        // 觸摸移動
+        function touchDraw(e) {
+            e.preventDefault();
+            
+            if (!isDrawing || !isDrawingMode) return;
+            
+            const rect = drawCanvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            // 計算畫布坐標
+            const canvasX = (x / rect.width) * drawCanvas.width;
+            const canvasY = (y / rect.height) * drawCanvas.height;
+            
+            drawCtx.beginPath();
+            drawCtx.strokeStyle = 'white';
+            drawCtx.lineWidth = parseInt(drawingThickness.value);
+            drawCtx.lineCap = 'round';
+            drawCtx.lineJoin = 'round';
+            
+            drawCtx.moveTo(prevX, prevY);
+            drawCtx.lineTo(canvasX, canvasY);
+            drawCtx.stroke();
+            
+            prevX = canvasX;
+            prevY = canvasY;
+            
+            // 更新顯示畫布
+            updateDisplayCanvas();
+        }
+        
+        // 結束繪圖
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        // 更新顯示畫布（將繪圖結果複製到顯示畫布）
+        function updateDisplayCanvas() {
+            displayCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
+            displayCtx.drawImage(drawCanvas, 0, 0);
+        }
+        
+        // 清空繪圖
+        function clearDrawing() {
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            updateDisplayCanvas();
+        }
+        
+        // 繪圖模式切換事件
+        drawingModeToggle.addEventListener('change', function() {
+            setDrawingMode(this.checked);
+        });
+        
+        // 清空繪圖按鈕事件
+        clearDrawingBtn.addEventListener('click', clearDrawing);
+        
+        // 繪圖事件綁定
+        drawCanvas.addEventListener('mousedown', startDrawing);
+        drawCanvas.addEventListener('mousemove', draw);
+        drawCanvas.addEventListener('mouseup', stopDrawing);
+        drawCanvas.addEventListener('mouseleave', stopDrawing);
+        
+        // 觸摸事件綁定
+        drawCanvas.addEventListener('touchstart', touchStartDrawing);
+        drawCanvas.addEventListener('touchmove', touchDraw);
+        drawCanvas.addEventListener('touchend', stopDrawing);
+        drawCanvas.addEventListener('touchcancel', stopDrawing);
+        
+        // 字體上傳處理
+        fontUploadBtn.addEventListener('click', () => {
+            fontFileInput.click();
+        });
+        
+        fontFileInput.addEventListener('change', handleFontUpload);
+        
+        // 形狀選擇事件
+        shapeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                shapeOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                currentShape = option.getAttribute('data-shape');
+                redrawSealBackground();
+            });
+        });
+        
+        // 事件監聽
+        nameInput.addEventListener('input', () => {
+            // 當文字改變時，重新生成印章
+            generateSeal();
+        });
+        
+        fontSelect.addEventListener('change', () => {
+            // 當字體改變時，更新所有字符的字體
+            updateCharsStyle();
+        });
+        
+        fontSizeRange.addEventListener('input', () => {
+            // 更新顯示的數值
+            const fontSize = parseInt(fontSizeRange.value);
+            fontSizeValue.textContent = `${fontSize}px`;
+            
+            // 根據選擇狀態調整大小
+            if (selectedCharIndex !== null) {
+                // 只調整選中字符的大小
+                charSizes[selectedCharIndex] = fontSize;
+                updateCharSize(charElements[selectedCharIndex], fontSize);
+            } else {
+                // 調整所有字符的大小
+                charElements.forEach((char, index) => {
+                    charSizes[index] = fontSize;
+                    updateCharSize(char, fontSize);
+                });
+            }
+        });
+        
+        colorSelect.addEventListener('change', () => {
+            // 當顏色改變時，更新印章背景
+            redrawSealBackground();
+        });
+        
+        initialLayout.addEventListener('change', () => {
+            // 重新基於新的布局安排字符
+            resetCharPositions();
+        });
+        
+        // 點擊印章背景取消選擇
+        sealBackground.addEventListener('click', (e) => {
+            // 只有在非繪圖模式下，直接點擊背景時才取消選擇
+            if (!isDrawingMode && e.target === sealBackground) {
+                unselectChar();
+            }
+        });
+        
+        // 按鈕事件綁定
+        generateBtn.addEventListener('click', generateSeal);
+        resetPositionsBtn.addEventListener('click', resetCharPositions);
+        resetSizesBtn.addEventListener('click', resetAllCharSizes);
+        downloadBtn.addEventListener('click', downloadSeal);
+        
+        // 等待字體加載完成後初始化
+        document.fonts.ready.then(() => {
+            // 嘗試加載崇熙篆體 - 先嘗試HTTPS，後嘗試HTTP
+            async function loadChongXiFont() {
+                const urls = [
+                    'https://chineseclassics.github.io/files/chongxi_seal.otf',
+                    'http://chineseclassics.github.io/files/chongxi_seal.otf'
+                ];
+                
+                for (const url of urls) {
+                    try {
+                        console.log(`嘗試從 ${url} 加載崇熙篆體`);
+                        const testFont = new FontFace('ChongXi Seal', `url(${url})`);
+                        await testFont.load();
+                        document.fonts.add(testFont);
+                        console.log('崇熙篆體加載成功');
+                        
+                        // 測試字體是否真正可用
+                        const testDiv = document.createElement('div');
+                        testDiv.style.fontFamily = "'ChongXi Seal'";
+                        testDiv.style.position = 'absolute';
+                        testDiv.style.visibility = 'hidden';
+                        testDiv.textContent = '測試';
+                        document.body.appendChild(testDiv);
+                        
+                        const computedStyle = window.getComputedStyle(testDiv);
+                        document.body.removeChild(testDiv);
+                        
+                        if (computedStyle.fontFamily.includes('ChongXi Seal')) {
+                            console.log('字體驗證成功');
+                            // 重新生成印章以應用字體
+                            setTimeout(() => {
+                                generateSeal();
+                            }, 300);
+                            return true;
+                        }
+                    } catch (error) {
+                        console.warn(`從 ${url} 加載字體失敗:`, error);
+                    }
+                }
+                
+                // 所有URL都失敗
+                console.warn('崇熙篆體加載失敗，使用後備字體');
+                fontSelect.value = "'LXGW WenKai'";
+                generateSeal();
+                return false;
+            }
+            
+            loadChongXiFont();
+        });
+        
+        // 初始化（先生成一次，字體加載後會重新生成）
+        generateSeal();
+        
+        // 處理字體上傳
+        function handleFontUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 檢查文件類型
+            const validTypes = ['font/ttf', 'font/otf', 'font/woff', 'font/woff2', 'application/x-font-ttf', 'application/x-font-otf', 'application/font-woff'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const isValidExtension = ['ttf', 'otf', 'woff', 'woff2'].includes(fileExtension);
+            
+            if (!isValidExtension) {
+                alert('請上傳有效的字體文件 (.ttf, .otf, .woff, .woff2)');
+                return;
+            }
+            
+            // 獲取字體名稱
+            let fontName = fontNameInput.value.trim();
+            if (!fontName) {
+                // 如果沒有輸入名稱，使用文件名（不帶擴展名）
+                fontName = file.name.replace(/\.[^/.]+$/, "");
+                fontNameInput.value = fontName;
+            }
+            
+            // 讀取字體文件
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fontData = e.target.result;
+                
+                // 創建唯一的字體名稱（避免衝突）
+                const uniqueFontName = `custom-font-${Date.now()}`;
+                
+                // 創建字體樣式
+                const fontFace = new FontFace(uniqueFontName, fontData);
+                
+                // 加載字體
+                fontFace.load().then(function(loadedFace) {
+                    // 添加到文檔
+                    document.fonts.add(loadedFace);
+                    
+                    // 保存字體信息
+                    const fontInfo = {
+                        id: uniqueFontName,
+                        name: fontName,
+                        fontFace: loadedFace
+                    };
+                    customFonts.push(fontInfo);
+                    
+                    // 添加到選擇列表
+                    addFontToSelector(fontInfo);
+                    
+                    // 顯示在自定義字體列表中
+                    updateCustomFontsList();
+                    
+                    // 切換到新字體
+                    fontSelect.value = uniqueFontName;
+                    updateCharsStyle();
+                    
+                    // 清空輸入
+                    fontNameInput.value = '';
+                    fontFileInput.value = '';
+                    
+                }).catch(function(error) {
+                    console.error('字體加載失敗:', error);
+                    alert('字體加載失敗，請嘗試其他字體文件。');
+                });
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // 將字體添加到選擇器
+        function addFontToSelector(fontInfo) {
+            const option = document.createElement('option');
+            option.value = fontInfo.id;
+            option.textContent = `${fontInfo.name} (自定義)`;
+            option.style.fontFamily = fontInfo.id;
+            fontSelect.appendChild(option);
+        }
+        
+        // 更新自定義字體列表
+        function updateCustomFontsList() {
+            customFontsList.innerHTML = '';
+            
+            if (customFonts.length === 0) {
+                return;
+            }
+            
+            customFonts.forEach(font => {
+                const fontItem = document.createElement('div');
+                fontItem.className = 'custom-font-item';
+                
+                const fontName = document.createElement('div');
+                fontName.className = 'font-name';
+                fontName.style.fontFamily = font.id;
+                fontName.textContent = font.name;
+                
+                const removeBtn = document.createElement('div');
+                removeBtn.className = 'remove-font-btn';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.title = '移除此字體';
+                removeBtn.onclick = () => removeCustomFont(font.id);
+                
+                fontItem.appendChild(fontName);
+                fontItem.appendChild(removeBtn);
+                customFontsList.appendChild(fontItem);
+            });
+        }
+        
+        // 移除自定義字體
+        function removeCustomFont(fontId) {
+            // 從列表中移除
+            const index = customFonts.findIndex(f => f.id === fontId);
+            if (index !== -1) {
+                customFonts.splice(index, 1);
+            }
+            
+            // 從選擇器中移除
+            const option = Array.from(fontSelect.options).find(opt => opt.value === fontId);
+            if (option) {
+                fontSelect.removeChild(option);
+            }
+            
+            // 如果當前選中的是被移除的字體，切換到第一個選項
+            if (fontSelect.value === fontId) {
+                fontSelect.selectedIndex = 0;
+                updateCharsStyle();
+            }
+            
+            // 更新列表顯示
+            updateCustomFontsList();
+        }
+        
+        // 生成印章
+        function generateSeal() {
+            // 取消任何選中的字符
+            unselectChar();
+            
+            // 獲取用戶輸入的文字
+            const text = nameInput.value.trim() || "印";
+            
+            // 清空現有字符
+            charContainer.innerHTML = '';
+            charElements = [];
+            
+            // 初始化或重置字符大小
+            resetCharSizesData(text.length);
+            
+            // 創建字符位置數據
+            createCharPositions(text);
+            
+            // 繪製印章背景
+            redrawSealBackground();
+            
+            // 創建可拖動字符
+            createDraggableChars(text);
+            
+            // 保持繪圖內容
+            // (不清除繪圖內容，除非用戶明確要求)
+        }
+        
+        // 初始化或重置字符大小數據
+        function resetCharSizesData(charCount) {
+            charSizes = {};
+            for (let i = 0; i < charCount; i++) {
+                charSizes[i] = defaultFontSize;
+            }
+            
+            // 重置字體大小滑塊
+            fontSizeRange.value = defaultFontSize;
+            fontSizeValue.textContent = `${defaultFontSize}px`;
+        }
+        
+        // 創建字符位置數據
+        function createCharPositions(text) {
+            const centerX = sealSize / 2;
+            const centerY = sealSize / 2;
+            const radius = (sealSize / 2) - padding * 1.5;
+            
+            charPositions = [];
+            
+            // 根據選擇的布局安排字符
+            const layout = initialLayout.value;
+            
+            if (layout === 'vertical') {
+                // 垂直佈局
+                const totalHeight = sealSize - padding * 3;
+                const spacing = totalHeight / (text.length > 1 ? text.length : 1);
+                
+                for (let i = 0; i < text.length; i++) {
+                    charPositions.push({
+                        x: centerX,
+                        y: padding * 1.5 + spacing * (i + 0.5),
+                        rotation: 0
+                    });
+                }
+            } 
+            else if (layout === 'horizontal') {
+                // 水平佈局
+                const totalWidth = sealSize - padding * 3;
+                const spacing = totalWidth / (text.length > 1 ? text.length : 1);
+                
+                for (let i = 0; i < text.length; i++) {
+                    charPositions.push({
+                        x: padding * 1.5 + spacing * (i + 0.5),
+                        y: centerY,
+                        rotation: 0
+                    });
+                }
+            } 
+            else if (layout === 'circle') {
+                // 環形佈局
+                for (let i = 0; i < text.length; i++) {
+                    const angle = (i / text.length) * (Math.PI * 2) - (Math.PI / 2);
+                    charPositions.push({
+                        x: centerX + Math.cos(angle) * radius,
+                        y: centerY + Math.sin(angle) * radius,
+                        rotation: angle + (Math.PI / 2)
+                    });
+                }
+            } 
+            else if (layout === 'random') {
+                // 隨機分佈
+                const safeRadius = radius * 0.8; // 确保不会太靠近边缘
+                
+                for (let i = 0; i < text.length; i++) {
+                    // 在印章區域內隨機分佈
+                    let x, y;
+                    
+                    if (currentShape === 'circle') {
+                        // 在圓形區域內隨機分佈
+                        const angle = Math.random() * Math.PI * 2;
+                        const r = Math.random() * safeRadius;
+                        x = centerX + Math.cos(angle) * r;
+                        y = centerY + Math.sin(angle) * r;
+                    } else {
+                        // 在方形區域內隨機分佈
+                        x = padding + Math.random() * (sealSize - padding * 2);
+                        y = padding + Math.random() * (sealSize - padding * 2);
+                    }
+                    
+                    charPositions.push({
+                        x: x,
+                        y: y,
+                        rotation: Math.random() * Math.PI * 0.5 - Math.PI * 0.25 // 轻微随机旋转
+                    });
+                }
+            }
+        }
+        
+        // 重置字符位置
+        function resetCharPositions() {
+            const text = nameInput.value.trim() || "印";
+            createCharPositions(text);
+            updateCharsPosition();
+        }
+        
+        // 重置所有字符大小
+        function resetAllCharSizes() {
+            const text = nameInput.value.trim() || "印";
+            resetCharSizesData(text.length);
+            
+            // 更新所有字符的大小
+            charElements.forEach((char, index) => {
+                updateCharSize(char, defaultFontSize);
+            });
+            
+            // 取消選中狀態
+            unselectChar();
+        }
+        
+        // 創建可拖動字符
+        function createDraggableChars(text) {
+            const fontFamily = fontSelect.value;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = document.createElement('div');
+                char.className = 'draggable-char';
+                char.textContent = text[i];
+                char.dataset.index = i;
+                
+                // 設置字符樣式
+                char.style.fontFamily = fontFamily;
+                
+                // 設置字體大小
+                updateCharSize(char, charSizes[i]);
+                
+                // 設置初始位置
+                updateCharPosition(char, i);
+                
+                // 在繪圖模式下禁用拖動
+                if (isDrawingMode) {
+                    char.style.pointerEvents = 'none';
+                }
+                
+                // 添加事件監聽
+                char.addEventListener('mousedown', handleCharMouseDown);
+                char.addEventListener('touchstart', handleCharTouchStart);
+                char.addEventListener('click', selectChar);
+                
+                charContainer.appendChild(char);
+                charElements.push(char);
+            }
+            
+            // 添加拖動事件監聽
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+            
+            // 點擊印章容器的空白區域取消選擇
+            sealContainer.addEventListener('click', function(e) {
+                if (!isDrawingMode && (e.target === sealContainer || e.target === sealBackground)) {
+                    unselectChar();
+                }
+            });
+        }
+        
+        // 選擇字符
+        function selectChar(e) {
+            e.stopPropagation();
+            
+            // 如果在繪圖模式下或正在拖動，不處理選擇
+            if (isDrawingMode || isDragging) return;
+            
+            // 取消所有字符的選中狀態
+            charElements.forEach(char => char.classList.remove('selected'));
+            
+            // 設置當前字符為選中狀態
+            this.classList.add('selected');
+            
+            // 保存選中的字符索引
+            selectedCharIndex = parseInt(this.dataset.index);
+            
+            // 更新字體大小滑塊值為選中字符的當前大小
+            const fontSize = charSizes[selectedCharIndex];
+            fontSizeRange.value = fontSize;
+            fontSizeValue.textContent = `${fontSize}px`;
+            
+            // 更新UI狀態
+            selectedCharInfo.classList.remove('hidden');
+            globalSizeInfo.classList.add('hidden');
+            charSelectedTip.classList.remove('hidden');
+            
+            // 顯示選中的字符
+            selectedCharDisplay.textContent = this.textContent;
+        }
+        
+        // 取消選擇字符
+        function unselectChar() {
+            // 移除所有字符的選中狀態
+            charElements.forEach(char => char.classList.remove('selected'));
+            
+            // 重置選中索引
+            selectedCharIndex = null;
+            
+            // 更新UI狀態
+            selectedCharInfo.classList.add('hidden');
+            globalSizeInfo.classList.remove('hidden');
+            charSelectedTip.classList.add('hidden');
+        }
+        
+        // 鼠標按下事件處理
+        function handleCharMouseDown(e) {
+            // 在繪圖模式下或非左鍵點擊時不處理拖動
+            if (isDrawingMode || e.button !== 0) return;
+            
+            e.preventDefault();
+            startDrag(e, this);
+        }
+        
+        // 觸摸開始事件處理
+        function handleCharTouchStart(e) {
+            // 在繪圖模式下不處理拖動
+            if (isDrawingMode) return;
+            
+            e.preventDefault();
+            startDrag(e, this);
+        }
+        
+        // 更新字符位置
+        function updateCharsPosition() {
+            for (let i = 0; i < charElements.length; i++) {
+                updateCharPosition(charElements[i], i);
+            }
+        }
+        
+        // 更新單個字符位置
+        function updateCharPosition(charElement, index) {
+            if (index >= charPositions.length) return;
+            
+            const pos = charPositions[index];
+            const fontSize = charSizes[index];
+            const offsetX = fontSize * 0.5; // 半寬度偏移
+            const offsetY = fontSize * 0.5; // 半高度偏移
+            
+            charElement.style.left = `${pos.x - offsetX}px`;
+            charElement.style.top = `${pos.y - offsetY}px`;
+            charElement.style.transform = `rotate(${pos.rotation}rad)`;
+        }
+        
+        // 更新字符大小
+        function updateCharSize(charElement, fontSize) {
+            charElement.style.fontSize = `${fontSize}px`;
+            
+            // 更新字符寬高
+            const index = parseInt(charElement.dataset.index);
+            const sizeFactor = 1.2; // 字符容器比字體大一些
+            
+            charElement.style.width = `${fontSize * sizeFactor}px`;
+            charElement.style.height = `${fontSize * sizeFactor}px`;
+            
+            // 更新位置以適應新的尺寸
+            updateCharPosition(charElement, index);
+        }
+        
+        // 更新所有字符的樣式
+        function updateCharsStyle() {
+            const fontFamily = fontSelect.value;
+            
+            charElements.forEach(char => {
+                char.style.fontFamily = fontFamily;
+            });
+        }
+        
+        // 繪製印章背景
+        function redrawSealBackground() {
+            const color = colorSelect.value;
+            const shape = currentShape;
+            const centerX = sealSize / 2;
+            const centerY = sealSize / 2;
+            const radius = sealSize / 2 - padding;
+            
+            // 設置背景色
+            sealBackground.style.background = 'transparent';
+            
+            // 根據形狀繪製背景
+            let svgContent = '';
+            
+            if (shape === 'circle') {
+                svgContent = `
+                    <svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}">
+                        <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="${color}" />
+                    </svg>
+                `;
+            } 
+            else {
+                // 默認方形
+                svgContent = `
+                    <svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}">
+                        <rect x="${padding}" y="${padding}" width="${sealSize - padding * 2}" height="${sealSize - padding * 2}" fill="${color}" />
+                    </svg>
+                `;
+            }
+            
+            sealBackground.innerHTML = svgContent;
+        }
+        
+        // 開始拖動
+        function startDrag(e, target) {
+            // 在繪圖模式下不啟動拖動
+            if (isDrawingMode) return;
+            
+            isDragging = true;
+            dragTarget = target;
+            dragTarget.classList.add('dragging');
+            
+            const index = parseInt(dragTarget.dataset.index);
+            
+            // 獲取鼠標/觸摸起始位置
+            if (e.type === 'mousedown') {
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+            } else {
+                dragStartX = e.touches[0].clientX;
+                dragStartY = e.touches[0].clientY;
+            }
+            
+            // 獲取元素起始位置
+            targetStartX = charPositions[index].x;
+            targetStartY = charPositions[index].y;
+            
+            // 防止選擇時觸發拖動
+            setTimeout(() => {
+                if (isDragging) {
+                    // 在拖動時取消字符的選中狀態
+                    unselectChar();
+                }
+            }, 200);
+        }
+        
+        // 拖動移動
+        function dragMove(e) {
+            if (!isDragging || !dragTarget) return;
+            
+            e.preventDefault();
+            
+            let clientX, clientY;
+            if (e.type === 'mousemove') {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            } else {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            // 計算移動距離
+            const deltaX = clientX - dragStartX;
+            const deltaY = clientY - dragStartY;
+            
+            // 更新字符位置
+            const index = parseInt(dragTarget.dataset.index);
+            charPositions[index].x = targetStartX + deltaX;
+            charPositions[index].y = targetStartY + deltaY;
+            
+            // 更新元素位置
+            updateCharPosition(dragTarget, index);
+        }
+        
+        // 結束拖動
+        function endDrag() {
+            if (dragTarget) {
+                dragTarget.classList.remove('dragging');
+            }
+            
+            isDragging = false;
+            dragTarget = null;
+        }
+        
+        // 完全重寫下載印章功能
+        function downloadSeal() {
+            try {
+                // 顯示加載指示器
+                loadingIndicator.classList.remove('hidden');
+                downloadMessage.className = '';
+                downloadMessage.textContent = '';
+                
+                // 準備下載用畫布
+                downloadCanvas.width = sealSize;
+                downloadCanvas.height = sealSize;
+                downloadCtx.clearRect(0, 0, sealSize, sealSize);
+                
+                // 1. 首先繪製背景顏色和形狀
+                const color = colorSelect.value;
+                const shape = currentShape;
+                const centerX = sealSize / 2;
+                const centerY = sealSize / 2;
+                const radius = sealSize / 2 - padding;
+                
+                downloadCtx.fillStyle = color;
+                
+                if (shape === 'circle') {
+                    downloadCtx.beginPath();
+                    downloadCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    downloadCtx.fill();
+                } else {
+                    // 方形
+                    downloadCtx.fillRect(padding, padding, sealSize - padding * 2, sealSize - padding * 2);
+                }
+                
+                // 2. 繪製使用者繪製的內容
+                if (displayCanvas) {
+                    downloadCtx.drawImage(displayCanvas, 0, 0);
+                }
+                
+                // 3. 繪製文字
+                const text = nameInput.value.trim() || "印";
+                const fontFamily = fontSelect.value;
+                
+                downloadCtx.fillStyle = 'white';
+                downloadCtx.textAlign = 'center';
+                downloadCtx.textBaseline = 'middle';
+                
+                // 確保使用的字體已加載完成
+                document.fonts.ready.then(() => {
+                    // 繪製每個字符
+                    for (let i = 0; i < text.length; i++) {
+                        const pos = charPositions[i];
+                        const fontSize = charSizes[i];
+                        
+                        downloadCtx.save();
+                        downloadCtx.translate(pos.x, pos.y);
+                        downloadCtx.rotate(pos.rotation);
+                        downloadCtx.font = `bold ${fontSize}px ${fontFamily}`;
+                        downloadCtx.fillText(text[i], 0, 0);
+                        downloadCtx.restore();
+                    }
+                    
+                    // 將畫布轉換為下載連結
+                    try {
+                        downloadCanvas.toBlob(function(blob) {
+                            if (!blob) {
+                                throw new Error('無法創建圖片檔案');
+                            }
+                            
+                            // 創建下載連結
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = '弘立書院印章.png';
+                            
+                            // 觸發下載
+                            document.body.appendChild(link);
+                            link.click();
+                            
+                            // 清理
+                            setTimeout(() => {
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(url);
+                                
+                                // 隱藏加載指示器並顯示成功信息
+                                loadingIndicator.classList.add('hidden');
+                                downloadMessage.className = 'success';
+                                downloadMessage.textContent = '印章已成功下載！';
+                                
+                                // 3秒後隱藏成功信息
+                                setTimeout(() => {
+                                    downloadMessage.className = '';
+                                    downloadMessage.textContent = '';
+                                }, 3000);
+                            }, 100);
+                        }, 'image/png', 1.0);
+                    } catch (error) {
+                        console.error('Blob 創建失敗:', error);
+                        showDownloadError('創建圖片檔案時出錯');
+                    }
+                }).catch(err => {
+                    console.error('字體加載失敗:', err);
+                    showDownloadError('字體加載失敗，請嘗試使用標準字體');
+                });
+                
+            } catch (error) {
+                console.error('下載過程錯誤:', error);
+                showDownloadError('下載過程中發生錯誤');
+            }
+        }
+        
+        function showDownloadError(message) {
+            loadingIndicator.classList.add('hidden');
+            downloadMessage.className = 'error';
+            downloadMessage.textContent = message || '下載失敗，請再試一次';
+            
+            // 5秒後隱藏錯誤信息
+            setTimeout(() => {
+                downloadMessage.className = '';
+                downloadMessage.textContent = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+
