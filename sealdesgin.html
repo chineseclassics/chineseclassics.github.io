@@ -551,8 +551,8 @@
     </style>
 </head>
 <body class="min-h-screen" style="background-color: var(--bg-warm); color: var(--text-primary);">
-    <div class="container mx-auto px-4 py-3 max-w-7xl h-screen flex flex-col">
-        <header class="text-center mb-4 flex-shrink-0">
+    <div class="container mx-auto px-4 py-2 max-w-7xl h-screen flex flex-col">
+        <header class="text-center mb-2 flex-shrink-0">
             <h1 class="text-2xl md:text-3xl font-bold mb-2" style="color: var(--primary-dark);">弘立書院印章設計</h1>
             <p class="text-sm" style="color: var(--text-secondary);">自定義您的專屬印章設計</p>
             <div class="w-12 h-0.5 mx-auto mt-2 rounded-full" style="background-color: var(--accent-gold);"></div>
@@ -663,7 +663,7 @@
                     </div>
                     
                     <!-- 繪圖控制區 -->
-                    <div class="bg-gray-50 rounded-lg p-3 mb-4" style="border: 1px solid var(--border-light);">
+<parameter name="new_str">                    <div class="bg-gray-50 rounded-lg p-2 mb-2 mt-2" style="border: 1px solid var(--border-light);">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
                             <div class="text-sm font-medium" style="color: var(--text-primary);">
                                 繪圖工具
@@ -699,8 +699,8 @@
                         </div>
                     </div>
                     
-                    <!-- 印章容器区域 - 居中显示 -->
-                    <div class="flex-1 flex items-center justify-center">
+                    <!-- 印章容器区域 - 適中位置 -->
+                    <div class="flex-1 flex items-center justify-center pt-4">
                         <div id="sealContainer" class="seal-container rounded-lg flex items-center justify-center">
                             <div id="loadingIndicator" class="loader hidden"></div>
                             
@@ -761,10 +761,7 @@
                 </div>
             </div>
         </div>
-        
-        <footer class="mt-6 text-center text-gray-600 text-xs">
-            <p>印章設計生成器 &copy; 2023 | 僅供個人使用</p>
-        </footer>
+
     </div>
 
     <script>
@@ -2173,5 +2170,6 @@
     </script>
 </body>
 </html>
+
 
 
