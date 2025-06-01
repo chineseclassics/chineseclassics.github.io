@@ -241,6 +241,291 @@
             transform: scale(1) !important;
         }
         
+        /* 云气粒子动画效果 */
+        .cloud-particle {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            filter: blur(6px);
+            animation: float-clouds 25s infinite linear;
+        }
+        
+        /* 云朵形状 - 使用多个圆形重叠创建真实云朵轮廓，每朵云有独特的配色 */
+        
+        /* 月白云 - 经典纯净白色 */
+        .cloud-1 {
+            width: 120px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(248, 250, 252, 0.3) 40%, transparent 70%);
+            border-radius: 60px;
+            animation-delay: 0s;
+        }
+        
+        .cloud-1::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(248, 250, 252, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -20px;
+            left: 10px;
+        }
+        
+        .cloud-1::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(248, 250, 252, 0.25) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -15px;
+            right: 15px;
+        }
+        
+        /* 薰衣草紫云 - 优雅淡紫色 */
+        .cloud-2 {
+            width: 100px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(196, 181, 253, 0.4) 0%, rgba(221, 214, 254, 0.25) 40%, transparent 70%);
+            border-radius: 50px;
+            animation-delay: 4s;
+        }
+        
+        .cloud-2::before {
+            content: '';
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, rgba(196, 181, 253, 0.35) 0%, rgba(221, 214, 254, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -25px;
+            left: 5px;
+        }
+        
+        .cloud-2::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(196, 181, 253, 0.4) 0%, rgba(221, 214, 254, 0.22) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -20px;
+            right: 10px;
+        }
+        
+        /* 天青云 - 清新天蓝色 */
+        .cloud-3 {
+            width: 140px;
+            height: 70px;
+            background: radial-gradient(circle, rgba(147, 197, 253, 0.4) 0%, rgba(186, 230, 253, 0.25) 40%, transparent 70%);
+            border-radius: 70px;
+            animation-delay: 8s;
+        }
+        
+        .cloud-3::before {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, rgba(147, 197, 253, 0.35) 0%, rgba(186, 230, 253, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -30px;
+            left: 15px;
+        }
+        
+        .cloud-3::after {
+            content: '';
+            position: absolute;
+            width: 65px;
+            height: 65px;
+            background: radial-gradient(circle, rgba(147, 197, 253, 0.38) 0%, rgba(186, 230, 253, 0.23) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -25px;
+            right: 20px;
+        }
+        
+        /* 香槟金云 - 温暖金色调 */
+        .cloud-4 {
+            width: 80px;
+            height: 40px;
+            background: radial-gradient(circle, rgba(254, 240, 138, 0.4) 0%, rgba(255, 251, 235, 0.25) 40%, transparent 70%);
+            border-radius: 40px;
+            animation-delay: 12s;
+        }
+        
+        .cloud-4::before {
+            content: '';
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle, rgba(254, 240, 138, 0.35) 0%, rgba(255, 251, 235, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -20px;
+            left: 8px;
+        }
+        
+        .cloud-4::after {
+            content: '';
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle, rgba(254, 240, 138, 0.38) 0%, rgba(255, 251, 235, 0.23) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -15px;
+            right: 12px;
+        }
+        
+        /* 玫瑰云 - 柔和粉紫色 */
+        .cloud-5 {
+            width: 110px;
+            height: 55px;
+            background: radial-gradient(circle, rgba(244, 114, 182, 0.3) 0%, rgba(251, 207, 232, 0.2) 40%, transparent 70%);
+            border-radius: 55px;
+            animation-delay: 16s;
+        }
+        
+        .cloud-5::before {
+            content: '';
+            position: absolute;
+            width: 75px;
+            height: 75px;
+            background: radial-gradient(circle, rgba(244, 114, 182, 0.25) 0%, rgba(251, 207, 232, 0.15) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -25px;
+            left: 12px;
+        }
+        
+        .cloud-5::after {
+            content: '';
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle, rgba(244, 114, 182, 0.28) 0%, rgba(251, 207, 232, 0.18) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -20px;
+            right: 18px;
+        }
+        
+        /* 青玉云 - 清雅青绿色 */
+        .cloud-6 {
+            width: 130px;
+            height: 65px;
+            background: radial-gradient(circle, rgba(134, 239, 172, 0.35) 0%, rgba(220, 252, 231, 0.22) 40%, transparent 70%);
+            border-radius: 65px;
+            animation-delay: 20s;
+        }
+        
+        .cloud-6::before {
+            content: '';
+            position: absolute;
+            width: 85px;
+            height: 85px;
+            background: radial-gradient(circle, rgba(134, 239, 172, 0.3) 0%, rgba(220, 252, 231, 0.18) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -28px;
+            left: 18px;
+        }
+        
+        .cloud-6::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(134, 239, 172, 0.33) 0%, rgba(220, 252, 231, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            top: -22px;
+            right: 22px;
+        }
+        
+        @keyframes float-clouds {
+            0% {
+                opacity: 0;
+                transform: translateX(-150px) translateY(0px) scale(0.5) rotate(0deg);
+            }
+            5% {
+                opacity: 0.6;
+                transform: translateX(-120px) translateY(-5px) scale(0.7) rotate(1deg);
+            }
+            15% {
+                opacity: 0.8;
+                transform: translateX(-80px) translateY(8px) scale(1) rotate(-1deg);
+            }
+            25% {
+                opacity: 1;
+                transform: translateX(-40px) translateY(-12px) scale(1.1) rotate(0.5deg);
+            }
+            35% {
+                opacity: 0.9;
+                transform: translateX(0px) translateY(15px) scale(1.2) rotate(-0.5deg);
+            }
+            45% {
+                opacity: 0.8;
+                transform: translateX(40px) translateY(-8px) scale(1.1) rotate(1deg);
+            }
+            55% {
+                opacity: 0.7;
+                transform: translateX(80px) translateY(20px) scale(1) rotate(-1deg);
+            }
+            65% {
+                opacity: 0.6;
+                transform: translateX(120px) translateY(-15px) scale(0.9) rotate(0.5deg);
+            }
+            75% {
+                opacity: 0.5;
+                transform: translateX(160px) translateY(10px) scale(0.8) rotate(-0.5deg);
+            }
+            85% {
+                opacity: 0.3;
+                transform: translateX(200px) translateY(-5px) scale(0.7) rotate(1deg);
+            }
+            95% {
+                opacity: 0.1;
+                transform: translateX(240px) translateY(5px) scale(0.6) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(280px) translateY(0px) scale(0.5) rotate(0deg);
+            }
+        }
+        
+        /* 幻境光效 */
+        .mystic-glow {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(93, 92, 222, 0.1) 0%, transparent 70%);
+            animation: mystic-pulse 6s ease-in-out infinite;
+        }
+        
+        .mystic-glow:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(129, 140, 248, 0.08) 0%, transparent 70%);
+            animation-delay: 2s;
+            animation-duration: 8s;
+        }
+        
+        .mystic-glow:nth-child(3) {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(165, 180, 252, 0.06) 0%, transparent 70%);
+            animation-delay: 4s;
+            animation-duration: 10s;
+        }
+        
+        @keyframes mystic-pulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+
         /* 响应式网格调整 */
         @media (max-width: 640px) {
             #switcherAppGrid {
@@ -320,6 +605,12 @@
     <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 fixed top-0 left-0 right-0 z-50">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
+                <!-- 网站Logo -->
+                <img src="https://chineseclassics.github.io/images/cclogo.png" 
+                     alt="書院中文經典" 
+                     class="h-12 w-12 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                     onclick="showHome()">
+                
                 <button id="homeBtn" class="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors">
                     <i class="fas fa-home"></i>
                     <span class="hidden sm:inline">首頁</span>
@@ -342,6 +633,25 @@
         <div id="homeView">
             <div class="py-8 px-4 mb-10 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-primary/20 to-indigo-900/10 dark:from-indigo-900/30 dark:via-primary/40 dark:to-indigo-900/30"></div>
+                
+                <!-- 幻境光效 -->
+                <div class="mystic-glow absolute top-1/4 left-1/4"></div>
+                <div class="mystic-glow absolute top-3/4 right-1/3"></div>
+                <div class="mystic-glow absolute top-1/2 left-2/3"></div>
+                
+                <!-- 浮动云气 -->
+                <div class="cloud-particle cloud-1 absolute" style="left: 5%; top: 15%;"></div>
+                <div class="cloud-particle cloud-2 absolute" style="left: 75%; top: 25%;"></div>
+                <div class="cloud-particle cloud-3 absolute" style="left: 25%; top: 55%;"></div>
+                <div class="cloud-particle cloud-4 absolute" style="left: 85%; top: 10%;"></div>
+                <div class="cloud-particle cloud-5 absolute" style="left: 45%; top: 75%;"></div>
+                <div class="cloud-particle cloud-6 absolute" style="left: 15%; top: 65%;"></div>
+                <div class="cloud-particle cloud-1 absolute" style="left: 95%; top: 45%;"></div>
+                <div class="cloud-particle cloud-2 absolute" style="left: 10%; top: 35%;"></div>
+                <div class="cloud-particle cloud-3 absolute" style="left: 80%; top: 70%;"></div>
+                <div class="cloud-particle cloud-4 absolute" style="left: 35%; top: 20%;"></div>
+                <div class="cloud-particle cloud-5 absolute" style="left: 55%; top: 85%;"></div>
+                <div class="cloud-particle cloud-6 absolute" style="left: 20%; top: 5%;"></div>
                 
                 <div class="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 border-l-2 border-t-2 border-primary opacity-30 dark:opacity-40"></div>
                 <div class="absolute bottom-0 right-0 w-16 h-16 md:w-24 md:h-24 border-r-2 border-b-2 border-primary opacity-30 dark:opacity-40"></div>
@@ -501,7 +811,8 @@
                 name: '印章設計',
                 icon: 'fas fa-stamp',
                 gradient: 'from-red-600 to-rose-500',
-                url: 'https://sites.google.com/isf.edu.hk/aichineseclassics/%E5%8D%B0%E7%AB%A0%E8%A8%AD%E8%A8%88'
+                url: 'https://chineseclassics.github.io/sealdesgin.html',
+                description: '專業的中式印章設計工具，支援陰刻陽刻、多種古典字體選擇，可自由調整文字位置大小，並提供繪圖功能個性化創作'
             },
             {
                 id: 'mishijiangchun',
@@ -574,88 +885,77 @@
         const switcherAppGrid = document.getElementById('switcherAppGrid');
         const appSwitcherModal = document.getElementById('appSwitcherModal');
 
-        // Tooltip相关变量
-        let currentTooltip = null;
-        let tooltipTimeout = null;
+        // 简单的鼠标悬停信息显示
+        let hoverInfo = null;
+        let hoverTimeout = null;
 
-        // 创建tooltip
-        function createTooltip(app, targetElement) {
-            if (!app.description) return;
-
-            const tooltip = document.createElement('div');
-            tooltip.className = 'app-tooltip';
-            if (document.documentElement.classList.contains('dark')) {
-                tooltip.classList.add('dark');
-            }
-
-            // 判断是简洁介绍还是详细介绍
-            if (typeof app.description === 'string') {
-                // 简洁的一句话介绍（不显示重复的app名称）
-                tooltip.innerHTML = `
-                    <div class="app-tooltip-subtitle" style="color: #5D5CDE; font-style: normal; font-weight: 500; margin-bottom: 0;">${app.description}</div>
-                `;
-            } else {
-                // 详细介绍（保持原格式，但也移除重复名称）
-                tooltip.innerHTML = `
-                    <div class="app-tooltip-subtitle">${app.description.subtitle}</div>
-                    <ul class="app-tooltip-features">
-                        ${app.description.features.map(feature => `<li>${feature}</li>`).join('')}
-                    </ul>
-                    <div class="app-tooltip-quote">${app.description.quote}</div>
-                `;
-            }
-
-            document.body.appendChild(tooltip);
-
-            // 计算位置
-            const rect = targetElement.getBoundingClientRect();
-            const tooltipRect = tooltip.getBoundingClientRect();
+        // 创建悬停信息框
+        function createHoverInfo(description) {
+            const info = document.createElement('div');
+            info.style.cssText = `
+                position: fixed;
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 14px;
+                max-width: 300px;
+                z-index: 10000;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            `;
+            info.textContent = description;
+            document.body.appendChild(info);
             
-            let left = rect.left + (rect.width - tooltipRect.width) / 2;
-            let top = rect.bottom + 10;
-
-            // 确保不超出屏幕边界
-            if (left < 10) left = 10;
-            if (left + tooltipRect.width > window.innerWidth - 10) {
-                left = window.innerWidth - tooltipRect.width - 10;
-            }
-            if (top + tooltipRect.height > window.innerHeight - 10) {
-                top = rect.top - tooltipRect.height - 10;
-            }
-
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-
-            // 显示tooltip
-            setTimeout(() => tooltip.classList.add('show'), 10);
-
-            return tooltip;
+            // 显示动画
+            setTimeout(() => info.style.opacity = '1', 10);
+            
+            return info;
         }
 
-        // 隐藏tooltip
-        function hideTooltip() {
-            if (currentTooltip) {
-                currentTooltip.classList.remove('show');
+        // 更新信息框位置
+        function updateHoverInfoPosition(e) {
+            if (hoverInfo) {
+                const x = e.clientX + 10;
+                const y = e.clientY - 40;
+                
+                // 简单边界检查
+                const maxX = window.innerWidth - hoverInfo.offsetWidth - 10;
+                const maxY = window.innerHeight - hoverInfo.offsetHeight - 10;
+                
+                hoverInfo.style.left = Math.min(x, maxX) + 'px';
+                hoverInfo.style.top = Math.max(10, Math.min(y, maxY)) + 'px';
+            }
+        }
+
+        // 显示悬停信息
+        function showHoverInfo(description, e) {
+            hideHoverInfo();
+            
+            if (description) {
+                hoverTimeout = setTimeout(() => {
+                    hoverInfo = createHoverInfo(description);
+                    updateHoverInfoPosition(e);
+                }, 500);
+            }
+        }
+
+        // 隐藏悬停信息
+        function hideHoverInfo() {
+            if (hoverTimeout) {
+                clearTimeout(hoverTimeout);
+                hoverTimeout = null;
+            }
+            
+            if (hoverInfo) {
+                hoverInfo.style.opacity = '0';
                 setTimeout(() => {
-                    if (currentTooltip && currentTooltip.parentNode) {
-                        currentTooltip.parentNode.removeChild(currentTooltip);
+                    if (hoverInfo && hoverInfo.parentNode) {
+                        hoverInfo.parentNode.removeChild(hoverInfo);
                     }
-                    currentTooltip = null;
-                }, 300);
-            }
-            if (tooltipTimeout) {
-                clearTimeout(tooltipTimeout);
-                tooltipTimeout = null;
-            }
-        }
-
-        // 显示tooltip
-        function showTooltip(app, targetElement) {
-            hideTooltip();
-            if (app.description) {
-                tooltipTimeout = setTimeout(() => {
-                    currentTooltip = createTooltip(app, targetElement);
-                }, 500); // 0.5秒延迟
+                    hoverInfo = null;
+                }, 200);
             }
         }
 
@@ -688,14 +988,14 @@
             
             const app = apps.find(a => a.id === appId);
             if (app && app.description) {
-                showTooltip(app, event.currentTarget);
+                showHoverInfo(app.description, event);
             }
         }
 
         // 鼠标离开事件
         function handleMouseLeave() {
             if (!isMobile()) {
-                hideTooltip();
+                hideHoverInfo();
             }
         }
 
@@ -716,9 +1016,9 @@
             
             // 设置长按定时器（500ms）
             longPressTimer = setTimeout(() => {
-                // 这是长按，显示tooltip
+                // 这是长按，显示悬停信息
                 isLongPress = true;
-                showTooltip(app, event.currentTarget);
+                showHoverInfo(app.description, event);
                 
                 // 触觉反馈
                 if (navigator.vibrate) {
@@ -745,15 +1045,15 @@
                 return;
             }
             
-            // 如果是短按且当前没有显示tooltip，正常打开应用
-            if (touchDuration < 500 && !currentTooltip) {
+            // 如果是短按且当前没有显示信息框，正常打开应用
+            if (touchDuration < 500 && !hoverInfo) {
                 // 这里不阻止事件，让onclick正常执行
                 return;
             }
             
-            // 如果当前有tooltip显示，第一次点击隐藏tooltip
-            if (currentTooltip) {
-                hideTooltip();
+            // 如果当前有信息框显示，第一次点击隐藏信息框
+            if (hoverInfo) {
+                hideHoverInfo();
                 event.preventDefault();
                 return;
             }
@@ -767,10 +1067,10 @@
             }
         }
 
-        // 点击其他地方隐藏tooltip
+        // 点击其他地方隐藏悬停信息
         document.addEventListener('click', (event) => {
-            if (currentTooltip && !event.target.closest('.app-icon') && !event.target.closest('.app-tooltip')) {
-                hideTooltip();
+            if (hoverInfo && !event.target.closest('.app-icon')) {
+                hideHoverInfo();
             }
         });
 
