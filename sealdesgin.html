@@ -548,6 +548,98 @@
             color: #ef4444;
             display: block;
         }
+
+        /* 移動端優化 */
+        @media (max-width: 1023px) {
+            /* 調整容器間距 */
+            .container {
+                padding: 0.5rem;
+            }
+            
+            /* 調整標題大小 */
+            header h1 {
+                font-size: 1.5rem !important;
+            }
+            
+            /* 印章容器在移動端縮小 */
+            .seal-container {
+                width: 300px;
+                height: 300px;
+            }
+            
+            /* 調整字體卡片在移動端的大小 */
+            .font-card {
+                padding: 0.5rem !important;
+            }
+            
+            .font-preview {
+                font-size: 1rem !important;
+            }
+            
+            /* 調整刻印方式卡片 */
+            .carving-option {
+                padding: 0.5rem !important;
+            }
+            
+            .carving-preview {
+                width: 2rem !important;
+                height: 2rem !important;
+            }
+            
+            /* 繪圖控制區在移動端的調整 */
+            .drawing-controls-mobile {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            /* 按鈕在移動端增大觸摸面積 */
+            .mobile-button {
+                min-height: 44px;
+                font-size: 0.875rem;
+            }
+            
+            /* 滑塊容器在移動端的調整 */
+            .slider-container {
+                padding: 6px 8px;
+            }
+            
+            /* 調整操作按鈕區域 */
+            .action-buttons-mobile {
+                gap: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            /* 極小屏幕的額外優化 */
+            .seal-container {
+                width: 250px;
+                height: 250px;
+            }
+            
+            /* 繪圖工具在小屏幕上垂直排列 */
+            .drawing-tools-small {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            
+            .drawing-tools-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            /* 調整字體選擇區域高度 */
+            .font-selection-container {
+                max-height: 200px;
+            }
+            
+            /* 確保觸摸友好的間距 */
+            .mobile-spacing {
+                margin-bottom: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen" style="background-color: var(--bg-warm); color: var(--text-primary);">
@@ -663,7 +755,7 @@
                     </div>
                     
                     <!-- 繪圖控制區 -->
-<parameter name="new_str">                    <div class="bg-gray-50 rounded-lg p-2 mb-2 mt-2" style="border: 1px solid var(--border-light);">
+                    <div class="bg-gray-50 rounded-lg p-2 mb-2 mt-2" style="border: 1px solid var(--border-light);">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
                             <div class="text-sm font-medium" style="color: var(--text-primary);">
                                 繪圖工具
@@ -2170,6 +2262,10 @@
     </script>
 </body>
 </html>
+
+
+
+
 
 
 
