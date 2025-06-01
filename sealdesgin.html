@@ -908,10 +908,35 @@
         // 當前選中的字符
         let selectedCharIndex = null;
         
-        // 印章參數
-        const sealSize = 350;
-        const padding = 30;
-        const defaultFontSize = 120;
+        // 印章參數 - 根據屏幕尺寸動態調整
+        let sealSize = 350;
+        let padding = 30;
+        let defaultFontSize = 120;
+        
+        // 檢測屏幕尺寸並調整參數
+        function updateSealParameters() {
+            const screenWidth = window.innerWidth;
+            
+            if (screenWidth <= 640) {
+                // 手機端：250x250
+                sealSize = 250;
+                padding = 20;
+                defaultFontSize = 80;
+            } else if (screenWidth <= 1023) {
+                // 平板端：300x300
+                sealSize = 300;
+                padding = 25;
+                defaultFontSize = 100;
+            } else {
+                // 桌面端：350x350
+                sealSize = 350;
+                padding = 30;
+                defaultFontSize = 120;
+            }
+        }
+        
+        // 初始化參數
+        updateSealParameters();
         
         // 拖動狀態
         let isDragging = false;
@@ -936,12 +961,24 @@
         let prevY = 0;
         
         // 初始化畫布大小
-        drawCanvas.width = sealSize;
-        drawCanvas.height = sealSize;
-        displayCanvas.width = sealSize;
-        displayCanvas.height = sealSize;
-        downloadCanvas.width = sealSize;
-        downloadCanvas.height = sealSize;
+        function updateCanvasSize() {
+            drawCanvas.width = sealSize;
+            drawCanvas.height = sealSize;
+            displayCanvas.width = sealSize;
+            displayCanvas.height = sealSize;
+            downloadCanvas.width = sealSize;
+            downloadCanvas.height = sealSize;
+        }
+        
+        updateCanvasSize();
+        
+        // 監聽窗口大小變化
+        window.addEventListener('resize', function() {
+            updateSealParameters();
+            updateCanvasSize();
+            // 重新生成印章以適應新的參數
+            generateSeal();
+        });
         
         // 繪圖事件處理函數 - 完全重寫
         function setDrawingMode(enabled) {
@@ -2262,10 +2299,6 @@
     </script>
 </body>
 </html>
-
-
-
-
 
 
 
