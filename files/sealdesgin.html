@@ -176,61 +176,40 @@
             text-align: center;
         }
         
-        /* 自定義字體上傳區域 */
-        .font-upload-container {
-            border: 2px dashed #ccc;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            transition: all 0.3s;
+        /* 字體卡片樣式 */
+        .font-card {
+            background-color: white;
+            transition: all 0.3s ease;
         }
         
-        .font-upload-container:hover {
-            border-color: var(--primary-color);
+        .font-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .font-card.selected {
+            border-color: var(--primary-color) !important;
             background-color: rgba(93, 92, 222, 0.05);
+            box-shadow: 0 4px 12px rgba(93, 92, 222, 0.2);
         }
         
-        .dark .font-upload-container {
-            border-color: #555;
+        .dark .font-card {
+            background-color: var(--bg-secondary);
         }
         
-        .dark .font-upload-container:hover {
-            border-color: var(--primary-color);
-            background-color: rgba(93, 92, 222, 0.1);
+        .dark .font-card.selected {
+            background-color: rgba(93, 92, 222, 0.15);
         }
         
-        /* 自定義字體列表 */
-        .custom-font-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.5rem;
-            margin-bottom: 0.25rem;
-            border-radius: 0.25rem;
-            background-color: #f3f4f6;
+        .dark .font-card:hover {
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
         }
         
-        .dark .custom-font-item {
-            background-color: #333;
-        }
-        
-        .custom-font-item .font-name {
-            flex-grow: 1;
-            margin-right: 0.5rem;
-            white-space: nowrap;
+        .font-preview {
+            line-height: 1.2;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-        
-        .remove-font-btn {
-            color: #ef4444;
-            cursor: pointer;
-            padding: 0.25rem;
-        }
-        
-        .remove-font-btn:hover {
-            color: #dc2626;
+            white-space: nowrap;
         }
         
         /* 繪圖畫布樣式 */
@@ -401,29 +380,27 @@
                 </div>
                 
                 <div class="mb-4">
-                    <label for="fontSelect" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">字體選擇</label>
-                    <select id="fontSelect" class="w-full border border-gray-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="'ChongXi Seal'" selected>篆體一</option>
-                        <option value="'LXGW WenKai'">落霞孤鶩文楷</option>
-                    </select>
-                </div>
-                
-                <!-- 自定義字體上傳區域 -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">自定義字體</label>
-                    
-                    <div class="font-upload-container" id="fontUploadArea">
-                        <p class="text-sm mb-2">上傳TTF、OTF、WOFF或WOFF2格式字體文件</p>
-                        <div class="flex items-center">
-                            <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" class="hidden">
-                            <input type="text" id="fontNameInput" placeholder="字體名稱" class="flex-grow border border-gray-300 rounded-l-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <button id="fontUploadBtn" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-bold py-2 px-4 rounded-r-md">瀏覽</button>
+                    <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">字體選擇</label>
+                    <div class="grid grid-cols-1 gap-3">
+                        <!-- 篆體一卡片 -->
+                        <div class="font-card cursor-pointer border-2 border-gray-300 dark:border-gray-600 rounded-lg p-4 transition-all duration-200 hover:border-primary-400" data-font="'ChongXi Seal'">
+                            <div class="font-preview text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2" style="font-family: 'ChongXi Seal';">
+                                王大明印
+                            </div>
+                            <div class="font-name text-sm text-gray-600 dark:text-gray-400">
+                                篆體一
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- 自定義字體列表 -->
-                    <div id="customFontsList" class="text-sm">
-                        <!-- 動態添加的自定義字體將顯示在這裡 -->
+                        
+                        <!-- 落霞孤鶩文楷卡片 -->
+                        <div class="font-card cursor-pointer border-2 border-primary-500 rounded-lg p-4 transition-all duration-200 hover:border-primary-400 selected" data-font="'LXGW WenKai'">
+                            <div class="font-preview text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2" style="font-family: 'LXGW WenKai';">
+                                王大明印
+                            </div>
+                            <div class="font-name text-sm text-gray-600 dark:text-gray-400">
+                                落霞孤鶩文楷
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -578,7 +555,6 @@
         
         // 獲取DOM元素
         const nameInput = document.getElementById('nameInput');
-        const fontSelect = document.getElementById('fontSelect');
         const initialLayout = document.getElementById('initialLayout');
         const fontSizeRange = document.getElementById('fontSizeRange');
         const fontSizeValue = document.getElementById('fontSizeValue');
@@ -612,11 +588,9 @@
         const displayCtx = displayCanvas.getContext('2d');
         const downloadCtx = downloadCanvas.getContext('2d');
         
-        // 自定義字體相關元素
-        const fontFileInput = document.getElementById('fontFileInput');
-        const fontNameInput = document.getElementById('fontNameInput');
-        const fontUploadBtn = document.getElementById('fontUploadBtn');
-        const customFontsList = document.getElementById('customFontsList');
+        // 字體卡片相關元素
+        const fontCards = document.querySelectorAll('.font-card');
+        let currentFont = "'LXGW WenKai'"; // 默認字體
         
         // 印章形狀選擇
         const shapeOptions = document.querySelectorAll('.shape-option');
@@ -628,9 +602,6 @@
         
         // 用於存儲每個字符的dom元素引用
         let charElements = [];
-        
-        // 自定義字體列表
-        let customFonts = [];
         
         // 當前選中的字符
         let selectedCharIndex = null;
@@ -864,12 +835,21 @@
         drawCanvas.addEventListener('touchend', stopDrawing);
         drawCanvas.addEventListener('touchcancel', stopDrawing);
         
-        // 字體上傳處理
-        fontUploadBtn.addEventListener('click', () => {
-            fontFileInput.click();
+        // 字體卡片選擇事件
+        fontCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // 移除所有卡片的選中狀態
+                fontCards.forEach(c => c.classList.remove('selected'));
+                // 添加當前卡片的選中狀態
+                card.classList.add('selected');
+                
+                // 更新當前字體
+                currentFont = card.getAttribute('data-font');
+                
+                // 更新字符樣式
+                updateCharsStyle();
+            });
         });
-        
-        fontFileInput.addEventListener('change', handleFontUpload);
         
         // 形狀選擇事件
         shapeOptions.forEach(option => {
@@ -885,11 +865,6 @@
         nameInput.addEventListener('input', () => {
             // 當文字改變時，重新生成印章
             generateSeal();
-        });
-        
-        fontSelect.addEventListener('change', () => {
-            // 當字體改變時，更新所有字符的字體
-            updateCharsStyle();
         });
         
         fontSizeRange.addEventListener('input', () => {
@@ -977,9 +952,7 @@
                 }
                 
                 // 所有URL都失敗
-                console.warn('崇熙篆體加載失敗，使用後備字體');
-                fontSelect.value = "'LXGW WenKai'";
-                generateSeal();
+                console.warn('崇熙篆體加載失敗');
                 return false;
             }
             
@@ -988,138 +961,6 @@
         
         // 初始化（先生成一次，字體加載後會重新生成）
         generateSeal();
-        
-        // 處理字體上傳
-        function handleFontUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            // 檢查文件類型
-            const validTypes = ['font/ttf', 'font/otf', 'font/woff', 'font/woff2', 'application/x-font-ttf', 'application/x-font-otf', 'application/font-woff'];
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-            const isValidExtension = ['ttf', 'otf', 'woff', 'woff2'].includes(fileExtension);
-            
-            if (!isValidExtension) {
-                alert('請上傳有效的字體文件 (.ttf, .otf, .woff, .woff2)');
-                return;
-            }
-            
-            // 獲取字體名稱
-            let fontName = fontNameInput.value.trim();
-            if (!fontName) {
-                // 如果沒有輸入名稱，使用文件名（不帶擴展名）
-                fontName = file.name.replace(/\.[^/.]+$/, "");
-                fontNameInput.value = fontName;
-            }
-            
-            // 讀取字體文件
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const fontData = e.target.result;
-                
-                // 創建唯一的字體名稱（避免衝突）
-                const uniqueFontName = `custom-font-${Date.now()}`;
-                
-                // 創建字體樣式
-                const fontFace = new FontFace(uniqueFontName, fontData);
-                
-                // 加載字體
-                fontFace.load().then(function(loadedFace) {
-                    // 添加到文檔
-                    document.fonts.add(loadedFace);
-                    
-                    // 保存字體信息
-                    const fontInfo = {
-                        id: uniqueFontName,
-                        name: fontName,
-                        fontFace: loadedFace
-                    };
-                    customFonts.push(fontInfo);
-                    
-                    // 添加到選擇列表
-                    addFontToSelector(fontInfo);
-                    
-                    // 顯示在自定義字體列表中
-                    updateCustomFontsList();
-                    
-                    // 切換到新字體
-                    fontSelect.value = uniqueFontName;
-                    updateCharsStyle();
-                    
-                    // 清空輸入
-                    fontNameInput.value = '';
-                    fontFileInput.value = '';
-                    
-                }).catch(function(error) {
-                    console.error('字體加載失敗:', error);
-                    alert('字體加載失敗，請嘗試其他字體文件。');
-                });
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-        
-        // 將字體添加到選擇器
-        function addFontToSelector(fontInfo) {
-            const option = document.createElement('option');
-            option.value = fontInfo.id;
-            option.textContent = `${fontInfo.name} (自定義)`;
-            option.style.fontFamily = fontInfo.id;
-            fontSelect.appendChild(option);
-        }
-        
-        // 更新自定義字體列表
-        function updateCustomFontsList() {
-            customFontsList.innerHTML = '';
-            
-            if (customFonts.length === 0) {
-                return;
-            }
-            
-            customFonts.forEach(font => {
-                const fontItem = document.createElement('div');
-                fontItem.className = 'custom-font-item';
-                
-                const fontName = document.createElement('div');
-                fontName.className = 'font-name';
-                fontName.style.fontFamily = font.id;
-                fontName.textContent = font.name;
-                
-                const removeBtn = document.createElement('div');
-                removeBtn.className = 'remove-font-btn';
-                removeBtn.innerHTML = '&times;';
-                removeBtn.title = '移除此字體';
-                removeBtn.onclick = () => removeCustomFont(font.id);
-                
-                fontItem.appendChild(fontName);
-                fontItem.appendChild(removeBtn);
-                customFontsList.appendChild(fontItem);
-            });
-        }
-        
-        // 移除自定義字體
-        function removeCustomFont(fontId) {
-            // 從列表中移除
-            const index = customFonts.findIndex(f => f.id === fontId);
-            if (index !== -1) {
-                customFonts.splice(index, 1);
-            }
-            
-            // 從選擇器中移除
-            const option = Array.from(fontSelect.options).find(opt => opt.value === fontId);
-            if (option) {
-                fontSelect.removeChild(option);
-            }
-            
-            // 如果當前選中的是被移除的字體，切換到第一個選項
-            if (fontSelect.value === fontId) {
-                fontSelect.selectedIndex = 0;
-                updateCharsStyle();
-            }
-            
-            // 更新列表顯示
-            updateCustomFontsList();
-        }
         
         // 生成印章
         function generateSeal() {
@@ -1261,7 +1102,7 @@
         
         // 創建可拖動字符
         function createDraggableChars(text) {
-            const fontFamily = fontSelect.value;
+            const fontFamily = currentFont;
             
             for (let i = 0; i < text.length; i++) {
                 const char = document.createElement('div');
@@ -1406,10 +1247,8 @@
         
         // 更新所有字符的樣式
         function updateCharsStyle() {
-            const fontFamily = fontSelect.value;
-            
             charElements.forEach(char => {
-                char.style.fontFamily = fontFamily;
+                char.style.fontFamily = currentFont;
             });
         }
         
@@ -1555,7 +1394,7 @@
                 
                 // 3. 繪製文字
                 const text = nameInput.value.trim() || "印";
-                const fontFamily = fontSelect.value;
+                const fontFamily = currentFont;
                 
                 downloadCtx.fillStyle = 'white';
                 downloadCtx.textAlign = 'center';
@@ -1639,4 +1478,3 @@
     </script>
 </body>
 </html>
-
