@@ -731,25 +731,73 @@
         
         /* 作品卡片 */
         .work-card {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: white;
+            border: 2px solid #e0e0e0;
             border-radius: 12px;
-            padding: 15px;
-            transition: all 0.3s ease;
+            padding: 16px;
+            transition: all 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin: 0 1px 10px 1px;
+            transform: translateY(0);
+        }
+        
+        .work-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(93, 92, 222, 0), rgba(93, 92, 222, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
         }
         
         .work-card:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(93, 92, 222, 0.4);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: #5D5CDE;
+            box-shadow: 0 6px 15px rgba(93, 92, 222, 0.25);
+            transform: translateY(-3px);
+        }
+        
+        .work-card:hover::before {
+            opacity: 1;
         }
         
         .work-card.current-work {
+            background: linear-gradient(45deg, #5D5CDE 0%, #7469DC 100%);
+            color: white;
             border-color: #5D5CDE;
-            background: rgba(93, 92, 222, 0.1);
+            box-shadow: 0 6px 20px rgba(93, 92, 222, 0.4);
+        }
+        
+        .work-card.current-work .cipai-name {
+            color: white;
+        }
+        
+        .work-card.current-work .author-name {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .work-card.current-work .work-preview {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .work-card.current-work .work-meta {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .work-card.current-work .btn-icon {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .work-card.current-work .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
         }
         
         .work-card.current-work::before {
@@ -777,12 +825,12 @@
         
         .cipai-name {
             font-weight: 600;
-            color: white;
+            color: #333;
             font-size: 16px;
         }
         
         .author-name {
-            color: rgba(255, 255, 255, 0.7);
+            color: #666;
             font-size: 14px;
             margin-left: 5px;
         }
@@ -796,10 +844,10 @@
         .btn-icon {
             width: 28px;
             height: 28px;
-            border: none;
+            border: 1px solid #e0e0e0;
             border-radius: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.8);
+            color: #666;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -809,8 +857,9 @@
         }
         
         .btn-icon:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: #5D5CDE;
             color: white;
+            border-color: #5D5CDE;
         }
         
         .btn-icon.btn-danger:hover {
@@ -820,7 +869,7 @@
         
         /* 作品预览 */
         .work-preview {
-            color: rgba(255, 255, 255, 0.8);
+            color: #555;
             font-size: 14px;
             line-height: 1.5;
             margin-bottom: 12px;
@@ -833,7 +882,7 @@
             justify-content: space-between;
             align-items: flex-end;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.6);
+            color: #888;
         }
         
         .work-stats {
@@ -875,29 +924,52 @@
         }
         
         .dark-mode .work-card {
-            background: rgba(40, 40, 55, 0.6);
+            background: rgba(40, 40, 55, 0.8);
             border-color: rgba(60, 60, 75, 0.8);
+            color: #e0e0e0;
         }
         
         .dark-mode .work-card:hover {
-            background: rgba(40, 40, 55, 0.8);
-            border-color: rgba(93, 92, 222, 0.6);
+            border-color: #6A67E5;
+            box-shadow: 0 6px 15px rgba(93, 92, 222, 0.4);
+        }
+        
+        .dark-mode .work-card.current-work {
+            background: linear-gradient(45deg, #4A4AE0 0%, #5245C2 100%);
+            border-color: #4A4AE0;
+            color: white;
         }
         
         .dark-mode .cipai-name {
-            color: #e6e6e6;
+            color: #e0e0e0;
         }
         
         .dark-mode .author-name {
-            color: rgba(230, 230, 230, 0.7);
+            color: rgba(224, 224, 224, 0.7);
         }
         
         .dark-mode .work-preview {
-            color: rgba(230, 230, 230, 0.8);
+            color: rgba(224, 224, 224, 0.8);
         }
         
         .dark-mode .work-meta {
-            color: rgba(230, 230, 230, 0.6);
+            color: rgba(224, 224, 224, 0.6);
+        }
+        
+        .dark-mode .btn-icon {
+            background: rgba(60, 60, 75, 0.8);
+            border-color: rgba(80, 80, 100, 0.5);
+            color: rgba(224, 224, 224, 0.7);
+        }
+        
+        .dark-mode .btn-icon:hover {
+            background: #5D5CDE;
+            color: white;
+            border-color: #5D5CDE;
+        }
+        
+        .dark-mode .empty-works-message {
+            color: rgba(224, 224, 224, 0.6);
         }
         
         /* 响应式适配 */
@@ -955,6 +1027,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            position: relative; /* 添加相对定位，作为侧边栏切换按钮的定位参考 */
             transition: all 0.5s cubic-bezier(0.215, 0.61, 0.355, 1);
             animation: container-fade-in 0.8s ease-out;
         }
@@ -6102,26 +6175,50 @@
             }
             
             try {
-                const exportData = {
-                    version: '1.0',
-                    exportTime: new Date().toISOString(),
-                    totalWorks: works.length,
-                    works: works
-                };
+                // 创建纯文本格式的作品集
+                let textContent = '南风填词作品集\n';
+                textContent += '='.repeat(50) + '\n\n';
+                textContent += `导出时间：${new Date().toLocaleString()}\n`;
+                textContent += `作品总数：${works.length}\n\n`;
                 
-                const dataStr = JSON.stringify(exportData, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
+                works.forEach((work, index) => {
+                    textContent += `【${index + 1}】${work.cipai}\n`;
+                    textContent += `作者：${work.author}\n`;
+                    textContent += `创作时间：${new Date(work.createTime).toLocaleString()}\n`;
+                    if (work.createTime !== work.lastModified) {
+                        textContent += `修改时间：${new Date(work.lastModified).toLocaleString()}\n`;
+                    }
+                    textContent += `字数：${work.wordCount}字\n`;
+                    if (work.rhymeGroup) {
+                        const rhymeName = rhymeDatabase[work.rhymeGroup]?.name || '未知';
+                        textContent += `韵部：${rhymeName}\n`;
+                    }
+                    textContent += '\n';
+                    
+                    // 格式化作品内容，每句一行
+                    const lines = work.modifiedContent.split(/[，。；！？]/);
+                    lines.forEach(line => {
+                        if (line.trim()) {
+                            textContent += line.trim() + '\n';
+                        }
+                    });
+                    
+                    textContent += '\n' + '-'.repeat(30) + '\n\n';
+                });
+                
+                // 创建并下载文本文件
+                const blob = new Blob([textContent], { type: 'text/plain; charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `南风填词作品集_${new Date().toISOString().slice(0, 10)}.json`;
+                a.download = `南风填词作品集_${new Date().toISOString().slice(0, 10)}.txt`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                showMessage('作品已导出', 'success');
+                showMessage('作品已导出为文本文件', 'success');
             } catch (error) {
                 console.error('导出失败:', error);
                 showMessage('导出失败: ' + error.message, 'error');
