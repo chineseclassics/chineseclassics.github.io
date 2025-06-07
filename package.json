@@ -1,0 +1,21 @@
+{
+  "name": "chineseclassics-website",
+  "version": "1.0.0",
+  "description": "太虛幻境：書院中文經典數字體驗學習",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "build": "echo 'Static site, no build needed'",
+    "start": "python -m http.server 8000"
+  },
+  "dependencies": {
+    "@vercel/speed-insights": "^1.0.12"
+  },
+  "keywords": [
+    "chinese-classics",
+    "education",
+    "interactive-learning"
+  ],
+  "author": "書院中文經典",
+  "license": "MIT"
+} 

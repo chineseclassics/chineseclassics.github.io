@@ -620,6 +620,317 @@
             background: rgba(0, 0, 0, 0.3);
             z-index: 999;
         }
+        
+        /* === 作品列表相关样式 === */
+        
+        /* 侧边栏标签 */
+        .sidebar-tabs {
+            display: flex;
+            margin-top: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3px;
+            gap: 2px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 标签内容容器 */
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 作品列表容器 */
+        .works-list-container {
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        /* 作品列表头部 */
+        .works-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .works-header h3 {
+            margin: 0;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .works-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .works-actions .btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .works-actions .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .works-actions .btn-danger {
+            border-color: rgba(244, 67, 54, 0.5);
+            background: rgba(244, 67, 54, 0.1);
+        }
+        
+        .works-actions .btn-danger:hover {
+            background: rgba(244, 67, 54, 0.2);
+        }
+        
+        /* 作品网格 */
+        .works-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        /* 作品卡片 */
+        .work-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .work-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(93, 92, 222, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .work-card.current-work {
+            border-color: #5D5CDE;
+            background: rgba(93, 92, 222, 0.1);
+        }
+        
+        .work-card.current-work::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #5D5CDE;
+        }
+        
+        /* 作品卡片头部 */
+        .work-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .work-title {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .cipai-name {
+            font-weight: 600;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .author-name {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        
+        .work-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .btn-icon.btn-danger:hover {
+            background: rgba(244, 67, 54, 0.3);
+            color: #ff6b6b;
+        }
+        
+        /* 作品预览 */
+        .work-preview {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            font-family: "Noto Serif SC", serif;
+        }
+        
+        /* 作品元信息 */
+        .work-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .work-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .work-stats span {
+            display: block;
+        }
+        
+        .work-time {
+            text-align: right;
+            line-height: 1.3;
+        }
+        
+        /* 当前作品指示器 */
+        .current-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #5D5CDE;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* 空状态消息 */
+        .empty-works-message {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* 暗黑模式适配 */
+        .dark-mode .works-header h3 {
+            color: #e6e6e6;
+        }
+        
+        .dark-mode .work-card {
+            background: rgba(40, 40, 55, 0.6);
+            border-color: rgba(60, 60, 75, 0.8);
+        }
+        
+        .dark-mode .work-card:hover {
+            background: rgba(40, 40, 55, 0.8);
+            border-color: rgba(93, 92, 222, 0.6);
+        }
+        
+        .dark-mode .cipai-name {
+            color: #e6e6e6;
+        }
+        
+        .dark-mode .author-name {
+            color: rgba(230, 230, 230, 0.7);
+        }
+        
+        .dark-mode .work-preview {
+            color: rgba(230, 230, 230, 0.8);
+        }
+        
+        .dark-mode .work-meta {
+            color: rgba(230, 230, 230, 0.6);
+        }
+        
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .works-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .works-actions {
+                justify-content: center;
+            }
+            
+            .work-header {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .work-actions {
+                align-self: flex-end;
+            }
+            
+            .work-meta {
+                flex-direction: column;
+                gap: 8px;
+                align-items: stretch;
+            }
+            
+            .work-time {
+                text-align: left;
+            }
+        }
 
         body {
             font-family: "Noto Serif SC", "SimSun", serif;
@@ -2345,9 +2656,16 @@
                 <div class="sidebar-header">
                     <h1 class="app-title">南風填詞</h1>
                     <input type="text" class="search-box" id="searchBox" placeholder="搜索詞牌名稱或作者...">
+                    <div class="sidebar-tabs">
+                        <button class="tab-btn active" onclick="switchSidebarTab('poems')">詞牌</button>
+                        <button class="tab-btn" onclick="switchSidebarTab('works')">我的作品</button>
+                    </div>
                 </div>
-                <div id="poemList" class="poem-list-container">
+                <div id="poemList" class="poem-list-container tab-content active">
                     <!-- 詞作列表將由JavaScript生成 -->
+                </div>
+                <div id="worksContainer" class="works-list-container tab-content">
+                    <!-- 作品列表將由JavaScript生成 -->
                 </div>
             </div>
             
@@ -2458,6 +2776,7 @@
 
                         
                         <div class="controls">
+                            <button class="btn" onclick="saveCurrentWorkQuick()">💾 保存作品</button>
                             <button class="btn" onclick="resetPoem()">還原原作</button>
                             <button class="btn" onclick="copyTextToClipboard()">複製文本</button>
                             <button class="btn" onclick="openPosterGenerator()">生成壁紙</button>
@@ -5319,10 +5638,549 @@
         let currentCipai = null;
         let currentVersion = null;
         let userSelectedRhymeGroup = null; // 用户选择的韵部
+        
+        // === 数据持久化存储功能 ===
+        
+        // 检测localStorage可用性
+        const isStorageAvailable = (function() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return true;
+            } catch (e) {
+                console.log('localStorage不可用，使用内存存储');
+                return false;
+            }
+        })();
+        
+        // 内存存储（作为localStorage的后备）
+        const memoryStorage = {
+            data: {},
+            setItem: function(key, value) {
+                this.data[key] = value;
+            },
+            getItem: function(key) {
+                return this.data[key] || null;
+            },
+            removeItem: function(key) {
+                delete this.data[key];
+            },
+            clear: function() {
+                this.data = {};
+            }
+        };
+        
+        // 安全的存储访问
+        const storage = {
+            setItem: function(key, value) {
+                try {
+                    if (isStorageAvailable) {
+                        localStorage.setItem(key, value);
+                    } else {
+                        memoryStorage.setItem(key, value);
+                    }
+                } catch (e) {
+                    console.error('存储写入失败:', e);
+                    memoryStorage.setItem(key, value);
+                }
+            },
+            getItem: function(key) {
+                try {
+                    if (isStorageAvailable) {
+                        return localStorage.getItem(key);
+                    } else {
+                        return memoryStorage.getItem(key);
+                    }
+                } catch (e) {
+                    console.error('存储读取失败:', e);
+                    return memoryStorage.getItem(key);
+                }
+            },
+            removeItem: function(key) {
+                try {
+                    if (isStorageAvailable) {
+                        localStorage.removeItem(key);
+                    } else {
+                        memoryStorage.removeItem(key);
+                    }
+                } catch (e) {
+                    console.error('存储删除失败:', e);
+                    memoryStorage.removeItem(key);
+                }
+            },
+            clear: function() {
+                try {
+                    if (isStorageAvailable) {
+                        // 只清除我们的数据，不影响其他应用
+                        const keys = Object.keys(localStorage).filter(key => 
+                            key.startsWith('nanfeng_')
+                        );
+                        keys.forEach(key => localStorage.removeItem(key));
+                    } else {
+                        memoryStorage.clear();
+                    }
+                } catch (e) {
+                    console.error('存储清除失败:', e);
+                    memoryStorage.clear();
+                }
+            }
+        };
+        
+        // 自动保存定时器
+        let autoSaveTimer = null;
+        let lastSaveTime = null;
+        
+        // 当前作品唯一ID
+        let currentWorkId = null;
+        
+        // === 数据管理核心功能 ===
+        
+        // 生成唯一ID
+        function generateWorkId() {
+            return 'work_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // 获取当前作品数据
+        function getCurrentWorkData() {
+            if (!currentPoem) return null;
+            
+            return {
+                id: currentWorkId,
+                cipai: currentCipai,
+                version: currentVersion,
+                author: currentAuthor || currentPoem.author,
+                originalContent: currentPoem.content,
+                modifiedContent: getModifiedContent(),
+                modifiedChars: Array.from(modifiedChars).map(span => ({
+                    lineIndex: parseInt(span.dataset.lineIndex),
+                    charIndex: parseInt(span.dataset.charIndex),
+                    originalChar: span.dataset.originalChar,
+                    newChar: span.textContent
+                })),
+                rhymeGroup: userSelectedRhymeGroup,
+                createTime: currentWorkId ? getWorkById(currentWorkId)?.createTime : new Date().toISOString(),
+                lastModified: new Date().toISOString(),
+                wordCount: getModifiedContent().replace(/[，。！？；：、\s]/g, '').length
+            };
+        }
+        
+        // 保存当前作品
+        function saveCurrentWork(showFeedback = true) {
+            const workData = getCurrentWorkData();
+            if (!workData) {
+                if (showFeedback) {
+                    showMessage('没有可保存的作品', 'warning');
+                }
+                return false;
+            }
+            
+            // 如果是新作品，生成ID
+            if (!currentWorkId) {
+                currentWorkId = generateWorkId();
+                workData.id = currentWorkId;
+            }
+            
+            try {
+                // 获取现有作品列表
+                const works = getAllWorks();
+                
+                // 查找是否已存在相同ID的作品
+                const existingIndex = works.findIndex(w => w.id === workData.id);
+                
+                if (existingIndex >= 0) {
+                    // 更新现有作品
+                    works[existingIndex] = workData;
+                } else {
+                    // 添加新作品
+                    works.unshift(workData); // 新作品放在最前面
+                }
+                
+                // 保存到存储
+                storage.setItem('nanfeng_works', JSON.stringify(works));
+                lastSaveTime = new Date();
+                
+                if (showFeedback) {
+                    showMessage('作品已保存', 'success');
+                }
+                
+                // 更新作品列表显示
+                updateWorksList();
+                
+                return true;
+            } catch (error) {
+                console.error('保存作品失败:', error);
+                if (showFeedback) {
+                    showMessage('保存失败: ' + error.message, 'error');
+                }
+                return false;
+            }
+        }
+        
+        // 获取所有作品
+        function getAllWorks() {
+            try {
+                const worksData = storage.getItem('nanfeng_works');
+                return worksData ? JSON.parse(worksData) : [];
+            } catch (error) {
+                console.error('读取作品列表失败:', error);
+                return [];
+            }
+        }
+        
+        // 根据ID获取作品
+        function getWorkById(id) {
+            const works = getAllWorks();
+            return works.find(work => work.id === id);
+        }
+        
+        // 删除作品
+        function deleteWork(id) {
+            try {
+                const works = getAllWorks();
+                const filteredWorks = works.filter(work => work.id !== id);
+                storage.setItem('nanfeng_works', JSON.stringify(filteredWorks));
+                
+                // 如果删除的是当前作品，清空当前状态
+                if (currentWorkId === id) {
+                    currentWorkId = null;
+                }
+                
+                updateWorksList();
+                showMessage('作品已删除', 'success');
+                return true;
+            } catch (error) {
+                console.error('删除作品失败:', error);
+                showMessage('删除失败: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        // 加载作品
+        function loadWork(id) {
+            const work = getWorkById(id);
+            if (!work) {
+                showMessage('作品不存在', 'error');
+                return false;
+            }
+            
+            try {
+                // 确保词牌存在
+                if (!cipaiPatterns[work.cipai] || !cipaiPatterns[work.cipai].versions[work.version]) {
+                    showMessage('词牌数据不存在，无法加载作品', 'error');
+                    return false;
+                }
+                
+                // 设置当前作品信息
+                currentWorkId = work.id;
+                currentCipai = work.cipai;
+                currentVersion = work.version;
+                currentPoem = cipaiPatterns[work.cipai].versions[work.version];
+                currentAuthor = work.author !== currentPoem.author ? work.author : null;
+                userSelectedRhymeGroup = work.rhymeGroup;
+                
+                // 清空修改记录
+                modifiedChars.clear();
+                modifiedCharRecords = [];
+                
+                // 显示诗词内容
+                displayPoem(work.cipai, work.version);
+                
+                // 恢复修改的字符
+                if (work.modifiedChars && work.modifiedChars.length > 0) {
+                    setTimeout(() => {
+                        work.modifiedChars.forEach(mod => {
+                            const span = document.querySelector(`[data-line-index="${mod.lineIndex}"][data-char-index="${mod.charIndex}"]`);
+                            if (span) {
+                                span.textContent = mod.newChar;
+                                span.dataset.originalChar = mod.originalChar;
+                                modifiedChars.add(span);
+                                
+                                // 更新修改记录
+                                const record = {
+                                    lineIndex: mod.lineIndex,
+                                    charIndex: mod.charIndex,
+                                    originalChar: mod.originalChar,
+                                    newChar: mod.newChar,
+                                    timestamp: new Date().toISOString()
+                                };
+                                
+                                const existingIndex = modifiedCharRecords.findIndex(r =>
+                                    r.lineIndex === mod.lineIndex && r.charIndex === mod.charIndex
+                                );
+                                
+                                if (existingIndex >= 0) {
+                                    modifiedCharRecords[existingIndex] = record;
+                                } else {
+                                    modifiedCharRecords.push(record);
+                                }
+                            }
+                        });
+                        
+                        // 更新韵部按钮状态
+                        updateRhymeButtonText();
+                    }, 100);
+                }
+                
+                showMessage('作品已加载', 'success');
+                return true;
+            } catch (error) {
+                console.error('加载作品失败:', error);
+                showMessage('加载失败: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        // 自动保存功能
+        function scheduleAutoSave() {
+            // 清除之前的定时器
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+            
+            // 设置新的定时器（3秒后自动保存）
+            autoSaveTimer = setTimeout(() => {
+                saveCurrentWork(false); // 不显示反馈信息
+            }, 3000);
+        }
+        
+        // 触发自动保存
+        function triggerAutoSave() {
+            // 只有在有实际修改时才自动保存
+            if (modifiedChars.size > 0) {
+                scheduleAutoSave();
+            }
+        }
+        
+        // === 作品列表UI管理 ===
+        
+        // 加载并显示作品列表
+        function loadWorksList() {
+            updateWorksList();
+        }
+        
+        // 更新作品列表显示
+        function updateWorksList() {
+            const worksContainer = document.getElementById('worksContainer');
+            if (!worksContainer) {
+                console.warn('未找到作品容器，可能是UI结构问题');
+                return;
+            }
+            
+            const works = getAllWorks();
+            
+            if (works.length === 0) {
+                worksContainer.innerHTML = `
+                    <div class="empty-works-message">
+                        <div style="text-align: center; padding: 40px 20px; color: #666;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📝</div>
+                            <div style="font-size: 16px; margin-bottom: 8px;">还没有保存的作品</div>
+                            <div style="font-size: 14px; color: #999;">开始填词创作，系统会自动保存您的作品</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const worksHtml = works.map(work => createWorkCard(work)).join('');
+            worksContainer.innerHTML = `
+                <div class="works-header">
+                    <h3>我的作品 (${works.length})</h3>
+                    <div class="works-actions">
+                        <button class="btn btn-sm" onclick="exportAllWorks()">导出作品</button>
+                        <button class="btn btn-sm btn-danger" onclick="clearAllWorks()">清空全部</button>
+                    </div>
+                </div>
+                <div class="works-grid">
+                    ${worksHtml}
+                </div>
+            `;
+        }
+        
+        // 创建作品卡片
+        function createWorkCard(work) {
+            const isCurrentWork = currentWorkId === work.id;
+            const createTime = new Date(work.createTime).toLocaleDateString();
+            const lastModified = new Date(work.lastModified).toLocaleString();
+            const preview = work.modifiedContent.substring(0, 30) + (work.modifiedContent.length > 30 ? '...' : '');
+            
+            return `
+                <div class="work-card ${isCurrentWork ? 'current-work' : ''}" data-work-id="${work.id}">
+                    <div class="work-header">
+                        <div class="work-title">
+                            <span class="cipai-name">${work.cipai}</span>
+                            ${work.author !== work.cipai ? `<span class="author-name">- ${work.author}</span>` : ''}
+                        </div>
+                        <div class="work-actions">
+                            <button class="btn-icon" onclick="loadWork('${work.id}')" title="加载作品">
+                                <i class="fas fa-folder-open"></i>
+                            </button>
+                            <button class="btn-icon" onclick="duplicateWork('${work.id}')" title="复制作品">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="btn-icon btn-danger" onclick="confirmDeleteWork('${work.id}')" title="删除作品">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="work-preview">
+                        ${preview}
+                    </div>
+                    <div class="work-meta">
+                        <div class="work-stats">
+                            <span>${work.wordCount}字</span>
+                            ${work.rhymeGroup ? `<span>韵部: ${rhymeDatabase[work.rhymeGroup]?.name || '未知'}</span>` : ''}
+                        </div>
+                        <div class="work-time">
+                            创建: ${createTime}
+                            ${work.createTime !== work.lastModified ? `<br>修改: ${lastModified}` : ''}
+                        </div>
+                    </div>
+                    ${isCurrentWork ? '<div class="current-indicator">当前作品</div>' : ''}
+                </div>
+            `;
+        }
+        
+        // 复制作品
+        function duplicateWork(id) {
+            const work = getWorkById(id);
+            if (!work) {
+                showMessage('作品不存在', 'error');
+                return;
+            }
+            
+            // 创建副本
+            const duplicate = {
+                ...work,
+                id: generateWorkId(),
+                createTime: new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            };
+            
+            try {
+                const works = getAllWorks();
+                works.unshift(duplicate);
+                storage.setItem('nanfeng_works', JSON.stringify(works));
+                updateWorksList();
+                showMessage('作品已复制', 'success');
+            } catch (error) {
+                console.error('复制作品失败:', error);
+                showMessage('复制失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 确认删除作品
+        function confirmDeleteWork(id) {
+            const work = getWorkById(id);
+            if (!work) return;
+            
+            if (confirm(`确定要删除作品《${work.cipai}》吗？\n此操作无法撤销。`)) {
+                deleteWork(id);
+            }
+        }
+        
+        // 导出所有作品
+        function exportAllWorks() {
+            const works = getAllWorks();
+            if (works.length === 0) {
+                showMessage('没有可导出的作品', 'warning');
+                return;
+            }
+            
+            try {
+                const exportData = {
+                    version: '1.0',
+                    exportTime: new Date().toISOString(),
+                    totalWorks: works.length,
+                    works: works
+                };
+                
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `南风填词作品集_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showMessage('作品已导出', 'success');
+            } catch (error) {
+                console.error('导出失败:', error);
+                showMessage('导出失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 清空所有作品
+        function clearAllWorks() {
+            const works = getAllWorks();
+            if (works.length === 0) {
+                showMessage('没有作品可清空', 'warning');
+                return;
+            }
+            
+            if (confirm(`确定要清空所有 ${works.length} 个作品吗？\n此操作无法撤销！`)) {
+                try {
+                    storage.clear();
+                    currentWorkId = null;
+                    updateWorksList();
+                    showMessage('所有作品已清空', 'success');
+                } catch (error) {
+                    console.error('清空失败:', error);
+                    showMessage('清空失败: ' + error.message, 'error');
+                }
+            }
+        }
+        
+        // 显示消息的简化版本（如果没有showFeedback函数）
+        function showMessage(message, type = 'info') {
+            if (typeof showFeedback === 'function') {
+                showFeedback(message, type);
+            } else {
+                // 简单的alert备用方案
+                alert(message);
+            }
+        }
+        
+        // === 侧边栏标签切换功能 ===
+        
+        // 切换侧边栏标签
+        function switchSidebarTab(tab) {
+            // 更新标签按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新内容显示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            if (tab === 'poems') {
+                document.getElementById('poemList').classList.add('active');
+            } else if (tab === 'works') {
+                document.getElementById('worksContainer').classList.add('active');
+                // 切换到作品列表时刷新数据
+                updateWorksList();
+            }
+        }
+        
+        // 保存当前作品的快捷按钮
+        function saveCurrentWorkQuick() {
+            if (currentPoem) {
+                saveCurrentWork(true);
+            } else {
+                showMessage('请先选择一首词作', 'warning');
+            }
+        }
 
         // 初始化頁面
         function initPage() {
             renderPoemList();
+            loadWorksList();
             
             // 搜索功能
             const searchBox = document.getElementById('searchBox');
@@ -6199,7 +7057,8 @@
                         lineIndex: lineIndex,
                         charIndex: charIndex,
                         originalChar: originalChar,
-                        newChar: userInput
+                        newChar: userInput,
+                        timestamp: new Date().toISOString()
                     };
                     
                     // 更新或添加修改记录
@@ -6212,6 +7071,9 @@
                     } else {
                         modifiedCharRecords.push(record);
                     }
+                    
+                    // 触发自动保存
+                    triggerAutoSave();
                 } else {
                     // 用户没有输入内容，不记录为修改
                     span.classList.remove('modified');
@@ -6224,6 +7086,11 @@
                     
                     if (recordIndex >= 0) {
                         modifiedCharRecords.splice(recordIndex, 1);
+                    }
+                    
+                    // 如果有修改则触发自动保存
+                    if (modifiedChars.size > 0) {
+                        triggerAutoSave();
                     }
                 }
                 
@@ -8040,6 +8907,34 @@
                     correctCharsCount--;
                     span.dataset.hasBeenCorrect = 'false';
                 }
+            }
+            
+            // 记录修改（用于数据保存）
+            if (!isReciteChallengeMode) { // 非背诵模式才记录修改
+                span.classList.add('modified');
+                modifiedChars.add(span);
+                
+                // 保存修改记录
+                const record = {
+                    lineIndex: parseInt(span.dataset.lineIndex),
+                    charIndex: parseInt(span.dataset.charIndex),
+                    originalChar: originalChar,
+                    newChar: selectedChar,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const existingRecordIndex = modifiedCharRecords.findIndex(r => 
+                    r.lineIndex === record.lineIndex && r.charIndex === record.charIndex
+                );
+                
+                if (existingRecordIndex >= 0) {
+                    modifiedCharRecords[existingRecordIndex] = record;
+                } else {
+                    modifiedCharRecords.push(record);
+                }
+                
+                // 触发自动保存
+                triggerAutoSave();
             }
             
             // 关闭选择器
