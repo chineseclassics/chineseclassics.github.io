@@ -674,6 +674,7 @@
             padding: 15px;
             flex: 1;
             overflow-y: auto;
+            height: calc(100% - 150px); /* 设置固定高度以启用滚动，与词牌列表保持一致 */
         }
         
         /* 作品列表头部 */
@@ -683,12 +684,12 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid #e0e0e0;
         }
         
         .works-header h3 {
             margin: 0;
-            color: white;
+            color: #333;
             font-size: 18px;
             font-weight: 600;
         }
@@ -702,24 +703,29 @@
             padding: 6px 12px;
             font-size: 12px;
             border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            border: 1px solid #e0e0e0;
+            background: white;
+            color: #333;
             cursor: pointer;
             transition: all 0.3s ease;
         }
         
         .works-actions .btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: #5D5CDE;
+            color: white;
+            border-color: #5D5CDE;
         }
         
         .works-actions .btn-danger {
-            border-color: rgba(244, 67, 54, 0.5);
-            background: rgba(244, 67, 54, 0.1);
+            border-color: #ff6b6b;
+            background: white;
+            color: #ff6b6b;
         }
         
         .works-actions .btn-danger:hover {
-            background: rgba(244, 67, 54, 0.2);
+            background: #ff6b6b;
+            color: white;
+            border-color: #ff6b6b;
         }
         
         /* 作品网格 */
@@ -919,8 +925,34 @@
         }
         
         /* 暗黑模式适配 */
+        .dark-mode .works-header {
+            border-bottom-color: rgba(224, 224, 224, 0.2);
+        }
+        
         .dark-mode .works-header h3 {
             color: #e6e6e6;
+        }
+        
+        .dark-mode .works-actions .btn {
+            border-color: rgba(224, 224, 224, 0.3);
+            background: rgba(60, 60, 75, 0.8);
+            color: #e6e6e6;
+        }
+        
+        .dark-mode .works-actions .btn:hover {
+            background: rgba(93, 92, 222, 0.3);
+            border-color: #5D5CDE;
+        }
+        
+        .dark-mode .works-actions .btn-danger {
+            border-color: rgba(244, 67, 54, 0.5);
+            background: rgba(244, 67, 54, 0.2);
+            color: #ff6b6b;
+        }
+        
+        .dark-mode .works-actions .btn-danger:hover {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: rgba(244, 67, 54, 0.7);
         }
         
         .dark-mode .work-card {
