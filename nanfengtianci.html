@@ -5884,6 +5884,22 @@
                 // 显示诗词内容
                 displayPoem(work.cipai, work.version);
                 
+                // 在移动端切换到编辑视图
+                if (window.innerWidth <= 768) {
+                    const container = document.querySelector('.container');
+                    if (container && !container.classList.contains('mobile-view-edit')) {
+                        container.classList.remove('mobile-view-list');
+                        container.classList.add('mobile-view-edit');
+                        window.nanfengViewMode = 'edit';
+                        
+                        // 更新视图切换按钮文本
+                        const cipaiToggleText = document.getElementById('cipaiToggleText');
+                        if (cipaiToggleText) {
+                            cipaiToggleText.textContent = "查看詞牌";
+                        }
+                    }
+                }
+                
                 // 恢复修改的字符
                 if (work.modifiedChars && work.modifiedChars.length > 0) {
                     setTimeout(() => {
@@ -6003,20 +6019,20 @@
             const preview = work.modifiedContent.substring(0, 30) + (work.modifiedContent.length > 30 ? '...' : '');
             
             return `
-                <div class="work-card ${isCurrentWork ? 'current-work' : ''}" data-work-id="${work.id}">
+                <div class="work-card ${isCurrentWork ? 'current-work' : ''}" data-work-id="${work.id}" onclick="loadWork('${work.id}')" style="cursor: pointer;">
                     <div class="work-header">
                         <div class="work-title">
                             <span class="cipai-name">${work.cipai}</span>
                             ${work.author !== work.cipai ? `<span class="author-name">- ${work.author}</span>` : ''}
                         </div>
                         <div class="work-actions">
-                            <button class="btn-icon" onclick="loadWork('${work.id}')" title="加载作品">
+                            <button class="btn-icon" onclick="event.stopPropagation(); loadWork('${work.id}')" title="加载作品">
                                 <i class="fas fa-folder-open"></i>
                             </button>
-                            <button class="btn-icon" onclick="duplicateWork('${work.id}')" title="复制作品">
+                            <button class="btn-icon" onclick="event.stopPropagation(); duplicateWork('${work.id}')" title="复制作品">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <button class="btn-icon btn-danger" onclick="confirmDeleteWork('${work.id}')" title="删除作品">
+                            <button class="btn-icon btn-danger" onclick="event.stopPropagation(); confirmDeleteWork('${work.id}')" title="删除作品">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
