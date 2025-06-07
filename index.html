@@ -4,6 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>太虛幻境：書院中文經典數字體驗學習</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="太虛幻境是書院中文經典的數字化學習平台，通過互動遊戲和創新體驗探索中國古典文學之美。">
+    <meta name="keywords" content="中文經典,古典文學,詩詞,教育遊戲,數字學習,太虛幻境">
+    <meta name="author" content="書院中文經典">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://chineseclassics.github.io/">
+    <meta property="og:title" content="太虛幻境：書院中文經典數字體驗學習">
+    <meta property="og:description" content="探索中國古典文學的數字化學習平台">
+    <meta property="og:image" content="https://chineseclassics.github.io/images/cclogo.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://chineseclassics.github.io/">
+    <meta property="twitter:title" content="太虛幻境：書院中文經典數字體驗學習">
+    <meta property="twitter:description" content="探索中國古典文學的數字化學習平台">
+    <meta property="twitter:image" content="https://chineseclassics.github.io/images/cclogo.png">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
+    <link rel="preload" href="https://chineseclassics.github.io/images/cclogo.png" as="image">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -32,14 +57,28 @@
     </script>
     <style>
         .app-icon {
-            transition: transform 0.2s ease-in-out;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            position: relative;
         }
         .app-icon:hover {
-            transform: scale(1.05);
+            transform: translateY(-2px) scale(1.05);
         }
         .app-icon:active {
-            transform: scale(0.95);
+            transform: translateY(0) scale(0.98);
+        }
+        .app-icon:focus {
+            outline: 2px solid #5D5CDE;
+            outline-offset: 2px;
+        }
+        
+        /* 優化的卡片陰影 */
+        .app-icon .shadow-lg {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        .app-icon:hover .shadow-lg {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
         
         .app-container {
@@ -552,12 +591,102 @@
                 grid-template-columns: repeat(6, 1fr);
             }
         }
+        
+        /* 優化的加載動畫 */
+        .enhanced-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(93, 92, 222, 0.1);
+            border-top: 3px solid #5D5CDE;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #6b7280;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        /* 骨架屏動畫 */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+        
+        .dark .skeleton {
+            background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+            background-size: 200% 100%;
+        }
+        
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* 改進的錯誤狀態 */
+        .error-container {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+        .error-container i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #f59e0b;
+        }
+        
+        /* 鍵盤導航增強 */
+        .app-icon:focus-visible {
+            outline: 2px solid #5D5CDE;
+            outline-offset: 2px;
+            border-radius: 0.5rem;
+        }
+        
+        /* 無障礙訪問優化 */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
-    <!-- 欢迎弹窗 -->
-    <div id="welcomeModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm opacity-0 transform scale-95 transition-all duration-300 ease-out">
+    <!-- 欢迎弹窗 - 優化版 -->
+    <div id="welcomeModal" 
+         class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm opacity-0 transform scale-95 transition-all duration-300 ease-out"
+         role="dialog" 
+         aria-labelledby="welcomeTitle" 
+         aria-describedby="welcomeDescription"
+         aria-modal="true">
         <div class="relative bg-gradient-to-br from-stone-50 via-amber-50/50 to-rose-50/30 dark:from-stone-800 dark:via-stone-700 dark:to-rose-900/30 rounded-3xl max-w-2xl w-full shadow-2xl border border-stone-200/60 dark:border-stone-600/60 overflow-hidden">
+            <!-- 關閉按鈕 -->
+            <button id="skipWelcomeBtn" 
+                    class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black bg-opacity-20 hover:bg-opacity-40 text-white hover:text-gray-200 transition-all duration-200 flex items-center justify-center backdrop-blur-sm"
+                    aria-label="跳過歡迎訊息">
+                <i class="fas fa-times text-sm"></i>
+            </button>
             <!-- 装饰性边框 -->
             <div class="absolute inset-0 bg-gradient-to-br from-amber-50/20 via-transparent to-rose-50/20 pointer-events-none"></div>
             
@@ -566,14 +695,14 @@
                 <!-- 标题装饰 -->
                 <div class="mb-8">
                     <div class="w-16 h-1 bg-gradient-to-r from-transparent via-stone-400/60 to-transparent mx-auto mb-4"></div>
-                    <h2 class="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-600 via-amber-700/80 to-stone-600 dark:from-stone-300 dark:via-amber-400/70 dark:to-stone-300">
+                    <h2 id="welcomeTitle" class="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-600 via-amber-700/80 to-stone-600 dark:from-stone-300 dark:via-amber-400/70 dark:to-stone-300">
                         太虛幻境
                     </h2>
                     <div class="w-16 h-1 bg-gradient-to-r from-transparent via-stone-400/60 to-transparent mx-auto mt-4"></div>
                 </div>
 
                 <!-- 诗词部分 -->
-                <div class="mb-8 space-y-2 text-lg md:text-xl leading-relaxed text-stone-700 dark:text-stone-200 font-serif">
+                <div id="welcomeDescription" class="mb-8 space-y-2 text-lg md:text-xl leading-relaxed text-stone-700 dark:text-stone-200 font-serif" role="poem">
                     <p class="hover:text-amber-700/80 dark:hover:text-amber-300/80 transition-colors duration-300">方寸靈臺入太虛，</p>
                     <p class="hover:text-amber-700/80 dark:hover:text-amber-300/80 transition-colors duration-300">詩魄劍魂幻境居。</p>
                     <p class="hover:text-amber-700/80 dark:hover:text-amber-300/80 transition-colors duration-300">玉屏一點越千載，</p>
@@ -590,11 +719,20 @@
                     <p>縱代碼茫茫，bug時現，莫謂虛而不實，蓋經典之義理情懷，無關今古，真實不虛。</p>
                 </div>
 
-                <!-- 开始探索按钮 -->
-                <button id="startExploreBtn" class="group relative inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-white bg-gradient-to-r from-stone-500/80 to-amber-600/80 hover:from-amber-600/90 hover:to-stone-600/90 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out">
-                    <span class="relative z-10">開始探索</span>
-                    <div class="absolute inset-0 bg-gradient-to-r from-amber-400/60 to-stone-500/60 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
-                </button>
+                <!-- 开始探索按钮和选项 -->
+                <div class="flex flex-col items-center space-y-4">
+                    <button id="startExploreBtn" 
+                            class="group relative inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-white bg-gradient-to-r from-stone-500/80 to-amber-600/80 hover:from-amber-600/90 hover:to-stone-600/90 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+                        <span class="relative z-10">開始探索</span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-amber-400/60 to-stone-500/60 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+                    </button>
+                    
+                    <!-- 記憶選項 -->
+                    <label class="flex items-center space-x-2 text-sm text-stone-600 dark:text-stone-400 cursor-pointer">
+                        <input type="checkbox" id="rememberChoice" class="w-4 h-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500 focus:ring-2">
+                        <span>下次訪問時不再顯示此歡迎頁</span>
+                    </label>
+                </div>
             </div>
 
             <!-- 底部装饰 -->
@@ -689,23 +827,33 @@
             <div id="appContainer" class="app-container w-full relative">
                 <iframe id="appFrame" class="w-full h-full border-0" src="about:blank"></iframe>
                 
-                <!-- 加载状态 -->
+                <!-- 優化的加载状态 -->
                 <div id="loadingState" class="absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
-                    <div class="text-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p class="text-gray-600 dark:text-gray-400">正在加載應用...</p>
+                    <div class="enhanced-loading text-center">
+                        <div class="loading-spinner mb-4"></div>
+                        <div class="loading-text">正在加載應用...</div>
+                        <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                            首次載入可能需要幾秒鐘時間
+                        </div>
                     </div>
                 </div>
                 
-                <!-- 错误状态 -->
+                <!-- 優化的错误状态 -->
                 <div id="errorState" class="hidden absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
-                    <div class="text-center max-w-md mx-auto p-6">
-                        <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+                    <div class="error-container max-w-md mx-auto">
+                        <i class="fas fa-exclamation-triangle"></i>
                         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">無法載入應用</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-4">該應用可能不支援嵌入模式</p>
-                        <button id="openInNewTabBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                            在新標籤頁打開
-                        </button>
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">該應用可能不支援嵌入模式或網路連線有問題</p>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                            <button id="openInNewTabBtn" 
+                                    class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                                在新標籤頁打開
+                            </button>
+                            <button id="retryLoadBtn" 
+                                    class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                重新嘗試
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -959,26 +1107,28 @@
             }
         }
 
-        // 渲染应用图标
+        // 渲染應用圖標 - 優化版
         function renderAppIcon(app, isCompact = false) {
             const size = isCompact ? 'w-12 h-12' : 'aspect-square';
             const iconSize = isCompact ? 'text-xl' : 'text-4xl';
             const textSize = isCompact ? 'text-xs' : 'font-medium';
             
             return `
-                <div class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200 relative" 
-                     data-app-id="${app.id}" 
-                     onclick="openApp('${app.id}')"
-                     onmouseenter="handleMouseEnter(event, '${app.id}')"
-                     onmouseleave="handleMouseLeave()"
-                     ontouchstart="handleTouchStart(event, '${app.id}')"
-                     ontouchend="handleTouchEnd(event, '${app.id}')"
-                     ontouchmove="handleTouchMove()">
+                <button class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200 relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl" 
+                        data-app-id="${app.id}" 
+                        onclick="openApp('${app.id}')"
+                        onmouseenter="handleMouseEnter(event, '${app.id}')"
+                        onmouseleave="handleMouseLeave()"
+                        ontouchstart="handleTouchStart(event, '${app.id}')"
+                        ontouchend="handleTouchEnd(event, '${app.id}')"
+                        ontouchmove="handleTouchMove()"
+                        aria-label="打開 ${app.name} 應用"
+                        title="${app.description || app.name}">
                     <div class="bg-gradient-to-br ${app.gradient} rounded-2xl p-4 ${size} flex items-center justify-center shadow-lg">
-                        <i class="${app.icon} text-white ${iconSize}"></i>
+                        <i class="${app.icon} text-white ${iconSize}" aria-hidden="true"></i>
                     </div>
                     <p class="text-center mt-2 ${textSize}">${app.name}</p>
-                </div>
+                </button>
             `;
         }
 
@@ -1142,13 +1292,25 @@
             hideAppSwitcher();
         }
 
-        // 显示错误状态
+        // 顯示錯誤狀態 - 優化版
         function showError() {
             loadingState.classList.add('hidden');
             errorState.classList.remove('hidden');
             
+            // 在新標籤頁打開
             document.getElementById('openInNewTabBtn').onclick = () => {
                 window.open(currentApp.url, '_blank');
+            };
+            
+            // 重新嘗試載入
+            document.getElementById('retryLoadBtn').onclick = () => {
+                errorState.classList.add('hidden');
+                loadingState.classList.remove('hidden');
+                
+                // 重新載入iframe
+                setTimeout(() => {
+                    appFrame.src = currentApp.url + '?retry=' + Date.now();
+                }, 500);
             };
         }
 
@@ -1203,30 +1365,55 @@
             return window.innerWidth <= 768;
         }
 
-        // 欢迎弹窗控制
+        // 歡迎弹窗控制 - 優化版
         const welcomeModal = document.getElementById('welcomeModal');
         const startExploreBtn = document.getElementById('startExploreBtn');
+        const skipWelcomeBtn = document.getElementById('skipWelcomeBtn');
+        const rememberChoice = document.getElementById('rememberChoice');
 
-        // 点击开始探索按钮
-        startExploreBtn.onclick = () => {
+        // 檢查是否應該顯示歡迎弹窗
+        function shouldShowWelcome() {
+            const skipWelcome = localStorage.getItem('skipWelcome');
+            return skipWelcome !== 'true';
+        }
+
+        // 隱藏歡迎弹窗
+        function hideWelcomeModal() {
+            // 如果勾選了記憶選項，保存到localStorage
+            if (rememberChoice.checked) {
+                localStorage.setItem('skipWelcome', 'true');
+            }
+            
             welcomeModal.style.opacity = '0';
             welcomeModal.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 welcomeModal.style.display = 'none';
-                document.body.style.overflow = ''; // 恢复滚动
+                document.body.style.overflow = ''; // 恢復滾動
             }, 300);
-        };
+        }
 
-        // 页面加载时显示欢迎弹窗
+        // 點擊開始探索按鈕
+        startExploreBtn.onclick = hideWelcomeModal;
+        
+        // 點擊跳過按鈕
+        skipWelcomeBtn.onclick = hideWelcomeModal;
+
+        // 頁面加載時的邏輯 - 優化版
         document.addEventListener('DOMContentLoaded', () => {
-            // 防止背景滚动
-            document.body.style.overflow = 'hidden';
-            
-            // 延迟300ms显示动画，让页面先渲染
-            setTimeout(() => {
-                welcomeModal.style.opacity = '1';
-                welcomeModal.style.transform = 'scale(1)';
-            }, 300);
+            // 檢查是否需要顯示歡迎弹窗
+            if (shouldShowWelcome()) {
+                // 防止背景滾動
+                document.body.style.overflow = 'hidden';
+                
+                // 延遲300ms顯示動畫，讓頁面先渲染
+                setTimeout(() => {
+                    welcomeModal.style.opacity = '1';
+                    welcomeModal.style.transform = 'scale(1)';
+                }, 300);
+            } else {
+                // 如果不需要顯示歡迎弹窗，直接隱藏
+                welcomeModal.style.display = 'none';
+            }
         });
 
         // 阻止ESC键关闭欢迎弹窗，因为这是首次访问必看的内容
@@ -1240,8 +1427,63 @@
             }
         });
 
+        // 鍵盤導航支援
+        document.addEventListener('keydown', (e) => {
+            // ESC鍵處理
+            if (e.key === 'Escape') {
+                // 優先處理應用切換器
+                if (appSwitcherModal.classList.contains('switcher-modal-show')) {
+                    hideAppSwitcher();
+                    return;
+                }
+                
+                // 如果在應用視圖中，返回首頁
+                if (currentView === 'app') {
+                    showHome();
+                    return;
+                }
+            }
+            
+            // Enter或Space鍵處理聚焦的應用圖標
+            if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('app-icon')) {
+                e.preventDefault();
+                const appId = e.target.getAttribute('data-app-id');
+                if (appId) {
+                    openApp(appId);
+                }
+            }
+        });
+
+        // 性能優化：使用Intersection Observer懶載入應用描述
+        const observerOptions = {
+            root: null,
+            rootMargin: '50px',
+            threshold: 0.1
+        };
+
+        const appIconObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const appIcon = entry.target;
+                    const appId = appIcon.getAttribute('data-app-id');
+                    const app = apps.find(a => a.id === appId);
+                    
+                    if (app && app.description) {
+                        appIcon.setAttribute('data-loaded', 'true');
+                    }
+                }
+            });
+        }, observerOptions);
+
         // 初始化
         renderApps();
+        
+        // 觀察所有應用圖標
+        setTimeout(() => {
+            document.querySelectorAll('.app-icon').forEach(icon => {
+                appIconObserver.observe(icon);
+            });
+        }, 100);
     </script>
 </body>
 </html>
