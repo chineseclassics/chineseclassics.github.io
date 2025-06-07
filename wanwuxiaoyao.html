@@ -868,9 +868,81 @@
         radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
       animation: pulse-glow 5s infinite ease-in-out;
     }
+
+    /* 通用按钮优化 */
+    button {
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+    }
+
+    button:not(:disabled):active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* 按钮点击效果 */
+    button:not(:disabled)::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    button:not(:disabled):active::after {
+      width: 300px;
+      height: 300px;
+    }
+
+    /* 加载状态提示 */
+    .loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .loading::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid transparent;
+      border-top: 2px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="bg-white dark:bg-dark-bg text-gray-800 dark:text-dark-text">
+    <!-- 加载指示器 -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <p class="text-gray-700 dark:text-gray-300">載入中...</p>
+      </div>
+    </div>
+
     <!-- 主遊戲容器 -->
     <div id="game-container" class="max-w-4xl mx-auto px-4 py-6 min-h-screen flex flex-col">
       
@@ -897,29 +969,46 @@
       </div>
       
       <!-- 章節導航 -->
-      <div class="mb-6 overflow-x-auto">
-        <div class="flex space-x-2 md:space-x-4 min-w-max">
-          <button class="chapter-btn px-3 py-2 rounded-lg bg-primary text-white text-sm md:text-base" data-chapter="intro">
-            序章: 莊周夢蝶
-          </button>
-          <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base" data-chapter="ch1" disabled>
-            一章: 子非魚
-          </button>
-          <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base" data-chapter="ch2" disabled>
-            二章: 北冥有魚
-          </button>
-          <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base" data-chapter="ch3" disabled>
-            三章: 鴟得腐鼠
-          </button>
-          <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base" data-chapter="ch4" disabled>
-            四章: 蝸角之爭
-          </button>
-          <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base" data-chapter="ch5" disabled>
-            五章: 朝菌與大椿
-          </button>
-          <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base" data-chapter="epilogue" disabled>
-            終章: 渾沌復生
-          </button>
+      <div class="mb-6">
+        <!-- 移动端章节选择器 -->
+        <div class="md:hidden">
+          <label for="chapter-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">選擇章節：</label>
+          <select id="chapter-select" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="intro">序章: 莊周夢蝶</option>
+            <option value="ch1" disabled>一章: 子非魚</option>
+            <option value="ch2" disabled>二章: 北冥有魚</option>
+            <option value="ch3" disabled>三章: 鴟得腐鼠</option>
+            <option value="ch4" disabled>四章: 蝸角之爭</option>
+            <option value="ch5" disabled>五章: 朝菌與大椿</option>
+            <option value="epilogue" disabled>終章: 渾沌復生</option>
+          </select>
+        </div>
+        
+        <!-- 桌面端章节按钮 -->
+        <div class="hidden md:block overflow-x-auto">
+          <div class="flex space-x-2 md:space-x-4 min-w-max">
+            <button class="chapter-btn px-3 py-2 rounded-lg bg-primary text-white text-sm md:text-base hover:bg-opacity-90 active:scale-95 transition-all duration-200" data-chapter="intro">
+              序章: 莊周夢蝶
+            </button>
+            <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all duration-200" data-chapter="ch1" disabled>
+              一章: 子非魚
+            </button>
+            <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all duration-200" data-chapter="ch2" disabled>
+              二章: 北冥有魚
+            </button>
+            <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all duration-200" data-chapter="ch3" disabled>
+              三章: 鴟得腐鼠
+            </button>
+            <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all duration-200" data-chapter="ch4" disabled>
+              四章: 蝸角之爭
+            </button>
+            <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all duration-200" data-chapter="ch5" disabled>
+              五章: 朝菌與大椿
+            </button>
+            <button class="chapter-btn px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all duration-200" data-chapter="epilogue" disabled>
+              終章: 渾沌復生
+            </button>
+          </div>
         </div>
       </div>
       
@@ -944,7 +1033,7 @@
                   <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm italic">「幫助我找回七竅的封印，修復我的完整，萬物才能重獲物化之道，達到逍遙的境界。」</p>
                 </div>
                 <div class="text-center">
-                  <button id="start-journey" class="bg-primary hover:bg-opacity-90 text-white px-6 py-2 rounded-lg font-medium transition">踏上尋找渾沌之旅</button>
+                  <button id="start-journey" class="bg-primary hover:bg-opacity-90 active:scale-95 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl">踏上尋找渾沌之旅</button>
                 </div>
               </div>
             </div>
@@ -3520,15 +3609,27 @@
         // 初始化章節按鈕狀態
         updateChapterButtons();
         
+        // 初始化移动端章节选择器
+        setupMobileChapterSelector();
+        updateMobileChapterSelector();
+        
         // 為斷句練習生成互動句子
         setupInteractiveSentence('intro');
+        
+        // 隐藏初始加载
+        hideLoading();
       }
       
       // 設置事件監聽器
       function setupEventListeners() {
         // 起始旅程按鈕
         document.getElementById('start-journey').addEventListener('click', function() {
-          showScene('scene-transformation');
+          const button = this;
+          setButtonLoading(button, true);
+          setTimeout(() => {
+            showScene('scene-transformation');
+            setButtonLoading(button, false);
+          }, 500);
         });
         
         // 形態選擇器
@@ -4383,6 +4484,9 @@
             btn.setAttribute('disabled', '');
           }
         });
+        
+        // 同时更新移动端选择器
+        updateMobileChapterSelector();
       }
       
       // 設置互動式斷句練習
@@ -4567,6 +4671,66 @@
         
         // 顯示初始場景
         showScene('scene-intro');
+      }
+
+      // 加载状态管理
+      function showLoading() {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+      }
+
+      function hideLoading() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+
+      // 添加按钮加载状态
+      function setButtonLoading(button, loading = true) {
+        if (loading) {
+          button.classList.add('loading');
+          button.disabled = true;
+        } else {
+          button.classList.remove('loading');
+          button.disabled = false;
+        }
+      }
+
+      // 优化场景转换
+      function showSceneWithLoading(sceneId, delay = 300) {
+        showLoading();
+        setTimeout(() => {
+          showScene(sceneId);
+          hideLoading();
+        }, delay);
+      }
+
+      // 移动端章节选择器支持
+      function setupMobileChapterSelector() {
+        const chapterSelect = document.getElementById('chapter-select');
+        if (chapterSelect) {
+          chapterSelect.addEventListener('change', function() {
+            const selectedChapter = this.value;
+            const chapterBtn = document.querySelector(`[data-chapter="${selectedChapter}"]`);
+            if (chapterBtn && !chapterBtn.disabled) {
+              chapterBtn.click();
+            }
+          });
+        }
+      }
+
+      // 更新移动端选择器状态
+      function updateMobileChapterSelector() {
+        const chapterSelect = document.getElementById('chapter-select');
+        if (chapterSelect) {
+          Array.from(chapterSelect.options).forEach(option => {
+            const chapterValue = option.value;
+            if (gameState.unlockedChapters.includes(chapterValue)) {
+              option.disabled = false;
+            } else {
+              option.disabled = true;
+            }
+          });
+          // 更新当前选中值
+          chapterSelect.value = gameState.currentChapter || 'intro';
+        }
       }
     </script>
   </body>
