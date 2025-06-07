@@ -2366,6 +2366,97 @@
             showChoiceHints: false // 默認不顯示選項提示
         };
 
+        // localStorage數據持久化功能
+        const STORAGE_KEY = 'cikezhidao_gameState';
+        
+        // 檢測localStorage可用性
+        function isLocalStorageAvailable() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return true;
+            } catch (e) {
+                console.log('localStorage不可用，遊戲數據將只在當前會話中保存');
+                return false;
+            }
+        }
+        
+        // 保存遊戲狀態到localStorage
+        function saveGameState() {
+            if (!isLocalStorageAvailable()) return;
+            
+            try {
+                // 創建要保存的狀態副本，排除當前遊戲會話相關的臨時數據
+                const stateToSave = {
+                    completedEndings: gameState.completedEndings,
+                    unlockedAchievements: gameState.unlockedAchievements,
+                    unlockedHints: gameState.unlockedHints,
+                    specialEndingProgress: gameState.specialEndingProgress,
+                    endingTypeStats: gameState.endingTypeStats,
+                    decisionsHistory: gameState.decisionsHistory,
+                    hasSeenTimedChoice: gameState.hasSeenTimedChoice,
+                    soundEnabled: gameState.soundEnabled,
+                    unlockedCharacters: gameState.unlockedCharacters,
+                    acquiredSpirits: gameState.acquiredSpirits,
+                    showChoiceHints: gameState.showChoiceHints,
+                    // 添加保存時間戳用於調試
+                    lastSaved: new Date().toISOString()
+                };
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+                console.log('遊戲進度已保存');
+            } catch (error) {
+                console.error('保存遊戲狀態失敗:', error);
+            }
+        }
+        
+        // 從localStorage加載遊戲狀態
+        function loadGameState() {
+            if (!isLocalStorageAvailable()) return;
+            
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    
+                    // 合併保存的數據到當前遊戲狀態
+                    gameState.completedEndings = parsedData.completedEndings || gameState.completedEndings;
+                    gameState.unlockedAchievements = parsedData.unlockedAchievements || [];
+                    gameState.unlockedHints = parsedData.unlockedHints || {};
+                    gameState.specialEndingProgress = parsedData.specialEndingProgress || gameState.specialEndingProgress;
+                    gameState.endingTypeStats = parsedData.endingTypeStats || gameState.endingTypeStats;
+                    gameState.decisionsHistory = parsedData.decisionsHistory || {};
+                    gameState.hasSeenTimedChoice = parsedData.hasSeenTimedChoice || false;
+                    gameState.soundEnabled = parsedData.soundEnabled !== undefined ? parsedData.soundEnabled : true;
+                    gameState.unlockedCharacters = parsedData.unlockedCharacters || ["cao-mo"];
+                    gameState.acquiredSpirits = parsedData.acquiredSpirits || [];
+                    gameState.showChoiceHints = parsedData.showChoiceHints || false;
+                    
+                    console.log('遊戲進度已載入');
+                    if (parsedData.lastSaved) {
+                        console.log('上次保存時間:', parsedData.lastSaved);
+                    }
+                } else {
+                    console.log('沒有找到保存的遊戲數據，使用默認設置');
+                }
+            } catch (error) {
+                console.error('載入遊戲狀態失敗:', error);
+                console.log('使用默認遊戲設置');
+            }
+        }
+        
+        // 清除保存的遊戲數據（可用於調試或重置）
+        function clearSavedGame() {
+            if (!isLocalStorageAvailable()) return;
+            
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+                console.log('已清除保存的遊戲數據');
+            } catch (error) {
+                console.error('清除遊戲數據失敗:', error);
+            }
+        }
+
         // 成就系統定義
         const achievements = [
             {
@@ -3123,6 +3214,9 @@
                 toggleCheckbox.checked = gameState.showChoiceHints;
             }
             
+            // 保存設置
+            saveGameState();
+            
             // 如果當前有選項顯示，則重新渲染選項以更新提示
             if (gameState.currentScenario && gameState.currentScenario.choices) {
                 const choicesContainer = document.getElementById('choices-container');
@@ -3163,6 +3257,9 @@
 
         // 初始化遊戲
         function initGame() {
+            // 首先載入保存的遊戲數據
+            loadGameState();
+            
             // 計算每個角色的總結局數
             updateEndingCounts();
             
@@ -3426,14 +3523,19 @@
                 
                 if (currentIndex < characterOrder.length - 1) {
                     const nextCharacter = characterOrder[currentIndex + 1];
-                    if (!gameState.unlockedCharacters.includes(nextCharacter)) {
-                        gameState.unlockedCharacters.push(nextCharacter);
-                        showCharacterUnlockNotification(nextCharacter);
-                    }
+                                    if (!gameState.unlockedCharacters.includes(nextCharacter)) {
+                    gameState.unlockedCharacters.push(nextCharacter);
+                    showCharacterUnlockNotification(nextCharacter);
+                    // 保存角色解鎖狀態
+                    saveGameState();
+                }
                 }
                 
                 // 顯示獲得精神通知
                 showSpiritAcquiredNotification(characterId);
+                
+                // 保存刺客精神獲得狀態
+                saveGameState();
                 
                 // 更新角色卡片顯示
                 updateCharacterCards();
@@ -4026,6 +4128,9 @@
             
             // 使用通知隊列顯示成就通知
             notificationQueue.add('achievement', achievement.name);
+            
+            // 保存遊戲狀態
+            saveGameState();
         }
 
         // 不需要在這裡設置點擊事件，由updateCharacterCards函數處理
@@ -4073,6 +4178,9 @@
             
             // 檢查特殊結局條件
             checkSpecialEndingConditions(characterId, nextId, choiceText);
+            
+            // 保存決策記錄
+            saveGameState();
             
             // 立即隱藏知識點和選項，確保在場景轉換時不會顯示上一個場景的元素
             const knowledgePoint = document.getElementById('knowledge-point');
@@ -4234,6 +4342,9 @@
                 
                 // 檢查是否解鎖刺客精神和新角色
                 checkSpiritUnlock(characterId, finalEndingId);
+                
+                // 保存遊戲狀態
+                saveGameState();
             }
             
             // 平滑滾動到頂部
@@ -4468,6 +4579,18 @@
         // DOM 加載完成後初始化遊戲
         document.addEventListener('DOMContentLoaded', function() {
             initGame();
+        });
+        
+        // 頁面卸載前自動保存遊戲狀態
+        window.addEventListener('beforeunload', function() {
+            saveGameState();
+        });
+        
+        // 頁面隱藏時保存（針對移動設備和標籤切換）
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                saveGameState();
+            }
         });
     </script>
 </body>
