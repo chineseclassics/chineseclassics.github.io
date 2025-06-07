@@ -4,7 +4,7 @@
     <!-- 移除了CSP定義 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>南風填詞</title>
+    <title>古典填詞工具 - 基於欽定詞譜</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css" />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <!-- 添加更多字體資源，提升海報效果 -->
@@ -2223,6 +2223,106 @@
             font-size: 10px;
             font-weight: bold;
         }
+        /* 评价结果窗口样式优化 */
+        .evaluation-section-title {
+            color: #5D5CDE;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .evaluation-content-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            line-height: 1.7;
+            color: #333;
+            border: 1px solid #e9ecef;
+            font-size: 0.95em;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* 针对列表容器的特殊处理 */
+        ul.evaluation-content-box, ol.evaluation-content-box {
+            padding-left: 15px;
+            padding-right: 15px;
+            margin: 0;
+            list-style-position: inside;
+        }
+        
+        .highlights-title {
+            color: #28a745 !important;
+        }
+        
+        .suggestions-title {
+            color: #dc3545 !important;
+        }
+        
+        .highlights-box {
+            background: #f0f8f0 !important;
+            border-color: #d4edda !important;
+        }
+        
+        .suggestions-box {
+            background: #fff5f5 !important;
+            border-color: #f5c6cb !important;
+        }
+        
+        .evaluation-list-item {
+            margin-bottom: 8px;
+            line-height: 1.6;
+            color: #333;
+            padding: 4px 0;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* 深色模式下的评价结果样式 */
+        .dark-mode .evaluation-section-title {
+            color: #7469DC;
+        }
+        
+        .dark-mode .evaluation-content-box {
+            background: #343a40;
+            color: #f8f9fa;
+            border-color: #495057;
+        }
+        
+        .dark-mode .highlights-title {
+            color: #40d058 !important;
+        }
+        
+        .dark-mode .suggestions-title {
+            color: #ff6b6b !important;
+        }
+        
+        .dark-mode .highlights-box {
+            background: #1e3a1e !important;
+            color: #e8f5e8 !important;
+            border-color: #2d5a2d !important;
+        }
+        
+        .dark-mode .suggestions-box {
+            background: #3a1e1e !important;
+            color: #f5e8e8 !important;
+            border-color: #5a2d2d !important;
+        }
+        
+        .dark-mode .evaluation-list-item {
+            color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -2361,6 +2461,7 @@
                             <button class="btn" onclick="resetPoem()">還原原作</button>
                             <button class="btn" onclick="copyTextToClipboard()">複製文本</button>
                             <button class="btn" onclick="openPosterGenerator()">生成壁紙</button>
+                            <button class="btn" onclick="requestAIEvaluation()" id="aiEvaluationBtn">AI評價</button>
                         </div>
                         
                         <div class="stats" id="statsInfo">
@@ -8055,9 +8156,606 @@
             initPage();
             initMobileViewToggle();
         });
+        // AI评价功能
+        async function requestAIEvaluation() {
+            const button = document.getElementById('aiEvaluationBtn');
+            
+            // 检查是否有当前词作
+            if (!currentPoem || !currentCipai) {
+                showFeedback('请先选择一首词作', 'warning');
+                return;
+            }
+            
+            // 获取用户填写的内容
+            const userContent = getModifiedContent();
+            const originalContent = currentPoem.content;
+            
+            // 如果没有修改，提示用户
+            if (modifiedChars.size === 0) {
+                showFeedback('您还没有填写任何字词，请先进行创作', 'warning');
+                return;
+            }
+            
+            // 立即显示评价框with加载动画
+            showEvaluationLoadingModal();
+            
+            // 显示按钮加载状态
+            button.disabled = true;
+            button.textContent = 'AI评价中...';
+            
+            try {
+                // 准备评价请求的数据
+                const evaluationData = {
+                    cipaiName: currentCipai,
+                    originalContent: originalContent,
+                    userContent: userContent,
+                    author: currentAuthor || currentPoem.author,
+                    modifiedCount: modifiedChars.size,
+                    totalChars: document.querySelectorAll('.char-span').length
+                };
+                
+                // 调用DeepSeek API
+                const result = await callDeepSeekAPI(evaluationData);
+                
+                // 用动画效果显示评价结果
+                showEvaluationResultWithAnimation(result);
+                
+            } catch (error) {
+                console.error('AI评价失败:', error);
+                showEvaluationError(error.message);
+            } finally {
+                // 恢复按钮状态
+                button.disabled = false;
+                button.textContent = 'AI評價';
+            }
+        }
+        
+        // 使用DeepSeek API调用AI进行评价
+        async function callDeepSeekAPI(evaluationData) {
+            // DeepSeek API配置
+            const apiKey = 'sk-d850478e8977454abc9975d544ffd4e3'; // 您的API密钥
+            const apiUrl = 'https://api.deepseek.com/chat/completions'; // 根据文档的正确端点
+            
+            // 构建评价提示词
+            const prompt = `请作为一位专业的古典诗词专家，对用户填写的词作进行详细评价。
+
+**词作信息：**
+- 词牌名：${evaluationData.cipaiName}
+- 原作者：${currentPoem.author}
+- 填词者：${evaluationData.author}
+- 修改字数：${evaluationData.modifiedCount}/${evaluationData.totalChars}
+
+**原作内容：**
+${evaluationData.originalContent}
+
+**用户填写内容：**
+${evaluationData.userContent}
+
+**评价要求：**
+请从以下四个方面进行专业评价并打分（每项25分，总分100分）：
+
+1. **平仄合律性（25分）**：是否符合词牌的平仄格律要求
+2. **押韵准确性（25分）**：韵脚是否准确，韵部是否统一协调
+3. **意境表达（25分）**：词意是否优美，情感表达是否真挚动人
+4. **用词精准性（25分）**：用词是否恰当得体，是否有生僻或不当用词
+
+**输出格式要求：**
+请严格按照以下JSON格式返回评价结果，不要包含任何markdown标记或其他文字：
+
+{
+  "totalScore": 85,
+  "scores": {
+    "rhythm": 22,
+    "rhyme": 20,
+    "meaning": 21,
+    "vocabulary": 22
+  },
+  "evaluation": "整体评价文字描述...",
+  "suggestions": [
+    "具体修改建议1",
+    "具体修改建议2",
+    "具体修改建议3"
+  ],
+  "highlights": [
+    "优秀之处1",
+    "优秀之处2"
+  ]
+}`;
+
+            try {
+                // 构建请求体（按照DeepSeek API文档格式）
+                const requestBody = {
+                    model: "deepseek-chat", // 使用deepseek-chat模型
+                    messages: [
+                        {
+                            role: "system",
+                            content: "你是一位专业的古典诗词专家，精通格律、韵部、意境分析和文学评价。"
+                        },
+                        {
+                            role: "user",
+                            content: prompt
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2000,
+                    stream: false
+                };
+
+                console.log('发送DeepSeek API请求...');
+                
+                // 发送请求到DeepSeek API
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('DeepSeek API错误响应:', response.status, errorText);
+                    throw new Error(`DeepSeek API请求失败: ${response.status} ${response.statusText}\n${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('DeepSeek API响应:', data);
+                
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('DeepSeek API返回数据格式错误');
+                }
+                
+                const content = data.choices[0].message.content.trim();
+                console.log('AI返回内容:', content);
+                
+                try {
+                    // 尝试解析JSON响应
+                    let jsonContent = content;
+                    
+                    // 移除可能的markdown代码块标记
+                    jsonContent = jsonContent.replace(/```json\s*|\s*```/g, '');
+                    jsonContent = jsonContent.replace(/```\s*|\s*```/g, '');
+                    
+                    // 尝试找到JSON部分
+                    const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const evaluationResult = JSON.parse(jsonMatch[0]);
+                        console.log('解析成功的评价结果:', evaluationResult);
+                        return evaluationResult;
+                    } else {
+                        throw new Error('响应中未找到有效的JSON格式');
+                    }
+                } catch (parseError) {
+                    console.error('解析JSON失败:', parseError);
+                    // 如果JSON解析失败，创建一个包含原始响应的结果
+                    const fallbackResult = {
+                        totalScore: 75,
+                        scores: {
+                            rhythm: 18,
+                            rhyme: 19,
+                            meaning: 20,
+                            vocabulary: 18
+                        },
+                        evaluation: content,
+                        suggestions: ["AI返回格式解析失败，以上为原始评价内容"],
+                        highlights: ["已完成词作创作"]
+                    };
+                    return fallbackResult;
+                }
+            } catch (error) {
+                console.error('DeepSeek API调用失败:', error);
+                
+                // 检查是否是CORS错误
+                if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+                    throw new Error('网络连接失败：可能是由于浏览器CORS限制。建议使用代理服务器或在支持的环境中运行。\n\n技术详情：' + error.message);
+                }
+                
+                throw error;
+            }
+        }
+        
+        // 显示评价结果
+        function showEvaluationResult(result) {
+            // 创建评价结果模态窗口
+            const modal = document.createElement('div');
+            modal.className = 'rhyme-modal';
+            modal.style.display = 'flex';
+            
+            // 计算等级
+            const grade = getGrade(result.totalScore);
+            const gradeColor = getGradeColor(result.totalScore);
+            
+            modal.innerHTML = `
+                <div class="rhyme-modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                    <div class="rhyme-modal-header">
+                        <div class="rhyme-modal-title">AI 评价结果</div>
+                        <button id="evaluationModalClose" class="rhyme-modal-close">&times;</button>
+                    </div>
+                    <div class="rhyme-modal-body" style="padding: 20px;">
+                        <!-- 总分展示 -->
+                        <div style="text-align: center; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 15px;">
+                            <div style="font-size: 48px; font-weight: bold; color: ${gradeColor}; margin-bottom: 10px;">
+                                ${result.totalScore}
+                            </div>
+                            <div style="font-size: 18px; color: ${gradeColor}; font-weight: bold;">
+                                ${grade} - ${getGradeLabel(result.totalScore)}
+                            </div>
+                        </div>
+                        
+                        <!-- 分项评分 -->
+                        <div style="margin-bottom: 25px;">
+                            <h4 style="color: #5D5CDE; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                                📊 分项评分
+                            </h4>
+                            <div class="score-items">
+                                <div class="score-item">
+                                    <span>⚖️ 平仄合律性</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${(result.scores.rhythm/25)*100}%"></div>
+                                        <span class="score-text">${result.scores.rhythm}/25</span>
+                                    </div>
+                                </div>
+                                <div class="score-item">
+                                    <span>🎵 押韵准确性</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${(result.scores.rhyme/25)*100}%"></div>
+                                        <span class="score-text">${result.scores.rhyme}/25</span>
+                                    </div>
+                                </div>
+                                <div class="score-item">
+                                    <span>🎭 意境表达</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${(result.scores.meaning/25)*100}%"></div>
+                                        <span class="score-text">${result.scores.meaning}/25</span>
+                                    </div>
+                                </div>
+                                <div class="score-item">
+                                    <span>✒️ 用词精准性</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${(result.scores.vocabulary/25)*100}%"></div>
+                                        <span class="score-text">${result.scores.vocabulary}/25</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 整体评价 -->
+                        <div style="margin-bottom: 25px;">
+                            <h4 class="evaluation-section-title">
+                                💭 专家点评
+                            </h4>
+                            <div class="evaluation-content-box">
+                                ${result.evaluation}
+                            </div>
+                        </div>
+                        
+                        <!-- 优点和建议 -->
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 25px;">
+                            ${result.highlights && result.highlights.length > 0 ? `
+                            <div>
+                                <h4 class="evaluation-section-title highlights-title">
+                                    ✨ 优秀之处
+                                </h4>
+                                <ul class="evaluation-content-box highlights-box">
+                                    ${result.highlights.map(highlight => `<li class="evaluation-list-item">${highlight}</li>`).join('')}
+                                </ul>
+                            </div>
+                            ` : ''}
+                            
+                            ${result.suggestions && result.suggestions.length > 0 ? `
+                            <div>
+                                <h4 class="evaluation-section-title suggestions-title">
+                                    💡 修改建议
+                                </h4>
+                                <ol class="evaluation-content-box suggestions-box">
+                                    ${result.suggestions.map(suggestion => `<li class="evaluation-list-item">${suggestion}</li>`).join('')}
+                                </ol>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- 操作按钮 -->
+                        <div style="text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
+                            <button class="btn" id="closeEvaluationBtn" style="background: #6c757d;">关闭</button>
+                            <button class="btn" id="copyEvaluationBtn">复制评价</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 绑定关闭按钮事件
+            document.getElementById('evaluationModalClose').addEventListener('click', closeEvaluationModal);
+            document.getElementById('closeEvaluationBtn').addEventListener('click', closeEvaluationModal);
+            
+            // 绑定复制按钮事件
+            document.getElementById('copyEvaluationBtn').addEventListener('click', () => {
+                copyEvaluationToClipboard(result);
+            });
+            
+            function closeEvaluationModal() {
+                document.body.removeChild(modal);
+            }
+        }
+        
+        // 获取评分等级
+        function getGrade(score) {
+            if (score >= 90) return 'A+';
+            if (score >= 80) return 'A';
+            if (score >= 70) return 'B+';
+            if (score >= 60) return 'B';
+            if (score >= 50) return 'C';
+            return 'D';
+        }
+        
+        // 获取评分颜色
+        function getGradeColor(score) {
+            if (score >= 90) return '#28a745';
+            if (score >= 80) return '#20c997';
+            if (score >= 70) return '#ffc107';
+            if (score >= 60) return '#fd7e14';
+            if (score >= 50) return '#dc3545';
+            return '#6c757d';
+        }
+        
+        // 获取评分图标
+        function getGradeIcon(score) {
+            if (score >= 90) return '🏆';
+            if (score >= 80) return '🎉';
+            if (score >= 70) return '👍';
+            if (score >= 60) return '📝';
+            if (score >= 50) return '💪';
+            return '📚';
+        }
+        
+        // 获取评分标签
+        function getGradeLabel(score) {
+            if (score >= 90) return '优秀';
+            if (score >= 80) return '良好';
+            if (score >= 70) return '中等';
+            if (score >= 60) return '及格';
+            if (score >= 50) return '需努力';
+            return '继续加油';
+        }
+        
+        // 显示评价加载模态窗口
+        function showEvaluationLoadingModal() {
+            // 创建加载模态窗口
+            const modal = document.createElement('div');
+            modal.id = 'evaluationLoadingModal';
+            modal.className = 'rhyme-modal';
+            modal.style.display = 'flex';
+            
+            modal.innerHTML = `
+                <div class="rhyme-modal-content" style="max-width: 500px; text-align: center;">
+                    <div class="rhyme-modal-header">
+                        <div class="rhyme-modal-title">AI 正在分析您的作品</div>
+                        <button id="evaluationLoadingClose" class="rhyme-modal-close">&times;</button>
+                    </div>
+                    <div class="rhyme-modal-body" style="padding: 40px;">
+                        <!-- 加载动画 -->
+                        <div class="evaluation-loading-container">
+                            <div class="evaluation-spinner"></div>
+                            <div id="evaluationStageText" class="evaluation-stage-text">正在初始化分析...</div>
+                            <div class="evaluation-progress-bar">
+                                <div id="evaluationProgressFill" class="evaluation-progress-fill"></div>
+                            </div>
+                            <div class="evaluation-tips">
+                                <p>🎯 AI正在从格律、韵律、意境、用词等多个维度进行专业分析</p>
+                                <p>⏰ 预计需要10-30秒，请耐心等待</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 绑定关闭按钮
+            document.getElementById('evaluationLoadingClose').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            // 开始阶段性提示动画
+            startEvaluationStageAnimation();
+        }
+        
+        // 开始评价阶段动画
+        function startEvaluationStageAnimation() {
+            const stages = [
+                { text: "正在分析平仄格律...", progress: 20 },
+                { text: "正在检查押韵规律...", progress: 40 },
+                { text: "正在评估意境表达...", progress: 60 },
+                { text: "正在分析用词精准性...", progress: 80 },
+                { text: "正在生成综合评价...", progress: 95 }
+            ];
+            
+            let currentStage = 0;
+            const stageText = document.getElementById('evaluationStageText');
+            const progressFill = document.getElementById('evaluationProgressFill');
+            
+            function updateStage() {
+                if (currentStage < stages.length && stageText && progressFill) {
+                    const stage = stages[currentStage];
+                    stageText.textContent = stage.text;
+                    progressFill.style.width = stage.progress + '%';
+                    currentStage++;
+                    
+                    // 随机间隔时间，让进度更自然
+                    const nextDelay = Math.random() * 1500 + 1000; // 1-2.5秒随机间隔
+                    setTimeout(updateStage, nextDelay);
+                }
+            }
+            
+            // 开始第一个阶段
+            setTimeout(updateStage, 500);
+        }
+        
+        // 用动画效果显示评价结果
+        function showEvaluationResultWithAnimation(result) {
+            const loadingModal = document.getElementById('evaluationLoadingModal');
+            if (loadingModal) {
+                // 先更新进度到100%
+                const progressFill = document.getElementById('evaluationProgressFill');
+                const stageText = document.getElementById('evaluationStageText');
+                if (progressFill) progressFill.style.width = '100%';
+                if (stageText) stageText.textContent = '分析完成！正在生成报告...';
+                
+                // 延迟一下再显示结果，让用户看到完成状态
+                setTimeout(() => {
+                    document.body.removeChild(loadingModal);
+                    showEvaluationResult(result);
+                }, 1000);
+            } else {
+                // 如果没有加载窗口，直接显示结果
+                showEvaluationResult(result);
+            }
+        }
+        
+        // 显示评价错误
+        function showEvaluationError(errorMessage) {
+            const loadingModal = document.getElementById('evaluationLoadingModal');
+            if (loadingModal) {
+                // 替换加载内容为错误信息
+                const modalBody = loadingModal.querySelector('.rhyme-modal-body');
+                modalBody.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">😔</div>
+                        <h3 style="color: #dc3545; margin-bottom: 15px;">AI评价失败</h3>
+                        <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 15px; margin-bottom: 20px; color: #721c24;">
+                            ${errorMessage}
+                        </div>
+                        <div style="display: flex; justify-content: center; gap: 15px;">
+                            <button class="btn" id="retryEvaluationBtn" style="background: #007bff;">重试</button>
+                            <button class="btn" id="closeErrorBtn" style="background: #6c757d;">关闭</button>
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定按钮事件
+                document.getElementById('retryEvaluationBtn').addEventListener('click', () => {
+                    document.body.removeChild(loadingModal);
+                    requestAIEvaluation(); // 重新尝试评价
+                });
+                
+                document.getElementById('closeErrorBtn').addEventListener('click', () => {
+                    document.body.removeChild(loadingModal);
+                });
+            } else {
+                // 如果没有加载窗口，显示普通错误信息
+                showFeedback('AI评价失败: ' + errorMessage, 'warning');
+            }
+        }
+        
+        // 复制评价结果到剪贴板
+        function copyEvaluationToClipboard(result) {
+            const evaluationText = `
+AI 评价结果 - ${currentCipai}
+
+总分：${result.totalScore}/100 (${getGrade(result.totalScore)})
+
+分项评分：
+• 平仄合律性：${result.scores.rhythm}/25
+• 押韵准确性：${result.scores.rhyme}/25  
+• 意境表达：${result.scores.meaning}/25
+• 用词精准性：${result.scores.vocabulary}/25
+
+整体评价：
+${result.evaluation}
+
+${result.highlights && result.highlights.length > 0 ? `
+优秀之处：
+${result.highlights.map((h, i) => `${i + 1}. ${h}`).join('\n')}
+` : ''}
+
+${result.suggestions && result.suggestions.length > 0 ? `
+修改建议：
+${result.suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+` : ''}
+
+——————————————
+作品信息：
+词牌：${currentCipai}
+作者：${currentAuthor || currentPoem.author}
+填写内容：
+${getModifiedContent()}
+            `.trim();
+            
+            navigator.clipboard.writeText(evaluationText)
+                .then(() => {
+                    showFeedback('评价结果已复制到剪贴板', 'success');
+                })
+                .catch(err => {
+                    showFeedback('复制失败：' + err.message, 'warning');
+                });
+        }
+        
     </script>
+    
+    <!-- AI评价结果样式 -->
+    <style>
+        .score-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .score-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .score-item span:first-child {
+            min-width: 100px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .score-bar {
+            flex: 1;
+            height: 24px;
+            background: #e9ecef;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #5D5CDE 0%, #7469DC 100%);
+            border-radius: 12px;
+            transition: width 0.8s ease;
+        }
+        
+        .score-text {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            font-weight: bold;
+            color: #666;
+        }
+        
+        /* 深色模式适配 */
+        .dark-mode .score-item span:first-child {
+            color: #e0e0e0;
+        }
+        
+        .dark-mode .score-bar {
+            background: #495057;
+        }
+        
+        .dark-mode .score-text {
+            color: #adb5bd;
+        }
+    </style>
 </body>
 </html>
+
 
 
 
