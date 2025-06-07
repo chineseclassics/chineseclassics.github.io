@@ -726,12 +726,6 @@
                         <span class="relative z-10">開始探索</span>
                         <div class="absolute inset-0 bg-gradient-to-r from-amber-400/60 to-stone-500/60 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
                     </button>
-                    
-                    <!-- 記憶選項 -->
-                    <label class="flex items-center space-x-2 text-sm text-stone-600 dark:text-stone-400 cursor-pointer">
-                        <input type="checkbox" id="rememberChoice" class="w-4 h-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500 focus:ring-2">
-                        <span>下次訪問時不再顯示此歡迎頁</span>
-                    </label>
                 </div>
             </div>
 
@@ -1369,21 +1363,14 @@
         const welcomeModal = document.getElementById('welcomeModal');
         const startExploreBtn = document.getElementById('startExploreBtn');
         const skipWelcomeBtn = document.getElementById('skipWelcomeBtn');
-        const rememberChoice = document.getElementById('rememberChoice');
 
         // 檢查是否應該顯示歡迎弹窗
         function shouldShowWelcome() {
-            const skipWelcome = localStorage.getItem('skipWelcome');
-            return skipWelcome !== 'true';
+            return true;
         }
 
         // 隱藏歡迎弹窗
         function hideWelcomeModal() {
-            // 如果勾選了記憶選項，保存到localStorage
-            if (rememberChoice.checked) {
-                localStorage.setItem('skipWelcome', 'true');
-            }
-            
             welcomeModal.style.opacity = '0';
             welcomeModal.style.transform = 'scale(0.95)';
             setTimeout(() => {
