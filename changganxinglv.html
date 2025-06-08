@@ -3336,7 +3336,51 @@
                 totalResourcesGained: 0,
                 totalResourcesSpent: 0,
                 playTime: 0,
-                gameStartTime: null
+                gameStartTime: null,
+                
+                // 新增統計項目
+                lowResourceRounds: 0,
+                extremeLowResourceRounds: 0,
+                stableEmotionYears: 0,
+                balancedResourceYears: 0,
+                consecutivePoetic: 0,
+                consecutivePractical: 0,
+                maxSingleResourceLoss: 0,
+                uniqueEvents: 0,
+                riskChoices: 0,
+                safeChoicesYear: 0,
+                diverseChoices: 0,
+                nightPlayTime: 0,
+                perfectChoices: 0,
+                sequentialPoems: 0,
+                emotionWaves: 0,
+                seasonalMaster: 0,
+                consecutiveRareEvents: 0,
+                consecutiveNegativeEvents: 0,
+                easterEggFound: 0,
+                
+                // 季節相關統計
+                seasonalPoems: {
+                    spring: 0,
+                    summer: 0,
+                    autumn: 0,
+                    winter: 0
+                },
+                springHighEmotion: 0,
+                summerPracticalActions: 0,
+                autumnPoeticActions: 0,
+                winterLowResource: 0,
+                
+                // 當前追蹤變數
+                currentConsecutivePoetic: 0,
+                currentConsecutivePractical: 0,
+                currentEmotionWaves: 0,
+                currentRareEvents: 0,
+                currentNegativeEvents: 0,
+                lastEmotionDirection: null, // 'up' or 'down'
+                seasonStartEmotion: 50,
+                seasonStartResources: {},
+                lastActionType: null
             },
             
             // 獲取年號顯示
@@ -6177,6 +6221,22 @@
             // 初始化成就系统
             initAchievementSystem();
             
+            // 確保成就模態框的關閉按鈕正確綁定
+            const closeAchievementModalBtn = document.getElementById('close-achievement-modal');
+            if (closeAchievementModalBtn) {
+                closeAchievementModalBtn.addEventListener('click', closeAchievementModal);
+            }
+            
+            // 點擊模態框外部關閉成就面板
+            const achievementModal = document.getElementById('achievement-modal');
+            if (achievementModal) {
+                achievementModal.addEventListener('click', (e) => {
+                    if (e.target === achievementModal) {
+                        closeAchievementModal();
+                    }
+                });
+            }
+            
             // 初始化結局收集系統
             initEndingsGallery();
             
@@ -6468,6 +6528,28 @@
             }
         }
         
+        // 打開成就模態框
+        function openAchievementModal() {
+            const achievementModal = document.getElementById('achievement-modal');
+            if (achievementModal) {
+                // 更新成就UI數據
+                if (typeof updateAchievementUI === 'function') {
+                    updateAchievementUI();
+                }
+                // 顯示模態框
+                achievementModal.classList.add('active');
+            } else {
+                console.warn('Achievement modal not found');
+            }
+        }
+        
+        // 關閉成就模態框
+        function closeAchievementModal() {
+            const achievementModal = document.getElementById('achievement-modal');
+            if (achievementModal) {
+                achievementModal.classList.remove('active');
+            }
+        }
 
         
         // 顯示游戲菜單
@@ -9901,6 +9983,19 @@ function triggerGameEnding() {
                 discoveredEndings.push(endingType);
             }
             
+            // 標記角色完成狀態（用於雙重人生成就）
+            if (gameState.characterType === 'wife') {
+                localStorage.setItem('changganxinglv_completed_wife', 'true');
+            } else if (gameState.characterType === 'husband') {
+                localStorage.setItem('changganxinglv_completed_husband', 'true');
+            }
+            
+            // 最終檢查成就
+            checkAchievements();
+            
+            // 追蹤深夜遊戲時間
+            trackNightPlayTime();
+            
             // 設置結局標題
             endTitle.textContent = title;
             
@@ -10664,145 +10759,587 @@ function triggerGameEnding() {
         
         // 成就定义
         const ACHIEVEMENTS = [
-            // 剧情成就
+            // === 基礎劇情成就 ===
             {
                 id: 'first_game',
-                title: '初识长干',
-                description: '第一次开始游戏',
+                title: '初識長干',
+                description: '第一次開始遊戲',
                 icon: '🌸',
                 category: 'story',
                 hidden: false,
                 condition: () => true // 游戏开始时自动解锁
             },
             {
+                id: 'wife_path',
+                title: '閨閣歲月',
+                description: '選擇長干少婦開始遊戲',
+                icon: '👩',
+                category: 'story',
+                hidden: false,
+                condition: () => gameState.characterType === 'wife'
+            },
+            {
+                id: 'husband_path',
+                title: '商旅征途',
+                description: '選擇三巴商人開始遊戲',
+                icon: '👨',
+                category: 'story',
+                hidden: false,
+                condition: () => gameState.characterType === 'husband'
+            },
+            {
+                id: 'year_one',
+                title: '初度春秋',
+                description: '完成第一年的生活',
+                icon: '🌱',
+                category: 'story',
+                hidden: false,
+                condition: () => gameState.yearProgress >= 2
+            },
+            {
+                id: 'year_two',
+                title: '歲月如流',
+                description: '完成第二年的生活',
+                icon: '🌿',
+                category: 'story',
+                hidden: false,
+                condition: () => gameState.yearProgress >= 3
+            },
+            {
+                id: 'full_journey',
+                title: '三載光陰',
+                description: '完成完整的三年旅程',
+                icon: '🌳',
+                category: 'story',
+                hidden: false,
+                condition: () => gameState.round >= 36
+            },
+
+            // === 詩句收集成就 ===
+            {
                 id: 'first_poem',
-                title: '诗魂初现',
-                description: '收集第一句诗',
+                title: '詩魂初現',
+                description: '收集第一句詩',
                 icon: '📜',
                 category: 'collect',
                 hidden: false,
                 condition: () => gameState.collectedPoems.length >= 1
             },
             {
+                id: 'poem_apprentice',
+                title: '詩詞學徒',
+                description: '收集3句詩',
+                icon: '📝',
+                category: 'collect',
+                hidden: false,
+                condition: () => gameState.collectedPoems.length >= 3
+            },
+            {
                 id: 'poem_collector',
-                title: '诗词收藏家',
-                description: '收集5句诗',
+                title: '詩詞收藏家',
+                description: '收集7句詩',
                 icon: '📚',
                 category: 'collect',
                 hidden: false,
-                condition: () => gameState.collectedPoems.length >= 5
+                condition: () => gameState.collectedPoems.length >= 7
             },
             {
-                id: 'poem_master',
-                title: '诗词大师',
-                description: '收集10句诗',
+                id: 'poem_scholar',
+                title: '詩詞學者',
+                description: '收集10句詩',
                 icon: '🎭',
                 category: 'collect',
                 hidden: false,
                 condition: () => gameState.collectedPoems.length >= 10
             },
             {
+                id: 'poem_master',
+                title: '詩詞大師',
+                description: '收集13句詩',
+                icon: '🎨',
+                category: 'collect',
+                hidden: false,
+                condition: () => gameState.collectedPoems.length >= 13
+            },
+            {
                 id: 'complete_collection',
-                title: '《长干行》传人',
-                description: '收集全部15句诗',
+                title: '《長干行》傳人',
+                description: '收集全部15句詩',
                 icon: '👑',
                 category: 'collect',
                 hidden: false,
                 condition: () => gameState.collectedPoems.length >= 15
             },
-            
-            // 技巧成就
             {
-                id: 'emotion_master',
+                id: 'seasonal_poet',
+                title: '四季詩人',
+                description: '在每個季節都收集到詩句',
+                icon: '🗓️',
+                category: 'collect',
+                hidden: false,
+                condition: () => {
+                    // 需要在遊戲中追蹤每季詩句收集
+                    return gameState.statistics.seasonalPoems && 
+                           gameState.statistics.seasonalPoems.spring > 0 &&
+                           gameState.statistics.seasonalPoems.summer > 0 &&
+                           gameState.statistics.seasonalPoems.autumn > 0 &&
+                           gameState.statistics.seasonalPoems.winter > 0;
+                }
+            },
+
+            // === 情感與關係成就 ===
+            {
+                id: 'emotion_stable',
+                title: '心如止水',
+                description: '情感值保持在40-60之間完成一年',
+                icon: '🧘',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.stableEmotionYears >= 1
+            },
+            {
+                id: 'emotion_high',
                 title: '情深如海',
-                description: '情感值达到90以上',
+                description: '情感值達到85以上',
                 icon: '💖',
                 category: 'skill',
                 hidden: false,
-                condition: () => gameState.emotion >= 90
+                condition: () => gameState.emotion >= 85
             },
+            {
+                id: 'emotion_peak',
+                title: '愛意滿懷',
+                description: '情感值達到95以上',
+                icon: '💕',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.emotion >= 95
+            },
+            {
+                id: 'emotion_volatile',
+                title: '情感波瀾',
+                description: '在一次遊戲中情感值變化超過80點',
+                icon: '🌊',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.maxEmotion - gameState.statistics.minEmotion >= 80
+            },
+            {
+                id: 'heartbreak',
+                title: '相思成疾',
+                description: '情感值跌落至10以下',
+                icon: '💔',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.emotion <= 10
+            },
+
+            // === 資源管理成就 ===
             {
                 id: 'resource_rich',
                 title: '富甲一方',
-                description: '任意资源达到100以上',
+                description: '任意資源達到150以上',
                 icon: '💰',
                 category: 'skill',
                 hidden: false,
                 condition: () => {
-                    return Object.values(gameState.resources).some(value => value >= 100);
+                    return Object.values(gameState.resources).some(value => value >= 150);
                 }
             },
             {
+                id: 'resource_tycoon',
+                title: '財富巨擘',
+                description: '任意資源達到200以上',
+                icon: '💎',
+                category: 'skill',
+                hidden: false,
+                condition: () => {
+                    return Object.values(gameState.resources).some(value => value >= 200);
+                }
+            },
+            {
+                id: 'balanced_life',
+                title: '平衡人生',
+                description: '所有資源都保持在50以上完成一年',
+                icon: '⚖️',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.balancedResourceYears >= 1
+            },
+            {
                 id: 'survivor',
-                title: '坚韧不拔',
-                description: '在资源极低的情况下坚持10回合',
+                title: '堅韌不拔',
+                description: '在資源極低的情況下堅持15回合',
                 icon: '🛡️',
                 category: 'skill',
                 hidden: false,
                 condition: () => {
-                    // 这需要在游戏逻辑中跟踪
-                    return gameState.statistics.lowResourceRounds >= 10;
+                    return gameState.statistics.lowResourceRounds >= 15;
                 }
             },
             {
+                id: 'extreme_survivor',
+                title: '絕境求生',
+                description: '在所有資源都低於10的情況下堅持5回合',
+                icon: '⚡',
+                category: 'skill',
+                hidden: false,
+                condition: () => {
+                    return gameState.statistics.extremeLowResourceRounds >= 5;
+                }
+            },
+            {
+                id: 'resource_waste',
+                title: '揮金如土',
+                description: '單次動作消耗資源超過50點',
+                icon: '💸',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.maxSingleResourceLoss >= 50
+            },
+
+            // === 行動風格成就 ===
+            {
                 id: 'poetic_soul',
-                title: '诗意人生',
-                description: '执行50次诗意动作',
+                title: '詩意人生',
+                description: '執行50次詩意動作',
                 icon: '🎨',
                 category: 'skill',
                 hidden: false,
                 condition: () => gameState.statistics.poeticActions >= 50
             },
             {
+                id: 'pure_poet',
+                title: '純粹詩人',
+                description: '連續20個回合只執行詩意動作',
+                icon: '🌙',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.consecutivePoetic >= 20
+            },
+            {
                 id: 'practical_master',
-                title: '务实能手',
-                description: '执行50次务实动作',
+                title: '務實能手',
+                description: '執行50次務實動作',
                 icon: '🔨',
                 category: 'skill',
                 hidden: false,
                 condition: () => gameState.statistics.practicalActions >= 50
             },
-            
-            // 结局成就
+            {
+                id: 'pragmatist',
+                title: '現實主義者',
+                description: '連續20個回合只執行務實動作',
+                icon: '⚙️',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.consecutivePractical >= 20
+            },
+            {
+                id: 'balanced_soul',
+                title: '文武雙全',
+                description: '詩意與務實動作數量相差不超過5',
+                icon: '☯️',
+                category: 'skill',
+                hidden: false,
+                condition: () => {
+                    return Math.abs(gameState.statistics.poeticActions - gameState.statistics.practicalActions) <= 5;
+                }
+            },
+            {
+                id: 'action_master',
+                title: '行動大師',
+                description: '總行動次數達到100次',
+                icon: '🏃',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.totalActions >= 100
+            },
+
+            // === 季節與時間成就 ===
+            {
+                id: 'spring_lover',
+                title: '春日戀人',
+                description: '在春季保持高情感值（80+）完成整季',
+                icon: '🌸',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.springHighEmotion >= 1
+            },
+            {
+                id: 'summer_warrior',
+                title: '夏日戰士',
+                description: '在夏季完成20次以上務實動作',
+                icon: '☀️',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.summerPracticalActions >= 20
+            },
+            {
+                id: 'autumn_poet',
+                title: '秋日詩人',
+                description: '在秋季完成20次以上詩意動作',
+                icon: '🍂',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.autumnPoeticActions >= 20
+            },
+            {
+                id: 'winter_survivor',
+                title: '寒冬倖存者',
+                description: '在冬季資源不足30的情況下完成整季',
+                icon: '❄️',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.winterLowResource >= 1
+            },
+            {
+                id: 'year_cycle',
+                title: '歲月輪迴',
+                description: '完成三個完整的年度循環',
+                icon: '🔄',
+                category: 'story',
+                hidden: false,
+                condition: () => gameState.round >= 36
+            },
+
+            // === 事件與選擇成就 ===
+            {
+                id: 'event_master',
+                title: '事件達人',
+                description: '觸發30個不同的事件',
+                icon: '🎯',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.uniqueEvents >= 30
+            },
+            {
+                id: 'risk_taker',
+                title: '冒險家',
+                description: '選擇高風險選項10次',
+                icon: '🎲',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.riskChoices >= 10
+            },
+            {
+                id: 'conservative',
+                title: '保守主義者',
+                description: '總是選擇最安全的選項完成一年',
+                icon: '🛡️',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.safeChoicesYear >= 1
+            },
+            {
+                id: 'choice_variety',
+                title: '選擇多樣性',
+                description: '在每種類型的事件中都做出不同選擇',
+                icon: '🌈',
+                category: 'skill',
+                hidden: false,
+                condition: () => gameState.statistics.diverseChoices >= 1
+            },
+
+            // === 結局成就 ===
             {
                 id: 'perfect_ending',
-                title: '花好月圆',
-                description: '达成圆满结局',
+                title: '花好月圓',
+                description: '達成圓滿結局',
                 icon: '🌕',
                 category: 'story',
                 hidden: false,
                 condition: () => false // 在结局时检查
             },
             {
+                id: 'good_ending',
+                title: '良緣佳話',
+                description: '達成良好結局',
+                icon: '🌟',
+                category: 'story',
+                hidden: false,
+                condition: () => false // 在结局时检查
+            },
+            {
+                id: 'sad_ending',
+                title: '離愁別緒',
+                description: '達成遺憾結局',
+                icon: '🥀',
+                category: 'story',
+                hidden: false,
+                condition: () => false // 在结局时检查
+            },
+            {
+                id: 'ending_collector',
+                title: '結局收藏家',
+                description: '解鎖5種不同結局',
+                icon: '📖',
+                category: 'collect',
+                hidden: false,
+                condition: () => {
+                    const endings = getUnlockedEndings();
+                    return Object.keys(endings).length >= 5;
+                }
+            },
+            {
+                id: 'ending_master',
+                title: '結局大師',
+                description: '解鎖10種不同結局',
+                icon: '📚',
+                category: 'collect',
+                hidden: false,
+                condition: () => {
+                    const endings = getUnlockedEndings();
+                    return Object.keys(endings).length >= 10;
+                }
+            },
+
+            // === 隱藏成就 ===
+            {
                 id: 'hidden_ending',
-                title: '谪仙奇遇',
-                description: '达成隐藏结局',
+                title: '謫仙奇遇',
+                description: '達成隱藏結局',
                 icon: '✨',
                 category: 'hidden',
                 hidden: true,
                 condition: () => false // 在结局时检查
             },
-            
-            // 隐藏成就
             {
                 id: 'time_traveler',
-                title: '时光旅者',
-                description: '游戏总时长超过2小时',
+                title: '時光旅者',
+                description: '遊戲總時長超過2小時',
                 icon: '⏰',
                 category: 'hidden',
                 hidden: true,
                 condition: () => gameState.statistics.playTime >= 7200000 // 2小时毫秒数
             },
             {
-                id: 'devoted_player',
-                title: '痴情玩家',
-                description: '保存游戏10次',
-                icon: '💾',
+                id: 'night_owl',
+                title: '夜半詩魂',
+                description: '在深夜時分（23:00-05:00）遊玩超過30分鐘',
+                icon: '🦉',
                 category: 'hidden',
                 hidden: true,
-                condition: () => gameState.statistics.saveCount >= 10
+                condition: () => gameState.statistics.nightPlayTime >= 1800000 // 30分钟
+            },
+            {
+                id: 'perfectionist',
+                title: '完美主義者',
+                description: '在一次遊戲中達成所有可能的最優選擇',
+                icon: '💎',
+                category: 'hidden',
+                hidden: true,
+                condition: () => gameState.statistics.perfectChoices >= 1
+            },
+            {
+                id: 'speed_runner',
+                title: '速通達人',
+                description: '在30分鐘內完成一次完整遊戲',
+                icon: '⚡',
+                category: 'hidden',
+                hidden: true,
+                condition: () => {
+                    if (gameState.round >= 36 && gameState.statistics.gameStartTime) {
+                        const playTime = Date.now() - gameState.statistics.gameStartTime;
+                        return playTime <= 1800000; // 30分钟
+                    }
+                    return false;
+                }
+            },
+            {
+                id: 'multi_character',
+                title: '雙重人生',
+                description: '分別以兩個角色完成遊戲',
+                icon: '🎭',
+                category: 'hidden',
+                hidden: true,
+                condition: () => {
+                    const completedWife = localStorage.getItem('changganxinglv_completed_wife') === 'true';
+                    const completedHusband = localStorage.getItem('changganxinglv_completed_husband') === 'true';
+                    return completedWife && completedHusband;
+                }
+            },
+            {
+                id: 'poem_sequence',
+                title: '詩序大師',
+                description: '按照原詩順序收集所有詩句',
+                icon: '📜',
+                category: 'hidden',
+                hidden: true,
+                condition: () => gameState.statistics.sequentialPoems >= 1
+            },
+            {
+                id: 'emotional_roller',
+                title: '情感過山車',
+                description: '在單次遊戲中情感值上下波動超過5次',
+                icon: '🎢',
+                category: 'hidden',
+                hidden: true,
+                condition: () => gameState.statistics.emotionWaves >= 5
+            },
+            {
+                id: 'resource_juggler',
+                title: '資源雜耍師',
+                description: '同時讓三種資源都達到100以上',
+                icon: '🤹',
+                category: 'hidden',
+                hidden: true,
+                condition: () => {
+                    const values = Object.values(gameState.resources);
+                    return values.filter(v => v >= 100).length >= 3;
+                }
+            },
+            {
+                id: 'seasonal_master',
+                title: '四季宗師',
+                description: '在每個季節都達成不同的特殊成就',
+                icon: '🌌',
+                category: 'hidden',
+                hidden: true,
+                condition: () => gameState.statistics.seasonalMaster >= 1
+            },
+            {
+                id: 'lucky_player',
+                title: '幸運之子',
+                description: '連續觸發5次稀有事件',
+                icon: '🍀',
+                category: 'hidden',
+                hidden: true,
+                condition: () => gameState.statistics.consecutiveRareEvents >= 5
+            },
+            {
+                id: 'unlucky_player',
+                title: '命運坎坷',
+                description: '連續觸發5次負面事件',
+                icon: '⚡',
+                category: 'hidden',
+                hidden: true,
+                condition: () => gameState.statistics.consecutiveNegativeEvents >= 5
+            },
+            {
+                id: 'easter_egg',
+                title: '彩蛋獵人',
+                description: '發現遊戲中的隱藏彩蛋',
+                icon: '🥚',
+                category: 'hidden',
+                hidden: true,
+                condition: () => gameState.statistics.easterEggFound >= 1
             }
         ];
+        
+        // 追蹤深夜遊戲時間
+        function trackNightPlayTime() {
+            const now = new Date();
+            const hour = now.getHours();
+            
+            // 深夜時段：23:00-05:00
+            if (hour >= 23 || hour < 5) {
+                const sessionTime = Date.now() - (gameState.statistics.gameStartTime || Date.now());
+                if (sessionTime > 0) {
+                    gameState.statistics.nightPlayTime += Math.min(sessionTime, 60000); // 每次最多增加1分鐘
+                }
+            }
+        }
         
         // 检查成就解锁
         function checkAchievements() {
