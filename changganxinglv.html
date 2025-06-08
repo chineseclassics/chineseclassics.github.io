@@ -1078,6 +1078,101 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
+        /* 側邊欄按鈕樣式 */
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 0.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            background: linear-gradient(135deg, rgba(140, 191, 119, 0.15) 0%, rgba(140, 191, 119, 0.05) 100%);
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            min-height: 70px;
+        }
+        
+        .sidebar-btn:hover {
+            background: linear-gradient(135deg, rgba(140, 191, 119, 0.25) 0%, rgba(140, 191, 119, 0.15) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(140, 191, 119, 0.2);
+        }
+        
+        .sidebar-btn:hover .progress-ring {
+            transform: rotate(-90deg) scale(1.05);
+        }
+        
+        .sidebar-btn:hover .progress-ring-progress {
+            filter: drop-shadow(0 0 6px currentColor);
+        }
+        
+        .sidebar-btn:active {
+            transform: translateY(0);
+        }
+        
+        .sidebar-btn-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .progress-ring-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.25rem;
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+            transition: all 0.3s ease;
+        }
+        
+        .progress-ring-progress {
+            transition: stroke-dashoffset 0.5s ease;
+            stroke: var(--primary);
+            filter: drop-shadow(0 0 2px rgba(140, 191, 119, 0.3));
+        }
+        
+        .sidebar-btn-icon {
+            position: absolute;
+            font-size: 1rem;
+            z-index: 1;
+        }
+        
+        .sidebar-btn-text {
+            font-size: 0.75rem;
+            line-height: 1;
+            margin-bottom: 0.125rem;
+        }
+        
+        .sidebar-btn-progress {
+            font-size: 0.6rem;
+            font-weight: 600;
+            opacity: 0.8;
+            line-height: 1;
+        }
+        
+        .dark .sidebar-btn {
+            background: linear-gradient(135deg, rgba(140, 191, 119, 0.12) 0%, rgba(140, 191, 119, 0.04) 100%);
+            color: var(--primary-light);
+        }
+        
+        .dark .sidebar-btn:hover {
+            background: linear-gradient(135deg, rgba(140, 191, 119, 0.2) 0%, rgba(140, 191, 119, 0.1) 100%);
+        }
+        
+        .dark .progress-ring-progress {
+            stroke: var(--primary-light);
+            filter: drop-shadow(0 0 2px rgba(140, 191, 119, 0.4));
+        }
+        
         .character-card {
             padding: 1.5rem;
             border-radius: 1rem;
@@ -2383,6 +2478,238 @@
             0% { transform: scale(0.8); opacity: 0; }
             70% { transform: scale(1.05); opacity: 0.9; }
             100% { transform: scale(1); opacity: 1; }
+                }
+        
+
+        
+        /* 結局收集界面樣式 */
+        .ending-stats-section {
+            background: linear-gradient(135deg, var(--paper-light) 0%, var(--paper) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--paper-dark);
+        }
+        
+        .stat-card {
+            background: var(--paper);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--paper-dark);
+            transition: transform var(--transition-normal);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--ink-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .ending-filter-btn {
+            background: var(--paper);
+            border: 1px solid var(--paper-dark);
+            color: var(--ink-light);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+        
+        .ending-filter-btn:hover {
+            background: var(--paper-dark);
+            color: var(--ink);
+        }
+        
+        .ending-filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .ending-card {
+            background: var(--paper-light);
+            border: 2px solid var(--paper-dark);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ending-card.unlocked {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--paper-light) 0%, rgba(140, 191, 119, 0.05) 100%);
+        }
+        
+        .ending-card.locked {
+            opacity: 0.7;
+            background: var(--paper);
+        }
+        
+        .ending-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ending-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .ending-character-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            background: var(--primary-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ending-type-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .ending-type-badge.perfect {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        
+        .ending-type-badge.good {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .ending-type-badge.sad {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .ending-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 8px;
+            font-family: var(--font-family-display);
+        }
+        
+        .ending-description {
+            font-size: 14px;
+            color: var(--ink-light);
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+        
+        .view-ending-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            width: 100%;
+        }
+        
+        .view-ending-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .unlock-hint {
+            text-align: center;
+            font-size: 12px;
+            color: var(--ink-light);
+            font-style: italic;
+            padding: 8px;
+            background: var(--paper-dark);
+            border-radius: 6px;
+        }
+        
+        .unlocked-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .ending-full-text {
+            line-height: 1.8;
+            font-size: 16px;
+            color: var(--ink);
+        }
+        
+        .ending-full-text p {
+            text-align: justify;
+            text-indent: 2em;
+        }
+        
+        /* 深色模式適配 */
+        .dark .ending-stats-section {
+            background: linear-gradient(135deg, var(--paper-dark) 0%, var(--paper) 100%);
+        }
+        
+        .dark .stat-card {
+            background: var(--paper-dark);
+            border-color: var(--ink-light);
+        }
+        
+        .dark .ending-card {
+            background: var(--paper-dark);
+            border-color: var(--ink-light);
+        }
+        
+        .dark .ending-card.unlocked {
+            background: linear-gradient(135deg, var(--paper-dark) 0%, rgba(140, 191, 119, 0.1) 100%);
+            border-color: var(--primary);
+        }
+        
+        .dark .ending-card.locked {
+            background: var(--paper);
+        }
+        
+        .dark .ending-filter-btn {
+            background: var(--paper-dark);
+            border-color: var(--ink-light);
+            color: var(--ink-light);
+        }
+        
+        .dark .ending-filter-btn:hover {
+            background: var(--paper);
+            color: var(--ink);
+        }
+        
+        .dark .unlock-hint {
+            background: var(--paper);
         }
     </style>
 </head>
@@ -2486,18 +2813,7 @@
                     </button>
                     <p id="select-prompt" class="mt-3 text-xs text-gray-500 dark:text-gray-400">請選擇一個角色以開始游戲</p>
                     
-                    <!-- 功能按钮 -->
-                    <div class="flex gap-3 justify-center mt-4">
-                        <button id="save-load-btn" class="btn btn-secondary text-sm px-4 py-2 rounded-lg">
-                            <span class="mr-1">💾</span>存档
-                        </button>
-                        <button id="achievement-btn" class="btn btn-secondary text-sm px-4 py-2 rounded-lg">
-                            <span class="mr-1">🏆</span>成就
-                        </button>
-                        <button id="tutorial-btn" class="btn btn-secondary text-sm px-4 py-2 rounded-lg">
-                            <span class="mr-1">❓</span>教学
-                        </button>
-                    </div>
+
                 </div>
             </div>
         </div>
@@ -2509,6 +2825,36 @@
                 <div class="md:col-span-1">
                     <!-- 角色與情感面板 -->
                     <div class="paper-bg p-5 mb-4">
+                        <!-- 頂部功能按鈕 -->
+                        <div class="mb-4 flex gap-2">
+                            <button id="sidebar-endings-btn" class="sidebar-btn flex-1" title="結局收集 (Ctrl+E)">
+                                <div class="sidebar-btn-content">
+                                    <div class="progress-ring-container">
+                                        <svg class="progress-ring" width="40" height="40">
+                                            <circle class="progress-ring-bg" cx="20" cy="20" r="16" fill="transparent" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+                                            <circle id="endings-progress-ring" class="progress-ring-progress" cx="20" cy="20" r="16" fill="transparent" stroke="currentColor" stroke-width="2" stroke-dasharray="100.48" stroke-dashoffset="100.48"/>
+                                        </svg>
+                                        <span class="sidebar-btn-icon">📖</span>
+                                    </div>
+                                    <span class="sidebar-btn-text">結局</span>
+                                    <span id="endings-progress-text" class="sidebar-btn-progress">0%</span>
+                                </div>
+                            </button>
+                            <button id="sidebar-achievement-btn" class="sidebar-btn flex-1" title="成就系統 (Ctrl+A)">
+                                <div class="sidebar-btn-content">
+                                    <div class="progress-ring-container">
+                                        <svg class="progress-ring" width="40" height="40">
+                                            <circle class="progress-ring-bg" cx="20" cy="20" r="16" fill="transparent" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+                                            <circle id="achievements-progress-ring" class="progress-ring-progress" cx="20" cy="20" r="16" fill="transparent" stroke="currentColor" stroke-width="2" stroke-dasharray="100.48" stroke-dashoffset="100.48"/>
+                                        </svg>
+                                        <span class="sidebar-btn-icon">🏆</span>
+                                    </div>
+                                    <span class="sidebar-btn-text">成就</span>
+                                    <span id="achievements-progress-text" class="sidebar-btn-progress">0%</span>
+                                </div>
+                            </button>
+                        </div>
+                        
                         <div id="player-info" class="mb-4">
                             <h2 id="player-name" class="text-xl font-bold mb-1 title-font player-name"></h2>
                             <p id="player-description" class="text-sm mb-4 text-gray-600 dark:text-gray-400 character-desc"></p>
@@ -5749,9 +6095,20 @@
             // 初始化歷史記錄視圖
             initHistoryView();
             
-            // 初始化存档和成就系统
-            initSaveSystem();
+            // 初始化成就系统
             initAchievementSystem();
+            
+            // 初始化結局收集系統
+            initEndingsGallery();
+            
+            // 初始化側邊欄按鈕
+            initSidebarButtons();
+            
+            // 初始化教學按鈕
+            const tutorialBtn = document.getElementById('tutorial-btn');
+            if (tutorialBtn) {
+                tutorialBtn.addEventListener('click', showTutorial);
+            }
             // 綁定角色選擇事件
             wifeCard.addEventListener("click", function() {
                 wifeCard.classList.add("selected");
@@ -5839,6 +6196,43 @@
             
             // 獲取新按鈕並正確綁定事件
             document.getElementById("tutorial-next").addEventListener("click", globalHandleTutorialNext);
+            
+            // 添加鍵盤快捷鍵支持
+            document.addEventListener('keydown', function(e) {
+                // 只在游戲界面活動時響應快捷鍵
+                if (document.getElementById("game-screen").classList.contains("hidden")) {
+                    return;
+                }
+                
+                // ESC鍵：打開/關閉游戲菜單
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    const gameMenu = document.getElementById("game-menu-modal");
+                    if (gameMenu && gameMenu.classList.contains("active")) {
+                        closeGameMenu();
+                    } else {
+                        showGameMenu();
+                    }
+                }
+                
+                // Ctrl+E：結局收集
+                if (e.ctrlKey && e.key === 'e') {
+                    e.preventDefault();
+                    openEndingsGallery();
+                }
+                
+                // Ctrl+A：查看成就
+                if (e.ctrlKey && e.key === 'a') {
+                    e.preventDefault();
+                    openAchievementModal();
+                }
+                
+                // F1：查看教學
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    showTutorial();
+                }
+            });
         });
         
         // 初始化歷史記錄視圖
@@ -5859,6 +6253,447 @@
             
             if (closeHistoryBtn) {
                 closeHistoryBtn.addEventListener("click", closeHistoryView);
+            }
+        }
+        
+        // 初始化側邊欄按鈕
+        function initSidebarButtons() {
+            const sidebarEndingsBtn = document.getElementById("sidebar-endings-btn");
+            const sidebarAchievementBtn = document.getElementById("sidebar-achievement-btn");
+            
+            // 結局收集按鈕
+            if (sidebarEndingsBtn) {
+                sidebarEndingsBtn.addEventListener("click", function() {
+                    openEndingsGallery();
+                });
+            }
+            
+            // 成就按鈕
+            if (sidebarAchievementBtn) {
+                sidebarAchievementBtn.addEventListener("click", function() {
+                    openAchievementModal();
+                });
+            }
+            
+            // 初始化進度圓環（安全模式，不影響主要功能）
+            try {
+                setTimeout(() => {
+                    if (typeof updateSidebarProgress === 'function') {
+                        updateSidebarProgress();
+                    }
+                }, 1000);
+            } catch (error) {
+                console.warn('Progress update failed, but main functionality preserved:', error);
+            }
+        }
+        
+        // 更新側邊欄進度圓環
+        function updateSidebarProgress() {
+            // 延遲執行，確保所有必要函數都已加載
+            setTimeout(() => {
+                try {
+                    // 更新結局收集進度
+                    updateEndingsProgress();
+                    
+                    // 更新成就進度
+                    updateAchievementsProgress();
+                } catch (error) {
+                    console.warn('Error updating sidebar progress:', error);
+                }
+            }, 100);
+        }
+        
+        // 更新結局收集進度圓環
+        function updateEndingsProgress() {
+            if (typeof getEndingStats !== 'function') {
+                console.warn('getEndingStats function not defined yet');
+                return;
+            }
+            
+            const stats = getEndingStats();
+            const percentage = Math.round((stats.unlocked / stats.total) * 100);
+            
+            // 更新進度圓環
+            const progressRing = document.getElementById("endings-progress-ring");
+            const progressText = document.getElementById("endings-progress-text");
+            
+            if (progressRing && progressText) {
+                // 計算 stroke-dashoffset（圓周長 = 2 * π * r = 2 * π * 16 ≈ 100.48）
+                const circumference = 100.48;
+                const offset = circumference - (percentage / 100) * circumference;
+                
+                progressRing.style.strokeDashoffset = offset;
+                progressText.textContent = `${percentage}%`;
+                
+                // 根據進度調整顏色
+                if (percentage === 100) {
+                    progressRing.style.stroke = "#f59e0b"; // 金色
+                    progressRing.style.filter = "drop-shadow(0 0 4px rgba(245, 158, 11, 0.5))";
+                } else if (percentage >= 50) {
+                    progressRing.style.stroke = "#10b981"; // 綠色
+                    progressRing.style.filter = "drop-shadow(0 0 3px rgba(16, 185, 129, 0.4))";
+                } else {
+                    progressRing.style.stroke = "var(--primary)"; // 默認主色
+                    progressRing.style.filter = "drop-shadow(0 0 2px rgba(140, 191, 119, 0.3))";
+                }
+            }
+        }
+        
+        // 更新成就進度圓環
+        function updateAchievementsProgress() {
+            if (typeof ACHIEVEMENTS === 'undefined') {
+                console.warn('ACHIEVEMENTS not defined yet');
+                return;
+            }
+            
+            const unlockedCount = gameState.achievements ? gameState.achievements.length : 0;
+            const totalCount = ACHIEVEMENTS.length;
+            const percentage = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
+            
+            // 更新進度圓環
+            const progressRing = document.getElementById("achievements-progress-ring");
+            const progressText = document.getElementById("achievements-progress-text");
+            
+            if (progressRing && progressText) {
+                // 計算 stroke-dashoffset
+                const circumference = 100.48;
+                const offset = circumference - (percentage / 100) * circumference;
+                
+                progressRing.style.strokeDashoffset = offset;
+                progressText.textContent = `${percentage}%`;
+                
+                // 根據進度調整顏色
+                if (percentage === 100) {
+                    progressRing.style.stroke = "#f59e0b"; // 金色
+                    progressRing.style.filter = "drop-shadow(0 0 4px rgba(245, 158, 11, 0.5))";
+                } else if (percentage >= 50) {
+                    progressRing.style.stroke = "#10b981"; // 綠色
+                    progressRing.style.filter = "drop-shadow(0 0 3px rgba(16, 185, 129, 0.4))";
+                } else {
+                    progressRing.style.stroke = "var(--primary)"; // 默認主色
+                    progressRing.style.filter = "drop-shadow(0 0 2px rgba(140, 191, 119, 0.3))";
+                }
+            }
+        }
+        
+
+        
+        // 顯示游戲菜單
+        function showGameMenu() {
+            // 創建游戲菜單模態框（如果不存在）
+            let gameMenuModal = document.getElementById("game-menu-modal");
+            if (!gameMenuModal) {
+                gameMenuModal = document.createElement("div");
+                gameMenuModal.id = "game-menu-modal";
+                gameMenuModal.className = "modal";
+                gameMenuModal.innerHTML = `
+                    <div class="modal-content">
+                        <button class="close-btn" onclick="closeGameMenu()">×</button>
+                        <h2 class="text-xl font-bold mb-4 title-font">游戲菜單</h2>
+                        
+                        <div class="space-y-3">
+                            <button onclick="showTutorial(); closeGameMenu();" class="w-full btn btn-secondary">
+                                ❓ 查看教學
+                            </button>
+                            <button onclick="returnToMainMenu();" class="w-full btn btn-secondary">
+                                🏠 返回主菜單
+                            </button>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                <p>游戲時間：<span id="menu-play-time">0分鐘</span></p>
+                                <p>收集詩句：<span id="menu-poems-count">${gameState.collectedPoems.length}</span>/15</p>
+                                <p>當前回合：<span id="menu-round">${gameState.round}</span>/36</p>
+                            </div>
+                            <div class="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center">
+                                <p>💡 結局收集和成就系統可在左側面板頂部訪問</p>
+                                <p>⌨️ 快捷鍵：Ctrl+E (結局) • Ctrl+A (成就) • ESC (菜單)</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(gameMenuModal);
+            }
+            
+            // 更新菜單中的統計信息
+            const playTime = gameState.statistics.gameStartTime ? 
+                Math.floor((Date.now() - gameState.statistics.gameStartTime) / 60000) : 0;
+            document.getElementById("menu-play-time").textContent = `${playTime}分鐘`;
+            document.getElementById("menu-poems-count").textContent = gameState.collectedPoems.length;
+            document.getElementById("menu-round").textContent = gameState.round;
+            
+            // 顯示菜單
+            gameMenuModal.classList.add("active");
+        }
+        
+        // 關閉游戲菜單
+        function closeGameMenu() {
+            const gameMenuModal = document.getElementById("game-menu-modal");
+            if (gameMenuModal) {
+                gameMenuModal.classList.remove("active");
+            }
+        }
+        
+        // 返回主菜單
+        function returnToMainMenu() {
+            if (confirm("確定要返回主菜單嗎？當前進度將會丟失。")) {
+                closeGameMenu();
+                
+                // 隱藏游戲界面，顯示主菜單
+                document.getElementById("game-screen").classList.add("hidden");
+                document.getElementById("start-screen").classList.remove("hidden");
+                
+                // 重置角色選擇
+                document.getElementById("wife-card").classList.remove("selected");
+                document.getElementById("husband-card").classList.remove("selected");
+                document.getElementById("start-game").disabled = true;
+                document.getElementById("select-prompt").style.opacity = "1";
+            }
+        }
+        
+        // 打開結局收集界面
+        function openEndingsGallery() {
+            // 創建結局收集模態框（如果不存在）
+            let endingsModal = document.getElementById("endings-gallery-modal");
+            if (!endingsModal) {
+                endingsModal = document.createElement("div");
+                endingsModal.id = "endings-gallery-modal";
+                endingsModal.className = "modal";
+                endingsModal.innerHTML = `
+                    <div class="modal-content max-w-4xl">
+                        <button class="close-btn" onclick="closeEndingsGallery()">×</button>
+                        <h2 class="text-2xl font-bold mb-4 title-font text-center">結局收集</h2>
+                        
+                        <!-- 統計信息 -->
+                        <div class="ending-stats-section mb-6">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                <div class="stat-card">
+                                    <div class="stat-number" id="total-endings">0</div>
+                                    <div class="stat-label">總結局數</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number text-green-600" id="unlocked-endings">0</div>
+                                    <div class="stat-label">已解鎖</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number text-blue-600" id="completion-rate">0%</div>
+                                    <div class="stat-label">完成度</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number text-purple-600" id="hidden-endings">0</div>
+                                    <div class="stat-label">隱藏結局</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 分類篩選 -->
+                        <div class="ending-filter-section mb-4">
+                            <div class="flex justify-center gap-2 flex-wrap">
+                                <button class="ending-filter-btn active" data-category="all">全部</button>
+                                <button class="ending-filter-btn" data-category="perfect">圓滿結局</button>
+                                <button class="ending-filter-btn" data-category="good">良好結局</button>
+                                <button class="ending-filter-btn" data-category="sad">遺憾結局</button>
+                                <button class="ending-filter-btn" data-category="unlocked">已解鎖</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 結局列表 -->
+                        <div id="endings-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                            <!-- 動態生成結局卡片 -->
+                        </div>
+                        
+                        <div class="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+                            <p>💡 提示：不同的選擇和詩句收集會解鎖不同的結局</p>
+                            <p>🌟 嘗試不同的遊戲策略來解鎖所有結局！</p>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(endingsModal);
+                
+                // 綁定篩選按鈕事件
+                const filterBtns = endingsModal.querySelectorAll('.ending-filter-btn');
+                filterBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        // 更新活動狀態
+                        filterBtns.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // 篩選結局
+                        filterEndingsByCategory(this.dataset.category);
+                    });
+                });
+            }
+            
+            // 更新內容並顯示
+            updateEndingsGallery();
+            endingsModal.classList.add("active");
+        }
+        
+        // 關閉結局收集界面
+        function closeEndingsGallery() {
+            const endingsModal = document.getElementById("endings-gallery-modal");
+            if (endingsModal) {
+                endingsModal.classList.remove("active");
+            }
+        }
+        
+        // 更新結局收集界面內容
+        function updateEndingsGallery() {
+            const stats = getEndingStats();
+            const unlockedEndings = getUnlockedEndings();
+            
+            // 更新統計信息
+            document.getElementById("total-endings").textContent = stats.total;
+            document.getElementById("unlocked-endings").textContent = stats.unlocked;
+            document.getElementById("completion-rate").textContent = Math.round((stats.unlocked / stats.total) * 100) + '%';
+            document.getElementById("hidden-endings").textContent = stats.hidden;
+            
+            // 生成結局列表
+            generateEndingsList();
+        }
+        
+        // 生成結局列表
+        function generateEndingsList() {
+            const endingsList = document.getElementById("endings-list");
+            const unlockedEndings = getUnlockedEndings();
+            
+            endingsList.innerHTML = '';
+            
+            // 為每種結局類型和角色組合創建卡片
+            Object.entries(ENDING_TYPES).forEach(([typeName, typeKey]) => {
+                ['wife', 'husband'].forEach(character => {
+                    const endingKey = `${typeKey}_${character}`;
+                    const isUnlocked = unlockedEndings.includes(endingKey);
+                    const endingInfo = endingData[typeKey][character];
+                    
+                    const endingCard = document.createElement('div');
+                    endingCard.className = `ending-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+                    endingCard.dataset.category = getCategoryForType(typeKey);
+                    endingCard.dataset.unlocked = isUnlocked ? 'true' : 'false';
+                    
+                    endingCard.innerHTML = `
+                        <div class="ending-card-header">
+                            <div class="ending-character-icon">
+                                ${character === 'wife' ? '👩' : '👨'}
+                            </div>
+                            <div class="ending-type-badge ${getCategoryForType(typeKey)}">
+                                ${getCategoryName(typeKey)}
+                            </div>
+                        </div>
+                        <div class="ending-card-content">
+                            <h3 class="ending-title">${isUnlocked ? endingInfo.title : '???'}</h3>
+                            <p class="ending-description">
+                                ${isUnlocked ? 
+                                    (endingInfo.description.length > 120 ? 
+                                        endingInfo.description.substring(0, 120) + '...' : 
+                                        endingInfo.description.split('\n\n')[0]) : 
+                                    '達成特定條件後解鎖'}
+                            </p>
+                            ${isUnlocked ? 
+                                `<button class="view-ending-btn" onclick="viewFullEnding('${typeKey}', '${character}')">
+                                    查看完整結局
+                                </button>` : 
+                                `<div class="unlock-hint">
+                                    收集更多詩句來解鎖
+                                </div>`
+                            }
+                        </div>
+                        ${isUnlocked ? '<div class="unlocked-badge">✓</div>' : ''}
+                    `;
+                    
+                    endingsList.appendChild(endingCard);
+                });
+            });
+        }
+        
+        // 獲取結局類型對應的分類
+        function getCategoryForType(endingType) {
+            if (ENDING_CATEGORIES.PERFECT.includes(endingType)) return 'perfect';
+            if (ENDING_CATEGORIES.GOOD.includes(endingType)) return 'good';
+            if (ENDING_CATEGORIES.SAD.includes(endingType)) return 'sad';
+            return 'unknown';
+        }
+        
+        // 獲取分類名稱
+        function getCategoryName(endingType) {
+            if (endingType === ENDING_TYPES.HIDDEN) return '隱藏結局';
+            if (endingType === ENDING_TYPES.PERFECT) return '圓滿結局';
+            if (ENDING_CATEGORIES.GOOD.includes(endingType)) return '良好結局';
+            if (ENDING_CATEGORIES.SAD.includes(endingType)) return '遺憾結局';
+            return '未知';
+        }
+        
+        // 根據分類篩選結局
+        function filterEndingsByCategory(category) {
+            const endingCards = document.querySelectorAll('.ending-card');
+            
+            endingCards.forEach(card => {
+                const shouldShow = category === 'all' || 
+                                  card.dataset.category === category ||
+                                  (category === 'unlocked' && card.dataset.unlocked === 'true');
+                
+                card.style.display = shouldShow ? 'block' : 'none';
+            });
+        }
+        
+        // 查看完整結局
+        function viewFullEnding(endingType, character) {
+            const endingInfo = endingData[endingType][character];
+            
+            // 創建完整結局查看模態框
+            let fullEndingModal = document.getElementById("full-ending-modal");
+            if (!fullEndingModal) {
+                fullEndingModal = document.createElement("div");
+                fullEndingModal.id = "full-ending-modal";
+                fullEndingModal.className = "modal";
+                fullEndingModal.innerHTML = `
+                    <div class="modal-content max-w-3xl">
+                        <button class="close-btn" onclick="closeFullEndingModal()">×</button>
+                        <div id="full-ending-content">
+                            <!-- 動態內容 -->
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(fullEndingModal);
+            }
+            
+            // 設置內容
+            const content = document.getElementById("full-ending-content");
+            content.innerHTML = `
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold title-font mb-2">${endingInfo.title}</h2>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        ${character === 'wife' ? '長干少婦' : '三巴商人'} • ${getCategoryName(endingType)}
+                    </div>
+                </div>
+                <div class="ending-full-text">
+                    ${endingInfo.description.split('\n\n').map(para => `<p class="mb-4">${para}</p>`).join('')}
+                </div>
+                <div class="text-center mt-6">
+                    <button onclick="closeFullEndingModal()" class="btn btn-primary">關閉</button>
+                </div>
+            `;
+            
+            fullEndingModal.classList.add("active");
+        }
+        
+        // 關閉完整結局查看模態框
+        function closeFullEndingModal() {
+            const fullEndingModal = document.getElementById("full-ending-modal");
+            if (fullEndingModal) {
+                fullEndingModal.classList.remove("active");
+            }
+        }
+        
+        // 初始化結局收集系統
+        function initEndingsGallery() {
+            const endingsGalleryBtn = document.getElementById("endings-gallery-btn");
+            
+            if (endingsGalleryBtn) {
+                endingsGalleryBtn.addEventListener("click", function() {
+                    openEndingsGallery();
+                });
             }
         }
         
@@ -6143,6 +6978,7 @@
             const startMsg = `開元元年(公元713年) ${seasonNames[0]}，${gameState.character.name}【${currentAge}歲】`;
             addMessage(startMsg);
             addMessage(`游戲開始！你正在扮演${gameState.character.name}。`);
+            addMessage(`💡 提示：左側面板頂部的按鈕可查看結局收集和成就進度！`);
             
             // 顯示教學提示
             showTutorial();
@@ -7833,9 +8669,6 @@ function advanceRound() {
     // 检查成就
     checkAchievements();
     
-    // 自动保存
-    autoSave();
-    
     // 再次檢查回合進度（冗余檢查）
     // 這保證了即使前面的檢查失敗，這裡也會捕獲
     if (gameState.round >= gameState.maxRound) {
@@ -8641,6 +9474,9 @@ function evaluateEnding() {
             // 最终成就检查
             checkAchievements();
             
+            // 保存解鎖的結局
+            saveUnlockedEnding(endingType, characterType);
+            
             return {
                 title: ending.title,
                 description: ending.description,
@@ -8717,6 +9553,84 @@ function triggerGameEnding() {
         
         // 初始化全局已發現結局記錄
         let discoveredEndings = [];
+        
+        // 從localStorage獲取已解鎖的結局
+        function getUnlockedEndings() {
+            try {
+                const stored = localStorage.getItem('changganxinglv_unlocked_endings');
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                console.error('讀取已解鎖結局失敗:', e);
+                return [];
+            }
+        }
+        
+        // 保存已解鎖的結局到localStorage
+        function saveUnlockedEnding(endingType, characterType) {
+            try {
+                const unlockedEndings = getUnlockedEndings();
+                const endingKey = `${endingType}_${characterType}`;
+                
+                if (!unlockedEndings.includes(endingKey)) {
+                    unlockedEndings.push(endingKey);
+                    localStorage.setItem('changganxinglv_unlocked_endings', JSON.stringify(unlockedEndings));
+                    
+                    // 顯示解鎖通知
+                    const endingTitle = endingData[endingType][characterType].title;
+                    showNotification(
+                        "🎉 新結局解鎖！",
+                        `解鎖了「${endingTitle}」結局！前往結局收集查看詳細內容。`,
+                        "achievement",
+                        8000
+                    );
+                    
+                    // 更新側邊欄結局進度
+                    if (typeof updateEndingsProgress === 'function') {
+                        updateEndingsProgress();
+                    }
+                    
+                    return true; // 表示是新解鎖的結局
+                }
+                return false; // 表示已經解鎖過
+            } catch (e) {
+                console.error('保存結局失敗:', e);
+                return false;
+            }
+        }
+        
+        // 獲取結局解鎖統計
+        function getEndingStats() {
+            const unlockedEndings = getUnlockedEndings();
+            const totalEndings = Object.keys(ENDING_TYPES).length * 2; // 每種結局有兩個角色版本
+            const unlockedCount = unlockedEndings.length;
+            
+            // 按類別統計
+            const stats = {
+                total: totalEndings,
+                unlocked: unlockedCount,
+                perfect: 0,
+                good: 0,
+                sad: 0,
+                hidden: 0
+            };
+            
+            unlockedEndings.forEach(endingKey => {
+                const [endingType] = endingKey.split('_');
+                if (ENDING_CATEGORIES.PERFECT.includes(endingType)) {
+                    stats.perfect++;
+                } else if (ENDING_CATEGORIES.GOOD.includes(endingType)) {
+                    stats.good++;
+                } else if (ENDING_CATEGORIES.SAD.includes(endingType)) {
+                    stats.sad++;
+                }
+                
+                if (endingType === ENDING_TYPES.HIDDEN) {
+                    stats.hidden++;
+                }
+            });
+            
+            return stats;
+        }
         
         // 打字機效果函數 - 增強版
         function typewriterEffect(element, text, speed = 30, onComplete = null) {
@@ -9814,6 +10728,11 @@ function triggerGameEnding() {
                 showAchievementNotification(achievement);
             });
             
+            // 更新側邊欄進度
+            if (typeof updateAchievementsProgress === 'function') {
+                updateAchievementsProgress();
+            }
+            
             return newAchievements;
         }
         
@@ -10094,17 +11013,8 @@ function triggerGameEnding() {
     </script>
 
     <script>
-        // 页面加载完成后初始化系统
-        document.addEventListener('DOMContentLoaded', function() {
-            initSaveSystem();
-            initAchievementSystem();
-            
-            // 初始化教学按钮
-            const tutorialBtn = document.getElementById('tutorial-btn');
-            if (tutorialBtn) {
-                tutorialBtn.addEventListener('click', showTutorial);
-            }
-        });
+        // 页面加载完成后初始化系统（已整合到主DOMContentLoaded中）
+        // 移除重複的DOMContentLoaded監聽器以避免衝突
     </script>
 
     <!-- 存档系统模态框 -->
