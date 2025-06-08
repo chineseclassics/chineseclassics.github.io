@@ -597,6 +597,85 @@
             }
         }
         
+        /* 移動端優化 */
+        @media (max-width: 767px) {
+            /* 側邊欄按鈕在移動端的優化 */
+            .sidebar-btn {
+                min-height: 60px;
+                padding: 0.6rem 0.4rem;
+            }
+            
+            .sidebar-btn-text {
+                font-size: 0.7rem;
+            }
+            
+            .sidebar-btn-progress {
+                font-size: 0.55rem;
+            }
+            
+            .sidebar-btn-icon {
+                font-size: 0.9rem;
+            }
+            
+            .progress-ring {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .progress-ring circle {
+                r: 14;
+            }
+            
+            /* 更新進度圓環的stroke-dasharray以匹配小尺寸 */
+            #endings-progress-ring,
+            #achievements-progress-ring {
+                stroke-dasharray: 87.92; /* 2 * π * 14 */
+            }
+            
+            /* 游戲界面在移動端的間距調整 */
+            .paper-bg {
+                padding: 1rem;
+            }
+            
+            /* 動作按鈕在小屏幕上的佈局優化 */
+            #action-buttons {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.5rem;
+            }
+            
+            /* 模態框在移動端的優化 */
+            .modal-content {
+                margin: 1rem;
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+            }
+            
+            /* 角色選擇卡片在移動端的優化 */
+            .character-card {
+                padding: 1rem;
+            }
+            
+            /* 資源項目在移動端的優化 */
+            .resource-item {
+                padding: 0.5rem;
+            }
+            
+            .resource-icon {
+                width: 2rem;
+                height: 2rem;
+                margin-right: 0.5rem;
+                font-size: 1rem;
+            }
+            
+            .resource-name {
+                font-size: 0.85rem;
+            }
+            
+            .resource-value {
+                font-size: 1rem;
+            }
+        }
+        
         /* 平移动画 */
         .translate-x-full {
             transform: translateX(100%);
@@ -6197,6 +6276,17 @@
             // 獲取新按鈕並正確綁定事件
             document.getElementById("tutorial-next").addEventListener("click", globalHandleTutorialNext);
             
+            // 添加窗口大小變化監聽器以更新進度圓環
+            window.addEventListener('resize', function() {
+                // 延遲更新以避免頻繁重繪
+                clearTimeout(window.resizeTimeout);
+                window.resizeTimeout = setTimeout(() => {
+                    if (typeof updateSidebarProgress === 'function') {
+                        updateSidebarProgress();
+                    }
+                }, 250);
+            });
+            
             // 添加鍵盤快捷鍵支持
             document.addEventListener('keydown', function(e) {
                 // 只在游戲界面活動時響應快捷鍵
@@ -6318,8 +6408,9 @@
             const progressText = document.getElementById("endings-progress-text");
             
             if (progressRing && progressText) {
-                // 計算 stroke-dashoffset（圓周長 = 2 * π * r = 2 * π * 16 ≈ 100.48）
-                const circumference = 100.48;
+                // 根據屏幕尺寸動態計算圓周長
+                const isMobile = window.innerWidth <= 767;
+                const circumference = isMobile ? 87.92 : 100.48; // 移動端 r=14，桌面端 r=16
                 const offset = circumference - (percentage / 100) * circumference;
                 
                 progressRing.style.strokeDashoffset = offset;
@@ -6355,8 +6446,9 @@
             const progressText = document.getElementById("achievements-progress-text");
             
             if (progressRing && progressText) {
-                // 計算 stroke-dashoffset
-                const circumference = 100.48;
+                // 根據屏幕尺寸動態計算圓周長
+                const isMobile = window.innerWidth <= 767;
+                const circumference = isMobile ? 87.92 : 100.48; // 移動端 r=14，桌面端 r=16
                 const offset = circumference - (percentage / 100) * circumference;
                 
                 progressRing.style.strokeDashoffset = offset;
