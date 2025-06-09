@@ -1529,25 +1529,32 @@
             align-items: center;
             justify-content: center;
             z-index: 10;
-            overflow-y: auto;
             position: relative;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
         }
         
         .login-content {
             width: 90%;
-            max-width: 400px;
+            max-width: 380px;
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
-            padding: 30px 25px;
+            padding: 20px 16px;
             animation: slideInUp 0.6s ease-out;
+            display: flex;
+            flex-direction: column;
+            height: auto;
+            max-height: 90vh;
+            box-sizing: border-box;
         }
         
         @keyframes slideInUp {
             from {
                 opacity: 0;
-                transform: translateY(50px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -1557,26 +1564,27 @@
         
         .login-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 16px;
+            flex-shrink: 0;
         }
         
         .app-title {
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         
         .title-main {
-            font-size: 36px;
+            font-size: 28px;
             font-weight: bold;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
         
         .title-sub {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
             font-weight: 500;
         }
@@ -1607,50 +1615,87 @@
         
         .welcome-message {
             background: rgba(255, 255, 255, 0.8);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
             border-left: 4px solid #667eea;
+            flex-shrink: 0;
         }
         
         .welcome-title {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 12px;
+            margin-bottom: 0;
             text-align: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .welcome-toggle {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+        
+        .welcome-toggle.expanded {
+            transform: rotate(180deg);
         }
         
         .welcome-text {
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 11px;
+            line-height: 1.4;
             color: #555;
             text-align: left;
+            margin-top: 8px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        .welcome-text.show {
+            display: block;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 200px;
+            }
         }
         
         .login-form {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
         
         .form-group label {
             display: block;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 12px 15px;
+            padding: 8px 10px;
             border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 6px;
+            font-size: 14px;
             transition: all 0.3s ease;
             background-color: #fff;
             box-sizing: border-box;
@@ -1664,10 +1709,16 @@
         }
         
         .password-hint {
-            font-size: 12px;
+            font-size: 10px;
             color: #888;
-            margin-top: 5px;
+            margin-top: 2px;
             font-style: italic;
+            line-height: 1.2;
+        }
+        
+        .button-container {
+            margin-top: auto;
+            flex-shrink: 0;
         }
         
         .login-btn {
@@ -1675,22 +1726,22 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 20px;
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 5px;
+            margin-bottom: 8px;
         }
         
         .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.3);
         }
         
         .login-btn:active {
@@ -1702,17 +1753,17 @@
             background: linear-gradient(135deg, #ff6b6b, #ee5a52);
             color: white;
             border: none;
-            padding: 15px 20px;
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
+            display: none; /* 隐藏开发者按钮 */
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 5px;
+            margin-bottom: 8px;
             opacity: 0.9;
         }
         
@@ -1752,21 +1803,130 @@
         
         .login-footer {
             text-align: center;
-            padding-top: 20px;
+            padding-top: 12px;
             border-top: 1px solid #eee;
+            flex-shrink: 0;
         }
         
         .footer-text {
-            font-size: 13px;
+            font-size: 10px;
             color: #888;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             font-weight: 500;
         }
         
         .footer-icons {
-            font-size: 20px;
-            letter-spacing: 10px;
+            font-size: 14px;
+            letter-spacing: 6px;
             opacity: 0.7;
+        }
+        
+        /* 移動端適配 - 消除滾動條 */
+        @media (max-height: 700px) {
+            .login-content {
+                padding: 16px 14px;
+                max-height: 95vh;
+            }
+            
+            .login-header {
+                margin-bottom: 12px;
+            }
+            
+            .title-main {
+                font-size: 24px;
+            }
+            
+            .welcome-message {
+                padding: 10px;
+                margin-bottom: 12px;
+            }
+            
+            .form-group {
+                margin-bottom: 10px;
+            }
+            
+            .form-group input,
+            .form-group select {
+                padding: 6px 8px;
+                font-size: 13px;
+            }
+            
+            .login-btn,
+            .debug-btn {
+                padding: 8px 12px;
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+            
+            .login-footer {
+                padding-top: 8px;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .login-content {
+                padding: 12px 10px;
+                max-height: 98vh;
+            }
+            
+            .title-main {
+                font-size: 22px;
+            }
+            
+            .welcome-message {
+                padding: 8px;
+                margin-bottom: 10px;
+            }
+            
+            .welcome-title {
+                font-size: 12px;
+            }
+            
+            .form-group {
+                margin-bottom: 8px;
+            }
+            
+            .form-group label {
+                font-size: 11px;
+                margin-bottom: 3px;
+            }
+            
+            .form-group input,
+            .form-group select {
+                padding: 5px 7px;
+                font-size: 12px;
+            }
+            
+            .password-hint {
+                font-size: 9px;
+            }
+            
+            .login-btn,
+            .debug-btn {
+                padding: 7px 10px;
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+            
+            .login-footer {
+                padding-top: 6px;
+            }
+            
+            .footer-text {
+                font-size: 9px;
+                margin-bottom: 2px;
+            }
+            
+            .footer-icons {
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .login-content {
+                width: 95%;
+                padding: 14px 10px;
+            }
         }
         
         /* 響應式設計 */
@@ -2840,8 +3000,11 @@
             
             <!-- 歡迎信息 -->
             <div class="welcome-message">
-                <div class="welcome-title">歡迎來到太虛幻聊！🌟</div>
-                <div class="welcome-text">
+                <div class="welcome-title" onclick="toggleWelcomeText()">
+                    歡迎來到太虛幻聊！🌟
+                    <span class="welcome-toggle" id="welcomeToggle">▼</span>
+                </div>
+                <div class="welcome-text" id="welcomeText">
                     這裡有不同的主題群組等著你：與詩人們吟詩作對，和史家探討古今，與哲人思辨人生，還能和神話人物暢聊奇事！
                     <br><br>
                     雖然這些角色的回應都是基於AI技術生成的合理想像，但請記住不要將其視為標準答案哦～我們的目標是讓你更親近中華經典，激發學習興趣！
@@ -2879,19 +3042,21 @@
                     <div class="password-hint">💡 提示：密碼是英文「中國經典」</div>
                 </div>
                 
-                <button class="login-btn" id="loginBtn">
-                    <span class="btn-icon">🚀</span>
-                    開始太虛幻聊之旅
-                </button>
-                
-                <button class="debug-btn" id="debugBtn">
-                    <span class="btn-icon">🛠️</span>
-                    開發者快速進入
-                </button>
-                
-                <div class="login-error" id="loginError" style="display: none;">
-                    <span class="error-icon">⚠️</span>
-                    <span class="error-text"></span>
+                <div class="button-container">
+                    <button class="login-btn" id="loginBtn">
+                        <span class="btn-icon">🚀</span>
+                        開始太虛幻聊之旅
+                    </button>
+                    
+                    <button class="debug-btn" id="debugBtn">
+                        <span class="btn-icon">🛠️</span>
+                        開發者快速進入
+                    </button>
+                    
+                    <div class="login-error" id="loginError" style="display: none;">
+                        <span class="error-icon">⚠️</span>
+                        <span class="error-text"></span>
+                    </div>
                 </div>
             </div>
             
@@ -7159,8 +7324,22 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         window.onload = function() {
             console.log('應用開始初始化...');
             
-            // 初始化登入管理器
-            loginManager.init();
+                    // 初始化登入管理器
+        loginManager.init();
+        
+        // 欢迎信息切换功能
+        function toggleWelcomeText() {
+            const welcomeText = document.getElementById('welcomeText');
+            const welcomeToggle = document.getElementById('welcomeToggle');
+            
+            if (welcomeText.classList.contains('show')) {
+                welcomeText.classList.remove('show');
+                welcomeToggle.classList.remove('expanded');
+            } else {
+                welcomeText.classList.add('show');
+                welcomeToggle.classList.add('expanded');
+            }
+        }
             
             // 初始化狀態欄時間
             initializeStatusBarTime();
