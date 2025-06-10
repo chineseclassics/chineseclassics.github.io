@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>太虛幻聊 - 與古今名士暢談千古</title>
     <style>
         /* ===== 太虛幻聊統一設計規範 ===== */
@@ -1717,8 +1717,9 @@
             justify-content: center;
             z-index: 10;
             position: relative;
-            height: 100vh;
-            overflow: hidden;
+            height: calc(100vh - 28px);
+            overflow-y: auto;
+            padding: 10px 0;
             box-sizing: border-box;
         }
         
@@ -1734,8 +1735,10 @@
             display: flex;
             flex-direction: column;
             height: auto;
-            max-height: 90vh;
+            max-height: calc(100vh - 28px - 20px);
+            margin: auto;
             box-sizing: border-box;
+            overflow-y: auto;
         }
         
         @keyframes slideInUp {
@@ -1907,6 +1910,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            min-height: 0;
         }
         
         .form-group {
@@ -1951,6 +1955,8 @@
         .button-container {
             margin-top: auto;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
         }
         
         .login-btn {
@@ -1969,6 +1975,9 @@
             justify-content: center;
             gap: 5px;
             margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+            min-height: 44px;
         }
         
         .login-btn:hover {
@@ -1997,6 +2006,9 @@
             gap: 5px;
             margin-bottom: 8px;
             opacity: 0.9;
+            position: relative;
+            z-index: 2;
+            min-height: 44px;
         }
         
         .debug-btn:hover {
@@ -2053,12 +2065,27 @@
             opacity: 0.7;
         }
         
-        /* 移動端適配 - 消除滾動條 */
-        @media (max-height: 700px) {
+        /* 大屏幕適配 */
+        @media (min-width: 600px) {
+            .login-container {
+                height: calc(95vh - 28px - 2.5vh);
+            }
+            
+            .login-content {
+                max-height: calc(95vh - 28px - 2.5vh - 20px);
+            }
+        }
+        
+        /* 移動端適配 - 小屏幕優化 */
+        @media (max-height: 800px) {
+            .login-container {
+                padding: 5px 0;
+                height: calc(100vh - 28px);
+            }
+            
             .login-content {
                 padding: 16px 14px;
-                max-height: 95vh;
-                overflow-y: auto;
+                width: 92%;
             }
             
             .login-header {
@@ -2107,9 +2134,13 @@
         }
         
         @media (max-height: 600px) {
+            .login-container {
+                height: calc(100vh - 28px);
+                padding: 2px 0;
+            }
+            
             .login-content {
                 padding: 12px 10px;
-                max-height: 98vh;
             }
             
             .title-main {
@@ -2166,9 +2197,134 @@
         }
         
         @media (max-width: 360px) {
+            .login-container {
+                padding: 2px 0;
+            }
+            
             .login-content {
                 width: 95%;
-                padding: 14px 10px;
+                padding: 12px 8px;
+            }
+            
+            .title-main {
+                font-size: 20px;
+            }
+            
+            .welcome-message {
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .form-group {
+                margin-bottom: 8px;
+            }
+            
+            .login-btn,
+            .debug-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+        
+        /* 超小屏幕適配 */
+        @media (max-height: 500px) {
+            .login-container {
+                padding: 2px 0;
+                height: calc(100vh - 28px);
+            }
+            
+            .login-content {
+                padding: 8px 6px;
+                border-radius: 12px;
+            }
+            
+            .title-main {
+                font-size: 18px;
+            }
+            
+            .title-sub {
+                font-size: 10px;
+            }
+            
+            .welcome-message {
+                padding: 6px;
+                margin-bottom: 6px;
+            }
+            
+            .welcome-title {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+            
+            .welcome-text {
+                font-size: 10px;
+                line-height: 1.3;
+                margin-bottom: 8px;
+            }
+            
+            .form-group {
+                margin-bottom: 6px;
+            }
+            
+            .form-group label {
+                font-size: 10px;
+                margin-bottom: 2px;
+            }
+            
+            .form-group input,
+            .form-group select {
+                padding: 4px 6px;
+                font-size: 11px;
+            }
+            
+            .password-hint {
+                font-size: 8px;
+            }
+            
+            .login-btn,
+            .debug-btn {
+                padding: 5px 8px;
+                font-size: 11px;
+                margin-bottom: 4px;
+            }
+            
+            .login-footer {
+                padding-top: 4px;
+            }
+            
+            .footer-text {
+                font-size: 8px;
+                margin-bottom: 1px;
+            }
+            
+            .footer-icons {
+                font-size: 10px;
+            }
+        }
+        
+        /* 橫屏模式適配 */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .login-container {
+                padding: 1px 0;
+                height: calc(100vh - 28px);
+            }
+            
+            .login-content {
+                padding: 6px 12px;
+                max-width: 450px;
+            }
+            
+            .login-header {
+                margin-bottom: 6px;
+            }
+            
+            .welcome-message {
+                padding: 8px;
+                margin-bottom: 6px;
+            }
+            
+            .form-group {
+                margin-bottom: 5px;
             }
         }
         
@@ -3388,11 +3544,6 @@
                 </div>
             </div>
             
-            <!-- 底部裝飾 -->
-            <div class="login-footer">
-                <div class="footer-text">探索經典 • 啟發智慧 • 樂趣學習</div>
-                <div class="footer-icons">📚 🎭 🏛️ 🐲</div>
-            </div>
         </div>
     </div>
 
