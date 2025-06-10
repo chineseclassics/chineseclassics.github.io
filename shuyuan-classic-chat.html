@@ -209,7 +209,7 @@
         .moment-preview-image {
             width: 45px;
             height: 45px;
-            border-radius: 3px;
+            border-radius: 8px;
             overflow: hidden;
             background-color: #f0f0f0;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -359,7 +359,7 @@
             left: 50%;
             transform-origin: center center;
             animation: galaxyRotate 200s linear infinite;
-        }
+            }
         
         /* 第一條旋臂 */
         .spiral-arm:nth-child(2) {
@@ -369,7 +369,7 @@
         /* 第二條旋臂 - 180度相位差 */
         .spiral-arm:nth-child(3) {
             animation-delay: -100s;
-        }
+            }
         
         /* 粒子點 */
         .particle {
@@ -442,8 +442,8 @@
             pointer-events: none;
             z-index: 1;
             opacity: 0.6;
-        }
-        
+            }
+            
         /* 太虛幻聊 App 圖標 */
         .app-icon-container {
             position: fixed;
@@ -471,8 +471,8 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-        }
-        
+            }
+            
         .app-icon::before {
             content: '';
             position: absolute;
@@ -482,16 +482,16 @@
             height: 50%;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
             border-radius: 24px 24px 60px 60px;
-        }
-        
+            }
+            
         .app-icon:hover {
             transform: scale(1.05);
             box-shadow: 
                 0 12px 40px rgba(102, 126, 234, 0.5),
                 0 6px 20px rgba(138, 43, 226, 0.4),
                 inset 0 2px 4px rgba(255, 255, 255, 0.3);
-        }
-        
+            }
+            
         .app-icon:active {
             transform: scale(0.95);
         }
@@ -526,8 +526,8 @@
             border-radius: 50%;
             animation: iconGlow 4s ease-in-out infinite alternate;
             pointer-events: none;
-        }
-        
+            }
+            
         /* App圖標浮動動畫 */
         @keyframes appIconFloat {
             0%, 100% {
@@ -583,18 +583,10 @@
             100% {
                 transform: translate(-50%, -50%) scale(1.2);
                 opacity: 0;
-            }
+        }
         }
         
-        /* 手機容器iOS打開動畫類 */
-        .phone-container.app-opening {
-            animation: iOSAppOpen 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            margin: 0 !important;
-            z-index: 20;
-        }
+
         
         .app-icon-container.disappearing {
             animation: iconDisappear 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
@@ -662,7 +654,7 @@
             }
             to {
                 transform: translate(-50%, -50%) rotate(360deg);
-            }
+        }
         }
         
         @keyframes galaxyPulse {
@@ -673,7 +665,7 @@
             50% {
                 transform: translate(-50%, -50%) scale(1.1);
                 opacity: 1;
-            }
+        }
         }
         
         @keyframes twinkle {
@@ -699,239 +691,45 @@
             66% {
                 transform: translateX(-15px) translateY(10px) rotate(240deg);
                 opacity: 0.4;
-            }
+        }
         }
         
-        /* 手機界面容器 */
-        .phone-container {
-            max-width: 500px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 10;
-            background-color: #f7f7f7;
-            color: #333;
-            line-height: 1.4;
-            overflow: hidden;
-            height: 100vh;
-            box-shadow: 0 0 50px rgba(138, 43, 226, 0.3), 0 0 100px rgba(75, 0, 130, 0.2);
-            border-radius: 0;
-            box-sizing: border-box;
-            display: none; /* 初始隱藏手機容器 */
-            flex-direction: column;
-            border: none;
-            outline: none;
-        }
-        
-        /* 在大屏幕上添加陰影效果，使用完全直角 */
-        @media (min-width: 600px) {
-            .phone-container {
-                border-radius: 0; /* 完全直角 */
-                height: 95vh;
-                margin-top: 2.5vh;
-                box-shadow: 
-                    0 0 50px rgba(138, 43, 226, 0.4), 
-                    0 0 100px rgba(75, 0, 130, 0.3),
-                    0 20px 80px rgba(0, 0, 0, 0.5);
-                border: none;
-                outline: none;
-            }
-            
 
-        }
-            
-            /* 大屏幕下調整聊天容器高度 */
-            .wx-chat-container {
-                height: calc(95vh - 44px - 44px - 66px - 2.5vh); /* 調整為大屏幕模式的高度 */
-            }
-            
-            /* 讓全局狀態欄使用直角頂部 */
-            .global-status-bar {
-                border-radius: 0; /* 改為完全直角 */
-                background-color: #393a3f;
-                padding: 0 !important;
-                margin: 0 !important;
-                border: none !important;
-                outline: none !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            
-            /* 在大屏幕上調整狀態欄內容的邊距 */
-            .status-bar-left {
-                margin-left: 20px;
-                margin-top: 8px;
-            }
-            
-            .status-bar-right {
-                margin-right: 20px;
-                margin-top: 8px;
-            }
-            
-            /* 確保主容器無縫連接，使用完全直角 */
-            .main-container {
-                border-radius: 0 !important; /* 強制完全直角 */
-                flex: 1;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: none !important;
-                outline: none !important;
-            }
-            
-            /* 移除主界面header的圓角，確保無縫連接 */
-            .main-header {
-                border-radius: 0;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                border: none !important;
-                outline: none !important;
-                box-sizing: border-box !important;
-            }
-            
-            /* 在大屏幕模式下調整標題和按鈕的邊距 */
-            .main-title {
-                margin-left: 20px;
-            }
-            
-            .main-add-btn {
-                margin-right: 20px;
-            }
-            
-            /* 確保狀態欄在大屏幕模式下使用直角 */
-            .status-bar {
-                border-radius: 0 !important;
-            }
-        }
         
-        /* 狀態欄 */
-        .status-bar {
-            height: 44px;
-            background-color: #ffffff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 15px;
-            font-size: 12px;
-            color: #000;
-            font-weight: 600;
-            border-radius: 0; /* 確保狀態欄使用直角 */
-        }
-        
-        .status-bar-left {
-            font-size: 17px;
-            font-weight: 500;
-        }
-        
-        .status-bar-right {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .signal-container {
-            display: flex;
-            align-items: flex-end;
-            height: 12px;
-            gap: 1px;
-        }
-        
-        .signal-bar {
-            width: 3px;
-            height: 6px;
-            background-color: #000;
-            border-radius: 1px;
-        }
-        
-        .signal-bar:nth-child(2) {
-            height: 8px;
-        }
-        
-        .signal-bar:nth-child(3) {
-            height: 10px;
-        }
-        
-        .signal-bar:nth-child(4) {
-            height: 12px;
-        }
-        
-        .network-type {
-            font-size: 12px;
-            font-weight: 500;
-            margin-left: 5px;
-        }
-        
-        .battery {
-            display: flex;
-            align-items: center;
-            margin-left: 6px;
-        }
-        
-        .battery-icon {
-            width: 24px;
-            height: 12px;
-            background-color: #000;
-            border-radius: 2.5px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 1px;
-        }
-        
-        .battery-level {
-            background-color: #fff;
-            height: 8px;
-            border-radius: 1px;
-        }
-        
-        .battery-text {
-            position: absolute;
-            color: #fff;
-            font-size: 9px;
-            font-weight: 500;
-            width: 100%;
-            text-align: center;
-        }
-        
-        .battery-icon:after {
-            content: "";
-            position: absolute;
-            right: -2px;
-            top: 3px;
-            width: 2px;
-            height: 6px;
-            background-color: #000;
-            border-radius: 0 1px 1px 0;
-        }
+
         
         /* 聊天容器 */
         .wx-container {
-            flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-color: var(--wx-chat-bg);
             display: flex;
             flex-direction: column;
-            z-index: 1;
-            position: relative;
-            height: 100%; /* 確保容器有明確的高度 */
-            min-height: 0; /* 允許flex子項縮小 */
+            z-index: 10;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         
-        /* 微信頭部 - 統一狀態欄適配 */
+        /* 微信頭部 */
         .wx-header {
             background-color: var(--wx-header-bg);
-            height: 68px; /* 統一header高度以容納44px按鈕 */
+            height: 64px;
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 32px 15px 20px 15px; /* 統一狀態欄適配：32px頂部間距，20px底部間距 */
+            padding: 0 15px; /* 移除顶部多余空间 */
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             position: relative;
             z-index: 50;
             box-sizing: border-box;
             flex-shrink: 0;
-            min-height: 68px; /* 確保最小高度 */
         }
+        
+
         
         .wx-back-btn {
             width: 44px;
@@ -1069,7 +867,7 @@
         .wx-avatar {
             width: 40px;
             height: 40px;
-            border-radius: 3px;
+            border-radius: 8px;
             background-color: #f0f0f0;
             display: flex;
             align-items: center;
@@ -1088,24 +886,24 @@
         
         .wx-msg-bubble {
             max-width: 100%;
-            padding: 9px 12px;
+            padding: 8px 11px;
             position: relative;
             word-wrap: break-word;
             display: inline-block;
             text-align: left;
-            font-size: 17px;
-            line-height: 1.4;
+            font-size: 14px;
+            line-height: 1.3;
         }
         
         .wx-msg-self .wx-msg-bubble {
             background-color: var(--wx-bubble-self);
-            border-radius: 3px 0 3px 3px;
+            border-radius: 18px 6px 18px 18px;
             margin-right: 10px;
         }
         
         .wx-msg-others .wx-msg-bubble {
             background-color: var(--wx-bubble-others);
-            border-radius: 0 3px 3px 3px;
+            border-radius: 6px 18px 18px 18px;
             margin-left: 10px;
             box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
         }
@@ -1141,7 +939,7 @@
             min-height: 36px; /* 改为最小高度以适应文字 */
             padding: 8px 12px;
             background-color: var(--wx-bubble-others);
-            border-radius: 0 3px 3px 3px;
+            border-radius: 6px 18px 18px 18px;
             margin-left: 10px;
             box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
             position: relative;
@@ -1208,21 +1006,21 @@
         
         /* 發送者名稱 */
         .wx-name {
-            font-size: 12px;
+            font-size: 11px;
             color: #888;
             margin-bottom: 2px;
-            padding-left: 12px;
+            padding-left: 11px;
         }
         
         /* 系統消息 */
         .wx-system-msg {
             text-align: center;
-            font-size: 14px;
+            font-size: 12px;
             color: #999;
             background-color: rgba(0, 0, 0, 0.03);
-            border-radius: 3px;
+            border-radius: 10px;
             padding: 3px 8px;
-            margin: 10px auto;
+            margin: 8px auto;
             max-width: 70%;
             display: inline-block;
             clear: both;
@@ -1351,7 +1149,7 @@
             flex: 1;
             height: 32px;
             background-color: #fff;
-            border-radius: 4px;
+            border-radius: 18px;
             margin: 0 8px;
             border: none;
             outline: none;
@@ -1398,7 +1196,7 @@
         .mention-avatar {
             width: 36px;
             height: 36px;
-            border-radius: 4px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1417,7 +1215,7 @@
             color: #576b95;
             background-color: rgba(87, 107, 149, 0.1);
             padding: 2px 4px;
-            border-radius: 3px;
+            border-radius: 6px;
             font-weight: 500;
         }
         
@@ -1485,7 +1283,7 @@
             justify-content: center;
             font-size: 24px;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 10px;
             transition: background-color 0.2s;
         }
         
@@ -1593,18 +1391,16 @@
             display: none;
             flex-direction: column;
             overflow: auto;
-            /* 確保頂部不被狀態欄遮擋 */
-            padding-top: 0;
+            box-sizing: border-box;
         }
         
         .detail-header {
             background-color: var(--wx-header-bg);
-            height: 88px; /* 充足header高度：32px頂部 + 46px按鈕懸停空間 + 10px底部間距 */
+            height: 64px;
             display: flex;
             align-items: center;
-            padding: 36px 15px 10px 15px; /* 適度增加頂部間距，減少底部間距以平衡 */
+            padding: 0 15px; /* 移除顶部多余空间 */
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            min-height: 88px; /* 確保最小高度 */
         }
         
         .detail-back {
@@ -1726,6 +1522,7 @@
             flex-direction: column;
             overflow: auto;
             color: #333;
+            box-sizing: border-box;
         }
         
         .private-chat-details .detail-header {
@@ -1889,6 +1686,7 @@
             z-index: 200;
             display: none;
             flex-direction: column;
+            box-sizing: border-box;
         }
         
         .profile-header {
@@ -1901,7 +1699,7 @@
         .profile-avatar {
             width: 60px;
             height: 60px;
-            border-radius: 3px;
+            border-radius: 10px;
             background-color: #f0f0f0;
             display: flex;
             align-items: center;
@@ -1956,7 +1754,7 @@
         
         /* 朋友圈界面 */
         .moments {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
@@ -1966,8 +1764,6 @@
             display: none;
             flex-direction: column;
             overflow: auto;
-            max-width: 500px;
-            margin: 0 auto;
         }
         
         .moment-item {
@@ -1982,7 +1778,7 @@
         .moment-avatar {
             width: 40px;
             height: 40px;
-            border-radius: 3px;
+            border-radius: 8px;
             background-color: #f0f0f0;
             display: flex;
             align-items: center;
@@ -2024,37 +1820,61 @@
             animation: fadeIn 0.2s ease-out forwards;
         }
         
+        /* 統一父容器 - 控制所有頁面的圓角和尺寸 */
+        .app-universal-container {
+            width: 390px;
+            height: 844px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.3), 0 0 40px rgba(75, 0, 130, 0.2);
+            box-sizing: border-box;
+            z-index: 5;
+            opacity: 0; /* 初始不可见 */
+            visibility: hidden; /* 初始隐藏 */
+            transition: opacity 0.4s ease, visibility 0.4s ease; /* 平滑过渡 */
+        }
+        
+        /* 父容器显示状态 */
+        .app-universal-container.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
         /* 登入頁面樣式 */
         .login-container {
-            flex: 1;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            background: transparent;
             display: none; /* 初始隱藏 */
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: stretch; /* 改為 stretch 以填滿寬度 */
+            justify-content: stretch; /* 改為 stretch 以填滿高度 */
             overflow-y: auto;
-            padding: 20px;
+            padding: 0; /* 移除内边距，使用子元素的内边距 */
             box-sizing: border-box;
-            width: 100%;
-            min-height: 0; /* 確保flex子元素可以縮小 */
         }
         
         .login-content {
             width: 100%;
-            max-width: 380px;
+            height: 100%;
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border-radius: 0; /* 移除圆角，使用父容器的圆角 */
+            box-shadow: none; /* 移除阴影，使用父容器的阴影 */
             backdrop-filter: blur(10px);
             padding: 20px 16px;
             animation: slideInUp 0.6s ease-out;
             display: flex;
             flex-direction: column;
-            height: auto;
-            max-height: 100%; /* 使用父容器的全部高度 */
             box-sizing: border-box;
             overflow-y: auto;
-            flex-shrink: 1; /* 允許縮小以適應容器 */
         }
         
         @keyframes slideInUp {
@@ -2071,6 +1891,7 @@
         .login-header {
             text-align: center;
             margin-bottom: 16px;
+            margin-top: 40px; /* 增加顶部间距 */
             flex-shrink: 0;
         }
         
@@ -2121,12 +1942,14 @@
         
         .welcome-message {
             background: linear-gradient(135deg, rgba(255, 248, 220, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
-            border-radius: 12px;
+            border-radius: 8px; /* 减少圆角，避免与父容器冲突 */
             padding: 16px;
-            margin-bottom: 16px;
+            margin-bottom: 20px; /* 增加底部间距 */
             border: 2px solid #667eea;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-            flex-shrink: 0;
+            flex: 1; /* 使欢迎消息占用可用空间 */
+            display: flex;
+            flex-direction: column;
             position: relative;
         }
         
@@ -2138,7 +1961,7 @@
             background: #667eea;
             color: white;
             padding: 4px 12px;
-            border-radius: 12px;
+            border-radius: 6px; /* 减少圆角 */
             font-size: 11px;
             font-weight: bold;
         }
@@ -2162,10 +1985,11 @@
         
         .welcome-confirmation {
             background: rgba(102, 126, 234, 0.1);
-            border-radius: 8px;
+            border-radius: 6px; /* 减少圆角 */
             padding: 10px;
             text-align: center;
             border: 1px dashed #667eea;
+            margin-top: auto; /* 推到底部 */
         }
         
         .confirmation-text {
@@ -2180,7 +2004,7 @@
             color: white;
             border: none;
             padding: 6px 16px;
-            border-radius: 6px;
+            border-radius: 4px; /* 减少圆角 */
             font-size: 12px;
             font-weight: bold;
             cursor: pointer;
@@ -2221,12 +2045,10 @@
         }
         
         .login-form {
-            margin-bottom: 12px;
-            flex: 1;
+            margin-bottom: 20px; /* 增加底部间距 */
+            flex-shrink: 0; /* 避免压缩 */
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            min-height: 0;
         }
         
         .form-group {
@@ -2246,7 +2068,7 @@
             width: 100%;
             padding: 8px 10px;
             border: 2px solid #e0e0e0;
-            border-radius: 6px;
+            border-radius: 4px; /* 减少圆角 */
             font-size: 14px;
             transition: all 0.3s ease;
             background-color: #fff;
@@ -2281,7 +2103,7 @@
             color: white;
             border: none;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 6px; /* 减少圆角 */
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
@@ -2311,7 +2133,7 @@
             color: white;
             border: none;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 6px; /* 减少圆角 */
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
@@ -2344,7 +2166,7 @@
         .login-error {
             background-color: #fee;
             border: 1px solid #fcc;
-            border-radius: 8px;
+            border-radius: 4px; /* 减少圆角 */
             padding: 10px 12px;
             display: flex;
             align-items: center;
@@ -2363,8 +2185,9 @@
         
         .login-footer {
             text-align: center;
-            padding-top: 12px;
+            padding: 20px 0 30px 0; /* 增加上下内边距 */
             border-top: 1px solid #eee;
+            margin-top: auto; /* 推到底部 */
             flex-shrink: 0;
         }
         
@@ -2381,423 +2204,44 @@
             opacity: 0.7;
         }
         
-        /* 大屏幕適配 */
-        @media (min-width: 600px) {
-            .login-container {
-                height: calc(95vh - 28px - 2.5vh);
-            }
-            
-            .login-content {
-                max-height: calc(95vh - 28px - 2.5vh - 20px);
-            }
-        }
+        /* 媒体查询已移除，使用统一的全屏设计 */
         
-        /* 移動端適配 - 小屏幕優化 */
-        @media (max-height: 800px) {
-            .login-container {
-                padding: 5px 0;
-                height: calc(100vh - 28px);
-            }
-            
-            .login-content {
-                padding: 16px 14px;
-                width: 92%;
-            }
-            
-            .login-header {
-                margin-bottom: 12px;
-            }
-            
-            .title-main {
-                font-size: 24px;
-            }
-            
-            .welcome-message {
-                padding: 12px;
-                margin-bottom: 12px;
-            }
-            
-            .welcome-text {
-                font-size: 11px;
-                line-height: 1.4;
-            }
-            
-            .confirm-btn {
-                padding: 5px 12px;
-                font-size: 11px;
-            }
-            
-            .form-group {
-                margin-bottom: 10px;
-            }
-            
-            .form-group input,
-            .form-group select {
-                padding: 6px 8px;
-                font-size: 13px;
-            }
-            
-            .login-btn,
-            .debug-btn {
-                padding: 8px 12px;
-                font-size: 13px;
-                margin-bottom: 6px;
-            }
-            
-            .login-footer {
-                padding-top: 8px;
-            }
-        }
+
         
-        @media (max-height: 600px) {
-            .login-container {
-                height: calc(100vh - 28px);
-                padding: 2px 0;
-            }
-            
-            .login-content {
-                padding: 12px 10px;
-            }
-            
-            .title-main {
-                font-size: 22px;
-            }
-            
-            .welcome-message {
-                padding: 8px;
-                margin-bottom: 10px;
-            }
-            
-            .welcome-title {
-                font-size: 12px;
-            }
-            
-            .form-group {
-                margin-bottom: 8px;
-            }
-            
-            .form-group label {
-                font-size: 11px;
-                margin-bottom: 3px;
-            }
-            
-            .form-group input,
-            .form-group select {
-                padding: 5px 7px;
-                font-size: 12px;
-            }
-            
-            .password-hint {
-                font-size: 9px;
-            }
-            
-            .login-btn,
-            .debug-btn {
-                padding: 7px 10px;
-                font-size: 12px;
-                margin-bottom: 5px;
-            }
-            
-            .login-footer {
-                padding-top: 6px;
-            }
-            
-            .footer-text {
-                font-size: 9px;
-                margin-bottom: 2px;
-            }
-            
-            .footer-icons {
-                font-size: 12px;
-            }
-        }
+
         
-        @media (max-width: 360px) {
-            .login-container {
-                padding: 2px 0;
-            }
-            
-            .login-content {
-                width: 95%;
-                padding: 12px 8px;
-            }
-            
-            .title-main {
-                font-size: 20px;
-            }
-            
-            .welcome-message {
-                padding: 8px;
-                margin-bottom: 8px;
-            }
-            
-            .form-group {
-                margin-bottom: 8px;
-            }
-            
-            .login-btn,
-            .debug-btn {
-                padding: 6px 10px;
-                font-size: 12px;
-            }
-        }
+
         
-        /* 超小屏幕適配 */
-        @media (max-height: 500px) {
-            .login-container {
-                padding: 2px 0;
-                height: calc(100vh - 28px);
-            }
-            
-            .login-content {
-                padding: 8px 6px;
-                border-radius: 12px;
-            }
-            
-            .title-main {
-                font-size: 18px;
-            }
-            
-            .title-sub {
-                font-size: 10px;
-            }
-            
-            .welcome-message {
-                padding: 6px;
-                margin-bottom: 6px;
-            }
-            
-            .welcome-title {
-                font-size: 12px;
-                margin-bottom: 6px;
-            }
-            
-            .welcome-text {
-                font-size: 10px;
-                line-height: 1.3;
-                margin-bottom: 8px;
-            }
-            
-            .form-group {
-                margin-bottom: 6px;
-            }
-            
-            .form-group label {
-                font-size: 10px;
-                margin-bottom: 2px;
-            }
-            
-            .form-group input,
-            .form-group select {
-                padding: 4px 6px;
-                font-size: 11px;
-            }
-            
-            .password-hint {
-                font-size: 8px;
-            }
-            
-            .login-btn,
-            .debug-btn {
-                padding: 5px 8px;
-                font-size: 11px;
-                margin-bottom: 4px;
-            }
-            
-            .login-footer {
-                padding-top: 4px;
-            }
-            
-            .footer-text {
-                font-size: 8px;
-                margin-bottom: 1px;
-            }
-            
-            .footer-icons {
-                font-size: 10px;
-            }
-        }
+
         
-        /* 橫屏模式適配 */
-        @media (orientation: landscape) and (max-height: 500px) {
-            .login-container {
-                padding: 1px 0;
-                height: calc(100vh - 28px);
-            }
-            
-            .login-content {
-                padding: 6px 12px;
-                max-width: 450px;
-            }
-            
-            .login-header {
-                margin-bottom: 6px;
-            }
-            
-            .welcome-message {
-                padding: 8px;
-                margin-bottom: 6px;
-            }
-            
-            .form-group {
-                margin-bottom: 5px;
-            }
-        }
-        
-        /* 響應式設計 */
-        @media (max-height: 700px) {
-            .login-content {
-                padding: 20px;
-                margin: 20px auto;
-            }
-            
-            .welcome-text {
-                font-size: 13px;
-            }
-            
-            .title-main {
-                font-size: 30px;
-            }
-        }
-        
-        /* 全局狀態欄樣式 */
-        .global-status-bar {
-            position: relative;
-            width: 100%;
-            height: 28px;
-            background-color: #393a3f;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0;
-            font-size: 14px;
-            font-weight: 600;
-            z-index: 1000;
-            box-sizing: border-box;
-            flex-shrink: 0;
-            margin: 0;
-            border: none;
-            outline: none;
-        }
-        
-        /* 狀態欄樣式（保留用於兼容性） */
-        .status-bar {
-            height: 24px;
-            background-color: #000;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        
-        .status-bar-left {
-            display: flex;
-            align-items: center;
-            margin-left: 15px;
-            margin-top: 4px;
-        }
-        
-        .status-bar-right {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-right: 15px;
-            margin-top: 4px;
-        }
-        
-        .signal-container {
-            display: flex;
-            align-items: end;
-            gap: 1px;
-        }
-        
-        .signal-bar {
-            width: 3px;
-            background-color: white;
-            border-radius: 1px;
-        }
-        
-        .signal-bar:nth-child(1) { height: 3px; }
-        .signal-bar:nth-child(2) { height: 5px; }
-        .signal-bar:nth-child(3) { height: 7px; }
-        .signal-bar:nth-child(4) { height: 9px; }
-        
-        .network-type {
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .battery {
-            display: flex;
-            align-items: center;
-        }
-        
-        .battery-icon {
-            position: relative;
-            width: 24px;
-            height: 12px;
-            border: 1px solid white;
-            border-radius: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .battery-icon::after {
-            content: '';
-            position: absolute;
-            right: -3px;
-            top: 3px;
-            width: 2px;
-            height: 6px;
-            background-color: white;
-            border-radius: 0 1px 1px 0;
-        }
-        
-        .battery-level {
-            height: 8px;
-            background-color: white;
-            border-radius: 1px;
-            position: absolute;
-            left: 1px;
-            top: 1px;
-        }
-        
-        .battery-text {
-            font-size: 10px;
-            font-weight: 500;
-            z-index: 1;
-        }
+
         
         /* 主界面樣式 */
         .main-container {
-            flex: 1;
-            background-color: #f7f7f7;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #393a3f;
             display: flex;
             flex-direction: column;
-            z-index: 1;
-            position: relative;
-            width: 100%;
-            margin: 0;
+            z-index: 10;
             padding: 0;
             border: none;
             outline: none;
             box-sizing: border-box;
-            border-radius: 0; /* 確保完全直角 */
+            overflow: hidden;
         }
         
         .main-header {
-            background-color: #393a3f;
-            color: white;
+            background-color: #f7f7f7;
+            color: #000;
             height: 64px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 32px 0 8px 0; /* 統一狀態欄適配：32px頂部間距 */
+            justify-content: center;
+            padding: 8px 0; /* 移除狀態欄適配 */
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             margin: 0;
             border: none;
@@ -2805,7 +2249,10 @@
             width: 100%;
             box-sizing: border-box;
             flex-shrink: 0;
+            position: relative;
         }
+        
+
         
         .main-title {
             font-size: 18px;
@@ -2821,31 +2268,17 @@
         
         .main-title-count {
             font-size: 16px;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(0, 0, 0, 0.6);
         }
         
-        .main-add-btn {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background-color 0.2s;
-            margin-right: 15px;
-            color: white;
-        }
-        
-        .main-add-btn:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
+
         
         .main-content {
             flex: 1;
             overflow: hidden;
             background-color: #ffffff;
+            margin: 0;
+            border: none;
         }
         
         /* 聊天列表樣式 */
@@ -2959,6 +2392,8 @@
             box-shadow: 0 -0.5px 0 rgba(0, 0, 0, 0.05);
             height: 56px;
             align-items: center;
+            margin: 0;
+            flex-shrink: 0;
         }
         
         .nav-item {
@@ -3038,12 +2473,16 @@
         }
         
         .contact-group-header {
-            background-color: #f0f0f0;
-            padding: 8px 15px;
-            font-size: 13px;
-            color: #666;
-            font-weight: 500;
+            background-color: #f7f7f7;
+            padding: 12px 15px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
             line-height: 1.2;
+            border-bottom: 1px solid #e5e5e5;
+            position: sticky;
+            top: 0;
+            z-index: 5;
         }
         
         .contact-item {
@@ -3090,27 +2529,13 @@
             line-height: 1.2;
         }
         
-        /* 通訊錄右側字母索引 */
+        /* 通訊錄右側字母索引 - 隱藏，因為改用朝代排序 */
         .contacts-index {
-            position: fixed;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 12px;
-            padding: 8px 4px;
-            z-index: 10;
+            display: none;
         }
         
         .index-letter {
-            font-size: 11px;
-            color: #07c160;
-            padding: 2px 0;
-            line-height: 1;
-            font-weight: 500;
+            display: none;
         }
         
         /* 發現頁面樣式 - 模擬真實微信 */
@@ -3295,7 +2720,6 @@
         .profile-menu-section {
             background-color: #ffffff;
             margin-bottom: 10px;
-            border-radius: 8px;
         }
         
         .profile-menu-item {
@@ -3370,13 +2794,7 @@
             flex-direction: column;
             z-index: 15;
             box-sizing: border-box;
-        }
-        
-        /* 大屏幕模式下的朋友圈header圓角 */
-        @media (min-width: 600px) {
-            .moments-header {
-                border-radius: 25px 25px 0 0;
-            }
+            overflow: hidden;
         }
         
         .moments-header {
@@ -3388,8 +2806,10 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding: 76px 15px 15px 15px; /* 統一狀態欄適配：44px狀態欄 + 32px安全間距 */
+            padding: 15px 15px 15px 15px; /* 移除顶部多余空间 */
         }
+        
+
         
         .moments-back-btn, .moments-camera-btn {
             width: 44px;
@@ -3594,22 +3014,7 @@
             margin: 8px 0;
         }
         
-        /* 響應式圖片網格 */
-        @media (max-width: 400px) {
-            .moment-images {
-                max-width: 240px;
-            }
-        }
-        
-        /* 響應式隱藏桌面端不需要的元素 */
-        @media (min-width: 500px) {
-            .main-container {
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            }
-        }
+        /* 媒体查询已移除，使用统一设计 */
         
         /* 群組列表頁面樣式 */
         .group-list-page {
@@ -3631,7 +3036,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 32px 15px 8px 15px; /* 統一狀態欄適配：32px頂部間距 */
+            padding: 0 15px; /* 移除顶部多余空间 */
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
@@ -3770,7 +3175,7 @@
         <div class="nebula-cloud"></div>
         <div class="nebula-cloud"></div>
         <div class="nebula-cloud"></div>
-    </div>
+            </div>
     
     <!-- 額外的星空裝飾層 -->
     <div class="star-field"></div>
@@ -3784,13 +3189,11 @@
         </div>
     </div>
     
-
-
-
-        
-        <!-- 登入頁面 -->
-        <div class="login-container" id="loginContainer">
-            <div class="login-content">
+    <!-- 統一父容器 - 控制所有頁面的圓角和尺寸 -->
+    <div class="app-universal-container" id="appUniversalContainer">
+    <!-- 登入頁面 -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-content">
             <!-- 標題區域 -->
             <div class="login-header">
                 <div class="app-title">
@@ -3869,18 +3272,17 @@
                 </div>
             </div>
             
-            </div>
         </div>
+    </div>
 
-        <!-- 太虛幻聊主界面 -->
-        <div class="main-container" id="mainContainer" style="display: none;">
+    <!-- 太虛幻聊主界面 -->
+    <div class="main-container" id="mainContainer" style="display: none;">
         <!-- 主界面頭部 -->
         <div class="main-header">
             <div class="main-title">
-                <span>WeChat</span>
+                <span>TheyChat</span>
                 <span class="main-title-count">(41)</span>
             </div>
-            <div class="main-add-btn" id="mainAddBtn">+</div>
         </div>
         
         <!-- 主界面內容 -->
@@ -4549,6 +3951,8 @@
         </div>
     </div>
 
+    </div> <!-- 關閉統一父容器 -->
+    
     <script>
         // 檢測深色模式
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -5776,13 +5180,8 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     });
                 });
                 
-                // 添加按鈕
-                const addBtn = document.getElementById('mainAddBtn');
-                if (addBtn) {
-                    addBtn.addEventListener('click', () => {
-                        this.showAddMenu();
-                    });
-                }
+                // 初始化header状态
+                this.updateMainHeader('chatListTab');
             }
             
             // 切換標籤頁
@@ -5806,42 +5205,40 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                         item.classList.add('active');
                     }
                 });
+                
+                // 更新header标题和显示状态
+                this.updateMainHeader(targetTab);
             }
             
-            // 顯示添加菜單
-            showAddMenu() {
-                // 開發者工具菜單
-                const storageSize = chatHistoryManager.getStorageSize();
-                const options = [
-                    `當前存儲大小: ${storageSize}KB`,
-                    '1. 清空所有聊天記錄',
-                    '2. 導出聊天記錄',
-                    '3. 查看存儲統計',
-                    '4. 取消'
-                ];
+            // 更新主界面header
+            updateMainHeader(targetTab) {
+                const mainHeader = document.querySelector('.main-header');
+                const mainTitle = document.querySelector('.main-title');
                 
-                const choice = prompt(options.join('\n'), '4');
-                
-                switch(choice) {
-                    case '1':
-                        if (confirm('確定要清空所有聊天記錄嗎？此操作無法撤銷！')) {
-                            chatHistoryManager.clearAllHistory();
-                            alert('所有聊天記錄已清空');
-                            this.refreshChatList();
-                        }
+                if (targetTab === 'profileTab') {
+                    // "我"页面隐藏header
+                    mainHeader.style.display = 'none';
+                } else {
+                    // 其他页面显示header
+                    mainHeader.style.display = 'flex';
+                    
+                    // 根据不同tab更新标题
+                    switch(targetTab) {
+                        case 'chatListTab':
+                            const unreadCount = this.getUnreadCount();
+                            mainTitle.innerHTML = `TheyChat <span class="main-title-count">(${unreadCount})</span>`;
                         break;
-                    case '2':
-                        chatHistoryManager.exportHistory();
+                        case 'contactsTab':
+                            mainTitle.innerHTML = '通訊錄';
                         break;
-                    case '3':
-                        const allHistory = chatHistoryManager.getAllHistory();
-                        const stats = Object.keys(allHistory).map(chatId => {
-                            return `${chatId}: ${allHistory[chatId].length} 條消息`;
-                        }).join('\n');
-                        alert(`聊天記錄統計：\n${stats || '暫無記錄'}`);
+                        case 'discoverTab':
+                            mainTitle.innerHTML = '發現';
                         break;
+                    }
                 }
             }
+            
+
             
             // 更新徽章
             updateBadges() {
@@ -5861,7 +5258,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             // 獲取未讀消息數
             getUnreadCount() {
                 // 模擬未讀數量
-                return Math.floor(Math.random() * 10);
+                return 41;
             }
             
             // 刷新聊天列表（用於發送消息後更新）
@@ -5879,49 +5276,55 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 Object.values(CONFIG.groups).forEach(group => {
                     group.members.forEach(id => {
                         const char = characters[id];
-                        if (char) allCharacters.push(char);
+                        if (char && id !== 'user' && id !== 'system') allCharacters.push(char);
                     });
                 });
                 
-                // 按首字母分組
-                const charactersByLetter = {};
+                // 按朝代分組
+                const charactersByDynasty = {};
                 allCharacters.forEach(char => {
-                    const firstLetter = this.getFirstLetter(char.name);
-                    if (!charactersByLetter[firstLetter]) {
-                        charactersByLetter[firstLetter] = [];
+                    const dynasty = char.dynasty || '未分類';
+                    if (!charactersByDynasty[dynasty]) {
+                        charactersByDynasty[dynasty] = [];
                     }
-                    charactersByLetter[firstLetter].push(char);
+                    charactersByDynasty[dynasty].push(char);
                 });
                 
-                // 按字母順序生成通訊錄
-                const sortedLetters = Object.keys(charactersByLetter).sort();
-                sortedLetters.forEach(letter => {
-                    // 字母分組標題
+                // 定義朝代排序順序
+                const dynastyOrder = [
+                    '神話傳說',
+                    '春秋戰國',
+                    '漢代',
+                    '三國兩晉南北朝',
+                    '五代十國',
+                    '唐代',
+                    '宋代',
+                    '元代',
+                    '明代',
+                    '清代',
+                    '現代',
+                    '未分類'
+                ];
+                
+                // 按朝代順序生成通訊錄
+                dynastyOrder.forEach(dynasty => {
+                    if (charactersByDynasty[dynasty] && charactersByDynasty[dynasty].length > 0) {
+                        // 朝代分組標題
                     const groupHeader = document.createElement('div');
                     groupHeader.className = 'contact-group-header';
-                    groupHeader.textContent = letter;
+                        groupHeader.textContent = dynasty;
                     container.appendChild(groupHeader);
                     
-                    // 該字母下的角色列表
-                    charactersByLetter[letter].forEach(char => {
+                        // 該朝代下的角色列表
+                        charactersByDynasty[dynasty].forEach(char => {
                         const contactItem = this.createContactItem(char);
                         container.appendChild(contactItem);
                     });
+                    }
                 });
             }
             
-            // 獲取姓名首字母
-            getFirstLetter(name) {
-                const firstChar = name.charAt(0);
-                // 簡單的中文轉拼音首字母映射
-                const pinyinMap = {
-                    '阿': 'A', '杜': 'D', '韓': 'H', '孔': 'K', 
-                    '李': 'L', '老': 'L', '蘇': 'S', '司': 'S', 
-                    '莊': 'Z', '嫦': 'C', '白': 'B', '王': 'W',
-                    '張': 'Z', '劉': 'L', '陳': 'C', '趙': 'Z'
-                };
-                return pinyinMap[firstChar] || firstChar.toUpperCase();
-            }
+
             
             // 創建聯繫人項目
             createContactItem(character) {
@@ -6169,6 +5572,12 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
             // 處理調試登入
             handleDebugLogin() {
+                // 確保父容器可見
+                const universalContainer = document.getElementById('appUniversalContainer');
+                if (!universalContainer.classList.contains('show')) {
+                    universalContainer.classList.add('show');
+                }
+                
                 // 直接設置默認用戶信息
                 this.userInfo = {
                     nickname: '開發者',
@@ -6588,279 +5997,318 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         const characters = {
             system: { 
                 name: "系統", 
-                avatar: "ℹ️" 
-            },
-            libai: { 
-                name: "李白", 
-                nickname: "謫仙人", 
-                avatar: "🥂", 
-                description: "唐代詩人，字太白，號青蓮居士，被譽為「詩仙」。",
-                inGroup: true
+                avatar: "ℹ️",
+                dynasty: "現代"
             },
             user: {
                 name: "我",
                 nickname: "現代學者",
                 avatar: "👤", 
                 description: "現代的文學愛好者",
-                inGroup: true
+                inGroup: true,
+                dynasty: "現代"
             },
 
-            taoyuanming: { 
-                name: "陶淵明", 
-                nickname: "採菊東籬", 
-                avatar: "🌾", 
-                description: "東晉詩人，崇尚自然，歸隱田園。",
-                inGroup: true
-            },
-            liuling: { 
-                name: "劉伶", 
-                nickname: "酒中仙", 
-                avatar: "🍶", 
-                description: "魏晉竹林七賢之一，嗜酒如命。",
-                inGroup: true
-            },
-
-            dufu: { 
-                name: "杜甫", 
-                nickname: "少陵野老", 
-                avatar: "📝", 
-                description: "唐代詩人，被譽為「詩聖」。",
-                inGroup: true
-            },
-
-            ligui: { 
-                name: "李龜年", 
-                nickname: "宮廷樂師", 
-                avatar: "🎵", 
-                description: "唐代著名樂師，善歌舞。",
-                inGroup: true
-            },
+            // 神話傳說
             yutu: { 
                 name: "玉兔", 
                 nickname: "搗藥翁", 
                 avatar: "🐇", 
                 description: "月宮中的玉兔，傳說搗藥不輟。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "神話傳說"
             },
             change: { 
                 name: "嫦娥", 
                 nickname: "月宮仙子", 
                 avatar: "🙎‍♀️", 
                 description: "月中仙子，居廣寒宮。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "神話傳說"
             },
-
-            yuzhen: {
-                name: "玉真公主",
-                nickname: "唐玄宗妹妹",
-                avatar: "👸",
-                description: "唐玄宗的妹妹，喜歡修道，喜歡結交推薦有才華的文人。",
-                inGroup: true
-            },
-            wangwei: {
-                name: "王維",
-                nickname: "詩佛",
-                avatar: "🧘",
-                description: "唐代詩人，善山水詩，信佛，氣質與李白相異。",
-                inGroup: true
-            },
-            caozhi: {
-                name: "曹植",
-                nickname: "陳王",
-                avatar: "🤴",
-                description: "三國時期才子，李白在《將進酒》中提到的「陳王」。",
-                inGroup: true
-            },
-            menghaoran: {
-                name: "孟浩然",
-                nickname: "孟襄陽",
-                avatar: "🏞️",
-                description: "唐代山水田園詩人，與王維齊名，李白好友。",
-                inGroup: true
-            },
-
             xiwangmu: {
                 name: "西王母",
                 nickname: "瑤池金母",
                 avatar: "👑",
                 description: "神話中掌管仙界的女神，擁有不死藥。",
-                inGroup: true
-            },
-            yangguifei: {
-                name: "楊貴妃",
-                nickname: "天生麗質",
-                avatar: "💃",
-                description: "唐玄宗寵妃，李白曾作《清平調》稱頌其美。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "神話傳說"
             },
             
-            // 史記群角色
-            simaqian: {
-                name: "司馬遷",
-                nickname: "太史公",
-                avatar: "📚",
-                description: "西漢史學家，著《史記》，被譽為「史聖」。",
-                inGroup: true
-            },
-            liusi: {
-                name: "劉恕",
-                nickname: "史家能手",
-                avatar: "📜",
-                description: "北宋史學家，協助司馬光編寫《資治通鑑》。",
-                inGroup: true
-            },
-            baiqi: {
-                name: "白起",
-                nickname: "戰神",
-                avatar: "⚔️",
-                description: "戰國時期秦國名將，被稱為「戰神」，軍事才能卓越。",
-                inGroup: true
-            },
-            hanxin: {
-                name: "韓信",
-                nickname: "兵仙",
-                avatar: "🏹",
-                description: "西漢初年軍事家，被劉邦稱為「兵仙」，助漢建國。",
-                inGroup: true
-            },
-            
-            // 聞道群角色
+            // 春秋戰國
             confucius: {
                 name: "孔子", 
                 nickname: "至聖先師",
                 avatar: "👨‍🏫",
                 description: "春秋時期思想家、教育家，儒家學派創始人。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "春秋戰國"
             },
             laozi: {
                 name: "老子",
                 nickname: "道德天尊", 
                 avatar: "🧙‍♂️",
                 description: "春秋時期哲學家，道家學派創始人，著《道德經》。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "春秋戰國"
             },
             zhuangzi: {
                 name: "莊子",
                 nickname: "南華真人",
                 avatar: "🦋", 
                 description: "戰國時期哲學家，道家學派代表人物，著《莊子》。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "春秋戰國"
             },
             mencius: {
                 name: "孟子",
                 nickname: "亞聖",
                 avatar: "📖",
                 description: "戰國時期思想家，儒家學派代表人物，被稱為「亞聖」。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "春秋戰國"
             },
             huizi: {
                 name: "惠子",
                 nickname: "名家宗師", 
                 avatar: "🤔",
                 description: "戰國時期哲學家，名家學派代表人物，莊子的好友。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "春秋戰國"
             },
-            
-            // 怪力亂神群角色
-            pushengling: {
-                name: "蒲松齡",
-                nickname: "聊齋先生",
-                avatar: "👻",
-                description: "清代小說家，著《聊齋志異》，擅寫神怪故事。",
-                inGroup: true
+            baiqi: {
+                name: "白起",
+                nickname: "戰神",
+                avatar: "⚔️",
+                description: "戰國時期秦國名將，被稱為「戰神」，軍事才能卓越。",
+                inGroup: true,
+                dynasty: "春秋戰國"
+            },
+
+            // 三國兩晉南北朝
+            caozhi: {
+                name: "曹植",
+                nickname: "陳王",
+                avatar: "🤴",
+                description: "三國時期才子，李白在《將進酒》中提到的「陳王」。",
+                inGroup: true,
+                dynasty: "三國兩晉南北朝"
+            },
+            taoyuanming: { 
+                name: "陶淵明", 
+                nickname: "採菊東籬", 
+                avatar: "🌾", 
+                description: "東晉詩人，崇尚自然，歸隱田園。",
+                inGroup: true,
+                dynasty: "三國兩晉南北朝"
+            },
+            liuling: { 
+                name: "劉伶", 
+                nickname: "酒中仙", 
+                avatar: "🍶", 
+                description: "魏晉竹林七賢之一，嗜酒如命。",
+                inGroup: true,
+                dynasty: "三國兩晉南北朝"
             },
             ganbao: {
                 name: "干寶",
                 nickname: "搜神記主",
                 avatar: "🔮", 
                 description: "東晉史學家，著《搜神記》，記錄神仙鬼怪故事。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "三國兩晉南北朝"
             },
             
-            // 詞人群角色
+            // 漢代
+            simaqian: {
+                name: "司馬遷",
+                nickname: "太史公",
+                avatar: "📚",
+                description: "西漢史學家，著《史記》，被譽為「史聖」。",
+                inGroup: true,
+                dynasty: "漢代"
+            },
+            hanxin: {
+                name: "韓信",
+                nickname: "兵仙",
+                avatar: "🏹",
+                description: "西漢初年軍事家，被劉邦稱為「兵仙」，助漢建國。",
+                inGroup: true,
+                dynasty: "漢代"
+            },
+
+            // 唐代
+            libai: { 
+                name: "李白", 
+                nickname: "謫仙人", 
+                avatar: "🥂", 
+                description: "唐代詩人，字太白，號青蓮居士，被譽為「詩仙」。",
+                inGroup: true,
+                dynasty: "唐代"
+            },
+            dufu: { 
+                name: "杜甫", 
+                nickname: "少陵野老", 
+                avatar: "📝", 
+                description: "唐代詩人，被譽為「詩聖」。",
+                inGroup: true,
+                dynasty: "唐代"
+            },
+            wangwei: {
+                name: "王維",
+                nickname: "詩佛",
+                avatar: "🧘",
+                description: "唐代詩人，善山水詩，信佛，氣質與李白相異。",
+                inGroup: true,
+                dynasty: "唐代"
+            },
+            menghaoran: {
+                name: "孟浩然",
+                nickname: "孟襄陽",
+                avatar: "🏞️",
+                description: "唐代山水田園詩人，與王維齊名，李白好友。",
+                inGroup: true,
+                dynasty: "唐代"
+            },
+            ligui: { 
+                name: "李龜年", 
+                nickname: "宮廷樂師", 
+                avatar: "🎵", 
+                description: "唐代著名樂師，善歌舞。",
+                inGroup: true,
+                dynasty: "唐代"
+            },
+            yuzhen: {
+                name: "玉真公主",
+                nickname: "唐玄宗妹妹",
+                avatar: "👸",
+                description: "唐玄宗的妹妹，喜歡修道，喜歡結交推薦有才華的文人。",
+                inGroup: true,
+                dynasty: "唐代"
+            },
+            yangguifei: {
+                name: "楊貴妃",
+                nickname: "天生麗質",
+                avatar: "💃",
+                description: "唐玄宗寵妃，李白曾作《清平調》稱頌其美。",
+                inGroup: true,
+                dynasty: "唐代"
+            },
+
+            // 宋代
+            liusi: {
+                name: "劉恕",
+                nickname: "史家能手",
+                avatar: "📜",
+                description: "北宋史學家，協助司馬光編寫《資治通鑑》。",
+                inGroup: true,
+                dynasty: "宋代"
+            },
             liuyong: {
                 name: "柳永",
                 nickname: "三變",
                 avatar: "🎵",
                 description: "北宋詞人，原名三變，字耆卿，擅寫慢詞長調，開拓詞的表現力。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
+            },
+
+            // 清代
+            pushengling: {
+                name: "蒲松齡",
+                nickname: "聊齋先生",
+                avatar: "👻",
+                description: "清代小說家，著《聊齋志異》，擅寫神怪故事。",
+                inGroup: true,
+                dynasty: "清代"
             },
             liqingzhao: {
                 name: "李清照",
                 nickname: "易安居士",
                 avatar: "🌸",
                 description: "宋代女詞人，號易安居士，婉約詞派代表，被譽為「千古第一才女」。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
             },
             sushi: {
                 name: "蘇軾",
                 nickname: "東坡居士",
                 avatar: "🏔️",
                 description: "北宋文學家，字子瞻，號東坡居士，豪放詞派創始人，詩詞書畫皆精。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
             },
             xinqiji: {
                 name: "辛棄疾",
                 nickname: "稼軒",
                 avatar: "⚔️",
                 description: "南宋詞人，字幼安，號稼軒，豪放詞派代表，文武雙全。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
             },
             jiangkui: {
                 name: "姜夔",
                 nickname: "白石道人",
                 avatar: "🎶",
                 description: "南宋詞人，號白石道人，格律派詞人，音律精妙。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
             },
             liyu: {
                 name: "李煜",
                 nickname: "李後主",
                 avatar: "👑",
                 description: "南唐末代君主，詞人，被稱為「千古詞帝」，詞風悲愴動人。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "五代十國"
             },
             zhoubanyan: {
                 name: "周邦彥",
                 nickname: "美成",
                 avatar: "🎼",
                 description: "北宋詞人，字美成，格律嚴謹，被稱為「詞家之冠」。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
             },
             yanjidao: {
                 name: "晏幾道",
                 nickname: "小山",
                 avatar: "🍃",
                 description: "北宋詞人，字叔原，號小山，婉約詞派代表，晏殊之子。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
             },
             wuwenying: {
                 name: "吳文英",
                 nickname: "夢窗",
                 avatar: "🌙",
                 description: "南宋詞人，字君特，號夢窗，詞風綿密，意象豐富。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "宋代"
             },
             chenweisong: {
                 name: "陳維崧",
                 nickname: "其年",
                 avatar: "📚",
                 description: "清代詞人，字其年，號迦陵，陽羨詞派領袖，風格豪放。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "清代"
             },
             zhuyizun: {
                 name: "朱彜尊",
                 nickname: "竹垞",
                 avatar: "🎋",
                 description: "清代詞人，字錫鬯，號竹垞，浙西詞派創始人，詞學理論家。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "清代"
             },
             nalanxingde: {
                 name: "納蘭性德",
                 nickname: "容若",
                 avatar: "🏹",
                 description: "清代詞人，字容若，滿洲正黃旗人，詞風清麗，情真意切。",
-                inGroup: true
+                inGroup: true,
+                dynasty: "清代"
             }
         };
 
@@ -6924,8 +6372,8 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 // 滾動到底部以顯示"正在輸入"
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 
-                // 2-4秒後替換為實際消息（延長打字動畫，給用戶更好的期待感）
-                const typingDuration = 2000 + Math.random() * 2000; // 2-4秒隨機延時
+                // 缩短打字动画时间，快速响应用户
+                const typingDuration = 800 + Math.random() * 400; // 0.8-1.2秒随机延时
                 setTimeout(() => {
                     // 移除"正在輸入"元素（使用統一的函數）
                     removeTypingAnimation(message.character);
@@ -7084,7 +6532,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     body: JSON.stringify({
                         model: AI_CONFIG.model,
                         messages: messages,
-                        max_tokens: 200,
+                        max_tokens: 400, // 从200增加到400，允许更长的回应
                         temperature: 0.8
                     })
                 });
@@ -7129,6 +6577,149 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }
         }
 
+        // 将长消息分段发送
+        function splitMessageIntoSegments(text, maxLength = 100) {
+            if (text.length <= maxLength) {
+                return [text];
+            }
+            
+            const segments = [];
+            let currentSegment = '';
+            
+            // 按句子分割（中文句号、感叹号、问号等）
+            const sentences = text.split(/([。！？；\.\!\?;])/);
+            
+            for (let i = 0; i < sentences.length; i += 2) {
+                const sentence = sentences[i] + (sentences[i + 1] || '');
+                
+                // 如果当前段落加上新句子超过限制
+                if (currentSegment.length + sentence.length > maxLength && currentSegment.length > 0) {
+                    segments.push(currentSegment.trim());
+                    currentSegment = sentence;
+                } else {
+                    currentSegment += sentence;
+                }
+            }
+            
+            // 添加最后一段
+            if (currentSegment.trim()) {
+                segments.push(currentSegment.trim());
+            }
+            
+            // 如果没有找到合适的分割点，按字符强制分割
+            if (segments.length === 0 || segments.some(seg => seg.length > maxLength * 1.5)) {
+                segments.length = 0;
+                for (let i = 0; i < text.length; i += maxLength) {
+                    segments.push(text.slice(i, i + maxLength));
+                }
+            }
+            
+            return segments.filter(seg => seg.trim());
+        }
+
+        // 分段发送消息
+        function sendMessageSegments(characterKey, segments) {
+            segments.forEach((segment, index) => {
+                setTimeout(() => {
+                    // 如果不是第一段，先移除该角色的打字动画（第一段已在主函数中移除）
+                    if (index > 0) {
+                        removeTypingAnimation(characterKey);
+                    }
+                    
+                    // 直接添加消息段（绕过addMessage的打字动画逻辑）
+                    addRealMessage({
+                        type: 'message',
+                        character: characterKey,
+                        content: segment,
+                        contentType: 'text'
+                    });
+                    
+                    // 如果不是最后一段，显示继续输入的动画
+                    if (index < segments.length - 1) {
+                        setTimeout(() => {
+                            showTypingAnimation(characterKey);
+                        }, 300);
+                    }
+                }, index * 1500); // 每段间隔1.5秒
+            });
+        }
+
+        // 获取角色的性格化延迟倍数
+        function getCharacterDelayMultiplier(characterKey) {
+            const delayMultipliers = {
+                libai: 0.8,        // 李白性格豪爽，回复较快
+                dufu: 1.2,         // 杜甫深思熟虑，回复较慢
+                taoyuanming: 1.4,  // 陶渊明悠然自得，不急不躁
+                wangwei: 1.1,      // 王维禅意深远，略慢
+                caozhi: 0.9,       // 曹植才思敏捷
+                menghaoran: 1.3,   // 孟浩然田园闲适
+                liuling: 0.7,      // 刘伶醉酒豪爽，最快
+                change: 1.0,       // 嫦娥标准速度
+                yutu: 0.6,         // 玉兔活泼，最快
+                ligui: 0.9,        // 李龟年艺术家敏感
+                yuzhen: 1.1,       // 玉真公主贵族风范
+                yangguifei: 1.0,   // 杨贵妃标准
+                xiwangmu: 1.5      // 西王母神仙威严，最慢
+            };
+            return delayMultipliers[characterKey] || 1.0;
+        }
+
+        // 计算自然的分段间隔时间
+        function getNaturalSegmentInterval(characterKey, segmentIndex, totalSegments) {
+            const baseInterval = 1200; // 基础1.2秒
+            const characterMultiplier = getCharacterDelayMultiplier(characterKey);
+            const randomFactor = 0.7 + Math.random() * 0.6; // 0.7-1.3倍随机
+            
+            // 第一段稍快，中间段正常，最后一段略慢（思考下句话）
+            let positionMultiplier = 1.0;
+            if (segmentIndex === 0) {
+                positionMultiplier = 0.8;
+            } else if (segmentIndex === totalSegments - 1) {
+                positionMultiplier = 1.2;
+            }
+            
+            return Math.floor(baseInterval * characterMultiplier * randomFactor * positionMultiplier);
+        }
+
+        // 串行分段发送消息（等待完成）- 自然化版本
+        function sendMessageSegmentsSequentially(characterKey, segments) {
+            return new Promise((resolve) => {
+                let totalDelay = 0;
+                
+                segments.forEach((segment, index) => {
+                    const segmentDelay = getNaturalSegmentInterval(characterKey, index, segments.length);
+                    totalDelay += segmentDelay;
+                    
+                    setTimeout(() => {
+                        // 如果不是第一段，先移除该角色的打字动画
+                        if (index > 0) {
+                            removeTypingAnimation(characterKey);
+                        }
+                        
+                        // 直接添加消息段
+                        addRealMessage({
+                            type: 'message',
+                            character: characterKey,
+                            content: segment,
+                            contentType: 'text'
+                        });
+                        
+                        // 如果不是最后一段，显示继续输入的动画
+                        if (index < segments.length - 1) {
+                            // 随机延迟显示打字动画，模拟思考下一句
+                            const thinkingDelay = 200 + Math.random() * 300;
+                            setTimeout(() => {
+                                showTypingAnimation(characterKey);
+                            }, thinkingDelay);
+                        } else {
+                            // 最后一段发送完成
+                            resolve();
+                        }
+                    }, totalDelay);
+                });
+            });
+        }
+
         // 備用回應（當AI調用失敗時使用）
         function getBackupResponse(characterKey) {
             const backupResponses = {
@@ -7166,6 +6757,51 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             // 隨機選擇角色
             const shuffled = inGroupCharacters.sort(() => 0.5 - Math.random());
             return shuffled.slice(0, responseCount);
+        }
+
+        // 生成AI角色间的互动回应
+        function generateCharacterInteraction(characterKey, previousResponses, userMessage) {
+            const character = characters[characterKey];
+            if (!character) return '';
+            
+            // 基于前面角色的回应生成互动内容
+            const lastResponse = previousResponses[previousResponses.length - 1];
+            if (!lastResponse) return '';
+            
+            const interactionPrompts = {
+                libai: [
+                    `听了${lastResponse.characterName}的话，哈哈！`,
+                    `${lastResponse.characterName}说得好！李某深以为然。`,
+                    `妙哉！${lastResponse.characterName}此言甚有见地。`
+                ],
+                dufu: [
+                    `${lastResponse.characterName}所言极是，深有同感。`,
+                    `听君一席话，胜读十年书。`,
+                    `${lastResponse.characterName}这话让我想起了往昔。`
+                ],
+                taoyuanming: [
+                    `${lastResponse.characterName}说得是，心远地自偏。`,
+                    `同感，此中有真意，欲辨已忘言。`,
+                    `${lastResponse.characterName}的话让我想起田园之乐。`
+                ],
+                wangwei: [
+                    `阿弥陀佛，${lastResponse.characterName}此言颇有禅意。`,
+                    `${lastResponse.characterName}说得对，山水有情，诗画同源。`,
+                    `善哉，${lastResponse.characterName}所言令人深思。`
+                ],
+                change: [
+                    `在月宫听到${lastResponse.characterName}这话，甚有感触。`,
+                    `${lastResponse.characterName}的话让我想起人间往事。`,
+                    `广寒宫中，难得听到如此佳言。`
+                ]
+            };
+            
+            const interactions = interactionPrompts[characterKey] || [
+                `${lastResponse.characterName}说得有道理。`,
+                `听了${lastResponse.characterName}的话，深有感触。`
+            ];
+            
+            return interactions[Math.floor(Math.random() * interactions.length)];
         }
 
         // 生成安全的AI回應（新版本）
@@ -7231,72 +6867,283 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
             console.log('最終選中的回應角色:', respondingCharacters);
             
-            for (let i = 0; i < respondingCharacters.length; i++) {
-                const characterKey = respondingCharacters[i];
+            // 记录回应历史，用于角色间互动
+            let responseHistory = [];
+            
+            // 串行处理角色回应，确保一个完成后再处理下一个
+            async function processCharacterResponsesSequentially(characterList, index = 0) {
+                console.log(`=== 串行处理调用，index=${index}，总长度=${characterList.length} ===`);
+                
+                if (index >= characterList.length) {
+                    console.log('=== 所有角色处理完成 ===');
+                    return;
+                }
+                
+                const characterKey = characterList[index];
+                const isFirstCharacter = index === 0;
+                
+                console.log(`准备处理第${index + 1}个角色: ${characterKey}`);
+                
+                // 检查角色是否存在
+                if (!characters[characterKey]) {
+                    console.error(`角色 ${characterKey} 不存在，跳过`);
+                    setTimeout(() => {
+                        processCharacterResponsesSequentially(characterList, index + 1);
+                    }, 100);
+                    return;
+                }
+                
+                // 计算自然的开始延迟
+                function getStartDelay(characterKey, isFirst, userMessageLength) {
+                    const characterMultiplier = getCharacterDelayMultiplier(characterKey);
+                    const messageComplexity = Math.min(userMessageLength / 50, 2); // 消息复杂度影响
+                    const baseDelay = isFirst ? 800 : 1500; // 基础延迟
+                    const randomFactor = 0.7 + Math.random() * 0.8; // 随机因子
+                    
+                    return Math.floor(baseDelay * characterMultiplier * (1 + messageComplexity * 0.3) * randomFactor);
+                }
+                
+                const startDelay = getStartDelay(characterKey, isFirstCharacter, userMessage.length);
                 
                 setTimeout(async () => {
-                    // 檢查該角色是否被@
-                    const isMentioned = mentions.some(mention => mention.id === characterKey);
+                    console.log(`=== 开始处理角色 ${characterKey} (${characters[characterKey]?.name}) ===`);
                     
-                    // 使用群組管理器生成AI提示詞，包含@信息
-                    let aiPrompt = groupManager.getAIPrompt(characterKey, userMessage);
+                    // 显示该角色正在思考
+                    showTypingAnimation(characterKey);
                     
-                    if (isMentioned) {
-                        aiPrompt += `\n注意：用戶在消息中@了你，請直接回應用戶的問題或評論。`;
-                    }
-                    
-                    const response = await generateAIResponse(characterKey, userMessage, aiPrompt);
-                    
-                    if (response) {
-                        // 安全性過濾
-                        const safeResponse = safetyFilter.filterAIResponse(response);
-                        
-                        addMessage({
-                            type: 'message',
-                            character: characterKey,
-                            content: safeResponse,
-                            contentType: 'text'
-                        });
-                        
-                        // 音效已移除
-                        
+                    // 5%概率模拟"重新思考"（先移除再显示思考动画）
+                    if (Math.random() < 0.05) {
+                        const rethinkDelay = 1000 + Math.random() * 1500; // 1-2.5秒后重新思考
                         setTimeout(() => {
-                            const chatContainer = document.getElementById('chatMessages');
-                            chatContainer.scrollTop = chatContainer.scrollHeight;
-                        }, 100);
+                            removeTypingAnimation(characterKey);
+                            setTimeout(() => {
+                                showTypingAnimation(characterKey);
+                            }, 200 + Math.random() * 300);
+                        }, rethinkDelay);
                     }
-                }, (i + 1) * 1500);
+                    
+                    let response;
+                    let characterResponse;
+                    
+                    try {
+                        if (isFirstCharacter || Math.random() < 0.7) {
+                            // 第一个角色或70%概率回应用户消息
+                            console.log(`${characterKey} 将回应用户消息`);
+                            const isMentioned = mentions.some(mention => mention.id === characterKey);
+                            let aiPrompt = groupManager.getAIPrompt(characterKey, userMessage);
+                            
+                            if (isMentioned) {
+                                aiPrompt += `\n注意：用戶在消息中@了你，請直接回應用戶的問題或評論。`;
+                            }
+                            
+                            response = await generateAIResponse(characterKey, userMessage, aiPrompt);
+                            characterResponse = response;
+                            console.log(`${characterKey} AI回应:`, characterResponse);
+                            
+                            // 如果AI回应失败，使用备用回应
+                            if (!characterResponse || !characterResponse.trim()) {
+                                console.log(`${characterKey} AI回应为空，使用备用回应`);
+                                characterResponse = getBackupResponse(characterKey);
+                            }
+                        } else {
+                            // 30%概率与其他角色互动
+                            console.log(`${characterKey} 尝试与其他角色互动`);
+                            const interactionText = generateCharacterInteraction(characterKey, responseHistory, userMessage);
+                            if (interactionText) {
+                                characterResponse = interactionText;
+                                console.log(`${characterKey} 互动回应:`, characterResponse);
+                            } else {
+                                // 如果没有互动内容，还是回应用户
+                                console.log(`${characterKey} 没有互动内容，回应用户`);
+                                response = await generateAIResponse(characterKey, userMessage);
+                                characterResponse = response;
+                                console.log(`${characterKey} AI回应:`, characterResponse);
+                                
+                                // 如果AI回应失败，使用备用回应
+                                if (!characterResponse || !characterResponse.trim()) {
+                                    console.log(`${characterKey} AI回应为空，使用备用回应`);
+                                    characterResponse = getBackupResponse(characterKey);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`${characterKey} 生成回应时出错:`, error);
+                        characterResponse = null;
+                    }
+                    
+                    if (characterResponse && characterResponse.trim()) {
+                        console.log(`${characterKey} 准备发送回应:`, characterResponse);
+                        
+                        // 移除打字动画
+                        removeTypingAnimation(characterKey);
+                        
+                        // 安全性过滤
+                        const safeResponse = safetyFilter.filterAIResponse(characterResponse);
+                        console.log(`${characterKey} 过滤后的回应:`, safeResponse);
+                        
+                        if (safeResponse && safeResponse.trim()) {
+                            // 记录回应历史
+                            responseHistory.push({
+                                characterKey: characterKey,
+                                characterName: characters[characterKey]?.name || characterKey,
+                                content: safeResponse
+                            });
+                            
+                            // 分段发送长消息
+                            const segments = splitMessageIntoSegments(safeResponse, 80);
+                            console.log(`${characterKey} 消息分段:`, segments);
+                            
+                            if (segments.length > 1) {
+                                // 等待分段消息完成发送
+                                await sendMessageSegmentsSequentially(characterKey, segments);
+                                console.log(`${characterKey} 分段消息发送完成`);
+                                
+                                setTimeout(() => {
+                                    const chatContainer = document.getElementById('chatMessages');
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }, 100);
+                                
+                                // 分段消息完成后，动态延迟处理下一个角色
+                                const nextDelay = 800 + Math.random() * 400; // 0.8-1.2秒随机
+                                setTimeout(() => {
+                                    console.log(`${characterKey} 分段完成，延迟${nextDelay}ms处理下一个角色 (index=${index + 1})`);
+                                    processCharacterResponsesSequentially(characterList, index + 1);
+                                }, nextDelay);
+                            } else {
+                                addMessage({
+                                    type: 'message',
+                                    character: characterKey,
+                                    content: safeResponse,
+                                    contentType: 'text'
+                                });
+                                
+                                setTimeout(() => {
+                                    const chatContainer = document.getElementById('chatMessages');
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }, 100);
+                                
+                                // 单条消息发送后，短暂随机延迟处理下一个角色
+                                const shortDelay = 300 + Math.random() * 400; // 0.3-0.7秒随机
+                                setTimeout(() => {
+                                    console.log(`${characterKey} 单条完成，延迟${shortDelay}ms处理下一个角色 (index=${index + 1})`);
+                                    processCharacterResponsesSequentially(characterList, index + 1);
+                                }, shortDelay);
+                            }
+                        } else {
+                            console.warn(`${characterKey} 过滤后的回应为空`);
+                            removeTypingAnimation(characterKey);
+                            
+                            // 如果过滤后回应为空，立即处理下一个角色
+                            setTimeout(() => {
+                                console.log(`${characterKey} 过滤后回应为空，处理下一个角色 (index=${index + 1})`);
+                                processCharacterResponsesSequentially(characterList, index + 1);
+                            }, 500);
+                        }
+                    } else {
+                        // 如果没有回应，移除动画并处理下一个角色
+                        console.warn(`${characterKey} 没有生成有效回应`);
+                        removeTypingAnimation(characterKey);
+                        setTimeout(() => {
+                            console.log(`${characterKey} 没有有效回应，处理下一个角色 (index=${index + 1})`);
+                            processCharacterResponsesSequentially(characterList, index + 1);
+                        }, 500);
+                    }
+                }, startDelay);
             }
+            
+            // 开始串行处理
+            processCharacterResponsesSequentially(respondingCharacters);
         }
         
         // 生成AI回應（原版本，向後兼容）
         async function generateAIResponses(userMessage) {
             const respondingCharacters = selectRespondingCharacters();
             
-            for (let i = 0; i < respondingCharacters.length; i++) {
-                const characterKey = respondingCharacters[i];
+            // 串行处理角色回应
+            async function processResponsesSequentially(characterList, index = 0) {
+                if (index >= characterList.length) return;
                 
-                // 延遲回應，模擬真實聊天
+                const characterKey = characterList[index];
+                const isFirstCharacter = index === 0;
+                const startDelay = isFirstCharacter ? 1000 : 2000;
+                
+                // 检查角色是否存在
+                if (!characters[characterKey]) {
+                    console.error(`角色 ${characterKey} 不存在，跳过`);
+                    setTimeout(() => {
+                        processResponsesSequentially(characterList, index + 1);
+                    }, 100);
+                    return;
+                }
+                
                 setTimeout(async () => {
-                    const response = await generateAIResponse(characterKey, userMessage);
-                    if (response) {
-                        addMessage({
-                            type: 'message',
-                            character: characterKey,
-                            content: response,
-                            contentType: 'text'
-                        });
-                        
-                        // 音效已移除
-                        
-                        // 滾動到底部
-                        setTimeout(() => {
-                            const chatContainer = document.getElementById('chatMessages');
-                            chatContainer.scrollTop = chatContainer.scrollHeight;
-                        }, 100);
+                    console.log(`=== 开始处理角色 ${characterKey} (旧版本) ===`);
+                    
+                    // 显示该角色正在思考
+                    showTypingAnimation(characterKey);
+                    
+                    let response = await generateAIResponse(characterKey, userMessage);
+                    
+                    // 如果AI回应失败，使用备用回应
+                    if (!response || !response.trim()) {
+                        console.log(`${characterKey} AI回应为空，使用备用回应`);
+                        response = getBackupResponse(characterKey);
                     }
-                }, (i + 1) * 1500); // 每個回應間隔1.5秒
+                    
+                    if (response && response.trim()) {
+                        console.log(`${characterKey} 准备发送回应:`, response);
+                        
+                        // 移除打字动画
+                        removeTypingAnimation(characterKey);
+                        
+                        // 分段发送长消息
+                        const segments = splitMessageIntoSegments(response, 80);
+                        if (segments.length > 1) {
+                            await sendMessageSegmentsSequentially(characterKey, segments);
+                            console.log(`${characterKey} 分段消息发送完成 (旧版本)`);
+                            
+                            setTimeout(() => {
+                                const chatContainer = document.getElementById('chatMessages');
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
+                            }, 100);
+                            
+                            // 分段消息完成后，延迟处理下一个角色
+                            setTimeout(() => {
+                                console.log(`${characterKey} 完成，开始处理下一个角色`);
+                                processResponsesSequentially(characterList, index + 1);
+                            }, 1000);
+                        } else {
+                            addMessage({
+                                type: 'message',
+                                character: characterKey,
+                                content: response,
+                                contentType: 'text'
+                            });
+                            
+                            setTimeout(() => {
+                                const chatContainer = document.getElementById('chatMessages');
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
+                            }, 100);
+                            
+                            // 单条消息发送后，短暂延迟处理下一个角色
+                            setTimeout(() => {
+                                console.log(`${characterKey} 完成，开始处理下一个角色`);
+                                processResponsesSequentially(characterList, index + 1);
+                            }, 500);
+                        }
+                    } else {
+                        // 如果仍然没有回应，移除动画并处理下一个角色
+                        console.warn(`${characterKey} 没有生成有效回应`);
+                        removeTypingAnimation(characterKey);
+                        setTimeout(() => {
+                            processResponsesSequentially(characterList, index + 1);
+                        }, 500);
+                    }
+                }, startDelay);
             }
+            
+            // 开始串行处理
+            processResponsesSequentially(respondingCharacters);
         }
 
 
@@ -7431,22 +7278,19 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }, 100);
             
-            // 觸發AI回應
+            // 触发AI回应
             setTimeout(() => {
                 if (isPrivateChat) {
-                    // 私聊模式：顯示對方正在輸入的動畫
+                    // 私聊模式：延迟1秒显示对方正在输入的动画
                     const characterId = getPrivateChatCharacterId();
                     if (characterId) {
-                        showTypingAnimation(characterId);
+                        setTimeout(() => {
+                            showTypingAnimation(characterId);
+                        }, 1000);
                     }
                     generatePrivateChatResponse(message);
                 } else {
-                    // 群聊模式：如果有@提及，顯示被@角色的打字動畫
-                    if (hasAtMentions) {
-                        mentions.forEach(mention => {
-                            showTypingAnimation(mention);
-                        });
-                    }
+                    // 群聊模式：正常生成AI回应（延迟显示动画已在函数内处理）
                     generateSafeAIResponses(message, mentions);
                 }
                 
@@ -7456,7 +7300,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                         mainInterface.refreshChatList();
                     }
                 }, 2000);
-            }, 1000);
+            }, 200);
         }
 
 
@@ -8004,6 +7848,8 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             typingMessages.forEach(el => el.remove());
         }
 
+
+
         // 生成私聊回應
         async function generatePrivateChatResponse(userMessage) {
             console.log('=== 開始生成私聊回應 ===');
@@ -8046,12 +7892,20 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     console.log('正在添加回應消息...');
                     // 先移除打字動畫
                     removeTypingAnimation(characterId);
+                    
+                    // 分段发送长消息（使用自然化版本）
+                    const segments = splitMessageIntoSegments(aiResponse, 80);
+                    if (segments.length > 1) {
+                        sendMessageSegmentsSequentially(characterId, segments);
+                    } else {
+                        // 短消息直接发送
                     addMessage({
                         type: 'message',
                         character: characterId,
                         content: aiResponse,
                         contentType: 'text'
                     });
+                    }
                     console.log('回應消息已添加');
                 }, responseDelay);
             } else {
@@ -9821,7 +9675,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         function handleAppIconClick() {
             const appIconContainer = document.getElementById('appIconContainer');
             const loginContainer = document.getElementById('loginContainer');
-            const phoneContainer = document.querySelector('.phone-container');
+            const universalContainer = document.getElementById('appUniversalContainer');
             
             // 添加消失動畫類
             appIconContainer.classList.add('disappearing');
@@ -9831,31 +9685,13 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 // 隱藏app圖標
                 appIconContainer.style.display = 'none';
                 
-                // 顯示登入界面（在手機容器內）
+                // 顯示父容器（带阴影效果）
+                universalContainer.classList.add('show');
+                
+                // 直接顯示登入界面
                 loginContainer.style.display = 'flex';
                 
-                // 只給手機容器應用iOS打開動畫
-                phoneContainer.style.display = 'flex';
-                phoneContainer.classList.add('app-opening');
-                
-                // 動畫完成後移除動畫類並恢復正常定位
-                setTimeout(() => {
-                    phoneContainer.classList.remove('app-opening');
-                    // 恢復正常的相對定位
-                    phoneContainer.style.position = 'relative';
-                    phoneContainer.style.top = 'auto';
-                    phoneContainer.style.left = 'auto';
-                    phoneContainer.style.transform = 'none';
-                    phoneContainer.style.margin = '0 auto';
-                    phoneContainer.style.zIndex = '10';
-                    
-                    // 在大屏幕模式下恢復原有的margin-top
-                    if (window.innerWidth >= 600) {
-                        phoneContainer.style.marginTop = '2.5vh';
-                    }
-                }, 800);
-                
-            }, 400); // 讓圖標消失動畫先進行一半
+            }, 400); // 圖標消失動畫時間
         }
         
         // 啟動應用
@@ -9878,11 +9714,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             // 页面加载完成后初始化登录表单
             initializeLoginForm();
             
-            // 初始化狀態欄時間
-            initializeStatusBarTime();
             
-            // 初始化電池管理器
-            batteryManager.initialize();
             
             // 設置聊天輸入功能
             setupChatInput();
@@ -9959,6 +9791,6 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         };
     </script>
     
-    </div> <!-- 結束 phone-container -->
+
 </body>
 </html>
