@@ -335,7 +335,7 @@
             width: 100%;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow: hidden; /* 完全禁止滚动 */
         }
         
         body {
@@ -346,7 +346,10 @@
                 radial-gradient(ellipse at 50% 50%, rgba(25, 25, 112, 0.2) 0%, transparent 60%),
                 linear-gradient(135deg, #0f0f23 0%, #1a1a3a 25%, #2d1b69 50%, #1e3a8a 75%, #0f172a 100%);
             position: relative;
+            width: 100vw;
+            height: 100vh;
             min-height: 100vh;
+            max-height: 100vh;
             overflow: hidden;
         }
         
@@ -355,8 +358,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
             z-index: 0;
             pointer-events: none;
@@ -454,18 +457,20 @@
             width: 100%;
             height: 100%;
             background-image: 
-                radial-gradient(0.5px 0.5px at 25px 35px, rgba(255,255,255,0.4), transparent),
-                radial-gradient(0.5px 0.5px at 125px 45px, rgba(70, 130, 180, 0.3), transparent),
-                radial-gradient(0.5px 0.5px at 185px 95px, rgba(255,255,255,0.3), transparent),
-                radial-gradient(0.5px 0.5px at 285px 75px, rgba(255,255,255,0.4), transparent),
-                radial-gradient(0.5px 0.5px at 335px 105px, rgba(147, 51, 234, 0.3), transparent),
-                radial-gradient(0.5px 0.5px at 385px 55px, rgba(255,255,255,0.2), transparent);
+                radial-gradient(0.8px 0.8px at 25px 35px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(0.6px 0.6px at 125px 45px, rgba(70, 130, 180, 0.4), transparent),
+                radial-gradient(0.7px 0.7px at 185px 95px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(0.8px 0.8px at 285px 75px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(0.6px 0.6px at 335px 105px, rgba(147, 51, 234, 0.4), transparent),
+                radial-gradient(0.5px 0.5px at 385px 55px, rgba(255,255,255,0.3), transparent),
+                radial-gradient(0.7px 0.7px at 85px 125px, rgba(138, 43, 226, 0.3), transparent),
+                radial-gradient(0.6px 0.6px at 245px 165px, rgba(70, 130, 180, 0.3), transparent);
             background-repeat: repeat;
-            background-size: 400px 130px;
+            background-size: 450px 150px;
             animation: starfieldMove 80s linear infinite;
             pointer-events: none;
             z-index: 1;
-            opacity: 0.6;
+            opacity: 0.7;
             }
             
         /* 太虛幻聊 App 圖標 */
@@ -1879,19 +1884,21 @@
             background: transparent;
             display: none; /* 初始隱藏 */
             flex-direction: column;
-            align-items: stretch; /* 改為 stretch 以填滿寬度 */
-            justify-content: stretch; /* 改為 stretch 以填滿高度 */
-            overflow-y: auto;
-            padding: 0; /* 移除内边距，使用子元素的内边距 */
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* 防止滚动条 */
+            padding: 0;
             box-sizing: border-box;
+            width: 100%; /* 相对于父容器 */
+            height: 100%; /* 相对于父容器 */
         }
         
         .login-content {
             width: 100%;
             height: 100%;
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 0; /* 移除圆角，使用父容器的圆角 */
-            box-shadow: none; /* 移除阴影，使用父容器的阴影 */
+            border-radius: 0; /* 使用父容器的圆角 */
+            box-shadow: none; /* 使用父容器的阴影 */
             backdrop-filter: blur(10px);
             padding: 20px 16px;
             animation: slideInUp 0.6s ease-out;
@@ -1899,6 +1906,10 @@
             flex-direction: column;
             box-sizing: border-box;
             overflow-y: auto;
+            overflow-x: hidden; /* 防止水平溢出 */
+            align-items: center;
+            justify-content: flex-start; /* 内容从顶部开始 */
+            max-width: 100%;
         }
         
         @keyframes slideInUp {
@@ -1915,8 +1926,10 @@
         .login-header {
             text-align: center;
             margin-bottom: 16px;
-            margin-top: 40px; /* 增加顶部间距 */
+            margin-top: 20px; /* 减少顶部间距以适应父容器 */
             flex-shrink: 0;
+            width: 100%;
+            max-width: 100%;
         }
         
         .app-title {
@@ -1975,6 +1988,9 @@
             display: flex;
             flex-direction: column;
             position: relative;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
         
         .welcome-message::before {
@@ -2073,6 +2089,9 @@
             flex-shrink: 0; /* 避免压缩 */
             display: flex;
             flex-direction: column;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
         
         .form-group {
@@ -2230,9 +2249,19 @@
         
                  /* ===== 移动端响应式适配 ===== */
          
-         /* 基础移动端优化 */
+                  /* 基础移动端优化 */
          @media (max-width: 768px) {
-            /* 确保游戏界面在移动设备上完全显示 */
+             /* 父容器移动端适配 */
+             .app-universal-container {
+                 width: 100vw;
+                 height: 100vh;
+                 top: 0;
+                 left: 0;
+                 transform: none;
+                 border-radius: 0;
+             }
+             
+             /* 确保游戏界面在移动设备上完全显示 */
             body {
                 margin: 0;
                 padding: 0;
@@ -2242,24 +2271,28 @@
                 -ms-text-size-adjust: 100%;
             }
             
-            /* 登录界面移动端优化 */
-            .login-container {
-                width: 100%;
-                max-width: 100%;
-                height: 100vh;
-                min-height: 100vh;
-                padding: 10px;
-                box-sizing: border-box;
-                border-radius: 0;
-            }
+                         /* 登录界面移动端优化 */
+             .login-container {
+                 width: 100%;
+                 height: 100%;
+                 padding: 0;
+                 box-sizing: border-box;
+                 border-radius: 0;
+                 overflow: hidden;
+                 position: absolute;
+                 top: 0;
+                 left: 0;
+             }
             
-            .login-content {
-                height: calc(100vh - 20px);
-                min-height: calc(100vh - 20px);
-                max-width: 100%;
-                padding: 20px 15px;
-                box-sizing: border-box;
-            }
+                         .login-content {
+                 width: 100%;
+                 height: 100%;
+                 padding: 15px 12px;
+                 box-sizing: border-box;
+                 border-radius: 0;
+                 overflow-y: auto;
+                 overflow-x: hidden;
+             }
             
             .login-header h1 {
                 font-size: 1.8rem;
@@ -10377,8 +10410,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     const x = Math.cos(randomAngle) * randomRadius;
                     const y = Math.sin(randomAngle) * randomRadius;
                     
-                    particle.style.left = x + 'px';
-                    particle.style.top = y + 'px';
+                    particle.style.position = 'absolute';
+                    particle.style.left = `calc(50% + ${x}px)`;
+                    particle.style.top = `calc(50% + ${y}px)`;
                     particle.style.opacity = Math.max(0.1, Math.random() * 0.6 + 0.1);
                     particle.style.animationDelay = Math.random() * 3 + 's';
                     
@@ -10399,14 +10433,19 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }
             
             // 增加背景星星來填充擴展的空間
-            for (let i = 0; i < 250; i++) {
+            for (let i = 0; i < 200; i++) {
                 const star = document.createElement('div');
                 star.className = 'particle small';
                 star.style.position = 'absolute';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
+                
+                // 确保星星分布更均匀，避免聚集
+                const x = (Math.random() * 150 - 75); // -75% 到 +75%
+                const y = (Math.random() * 150 - 75);
+                star.style.left = `calc(50% + ${x}vw)`;
+                star.style.top = `calc(50% + ${y}vh)`;
+                
                 star.style.animationDelay = Math.random() * 3 + 's';
-                star.style.opacity = Math.random() * 0.5 + 0.1; // 稍微提高背景星星亮度
+                star.style.opacity = Math.random() * 0.4 + 0.1;
                 
                 // 背景彩色星星
                 if (Math.random() < 0.08) {
@@ -10427,6 +10466,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             for (let i = 0; i < 60; i++) {
                 const centralStar = document.createElement('div');
                 centralStar.className = 'particle';
+                centralStar.style.position = 'absolute';
                 
                 const centerRadius = Math.random() * 80; // 擴展中心範圍到80px
                 const centerAngle = Math.random() * Math.PI * 2;
@@ -10434,8 +10474,8 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 const x = Math.cos(centerAngle) * centerRadius;
                 const y = Math.sin(centerAngle) * centerRadius;
                 
-                centralStar.style.left = x + 'px';
-                centralStar.style.top = y + 'px';
+                centralStar.style.left = `calc(50% + ${x}px)`;
+                centralStar.style.top = `calc(50% + ${y}px)`;
                 
                 // 中心區域星體更大更亮
                 const rand = Math.random();
@@ -10462,22 +10502,22 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
             // 添加外圍環狀星體，進一步擴展銀河系可見範圍
             for (let ring = 0; ring < 3; ring++) {
-                const ringRadius = 500 + ring * 150; // 500px, 650px, 800px三個環
+                const ringRadius = 200 + ring * 100; // 缩小环的半径：200px, 300px, 400px
                 const starsInRing = 20 - ring * 5; // 每個環的星體數量遞減
                 
                 for (let i = 0; i < starsInRing; i++) {
                     const star = document.createElement('div');
                     star.className = 'particle small';
+                    star.style.position = 'absolute';
                     
                     const angle = (i / starsInRing) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-                    const radius = ringRadius + (Math.random() - 0.5) * 80;
+                    const radius = ringRadius + (Math.random() - 0.5) * 50;
                     
                     const x = Math.cos(angle) * radius;
                     const y = Math.sin(angle) * radius;
                     
-                    star.style.position = 'absolute';
-                    star.style.left = x + 'px';
-                    star.style.top = y + 'px';
+                    star.style.left = `calc(50% + ${x}px)`;
+                    star.style.top = `calc(50% + ${y}px)`;
                     star.style.opacity = Math.max(0.1, 0.4 - ring * 0.1);
                     star.style.animationDelay = Math.random() * 3 + 's';
                     
@@ -10499,6 +10539,13 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             const loginContainer = document.getElementById('loginContainer');
             const universalContainer = document.getElementById('appUniversalContainer');
             
+            console.log('App图标被点击');
+            console.log('Elements found:', {
+                appIconContainer: !!appIconContainer,
+                loginContainer: !!loginContainer,
+                universalContainer: !!universalContainer
+            });
+            
             // 添加消失動畫類
             appIconContainer.classList.add('disappearing');
             
@@ -10512,6 +10559,8 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 // 直接顯示登入界面
                 loginContainer.style.display = 'flex';
+                
+                console.log('登录界面应该已显示');
                 
             }, 400); // 圖標消失動畫時間
         }
