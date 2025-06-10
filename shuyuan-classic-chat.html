@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
     <title>太虛幻聊 - 與古今名士暢談千古</title>
     <style>
         /* ===== 太虛幻聊統一設計規範 ===== */
@@ -27,6 +27,30 @@
          */
         
         /* 基礎樣式 - 模擬微信風格 */
+        
+        /* 全局移动端优化 */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        
+        /* 防止移动端双击缩放 */
+        html {
+            touch-action: manipulation;
+        }
+        
+        /* 优化移动端滚动 */
+        body {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
         
         /* 新增成員資料頁面樣式 */
         .profile-nav-bar {
@@ -2204,19 +2228,813 @@
             opacity: 0.7;
         }
         
-        /* 媒体查询已移除，使用统一的全屏设计 */
+                 /* ===== 移动端响应式适配 ===== */
+         
+         /* 基础移动端优化 */
+         @media (max-width: 768px) {
+            /* 确保游戏界面在移动设备上完全显示 */
+            body {
+                margin: 0;
+                padding: 0;
+                overflow-x: hidden;
+                font-size: 16px; /* 防止iOS Safari自动缩放 */
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+            }
+            
+            /* 登录界面移动端优化 */
+            .login-container {
+                width: 100%;
+                max-width: 100%;
+                height: 100vh;
+                min-height: 100vh;
+                padding: 10px;
+                box-sizing: border-box;
+                border-radius: 0;
+            }
+            
+            .login-content {
+                height: calc(100vh - 20px);
+                min-height: calc(100vh - 20px);
+                max-width: 100%;
+                padding: 20px 15px;
+                box-sizing: border-box;
+            }
+            
+            .login-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .login-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            /* 表单组件移动端优化 */
+            .form-group input,
+            .form-group select {
+                padding: 12px 15px;
+                font-size: 16px; /* 防止iOS自动缩放 */
+                border-radius: 8px;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+            }
+            
+            .login-btn,
+            .debug-btn {
+                padding: 15px 20px;
+                font-size: 16px;
+                border-radius: 8px;
+                min-height: 48px; /* 增加触摸面积 */
+            }
+            
+            /* 主界面移动端优化 */
+            .main-container {
+                width: 100%;
+                height: 100vh;
+                max-height: 100vh;
+                position: fixed;
+                border-radius: 0;
+            }
+            
+            .main-header {
+                height: 56px;
+                padding: 8px 0;
+                /* 适配安全区域 */
+                padding-top: max(8px, env(safe-area-inset-top));
+            }
+            
+            .main-title {
+                font-size: 17px;
+            }
+            
+            .main-title-count {
+                font-size: 15px;
+            }
+            
+            /* 聊天列表移动端优化 */
+            .chat-item {
+                padding: 15px;
+                min-height: 72px;
+                box-sizing: border-box;
+            }
+            
+            .chat-avatar {
+                width: 52px;
+                height: 52px;
+                font-size: 22px;
+                border-radius: 8px;
+            }
+            
+            .chat-name {
+                font-size: 16px;
+                font-weight: 500;
+            }
+            
+            .chat-preview {
+                font-size: 14px;
+                margin-top: 2px;
+            }
+            
+            .chat-time {
+                font-size: 12px;
+            }
+            
+            /* 底部导航移动端优化 */
+            .bottom-nav {
+                height: 60px;
+                padding: 8px 0;
+                /* 适配安全区域 */
+                padding-bottom: max(8px, env(safe-area-inset-bottom));
+            }
+            
+            .nav-item {
+                height: 48px;
+                padding: 4px 8px;
+            }
+            
+            .nav-icon {
+                font-size: 24px;
+                margin-bottom: 2px;
+            }
+            
+                         .nav-label {
+                 font-size: 11px;
+             }
+             
+             /* 聊天界面移动端优化 */
+             .wx-container {
+                 width: 100%;
+                 height: 100vh;
+                 max-height: 100vh;
+                 position: fixed;
+                 border-radius: 0;
+             }
+             
+             .wx-header {
+                 height: 56px;
+                 padding: 0 12px;
+                 /* 适配安全区域 */
+                 padding-top: max(0px, env(safe-area-inset-top));
+                 height: calc(56px + max(0px, env(safe-area-inset-top)));
+             }
+             
+             .wx-header-title {
+                 font-size: 16px !important;
+             }
+             
+             .wx-back-btn,
+             .wx-menu-btn {
+                 width: 40px;
+                 height: 40px;
+                 font-size: 18px;
+             }
+             
+             /* 聊天消息区域优化 */
+             .wx-chat-container {
+                 padding: 12px 8px;
+                 padding-bottom: calc(70px + max(0px, env(safe-area-inset-bottom)));
+             }
+             
+             .wx-msg {
+                 margin-bottom: 12px;
+             }
+             
+             .wx-avatar {
+                 width: 36px;
+                 height: 36px;
+                 font-size: 20px;
+                 border-radius: 6px;
+             }
+             
+             .wx-content-wrapper {
+                 max-width: calc(100% - 80px);
+             }
+             
+             .wx-msg-bubble {
+                 padding: 10px 12px;
+                 font-size: 16px; /* 防止iOS自动缩放 */
+                 line-height: 1.4;
+                 border-radius: 16px;
+             }
+             
+             .wx-msg-self .wx-msg-bubble {
+                 border-radius: 16px 6px 16px 16px;
+             }
+             
+             .wx-msg-other .wx-msg-bubble {
+                 border-radius: 6px 16px 16px 16px;
+             }
+             
+             .wx-name {
+                 font-size: 12px;
+                 margin-bottom: 3px;
+             }
+             
+             .wx-time {
+                 font-size: 12px;
+                 margin: 8px 0;
+             }
+             
+             /* 输入区域移动端优化 */
+             .wx-input-area {
+                 height: calc(60px + max(0px, env(safe-area-inset-bottom)));
+                 padding: 8px 10px;
+                 padding-bottom: calc(8px + max(0px, env(safe-area-inset-bottom)));
+             }
+             
+             .wx-input-box {
+                 height: 36px;
+                 font-size: 16px; /* 防止iOS自动缩放 */
+                 border-radius: 18px;
+                 padding: 0 12px;
+             }
+             
+             .wx-voice-btn {
+                 width: 36px;
+                 height: 36px;
+             }
+             
+             /* 提及popup优化 */
+             .mention-popup {
+                 bottom: calc(60px + max(0px, env(safe-area-inset-bottom)));
+                 left: 10px;
+                 right: 10px;
+                 border-radius: 12px;
+             }
+             
+             .mention-item {
+                 padding: 15px;
+                 min-height: 60px;
+             }
+             
+             .mention-avatar {
+                 width: 40px;
+                 height: 40px;
+             }
+         }
         
-
+                 /* 小屏幕设备额外优化 */
+         @media (max-width: 480px) {
+             .login-content {
+                 padding: 15px 10px;
+             }
+             
+             .login-header h1 {
+                 font-size: 1.6rem;
+             }
+             
+             .chat-item {
+                 padding: 12px 15px;
+                 min-height: 68px;
+             }
+             
+             .chat-avatar {
+                 width: 48px;
+                 height: 48px;
+                 font-size: 20px;
+             }
+             
+             .chat-name {
+                 font-size: 15px;
+             }
+             
+             .chat-preview {
+                 font-size: 13px;
+             }
+             
+             /* 聊天界面小屏优化 */
+             .wx-header {
+                 height: 52px;
+                 padding: 0 10px;
+                 height: calc(52px + max(0px, env(safe-area-inset-top)));
+             }
+             
+             .wx-back-btn,
+             .wx-menu-btn {
+                 width: 36px;
+                 height: 36px;
+                 font-size: 16px;
+             }
+             
+             .wx-header-title {
+                 font-size: 15px !important;
+             }
+             
+             .wx-chat-container {
+                 padding: 10px 6px;
+             }
+             
+             .wx-avatar {
+                 width: 32px;
+                 height: 32px;
+                 font-size: 18px;
+             }
+             
+             .wx-content-wrapper {
+                 max-width: calc(100% - 70px);
+             }
+             
+             .wx-msg-bubble {
+                 padding: 8px 10px;
+                 font-size: 15px;
+             }
+             
+             .wx-input-area {
+                 height: calc(56px + max(0px, env(safe-area-inset-bottom)));
+                 padding: 6px 8px;
+                 padding-bottom: calc(6px + max(0px, env(safe-area-inset-bottom)));
+             }
+             
+             .wx-input-box {
+                 height: 32px;
+                 font-size: 15px;
+                 padding: 0 10px;
+             }
+             
+             .wx-voice-btn {
+                 width: 32px;
+                 height: 32px;
+             }
+         }
         
-
+                 /* 群组详情和成员资料页面移动端优化 */
+         @media (max-width: 768px) {
+             /* 群组详情页面 */
+             .group-detail-container {
+                 width: 100%;
+                 height: 100vh;
+                 max-height: 100vh;
+                 position: fixed;
+                 border-radius: 0;
+                 z-index: 200;
+             }
+             
+             .detail-header {
+                 height: 56px;
+                 padding: 0 12px;
+                 padding-top: max(0px, env(safe-area-inset-top));
+                 height: calc(56px + max(0px, env(safe-area-inset-top)));
+             }
+             
+             .detail-back-btn {
+                 width: 40px;
+                 height: 40px;
+                 font-size: 18px;
+             }
+             
+             .detail-title {
+                 font-size: 16px;
+             }
+             
+             .group-info {
+                 padding: 20px 15px;
+             }
+             
+             .group-avatar {
+                 width: 60px;
+                 height: 60px;
+                 font-size: 26px;
+             }
+             
+             .group-name {
+                 font-size: 20px;
+             }
+             
+             .group-description {
+                 font-size: 14px;
+                 margin-top: 8px;
+             }
+             
+             .member-grid {
+                 grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                 gap: 15px;
+                 padding: 15px;
+             }
+             
+             .member-card {
+                 padding: 10px;
+                 border-radius: 12px;
+             }
+             
+             .member-avatar {
+                 width: 50px;
+                 height: 50px;
+                 font-size: 22px;
+             }
+             
+             .member-name {
+                 font-size: 12px;
+                 margin-top: 8px;
+             }
+             
+             /* 成员资料页面 */
+             .member-profile-container {
+                 width: 100%;
+                 height: 100vh;
+                 max-height: 100vh;
+                 position: fixed;
+                 border-radius: 0;
+                 z-index: 300;
+             }
+             
+             .profile-nav-bar {
+                 height: 56px;
+                 padding: 0 12px;
+                 padding-top: max(0px, env(safe-area-inset-top));
+                 height: calc(56px + max(0px, env(safe-area-inset-top)));
+             }
+             
+             .profile-back-btn,
+             .profile-more-btn {
+                 width: 40px;
+                 height: 40px;
+                 font-size: 18px;
+             }
+             
+             .profile-header {
+                 padding: 20px 15px;
+             }
+             
+             .profile-avatar {
+                 width: 60px;
+                 height: 60px;
+                 font-size: 26px;
+             }
+             
+             .profile-name {
+                 font-size: 20px;
+             }
+             
+             .profile-wechat-id,
+             .profile-location {
+                 font-size: 14px;
+                 margin: 4px 0;
+             }
+             
+             .profile-menu-item {
+                 padding: 15px;
+                 min-height: 56px;
+             }
+             
+             .menu-item-label {
+                 font-size: 16px;
+             }
+             
+             .menu-item-value {
+                 font-size: 14px;
+             }
+             
+             /* 朋友圈预览优化 */
+             .moments-preview {
+                 gap: 8px;
+                 margin-right: 12px;
+             }
+             
+             .moment-preview-image {
+                 width: 50px;
+                 height: 50px;
+                 border-radius: 8px;
+             }
+         }
+         
+         /* 横屏模式优化 */
+         @media (max-height: 500px) and (orientation: landscape) {
+            .login-container {
+                height: 100vh;
+                overflow-y: auto;
+            }
+            
+            .login-content {
+                min-height: auto;
+                height: auto;
+                padding: 10px 15px;
+            }
+            
+            .login-header h1 {
+                font-size: 1.4rem;
+                margin-bottom: 8px;
+            }
+            
+            .login-subtitle {
+                font-size: 0.8rem;
+                margin-bottom: 15px;
+            }
+            
+            .form-group {
+                margin-bottom: 8px;
+            }
+            
+            .main-header {
+                height: 48px;
+            }
+            
+            .bottom-nav {
+                height: 48px;
+                padding: 4px 0;
+            }
+            
+            .nav-item {
+                height: 40px;
+            }
+            
+            .nav-icon {
+                font-size: 20px;
+            }
+            
+                         .nav-label {
+                 font-size: 10px;
+             }
+             
+             /* 横屏模式下其他页面的优化 */
+             .wx-header,
+             .detail-header,
+             .profile-nav-bar,
+             .moments-header {
+                 height: 44px;
+                 height: calc(44px + max(0px, env(safe-area-inset-top)));
+             }
+             
+             .wx-header-title,
+             .detail-title,
+             .moments-title {
+                 font-size: 14px !important;
+             }
+             
+             .wx-back-btn,
+             .wx-menu-btn,
+             .detail-back-btn,
+             .profile-back-btn,
+             .profile-more-btn,
+             .moments-back-btn {
+                 width: 32px;
+                 height: 32px;
+                 font-size: 14px;
+             }
+             
+             .wx-input-area {
+                 height: calc(44px + max(0px, env(safe-area-inset-bottom)));
+                 padding: 4px 8px;
+                 padding-bottom: calc(4px + max(0px, env(safe-area-inset-bottom)));
+             }
+             
+             .wx-input-box {
+                 height: 28px;
+                 font-size: 14px;
+             }
+             
+             .wx-voice-btn {
+                 width: 28px;
+                 height: 28px;
+             }
+         }
         
-
+        /* 超高分辨率设备优化 */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .chat-avatar,
+            .nav-icon {
+                /* 高DPI设备的清晰度优化 */
+                transform: translateZ(0);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
         
-
+                 /* iOS Safari 特殊优化 */
+         @supports (-webkit-touch-callout: none) {
+             .main-container,
+             .wx-container,
+             .group-detail-container,
+             .member-profile-container,
+             .moments-container {
+                 /* iOS Safari 视口高度修正 */
+                 height: 100vh;
+                 height: -webkit-fill-available;
+             }
+             
+             .login-container {
+                 height: 100vh;
+                 height: -webkit-fill-available;
+             }
+             
+             /* 防止iOS Safari弹性滚动 */
+             body {
+                 position: fixed;
+                 width: 100%;
+                 height: 100%;
+                 overflow: hidden;
+             }
+             
+             /* 修正iOS Safari中的输入框问题 */
+             .wx-input-box {
+                 transform: translateZ(0);
+                 -webkit-appearance: none;
+                 border-radius: 18px;
+             }
+             
+             .form-group input,
+             .form-group select {
+                 transform: translateZ(0);
+                 -webkit-appearance: none;
+             }
+             
+             /* 优化iOS Safari的滚动性能 */
+             .wx-chat-container,
+             .chat-list-container,
+             .contacts-tab,
+             .discover-tab,
+             .profile-tab,
+             .moments-container {
+                 -webkit-overflow-scrolling: touch;
+                 transform: translate3d(0, 0, 0);
+             }
+         }
         
-
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            /* 移除hover效果，优化触摸体验 */
+            .chat-item:hover {
+                background-color: transparent;
+            }
+            
+            .chat-item:active {
+                background-color: #f0f0f0;
+                transition: background-color 0.1s;
+            }
+            
+            .nav-item:hover {
+                background-color: transparent;
+            }
+            
+            .nav-item:active {
+                background-color: rgba(0, 0, 0, 0.1);
+                transition: background-color 0.1s;
+            }
+            
+                         /* 增大触摸目标 */
+             .login-btn,
+             .debug-btn,
+             .chat-item,
+             .nav-item {
+                 min-height: 44px; /* Apple推荐的最小触摸目标 */
+             }
+             
+             /* 通讯录页面优化 */
+             .contacts-tab {
+                 height: 100%;
+                 overflow-y: auto;
+                 -webkit-overflow-scrolling: touch;
+             }
+             
+             .contact-item {
+                 padding: 15px;
+                 min-height: 60px;
+                 border-bottom: 0.5px solid #e5e5e5;
+             }
+             
+             .contact-avatar {
+                 width: 44px;
+                 height: 44px;
+                 font-size: 20px;
+             }
+             
+             /* 发现页面优化 */
+             .discover-tab {
+                 height: 100%;
+                 overflow-y: auto;
+                 -webkit-overflow-scrolling: touch;
+             }
+             
+             .discover-item {
+                 padding: 15px;
+                 min-height: 56px;
+                 border-bottom: 0.5px solid #e5e5e5;
+             }
+             
+             .discover-icon {
+                 width: 32px;
+                 height: 32px;
+                 font-size: 18px;
+             }
+             
+             .discover-label {
+                 font-size: 16px;
+             }
+             
+             /* 个人资料页面优化 */
+             .profile-tab {
+                 height: 100%;
+                 overflow-y: auto;
+                 -webkit-overflow-scrolling: touch;
+             }
+             
+             .profile-header {
+                 padding: 20px 15px;
+             }
+             
+             .profile-avatar img {
+                 width: 60px;
+                 height: 60px;
+             }
+             
+             .profile-name {
+                 font-size: 20px;
+             }
+             
+             .profile-menu-item {
+                 padding: 15px;
+                 min-height: 56px;
+             }
+             
+             .menu-icon {
+                 width: 28px;
+                 height: 28px;
+             }
+             
+             .menu-label {
+                 font-size: 16px;
+             }
+             
+             /* 朋友圈页面优化 */
+             .moments-container {
+                 height: 100vh;
+                 overflow-y: auto;
+                 -webkit-overflow-scrolling: touch;
+                 position: fixed;
+                 top: 0;
+                 left: 0;
+                 right: 0;
+                 bottom: 0;
+                 background-color: #f5f5f5;
+                 z-index: 100;
+             }
+             
+             .moments-header {
+                 height: 56px;
+                 padding: 0 15px;
+                 padding-top: max(0px, env(safe-area-inset-top));
+                 height: calc(56px + max(0px, env(safe-area-inset-top)));
+                 background-color: rgba(0, 0, 0, 0.5);
+                 color: white;
+             }
+             
+             .moments-back-btn {
+                 width: 40px;
+                 height: 40px;
+                 font-size: 18px;
+                 color: white;
+             }
+             
+             .moments-title {
+                 font-size: 16px;
+                 color: white;
+             }
+             
+             .moment-item {
+                 padding: 15px;
+                 margin-bottom: 8px;
+                 background-color: white;
+             }
+             
+             .moment-avatar {
+                 width: 44px;
+                 height: 44px;
+                 font-size: 20px;
+             }
+             
+             .moment-name {
+                 font-size: 16px;
+                 font-weight: 500;
+             }
+             
+             .moment-content {
+                 font-size: 16px;
+                 line-height: 1.5;
+                 margin: 8px 0;
+             }
+             
+             .moment-images {
+                 margin: 12px 0;
+             }
+             
+             .moment-image {
+                 border-radius: 8px;
+                 margin: 2px;
+             }
+             
+             .moment-actions {
+                 margin-top: 12px;
+             }
+             
+             .moment-like-btn,
+             .moment-comment-btn {
+                 padding: 8px 12px;
+                 font-size: 14px;
+                 min-height: 40px;
+             }
+         }
         
-        /* 主界面樣式 */
+                 /* 主界面樣式 */
         .main-container {
             position: absolute;
             top: 0;
@@ -2232,6 +3050,10 @@
             outline: none;
             box-sizing: border-box;
             overflow: hidden;
+            /* 移动端性能优化 */
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
         
         .main-header {
