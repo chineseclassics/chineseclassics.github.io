@@ -573,10 +573,9 @@
         @media screen and (max-width: 768px), screen and (max-height: 600px) {
             .app-icon-container {
                 position: absolute;
-                top: 50vh;
+                top: 50%;
                 left: 50%;
-                transform: translateX(-50%);
-                margin-top: -60px; /* 半个图标高度 */
+                transform: translate(-50%, -50%);
             }
         }
         
@@ -667,6 +666,24 @@
             }
             75% {
                 transform: translate(-50%, -50%) translateY(-5px) rotate(-1deg);
+            }
+        }
+        
+        /* 移动端app图标浮动动画优化 */
+        @media screen and (max-width: 768px), screen and (max-height: 600px) {
+            @keyframes appIconFloat {
+                0%, 100% {
+                    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
+                }
+                25% {
+                    transform: translate(-50%, -50%) translateY(-6px) rotate(0.5deg);
+                }
+                50% {
+                    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
+                }
+                75% {
+                    transform: translate(-50%, -50%) translateY(-3px) rotate(-0.5deg);
+                }
             }
         }
         
