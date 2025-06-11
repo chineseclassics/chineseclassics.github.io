@@ -3,6 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+    
+    <!-- 立即初始化脚本，解决iframe中的时序问题 -->
+    <script>
+        // 检测URL参数，确定是否在iframe中加载
+        const urlParams = new URLSearchParams(window.location.search);
+        const isInIframe = urlParams.has('iframe') || window.self !== window.top;
+        
+        // 确保在iframe环境中能正确显示
+        if (isInIframe) {
+            document.documentElement.style.height = '100%';
+            document.documentElement.style.overflow = 'hidden';
+            
+            // iframe环境下的特殊优化
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.body.style.width = '100%';
+            document.body.style.height = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // 强制刷新显示函数
+        function forceRefreshDisplay() {
+            // 触发重绘，解决需要拖拽才显示的问题
+            const body = document.body;
+            body.style.transform = 'translateZ(0)';
+            
+            // 强制重新渲染星空背景
+            const starField = document.querySelector('.star-field');
+            if (starField) {
+                starField.style.visibility = 'visible';
+                starField.style.opacity = '0.7';
+                starField.style.transform = 'translateZ(0)';
+            }
+            
+            // 强制重新渲染银河系容器
+            const galaxyContainer = document.querySelector('.galaxy-container');
+            if (galaxyContainer) {
+                galaxyContainer.style.visibility = 'visible';
+                galaxyContainer.style.opacity = '1';
+                galaxyContainer.style.transform = 'translateZ(0)';
+            }
+            
+            // 强制重新渲染app图标
+            const appIcon = document.getElementById('appIconContainer');
+            if (appIcon) {
+                appIcon.style.visibility = 'visible';
+                appIcon.style.opacity = '1';
+                appIcon.style.transform = 'translate(-50%, -50%) translateZ(0)';
+            }
+            
+            // 强制浏览器重绘
+            setTimeout(() => {
+                window.requestAnimationFrame(() => {
+                    console.log('强制刷新显示完成');
+                });
+            }, 100);
+        }
+        
+        // 预先创建关键元素，避免初始空白
+        document.addEventListener('DOMContentLoaded', function() {
+            forceRefreshDisplay();
+        });
+    </script>
     <title>太虛幻聊 - 與古今名士暢談千古</title>
     <style>
         /* ===== 太虛幻聊統一設計規範 ===== */
@@ -329,14 +392,13 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* 太虛幻境全頁面背景 - 針對iframe優化 */
+        /* 太虛幻境全頁面背景 */
         html, body {
             height: 100%;
             width: 100%;
             margin: 0;
             padding: 0;
-            /* 針對iframe環境進行優化 */
-            overflow: hidden; /* 防止iframe內滾動 */
+            overflow: hidden; /* 完全禁止滚动 */
         }
         
         body {
@@ -347,36 +409,34 @@
                 radial-gradient(ellipse at 50% 50%, rgba(25, 25, 112, 0.2) 0%, transparent 60%),
                 linear-gradient(135deg, #0f0f23 0%, #1a1a3a 25%, #2d1b69 50%, #1e3a8a 75%, #0f172a 100%);
             position: relative;
-            /* iframe環境適配：使用百分比而非視口單位 */
-            width: 100%;
-            height: 100%;
-            min-height: 100%;
+            width: 100vw;
+            height: 100vh;
+            min-height: 100vh;
+            max-height: 100vh;
             overflow: hidden;
-            /* 確保在iframe中的正確顯示 */
-            -webkit-transform: translateZ(0);
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            /* 防止空白屏幕：確保背景立即顯示 */
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            background-size: cover;
         }
         
-        /* 銀河系背景容器 - iframe優化 */
+        /* 銀河系背景容器 */
         .galaxy-container {
             position: fixed;
             top: 0;
             left: 0;
-            /* iframe中使用百分比更穩定 */
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
             z-index: 0;
             pointer-events: none;
-            /* 強制硬件加速，提升iframe性能 */
-            will-change: transform;
-            -webkit-transform: translateZ(0);
-            transform: translateZ(0);
+            background: linear-gradient(135deg, #0c0c2e 0%, #1a1a3e 25%, #2d1b69 50%, #1a1a3e 75%, #0c0c2e 100%);
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* iframe环境优化 */
+        @media screen and (max-width: 768px), screen and (max-height: 600px) {
+            .galaxy-container {
+                position: absolute;
+                min-height: 100vh;
+            }
         }
         
         /* 銀河中心 */
@@ -463,7 +523,7 @@
             animation: nebulaFloat 25s ease-in-out infinite;
         }
         
-        /* 額外的星空裝飾層 - iframe優化版 */
+        /* 額外的星空裝飾層 */
         .star-field {
             position: fixed;
             top: 0;
@@ -485,15 +545,18 @@
             pointer-events: none;
             z-index: 1;
             opacity: 0.7;
-            /* iframe優化：立即顯示，避免空白 */
             will-change: transform;
-            -webkit-transform: translateZ(0);
             transform: translateZ(0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            /* 確保在iframe中立即渲染 */
-            content-visibility: auto;
             }
+        
+        /* iframe环境优化 */
+        @media screen and (max-width: 768px), screen and (max-height: 600px) {
+            .star-field {
+                position: absolute;
+                min-height: 100vh;
+                background-attachment: scroll;
+            }
+        }
             
         /* 太虛幻聊 App 圖標 */
         .app-icon-container {
@@ -503,6 +566,18 @@
             transform: translate(-50%, -50%);
             z-index: 20; /* 提高z-index確保在所有銀河系元素之上 */
             animation: appIconFloat 8s ease-in-out infinite;
+            will-change: transform;
+        }
+        
+        /* iframe环境下的app图标优化 */
+        @media screen and (max-width: 768px), screen and (max-height: 600px) {
+            .app-icon-container {
+                position: absolute;
+                top: 50vh;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-top: -60px; /* 半个图标高度 */
+            }
         }
         
         .app-icon {
@@ -3441,6 +3516,10 @@
             transition: background-color 0.15s;
         }
         
+        .discover-item:last-child {
+            border-bottom: none;
+        }
+        
         .discover-item:hover {
             background-color: #f0f0f0;
         }
@@ -3785,6 +3864,10 @@
         
         .moment-images.grid.four {
             grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .moment-images.grid.more {
+            grid-template-columns: repeat(3, 1fr);
         }
         
         .moment-image {
@@ -6098,10 +6181,10 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                             mainTitle.innerHTML = `TheyChat <span class="main-title-count">(${unreadCount})</span>`;
                         break;
                         case 'contactsTab':
-                            mainTitle.innerHTML = '通讯录';
+                            mainTitle.innerHTML = '通訊錄';
                         break;
                         case 'discoverTab':
-                            mainTitle.innerHTML = '发现';
+                            mainTitle.innerHTML = '發現';
                         break;
                     }
                 }
@@ -6124,18 +6207,18 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 }
             }
             
-            // 获取未读消息数
+            // 獲取未讀消息數
             getUnreadCount() {
-                // 模拟未读数量
+                // 模擬未讀數量
                 return 41;
             }
             
-            // 刷新聊天列表（用于发送消息后更新）
+            // 刷新聊天列表（用於發送消息後更新）
             refreshChatList() {
                 this.generateChatList();
             }
 
-            // 生成通讯录
+            // 生成通訊錄
             generateContacts() {
                 const container = document.getElementById('contactsContainer');
                 container.innerHTML = '';
@@ -6149,42 +6232,42 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     });
                 });
                 
-                // 按朝代分组
+                // 按朝代分組
                 const charactersByDynasty = {};
                 allCharacters.forEach(char => {
-                    const dynasty = char.dynasty || '未分类';
+                    const dynasty = char.dynasty || '未分類';
                     if (!charactersByDynasty[dynasty]) {
                         charactersByDynasty[dynasty] = [];
                     }
                     charactersByDynasty[dynasty].push(char);
                 });
                 
-                // 定义朝代排序顺序
+                // 定義朝代排序順序
                 const dynastyOrder = [
-                    '神话传说',
-                    '春秋战国',
-                    '汉代',
-                    '三国两晋南北朝',
-                    '五代十国',
+                    '神話傳說',
+                    '春秋戰國',
+                    '漢代',
+                    '三國兩晉南北朝',
+                    '五代十國',
                     '唐代',
                     '宋代',
                     '元代',
                     '明代',
                     '清代',
-                    '现代',
-                    '未分类'
+                    '現代',
+                    '未分類'
                 ];
                 
-                // 按朝代顺序生成通讯录
+                // 按朝代順序生成通訊錄
                 dynastyOrder.forEach(dynasty => {
                     if (charactersByDynasty[dynasty] && charactersByDynasty[dynasty].length > 0) {
-                        // 朝代分组标题
+                        // 朝代分組標題
                     const groupHeader = document.createElement('div');
                     groupHeader.className = 'contact-group-header';
                         groupHeader.textContent = dynasty;
                     container.appendChild(groupHeader);
                     
-                        // 该朝代下的角色列表
+                        // 該朝代下的角色列表
                         charactersByDynasty[dynasty].forEach(char => {
                         const contactItem = this.createContactItem(char);
                         container.appendChild(contactItem);
@@ -6195,7 +6278,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
 
             
-            // 创建联系人项目
+            // 創建聯繫人項目
             createContactItem(character) {
                 const item = document.createElement('div');
                 item.className = 'contact-item';
@@ -6218,19 +6301,19 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 return item;
             }
             
-            // 查看角色资料
+            // 查看角色資料
             viewCharacterProfile(character) {
-                // 通过角色名称查找对应的ID
+                // 通過角色名稱查找對應的ID
                 const characterId = this.findCharacterIdByName(character.name);
                 if (characterId) {
-                    // 打开角色资料页面
+                    // 打開角色資料頁面
                     openProfilePage(characterId);
                 } else {
                     console.error('找不到角色ID:', character.name);
                 }
             }
             
-            // 通过角色名称查找对应的ID
+            // 通過角色名稱查找對應的ID
             findCharacterIdByName(name) {
                 for (const [id, char] of Object.entries(characters)) {
                     if (char.name === name) {
@@ -6240,12 +6323,12 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 return null;
             }
             
-            // 生成发现页面
+            // 生成發現頁面
             generateDiscover() {
                 const container = document.getElementById('discoverContainer');
                 container.innerHTML = '';
                 
-                // 创建朋友圈入口
+                // 創建朋友圈入口
                 const momentsEntry = document.createElement('div');
                 momentsEntry.className = 'discover-item';
                 momentsEntry.innerHTML = `
@@ -6257,18 +6340,18 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 });
                 container.appendChild(momentsEntry);
                 
-                // 添加分隔线
+                // 添加分隔線
                 const separator = document.createElement('div');
                 separator.style.height = '8px';
                 separator.style.backgroundColor = '#f0f0f0';
                 container.appendChild(separator);
                 
-                // 创建其他发现选项
+                // 創建其他發現選項
                 const otherItems = [
-                    { icon: '📚', label: '诗词鉴赏' },
-                    { icon: '🎭', label: '戏曲赏析' },
-                    { icon: '🏛️', label: '历史典故' },
-                    { icon: '🐲', label: '神话传说' }
+                    { icon: '📚', label: '詩詞鑑賞' },
+                    { icon: '🎭', label: '戲曲賞析' },
+                    { icon: '🏛️', label: '歷史典故' },
+                    { icon: '🐲', label: '神話傳說' }
                 ];
                 
                 otherItems.forEach(item => {
@@ -6279,14 +6362,14 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                         <div class="discover-label">${item.label}</div>
                     `;
                     discoverItem.addEventListener('click', () => {
-                        // 暂时显示提示
-                        alert(`${item.label}功能开发中...`);
+                        // 暫時顯示提示
+                        alert(`${item.label}功能開發中...`);
                     });
                     container.appendChild(discoverItem);
                 });
             }
             
-            // 创建发现项目  
+            // 創建發現項目  
             createDiscoverItem(character) {
                 const item = document.createElement('div');
                 item.className = 'discover-item';
@@ -6311,18 +6394,18 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 momentsManager.openMoments();
             }
             
-            // 切换标签页
+            // 切換標籤頁
             switchTab(tabId) {
-                // 隐藏所有标签内容
+                // 隱藏所有標籤內容
                 document.querySelectorAll('.main-content > div').forEach(tab => {
                     tab.style.display = 'none';
                 });
                 
-                // 显示选中的标签
+                // 顯示選中的標籤
                 document.getElementById(tabId).style.display = 'block';
                 this.currentTab = tabId;
                 
-                // 更新导航栏状态
+                // 更新導航欄狀態
                 document.querySelectorAll('.nav-item').forEach(nav => {
                     nav.classList.remove('active');
                 });
@@ -6335,9 +6418,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 document.getElementById('discoverBadge').classList.add('show');
             }
             
-            // 设置主界面事件
+            // 設置主界面事件
             setupMainEvents() {
-                // 底部导航切换
+                // 底部導航切換
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', () => {
                         const tabId = item.getAttribute('data-tab');
@@ -6345,7 +6428,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     });
                 });
                 
-                // 返回主界面按钮
+                // 返回主界面按鈕
                 document.getElementById('backToMainBtn').addEventListener('click', () => {
                     this.backToMain();
                 });
@@ -6358,10 +6441,10 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }
         }
         
-        // 全局主界面实例
+        // 全局主界面實例
         const mainInterface = new MainInterface();
         
-        // 登录管理器
+        // 登入管理器
         class LoginManager {
             constructor() {
                 this.correctPassword = 'chineseclassics';
@@ -6372,30 +6455,30 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 };
             }
             
-            // 初始化登录功能
+            // 初始化登入功能
             init() {
                 this.setupLoginEvents();
                 this.setupFormValidation();
             }
             
-            // 设置登录事件
+            // 設置登入事件
             setupLoginEvents() {
                 const loginBtn = document.getElementById('loginBtn');
                 const debugBtn = document.getElementById('debugBtn');
                 const nicknameInput = document.getElementById('nickname');
                 const passwordInput = document.getElementById('password');
                 
-                // 登录按钮点击
+                // 登入按鈕點擊
                 loginBtn.addEventListener('click', () => {
                     this.handleLogin();
                 });
                 
-                // 调试按钮点击
+                // 調試按鈕點擊
                 debugBtn.addEventListener('click', () => {
                     this.handleDebugLogin();
                 });
                 
-                // 回车键登录
+                // 回車鍵登入
                 [nicknameInput, passwordInput, document.getElementById('grade')].forEach(element => {
                     element.addEventListener('keypress', (e) => {
                         if (e.key === 'Enter') {
@@ -6405,7 +6488,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 });
             }
             
-            // 设置表单验证
+            // 設置表單驗證
             setupFormValidation() {
                 const inputs = ['nickname', 'password'];
                 inputs.forEach(id => {
@@ -8907,7 +8990,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 confucius: "有朋自遠方來，不亦樂乎？你想請教什麼？",
                 caozhi: "陳王在此，有何雅事要與我分享？",
                 menghaoran: "襄陽一隅，難得友人來訪，甚是歡喜！",
-                yuzhen: "詩佛在此，與君論道。",
+                yuzhen: "公主府中清靜，你來找我有何事？",
                 yutu: "搗藥間隙，能聊天真是太好了！你想聽什麼故事？",
                 yangguifei: "難得有人願意聽我說話，你想了解宮中趣事嗎？",
                 laozi: "道可道，非常道。你想與老夫探討什麼？",
@@ -10579,26 +10662,31 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }, 400); // 圖標消失動畫時間
         }
         
-        // 針對iframe環境優化的初始化函數
-        function initializeApp() {
-            console.log('應用開始初始化...');
+        // 早期初始化函数
+        function earlyInit() {
+            if (window.earlyInitialized) return;
             
-            // 確保DOM已完全加載
-            if (document.readyState !== 'complete') {
-                console.log('DOM未完全加載，等待...');
-                return;
-            }
+            console.log('早期初始化开始...');
             
-            // 創建銀河系背景效果
+            // 創建銀河系背景效果 - 提前创建
             createGalaxyParticles();
             
             // 設置app圖標點擊事件
             const appIcon = document.getElementById('appIcon');
             if (appIcon) {
                 appIcon.addEventListener('click', handleAppIconClick);
-                appIcon.setAttribute('data-initialized', 'true'); // 標記已初始化
                 console.log('App圖標點擊事件已設置');
             }
+            
+            window.earlyInitialized = true;
+            console.log('早期初始化完成');
+        }
+        
+        // 延迟初始化函数
+        function lateInit() {
+            if (window.lateInitialized) return;
+            
+            console.log('延迟初始化开始...');
             
             // 初始化登入管理器
             loginManager.init();
@@ -10622,6 +10710,25 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
             // 初始化emoji面板
             populateEmojiPanel();
+            
+            window.lateInitialized = true;
+            console.log('延迟初始化完成');
+        }
+        
+        // 多重初始化策略，确保在iframe环境中稳定运行
+        function initializeApp() {
+            console.log('應用開始初始化...');
+            
+            // 早期初始化
+            earlyInit();
+            
+            // 延迟初始化
+            lateInit();
+            
+            // 强制刷新显示
+            setTimeout(() => {
+                forceRefreshDisplay();
+            }, 200);
             
             console.log('應用初始化完成');
             
@@ -10682,67 +10789,69 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             });
         }
         
-        // 多重初始化策略，確保在iframe環境中能正確加載
-        // 方法1：使用DOMContentLoaded事件（最快）
+        // 多重事件监听，确保在各种环境下都能正常初始化
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('DOMContentLoaded 觸發，開始初始化');
-                setTimeout(initializeApp, 100); // 延遲100ms確保DOM完全就緒
-            });
+            document.addEventListener('DOMContentLoaded', initializeApp);
         } else {
-            // DOM已加載完成，直接初始化
-            console.log('DOM已加載，直接初始化');
-            setTimeout(initializeApp, 50);
+            // DOM已加载完成，立即初始化
+            initializeApp();
         }
         
-        // 方法2：使用window.onload作為備用（確保所有資源加載完成）
+        // 备用初始化 - 确保在iframe环境中也能正常工作
         window.addEventListener('load', function() {
-            console.log('window.onload 觸發，檢查是否需要重新初始化');
-            // 如果app圖標還沒有設置點擊事件，說明之前的初始化可能失敗了
-            const appIcon = document.getElementById('appIcon');
-            if (appIcon && !appIcon.onclick && !appIcon.getAttribute('data-initialized')) {
-                console.log('檢測到初始化可能失敗，重新初始化');
+            // 检查是否已经初始化，避免重复
+            if (!window.appInitialized) {
+                console.log('备用初始化触发');
                 initializeApp();
+                window.appInitialized = true;
             }
         });
         
-        // 方法3：針對iframe環境的特殊處理
-        if (window !== window.top) {
-            // 在iframe中運行
-            console.log('檢測到在iframe環境中運行，使用額外的初始化策略');
-            // 等待父窗口完全加載後再初始化
-            setTimeout(function() {
-                if (document.readyState === 'complete') {
+        // 针对iframe环境的特殊处理
+        if (window.self !== window.top) {
+            // 在iframe中，使用更早的时机
+            if (document.body) {
+                initializeApp();
+                window.appInitialized = true;
+            } else {
+                document.addEventListener('DOMContentLoaded', function() {
                     initializeApp();
-                }
-            }, 200);
-            
-            // 监听resize事件，确保在iframe尺寸变化时正确重新渲染
-            window.addEventListener('resize', function() {
-                console.log('iframe尺寸变化，重新调整显示');
-                // 强制重新计算星空背景
-                const galaxyContainer = document.querySelector('.galaxy-container');
-                const starField = document.querySelector('.star-field');
-                if (galaxyContainer) {
-                    galaxyContainer.style.transform = 'translateZ(0)';
-                }
-                if (starField) {
-                    starField.style.transform = 'translateZ(0)';
-                }
-            });
-            
-            // 监听父窗口的消息，用于处理显示刷新
-            window.addEventListener('message', function(event) {
-                if (event.data === 'refresh-display') {
-                    console.log('收到父窗口刷新显示指令');
-                    // 强制重新渲染
-                    document.body.style.transform = 'translateZ(0)';
-                    setTimeout(() => {
-                        document.body.style.transform = '';
-                    }, 100);
-                }
-            });
+                    window.appInitialized = true;
+                });
+            }
         }
+        
+        // 监听滚动和触摸事件，当用户交互时强制刷新显示
+        let refreshTimeout;
+        function handleUserInteraction() {
+            if (refreshTimeout) clearTimeout(refreshTimeout);
+            refreshTimeout = setTimeout(() => {
+                forceRefreshDisplay();
+            }, 100);
+        }
+        
+        // 添加事件监听器
+        document.addEventListener('scroll', handleUserInteraction, { passive: true });
+        document.addEventListener('touchstart', handleUserInteraction, { passive: true });
+        document.addEventListener('touchmove', handleUserInteraction, { passive: true });
+        
+        // 视口变化时也重新刷新
+        window.addEventListener('resize', handleUserInteraction);
+        window.addEventListener('orientationchange', handleUserInteraction);
+        
+        // 接收来自父页面iframe的消息
+        window.addEventListener('message', function(event) {
+            // 验证消息来源（可以根据需要调整）
+            if (event.origin !== window.location.origin && 
+                event.origin !== 'https://chineseclassics.github.io') {
+                return;
+            }
+            
+            if (event.data && event.data.action === 'forceRefresh') {
+                console.log('收到父页面的强制刷新消息');
+                forceRefreshDisplay();
+            }
+        });
     </script>
     
 

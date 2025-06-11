@@ -100,27 +100,6 @@
             }
         }
         
-        /* iframe优化 - 确保游戏正确显示 */
-        #appFrame {
-            /* 确保iframe在移动端正确显示 */
-            -webkit-overflow-scrolling: touch;
-            /* 优化渲染性能 */
-            will-change: contents;
-            /* 确保内容立即显示 */
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-        
-        /* 当iframe加载时的平滑过渡 */
-        #appFrame.loading {
-            opacity: 0.7;
-        }
-        
-        /* 确保iframe触摸交互正常 */
-        #appView {
-            touch-action: manipulation;
-        }
-        
 
         
         /* 应用详情提示框 */
@@ -1288,57 +1267,50 @@
             loadingState.classList.remove('hidden');
             errorState.classList.add('hidden');
 
-            // 预加载iframe内容，提升加载速度
-            const link = document.createElement('link');
-            link.rel = 'prefetch';
-            link.href = app.url;
-            document.head.appendChild(link);
+            // 针对太虛幻聊的特殊优化
+            if (appId === 'shuyuanclassicchat') {
+                // 设置iframe特殊属性以优化移动端显示
+                appFrame.style.width = '100%';
+                appFrame.style.height = '100%';
+                appFrame.style.border = 'none';
+                appFrame.style.overflow = 'hidden';
+                
+                // 添加特殊的加载参数
+                appFrame.src = app.url + '?iframe=1&t=' + Date.now();
+            } else {
+                // 其他应用的正常加载
+                appFrame.src = app.url;
+            }
 
-            // 加载iframe - 优化版
-            appFrame.classList.add('loading'); // 添加加载状态样式
-            appFrame.src = app.url;
-            
-            // 为iframe设置更好的属性以优化移动端显示
-            appFrame.setAttribute('loading', 'eager');
-            appFrame.setAttribute('importance', 'high');
-            
-            // 设置iframe错误处理 - 延长超时时间给复杂页面更多加载时间
+            // 设置iframe错误处理
             const timeoutId = setTimeout(() => {
                 showError();
-            }, 15000); // 延长到15秒超时，适应复杂游戏页面
+            }, 15000); // 增加到15秒超时，给太虛幻聊更多加载时间
 
-            // iframe加载完成处理
             appFrame.onload = () => {
                 clearTimeout(timeoutId);
                 
-                // 给iframe内容一些时间完成初始化
-                setTimeout(() => {
-                    loadingState.classList.add('hidden');
-                    appFrame.classList.remove('loading'); // 移除加载状态样式
-                    
-                    // 尝试与iframe通信，确保内容已正确加载
-                    try {
-                        const iframeDoc = appFrame.contentDocument || appFrame.contentWindow.document;
-                        if (iframeDoc && iframeDoc.readyState === 'complete') {
-                            console.log('iframe内容加载完成');
-                            // 发送一个resize事件帮助iframe内容适应
-                            appFrame.contentWindow.dispatchEvent(new Event('resize'));
-                            // 发送刷新显示消息
-                            appFrame.contentWindow.postMessage('refresh-display', '*');
-                        }
-                    } catch (e) {
-                        // 跨域限制，忽略错误 - 尝试通过postMessage通信
-                        console.log('使用postMessage与iframe通信');
+                // 针对太虛幻聊的特殊处理
+                if (appId === 'shuyuanclassicchat') {
+                    // 稍长的延迟，确保星空背景完全加载
+                    setTimeout(() => {
+                        loadingState.classList.add('hidden');
+                        
+                        // 向iframe发送消息，触发强制刷新
                         try {
-                            // 延迟发送消息，确保iframe已准备好接收
-                            setTimeout(() => {
-                                appFrame.contentWindow.postMessage('refresh-display', '*');
-                            }, 300);
-                        } catch (err) {
-                            console.log('postMessage也无法使用:', err);
+                            appFrame.contentWindow.postMessage({ 
+                                action: 'forceRefresh',
+                                timestamp: Date.now()
+                            }, '*');
+                        } catch (e) {
+                            console.log('无法向iframe发送消息:', e);
                         }
-                    }
-                }, 1200); // 稍微延长等待时间
+                    }, 1500);
+                } else {
+                    setTimeout(() => {
+                        loadingState.classList.add('hidden');
+                    }, 1000);
+                }
             };
 
             appFrame.onerror = () => {
@@ -1385,37 +1357,6 @@
 
         // 事件监听
         document.getElementById('homeBtn').onclick = showHome;
-        
-        // 添加iframe交互监听，帮助解决移动端显示问题
-        const appView = document.getElementById('appView');
-        let touchStartTime = 0;
-        
-        appView.addEventListener('touchstart', function(e) {
-            touchStartTime = Date.now();
-        }, { passive: true });
-        
-        appView.addEventListener('touchend', function(e) {
-            const touchDuration = Date.now() - touchStartTime;
-            // 如果是快速点击（不是滑动），尝试刷新iframe显示
-            if (touchDuration < 200 && currentApp) {
-                try {
-                    appFrame.contentWindow.postMessage('refresh-display', '*');
-                } catch (err) {
-                    // 忽略跨域错误
-                }
-            }
-        }, { passive: true });
-        
-        // 桌面端点击监听
-        appView.addEventListener('click', function(e) {
-            if (currentApp && e.target === appFrame) {
-                try {
-                    appFrame.contentWindow.postMessage('refresh-display', '*');
-                } catch (err) {
-                    // 忽略跨域错误
-                }
-            }
-        });
         
         // 显示应用切换器（带动画）
         function showAppSwitcher() {
