@@ -4,6 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
     <title>太虛幻聊 - 與古今名士暢談千古</title>
+    
+    <!-- 预加载和优化 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    
+    <!-- 防止iframe中的FOUC（Flash of Unstyled Content） -->
+    <style>
+        /* 立即应用的基础样式，防止FOUC */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* iframe适配优化 */
+        body {
+            min-height: 100vh;
+            min-height: 100dvh; /* 支持动态视口高度 */
+        }
+        
+        /* 确保容器在iframe中正确显示 */
+        .galaxy-container, .star-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh; /* 动态视口高度 */
+        }
+        
+        /* 防止在iframe中内容被截断 */
+        .app-universal-container {
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+        
+        /* 桌面端app容器样式优化 - 保持手机屏幕比例 */
+        @media screen and (min-width: 769px) {
+            /* 非iframe模式下的桌面端样式 */
+            body:not(.iframe-mode) .app-universal-container {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 375px;  /* 标准手机宽度 */
+                height: 667px; /* 标准手机高度 (iPhone 6/7/8 比例) */
+                max-width: 90vw;
+                max-height: 90vh;
+                overflow: hidden;
+                border-radius: 24px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                z-index: 10;
+                background: #000; /* 确保有背景色 */
+            }
+            
+            /* 大屏幕下稍微放大 */
+            @media screen and (min-width: 1200px) {
+                body:not(.iframe-mode) .app-universal-container {
+                    width: 414px;  /* iPhone 6 Plus尺寸 */
+                    height: 736px;
+                }
+            }
+            
+            /* 超大屏幕下进一步放大 */
+            @media screen and (min-width: 1600px) {
+                body:not(.iframe-mode) .app-universal-container {
+                    width: 450px;
+                    height: 800px;
+                }
+            }
+            
+            /* iframe模式下填满容器 */
+            body.iframe-mode .app-universal-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+    
     <style>
         /* ===== 太虛幻聊統一設計規範 ===== */
         /* 
@@ -50,6 +137,137 @@
         body {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
+        }
+        
+        /* 桌面端默认样式 - 背景填满屏幕 */
+        @media screen and (min-width: 769px) {
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100vh;
+                overflow: hidden;
+            }
+            
+            /* 背景层始终填满整个屏幕 */
+            .galaxy-container, .star-field {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: 1;
+            }
+            
+            /* App图标在背景层上方，但在应用容器下方 */
+            .app-icon-container {
+                z-index: 5;
+            }
+        }
+        
+        /* 移动端样式 - 防止滚动和显示问题 */
+        @media screen and (max-width: 768px) {
+            body:not(.iframe-mode) {
+                /* 防止移动端橡皮筋效果 */
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            
+            /* 移动端iframe模式 */
+            body.iframe-mode {
+                position: relative;
+                width: 100%;
+                height: 100vh;
+                overflow: auto;
+            }
+            
+            .galaxy-container {
+                /* 移动端使用更稳定的定位 */
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                min-height: 100vh;
+                min-height: 100dvh;
+            }
+            
+            .star-field {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                min-height: 100vh;
+                min-height: 100dvh;
+            }
+            
+            .app-icon-container {
+                /* 确保图标在移动端正确居中 */
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+        
+        /* 解决iOS Safari的视口问题 */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                height: -webkit-fill-available;
+            }
+            
+            .galaxy-container, .star-field {
+                height: -webkit-fill-available;
+            }
+        }
+        
+        /* iframe环境特殊优化 */
+        @media screen {
+            /* 强制硬件加速 */
+            .galaxy-container, .star-field, .app-icon-container {
+                transform: translateZ(0);
+                -webkit-transform: translateZ(0);
+                will-change: transform;
+            }
+            
+            /* 确保动画在iframe中正常工作 */
+            .particle, .app-icon {
+                backface-visibility: hidden;
+                -webkit-backface-visibility: hidden;
+            }
+        }
+        
+        /* 针对iframe的显示修复 */
+        body.iframe-mode {
+            position: relative !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow: auto !important;
+        }
+        
+        body.iframe-mode .galaxy-container,
+        body.iframe-mode .star-field {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        /* 针对iframe中的桌面端 */
+        @media screen and (min-width: 769px) {
+            body.iframe-mode {
+                height: 100vh !important;
+                min-height: 100vh !important;
+            }
+            
+            body.iframe-mode .galaxy-container,
+            body.iframe-mode .star-field {
+                width: 100vw !important;
+                height: 100vh !important;
+            }
         }
         
         /* 新增成員資料頁面樣式 */
@@ -3419,10 +3637,6 @@
             transition: background-color 0.15s;
         }
         
-        .discover-item:last-child {
-            border-bottom: none;
-        }
-        
         .discover-item:hover {
             background-color: #f0f0f0;
         }
@@ -3871,7 +4085,7 @@
         
         /* 媒体查询已移除，使用统一设计 */
         
-        /* 群組列表頁面樣式 */
+        /* 群组列表页面样式 */
         .group-list-page {
             position: absolute;
             top: 0;
@@ -4019,12 +4233,12 @@
     </style>
 </head>
 <body>
-    <!-- 銀河系背景 -->
+    <!-- 银河系背景 -->
     <div class="galaxy-container">
-        <!-- 銀河中心 -->
+        <!-- 银河中心 -->
         <div class="galaxy-center"></div>
         
-        <!-- 銀河塵埃雲 -->
+        <!-- 银河尘埃云 -->
         <div class="nebula-cloud"></div>
         <div class="nebula-cloud"></div>
         <div class="nebula-cloud"></div>
@@ -4032,28 +4246,28 @@
         <div class="nebula-cloud"></div>
             </div>
     
-    <!-- 額外的星空裝飾層 -->
+    <!-- 额外的星空装饰层 -->
     <div class="star-field"></div>
     
-    <!-- 太虛幻聊 App 圖標 - 直接在銀河系背景中 -->
+    <!-- 太虚幻聊 App 图标 - 直接在银河系背景中 -->
     <div class="app-icon-container" id="appIconContainer">
         <div class="app-icon-glow"></div>
         <div class="app-icon" id="appIcon">
             <div class="app-icon-symbol">🌌</div>
-            <div class="app-icon-text">太虛幻聊</div>
+            <div class="app-icon-text">太虚幻聊</div>
         </div>
     </div>
     
-    <!-- 統一父容器 - 控制所有頁面的圓角和尺寸 -->
+    <!-- 统一父容器 - 控制所有页面的圆角和尺寸 -->
     <div class="app-universal-container" id="appUniversalContainer">
-    <!-- 登入頁面 -->
+    <!-- 登入页面 -->
     <div class="login-container" id="loginContainer">
         <div class="login-content">
-            <!-- 標題區域 -->
+            <!-- 标题区域 -->
             <div class="login-header">
                 <div class="app-title">
-                    <div class="title-main">太虛幻聊</div>
-                    <div class="title-sub">與經典人物的奇妙對話</div>
+                    <div class="title-main">太虚幻聊</div>
+                    <div class="title-sub">与经典人物的奇妙对话</div>
                 </div>
                 <div class="title-decoration">
                     <div class="star">✨</div>
@@ -4062,20 +4276,20 @@
                 </div>
             </div>
             
-            <!-- 歡迎信息 -->
+            <!-- 欢迎信息 -->
             <div class="welcome-message">
-                <div class="welcome-title">歡迎來到太虛幻聊！🌟</div>
+                <div class="welcome-title">欢迎来到太虚幻聊！🌟</div>
                 <div class="welcome-text">
-                    這裡有不同的主題群組等著你：與詩人們吟詩作對，和史家探討古今，與哲人思辨人生，還能和神話人物暢聊奇事！
+                    这里有不同的主题群组等著你：与诗人们吟诗作对，和史家探讨古今，与哲人思辨人生，还能和神话人物暢聊奇事！
                     <br><br>
-                    <strong>⚠️ 重要提醒：</strong>雖然這些角色的回應都是基於AI技術生成的合理想像，但請記住<strong>不要將其視為標準答案</strong>哦～我們的目標是讓你更親近中華經典，激發學習興趣！
+                    <strong>⚠️ 重要提醒：</strong>雖然这些角色的回应都是基於AI技术生成的合理想像，但请记住<strong>不要将其视为标准答案</strong>哦～我们的目标是让你更亲近中华经典，激发学习兴趣！
                     <br><br>
-                    <strong>📝 使用須知：</strong>在聊天時，你可以詢問角色的故事背景，分享你對經典作品的理解和感受。同時也請注意<strong>保護個人隱私，保持文明用語</strong>，讓我們一起營造溫馨的聊天氛圍吧！💫
+                    <strong>📝 使用须知：</strong>在聊天时，你可以詢问角色的故事背景，分享你对经典作品的理解和感受。同时也请注意<strong>保护个人隐私，保持文明用语</strong>，讓我们一起营造温馨的聊天氛围吧！💫
                 </div>
                 <div class="welcome-confirmation">
-                    <div class="confirmation-text">請確認您已閱讀並理解以上重要說明</div>
+                    <div class="confirmation-text">请确认您已阅读并理解以上重要说明</div>
                     <button class="confirm-btn" id="confirmBtn" onclick="confirmReading()">
-                        <span id="confirmText">✓ 已經閱讀，我明白了</span>
+                        <span id="confirmText">✓ 已经阅读，我明白了</span>
                     </button>
                 </div>
             </div>
@@ -6084,10 +6298,10 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                             mainTitle.innerHTML = `TheyChat <span class="main-title-count">(${unreadCount})</span>`;
                         break;
                         case 'contactsTab':
-                            mainTitle.innerHTML = '通訊錄';
+                            mainTitle.innerHTML = '通讯录';
                         break;
                         case 'discoverTab':
-                            mainTitle.innerHTML = '發現';
+                            mainTitle.innerHTML = '发现';
                         break;
                     }
                 }
@@ -6110,18 +6324,18 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 }
             }
             
-            // 獲取未讀消息數
+            // 获取未读消息数
             getUnreadCount() {
-                // 模擬未讀數量
+                // 模拟未读数量
                 return 41;
             }
             
-            // 刷新聊天列表（用於發送消息後更新）
+            // 刷新聊天列表（用于发送消息后更新）
             refreshChatList() {
                 this.generateChatList();
             }
 
-            // 生成通訊錄
+            // 生成通讯录
             generateContacts() {
                 const container = document.getElementById('contactsContainer');
                 container.innerHTML = '';
@@ -6135,42 +6349,42 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     });
                 });
                 
-                // 按朝代分組
+                // 按朝代分组
                 const charactersByDynasty = {};
                 allCharacters.forEach(char => {
-                    const dynasty = char.dynasty || '未分類';
+                    const dynasty = char.dynasty || '未分类';
                     if (!charactersByDynasty[dynasty]) {
                         charactersByDynasty[dynasty] = [];
                     }
                     charactersByDynasty[dynasty].push(char);
                 });
                 
-                // 定義朝代排序順序
+                // 定义朝代排序顺序
                 const dynastyOrder = [
-                    '神話傳說',
-                    '春秋戰國',
-                    '漢代',
-                    '三國兩晉南北朝',
-                    '五代十國',
+                    '神话传说',
+                    '春秋战国',
+                    '汉代',
+                    '三国两晋南北朝',
+                    '五代十国',
                     '唐代',
                     '宋代',
                     '元代',
                     '明代',
                     '清代',
-                    '現代',
-                    '未分類'
+                    '现代',
+                    '未分类'
                 ];
                 
-                // 按朝代順序生成通訊錄
+                // 按朝代顺序生成通讯录
                 dynastyOrder.forEach(dynasty => {
                     if (charactersByDynasty[dynasty] && charactersByDynasty[dynasty].length > 0) {
-                        // 朝代分組標題
+                        // 朝代分组标题
                     const groupHeader = document.createElement('div');
                     groupHeader.className = 'contact-group-header';
                         groupHeader.textContent = dynasty;
                     container.appendChild(groupHeader);
                     
-                        // 該朝代下的角色列表
+                        // 该朝代下的角色列表
                         charactersByDynasty[dynasty].forEach(char => {
                         const contactItem = this.createContactItem(char);
                         container.appendChild(contactItem);
@@ -6181,7 +6395,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
 
             
-            // 創建聯繫人項目
+            // 创建联系人项目
             createContactItem(character) {
                 const item = document.createElement('div');
                 item.className = 'contact-item';
@@ -6204,19 +6418,19 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 return item;
             }
             
-            // 查看角色資料
+            // 查看角色资料
             viewCharacterProfile(character) {
-                // 通過角色名稱查找對應的ID
+                // 通过角色名称查找对应的ID
                 const characterId = this.findCharacterIdByName(character.name);
                 if (characterId) {
-                    // 打開角色資料頁面
+                    // 打开角色资料页面
                     openProfilePage(characterId);
                 } else {
                     console.error('找不到角色ID:', character.name);
                 }
             }
             
-            // 通過角色名稱查找對應的ID
+            // 通过角色名称查找对应的ID
             findCharacterIdByName(name) {
                 for (const [id, char] of Object.entries(characters)) {
                     if (char.name === name) {
@@ -6226,12 +6440,12 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 return null;
             }
             
-            // 生成發現頁面
+            // 生成发现页面
             generateDiscover() {
                 const container = document.getElementById('discoverContainer');
                 container.innerHTML = '';
                 
-                // 創建朋友圈入口
+                // 创建朋友圈入口
                 const momentsEntry = document.createElement('div');
                 momentsEntry.className = 'discover-item';
                 momentsEntry.innerHTML = `
@@ -6243,18 +6457,18 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 });
                 container.appendChild(momentsEntry);
                 
-                // 添加分隔線
+                // 添加分隔线
                 const separator = document.createElement('div');
                 separator.style.height = '8px';
                 separator.style.backgroundColor = '#f0f0f0';
                 container.appendChild(separator);
                 
-                // 創建其他發現選項
+                // 创建其他发现选项
                 const otherItems = [
-                    { icon: '📚', label: '詩詞鑑賞' },
-                    { icon: '🎭', label: '戲曲賞析' },
-                    { icon: '🏛️', label: '歷史典故' },
-                    { icon: '🐲', label: '神話傳說' }
+                    { icon: '📚', label: '诗词鉴赏' },
+                    { icon: '🎭', label: '戏曲赏析' },
+                    { icon: '🏛️', label: '历史典故' },
+                    { icon: '🐲', label: '神话传说' }
                 ];
                 
                 otherItems.forEach(item => {
@@ -6265,14 +6479,14 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                         <div class="discover-label">${item.label}</div>
                     `;
                     discoverItem.addEventListener('click', () => {
-                        // 暫時顯示提示
-                        alert(`${item.label}功能開發中...`);
+                        // 暂时显示提示
+                        alert(`${item.label}功能开发中...`);
                     });
                     container.appendChild(discoverItem);
                 });
             }
             
-            // 創建發現項目  
+            // 创建发现项目  
             createDiscoverItem(character) {
                 const item = document.createElement('div');
                 item.className = 'discover-item';
@@ -6297,18 +6511,18 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 momentsManager.openMoments();
             }
             
-            // 切換標籤頁
+            // 切换标签页
             switchTab(tabId) {
-                // 隱藏所有標籤內容
+                // 隐藏所有标签内容
                 document.querySelectorAll('.main-content > div').forEach(tab => {
                     tab.style.display = 'none';
                 });
                 
-                // 顯示選中的標籤
+                // 显示选中的标签
                 document.getElementById(tabId).style.display = 'block';
                 this.currentTab = tabId;
                 
-                // 更新導航欄狀態
+                // 更新导航栏状态
                 document.querySelectorAll('.nav-item').forEach(nav => {
                     nav.classList.remove('active');
                 });
@@ -6321,9 +6535,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 document.getElementById('discoverBadge').classList.add('show');
             }
             
-            // 設置主界面事件
+            // 设置主界面事件
             setupMainEvents() {
-                // 底部導航切換
+                // 底部导航切换
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', () => {
                         const tabId = item.getAttribute('data-tab');
@@ -6331,7 +6545,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     });
                 });
                 
-                // 返回主界面按鈕
+                // 返回主界面按钮
                 document.getElementById('backToMainBtn').addEventListener('click', () => {
                     this.backToMain();
                 });
@@ -6344,10 +6558,10 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }
         }
         
-        // 全局主界面實例
+        // 全局主界面实例
         const mainInterface = new MainInterface();
         
-        // 登入管理器
+        // 登录管理器
         class LoginManager {
             constructor() {
                 this.correctPassword = 'chineseclassics';
@@ -6358,30 +6572,30 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 };
             }
             
-            // 初始化登入功能
+            // 初始化登录功能
             init() {
                 this.setupLoginEvents();
                 this.setupFormValidation();
             }
             
-            // 設置登入事件
+            // 设置登录事件
             setupLoginEvents() {
                 const loginBtn = document.getElementById('loginBtn');
                 const debugBtn = document.getElementById('debugBtn');
                 const nicknameInput = document.getElementById('nickname');
                 const passwordInput = document.getElementById('password');
                 
-                // 登入按鈕點擊
+                // 登录按钮点击
                 loginBtn.addEventListener('click', () => {
                     this.handleLogin();
                 });
                 
-                // 調試按鈕點擊
+                // 调试按钮点击
                 debugBtn.addEventListener('click', () => {
                     this.handleDebugLogin();
                 });
                 
-                // 回車鍵登入
+                // 回车键登录
                 [nicknameInput, passwordInput, document.getElementById('grade')].forEach(element => {
                     element.addEventListener('keypress', (e) => {
                         if (e.key === 'Enter') {
@@ -6391,7 +6605,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 });
             }
             
-            // 設置表單驗證
+            // 设置表单验证
             setupFormValidation() {
                 const inputs = ['nickname', 'password'];
                 inputs.forEach(id => {
@@ -8893,7 +9107,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 confucius: "有朋自遠方來，不亦樂乎？你想請教什麼？",
                 caozhi: "陳王在此，有何雅事要與我分享？",
                 menghaoran: "襄陽一隅，難得友人來訪，甚是歡喜！",
-                yuzhen: "公主府中清靜，你來找我有何事？",
+                yuzhen: "詩佛在此，與君論道。",
                 yutu: "搗藥間隙，能聊天真是太好了！你想聽什麼故事？",
                 yangguifei: "難得有人願意聽我說話，你想了解宮中趣事嗎？",
                 laozi: "道可道，非常道。你想與老夫探討什麼？",
@@ -9302,7 +9516,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                         time: '二十年前',
                         likes: ['taoyuanming', 'menghaoran'],
                         comments: [
-                            { authorId: 'taoyuanming', text: '「山隨平野盡，江入大荒流」一句氣勢磅礴，寫盡江流壯闊！太白遠行，必成大器！' },
+                            { authorId: 'taoyuanming', text: '「山隨平野盡，江入大荒流」一句氣勢磅礡，寫盡江流壯闊！太白遠行，必成大器！' },
                             { authorId: 'menghaoran', text: '初出蜀地便有如此佳作，太白前程遠大，老夫拭目以待！' }
                         ]
                     },
@@ -10318,9 +10532,20 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }, 200);
         }
         
-        // 生成銀河系粒子效果
+        // 優化的銀河系創建函數 - 支持iframe環境
         function createGalaxyParticles() {
             const galaxyContainer = document.querySelector('.galaxy-container');
+            if (!galaxyContainer) {
+                console.error('Galaxy container not found');
+                return;
+            }
+            
+            // 防止重复创建
+            if (galaxyContainer.hasAttribute('data-initialized')) {
+                console.log('銀河系已存在，跳過創建');
+                return;
+            }
+            
             const numberOfArms = 2; // 兩條主要螺旋臂（更符合銀河系實際結構）
             
             // 創建螺旋臂
@@ -10530,6 +10755,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 }
             }
             
+            // 標記銀河系已創建
+            galaxyContainer.setAttribute('data-initialized', 'true');
+            
             console.log('大尺寸銀河系螺旋臂結構已生成 - 半徑達800px的壯麗銀河系，總計約600+個星體');
         }
         
@@ -10565,12 +10793,15 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }, 400); // 圖標消失動畫時間
         }
         
-        // 啟動應用
-        window.onload = function() {
+        // 优化的初始化函数 - 支持iframe和独立运行
+        function initializeApp() {
             console.log('應用開始初始化...');
             
-            // 創建銀河系背景效果
-            createGalaxyParticles();
+            // 立即创建银河系背景，不等待图片加载
+            requestAnimationFrame(() => {
+                createGalaxyParticles();
+                console.log('銀河系背景已創建');
+            });
             
             // 設置app圖標點擊事件
             const appIcon = document.getElementById('appIcon');
@@ -10593,6 +10824,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             // 群組標題由進入聊天時直接設置，無需在初始化時處理
             console.log('應用初始化完成，群組標題將在進入聊天時設置');
             
+            // 標記已初始化
+            markAsInitialized();
+            
             // 設置UI交互
             setupUIInteractions();
             
@@ -10602,8 +10836,193 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             // 初始化emoji面板
             populateEmojiPanel();
             
-            console.log('應用初始化完成');
+            // 設置其他事件監聽器
+            setupEventListeners();
             
+            console.log('應用初始化完成');
+        }
+        
+        // 多种初始化方式 - 确保在iframe中也能正常加载
+        function startApp() {
+            // 检查是否在iframe中
+            const isInIframe = window !== window.parent;
+            console.log('運行環境:', isInIframe ? 'iframe中' : '獨立頁面');
+            
+            // 如果在iframe中，应用特殊的CSS类
+            if (isInIframe) {
+                document.body.classList.add('iframe-mode');
+                console.log('已應用iframe模式樣式');
+            } else {
+                // 确保非iframe环境下移除可能的iframe样式
+                document.body.classList.remove('iframe-mode');
+                console.log('運行在獨立頁面模式');
+            }
+            
+            // 立即初始化，不等待所有资源加载完成
+            initializeApp();
+            
+            // 如果在iframe中，额外设置一些优化
+            if (isInIframe) {
+                // 告诉父页面已经加载完成
+                try {
+                    window.parent.postMessage({
+                        type: 'appLoaded',
+                        source: 'taixuhuanliao'
+                    }, '*');
+                } catch (e) {
+                    console.log('無法與父頁面通信:', e);
+                }
+                
+                // 确保视口正确设置
+                if (window.innerWidth <= 768) {
+                    // 移动端设置
+                    document.body.style.height = '100vh';
+                    document.body.style.overflow = 'auto';
+                } else {
+                    // 桌面端iframe设置
+                    document.body.style.height = '100vh';
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            
+            // 延迟检查显示状态，如果有问题则强制刷新
+            setTimeout(() => {
+                const galaxyContainer = document.querySelector('.galaxy-container');
+                const appIconContainer = document.getElementById('appIconContainer');
+                const appUniversalContainer = document.getElementById('appUniversalContainer');
+                
+                // 输出调试信息
+                console.log('顯示狀態檢查:');
+                console.log('- 運行環境:', isInIframe ? 'iframe' : '獨立頁面');
+                console.log('- 視口尺寸:', window.innerWidth + 'x' + window.innerHeight);
+                console.log('- 是否為移動端:', window.innerWidth <= 768);
+                console.log('- Body CSS類:', document.body.className);
+                
+                if (galaxyContainer) {
+                    const rect = galaxyContainer.getBoundingClientRect();
+                    console.log('- 銀河系容器尺寸:', rect.width + 'x' + rect.height);
+                }
+                
+                if (appUniversalContainer) {
+                    const rect = appUniversalContainer.getBoundingClientRect();
+                    console.log('- App容器尺寸:', rect.width + 'x' + rect.height);
+                    console.log('- App容器位置:', 'top:' + rect.top + ', left:' + rect.left);
+                    
+                    // 检查是否使用了正确的样式
+                    const computedStyle = window.getComputedStyle(appUniversalContainer);
+                    console.log('- App容器CSS定位:', computedStyle.position);
+                    console.log('- App容器CSS尺寸:', computedStyle.width + ' x ' + computedStyle.height);
+                }
+                
+                if (galaxyContainer && appIconContainer) {
+                    const galaxyRect = galaxyContainer.getBoundingClientRect();
+                    const iconRect = appIconContainer.getBoundingClientRect();
+                    
+                    // 检查元素是否正确显示
+                    if (galaxyRect.width === 0 || galaxyRect.height === 0 || 
+                        iconRect.width === 0 || iconRect.height === 0) {
+                        console.log('檢測到顯示問題，強制刷新');
+                        forceRefreshDisplay();
+                    } else {
+                        console.log('顯示狀態正常');
+                    }
+                }
+            }, 1000);
+        }
+        
+        // 强制刷新背景显示的函数
+        function forceRefreshDisplay() {
+            const galaxyContainer = document.querySelector('.galaxy-container');
+            const starField = document.querySelector('.star-field');
+            const appIconContainer = document.getElementById('appIconContainer');
+            
+            if (galaxyContainer) {
+                galaxyContainer.style.display = 'none';
+                requestAnimationFrame(() => {
+                    galaxyContainer.style.display = 'block';
+                });
+            }
+            
+            if (starField) {
+                starField.style.display = 'none';
+                requestAnimationFrame(() => {
+                    starField.style.display = 'block';
+                });
+            }
+            
+            if (appIconContainer) {
+                appIconContainer.style.display = 'none';
+                requestAnimationFrame(() => {
+                    appIconContainer.style.display = 'block';
+                });
+            }
+        }
+        
+        // 监听触摸事件，检测可能的滚动刷新
+        let touchStartY = 0;
+        let refreshTriggered = false;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartY = e.touches[0].clientY;
+            refreshTriggered = false;
+        }, { passive: true });
+        
+        document.addEventListener('touchmove', function(e) {
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchY - touchStartY;
+            
+            // 检测向下滑动且滚动位置在顶部
+            if (deltaY > 50 && window.scrollY === 0 && !refreshTriggered) {
+                refreshTriggered = true;
+                console.log('檢測到下拉刷新，強制刷新顯示');
+                setTimeout(() => {
+                    forceRefreshDisplay();
+                }, 100);
+            }
+        }, { passive: true });
+        
+        // 监听视口变化，确保在设备旋转时正确显示
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                forceRefreshDisplay();
+            }, 300);
+        });
+        
+        window.addEventListener('resize', function() {
+            setTimeout(() => {
+                forceRefreshDisplay();
+            }, 100);
+        });
+        
+        // 多种触发方式确保应用能够启动
+        if (document.readyState === 'loading') {
+            // DOM还在加载中
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            // DOM已经加载完成
+            startApp();
+        }
+        
+        // 备用触发 - 确保在所有情况下都能启动
+        window.addEventListener('load', function() {
+            // 如果应用还没有初始化，再次尝试
+            const appIcon = document.getElementById('appIcon');
+            if (appIcon && !appIcon.hasAttribute('data-initialized')) {
+                console.log('備用初始化觸發');
+                startApp();
+            }
+        });
+        
+        // 在app图标创建时标记已初始化
+        function markAsInitialized() {
+            const appIcon = document.getElementById('appIcon');
+            if (appIcon) {
+                appIcon.setAttribute('data-initialized', 'true');
+            }
+        }
+        
+        // 设置其他事件监听器
+        function setupEventListeners() {
             // 設置emoji按鈕點擊事件
             const emojiBtn = document.getElementById('emojiBtn');
             if (emojiBtn) {
@@ -10644,22 +11063,29 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }
             
             // 點擊聊天界面任意位置關閉面板
-            document.getElementById('chatMessages').addEventListener('click', function() {
-                toggleEmojiPanel(false);
-                document.getElementById('functionPanel').style.display = 'none';
-                hideMentionPopup();
-            });
-            
-            
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) {
+                chatMessages.addEventListener('click', function() {
+                    toggleEmojiPanel(false);
+                    document.getElementById('functionPanel').style.display = 'none';
+                    hideMentionPopup();
+                });
+            }
             
             // 其他功能按鈕点击事件（目前不可用，但为了完整性添加）
             ['photoBtn', 'cameraBtn', 'callBtn', 'locationBtn', 'voiceInputBtn', 'favBtn'].forEach(id => {
-                document.getElementById(id).addEventListener('click', function() {
-                    alert('此功能暫未開放');
-                    document.getElementById('functionPanel').style.display = 'none';
-                });
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        alert('此功能暫未開放');
+                        const functionPanel = document.getElementById('functionPanel');
+                        if (functionPanel) {
+                            functionPanel.style.display = 'none';
+                        }
+                    });
+                }
             });
-        };
+        }
     </script>
     
 

@@ -1279,8 +1279,20 @@
                 clearTimeout(timeoutId);
                 setTimeout(() => {
                     loadingState.classList.add('hidden');
-                }, 1000);
+                }, 500); // 缩短延迟时间
             };
+            
+            // 监听iframe内应用的加载完成消息
+            const messageHandler = (event) => {
+                if (event.data && event.data.type === 'appLoaded' && event.data.source === 'taixuhuanliao') {
+                    clearTimeout(timeoutId);
+                    loadingState.classList.add('hidden');
+                    console.log('太虛幻聊加載完成');
+                    // 移除消息监听器
+                    window.removeEventListener('message', messageHandler);
+                }
+            };
+            window.addEventListener('message', messageHandler);
 
             appFrame.onerror = () => {
                 clearTimeout(timeoutId);
