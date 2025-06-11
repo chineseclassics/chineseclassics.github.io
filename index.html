@@ -1267,50 +1267,19 @@
             loadingState.classList.remove('hidden');
             errorState.classList.add('hidden');
 
-            // 针对太虛幻聊的特殊优化
-            if (appId === 'shuyuanclassicchat') {
-                // 设置iframe特殊属性以优化移动端显示
-                appFrame.style.width = '100%';
-                appFrame.style.height = '100%';
-                appFrame.style.border = 'none';
-                appFrame.style.overflow = 'hidden';
-                
-                // 添加特殊的加载参数
-                appFrame.src = app.url + '?iframe=1&t=' + Date.now();
-            } else {
-                // 其他应用的正常加载
-                appFrame.src = app.url;
-            }
+            // 加载iframe
+            appFrame.src = app.url;
 
             // 设置iframe错误处理
             const timeoutId = setTimeout(() => {
                 showError();
-            }, 15000); // 增加到15秒超时，给太虛幻聊更多加载时间
+            }, 10000); // 10秒超时
 
             appFrame.onload = () => {
                 clearTimeout(timeoutId);
-                
-                // 针对太虛幻聊的特殊处理
-                if (appId === 'shuyuanclassicchat') {
-                    // 稍长的延迟，确保星空背景完全加载
-                    setTimeout(() => {
-                        loadingState.classList.add('hidden');
-                        
-                        // 向iframe发送消息，触发强制刷新
-                        try {
-                            appFrame.contentWindow.postMessage({ 
-                                action: 'forceRefresh',
-                                timestamp: Date.now()
-                            }, '*');
-                        } catch (e) {
-                            console.log('无法向iframe发送消息:', e);
-                        }
-                    }, 1500);
-                } else {
-                    setTimeout(() => {
-                        loadingState.classList.add('hidden');
-                    }, 1000);
-                }
+                setTimeout(() => {
+                    loadingState.classList.add('hidden');
+                }, 1000);
             };
 
             appFrame.onerror = () => {

@@ -3,69 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
-    
-    <!-- 立即初始化脚本，解决iframe中的时序问题 -->
-    <script>
-        // 检测URL参数，确定是否在iframe中加载
-        const urlParams = new URLSearchParams(window.location.search);
-        const isInIframe = urlParams.has('iframe') || window.self !== window.top;
-        
-        // 确保在iframe环境中能正确显示
-        if (isInIframe) {
-            document.documentElement.style.height = '100%';
-            document.documentElement.style.overflow = 'hidden';
-            
-            // iframe环境下的特殊优化
-            document.body.style.margin = '0';
-            document.body.style.padding = '0';
-            document.body.style.width = '100%';
-            document.body.style.height = '100%';
-            document.body.style.overflow = 'hidden';
-        }
-        
-        // 强制刷新显示函数
-        function forceRefreshDisplay() {
-            // 触发重绘，解决需要拖拽才显示的问题
-            const body = document.body;
-            body.style.transform = 'translateZ(0)';
-            
-            // 强制重新渲染星空背景
-            const starField = document.querySelector('.star-field');
-            if (starField) {
-                starField.style.visibility = 'visible';
-                starField.style.opacity = '0.7';
-                starField.style.transform = 'translateZ(0)';
-            }
-            
-            // 强制重新渲染银河系容器
-            const galaxyContainer = document.querySelector('.galaxy-container');
-            if (galaxyContainer) {
-                galaxyContainer.style.visibility = 'visible';
-                galaxyContainer.style.opacity = '1';
-                galaxyContainer.style.transform = 'translateZ(0)';
-            }
-            
-            // 强制重新渲染app图标
-            const appIcon = document.getElementById('appIconContainer');
-            if (appIcon) {
-                appIcon.style.visibility = 'visible';
-                appIcon.style.opacity = '1';
-                appIcon.style.transform = 'translate(-50%, -50%) translateZ(0)';
-            }
-            
-            // 强制浏览器重绘
-            setTimeout(() => {
-                window.requestAnimationFrame(() => {
-                    console.log('强制刷新显示完成');
-                });
-            }, 100);
-        }
-        
-        // 预先创建关键元素，避免初始空白
-        document.addEventListener('DOMContentLoaded', function() {
-            forceRefreshDisplay();
-        });
-    </script>
     <title>太虛幻聊 - 與古今名士暢談千古</title>
     <style>
         /* ===== 太虛幻聊統一設計規範 ===== */
@@ -426,17 +363,6 @@
             overflow: hidden;
             z-index: 0;
             pointer-events: none;
-            background: linear-gradient(135deg, #0c0c2e 0%, #1a1a3e 25%, #2d1b69 50%, #1a1a3e 75%, #0c0c2e 100%);
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        /* iframe环境优化 */
-        @media screen and (max-width: 768px), screen and (max-height: 600px) {
-            .galaxy-container {
-                position: absolute;
-                min-height: 100vh;
-            }
         }
         
         /* 銀河中心 */
@@ -545,18 +471,7 @@
             pointer-events: none;
             z-index: 1;
             opacity: 0.7;
-            will-change: transform;
-            transform: translateZ(0);
             }
-        
-        /* iframe环境优化 */
-        @media screen and (max-width: 768px), screen and (max-height: 600px) {
-            .star-field {
-                position: absolute;
-                min-height: 100vh;
-                background-attachment: scroll;
-            }
-        }
             
         /* 太虛幻聊 App 圖標 */
         .app-icon-container {
@@ -566,17 +481,6 @@
             transform: translate(-50%, -50%);
             z-index: 20; /* 提高z-index確保在所有銀河系元素之上 */
             animation: appIconFloat 8s ease-in-out infinite;
-            will-change: transform;
-        }
-        
-        /* iframe环境下的app图标优化 */
-        @media screen and (max-width: 768px), screen and (max-height: 600px) {
-            .app-icon-container {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
         }
         
         .app-icon {
@@ -666,24 +570,6 @@
             }
             75% {
                 transform: translate(-50%, -50%) translateY(-5px) rotate(-1deg);
-            }
-        }
-        
-        /* 移动端app图标浮动动画优化 */
-        @media screen and (max-width: 768px), screen and (max-height: 600px) {
-            @keyframes appIconFloat {
-                0%, 100% {
-                    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
-                }
-                25% {
-                    transform: translate(-50%, -50%) translateY(-6px) rotate(0.5deg);
-                }
-                50% {
-                    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
-                }
-                75% {
-                    transform: translate(-50%, -50%) translateY(-3px) rotate(-0.5deg);
-                }
             }
         }
         
@@ -10679,13 +10565,11 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }, 400); // 圖標消失動畫時間
         }
         
-        // 早期初始化函数
-        function earlyInit() {
-            if (window.earlyInitialized) return;
+        // 啟動應用
+        window.onload = function() {
+            console.log('應用開始初始化...');
             
-            console.log('早期初始化开始...');
-            
-            // 創建銀河系背景效果 - 提前创建
+            // 創建銀河系背景效果
             createGalaxyParticles();
             
             // 設置app圖標點擊事件
@@ -10694,16 +10578,6 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 appIcon.addEventListener('click', handleAppIconClick);
                 console.log('App圖標點擊事件已設置');
             }
-            
-            window.earlyInitialized = true;
-            console.log('早期初始化完成');
-        }
-        
-        // 延迟初始化函数
-        function lateInit() {
-            if (window.lateInitialized) return;
-            
-            console.log('延迟初始化开始...');
             
             // 初始化登入管理器
             loginManager.init();
@@ -10727,25 +10601,6 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
             // 初始化emoji面板
             populateEmojiPanel();
-            
-            window.lateInitialized = true;
-            console.log('延迟初始化完成');
-        }
-        
-        // 多重初始化策略，确保在iframe环境中稳定运行
-        function initializeApp() {
-            console.log('應用開始初始化...');
-            
-            // 早期初始化
-            earlyInit();
-            
-            // 延迟初始化
-            lateInit();
-            
-            // 强制刷新显示
-            setTimeout(() => {
-                forceRefreshDisplay();
-            }, 200);
             
             console.log('應用初始化完成');
             
@@ -10804,71 +10659,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     document.getElementById('functionPanel').style.display = 'none';
                 });
             });
-        }
-        
-        // 多重事件监听，确保在各种环境下都能正常初始化
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            // DOM已加载完成，立即初始化
-            initializeApp();
-        }
-        
-        // 备用初始化 - 确保在iframe环境中也能正常工作
-        window.addEventListener('load', function() {
-            // 检查是否已经初始化，避免重复
-            if (!window.appInitialized) {
-                console.log('备用初始化触发');
-                initializeApp();
-                window.appInitialized = true;
-            }
-        });
-        
-        // 针对iframe环境的特殊处理
-        if (window.self !== window.top) {
-            // 在iframe中，使用更早的时机
-            if (document.body) {
-                initializeApp();
-                window.appInitialized = true;
-            } else {
-                document.addEventListener('DOMContentLoaded', function() {
-                    initializeApp();
-                    window.appInitialized = true;
-                });
-            }
-        }
-        
-        // 监听滚动和触摸事件，当用户交互时强制刷新显示
-        let refreshTimeout;
-        function handleUserInteraction() {
-            if (refreshTimeout) clearTimeout(refreshTimeout);
-            refreshTimeout = setTimeout(() => {
-                forceRefreshDisplay();
-            }, 100);
-        }
-        
-        // 添加事件监听器
-        document.addEventListener('scroll', handleUserInteraction, { passive: true });
-        document.addEventListener('touchstart', handleUserInteraction, { passive: true });
-        document.addEventListener('touchmove', handleUserInteraction, { passive: true });
-        
-        // 视口变化时也重新刷新
-        window.addEventListener('resize', handleUserInteraction);
-        window.addEventListener('orientationchange', handleUserInteraction);
-        
-        // 接收来自父页面iframe的消息
-        window.addEventListener('message', function(event) {
-            // 验证消息来源（可以根据需要调整）
-            if (event.origin !== window.location.origin && 
-                event.origin !== 'https://chineseclassics.github.io') {
-                return;
-            }
-            
-            if (event.data && event.data.action === 'forceRefresh') {
-                console.log('收到父页面的强制刷新消息');
-                forceRefreshDisplay();
-            }
-        });
+        };
     </script>
     
 
