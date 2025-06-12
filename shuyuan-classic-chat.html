@@ -1895,20 +1895,19 @@
         
         .login-content {
             width: 100%;
-            height: 100%;
+            height: 100vh;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 0; /* 使用父容器的圆角 */
             box-shadow: none; /* 使用父容器的阴影 */
             backdrop-filter: blur(10px);
-            padding: 20px 16px;
+            padding: 15px 16px 10px 16px; /* 减少内边距 */
             animation: slideInUp 0.6s ease-out;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            overflow-y: auto;
-            overflow-x: hidden; /* 防止水平溢出 */
+            overflow: hidden; /* 完全隐藏滚动条 */
             align-items: center;
-            justify-content: flex-start; /* 内容从顶部开始 */
+            justify-content: space-between; /* 内容均匀分布 */
             max-width: 100%;
         }
         
@@ -1925,8 +1924,8 @@
         
         .login-header {
             text-align: center;
-            margin-bottom: 16px;
-            margin-top: 20px; /* 减少顶部间距以适应父容器 */
+            margin-bottom: 8px; /* 进一步减少底部间距 */
+            margin-top: 5px; /* 大幅减少顶部间距 */
             flex-shrink: 0;
             width: 100%;
             max-width: 100%;
@@ -1980,8 +1979,8 @@
         .welcome-message {
             background: linear-gradient(135deg, rgba(255, 248, 220, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
             border-radius: 8px; /* 减少圆角，避免与父容器冲突 */
-            padding: 16px;
-            margin-bottom: 20px; /* 增加底部间距 */
+            padding: 12px; /* 减少内边距 */
+            margin-bottom: 8px; /* 减少底部间距 */
             border: 2px solid #667eea;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
             flex: 1; /* 使欢迎消息占用可用空间 */
@@ -1991,6 +1990,7 @@
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
+            min-height: 0; /* 允许内容压缩 */
         }
         
         .welcome-message::before {
@@ -2016,11 +2016,12 @@
         }
         
         .welcome-text {
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 11px; /* 减小字体 */
+            line-height: 1.3; /* 减小行高 */
             color: #444;
             text-align: left;
-            margin-bottom: 12px;
+            margin-bottom: 8px; /* 减少底部间距 */
+            overflow: hidden; /* 隐藏超出内容 */
         }
         
         .welcome-confirmation {
@@ -2085,7 +2086,7 @@
         }
         
         .login-form {
-            margin-bottom: 20px; /* 增加底部间距 */
+            margin-bottom: 0; /* 移除底部间距 */
             flex-shrink: 0; /* 避免压缩 */
             display: flex;
             flex-direction: column;
@@ -2095,7 +2096,7 @@
         }
         
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 8px; /* 减少间距 */
         }
         
         .form-group label {
@@ -2286,12 +2287,12 @@
             
                          .login-content {
                  width: 100%;
-                 height: 100%;
-                 padding: 15px 12px;
+                 height: 100vh;
+                 padding: 10px 12px 8px 12px; /* 进一步减少内边距 */
                  box-sizing: border-box;
                  border-radius: 0;
-                 overflow-y: auto;
-                 overflow-x: hidden;
+                 overflow: hidden; /* 隐藏滚动条 */
+                 justify-content: space-between; /* 均匀分布内容 */
              }
             
             .login-header h1 {
@@ -2375,24 +2376,24 @@
             
             /* 底部导航移动端优化 */
             .bottom-nav {
-                height: 60px;
-                padding: 8px 0;
+                height: 68px; /* 從60px增加到68px，與基礎樣式保持協調 */
+                padding: 10px 0; /* 適當增加內邊距 */
                 /* 适配安全区域 */
-                padding-bottom: max(8px, env(safe-area-inset-bottom));
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
             }
             
             .nav-item {
-                height: 48px;
+                height: 52px; /* 從48px增加到52px */
                 padding: 4px 8px;
             }
             
             .nav-icon {
-                font-size: 24px;
-                margin-bottom: 2px;
+                font-size: 26px; /* 從24px增加到26px */
+                margin-bottom: 3px; /* 適當增加間距 */
             }
             
                          .nav-label {
-                 font-size: 11px;
+                 font-size: 12px; /* 從11px增加到12px */
              }
              
              /* 聊天界面移动端优化 */
@@ -2426,7 +2427,7 @@
              /* 聊天消息区域优化 */
              .wx-chat-container {
                  padding: 12px 8px;
-                 padding-bottom: calc(70px + max(0px, env(safe-area-inset-bottom)));
+                 padding-bottom: calc(78px + max(0px, env(safe-area-inset-bottom))); /* 從70px增加到78px，配合導航欄高度增加 */
              }
              
              .wx-msg {
@@ -2510,7 +2511,7 @@
                  /* 小屏幕设备额外优化 */
          @media (max-width: 480px) {
              .login-content {
-                 padding: 15px 10px;
+                 padding: 8px 10px 6px 10px; /* 减少小屏幕设备的内边距 */
              }
              
              .login-header h1 {
@@ -2588,6 +2589,21 @@
              .wx-voice-btn {
                  width: 32px;
                  height: 32px;
+             }
+             
+             /* 小屏幕設備四宮格配圖優化 */
+             .moment-images-grid {
+                 width: 180px !important;
+                 height: 180px !important;
+             }
+             
+             .moment-emoji-grid-item {
+                 font-size: 30px !important; /* 小屏幕進一步縮小 */
+             }
+             
+             .emoji-count-overlay {
+                 font-size: 9px !important;
+                 padding: 1px 3px !important;
              }
          }
         
@@ -2740,8 +2756,10 @@
             
             .login-content {
                 min-height: auto;
-                height: auto;
-                padding: 10px 15px;
+                height: 100vh;
+                padding: 5px 15px 3px 15px; /* 横屏模式进一步减少内边距 */
+                overflow: hidden; /* 确保横屏模式也不出现滚动条 */
+                justify-content: space-between;
             }
             
             .login-header h1 {
@@ -2763,20 +2781,20 @@
             }
             
             .bottom-nav {
-                height: 48px;
-                padding: 4px 0;
+                height: 52px; /* 從48px增加到52px，橫屏模式適度增加 */
+                padding: 6px 0; /* 適當增加內邊距 */
             }
             
             .nav-item {
-                height: 40px;
+                height: 44px; /* 從40px增加到44px */
             }
             
             .nav-icon {
-                font-size: 20px;
+                font-size: 22px; /* 從20px增加到22px */
             }
             
                          .nav-label {
-                 font-size: 10px;
+                 font-size: 11px; /* 從10px增加到11px */
              }
              
              /* 横屏模式下其他页面的优化 */
@@ -2883,6 +2901,21 @@
              }
          }
         
+        /* 大屏幕设备登录界面优化 */
+        @media (min-width: 768px) and (min-height: 600px) {
+            .login-content {
+                max-width: 400px;
+                margin: 0 auto;
+                padding: 20px 24px;
+                justify-content: center; /* 大屏幕居中显示 */
+            }
+            
+            .welcome-message {
+                max-height: 40vh; /* 限制欢迎信息最大高度 */
+                overflow-y: auto; /* 如果内容过多，允许局部滚动 */
+            }
+        }
+
         /* 触摸设备优化 */
         @media (hover: none) and (pointer: coarse) {
             /* 移除hover效果，优化触摸体验 */
@@ -2909,7 +2942,7 @@
              .debug-btn,
              .chat-item,
              .nav-item {
-                 min-height: 44px; /* Apple推荐的最小触摸目标 */
+                 min-height: 48px; /* 從44px增加到48px，配合導航欄調整 */
              }
              
              /* 通讯录页面优化 */
@@ -3044,6 +3077,22 @@
                  font-size: 16px;
                  line-height: 1.5;
                  margin: 8px 0;
+             }
+             
+             /* 移動端四宮格配圖優化 */
+             .moment-images-grid {
+                 width: 200px !important;
+                 height: 200px !important;
+                 margin: 12px 0;
+             }
+             
+             .moment-emoji-grid-item {
+                 font-size: 36px !important; /* 移動端稍微小一些 */
+             }
+             
+             .emoji-count-overlay {
+                 font-size: 10px !important;
+                 padding: 1px 4px !important;
              }
              
              .moment-images {
@@ -3243,9 +3292,9 @@
             display: flex;
             background-color: #f7f7f7;
             border-top: 0.5px solid #e5e5e5;
-            padding: 6px 0 6px 0;
+            padding: 8px 0 8px 0; /* 適當增加內邊距 */
             box-shadow: 0 -0.5px 0 rgba(0, 0, 0, 0.05);
-            height: 56px;
+            height: 64px; /* 從56px增加到64px */
             align-items: center;
             margin: 0;
             flex-shrink: 0;
@@ -3259,9 +3308,9 @@
             justify-content: center;
             cursor: pointer;
             position: relative;
-            padding: 2px 8px;
+            padding: 3px 8px; /* 適當增加內邊距 */
             transition: all 0.15s;
-            height: 44px;
+            height: 48px; /* 從44px增加到48px */
         }
         
         .nav-item:hover {
@@ -3269,8 +3318,8 @@
         }
         
         .nav-icon {
-            font-size: 22px;
-            margin-bottom: 2px;
+            font-size: 25px; /* 從22px增加到25px */
+            margin-bottom: 3px; /* 適當增加間距 */
             color: #989898;
             transition: color 0.15s;
             line-height: 1;
@@ -3281,7 +3330,7 @@
         }
         
         .nav-label {
-            font-size: 10px;
+            font-size: 11px; /* 從10px增加到11px */
             color: #989898;
             transition: color 0.15s;
             line-height: 1;
@@ -3857,16 +3906,55 @@
             margin-bottom: 8px;
         }
         
-        .moment-emoji-image {
+        /* 四宮格配圖容器 */
+        .moment-images-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 3px;
+            width: 240px;
+            height: 240px;
+            margin: 10px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        /* 四宮格中的單個emoji項目 */
+        .moment-emoji-grid-item {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 150px;
-            height: 150px;
             background-color: #f5f5f5;
+            font-size: 48px; /* 增大emoji尺寸 */
+            border-radius: 6px;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+        
+        .moment-emoji-grid-item:hover {
+            background-color: #e8e8e8;
+        }
+        
+        /* 空白格子 */
+        .moment-emoji-grid-item.empty {
+            background-color: transparent;
+        }
+        
+        /* 更多指示器樣式 */
+        .moment-emoji-grid-item.more-indicator {
+            position: relative;
+        }
+        
+        .emoji-count-overlay {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
             border-radius: 10px;
-            font-size: 60px;
-            margin: 8px 0;
+            font-weight: bold;
         }
         
         /* 媒体查询已移除，使用统一设计 */
@@ -6694,13 +6782,41 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 element.className = 'moment-item';
                 element.setAttribute('data-moment-id', moment.id);
                 
-                // 處理圖片：現有數據使用emoji作為圖片
+                // 處理圖片：現有數據使用emoji作為圖片，統一使用四宮格布局
                 let imagesHtml = '';
                 if (moment.image) {
-                    // 使用CSS樣式創建emoji顯示
+                    const emojiArray = [...moment.image];
+                    const emojiCount = emojiArray.length;
+                    
+                    // 統一使用四宮格布局
+                    let emojisToShow = [];
+                    
+                    if (emojiCount <= 4) {
+                        // 1-4個emoji，正常顯示
+                        emojisToShow = emojiArray.map(emoji => 
+                            `<div class="moment-emoji-grid-item">${emoji}</div>`
+                        );
+                        
+                        // 如果不足4個，用空白填充
+                        while (emojisToShow.length < 4) {
+                            emojisToShow.push(`<div class="moment-emoji-grid-item empty"></div>`);
+                        }
+                    } else {
+                        // 超過4個emoji，顯示前3個，第4個位置顯示計數
+                        emojisToShow = emojiArray.slice(0, 3).map(emoji => 
+                            `<div class="moment-emoji-grid-item">${emoji}</div>`
+                        );
+                        emojisToShow.push(`
+                            <div class="moment-emoji-grid-item more-indicator">
+                                ${emojiArray[3]}
+                                <div class="emoji-count-overlay">+${emojiCount - 4}</div>
+                            </div>
+                        `);
+                    }
+                    
                     imagesHtml = `
-                        <div class="moment-images single">
-                            <div class="moment-emoji-image">${moment.image}</div>
+                        <div class="moment-images-grid">
+                            ${emojisToShow.join('')}
                         </div>
                     `;
                 }
@@ -6708,11 +6824,14 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 // 處理點讚列表
                 let likesHtml = '';
                 if (moment.likes && moment.likes.length > 0) {
-                    const likeNames = moment.likes.map(userId => characters[userId]?.name || userId).join('、');
+                    const likeNamesHtml = moment.likes.map(userId => {
+                        const userName = characters[userId]?.name || userId;
+                        return `<span class="like-user-name" onclick="openProfilePage('${userId}')" style="cursor: pointer; color: #576b95;">${userName}</span>`;
+                    }).join('、');
                     likesHtml = `
                         <div class="moment-likes">
                             <span class="moment-like-icon">👍</span>
-                            <span class="moment-like-list">${likeNames}</span>
+                            <span class="moment-like-list">${likeNamesHtml}</span>
                         </div>
                     `;
                 }
@@ -6726,7 +6845,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                                 const commentAuthor = characters[comment.authorId]?.name || comment.authorId;
                                 return `
                                     <div class="moment-comment">
-                                        <span class="comment-author">${commentAuthor}</span>：
+                                        <span class="comment-author" onclick="openProfilePage('${comment.authorId}')" style="cursor: pointer; color: #576b95;">${commentAuthor}</span>：
                                         <span class="comment-text">${comment.text}</span>
                                     </div>
                                 `;
@@ -6743,9 +6862,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 element.innerHTML = `
                     <div class="moment-header">
-                        <div class="moment-avatar">${character.avatar}</div>
+                        <div class="moment-avatar" onclick="openProfilePage('${moment.authorId}')" style="cursor: pointer;">${character.avatar}</div>
                         <div class="moment-info">
-                            <div class="moment-name">${character.name}</div>
+                            <div class="moment-name" onclick="openProfilePage('${moment.authorId}')" style="cursor: pointer; color: #576b95;">${character.name}</div>
                         </div>
                     </div>
                     <div class="moment-content-text">${moment.text}</div>
