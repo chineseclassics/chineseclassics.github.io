@@ -926,44 +926,38 @@
         
         .wx-msg-self .wx-msg-bubble {
             background-color: var(--wx-bubble-self);
-            border-radius: 18px 4px 18px 18px;
-            margin-right: 12px;
-            position: relative;
+            border-radius: 18px 0px 18px 18px; /* 右上角改為直角，與尖角連接 */
+            margin-right: 10px;
         }
         
         .wx-msg-others .wx-msg-bubble {
             background-color: var(--wx-bubble-others);
-            border-radius: 4px 18px 18px 18px;
-            margin-left: 12px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            position: relative;
+            border-radius: 0px 18px 18px 18px; /* 左上角改為直角，與尖角連接 */
+            margin-left: 10px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
         }
         
-        /* 優化氣泡尖角 - 使用一體化設計 */
-        .wx-msg-self .wx-msg-bubble:before {
+        /* 添加微信泡泡的尖角 */
+        .wx-msg-self .wx-msg-bubble:after {
             content: '';
             position: absolute;
             right: -6px;
-            top: 6px;
-            width: 12px;
-            height: 12px;
-            background-color: var(--wx-bubble-self);
-            border-radius: 0 0 16px 0;
-            transform: rotate(-30deg);
-            transform-origin: center;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-top: 6px solid var(--wx-bubble-self);
+            border-right: 6px solid transparent;
         }
         
-        .wx-msg-others .wx-msg-bubble:before {
+        .wx-msg-others .wx-msg-bubble:after {
             content: '';
             position: absolute;
             left: -6px;
-            top: 6px;
-            width: 12px;
-            height: 12px;
-            background-color: var(--wx-bubble-others);
-            border-radius: 0 0 0 16px;
-            transform: rotate(30deg);
-            transform-origin: center;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-top: 6px solid var(--wx-bubble-others);
+            border-left: 6px solid transparent;
         }
         
         /* 正在輸入提示樣式 */
@@ -974,23 +968,21 @@
             min-height: 36px; /* 改为最小高度以适应文字 */
             padding: 8px 12px;
             background-color: var(--wx-bubble-others);
-            border-radius: 4px 18px 18px 18px;
-            margin-left: 12px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            border-radius: 0px 18px 18px 18px; /* 左上角改為直角，與尖角連接 */
+            margin-left: 10px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
             position: relative;
         }
         
-        .wx-typing:before {
+        .wx-typing:after {
             content: '';
             position: absolute;
             left: -6px;
-            top: 6px;
-            width: 12px;
-            height: 12px;
-            background-color: var(--wx-bubble-others);
-            border-radius: 0 0 0 16px;
-            transform: rotate(30deg);
-            transform-origin: center;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-top: 6px solid var(--wx-bubble-others);
+            border-left: 6px solid transparent;
         }
         
         .typing-dots {
@@ -2461,31 +2453,11 @@
              }
              
              .wx-msg-self .wx-msg-bubble {
-                 border-radius: 16px 4px 16px 16px;
-                 margin-right: 14px; /* 移動端稍微增加間距 */
-             }
-             
-             .wx-msg-self .wx-msg-bubble:before {
-                 right: -7px;
-                 top: 7px;
-                 width: 14px;
-                 height: 14px;
-                 border-radius: 0 0 18px 0;
-                 transform: rotate(-30deg);
+                 border-radius: 16px 0px 16px 16px; /* 右上角改為直角，與尖角連接 */
              }
              
              .wx-msg-other .wx-msg-bubble {
-                 border-radius: 4px 16px 16px 16px;
-                 margin-left: 14px; /* 移動端稍微增加間距 */
-             }
-             
-             .wx-msg-others .wx-msg-bubble:before {
-                 left: -7px;
-                 top: 7px;
-                 width: 14px;
-                 height: 14px;
-                 border-radius: 0 0 0 18px;
-                 transform: rotate(30deg);
+                 border-radius: 0px 16px 16px 16px; /* 左上角改為直角，與尖角連接 */
              }
              
              .wx-name {
@@ -2600,25 +2572,6 @@
              .wx-msg-bubble {
                  padding: 8px 10px;
                  font-size: 15px;
-             }
-             
-             /* 小屏幕設備氣泡尖角優化 */
-             .wx-msg-self .wx-msg-bubble:before {
-                 right: -5px;
-                 top: 5px;
-                 width: 10px;
-                 height: 10px;
-                 border-radius: 0 0 14px 0;
-                 transform: rotate(-30deg);
-             }
-             
-             .wx-msg-others .wx-msg-bubble:before {
-                 left: -5px;
-                 top: 5px;
-                 width: 10px;
-                 height: 10px;
-                 border-radius: 0 0 0 14px;
-                 transform: rotate(30deg);
              }
              
              .wx-input-area {
