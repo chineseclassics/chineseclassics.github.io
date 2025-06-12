@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>向日葵接太陽游戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .sun-pulse {
+            animation: pulse 2s infinite;
+        }
+        .score-increase {
+            animation: fadeOut 1s forwards;
+        }
+        .score-decrease {
+            animation: fadeOut 1s forwards;
+            color: #ef4444;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+        .cloud-float {
+            position: absolute;
+            transition: left 15s linear;
+        }
+        .dark .game-bg {
+            background: linear-gradient(to bottom, #3a4557 0%, #2d3748 50%, #1a202c 100%);
+        }
+        .game-bg {
+            background: linear-gradient(to bottom, #87ceeb 0%, #a6d8f1 50%, #b8e1f9 100%);
+        }
+        .sunflower {
+            transition: left 0.1s ease-out;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="h-screen w-screen overflow-hidden game-bg relative flex flex-col">
+        <!-- Header -->
+        <div class="p-4 flex justify-between items-center z-10">
+            <div class="text-lg font-bold text-gray-800 dark:text-gray-200">向日葵接太陽</div>
+            <div class="flex space-x-3">
+                <div class="py-1 px-3 bg-primary/10 text-primary rounded-lg flex items-center">
+                    <span class="mr-1">⏱️</span>
+                    <span id="timer" class="font-mono">60</span>
+                </div>
+                <div class="py-1 px-3 bg-primary/10 text-primary rounded-lg flex items-center">
+                    <span class="mr-1">🏆</span>
+                    <span id="score" class="font-mono">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div id="game-area" class="flex-1 relative w-full overflow-hidden">
+            <!-- Clouds Container -->
+            <div id="clouds-container" class="absolute inset-0 pointer-events-none"></div>
+            
+            <!-- Suns Container -->
+            <div id="suns-container" class="absolute inset-0 pointer-events-none"></div>
+            
+            <!-- Floating score indicators -->
+            <div id="score-indicators" class="absolute w-full h-full pointer-events-none"></div>
+            
+            <!-- Sunflower -->
+            <div id="sunflower" class="sunflower absolute text-7xl" style="bottom: 20px; left: 50%;">🌻</div>
+        </div>
+
+        <!-- Controls and instructions -->
+        <div class="p-4 flex flex-col items-center z-10">
+            <div class="mb-4 text-center text-gray-800 dark:text-gray-200 text-sm">
+                左右移動向日葵來接住掉落的太陽！接住加一分，漏掉扣一分！
+            </div>
+            <button id="start-btn" class="px-6 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition">
+                開始遊戲
+            </button>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div id="mobile-controls" class="fixed bottom-0 left-0 w-full p-4 flex justify-between z-20 hidden">
+            <button id="left-btn" class="w-16 h-16 bg-primary/30 text-primary rounded-full flex items-center justify-center text-2xl">
+                ◀
+            </button>
+            <button id="right-btn" class="w-16 h-16 bg-primary/30 text-primary rounded-full flex items-center justify-center text-2xl">
+                ▶
+            </button>
+        </div>
+
+        <!-- Game over screen -->
+        <div id="game-over" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center hidden z-50">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-xs w-full text-center">
+                <h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">遊戲結束！</h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">你的最終得分是：<span id="final-score" class="font-bold text-primary"></span></p>
+                <button id="restart-btn" class="px-6 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition">
+                    再玩一次
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Game variables
+        let score = 0;
+        let timer = 60;
+        let gameInterval;
+        let sunCreateInterval;
+        let cloudCreateInterval;
+        let isGameRunning = false;
+        let isMobile = window.innerWidth < 768;
+        let suns = [];
+        let sunSpeed = 3;
+        let leftPressed = false;
+        let rightPressed = false;
+        let sunflowerSpeed = 10;
+
+        // DOM elements
+        const gameArea = document.getElementById('game-area');
+        const sunflower = document.getElementById('sunflower');
+        const sunsContainer = document.getElementById('suns-container');
+        const cloudsContainer = document.getElementById('clouds-container');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const scoreIndicators = document.getElementById('score-indicators');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const mobileControls = document.getElementById('mobile-controls');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
+
+        // Game area dimensions
+        let gameWidth = gameArea.clientWidth;
+        let gameHeight = gameArea.clientHeight;
+
+        // Start button event
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', restartGame);
+
+        // Initialize sunflower position
+        positionSunflower(gameWidth / 2);
+
+        // Check if mobile
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+
+        // Mobile controls
+        leftBtn.addEventListener('mousedown', () => leftPressed = true);
+        leftBtn.addEventListener('touchstart', () => leftPressed = true, { passive: true });
+        leftBtn.addEventListener('mouseup', () => leftPressed = false);
+        leftBtn.addEventListener('touchend', () => leftPressed = false);
+        
+        rightBtn.addEventListener('mousedown', () => rightPressed = true);
+        rightBtn.addEventListener('touchstart', () => rightPressed = true, { passive: true });
+        rightBtn.addEventListener('mouseup', () => rightPressed = false);
+        rightBtn.addEventListener('touchend', () => rightPressed = false);
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') leftPressed = true;
+            if (e.key === 'ArrowRight') rightPressed = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') leftPressed = false;
+            if (e.key === 'ArrowRight') rightPressed = false;
+        });
+
+        // Check if device is mobile
+        function checkMobile() {
+            isMobile = window.innerWidth < 768;
+            if (isMobile && isGameRunning) {
+                mobileControls.classList.remove('hidden');
+            } else {
+                mobileControls.classList.add('hidden');
+            }
+            
+            // Update game dimensions
+            gameWidth = gameArea.clientWidth;
+            gameHeight = gameArea.clientHeight;
+        }
+
+        // Position sunflower
+        function positionSunflower(x) {
+            const sunflowerWidth = 70; // Approximate width of emoji
+            x = Math.max(sunflowerWidth/2, Math.min(x, gameWidth - sunflowerWidth/2));
+            sunflower.style.left = `${x}px`;
+            sunflower.style.transform = 'translateX(-50%)'; // Center horizontally
+        }
+
+        // Create sun
+        function createSun() {
+            if (!isGameRunning) return;
+            
+            const sunElement = document.createElement('div');
+            sunElement.className = 'absolute text-4xl sun-pulse';
+            sunElement.textContent = '☀️';
+            
+            // Random position on top
+            const randomX = Math.random() * (gameWidth - 40) + 20;
+            sunElement.style.left = `${randomX}px`;
+            sunElement.style.top = '0px';
+            
+            sunsContainer.appendChild(sunElement);
+            
+            suns.push({
+                element: sunElement,
+                x: randomX,
+                y: 0,
+                caught: false
+            });
+        }
+
+        // Create cloud
+        function createCloud() {
+            if (!isGameRunning) return;
+            
+            const cloudElement = document.createElement('div');
+            cloudElement.className = 'cloud-float text-5xl';
+            
+            // Random cloud emoji
+            const cloudEmojis = ['☁️', '⛅', '🌥️'];
+            cloudElement.textContent = cloudEmojis[Math.floor(Math.random() * cloudEmojis.length)];
+            
+            // Random starting position
+            const randomY = Math.random() * (gameHeight * 0.5);
+            const startX = -100; // Start offscreen
+            const endX = gameWidth + 100; // End offscreen
+            
+            // Set initial position
+            cloudElement.style.top = `${randomY}px`;
+            cloudElement.style.left = `${startX}px`;
+            
+            cloudsContainer.appendChild(cloudElement);
+            
+            // Animate cloud
+            setTimeout(() => {
+                cloudElement.style.left = `${endX}px`;
+            }, 10);
+            
+            // Remove cloud after animation
+            setTimeout(() => {
+                cloudElement.remove();
+            }, 15000);
+        }
+
+        // Update game state
+        function updateGame() {
+            // Update sunflower position based on input
+            if (isGameRunning) {
+                const sunflowerX = parseFloat(sunflower.style.left);
+                
+                if (leftPressed) {
+                    positionSunflower(sunflowerX - sunflowerSpeed);
+                }
+                
+                if (rightPressed) {
+                    positionSunflower(sunflowerX + sunflowerSpeed);
+                }
+                
+                // Update suns
+                for (let i = suns.length - 1; i >= 0; i--) {
+                    const sun = suns[i];
+                    
+                    if (!sun.caught) {
+                        // Update position
+                        sun.y += sunSpeed;
+                        sun.element.style.top = `${sun.y}px`;
+                        
+                        // Check for collision with sunflower
+                        const sunflowerRect = sunflower.getBoundingClientRect();
+                        const sunRect = sun.element.getBoundingClientRect();
+                        
+                        if (checkCollision(sunflowerRect, sunRect)) {
+                            // Caught the sun
+                            sun.caught = true;
+                            sun.element.remove();
+                            suns.splice(i, 1);
+                            addPoints(1);
+                        }
+                        // Check if sun reached bottom
+                        else if (sun.y > gameHeight - 50) {
+                            // Missed the sun
+                            sun.caught = true;
+                            sun.element.remove();
+                            suns.splice(i, 1);
+                            addPoints(-1);
+                        }
+                    }
+                }
+            }
+            
+            // Keep animation running
+            requestAnimationFrame(updateGame);
+        }
+
+        // Check collision between two elements
+        function checkCollision(rect1, rect2) {
+            return !(
+                rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom
+            );
+        }
+
+        // Add points with visual indicator
+        function addPoints(points) {
+            score += points;
+            scoreElement.textContent = score;
+            
+            // Create floating score indicator
+            const indicator = document.createElement('div');
+            indicator.className = points > 0 ? 
+                'absolute score-increase text-lg font-bold text-green-500' : 
+                'absolute score-decrease text-lg font-bold text-red-500';
+            indicator.textContent = points > 0 ? `+${points}` : `${points}`;
+            
+            // Position near sunflower
+            const sunflowerRect = sunflower.getBoundingClientRect();
+            indicator.style.left = `${sunflowerRect.left + sunflowerRect.width / 2}px`;
+            indicator.style.top = `${sunflowerRect.top - 20}px`;
+            
+            scoreIndicators.appendChild(indicator);
+            
+            // Remove after animation
+            setTimeout(() => {
+                indicator.remove();
+            }, 1000);
+        }
+
+        // Start game function
+        function startGame() {
+            if (isGameRunning) return;
+            
+            score = 0;
+            timer = 60;
+            isGameRunning = true;
+            suns = [];
+            
+            // Clear containers
+            sunsContainer.innerHTML = '';
+            cloudsContainer.innerHTML = '';
+            
+            scoreElement.textContent = score;
+            timerElement.textContent = timer;
+            startBtn.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            
+            // Show mobile controls if on mobile
+            if (isMobile) {
+                mobileControls.classList.remove('hidden');
+            }
+            
+            // Start game loop
+            updateGame();
+            
+            // Set intervals
+            sunCreateInterval = setInterval(createSun, 2000);
+            cloudCreateInterval = setInterval(createCloud, 3000);
+            
+            // Create initial clouds
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => createCloud(), i * 1000);
+            }
+            
+            gameInterval = setInterval(() => {
+                timer--;
+                timerElement.textContent = timer;
+                
+                // Increase difficulty over time
+                if (timer % 10 === 0 && timer > 0) {
+                    sunSpeed += 0.5;
+                }
+                
+                if (timer <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // End game function
+        function endGame() {
+            isGameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(sunCreateInterval);
+            clearInterval(cloudCreateInterval);
+            
+            mobileControls.classList.add('hidden');
+            
+            finalScoreElement.textContent = score;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        // Restart game
+        function restartGame() {
+            startGame();
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            gameWidth = gameArea.clientWidth;
+            gameHeight = gameArea.clientHeight;
+            
+            // Reposition sunflower if it's now out of bounds
+            const currentX = parseFloat(sunflower.style.left);
+            positionSunflower(currentX);
+        });
+    </script>
+</body>
+</html>
