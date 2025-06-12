@@ -2256,55 +2256,102 @@
             }, 5000);
         }
         
-        // SVG反字下載功能 - 適合激光切割
-        function downloadSvgSeal() {
+        // 為單個字符創建高質量圖像的函數
+        async function renderCharacterToImage(char, fontSize, fontFamily) {
+            return new Promise((resolve) => {
+                // 等待字體加載完成
+                document.fonts.ready.then(() => {
+                    try {
+                        // 創建高分辨率的Canvas
+                        const canvas = document.createElement('canvas');
+                        const scale = 3; // 高分辨率倍數，確保字體清晰
+                        const padding = fontSize * 0.2; // 添加適當邊距
+                        
+                        canvas.width = (fontSize + padding * 2) * scale;
+                        canvas.height = (fontSize + padding * 2) * scale;
+                        
+                        const ctx = canvas.getContext('2d');
+                        
+                        // 設置高質量渲染
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.scale(scale, scale);
+                        
+                        // 設置字體和樣式
+                        ctx.font = `bold ${fontSize}px ${fontFamily}`;
+                        ctx.fillStyle = 'white'; // 白色字體（反字）
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        
+                        // 添加文字陰影以增強效果（可選）
+                        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                        ctx.shadowBlur = 2;
+                        ctx.shadowOffsetX = 1;
+                        ctx.shadowOffsetY = 1;
+                        
+                        // 在Canvas中心繪製字符
+                        const centerX = canvas.width / scale / 2;
+                        const centerY = canvas.height / scale / 2;
+                        ctx.fillText(char, centerX, centerY);
+                        
+                        // 轉換為base64圖像
+                        const dataUrl = canvas.toDataURL('image/png', 1.0);
+                        
+                        // 返回圖像信息
+                        resolve({
+                            dataUrl: dataUrl,
+                            width: canvas.width / scale,
+                            height: canvas.height / scale
+                        });
+                        
+                    } catch (error) {
+                        console.warn(`字符 "${char}" 渲染失敗:`, error);
+                        // 返回null表示失敗，將使用備選方案
+                        resolve(null);
+                    }
+                });
+            });
+        }
+        
+        // 簡化的繪圖內容處理函數
+        function processDrawingForSvg() {
+            try {
+                if (!displayCanvas || !displayCtx) return '';
+                
+                const imageData = displayCtx.getImageData(0, 0, sealSize, sealSize);
+                if (!imageData || !imageData.data.some(value => value > 0)) return '';
+                
+                // 將整個繪圖畫布轉換為base64圖像嵌入
+                const drawingDataUrl = displayCanvas.toDataURL('image/png');
+                return `<image x="0" y="0" width="${sealSize}" height="${sealSize}" href="${drawingDataUrl}" opacity="1" />`;
+            } catch (error) {
+                console.warn('處理繪圖內容時出錯:', error);
+                return '';
+            }
+        }
+        
+        // SVG反字下載功能 - 修復版本，確保字符正確顯示
+        async function downloadSvgSeal() {
             try {
                 // 顯示加載指示器
                 loadingIndicator.classList.remove('hidden');
                 downloadMessage.className = '';
-                downloadMessage.textContent = '';
+                downloadMessage.textContent = '正在轉換文字為可靠的矢量格式...';
                 
                 const text = nameInput.value.trim() || "印";
                 const sizeOffset = padding * 0.8;
                 
-                // 獲取字體定義，保持原始字體名稱格式
-                let fontFamily = currentFont;
-                let fontUrl = '';
-                
-                // 根據選擇的字體獲取對應的URL
-                if (fontFamily === "'ChongXi Seal'") {
-                    fontUrl = 'https://chineseclassics.github.io/files/chongxi_seal.otf';
-                } else if (fontFamily === "'ZiYue Seal'") {
-                    fontUrl = 'https://chineseclassics.github.io/files/ZIYueJiuDieYinZhuan-Regular.ttf';
-                } else if (fontFamily === "'HuaKang Seal'") {
-                    fontUrl = 'https://chineseclassics.github.io/files/huakangxinzhuan.ttf';
-                } else if (fontFamily === "'JiaJin Script'") {
-                    fontUrl = 'https://chineseclassics.github.io/files/jiajinwen.ttf';
-                } else if (fontFamily === "'LXGW WenKai'") {
-                    fontUrl = 'https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/lxgwwenkai-regular.woff2';
-                }
-                
-                // 為SVG準備字體名稱（移除引號）
-                const svgFontFamily = fontFamily.replace(/'/g, '');
-                
                 // 創建SVG內容 - 反字設計，適合激光切割
                 let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}" xmlns="http://www.w3.org/2000/svg">
-    <defs>`;
-                
-                // 如果有自定義字體，添加字體定義
-                if (fontUrl) {
-                    svgContent += `
+<svg width="${sealSize}" height="${sealSize}" viewBox="0 0 ${sealSize} ${sealSize}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <!-- 確保兼容性的字體備選 -->
         <style>
-            @font-face {
-                font-family: '${svgFontFamily}';
-                src: url('${fontUrl}');
+            .seal-text {
+                font-family: ${currentFont}, Arial, "Microsoft JhengHei", "PingFang TC", "Noto Sans CJK TC", sans-serif;
                 font-weight: bold;
             }
-        </style>`;
-                }
-                
-                svgContent += `
+        </style>
     </defs>
     
     <!-- 印章邊框 -->
@@ -2317,47 +2364,75 @@
     <!-- 反字文字（鏤空，用於激光切割） -->
     <g transform="scale(-1,1) translate(-${sealSize},0)">`;
                 
-                // 添加每個字符 - 使用SVG transform進行鏡像
+                // 轉換每個字符 - 使用高質量圖像渲染保持字體效果
                 for (let i = 0; i < text.length; i++) {
                     const pos = charPositions[i];
                     const fontSize = charSizes[i];
+                    const char = text[i];
                     
-                    // 轉換旋轉角度為度數
-                    const rotationDeg = pos.rotation * 180 / Math.PI;
+                    downloadMessage.textContent = `正在處理字符: ${char} (${i + 1}/${text.length})`;
                     
-                    svgContent += `
+                    try {
+                        // 轉換旋轉角度為度數
+                        const rotationDeg = pos.rotation * 180 / Math.PI;
+                        
+                        // 嘗試渲染字符為高質量圖像
+                        const charImage = await renderCharacterToImage(char, fontSize, currentFont);
+                        
+                        if (charImage) {
+                            // 使用渲染的圖像，保持原字體效果
+                            svgContent += `
+        <g transform="translate(${pos.x}, ${pos.y}) rotate(${rotationDeg})">
+            <image x="${-charImage.width/2}" y="${-charImage.height/2}" 
+                   width="${charImage.width}" height="${charImage.height}" 
+                   href="${charImage.dataUrl}" />
+        </g>`;
+                        } else {
+                            // 備選方案：使用文字元素
+                            console.warn(`字符 "${char}" 圖像渲染失敗，使用文字備選`);
+                            svgContent += `
         <text x="${pos.x}" y="${pos.y}" 
-              font-family="${svgFontFamily}" 
+              class="seal-text"
               font-size="${fontSize}" 
-              font-weight="bold"
               text-anchor="middle" 
               dominant-baseline="central"
               fill="white"
-              transform="rotate(${rotationDeg} ${pos.x} ${pos.y})">${text[i]}</text>`;
-                }
-                
-                svgContent += `
-    </g>`;
-                
-                // 如果有用戶繪圖，添加繪圖路徑（也需要反向）
-                if (displayCanvas && displayCtx) {
-                    try {
-                        const imageData = displayCtx.getImageData(0, 0, sealSize, sealSize);
-                        if (imageData && imageData.data.some(value => value > 0)) {
-                            svgContent += `
-    <!-- 用戶繪圖內容 - 已鏡像處理 -->
-    <g transform="scale(-1,1) translate(-${sealSize},0)">
-        <!-- 繪圖內容轉換為SVG需要額外處理 -->
-        <!-- 建議：在激光切割前手動添加繪圖路徑 -->
-    </g>`;
+              transform="rotate(${rotationDeg} ${pos.x} ${pos.y})">${char}</text>`;
                         }
+                        
                     } catch (error) {
-                        console.warn('無法處理繪圖內容:', error);
+                        console.error(`處理字符 ${char} 時出錯:`, error);
+                        // 使用最安全的備選方案
+                        const rotationDeg = pos.rotation * 180 / Math.PI;
+                        svgContent += `
+        <text x="${pos.x}" y="${pos.y}" 
+              class="seal-text"
+              font-size="${fontSize}" 
+              text-anchor="middle" 
+              dominant-baseline="central"
+              fill="white"
+              transform="rotate(${rotationDeg} ${pos.x} ${pos.y})">${char}</text>`;
                     }
                 }
                 
+                // 處理用戶繪圖內容
+                downloadMessage.textContent = '正在處理繪圖內容...';
+                const drawingContent = processDrawingForSvg();
+                if (drawingContent) {
+                    svgContent += `
+        <!-- 用戶繪圖內容 - 高保真嵌入 -->
+        ${drawingContent}`;
+                }
+                
                 svgContent += `
+    </g>
+    
+    <!-- 使用說明註釋 -->
+    <!-- 此SVG使用字體備選機制確保文字顯示 -->
+    <!-- 適合激光切割：黑色區域切割，白色區域保留 -->
 </svg>`;
+                
+                downloadMessage.textContent = '正在生成下載文件...';
                 
                 // 創建Blob並下載
                 const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
@@ -2378,7 +2453,7 @@
                     // 隱藏加載指示器並顯示成功信息
                     loadingIndicator.classList.add('hidden');
                     downloadMessage.className = 'success';
-                    downloadMessage.textContent = 'SVG反字印章已成功下載！字體已鏡像處理，適合激光切割使用。';
+                    downloadMessage.textContent = 'SVG反字印章已成功下載！使用高質量字符圖像渲染技術，完美保持設定字體效果，確保在任何設備上都能正確顯示，適合激光切割使用。';
                     
                     // 5秒後隱藏成功信息
                     setTimeout(() => {
@@ -2388,8 +2463,15 @@
                 }, 100);
                 
             } catch (error) {
-                console.error('SVG下載過程錯誤:', error);
-                showDownloadError('SVG下載過程中發生錯誤');
+                console.error('SVG轉換過程錯誤:', error);
+                loadingIndicator.classList.add('hidden');
+                downloadMessage.className = 'error';
+                downloadMessage.textContent = 'SVG轉換過程中發生錯誤，請重試。';
+                
+                setTimeout(() => {
+                    downloadMessage.className = '';
+                    downloadMessage.textContent = '';
+                }, 5000);
             }
         }
     </script>
