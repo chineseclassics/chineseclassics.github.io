@@ -618,37 +618,7 @@
             font-family: 'Noto Sans TC', sans-serif;
         }
         
-        /* 新增的組詞區域樣式 */
-        .word-combinations {
-            margin-top: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 8px;
-            max-width: 100%;
-        }
-        
-        .word-item {
-            display: inline-block;
-            padding: 5px 10px;
-            background-color: rgba(142, 62, 26, 0.1);
-            border-radius: var(--border-radius);
-            font-size: 14px;
-            color: var(--ink-color);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .word-item:hover {
-            background-color: rgba(142, 62, 26, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        .no-data-message {
-            font-size: 14px;
-            color: var(--light-text);
-            font-style: italic;
-        }
+
         
         .control-buttons {
             display: flex;
@@ -890,60 +860,318 @@
             color: var(--warning);
         }
         
-        /* 成就系统 */
-        .achievements {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
+        /* 字詞本樣式 */
+        .vocabulary-book-content {
+            margin-top: 15px;
         }
         
-        .achievement {
+        .vocabulary-count {
+            font-size: 12px;
+            color: var(--light-text);
+            margin-left: 5px;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        
+        .vocabulary-list {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        
+        .vocabulary-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #FFFDF7 0%, #FFF8E1 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .vocabulary-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(255, 107, 157, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .vocabulary-item-number {
+            font-size: 12px;
+            color: var(--secondary);
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 20px;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        
+        .vocabulary-item-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .vocabulary-item-text {
+            display: flex;
+            align-items: flex-end;
+            margin-top: 2px;
+        }
+        
+        .vocabulary-character-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: rgba(255, 255, 255, 0.4);
-            border-radius: var(--border-radius);
-            padding: 8px 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid var(--border-color);
+            margin-right: 4px;
         }
         
-        .achievement.locked {
-            opacity: 0.6;
-            filter: grayscale(0.8);
+        .vocabulary-character-container:last-child {
+            margin-right: 0;
         }
         
-        .achievement-icon {
-            width: 40px;
-            height: 40px;
-            background: #51CF66;  /* 統一使用綠色成就圖標 */
-            border-radius: 50%;
+        .vocabulary-character-pinyin {
+            font-size: 9px;
+            color: var(--secondary);
+            font-family: 'Noto Sans TC', sans-serif;
+            margin-bottom: 1px;
+            text-align: center;
+            font-weight: 500;
+            height: 12px;
+            line-height: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 5px;
-            color: white;
-            font-size: 16px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 28px;
         }
         
-        .achievement-name {
-            font-size: 12px;
-            text-align: center;
+        .vocabulary-character-box {
+            position: relative;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FFFDF7 0%, #FFF8E1 100%);
+            border: 1px solid rgba(255, 107, 157, 0.3);
+            border-radius: 4px;
+        }
+        
+        /* 田字格背景 */
+        .vocabulary-character-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 107, 157, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 107, 157, 0.3) 1px, transparent 1px);
+            background-size: 50% 50%;
+            background-position: 0 0;
+        }
+        
+        .vocabulary-character {
+            font-size: 16px;
             font-weight: bold;
-            color: var(--text);
-            line-height: 1.2;
+            color: var(--ink-color);
+            font-family: 'Noto Serif TC', serif;
+            z-index: 2;
+            position: relative;
+        }
+        
+
+        
+        .vocabulary-remove {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            transition: all 0.2s ease;
+        }
+        
+        .vocabulary-item:hover .vocabulary-remove {
+            display: flex;
+        }
+        
+        .vocabulary-remove:hover {
+            background: #E74C3C;
+            transform: scale(1.1);
+        }
+        
+        .vocabulary-more {
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .btn-more {
+            width: 100%;
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+        
+        .empty-vocabulary {
+            text-align: center;
+            padding: 20px;
+            color: var(--light-text);
+        }
+        
+        .empty-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-text {
+            font-size: 14px;
+            margin-bottom: 4px;
             font-family: 'Noto Serif TC', serif;
         }
         
-        .achievement-progress {
-            font-size: 10px;
-            color: var(--light-text);
-            margin-top: 3px;
+        .empty-hint {
+            font-size: 12px;
+            opacity: 0.7;
             font-family: 'Noto Sans TC', sans-serif;
         }
+        
+        /* 模態窗口樣式 */
+        .vocabulary-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .vocabulary-modal-content {
+            background: var(--background);
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .vocabulary-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .vocabulary-modal-header h3 {
+            margin: 0;
+            color: var(--ink-color);
+            font-family: 'Noto Serif TC', serif;
+        }
+        
+        .vocabulary-modal-count {
+            font-size: 14px;
+            color: var(--light-text);
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        
+        .vocabulary-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--light-text);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .vocabulary-modal-close:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .vocabulary-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .vocabulary-modal-list {
+            display: grid;
+            gap: 8px;
+        }
+        
+        /* 收藏按鈕樣式 */
+        .btn-favorite {
+            background: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-favorite:hover {
+            background: linear-gradient(135deg, #FF1493 0%, #DC143C 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 20, 147, 0.4);
+        }
+        
+        .btn-favorite.favorited {
+            background: linear-gradient(135deg, #32CD32 0%, #228B22 100%);
+            animation: heartbeat 0.6s ease-in-out;
+        }
+        
+        .btn-favorite.favorited:hover {
+            background: linear-gradient(135deg, #228B22 0%, #006400 100%);
+        }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes toastSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+        
+
         
         /* 笔顺挑战模式 */
         .quiz-container {
@@ -2095,10 +2323,6 @@
             transition: opacity 0.2s ease;
         }
         
-        .radical-item-workspace:hover::after {
-            opacity: 1;
-        }
-        
         .radical-result {
             display: none;
             padding: 15px;
@@ -2140,7 +2364,7 @@
             flex-wrap: wrap;
         }
         
-        /* 字詞查詢模式 */
+        /* 字词查询模式 */
         .word-lookup-container {
             display: none;
             flex-direction: column;
@@ -2277,16 +2501,16 @@
             margin-right: 8px;
         }
         
-        /* 字詞查詢模式專用樣式 */
+        /* 字词查询模式专用样式 */
         .word-lookup-container .definition-text {
             color: var(--ink-color);
-            font-size: 18px;  /* 比筆順查詢的16px更大 */
+            font-size: 18px;  /* 比笔顺查询的16px更大 */
             line-height: 1.7;
             font-family: 'Noto Serif TC', serif;
             margin-bottom: 8px;
             text-align: left;
-            font-weight: 500;  /* 比筆順查詢的400更粗 */
-            display: inline;  /* 改為inline，與詞性標籤在同一行 */
+            font-weight: 500;  /* 比笔顺查询的400更粗 */
+            display: inline;  /* 改为inline，与词性标签在同一行 */
             word-wrap: break-word;
             overflow-wrap: break-word;
             max-width: 100%;
@@ -2308,7 +2532,7 @@
             background: rgba(77, 171, 247, 0.1);
             border-left: 3px solid #4DABF7;
             border-radius: 0 6px 6px 0;
-            font-size: 14px;  /* 保持14px，比解釋文字的18px小 */
+            font-size: 14px;  /* 保持14px，比解释文字的18px小 */
             color: #666;
             font-style: italic;
             line-height: 1.5;
@@ -2343,10 +2567,10 @@
             padding: 20px;
         }
         
-        /* 響應式調整 - 字詞查詢模式 */
+        /* 响应式调整 - 字词查询模式 */
         @media (max-width: 768px) {
             .word-lookup-container .definition-text {
-                font-size: 16px;  /* 小屏幕上稍微縮小 */
+                font-size: 16px;  /* 小屏幕上稍微缩小 */
             }
             
             .word-lookup-container .definition-example {
@@ -2355,19 +2579,910 @@
             }
         }
         
-        /* 記憶遊戲 */
+        /* 记忆游戏 */
+        
+        /* 墨寶積分系統樣式 */
+        
+        /* 頂部狀態欄 */
+        .moba-status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, #FF6B9D, #4DABF7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .moba-player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .moba-level {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .moba-points {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .moba-progress-container {
+            flex: 1;
+            max-width: 200px;
+            margin: 0 20px;
+        }
+        
+        .moba-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .moba-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFE66D, #51CF66);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .moba-streak {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        /* 通知樣式 */
+        .points-notification,
+        .level-up-notification,
+        .achievement-notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            z-index: 2000;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 300px;
+        }
+        
+        .points-notification.show,
+        .level-up-notification.show,
+        .achievement-notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .points-notification.hide,
+        .level-up-notification.hide,
+        .achievement-notification.hide {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        
+        .points-notification {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #FFE66D, #FF6B9D);
+            color: white;
+        }
+        
+        .points-icon {
+            font-size: 24px;
+        }
+        
+        .points-amount {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .points-desc {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .level-up-notification {
+            background: linear-gradient(135deg, #4DABF7, #51CF66);
+            color: white;
+            text-align: center;
+        }
+        
+        .level-up-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .level-up-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .level-up-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .old-level,
+        .new-level {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .level-arrow {
+            font-size: 14px;
+        }
+        
+        .level-up-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .level-up-desc {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .achievement-notification {
+            background: linear-gradient(135deg, #51CF66, #FFE66D);
+            color: white;
+        }
+        
+        .achievement-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .achievement-icon-large {
+            font-size: 32px;
+        }
+        
+        .achievement-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .achievement-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        
+        .achievement-desc {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        
+        .achievement-points {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        /* 頂部狀態欄樣式 */
+        .top-status-bar {
+            background: linear-gradient(135deg, #FF6B9D22, #4DABF722);
+            border: 2px solid #FF6B9D44;
+            border-radius: 15px;
+            padding: 12px 20px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.15);
+            backdrop-filter: blur(10px);
+            width: calc(100% - 40px);
+            max-width: 1200px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .level-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #FF6B9D, #FF8787);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+        }
+
+        .level-number {
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .level-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .points-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 6px 12px;
+            border-radius: 15px;
+            border: 2px solid #FFD43B;
+            box-shadow: 0 2px 6px rgba(255, 212, 59, 0.2);
+        }
+
+        .points-icon {
+            font-size: 16px;
+        }
+
+        .points-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #FF6B9D;
+        }
+
+        .progress-section {
+            flex: 1;
+            max-width: 300px;
+            margin: 0 20px;
+        }
+
+        .progress-bar-container {
+            position: relative;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            border: 2px solid #4DABF7;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4DABF7, #51CF66);
+            border-radius: 8px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .streak-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .streak-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #FFD43B, #FFE66D);
+            padding: 6px 12px;
+            border-radius: 15px;
+            border: 2px solid #FF8787;
+            box-shadow: 0 2px 6px rgba(255, 212, 59, 0.2);
+        }
+
+        .streak-icon {
+            font-size: 16px;
+        }
+
+        .streak-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #E03131;
+        }
+
+        .streak-label {
+            font-size: 12px;
+            color: #E03131;
+            font-weight: 600;
+        }
+
+        /* 通知動畫樣式 */
+        .point-notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, #51CF66, #40C057);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(81, 207, 102, 0.4);
+            z-index: 1000;
+            animation: slideInRight 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .level-up-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #FFD43B, #FFE66D);
+            color: #E03131;
+            padding: 20px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(255, 212, 59, 0.5);
+            z-index: 1001;
+            animation: bounceIn 0.6s ease, fadeOut 0.5s ease 3s forwards;
+            border: 3px solid #FF6B9D;
+        }
+
+        .achievement-notification {
+            position: fixed;
+            top: 150px;
+            right: 20px;
+            background: linear-gradient(135deg, #9775FA, #845EF7);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 6px 20px rgba(151, 117, 250, 0.4);
+            z-index: 1002;
+            animation: slideInRight 0.5s ease, fadeOut 0.5s ease 4s forwards;
+            max-width: 300px;
+        }
+
+        .achievement-notification .achievement-title {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .achievement-notification .achievement-desc {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: translate(-50%, -50%) scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        /* 更新成就面板樣式 */
+        .achievement-count {
+            font-size: 12px;
+            color: var(--light-text);
+            margin-left: 8px;
+        }
+
+        .achievements-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .recent-achievements {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .recent-achievement {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: linear-gradient(135deg, rgba(151, 117, 250, 0.1), rgba(255, 107, 157, 0.1));
+            border-radius: 8px;
+            border: 1px solid rgba(151, 117, 250, 0.2);
+            animation: slideInRight 0.5s ease;
+        }
+
+        .recent-achievement-icon {
+            font-size: 16px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .recent-achievement-info {
+            flex: 1;
+        }
+
+        .recent-achievement-name {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--ink-color);
+            margin-bottom: 2px;
+        }
+
+        .recent-achievement-desc {
+            font-size: 10px;
+            color: var(--light-text);
+        }
+
+        .recent-achievement-points {
+            font-size: 11px;
+            color: #9775FA;
+            font-weight: bold;
+        }
+
+        .achievement-progress-overview {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .progress-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .progress-item:last-child {
+            border-bottom: none;
+        }
+
+        .progress-label {
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .progress-value {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .btn-view-all {
+            width: 100%;
+            padding: 8px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* 成就模態窗口樣式 */
+        .achievements-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .achievements-modal-content {
+            background: var(--panel-bg);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--border-color);
+        }
+
+        .achievements-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 2px solid var(--border-color);
+            background: linear-gradient(135deg, #FF6B9D22, #4DABF722);
+        }
+
+        .achievements-modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--ink-color);
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        .achievements-modal-count {
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .achievements-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--light-text);
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .achievements-modal-close:hover {
+            background: rgba(255, 107, 157, 0.1);
+            color: var(--accent);
+        }
+
+        .achievements-modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .achievements-modal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .achievement-category {
+            font-weight: bold;
+            color: var(--ink-color);
+            font-size: 14px;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .achievement-category:first-child {
+            margin-top: 0;
+        }
+
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .achievement {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+            min-height: 70px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .achievement:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .achievement.unlocked {
+            background: linear-gradient(135deg, rgba(81, 207, 102, 0.1), rgba(255, 230, 109, 0.1));
+            border-color: #51CF66;
+            box-shadow: 0 2px 8px rgba(81, 207, 102, 0.2);
+        }
+
+        .achievement.unlocked:hover {
+            box-shadow: 0 6px 16px rgba(81, 207, 102, 0.3);
+        }
+
+        .achievement.locked {
+            opacity: 0.6;
+            background: rgba(200, 200, 200, 0.1);
+        }
+
+        .achievement.locked:hover {
+            opacity: 0.8;
+        }
+
+        .achievement-icon {
+            font-size: 20px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .achievement.unlocked .achievement-icon {
+            background: linear-gradient(135deg, #51CF66, #40C057);
+            color: white;
+            border-color: #51CF66;
+        }
+
+        .achievement-details {
+            flex: 1;
+            min-width: 0; /* 允許文字換行 */
+        }
+
+        .achievement-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--ink-color);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .achievement-description {
+            font-size: 12px;
+            color: var(--light-text);
+            margin-bottom: 4px;
+            line-height: 1.3;
+            word-wrap: break-word;
+        }
+
+        .achievement-progress {
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: bold;
+            background: rgba(77, 171, 247, 0.1);
+            padding: 2px 6px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .achievement-points {
+            font-size: 12px;
+            font-weight: bold;
+            color: #9775FA;
+            background: rgba(151, 117, 250, 0.1);
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(151, 117, 250, 0.2);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 1200px) {
+            .achievement-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .achievements-modal-content {
+                width: 95%;
+                max-height: 85vh;
+            }
+
+            .achievements-modal-header {
+                padding: 15px;
+            }
+
+            .achievements-modal-header h3 {
+                font-size: 16px;
+            }
+
+            .achievements-modal-body {
+                padding: 15px;
+                max-height: 65vh;
+            }
+
+            .achievement-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .achievement {
+                padding: 10px;
+                gap: 10px;
+                min-height: 60px;
+            }
+
+            .achievement-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 18px;
+            }
+
+            .achievement-name {
+                font-size: 13px;
+            }
+
+            .achievement-description {
+                font-size: 11px;
+            }
+
+            .achievement-points {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+
+            .recent-achievement {
+                padding: 6px;
+                gap: 6px;
+            }
+
+            .recent-achievement-icon {
+                font-size: 14px;
+                width: 20px;
+            }
+
+            .recent-achievement-name {
+                font-size: 11px;
+            }
+
+            .recent-achievement-desc {
+                font-size: 9px;
+            }
+
+            .recent-achievement-points {
+                font-size: 10px;
+            }
+
+            .progress-item {
+                padding: 3px 0;
+            }
+
+            .progress-label,
+            .progress-value {
+                font-size: 11px;
+            }
+
+            .btn-view-all {
+                padding: 6px;
+                font-size: 11px;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .achievement-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .achievement-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            }
+        }
+        
+        /* 調整主內容區域以適應頂部狀態欄 */
+        .container {
+            margin-top: 70px;
+        }
+        
+        /* 響應式設計 - 墨寶積分系統 */
+        @media (max-width: 768px) {
+            .top-status-bar {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+                width: calc(100% - 30px);
+            }
+            
+            .player-info {
+                gap: 10px;
+            }
+            
+            .level-badge {
+                padding: 4px 8px;
+            }
+            
+            .level-number {
+                font-size: 14px;
+            }
+            
+            .level-name {
+                font-size: 12px;
+            }
+            
+            .points-display {
+                padding: 4px 8px;
+            }
+            
+            .points-value {
+                font-size: 14px;
+            }
+            
+            .progress-section {
+                max-width: 200px;
+                margin: 0;
+            }
+            
+            .streak-display {
+                padding: 4px 8px;
+            }
+            
+            .streak-value {
+                font-size: 14px;
+            }
+            
+            .points-notification,
+            .level-up-notification,
+            .achievement-notification {
+                right: 10px;
+                max-width: 250px;
+                padding: 12px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header>
             <div class="content">
-                <h1>點點墨寶</h1>
-                <p class="tagline">弘立書院中文經典AI實驗室出品</p>
+                <h1>点点墨宝</h1>
+                <p class="tagline">弘立书院中文经典AI实验室出品</p>
             </div>
         </header>
         
-        <!-- 主導航 -->
+        <!-- 主导航 -->
         <div class="main-nav">
             <div class="nav-container">
                 <button id="nav-lookup" class="nav-button active">
@@ -2375,7 +3490,7 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <span>筆順查詢</span>
+                    <span>笔顺查询</span>
                 </button>
                 <button id="nav-word-lookup" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2385,7 +3500,7 @@
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                         <polyline points="10,9 9,9 8,9"></polyline>
                     </svg>
-                    <span>字詞查詢</span>
+                    <span>字词查询</span>
                 </button>
                 <button id="nav-practice" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2393,7 +3508,7 @@
                         <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
                         <circle cx="11" cy="11" r="2"></circle>
                     </svg>
-                    <span>筆順大師</span>
+                    <span>笔顺大师</span>
                 </button>
                 <button id="nav-memory" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2401,7 +3516,7 @@
                         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                     </svg>
-                    <span>記憶挑戰</span>
+                    <span>记忆挑战</span>
                 </button>
                 <button id="nav-radical" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2414,43 +3529,72 @@
                         <path d="M20 13v7h-7"></path>
                         <path d="M20 17l-7-7"></path>
                     </svg>
-                    <span>部首組字</span>
+                    <span>部首组字</span>
                 </button>
             </div>
         </div>
         
+        <!-- 頂部狀態欄 -->
+        <div class="top-status-bar">
+            <div class="player-info">
+                <div class="level-badge">
+                    <span class="level-number" id="player-level">1</span>
+                    <span class="level-name" id="player-level-name">墨韻初心</span>
+                </div>
+                <div class="points-display">
+                                            <span class="points-icon">🖌️</span>
+                    <span class="points-value" id="player-points">0</span>
+                </div>
+            </div>
+            <div class="progress-section">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="level-progress-bar">
+                        <div class="progress-fill" id="level-progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="level-progress-text">0/100</div>
+                </div>
+            </div>
+            <div class="streak-info">
+                <div class="streak-display">
+                    <span class="streak-icon">🔥</span>
+                    <span class="streak-value" id="login-streak">0</span>
+                    <span class="streak-label">天</span>
+                </div>
+            </div>
+        </div>
+        
         <div class="main-content">
-            <!-- 功能區域面板 -->
+            <!-- 功能区域面板 -->
             <div class="panel main-panel">
-                <!-- 頂部: 通用漢字查詢部分 -->
+                <!-- 顶部: 通用汉字查询部分 -->
                 <div id="character-search-section" class="character-search-section">
                     <div class="character-search">
-                        <input type="text" id="character-input" class="character-input" placeholder="請輸入漢字或短句（最多20字）" maxlength="20">
+                        <input type="text" id="character-input" class="character-input" placeholder="请输入汉字或短句（最多20字）" maxlength="20">
                         <button id="search-button" class="search-button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
-                            查詢
+                            查询
                         </button>
                     </div>
                     
-                    <div id="error-message" class="error-message">請輸入有效的中文字</div>
+                    <div id="error-message" class="error-message">请输入有效的中文字</div>
                     
                     <div class="loader-container">
                         <div id="loader" class="loader"></div>
                     </div>
                 </div>
                 
-                <!-- 功能模式容器 - 只會顯示一個 -->
+                <!-- 功能模式容器 - 只会显示一个 -->
                 <div class="function-container">
-                    <!-- 多字符選擇器 -->
+                    <!-- 多字符选择器 -->
                     <div id="character-selector" class="character-selector" style="display: none;">
-                        <div class="selector-title">點擊要查詢的漢字：</div>
+                        <div class="selector-title">点击要查询的汉字：</div>
                         <div id="character-buttons" class="character-buttons"></div>
                     </div>
                     
-                    <!-- 功能1: 筆順查詢模式 -->
+                    <!-- 功能1: 笔顺查询模式 -->
                     <div id="character-display-section" class="character-display-section function-section">
                         <div class="character-board">
                             <div class="grid-background"></div>
@@ -2461,9 +3605,6 @@
                             <span id="character-display" class="character-label" style="display: none;"></span>
                             <span id="pinyin-display" class="pinyin"></span>
                             <div id="stroke-count" class="stroke-count"></div>
-                            
-                            <!-- 新增：組詞顯示區 -->
-                            <div id="word-combinations" class="word-combinations"></div>
                         </div>
                         
                         <div class="control-buttons">
@@ -2471,7 +3612,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                 </svg>
-                                重播筆順
+                                重播笔顺
                             </button>
                             <button id="quiz-button" class="btn btn-secondary">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2479,45 +3620,48 @@
                                     <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
                                     <circle cx="11" cy="11" r="2"></circle>
                                 </svg>
-                                練習書寫
+                                练习书写
                             </button>
                             <button id="speak-button" class="btn btn-outline">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                 </svg>
-                                朗讀
+                                朗读
+                            </button>
+                            <button id="character-favorite-btn" class="btn btn-favorite" title="收藏字">
+                                💝 收藏
                             </button>
                         </div>
                         
-                        <!-- 新增：字義解釋區 -->
+                        <!-- 新增：字义解释区 -->
                         <div id="character-definition" class="character-definition" style="display: none;">
-                            <div class="definition-header">📖 字義解釋</div>
+                            <div class="definition-header">📖 字义解释</div>
                             <div id="definition-content" class="definition-content"></div>
                             <div id="definition-loading" class="definition-loading" style="display: none;">
-                                正在查詢字義...
+                                正在查询字义...
                             </div>
                     </div>
                     
-                        <!-- 可愛星星装饰 -->
+                        <!-- 可爱星星装饰 -->
                         <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%23FF6B9D66'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%23FF6B9D' font-weight='bold'%3E棒棒%3C/text%3E%3C/svg%3E">
                     </div>
                     
-                    <!-- 功能2: 字詞查詢模式 -->
+                    <!-- 功能2: 字词查询模式 -->
                     <div id="word-lookup-container" class="word-lookup-container function-section">
                         <div class="word-search-section">
                             <div class="word-search">
-                                <input type="text" id="word-input" class="word-input" placeholder="請輸入要查詢的字或詞語（如：學、學習、美麗）" maxlength="10">
+                                <input type="text" id="word-input" class="word-input" placeholder="请输入要查询的字或词语（如：学、学习、美丽）" maxlength="10">
                                 <button id="word-search-button" class="search-button">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="11" cy="11" r="8"></circle>
                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                     </svg>
-                                    查詢
+                                    查询
                                 </button>
                             </div>
                             
-                            <div id="word-error-message" class="error-message" style="display: none;">請輸入有效的中文字或詞語</div>
+                            <div id="word-error-message" class="error-message" style="display: none;">请输入有效的中文字或词语</div>
                             
                             <div class="loader-container">
                                 <div id="word-loader" class="loader" style="display: none;"></div>
@@ -2536,7 +3680,7 @@
                                         <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                         <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                     </svg>
-                                    朗讀
+                                    朗读
                                 </button>
                                 <button id="word-practice-button" class="btn btn-secondary">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2544,27 +3688,30 @@
                                     <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
                                     <circle cx="11" cy="11" r="2"></circle>
                                 </svg>
-                                    拆字練習
+                                    拆字练习
+                                </button>
+                                <button id="word-favorite-btn" class="btn btn-favorite" title="收藏词语">
+                                    💝 收藏
                                 </button>
                         </div>
                             
-                            <!-- 詞語解釋區 -->
+                            <!-- 词语解释区 -->
                             <div id="word-definition" class="word-definition">
-                                <div class="definition-header">📚 字詞解釋</div>
+                                                            <div class="definition-header">📚 字词解释</div>
                                 <div id="word-definition-content" class="definition-content"></div>
                                 <div id="word-definition-loading" class="definition-loading" style="display: none;">
-                                    正在查詢字詞解釋...
+                                    正在查询字词解释...
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- 可愛星星装饰 -->
-                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%234DABF766'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%234DABF7' font-weight='bold'%3E詞典%3C/text%3E%3C/svg%3E">
+                        <!-- 可爱星星装饰 -->
+                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%234DABF766'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%234DABF7' font-weight='bold'%3E词典%3C/text%3E%3C/svg%3E">
                     </div>
                     
-                    <!-- 功能3: 筆順練習模式 -->
+                    <!-- 功能3: 笔顺练习模式 -->
                     <div id="quiz-container" class="quiz-container function-section">
-                        <div class="quiz-instruction">請按照正確的筆順點擊完成漢字！</div>
+                        <div class="quiz-instruction">请按照正确的笔顺点击完成汉字！</div>
                         
                         <div class="quiz-progress" id="quiz-progress">
                             <!-- 动态生成进度条 -->
@@ -2574,65 +3721,65 @@
                             <div class="grid-background"></div>
                             <div id="quiz-target-field"></div>
                             <div id="stroke-hint" class="stroke-hint"></div>
-                            <div id="stroke-animation-hint" class="stroke-animation-hint">點擊這裡！</div>
+                            <div id="stroke-animation-hint" class="stroke-animation-hint">点击这里！</div>
                         </div>
                         
                         <div id="quiz-result" class="quiz-result">
-                            <div class="quiz-result-message">真棒！你完成了這個漢字！</div>
-                            <div class="quiz-result-detail">你成功按照正確的筆順完成了「人」字！</div>
+                            <div class="quiz-result-message">真棒！你完成了这个汉字！</div>
+                            <div class="quiz-result-detail">你成功按照正确的笔顺完成了「人」字！</div>
                         </div>
                         
                         <div class="quiz-buttons">
-                            <button id="quiz-retry" class="btn btn-primary">重新挑戰</button>
+                            <button id="quiz-retry" class="btn btn-primary">重新挑战</button>
                             <button id="quiz-next" class="btn btn-secondary">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M9 18l6-6-6-6"/>
                                 </svg>
-                                下一個漢字
+                                下一个汉字
                             </button>
-                            <button id="quiz-hint" class="btn btn-outline">顯示提示</button>
+                            <button id="quiz-hint" class="btn btn-outline">显示提示</button>
                         </div>
                     </div>
                     
-                    <!-- 功能4: 記憶挑戰模式 -->
+                    <!-- 功能4: 记忆挑战模式 -->
                     <div id="memory-game-container" class="memory-game-container function-section">
-                        <div class="memory-instruction">記住顯示的漢字，然後在它們消失後選出正確的漢字！</div>
+                        <div class="memory-instruction">记住显示的汉字，然后在它们消失后选出正确的汉字！</div>
                         
                         <div class="memory-level">
-                            <button class="level-btn active" data-level="3">初級 (3字)</button>
-                            <button class="level-btn" data-level="5">中級 (5字)</button>
-                            <button class="level-btn" data-level="8">高級 (8字)</button>
+                            <button class="level-btn active" data-level="3">初级 (3字)</button>
+                            <button class="level-btn" data-level="5">中级 (5字)</button>
+                            <button class="level-btn" data-level="8">高级 (8字)</button>
                         </div>
                         
-                        <div class="memory-timer" id="memory-timer">準備開始...</div>
+                        <div class="memory-timer" id="memory-timer">准备开始...</div>
                         
                         <div class="memory-characters" id="memory-characters">
-                            <!-- 動態生成字符卡片 -->
+                            <!-- 动态生成字符卡片 -->
                         </div>
                         
                         <div class="memory-options" id="memory-options">
-                            <!-- 動態生成選項 -->
+                            <!-- 动态生成选项 -->
                         </div>
                         
                         <div id="memory-result" class="memory-result">
-                            <div class="memory-result-message">做得好！你記住了所有漢字！</div>
+                            <div class="memory-result-message">做得好！你记住了所有汉字！</div>
                             <div class="memory-result-score">得分：3/3</div>
                         </div>
                         
                         <div class="memory-controls">
-                            <button id="memory-start" class="btn btn-primary">開始遊戲</button>
+                            <button id="memory-start" class="btn btn-primary">开始游戏</button>
                         </div>
                     </div>
                     
-                    <!-- 功能5: 部首組字遊戲 -->
+                    <!-- 功能5: 部首组字游戏 -->
                     <div id="radical-game-container" class="radical-game-container function-section">
                         <!-- 顶部难度选择区域 -->
                         <div class="radical-header-section">
                             <div class="radical-level-wrapper">
                                 <div class="radical-level">
-                                    <button class="level-btn active" data-level="easy">初級</button>
-                                    <button class="level-btn" data-level="medium">中級</button>
-                                    <button class="level-btn" data-level="hard">高級</button>
+                                    <button class="level-btn active" data-level="easy">初级</button>
+                                    <button class="level-btn" data-level="medium">中级</button>
+                                    <button class="level-btn" data-level="hard">高级</button>
                                 </div>
                             </div>
                         </div>
@@ -2641,41 +3788,42 @@
                         <div class="radical-game-board">
                             <!-- 目标字区域 -->
                             <div class="target-word-container">
-                                <div class="target-word-label">目標字</div>
+                                <div class="target-word-label">目标字</div>
                                 <div id="target-word" class="target-word">?</div>
                             </div>
                             
                             <!-- 部首工作区 -->
                             <div class="radical-workspace">
                                 <div id="radical-drop-area" class="radical-drop-area">
-                                    <div class="drop-placeholder">點擊下方部首添加到此處</div>
+                                    <div class="drop-placeholder">点击下方部首添加到此处</div>
                                 </div>
                             </div>
                             
                             <!-- 部首选择区 -->
                             <div class="radicals-selection-area">
-                                <div class="radicals-label">部首選擇</div>
+                                <div class="radicals-label">部首选择</div>
                                 <div id="radicals-container" class="radicals-container">
-                                    <!-- 這裡將動態生成部首元素 -->
+                                    <!-- 这里将动态生成部首元素 -->
                                 </div>
                             </div>
                             
                             <!-- 操作按钮区域 -->
                             <div class="radical-controls">
-                                <button id="radical-check" class="btn btn-primary">檢查</button>
-                                <button id="radical-hint-btn" class="btn btn-solid-light">顯示提示</button>
+                                <button id="radical-check" class="btn btn-primary">检查</button>
+                                <button id="radical-hint-btn" class="btn btn-solid-light">显示提示</button>
                                 <button id="radical-clear" class="btn btn-solid-light">清除</button>
                                 <button id="radical-next" class="btn btn-secondary">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
-                                    下一題
+                                    下一题
                                 </button>
                             </div>
                         </div>
                         
                         <!-- 结果和提示区域 -->
                         <div id="radical-result" class="radical-result">
+                            <div class="radical-result-message">非常棒！你成功组字了！</div>
                             <div class="radical-result-message">非常棒！你成功組字了！</div>
                             <div class="radical-result-detail">你成功組合了「好」字！</div>
                         </div>
@@ -2694,40 +3842,88 @@
                             <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"></path>
                         </svg>
                         <h2 class="chinese-text">我的成就</h2>
+                        <span class="achievement-count" id="achievement-count">(0/40)</span>
                     </div>
-                    <div class="achievements" id="achievements-container">
-                        <div class="achievement">
-                            <div class="achievement-icon">1</div>
-                            <div class="achievement-name">筆順新手</div>
-                            <div class="achievement-progress">1/1</div>
+                    <div class="achievements-summary">
+                        <div class="recent-achievements" id="recent-achievements">
+                            <!-- 最近獲得的成就 -->
                         </div>
-                        
-                        <div class="achievement locked">
-                            <div class="achievement-icon">5</div>
-                            <div class="achievement-name">筆順高手</div>
-                            <div class="achievement-progress">1/5</div>
-                        </div>
-                        
-                        <div class="achievement locked">
-                            <div class="achievement-icon">10</div>
-                            <div class="achievement-name">筆順達人</div>
-                            <div class="achievement-progress">1/10</div>
-                        </div>
-                        
-                        <div class="achievement locked">
-                            <div class="achievement-icon">25</div>
-                            <div class="achievement-name">筆順大師</div>
-                            <div class="achievement-progress">1/25</div>
-                        </div>
-                        
-                        <div class="achievement locked">
-                            <div class="achievement-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"></path>
-                                </svg>
+                        <div class="achievement-progress-overview">
+                            <div class="progress-item">
+                                <span class="progress-label">基礎探索</span>
+                                <span class="progress-value" id="basic-progress">0/4</span>
                             </div>
-                            <div class="achievement-name">筆順王者</div>
-                            <div class="achievement-progress">1/50</div>
+                            <div class="progress-item">
+                                <span class="progress-label">筆順修煉</span>
+                                <span class="progress-value" id="stroke-progress">0/4</span>
+                            </div>
+                            <div class="progress-item">
+                                <span class="progress-label">記憶挑戰</span>
+                                <span class="progress-value" id="memory-progress">0/4</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline btn-view-all" id="view-all-achievements">
+                            查看全部成就
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 全部成就模態窗口 -->
+                <div class="achievements-modal" id="achievements-modal" style="display: none;">
+                    <div class="achievements-modal-content">
+                        <div class="achievements-modal-header">
+                            <h3>🏆 全部成就</h3>
+                            <span class="achievements-modal-count" id="achievements-modal-count">(0/40)</span>
+                            <button class="achievements-modal-close" id="achievements-modal-close">×</button>
+                        </div>
+                        <div class="achievements-modal-body">
+                            <div class="achievements-modal-list" id="achievements-modal-list">
+                                <!-- 動態生成完整成就列表 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 字詞本 -->
+                <div class="panel panel-compact side-panel" id="vocabulary-book-panel">
+                    <div class="side-panel-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            <path d="M12 6v12"></path>
+                            <path d="M8 12h8"></path>
+                        </svg>
+                        <h2 class="chinese-text">我的字詞本</h2>
+                        <span class="vocabulary-count" id="vocabulary-count">(0)</span>
+                    </div>
+                    <div class="vocabulary-book-content">
+                        <div class="vocabulary-list" id="vocabulary-list">
+                            <div class="empty-vocabulary">
+                                <div class="empty-icon">📚</div>
+                                <div class="empty-text">還沒有收藏任何字詞</div>
+                                <div class="empty-hint">查詢字詞時點擊收藏按鈕</div>
+                            </div>
+                        </div>
+                        <div class="vocabulary-more" id="vocabulary-more" style="display: none;">
+                            <button class="btn btn-outline btn-more" id="vocabulary-more-btn">
+                                查看全部 (<span id="total-count">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 字詞本模態窗口 -->
+                <div class="vocabulary-modal" id="vocabulary-modal" style="display: none;">
+                    <div class="vocabulary-modal-content">
+                        <div class="vocabulary-modal-header">
+                            <h3>我的字詞本</h3>
+                            <span class="vocabulary-modal-count" id="vocabulary-modal-count">(0)</span>
+                            <button class="vocabulary-modal-close" id="vocabulary-modal-close">×</button>
+                        </div>
+                        <div class="vocabulary-modal-body">
+                            <div class="vocabulary-modal-list" id="vocabulary-modal-list">
+                                <!-- 動態生成完整列表 -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2754,159 +3950,156 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 添加分級詞庫 - 基礎詞庫(一二年級)
-            const wordCombinationsLevel1 = {
-                '人': ['人民', '人生', '人物', '人間', '好人'],
-                '大': ['大小', '大人', '大山', '大海', '大家'],
-                '小': ['小人', '小心', '小河', '小學', '小鳥'],
-                '山': ['山水', '山峰', '山坡', '山河', '高山'],
-                '水': ['水平', '水果', '水面', '山水', '水田'],
-                '木': ['木頭', '木匠', '樹木', '木材', '木魚'],
-                '火': ['火山', '火車', '火焰', '火柴', '火光'],
-                '土': ['土地', '土壤', '國土', '泥土', '土豆'],
-                '日': ['日子', '日月', '日記', '日出', '星日'],
-                '月': ['月亮', '月光', '月餅', '日月', '月牙'],
-                '金': ['金子', '金錢', '金牌', '金屬', '黃金'],
-                '口': ['口水', '口氣', '口味', '人口', '門口'],
-                '手': ['手指', '手套', '手掌', '拍手', '手勢'],
-                '足': ['腳足', '滿足', '足球', '足跡', '腳踏'],
-                '目': ['目標', '眼目', '目光', '目錄', '注目'],
-                '耳': ['耳朵', '耳環', '耳機', '耳聞', '側耳'],
-                '心': ['心臟', '心思', '開心', '小心', '關心'],
-                '女': ['女生', '女孩', '女人', '少女', '女兒'],
-                '子': ['孩子', '子女', '種子', '兒子', '子孫'],
-                '好': ['好人', '好吃', '很好', '友好', '美好'],
-                '文': ['文字', '文化', '文明', '文章', '作文']
+            
+            // 墨寶積分系統 - 完整的玩家數據結構
+            let playerData = {
+                points: 0,
+                level: 1,
+                levelName: '墨韻初心',
+                dailyLoginStreak: 0,
+                lastLoginDate: null,
+                totalCharactersLearned: 0,
+                totalWordsLearned: 0,
+                totalStrokePractices: 0,
+                totalMemoryGames: 0,
+                totalRadicalGames: 0,
+                totalCollections: 0,
+                perfectMemoryGames: 0,
+                perfectRadicalGames: 0,
+                functionsUsed: new Set(),
+                firstTimeActions: new Set(),
+                achievements: new Set(),
+                statistics: {
+                    charactersToday: 0,
+                    wordsToday: 0,
+                    practiceToday: 0,
+                    gamesPlayedToday: 0,
+                    lastResetDate: new Date().toDateString()
+                }
+            };
+
+            // 等級系統定義
+            const levelSystem = [
+                { level: 1, name: '墨韻初心', minPoints: 0, maxPoints: 99, color: '#FF6B9D' },
+                { level: 2, name: '筆墨新手', minPoints: 100, maxPoints: 299, color: '#4DABF7' },
+                { level: 3, name: '字海探索', minPoints: 300, maxPoints: 599, color: '#51CF66' },
+                { level: 4, name: '詞韻小成', minPoints: 600, maxPoints: 999, color: '#FFD43B' },
+                { level: 5, name: '墨香書生', minPoints: 1000, maxPoints: 1999, color: '#FF8787' },
+                { level: 6, name: '文字達人', minPoints: 2000, maxPoints: 3499, color: '#9775FA' },
+                { level: 7, name: '筆韻大師', minPoints: 3500, maxPoints: 5499, color: '#20C997' },
+                { level: 8, name: '墨寶學者', minPoints: 5500, maxPoints: 7999, color: '#FD7E14' },
+                { level: 9, name: '字聖傳人', minPoints: 8000, maxPoints: 9999, color: '#E03131' },
+                { level: 10, name: '墨寶宗師', minPoints: 10000, maxPoints: 999999, color: '#FFD700' }
+            ];
+
+            // 成就系統定義 - 按類別組織
+            const achievementCategories = {
+                basic: {
+                    name: '基礎探索',
+                    achievements: [
+                        { id: 'first_character', name: '初識漢字', desc: '查詢第一個漢字', points: 20, icon: '🔤' },
+                        { id: 'first_word', name: '詞海初航', desc: '查詢第一個詞語', points: 20, icon: '📖' },
+                        { id: 'first_collection', name: '珍藏墨寶', desc: '收藏第一個字詞', points: 20, icon: '💎' },
+                        { id: 'first_login', name: '每日墨香', desc: '完成每日登入', points: 20, icon: '🌅' }
+                    ]
+                },
+                stroke: {
+                    name: '筆順修煉',
+                    achievements: [
+                        { id: 'stroke_beginner', name: '筆順啟蒙', desc: '完成5次筆順練習', points: 50, icon: '✏️', requirement: 5 },
+                        { id: 'stroke_intermediate', name: '筆法小成', desc: '完成20次筆順練習', points: 100, icon: '🖌️', requirement: 20 },
+                        { id: 'stroke_advanced', name: '筆順大師', desc: '完成50次筆順練習', points: 200, icon: '🎨', requirement: 50 },
+                        { id: 'stroke_master', name: '筆韻宗師', desc: '完成100次筆順練習', points: 300, icon: '🏆', requirement: 100 }
+                    ]
+                },
+                memory: {
+                    name: '記憶挑戰',
+                    achievements: [
+                        { id: 'memory_first', name: '記憶初試', desc: '完成第一場記憶遊戲', points: 30, icon: '🧠' },
+                        { id: 'memory_good', name: '過目不忘', desc: '完成10場記憶遊戲', points: 80, icon: '💭', requirement: 10 },
+                        { id: 'memory_expert', name: '記憶達人', desc: '完成25場記憶遊戲', points: 150, icon: '🎯', requirement: 25 },
+                        { id: 'memory_legend', name: '記憶傳說', desc: '完成50場記憶遊戲', points: 250, icon: '⭐', requirement: 50 }
+                    ]
+                },
+                radical: {
+                    name: '部首遊戲',
+                    achievements: [
+                        { id: 'radical_first', name: '部首初探', desc: '完成第一場部首遊戲', points: 30, icon: '🔍' },
+                        { id: 'radical_builder', name: '造字工匠', desc: '完成15場部首遊戲', points: 100, icon: '🔨', requirement: 15 },
+                        { id: 'radical_master', name: '字構大師', desc: '完成30場部首遊戲', points: 180, icon: '🏗️', requirement: 30 }
+                    ]
+                },
+                learning: {
+                    name: '學習里程',
+                    achievements: [
+                        { id: 'char_collector', name: '字海拾貝', desc: '學習50個漢字', points: 100, icon: '🐚', requirement: 50 },
+                        { id: 'char_scholar', name: '字庫豐富', desc: '學習150個漢字', points: 200, icon: '📚', requirement: 150 },
+                        { id: 'char_master', name: '字海博學', desc: '學習300個漢字', points: 350, icon: '🎓', requirement: 300 },
+                        { id: 'word_starter', name: '詞彙初豐', desc: '學習30個詞語', points: 80, icon: '🌱', requirement: 30 },
+                        { id: 'word_expert', name: '詞海暢遊', desc: '學習100個詞語', points: 180, icon: '🌊', requirement: 100 }
+                    ]
+                },
+                collection: {
+                    name: '收藏成就',
+                    achievements: [
+                        { id: 'collector', name: '墨寶收藏家', desc: '收藏20個字詞', points: 120, icon: '📦', requirement: 20 },
+                        { id: 'treasure_hunter', name: '珍藏大師', desc: '收藏50個字詞', points: 250, icon: '💰', requirement: 50 },
+                        { id: 'archive_keeper', name: '墨寶典藏', desc: '收藏100個字詞', points: 400, icon: '🏛️', requirement: 100 }
+                    ]
+                },
+                daily: {
+                    name: '每日堅持',
+                    achievements: [
+                        { id: 'streak_3', name: '三日墨香', desc: '連續登入3天', points: 60, icon: '🔥', requirement: 3 },
+                        { id: 'streak_7', name: '一週堅持', desc: '連續登入7天', points: 140, icon: '📅', requirement: 7 },
+                        { id: 'streak_30', name: '月圓墨滿', desc: '連續登入30天', points: 500, icon: '🌕', requirement: 30 }
+                    ]
+                },
+                exploration: {
+                    name: '功能探索',
+                    achievements: [
+                        { id: 'explorer', name: '功能探索者', desc: '使用所有主要功能', points: 150, icon: '🗺️' },
+                        { id: 'game_master', name: '遊戲全能', desc: '玩過所有遊戲模式', points: 120, icon: '🎮' }
+                    ]
+                },
+                special: {
+                    name: '特殊成就',
+                    achievements: [
+                        { id: 'lightning_memory', name: '閃電記憶', desc: '記憶遊戲5秒內完成', points: 100, icon: '⚡' },
+                        { id: 'perfectionist', name: '完美主義', desc: '連續10次完美遊戲', points: 200, icon: '💯' },
+                        { id: 'night_owl', name: '夜讀墨香', desc: '晚上10點後學習', points: 80, icon: '🌙' },
+                        { id: 'early_bird', name: '晨讀書香', desc: '早上6點前學習', points: 80, icon: '🌅' }
+                    ]
+                }
+            };
+
+            // 積分獎勵規則
+            const pointRewards = {
+                characterLookup: 2,
+                wordLookup: 3,
+                strokePractice: 5,
+                memoryGame: 10,
+                memoryGamePerfect: 20,
+                radicalGame: 15,
+                radicalGamePerfect: 25,
+                collection: 8,
+                dailyLogin: 10,
+                streakBonus: 5,
+                firstTime: 20
             };
             
-            // 中級詞庫(三四年級)
-            const wordCombinationsLevel2 = {
-                '學': ['學校', '學生', '學習', '小學', '讀學'],
-                '生': ['生活', '先生', '學生', '生命', '出生'],
-                '天': ['天空', '天氣', '今天', '明天', '昨天'],
-                '地': ['地方', '地球', '土地', '地址', '地圖'],
-                '年': ['年紀', '今年', '去年', '少年', '年輕'],
-                '家': ['家庭', '大家', '國家', '家人', '回家'],
-                '花': ['花朵', '鮮花', '花草', '開花', '花園'],
-                '草': ['草地', '花草', '草原', '草莓', '雜草'],
-                '樹': ['樹木', '大樹', '樹枝', '樹葉', '松樹'],
-                '林': ['森林', '林木', '林地', '竹林', '松林'],
-                '風': ['風雨', '風景', '東風', '風格', '清風'],
-                '雨': ['雨水', '雨天', '風雨', '春雨', '雨點'],
-                '雪': ['雪花', '大雪', '冬雪', '雪白', '飄雪'],
-                '字': ['文字', '漢字', '字體', '字典', '字母'],
-                '詞': ['詞語', '歌詞', '詞彙', '動詞', '名詞'],
-                '句': ['句子', '短句', '長句', '句號', '句式'],
-                '詩': ['詩歌', '古詩', '詩人', '新詩', '詩句'],
-                '書': ['書本', '圖書', '寫書', '讀書', '教科書'],
-                '筆': ['鉛筆', '毛筆', '筆記', '筆頭', '筆畫'],
-                '字': ['文字', '漢字', '數字', '寫字', '方字']
+            // 字詞本功能變量
+            let vocabularyBook = {
+                items: [] // 統一存儲字和詞
             };
+            let currentSearchCharacter = '';
+            let currentSearchWord = '';
+            let lastLookedUpCharacter = '';
+            let lastLookedUpCharacterPinyin = '';
+            let lastLookedUpWord = '';
+            let lastLookedUpWordPinyin = '';
             
-            // 高級詞庫(五六年級)
-            const wordCombinationsLevel3 = {
-                '國': ['國家', '國旗', '國慶', '中國', '愛國'],
-                '民': ['人民', '民眾', '民族', '國民', '民間'],
-                '城': ['城市', '城門', '城牆', '古城', '城鎮'],
-                '鄉': ['鄉村', '鄉下', '鄉音', '鄉愁', '故鄉'],
-                '海': ['海洋', '大海', '海水', '海岸', '海灘'],
-                '洋': ['海洋', '太平洋', '洋氣', '西洋', '洋裝'],
-                '江': ['江水', '長江', '黃江', '江南', '江山'],
-                '河': ['河流', '黃河', '河水', '小河', '河岸'],
-                '湖': ['湖水', '湖面', '湖光', '西湖', '湖畔'],
-                '情': ['情感', '情緒', '心情', '愛情', '熱情'],
-                '想': ['思想', '想法', '想念', '想像', '理想'],
-                '念': ['思念', '想念', '讀念', '專念', '留念'],
-                '愛': ['愛心', '愛情', '親愛', '關愛', '熱愛'],
-                '恨': ['恨意', '痛恨', '怨恨', '悔恨', '愛恨'],
-                '喜': ['喜歡', '喜悅', '高興', '喜事', '歡喜'],
-                '歡': ['歡樂', '歡喜', '喜歡', '快歡', '歡迎'],
-                '樂': ['快樂', '音樂', '樂趣', '歡樂', '樂園'],
-                '苦': ['苦味', '辛苦', '痛苦', '苦難', '甘苦'],
-                '樂': ['音樂', '樂器', '樂曲', '樂隊', '樂譜']
-            };
-            
-            // 管理詞庫加載狀態
-            let currentWordCombinations = {};
-            let wordDatabaseLoaded = false;
-            
-            // 初始化詞庫
-            function initWordDatabase() {
-                // 如果已經加載過則跳過
-                if (wordDatabaseLoaded) return;
-                
-                // 先加載基礎詞庫
-                currentWordCombinations = {...wordCombinationsLevel1};
-                
-                // 根據用戶等級加載更多詞庫
-                const userLevel = getUserLearningLevel();
-                
-                if (userLevel >= 2) {
-                    // 加載中級詞庫
-                    currentWordCombinations = {...currentWordCombinations, ...wordCombinationsLevel2};
-                }
-                
-                if (userLevel >= 3) {
-                    // 加載高級詞庫
-                    currentWordCombinations = {...currentWordCombinations, ...wordCombinationsLevel3};
-                }
-                
-                wordDatabaseLoaded = true;
-                console.log('詞庫初始化完成，詞量：', Object.keys(currentWordCombinations).length);
-            }
-            
-            // 獲取用戶學習等級，這裡可以根據實際情況來調整
-            function getUserLearningLevel() {
-                // 這裡可以實現更複雜的邏輯，例如根據學習記錄、年齡、學習成就等
-                // 暫時使用學習記錄數量作為簡易判斷
-                if (learnedCharacters.length >= 20) return 3; // 高級
-                if (learnedCharacters.length >= 10) return 2; // 中級
-                return 1; // 基礎級
-            }
-            
-            // 新增顯示組詞的函數
-            function displayWordCombinations(character) {
-                // 確保詞庫已加載
-                if (!wordDatabaseLoaded) {
-                    initWordDatabase();
-                }
-                
-                const wordCombinationsElement = document.getElementById('word-combinations');
-                wordCombinationsElement.innerHTML = '';
-                
-                if (currentWordCombinations[character]) {
-                    // 有組詞數據
-                    currentWordCombinations[character].forEach(word => {
-                        const wordItem = document.createElement('span');
-                        wordItem.className = 'word-item';
-                        wordItem.textContent = word;
-                        
-                        // 點擊詞語時的操作
-                        wordItem.addEventListener('click', function() {
-                            // 朗讀詞語
-                            if ('speechSynthesis' in window) {
-                                const utterance = new SpeechSynthesisUtterance(word);
-                                utterance.lang = 'zh-TW';
-                                speechSynthesis.speak(utterance);
-                            }
-                            
-                            // 添加動畫效果
-                            this.classList.add('bounce');
-                            setTimeout(() => {
-                                this.classList.remove('bounce');
-                            }, 1000);
-                        });
-                        
-                        wordCombinationsElement.appendChild(wordItem);
-                    });
-                } else {
-                    // 無組詞數據
-                    const noDataMessage = document.createElement('span');
-                    noDataMessage.className = 'no-data-message';
-                    noDataMessage.textContent = '暫無組詞數據';
-                    wordCombinationsElement.appendChild(noDataMessage);
-                }
-            }
+
             
             // 書法經典字庫
             const calligraphyData = [
@@ -3003,6 +4196,512 @@
             
             // 顯示今日隨機漢字
             showDailyCharacter();
+
+            // ===== 墨寶積分系統核心功能 =====
+            
+            // 載入玩家數據
+            function loadPlayerData() {
+                const saved = localStorage.getItem('diandianmobao_player_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    // 轉換Set類型的數據
+                    if (data.functionsUsed && Array.isArray(data.functionsUsed)) {
+                        data.functionsUsed = new Set(data.functionsUsed);
+                    }
+                    if (data.firstTimeActions && Array.isArray(data.firstTimeActions)) {
+                        data.firstTimeActions = new Set(data.firstTimeActions);
+                    }
+                    if (data.achievements && Array.isArray(data.achievements)) {
+                        data.achievements = new Set(data.achievements);
+                    }
+                    Object.assign(playerData, data);
+                }
+                
+                // 檢查每日重置
+                const today = new Date().toDateString();
+                if (playerData.statistics.lastResetDate !== today) {
+                    playerData.statistics = {
+                        charactersToday: 0,
+                        wordsToday: 0,
+                        practiceToday: 0,
+                        gamesPlayedToday: 0,
+                        lastResetDate: today
+                    };
+                }
+                
+                updateUI();
+                handleDailyLogin();
+            }
+
+            // 保存玩家數據
+            function savePlayerData() {
+                const dataToSave = {
+                    ...playerData,
+                    functionsUsed: Array.from(playerData.functionsUsed),
+                    firstTimeActions: Array.from(playerData.firstTimeActions),
+                    achievements: Array.from(playerData.achievements)
+                };
+                localStorage.setItem('diandianmobao_player_data', JSON.stringify(dataToSave));
+            }
+
+            // 處理每日登入
+            function handleDailyLogin() {
+                const today = new Date().toDateString();
+                const lastLogin = playerData.lastLoginDate;
+                
+                if (lastLogin !== today) {
+                    if (lastLogin) {
+                        const lastDate = new Date(lastLogin);
+                        const todayDate = new Date(today);
+                        const daysDiff = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+                        
+                        if (daysDiff === 1) {
+                            // 連續登入
+                            playerData.dailyLoginStreak++;
+                        } else {
+                            // 中斷連續登入
+                            playerData.dailyLoginStreak = 1;
+                        }
+                    } else {
+                        // 首次登入
+                        playerData.dailyLoginStreak = 1;
+                        checkAchievement('first_login');
+                    }
+                    
+                    playerData.lastLoginDate = today;
+                    
+                    // 每日登入獎勵
+                    let dailyPoints = pointRewards.dailyLogin;
+                    if (playerData.dailyLoginStreak > 1) {
+                        dailyPoints += pointRewards.streakBonus * Math.min(playerData.dailyLoginStreak - 1, 10);
+                    }
+                    
+                    awardPoints(dailyPoints, `每日登入 +${dailyPoints} 🖌️`);
+                    
+                    // 檢查連續登入成就
+                    if (playerData.dailyLoginStreak >= 3) checkAchievement('streak_3');
+                    if (playerData.dailyLoginStreak >= 7) checkAchievement('streak_7');
+                    if (playerData.dailyLoginStreak >= 30) checkAchievement('streak_30');
+                    
+                    savePlayerData();
+                }
+            }
+
+            // 獎勵積分
+            function awardPoints(points, message = '') {
+                playerData.points += points;
+                updatePlayerLevel();
+                updateUI();
+                savePlayerData();
+                
+                if (message) {
+                    showPointNotification(message);
+                }
+            }
+
+            // 更新玩家等級
+            function updatePlayerLevel() {
+                const currentLevel = levelSystem.find(level => 
+                    playerData.points >= level.minPoints && playerData.points <= level.maxPoints
+                );
+                
+                if (currentLevel && currentLevel.level !== playerData.level) {
+                    const oldLevel = playerData.level;
+                    playerData.level = currentLevel.level;
+                    playerData.levelName = currentLevel.name;
+                    
+                    if (currentLevel.level > oldLevel) {
+                        showLevelUpNotification(currentLevel.level, currentLevel.name);
+                    }
+                }
+            }
+
+            // 檢查成就
+            function checkAchievement(achievementId) {
+                if (playerData.achievements.has(achievementId)) return;
+                
+                // 查找成就
+                let achievement = null;
+                for (const category of Object.values(achievementCategories)) {
+                    achievement = category.achievements.find(a => a.id === achievementId);
+                    if (achievement) break;
+                }
+                
+                if (!achievement) return;
+                
+                // 檢查成就條件
+                let unlocked = false;
+                
+                switch (achievementId) {
+                    case 'first_character':
+                    case 'first_word':
+                    case 'first_collection':
+                    case 'first_login':
+                    case 'memory_first':
+                    case 'radical_first':
+                        unlocked = true;
+                        break;
+                        
+                    case 'stroke_beginner':
+                        unlocked = playerData.totalStrokePractices >= 5;
+                        break;
+                    case 'stroke_intermediate':
+                        unlocked = playerData.totalStrokePractices >= 20;
+                        break;
+                    case 'stroke_advanced':
+                        unlocked = playerData.totalStrokePractices >= 50;
+                        break;
+                    case 'stroke_master':
+                        unlocked = playerData.totalStrokePractices >= 100;
+                        break;
+                        
+                    case 'memory_good':
+                        unlocked = playerData.totalMemoryGames >= 10;
+                        break;
+                    case 'memory_expert':
+                        unlocked = playerData.totalMemoryGames >= 25;
+                        break;
+                    case 'memory_legend':
+                        unlocked = playerData.totalMemoryGames >= 50;
+                        break;
+                        
+                    case 'radical_builder':
+                        unlocked = playerData.totalRadicalGames >= 15;
+                        break;
+                    case 'radical_master':
+                        unlocked = playerData.totalRadicalGames >= 30;
+                        break;
+                        
+                    case 'char_collector':
+                        unlocked = playerData.totalCharactersLearned >= 50;
+                        break;
+                    case 'char_scholar':
+                        unlocked = playerData.totalCharactersLearned >= 150;
+                        break;
+                    case 'char_master':
+                        unlocked = playerData.totalCharactersLearned >= 300;
+                        break;
+                    case 'word_starter':
+                        unlocked = playerData.totalWordsLearned >= 30;
+                        break;
+                    case 'word_expert':
+                        unlocked = playerData.totalWordsLearned >= 100;
+                        break;
+                        
+                    case 'collector':
+                        unlocked = playerData.totalCollections >= 20;
+                        break;
+                    case 'treasure_hunter':
+                        unlocked = playerData.totalCollections >= 50;
+                        break;
+                    case 'archive_keeper':
+                        unlocked = playerData.totalCollections >= 100;
+                        break;
+                        
+                    case 'streak_3':
+                        unlocked = playerData.dailyLoginStreak >= 3;
+                        break;
+                    case 'streak_7':
+                        unlocked = playerData.dailyLoginStreak >= 7;
+                        break;
+                    case 'streak_30':
+                        unlocked = playerData.dailyLoginStreak >= 30;
+                        break;
+                        
+                    case 'explorer':
+                        unlocked = playerData.functionsUsed.size >= 5;
+                        break;
+                    case 'game_master':
+                        unlocked = playerData.functionsUsed.has('memory') && playerData.functionsUsed.has('radical');
+                        break;
+                        
+                    case 'perfectionist':
+                        unlocked = (playerData.perfectMemoryGames + playerData.perfectRadicalGames) >= 10;
+                        break;
+                        
+                    case 'night_owl':
+                        unlocked = new Date().getHours() >= 22;
+                        break;
+                    case 'early_bird':
+                        unlocked = new Date().getHours() <= 6;
+                        break;
+                }
+                
+                if (unlocked) {
+                    playerData.achievements.add(achievementId);
+                    awardPoints(achievement.points, `🏆 ${achievement.name} +${achievement.points} 🖌️`);
+                    showAchievementNotification(achievement);
+                    updateAchievementsDisplay();
+                }
+            }
+
+            // 更新UI顯示
+            function updateUI() {
+                // 更新頂部狀態欄
+                document.getElementById('player-level').textContent = playerData.level;
+                document.getElementById('player-level-name').textContent = playerData.levelName;
+                document.getElementById('player-points').textContent = playerData.points;
+                document.getElementById('login-streak').textContent = playerData.dailyLoginStreak;
+                
+                // 更新進度條
+                const currentLevelData = levelSystem.find(l => l.level === playerData.level);
+                if (currentLevelData) {
+                    const progress = ((playerData.points - currentLevelData.minPoints) / 
+                                    (currentLevelData.maxPoints - currentLevelData.minPoints)) * 100;
+                    document.getElementById('level-progress-fill').style.width = `${Math.min(progress, 100)}%`;
+                    document.getElementById('level-progress-text').textContent = 
+                        `${playerData.points - currentLevelData.minPoints}/${currentLevelData.maxPoints - currentLevelData.minPoints}`;
+                }
+                
+                updateAchievementsDisplay();
+            }
+
+            // 更新成就顯示
+            function updateAchievementsDisplay() {
+                updateRecentAchievements();
+                updateAchievementProgress();
+                updateAchievementCounts();
+            }
+
+            // 更新最近獲得的成就
+            function updateRecentAchievements() {
+                const container = document.getElementById('recent-achievements');
+                container.innerHTML = '';
+                
+                // 獲取最近解鎖的3個成就
+                const recentAchievements = [];
+                for (const [categoryKey, category] of Object.entries(achievementCategories)) {
+                    for (const achievement of category.achievements) {
+                        if (playerData.achievements.has(achievement.id)) {
+                            recentAchievements.push(achievement);
+                        }
+                    }
+                }
+                
+                // 顯示最近的3個成就
+                const recent = recentAchievements.slice(-3);
+                
+                if (recent.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--light-text); font-size: 12px; padding: 10px;">
+                            開始學習來解鎖成就吧！
+                        </div>
+                    `;
+                } else {
+                    recent.forEach(achievement => {
+                        const achievementEl = document.createElement('div');
+                        achievementEl.className = 'recent-achievement';
+                        achievementEl.innerHTML = `
+                            <div class="recent-achievement-icon">${achievement.icon}</div>
+                            <div class="recent-achievement-info">
+                                <div class="recent-achievement-name">${achievement.name}</div>
+                                <div class="recent-achievement-desc">${achievement.desc}</div>
+                            </div>
+                            <div class="recent-achievement-points">+${achievement.points}</div>
+                        `;
+                        container.appendChild(achievementEl);
+                    });
+                }
+            }
+
+            // 更新成就進度概覽
+            function updateAchievementProgress() {
+                const categories = {
+                    'basic': { element: 'basic-progress', total: 4 },
+                    'stroke': { element: 'stroke-progress', total: 4 },
+                    'memory': { element: 'memory-progress', total: 4 }
+                };
+                
+                for (const [categoryKey, categoryInfo] of Object.entries(categories)) {
+                    const category = achievementCategories[categoryKey];
+                    if (category) {
+                        let unlocked = 0;
+                        for (const achievement of category.achievements) {
+                            if (playerData.achievements.has(achievement.id)) {
+                                unlocked++;
+                            }
+                        }
+                        document.getElementById(categoryInfo.element).textContent = `${unlocked}/${categoryInfo.total}`;
+                    }
+                }
+            }
+
+            // 更新成就計數
+            function updateAchievementCounts() {
+                const totalAchievements = Object.values(achievementCategories).reduce((total, category) => total + category.achievements.length, 0);
+                const unlockedAchievements = playerData.achievements.size;
+                
+                document.getElementById('achievement-count').textContent = `(${unlockedAchievements}/${totalAchievements})`;
+                document.getElementById('achievements-modal-count').textContent = `(${unlockedAchievements}/${totalAchievements})`;
+            }
+
+            // 更新模態窗口中的全部成就
+            function updateFullAchievementsDisplay() {
+                const container = document.getElementById('achievements-modal-list');
+                container.innerHTML = '';
+                
+                // 按類別顯示成就
+                for (const [categoryKey, category] of Object.entries(achievementCategories)) {
+                    // 添加類別標題
+                    const categoryTitle = document.createElement('div');
+                    categoryTitle.className = 'achievement-category';
+                    categoryTitle.textContent = category.name;
+                    container.appendChild(categoryTitle);
+                    
+                    // 創建該類別的成就網格容器
+                    const achievementGrid = document.createElement('div');
+                    achievementGrid.className = 'achievement-grid';
+                    
+                    // 添加該類別的成就
+                    for (const achievement of category.achievements) {
+                        const achievementEl = document.createElement('div');
+                        achievementEl.className = `achievement ${playerData.achievements.has(achievement.id) ? 'unlocked' : 'locked'}`;
+                        
+                        // 計算進度
+                        let progress = '';
+                        if (achievement.requirement) {
+                            let current = 0;
+                            switch (achievement.id) {
+                                case 'stroke_beginner':
+                                case 'stroke_intermediate':
+                                case 'stroke_advanced':
+                                case 'stroke_master':
+                                    current = playerData.totalStrokePractices;
+                                    break;
+                                case 'memory_good':
+                                case 'memory_expert':
+                                case 'memory_legend':
+                                    current = playerData.totalMemoryGames;
+                                    break;
+                                case 'radical_builder':
+                                case 'radical_master':
+                                    current = playerData.totalRadicalGames;
+                                    break;
+                                case 'char_collector':
+                                case 'char_scholar':
+                                case 'char_master':
+                                    current = playerData.totalCharactersLearned;
+                                    break;
+                                case 'word_starter':
+                                case 'word_expert':
+                                    current = playerData.totalWordsLearned;
+                                    break;
+                                case 'collector':
+                                case 'treasure_hunter':
+                                case 'archive_keeper':
+                                    current = playerData.totalCollections;
+                                    break;
+                                case 'streak_3':
+                                case 'streak_7':
+                                case 'streak_30':
+                                    current = playerData.dailyLoginStreak;
+                                    break;
+                            }
+                            progress = `${Math.min(current, achievement.requirement)}/${achievement.requirement}`;
+                        }
+                        
+                        achievementEl.innerHTML = `
+                            <div class="achievement-icon">${achievement.icon}</div>
+                            <div class="achievement-details">
+                                <div class="achievement-name">${achievement.name}</div>
+                                <div class="achievement-description">${achievement.desc}</div>
+                                ${progress ? `<div class="achievement-progress">${progress}</div>` : ''}
+                            </div>
+                            <div class="achievement-points">+${achievement.points}</div>
+                        `;
+                        
+                        achievementGrid.appendChild(achievementEl);
+                    }
+                    
+                    container.appendChild(achievementGrid);
+                }
+            }
+
+            // 顯示積分通知
+            function showPointNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'point-notification';
+                notification.innerHTML = `<span>🖌️</span> ${message}`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 3000);
+            }
+
+            // 顯示升級通知
+            function showLevelUpNotification(level, levelName) {
+                const notification = document.createElement('div');
+                notification.className = 'level-up-notification';
+                notification.innerHTML = `
+                    <div>🎉 恭喜升級！</div>
+                    <div>等級 ${level}: ${levelName}</div>
+                `;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 3500);
+            }
+
+            // 顯示成就通知
+            function showAchievementNotification(achievement) {
+                const notification = document.createElement('div');
+                notification.className = 'achievement-notification';
+                notification.innerHTML = `
+                    <div class="achievement-title">${achievement.icon} ${achievement.name}</div>
+                    <div class="achievement-desc">${achievement.desc}</div>
+                `;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 4000);
+            }
+
+            // 初始化積分系統
+            loadPlayerData();
+
+            // 設置成就模態窗口事件監聽器
+            function setupAchievementsModal() {
+                const viewAllBtn = document.getElementById('view-all-achievements');
+                const modal = document.getElementById('achievements-modal');
+                const closeBtn = document.getElementById('achievements-modal-close');
+
+                // 打開模態窗口
+                viewAllBtn.addEventListener('click', () => {
+                    updateFullAchievementsDisplay();
+                    modal.style.display = 'flex';
+                });
+
+                // 關閉模態窗口
+                closeBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                });
+
+                // 點擊背景關閉模態窗口
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+
+                // ESC鍵關閉模態窗口
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+
+            // 初始化成就模態窗口
+            setupAchievementsModal();
             
             // 獲取所有DOM元素（必須在函數定義之前）
             const navLookup = document.getElementById('nav-lookup');
@@ -3068,14 +4767,23 @@
             // 設置主導航事件監聽器
             navLookup.addEventListener('click', function() {
                 switchMainFunction(navLookup, characterDisplaySection);
+                // 記錄功能使用
+                playerData.functionsUsed.add('stroke_lookup');
+                checkAchievement('explorer');
             });
             
             navWordLookup.addEventListener('click', function() {
                 switchMainFunction(navWordLookup, wordLookupContainer);
+                // 記錄功能使用
+                playerData.functionsUsed.add('word_lookup_page');
+                checkAchievement('explorer');
             });
             
             navPractice.addEventListener('click', function() {
                 switchMainFunction(navPractice, quizContainer);
+                // 記錄功能使用
+                playerData.functionsUsed.add('practice_page');
+                checkAchievement('explorer');
                 // 只有在沒有設置防止自動啟動標記時才啟動隨機練習
                 if (!preventAutoStart) {
                     setTimeout(() => {
@@ -3089,6 +4797,9 @@
             
             navMemory.addEventListener('click', function() {
                 switchMainFunction(navMemory, memoryGameContainer);
+                // 記錄功能使用
+                playerData.functionsUsed.add('memory_page');
+                checkAchievement('explorer');
             });
             // 獲取DOM元素
             const characterInput = document.getElementById('character-input');
@@ -3160,16 +4871,7 @@
             let memorySelectionStartTime = null;  // 記錄用戶開始選字的時間
             let memorySelectionDuration = 0;  // 記錄用戶選字所用時間（秒）
             
-            // 拼音資料
-            const pinyinData = {
-                '一': 'yī', '二': 'èr', '三': 'sān', '四': 'sì', '五': 'wǔ',
-                '六': 'liù', '七': 'qī', '八': 'bā', '九': 'jiǔ', '十': 'shí',
-                '人': 'rén', '大': 'dà', '小': 'xiǎo', '中': 'zhōng', '天': 'tiān',
-                '地': 'dì', '日': 'rì', '月': 'yuè', '水': 'shuǐ', '火': 'huǒ',
-                '木': 'mù', '金': 'jīn', '土': 'tǔ', '山': 'shān', '石': 'shí',
-                '田': 'tián', '口': 'kǒu', '手': 'shǒu', '足': 'zú', '目': 'mù',
-                '耳': 'ěr', '心': 'xīn', '女': 'nǚ', '子': 'zǐ', '好': 'hǎo'
-            };
+
             
             // 常用漢字列表（适合小學生學習的基礎漢字）
             const commonCharacters = [
@@ -3252,6 +4954,8 @@
                         if (pinyin && index === 0) {
                             // 更新主要的拼音顯示
                             pinyinDisplay.textContent = pinyin;
+                            // 保存到查詢歷史以供字詞本使用
+                            lastLookedUpCharacterPinyin = pinyin;
                         }
                         
                         // 遍歷所有釋義
@@ -3405,10 +5109,15 @@
             // 切換到指定字符
             function switchToCharacter(character) {
                 currentCharacter = character;
+                currentSearchCharacter = character; // 更新當前搜索的字符
+                
+                // 保存到字詞本查詢歷史
+                lastLookedUpCharacter = character;
+                lastLookedUpCharacterPinyin = ''; // 將從萌典API獲取
                 
                 // 更新顯示的漢字和拼音
                 characterDisplay.textContent = character;
-                pinyinDisplay.textContent = pinyinData[character] || '';
+                pinyinDisplay.textContent = ''; // 拼音將從萌典API獲取並更新
                 
                 showLoader();
                 
@@ -3417,6 +5126,9 @@
                 
                 // 清空並添加新容器
                 characterTarget.innerHTML = '';
+                
+                // 更新收藏按鈕狀態
+                updateFavoriteButtonState('character', character);
                 
                 // 初始化漢字筆順
                 writer = HanziWriter.create('character-target', character, {
@@ -3444,11 +5156,31 @@
                         // 添加到學習記錄
                         addToLearnedCharacters(character);
                         
+                        // 墨寶積分系統 - 字符查詢獎勵
+                        playerData.totalCharactersLearned++;
+                        playerData.statistics.charactersToday++;
+                        playerData.functionsUsed.add('character_lookup');
+                        
+                        // 首次查詢獎勵
+                        if (!playerData.firstTimeActions.has('first_character')) {
+                            playerData.firstTimeActions.add('first_character');
+                            checkAchievement('first_character');
+                        }
+                        
+                        // 查詢積分獎勵
+                        awardPoints(pointRewards.characterLookup, `查詢漢字 +${pointRewards.characterLookup} 🖌️`);
+                        
+                        // 檢查學習里程成就
+                        checkAchievement('char_collector');
+                        checkAchievement('char_scholar');
+                        checkAchievement('char_master');
+                        
+                        // 檢查時間相關成就
+                        checkAchievement('night_owl');
+                        checkAchievement('early_bird');
+                        
                         // 更新成就
                         updateAchievements();
-                        
-                        // 顯示組詞
-                        displayWordCombinations(character);
                         
                         // 查詢字義解釋
                         fetchCharacterDefinition(character);
@@ -3764,6 +5496,20 @@
                         
                         // 显示结果
                         showQuizResult(true);
+                        
+                        // 墨寶積分系統 - 筆順練習獎勵
+                        playerData.totalStrokePractices++;
+                        playerData.statistics.practiceToday++;
+                        playerData.functionsUsed.add('stroke_practice');
+                        
+                        // 筆順練習積分獎勵
+                        awardPoints(pointRewards.strokePractice, `筆順練習 +${pointRewards.strokePractice} 🖌️`);
+                        
+                        // 檢查筆順練習成就
+                        checkAchievement('stroke_beginner');
+                        checkAchievement('stroke_intermediate');
+                        checkAchievement('stroke_advanced');
+                        checkAchievement('stroke_master');
                         
                         // 更新成就
                         addToLearnedCharacters(currentCharacter);
@@ -4282,6 +6028,39 @@
                     }
                 });
                 
+                // 墨寶積分系統 - 記憶遊戲獎勵
+                playerData.totalMemoryGames++;
+                playerData.statistics.gamesPlayedToday++;
+                playerData.functionsUsed.add('memory');
+                
+                // 首次遊戲獎勵
+                if (!playerData.firstTimeActions.has('memory_first')) {
+                    playerData.firstTimeActions.add('memory_first');
+                    checkAchievement('memory_first');
+                }
+                
+                // 根據表現給予積分
+                let gamePoints = pointRewards.memoryGame;
+                if (correctCount === memoryLevel) {
+                    // 完美表現
+                    gamePoints = pointRewards.memoryGamePerfect;
+                    playerData.perfectMemoryGames++;
+                    
+                    // 檢查閃電記憶成就（5秒內完成）
+                    if (memorySelectionDuration > 0 && memorySelectionDuration <= 5) {
+                        checkAchievement('lightning_memory');
+                    }
+                }
+                
+                awardPoints(gamePoints, `記憶挑戰 +${gamePoints} 🖌️`);
+                
+                // 檢查記憶遊戲成就
+                checkAchievement('memory_good');
+                checkAchievement('memory_expert');
+                checkAchievement('memory_legend');
+                checkAchievement('perfectionist');
+                checkAchievement('game_master');
+                
                 // 更新成就
                 updateAchievements();
                 
@@ -4386,6 +6165,355 @@
                 
                 // 直接開始新遊戲
                 startMemoryChallenge();
+            }
+            
+            // ============ 字詞本功能 ============
+            
+            // 初始化字詞本
+            function initVocabularyBook() {
+                // 從本地存儲載入字詞本
+                const savedVocabularyBook = localStorage.getItem('vocabularyBook');
+                if (savedVocabularyBook) {
+                    const data = JSON.parse(savedVocabularyBook);
+                    // 兼容舊版本數據
+                    if (data.characters || data.words) {
+                        vocabularyBook.items = [];
+                        if (data.characters) {
+                            data.characters.forEach(item => {
+                                vocabularyBook.items.push({...item, type: 'character'});
+                            });
+                        }
+                        if (data.words) {
+                            data.words.forEach(item => {
+                                vocabularyBook.items.push({...item, type: 'word'});
+                            });
+                        }
+                        // 按時間戳排序
+                        vocabularyBook.items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                        saveVocabularyBook(); // 保存為新格式
+                    } else {
+                        vocabularyBook = data;
+                    }
+                }
+                updateVocabularyBookDisplay();
+                setupVocabularyBookEventListeners();
+            }
+            
+            // 保存字詞本到本地存儲
+            function saveVocabularyBook() {
+                localStorage.setItem('vocabularyBook', JSON.stringify(vocabularyBook));
+            }
+            
+            // 添加字詞到收藏
+            function addToVocabularyBook(text, pinyin, type) {
+                // 檢查是否已經收藏
+                const exists = vocabularyBook.items.find(item => item.text === text);
+                if (exists) {
+                    return false; // 已經收藏過了
+                }
+                
+                // 添加到收藏（最新的在前面）
+                vocabularyBook.items.unshift({
+                    text: text,
+                    pinyin: pinyin || '',
+                    type: type,
+                    timestamp: Date.now()
+                });
+                
+                saveVocabularyBook();
+                updateVocabularyBookDisplay();
+                
+                // 墨寶積分系統 - 收藏獎勵
+                playerData.totalCollections++;
+                playerData.functionsUsed.add('collection');
+                
+                // 首次收藏獎勵
+                if (!playerData.firstTimeActions.has('first_collection')) {
+                    playerData.firstTimeActions.add('first_collection');
+                    checkAchievement('first_collection');
+                }
+                
+                // 收藏積分獎勵
+                awardPoints(pointRewards.collection, `收藏字詞 +${pointRewards.collection} 🖌️`);
+                
+                // 檢查收藏成就
+                checkAchievement('collector');
+                checkAchievement('treasure_hunter');
+                checkAchievement('archive_keeper');
+                
+                return true; // 成功添加
+            }
+            
+            // 從收藏中移除字詞（全局函數）
+            window.removeFromVocabularyBook = function(text) {
+                const index = vocabularyBook.items.findIndex(item => item.text === text);
+                
+                if (index !== -1) {
+                    vocabularyBook.items.splice(index, 1);
+                    saveVocabularyBook();
+                    updateVocabularyBookDisplay();
+                    return true;
+                }
+                return false;
+            }
+            
+            // 檢查是否已收藏
+            function isInVocabularyBook(text) {
+                return vocabularyBook.items.some(item => item.text === text);
+            }
+            
+            // 創建字詞項目HTML
+            function createVocabularyItemHTML(item, number) {
+                const characters = item.text.split('');
+                const pinyinParts = item.pinyin ? item.pinyin.split(' ') : [];
+                
+                let characterBoxes = '';
+                characters.forEach((char, index) => {
+                    const charPinyin = pinyinParts[index] || '';
+                    characterBoxes += `
+                        <div class="vocabulary-character-container">
+                            ${charPinyin ? `<div class="vocabulary-character-pinyin">${charPinyin}</div>` : ''}
+                            <div class="vocabulary-character-box">
+                                <div class="vocabulary-character">${char}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                return `
+                    <div class="vocabulary-item" onclick="navigateToVocabularyItem('${item.type}', '${item.text}')">
+                        <div class="vocabulary-item-number">${number}.</div>
+                        <div class="vocabulary-item-content">
+                            <div class="vocabulary-item-text">
+                                ${characterBoxes}
+                            </div>
+                        </div>
+                        <button class="vocabulary-remove" onclick="event.stopPropagation(); removeFromVocabularyBook('${item.text}')">×</button>
+                    </div>
+                `;
+            }
+            
+            // 更新字詞本顯示
+            function updateVocabularyBookDisplay() {
+                const vocabularyList = document.getElementById('vocabulary-list');
+                const vocabularyCount = document.getElementById('vocabulary-count');
+                const vocabularyMore = document.getElementById('vocabulary-more');
+                const totalCountSpan = document.getElementById('total-count');
+                
+                if (!vocabularyList || !vocabularyCount) return;
+                
+                const totalCount = vocabularyBook.items.length;
+                vocabularyCount.textContent = `(${totalCount})`;
+                
+                if (totalCount === 0) {
+                    vocabularyList.innerHTML = `
+                        <div class="empty-vocabulary">
+                            <div class="empty-icon">📚</div>
+                            <div class="empty-text">還沒有收藏任何字詞</div>
+                            <div class="empty-hint">查詢字詞時點擊收藏按鈕</div>
+                        </div>
+                    `;
+                    if (vocabularyMore) vocabularyMore.style.display = 'none';
+                    return;
+                }
+                
+                // 顯示最近的5個
+                const displayItems = vocabularyBook.items.slice(0, 5);
+                
+                vocabularyList.innerHTML = displayItems.map((item, index) => {
+                    return createVocabularyItemHTML(item, index + 1);
+                }).join('');
+                
+                // 顯示或隱藏"查看全部"按鈕
+                if (vocabularyMore && totalCountSpan) {
+                    if (totalCount > 5) {
+                        vocabularyMore.style.display = 'block';
+                        totalCountSpan.textContent = totalCount;
+                    } else {
+                        vocabularyMore.style.display = 'none';
+                    }
+                }
+            }
+            
+            // 打開模態窗口
+            function openVocabularyModal() {
+                const modal = document.getElementById('vocabulary-modal');
+                const modalList = document.getElementById('vocabulary-modal-list');
+                const modalCount = document.getElementById('vocabulary-modal-count');
+                
+                if (!modal || !modalList || !modalCount) return;
+                
+                modalCount.textContent = `(${vocabularyBook.items.length})`;
+                
+                modalList.innerHTML = vocabularyBook.items.map((item, index) => {
+                    return createVocabularyItemHTML(item, index + 1);
+                }).join('');
+                
+                modal.style.display = 'flex';
+            }
+            
+            // 關閉模態窗口
+            function closeVocabularyModal() {
+                const modal = document.getElementById('vocabulary-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+            
+            // 導航到字詞項目（全局函數）
+            window.navigateToVocabularyItem = function(type, text) {
+                closeVocabularyModal(); // 關閉模態窗口
+                
+                if (type === 'character') {
+                    // 跳轉到字的筆順查詢
+                    const navLookup = document.getElementById('nav-lookup');
+                    const characterDisplaySection = document.getElementById('character-display-section');
+                    switchMainFunction(navLookup, characterDisplaySection);
+                    const characterInput = document.getElementById('character-input');
+                    if (characterInput) {
+                        characterInput.value = text;
+                        queryCharacter();
+                    }
+                } else {
+                    // 跳轉到詞語查詢
+                    const navWordLookup = document.getElementById('nav-word-lookup');
+                    const wordLookupContainer = document.getElementById('word-lookup-container');
+                    switchMainFunction(navWordLookup, wordLookupContainer);
+                    const wordInput = document.getElementById('word-input');
+                    if (wordInput) {
+                        wordInput.value = text;
+                        fetchWordDefinition(text);
+                    }
+                }
+            }
+            
+            // 設置字詞本事件監聽器
+            function setupVocabularyBookEventListeners() {
+                // 字收藏按鈕
+                const characterFavoriteBtn = document.getElementById('character-favorite-btn');
+                if (characterFavoriteBtn) {
+                    characterFavoriteBtn.addEventListener('click', () => {
+                        const currentChar = lastLookedUpCharacter;
+                        const currentPinyin = lastLookedUpCharacterPinyin;
+                        
+                        if (!currentChar) {
+                            showVocabularyFeedback('請先查詢一個字！', true);
+                            return;
+                        }
+                        
+                        const exists = isInVocabularyBook(currentChar);
+                        
+                        if (exists) {
+                            removeFromVocabularyBook(currentChar);
+                            characterFavoriteBtn.textContent = '💝 收藏';
+                            characterFavoriteBtn.classList.remove('favorited');
+                            showVocabularyFeedback('已取消收藏');
+                        } else {
+                            if (addToVocabularyBook(currentChar, currentPinyin || '', 'character')) {
+                                characterFavoriteBtn.textContent = '💖 已收藏';
+                                characterFavoriteBtn.classList.add('favorited');
+                                showVocabularyFeedback('字已收藏！');
+                            }
+                        }
+                    });
+                }
+                
+                // 詞語收藏按鈕
+                const wordFavoriteBtn = document.getElementById('word-favorite-btn');
+                if (wordFavoriteBtn) {
+                    wordFavoriteBtn.addEventListener('click', () => {
+                        const currentWord = lastLookedUpWord;
+                        const currentPinyin = lastLookedUpWordPinyin;
+                        
+                        if (!currentWord) {
+                            showVocabularyFeedback('請先查詢一個詞語！', true);
+                            return;
+                        }
+                        
+                        const exists = isInVocabularyBook(currentWord);
+                        
+                        if (exists) {
+                            removeFromVocabularyBook(currentWord);
+                            wordFavoriteBtn.textContent = '💝 收藏';
+                            wordFavoriteBtn.classList.remove('favorited');
+                            showVocabularyFeedback('已取消收藏');
+                        } else {
+                            if (addToVocabularyBook(currentWord, currentPinyin || '', 'word')) {
+                                wordFavoriteBtn.textContent = '💖 已收藏';
+                                wordFavoriteBtn.classList.add('favorited');
+                                showVocabularyFeedback('詞已收藏！');
+                            }
+                        }
+                    });
+                }
+                
+                // 查看全部按鈕
+                const moreBtn = document.getElementById('vocabulary-more-btn');
+                if (moreBtn) {
+                    moreBtn.addEventListener('click', openVocabularyModal);
+                }
+                
+                // 模態窗口關閉
+                const modalClose = document.getElementById('vocabulary-modal-close');
+                const modal = document.getElementById('vocabulary-modal');
+                if (modalClose && modal) {
+                    modalClose.addEventListener('click', closeVocabularyModal);
+                    
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            closeVocabularyModal();
+                        }
+                    });
+                }
+            }
+            
+            // 更新收藏按鈕狀態
+            function updateFavoriteButtonState(type, text) {
+                const btn = type === 'character' ? 
+                    document.getElementById('character-favorite-btn') : 
+                    document.getElementById('word-favorite-btn');
+                
+                if (!btn) return;
+                
+                const exists = isInVocabularyBook(text);
+                
+                if (exists) {
+                    btn.textContent = '💖 已收藏';
+                    btn.classList.add('favorited');
+                } else {
+                    btn.textContent = '💝 收藏';
+                    btn.classList.remove('favorited');
+                }
+            }
+            
+            // 顯示字詞本反饋消息
+            function showVocabularyFeedback(message, isError = false) {
+                const toast = document.createElement('div');
+                toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
+                toast.textContent = message;
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${isError ? 'var(--danger)' : 'var(--success)'};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    z-index: 10000;
+                    animation: toastSlideIn 0.3s ease;
+                `;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.animation = 'toastSlideOut 0.3s ease';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }, 2000);
             }
             
             // 獲取隨機漢字
@@ -4646,9 +6774,6 @@
             updateAchievements();
             preloadVoices();
             
-            // 初始化詞庫
-            initWordDatabase();
-            
             // 初始化記憶挑戰
             initMemoryGameLevel();
             
@@ -4659,6 +6784,9 @@
             navRadical.addEventListener('click', function() {
                 // 使用通用的切換功能，保持代碼一致性
                 switchMainFunction(navRadical, radicalGameContainer);
+                // 記錄功能使用
+                playerData.functionsUsed.add('radical_game');
+                checkAchievement('explorer');
             });
             
             // 部首字典 - 常用部首及其可組成的字
@@ -5012,6 +7140,34 @@
                     // 完全匹配
                     showRadicalResult(true);
                     addToLearnedCharacters(currentRadicalPuzzle.target);
+                    
+                    // 墨寶積分系統 - 部首遊戲獎勵
+                    playerData.totalRadicalGames++;
+                    playerData.statistics.gamesPlayedToday++;
+                    playerData.functionsUsed.add('radical');
+                    
+                    // 首次遊戲獎勵
+                    if (!playerData.firstTimeActions.has('radical_first')) {
+                        playerData.firstTimeActions.add('radical_first');
+                        checkAchievement('radical_first');
+                    }
+                    
+                    // 根據表現給予積分
+                    let gamePoints = pointRewards.radicalGame;
+                    if (currentRadicalAttempts === 1) {
+                        // 一次成功，完美表現
+                        gamePoints = pointRewards.radicalGamePerfect;
+                        playerData.perfectRadicalGames++;
+                    }
+                    
+                    awardPoints(gamePoints, `部首組字 +${gamePoints} 🖌️`);
+                    
+                    // 檢查部首遊戲成就
+                    checkAchievement('radical_builder');
+                    checkAchievement('radical_master');
+                    checkAchievement('perfectionist');
+                    checkAchievement('game_master');
+                    
                     updateAchievements();
                 } else {
                     // 不匹配
@@ -5183,6 +7339,11 @@
             
             // 查詢字詞解釋（統一入口）
             async function fetchWordDefinition(word) {
+                currentSearchWord = word; // 更新當前搜索的詞語
+                
+                // 保存到字詞本查詢歷史
+                lastLookedUpWord = word;
+                
                 try {
                     showWordLoader();
                     hideWordError();
@@ -5200,6 +7361,30 @@
                     showWordError('暫時無法獲取字詞解釋，請稍後重試');
                 } finally {
                     hideWordLoader();
+                    // 更新收藏按鈕狀態
+                    updateFavoriteButtonState('word', word);
+                    
+                    // 墨寶積分系統 - 詞語查詢獎勵
+                    playerData.totalWordsLearned++;
+                    playerData.statistics.wordsToday++;
+                    playerData.functionsUsed.add('word_lookup');
+                    
+                    // 首次查詢獎勵
+                    if (!playerData.firstTimeActions.has('first_word')) {
+                        playerData.firstTimeActions.add('first_word');
+                        checkAchievement('first_word');
+                    }
+                    
+                    // 查詢積分獎勵
+                    awardPoints(pointRewards.wordLookup, `查詢詞語 +${pointRewards.wordLookup} 🖌️`);
+                    
+                    // 檢查學習里程成就
+                    checkAchievement('word_starter');
+                    checkAchievement('word_expert');
+                    
+                    // 檢查時間相關成就
+                    checkAchievement('night_owl');
+                    checkAchievement('early_bird');
                 }
             }
             
@@ -5247,6 +7432,9 @@
                     }
                 }
                 wordPronunciation.textContent = pronunciation ? `[${pronunciation}]` : '';
+                
+                // 保存拼音到查詢歷史
+                lastLookedUpWordPinyin = pronunciation;
                 
                 // 顯示結果區域
                 wordResultSection.style.display = 'block';
@@ -5356,6 +7544,9 @@
                     }
                 }
                 wordPronunciation.textContent = pronunciation ? `[${pronunciation}]` : '';
+                
+                // 保存拼音到查詢歷史
+                lastLookedUpWordPinyin = pronunciation;
                 
                 // 顯示結果區域
                 wordResultSection.style.display = 'block';
@@ -5516,6 +7707,9 @@
             });
             
             // 最後進行初始化
+            // 初始化字詞本
+            initVocabularyBook();
+            
             // 載入默認漢字
             characterInput.value = '人';
             queryCharacter();
