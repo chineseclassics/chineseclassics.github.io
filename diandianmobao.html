@@ -45,7 +45,7 @@
         
         body {
             font-family: 'Noto Serif TC', 'Source Han Serif', 'Georgia', serif;
-            background: var(--paper-gradient);
+            background: var(--background);  /* 使用純色背景 */
             margin: 0;
             padding: 10px;
             color: var(--text);
@@ -58,31 +58,6 @@
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             font-feature-settings: "kern" 1, "liga" 1;
-        }
-        
-        /* 小學生友善背景 */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(circle at 20% 20%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(77, 171, 247, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 60%, rgba(255, 230, 109, 0.1) 0%, transparent 50%),
-                linear-gradient(to right, rgba(227, 232, 240, 0.3) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(227, 232, 240, 0.3) 1px, transparent 1px);
-            background-size: 400px 400px, 350px 350px, 300px 300px, 30px 30px, 30px 30px;
-            z-index: -1;
-            opacity: 0.8;
-            animation: float-bubbles 8s ease-in-out infinite;
-        }
-        
-        @keyframes float-bubbles {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(2deg); }
         }
         
         /* 新增微交互效果 */
@@ -129,9 +104,9 @@
             animation: spin 1s linear infinite;
         }
         
-        /* 成功狀態反饋 - 小學生友善動畫 */
+        /* 成功狀態反饋 - 簡化版本 */
         .success-feedback {
-            animation: success-pulse 0.6s ease-out, sparkle 1.2s ease-in-out;
+            animation: sparkle 0.6s ease-out;
         }
         
         /* 錯誤狀態反饋 - 溫和晃動 */
@@ -152,27 +127,9 @@
             75% { transform: translateX(3px); }
         }
         
-        @keyframes rainbow-glow {
-            0% { box-shadow: 0 0 20px rgba(255, 107, 157, 0.5); }
-            25% { box-shadow: 0 0 20px rgba(77, 171, 247, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(255, 230, 109, 0.5); }
-            75% { box-shadow: 0 0 20px rgba(81, 207, 102, 0.5); }
-            100% { box-shadow: 0 0 20px rgba(255, 107, 157, 0.5); }
-        }
+
         
-        /* 可愛裝飾圖案 */
-        body::after {
-            content: "";
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            width: 180px;
-            height: 180px;
-            background-image: url("data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='100' cy='100' r='50' fill='%23FF6B9D22'/%3E%3Ccircle cx='120' cy='80' r='30' fill='%234DABF722'/%3E%3Ccircle cx='80' cy='120' r='25' fill='%23FFE66D22'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            z-index: -1;
-            opacity: 0.6;
-        }
+
         
         /* 整體布局優化 - 縮減整體寬度 */
         .app-container {
@@ -310,204 +267,13 @@
             box-shadow: 0 -2px 6px rgba(255, 255, 255, 0.3);
         }
         
-        /* 水墨風格標題裝飾 */
-        header::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 70px;
-            height: 70px;
-            background-image: url("data:image/svg+xml,%3Csvg width='70' height='70' viewBox='0 0 70 70' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20,10 C30,5 45,15 35,30 C25,45 10,35 20,20 C25,12 15,15 20,10 Z' fill='%238E3E1A22'/%3E%3C/svg%3E");
-            opacity: 0.8;
-            z-index: 0;
-        }
+
         
-        /* 優化的水墨風格動畫 */
-        @keyframes success-pulse {
-            0% { 
-                transform: scale(1); 
-                opacity: 1; 
-                filter: blur(0px);
-            }
-            50% { 
-                transform: scale(1.3); 
-                opacity: 0.8; 
-                filter: blur(1px);
-            }
-            100% { 
-                transform: scale(1.8); 
-                opacity: 0; 
-                filter: blur(3px);
-            }
-        }
+
         
-        @keyframes float-up {
-            0% { 
-                transform: translateY(0) rotate(0deg); 
-                opacity: 1; 
-                filter: blur(0px);
-            }
-            50% {
-                transform: translateY(-30px) rotate(2deg);
-                opacity: 0.7;
-                filter: blur(1px);
-            }
-            100% { 
-                transform: translateY(-80px) rotate(5deg); 
-                opacity: 0; 
-                filter: blur(2px);
-            }
-        }
+
         
-        @keyframes ink-diffuse {
-            0% { 
-                transform: scale(0.3) rotate(0deg); 
-                opacity: 0.95; 
-                filter: blur(0px) contrast(1.2);
-            }
-            25% {
-                transform: scale(0.8) rotate(3deg);
-                opacity: 0.9;
-                filter: blur(1px) contrast(1.1);
-            }
-            50% { 
-                transform: scale(1.4) rotate(8deg); 
-                opacity: 0.7; 
-                filter: blur(2px) contrast(1);
-            }
-            75% {
-                transform: scale(2.2) rotate(12deg);
-                opacity: 0.4;
-                filter: blur(3px) contrast(0.9);
-            }
-            100% { 
-                transform: scale(3.5) rotate(18deg); 
-                opacity: 0; 
-                filter: blur(5px) contrast(0.8);
-            }
-        }
-        
-        @keyframes character-glow {
-            0% { 
-                text-shadow: 0 0 8px rgba(139, 69, 19, 0.4), 0 0 16px rgba(139, 69, 19, 0.2); 
-                transform: scale(1); 
-                filter: brightness(1);
-            }
-            50% { 
-                text-shadow: 0 0 20px rgba(139, 69, 19, 0.8), 0 0 40px rgba(139, 69, 19, 0.4), 0 0 60px rgba(139, 69, 19, 0.2); 
-                transform: scale(1.15); 
-                filter: brightness(1.1);
-            }
-            100% { 
-                text-shadow: 0 0 8px rgba(139, 69, 19, 0.4), 0 0 16px rgba(139, 69, 19, 0.2); 
-                transform: scale(1); 
-                filter: brightness(1);
-            }
-        }
-        
-        @keyframes character-bounce {
-            0%, 20%, 50%, 80%, 100% { 
-                transform: translateY(0) scale(1); 
-                filter: brightness(1);
-            }
-            40% { 
-                transform: translateY(-25px) scale(1.05); 
-                filter: brightness(1.1);
-            }
-            60% { 
-                transform: translateY(-12px) scale(1.02); 
-                filter: brightness(1.05);
-            }
-        }
-        
-        /* 新增墨水擴散動畫變體 */
-        @keyframes ink-spread {
-            0% {
-                transform: scale(0.2);
-                opacity: 1;
-                border-radius: 50%;
-            }
-            30% {
-                transform: scale(1);
-                opacity: 0.8;
-                border-radius: 45%;
-            }
-            70% {
-                transform: scale(2.5);
-                opacity: 0.4;
-                border-radius: 30%;
-            }
-            100% {
-                transform: scale(4);
-                opacity: 0;
-                border-radius: 20%;
-            }
-        }
-        
-        /* 毛筆筆觸動畫 */
-        @keyframes brush-stroke {
-            0% {
-                stroke-dasharray: 0 1000;
-                opacity: 0.8;
-            }
-            50% {
-                stroke-dasharray: 500 500;
-                opacity: 1;
-            }
-            100% {
-                stroke-dasharray: 1000 0;
-                opacity: 0.9;
-            }
-        }
-        
-        .success-particle {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--highlight-color);
-            pointer-events: none;
-            z-index: 100;
-        }
-        
-        .success-character {
-            position: absolute;
-            font-size: 20px;
-            color: var(--accent);
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 100;
-            animation: float-up 2s forwards;
-            opacity: 0.9;
-        }
-        
-        .ink-splash {
-            position: fixed; /* 使用fixed而不是absolute确保正确显示 */
-            background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M80,40 C110,20 160,60 130,100 C100,140 50,120 60,80 C70,40 50,60 80,40 Z' fill='%238E3E1A77'/%3E%3C/svg%3E");
-            background-size: contain;
-            background-repeat: no-repeat;
-            width: 200px;
-            height: 200px;
-            pointer-events: none;
-            z-index: 1000; /* 增加z-index确保在顶层 */
-            opacity: 0.8;
-            animation: ink-diffuse 2s forwards;
-            transform-origin: center center;
-        }
-        
-        /* 水墨風格標題裝飾 */
-        header::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            right: -10px;
-            width: 80px;
-            height: 80px;
-            background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60,20 C70,10 55,40 40,35 C25,30 40,10 50,20 C55,25 55,25 60,20 Z' fill='%23232D5222'/%3E%3C/svg%3E");
-            opacity: 0.8;
-            z-index: 0;
-        }
+
         
         .content {
             position: relative;
@@ -602,26 +368,19 @@
         }
         
         .panel {
-            background: var(--paper-gradient);
+            background: var(--panel-bg);  /* 使用純色背景 */
             border-radius: var(--border-radius);
             padding: 18px;
             margin-bottom: 18px;
-            box-shadow: 
-                0 4px 20px rgba(0, 0, 0, 0.08),
-                0 2px 6px rgba(0, 0, 0, 0.04),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);  /* 簡化陰影 */
             position: relative;
             border: 1px solid var(--border-color);
-            backdrop-filter: blur(20px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;  /* 簡化過渡 */
         }
         
         .panel:hover {
-            transform: translateY(-2px);
-            box-shadow: 
-                0 8px 30px rgba(0, 0, 0, 0.12),
-                0 4px 10px rgba(0, 0, 0, 0.06),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            transform: translateY(-1px);  /* 減少移動距離 */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);  /* 簡化陰影 */
         }
         
         .panel-compact {
@@ -765,19 +524,7 @@
             overflow-x: hidden;
         }
         
-        /* 毛筆裝飾 */
-        .character-display-section::before {
-            content: "";
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            width: 60px;
-            height: 60px;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20,10 C25,15 30,20 40,15 C35,25 25,35 15,30 C5,25 15,5 20,10 Z' fill='%23232D5222'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            opacity: 0.6;
-            z-index: 0;
-        }
+
         
         .character-board {
             position: relative;
@@ -1016,7 +763,7 @@
             background: linear-gradient(135deg, #E8E8E8 0%, #DADADA 100%);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
             color: var(--ink-color);
-        }
+            }
         
 
         
@@ -1246,8 +993,8 @@
         }
         
         .quiz-target {
-            width: 220px;  /* 從250px縮減到220px */
-            height: 220px;  /* 從250px縮減到220px */
+            width: 220px;  /* 與HanziWriter尺寸一致 */
+            height: 220px;  /* 與HanziWriter尺寸一致 */
             margin: 0 auto 10px;
             position: relative;
             border-radius: 5px;
@@ -1607,14 +1354,11 @@
             height: 60px;
             opacity: 0.8;
             z-index: 1;
-            animation: gentle-bounce 3s ease-in-out infinite;
+
             filter: drop-shadow(0 2px 4px rgba(255, 107, 157, 0.3));
         }
         
-        @keyframes gentle-bounce {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-3px) rotate(5deg); }
-        }
+
         
         /* 书法字体风格覆盖 */
         .chinese-text {
@@ -1676,8 +1420,8 @@
                 linear-gradient(to bottom, rgba(255, 107, 157, 0.3) 1px, transparent 1px);
             background-size: 25px 25px, 25px 25px, 50px 50px, 50px 50px;
             background-position: 0 0, 0 0, 0 0, 0 0;
-        }
-        
+            }
+            
         .character-btn:hover:not(.active) {
             transform: translateY(-2px) scale(1.05);
             border-color: var(--primary);
@@ -1688,8 +1432,8 @@
         .character-btn.active:hover {
             transform: scale(1.15);
             box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
-        }
-        
+            }
+            
         .character-btn.active {
             background: rgba(255, 255, 255, 0.95);
             color: #22c55e;
@@ -1705,31 +1449,24 @@
                 linear-gradient(to bottom, rgba(34, 197, 94, 0.2) 1px, transparent 1px);
             background-size: 25px 25px, 25px 25px, 50px 50px, 50px 50px;
             background-position: 0 0, 0 0, 0 0, 0 0;
-            animation: gentle-glow 2s ease-in-out infinite;
+
         }
         
         .character-btn:active {
             transform: translateY(0) scale(1.02);
-        }
-        
+            }
+            
         /* 為選中狀態添加輕微的閃爍動畫 */
-        @keyframes gentle-glow {
-            0%, 100% { 
-                box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
-            }
-            50% { 
-                box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
-            }
-        }
+
         
-        /* 字義解釋區樣式 - 精美版本 */
+        /* 字義解釋區樣式 - 簡潔版本 */
         .character-definition {
             margin-top: 20px;
             padding: 18px;
-            background: linear-gradient(135deg, var(--panel-bg) 0%, rgba(255, 255, 255, 0.95) 100%);
+            background: var(--panel-bg);  /* 使用純色背景 */
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);  /* 簡化陰影 */
             position: relative;
             overflow: hidden;
             width: 100%;
@@ -1776,8 +1513,8 @@
         .definition-item:last-child {
             border-bottom: none;
             margin-bottom: 0;
-        }
-        
+            }
+            
         .definition-main {
             margin-bottom: 8px;
             line-height: 1.8;
@@ -1797,8 +1534,8 @@
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(255, 107, 157, 0.3);
             vertical-align: baseline;
-        }
-        
+            }
+            
         .definition-text {
             color: var(--ink-color);
             font-size: 16px;
@@ -1813,8 +1550,8 @@
             max-width: 100%;
             white-space: normal;
             overflow: hidden;
-        }
-        
+            }
+            
         .definition-english {
             color: #2563eb;
             font-size: 15px;
@@ -1832,8 +1569,8 @@
             max-width: 100%;
             white-space: normal;
             overflow: hidden;
-        }
-        
+            }
+            
         .definition-example {
             font-size: 14px;
             color: #64748b;
@@ -1851,8 +1588,8 @@
             max-width: 100%;
             white-space: normal;
             overflow: hidden;
-        }
-        
+            }
+            
         .definition-example::before {
             content: "例：";
             color: var(--primary);
@@ -1870,8 +1607,8 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-        }
-        
+            }
+            
         .definition-loading::before {
             content: '🔍';
             animation: spin 2s linear infinite;
@@ -1880,8 +1617,8 @@
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
-        }
-        
+            }
+            
         /* 響應式調整 */
         @media (max-width: 768px) {
             .character-definition {
@@ -1968,13 +1705,10 @@
             border-radius: var(--border-radius);
             color: white;
             box-shadow: 0 2px 8px rgba(116, 185, 255, 0.3);
-            animation: gentle-pulse 2s ease-in-out infinite;
+
         }
         
-        @keyframes gentle-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
+
         
         .side-panel {
             margin-bottom: 15px;
@@ -2596,7 +2330,6 @@
                         </div>
                         
                         <div class="quiz-buttons">
-                            <button id="quiz-cancel" class="btn btn-outline">挑戰新漢字</button>
                             <button id="quiz-retry" class="btn btn-primary">重新挑戰</button>
                             <button id="quiz-next" class="btn btn-secondary">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3123,7 +2856,7 @@
             const quizContainer = document.getElementById('quiz-container');
             const characterDisplaySection = document.getElementById('character-display-section');
             const quizResult = document.getElementById('quiz-result');
-            const quizCancel = document.getElementById('quiz-cancel');
+
             const quizRetry = document.getElementById('quiz-retry');
             const quizHint = document.getElementById('quiz-hint');
             const quizProgress = document.getElementById('quiz-progress');
@@ -3392,8 +3125,8 @@
                 
                 // 顯示選擇器
                 characterSelector.style.display = 'block';
-            }
-            
+                }
+                
             // 隱藏字符選擇器
             function hideCharacterSelector() {
                 characterSelector.style.display = 'none';
@@ -3420,9 +3153,9 @@
                 
                 // 初始化漢字筆順
                 writer = HanziWriter.create('character-target', character, {
-                    width: window.innerWidth > 768 ? 280 : 220,
-                    height: window.innerWidth > 768 ? 280 : 220,
-                    padding: 5,
+                    width: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    height: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
                     strokeAnimationSpeed: 1,
@@ -3629,9 +3362,9 @@
                 
                 // 创建新的笔顺练习实例
                 quizWriter = HanziWriter.create('quiz-target-field', currentCharacter, {
-                    width: window.innerWidth > 768 ? 280 : 220,
-                    height: window.innerWidth > 768 ? 280 : 220,
-                    padding: 5,
+                    width: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    height: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
                     radicalColor: '#8E3E1A',
@@ -3691,9 +3424,9 @@
                 
                 // 创建新的笔顺练习实例
                 quizWriter = HanziWriter.create('quiz-target-field', currentCharacter, {
-                    width: window.innerWidth > 768 ? 280 : 220,
-                    height: window.innerWidth > 768 ? 280 : 220,
-                    padding: 5,
+                    width: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    height: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
                     radicalColor: '#8E3E1A',
@@ -3801,9 +3534,10 @@
                 
                 // 获取笔画开始坐标
                 const startPoint = stroke.getStartingPoint();
-                const width = window.innerWidth > 768 ? 280 : 220;
-                const startX = startPoint.x * width / 1024;
-                const startY = startPoint.y * width / 1024;
+                const width = window.innerWidth > 768 ? 240 : 220;  // 與HanziWriter尺寸一致
+                const padding = 20;  // 與HanziWriter padding一致
+                const startX = (startPoint.x * (width - padding * 2) / 1024) + padding;
+                const startY = (startPoint.y * (width - padding * 2) / 1024) + padding;
                 
                 // 设置提示位置
                 strokeHint.style.left = `${startX - 15}px`;
@@ -3824,8 +3558,8 @@
                     const idx = Math.floor(progress * (points.length - 1));
                     const point = points[idx];
                     
-                    const x = point.x * width / 1024;
-                    const y = point.y * width / 1024;
+                    const x = (point.x * (width - padding * 2) / 1024) + padding;
+                    const y = (point.y * (width - padding * 2) / 1024) + padding;
                     
                     strokeHint.style.left = `${x - 15}px`;
                     strokeHint.style.top = `${y - 15}px`;
@@ -4493,13 +4227,7 @@
             
             quizButton.addEventListener('click', startQuizMode);
             
-            quizCancel.addEventListener('click', function() {
-                // 清理筆順練習
-                cleanupWriter('quiz');
-                
-                // 啟動新的隨機字符練習
-                startIndependentQuizMode();
-            });
+
             
             quizRetry.addEventListener('click', resetQuizMode);
             
@@ -4590,6 +4318,28 @@
                     }
                 }
             }
+            
+            // 添加田字格觸摸事件處理，防止頁面滾動
+            function preventTouchScroll(element) {
+                element.addEventListener('touchstart', function(e) {
+                    // 如果是田字格區域，阻止滾動
+                    e.stopPropagation();
+                }, { passive: false });
+                
+                element.addEventListener('touchmove', function(e) {
+                    // 阻止滾動事件
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, { passive: false });
+                
+                element.addEventListener('touchend', function(e) {
+                    e.stopPropagation();
+                }, { passive: false });
+            }
+            
+            // 為田字格元素添加防滾動處理
+            preventTouchScroll(characterTarget);
+            preventTouchScroll(quizTargetField);
             
             // 載入學習記錄和預加載語音
             loadLearnedCharacters();
