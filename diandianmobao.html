@@ -174,15 +174,34 @@
             opacity: 0.6;
         }
         
-        /* 整體布局優化 */
+        /* 整體布局優化 - 縮減整體寬度 */
         .app-container {
-            max-width: 1200px;
+            max-width: 900px;  /* 從1200px縮減到900px */
             margin: 0 auto;
             padding: 0;
             display: flex;
             flex-direction: column;
             height: 100%;
             flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        
+        /* 全局文本寬度控制 */
+        * {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* 主面板寬度統一控制 */
+        .main-panel {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
         
         /* 頂部導航設計 */
@@ -199,7 +218,7 @@
             border: 1px solid var(--border-color);
         }
         
-        /* 主導航設計 */
+        /* 主導航設計 - 縮減寬度 */
         .main-nav {
             background-color: var(--panel-bg);
             border-radius: var(--border-radius);
@@ -212,7 +231,7 @@
         .nav-container {
             display: flex;
             justify-content: space-between;
-            max-width: 600px;
+            max-width: 480px;  /* 從600px縮減到480px */
             margin: 0 auto;
         }
         
@@ -526,19 +545,22 @@
             flex: 1;
         }
         
-        /* 主面板 - 功能展示區域 */
+        /* 主面板 - 功能展示區域，縮減寬度 */
         .main-panel {
-            flex: 3;
-            min-width: 320px;
+            flex: 2.5;  /* 從flex: 3 調整為 2.5 */
+            min-width: 280px;  /* 從320px縮減到280px */
+            max-width: 600px;  /* 從800px縮減到600px */
+            width: 100%;
             display: flex;
             flex-direction: column;
+            box-sizing: border-box;
         }
         
-        /* 側邊面板區域 */
+        /* 側邊面板區域 - 調整寬度保持平衡 */
         .side-panel-container {
-            flex: 1;
-            min-width: 220px;
-            max-width: 300px;
+            flex: 1.5;  /* 從flex: 1 調整為 1.5 */
+            min-width: 200px;  /* 從220px縮減到200px */
+            max-width: 280px;  /* 從300px縮減到280px */
             display: flex;
             flex-direction: column;
         }
@@ -551,14 +573,14 @@
         }
         
         .daily-character {
-            font-size: 120px;
+            font-size: 100px;  /* 從120px縮減到100px */
             line-height: 1.2;
             margin-bottom: 15px;
             font-family: 'Noto Serif TC', serif;
             color: var(--ink-color);
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
             text-align: center;
-            min-height: 140px;
+            min-height: 120px;  /* 從140px縮減到120px */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -735,6 +757,12 @@
             align-items: center;
             position: relative;
             padding-top: 10px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;  
+            overflow-wrap: break-word;
+            overflow-x: hidden;
         }
         
         /* 毛筆裝飾 */
@@ -753,8 +781,8 @@
         
         .character-board {
             position: relative;
-            width: 250px;
-            height: 250px;
+            width: 220px;  /* 從250px縮減到220px */
+            height: 220px;  /* 從250px縮減到220px */
             margin: 0 auto 10px;
             background-color: #F9F5EC;
             border-radius: 5px;
@@ -820,11 +848,12 @@
         }
         
         .pinyin {
-            font-size: 16px;
+            font-size: 24px;
             color: var(--secondary);
             display: block;
-            margin-top: 2px;
+            margin-top: 5px;
             font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 600;
         }
         
         .stroke-count {
@@ -1167,6 +1196,12 @@
             text-align: center;
             padding: 12px;
             position: relative;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            overflow-x: hidden;
         }
         
         .quiz-header {
@@ -1211,8 +1246,8 @@
         }
         
         .quiz-target {
-            width: 250px;
-            height: 250px;
+            width: 220px;  /* 從250px縮減到220px */
+            height: 220px;  /* 從250px縮減到220px */
             margin: 0 auto 10px;
             position: relative;
             border-radius: 5px;
@@ -1269,6 +1304,12 @@
             display: none;
             text-align: center;
             padding: 12px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            overflow-x: hidden;
         }
         
         .memory-header {
@@ -1316,25 +1357,25 @@
         
         .memory-characters {
             display: grid;
-            grid-template-columns: repeat(auto-fit, 60px);
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, 55px);  /* 從60px縮減到55px */
+            gap: 10px;  /* 從12px縮減到10px */
             margin-bottom: 20px;
             justify-content: center;
             width: 100%;
-            max-width: 320px;
+            max-width: 280px;  /* 從320px縮減到280px */
             margin-left: auto;
             margin-right: auto;
         }
         
         .memory-character {
-            width: 60px;
-            height: 60px;
+            width: 55px;  /* 從60px縮減到55px */
+            height: 55px;  /* 從60px縮減到55px */
             display: flex;
             align-items: center;
             justify-content: center;
             background: var(--info-gradient);
             color: white;
-            font-size: 28px;
+            font-size: 26px;  /* 從28px縮減到26px */
             font-weight: bold;
             border-radius: 5px;
             box-shadow: 0 3px 8px rgba(116, 185, 255, 0.3);
@@ -1589,6 +1630,8 @@
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .selector-title {
@@ -1679,6 +1722,192 @@
             }
         }
         
+        /* 字義解釋區樣式 - 精美版本 */
+        .character-definition {
+            margin-top: 20px;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--panel-bg) 0%, rgba(255, 255, 255, 0.95) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            overflow-x: hidden;
+        }
+        
+        .character-definition::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+        }
+        
+        .definition-header {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ink-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Noto Serif TC', serif;
+            letter-spacing: 0.5px;
+        }
+        
+        .definition-content {
+            text-align: left;
+        }
+        
+        .definition-item {
+            margin-bottom: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+        
+        .definition-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .definition-main {
+            margin-bottom: 8px;
+            line-height: 1.8;
+        }
+        
+        .definition-type {
+            display: inline-block;
+            font-size: 11px;
+            color: white;
+            background: linear-gradient(45deg, var(--primary), #ff8fab);
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin-right: 10px;
+            margin-bottom: 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(255, 107, 157, 0.3);
+            vertical-align: baseline;
+        }
+        
+        .definition-text {
+            color: var(--ink-color);
+            font-size: 16px;
+            line-height: 1.7;
+            font-family: 'Noto Serif TC', serif;
+            margin-bottom: 8px;
+            text-align: left;
+            font-weight: 400;
+            display: inline;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            white-space: normal;
+            overflow: hidden;
+        }
+        
+        .definition-english {
+            color: #2563eb;
+            font-size: 15px;
+            line-height: 1.6;
+            font-family: 'Georgia', serif;
+            margin: 8px 0;
+            padding: 10px 14px;
+            background: rgba(37, 99, 235, 0.05);
+            border-left: 3px solid #2563eb;
+            border-radius: 0 6px 6px 0;
+            font-style: italic;
+            text-align: left;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            white-space: normal;
+            overflow: hidden;
+        }
+        
+        .definition-example {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(100, 116, 139, 0.05);
+            border-radius: 6px;
+            font-family: 'Noto Serif TC', serif;
+            line-height: 1.5;
+            text-align: left;
+            position: relative;
+            border-left: 2px solid var(--accent);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            white-space: normal;
+            overflow: hidden;
+        }
+        
+        .definition-example::before {
+            content: "例：";
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 6px;
+        }
+        
+        .definition-loading {
+            text-align: center;
+            color: var(--light-text);
+            font-style: italic;
+            font-size: 13px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .definition-loading::before {
+            content: '🔍';
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            .character-definition {
+                padding: 15px;
+                margin-top: 15px;
+            }
+            
+            .definition-header {
+                font-size: 15px;
+            }
+            
+            .definition-text {
+                font-size: 15px;
+            }
+            
+            .definition-english {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            
+            .definition-example {
+                font-size: 13px;
+                padding: 6px 10px;
+            }
+        }
+        
 
         
 
@@ -1692,6 +1921,23 @@
         
         .function-section {
             position: relative;
+            min-width: 100%;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            overflow-x: hidden;
+        }
+        
+        .function-container {
+            width: 100%;
+            max-width: 100%;
+            min-height: 500px;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            overflow-x: hidden;
         }
         
         .section-title {
@@ -1840,8 +2086,8 @@
             }
             
             .character-board, .quiz-target {
-                width: 280px;
-                height: 280px;
+                width: 240px;  /* 從280px縮減到240px */
+                height: 240px;  /* 從280px縮減到240px */
             }
         }
         
@@ -1851,11 +2097,15 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
+            max-width: 100%;
             text-align: center;
             padding: 2px;
             position: relative;
             height: 100%;
             box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            overflow-x: hidden;
         }
         
         /* 顶部游戏介绍和难度选择区域 - 更紧凑的设计 */
@@ -1930,7 +2180,7 @@
         /* 下方功能区 */
         .radical-game-board {
             width: 100%;
-            max-width: 500px;
+            max-width: 420px;  /* 從500px縮減到420px */
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -1975,11 +2225,11 @@
         }
         
         .target-word {
-            font-size: 70px;
+            font-size: 60px;  /* 從70px縮減到60px */
             color: var(--ink-color);
             line-height: 1;
-            width: 100px;
-            height: 100px;
+            width: 85px;  /* 從100px縮減到85px */
+            height: 85px;  /* 從100px縮減到85px */
             font-family: 'Noto Serif TC', serif;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
             background-color: rgba(255, 255, 255, 0.8);
@@ -2264,27 +2514,27 @@
                     
                     <!-- 功能1: 筆順查詢模式 -->
                     <div id="character-display-section" class="character-display-section function-section">
-                        <div class="section-title">
-                            <span class="icon-wrapper">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                </svg>
-                            </span>
-                            <h2>筆順查詢</h2>
-                        </div>
                         <div class="character-board">
                             <div class="grid-background"></div>
                             <div id="character-target" class="character-target"></div>
                         </div>
                         
                         <div class="character-info">
-                            <span id="character-display" class="character-label"></span>
+                            <span id="character-display" class="character-label" style="display: none;"></span>
                             <span id="pinyin-display" class="pinyin"></span>
                             <div id="stroke-count" class="stroke-count"></div>
                             
                             <!-- 新增：組詞顯示區 -->
                             <div id="word-combinations" class="word-combinations"></div>
+                        
+                        <!-- 新增：字義解釋區 -->
+                        <div id="character-definition" class="character-definition" style="display: none;">
+                            <div class="definition-header">📖 字義解釋</div>
+                            <div id="definition-content" class="definition-content"></div>
+                            <div id="definition-loading" class="definition-loading" style="display: none;">
+                                正在查詢字義...
+                            </div>
+                        </div>
                         </div>
                         
                         <div class="control-buttons">
@@ -2858,6 +3108,9 @@
             const characterSelector = document.getElementById('character-selector');
             const characterButtons = document.getElementById('character-buttons');
             const pinyinDisplay = document.getElementById('pinyin-display');
+            const characterDefinition = document.getElementById('character-definition');
+            const definitionContent = document.getElementById('definition-content');
+            const definitionLoading = document.getElementById('definition-loading');
             const strokeCount = document.getElementById('stroke-count');
             const animateButton = document.getElementById('animate-button');
             const speakButton = document.getElementById('speak-button');
@@ -2943,6 +3196,158 @@
                 return matches ? [...new Set(matches)] : []; // 去重
             }
             
+            // 查詢萌典API獲取字義
+            async function fetchCharacterDefinition(character) {
+                try {
+                    // 顯示加載狀態
+                    characterDefinition.style.display = 'block';
+                    characterDefinition.style.opacity = '1';
+                    characterDefinition.style.transform = 'translateY(0)';
+                    characterDefinition.style.transition = 'none';
+                    definitionLoading.style.display = 'block';
+                    definitionContent.innerHTML = '';
+                    
+                    const response = await fetch(`https://www.moedict.tw/uni/${encodeURIComponent(character)}`);
+                    
+                    if (!response.ok) {
+                        throw new Error('查詢失敗');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // 調試：打印完整數據結構
+                    console.log('萌典API返回數據:', JSON.stringify(data, null, 2));
+                    
+                    displayCharacterDefinition(data);
+                } catch (error) {
+                    console.error('萌典API查詢錯誤:', error);
+                    definitionContent.innerHTML = '<div class="definition-item"><span class="definition-text">暫時無法獲取字義解釋</span></div>';
+                } finally {
+                    definitionLoading.style.display = 'none';
+                }
+            }
+            
+                            // 顯示字義解釋
+            function displayCharacterDefinition(data) {
+                if (!data || !data.heteronyms || data.heteronyms.length === 0) {
+                    definitionContent.innerHTML = '<div class="definition-item"><div class="definition-text">未找到字義資料</div></div>';
+                    // 添加漸入動畫
+                    characterDefinition.style.opacity = '0';
+                    characterDefinition.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        characterDefinition.style.transition = 'all 0.4s ease-out';
+                        characterDefinition.style.opacity = '1';
+                        characterDefinition.style.transform = 'translateY(0)';
+                    }, 100);
+                    return;
+                }
+                
+                let html = '';
+                
+                // 遍歷所有讀音和釋義
+                data.heteronyms.forEach((heteronym, index) => {
+                    if (heteronym.definitions && heteronym.definitions.length > 0) {
+                        // 顯示拼音（如果有的話）
+                        const pinyin = heteronym.pinyin || '';
+                        if (pinyin && index === 0) {
+                            // 更新主要的拼音顯示
+                            pinyinDisplay.textContent = pinyin;
+                        }
+                        
+                        // 遍歷所有釋義
+                        heteronym.definitions.forEach((def, defIndex) => {
+                            html += '<div class="definition-item">';
+                            
+                            // 詞性標籤和中文釋義內容在同一行
+                            html += '<div class="definition-main">';
+                            if (def.type) {
+                                html += `<span class="definition-type">${def.type}</span>`;
+                            }
+                            if (def.def) {
+                                html += `<span class="definition-text">${def.def}</span>`;
+                            }
+                            html += '</div>';
+                            
+                            // 英文釋義
+                            if (def.english) {
+                                html += `<div class="definition-english">🇺🇸 ${def.english}</div>`;
+                            }
+                            
+                            // 檢查是否有其他格式的英文釋義
+                            if (def.en) {
+                                html += `<div class="definition-english">🇺🇸 ${def.en}</div>`;
+                            }
+                            
+                            // 例句顯示 - 檢查多種可能的例句字段
+                            const examples = [];
+                            
+                            // 檢查 example 字段
+                            if (def.example) {
+                                if (Array.isArray(def.example)) {
+                                    examples.push(...def.example);
+                                } else if (typeof def.example === 'string') {
+                                    examples.push(def.example);
+                                }
+                            }
+                            
+                            // 檢查 quote 字段
+                            if (def.quote) {
+                                if (Array.isArray(def.quote)) {
+                                    examples.push(...def.quote);
+                                } else if (typeof def.quote === 'string') {
+                                    examples.push(def.quote);
+                                }
+                            }
+                            
+                            // 檢查 synonyms 相關的例句
+                            if (def.synonyms && Array.isArray(def.synonyms)) {
+                                def.synonyms.forEach(syn => {
+                                    if (syn.example) {
+                                        if (Array.isArray(syn.example)) {
+                                            examples.push(...syn.example);
+                                        } else if (typeof syn.example === 'string') {
+                                            examples.push(syn.example);
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            // 顯示例句（最多2個）
+                            examples.slice(0, 2).forEach(example => {
+                                if (example && example.trim()) {
+                                    // 移除HTML標籤，只保留純文本，並清理多餘空格
+                                    let cleanExample = example.replace(/<[^>]*>/g, '').trim();
+                                    
+                                    // 限制例句長度，避免過長
+                                    if (cleanExample.length > 50) {
+                                        cleanExample = cleanExample.substring(0, 47) + '...';
+                                    }
+                                    
+                                    html += `<div class="definition-example">${cleanExample}</div>`;
+                                }
+                            });
+                            
+                            html += '</div>';
+                        });
+                    }
+                });
+                
+                if (html) {
+                    definitionContent.innerHTML = html;
+                } else {
+                    definitionContent.innerHTML = '<div class="definition-item"><div class="definition-text">未找到詳細釋義</div></div>';
+                }
+                
+                // 添加漸入動畫
+                characterDefinition.style.opacity = '0';
+                characterDefinition.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    characterDefinition.style.transition = 'all 0.4s ease-out';
+                    characterDefinition.style.opacity = '1';
+                    characterDefinition.style.transform = 'translateY(0)';
+                }, 100);
+            }
+            
             // 顯示加載動畫
             function showLoader() {
                 loader.classList.add('active');
@@ -2993,6 +3398,8 @@
             function hideCharacterSelector() {
                 characterSelector.style.display = 'none';
                 characterButtons.innerHTML = '';
+                // 同時隱藏字義解釋區
+                characterDefinition.style.display = 'none';
             }
             
             // 切換到指定字符
@@ -3042,10 +3449,16 @@
                         
                         // 顯示組詞
                         displayWordCombinations(character);
+                        
+                        // 查詢字義解釋
+                        fetchCharacterDefinition(character);
                     },
                     onLoadCharDataError: function() {
                         hideLoader();
                         alert('找不到這個漢字的筆順資料，請嘗試其他漢字');
+                        
+                        // 即使筆順資料失敗，也嘗試查詢字義
+                        fetchCharacterDefinition(character);
                     }
                 });
             }
@@ -4103,7 +4516,7 @@
             memoryStart.addEventListener('click', function() {
                 if (memoryGameActive) {
                     // 如果遊戲正在進行，停止遊戲並重置
-                    stopMemoryGame();
+                stopMemoryGame();
                     resetMemoryGame();
                 } else if (memoryResult.style.display === 'block') {
                     // 如果顯示了結果，直接開始新一局遊戲
