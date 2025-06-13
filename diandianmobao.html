@@ -8,25 +8,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #8E3E1A;
-            --secondary: #B85D45;
-            --accent: #232D52;
-            --background: #F5F1E6;
-            --success: #3A7355;
-            --danger: #B43D3D;
-            --warning: #B7943F;
-            --text: #2D2418;
-            --light-text: #6F6657;
-            --border-radius: 8px;
-            --ink-color: #232D52;
-            --highlight-color: #8E3E1A;
-            --border-color: #D4C8A8;
-            --panel-bg: #F9F5EC;
+            /* 小學生活潑友善配色方案 */
+            --primary: #FF6B9D;          /* 活潑粉紅色 */
+            --secondary: #4DABF7;        /* 清新藍色 */
+            --accent: #FFE66D;           /* 陽光黃色 */
+            --background: #FFFDF7;       /* 溫暖乳白色 */
+            --success: #51CF66;          /* 成功綠色 */
+            --danger: #FF6B6B;           /* 友善紅色 */
+            --warning: #FFB366;          /* 溫暖橙色 */
+            --text: #2D3436;             /* 深灰色文字 */
+            --light-text: #636E72;       /* 淡灰色 */
+            --border-radius: 16px;       /* 更圓潤的邊角 */
+            --ink-color: #2D3436;        /* 深灰色墨水 */
+            --highlight-color: #FF7675;  /* 高亮粉色 */
+            --border-color: #E3E8F0;     /* 柔和邊框色 */
+            --panel-bg: #FFFFFF;         /* 純白面板背景 */
+            
+            /* 小學生友好的補充顏色 */
+            --purple: #A29BFE;           /* 可愛紫色 */
+            --mint: #81ECEC;             /* 薄荷綠色 */
+            --coral: #FF7675;            /* 珊瑚色 */
+            --lavender: #DDD6FE;         /* 薰衣草色 */
+            --peach: #FDCB6E;            /* 桃子色 */
+            --sky: #74B9FF;              /* 天空藍 */
+            --lime: #00B894;             /* 青檸色 */
+            --rose: #FD79A8;             /* 玫瑰色 */
+            
+            /* 活潑漸變色變量 */
+            --ink-gradient: linear-gradient(135deg, #FF6B9D 0%, #4DABF7 100%);
+            --paper-gradient: linear-gradient(135deg, #FFFDF7 0%, #FFF0F6 100%);
+            --accent-gradient: linear-gradient(135deg, #FFE66D 0%, #FFB366 100%);
+            --success-gradient: linear-gradient(135deg, #51CF66 0%, #81ECEC 100%);
+            --info-gradient: linear-gradient(135deg, #74B9FF 0%, #A29BFE 100%);
+            --rainbow-gradient: linear-gradient(135deg, #FF6B9D 0%, #4DABF7 25%, #FFE66D 50%, #51CF66 75%, #A29BFE 100%);
         }
         
         body {
-            font-family: 'Noto Serif TC', serif;
-            background-color: var(--background);
+            font-family: 'Noto Serif TC', 'Source Han Serif', 'Georgia', serif;
+            background: var(--paper-gradient);
             margin: 0;
             padding: 10px;
             color: var(--text);
@@ -34,9 +53,14 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            /* 優化字體渲染 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: "kern" 1, "liga" 1;
         }
         
-        /* 宣紙質感背景 */
+        /* 小學生友善背景 */
         body::before {
             content: "";
             position: fixed;
@@ -44,15 +68,99 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E"),
-                          linear-gradient(to right, rgba(224, 215, 194, 0.2) 1px, transparent 1px),
-                          linear-gradient(to bottom, rgba(224, 215, 194, 0.2) 1px, transparent 1px);
-            background-size: 100px 100px, 20px 20px, 20px 20px;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(77, 171, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(255, 230, 109, 0.1) 0%, transparent 50%),
+                linear-gradient(to right, rgba(227, 232, 240, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(227, 232, 240, 0.3) 1px, transparent 1px);
+            background-size: 400px 400px, 350px 350px, 300px 300px, 30px 30px, 30px 30px;
             z-index: -1;
-            opacity: 0.7;
+            opacity: 0.8;
+            animation: float-bubbles 8s ease-in-out infinite;
         }
         
-        /* 墨水點裝飾 */
+        @keyframes float-bubbles {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        
+        /* 新增微交互效果 */
+        .interactive-element {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .interactive-element:hover {
+            filter: brightness(1.05);
+        }
+        
+        .interactive-element:active {
+            transform: scale(0.98);
+            filter: brightness(0.95);
+        }
+        
+        /* 焦點狀態優化 - 小學生友善 */
+        .btn:focus,
+        .nav-button:focus,
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.4);
+            transform: scale(1.02);
+        }
+        
+        /* 加載狀態優化 */
+        .loading-state {
+            pointer-events: none;
+            opacity: 0.7;
+            position: relative;
+        }
+        
+        .loading-state::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid rgba(255, 107, 157, 0.3);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* 成功狀態反饋 - 小學生友善動畫 */
+        .success-feedback {
+            animation: success-pulse 0.6s ease-out, sparkle 1.2s ease-in-out;
+        }
+        
+        /* 錯誤狀態反饋 - 溫和晃動 */
+        .error-feedback {
+            animation: gentle-shake 0.5s ease-in-out;
+        }
+        
+        /* 小學生專屬動畫 */
+        @keyframes sparkle {
+            0% { filter: brightness(1) saturate(1); }
+            50% { filter: brightness(1.3) saturate(1.5); transform: scale(1.05); }
+            100% { filter: brightness(1) saturate(1); }
+        }
+        
+        @keyframes gentle-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+        
+        @keyframes rainbow-glow {
+            0% { box-shadow: 0 0 20px rgba(255, 107, 157, 0.5); }
+            25% { box-shadow: 0 0 20px rgba(77, 171, 247, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 230, 109, 0.5); }
+            75% { box-shadow: 0 0 20px rgba(81, 207, 102, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(255, 107, 157, 0.5); }
+        }
+        
+        /* 可愛裝飾圖案 */
         body::after {
             content: "";
             position: fixed;
@@ -60,10 +168,10 @@
             right: 10px;
             width: 180px;
             height: 180px;
-            background-image: url("data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M140,50 C170,60 190,90 160,130 C140,160 90,165 60,130 C30,100 40,65 70,50 C100,35 120,45 140,50 Z' fill='%232D241811'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='100' cy='100' r='50' fill='%23FF6B9D22'/%3E%3Ccircle cx='120' cy='80' r='30' fill='%234DABF722'/%3E%3Ccircle cx='80' cy='120' r='25' fill='%23FFE66D22'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             z-index: -1;
-            opacity: 0.5;
+            opacity: 0.6;
         }
         
         /* 整體布局優化 */
@@ -110,45 +218,77 @@
         
         .nav-button {
             flex: 1;
-            padding: 12px 10px;
+            padding: 14px 12px;
             border: none;
             background: transparent;
             color: var(--light-text);
             border-radius: var(--border-radius);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             font-family: 'Noto Serif TC', serif;
             position: relative;
             overflow: hidden;
+            /* 增強觸覺反饋 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+            z-index: -1;
         }
         
         .nav-button svg {
             margin-bottom: 3px;
+            transition: all 0.3s ease;
         }
         
         .nav-button.active {
-            color: var(--ink-color);
-            background-color: rgba(142, 62, 26, 0.1);
-            font-weight: bold;
+            color: white;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav-button.active::before {
+            opacity: 1;
+        }
+        
+        .nav-button.active svg {
+            transform: scale(1.1);
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
         }
         
         .nav-button:not(.active):hover {
-            background-color: rgba(142, 62, 26, 0.05);
+            background-color: rgba(139, 69, 19, 0.08);
+            color: var(--ink-color);
+            transform: translateY(-1px);
+        }
+        
+        .nav-button:not(.active):hover svg {
+            transform: scale(1.05);
         }
         
         .nav-button.active::after {
             content: '';
             position: absolute;
             bottom: 0;
-            left: 10%;
-            width: 80%;
-            height: 3px;
-            background-color: var(--highlight-color);
-            border-radius: 3px 3px 0 0;
+            left: 15%;
+            width: 70%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent 0%, white 50%, transparent 100%);
+            border-radius: 4px 4px 0 0;
+            box-shadow: 0 -2px 6px rgba(255, 255, 255, 0.3);
         }
         
         /* 水墨風格標題裝飾 */
@@ -164,34 +304,142 @@
             z-index: 0;
         }
         
-        /* 組字成功特效動畫 */
+        /* 優化的水墨風格動畫 */
         @keyframes success-pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.7; }
-            100% { transform: scale(2); opacity: 0; }
+            0% { 
+                transform: scale(1); 
+                opacity: 1; 
+                filter: blur(0px);
+            }
+            50% { 
+                transform: scale(1.3); 
+                opacity: 0.8; 
+                filter: blur(1px);
+            }
+            100% { 
+                transform: scale(1.8); 
+                opacity: 0; 
+                filter: blur(3px);
+            }
         }
         
         @keyframes float-up {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-60px); opacity: 0; }
+            0% { 
+                transform: translateY(0) rotate(0deg); 
+                opacity: 1; 
+                filter: blur(0px);
+            }
+            50% {
+                transform: translateY(-30px) rotate(2deg);
+                opacity: 0.7;
+                filter: blur(1px);
+            }
+            100% { 
+                transform: translateY(-80px) rotate(5deg); 
+                opacity: 0; 
+                filter: blur(2px);
+            }
         }
         
         @keyframes ink-diffuse {
-            0% { transform: scale(0.4) rotate(0deg); opacity: 0.9; }
-            50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
-            100% { transform: scale(3) rotate(15deg); opacity: 0; }
+            0% { 
+                transform: scale(0.3) rotate(0deg); 
+                opacity: 0.95; 
+                filter: blur(0px) contrast(1.2);
+            }
+            25% {
+                transform: scale(0.8) rotate(3deg);
+                opacity: 0.9;
+                filter: blur(1px) contrast(1.1);
+            }
+            50% { 
+                transform: scale(1.4) rotate(8deg); 
+                opacity: 0.7; 
+                filter: blur(2px) contrast(1);
+            }
+            75% {
+                transform: scale(2.2) rotate(12deg);
+                opacity: 0.4;
+                filter: blur(3px) contrast(0.9);
+            }
+            100% { 
+                transform: scale(3.5) rotate(18deg); 
+                opacity: 0; 
+                filter: blur(5px) contrast(0.8);
+            }
         }
         
         @keyframes character-glow {
-            0% { text-shadow: 0 0 5px rgba(142, 62, 26, 0.5); transform: scale(1); }
-            50% { text-shadow: 0 0 20px rgba(142, 62, 26, 0.8), 0 0 30px rgba(142, 62, 26, 0.5); transform: scale(1.2); }
-            100% { text-shadow: 0 0 5px rgba(142, 62, 26, 0.5); transform: scale(1); }
+            0% { 
+                text-shadow: 0 0 8px rgba(139, 69, 19, 0.4), 0 0 16px rgba(139, 69, 19, 0.2); 
+                transform: scale(1); 
+                filter: brightness(1);
+            }
+            50% { 
+                text-shadow: 0 0 20px rgba(139, 69, 19, 0.8), 0 0 40px rgba(139, 69, 19, 0.4), 0 0 60px rgba(139, 69, 19, 0.2); 
+                transform: scale(1.15); 
+                filter: brightness(1.1);
+            }
+            100% { 
+                text-shadow: 0 0 8px rgba(139, 69, 19, 0.4), 0 0 16px rgba(139, 69, 19, 0.2); 
+                transform: scale(1); 
+                filter: brightness(1);
+            }
         }
         
         @keyframes character-bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-20px); }
-            60% { transform: translateY(-10px); }
+            0%, 20%, 50%, 80%, 100% { 
+                transform: translateY(0) scale(1); 
+                filter: brightness(1);
+            }
+            40% { 
+                transform: translateY(-25px) scale(1.05); 
+                filter: brightness(1.1);
+            }
+            60% { 
+                transform: translateY(-12px) scale(1.02); 
+                filter: brightness(1.05);
+            }
+        }
+        
+        /* 新增墨水擴散動畫變體 */
+        @keyframes ink-spread {
+            0% {
+                transform: scale(0.2);
+                opacity: 1;
+                border-radius: 50%;
+            }
+            30% {
+                transform: scale(1);
+                opacity: 0.8;
+                border-radius: 45%;
+            }
+            70% {
+                transform: scale(2.5);
+                opacity: 0.4;
+                border-radius: 30%;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+                border-radius: 20%;
+            }
+        }
+        
+        /* 毛筆筆觸動畫 */
+        @keyframes brush-stroke {
+            0% {
+                stroke-dasharray: 0 1000;
+                opacity: 0.8;
+            }
+            50% {
+                stroke-dasharray: 500 500;
+                opacity: 1;
+            }
+            100% {
+                stroke-dasharray: 1000 0;
+                opacity: 0.9;
+            }
         }
         
         .success-particle {
@@ -332,13 +580,26 @@
         }
         
         .panel {
-            background-color: var(--panel-bg);
+            background: var(--paper-gradient);
             border-radius: var(--border-radius);
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.08),
+                0 2px 6px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
             position: relative;
             border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 30px rgba(0, 0, 0, 0.12),
+                0 4px 10px rgba(0, 0, 0, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
         }
         
         .panel-compact {
@@ -614,81 +875,121 @@
         }
         
         .btn {
-            padding: 8px 15px;
+            padding: 10px 18px;
             font-size: 14px;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--border-radius);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
             white-space: nowrap;
             font-family: 'Noto Serif TC', serif;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+            /* 觸覺反饋優化 */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        /* 按鈕漣漪效果 */
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+            z-index: 1;
+        }
+        
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px) scale(0.98);
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .btn svg {
-            margin-right: 5px;
+            margin-right: 6px;
             width: 16px;
             height: 16px;
+            transition: transform 0.25s ease;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .btn:hover svg {
+            transform: scale(1.1);
         }
         
         .btn-primary {
-            background-color: var(--accent);
+            background: var(--ink-gradient);
             color: white;
+            border: 1px solid transparent;
         }
         
         .btn-primary:hover {
-            background-color: #3A3F60;
+            background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
+            box-shadow: 0 8px 25px rgba(44, 62, 80, 0.3), 0 3px 8px rgba(44, 62, 80, 0.2);
         }
         
         .btn-secondary {
-            background-color: var(--primary);
+            background: var(--accent-gradient);
             color: white;
+            border: 1px solid transparent;
         }
         
         .btn-secondary:hover {
-            background-color: #AB4E31;
+            background: linear-gradient(135deg, #FF8F43 0%, #FF7043 100%);
+            box-shadow: 0 8px 25px rgba(255, 143, 67, 0.4), 0 3px 8px rgba(255, 112, 67, 0.3);
+            transform: translateY(-2px);
         }
         
         .btn-outline {
-            background-color: rgba(35, 45, 82, 0.1);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            font-weight: bold;
+            background: rgba(255, 230, 109, 0.1);
+            color: #B8860B;
+            border: 2px solid #B8860B;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
         }
         
         .btn-outline:hover {
-            background-color: rgba(35, 45, 82, 0.2);
-            box-shadow: 0 2px 8px rgba(35, 45, 82, 0.2);
+            background: var(--accent-gradient);
+            border-color: #B8860B;
+            color: white;
+            box-shadow: 0 8px 20px rgba(184, 134, 11, 0.4);
         }
         
         .btn-solid-light {
-            background-color: #e0e0e0;
+            background: linear-gradient(135deg, #F0F0F0 0%, #E8E8E8 100%);
             color: var(--text);
-            border: 1px solid #c0c0c0;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            font-weight: 600;
         }
         
         .btn-solid-light:hover {
-            background-color: #d0d0d0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #E8E8E8 0%, #DADADA 100%);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+            color: var(--ink-color);
         }
         
-        /* 暗黑模式按钮样式 */
-        @media (prefers-color-scheme: dark) {
-            .btn-solid-light {
-                background-color: #4B4742;
-                color: #F1EBE0;
-                border: 1px solid #5A5650;
-            }
-            
-            .btn-solid-light:hover {
-                background-color: #5A5650;
-            }
-        }
+
         
         /* 選項卡式界面 */
         .tab-container {
@@ -715,8 +1016,10 @@
         }
         
         .tab-button.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
+            color: #B8860B;
+            border-bottom-color: #B8860B;
+            background: rgba(255, 230, 109, 0.15);
+            font-weight: bold;
         }
         
         .tab-content {
@@ -793,8 +1096,9 @@
         }
         
         .badge-primary {
-            background-color: rgba(35, 45, 82, 0.1);
-            color: var(--accent);
+            background-color: rgba(255, 230, 109, 0.2);
+            color: #B8860B;
+            border: 1px solid rgba(184, 134, 11, 0.3);
         }
         
         .badge-warning {
@@ -1003,10 +1307,11 @@
         }
         
         .level-btn.active {
-            background-color: var(--warning);
+            background: var(--success-gradient);
             color: white;
             font-weight: bold;
-            border-color: var(--warning);
+            border-color: var(--success);
+            box-shadow: 0 2px 8px rgba(81, 207, 102, 0.3);
         }
         
         .memory-characters {
@@ -1027,16 +1332,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: var(--warning);
+            background: var(--info-gradient);
             color: white;
             font-size: 28px;
             font-weight: bold;
             border-radius: 5px;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 8px rgba(116, 185, 255, 0.3);
             transition: all 0.3s ease;
             animation: fadeIn 0.3s ease;
             font-family: 'Noto Serif TC', serif;
-            border: 1px solid rgba(183, 148, 63, 0.3);
+            border: 1px solid rgba(116, 185, 255, 0.3);
         }
         
         .memory-character.hidden {
@@ -1085,17 +1390,17 @@
         }
         
         .memory-option:hover {
-            border-color: var(--warning);
+            border-color: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
         }
         
         .memory-option.selected {
-            background-color: var(--warning);
+            background: var(--ink-gradient);
             color: white;
-            border-color: var(--warning);
+            border-color: var(--primary);
             transform: scale(1.05);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 3px 10px rgba(255, 107, 157, 0.4);
         }
         
         /* 選對的字 */
@@ -1172,11 +1477,12 @@
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: rgba(142, 62, 26, 0.3);
+            background: rgba(255, 107, 157, 0.4);
             animation: pulse 1.5s infinite;
             pointer-events: none;
             z-index: 10;
             display: none;
+            border: 2px solid rgba(255, 107, 157, 0.6);
         }
         
         @keyframes pulse {
@@ -1200,14 +1506,14 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(142, 62, 26, 0.9);
+            background: var(--success-gradient);
             color: white;
             padding: 5px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
             z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(81, 207, 102, 0.4);
             opacity: 0;
             transition: opacity 0.3s ease;
             font-family: 'Noto Sans TC', sans-serif;
@@ -1251,15 +1557,22 @@
             overflow: visible !important;
         }
         
-        /* 印章装饰 */
+        /* 可愛星星装饰 - 小學生友善 */
         .seal-decoration {
             position: absolute;
             bottom: 10px;
             right: 10px;
             width: 60px;
             height: 60px;
-            opacity: 0.5;
+            opacity: 0.8;
             z-index: 1;
+            animation: gentle-bounce 3s ease-in-out infinite;
+            filter: drop-shadow(0 2px 4px rgba(255, 107, 157, 0.3));
+        }
+        
+        @keyframes gentle-bounce {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-3px) rotate(5deg); }
         }
         
         /* 书法字体风格覆盖 */
@@ -1268,146 +1581,107 @@
             letter-spacing: 1px;
         }
         
-        /* 适配暗色模式 - 調整為Windows暗色模式友好的配色 */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --background: #292827;
-                --text: #F1EBE0;
-                --light-text: #BFB8A8;
-                --panel-bg: #363432;
-                --border-color: #4B4742;
-                --ink-color: #E5D6BC;
-                --highlight-color: #CF7A60;
-                --accent: #6B7AB3;
-                --primary: #B85D45;
-                --secondary: #D47A66;
-                --success: #5A9E76;
-                --danger: #D06161;
-                --warning: #D4B05A;
+        /* 多字符選擇器樣式 */
+        .character-selector {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .selector-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--ink-color);
+            margin-bottom: 12px;
+            text-align: center;
+            font-family: 'Noto Serif TC', serif;
+        }
+        
+        .character-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .character-btn {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Noto Serif TC', serif;
+            color: var(--ink-color);
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* 田字格背景 */
+            background-image: 
+                linear-gradient(to right, var(--border-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--border-color) 1px, transparent 1px),
+                linear-gradient(to right, rgba(255, 107, 157, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 107, 157, 0.3) 1px, transparent 1px);
+            background-size: 25px 25px, 25px 25px, 50px 50px, 50px 50px;
+            background-position: 0 0, 0 0, 0 0, 0 0;
+        }
+        
+        .character-btn:hover:not(.active) {
+            transform: translateY(-2px) scale(1.05);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+            background-color: rgba(255, 107, 157, 0.05);
+        }
+        
+        .character-btn.active:hover {
+            transform: scale(1.15);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+        }
+        
+        .character-btn.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: #22c55e;
+            font-weight: 900;
+            border: 3px solid #22c55e;
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+            /* 激活狀態下保持田字格但使用綠色 */
+            background-image: 
+                linear-gradient(to right, #22c55e 1px, transparent 1px),
+                linear-gradient(to bottom, #22c55e 1px, transparent 1px),
+                linear-gradient(to right, rgba(34, 197, 94, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(34, 197, 94, 0.2) 1px, transparent 1px);
+            background-size: 25px 25px, 25px 25px, 50px 50px, 50px 50px;
+            background-position: 0 0, 0 0, 0 0, 0 0;
+            animation: gentle-glow 2s ease-in-out infinite;
+        }
+        
+        .character-btn:active {
+            transform: translateY(0) scale(1.02);
+        }
+        
+        /* 為選中狀態添加輕微的閃爍動畫 */
+        @keyframes gentle-glow {
+            0%, 100% { 
+                box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
             }
-            
-            body::before {
-                opacity: 0.15;
-            }
-            
-            body::after {
-                background-image: url("data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M140,50 C170,60 190,90 160,130 C140,160 90,165 60,130 C30,100 40,65 70,50 C100,35 120,45 140,50 Z' fill='%23F1EBE022'/%3E%3C/svg%3E");
-            }
-            
-            header::before {
-                background-image: url("data:image/svg+xml,%3Csvg width='70' height='70' viewBox='0 0 70 70' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20,10 C30,5 45,15 35,30 C25,45 10,35 20,20 C25,12 15,15 20,10 Z' fill='%23D47A6633'/%3E%3C/svg%3E");
-            }
-            
-            header::after {
-                background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60,20 C70,10 55,40 40,35 C25,30 40,10 50,20 C55,25 55,25 60,20 Z' fill='%236B7AB333'/%3E%3C/svg%3E");
-            }
-            
-            .character-display-section::before {
-                background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20,10 C25,15 30,20 40,15 C35,25 25,35 15,30 C5,25 15,5 20,10 Z' fill='%236B7AB333'/%3E%3C/svg%3E");
-            }
-            
-            .character-input {
-                background-color: rgba(54, 52, 50, 0.7);
-                color: var(--text);
-                border-color: var(--border-color);
-            }
-            
-            .character-board,
-            .quiz-target {
-                background-color: #363432;
-            }
-            
-            .grid-background {
-                border-color: #4B4742;
-            }
-            
-            .grid-background::before {
-                background: 
-                    linear-gradient(to right, 
-                        transparent calc(50% - 1px), 
-                        rgba(207, 122, 96, 0.25) calc(50% - 1px), 
-                        rgba(207, 122, 96, 0.25) calc(50% + 1px), 
-                        transparent calc(50% + 1px)
-                    ),
-                    linear-gradient(to bottom, 
-                        transparent calc(50% - 1px), 
-                        rgba(207, 122, 96, 0.25) calc(50% - 1px), 
-                        rgba(207, 122, 96, 0.25) calc(50% + 1px), 
-                        transparent calc(50% + 1px)
-                    );
-            }
-            
-            .memory-character.hidden {
-                background-color: #4B4742;
-                border-color: #5A5650;
-            }
-            
-            .quiz-progress,
-            .character-search {
-                background-color: rgba(54, 52, 50, 0.7);
-                border-color: #4B4742;
-            }
-            
-            .level-btn,
-            .memory-option,
-            .game-card,
-            .achievement {
-                background-color: rgba(54, 52, 50, 0.7);
-                border-color: #4B4742;
-            }
-            
-            .memory-option:hover,
-            .game-card:hover {
-                border-color: var(--highlight-color);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            }
-            
-            .btn-outline {
-                color: var(--accent);
-                border-color: var(--accent);
-            }
-            
-            .btn-outline:hover {
-                background-color: rgba(107, 122, 179, 0.2);
-            }
-            
-            .badge-primary {
-                background-color: rgba(107, 122, 179, 0.2);
-                color: #9EABDA;
-            }
-            
-            .badge-warning {
-                background-color: rgba(212, 176, 90, 0.2);
-                color: #E8CC7A;
-            }
-            
-            .quiz-result.success,
-            .memory-result.success {
-                background-color: rgba(90, 158, 118, 0.15);
-                color: #7BC096;
-            }
-            
-            .quiz-result.error,
-            .memory-result.error {
-                background-color: rgba(208, 97, 97, 0.15);
-                color: #EE8A8A;
-            }
-            
-            .seal-decoration {
-                opacity: 0.7;
-                filter: brightness(1.2);
-            }
-            
-            /* 暗黑模式下組詞項目樣式 */
-            .word-item {
-                background-color: rgba(207, 122, 96, 0.15);
-                color: var(--text);
-            }
-            
-            .word-item:hover {
-                background-color: rgba(207, 122, 96, 0.25);
+            50% { 
+                box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
             }
         }
+        
+
+        
+
         
         /* 新增功能區樣式 */
         .character-search-section {
@@ -1444,9 +1718,16 @@
             align-items: center;
             justify-content: center;
             padding: 8px;
-            background-color: rgba(142, 62, 26, 0.1);
+            background: var(--info-gradient);
             border-radius: var(--border-radius);
-            color: var(--highlight-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(116, 185, 255, 0.3);
+            animation: gentle-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes gentle-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
         }
         
         .side-panel {
@@ -1527,6 +1808,21 @@
             }
             
             .nav-button span {
+                font-size: 14px;
+            }
+            
+            /* 字符選擇器響應式 */
+            .character-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+            
+            .character-buttons {
+                gap: 6px;
+            }
+            
+            .selector-title {
                 font-size: 14px;
             }
         }
@@ -1881,35 +2177,7 @@
             flex-wrap: wrap;
         }
         
-        @media (prefers-color-scheme: dark) {
-            .radical-workspace {
-                background-color: rgba(54, 52, 50, 0.7);
-                border-color: #4B4742;
-            }
-            
-            .radical-item {
-                background-color: rgba(54, 52, 50, 0.9);
-                border-color: #4B4742;
-            }
-            
-            .radical-item:hover {
-                background-color: rgba(107, 122, 179, 0.2);
-                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-            }
-            
-            .radical-item-workspace {
-                background-color: rgba(54, 52, 50, 0.9);
-                border-color: #4B4742;
-            }
-            
-            .radical-item-workspace:hover {
-                background-color: rgba(107, 122, 179, 0.2);
-            }
-            
-            .radical-hint {
-                background-color: rgba(207, 122, 96, 0.1);
-            }
-        }
+
     </style>
 </head>
 <body>
@@ -1969,7 +2237,7 @@
                 <!-- 頂部: 通用漢字查詢部分 -->
                 <div id="character-search-section" class="character-search-section">
                     <div class="character-search">
-                        <input type="text" id="character-input" class="character-input" placeholder="請輸入一個漢字" maxlength="1">
+                        <input type="text" id="character-input" class="character-input" placeholder="請輸入漢字或短句（最多20字）" maxlength="20">
                         <button id="search-button" class="search-button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="11" cy="11" r="8"></circle>
@@ -1988,6 +2256,12 @@
                 
                 <!-- 功能模式容器 - 只會顯示一個 -->
                 <div class="function-container">
+                    <!-- 多字符選擇器 -->
+                    <div id="character-selector" class="character-selector" style="display: none;">
+                        <div class="selector-title">點擊要查詢的漢字：</div>
+                        <div id="character-buttons" class="character-buttons"></div>
+                    </div>
+                    
                     <!-- 功能1: 筆順查詢模式 -->
                     <div id="character-display-section" class="character-display-section function-section">
                         <div class="section-title">
@@ -2037,8 +2311,8 @@
                             </button>
                         </div>
                         
-                        <!-- 印章装饰 -->
-                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='5' y='5' width='50' height='50' rx='5' fill='%238E3E1A33'/%3E%3Cpath d='M30,20 Q38,22 38,30 Q38,38 30,40 Q22,38 22,30 Q22,22 30,20 Z' stroke='%238E3E1A33' fill='none' stroke-width='1'/%3E%3Ctext x='30' y='33' text-anchor='middle' font-size='10' font-family='serif' fill='%238E3E1A44'%3E點墨%3C/text%3E%3C/svg%3E">
+                        <!-- 可愛星星装饰 -->
+                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%23FF6B9D66'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%23FF6B9D' font-weight='bold'%3E棒棒%3C/text%3E%3C/svg%3E">
                     </div>
                     
                     <!-- 功能2: 筆順練習模式 -->
@@ -2121,7 +2395,6 @@
                         
                         <div class="memory-controls">
                             <button id="memory-start" class="btn btn-primary">開始遊戲</button>
-                            <button id="memory-back" class="btn btn-outline">重新開始</button>
                         </div>
                     </div>
                     
@@ -2541,14 +2814,16 @@
                 activeButton.classList.add('active');
                 activeSection.style.display = 'flex';
                 
-                // 處理搜索框的顯示/隱藏
+                // 處理搜索框和字符選擇器的顯示/隱藏
                 const searchSection = document.getElementById('character-search-section');
                 if (activeSection === characterDisplaySection) {
                     // 在筆順查詢頁面顯示搜索框
                     searchSection.style.display = 'block';
+                    // 保持字符選擇器的當前狀態（不強制隱藏）
                 } else {
-                    // 在其他頁面隱藏搜索框
+                    // 在其他頁面隱藏搜索框和字符選擇器
                     searchSection.style.display = 'none';
+                    hideCharacterSelector();
                 }
                 
                 // 根據不同頁面啟動對應功能
@@ -2580,6 +2855,8 @@
             const characterInput = document.getElementById('character-input');
             const searchButton = document.getElementById('search-button');
             const characterDisplay = document.getElementById('character-display');
+            const characterSelector = document.getElementById('character-selector');
+            const characterButtons = document.getElementById('character-buttons');
             const pinyinDisplay = document.getElementById('pinyin-display');
             const strokeCount = document.getElementById('stroke-count');
             const animateButton = document.getElementById('animate-button');
@@ -2607,9 +2884,8 @@
             const memoryOptions = document.getElementById('memory-options');
             const memoryTimer = document.getElementById('memory-timer');
             const memoryStart = document.getElementById('memory-start');
-            const memoryBack = document.getElementById('memory-back');
             const memoryResult = document.getElementById('memory-result');
-            const levelButtons = document.querySelectorAll('.level-btn');
+            const levelButtons = document.querySelectorAll('#memory-game-container .level-btn');
             
             // 不需要選項卡相關元素，已移除舊的選項卡功能
             
@@ -2656,6 +2932,17 @@
                 return /[\u4e00-\u9fa5]/.test(char);
             }
             
+            // 檢查是否全為中文字符
+            function isAllChineseCharacters(text) {
+                return /^[\u4e00-\u9fa5]+$/.test(text);
+            }
+            
+            // 提取文本中的所有中文字符
+            function extractChineseCharacters(text) {
+                const matches = text.match(/[\u4e00-\u9fa5]/g);
+                return matches ? [...new Set(matches)] : []; // 去重
+            }
+            
             // 顯示加載動畫
             function showLoader() {
                 loader.classList.add('active');
@@ -2666,29 +2953,57 @@
                 loader.classList.remove('active');
             }
             
-            // 查詢漢字
-            function queryCharacter() {
-                const character = characterInput.value.trim();
+            // 創建字符選擇器
+            function createCharacterSelector(characters) {
+                characterButtons.innerHTML = '';
                 
-                // 驗證輸入
-                if (!character || !isChineseCharacter(character)) {
-                    errorMessage.style.display = 'block';
-                    return;
-                }
+                characters.forEach((char, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'character-btn';
+                    button.textContent = char;
+                    button.dataset.character = char;
+                    
+                    // 設置第一個字符為激活狀態
+                    if (index === 0) {
+                        button.classList.add('active');
+                    }
+                    
+                    // 點擊事件
+                    button.addEventListener('click', function() {
+                        // 移除其他按鈕的激活狀態
+                        characterButtons.querySelectorAll('.character-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        
+                        // 激活當前按鈕
+                        this.classList.add('active');
+                        
+                        // 切換到這個字符
+                        switchToCharacter(char);
+                    });
+                    
+                    characterButtons.appendChild(button);
+                });
                 
-                // 隱藏筆順挑戰模式和記憶遊戲，顯示一般模式
-                showNormalMode();
-                
-                // 隱藏錯誤訊息，顯示加載中
-                errorMessage.style.display = 'none';
-                showLoader();
-                
-                // 保存當前字符
+                // 顯示選擇器
+                characterSelector.style.display = 'block';
+            }
+            
+            // 隱藏字符選擇器
+            function hideCharacterSelector() {
+                characterSelector.style.display = 'none';
+                characterButtons.innerHTML = '';
+            }
+            
+            // 切換到指定字符
+            function switchToCharacter(character) {
                 currentCharacter = character;
                 
-                // 預先更新顯示的漢字和拼音
+                // 更新顯示的漢字和拼音
                 characterDisplay.textContent = character;
                 pinyinDisplay.textContent = pinyinData[character] || '';
+                
+                showLoader();
                 
                 // 清理writer
                 cleanupWriter('main');
@@ -2707,15 +3022,12 @@
                     delayBetweenStrokes: 1000,
                     radicalColor: '#8E3E1A',
                     onLoadCharDataSuccess: function() {
-                        // 隱藏加載動畫
                         hideLoader();
                         
                         // 顯示筆畫數
                         if (writer && writer._char && writer._char.strokes) {
                             const totalStrokes = writer._char.strokes.length;
                             strokeCount.textContent = `筆畫數：${totalStrokes}`;
-                            
-                            // 更新筆順挑戰進度條
                             updateQuizProgressSteps(totalStrokes);
                         }
                         
@@ -2728,17 +3040,58 @@
                         // 更新成就
                         updateAchievements();
                         
-                        // 顯示組詞 (新增)
+                        // 顯示組詞
                         displayWordCombinations(character);
                     },
                     onLoadCharDataError: function() {
-                        // 隱藏加載動畫
                         hideLoader();
-                        
-                        // 顯示錯誤消息
                         alert('找不到這個漢字的筆順資料，請嘗試其他漢字');
                     }
                 });
+            }
+            
+            // 查詢漢字
+            function queryCharacter() {
+                const inputText = characterInput.value.trim();
+                
+                // 驗證輸入
+                if (!inputText) {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = '請輸入漢字';
+                    return;
+                }
+                
+                // 提取中文字符
+                const chineseCharacters = extractChineseCharacters(inputText);
+                
+                if (chineseCharacters.length === 0) {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = '請輸入有效的中文字';
+                    return;
+                }
+                
+                if (chineseCharacters.length > 20) {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = '最多只能輸入20個漢字';
+                    return;
+                }
+                
+                // 隱藏筆順挑戰模式和記憶遊戲，顯示一般模式
+                showNormalMode();
+                
+                // 隱藏錯誤訊息
+                errorMessage.style.display = 'none';
+                
+                if (chineseCharacters.length === 1) {
+                    // 單個字符，隱藏選擇器，直接顯示
+                    hideCharacterSelector();
+                    switchToCharacter(chineseCharacters[0]);
+                } else {
+                    // 多個字符，顯示選擇器
+                    createCharacterSelector(chineseCharacters);
+                    // 默認顯示第一個字符
+                    switchToCharacter(chineseCharacters[0]);
+                }
             }
             
             // 清理writer實例
@@ -3253,27 +3606,9 @@
                 characterDisplaySection.style.display = 'none';
                 quizContainer.style.display = 'none';
                 memoryGameContainer.style.display = 'block';
-                memoryResult.style.display = 'none';
                 
-                // 重置選擇狀態
-                memoryGameActive = false;
-                memorySelectedChars = [];
-                memoryOptionElements = [];  // 清空选项元素引用
-                
-                // 更新界面
-                memoryOptions.innerHTML = '';
-                memoryCharacters.innerHTML = '';
-                memoryTimer.textContent = '準備開始...';
-                
-                // 獲取目標級別
-                levelButtons.forEach(btn => {
-                    if (btn.classList.contains('active')) {
-                        memoryLevel = parseInt(btn.getAttribute('data-level'));
-                    }
-                });
-                
-                // 啟用開始按鈕
-                memoryStart.disabled = false;
+                // 重置遊戲到初始狀態
+                resetMemoryGame();
             }
             
             // 保留舊函數用於筆順查詢使用
@@ -3283,10 +3618,18 @@
             
             // 開始記憶遊戲挑戰
             function startMemoryChallenge() {
+                // 檢查memoryLevel是否為有效數字，如果不是則重置為3
+                if (isNaN(memoryLevel) || memoryLevel < 3) {
+                    memoryLevel = 3;
+                    console.warn('memoryLevel無效，重置為默認值3');
+                }
+                
                 // 重置游戏状态
                 memoryGameActive = true;
-                memoryStart.disabled = true;
                 memorySelectedChars = [];  // 确保清空之前的选择
+                
+                // 更新按鈕狀態
+                updateMemoryButton();
                 
                 // 清除上一轮选项的选中状态
                 memoryOptionElements.forEach(option => {
@@ -3558,8 +3901,8 @@
                     memoryResult.querySelector('.memory-result-score').textContent = `得分：${correctCount}/${memoryLevel}${timeString}`;
                 }
                 
-                // 恢復游戲狀態
-                memoryStart.disabled = false;
+                // 更新按鈕狀態
+                updateMemoryButton();
                 
                 // 重新顯示原始字符
                 const charElements = document.querySelectorAll('.memory-character');
@@ -3578,6 +3921,61 @@
                     clearInterval(memoryTimer_id);
                     memoryTimer_id = null;
                 }
+            }
+            
+            // 重置記憶遊戲到初始狀態
+            function resetMemoryGame() {
+                // 停止遊戲
+                stopMemoryGame();
+                
+                // 重置遊戲狀態
+                memoryGameActive = false;
+                memorySelectedChars = [];
+                memoryOptionElements = [];
+                memoryTargetChars = [];
+                memorySelectionStartTime = null;
+                memorySelectionDuration = 0;
+                
+                // 清空界面
+                memoryOptions.innerHTML = '';
+                memoryCharacters.innerHTML = '';
+                memoryResult.style.display = 'none';
+                
+                // 重置提示文字和按鈕
+                memoryTimer.textContent = '準備開始...';
+                updateMemoryButton();
+            }
+            
+            // 更新記憶遊戲按鈕文字
+            function updateMemoryButton() {
+                if (memoryGameActive) {
+                    memoryStart.textContent = '停止遊戲';
+                    memoryStart.className = 'btn btn-outline';
+                } else if (memoryResult.style.display === 'block') {
+                    memoryStart.textContent = '再來一局';
+                    memoryStart.className = 'btn btn-primary';
+                } else {
+                    memoryStart.textContent = '開始遊戲';
+                    memoryStart.className = 'btn btn-primary';
+                }
+                memoryStart.disabled = false;
+            }
+            
+            // 開始新一局遊戲 - 重置並立即開始
+            function startNewRound() {
+                // 先清除結果顯示和重置部分狀態
+                memoryResult.style.display = 'none';
+                memorySelectedChars = [];
+                memoryOptionElements = [];
+                memorySelectionStartTime = null;
+                memorySelectionDuration = 0;
+                
+                // 清空選項和字符顯示區域
+                memoryOptions.innerHTML = '';
+                memoryCharacters.innerHTML = '';
+                
+                // 直接開始新遊戲
+                startMemoryChallenge();
             }
             
             // 獲取隨機漢字
@@ -3665,6 +4063,7 @@
             // 設置事件監聽器
             searchButton.addEventListener('click', queryCharacter);
             
+            // 添加回車鍵支持
             characterInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     queryCharacter();
@@ -3700,14 +4099,19 @@
             // 下一個漢字按鈕點擊事件
             document.getElementById('quiz-next').addEventListener('click', challengeNextCharacter);
             
-            // 記憶遊戲控制按鈕
-            memoryStart.addEventListener('click', startMemoryChallenge);
-            memoryBack.addEventListener('click', function() {
-                // 停止記憶遊戲
-                stopMemoryGame();
-                
-                // 重新初始化記憶遊戲，而不是返回筆順查詢
-                startIndependentMemoryGame();
+            // 記憶遊戲控制按鈕 - 智能按鈕，根據遊戲狀態改變功能
+            memoryStart.addEventListener('click', function() {
+                if (memoryGameActive) {
+                    // 如果遊戲正在進行，停止遊戲並重置
+                    stopMemoryGame();
+                    resetMemoryGame();
+                } else if (memoryResult.style.display === 'block') {
+                    // 如果顯示了結果，直接開始新一局遊戲
+                    startNewRound();
+                } else {
+                    // 否則開始新遊戲
+                    startMemoryChallenge();
+                }
             });
             
             // 使用事件委托处理记忆游戏选项点击
@@ -3718,12 +4122,19 @@
                 }
             });
             
-            // 設置難度按鈕點擊事件
+            // 設置記憶挑戰難度按鈕點擊事件
             levelButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    levelButtons.forEach(btn => btn.classList.remove('active'));
+                    // 只處理記憶挑戰容器內的按鈕
+                    const memoryLevelButtons = document.querySelectorAll('#memory-game-container .level-btn');
+                    memoryLevelButtons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
-                    memoryLevel = parseInt(this.getAttribute('data-level'));
+                    
+                    const level = parseInt(this.getAttribute('data-level'));
+                    if (!isNaN(level) && level > 0) {
+                        memoryLevel = level;
+                        console.log('記憶挑戰難度設置為:', memoryLevel);
+                    }
                 });
             });
             
@@ -3755,6 +4166,18 @@
                 }
             });
             
+            // 初始化記憶挑戰難度
+            function initMemoryGameLevel() {
+                const activeMemoryButton = document.querySelector('#memory-game-container .level-btn.active');
+                if (activeMemoryButton) {
+                    const level = parseInt(activeMemoryButton.getAttribute('data-level'));
+                    if (!isNaN(level) && level > 0) {
+                        memoryLevel = level;
+                        console.log('初始化記憶挑戰難度為:', memoryLevel);
+                    }
+                }
+            }
+            
             // 載入學習記錄和預加載語音
             loadLearnedCharacters();
             updateAchievements();
@@ -3762,6 +4185,9 @@
             
             // 初始化詞庫
             initWordDatabase();
+            
+            // 初始化記憶挑戰
+            initMemoryGameLevel();
             
             // 部首組字遊戲功能
             
