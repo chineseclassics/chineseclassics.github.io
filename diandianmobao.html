@@ -3206,8 +3206,9 @@
 
         .achievement-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 12px;
+            margin-bottom: 20px;
         }
 
         .achievement {
@@ -3220,8 +3221,11 @@
             background: rgba(255, 255, 255, 0.5);
             transition: all 0.3s ease;
             min-height: 70px;
+            max-height: 100px;
             position: relative;
             overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .achievement:hover {
@@ -3310,7 +3314,13 @@
         /* 響應式設計 */
         @media (max-width: 1200px) {
             .achievement-grid {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            }
+        }
+
+        @media (max-width: 900px) {
+            .achievement-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
         }
 
@@ -3334,9 +3344,17 @@
             }
 
             .achievement-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
                 gap: 10px;
             }
+        }
+
+        @media (max-width: 480px) {
+            .achievement-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
 
             .achievement {
                 padding: 10px;
@@ -3477,8 +3495,8 @@
     <div class="app-container">
         <header>
             <div class="content">
-                <h1>点点墨宝</h1>
-                <p class="tagline">弘立书院中文经典AI实验室出品</p>
+                            <h1>點點墨寶</h1>
+            <p class="tagline">弘立書院中文經典AI實驗室出品</p>
             </div>
         </header>
         
@@ -3490,7 +3508,7 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <span>笔顺查询</span>
+                    <span>筆順查詢</span>
                 </button>
                 <button id="nav-word-lookup" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3500,7 +3518,7 @@
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                         <polyline points="10,9 9,9 8,9"></polyline>
                     </svg>
-                    <span>字词查询</span>
+                    <span>字詞查詢</span>
                 </button>
                 <button id="nav-practice" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3508,7 +3526,7 @@
                         <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
                         <circle cx="11" cy="11" r="2"></circle>
                     </svg>
-                    <span>笔顺大师</span>
+                    <span>筆順大師</span>
                 </button>
                 <button id="nav-memory" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3516,7 +3534,7 @@
                         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                     </svg>
-                    <span>记忆挑战</span>
+                    <span>記憶挑戰</span>
                 </button>
                 <button id="nav-radical" class="nav-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3569,17 +3587,17 @@
                 <!-- 顶部: 通用汉字查询部分 -->
                 <div id="character-search-section" class="character-search-section">
                     <div class="character-search">
-                        <input type="text" id="character-input" class="character-input" placeholder="请输入汉字或短句（最多20字）" maxlength="20">
+                        <input type="text" id="character-input" class="character-input" placeholder="請輸入漢字或短句（最多20字）" maxlength="20">
                         <button id="search-button" class="search-button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
-                            查询
+                            查詢
                         </button>
                     </div>
                     
-                    <div id="error-message" class="error-message">请输入有效的中文字</div>
+                    <div id="error-message" class="error-message">請輸入有效的中文字</div>
                     
                     <div class="loader-container">
                         <div id="loader" class="loader"></div>
@@ -3590,7 +3608,7 @@
                 <div class="function-container">
                     <!-- 多字符选择器 -->
                     <div id="character-selector" class="character-selector" style="display: none;">
-                        <div class="selector-title">点击要查询的汉字：</div>
+                        <div class="selector-title">點擊要查詢的漢字：</div>
                         <div id="character-buttons" class="character-buttons"></div>
                     </div>
                     
@@ -3612,7 +3630,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                 </svg>
-                                重播笔顺
+                                重播筆順
                             </button>
                             <button id="quiz-button" class="btn btn-secondary">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3620,14 +3638,14 @@
                                     <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
                                     <circle cx="11" cy="11" r="2"></circle>
                                 </svg>
-                                练习书写
+                                練習書寫
                             </button>
                             <button id="speak-button" class="btn btn-outline">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                 </svg>
-                                朗读
+                                朗讀
                             </button>
                             <button id="character-favorite-btn" class="btn btn-favorite" title="收藏字">
                                 💝 收藏
@@ -3639,7 +3657,7 @@
                             <div class="definition-header">📖 字义解释</div>
                             <div id="definition-content" class="definition-content"></div>
                             <div id="definition-loading" class="definition-loading" style="display: none;">
-                                正在查询字义...
+                                正在查詢字義...
                             </div>
                     </div>
                     
@@ -3651,17 +3669,17 @@
                     <div id="word-lookup-container" class="word-lookup-container function-section">
                         <div class="word-search-section">
                             <div class="word-search">
-                                <input type="text" id="word-input" class="word-input" placeholder="请输入要查询的字或词语（如：学、学习、美丽）" maxlength="10">
+                                <input type="text" id="word-input" class="word-input" placeholder="請輸入要查詢的字或詞語（如：學、學習、美麗）" maxlength="10">
                                 <button id="word-search-button" class="search-button">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="11" cy="11" r="8"></circle>
                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                     </svg>
-                                    查询
+                                    查詢
                                 </button>
                             </div>
                             
-                            <div id="word-error-message" class="error-message" style="display: none;">请输入有效的中文字或词语</div>
+                            <div id="word-error-message" class="error-message" style="display: none;">請輸入有效的中文字或詞語</div>
                             
                             <div class="loader-container">
                                 <div id="word-loader" class="loader" style="display: none;"></div>
@@ -3680,7 +3698,7 @@
                                         <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                         <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                     </svg>
-                                    朗读
+                                    朗讀
                                 </button>
                                 <button id="word-practice-button" class="btn btn-secondary">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3688,30 +3706,30 @@
                                     <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
                                     <circle cx="11" cy="11" r="2"></circle>
                                 </svg>
-                                    拆字练习
+                                    拆字練習
                                 </button>
-                                <button id="word-favorite-btn" class="btn btn-favorite" title="收藏词语">
+                                <button id="word-favorite-btn" class="btn btn-favorite" title="收藏詞語">
                                     💝 收藏
                                 </button>
                         </div>
                             
                             <!-- 词语解释区 -->
                             <div id="word-definition" class="word-definition">
-                                                            <div class="definition-header">📚 字词解释</div>
+                                                            <div class="definition-header">📚 字詞解釋</div>
                                 <div id="word-definition-content" class="definition-content"></div>
                                 <div id="word-definition-loading" class="definition-loading" style="display: none;">
-                                    正在查询字词解释...
+                                    正在查詢字詞解釋...
                                 </div>
                             </div>
                         </div>
                         
                         <!-- 可爱星星装饰 -->
-                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%234DABF766'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%234DABF7' font-weight='bold'%3E词典%3C/text%3E%3C/svg%3E">
+                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%234DABF766'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%234DABF7' font-weight='bold'%3E詞典%3C/text%3E%3C/svg%3E">
                     </div>
                     
                     <!-- 功能3: 笔顺练习模式 -->
                     <div id="quiz-container" class="quiz-container function-section">
-                        <div class="quiz-instruction">请按照正确的笔顺点击完成汉字！</div>
+                        <div class="quiz-instruction">請按照正確的筆順點擊完成漢字！</div>
                         
                         <div class="quiz-progress" id="quiz-progress">
                             <!-- 动态生成进度条 -->
@@ -3721,37 +3739,37 @@
                             <div class="grid-background"></div>
                             <div id="quiz-target-field"></div>
                             <div id="stroke-hint" class="stroke-hint"></div>
-                            <div id="stroke-animation-hint" class="stroke-animation-hint">点击这里！</div>
+                            <div id="stroke-animation-hint" class="stroke-animation-hint">點擊這裡！</div>
                         </div>
                         
                         <div id="quiz-result" class="quiz-result">
-                            <div class="quiz-result-message">真棒！你完成了这个汉字！</div>
-                            <div class="quiz-result-detail">你成功按照正确的笔顺完成了「人」字！</div>
+                            <div class="quiz-result-message">真棒！你完成了這個漢字！</div>
+                            <div class="quiz-result-detail">你成功按照正確的筆順完成了「人」字！</div>
                         </div>
                         
                         <div class="quiz-buttons">
-                            <button id="quiz-retry" class="btn btn-primary">重新挑战</button>
+                            <button id="quiz-retry" class="btn btn-primary">重新挑戰</button>
                             <button id="quiz-next" class="btn btn-secondary">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M9 18l6-6-6-6"/>
                                 </svg>
-                                下一个汉字
+                                下一個漢字
                             </button>
-                            <button id="quiz-hint" class="btn btn-outline">显示提示</button>
+                            <button id="quiz-hint" class="btn btn-outline">顯示提示</button>
                         </div>
                     </div>
                     
                     <!-- 功能4: 记忆挑战模式 -->
                     <div id="memory-game-container" class="memory-game-container function-section">
-                        <div class="memory-instruction">记住显示的汉字，然后在它们消失后选出正确的汉字！</div>
+                        <div class="memory-instruction">記住顯示的漢字，然後在它們消失後選出正確的漢字！</div>
                         
                         <div class="memory-level">
-                            <button class="level-btn active" data-level="3">初级 (3字)</button>
-                            <button class="level-btn" data-level="5">中级 (5字)</button>
-                            <button class="level-btn" data-level="8">高级 (8字)</button>
+                            <button class="level-btn active" data-level="3">初級 (3字)</button>
+                            <button class="level-btn" data-level="5">中級 (5字)</button>
+                            <button class="level-btn" data-level="8">高級 (8字)</button>
                         </div>
                         
-                        <div class="memory-timer" id="memory-timer">准备开始...</div>
+                        <div class="memory-timer" id="memory-timer">準備開始...</div>
                         
                         <div class="memory-characters" id="memory-characters">
                             <!-- 动态生成字符卡片 -->
@@ -3762,12 +3780,12 @@
                         </div>
                         
                         <div id="memory-result" class="memory-result">
-                            <div class="memory-result-message">做得好！你记住了所有汉字！</div>
+                            <div class="memory-result-message">做得好！你記住了所有漢字！</div>
                             <div class="memory-result-score">得分：3/3</div>
                         </div>
                         
                         <div class="memory-controls">
-                            <button id="memory-start" class="btn btn-primary">开始游戏</button>
+                            <button id="memory-start" class="btn btn-primary">開始遊戲</button>
                         </div>
                     </div>
                     
@@ -3777,9 +3795,9 @@
                         <div class="radical-header-section">
                             <div class="radical-level-wrapper">
                                 <div class="radical-level">
-                                    <button class="level-btn active" data-level="easy">初级</button>
-                                    <button class="level-btn" data-level="medium">中级</button>
-                                    <button class="level-btn" data-level="hard">高级</button>
+                                    <button class="level-btn active" data-level="easy">初級</button>
+                                    <button class="level-btn" data-level="medium">中級</button>
+                                    <button class="level-btn" data-level="hard">高級</button>
                                 </div>
                             </div>
                         </div>
@@ -3788,20 +3806,20 @@
                         <div class="radical-game-board">
                             <!-- 目标字区域 -->
                             <div class="target-word-container">
-                                <div class="target-word-label">目标字</div>
+                                <div class="target-word-label">目標字</div>
                                 <div id="target-word" class="target-word">?</div>
                             </div>
                             
                             <!-- 部首工作区 -->
                             <div class="radical-workspace">
                                 <div id="radical-drop-area" class="radical-drop-area">
-                                    <div class="drop-placeholder">点击下方部首添加到此处</div>
+                                    <div class="drop-placeholder">點擊下方部首添加到此處</div>
                                 </div>
                             </div>
                             
                             <!-- 部首选择区 -->
                             <div class="radicals-selection-area">
-                                <div class="radicals-label">部首选择</div>
+                                <div class="radicals-label">部首選擇</div>
                                 <div id="radicals-container" class="radicals-container">
                                     <!-- 这里将动态生成部首元素 -->
                                 </div>
@@ -3809,21 +3827,20 @@
                             
                             <!-- 操作按钮区域 -->
                             <div class="radical-controls">
-                                <button id="radical-check" class="btn btn-primary">检查</button>
-                                <button id="radical-hint-btn" class="btn btn-solid-light">显示提示</button>
+                                <button id="radical-check" class="btn btn-primary">檢查</button>
+                                <button id="radical-hint-btn" class="btn btn-solid-light">顯示提示</button>
                                 <button id="radical-clear" class="btn btn-solid-light">清除</button>
                                 <button id="radical-next" class="btn btn-secondary">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
-                                    下一题
+                                    下一題
                                 </button>
                             </div>
                         </div>
                         
                         <!-- 结果和提示区域 -->
                         <div id="radical-result" class="radical-result">
-                            <div class="radical-result-message">非常棒！你成功组字了！</div>
                             <div class="radical-result-message">非常棒！你成功組字了！</div>
                             <div class="radical-result-detail">你成功組合了「好」字！</div>
                         </div>
