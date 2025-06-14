@@ -107,7 +107,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            padding: 2px;
+            padding: 6px;
             box-sizing: border-box;
         }
 
@@ -118,38 +118,57 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 4px;
             transition: all 0.2s ease;
             line-height: 1;
             box-sizing: border-box;
             overflow: hidden;
+            padding: 2px;
+            text-align: center;
+            font-family: '微軟正黑體', 'Microsoft JhengHei', Arial, sans-serif;
         }
 
         .snake-head {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
-            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), 0 0 25px rgba(76, 175, 80, 0.4);
             z-index: 10;
+            animation: dragonHeadPulse 2s ease-in-out infinite, dragonHeadGlow 3s ease-in-out infinite alternate;
+            transform-origin: center;
         }
 
         .snake-body {
             background: linear-gradient(45deg, #81C784, #66BB6A);
             color: white;
-            box-shadow: 0 2px 6px rgba(129, 199, 132, 0.3);
+            box-shadow: 0 4px 12px rgba(129, 199, 132, 0.4), 0 2px 6px rgba(129, 199, 132, 0.6);
+            animation: subtleBodyMove 4s ease-in-out infinite;
         }
 
         .food {
             background: linear-gradient(45deg, #FF9800, #F57C00);
             color: white;
-            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-            animation: pulse 1.5s infinite;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5), 0 2px 8px rgba(255, 152, 0, 0.7);
+            animation: foodPulse 1.5s infinite, foodRotate 6s linear infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        /* 增強的食物脈衝動畫 */
+        @keyframes foodPulse {
+            0%, 100% { 
+                transform: scale(1) rotate(var(--rotation, 0deg)); 
+                box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5), 0 2px 8px rgba(255, 152, 0, 0.7);
+            }
+            50% { 
+                transform: scale(1.15) rotate(var(--rotation, 0deg));
+                box-shadow: 0 6px 20px rgba(255, 152, 0, 0.7), 0 3px 12px rgba(255, 152, 0, 0.9);
+            }
+        }
+
+        /* 食物旋轉動畫 */
+        @keyframes foodRotate {
+            0% { --rotation: 0deg; }
+            100% { --rotation: 360deg; }
         }
 
         /* 遊戲信息面板 */
@@ -344,6 +363,38 @@
             80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
         }
+
+        /* 龍頭呼吸動畫 */
+        @keyframes dragonHeadPulse {
+            0%, 100% { 
+                transform: scale(1); 
+            }
+            50% { 
+                transform: scale(1.05); /* 輕微縮放 */
+            }
+        }
+
+        /* 龍頭光暈動畫 */
+        @keyframes dragonHeadGlow {
+            0% {
+                box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), 0 0 25px rgba(76, 175, 80, 0.4);
+            }
+            100% {
+                box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 0 35px rgba(76, 175, 80, 0.6), 0 0 45px rgba(76, 175, 80, 0.3);
+            }
+        }
+
+        /* 龍身輕微動畫 */
+        @keyframes subtleBodyMove {
+            0%, 100% { 
+                transform: translateY(0px);
+                box-shadow: 0 4px 12px rgba(129, 199, 132, 0.4), 0 2px 6px rgba(129, 199, 132, 0.6);
+            }
+            50% { 
+                transform: translateY(-1px); /* 非常輕微的上下移動 */
+                box-shadow: 0 6px 15px rgba(129, 199, 132, 0.5), 0 3px 8px rgba(129, 199, 132, 0.7);
+            }
+        }
     </style>
 </head>
 <body>
@@ -480,7 +531,7 @@
             }
         }
 
-        // 詞庫系統 - 優化版本，使用預處理的字典文件
+        // 詞庫系統 - 統一版本，使用您指定的詞庫URL
         class WordDatabase {
             constructor() {
                 // 本地詞庫（從優化的字典文件加載）
@@ -488,157 +539,166 @@
                 this.byFirstChar = {}; // 按首字分組
                 this.byLastChar = {};  // 按尾字分組
                 this.commonChars = []; // 常用字符（用於生成食物）
-                
-                // 初始化詞庫
-                this.initializeDictionary();
+                this.isLoaded = false; // 加載狀態標記
             }
 
-            // 初始化詞庫 - 使用優化的JSON字典
-            async initializeDictionary() {
+            // 異步初始化方法 - 確保詞庫正確加載
+            async initialize() {
+                console.log('開始初始化詞庫...');
+                
+                // 第一優先：嘗試加載優化詞庫
+                if (await this.loadOptimizedDictionary()) {
+                    return;
+                }
+                
+                // 第二優先：嘗試加載原始words.txt
+                if (await this.loadFromWordsFile()) {
+                    return;
+                }
+                
+                // 最後備案：使用內建詞庫
+                this.loadBuiltinDictionary();
+            }
+
+            // 加載優化詞庫 - 使用您指定的URL
+            async loadOptimizedDictionary() {
                 try {
-                    console.log('正在加載優化詞庫...');
-                    const response = await fetch('files/dictionary/cilong_words.json');
+                    const targetUrl = 'files/dictionary/cilong_words.json';
+                    console.log(`🎯 嘗試加載優化詞庫: ${targetUrl}`);
+                    console.log(`📍 完整URL: ${window.location.origin}/${targetUrl}`);
+                    
+                    const response = await fetch(targetUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+                    }
+                    
+                    console.log(`✅ 成功取得響應: ${response.status} ${response.statusText}`);
+                    console.log(`📦 內容類型: ${response.headers.get('content-type')}`);
+                    
                     const dictData = await response.json();
+                    
+                    // 驗證數據完整性
+                    if (!dictData.words || !Array.isArray(dictData.words)) {
+                        throw new Error('詞庫數據格式不正確：缺少words數組');
+                    }
+                    
+                    // 驗證關鍵字段
+                    const expectedFields = ['version', 'description', 'total_words', 'total_chars', 'words', 'by_first_char', 'by_last_char', 'common_chars'];
+                    const missingFields = expectedFields.filter(field => !(field in dictData));
+                    if (missingFields.length > 0) {
+                        console.warn(`⚠️ 詞庫缺少部分字段: ${missingFields.join(', ')}`);
+                    }
                     
                     // 載入詞語集合
                     this.words = new Set(dictData.words);
-                    this.byFirstChar = dictData.by_first_char;
-                    this.byLastChar = dictData.by_last_char;
-                    this.commonChars = dictData.common_chars;
+                    this.byFirstChar = dictData.by_first_char || {};
+                    this.byLastChar = dictData.by_last_char || {};
+                    this.commonChars = dictData.common_chars || [];
                     
-                    console.log(`優化詞庫加載完成！`);
-                    console.log(`- 詞語總數: ${dictData.total_words}`);
-                    console.log(`- 字符總數: ${dictData.total_chars}`);
-                    console.log(`- 不同首字: ${Object.keys(this.byFirstChar).length}`);
-                    console.log(`- 不同尾字: ${Object.keys(this.byLastChar).length}`);
+                    this.isLoaded = true;
                     
+                    console.log(`🎉 優化詞庫加載完全成功！`);
+                    console.log(`📖 版本: ${dictData.version || '未知'}`);
+                    console.log(`📝 描述: ${dictData.description || '未知'}`);
+                    console.log(`📊 詞語總數: ${dictData.total_words || this.words.size}`);
+                    console.log(`🔤 字符總數: ${dictData.total_chars || '未知'}`);
+                    console.log(`🅰️ 不同首字: ${Object.keys(this.byFirstChar).length}`);
+                    console.log(`🅱️ 不同尾字: ${Object.keys(this.byLastChar).length}`);
+                    console.log(`⭐ 常用字符: ${this.commonChars.length}`);
+                    
+                    // 測試"生字"是否在詞庫中
+                    const testWords = ['生字', '學生', '字體', '文字'];
+                    console.log(`🧪 測試詞語:`);
+                    testWords.forEach(word => {
+                        const exists = this.words.has(word);
+                        console.log(`   "${word}": ${exists ? '✅ 存在' : '❌ 不存在'}`);
+                    });
+                    
+                    return true;
                 } catch (error) {
-                    console.log('加載優化詞庫失敗，嘗試加載原始詞庫:', error);
-                    await this.loadFromOriginalFile();
+                    console.error('❌ 加載優化詞庫失敗:', error);
+                    console.error(`🔍 請檢查URL是否可訪問: ${window.location.origin}/files/dictionary/cilong_words.json`);
+                    return false;
                 }
             }
 
-            // 備用加載方式：從原始words.txt文件加載
-            async loadFromOriginalFile() {
+            // 備用：從原始words.txt文件加載
+            async loadFromWordsFile() {
                 try {
-                    console.log('正在加載原始詞庫...');
+                    console.log('嘗試加載原始詞庫: files/dictionary/words.txt');
                     const response = await fetch('files/dictionary/words.txt');
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
                     const text = await response.text();
-                    
-                    // 解析詞表，只保留兩字詞語，同時構建分組
                     const lines = text.split('\n');
-                    let twoCharCount = 0;
-                    this.byFirstChar = {};
-                    this.byLastChar = {};
-                    const charSet = new Set();
                     
-                    for (let line of lines) {
+                    // 只保留兩字詞語
+                    lines.forEach(line => {
                         const word = line.trim();
                         if (word.length === 2) {
                             this.words.add(word);
-                            twoCharCount++;
-                            
-                            const firstChar = word[0];
-                            const lastChar = word[1];
-                            
-                            // 按首字分組
-                            if (!this.byFirstChar[firstChar]) {
-                                this.byFirstChar[firstChar] = [];
-                            }
-                            this.byFirstChar[firstChar].push(word);
-                            
-                            // 按尾字分組
-                            if (!this.byLastChar[lastChar]) {
-                                this.byLastChar[lastChar] = [];
-                            }
-                            this.byLastChar[lastChar].push(word);
-                            
-                            // 收集字符
-                            charSet.add(firstChar);
-                            charSet.add(lastChar);
                         }
-                    }
+                    });
                     
-                    this.commonChars = Array.from(charSet).slice(0, 200);
-                    
-                    console.log(`原始詞庫加載完成！共加載 ${twoCharCount} 個兩字詞語`);
-                    
-                    // 如果詞庫為空，使用備用詞庫
-                    if (this.words.size === 0) {
-                        this.loadBackupDictionary();
-                    }
-                    
+                    this.buildIndices();
+                    this.isLoaded = true;
+                    console.log(`✅ 原始詞庫加載成功，共 ${this.words.size} 個兩字詞語`);
+                    return true;
                 } catch (error) {
-                    console.log('加載原始詞庫文件失敗，使用備用詞庫:', error);
-                    this.loadBackupDictionary();
+                    console.error('❌ 加載原始詞庫失敗:', error);
+                    return false;
                 }
             }
 
-            // 備用詞庫
-            loadBackupDictionary() {
-                const backupWords = [
-                    // 基礎詞彙
-                    '學習', '快樂', '智慧', '勇敢', '美麗', '善良', '努力', '成功', '希望', '夢想',
-                    '友情', '愛心', '溫暖', '光明', '健康', '平安', '幸福', '自由', '正義', '誠實',
-                    // 學習相關
-                    '知識', '思考', '理解', '記憶', '創造', '發現', '探索', '研究', '學問', '智能',
-                    '讀書', '寫字', '計算', '分析', '比較', '總結', '應用', '實踐', '改進', '創新',
-                    // 情感詞彙
-                    '開心', '興奮', '滿足', '感動', '驚喜', '安心', '放心', '舒服', '愉快', '歡樂',
-                    '難過', '傷心', '擔心', '害怕', '緊張', '焦慮', '煩惱', '困擾', '失望', '後悔',
-                    // 動作詞彙
-                    '走路', '跑步', '跳躍', '飛行', '游泳', '爬山', '騎車', '開車', '坐車', '搭船',
-                    '吃飯', '喝水', '睡覺', '起床', '洗澡', '刷牙', '穿衣', '脫衣', '購物', '工作',
-                    // 自然詞彙
-                    '太陽', '月亮', '星星', '天空', '白雲', '下雨', '打雷', '閃電', '彩虹', '雪花',
-                    '春天', '夏天', '秋天', '冬天', '花朵', '樹木', '草地', '森林', '山脈', '河流',
-                    // 動物詞彙
-                    '小狗', '小貓', '小鳥', '魚兒', '蝴蝶', '蜜蜂', '螞蟻', '老虎', '獅子', '大象',
-                    '兔子', '老鼠', '猴子', '熊貓', '企鵝', '海豚', '鯨魚', '烏龜', '青蛙', '蛇類',
-                    // 食物詞彙
-                    '米飯', '麵條', '餃子', '包子', '饅頭', '蛋糕', '餅乾', '糖果', '巧克力', '冰淇淋',
-                    '水果', '蘋果', '香蕉', '橘子', '草莓', '葡萄', '西瓜', '鳳梨', '芒果', '櫻桃',
-                    // 顏色詞彙
-                    '紅色', '藍色', '黃色', '綠色', '紫色', '橙色', '粉色', '黑色', '白色', '灰色',
-                    // 家庭詞彙
-                    '爸爸', '媽媽', '爺爺', '奶奶', '哥哥', '姐姐', '弟弟', '妹妹', '叔叔', '阿姨',
-                    // 學校詞彙
-                    '老師', '同學', '朋友', '教室', '操場', '圖書館', '實驗室', '音樂室', '美術室', '體育館',
-                    // 常用組合
-                    '中國', '台灣', '美國', '日本', '英國', '法國', '德國', '加拿大', '澳洲', '韓國'
-                ];
-                
-                // 構建備用詞庫的分組結構
+            // 構建索引
+            buildIndices() {
                 this.byFirstChar = {};
                 this.byLastChar = {};
-                const charSet = new Set();
+                const charFreq = {};
                 
-                for (let word of backupWords) {
-                    this.words.add(word);
-                    
+                this.words.forEach(word => {
                     const firstChar = word[0];
                     const lastChar = word[1];
                     
-                    // 按首字分組
                     if (!this.byFirstChar[firstChar]) {
                         this.byFirstChar[firstChar] = [];
                     }
                     this.byFirstChar[firstChar].push(word);
                     
-                    // 按尾字分組
                     if (!this.byLastChar[lastChar]) {
                         this.byLastChar[lastChar] = [];
                     }
                     this.byLastChar[lastChar].push(word);
                     
-                    // 收集字符
-                    charSet.add(firstChar);
-                    charSet.add(lastChar);
-                }
+                    // 統計字符頻率
+                    charFreq[firstChar] = (charFreq[firstChar] || 0) + 1;
+                    charFreq[lastChar] = (charFreq[lastChar] || 0) + 1;
+                });
                 
-                this.commonChars = Array.from(charSet);
+                // 提取常用字符（出現頻率前200的字符）
+                this.commonChars = Object.entries(charFreq)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 200)
+                    .map(entry => entry[0]);
+            }
+
+            // 內建備用詞庫
+            loadBuiltinDictionary() {
+                const builtinWords = [
+                    '學習', '知識', '智慧', '快樂', '美麗', '善良', '勇敢', '努力',
+                    '成功', '希望', '夢想', '友情', '愛心', '溫暖', '光明', '健康',
+                    '平安', '幸福', '自由', '正義', '誠實', '思考', '理解', '記憶',
+                    '創造', '發現', '探索', '研究', '讀書', '寫字', '生字', '漢字',
+                    '文字', '數字', '字體', '字典', '字母', '學生', '老師', '同學',
+                    '朋友', '家人', '父母', '孩子', '兄弟', '姐妹'
+                ];
                 
-                console.log(`使用備用詞庫，共 ${this.words.size} 個兩字詞語`);
+                this.words = new Set(builtinWords);
+                this.buildIndices();
+                this.isLoaded = true;
+                console.log(`⚠️ 使用備用詞庫，共 ${this.words.size} 個兩字詞語`);
             }
 
             // 檢查詞語是否存在（純本地查詢，無延遲）
@@ -731,8 +791,6 @@
                 // 否則回退到隨機字符
                 return this.getRandomChar();
             }
-
-
         }
 
         // 詞龍遊戲主體
@@ -781,15 +839,16 @@
 
             setupBoard() {
                 const board = document.getElementById('game-board');
-                // 計算實際需要的尺寸，並添加適當的邊距
-                const actualWidth = (this.boardWidth * this.cellSize) + 4; // 添加左右邊距
-                const actualHeight = (this.boardHeight * this.cellSize) + 4; // 添加上下邊距
+                // 計算實際需要的尺寸，增加更多邊距確保字符完全顯示
+                const margin = 6; // 增加邊距到6px
+                const actualWidth = (this.boardWidth * this.cellSize) + (margin * 2);
+                const actualHeight = (this.boardHeight * this.cellSize) + (margin * 2);
                 
                 board.style.width = actualWidth + 'px';
                 board.style.height = actualHeight + 'px';
                 board.innerHTML = '';
                 
-                console.log(`遊戲板設置: ${actualWidth}×${actualHeight}, 格子: ${this.boardWidth}×${this.boardHeight}, 單元格: ${this.cellSize}px`);
+                console.log(`遊戲板設置: ${actualWidth}×${actualHeight}, 格子: ${this.boardWidth}×${this.boardHeight}, 單元格: ${this.cellSize}px, 邊距: ${margin}px`);
             }
 
             bindEvents() {
@@ -1140,8 +1199,6 @@
                 return result.slice(0, 5); // 最多返回5個智能選擇的字符
             }
 
-
-
             generateSingleFood() {
                 let newFood;
                 do {
@@ -1186,7 +1243,7 @@
                 const board = document.getElementById('game-board');
                 board.innerHTML = '';
                 
-                const offset = 2; // 與CSS padding保持一致的偏移量
+                const offset = 6; // 與CSS padding和setupBoard的margin保持一致
                 
                 // 渲染龍身
                 this.dragon.forEach((segment, index) => {
