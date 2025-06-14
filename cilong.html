@@ -107,7 +107,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            padding: 6px;
+            padding: 8px;
             box-sizing: border-box;
         }
 
@@ -125,7 +125,7 @@
             line-height: 1;
             box-sizing: border-box;
             overflow: hidden;
-            padding: 2px;
+            padding: 1px;
             text-align: center;
             font-family: '微軟正黑體', 'Microsoft JhengHei', Arial, sans-serif;
         }
@@ -133,42 +133,32 @@
         .snake-head {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), 0 0 25px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
             z-index: 10;
-            animation: dragonHeadPulse 2s ease-in-out infinite, dragonHeadGlow 3s ease-in-out infinite alternate;
-            transform-origin: center;
+            animation: dragonHeadGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes dragonHeadGlow {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 4px 15px rgba(76, 175, 80, 0.6);
+                transform: scale(1.05);
+            }
         }
 
         .snake-body {
             background: linear-gradient(45deg, #81C784, #66BB6A);
             color: white;
-            box-shadow: 0 4px 12px rgba(129, 199, 132, 0.4), 0 2px 6px rgba(129, 199, 132, 0.6);
-            animation: subtleBodyMove 4s ease-in-out infinite;
+            box-shadow: 0 2px 6px rgba(129, 199, 132, 0.3);
         }
 
         .food {
             background: linear-gradient(45deg, #FF9800, #F57C00);
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5), 0 2px 8px rgba(255, 152, 0, 0.7);
-            animation: foodPulse 1.5s infinite, foodRotate 6s linear infinite;
-        }
-
-        /* 增強的食物脈衝動畫 */
-        @keyframes foodPulse {
-            0%, 100% { 
-                transform: scale(1) rotate(var(--rotation, 0deg)); 
-                box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5), 0 2px 8px rgba(255, 152, 0, 0.7);
-            }
-            50% { 
-                transform: scale(1.15) rotate(var(--rotation, 0deg));
-                box-shadow: 0 6px 20px rgba(255, 152, 0, 0.7), 0 3px 12px rgba(255, 152, 0, 0.9);
-            }
-        }
-
-        /* 食物旋轉動畫 */
-        @keyframes foodRotate {
-            0% { --rotation: 0deg; }
-            100% { --rotation: 360deg; }
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
         }
 
         /* 遊戲信息面板 */
@@ -362,38 +352,6 @@
             20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
             80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-        }
-
-        /* 龍頭呼吸動畫 */
-        @keyframes dragonHeadPulse {
-            0%, 100% { 
-                transform: scale(1); 
-            }
-            50% { 
-                transform: scale(1.05); /* 輕微縮放 */
-            }
-        }
-
-        /* 龍頭光暈動畫 */
-        @keyframes dragonHeadGlow {
-            0% {
-                box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), 0 0 25px rgba(76, 175, 80, 0.4);
-            }
-            100% {
-                box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 0 35px rgba(76, 175, 80, 0.6), 0 0 45px rgba(76, 175, 80, 0.3);
-            }
-        }
-
-        /* 龍身輕微動畫 */
-        @keyframes subtleBodyMove {
-            0%, 100% { 
-                transform: translateY(0px);
-                box-shadow: 0 4px 12px rgba(129, 199, 132, 0.4), 0 2px 6px rgba(129, 199, 132, 0.6);
-            }
-            50% { 
-                transform: translateY(-1px); /* 非常輕微的上下移動 */
-                box-shadow: 0 6px 15px rgba(129, 199, 132, 0.5), 0 3px 8px rgba(129, 199, 132, 0.7);
-            }
         }
     </style>
 </head>
@@ -839,8 +797,8 @@
 
             setupBoard() {
                 const board = document.getElementById('game-board');
-                // 計算實際需要的尺寸，增加更多邊距確保字符完全顯示
-                const margin = 6; // 增加邊距到6px
+                // 計算實際需要的尺寸，確保所有方向邊距一致
+                const margin = 8; // 增加邊距到8px，確保上下左右都有足夠空間
                 const actualWidth = (this.boardWidth * this.cellSize) + (margin * 2);
                 const actualHeight = (this.boardHeight * this.cellSize) + (margin * 2);
                 
@@ -1243,7 +1201,7 @@
                 const board = document.getElementById('game-board');
                 board.innerHTML = '';
                 
-                const offset = 6; // 與CSS padding和setupBoard的margin保持一致
+                const offset = 8; // 與setupBoard的margin保持一致，確保所有方向邊距相同
                 
                 // 渲染龍身
                 this.dragon.forEach((segment, index) => {

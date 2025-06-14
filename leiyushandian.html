@@ -408,6 +408,24 @@
                 <!-- 遊戲界面 -->
                 <div id="game-container" class="w-full h-full relative">
                     <canvas id="game-canvas" class="game-canvas absolute top-0 left-0 w-full h-full"></canvas>
+                    
+                    <!-- 背景音樂 -->
+                    <audio id="background-music" loop preload="auto">
+                        <source src="https://chineseclassics.github.io/sound/leiyu/leiyu.mp3" type="audio/mpeg">
+                        您的瀏覽器不支持音頻播放。
+                    </audio>
+                    
+                    <!-- 音樂控制按鈕 -->
+                    <button id="music-toggle" class="absolute top-4 left-4 z-50 w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-full border border-blue-500 border-opacity-30 shadow-lg flex items-center justify-center hover:from-gray-800 hover:to-gray-700 transition-all duration-300">
+                        <svg id="music-on-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                            <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 001.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06zM18.584 5.106a.75.75 0 011.06 0 11.249 11.249 0 010 15.788.75.75 0 11-1.06-1.06 9.749 9.749 0 000-13.668.75.75 0 010-1.06z" />
+                            <path d="M16.024 9.106a.75.75 0 01.976.04 4.5 4.5 0 010 6.708.75.75 0 11-1.051-1.071 3 3 0 000-4.566.75.75 0 01.075-1.111z" />
+                        </svg>
+                        <svg id="music-off-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 hidden">
+                            <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 001.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06zM17.78 9.22a.75.75 0 10-1.06 1.06L18.44 12l-1.72 1.72a.75.75 0 001.06 1.06L19.5 13.06l1.72 1.72a.75.75 0 101.06-1.06L20.56 12l1.72-1.72a.75.75 0 00-1.06-1.06L19.5 10.94l-1.72-1.72z" />
+                        </svg>
+                    </button>
+                    
                     <div id="character" class="character absolute bottom-6 h-16 w-16 transform -translate-x-1/2 hidden">
                         <img id="character-img" src="" alt="角色" class="w-full h-full">
                     </div>
@@ -887,6 +905,96 @@
             let rainInterval;
             let raindropsCount = 0;
             const MAX_RAINDROPS = 80;
+            
+            // 背景音樂控制
+            const backgroundMusic = document.getElementById('background-music');
+            const musicToggle = document.getElementById('music-toggle');
+            const musicOnIcon = document.getElementById('music-on-icon');
+            const musicOffIcon = document.getElementById('music-off-icon');
+            let isMusicPlaying = false;
+            
+            // 音樂控制函數
+            function toggleMusic() {
+                if (isMusicPlaying) {
+                    backgroundMusic.pause();
+                    musicOnIcon.classList.add('hidden');
+                    musicOffIcon.classList.remove('hidden');
+                    isMusicPlaying = false;
+                } else {
+                    // 嘗試播放音樂，如果失敗則靜默處理
+                    backgroundMusic.play().then(() => {
+                        musicOnIcon.classList.remove('hidden');
+                        musicOffIcon.classList.add('hidden');
+                        isMusicPlaying = true;
+                    }).catch(error => {
+                        console.log('無法播放背景音樂:', error);
+                        // 如果自動播放被阻止，顯示提示
+                        showMusicAlert();
+                    });
+                }
+            }
+            
+            // 顯示音樂播放提示
+            function showMusicAlert() {
+                const alert = document.createElement('div');
+                alert.className = 'fixed top-20 left-4 bg-gradient-to-br from-gray-900 to-gray-800 text-white p-3 rounded-lg border border-blue-500 border-opacity-30 shadow-lg z-50 text-sm max-w-xs';
+                alert.innerHTML = `
+                    <div class="flex items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 mr-2 text-yellow-300 flex-shrink-0 mt-0.5">
+                            <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 001.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06z" />
+                        </svg>
+                        <div>
+                            <div class="font-medium">背景音樂提示</div>
+                            <div class="text-xs text-gray-300 mt-1">請點擊音樂按鈕啟用背景音樂</div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(alert);
+                
+                // 3秒後自動消失
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 3000);
+            }
+            
+            // 初始化音樂控制
+            musicToggle.addEventListener('click', toggleMusic);
+            
+            // 設置音樂默認音量
+            backgroundMusic.volume = 0.3;
+            
+            // 當遊戲開始時嘗試播放背景音樂
+            function startBackgroundMusic() {
+                if (!isMusicPlaying) {
+                    backgroundMusic.play().then(() => {
+                        musicOnIcon.classList.remove('hidden');
+                        musicOffIcon.classList.add('hidden');
+                        isMusicPlaying = true;
+                    }).catch(error => {
+                        console.log('遊戲開始時無法自動播放音樂:', error);
+                    });
+                }
+            }
+            
+            // 當遊戲結束時淡出音樂
+            function fadeOutMusic() {
+                if (isMusicPlaying && backgroundMusic) {
+                    const fadeOutInterval = setInterval(() => {
+                        if (backgroundMusic.volume > 0.05) {
+                            backgroundMusic.volume -= 0.05;
+                        } else {
+                            backgroundMusic.pause();
+                            backgroundMusic.volume = 0.3; // 重置音量為默認值
+                            musicOnIcon.classList.add('hidden');
+                            musicOffIcon.classList.remove('hidden');
+                            isMusicPlaying = false;
+                            clearInterval(fadeOutInterval);
+                        }
+                    }, 100);
+                }
+            }
             
             // 雷聲音效集
             const thunderSounds = [
@@ -1621,6 +1729,9 @@
                 
                 // 開始大雷聲
                 playThunderSound('big');
+                
+                // 開始播放背景音樂
+                startBackgroundMusic();
                 
                 // 顯示角色台詞氣泡
                 showCharacterQuoteBubble();
@@ -4995,6 +5106,9 @@
                 
                 // 停止雨滴效果
                 clearInterval(rainInterval);
+                
+                // 淡出背景音樂
+                fadeOutMusic();
                 
                 if (score > highScore) {
                     highScore = score;
