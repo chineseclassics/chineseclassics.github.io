@@ -2504,7 +2504,7 @@
         /* 字词查询模式专用样式 */
         .word-lookup-container .definition-text {
             color: var(--ink-color);
-            font-size: 18px;  /* 比笔顺查询的16px更大 */
+            font-size: 20px !important;  /* 增大到20px，确保比例句的14px大 */
             line-height: 1.7;
             font-family: 'Noto Serif TC', serif;
             margin-bottom: 8px;
@@ -2570,7 +2570,7 @@
         /* 响应式调整 - 字词查询模式 */
         @media (max-width: 768px) {
             .word-lookup-container .definition-text {
-                font-size: 16px;  /* 小屏幕上稍微缩小 */
+                font-size: 18px !important;  /* 小屏幕上保持18px，仍然比例句大 */
             }
             
             .word-lookup-container .definition-example {
@@ -5105,7 +5105,7 @@
                         this.classList.add('active');
                         
                         // 切換到這個字符
-                        switchToCharacter(char);
+                        switchToCharacter(char, 'user');
                     });
                     
                     characterButtons.appendChild(button);
@@ -5124,7 +5124,7 @@
             }
             
             // 切換到指定字符
-            function switchToCharacter(character) {
+            function switchToCharacter(character, source = 'user') {
                 currentCharacter = character;
                 currentSearchCharacter = character; // 更新當前搜索的字符
                 
@@ -5173,31 +5173,33 @@
                         // 添加到學習記錄
                         addToLearnedCharacters(character);
                         
-                        // 墨寶積分系統 - 字符查詢獎勵
-                        playerData.totalCharactersLearned++;
-                        playerData.statistics.charactersToday++;
-                        playerData.functionsUsed.add('character_lookup');
-                        
-                        // 首次查詢獎勵
-                        if (!playerData.firstTimeActions.has('first_character')) {
-                            playerData.firstTimeActions.add('first_character');
-                            checkAchievement('first_character');
+                        // 墨寶積分系統 - 字符查詢獎勵（僅在用戶主動查詢時給予）
+                        if (source === 'user') {
+                            playerData.totalCharactersLearned++;
+                            playerData.statistics.charactersToday++;
+                            playerData.functionsUsed.add('character_lookup');
+                            
+                            // 首次查詢獎勵
+                            if (!playerData.firstTimeActions.has('first_character')) {
+                                playerData.firstTimeActions.add('first_character');
+                                checkAchievement('first_character');
+                            }
+                            
+                            // 查詢積分獎勵
+                            awardPoints(pointRewards.characterLookup, `查詢漢字 +${pointRewards.characterLookup} 🖌️`);
+                            
+                            // 檢查學習里程成就
+                            checkAchievement('char_collector');
+                            checkAchievement('char_scholar');
+                            checkAchievement('char_master');
+                            
+                            // 檢查時間相關成就
+                            checkAchievement('night_owl');
+                            checkAchievement('early_bird');
+                            
+                            // 更新成就
+                            updateAchievements();
                         }
-                        
-                        // 查詢積分獎勵
-                        awardPoints(pointRewards.characterLookup, `查詢漢字 +${pointRewards.characterLookup} 🖌️`);
-                        
-                        // 檢查學習里程成就
-                        checkAchievement('char_collector');
-                        checkAchievement('char_scholar');
-                        checkAchievement('char_master');
-                        
-                        // 檢查時間相關成就
-                        checkAchievement('night_owl');
-                        checkAchievement('early_bird');
-                        
-                        // 更新成就
-                        updateAchievements();
                         
                         // 查詢字義解釋
                         fetchCharacterDefinition(character);
@@ -5247,12 +5249,12 @@
                 if (chineseCharacters.length === 1) {
                     // 單個字符，隱藏選擇器，直接顯示
                     hideCharacterSelector();
-                    switchToCharacter(chineseCharacters[0]);
+                    switchToCharacter(chineseCharacters[0], 'user');
                 } else {
                     // 多個字符，顯示選擇器
                     createCharacterSelector(chineseCharacters);
                     // 默認顯示第一個字符
-                    switchToCharacter(chineseCharacters[0]);
+                    switchToCharacter(chineseCharacters[0], 'user');
                 }
             }
             
@@ -6382,24 +6384,25 @@
                 closeVocabularyModal(); // 關閉模態窗口
                 
                 if (type === 'character') {
-                    // 跳轉到字的筆順查詢
+                    // 跳轉到字的筆順查詢（不給積分）
                     const navLookup = document.getElementById('nav-lookup');
                     const characterDisplaySection = document.getElementById('character-display-section');
                     switchMainFunction(navLookup, characterDisplaySection);
                     const characterInput = document.getElementById('character-input');
                     if (characterInput) {
                         characterInput.value = text;
-                        queryCharacter();
+                        hideCharacterSelector();
+                        switchToCharacter(text, 'vocabulary');
                     }
                 } else {
-                    // 跳轉到詞語查詢
+                    // 跳轉到詞語查詢（不給積分）
                     const navWordLookup = document.getElementById('nav-word-lookup');
                     const wordLookupContainer = document.getElementById('word-lookup-container');
                     switchMainFunction(navWordLookup, wordLookupContainer);
                     const wordInput = document.getElementById('word-input');
                     if (wordInput) {
                         wordInput.value = text;
-                        fetchWordDefinition(text);
+                        fetchWordDefinition(text, 'vocabulary');
                     }
                 }
             }
@@ -7355,7 +7358,7 @@
             }
             
             // 查詢字詞解釋（統一入口）
-            async function fetchWordDefinition(word) {
+            async function fetchWordDefinition(word, source = 'user') {
                 currentSearchWord = word; // 更新當前搜索的詞語
                 
                 // 保存到字詞本查詢歷史
@@ -7381,27 +7384,29 @@
                     // 更新收藏按鈕狀態
                     updateFavoriteButtonState('word', word);
                     
-                    // 墨寶積分系統 - 詞語查詢獎勵
-                    playerData.totalWordsLearned++;
-                    playerData.statistics.wordsToday++;
-                    playerData.functionsUsed.add('word_lookup');
-                    
-                    // 首次查詢獎勵
-                    if (!playerData.firstTimeActions.has('first_word')) {
-                        playerData.firstTimeActions.add('first_word');
-                        checkAchievement('first_word');
+                    // 墨寶積分系統 - 詞語查詢獎勵（僅在用戶主動查詢時給予）
+                    if (source === 'user') {
+                        playerData.totalWordsLearned++;
+                        playerData.statistics.wordsToday++;
+                        playerData.functionsUsed.add('word_lookup');
+                        
+                        // 首次查詢獎勵
+                        if (!playerData.firstTimeActions.has('first_word')) {
+                            playerData.firstTimeActions.add('first_word');
+                            checkAchievement('first_word');
+                        }
+                        
+                        // 查詢積分獎勵
+                        awardPoints(pointRewards.wordLookup, `查詢詞語 +${pointRewards.wordLookup} 🖌️`);
+                        
+                        // 檢查學習里程成就
+                        checkAchievement('word_starter');
+                        checkAchievement('word_expert');
+                        
+                        // 檢查時間相關成就
+                        checkAchievement('night_owl');
+                        checkAchievement('early_bird');
                     }
-                    
-                    // 查詢積分獎勵
-                    awardPoints(pointRewards.wordLookup, `查詢詞語 +${pointRewards.wordLookup} 🖌️`);
-                    
-                    // 檢查學習里程成就
-                    checkAchievement('word_starter');
-                    checkAchievement('word_expert');
-                    
-                    // 檢查時間相關成就
-                    checkAchievement('night_owl');
-                    checkAchievement('early_bird');
                 }
             }
             
@@ -7699,7 +7704,7 @@
                     return;
                 }
                 
-                fetchWordDefinition(word);
+                fetchWordDefinition(word, 'user');
             });
             
             // 字詞輸入框回車事件
@@ -7727,9 +7732,10 @@
             // 初始化字詞本
             initVocabularyBook();
             
-            // 載入默認漢字
+            // 載入默認漢字（不給積分）
             characterInput.value = '人';
-            queryCharacter();
+            hideCharacterSelector();
+            switchToCharacter('人', 'init');
             
         }); // 關閉DOMContentLoaded事件監聽器
     </script>
