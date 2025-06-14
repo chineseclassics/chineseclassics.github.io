@@ -2672,8 +2672,17 @@
             }
 
             applyEffect(itemId) {
-                if (this.itemsDefinition[itemId]) {
-                    this.itemsDefinition[itemId].apply();
+                const itemDef = this.itemsDefinition[itemId];
+                if (itemDef) {
+                    // 根據道具類型播放音效
+                    if (itemDef.type === 'buff' || itemDef.type === 'special') {
+                        audioManager.play('powerup');
+                    } else if (itemDef.type === 'debuff') {
+                        audioManager.play('debuff');
+                    }
+                    
+                    // 應用道具效果
+                    itemDef.apply();
                 }
             }
 
@@ -2705,7 +2714,7 @@
                     'success': 'https://chineseclassics.github.io/files/audio/cilong/success.mp3',
                     'combo': 'https://chineseclassics.github.io/files/audio/cilong/combo.mp3',
                     'powerup': 'https://chineseclassics.github.io/files/audio/cilong/powerup.mp3',
-                    'debuff': 'https://cdn.pixabay.com/download/audio/2022/11/14/audio_9def34e1e6.mp3',
+                    'debuff': 'https://chineseclassics.github.io/files/audio/cilong/debuff.mp3',
                     'gameover': 'https://chineseclassics.github.io/files/audio/cilong/gameover.mp3',
                     'click': 'https://chineseclassics.github.io/files/audio/cilong/click.mp3'
                 };
