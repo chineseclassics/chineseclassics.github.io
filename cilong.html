@@ -184,31 +184,7 @@
             padding-bottom: 8px;
         }
 
-        .current-dragon {
-            font-size: 24px;
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
 
-        .dragon-body {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .dragon-char {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            border: 2px solid #bbdefb;
-        }
 
         .recent-words {
             max-height: 200px;
@@ -353,6 +329,187 @@
             80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
         }
+
+        /* 生詞本相關樣式 */
+        .vocab-count {
+            font-size: 14px;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .vocab-book {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .empty-vocab {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px 0;
+        }
+
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .word-item:last-child {
+            border-bottom: none;
+        }
+
+        .word-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .star-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #ddd;
+            transition: color 0.2s ease;
+            padding: 2px;
+        }
+
+        .star-btn:hover {
+            color: #ffd700;
+        }
+
+        .star-btn.active {
+            color: #ffd700;
+        }
+
+        .word-clickable {
+            cursor: pointer;
+            color: #1976d2;
+            text-decoration: underline;
+            transition: color 0.2s ease;
+        }
+
+        .word-clickable:hover {
+            color: #0d47a1;
+        }
+
+        .remove-vocab-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #f44336;
+            font-size: 12px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s ease;
+        }
+
+        .remove-vocab-btn:hover {
+            background-color: #ffebee;
+        }
+
+        /* 模態窗口樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            color: #333;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #aaa;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        .word-definition {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .definition-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .definition-type {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 5px;
+        }
+
+        .definition-text {
+            margin-bottom: 8px;
+        }
+
+        .definition-example {
+            font-style: italic;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #f44336;
+            background: #ffebee;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -393,17 +550,6 @@
 
             <div class="game-info">
                 <div class="info-panel">
-                    <h3>當前詞龍</h3>
-                    <div class="current-dragon">
-                        龍頭：<span id="dragon-head">學</span>
-                    </div>
-                    <div class="dragon-body" id="dragon-body">
-                        <div class="dragon-char">習</div>
-                        <div class="dragon-char">知</div>
-                    </div>
-                </div>
-
-                <div class="info-panel">
                     <h3>最近組詞</h3>
                     <div class="recent-words" id="recent-words">
                         <div class="word-item">
@@ -411,11 +557,180 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="info-panel">
+                    <h3>生詞本 <span class="vocab-count" id="vocab-count">(0)</span></h3>
+                    <div class="vocab-book" id="vocab-book">
+                        <div class="empty-vocab">
+                            <span>暫無收藏詞語</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 萌典詞義查詢模態窗口 -->
+    <div id="definition-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-word-title">詞語解釋</h2>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <div class="word-definition" id="word-definition">
+                <div class="loading-spinner">正在查詢中...</div>
             </div>
         </div>
     </div>
 
     <script>
+        // 生詞本管理系統
+        class VocabularyBook {
+            constructor() {
+                this.vocabWords = this.loadVocabWords();
+                this.bindModalEvents();
+            }
+
+            loadVocabWords() {
+                const stored = localStorage.getItem('vocabWords');
+                return stored ? JSON.parse(stored) : [];
+            }
+
+            saveVocabWords() {
+                localStorage.setItem('vocabWords', JSON.stringify(this.vocabWords));
+            }
+
+            addWord(word) {
+                if (!this.vocabWords.includes(word)) {
+                    this.vocabWords.push(word);
+                    this.saveVocabWords();
+                    this.updateVocabDisplay();
+                    return true;
+                }
+                return false;
+            }
+
+            removeWord(word) {
+                const index = this.vocabWords.indexOf(word);
+                if (index > -1) {
+                    this.vocabWords.splice(index, 1);
+                    this.saveVocabWords();
+                    this.updateVocabDisplay();
+                    return true;
+                }
+                return false;
+            }
+
+            isInVocab(word) {
+                return this.vocabWords.includes(word);
+            }
+
+            updateVocabDisplay() {
+                const vocabBook = document.getElementById('vocab-book');
+                const vocabCount = document.getElementById('vocab-count');
+                
+                vocabCount.textContent = `(${this.vocabWords.length})`;
+
+                if (this.vocabWords.length === 0) {
+                    vocabBook.innerHTML = '<div class="empty-vocab"><span>暫無收藏詞語</span></div>';
+                } else {
+                    vocabBook.innerHTML = this.vocabWords.map(word => 
+                        `<div class="word-item">
+                            <span class="word-clickable" onclick="vocabBook.showDefinition('${word}')">${word}</span>
+                            <button class="remove-vocab-btn" onclick="vocabBook.removeWord('${word}')">移除</button>
+                        </div>`
+                    ).join('');
+                }
+            }
+
+            async showDefinition(word) {
+                const modal = document.getElementById('definition-modal');
+                const modalTitle = document.getElementById('modal-word-title');
+                const definitionDiv = document.getElementById('word-definition');
+                
+                modalTitle.textContent = word;
+                definitionDiv.innerHTML = '<div class="loading-spinner">正在從萌典查詢中...</div>';
+                modal.style.display = 'block';
+
+                try {
+                    const response = await fetch(`https://www.moedict.tw/uni/${encodeURIComponent(word)}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.displayDefinition(data);
+                    
+                } catch (error) {
+                    console.error('萌典API查詢失敗:', error);
+                    definitionDiv.innerHTML = `
+                        <div class="error-message">
+                            <p>抱歉，查詢「${word}」時發生錯誤</p>
+                            <p>可能是網路問題或該詞語暫無收錄</p>
+                            <p>請檢查網路連線後重試</p>
+                        </div>
+                    `;
+                }
+            }
+
+            displayDefinition(data) {
+                const definitionDiv = document.getElementById('word-definition');
+                
+                if (!data || !data.heteronyms || data.heteronyms.length === 0) {
+                    definitionDiv.innerHTML = '<div class="error-message">很抱歉，萌典中暫無此詞條的詳細資料</div>';
+                    return;
+                }
+
+                let html = '';
+                
+                data.heteronyms.forEach((heteronym, index) => {
+                    if (heteronym.definitions) {
+                        heteronym.definitions.forEach((def, defIndex) => {
+                            html += `<div class="definition-item">`;
+                            
+                            if (def.type) {
+                                html += `<div class="definition-type">${def.type}</div>`;
+                            }
+                            
+                            if (def.def) {
+                                html += `<div class="definition-text">${def.def}</div>`;
+                            }
+                            
+                            if (def.example && def.example.length > 0) {
+                                html += `<div class="definition-example">例句：${def.example.join('；')}</div>`;
+                            }
+                            
+                            html += `</div>`;
+                        });
+                    }
+                });
+
+                if (html === '') {
+                    html = '<div class="error-message">很抱歉，萌典中暫無此詞條的詳細資料</div>';
+                }
+
+                definitionDiv.innerHTML = html;
+            }
+
+            bindModalEvents() {
+                // 綁定關閉模態窗口事件
+                const modal = document.getElementById('definition-modal');
+                const closeBtn = document.getElementById('close-modal');
+                
+                closeBtn.onclick = () => {
+                    modal.style.display = 'none';
+                };
+
+                // 點擊模態窗口外部關閉
+                window.onclick = (event) => {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                };
+            }
+        }
+
         // 遊戲狀態管理
         class GameState {
             constructor() {
@@ -468,12 +783,39 @@
                 // 更新最近組詞
                 const recentWordsElement = document.getElementById('recent-words');
                 if (this.recentWords.length > 0) {
-                    recentWordsElement.innerHTML = this.recentWords.map(item => 
-                        `<div class="word-item">
-                            <span class="word-text">${item.word}</span>
-                            <span class="word-score">+${item.score}</span>
-                        </div>`
-                    ).join('');
+                    recentWordsElement.innerHTML = this.recentWords.map(item => {
+                        const isInVocab = vocabBook.isInVocab(item.word);
+                        return `<div class="word-item">
+                            <span class="word-clickable" onclick="vocabBook.showDefinition('${item.word}')">${item.word}</span>
+                            <div class="word-actions">
+                                <button class="star-btn ${isInVocab ? 'active' : ''}" 
+                                        onclick="game.gameState.toggleStar('${item.word}', this)"
+                                        title="${isInVocab ? '從生詞本移除' : '加入生詞本'}">
+                                    ${isInVocab ? '★' : '☆'}
+                                </button>
+                                <span class="word-score">+${item.score}</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            // 切換星星狀態
+            toggleStar(word, button) {
+                const isInVocab = vocabBook.isInVocab(word);
+                
+                if (isInVocab) {
+                    if (vocabBook.removeWord(word)) {
+                        button.classList.remove('active');
+                        button.textContent = '☆';
+                        button.title = '加入生詞本';
+                    }
+                } else {
+                    if (vocabBook.addWord(word)) {
+                        button.classList.add('active');
+                        button.textContent = '★';
+                        button.title = '從生詞本移除';
+                    }
                 }
             }
 
@@ -790,7 +1132,6 @@
             initializeGame() {
                 this.setupBoard();
                 this.generateFoods(); // 初始化時生成多個食物
-                this.updateDragonDisplay();
                 this.gameState.updateDisplay();
                 this.render();
             }
@@ -920,7 +1261,6 @@
                 document.getElementById('pause-btn').disabled = true;
                 document.getElementById('pause-btn').textContent = '暫停';
                 
-                this.updateDragonDisplay();
                 this.gameState.updateDisplay();
                 this.render();
             }
@@ -967,8 +1307,7 @@
                     console.log('正常移動後龍身:', this.dragon.map((s, i) => `${i}:${s.char}(${s.x},${s.y})`).join(' | '));
                 }
                 
-                // 更新顯示
-                this.updateDragonDisplay();
+                // 更新顯示（已移除龍身顯示）
             }
 
             eatFood(eatenFood, newHeadPosition) {
@@ -1186,16 +1525,7 @@
                 return false;
             }
 
-            updateDragonDisplay() {
-                if (this.dragon.length > 0) {
-                    document.getElementById('dragon-head').textContent = this.dragon[0].char;
-                    
-                    const bodyElement = document.getElementById('dragon-body');
-                    bodyElement.innerHTML = this.dragon.slice(1).map(segment => 
-                        `<div class="dragon-char">${segment.char}</div>`
-                    ).join('');
-                }
-            }
+
 
             render() {
                 const board = document.getElementById('game-board');
@@ -1257,11 +1587,16 @@
             }
         }
 
-        // 初始化遊戲
+        // 初始化遊戲和生詞本
         let game;
+        let vocabBook;
+        
         document.addEventListener('DOMContentLoaded', () => {
+            vocabBook = new VocabularyBook();
+            vocabBook.updateVocabDisplay();
             game = new WordDragonGame();
         });
     </script>
 </body>
 </html>
+
