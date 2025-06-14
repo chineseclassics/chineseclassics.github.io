@@ -3000,6 +3000,12 @@
             handleKeyPress(e) {
                 if (!this.gameState.isPlaying) return;
                 
+                // 為了防止 iframe 中的鍵盤事件（如上下左右鍵）滾動主頁面，
+                // 我們需要對所有遊戲相關的按鍵執行 preventDefault。
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                    e.preventDefault();
+                }
+
                 let key = e.key;
                 let targetDirection = null;
 
@@ -3017,7 +3023,7 @@
                         targetDirection = { x: 1, y: 0 };
                         break;
                     case ' ':
-                        e.preventDefault();
+                        // e.preventDefault(); 已在上方統一處理
                         this.pauseGame();
                         return;
                 }
@@ -3027,7 +3033,7 @@
                     if (this.areControlsInverted) {
                         targetDirection.x *= -1;
                         targetDirection.y *= -1;
-                }
+                    }
                     // 檢查是否是反方向（防止龍掉頭）
                     if (this.direction.x !== -targetDirection.x || this.direction.y !== -targetDirection.y) {
                         this.direction = targetDirection;
