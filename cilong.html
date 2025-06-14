@@ -2964,15 +2964,20 @@
                 document.addEventListener('keydown', (e) => this.handleKeyPress(e));
                 
                 // 觸控控制（移動設備）
+                const board = document.getElementById('game-board');
                 let touchStartX = 0;
                 let touchStartY = 0;
                 
-                document.addEventListener('touchstart', (e) => {
+                board.addEventListener('touchstart', (e) => {
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
-                });
+                }, { passive: true });
+
+                board.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                }, { passive: false });
                 
-                document.addEventListener('touchend', (e) => {
+                board.addEventListener('touchend', (e) => {
                     if (!this.gameState.isPlaying) return;
                     
                     const touchEndX = e.changedTouches[0].clientX;
@@ -3451,7 +3456,7 @@
                     if (this.isMobile) {
                         element.style.width = this.cellSize + 'px';
                         element.style.height = this.cellSize + 'px';
-                        element.style.fontSize = (this.cellSize * 0.6) + 'px';
+                        element.style.fontSize = (this.cellSize * 0.75) + 'px';
                     }
 
                     element.textContent = segment.char;
@@ -3468,7 +3473,7 @@
                     if (this.isMobile) {
                         foodElement.style.width = this.cellSize + 'px';
                         foodElement.style.height = this.cellSize + 'px';
-                        foodElement.style.fontSize = (this.cellSize * 0.6) + 'px';
+                        foodElement.style.fontSize = (this.cellSize * 0.75) + 'px';
                     }
 
                     foodElement.textContent = food.char;
@@ -3488,7 +3493,7 @@
                     if (this.isMobile) {
                         itemElement.style.width = this.cellSize + 'px';
                         itemElement.style.height = this.cellSize + 'px';
-                        itemElement.style.fontSize = (this.cellSize * 0.7) + 'px'; // 道具圖標可以大一點
+                        itemElement.style.fontSize = (this.cellSize * 0.8) + 'px'; // 道具圖標可以大一點
                     }
                     
                     itemElement.textContent = item.icon;
