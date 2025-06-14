@@ -1380,13 +1380,8 @@
                 abilityCooldown = false;
                 
                 // 特殊能力初始化
-                if (characterAbility === '年輕反抗') {
-                    characterWidth = 65; // 周沖體型稍大
-                    characterHeight = 85;
-                } else {
-                    characterWidth = 60;
-                    characterHeight = 80;
-                }
+                characterWidth = 60;
+                characterHeight = 80;
                 
                 // 設置角色位置
                 characterX = gameWidth / 2;
@@ -2454,23 +2449,32 @@
                 ]
             };
             
-            // 更新角色能力狀態
+            // 更新角色能力狀態 - 增強版視覺反饋
             function updateAbilityStatus() {
                 if (!isGameRunning) return;
                 
                 const abilityStatus = document.getElementById('ability-status');
                 const abilityCooldownBar = document.getElementById('ability-cooldown-bar');
+                const abilityTimer = document.getElementById('ability-timer');
                 
                 if (!abilityStatus || !abilityCooldownBar) return;
                 
                 if (abilityActive) {
+                    // 能力激活狀態
                     abilityStatus.textContent = '生效中';
-                    abilityStatus.className = 'ml-1 px-1 bg-green-600 rounded text-[10px]';
+                    abilityStatus.className = 'ml-1.5 px-2 py-0.5 bg-gradient-to-r from-green-600 to-green-500 rounded-full text-[9px] font-medium shadow-sm whitespace-nowrap status-pulse';
                     
-                    // 更新技能剩餘時間顯示
+                    // 更新持續時間進度條
                     const percent = abilityDuration / getAbilityDuration() * 100;
                     abilityCooldownBar.style.width = `${percent}%`;
-                    abilityCooldownBar.className = 'h-full bg-green-500 transition-all';
+                    abilityCooldownBar.className = 'h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-300';
+                    
+                    // 顯示剩餘時間
+                    const remainingSeconds = Math.ceil(abilityDuration / 60);
+                    if (abilityTimer) {
+                        abilityTimer.textContent = `剩餘 ${remainingSeconds}s`;
+                        abilityTimer.className = 'absolute right-0 -top-5 text-[9px] text-green-300 font-bold';
+                    }
                     
                     // 減少持續時間
                     abilityDuration--;
@@ -2478,25 +2482,75 @@
                         deactivateAbility();
                     }
                 } else if (abilityCooldown) {
+                    // 冷卻狀態
                     abilityStatus.textContent = '冷卻中';
-                    abilityStatus.className = 'ml-1 px-1 bg-red-600 rounded text-[10px]';
+                    abilityStatus.className = 'ml-1.5 px-2 py-0.5 bg-gradient-to-r from-red-600 to-red-500 rounded-full text-[9px] font-medium shadow-sm whitespace-nowrap';
                     
-                    // 更新冷卻時間顯示
+                    // 更新冷卻進度條
                     const percent = (1 - abilityCooldownTime / getAbilityCooldown()) * 100;
                     abilityCooldownBar.style.width = `${percent}%`;
-                    abilityCooldownBar.className = 'h-full bg-red-500 transition-all';
+                    abilityCooldownBar.className = 'h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-300';
+                    
+                    // 顯示冷卻倒計時
+                    const remainingSeconds = Math.ceil(abilityCooldownTime / 60);
+                    if (abilityTimer) {
+                        abilityTimer.textContent = `冷卻 ${remainingSeconds}s`;
+                        abilityTimer.className = 'absolute right-0 -top-5 text-[9px] text-red-300 font-bold';
+                    }
                     
                     // 減少冷卻時間
                     abilityCooldownTime--;
                     if (abilityCooldownTime <= 0) {
                         abilityCooldown = false;
+                        // 能力就緒時的視覺提示
+                        showAbilityReadyNotification();
                     }
                 } else {
+                    // 就緒狀態
                     abilityStatus.textContent = '就緒';
-                    abilityStatus.className = 'ml-1 px-1 bg-blue-600 rounded text-[10px]';
+                    abilityStatus.className = 'ml-1.5 px-2 py-0.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full text-[9px] font-medium shadow-sm whitespace-nowrap status-pulse';
                     abilityCooldownBar.style.width = '100%';
-                    abilityCooldownBar.className = 'h-full bg-primary transition-all';
+                    abilityCooldownBar.className = 'h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-300';
+                    
+                    // 清除倒計時顯示
+                    if (abilityTimer) {
+                        abilityTimer.textContent = '';
+                    }
                 }
+            }
+            
+            // 能力就緒通知
+            function showAbilityReadyNotification() {
+                const notification = document.createElement('div');
+                notification.className = 'absolute top-1/4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-30 text-sm font-bold';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 mr-2">
+                            <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" clip-rule="evenodd" />
+                        </svg>
+                        <div>
+                            <div>${characterAbility} 就緒!</div>
+                            <div class="text-xs opacity-80">按空格鍵激活</div>
+                        </div>
+                    </div>
+                `;
+                
+                gameContainer.appendChild(notification);
+                
+                // 播放就緒音效
+                playThunderSound('button');
+                
+                // 動畫效果
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                    notification.style.transition = 'all 0.5s ease-out';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 500);
+                }, 2000);
             }
             
             // 獲取能力持續時間 - 平衡持續時間
@@ -3566,7 +3620,7 @@
                 }, 300);
             }
             
-            // 威嚴力場效果
+            // 威嚴力場效果 - 修復位置跟隨問題
             function createPressureField() {
                 if (!characterElement) return;
                 
@@ -3585,24 +3639,60 @@
                 
                 gameContainer.appendChild(field);
                 
-                // 監聽角色移動以更新力場位置
-                const updateField = () => {
-                    if (!isGameRunning || !characterElement) return;
-                    if (!abilityActive || !activeEffects.slowLightningFall) return;
-                    
+                // 威權力場位置跟隨系統 - 多重保障機制
+                const updateFieldPosition = () => {
                     const field = document.getElementById('pressure-field');
-                    if (field) {
+                    if (field && field.parentNode) {
                         field.style.left = `${characterX}px`;
-                    }
-                    
-                    if (abilityActive && activeEffects.slowLightningFall) {
-                        requestAnimationFrame(updateField);
                     }
                 };
                 
-                requestAnimationFrame(updateField);
+                // 方案1: 監聽角色元素的style屬性變化
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.attributeName === 'style') {
+                            updateFieldPosition();
+                        }
+                    });
+                });
                 
-                // 在能力結束時移除力場
+                if (characterElement) {
+                    observer.observe(characterElement, { attributes: true });
+                }
+                
+                // 方案2: 使用requestAnimationFrame持續更新（主要方案）
+                let isFieldActive = true;
+                const animationUpdateField = () => {
+                    if (!isFieldActive || !isGameRunning) return;
+                    
+                    const field = document.getElementById('pressure-field');
+                    if (!field) {
+                        isFieldActive = false;
+                        return;
+                    }
+                    
+                    // 確保威權力場始終跟隨角色
+                    if (characterAbility === '威權力場' && abilityActive) {
+                        updateFieldPosition();
+                        requestAnimationFrame(animationUpdateField);
+                    } else {
+                        isFieldActive = false;
+                    }
+                };
+                
+                // 啟動動畫循環
+                requestAnimationFrame(animationUpdateField);
+                
+                // 方案3: 定期檢查備用方案
+                const intervalId = setInterval(() => {
+                    if (!isGameRunning || characterAbility !== '威權力場' || !abilityActive) {
+                        clearInterval(intervalId);
+                        return;
+                    }
+                    updateFieldPosition();
+                }, 100); // 每100ms檢查一次
+                
+                // 在能力結束時移除力場和監聽器
                 setTimeout(() => {
                     const field = document.getElementById('pressure-field');
                     if (field && field.parentNode) {
@@ -3614,6 +3704,11 @@
                             }
                         }, 500);
                     }
+                    
+                    // 清理所有監聽器和定時器
+                    isFieldActive = false;
+                    observer.disconnect();
+                    clearInterval(intervalId);
                 }, abilityDuration * 1000 / 60);
             }
             
@@ -3812,7 +3907,7 @@
                 }
             }
             
-            // 更新道具 - 基於時間的移動
+            // 更新道具 - 基於時間的移動，增加威權力場阻隔檢查
             function updateItems(deltaTime) {
                 if (!characterElement) return;
                 
@@ -3821,6 +3916,32 @@
                 
                 for (let i = 0; i < items.length; i++) {
                     if (items[i].active) {
+                        // 檢查威權力場是否阻隔負面道具
+                        if (items[i].effect === 'subtractPoints' && 
+                            characterAbility === '威權力場' && 
+                            abilityActive && 
+                            activeEffects.blockNegativeItems) {
+                            
+                            // 計算道具與角色的距離
+                            const itemCenterX = items[i].x + items[i].width / 2;
+                            const distanceToCharacter = Math.abs(itemCenterX - characterX);
+                            const protectionRadius = gameWidth * 0.3; // 威權力場保護半徑
+                            
+                            // 如果負面道具進入威權力場範圍，推開它
+                            if (distanceToCharacter < protectionRadius) {
+                                const pushDirection = itemCenterX < characterX ? -1 : 1;
+                                items[i].x += pushDirection * 100 * dt; // 推開道具
+                                
+                                // 確保道具不會被推出屏幕
+                                items[i].x = Math.max(0, Math.min(gameWidth - items[i].width, items[i].x));
+                                
+                                // 創建視覺效果顯示阻隔
+                                if (Math.random() < 0.1) { // 偶爾顯示阻隔效果
+                                    createBlockEffect(items[i].x + items[i].width/2, items[i].y + items[i].height/2);
+                                }
+                            }
+                        }
+                        
                         // 使用時間差更新位置
                         items[i].y += items[i].speed * dt;
                         
@@ -3850,27 +3971,90 @@
                 items = items.filter(item => item.active);
             }
             
-            // 收集道具 - 簡化為僅加分和減分效果，不添加其他效果
+            // 創建阻隔效果 - 威權力場推開負面道具的視覺效果
+            function createBlockEffect(x, y) {
+                const effect = document.createElement('div');
+                effect.className = 'absolute pointer-events-none z-10';
+                effect.style.left = `${x}px`;
+                effect.style.top = `${y}px`;
+                effect.style.width = '20px';
+                effect.style.height = '20px';
+                effect.style.transform = 'translate(-50%, -50%)';
+                effect.style.background = 'radial-gradient(circle, rgba(255,215,0,0.8) 0%, rgba(255,215,0,0.4) 50%, transparent 80%)';
+                effect.style.borderRadius = '50%';
+                effect.style.animation = 'pulse 0.5s ease-out';
+                
+                gameContainer.appendChild(effect);
+                
+                // 自動移除效果
+                setTimeout(() => {
+                    if (effect.parentNode) {
+                        effect.remove();
+                    }
+                }, 500);
+            }
+            
+            // 收集道具 - 增加威權力場保護效果檢查
             function collectItem(item) {
+                // 檢查威權力場是否阻隔負面道具
+                if (item.effect === 'subtractPoints' && 
+                    characterAbility === '威權力場' && 
+                    abilityActive && 
+                    activeEffects.blockNegativeItems) {
+                    
+                    // 威權力場阻隔負面道具
+                    showItemEffectPopup({
+                        ...item,
+                        name: `${item.name} (已阻隔)`,
+                        description: '威權力場阻隔了負面道具的影響！',
+                        isPositive: true
+                    });
+                    
+                    // 播放威權力場保護音效
+                    playThunderSound('ability_周樸園');
+                    
+                    // 顯示阻隔效果動畫
+                    showScoreAnimation('阻隔!', true);
+                    
+                    // 威權力場阻隔效果 - 金色光芒
+                    createItemEffect('#FFD700', 0.6);
+                    
+                    return; // 直接返回，不應用負面效果
+                }
+                
                 // 顯示道具效果提示
                 showItemEffectPopup(item);
                 
                 // 根據道具類型應用加分或減分效果
                 if (item.effect === 'addPoints') {
                     // 加分效果
-                    score += item.pointValue;
+                    let pointValue = item.pointValue;
+                    
+                    // 檢查威權力場是否增強正面道具效果
+                    if (characterAbility === '威權力場' && 
+                        abilityActive && 
+                        activeEffects.enhancePositiveItems) {
+                        pointValue = Math.floor(pointValue * 1.5); // 增強50%效果
+                        
+                        // 顯示增強提示
+                        setTimeout(() => {
+                            showScoreAnimation(`威權加成 +${pointValue - item.pointValue}`, true);
+                        }, 500);
+                    }
+                    
+                    score += pointValue;
                     
                     // 播放積極音效
                     playThunderSound('button');
                     
                     // 顯示加分動畫
-                    showScoreAnimation(item.pointValue, true);
+                    showScoreAnimation(`+${pointValue}`, true);
                     
                     // 正面道具收集視覺效果 - 綠色光芒
                     createItemEffect('#4CAF50', 0.4);
                     
                 } else if (item.effect === 'subtractPoints') {
-                    // 扣分效果
+                    // 扣分效果（只有在威權力場未阻隔的情況下才會執行到這裡）
                     score = Math.max(0, score + item.pointValue); // 使用 += 因為 pointValue 已經是負數
                     
                     // 播放消極音效
@@ -4977,7 +5161,7 @@
                 
                 // 情感庇護的加速效果 - 降低加速幅度
                 if (characterAbility === '情感庇護' && activeEffects.emotionalSpeed) {
-                    speed *= 1.8; // 情感爆發時較快，但不至於太快
+                    speed *= 1.8; // 情感庇護時較快，但不至於太快
                 }
                 
                 if (e.key === 'ArrowLeft' || e.key === 'a') {
@@ -5005,20 +5189,39 @@
                     }
                 }
                 
-                // 猶豫閃避能力（周萍）
-                if (characterAbility === '猶豫閃避' && Math.random() < 0.15) {
-                    const randomDirection = Math.random() < 0.5 ? -1 : 1;
-                    characterX = Math.max(characterWidth / 2, Math.min(gameWidth - characterWidth / 2, characterX + randomDirection * speed * 1.5));
-                    characterElement.style.left = `${characterX}px`;
-                    updateQuoteBubblePosition();
-                }
+
             });
             
-            // 觸控控制
-            canvas.addEventListener('touchstart', handleTouch);
-            canvas.addEventListener('touchmove', handleTouch);
+            // 統一觸控事件處理
+            let touchStartTime = 0;
+            let lastTapTime = 0;
+            let touchStartX = 0;
             
-            function handleTouch(e) {
+            // 觸控開始事件
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (!isGameRunning || !characterElement) return;
+                
+                const currentTime = Date.now();
+                touchStartTime = currentTime;
+                
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                touchStartX = touch.clientX - rect.left;
+                
+                // 檢查雙擊 (適用於情感庇護)
+                if (currentTime - lastTapTime < 300) {
+                    if (characterAbility === '情感庇護' && !abilityCooldown) {
+                        activateAbility();
+                        return; // 激活能力後不執行移動
+                    }
+                }
+                
+                lastTapTime = currentTime;
+            });
+            
+            // 觸控移動事件
+            canvas.addEventListener('touchmove', function(e) {
                 e.preventDefault();
                 if (!isGameRunning || !characterElement) return;
                 
@@ -5026,11 +5229,32 @@
                 const rect = canvas.getBoundingClientRect();
                 const touchX = touch.clientX - rect.left;
                 
-                let speed = 15;
-                // 根據角色能力調整速度
-                if (characterAbility === '年輕反抗') {
-                    speed *= 1.3;
+                handleMovement(touchX);
+            });
+            
+            // 觸控結束事件
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                if (!isGameRunning || !characterElement) return;
+                
+                const touchDuration = Date.now() - touchStartTime;
+                
+                // 長按激活能力 (威權力場和隱忍堅韌)
+                if (touchDuration > 500) {
+                    if (characterAbility === '威權力場' && !abilityCooldown) {
+                        activateAbility();
+                    } else if (characterAbility === '隱忍堅韌' && !abilityCooldown && !activeEffects.oneTimeImmunity) {
+                        activateAbility();
+                    }
+                } else if (touchDuration < 200) {
+                    // 短點擊進行移動
+                    handleMovement(touchStartX);
                 }
+            });
+            
+            // 統一移動處理函數
+            function handleMovement(targetX) {
+                let speed = 15;
                 
                 // 特殊能力效果調整速度
                 if (activeEffects.speedUp) {
@@ -5041,15 +5265,15 @@
                     speed *= 2;
                 }
                 
-                // 情感爆發的加速效果
-                if (characterAbility === '情感爆發' && activeEffects.emotionalSpeed) {
+                // 情感庇護的加速效果
+                if (characterAbility === '情感庇護' && activeEffects.emotionalSpeed) {
                     speed *= 2.5;
                 }
                 
-                if (touchX < gameWidth / 2) {
+                if (targetX < characterX - 10) {
                     // 向左移動
                     characterX = Math.max(characterWidth / 2, characterX - speed);
-                } else {
+                } else if (targetX > characterX + 10) {
                     // 向右移動
                     characterX = Math.min(gameWidth - characterWidth / 2, characterX + speed);
                 }
@@ -5058,49 +5282,31 @@
                 updateQuoteBubblePosition();
             }
             
-            // 長按和雙擊激活能力
-            let touchStartTime = 0;
-            let lastTapTime = 0;
-            
-            canvas.addEventListener('touchstart', function(e) {
-                const currentTime = Date.now();
-                touchStartTime = currentTime;
-                
-                // 檢查雙擊 (適用於情感爆發)
-                if (currentTime - lastTapTime < 300) {
-                    if (characterAbility === '情感爆發' && !abilityCooldown) {
-                        activateAbility();
-                    }
-                }
-                
-                lastTapTime = currentTime;
-            });
-            
-            canvas.addEventListener('touchend', function(e) {
-                const touchDuration = Date.now() - touchStartTime;
-                
-                // 長按激活能力 (威權力場和隱忍堅韌)
-                if (touchDuration > 500) {
-                    if (characterAbility === '威權力場' && !abilityCooldown) {
-                        activateAbility();
-                    } else if (characterAbility === '隱忍堅韌' && !abilityCooldown && !activeEffects.oneTimeImmunity) {
-                        activateAbility();
-                    }
-                }
-            });
-            
-            // 鼠標點擊控制
+            // 統一鼠標點擊控制
+            let lastClickTime = 0;
             canvas.addEventListener('click', function(e) {
                 if (!isGameRunning || !characterElement) return;
                 
                 const rect = canvas.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
+                const currentTime = Date.now();
                 
-                let moveAmount = 40;
-                // 根據角色和能力調整移動速度
-                if (characterAbility === '年輕反抗') {
-                    moveAmount *= 1.3;
+                // 檢查雙擊
+                if (currentTime - lastClickTime < 300) {
+                    if (characterAbility === '情感庇護' && !abilityCooldown) {
+                        activateAbility();
+                        return; // 激活能力後不執行移動
+                    } else if (characterAbility === '威權力場' && !abilityCooldown) {
+                        activateAbility();
+                        return;
+                    } else if (characterAbility === '隱忍堅韌' && !abilityCooldown && !activeEffects.oneTimeImmunity) {
+                        activateAbility();
+                        return;
+                    }
                 }
+                
+                // 單擊移動
+                let moveAmount = 40;
                 
                 // 特殊能力效果調整速度
                 if (activeEffects.speedUp || activeEffects.dashBoost || activeEffects.emotionalSpeed) {
@@ -5115,23 +5321,6 @@
                 
                 characterElement.style.left = `${characterX}px`;
                 updateQuoteBubblePosition();
-            });
-            
-            // 雙擊激活能力
-            let lastClickTime = 0;
-            canvas.addEventListener('click', function(e) {
-                const currentTime = Date.now();
-                
-                // 檢查雙擊
-                if (currentTime - lastClickTime < 300) {
-                    if (characterAbility === '情感爆發' && !abilityCooldown) {
-                        activateAbility();
-                    } else if (characterAbility === '威權力場' && !abilityCooldown) {
-                        activateAbility();
-                    } else if (characterAbility === '隱忍堅韌' && !abilityCooldown && !activeEffects.oneTimeImmunity) {
-                        activateAbility();
-                    }
-                }
                 
                 lastClickTime = currentTime;
             });
