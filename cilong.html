@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>貪吃龍 - 太虛幻境</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,7 +15,7 @@
         }
 
         body {
-            font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+            font-family: "LXGW WenKai TC", 'Microsoft JhengHei', '微軟正黑體', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             min-height: 100vh;
             display: flex;
@@ -42,8 +45,8 @@
                 0 0 0 1px rgba(255, 255, 255, 0.5),
                 inset 0 1px 0 rgba(255, 255, 255, 0.9);
             padding: 25px;
-            max-width: 1200px;
-            width: 95vw;
+            display: inline-block;
+            max-width: 95vw;
             max-height: 95vh;
             overflow: hidden;
             position: relative;
@@ -94,17 +97,63 @@
             background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(10px);
             padding: 12px 20px;
-            border-radius: 25px;
+            border-radius: 15px; /* 與其他信息框統一圓角 */
             font-weight: bold;
             font-size: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.4); /* 更明顯的邊框 */
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.5), /* 內發光增加立體感 */
+                0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.5s ease-in-out;
+            display: inline-flex; /* 使用flex佈局讓內容垂直居中 */
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-width: 220px; /* 增加寬度以容納emoji */
         }
 
         .level-badge:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 
+                inset 0 1px 2px rgba(255, 255, 255, 0.5),
+                0 8px 25px rgba(0, 0, 0, 0.2); /* 懸停時陰影更明顯 */
+        }
+
+        /* 徽章升階動畫：龍魂覺醒 */
+        .badge-evolve {
+            animation: badge-evolve-animation 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes badge-evolve-animation {
+            0% {
+                transform: scale(1) rotate(0);
+                filter: brightness(1);
+            }
+            15% {
+                transform: scale(0.9) rotate(-5deg);
+            }
+            30% {
+                transform: scale(1.3) rotate(5deg);
+                filter: brightness(2);
+                box-shadow: 
+                    0 0 30px 10px rgba(255, 215, 0, 0.8), 
+                    inset 0 1px 2px rgba(255, 255, 255, 0.7);
+            }
+            50% {
+                transform: scale(1.1) rotate(-3deg);
+                filter: brightness(1.5);
+            }
+            70% {
+                transform: scale(1.2) rotate(3deg);
+                filter: brightness(1.2);
+                box-shadow: 
+                    0 0 15px 5px rgba(255, 215, 0, 0.6), 
+                    inset 0 1px 2px rgba(255, 255, 255, 0.6);
+            }
+            100% {
+                transform: scale(1) rotate(0);
+                filter: brightness(1);
+            }
         }
 
         .score-display {
@@ -158,21 +207,21 @@
         /* 遊戲區域 */
         .game-area {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             height: calc(95vh - 250px);
             max-height: 600px;
             min-height: 400px;
         }
 
         .game-board-container {
-            flex: 2.2;
+            flex-shrink: 0;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
 
         .game-board {
-            background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+            background: linear-gradient(135deg, #fdfaf2 0%, #f5f1e8 100%); /* 溫潤米色背景 */
             border: 3px solid transparent;
             background-clip: padding-box;
             border-radius: 20px;
@@ -180,7 +229,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            padding: 12px;
+            padding: 0; /* 移除內邊距，讓網格貼近邊框 */
             box-sizing: border-box;
             box-shadow: 
                 inset 0 2px 10px rgba(0, 0, 0, 0.05),
@@ -206,7 +255,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 18px; /* 字體加大 */
             font-weight: bold;
             border-radius: 8px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -215,14 +264,14 @@
             overflow: hidden;
             padding: 1px;
             text-align: center;
-            font-family: '微軟正黑體', 'Microsoft JhengHei', Arial, sans-serif;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            font-family: "LXGW WenKai TC", '微軟正黑體', 'Microsoft JhengHei', Arial, sans-serif;
             border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .snake-head {
             background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 50%, #81C784 100%);
-            color: white;
+            color: #FFEEA9; /* 流光金，高對比度 */
+            text-shadow: 0 0 5px rgba(255, 238, 169, 0.7); /* 同色系光暈效果 */
             box-shadow: 
                 0 4px 15px rgba(76, 175, 80, 0.4),
                 0 2px 8px rgba(76, 175, 80, 0.3),
@@ -251,7 +300,7 @@
 
         .snake-body {
             background: linear-gradient(135deg, #81C784 0%, #A5D6A7 50%, #C8E6C9 100%);
-            color: white;
+            color: #333; /* 文字改為深色 */
             box-shadow: 
                 0 3px 10px rgba(129, 199, 132, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -260,12 +309,12 @@
 
         .food {
             background: linear-gradient(135deg, #FF9800 0%, #FFB74D 50%, #FFCC02 100%);
-            color: white;
+            color: #333; /* 文字改為深色 */
             box-shadow: 
                 0 4px 15px rgba(255, 152, 0, 0.4),
                 inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            animation: foodPulse 1.5s ease-in-out infinite;
             border: 2px solid rgba(255, 255, 255, 0.5);
+            /* 移除呼吸動畫 */
         }
 
         @keyframes foodPulse {
@@ -281,18 +330,17 @@
 
         /* 遊戲信息面板 */
         .game-info {
-            flex: 0.8;
+            width: 300px;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            min-width: 300px;
         }
 
         .info-panel {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
             backdrop-filter: blur(15px);
             border-radius: 20px;
-            padding: 25px;
+            padding: 20px;
             box-shadow: 
                 0 10px 30px rgba(0, 0, 0, 0.1),
                 0 0 0 1px rgba(255, 255, 255, 0.5),
@@ -677,6 +725,9 @@
             background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(10px);
             animation: modalFadeIn 0.3s ease;
+            /* 新增：使用Flexbox實現完美居中 */
+            justify-content: center;
+            align-items: center;
         }
 
         @keyframes modalFadeIn {
@@ -687,7 +738,7 @@
         .modal-content {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
             backdrop-filter: blur(20px);
-            margin: 5% auto;
+            margin: 0; /* 移除舊的 margin 居中方式 */
             padding: 30px;
             border: none;
             border-radius: 25px;
@@ -762,41 +813,66 @@
         }
 
         .definition-item {
-            margin-bottom: 20px;
-            padding: 20px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            margin-bottom: 25px;
+            padding: 25px;
+            background: #fdfcff;
             border-radius: 15px;
-            border: 1px solid rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
 
         .definition-item:hover {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
         }
 
         .definition-type {
-            font-weight: bold;
-            color: #1976d2;
-            margin-bottom: 10px;
-            font-size: 16px;
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
         }
 
         .definition-text {
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             font-size: 16px;
-            line-height: 1.6;
+            line-height: 1.8;
+            color: #444;
         }
 
         .definition-example {
-            font-style: italic;
-            color: #666;
+            font-style: normal;
+            color: #555;
+            font-size: 15px;
+            background: #f5f6fa;
+            padding: 15px 20px 15px 30px;
+            border-radius: 10px;
+            border-left: 4px solid #764ba2;
+            position: relative;
+            line-height: 1.7;
+        }
+
+        .definition-example::before {
+            content: '例';
+            position: absolute;
+            left: -14px;
+            top: 14px;
+            background: #764ba2;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 14px;
-            background: rgba(102, 126, 234, 0.05);
-            padding: 10px;
-            border-radius: 8px;
-            border-left: 3px solid #667eea;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .loading-spinner {
@@ -859,28 +935,29 @@
                  gap: 15px;
              }
 
-             .game-area {
+                          .game-area {
                  flex-direction: column;
                  height: auto;
                  max-height: none;
-                 gap: 15px;
+                 gap: 12px;
              }
 
-            .game-board {
-                height: 300px;
-                min-height: 300px;
-            }
+             .game-board {
+                 height: 300px;
+                 min-height: 300px;
+             }
 
-                         .game-info {
+             .game-info {
                  flex-direction: row;
                  overflow-x: auto;
                  padding-bottom: 10px;
-                 gap: 15px;
+                 gap: 12px;
              }
 
              .info-panel {
-                 min-width: 250px;
+                 min-width: 240px;
                  flex-shrink: 0;
+                 padding: 18px;
              }
 
             .controls {
@@ -898,7 +975,7 @@
             .game-cell {
                 width: 25px;
                 height: 25px;
-                font-size: 14px;
+                font-size: 16px; /* 同步加大 */
             }
 
             .modal-content {
@@ -945,7 +1022,7 @@
              }
 
              .game-area {
-                 gap: 10px;
+                 gap: 8px;
              }
 
              .game-board {
@@ -956,12 +1033,12 @@
              .game-cell {
                  width: 22px;
                  height: 22px;
-                 font-size: 12px;
+                 font-size: 14px; /* 同步加大 */
              }
 
              .info-panel {
                  padding: 15px;
-                 min-width: 220px;
+                 min-width: 200px;
              }
 
              .info-panel h3 {
@@ -1009,6 +1086,102 @@
             transition: transform 0.1s ease;
         }
 
+        /* 道具相關樣式 */
+        .item-cell {
+            position: absolute; /* 確保與 .game-cell 基礎樣式一致 */
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px; /* 圖標大一點 */
+            font-weight: bold;
+            border-radius: 50%; /* 圓形以區分 */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            line-height: 1;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-align: center;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad); /* 默認: 神秘紫色 */
+            color: white;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            animation: itemPulse 1.5s infinite;
+            z-index: 5; /* 介於龍和食物之間 */
+        }
+
+        /* 減益道具樣式 */
+        .item-cell.debuff {
+            background: linear-gradient(135deg, #e74c3c, #c0392b); /* 警告紅色 */
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.6);
+            animation: itemPulseDebuff 1.5s infinite;
+        }
+
+        /* 鑽石特殊樣式 */
+        .item-cell.diamond {
+            background: linear-gradient(135deg, #3498db, #2980b9); /* 璀璨藍色 */
+            animation: diamondShine 2s infinite;
+        }
+
+        @keyframes itemPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 4px 15px rgba(155, 89, 182, 0.6);
+            }
+            50% {
+                transform: scale(1.15);
+                box-shadow: 0 8px 25px rgba(155, 89, 182, 0.8);
+            }
+        }
+
+        @keyframes itemPulseDebuff {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(10deg); }
+            75% { transform: scale(1.1) rotate(-10deg); }
+        }
+
+        @keyframes diamondShine {
+            0%, 100% {
+                transform: scale(1.1);
+                box-shadow: 0 0 15px 5px rgba(52, 152, 219, 0.7);
+            }
+            50% {
+                transform: scale(1.2);
+                box-shadow: 0 0 25px 10px rgba(52, 152, 219, 1);
+            }
+        }
+        
+        /* 提示神符高亮效果 */
+        .food.hinted {
+            animation: hintGlow 0.8s infinite alternate;
+            border: 3px solid #ffd700;
+        }
+
+        @keyframes hintGlow {
+             from {
+                box-shadow: 0 0 10px 3px rgba(255, 215, 0, 0.6);
+            }
+            to {
+                box-shadow: 0 0 20px 8px rgba(255, 215, 0, 0.9);
+            }
+        }
+
+        /* 隱身符視覺效果 */
+        .snake-invincible .snake-head,
+        .snake-invincible .snake-body {
+            opacity: 0.7;
+            animation: snakeGlow 1s infinite alternate;
+        }
+        
+        @keyframes snakeGlow {
+            from {
+                filter: drop-shadow(0 0 3px white);
+            }
+            to {
+                filter: drop-shadow(0 0 8px white);
+            }
+        }
+
         /* 遊戲板觸控區域指示 */
         .game-board::after {
             content: '👆 滑動控制方向';
@@ -1031,6 +1204,201 @@
                 opacity: 0.8;
             }
         }
+
+        /* 難度選擇界面 */
+        .difficulty-selection {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .difficulty-selection h4 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .difficulty-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .difficulty-btn {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .difficulty-desc {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* --- Toast 通知系統 --- */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.85));
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.5s cubic-bezier(0.215, 0.610, 0.355, 1);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* 專屬樣式 */
+        .toast-success {
+            border-left: 5px solid #4CAF50;
+        }
+        .toast-levelup {
+            border-left: 5px solid #2196F3;
+            background: linear-gradient(135deg, #2196F3, #4a00e0);
+        }
+        .toast-info {
+            border-left: 5px solid #FFC107;
+        }
+        .toast-error {
+            border-left: 5px solid #f44336;
+        }
+        .toast-achievement {
+            border-left: 5px solid #FFD700;
+            background: linear-gradient(135deg, #f7b733, #FFD700);
+            color: #333;
+            font-weight: bold;
+        }
+
+        /* 成就徽章系統樣式 */
+        .badge-book {
+            max-height: none; /* 移除高度限制 */
+            overflow-y: visible; /* 移除滾動條 */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); /* 增加徽章最小寬度 */
+            gap: 25px; /* 增加間距 */
+            padding: 10px;
+        }
+
+        .badge-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: help;
+            transition: all 0.3s ease;
+        }
+
+        .badge-icon {
+            font-size: 32px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .badge-name {
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        /* 未解鎖樣式 */
+        .badge-item.locked .badge-icon {
+            background: linear-gradient(135deg, #e0e0e0, #f5f5f5);
+            color: #bdbdbe;
+            filter: grayscale(80%);
+        }
+        .badge-item.locked .badge-name {
+            color: #9e9e9e;
+        }
+
+        /* 已解鎖樣式 */
+        .badge-item.unlocked .badge-icon {
+            background: linear-gradient(135deg, #f7b733, #ffd900);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.4);
+        }
+        .badge-item.unlocked .badge-name {
+            color: #333;
+        }
+        .badge-item.unlocked {
+            transform: scale(1.05);
+        }
+
+        /* 徽章模態窗口專屬樣式 */
+        #badge-modal .modal-content {
+            max-width: 850px; /* 擴大徽章模態窗口寬度 */
+            max-height: 90vh;
+        }
+
+        /* 頂部徽章陳列室樣式 */
+        .top-badges {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .top-badges:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        .top-badge-icon {
+            font-size: 20px;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        }
+
+        .top-badge-icon.locked {
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+
+        .badge-progress-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-center {
+            display: flex;
+            flex-direction: row; /* 強制水平排列 */
+            align-items: center;
+            gap: 25px;
+        }
     </style>
 </head>
 <body>
@@ -1038,22 +1406,34 @@
         <!-- 頂部狀態欄 -->
         <div class="status-bar">
             <div class="status-left">
-                <div class="level-badge">
-                    等級 <span id="player-level">1</span>
-                </div>
-                <div class="score-display">
-                    <div class="score-label">總積分</div>
-                    <div class="score-value" id="total-points">0</div>
+                <div class="level-badge" id="level-badge">
+                    <span id="player-level-title">🐉 1級 (呆萌龍寶 🥚)</span>
                 </div>
             </div>
-            <div class="status-right">
-                <div class="words-count">
-                    <div class="score-label">組詞成功</div>
-                    <div class="score-value" id="words-formed">0</div>
+
+            <!-- 中部核心得分 -->
+            <div class="status-center">
+                <div class="score-display">
+                    <div class="score-label">最高分</div>
+                    <div class="score-value" id="highest-score">0</div>
                 </div>
                 <div class="score-display">
                     <div class="score-label">當前分數</div>
                     <div class="score-value" id="current-score">0</div>
+            </div>
+                <div class="words-count">
+                    <div class="score-label">組詞成功</div>
+                    <div class="score-value" id="words-formed">0</div>
+                </div>
+            </div>
+
+            <div class="status-right">
+                <!-- 徽章陳列室入口 -->
+                <div class="top-badges" id="top-badges-entry">
+                    <span class="top-badge-icon locked">❓</span>
+                    <span class="top-badge-icon locked">❓</span>
+                    <span class="top-badge-icon locked">❓</span>
+                    <span class="badge-progress-text" id="badge-progress-text">(0/12)</span>
                 </div>
             </div>
         </div>
@@ -1062,8 +1442,24 @@
         <div class="game-area">
             <div class="game-board-container">
                 <div class="game-board" id="game-board"></div>
-                <div class="controls">
-                    <button class="control-btn" id="start-btn">開始遊戲</button>
+                
+                <!-- 難度選擇 -->
+                <div class="difficulty-selection" id="difficulty-selection">
+                    <h4>選擇遊戲模式</h4>
+                    <div class="difficulty-options">
+                        <div class="difficulty-btn-container">
+                            <button class="control-btn difficulty-btn" data-difficulty="exploration">探索模式</button>
+                            <p class="difficulty-desc">輕鬆遊玩，專注組詞樂趣</p>
+                        </div>
+                        <div class="difficulty-btn-container">
+                            <button class="control-btn difficulty-btn" data-difficulty="challenge">挑戰模式</button>
+                            <p class="difficulty-desc">挑戰極限，衝擊排行榜</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 遊戲中控制按鈕 -->
+                <div class="controls" id="ingame-controls" style="display: none;">
                     <button class="control-btn" id="pause-btn" disabled>暫停</button>
                     <button class="control-btn" id="restart-btn">重新開始</button>
                 </div>
@@ -1087,6 +1483,22 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知容器 -->
+    <div id="toast-container"></div>
+
+    <!-- 徽章殿堂 模態窗口 -->
+    <div id="badge-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">徽章殿堂</h2>
+                <button class="close-btn" id="close-badge-modal">&times;</button>
+            </div>
+            <div class="badge-book" id="badge-book-modal">
+                <!-- 徽章將由JS動態生成 -->
             </div>
         </div>
     </div>
@@ -1126,6 +1538,7 @@
                     this.vocabWords.push(word);
                     this.saveVocabWords();
                     this.updateVocabDisplay();
+                    badgeManager.checkAllBadges(); // 檢查成就
                     return true;
                 }
                 return false;
@@ -1171,7 +1584,7 @@
                 
                 modalTitle.textContent = word;
                 definitionDiv.innerHTML = '<div class="loading-spinner">正在從萌典查詢中...</div>';
-                modal.style.display = 'block';
+                modal.style.display = 'flex';
 
                 try {
                     const response = await fetch(`https://www.moedict.tw/uni/${encodeURIComponent(word)}`);
@@ -1182,6 +1595,7 @@
 
                     const data = await response.json();
                     this.displayDefinition(data);
+                    badgeManager.trackDefinition(word); // 追蹤查詢行為
                     
                 } catch (error) {
                     console.error('萌典API查詢失敗:', error);
@@ -1257,11 +1671,43 @@
             constructor() {
                 this.score = 0;
                 this.level = 1;
-                this.wordsFormed = 0;
+                this.wordsFormed = 0; // 當局組詞數
                 this.totalPoints = this.loadTotalPoints();
                 this.isPlaying = false;
                 this.isPaused = false;
+                this.startTime = null;
+                this.firstWordFormed = false;
                 this.recentWords = [];
+                this.levelTitles = [
+                    '呆萌龍寶', '貪吃幼龍', '識字青龍', '尋詞小龍', '吐墨蛟龍',
+                    '博學文龍', '智慧靈龍', '雲海蒼龍', '文宗聖龍', '詞聖天龍'
+                ];
+                this.levelEmojis = [
+                    '🥚', '🍎', '📖', '🔎', '✒️', '📚', '✨', '☁️', '🔥', '👑'
+                ];
+                this.badgeStyles = [
+                    // 1-3級: 初生綠
+                    { background: 'linear-gradient(135deg, #a8e063, #56ab2f)', color: 'white', borderColor: '#e0f0d8' },
+                    // 4-6級: 活力橙
+                    { background: 'linear-gradient(135deg, #f7971e, #ffd200)', color: 'white', borderColor: '#fff5cc' },
+                    // 7-9級: 智慧青
+                    { background: 'linear-gradient(135deg, #4facfe, #00f2fe)', color: 'white', borderColor: '#e6f7ff' },
+                    // 10-12級: 探索藍
+                    { background: 'linear-gradient(135deg, #00c6ff, #0072ff)', color: 'white', borderColor: '#e6f7ff' },
+                    // 13-15級: 神秘紫
+                    { background: 'linear-gradient(135deg, #8e2de2, #4a00e0)', color: 'white', borderColor: '#f3e8ff' },
+                    // 16-18級: 穩重褐
+                    { background: 'linear-gradient(135deg, #c79081, #dfa579)', color: 'white', borderColor: '#faede7' },
+                    // 19-21級: 靈動銀
+                    { background: 'linear-gradient(135deg, #e0eafc, #cfdef3)', color: '#3c4e6b', borderColor: '#f0f4f9' },
+                    // 22-24級: 天空灰
+                    { background: 'linear-gradient(135deg, #bdc3c7, #2c3e50)', color: 'white', borderColor: '#eef0f1' },
+                    // 25-27級: 熾熱紅
+                    { background: 'linear-gradient(135deg, #cb2d3e, #ef473a)', color: 'white', borderColor: '#ffebee' },
+                    // 28級以上: 王者金
+                    { background: 'linear-gradient(135deg, #ffd700, #f7b733)', color: '#6f4500', borderColor: '#fff0b3' }
+                ];
+                this.highestScore = this.loadHighestScore();
             }
 
             loadTotalPoints() {
@@ -1270,6 +1716,17 @@
 
             saveTotalPoints() {
                 localStorage.setItem('totalPoints', this.totalPoints.toString());
+            }
+
+            loadHighestScore() {
+                return parseInt(localStorage.getItem('cilongHighestScore') || '0');
+            }
+
+            saveHighestScore() {
+                if (this.score > this.highestScore) {
+                    this.highestScore = this.score;
+                    localStorage.setItem('cilongHighestScore', this.highestScore.toString());
+                }
             }
 
             addScore(points, word = '') {
@@ -1285,21 +1742,71 @@
                     }
                 }
                 
-                // 升級邏輯
-                const newLevel = Math.floor(this.wordsFormed / 5) + 1;
-                if (newLevel > this.level) {
+                // 升級邏輯 - 每3個詞升一級
+                const oldLevel = this.level;
+                const newLevel = Math.floor(this.wordsFormed / 3) + 1;
+                if (newLevel > oldLevel) {
                     this.level = newLevel;
-                    this.showSuccessAnimation(`升級到等級 ${this.level}！`);
+
+                    // 檢查是否為階段性升級（更換稱號時）
+                    const oldTitleIndex = Math.floor((oldLevel - 1) / 3);
+                    const newTitleIndex = Math.floor((newLevel - 1) / 3);
+                    if (newTitleIndex > oldTitleIndex) {
+                        // 觸發徽章進化動畫
+                        const badgeElement = document.getElementById('level-badge');
+                        badgeElement.classList.add('badge-evolve');
+                        setTimeout(() => {
+                            badgeElement.classList.remove('badge-evolve');
+                        }, 1200); // 動畫時長為1.2秒
+                    }
+
+                    const { title } = this.getLevelTitleAndStyle(this.level);
+                    toastManager.show(`✨ 等級提升！${title}`, 'levelup');
                 }
                 
+                badgeManager.checkAllBadges(); // 每次得分都檢查成就
                 this.updateDisplay();
+            }
+
+            getLevelTitleAndStyle(level) {
+                if (level <= 0) level = 1;
+                
+                const stageSize = 3;
+                
+                // 計算稱號和Emoji索引
+                const index = Math.min(
+                    Math.floor((level - 1) / stageSize), 
+                    this.levelTitles.length - 1
+                );
+                
+                const titleName = this.levelTitles[index];
+                const emoji = this.levelEmojis[index];
+                const title = `🐉 ${level}級 (${titleName} ${emoji})`;
+
+                // 獲取顏色樣式
+                const style = this.badgeStyles[index];
+
+                return { title, style };
             }
 
             updateDisplay() {
                 document.getElementById('current-score').textContent = this.score;
-                document.getElementById('total-points').textContent = this.totalPoints;
-                document.getElementById('player-level').textContent = this.level;
+                document.getElementById('highest-score').textContent = this.highestScore;
                 document.getElementById('words-formed').textContent = this.wordsFormed;
+
+                const { title, style } = this.getLevelTitleAndStyle(this.level);
+                
+                const badgeElement = document.getElementById('level-badge');
+                const titleElement = document.getElementById('player-level-title');
+
+                // 更新標題文本
+                titleElement.textContent = title;
+                
+                // 更新徽章樣式
+                badgeElement.className = `level-badge`; // 移除舊的stage class
+                badgeElement.style.background = style.background;
+                badgeElement.style.color = style.color;
+                badgeElement.style.borderColor = style.borderColor;
                 
                 // 更新最近組詞
                 const recentWordsElement = document.getElementById('recent-words');
@@ -1330,12 +1837,14 @@
                         button.classList.remove('active');
                         button.textContent = '☆';
                         button.title = '加入生詞本';
+                        toastManager.show(`📘 已從生詞本移除 "${word}"`, 'info');
                     }
                 } else {
                     if (vocabBook.addWord(word)) {
                         button.classList.add('active');
                         button.textContent = '★';
                         button.title = '從生詞本移除';
+                        toastManager.show(`📘 已收藏 "${word}" 到生詞本`, 'info');
                     }
                 }
             }
@@ -1347,8 +1856,266 @@
                 document.body.appendChild(animation);
                 
                 setTimeout(() => {
+                    if (animation.parentNode) {
                     document.body.removeChild(animation);
+                    }
                 }, 2000);
+            }
+        }
+
+        // --- 成就徽章管理器 ---
+        class BadgeManager {
+            constructor() {
+                this.badges = this.defineBadges();
+                this.playerStats = this.loadStats();
+                this.updateBadgeDisplay();
+                this.bindModalEvents();
+            }
+
+            defineBadges() {
+                return [
+                    { id: 'level_5', icon: '🌟', name: '初窺門徑', description: '累計達到 5 級', unlocked: false, condition: () => this.playerStats.maxLevel >= 5 },
+                    { id: 'level_15', icon: '🚀', name: '登堂入室', description: '累計達到 15 級', unlocked: false, condition: () => this.playerStats.maxLevel >= 15 },
+                    { id: 'level_30', icon: '👑', name: '一代宗師', description: '累計達到 30 級', unlocked: false, condition: () => this.playerStats.maxLevel >= 30 },
+                    { id: 'words_10', icon: '✍️', name: '初露鋒芒', description: '累計成功組成 10 個詞語', unlocked: false, condition: () => this.playerStats.totalWordsFormed >= 10 },
+                    { id: 'words_50', icon: '📚', name: '學富五車', description: '累計成功組成 50 個詞語', unlocked: false, condition: () => this.playerStats.totalWordsFormed >= 50 },
+                    { id: 'words_150', icon: '📜', name: '行走的詞典', description: '累計成功組成 150 個詞語', unlocked: false, condition: () => this.playerStats.totalWordsFormed >= 150 },
+                    { id: 'challenge_1', icon: '🎯', name: '挑戰者', description: '完成首次「挑戰模式」遊戲', unlocked: false, condition: () => this.playerStats.challengeGamesPlayed > 0 },
+                    { id: 'challenge_score_500', icon: '💯', name: '得分能手', description: '在單局「挑戰模式」中獲得 500 分', unlocked: false, condition: () => this.playerStats.maxChallengeScore >= 500 },
+                    { id: 'dragon_15', icon: '💪', name: '絕處逢生', description: '在龍身長度超過 15 節時成功組詞', unlocked: false, condition: () => this.playerStats.longestDragonSuccess >= 15 },
+                    { id: 'vocab_5', icon: '📖', name: '開卷有益', description: '收藏 5 個詞語到生詞本', unlocked: false, condition: () => this.playerStats.vocabCount >= 5 },
+                    { id: 'define_10', icon: '🔎', name: '學海無涯', description: '查詢 10 個不同詞語的釋義', unlocked: false, condition: () => this.playerStats.definitionQueryCount >= 10 },
+                    { id: 'quick_word', icon: '⚡️', name: '速戰速決', description: '在遊戲開始 15 秒內成功組成第一個詞', unlocked: false, condition: () => this.playerStats.quickestFirstWord <= 15 },
+                ];
+            }
+
+            loadStats() {
+                const defaults = {
+                    maxLevel: 0,
+                    totalWordsFormed: 0,
+                    challengeGamesPlayed: 0,
+                    maxChallengeScore: 0,
+                    longestDragonSuccess: 0,
+                    vocabCount: 0,
+                    queriedWords: [],
+                    definitionQueryCount: 0,
+                    quickestFirstWord: Infinity
+                };
+                const stored = localStorage.getItem('cilongPlayerStats');
+                const stats = stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
+                
+                // 從舊數據遷移
+                const unlockedBadges = new Set(JSON.parse(localStorage.getItem('cilongUnlockedBadges') || '[]'));
+                this.badges.forEach(b => {
+                    if (unlockedBadges.has(b.id)) {
+                        b.unlocked = true;
+                    }
+                });
+
+                return stats;
+            }
+
+            saveStats() {
+                localStorage.setItem('cilongPlayerStats', JSON.stringify(this.playerStats));
+                const unlockedIds = this.badges.filter(b => b.unlocked).map(b => b.id);
+                localStorage.setItem('cilongUnlockedBadges', JSON.stringify(unlockedIds));
+            }
+
+            updateStats(game) {
+                const { gameState, difficulty } = game;
+                this.playerStats.maxLevel = Math.max(this.playerStats.maxLevel, gameState.level);
+                
+                if (difficulty === 'challenge') {
+                    this.playerStats.challengeGamesPlayed++;
+                    this.playerStats.maxChallengeScore = Math.max(this.playerStats.maxChallengeScore, gameState.score);
+                }
+            }
+
+            trackWordFormation(wordLength, dragonLength) {
+                this.playerStats.totalWordsFormed++;
+                if (dragonLength > 15) {
+                    this.playerStats.longestDragonSuccess = Math.max(this.playerStats.longestDragonSuccess, dragonLength);
+                }
+            }
+
+            trackDefinition(word) {
+                if (!this.playerStats.queriedWords.includes(word)) {
+                    this.playerStats.queriedWords.push(word);
+                    this.playerStats.definitionQueryCount = this.playerStats.queriedWords.length;
+                    this.checkAllBadges();
+                }
+            }
+
+            checkAllBadges() {
+                // 更新動態數據
+                this.playerStats.vocabCount = vocabBook.vocabWords.length;
+                if(game.gameState.firstWordFormed === false && game.gameState.startTime !== null) {
+                    const timeDiff = (Date.now() - game.gameState.startTime) / 1000;
+                    this.playerStats.quickestFirstWord = Math.min(this.playerStats.quickestFirstWord, timeDiff);
+                    game.gameState.firstWordFormed = true; // 標記已完成，避免重複計算
+                }
+
+
+                this.badges.forEach(badge => {
+                    if (!badge.unlocked && badge.condition()) {
+                        this.unlockBadge(badge);
+                    }
+                });
+                this.saveStats();
+                this.updateTopBadgeDisplay(); // 更新頂部徽章
+            }
+
+            unlockBadge(badge) {
+                badge.unlocked = true;
+                toastManager.show(`🎖️ 成就解鎖：${badge.name}！`, 'achievement');
+            }
+
+            updateBadgeDisplay(isModal = false) {
+                const containerId = isModal ? 'badge-book-modal' : 'badge-book';
+                const badgeBook = document.getElementById(containerId);
+
+                if (!badgeBook) return;
+
+                const badgeCount = document.getElementById('badge-count'); // 這個ID可能需要移除
+                badgeBook.innerHTML = '';
+                
+                let unlockedCount = 0;
+                this.badges.forEach(badge => {
+                    if(badge.unlocked) unlockedCount++;
+
+                    const item = document.createElement('div');
+                    item.className = 'badge-item ' + (badge.unlocked ? 'unlocked' : 'locked');
+                    item.title = badge.description + (badge.unlocked ? ' (已達成)' : '');
+                    
+                    const icon = document.createElement('div');
+                    icon.className = 'badge-icon';
+                    icon.textContent = badge.unlocked ? badge.icon : '❓';
+                    
+                    const name = document.createElement('div');
+                    name.className = 'badge-name';
+                    name.textContent = badge.name;
+
+                    item.appendChild(icon);
+                    item.appendChild(name);
+                    badgeBook.appendChild(item);
+                });
+                
+                // 不再需要更新側邊欄的計數
+                // badgeCount.textContent = `(${unlockedCount}/${this.badges.length})`;
+            }
+
+            updateTopBadgeDisplay() {
+                const entry = document.getElementById('top-badges-entry');
+                entry.innerHTML = ''; // 清空
+
+                const unlockedBadges = this.badges.filter(b => b.unlocked);
+                const lockedBadges = this.badges.filter(b => !b.unlocked);
+                
+                let displayBadges = [];
+                
+                // 優先顯示最新解鎖的2個
+                if (unlockedBadges.length > 0) {
+                    displayBadges.push(...unlockedBadges.slice(-2));
+                }
+
+                // 填充未解鎖的徽章
+                let i = 0;
+                while(displayBadges.length < 3 && i < lockedBadges.length) {
+                    displayBadges.unshift(lockedBadges[i]);
+                    i++;
+                }
+
+                // 如果還不夠3個，用已解鎖的填充
+                let j = unlockedBadges.length - 3;
+                while(displayBadges.length < 3 && j >= 0) {
+                    displayBadges.unshift(unlockedBadges[j]);
+                    j--;
+                }
+
+
+                // 渲染圖標
+                displayBadges.forEach(badge => {
+                    const icon = document.createElement('span');
+                    icon.className = 'top-badge-icon ' + (badge.unlocked ? 'unlocked' : 'locked');
+                    icon.textContent = badge.unlocked ? badge.icon : '❓';
+                    icon.title = badge.name;
+                    entry.appendChild(icon);
+                });
+                
+                // 渲染進度
+                const progressText = document.createElement('span');
+                progressText.className = 'badge-progress-text';
+                progressText.id = 'badge-progress-text';
+                progressText.textContent = `(${unlockedBadges.length}/${this.badges.length})`;
+                entry.appendChild(progressText);
+            }
+
+            bindModalEvents() {
+                const modal = document.getElementById('badge-modal');
+                const entry = document.getElementById('top-badges-entry');
+                const closeBtn = document.getElementById('close-badge-modal');
+
+                entry.onclick = () => {
+                    this.updateBadgeDisplay(true); // 傳入參數，表示在模態框中渲染
+                    modal.style.display = 'flex';
+                }
+                closeBtn.onclick = () => {
+                    modal.style.display = 'none';
+                }
+
+                window.addEventListener('click', (event) => {
+                    if (event.target == modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // --- Toast 通知管理器 ---
+        class ToastManager {
+            constructor() {
+                this.queue = [];
+                this.isDisplaying = false;
+                this.container = document.getElementById('toast-container');
+            }
+
+            show(message, type = 'info', duration = 3000) {
+                this.queue.push({ message, type, duration });
+                if (!this.isDisplaying) {
+                    this._processQueue();
+                }
+            }
+
+            _processQueue() {
+                if (this.queue.length === 0) {
+                    this.isDisplaying = false;
+                    return;
+                }
+
+                this.isDisplaying = true;
+                const { message, type, duration } = this.queue.shift();
+
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.innerHTML = message;
+
+                this.container.appendChild(toast);
+
+                requestAnimationFrame(() => {
+                    toast.classList.add('show');
+                });
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    // 等待動畫結束後移除DOM並處理下一個
+                    toast.addEventListener('transitionend', () => {
+                        if (toast.parentNode === this.container) {
+                            this.container.removeChild(toast);
+                        }
+                        this._processQueue();
+                    }, { once: true });
+
+                }, duration);
             }
         }
 
@@ -1614,17 +2381,209 @@
             }
         }
 
+        // --- 詞龍秘寶：道具管理器 ---
+        class ItemManager {
+            constructor(game) {
+                this.game = game;
+                this.activeTimers = [];
+                
+                this.itemsDefinition = {
+                    // === 增益道具 ===
+                    'moving_coin': {
+                        id: 'moving_coin', name: '移動金幣', icon: '💰', type: 'buff',
+                        description: '追上它！獲得 50 分獎勵。',
+                        isMoving: true,
+                        apply: () => {
+                            this.game.gameState.addScore(50);
+                            toastManager.show(`💰 獲得道具：移動金幣！獲得50分！`, 'success');
+                        }
+                    },
+                    'diamond': {
+                        id: 'diamond', name: '鑽石', icon: '💎', type: 'buff',
+                        description: '10秒內消失！獲得 150 分獎勵。',
+                        duration: 10000,
+                        apply: () => {
+                            this.game.gameState.addScore(150);
+                            toastManager.show(`💎 獲得道具：鑽石！獲得150分！`, 'success');
+                        }
+                    },
+                    'hint': {
+                        id: 'hint', name: '靈光一閃', icon: '💡', type: 'buff',
+                        description: '高亮正確食物，持續3秒。',
+                        duration: 3000,
+                        apply: () => {
+                            const correctChar = this.game.findCorrectFoodChar();
+                            if (correctChar) {
+                                document.querySelectorAll('.food').forEach(el => {
+                                    if (el.textContent === correctChar) el.classList.add('hinted');
+                                });
+                                toastManager.show(`💡 獲得道具：靈光一閃！正確答案已高亮！`, 'info');
+                                this.addTimer(() => {
+                                   document.querySelectorAll('.food.hinted').forEach(el => el.classList.remove('hinted'));
+                                }, 3000);
+                            } else {
+                                toastManager.show(`💡 靈光一閃！但場上暫無匹配項。`, 'info');
+                            }
+                        }
+                    },
+                    'shrink': {
+                        id: 'shrink', name: '神龍斷尾', icon: '✂️', type: 'special',
+                        description: '龍身立刻縮短至4節。',
+                        apply: () => {
+                            if (this.game.dragon.length > 4) {
+                                this.game.dragon.splice(4);
+                                toastManager.show(`✂️ 獲得道具：神龍斷尾！龍身縮短了！`, 'info');
+                                this.game.render();
+                            } else {
+                                toastManager.show(`✂️ 神龍斷尾！但龍身已經很短了。`, 'info');
+                            }
+                        }
+                    },
+                    'bomb': {
+                        id: 'bomb', name: '清屏炸彈', icon: '💣', type: 'special',
+                        description: '清除所有錯誤的食物。',
+                        apply: () => {
+                            const correctChar = this.game.findCorrectFoodChar();
+                            if(correctChar) {
+                                this.game.foods = this.game.foods.filter(food => food.char === correctChar);
+                                toastManager.show(`💣 獲得道具：清屏炸彈！已清除干擾項！`, 'info');
+                                this.game.render();
+                            } else {
+                                this.game.foods = []; // 如果沒有正確的，就全清
+                                toastManager.show(`💣 獲得道具：清屏炸彈！已清除所有食物！`, 'info');
+                                this.game.generateFoods(); // 再生成一批
+                                this.game.render();
+                            }
+                        }
+                    },
+                    'time_stop': {
+                        id: 'time_stop', name: '時間靜止', icon: '⏱️', type: 'buff',
+                        description: '龍的移動速度減慢，持續5秒。',
+                        duration: 5000,
+                        apply: () => {
+                            const originalSpeed = this.game.gameSpeed;
+                            this.game.setGameSpeed(originalSpeed + 100); // 速度變慢
+                            toastManager.show(`⏱️ 獲得道具：時間靜止！速度減慢5秒。`, 'info');
+                            this.addTimer(() => {
+                                // 只有當前速度還是慢速時才恢復
+                                if(this.game.gameSpeed === originalSpeed + 100) {
+                                    this.game.updateGameSpeed(); // 恢復到當前等級應有的速度
+                                    toastManager.show(`⏱️ 時間靜止效果結束。`, 'info');
+                                }
+                            }, 5000);
+                        }
+                    },
+                    'invincibility': {
+                        id: 'invincibility', name: '隱身符', icon: '👻', type: 'buff',
+                        description: '10秒內，龍可以安全穿過自己的身體。',
+                        duration: 10000,
+                        apply: () => {
+                            this.game.isInvincibleToSelf = true;
+                            document.getElementById('game-board').classList.add('snake-invincible');
+                            toastManager.show(`👻 獲得道具：隱身符！10秒內免疫自身碰撞！`, 'info');
+                            this.addTimer(() => {
+                                this.game.isInvincibleToSelf = false;
+                                document.getElementById('game-board').classList.remove('snake-invincible');
+                                toastManager.show(`👻 隱身符效果結束。`, 'info');
+                            }, 10000);
+                        }
+                    },
+                    // === 減益道具 ===
+                    'debuff_poop': {
+                        id: 'debuff_poop', name: '臭臭便便', icon: '💩', type: 'debuff',
+                        description: '小心！扣除100分，龍身增長2節。',
+                        apply: () => {
+                            this.game.gameState.addScore(-100); // 扣分
+                            // 增長龍身
+                            const tail = this.game.dragon[this.game.dragon.length - 1];
+                            this.game.dragon.push({ ...tail, char: this.game.wordDB.getRandomChar() });
+                            this.game.dragon.push({ ...tail, char: this.game.wordDB.getRandomChar() });
+                            toastManager.show(`💩 誤食臭臭便便！扣除100分！`, 'error');
+                            this.game.render();
+                        }
+                    },
+                    'debuff_dizzy': {
+                        id: 'debuff_dizzy', name: '頭暈目眩', icon: '😵', type: 'debuff',
+                        description: '小心！方向控制顛倒，持續5秒。',
+                        duration: 5000,
+                        apply: () => {
+                            this.game.areControlsInverted = true;
+                            toastManager.show(`😵 誤食頭暈目眩！方向已顛倒！`, 'error');
+                            this.addTimer(() => {
+                                this.game.areControlsInverted = false;
+                                toastManager.show(`😵 頭暈目眩效果結束。`, 'info');
+                            }, 5000);
+                        }
+                    },
+                    'debuff_freeze': {
+                        id: 'debuff_freeze', name: '冰塊', icon: '🧊', type: 'debuff',
+                        description: '小心！凍結在原地2秒。',
+                        duration: 2000,
+                        apply: () => {
+                            this.game.isFrozen = true;
+                            toastManager.show(`🧊 誤食冰塊！已被凍結！`, 'error');
+                            this.addTimer(() => {
+                                this.game.isFrozen = false;
+                                toastManager.show(`🧊 凍結效果結束。`, 'info');
+                            }, 2000);
+                        }
+                    },
+                    // === 特殊道具 ===
+                    'mystery_box': {
+                        id: 'mystery_box', name: '神秘寶箱', icon: '❓', type: 'special',
+                        description: '是驚喜還是驚嚇？',
+                        apply: () => {
+                            toastManager.show(`❓ 打開了神秘寶箱...`, 'info');
+                            const allOtherItemIds = Object.keys(this.itemsDefinition).filter(id => id !== 'mystery_box');
+                            const randomItemId = allOtherItemIds[Math.floor(Math.random() * allOtherItemIds.length)];
+                            // 延遲一點執行，讓玩家看到提示
+                            setTimeout(() => {
+                                this.applyEffect(randomItemId);
+                            }, 500);
+                        }
+                    }
+                };
+                this.availableItemIds = Object.keys(this.itemsDefinition);
+            }
+
+            getRandomItemId() {
+                return this.availableItemIds[Math.floor(Math.random() * this.availableItemIds.length)];
+            }
+
+            applyEffect(itemId) {
+                if (this.itemsDefinition[itemId]) {
+                    this.itemsDefinition[itemId].apply();
+                }
+            }
+
+            addTimer(callback, duration) {
+                // 不暫停計時器，這是一個可接受的簡化
+                const timerId = setTimeout(() => {
+                    callback();
+                    this.activeTimers = this.activeTimers.filter(tId => tId !== timerId);
+                }, duration);
+                this.activeTimers.push(timerId);
+            }
+            
+            clearAllTimers() {
+                this.activeTimers.forEach(timerId => clearTimeout(timerId));
+                this.activeTimers = [];
+            }
+        }
+
         // 詞龍遊戲主體
         class WordDragonGame {
             constructor() {
                 this.gameState = new GameState();
                 this.wordDB = new WordDatabase();
+                this.itemManager = new ItemManager(this);
                 
                 // 遊戲參數
-                this.boardWidth = 20;
-                this.boardHeight = 15;
+                this.boardWidth = 22;
+                this.boardHeight = 16;
                 this.cellSize = 30;
                 this.gameSpeed = 250;
+                this.difficulty = 'exploration'; // 默認難度
                 
                 // 遊戲狀態  
                 this.dragon = [
@@ -1635,6 +2594,15 @@
                 ];
                 this.direction = { x: 1, y: 0 };
                 this.foods = []; // 多個食物數組
+                this.items = []; // 儲存道具
+                this.itemSpawnCounter = 0;
+                this.ITEM_SPAWN_THRESHOLD = 8; // 約每2秒 (8 * 250ms)
+                this.movingItemCounter = 0;
+                
+                // 狀態旗幟
+                this.isInvincibleToSelf = false;
+                this.areControlsInverted = false;
+                this.isFrozen = false;
                 this.gameLoop = null;
                 
                 this.bindEvents();
@@ -1646,6 +2614,9 @@
                 await this.wordDB.initialize();
                 console.log('詞庫初始化完成，詞語數量:', this.wordDB.words.size);
                 
+                // 初始化成就系統
+                badgeManager.checkAllBadges();
+                
                 // 然後初始化遊戲
                 this.initializeGame();
             }
@@ -1654,26 +2625,50 @@
                 this.setupBoard();
                 this.generateFoods(); // 初始化時生成多個食物
                 this.gameState.updateDisplay();
+                
+                // 重置所有道具和狀態
+                this.itemManager.clearAllTimers();
+                this.items = [];
+                this.itemSpawnCounter = 0;
+                this.isInvincibleToSelf = false;
+                this.areControlsInverted = false;
+                this.isFrozen = false;
+
+                document.getElementById('game-board').classList.remove('snake-invincible');
                 this.render();
             }
 
             setupBoard() {
                 const board = document.getElementById('game-board');
-                // 計算實際需要的尺寸，確保所有方向邊距一致
-                const margin = 8; // 增加邊距到8px，確保上下左右都有足夠空間
-                const actualWidth = (this.boardWidth * this.cellSize) + (margin * 2);
-                const actualHeight = (this.boardHeight * this.cellSize) + (margin * 2);
+                // 邊距現在完全由CSS中的padding控制。
+                // JS只需計算出包含padding和border的總尺寸。
+                const PADDING_PER_SIDE = 0; // 必須與 .game-board 的 padding 一致
+                const BORDER_PER_SIDE = 3;   // 必須與 .game-board 的 border-width 一致
+
+                const totalHorizontalPaddingAndBorder = (PADDING_PER_SIDE + BORDER_PER_SIDE) * 2;
+                const totalVerticalPaddingAndBorder = (PADDING_PER_SIDE + BORDER_PER_SIDE) * 2;
+
+                const actualWidth = (this.boardWidth * this.cellSize) + totalHorizontalPaddingAndBorder;
+                const actualHeight = (this.boardHeight * this.cellSize) + totalVerticalPaddingAndBorder;
                 
                 board.style.width = actualWidth + 'px';
                 board.style.height = actualHeight + 'px';
                 board.innerHTML = '';
                 
-                console.log(`遊戲板設置: ${actualWidth}×${actualHeight}, 格子: ${this.boardWidth}×${this.boardHeight}, 單元格: ${this.cellSize}px, 邊距: ${margin}px`);
+                console.log(`遊戲板設置 (border-box): ${actualWidth}×${actualHeight}, 邊距: ${PADDING_PER_SIDE}px`);
             }
 
             bindEvents() {
-                // 控制按鈕
-                document.getElementById('start-btn').addEventListener('click', () => this.startGame());
+                // 難度選擇按鈕
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const difficulty = e.target.dataset.difficulty;
+                        this.setDifficulty(difficulty);
+                        this.startGame();
+                    });
+                });
+
+                // 遊戲中控制按鈕
                 document.getElementById('pause-btn').addEventListener('click', () => this.pauseGame());
                 document.getElementById('restart-btn').addEventListener('click', () => this.restartGame());
                 
@@ -1698,19 +2693,26 @@
                     const deltaX = touchEndX - touchStartX;
                     const deltaY = touchEndY - touchStartY;
                     
+                    let targetDirection = null;
+                    
                     if (Math.abs(deltaX) > Math.abs(deltaY)) {
                         // 水平滑動
-                        if (deltaX > 30 && this.direction.x !== -1) {
-                            this.direction = { x: 1, y: 0 };
-                        } else if (deltaX < -30 && this.direction.x !== 1) {
-                            this.direction = { x: -1, y: 0 };
-                        }
+                        if (deltaX > 30) targetDirection = { x: 1, y: 0 }; // Right
+                        else if (deltaX < -30) targetDirection = { x: -1, y: 0 }; // Left
                     } else {
                         // 垂直滑動
-                        if (deltaY > 30 && this.direction.y !== -1) {
-                            this.direction = { x: 0, y: 1 };
-                        } else if (deltaY < -30 && this.direction.y !== 1) {
-                            this.direction = { x: 0, y: -1 };
+                        if (deltaY > 30) targetDirection = { x: 0, y: 1 }; // Down
+                        else if (deltaY < -30) targetDirection = { x: 0, y: -1 }; // Up
+                    }
+
+                    if(targetDirection) {
+                        if (this.areControlsInverted) {
+                            targetDirection.x *= -1;
+                            targetDirection.y *= -1;
+                        }
+                        // 檢查是否是反方向
+                        if (this.direction.x !== -targetDirection.x || this.direction.y !== -targetDirection.y) {
+                            this.direction = targetDirection;
                         }
                     }
                 });
@@ -1719,24 +2721,48 @@
             handleKeyPress(e) {
                 if (!this.gameState.isPlaying) return;
                 
-                switch(e.key) {
+                let key = e.key;
+                let targetDirection = null;
+
+                switch(key) {
                     case 'ArrowUp':
-                        if (this.direction.y !== 1) this.direction = { x: 0, y: -1 };
+                        targetDirection = { x: 0, y: -1 };
                         break;
                     case 'ArrowDown':
-                        if (this.direction.y !== -1) this.direction = { x: 0, y: 1 };
+                        targetDirection = { x: 0, y: 1 };
                         break;
                     case 'ArrowLeft':
-                        if (this.direction.x !== 1) this.direction = { x: -1, y: 0 };
+                        targetDirection = { x: -1, y: 0 };
                         break;
                     case 'ArrowRight':
-                        if (this.direction.x !== -1) this.direction = { x: 1, y: 0 };
+                        targetDirection = { x: 1, y: 0 };
                         break;
                     case ' ':
                         e.preventDefault();
                         this.pauseGame();
-                        break;
+                        return;
                 }
+
+                if (targetDirection) {
+                    // 處理頭暈目眩效果
+                    if (this.areControlsInverted) {
+                        targetDirection.x *= -1;
+                        targetDirection.y *= -1;
+                }
+                    // 檢查是否是反方向（防止龍掉頭）
+                    if (this.direction.x !== -targetDirection.x || this.direction.y !== -targetDirection.y) {
+                        this.direction = targetDirection;
+                    }
+                }
+            }
+
+            setDifficulty(difficulty) {
+                this.difficulty = difficulty;
+                console.log(`已選擇難度模式: ${this.difficulty}`);
+
+                // 切換UI顯示
+                document.getElementById('difficulty-selection').style.display = 'none';
+                document.getElementById('ingame-controls').style.display = 'flex';
             }
 
             startGame() {
@@ -1744,8 +2770,9 @@
                 
                 this.gameState.isPlaying = true;
                 this.gameState.isPaused = false;
+                this.gameState.startTime = Date.now();
+                this.gameState.firstWordFormed = false;
                 
-                document.getElementById('start-btn').disabled = true;
                 document.getElementById('pause-btn').disabled = false;
                 
                 this.gameLoop = setInterval(() => {
@@ -1778,15 +2805,63 @@
                 this.direction = { x: 1, y: 0 };
                 this.generateFoods(); // 重新開始時生成多個食物
                 
-                document.getElementById('start-btn').disabled = false;
+                // 恢復UI到初始狀態
+                document.getElementById('difficulty-selection').style.display = 'block';
+                document.getElementById('ingame-controls').style.display = 'none';
                 document.getElementById('pause-btn').disabled = true;
                 document.getElementById('pause-btn').textContent = '暫停';
                 
                 this.gameState.updateDisplay();
-                this.render();
+                this.itemManager.clearAllTimers();
+                this.items = [];
+                this.itemSpawnCounter = 0;
+                this.isInvincibleToSelf = false;
+                this.areControlsInverted = false;
+                this.isFrozen = false;
+                document.getElementById('game-board').classList.remove('snake-invincible');
             }
 
             update() {
+                // 檢查是否凍結
+                if (this.isFrozen) {
+                    return; // 如果凍結，跳過所有更新
+                }
+
+                // 道具生成邏輯
+                this.itemSpawnCounter++;
+                if (this.itemSpawnCounter > this.ITEM_SPAWN_THRESHOLD) {
+                    this.itemSpawnCounter = 0;
+                    // 每2秒有20%機率生成，且場上道具少於3個
+                    if (Math.random() < 0.2 && this.items.length < 3) { 
+                        this.spawnItem();
+                    }
+                }
+
+                // 移動道具邏輯
+                this.movingItemCounter++;
+                if (this.movingItemCounter > 4) { // 控制移動速度
+                    this.movingItemCounter = 0;
+                    this.items.forEach(item => {
+                        if (item.isMoving) {
+                            this.moveDynamicItem(item);
+                        }
+                    });
+                }
+
+                // 限時道具消失邏輯
+                const now = Date.now();
+                this.items = this.items.filter(item => {
+                    if (item.duration && now > item.spawnTime + item.duration) {
+                        toastManager.show(`${item.name} 消失了！`, 'info');
+                        return false;
+                    }
+                    return true;
+                });
+
+
+                // 挑戰模式下更新遊戲速度
+                this.updateGameSpeed();
+
                 // 計算龍頭新位置
                 const head = this.dragon[0];
                 const newX = head.x + this.direction.x;
@@ -1799,10 +2874,17 @@
                     return;
                 }
                 
-                // 檢查自身碰撞
-                if (this.dragon.some(segment => segment.x === newX && segment.y === newY)) {
+                // 檢查自身碰撞 (隱身符效果)
+                if (!this.isInvincibleToSelf && this.dragon.some((segment, index) => index > 0 && segment.x === newX && segment.y === newY)) {
                     this.gameOver();
                     return;
+                }
+                
+                // 檢查是否吃到道具
+                const eatenItem = this.items.find(item => item.x === newX && item.y === newY);
+                if (eatenItem) {
+                    this.collectItem(eatenItem, { x: newX, y: newY });
+                    return; // 吃到道具後，當前回合結束，避免後續的食物判斷
                 }
                 
                 // 檢查是否吃到食物
@@ -1875,10 +2957,10 @@
                     
                     // 組詞成功
                     this.gameState.addScore(bestWord.score, bestWord.word);
+                    badgeManager.trackWordFormation(bestWord.word.length, this.dragon.length);
                     
                     // 顯示成功信息
-                    let successMessage = `組詞成功：${bestWord.word} +${bestWord.score}分`;
-                    this.gameState.showSuccessAnimation(successMessage);
+                    this.gameState.showSuccessAnimation(`組詞成功：${bestWord.word} +${bestWord.score}分`);
                     
                     // 移除組詞的字符，龍頭被消除
                     this.removeUsedCharacters(bestWord.chars);
@@ -1945,36 +3027,45 @@
 
             generateFoods() {
                 this.foods = [];
-                const numFoods = 6; // 生成6個食物
                 const headChar = this.dragon[0].char;
                 
-                // 使用優化的智能字符選擇
+                if (this.difficulty === 'challenge') {
+                    // ---- 挑戰模式邏輯 ----
+                    // 1. 生成一個正確的食物
+                    const complementaryChars = Array.from(this.getSmartComplementaryChars(headChar));
+                    if (complementaryChars.length > 0) {
+                        const correctChar = complementaryChars[Math.floor(Math.random() * complementaryChars.length)];
+                        this.generateSingleFood(correctChar);
+                    } else {
+                        // 如果找不到匹配的字，就放一個隨機的，避免遊戲卡死
+                        this.generateSingleFood(this.wordDB.getRandomChar());
+                    }
+                    
+                    // 2. 生成干擾項
+                    const numDistractors = Math.floor(this.gameState.level * 1.2) + 1;
+                    const allChars = Object.keys(this.wordDB.byFirstChar); // 獲取所有可用字符
+
+                    for (let i = 0; i < numDistractors; i++) {
+                        let distractorChar;
+                        let attempts = 0; // 添加循環計數器
+                        do {
+                            distractorChar = allChars[Math.floor(Math.random() * allChars.length)];
+                            attempts++;
+                            if (attempts > 100) break; // 如果嘗試100次仍未找到，則跳出循環
+                        } while (complementaryChars.includes(distractorChar)); // 確保干擾項不是正確答案
+                        this.generateSingleFood(distractorChar);
+                    }
+
+                } else {
+                    // ---- 探索模式邏輯 ----
+                    const numFoods = 6;
                 const smartChars = this.getSmartComplementaryChars(headChar);
                 
-                // 生成食物
                 for (let i = 0; i < numFoods; i++) {
-                    let newFood;
-                    let attempts = 0;
-                    do {
-                        // 前半數食物優先使用智能選擇的字符，後半數使用隨機字符增加挑戰性
                         const char = (i < Math.min(3, smartChars.length)) ? 
                             smartChars[i] : this.wordDB.getRandomChar();
-                        
-                        newFood = {
-                            x: Math.floor(Math.random() * this.boardWidth),
-                            y: Math.floor(Math.random() * this.boardHeight),
-                            char: char
-                        };
-                        attempts++;
-                        
-                        // 防止無限循環
-                        if (attempts > 50) {
-                            console.log('生成食物位置嘗試次數過多，強制放置');
-                            break;
-                        }
-                    } while (this.isPositionOccupied(newFood.x, newFood.y));
-                    
-                    this.foods.push(newFood);
+                        this.generateSingleFood(char);
+                    }
                 }
             }
 
@@ -2017,21 +3108,22 @@
                 return result.slice(0, 5); // 最多返回5個智能選擇的字符
             }
 
-            generateSingleFood() {
+            generateSingleFood(char) {
                 let newFood;
+                let attempts = 0;
                 do {
-                    // 使用智能字符選擇，提高組詞成功率
-                    const headChar = this.dragon[0].char;
-                    const smartChar = this.wordDB.getSmartFoodChar(this.dragon[0]);
-                    
                     newFood = {
                         x: Math.floor(Math.random() * this.boardWidth),
                         y: Math.floor(Math.random() * this.boardHeight),
-                        char: smartChar
+                        char: char
                     };
+                    attempts++;
+                    if (attempts > 50) break; // 防止無限循環
                 } while (this.isPositionOccupied(newFood.x, newFood.y));
                 
+                if (attempts <= 50) {
                 this.foods.push(newFood);
+                }
             }
 
             isPositionOccupied(x, y) {
@@ -2043,6 +3135,10 @@
                 if (this.foods.some(food => food.x === x && food.y === y)) {
                     return true;
                 }
+                // 檢查是否與其他道具碰撞
+                if (this.items.some(item => item.x === x && item.y === y)) {
+                    return true;
+                }
                 return false;
             }
 
@@ -2050,14 +3146,12 @@
                 const board = document.getElementById('game-board');
                 board.innerHTML = '';
                 
-                const offset = 8; // 與setupBoard的margin保持一致，確保所有方向邊距相同
-                
                 // 渲染龍身
                 this.dragon.forEach((segment, index) => {
                     const element = document.createElement('div');
                     element.className = 'game-cell ' + (index === 0 ? 'snake-head' : 'snake-body');
-                    element.style.left = (segment.x * this.cellSize + offset) + 'px';
-                    element.style.top = (segment.y * this.cellSize + offset) + 'px';
+                    element.style.left = (segment.x * this.cellSize) + 'px';
+                    element.style.top = (segment.y * this.cellSize) + 'px';
                     element.textContent = segment.char;
                     board.appendChild(element);
                 });
@@ -2066,10 +3160,24 @@
                 this.foods.forEach(food => {
                     const foodElement = document.createElement('div');
                     foodElement.className = 'game-cell food';
-                    foodElement.style.left = (food.x * this.cellSize + offset) + 'px';
-                    foodElement.style.top = (food.y * this.cellSize + offset) + 'px';
+                    foodElement.style.left = (food.x * this.cellSize) + 'px';
+                    foodElement.style.top = (food.y * this.cellSize) + 'px';
                     foodElement.textContent = food.char;
                     board.appendChild(foodElement);
+                });
+
+                // 渲染所有道具
+                this.items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'item-cell';
+                    if (item.type === 'debuff') itemElement.classList.add('debuff');
+                    if (item.id === 'diamond') itemElement.classList.add('diamond');
+                    
+                    itemElement.style.left = (item.x * this.cellSize) + 'px';
+                    itemElement.style.top = (item.y * this.cellSize) + 'px';
+                    itemElement.textContent = item.icon;
+                    itemElement.title = item.name + ': ' + item.description;
+                    board.appendChild(itemElement);
                 });
             }
 
@@ -2088,7 +3196,7 @@
                         <div class="final-stats">
                             <div>最終分數: ${this.gameState.score}</div>
                             <div>組詞成功: ${this.gameState.wordsFormed}</div>
-                            <div>達到等級: ${this.gameState.level}</div>
+                            <div>達到等級: ${this.gameState.getLevelTitleAndStyle(this.gameState.level).title}</div>
                             <div>龍身長度: ${this.dragon.length}</div>
                         </div>
                         <button class="control-btn" onclick="game.closeGameOver(); game.restartGame();">再玩一次</button>
@@ -2096,6 +3204,10 @@
                 `;
                 
                 document.querySelector('.game-container').appendChild(gameOverDiv);
+                this.gameState.saveHighestScore();
+                badgeManager.updateStats(this);
+                badgeManager.checkAllBadges();
+                this.itemManager.clearAllTimers();
             }
 
             closeGameOver() {
@@ -2104,14 +3216,124 @@
                     gameOverDiv.remove();
                 }
             }
+
+            updateGameSpeed() {
+                if (this.difficulty === 'challenge') {
+                    let targetSpeed;
+                    if (this.gameSpeed > 150) { // 只有非時間靜止狀態才更新
+                        if (this.gameState.level < 10) {
+                            targetSpeed = 250;
+                        } else {
+                            const speedReduction = (this.gameState.level - 9) * 8;
+                            targetSpeed = Math.max(150, 250 - speedReduction);
+                        }
+                        this.setGameSpeed(targetSpeed);
+                    }
+                } else {
+                    this.setGameSpeed(250); // 探索模式固定速度
+                }
+            }
+
+            setGameSpeed(newSpeed) {
+                if (this.gameSpeed === newSpeed) return;
+                
+                this.gameSpeed = newSpeed;
+
+                // 重啟定時器以應用新速度
+                clearInterval(this.gameLoop);
+                this.gameLoop = setInterval(() => {
+                    if (!this.gameState.isPaused) {
+                        this.update();
+                        this.render();
+                    }
+                }, this.gameSpeed);
+            }
+
+            spawnItem() {
+                let newItemPosition;
+                let attempts = 0;
+                const itemId = this.itemManager.getRandomItemId();
+                const itemData = { ...this.itemManager.itemsDefinition[itemId] };
+
+                // 特殊生成邏輯
+                if (itemId === 'diamond') {
+                     const corners = [
+                        { x: 1, y: 1 }, { x: this.boardWidth - 2, y: 1 },
+                        { x: 1, y: this.boardHeight - 2}, { x: this.boardWidth - 2, y: this.boardHeight - 2 }
+                    ];
+                    newItemPosition = corners[Math.floor(Math.random() * corners.length)];
+                } else {
+                    do {
+                        newItemPosition = {
+                            x: Math.floor(Math.random() * this.boardWidth),
+                            y: Math.floor(Math.random() * this.boardHeight)
+                        };
+                        attempts++;
+                        if (attempts > 50) return; // 防止無限循環
+                    } while (this.isPositionOccupied(newItemPosition.x, newItemPosition.y));
+                }
+                
+                // 為限時道具添加生成時間
+                if (itemData.duration) {
+                    itemData.spawnTime = Date.now();
+                }
+
+                this.items.push({ ...newItemPosition, ...itemData });
+            }
+
+            collectItem(eatenItem, newHeadPosition) {
+                // 應用效果
+                this.itemManager.applyEffect(eatenItem.id);
+
+                // 從遊戲板上移除道具
+                this.items = this.items.filter(item => item !== eatenItem);
+
+                // 龍正常移動到道具的位置
+                for (let i = this.dragon.length - 1; i > 0; i--) {
+                    this.dragon[i].x = this.dragon[i-1].x;
+                    this.dragon[i].y = this.dragon[i-1].y;
+                }
+                this.dragon[0].x = newHeadPosition.x;
+                this.dragon[0].y = newHeadPosition.y;
+
+                // 立即重新渲染以反映變化
+                this.render();
+            }
+            
+            findCorrectFoodChar() {
+                const headChar = this.dragon[0].char;
+                for (const food of this.foods) {
+                    const foodChar = food.char;
+                    if (this.wordDB.isValidWord(headChar + foodChar) || this.wordDB.isValidWord(foodChar + headChar)) {
+                        return foodChar;
+                    }
+                }
+                return null;
+            }
+
+            moveDynamicItem(item) {
+                const directions = [{x:0, y:1}, {x:0, y:-1}, {x:1, y:0}, {x:-1, y:0}];
+                const dir = directions[Math.floor(Math.random() * directions.length)];
+                const newX = item.x + dir.x;
+                const newY = item.y + dir.y;
+
+                if (newX >= 0 && newX < this.boardWidth && newY >= 0 && newY < this.boardHeight && !this.isPositionOccupied(newX, newY)) {
+                    item.x = newX;
+                    item.y = newY;
+                }
+            }
         }
 
         // 初始化遊戲和生詞本
         let game;
         let vocabBook;
+        let toastManager;
+        let badgeManager;
         
         document.addEventListener('DOMContentLoaded', () => {
+            toastManager = new ToastManager();
             vocabBook = new VocabularyBook();
+            badgeManager = new BadgeManager();
             vocabBook.updateVocabDisplay();
             game = new WordDragonGame();
         });
