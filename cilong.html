@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>詞龍大冒險 - 太虛幻境</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 900px;
+            width: 95vw;
+            max-height: 95vh;
+            overflow: hidden;
+        }
+
+        /* 頂部狀態欄 */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .level-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .score-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .score-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .words-count {
+            text-align: center;
+        }
+
+        /* 遊戲區域 */
+        .game-area {
+            display: flex;
+            gap: 20px;
+            height: calc(95vh - 200px);
+            max-height: 600px;
+        }
+
+        .game-board-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-board {
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+            border-radius: 15px;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+
+        .game-cell {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            line-height: 1;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .snake-head {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            z-index: 10;
+        }
+
+        .snake-body {
+            background: linear-gradient(45deg, #81C784, #66BB6A);
+            color: white;
+            box-shadow: 0 2px 6px rgba(129, 199, 132, 0.3);
+        }
+
+        .food {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* 遊戲信息面板 */
+        .game-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .info-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-panel h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+
+        .current-dragon {
+            font-size: 24px;
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .dragon-body {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .dragon-char {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            border: 2px solid #bbdefb;
+        }
+
+        .recent-words {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .word-item:last-child {
+            border-bottom: none;
+        }
+
+        .word-text {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .word-score {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        /* 控制按鈕 */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+
+        .control-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 遊戲結束畫面 */
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-over h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .final-stats {
+            margin: 20px 0;
+            color: #666;
+        }
+
+        .final-stats div {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .game-info {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            
+            .info-panel {
+                min-width: 250px;
+            }
+            
+            .game-board {
+                height: 400px;
+            }
+        }
+
+        /* 成功動畫 */
+        .success-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: successPop 2s ease-out forwards;
+        }
+
+        @keyframes successPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 頂部狀態欄 -->
+        <div class="status-bar">
+            <div class="status-left">
+                <div class="level-badge">
+                    等級 <span id="player-level">1</span>
+                </div>
+                <div class="score-display">
+                    <div class="score-label">總積分</div>
+                    <div class="score-value" id="total-points">0</div>
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="words-count">
+                    <div class="score-label">組詞成功</div>
+                    <div class="score-value" id="words-formed">0</div>
+                </div>
+                <div class="score-display">
+                    <div class="score-label">當前分數</div>
+                    <div class="score-value" id="current-score">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲區域 -->
+        <div class="game-area">
+            <div class="game-board-container">
+                <div class="game-board" id="game-board"></div>
+                <div class="controls">
+                    <button class="control-btn" id="start-btn">開始遊戲</button>
+                    <button class="control-btn" id="pause-btn" disabled>暫停</button>
+                    <button class="control-btn" id="restart-btn">重新開始</button>
+                </div>
+            </div>
+
+            <div class="game-info">
+                <div class="info-panel">
+                    <h3>當前詞龍</h3>
+                    <div class="current-dragon">
+                        龍頭：<span id="dragon-head">學</span>
+                    </div>
+                    <div class="dragon-body" id="dragon-body">
+                        <div class="dragon-char">習</div>
+                        <div class="dragon-char">知</div>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <h3>最近組詞</h3>
+                    <div class="recent-words" id="recent-words">
+                        <div class="word-item">
+                            <span class="word-text">準備開始遊戲...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態管理
+        class GameState {
+            constructor() {
+                this.score = 0;
+                this.level = 1;
+                this.wordsFormed = 0;
+                this.totalPoints = this.loadTotalPoints();
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.recentWords = [];
+            }
+
+            loadTotalPoints() {
+                return parseInt(localStorage.getItem('totalPoints') || '0');
+            }
+
+            saveTotalPoints() {
+                localStorage.setItem('totalPoints', this.totalPoints.toString());
+            }
+
+            addScore(points, word = '') {
+                this.score += points;
+                this.totalPoints += points;
+                this.saveTotalPoints();
+                
+                if (word) {
+                    this.wordsFormed++;
+                    this.recentWords.unshift({ word, score: points });
+                    if (this.recentWords.length > 10) {
+                        this.recentWords.pop();
+                    }
+                }
+                
+                // 升級邏輯
+                const newLevel = Math.floor(this.wordsFormed / 5) + 1;
+                if (newLevel > this.level) {
+                    this.level = newLevel;
+                    this.showSuccessAnimation(`升級到等級 ${this.level}！`);
+                }
+                
+                this.updateDisplay();
+            }
+
+            updateDisplay() {
+                document.getElementById('current-score').textContent = this.score;
+                document.getElementById('total-points').textContent = this.totalPoints;
+                document.getElementById('player-level').textContent = this.level;
+                document.getElementById('words-formed').textContent = this.wordsFormed;
+                
+                // 更新最近組詞
+                const recentWordsElement = document.getElementById('recent-words');
+                if (this.recentWords.length > 0) {
+                    recentWordsElement.innerHTML = this.recentWords.map(item => 
+                        `<div class="word-item">
+                            <span class="word-text">${item.word}</span>
+                            <span class="word-score">+${item.score}</span>
+                        </div>`
+                    ).join('');
+                }
+            }
+
+            showSuccessAnimation(message) {
+                const animation = document.createElement('div');
+                animation.className = 'success-animation';
+                animation.textContent = message;
+                document.body.appendChild(animation);
+                
+                setTimeout(() => {
+                    document.body.removeChild(animation);
+                }, 2000);
+            }
+        }
+
+        // 詞庫系統 - 優化版本，使用預處理的字典文件
+        class WordDatabase {
+            constructor() {
+                // 本地詞庫（從優化的字典文件加載）
+                this.words = new Set();
+                this.byFirstChar = {}; // 按首字分組
+                this.byLastChar = {};  // 按尾字分組
+                this.commonChars = []; // 常用字符（用於生成食物）
+                
+                // 初始化詞庫
+                this.initializeDictionary();
+            }
+
+            // 初始化詞庫 - 使用優化的JSON字典
+            async initializeDictionary() {
+                try {
+                    console.log('正在加載優化詞庫...');
+                    const response = await fetch('files/dictionary/cilong_words.json');
+                    const dictData = await response.json();
+                    
+                    // 載入詞語集合
+                    this.words = new Set(dictData.words);
+                    this.byFirstChar = dictData.by_first_char;
+                    this.byLastChar = dictData.by_last_char;
+                    this.commonChars = dictData.common_chars;
+                    
+                    console.log(`優化詞庫加載完成！`);
+                    console.log(`- 詞語總數: ${dictData.total_words}`);
+                    console.log(`- 字符總數: ${dictData.total_chars}`);
+                    console.log(`- 不同首字: ${Object.keys(this.byFirstChar).length}`);
+                    console.log(`- 不同尾字: ${Object.keys(this.byLastChar).length}`);
+                    
+                } catch (error) {
+                    console.log('加載優化詞庫失敗，嘗試加載原始詞庫:', error);
+                    await this.loadFromOriginalFile();
+                }
+            }
+
+            // 備用加載方式：從原始words.txt文件加載
+            async loadFromOriginalFile() {
+                try {
+                    console.log('正在加載原始詞庫...');
+                    const response = await fetch('files/dictionary/words.txt');
+                    const text = await response.text();
+                    
+                    // 解析詞表，只保留兩字詞語，同時構建分組
+                    const lines = text.split('\n');
+                    let twoCharCount = 0;
+                    this.byFirstChar = {};
+                    this.byLastChar = {};
+                    const charSet = new Set();
+                    
+                    for (let line of lines) {
+                        const word = line.trim();
+                        if (word.length === 2) {
+                            this.words.add(word);
+                            twoCharCount++;
+                            
+                            const firstChar = word[0];
+                            const lastChar = word[1];
+                            
+                            // 按首字分組
+                            if (!this.byFirstChar[firstChar]) {
+                                this.byFirstChar[firstChar] = [];
+                            }
+                            this.byFirstChar[firstChar].push(word);
+                            
+                            // 按尾字分組
+                            if (!this.byLastChar[lastChar]) {
+                                this.byLastChar[lastChar] = [];
+                            }
+                            this.byLastChar[lastChar].push(word);
+                            
+                            // 收集字符
+                            charSet.add(firstChar);
+                            charSet.add(lastChar);
+                        }
+                    }
+                    
+                    this.commonChars = Array.from(charSet).slice(0, 200);
+                    
+                    console.log(`原始詞庫加載完成！共加載 ${twoCharCount} 個兩字詞語`);
+                    
+                    // 如果詞庫為空，使用備用詞庫
+                    if (this.words.size === 0) {
+                        this.loadBackupDictionary();
+                    }
+                    
+                } catch (error) {
+                    console.log('加載原始詞庫文件失敗，使用備用詞庫:', error);
+                    this.loadBackupDictionary();
+                }
+            }
+
+            // 備用詞庫
+            loadBackupDictionary() {
+                const backupWords = [
+                    // 基礎詞彙
+                    '學習', '快樂', '智慧', '勇敢', '美麗', '善良', '努力', '成功', '希望', '夢想',
+                    '友情', '愛心', '溫暖', '光明', '健康', '平安', '幸福', '自由', '正義', '誠實',
+                    // 學習相關
+                    '知識', '思考', '理解', '記憶', '創造', '發現', '探索', '研究', '學問', '智能',
+                    '讀書', '寫字', '計算', '分析', '比較', '總結', '應用', '實踐', '改進', '創新',
+                    // 情感詞彙
+                    '開心', '興奮', '滿足', '感動', '驚喜', '安心', '放心', '舒服', '愉快', '歡樂',
+                    '難過', '傷心', '擔心', '害怕', '緊張', '焦慮', '煩惱', '困擾', '失望', '後悔',
+                    // 動作詞彙
+                    '走路', '跑步', '跳躍', '飛行', '游泳', '爬山', '騎車', '開車', '坐車', '搭船',
+                    '吃飯', '喝水', '睡覺', '起床', '洗澡', '刷牙', '穿衣', '脫衣', '購物', '工作',
+                    // 自然詞彙
+                    '太陽', '月亮', '星星', '天空', '白雲', '下雨', '打雷', '閃電', '彩虹', '雪花',
+                    '春天', '夏天', '秋天', '冬天', '花朵', '樹木', '草地', '森林', '山脈', '河流',
+                    // 動物詞彙
+                    '小狗', '小貓', '小鳥', '魚兒', '蝴蝶', '蜜蜂', '螞蟻', '老虎', '獅子', '大象',
+                    '兔子', '老鼠', '猴子', '熊貓', '企鵝', '海豚', '鯨魚', '烏龜', '青蛙', '蛇類',
+                    // 食物詞彙
+                    '米飯', '麵條', '餃子', '包子', '饅頭', '蛋糕', '餅乾', '糖果', '巧克力', '冰淇淋',
+                    '水果', '蘋果', '香蕉', '橘子', '草莓', '葡萄', '西瓜', '鳳梨', '芒果', '櫻桃',
+                    // 顏色詞彙
+                    '紅色', '藍色', '黃色', '綠色', '紫色', '橙色', '粉色', '黑色', '白色', '灰色',
+                    // 家庭詞彙
+                    '爸爸', '媽媽', '爺爺', '奶奶', '哥哥', '姐姐', '弟弟', '妹妹', '叔叔', '阿姨',
+                    // 學校詞彙
+                    '老師', '同學', '朋友', '教室', '操場', '圖書館', '實驗室', '音樂室', '美術室', '體育館',
+                    // 常用組合
+                    '中國', '台灣', '美國', '日本', '英國', '法國', '德國', '加拿大', '澳洲', '韓國'
+                ];
+                
+                // 構建備用詞庫的分組結構
+                this.byFirstChar = {};
+                this.byLastChar = {};
+                const charSet = new Set();
+                
+                for (let word of backupWords) {
+                    this.words.add(word);
+                    
+                    const firstChar = word[0];
+                    const lastChar = word[1];
+                    
+                    // 按首字分組
+                    if (!this.byFirstChar[firstChar]) {
+                        this.byFirstChar[firstChar] = [];
+                    }
+                    this.byFirstChar[firstChar].push(word);
+                    
+                    // 按尾字分組
+                    if (!this.byLastChar[lastChar]) {
+                        this.byLastChar[lastChar] = [];
+                    }
+                    this.byLastChar[lastChar].push(word);
+                    
+                    // 收集字符
+                    charSet.add(firstChar);
+                    charSet.add(lastChar);
+                }
+                
+                this.commonChars = Array.from(charSet);
+                
+                console.log(`使用備用詞庫，共 ${this.words.size} 個兩字詞語`);
+            }
+
+            // 檢查詞語是否存在（純本地查詢，無延遲）
+            isValidWord(word) {
+                return this.words.has(word);
+            }
+
+            // 同步版本的詞語驗證
+            isValidWordSync(word) {
+                return {
+                    exists: this.words.has(word),
+                    word: word,
+                    source: 'local'
+                };
+            }
+
+            canFormWord(headChar, newChar) {
+                // 檢查是否能與龍頭組成詞
+                return this.words.has(headChar + newChar) || this.words.has(newChar + headChar);
+            }
+
+            calculateScore(word) {
+                let score = word.length * 10;
+                
+                // 難詞獎勵
+                if (word.length >= 3) score += 20;
+                if (word.length >= 4) score += 50;
+                
+                return score;
+            }
+
+            // 獲取隨機字符 - 使用優化的常用字符集
+            getRandomChar() {
+                // 如果有常用字符集，優先使用
+                if (this.commonChars && this.commonChars.length > 0) {
+                    return this.commonChars[Math.floor(Math.random() * this.commonChars.length)];
+                }
+                
+                // 備用字符集（如果字典未正確加載）
+                const fallbackChars = [
+                    '學', '習', '知', '識', '智', '慧', '快', '樂', '美', '麗',
+                    '善', '良', '勇', '敢', '努', '力', '成', '功', '希', '望',
+                    '夢', '想', '友', '情', '愛', '心', '溫', '暖', '光', '明', 
+                    '健', '康', '平', '安', '幸', '福', '自', '由', '正', '義',
+                    '誠', '實', '思', '考', '理', '解', '記', '憶', '創', '造',
+                    '發', '現', '探', '索', '研', '究', '讀', '書', '寫', '字'
+                ];
+                
+                return fallbackChars[Math.floor(Math.random() * fallbackChars.length)];
+            }
+
+            // 新增：獲取以指定字符開頭的詞語
+            getWordsByFirstChar(char) {
+                return this.byFirstChar[char] || [];
+            }
+
+            // 新增：獲取以指定字符結尾的詞語
+            getWordsByLastChar(char) {
+                return this.byLastChar[char] || [];
+            }
+
+            // 新增：智能選擇食物字符（增加組詞成功率）
+            getSmartFoodChar(dragonHead) {
+                // 先嘗試找能組詞的字符
+                const headChar = dragonHead.char;
+                const wordsWithHead = this.getWordsByFirstChar(headChar);
+                const wordsEndingWithHead = this.getWordsByLastChar(headChar);
+                
+                const candidateChars = new Set();
+                
+                // 收集能與龍頭組詞的字符
+                wordsWithHead.forEach(word => {
+                    if (word.length === 2) {
+                        candidateChars.add(word[1]); // 龍頭+新字符
+                    }
+                });
+                
+                wordsEndingWithHead.forEach(word => {
+                    if (word.length === 2) {
+                        candidateChars.add(word[0]); // 新字符+龍頭
+                    }
+                });
+                
+                // 如果找到候選字符，隨機選擇一個
+                if (candidateChars.size > 0) {
+                    const candidates = Array.from(candidateChars);
+                    return candidates[Math.floor(Math.random() * candidates.length)];
+                }
+                
+                // 否則回退到隨機字符
+                return this.getRandomChar();
+            }
+
+
+        }
+
+        // 詞龍遊戲主體
+        class WordDragonGame {
+            constructor() {
+                this.gameState = new GameState();
+                this.wordDB = new WordDatabase();
+                
+                // 遊戲參數
+                this.boardWidth = 20;
+                this.boardHeight = 15;
+                this.cellSize = 30;
+                this.gameSpeed = 250;
+                
+                // 遊戲狀態  
+                this.dragon = [
+                    { x: 5, y: 7, char: '學' },
+                    { x: 4, y: 7, char: '習' },
+                    { x: 3, y: 7, char: '知' },
+                    { x: 2, y: 7, char: '識' }
+                ];
+                this.direction = { x: 1, y: 0 };
+                this.foods = []; // 多個食物數組
+                this.gameLoop = null;
+                
+                this.bindEvents();
+                this.initializeGameAsync(); // 異步初始化
+            }
+
+            async initializeGameAsync() {
+                // 先初始化詞庫
+                await this.wordDB.initialize();
+                console.log('詞庫初始化完成，詞語數量:', this.wordDB.words.size);
+                
+                // 然後初始化遊戲
+                this.initializeGame();
+            }
+
+            initializeGame() {
+                this.setupBoard();
+                this.generateFoods(); // 初始化時生成多個食物
+                this.updateDragonDisplay();
+                this.gameState.updateDisplay();
+                this.render();
+            }
+
+            setupBoard() {
+                const board = document.getElementById('game-board');
+                // 計算實際需要的尺寸，並添加適當的邊距
+                const actualWidth = (this.boardWidth * this.cellSize) + 4; // 添加左右邊距
+                const actualHeight = (this.boardHeight * this.cellSize) + 4; // 添加上下邊距
+                
+                board.style.width = actualWidth + 'px';
+                board.style.height = actualHeight + 'px';
+                board.innerHTML = '';
+                
+                console.log(`遊戲板設置: ${actualWidth}×${actualHeight}, 格子: ${this.boardWidth}×${this.boardHeight}, 單元格: ${this.cellSize}px`);
+            }
+
+            bindEvents() {
+                // 控制按鈕
+                document.getElementById('start-btn').addEventListener('click', () => this.startGame());
+                document.getElementById('pause-btn').addEventListener('click', () => this.pauseGame());
+                document.getElementById('restart-btn').addEventListener('click', () => this.restartGame());
+                
+                // 鍵盤控制
+                document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+                
+                // 觸控控制（移動設備）
+                let touchStartX = 0;
+                let touchStartY = 0;
+                
+                document.addEventListener('touchstart', (e) => {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                });
+                
+                document.addEventListener('touchend', (e) => {
+                    if (!this.gameState.isPlaying) return;
+                    
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const touchEndY = e.changedTouches[0].clientY;
+                    
+                    const deltaX = touchEndX - touchStartX;
+                    const deltaY = touchEndY - touchStartY;
+                    
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                        // 水平滑動
+                        if (deltaX > 30 && this.direction.x !== -1) {
+                            this.direction = { x: 1, y: 0 };
+                        } else if (deltaX < -30 && this.direction.x !== 1) {
+                            this.direction = { x: -1, y: 0 };
+                        }
+                    } else {
+                        // 垂直滑動
+                        if (deltaY > 30 && this.direction.y !== -1) {
+                            this.direction = { x: 0, y: 1 };
+                        } else if (deltaY < -30 && this.direction.y !== 1) {
+                            this.direction = { x: 0, y: -1 };
+                        }
+                    }
+                });
+            }
+
+            handleKeyPress(e) {
+                if (!this.gameState.isPlaying) return;
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        if (this.direction.y !== 1) this.direction = { x: 0, y: -1 };
+                        break;
+                    case 'ArrowDown':
+                        if (this.direction.y !== -1) this.direction = { x: 0, y: 1 };
+                        break;
+                    case 'ArrowLeft':
+                        if (this.direction.x !== 1) this.direction = { x: -1, y: 0 };
+                        break;
+                    case 'ArrowRight':
+                        if (this.direction.x !== -1) this.direction = { x: 1, y: 0 };
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        this.pauseGame();
+                        break;
+                }
+            }
+
+            startGame() {
+                if (this.gameState.isPlaying) return;
+                
+                this.gameState.isPlaying = true;
+                this.gameState.isPaused = false;
+                
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('pause-btn').disabled = false;
+                
+                this.gameLoop = setInterval(() => {
+                    if (!this.gameState.isPaused) {
+                        this.update();
+                        this.render();
+                    }
+                }, this.gameSpeed);
+            }
+
+            pauseGame() {
+                if (!this.gameState.isPlaying) return;
+                
+                this.gameState.isPaused = !this.gameState.isPaused;
+                document.getElementById('pause-btn').textContent = this.gameState.isPaused ? '繼續' : '暫停';
+            }
+
+            restartGame() {
+                if (this.gameLoop) {
+                    clearInterval(this.gameLoop);
+                }
+                
+                this.gameState = new GameState();
+                this.dragon = [
+                    { x: 5, y: 7, char: '學' },
+                    { x: 4, y: 7, char: '習' },
+                    { x: 3, y: 7, char: '知' },
+                    { x: 2, y: 7, char: '識' }
+                ];
+                this.direction = { x: 1, y: 0 };
+                this.generateFoods(); // 重新開始時生成多個食物
+                
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('pause-btn').disabled = true;
+                document.getElementById('pause-btn').textContent = '暫停';
+                
+                this.updateDragonDisplay();
+                this.gameState.updateDisplay();
+                this.render();
+            }
+
+            update() {
+                // 計算龍頭新位置
+                const head = this.dragon[0];
+                const newX = head.x + this.direction.x;
+                const newY = head.y + this.direction.y;
+                
+                // 檢查邊界碰撞
+                if (newX < 0 || newX >= this.boardWidth || 
+                    newY < 0 || newY >= this.boardHeight) {
+                    this.gameOver();
+                    return;
+                }
+                
+                // 檢查自身碰撞
+                if (this.dragon.some(segment => segment.x === newX && segment.y === newY)) {
+                    this.gameOver();
+                    return;
+                }
+                
+                // 檢查是否吃到食物
+                const eatenFood = this.foods.find(food => food.x === newX && food.y === newY);
+                if (eatenFood) {
+                    this.eatFood(eatenFood, { x: newX, y: newY });
+                } else {
+                    // 正常移動：保持長度不變，每個部分向前移動
+                    console.log('正常移動前龍身:', this.dragon.map((s, i) => `${i}:${s.char}(${s.x},${s.y})`).join(' | '));
+                    
+                    // 從龍尾開始，每個部分移動到前一個部分的位置
+                    for (let i = this.dragon.length - 1; i > 0; i--) {
+                        this.dragon[i].x = this.dragon[i - 1].x;
+                        this.dragon[i].y = this.dragon[i - 1].y;
+                        // 字符保持不變：this.dragon[i].char 不需要修改
+                    }
+                    
+                    // 龍頭移動到新位置，字符保持不變
+                    this.dragon[0].x = newX;
+                    this.dragon[0].y = newY;
+                    // this.dragon[0].char 保持不變
+                    
+                    console.log('正常移動後龍身:', this.dragon.map((s, i) => `${i}:${s.char}(${s.x},${s.y})`).join(' | '));
+                }
+                
+                // 更新顯示
+                this.updateDragonDisplay();
+            }
+
+            eatFood(eatenFood, newHeadPosition) {
+                const headChar = this.dragon[0].char;
+                const foodChar = eatenFood.char;
+                
+                console.log(`吃食物: 龍頭字符="${headChar}", 食物字符="${foodChar}"`);
+                
+                // 檢查龍頭字符與食物字符是否能組詞
+                const validWords = [];
+                const word1 = headChar + foodChar;
+                const word2 = foodChar + headChar;
+                
+                // 使用本地詞庫檢查詞語（無延遲）
+                const word1Result = this.wordDB.isValidWordSync(word1);
+                const word2Result = this.wordDB.isValidWordSync(word2);
+                
+                if (word1Result.exists) {
+                    validWords.push({
+                        word: word1,
+                        chars: [headChar, foodChar],
+                        score: this.wordDB.calculateScore(word1),
+                        definitions: word1Result.definitions || [],
+                        pronunciation: word1Result.pronunciation || '',
+                        source: word1Result.source || 'moedict'
+                    });
+                }
+                if (word2Result.exists && word2 !== word1) {
+                    validWords.push({
+                        word: word2,
+                        chars: [foodChar, headChar],
+                        score: this.wordDB.calculateScore(word2),
+                        definitions: word2Result.definitions || [],
+                        pronunciation: word2Result.pronunciation || '',
+                        source: word2Result.source || 'moedict'
+                    });
+                }
+                
+                if (validWords.length > 0) {
+                    // 找到最高分的詞
+                    const bestWord = validWords.reduce((best, current) => 
+                        current.score > best.score ? current : best
+                    );
+                    
+                    // 組詞成功
+                    this.gameState.addScore(bestWord.score, bestWord.word);
+                    
+                    // 顯示成功信息
+                    let successMessage = `組詞成功：${bestWord.word} +${bestWord.score}分`;
+                    this.gameState.showSuccessAnimation(successMessage);
+                    
+                    // 移除組詞的字符，龍頭被消除
+                    this.removeUsedCharacters(bestWord.chars);
+                    
+                    // 組詞成功後重新生成所有食物
+                    this.generateFoods();
+                } else {
+                    // 無法組詞，龍身變長
+                    console.log('無法組詞，龍身變長');
+                    console.log('吃食物前龍身:', this.dragon.map((s, i) => `${i}:${s.char}(${s.x},${s.y})`).join(' | '));
+                    
+                    // 先保存原龍身數據的深拷貝
+                    const originalDragon = this.dragon.map(segment => ({
+                        x: segment.x,
+                        y: segment.y,
+                        char: segment.char
+                    }));
+                    
+                    // 擴展龍身數組長度
+                    this.dragon = new Array(originalDragon.length + 1);
+                    
+                    // 創建新的龍頭（吃到的食物字符）
+                    this.dragon[0] = {
+                        x: newHeadPosition.x,
+                        y: newHeadPosition.y,
+                        char: foodChar // 新吃到的字符成為龍頭
+                    };
+                    
+                    // 將原龍身數據複製到新位置，保持字符不變
+                    for (let i = 0; i < originalDragon.length; i++) {
+                        this.dragon[i + 1] = {
+                            x: originalDragon[i].x,
+                            y: originalDragon[i].y,
+                            char: originalDragon[i].char  // 保持原字符不變
+                        };
+                    }
+                    
+                    console.log('插入新龍頭後:', this.dragon.map((s, i) => `${i}:${s.char}(${s.x},${s.y})`).join(' | '));
+                    
+                    this.gameState.addScore(5); // 基礎分數
+                    
+                    // 重新生成所有食物，確保有可組詞的字符
+                    this.generateFoods();
+                }
+            }
+
+            removeUsedCharacters(usedChars) {
+                // 移除龍頭
+                this.dragon.shift();
+                
+                // 確保龍身始終保持至少3個字符
+                while (this.dragon.length < 3) {
+                    // 在龍尾添加新的隨機字符
+                    const lastSegment = this.dragon[this.dragon.length - 1];
+                    this.dragon.push({
+                        x: lastSegment.x - 1, // 簡單的位置安排，會在下次移動時調整
+                        y: lastSegment.y,
+                        char: this.wordDB.getRandomChar()
+                    });
+                }
+                
+                // 龍頭不需要更新字符，因為原本的第二個字符現在成為龍頭
+            }
+
+            generateFoods() {
+                this.foods = [];
+                const numFoods = 6; // 生成6個食物
+                const headChar = this.dragon[0].char;
+                
+                // 使用優化的智能字符選擇
+                const smartChars = this.getSmartComplementaryChars(headChar);
+                
+                // 生成食物
+                for (let i = 0; i < numFoods; i++) {
+                    let newFood;
+                    let attempts = 0;
+                    do {
+                        // 前半數食物優先使用智能選擇的字符，後半數使用隨機字符增加挑戰性
+                        const char = (i < Math.min(3, smartChars.length)) ? 
+                            smartChars[i] : this.wordDB.getRandomChar();
+                        
+                        newFood = {
+                            x: Math.floor(Math.random() * this.boardWidth),
+                            y: Math.floor(Math.random() * this.boardHeight),
+                            char: char
+                        };
+                        attempts++;
+                        
+                        // 防止無限循環
+                        if (attempts > 50) {
+                            console.log('生成食物位置嘗試次數過多，強制放置');
+                            break;
+                        }
+                    } while (this.isPositionOccupied(newFood.x, newFood.y));
+                    
+                    this.foods.push(newFood);
+                }
+            }
+
+            // 新的智能互補字符選擇方法 - 使用優化的字典數據
+            getSmartComplementaryChars(headChar) {
+                const complementaryChars = new Set();
+                
+                // 使用優化的字典數據快速查找
+                const wordsWithHead = this.wordDB.getWordsByFirstChar(headChar);
+                const wordsEndingWithHead = this.wordDB.getWordsByLastChar(headChar);
+                
+                // 從以龍頭開始的詞語中提取第二個字符
+                wordsWithHead.forEach(word => {
+                    if (word.length === 2 && word[1] !== headChar) {
+                        complementaryChars.add(word[1]);
+                    }
+                });
+                
+                // 從以龍頭結尾的詞語中提取第一個字符
+                wordsEndingWithHead.forEach(word => {
+                    if (word.length === 2 && word[0] !== headChar) {
+                        complementaryChars.add(word[0]);
+                    }
+                });
+                
+                // 轉換為數組並打亂順序
+                const result = Array.from(complementaryChars).sort(() => Math.random() - 0.5);
+                
+                // 如果找到的字符較少，補充一些常用字符
+                if (result.length < 3) {
+                    const fallbackChars = ['習', '生', '問', '家', '人', '心', '愛', '好', '美', '大'];
+                    for (let char of fallbackChars) {
+                        if (!complementaryChars.has(char) && char !== headChar) {
+                            result.push(char);
+                            if (result.length >= 5) break;
+                        }
+                    }
+                }
+                
+                return result.slice(0, 5); // 最多返回5個智能選擇的字符
+            }
+
+
+
+            generateSingleFood() {
+                let newFood;
+                do {
+                    // 使用智能字符選擇，提高組詞成功率
+                    const headChar = this.dragon[0].char;
+                    const smartChar = this.wordDB.getSmartFoodChar(this.dragon[0]);
+                    
+                    newFood = {
+                        x: Math.floor(Math.random() * this.boardWidth),
+                        y: Math.floor(Math.random() * this.boardHeight),
+                        char: smartChar
+                    };
+                } while (this.isPositionOccupied(newFood.x, newFood.y));
+                
+                this.foods.push(newFood);
+            }
+
+            isPositionOccupied(x, y) {
+                // 檢查是否與龍身碰撞
+                if (this.dragon.some(segment => segment.x === x && segment.y === y)) {
+                    return true;
+                }
+                // 檢查是否與其他食物碰撞
+                if (this.foods.some(food => food.x === x && food.y === y)) {
+                    return true;
+                }
+                return false;
+            }
+
+            updateDragonDisplay() {
+                if (this.dragon.length > 0) {
+                    document.getElementById('dragon-head').textContent = this.dragon[0].char;
+                    
+                    const bodyElement = document.getElementById('dragon-body');
+                    bodyElement.innerHTML = this.dragon.slice(1).map(segment => 
+                        `<div class="dragon-char">${segment.char}</div>`
+                    ).join('');
+                }
+            }
+
+            render() {
+                const board = document.getElementById('game-board');
+                board.innerHTML = '';
+                
+                const offset = 2; // 與CSS padding保持一致的偏移量
+                
+                // 渲染龍身
+                this.dragon.forEach((segment, index) => {
+                    const element = document.createElement('div');
+                    element.className = 'game-cell ' + (index === 0 ? 'snake-head' : 'snake-body');
+                    element.style.left = (segment.x * this.cellSize + offset) + 'px';
+                    element.style.top = (segment.y * this.cellSize + offset) + 'px';
+                    element.textContent = segment.char;
+                    board.appendChild(element);
+                });
+                
+                // 渲染所有食物
+                this.foods.forEach(food => {
+                    const foodElement = document.createElement('div');
+                    foodElement.className = 'game-cell food';
+                    foodElement.style.left = (food.x * this.cellSize + offset) + 'px';
+                    foodElement.style.top = (food.y * this.cellSize + offset) + 'px';
+                    foodElement.textContent = food.char;
+                    board.appendChild(foodElement);
+                });
+            }
+
+            gameOver() {
+                this.gameState.isPlaying = false;
+                if (this.gameLoop) {
+                    clearInterval(this.gameLoop);
+                }
+                
+                // 顯示遊戲結束畫面
+                const gameOverDiv = document.createElement('div');
+                gameOverDiv.className = 'game-over';
+                gameOverDiv.innerHTML = `
+                    <div class="game-over-content">
+                        <h2>遊戲結束</h2>
+                        <div class="final-stats">
+                            <div>最終分數: ${this.gameState.score}</div>
+                            <div>組詞成功: ${this.gameState.wordsFormed}</div>
+                            <div>達到等級: ${this.gameState.level}</div>
+                            <div>龍身長度: ${this.dragon.length}</div>
+                        </div>
+                        <button class="control-btn" onclick="game.closeGameOver(); game.restartGame();">再玩一次</button>
+                    </div>
+                `;
+                
+                document.querySelector('.game-container').appendChild(gameOverDiv);
+            }
+
+            closeGameOver() {
+                const gameOverDiv = document.querySelector('.game-over');
+                if (gameOverDiv) {
+                    gameOverDiv.remove();
+                }
+            }
+        }
+
+        // 初始化遊戲
+        let game;
+        document.addEventListener('DOMContentLoaded', () => {
+            game = new WordDragonGame();
+        });
+    </script>
+</body>
+</html>
