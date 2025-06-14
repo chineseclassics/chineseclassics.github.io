@@ -990,6 +990,14 @@
                 description: '深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界'
             },
             {
+                id: 'cilong',
+                name: '貪吃龍',
+                icon: '🐉',
+                gradient: 'from-lime-400 to-green-500',
+                url: 'https://chineseclassics.github.io/cilong.html',
+                description: '在經典的貪吃蛇玩法中，操控呆萌龍寶收集漢字，組成詞語，挑戰你的詞彙量和反應速度。'
+            },
+            {
                 id: 'yimoji',
                 name: '意moji：詩詞意象配對',
                 icon: 'fas fa-icons',
@@ -1111,6 +1119,10 @@
             const size = isCompact ? 'w-12 h-12' : 'aspect-square';
             const iconSize = isCompact ? 'text-xl' : 'text-4xl';
             const textSize = isCompact ? 'text-xs' : 'font-medium';
+
+            const iconHtml = app.icon.startsWith('fas ')
+                ? `<i class="${app.icon} text-white ${iconSize}" aria-hidden="true"></i>`
+                : `<span class="${iconSize} text-white">${app.icon}</span>`;
             
             return `
                 <button class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200 relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl" 
@@ -1121,10 +1133,9 @@
                         ontouchstart="handleTouchStart(event, '${app.id}')"
                         ontouchend="handleTouchEnd(event, '${app.id}')"
                         ontouchmove="handleTouchMove()"
-                        aria-label="打開 ${app.name} 應用"
-                        title="${app.description || app.name}">
+                        aria-label="打開 ${app.name} 應用">
                     <div class="bg-gradient-to-br ${app.gradient} rounded-2xl p-4 ${size} flex items-center justify-center shadow-lg">
-                        <i class="${app.icon} text-white ${iconSize}" aria-hidden="true"></i>
+                        ${iconHtml}
                     </div>
                     <p class="text-center mt-2 ${textSize}">${app.name}</p>
                 </button>
@@ -1231,12 +1242,16 @@
 
         // 渲染切换器应用图标（优化版）
         function renderSwitcherAppIcon(app) {
+            const iconHtml = app.icon.startsWith('fas ')
+                ? `<i class="${app.icon} text-white text-lg"></i>`
+                : `<span class="text-lg text-white">${app.icon}</span>`;
+
             return `
                 <div class="switcher-app-icon text-center" 
                      data-app-id="${app.id}" 
                      onclick="openApp('${app.id}')">
                     <div class="icon-container bg-gradient-to-br ${app.gradient} rounded-xl p-3 w-14 h-14 flex items-center justify-center shadow-lg mx-auto mb-2">
-                        <i class="${app.icon} text-white text-lg"></i>
+                        ${iconHtml}
                     </div>
                     <p class="switcher-app-name text-center">${app.name}</p>
                 </div>
