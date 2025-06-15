@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雙人貪吃蛇大戰</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden; /* 防止滾動條 */
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 100vh;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            position: relative; /* 新增：用於定位側邊玩家信息 */
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            width: min(800px, 90vw);
+            margin-bottom: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* 側邊玩家信息 */
+        .side-player-info {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.15);
+            padding: 25px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            min-width: 150px;
+            z-index: 100;
+        }
+
+        .side-player-info.left {
+            left: 20px;
+            border-left: 8px solid #4CAF50;
+        }
+
+        .side-player-info.right {
+            right: 20px;
+            border-right: 8px solid #FF5722;
+        }
+
+        .player-name {
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .level-display-large {
+            font-size: 48px;
+            font-weight: 900;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            color: #FFD700;
+        }
+
+        .controls-info {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .special-effects {
+            margin-top: 15px;
+            font-size: 11px;
+        }
+
+        .effect-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 10px;
+        }
+
+        .effect-timer {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .player-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .player1 { border-left: 5px solid #4CAF50; }
+        .player2 { border-left: 5px solid #FF5722; }
+
+        .level-display {
+            font-size: 20px;
+            margin: 3px 0;
+        }
+
+        .controls {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        #gameCanvas {
+            border: 3px solid white;
+            border-radius: 8px;
+            background: #2c3e50;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+            max-width: min(800px, 90vw);
+            max-height: min(600px, 60vh);
+        }
+
+        .game-controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .pause-btn {
+            background: linear-gradient(45deg, #ff9800, #e68900);
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .mute-btn {
+            background: linear-gradient(45deg, #9c27b0, #7b1fa2);
+            padding: 10px 15px;
+            font-size: 20px;
+            min-width: 50px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(118, 75, 162, 0.8), rgba(102, 126, 234, 0.8));
+            backdrop-filter: blur(15px);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 24px;
+            display: none;
+            z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .winner-text {
+            font-size: 36px;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 12px;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            max-width: min(800px, 90vw);
+        }
+
+        .instructions h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+        }
+
+        .instructions p {
+            margin: 6px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .food-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .food-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            margin: 2px 0;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .difficulty-btn {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            font-size: 13px;
+        }
+
+        .difficulty-btn.active {
+            background: white;
+            color: #764ba2;
+        }
+
+        .difficulty-btn.active:hover, .difficulty-btn:disabled {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        
+        .difficulty-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* 屏幕震動效果 */
+        .screen-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* 音效可視化效果 */
+        .sound-effect {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            pointer-events: none;
+            animation: soundEffectFade 1s ease-out forwards;
+        }
+
+        @keyframes soundEffectFade {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px) scale(1.2);
+            }
+        }
+
+        /* 特殊道具閃爍效果 */
+        .special-item {
+            animation: specialGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes specialGlow {
+            0% {
+                box-shadow: 0 0 5px currentColor;
+            }
+            100% {
+                box-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+            }
+        }
+
+        /* 特殊能力視覺效果 */
+        .speed-boost {
+            animation: speedEffect 0.5s ease-in-out infinite alternate;
+        }
+
+        .ghost-mode {
+            animation: ghostEffect 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes speedEffect {
+            0% { filter: hue-rotate(0deg) brightness(1); }
+            100% { filter: hue-rotate(60deg) brightness(1.2); }
+        }
+
+        @keyframes ghostEffect {
+            0% { opacity: 0.7; filter: blur(0px); }
+            100% { opacity: 0.9; filter: blur(1px); }
+        }
+    </style>
+  </head>
+<body>
+    <div class="game-container">
+        <!-- 左側玩家信息 -->
+        <div class="side-player-info left">
+            <div class="player-name">🐍 玩家1</div>
+            <div class="level-display-large" id="player1Level">3</div>
+            <div class="controls-info">WASD控制</div>
+            <div class="special-effects" id="player1Effects"></div>
+        </div>
+
+        <!-- 右側玩家信息 -->
+        <div class="side-player-info right">
+            <div class="player-name">🐍 玩家2</div>
+            <div class="level-display-large" id="player2Level">3</div>
+            <div class="controls-info">方向鍵控制</div>
+            <div class="special-effects" id="player2Effects"></div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div class="game-controls">
+            <div class="difficulty-selector">
+                <span>難度:</span>
+                <button class="difficulty-btn" onclick="setDifficulty('Hard', this)">困難</button>
+                <button class="difficulty-btn active" onclick="setDifficulty('Normal', this)">正常</button>
+                <button class="difficulty-btn" onclick="setDifficulty('Easy', this)">容易</button>
+            </div>
+            <button class="start-btn" onclick="startGame()">🎮 開始遊戲</button>
+            <button class="pause-btn" onclick="togglePause()">⏸️ 暫停</button>
+            <button class="reset-btn" onclick="resetGame()">🔄 重新開始</button>
+            <button class="mute-btn" id="mute-btn" onclick="toggleMute()">🔊</button>
+        </div>
+
+        <div class="instructions">
+            <h3>🎯 遊戲規則</h3>
+            <div class="food-legend">
+                <div class="food-item">🟡 普通食物 (+1級)</div>
+                <div class="food-item">🔴 大食物 (+2級)</div>
+                <div class="food-item">💎 鑽石食物 (+3級)</div>
+                <div class="food-item">🏅 黃金果 (+5級)</div>
+                <div class="food-item">⚡ 神速符 (雙倍速度5秒)</div>
+                <div class="food-item">👻 幽靈藥水 (穿牆5秒)</div>
+            </div>
+            <p>💥 頭部相撞：等級高者勝出 | 🤝 身體相撞：等級相加平分 | 🚧 撞牆減1級</p>
+            <p>🔊 遊戲包含音效，點擊音量鍵開關</p>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="winner-text" id="winnerText"></div>
+        <button class="reset-btn" onclick="resetGame()" style="margin-top: 20px;">再來一局</button>
+    </div>
+
+    <script>
+        // --- 音效管理器 ---
+        class AudioManager {
+            constructor() {
+                this.audioContext = null;
+                this.sounds = new Map();
+                this.loadingPromises = new Map();
+                this.isMuted = localStorage.getItem('snakeMuted') === 'true';
+
+                this.soundsToLoad = {
+                    'eat': 'https://chineseclassics.github.io/files/audio/cilong/eat.mp3',
+                    'success': 'https://chineseclassics.github.io/files/audio/cilong/success.mp3',
+                    'combo': 'https://chineseclassics.github.io/files/audio/cilong/combo.mp3',
+                    'powerup': 'https://chineseclassics.github.io/files/audio/cilong/powerup.mp3',
+                    'debuff': 'https://chineseclassics.github.io/files/audio/cilong/debuff.mp3',
+                    'gameover': 'https://chineseclassics.github.io/files/audio/cilong/gameover.mp3',
+                    'click': 'https://chineseclassics.github.io/files/audio/cilong/click.mp3'
+                };
+
+                this.updateMuteButton();
+            }
+
+            initAudioContext() {
+                if (this.audioContext) return;
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    console.log("AudioContext created on demand.");
+                    this.preloadAllSounds();
+                } catch (e) {
+                    console.error("Could not create or resume AudioContext.", e);
+                }
+            }
+
+            loadSound(key) {
+                if (this.loadingPromises.has(key)) {
+                    return this.loadingPromises.get(key);
+                }
+                
+                if (this.sounds.has(key)) {
+                    return Promise.resolve(this.sounds.get(key));
+                }
+
+                if (!this.soundsToLoad[key]) {
+                    return Promise.reject(new Error(`Sound key "${key}" not found.`));
+                }
+
+                const promise = fetch(this.soundsToLoad[key])
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status} for ${key}`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(arrayBuffer => this.audioContext.decodeAudioData(arrayBuffer))
+                    .then(audioBuffer => {
+                        this.sounds.set(key, audioBuffer);
+                        this.loadingPromises.delete(key);
+                        return audioBuffer;
+                    }).catch(error => {
+                        console.error(`音頻加載失敗: ${key}`, error);
+                        this.loadingPromises.delete(key);
+                        throw { key: key, error: error };
+                    });
+                
+                this.loadingPromises.set(key, promise);
+                return promise;
+            }
+
+            preloadAllSounds() {
+                if (!this.audioContext) return;
+                console.log("Preloading all sounds...");
+                
+                const promises = [];
+                for (const key in this.soundsToLoad) {
+                    promises.push(this.loadSound(key));
+                }
+
+                Promise.all(promises)
+                    .then(() => {
+                        console.log('所有音效加載成功！');
+                    })
+                    .catch((error) => {
+                        console.warn('部分音效加載失敗，遊戲將正常運行。', error);
+                    });
+            }
+
+            async play(key, options = {}) {
+                if (this.isMuted) return;
+
+                if (!this.audioContext) {
+                    this.initAudioContext();
+                }
+                
+                if (!this.audioContext) {
+                    console.warn("AudioContext could not be initialized, skipping play.");
+                    return;
+                }
+
+                if (this.audioContext.state === 'suspended') {
+                    await this.audioContext.resume();
+                }
+
+                try {
+                    const buffer = await this.loadSound(key);
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = buffer;
+
+                    const gainNode = this.audioContext.createGain();
+                    gainNode.gain.value = options.volume || 0.6;
+
+                    if (options.pitch) {
+                        source.playbackRate.value = options.pitch;
+                    }
+
+                    source.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    source.start(0);
+                } catch (error) {
+                    console.warn(`Could not play sound: ${key}`, error);
+                }
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                localStorage.setItem('snakeMuted', this.isMuted);
+                this.updateMuteButton();
+                if (!this.isMuted) {
+                    this.play('click');
+                }
+            }
+
+            updateMuteButton() {
+                const muteBtn = document.getElementById('mute-btn');
+                if (muteBtn) {
+                    muteBtn.textContent = this.isMuted ? '🔇' : '🔊';
+                }
+            }
+        }
+
+        // --- 音效可視化 ---
+        function showSoundEffect(text, x, y) {
+            const effect = document.createElement('div');
+            effect.className = 'sound-effect';
+            effect.textContent = text;
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            document.body.appendChild(effect);
+            
+            setTimeout(() => {
+                if (effect.parentNode) {
+                    effect.parentNode.removeChild(effect);
+                }
+            }, 1000);
+        }
+
+        // 遊戲邏輯
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        
+        // 初始化音效管理器
+        const audioManager = new AudioManager();
+
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameLoop;
+        let gameDifficulty = 'Normal'; // 新增難度等級變量
+
+        // 蛇的初始設置
+        let snake1 = {
+            body: [{x: 100, y: 100}, {x: 80, y: 100}, {x: 60, y: 100}],
+            direction: {x: 1, y: 0},
+            nextDirection: {x: 1, y: 0}, // 預設下一個方向
+            level: 3,
+            color: '#4CAF50',
+            speedBoost: 0, // 神速符剩餘時間
+            ghostMode: 0   // 幽靈模式剩餘時間
+        };
+
+        let snake2 = {
+            body: [{x: 700, y: 500}, {x: 720, y: 500}, {x: 740, y: 500}],
+            direction: {x: -1, y: 0},
+            nextDirection: {x: -1, y: 0}, // 預設下一個方向
+            level: 3,
+            color: '#FF5722',
+            speedBoost: 0, // 神速符剩餘時間
+            ghostMode: 0   // 幽靈模式剩餘時間
+        };
+
+        let foods = [];
+        const maxFoods = 15;
+
+        // 食物類型
+        const foodTypes = [
+            { emoji: '🟡', value: 1, probability: 0.65, color: '#FFD700', type: 'normal' },
+            { emoji: '🔴', value: 2, probability: 0.25, color: '#FF4444', type: 'normal' },
+            { emoji: '💎', value: 3, probability: 0.07, color: '#00FFFF', type: 'normal' },
+            { emoji: '🏅', value: 5, probability: 0.015, color: '#FFD700', type: 'golden' },
+            { emoji: '⚡', value: 0, probability: 0.01, color: '#4169E1', type: 'speed' },
+            { emoji: '👻', value: 0, probability: 0.005, color: '#F0F8FF', type: 'ghost' }
+        ];
+
+        function setDifficulty(level, btnElement) {
+            if (gameRunning) return; // 遊戲進行中不能更改難度
+            gameDifficulty = level;
+
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            
+            audioManager.play('click');
+        }
+
+        // 鍵盤控制 - 即時響應版本，阻止頁面滾動
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            
+            // 阻止遊戲控制鍵的默認行為（防止頁面滾動）
+            if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+                e.preventDefault();
+            }
+            
+            keys[key] = true;
+            // 立即處理輸入，不等待遊戲循環
+            if (gameRunning && !gamePaused) {
+                handleInput();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            
+            // 阻止遊戲控制鍵的默認行為
+            if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+                e.preventDefault();
+            }
+            
+            keys[key] = false;
+        });
+
+        function handleInput() {
+            // 玩家1 (WASD) - 立即響應，不等待遊戲循環
+            if (keys['w'] && snake1.direction.y === 0 && snake1.nextDirection.y === 0) {
+                snake1.nextDirection = {x: 0, y: -1};
+                audioManager.play('click', { volume: 0.2 });
+            }
+            if (keys['s'] && snake1.direction.y === 0 && snake1.nextDirection.y === 0) {
+                snake1.nextDirection = {x: 0, y: 1};
+                audioManager.play('click', { volume: 0.2 });
+            }
+            if (keys['a'] && snake1.direction.x === 0 && snake1.nextDirection.x === 0) {
+                snake1.nextDirection = {x: -1, y: 0};
+                audioManager.play('click', { volume: 0.2 });
+            }
+            if (keys['d'] && snake1.direction.x === 0 && snake1.nextDirection.x === 0) {
+                snake1.nextDirection = {x: 1, y: 0};
+                audioManager.play('click', { volume: 0.2 });
+            }
+
+            // 玩家2 (方向鍵) - 立即響應，不等待遊戲循環
+            if (keys['arrowup'] && snake2.direction.y === 0 && snake2.nextDirection.y === 0) {
+                snake2.nextDirection = {x: 0, y: -1};
+                audioManager.play('click', { volume: 0.2 });
+            }
+            if (keys['arrowdown'] && snake2.direction.y === 0 && snake2.nextDirection.y === 0) {
+                snake2.nextDirection = {x: 0, y: 1};
+                audioManager.play('click', { volume: 0.2 });
+            }
+            if (keys['arrowleft'] && snake2.direction.x === 0 && snake2.nextDirection.x === 0) {
+                snake2.nextDirection = {x: -1, y: 0};
+                audioManager.play('click', { volume: 0.2 });
+            }
+            if (keys['arrowright'] && snake2.direction.x === 0 && snake2.nextDirection.x === 0) {
+                snake2.nextDirection = {x: 1, y: 0};
+                audioManager.play('click', { volume: 0.2 });
+            }
+        }
+
+        function generateFood() {
+            while (foods.length < maxFoods) {
+                const x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
+                const y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
+
+                // 確保食物不在蛇身上
+                if (!isPositionOccupied(x, y)) {
+                    const rand = Math.random();
+                    let foodType = foodTypes[0]; // 默認普通食物
+
+                    let cumulative = 0;
+                    for (const type of foodTypes) {
+                        cumulative += type.probability;
+                        if (rand <= cumulative) {
+                            foodType = type;
+                            break;
+                        }
+                    }
+
+                    foods.push({
+                        x: x,
+                        y: y,
+                        type: foodType
+                    });
+                }
+            }
+        }
+
+        function isPositionOccupied(x, y) {
+            return snake1.body.some(segment => segment.x === x && segment.y === y) ||
+                   snake2.body.some(segment => segment.x === x && segment.y === y);
+        }
+
+        function moveSnake(snake) {
+            // 應用預設的方向變化，實現即時響應
+            snake.direction = snake.nextDirection;
+            
+            const head = {...snake.body[0]};
+            head.x += snake.direction.x * gridSize;
+            head.y += snake.direction.y * gridSize;
+
+            // 檢查邊界碰撞（幽靈模式可穿牆）
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+                if (snake.ghostMode > 0) {
+                    // 幽靈模式：從另一邊穿出，不扣分
+                    if (head.x < 0) head.x = canvas.width - gridSize;
+                    if (head.x >= canvas.width) head.x = 0;
+                    if (head.y < 0) head.y = canvas.height - gridSize;
+                    if (head.y >= canvas.height) head.y = 0;
+                    audioManager.play('click', { pitch: 1.8, volume: 0.3 });
+                    showSoundEffect('穿牆！', head.x, head.y - 20);
+                } else if (gameDifficulty === 'Easy') {
+                    // 從另一邊鑽出來，不扣分
+                    if (head.x < 0) head.x = canvas.width - gridSize;
+                    if (head.x >= canvas.width) head.x = 0;
+                    if (head.y < 0) head.y = canvas.height - gridSize;
+                    if (head.y >= canvas.height) head.y = 0;
+                    audioManager.play('click', { pitch: 1.5, volume: 0.4 });
+                } else { // 'Normal' or other difficulties
+                    snake.level = Math.max(1, snake.level - 1);
+                    audioManager.play('debuff', { volume: 0.5 });
+                    showSoundEffect('撞牆 -1', head.x, head.y);
+                    triggerScreenShake(); // 觸發屏幕震動
+                    
+                    // 重新定位到安全位置
+                    if (head.x < 0) head.x = canvas.width - gridSize;
+                    if (head.x >= canvas.width) head.x = 0;
+                    if (head.y < 0) head.y = canvas.height - gridSize;
+                    if (head.y >= canvas.height) head.y = 0;
+                }
+            }
+
+            snake.body.unshift(head);
+
+            // 檢查是否吃到食物
+            const foodIndex = foods.findIndex(food => food.x === head.x && food.y === head.y);
+            if (foodIndex !== -1) {
+                const food = foods[foodIndex];
+                foods.splice(foodIndex, 1);
+                
+                // 根據食物類型處理不同效果
+                switch (food.type.type) {
+                    case 'normal':
+                        snake.level += food.type.value;
+                        if (food.type.value === 1) {
+                            audioManager.play('eat', { volume: 0.8 });
+                            showSoundEffect('+1', head.x, head.y - 20);
+                        } else if (food.type.value === 2) {
+                            audioManager.play('success', { volume: 0.8 });
+                            showSoundEffect('+2', head.x, head.y - 20);
+                        } else if (food.type.value === 3) {
+                            audioManager.play('powerup', { volume: 0.9 });
+                            showSoundEffect('+3', head.x, head.y - 20);
+                        }
+                        // 添加身體節段
+                        for (let i = 0; i < food.type.value; i++) {
+                            snake.body.push({...snake.body[snake.body.length - 1]});
+                        }
+                        break;
+                    
+                    case 'golden':
+                        snake.level += food.type.value;
+                        audioManager.play('powerup', { volume: 1.0, pitch: 1.2 });
+                        showSoundEffect('黃金果 +5!', head.x - 20, head.y - 30);
+                        // 添加身體節段
+                        for (let i = 0; i < food.type.value; i++) {
+                            snake.body.push({...snake.body[snake.body.length - 1]});
+                        }
+                        break;
+                    
+                    case 'speed':
+                        snake.speedBoost = 50; // 5秒（以遊戲幀計算）
+                        audioManager.play('combo', { volume: 0.9, pitch: 1.5 });
+                        showSoundEffect('神速符！', head.x - 20, head.y - 30);
+                        break;
+                    
+                    case 'ghost':
+                        snake.ghostMode = 50; // 5秒（以遊戲幀計算）
+                        audioManager.play('powerup', { volume: 0.9, pitch: 0.8 });
+                        showSoundEffect('幽靈模式！', head.x - 25, head.y - 30);
+                        break;
+                }
+            } else {
+                // 維持蛇的長度等於等級
+                while (snake.body.length > snake.level) {
+                    snake.body.pop();
+                }
+            }
+        }
+
+        function checkCollisions() {
+            const head1 = snake1.body[0];
+            const head2 = snake2.body[0];
+
+            // 檢查頭部相撞（幽靈模式無效果）
+            if (head1.x === head2.x && head1.y === head2.y) {
+                if (snake1.ghostMode > 0 || snake2.ghostMode > 0) {
+                    audioManager.play('click', { pitch: 2.0, volume: 0.4 });
+                    showSoundEffect('穿透！', head1.x, head1.y - 30);
+                    return false;
+                }
+                
+                if (snake1.level > snake2.level) {
+                    audioManager.play('success', { volume: 1.0 });
+                    endGame("🟢 綠蛇勝利！");
+                } else if (snake2.level > snake1.level) {
+                    audioManager.play('success', { volume: 1.0 });
+                    endGame("🔴 紅蛇勝利！");
+                } else {
+                    audioManager.play('gameover', { volume: 1.0 });
+                    endGame("💥 平手！同歸於盡！");
+                }
+                return true;
+            }
+
+            // 檢查蛇1頭部撞到蛇2身體（幽靈模式可穿透）
+            if (snake1.ghostMode === 0) {
+                for (let i = 1; i < snake2.body.length; i++) {
+                    if (head1.x === snake2.body[i].x && head1.y === snake2.body[i].y) {
+                        const totalLevel = snake1.level + snake2.level;
+                        const newLevel1 = Math.ceil(totalLevel / 2);
+                        const newLevel2 = Math.floor(totalLevel / 2);
+                        
+                        audioManager.play('combo', { volume: 0.8 });
+                        showSoundEffect(`合體升級！`, head1.x - 20, head1.y - 30);
+                        
+                        snake1.level = newLevel1;
+                        snake2.level = newLevel2;
+                        adjustSnakeLength(snake1);
+                        adjustSnakeLength(snake2);
+                        return false;
+                    }
+                }
+            }
+
+            // 檢查蛇2頭部撞到蛇1身體（幽靈模式可穿透）
+            if (snake2.ghostMode === 0) {
+                for (let i = 1; i < snake1.body.length; i++) {
+                    if (head2.x === snake1.body[i].x && head2.y === snake1.body[i].y) {
+                        const totalLevel = snake1.level + snake2.level;
+                        const newLevel1 = Math.ceil(totalLevel / 2);
+                        const newLevel2 = Math.floor(totalLevel / 2);
+                        
+                        audioManager.play('combo', { volume: 0.8 });
+                        showSoundEffect(`合體升級！`, head2.x - 20, head2.y - 30);
+                        
+                        snake1.level = newLevel1;
+                        snake2.level = newLevel2;
+                        adjustSnakeLength(snake1);
+                        adjustSnakeLength(snake2);
+                        return false;
+                    }
+                }
+            }
+
+            // 檢查自撞（幽靈模式可穿透）
+            if (snake1.ghostMode === 0) {
+                for (let i = 1; i < snake1.body.length; i++) {
+                    if (head1.x === snake1.body[i].x && head1.y === snake1.body[i].y) {
+                        snake1.level = Math.max(1, snake1.level - 1);
+                        audioManager.play('debuff', { volume: 0.6 });
+                        showSoundEffect('自撞 -1', head1.x, head1.y - 20);
+                        adjustSnakeLength(snake1);
+                    }
+                }
+            }
+
+            if (snake2.ghostMode === 0) {
+                for (let i = 1; i < snake2.body.length; i++) {
+                    if (head2.x === snake2.body[i].x && head2.y === snake2.body[i].y) {
+                        snake2.level = Math.max(1, snake2.level - 1);
+                        audioManager.play('debuff', { volume: 0.6 });
+                        showSoundEffect('自撞 -1', head2.x, head2.y - 20);
+                        adjustSnakeLength(snake2);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function adjustSnakeLength(snake) {
+            while (snake.body.length > snake.level) {
+                snake.body.pop();
+            }
+            while (snake.body.length < snake.level) {
+                snake.body.push({...snake.body[snake.body.length - 1]});
+            }
+        }
+
+        function draw() {
+            // 清空畫布
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 繪製食物
+            foods.forEach(food => {
+                // 特殊道具閃爍效果
+                if (food.type.type !== 'normal') {
+                    const time = Date.now() * 0.005;
+                    const alpha = 0.7 + 0.3 * Math.sin(time);
+                    const glowSize = 2 + Math.sin(time) * 2;
+                    
+                    // 外圍光暈
+                    ctx.fillStyle = food.type.color + '40';
+                    ctx.fillRect(food.x - glowSize, food.y - glowSize, gridSize + glowSize * 2, gridSize + glowSize * 2);
+                }
+                
+                ctx.fillStyle = food.type.color;
+                ctx.fillRect(food.x + 2, food.y + 2, gridSize - 4, gridSize - 4);
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(food.type.emoji, food.x + gridSize/2, food.y + gridSize/2);
+            });
+
+            // 繪製蛇
+            drawSnake(snake1);
+            drawSnake(snake2);
+
+            // 更新等級顯示
+            document.getElementById('player1Level').textContent = snake1.level;
+            document.getElementById('player2Level').textContent = snake2.level;
+            
+            // 更新特殊效果顯示
+            updateSpecialEffectsDisplay();
+        }
+
+        function drawSnake(snake) {
+            snake.body.forEach((segment, index) => {
+                const opacity = index === 0 ? 1 : 0.8 - (index / snake.body.length) * 0.3;
+                const size = index === 0 ? gridSize - 2 : gridSize - 4;
+                const offset = index === 0 ? 1 : 2;
+
+                // 特殊效果處理
+                let finalColor = snake.color;
+                let extraEffects = false;
+                
+                if (snake.speedBoost > 0) {
+                    // 神速符效果：顏色變化和光暈
+                    const time = Date.now() * 0.01;
+                    const colorShift = Math.sin(time) * 0.3;
+                    finalColor = `hsl(${snake === snake1 ? 120 + colorShift * 60 : 15 + colorShift * 60}, 70%, 50%)`;
+                    extraEffects = true;
+                }
+                
+                if (snake.ghostMode > 0) {
+                    // 幽靈效果：半透明和閃爍
+                    const ghostOpacity = 0.5 + 0.3 * Math.sin(Date.now() * 0.015);
+                    opacity *= ghostOpacity;
+                    extraEffects = true;
+                }
+
+                // 繪製基礎發光效果（所有蛇身都有）
+                const baseGlowSize = index === 0 ? 3 : 2;
+                const baseGlowOpacity = index === 0 ? '60' : '40';
+                ctx.fillStyle = finalColor + baseGlowOpacity;
+                ctx.fillRect(segment.x + offset - baseGlowSize, segment.y + offset - baseGlowSize, 
+                           size + baseGlowSize * 2, size + baseGlowSize * 2);
+
+                // 繪製雙層光暈效果（蛇頭更明顯）
+                if (index === 0) {
+                    const innerGlowSize = 1;
+                    ctx.fillStyle = finalColor + '80';
+                    ctx.fillRect(segment.x + offset - innerGlowSize, segment.y + offset - innerGlowSize, 
+                               size + innerGlowSize * 2, size + innerGlowSize * 2);
+                }
+
+                // 特殊效果額外光暈
+                if (extraEffects) {
+                    const specialGlowSize = index === 0 ? 5 : 3;
+                    const specialGlowOpacity = index === 0 ? '50' : '30';
+                    ctx.fillStyle = finalColor + specialGlowOpacity;
+                    ctx.fillRect(segment.x + offset - specialGlowSize, segment.y + offset - specialGlowSize, 
+                               size + specialGlowSize * 2, size + specialGlowSize * 2);
+                }
+
+                // 繪製蛇身主體
+                ctx.fillStyle = finalColor + Math.floor(opacity * 255).toString(16).padStart(2, '0');
+                ctx.fillRect(segment.x + offset, segment.y + offset, size, size);
+
+                // 添加高光效果讓蛇身更立體
+                const highlightOpacity = Math.floor((opacity * 0.3) * 255).toString(16).padStart(2, '0');
+                ctx.fillStyle = '#FFFFFF' + highlightOpacity;
+                ctx.fillRect(segment.x + offset, segment.y + offset, Math.floor(size * 0.4), Math.floor(size * 0.4));
+
+                if (index === 0) {
+                    // 繪製眼睛 - 根據方向調整
+                    ctx.fillStyle = snake.ghostMode > 0 ? 'rgba(255,255,255,0.8)' : 'white';
+                    
+                    const eyeSize = 3;
+                    const pupilSize = 1;
+                    const eyeOffset1 = { x: 6, y: 6 };
+                    const eyeOffset2 = { x: 11, y: 6 };
+                    
+                    // 根據方向調整眼睛位置
+                    if (snake.direction.x === 1) { // Right
+                        eyeOffset1.x = 11; eyeOffset1.y = 6;
+                        eyeOffset2.x = 11; eyeOffset2.y = 11;
+                    } else if (snake.direction.x === -1) { // Left
+                        eyeOffset1.x = 6; eyeOffset1.y = 6;
+                        eyeOffset2.x = 6; eyeOffset2.y = 11;
+                    } else if (snake.direction.y === 1) { // Down
+                        eyeOffset1.x = 6; eyeOffset1.y = 11;
+                        eyeOffset2.x = 11; eyeOffset2.y = 11;
+                    } else if (snake.direction.y === -1) { // Up
+                        // Default is fine
+                    }
+
+                    ctx.fillRect(segment.x + eyeOffset1.x, segment.y + eyeOffset1.y, eyeSize, eyeSize);
+                    ctx.fillRect(segment.x + eyeOffset2.x, segment.y + eyeOffset2.y, eyeSize, eyeSize);
+
+                    ctx.fillStyle = snake.ghostMode > 0 ? 'rgba(0,0,0,0.8)' : 'black';
+                    ctx.fillRect(segment.x + eyeOffset1.x + 1, segment.y + eyeOffset1.y + 1, pupilSize, pupilSize);
+                    ctx.fillRect(segment.x + eyeOffset2.x + 1, segment.y + eyeOffset2.y + 1, pupilSize, pupilSize);
+                    
+                    // 眼睛高光
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.fillRect(segment.x + eyeOffset1.x, segment.y + eyeOffset1.y, pupilSize, pupilSize);
+                    ctx.fillRect(segment.x + eyeOffset2.x, segment.y + eyeOffset2.y, pupilSize, pupilSize);
+                }
+            });
+        }
+
+        // 更新特殊效果顯示
+        function updateSpecialEffectsDisplay() {
+            // 更新玩家1特殊效果
+            const player1Effects = document.getElementById('player1Effects');
+            let effects1 = '';
+            if (snake1.speedBoost > 0) {
+                effects1 += `<div class="effect-item">⚡ 神速符 <span class="effect-timer">${Math.ceil(snake1.speedBoost/10)}s</span></div>`;
+            }
+            if (snake1.ghostMode > 0) {
+                effects1 += `<div class="effect-item">👻 幽靈模式 <span class="effect-timer">${Math.ceil(snake1.ghostMode/10)}s</span></div>`;
+            }
+            player1Effects.innerHTML = effects1;
+            
+            // 更新玩家2特殊效果
+            const player2Effects = document.getElementById('player2Effects');
+            let effects2 = '';
+            if (snake2.speedBoost > 0) {
+                effects2 += `<div class="effect-item">⚡ 神速符 <span class="effect-timer">${Math.ceil(snake2.speedBoost/10)}s</span></div>`;
+            }
+            if (snake2.ghostMode > 0) {
+                effects2 += `<div class="effect-item">👻 幽靈模式 <span class="effect-timer">${Math.ceil(snake2.ghostMode/10)}s</span></div>`;
+            }
+            player2Effects.innerHTML = effects2;
+        }
+
+        function gameUpdate() {
+            if (!gameRunning || gamePaused) return;
+
+            // 更新特殊能力計時器
+            if (snake1.speedBoost > 0) snake1.speedBoost--;
+            if (snake1.ghostMode > 0) snake1.ghostMode--;
+            if (snake2.speedBoost > 0) snake2.speedBoost--;
+            if (snake2.ghostMode > 0) snake2.ghostMode--;
+
+            handleInput();
+            
+            // 神速符效果：雙倍移動
+            moveSnake(snake1);
+            if (snake1.speedBoost > 0) moveSnake(snake1); // 再移動一次
+            
+            moveSnake(snake2);
+            if (snake2.speedBoost > 0) moveSnake(snake2); // 再移動一次
+
+            if (checkCollisions()) return;
+
+            generateFood();
+            draw();
+        }
+
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                gamePaused = false; // 確保不是暫停狀態
+                document.querySelectorAll('.difficulty-btn').forEach(btn => btn.disabled = true);
+                audioManager.play('powerup', { volume: 0.8 });
+                
+                // 遊戲開始倒計時
+                let countdown = 3;
+                const countdownInterval = setInterval(() => {
+                    draw(); // 重繪以清除上一幀
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.font = 'bold 100px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    if (countdown > 0) {
+                        ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
+                        audioManager.play('click', { pitch: 1.0 + (3 - countdown) * 0.2 });
+                        countdown--;
+                    } else {
+                        clearInterval(countdownInterval);
+                        ctx.fillText('GO!', canvas.width / 2, canvas.height / 2);
+                        audioManager.play('success');
+                        
+                        setTimeout(() => {
+                             // 根據難度設置速度
+                            const speedMap = { 'Easy': 180, 'Normal': 120, 'Hard': 80 };
+                            const gameSpeed = speedMap[gameDifficulty] || 120;
+                            gameLoop = setInterval(gameUpdate, gameSpeed);
+                        }, 500); // "GO!" 顯示半秒後正式開始
+                    }
+                }, 1000);
+            }
+        }
+
+        function togglePause() {
+            if (!gameRunning) return; // 遊戲未開始時不能暫停
+            gamePaused = !gamePaused;
+            audioManager.play('click');
+            document.querySelector('.pause-btn').textContent = gamePaused ? '▶️ 繼續' : '⏸️ 暫停';
+        }
+
+        function resetGame() {
+            gameRunning = false;
+            gamePaused = false;
+            clearInterval(gameLoop);
+            audioManager.play('click');
+            
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.disabled = false);
+
+            // 重置蛇
+            snake1 = {
+                body: [{x: 100, y: 100}, {x: 80, y: 100}, {x: 60, y: 100}],
+                direction: {x: 1, y: 0},
+                nextDirection: {x: 1, y: 0},
+                level: 3,
+                color: '#4CAF50',
+                speedBoost: 0,
+                ghostMode: 0
+            };
+
+            snake2 = {
+                body: [{x: 700, y: 500}, {x: 720, y: 500}, {x: 740, y: 500}],
+                direction: {x: -1, y: 0},
+                nextDirection: {x: -1, y: 0},
+                level: 3,
+                color: '#FF5722',
+                speedBoost: 0,
+                ghostMode: 0
+            };
+
+            foods = [];
+            document.getElementById('gameOver').style.display = 'none';
+            document.querySelector('.pause-btn').textContent = '⏸️ 暫停';
+            
+            generateFood();
+            draw();
+        }
+
+        function endGame(message) {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            audioManager.play('gameover', { volume: 1.0 });
+            document.getElementById('winnerText').textContent = message;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function toggleMute() {
+            audioManager.toggleMute();
+        }
+
+        // 觸發屏幕震動
+        function triggerScreenShake() {
+            const gameContainer = document.querySelector('.game-container');
+            gameContainer.classList.add('screen-shake');
+            setTimeout(() => {
+                gameContainer.classList.remove('screen-shake');
+            }, 400);
+        }
+
+        // 調整Canvas尺寸以適應屏幕
+        function adjustCanvasSize() {
+            const canvas = document.getElementById('gameCanvas');
+            const maxWidth = Math.min(800, window.innerWidth * 0.9);
+            const maxHeight = Math.min(600, window.innerHeight * 0.6);
+            
+            // 保持縱橫比
+            const aspectRatio = 800 / 600;
+            let newWidth = maxWidth;
+            let newHeight = newWidth / aspectRatio;
+            
+            if (newHeight > maxHeight) {
+                newHeight = maxHeight;
+                newWidth = newHeight * aspectRatio;
+            }
+            
+            canvas.style.width = newWidth + 'px';
+            canvas.style.height = newHeight + 'px';
+        }
+
+        // 初始化遊戲
+        document.addEventListener('DOMContentLoaded', () => {
+            adjustCanvasSize();
+            resetGame();
+            
+            // 監聽窗口大小變化
+            window.addEventListener('resize', adjustCanvasSize);
+            
+            // 用戶首次交互時初始化音頻
+            document.addEventListener('click', () => {
+                audioManager.initAudioContext();
+            }, { once: true });
+            
+            document.addEventListener('keydown', () => {
+                audioManager.initAudioContext();
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>
