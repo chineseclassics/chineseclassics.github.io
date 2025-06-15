@@ -3672,16 +3672,32 @@
                     },
                     'wall_pass': {
                         id: 'wall_pass', name: '穿牆符', icon: '🌀', type: 'buff',
-                        description: '10秒內，龍可以穿越邊界。',
+                        description: '10秒內，龍可以穿越邊界。探索模式下為獎勵分數。',
                         duration: 10000,
                         apply: () => {
+                            if (this.game.difficulty === 'exploration') {
+                                this.game.gameState.addScore(75);
+                                toastManager.show(`🌀 探索模式下固有能力！獎勵75分！`, 'success');
+                                return;
+                            }
+
+                            if (this.game.canPassWalls) {
+                                // Effect is already active, give points instead
+                                this.game.gameState.addScore(75);
+                                toastManager.show(`🌀 穿牆效果已激活！獎勵75分！`, 'success');
+                                return;
+                            }
+
                             this.game.canPassWalls = true;
                             document.getElementById('game-board').classList.add('wall-passing');
                             toastManager.show(`🌀 獲得道具：穿牆符！10秒內可穿越邊界！`, 'info');
                             this.addTimer(() => {
-                                this.game.canPassWalls = false;
-                                document.getElementById('game-board').classList.remove('wall-passing');
-                                toastManager.show(`🌀 穿牆符效果結束。`, 'info');
+                                // Only disable if not in exploration mode
+                                if (this.game.difficulty !== 'exploration') {
+                                    this.game.canPassWalls = false;
+                                    document.getElementById('game-board').classList.remove('wall-passing');
+                                    toastManager.show(`🌀 穿牆符效果結束。`, 'info');
+                                }
                             }, 10000);
                         }
                     },
@@ -4166,6 +4182,15 @@
             setDifficulty(difficulty) {
                 this.difficulty = difficulty;
                 console.log(`已選擇難度模式: ${this.difficulty}`);
+
+                if (this.difficulty === 'exploration') {
+                    this.canPassWalls = true;
+                    document.getElementById('game-board').classList.add('wall-passing');
+                    toastManager.show('探索模式已啟用，可以穿越邊界了！', 'info');
+                } else {
+                    this.canPassWalls = false;
+                    document.getElementById('game-board').classList.remove('wall-passing');
+                }
 
                 // 切換UI顯示
                 document.getElementById('difficulty-selection').style.display = 'none';
