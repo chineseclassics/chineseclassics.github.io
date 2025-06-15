@@ -1557,7 +1557,7 @@
             flex-grow: 1; /* 佔據剩餘空間 */
             overflow-y: auto; /* 設為可滾動 */
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* 響應式4列網格 */
+            grid-template-columns: repeat(4, 1fr); /* 固定4列網格 */
             gap: 15px;
             align-content: flex-start;
             padding: 15px;
@@ -1577,66 +1577,71 @@
             transition: all 0.3s ease;
         }
 
-        /* This is now an invisible click target for the dog-ear effect */
+        /* 优雅的悬停复选框 */
         .vocab-card-checkbox {
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 50px; /* Larger clickable area */
-            height: 50px;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
             cursor: pointer;
             z-index: 10;
-            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
-            border-radius: 0 12px 0 0; /* Match card corner radius */
-        }
-
-        .vocab-card-checkbox:hover {
-             background-color: rgba(0, 0, 0, 0.05); /* Add subtle feedback for the click area */
-        }
-
-        /* The dog-ear triangle */
-        .vocab-list-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            border-style: solid;
-            border-width: 0 35px 35px 0; /* Triangle size */
-            border-color: transparent #4CAF50 transparent transparent;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transform: scale(0);
-            transform-origin: top right;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 5; /* Below the click target but above the card */
-        }
-        
-        .vocab-list-item.selected::before {
-            transform: scale(1);
-        }
-
-        /* The checkmark icon on the dog-ear */
-        .vocab-list-item::after {
-            content: '✔';
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            transition: opacity 0.3s ease 0.1s; /* Slight delay */
             opacity: 0;
-            z-index: 6;
-            transform: rotate(45deg); /* Align with the corner */
-            pointer-events: none; /* Make sure it doesn't block clicks */
+            transform: scale(0.7) rotate(-5deg);
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #4CAF50;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
         }
-        
-        .vocab-list-item.selected::after {
+
+        /* 悬停复选框本身时的效果 */
+        .vocab-card-checkbox:hover {
+            transform: scale(1.1) rotate(0deg);
+            border-color: #4CAF50;
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.3);
+        }
+
+        /* 只在正面悬停时显示复选框 */
+        .vocab-card:not(.is-flipped):hover .vocab-card-checkbox {
             opacity: 1;
+            transform: scale(1) rotate(0deg);
         }
-        
-        /* Remove the green outline on the card, the dog-ear is enough */
-        .vocab-list-item.selected .vocab-card .vocab-card-inner {
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05); /* Restore default shadow */
+
+        /* 复选框选中状态 */
+        .vocab-list-item.selected .vocab-card-checkbox {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+            background: linear-gradient(135deg, #4CAF50, #66BB6A);
+            border-color: #4CAF50;
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .vocab-card-checkbox::before {
+            content: '✓';
+            opacity: 0;
+            transform: scale(0.5) rotate(45deg);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .vocab-list-item.selected .vocab-card-checkbox::before {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+
+        /* 选中时的词卡样式 */
+        .vocab-list-item.selected .vocab-card-inner {
+            border: 2px solid #4CAF50;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.25);
+            transform: translateY(-2px);
         }
 
         .vocab-card {
@@ -1750,6 +1755,8 @@
             color: #555;
             line-height: 1.7;
         }
+
+
 
         .ai-story-container {
             flex-shrink: 0;
@@ -2102,7 +2109,7 @@
                 <div class="loading-spinner">正在加載生詞...</div>
             </div>
             <div class="modal-footer">
-                <p class="vocab-selection-hint">提示：點擊詞卡右上角可進行多選操作。</p>
+                <p class="vocab-selection-hint">提示：悬停词卡右上角出现复选框，点击可选中。</p>
                 <button class="control-btn" id="delete-selected-vocab-btn" style="display: none;">刪除選中</button>
                 <button class="control-btn" id="generate-ai-story-btn">呼叫AI寫故事</button>
                 <button class="control-btn" id="download-pdf-btn">下載為PDF</button>
@@ -2162,6 +2169,8 @@
                     return "查詢出錯";
                 }
             }
+
+
         }
 
         // --- AI 故事生成器 ---
@@ -2431,23 +2440,16 @@
             handleCardClick(event, cardElement) {
                 event.stopPropagation();
                 const listItem = cardElement.closest('.vocab-list-item');
-                const isCornerClick = event.target.classList.contains('vocab-card-checkbox');
+                const isCheckboxClick = event.target.classList.contains('vocab-card-checkbox');
 
-                if (listItem.classList.contains('selected')) {
-                    // If the card is already selected, any click on it will deselect it.
-                    // This makes deselection very easy and intuitive.
-                    listItem.classList.remove('selected');
+                if (isCheckboxClick) {
+                    // 点击复选框：切换选中状态
+                    listItem.classList.toggle('selected');
+                    this.updateFooterState();
                 } else {
-                    // If the card is not selected...
-                    if (isCornerClick) {
-                        // ...and the click is specifically on the corner hotspot, select it.
-                        listItem.classList.add('selected');
-                    } else {
-                        // ...and the click is on the main body, flip the card.
-                        cardElement.classList.toggle('is-flipped');
-                    }
+                    // 点击其他区域：翻转词卡
+                    cardElement.classList.toggle('is-flipped');
                 }
-                this.updateFooterState(); // Update the footer state after any interaction.
             }
 
             toggleVocabSelection(event, listItemElement) {
@@ -2558,8 +2560,11 @@
                 try {
                     // 1. Fetch word data
                     const wordDetails = await Promise.all(wordsToExport.map(async (word) => {
-                        const pinyin = await pinyinManager.getPinyin(word);
-                        return { word, pinyin };
+                        const [pinyin, definition] = await Promise.all([
+                            pinyinManager.getPinyin(word),
+                            definitionManager.getDefinition(word)
+                        ]);
+                        return { word, pinyin, definition };
                     }));
 
                     // 2. Create a hidden container for PDF content
@@ -2575,7 +2580,7 @@
                     // 3. Generate HTML that mimics the cards
                     const pdfTitleHTML = `<h1 style="text-align: center; color: #333; margin-bottom: 30px; font-size: 28px;">詞龍 - 我的生詞本</h1>`;
                     
-                    const cardContainerStyle = `display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;`;
+                    const cardContainerStyle = `display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: start;`;
 
                     const pdfContentHTML = wordDetails.map(detail => {
                         const pinyinParts = (detail.pinyin || '').split(' ');
@@ -2584,12 +2589,44 @@
                         const wordHTML = wordChars.map(char => `<span style="flex: 1; text-align: center;">${char}</span>`).join('');
 
                         return `
-                            <div style="border: 1px solid #eee; border-radius: 12px; padding: 20px; text-align: center; background: #fdfcff; break-inside: avoid;">
-                                <div style="display: flex; justify-content: center; gap: 15px; font-size: 16px; color: #28a745; font-weight: 500; height: 20px; width: 100%; margin-bottom: 8px;">
-                                    ${pinyinHTML}
+                            <div style="
+                                width: 160px; 
+                                height: 160px; 
+                                border: 2px solid #ccc; 
+                                border-radius: 12px; 
+                                padding: 12px; 
+                                text-align: center; 
+                                background: linear-gradient(135deg, #fdfcff 0%, #f8f9ff 100%); 
+                                box-shadow: 0 3px 10px rgba(0,0,0,0.08); 
+                                break-inside: avoid;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: space-between;
+                                box-sizing: border-box;
+                            ">
+                                <div style="flex-shrink: 0;">
+                                    <div style="display: flex; justify-content: center; gap: 2px; font-size: 13px; color: #28a745; font-weight: 500; height: 16px; width: 100%; margin-bottom: 6px;">
+                                        ${pinyinHTML}
+                                    </div>
+                                    <div style="display: flex; justify-content: center; gap: 1px; font-size: 26px; font-weight: bold; color: #333; letter-spacing: -2px; margin-bottom: 8px;">
+                                        ${wordHTML}
+                                    </div>
                                 </div>
-                                <div style="display: flex; justify-content: center; gap: 15px; font-size: 32px; font-weight: bold; color: #333;">
-                                    ${wordHTML}
+                                <div style="
+                                    flex-grow: 1; 
+                                    font-size: 11px; 
+                                    color: #555; 
+                                    line-height: 1.3; 
+                                    text-align: left; 
+                                    padding: 6px 0; 
+                                    border-top: 1px solid #eee;
+                                    overflow: hidden;
+                                    display: -webkit-box;
+                                    -webkit-line-clamp: 4;
+                                    -webkit-box-orient: vertical;
+                                    text-overflow: ellipsis;
+                                ">
+                                    ${detail.definition || '暂无释义'}
                                 </div>
                             </div>
                         `;
@@ -2732,7 +2769,7 @@
                 this.isPaused = false;
                 this.startTime = null;
                 this.firstWordFormed = false;
-                this.recentWords = [];
+                this.recentWords = this.loadRecentWords();
                 this.levelTitles = [
                     '呆萌龍寶', '貪吃幼龍', '識字青龍', '尋詞小龍', '吐墨蛟龍',
                     '博學文龍', '智慧靈龍', '雲海蒼龍', '文宗聖龍', '詞聖天龍'
@@ -2784,6 +2821,24 @@
                 }
             }
 
+            loadRecentWords() {
+                try {
+                    const saved = localStorage.getItem('cilongRecentWords');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    console.error('加載最近組詞數據失敗:', e);
+                    return [];
+                }
+            }
+
+            saveRecentWords() {
+                try {
+                    localStorage.setItem('cilongRecentWords', JSON.stringify(this.recentWords));
+                } catch (e) {
+                    console.error('保存最近組詞數據失敗:', e);
+                }
+            }
+
             addScore(points, word = '') {
                 let finalPoints = points;
                 let comboBonus = 0;
@@ -2804,6 +2859,7 @@
                     if (this.recentWords.length > 10) {
                         this.recentWords.pop();
                     }
+                    this.saveRecentWords();
                 }
 
                 this.score += finalPoints;
@@ -2844,6 +2900,7 @@
                 if (this.recentWords.length > 10) {
                     this.recentWords.pop();
                 }
+                this.saveRecentWords();
                 this.updateRecentWordsDisplay();
             }
 
@@ -4143,7 +4200,14 @@
                     this.gameLoopId = null;
                 }
                 
+                // 保存最近組詞數據
+                const savedRecentWords = this.gameState.recentWords || [];
+                
                 this.gameState = new GameState();
+                
+                // 恢復最近組詞數據
+                this.gameState.recentWords = savedRecentWords;
+                
                 this.dragon = [
                     { x: 5, y: 7, char: '學' },
                     { x: 4, y: 7, char: '習' },
