@@ -2125,6 +2125,17 @@
             line-height: 1.2;
         }
         
+        /* 
+         * === 臨時隱藏功能控制 ===
+         * 用途：暫時隱藏密碼功能和開發者直接進入按鈕
+         * 恢復方法：將下面的 display: none 改為 display: block（或刪除整個規則）
+         * 修改時間：按需求隱藏
+         */
+        .form-group:has(#password),
+        .debug-btn {
+            display: none !important;
+        }
+        
         .button-container {
             margin-top: auto;
             flex-shrink: 0;
@@ -6454,36 +6465,50 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     this.handleLogin();
                 });
                 
-                // 調試按鈕點擊
-                debugBtn.addEventListener('click', () => {
-                    this.handleDebugLogin();
-                });
-                
-                // 回車鍵登入
-                [nicknameInput, passwordInput, document.getElementById('grade')].forEach(element => {
-                    element.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            this.handleLogin();
-                        }
+                // 調試按鈕點擊（如果存在的話）
+                if (debugBtn) {
+                    debugBtn.addEventListener('click', () => {
+                        this.handleDebugLogin();
                     });
+                }
+                
+                // 回車鍵登入 - 臨時修改：只監聽存在的元素
+                const elementsToListen = [nicknameInput, document.getElementById('grade')];
+                if (passwordInput) {
+                    elementsToListen.push(passwordInput);
+                }
+                
+                elementsToListen.forEach(element => {
+                    if (element) {
+                        element.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') {
+                                this.handleLogin();
+                            }
+                        });
+                    }
                 });
             }
             
             // 設置表單驗證
             setupFormValidation() {
+                // 臨時修改：只監聽存在的輸入框
                 const inputs = ['nickname', 'password'];
                 inputs.forEach(id => {
                     const input = document.getElementById(id);
-                    input.addEventListener('input', () => {
-                        this.clearError();
-                        this.validateInput(input);
-                    });
+                    if (input) {
+                        input.addEventListener('input', () => {
+                            this.clearError();
+                            this.validateInput(input);
+                        });
+                    }
                 });
                 
                 const gradeSelect = document.getElementById('grade');
-                gradeSelect.addEventListener('change', () => {
-                    this.clearError();
-                });
+                if (gradeSelect) {
+                    gradeSelect.addEventListener('change', () => {
+                        this.clearError();
+                    });
+                }
             }
             
             // 驗證輸入
@@ -6538,6 +6563,19 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 const grade = document.getElementById('grade').value;
                 const password = document.getElementById('password').value;
                 
+                /* 
+                 * === 臨時簡化登入驗證 ===
+                 * 原功能：需要密碼驗證
+                 * 臨時修改：跳過密碼驗證，僅驗證昵稱和年級
+                 * 恢復方法：取消下面的註釋，恢復原始的密碼驗證邏輯
+                 */
+                
+                // 簡化版驗證表單（暫時不檢查密碼）
+                if (!this.validateFormSimplified(nickname, grade)) {
+                    return;
+                }
+                
+                /* 原始密碼驗證邏輯（已暫時禁用）
                 // 驗證表單
                 if (!this.validateForm(nickname, grade, password)) {
                     return;
@@ -6548,6 +6586,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     this.showError('密碼錯誤，請檢查輸入');
                     return;
                 }
+                */
                 
                 // 保存用戶信息
                 this.userInfo = {
@@ -6579,6 +6618,26 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 if (!password) {
                     this.showError('請輸入遊戲密碼');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            // 簡化版驗證表單（臨時使用，不檢查密碼）
+            validateFormSimplified(nickname, grade) {
+                if (!nickname) {
+                    this.showError('請輸入你的昵稱');
+                    return false;
+                }
+                
+                if (nickname.length < 2) {
+                    this.showError('昵稱至少需要2個字符');
+                    return false;
+                }
+                
+                if (!grade) {
+                    this.showError('請選擇你的年級');
                     return false;
                 }
                 
