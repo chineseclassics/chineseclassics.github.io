@@ -1125,6 +1125,104 @@
             .final-stats div {
                 font-size: 16px;
             }
+
+            /* 學習中心模態頁面移動端優化 */
+            #vocab-details-modal .modal-content {
+                max-width: 100%;
+                width: 100%;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+
+            .vocab-list-container {
+                grid-template-columns: repeat(2, 1fr); /* 移動端改為2列 */
+                gap: 12px;
+                padding: 12px;
+            }
+
+            .vocab-card {
+                min-height: 180px; /* 增加卡片高度 */
+            }
+
+            .vocab-card-inner {
+                min-height: 180px; /* 增加卡片內部高度 */
+            }
+
+            /* 放大拼音和漢字 */
+            .vocab-pinyin-line {
+                font-size: 18px; /* 從16px放大到18px */
+                gap: 8px;
+                height: 24px;
+            }
+
+            .vocab-word-line {
+                font-size: 40px; /* 從32px放大到40px */
+                gap: 8px;
+            }
+
+            /* 背面釋義優化 */
+            .vocab-card-back {
+                padding: 15px;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .vocab-definition {
+                text-align: left;
+                overflow-y: auto;
+                max-height: 100%;
+            }
+
+            /* 複選框移動端優化 */
+            .vocab-card-checkbox {
+                width: 32px;
+                height: 32px;
+                top: 6px;
+                right: 6px;
+                font-size: 18px;
+                opacity: 1; /* 移動端始終顯示 */
+                transform: scale(1) rotate(0deg);
+            }
+
+            /* AI小劇場收起按鈕移動端優化 */
+            .ai-story-container {
+                margin-bottom: 12px;
+            }
+
+            .ai-story-header {
+                font-size: 16px;
+                padding: 12px;
+            }
+
+            #toggle-ai-story-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+                min-width: 60px;
+            }
+
+            /* 底部按鈕區域優化 */
+            .modal-footer {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 12px;
+            }
+
+            .modal-footer .control-btn {
+                flex: 1;
+                min-width: calc(50% - 4px);
+                padding: 12px 8px;
+                font-size: 13px;
+            }
+
+            .vocab-selection-hint {
+                width: 100%;
+                text-align: center;
+                font-size: 12px;
+                margin-bottom: 8px;
+            }
         }
 
          @media (max-width: 480px) {
@@ -1166,6 +1264,59 @@
                  padding: 10px 15px;
                  font-size: 13px;
              }
+
+             /* 超小屏幕學習中心優化 */
+             .vocab-list-container {
+                 grid-template-columns: 1fr; /* 超小屏幕改為單列 */
+                 gap: 10px;
+                 padding: 10px;
+             }
+
+             .vocab-card {
+                 min-height: 200px; /* 單列時可以更高 */
+                 margin: 0 auto;
+                 max-width: 280px; /* 限制最大寬度保持美觀 */
+             }
+
+             .vocab-card-inner {
+                 min-height: 200px;
+             }
+
+             /* 超小屏幕字體進一步優化 */
+             .vocab-pinyin-line {
+                 font-size: 20px; /* 更大的拼音 */
+                 height: 26px;
+             }
+
+             .vocab-word-line {
+                 font-size: 48px; /* 更大的漢字 */
+             }
+
+             .vocab-card-back {
+                 padding: 20px;
+                 font-size: 15px;
+                 line-height: 1.7;
+             }
+
+             /* 複選框超小屏幕優化 */
+             .vocab-card-checkbox {
+                 width: 36px;
+                 height: 36px;
+                 top: 8px;
+                 right: 8px;
+                 font-size: 20px;
+             }
+
+             /* 底部按鈕單列排列 */
+             .modal-footer .control-btn {
+                 width: 100%;
+                 min-width: 100%;
+                 margin-bottom: 8px;
+             }
+
+             .modal-footer .control-btn:last-child {
+                 margin-bottom: 0;
+             }
          }
 
         /* 觸控優化 */
@@ -1191,12 +1342,35 @@
             .word-clickable:hover::after {
                 width: 0;
             }
+
+            /* 學習中心詞卡觸控優化 */
+            .vocab-card:hover {
+                transform: none;
+            }
+
+            .vocab-card-checkbox:hover {
+                transform: scale(1) rotate(0deg);
+                border-color: #4CAF50;
+            }
+
+            /* 移動端始終顯示複選框 */
+            .vocab-card-checkbox {
+                opacity: 1 !important;
+                transform: scale(1) rotate(0deg) !important;
+            }
+
+            /* 詞卡翻轉更明顯的視覺回饋 */
+            .vocab-card-inner {
+                transition: transform 0.5s ease-in-out;
+            }
         }
 
         /* 觸控反饋 */
         .control-btn:active,
         .star-btn:active,
         .word-clickable:active,
+        .vocab-card:active,
+        .vocab-card-checkbox:active,
         .remove-vocab-btn:active,
         .close-btn:active {
             transform: scale(0.95);
