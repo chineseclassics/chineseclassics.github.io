@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雙人貪吃蛇大戰</title>
+    <title>雙蛇大戰 - Snake Clash</title>
     <style>
         body {
             margin: 0;
@@ -27,6 +27,43 @@
             padding: 10px;
             box-sizing: border-box;
             position: relative; /* 新增：用於定位側邊玩家信息 */
+        }
+
+        /* 遊戲標題樣式 */
+        .game-title {
+            text-align: center;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-title h1 {
+            color: white;
+            font-size: 36px;
+            margin: 0;
+            font-weight: 900;
+            background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        .game-title h2 {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 18px;
+            margin: 5px 0 0 0;
+            font-weight: 400;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        @keyframes titleGlow {
+            0% {
+                filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+            }
+            100% {
+                filter: brightness(1.2) drop-shadow(0 0 15px rgba(255, 215, 0, 0.8));
+            }
         }
 
         .game-header {
@@ -363,6 +400,12 @@
             <div class="special-effects" id="player2Effects"></div>
         </div>
 
+        <!-- 遊戲標題 -->
+        <div class="game-title">
+            <h1>雙蛇大戰</h1>
+            <h2>Snake Clash</h2>
+        </div>
+
         <canvas id="gameCanvas" width="800" height="600"></canvas>
 
         <div class="game-controls">
@@ -387,6 +430,8 @@
                 <div class="food-item">🏅 黃金果 (+5級)</div>
                 <div class="food-item">⚡ 神速符 (雙倍速度5秒)</div>
                 <div class="food-item">👻 幽靈藥水 (穿牆5秒)</div>
+                <div class="food-item">🖌️ 畫筆 (生成假食物陷阱)</div>
+                <div class="food-item">💩 大便炸彈 (生成3個陷阱)</div>
             </div>
             <p>💥 頭部相撞：等級高者勝出 | 🤝 身體相撞：等級相加平分 | 🚧 撞牆減1級</p>
             <p>🔊 遊戲包含音效，點擊音量鍵開關</p>
@@ -589,15 +634,19 @@
 
         let foods = [];
         const maxFoods = 15;
+        let fakeFood = null; // 假食物
+        let poops = []; // 大便陷阱
 
         // 食物類型
         const foodTypes = [
-            { emoji: '🟡', value: 1, probability: 0.65, color: '#FFD700', type: 'normal' },
-            { emoji: '🔴', value: 2, probability: 0.25, color: '#FF4444', type: 'normal' },
-            { emoji: '💎', value: 3, probability: 0.07, color: '#00FFFF', type: 'normal' },
-            { emoji: '🏅', value: 5, probability: 0.015, color: '#FFD700', type: 'golden' },
-            { emoji: '⚡', value: 0, probability: 0.01, color: '#4169E1', type: 'speed' },
-            { emoji: '👻', value: 0, probability: 0.005, color: '#F0F8FF', type: 'ghost' }
+            { emoji: '🟡', value: 1, probability: 0.60, color: '#FFD700', type: 'normal' },
+            { emoji: '🔴', value: 2, probability: 0.22, color: '#FF4444', type: 'normal' },
+            { emoji: '💎', value: 3, probability: 0.06, color: '#00FFFF', type: 'normal' },
+            { emoji: '🏅', value: 5, probability: 0.012, color: '#FFD700', type: 'golden' },
+            { emoji: '⚡', value: 0, probability: 0.008, color: '#4169E1', type: 'speed' },
+            { emoji: '👻', value: 0, probability: 0.004, color: '#F0F8FF', type: 'ghost' },
+            { emoji: '🖌️', value: 0, probability: 0.006, color: '#8B4513', type: 'brush' },
+            { emoji: '💩', value: 0, probability: 0.004, color: '#8B4513', type: 'poop' }
         ];
 
         function setDifficulty(level, btnElement) {
@@ -706,7 +755,55 @@
 
         function isPositionOccupied(x, y) {
             return snake1.body.some(segment => segment.x === x && segment.y === y) ||
-                   snake2.body.some(segment => segment.x === x && segment.y === y);
+                   snake2.body.some(segment => segment.x === x && segment.y === y) ||
+                   foods.some(food => food.x === x && food.y === y) ||
+                   (fakeFood && fakeFood.x === x && fakeFood.y === y) ||
+                   poops.some(poop => poop.x === x && poop.y === y);
+        }
+
+        // 創建假食物
+        function createFakeFood(creatorSnake) {
+            if (fakeFood) return; // 已經存在假食物
+
+            // 在隨機位置生成假食物
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
+                y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
+            } while (isPositionOccupied(x, y) || 
+                     (Math.abs(x - creatorSnake.body[0].x) < 100 && Math.abs(y - creatorSnake.body[0].y) < 100));
+
+            fakeFood = {
+                x: x,
+                y: y,
+                creator: creatorSnake,
+                timer: 300, // 30秒後消失
+                type: foodTypes[Math.floor(Math.random() * 4)] // 偽裝成普通食物
+            };
+        }
+
+        // 創建大便陷阱
+        function createPoopTraps(creatorSnake) {
+            const newPoops = [];
+            for (let i = 0; i < 3; i++) {
+                let x, y;
+                let attempts = 0;
+                do {
+                    x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
+                    y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
+                    attempts++;
+                } while (isPositionOccupied(x, y) && attempts < 50);
+
+                if (attempts < 50) {
+                    newPoops.push({
+                        x: x,
+                        y: y,
+                        creator: creatorSnake,
+                        timer: 200 // 20秒後消失
+                    });
+                }
+            }
+            poops = poops.concat(newPoops);
         }
 
         function moveSnake(snake) {
@@ -749,6 +846,40 @@
             }
 
             snake.body.unshift(head);
+
+            // 檢查是否吃到假食物
+            if (fakeFood && fakeFood.x === head.x && fakeFood.y === head.y) {
+                if (fakeFood.creator !== snake) {
+                    // 對方踩到假食物，降級
+                    snake.level = Math.max(1, snake.level - 1);
+                    audioManager.play('debuff', { volume: 0.8 });
+                    showSoundEffect('中計 -1', head.x, head.y - 20);
+                    triggerScreenShake();
+                } else {
+                    // 創造者吃到自己的假食物，沒有效果
+                    audioManager.play('click', { volume: 0.3 });
+                    showSoundEffect('自己的陷阱', head.x - 20, head.y - 20);
+                }
+                fakeFood = null; // 移除假食物
+            }
+
+            // 檢查是否踩到大便
+            const poopIndex = poops.findIndex(poop => poop.x === head.x && poop.y === head.y);
+            if (poopIndex !== -1) {
+                const poop = poops[poopIndex];
+                if (poop.creator !== snake) {
+                    // 對方踩到大便，降2級
+                    snake.level = Math.max(1, snake.level - 2);
+                    audioManager.play('debuff', { volume: 1.0, pitch: 0.7 });
+                    showSoundEffect('踩屎 -2', head.x, head.y - 20);
+                    triggerScreenShake();
+                } else {
+                    // 創造者踩到自己的大便，沒有效果
+                    audioManager.play('click', { volume: 0.3, pitch: 0.8 });
+                    showSoundEffect('自己的屎', head.x - 20, head.y - 20);
+                }
+                poops.splice(poopIndex, 1); // 移除大便
+            }
 
             // 檢查是否吃到食物
             const foodIndex = foods.findIndex(food => food.x === head.x && food.y === head.y);
@@ -796,6 +927,18 @@
                         snake.ghostMode = 50; // 5秒（以遊戲幀計算）
                         audioManager.play('powerup', { volume: 0.9, pitch: 0.8 });
                         showSoundEffect('幽靈模式！', head.x - 25, head.y - 30);
+                        break;
+                    
+                    case 'brush':
+                        createFakeFood(snake);
+                        audioManager.play('combo', { volume: 0.8, pitch: 1.3 });
+                        showSoundEffect('畫筆陷阱！', head.x - 25, head.y - 30);
+                        break;
+                    
+                    case 'poop':
+                        createPoopTraps(snake);
+                        audioManager.play('debuff', { volume: 0.8, pitch: 0.6 });
+                        showSoundEffect('大便炸彈！', head.x - 25, head.y - 30);
                         break;
                 }
             } else {
@@ -930,6 +1073,43 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(food.type.emoji, food.x + gridSize/2, food.y + gridSize/2);
+            });
+
+            // 繪製假食物
+            if (fakeFood) {
+                // 假食物有微妙的閃爍效果來暗示它是陷阱
+                const time = Date.now() * 0.008;
+                const alpha = 0.8 + 0.2 * Math.sin(time);
+                const glowSize = 1 + Math.sin(time) * 1;
+                
+                // 略微不同的光暈（稍微暗一些）
+                ctx.fillStyle = fakeFood.type.color + '30';
+                ctx.fillRect(fakeFood.x - glowSize, fakeFood.y - glowSize, gridSize + glowSize * 2, gridSize + glowSize * 2);
+                
+                ctx.fillStyle = fakeFood.type.color;
+                ctx.fillRect(fakeFood.x + 2, fakeFood.y + 2, gridSize - 4, gridSize - 4);
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(fakeFood.type.emoji, fakeFood.x + gridSize/2, fakeFood.y + gridSize/2);
+            }
+
+            // 繪製大便陷阱
+            poops.forEach(poop => {
+                // 大便有棕色背景和惡臭效果
+                const time = Date.now() * 0.003;
+                const stinkSize = 3 + Math.sin(time) * 1;
+                
+                // 惡臭效果
+                ctx.fillStyle = '#8B4513' + '20';
+                ctx.fillRect(poop.x - stinkSize, poop.y - stinkSize, gridSize + stinkSize * 2, gridSize + stinkSize * 2);
+                
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(poop.x + 2, poop.y + 2, gridSize - 4, gridSize - 4);
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('💩', poop.x + gridSize/2, poop.y + gridSize/2);
             });
 
             // 繪製蛇
@@ -1074,6 +1254,20 @@
             if (snake2.speedBoost > 0) snake2.speedBoost--;
             if (snake2.ghostMode > 0) snake2.ghostMode--;
 
+            // 更新假食物計時器
+            if (fakeFood) {
+                fakeFood.timer--;
+                if (fakeFood.timer <= 0) {
+                    fakeFood = null;
+                }
+            }
+
+            // 更新大便計時器
+            poops = poops.filter(poop => {
+                poop.timer--;
+                return poop.timer > 0;
+            });
+
             handleInput();
             
             // 神速符效果：雙倍移動
@@ -1164,6 +1358,8 @@
             };
 
             foods = [];
+            fakeFood = null; // 重置假食物
+            poops = []; // 重置大便陷阱
             document.getElementById('gameOver').style.display = 'none';
             document.querySelector('.pause-btn').textContent = '⏸️ 暫停';
             
