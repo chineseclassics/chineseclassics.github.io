@@ -2094,19 +2094,19 @@
             position: absolute;
             cursor: pointer;
             z-index: 20;
-            animation: float-event 8s ease-in-out infinite, pulse-ring 1.5s ease-in-out infinite;
+            animation: float-event 8s ease-in-out infinite, pulse-ring 1.5s ease-in-out infinite, attention-ping 3s ease-in-out infinite;
             transition: transform 0.2s ease;
-            min-width: 36px;
-            min-height: 36px;
-            background-color: rgba(106, 143, 88, 0.85);
+            min-width: 40px;
+            min-height: 40px;
+            background-color: rgba(106, 143, 88, 0.9);
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(106, 143, 88, 0.7), inset 0 0 12px rgba(86, 123, 68, 0.8);
-            border: 3px solid rgba(76, 113, 58, 0.9);
+            box-shadow: 0 0 25px rgba(106, 143, 88, 0.8), inset 0 0 15px rgba(86, 123, 68, 0.9), 0 0 40px rgba(255, 215, 0, 0.3);
+            border: 4px solid rgba(255, 215, 0, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
-            text-shadow: 0 0 5px #0a2e10;
-            font-size: 16px;
+            text-shadow: 0 0 8px #0a2e10, 0 0 15px #ffd700;
+            font-size: 18px;
             font-weight: bold;
             color: #fff;
             overflow: visible;
@@ -2116,27 +2116,46 @@
             content: "!";
             position: absolute;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 18px;
             z-index: 21;
-            text-shadow: 0 0 5px #0a2e10;
-            color: #ffd700;
-            animation: pulse-content 1.5s ease-in-out infinite;
+            text-shadow: 0 0 8px #0a2e10, 0 0 12px #ffffff;
+            color: #fff;
+            animation: pulse-content 1.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 3px #ffd700);
         }
         
         .event-marker::after {
             content: '';
             position: absolute;
-            width: 100%;
-            height: 100%;
+            width: 120%;
+            height: 120%;
             border-radius: 50%;
-            border: 4px solid transparent;
-            background: linear-gradient(45deg, rgba(76,113,58,0.9), rgba(106,143,88,0.5)) border-box;
+            border: 3px solid transparent;
+            background: linear-gradient(45deg, rgba(255,215,0,0.6), rgba(255,255,255,0.3)) border-box;
             -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
-            animation: rotate-ring 4s linear infinite;
+            animation: rotate-ring 3s linear infinite;
             z-index: 19;
-            box-shadow: 0 0 10px rgba(158, 213, 132, 0.4);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            top: -10%;
+            left: -10%;
+        }
+        
+        /* 添加箭頭指向效果 */
+        .event-marker .arrow-indicator {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid rgba(255, 215, 0, 0.9);
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce-arrow 1.5s ease-in-out infinite;
+            z-index: 25;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
         
         @keyframes float-event {
@@ -2146,20 +2165,76 @@
         }
         
         @keyframes pulse-ring {
-            0% { box-shadow: 0 0 10px rgba(106, 143, 88, 0.5), inset 0 0 8px rgba(86, 123, 68, 0.6); }
-            50% { box-shadow: 0 0 30px rgba(140, 190, 120, 1), inset 0 0 20px rgba(120, 180, 90, 1); filter: brightness(1.2); }
-            100% { box-shadow: 0 0 10px rgba(106, 143, 88, 0.5), inset 0 0 8px rgba(86, 123, 68, 0.6); }
+            0% { 
+                box-shadow: 0 0 15px rgba(106, 143, 88, 0.6), inset 0 0 10px rgba(86, 123, 68, 0.7), 0 0 25px rgba(255, 215, 0, 0.2); 
+                border-color: rgba(255, 215, 0, 0.6);
+            }
+            50% { 
+                box-shadow: 0 0 35px rgba(140, 190, 120, 1), inset 0 0 25px rgba(120, 180, 90, 1), 0 0 50px rgba(255, 215, 0, 0.8); 
+                filter: brightness(1.3); 
+                border-color: rgba(255, 215, 0, 1);
+            }
+            100% { 
+                box-shadow: 0 0 15px rgba(106, 143, 88, 0.6), inset 0 0 10px rgba(86, 123, 68, 0.7), 0 0 25px rgba(255, 215, 0, 0.2); 
+                border-color: rgba(255, 215, 0, 0.6);
+            }
         }
         
         @keyframes pulse-content {
-            0% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.15); }
-            100% { opacity: 0.7; transform: scale(1); }
+            0% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.8; transform: scale(1); }
+        }
+        
+        @keyframes attention-ping {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.1); }
+            50% { transform: scale(1.05); }
+            75% { transform: scale(1.15); }
+            100% { transform: scale(1); }
         }
         
         @keyframes rotate-ring {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes bounce-arrow {
+            0% { transform: translateX(-50%) translateY(0); opacity: 0.8; }
+            50% { transform: translateX(-50%) translateY(-8px); opacity: 1; }
+            100% { transform: translateX(-50%) translateY(0); opacity: 0.8; }
+        }
+        
+        /* 添加超醒目的提醒效果 */
+        .event-marker.super-attention {
+            animation: float-event 8s ease-in-out infinite, pulse-ring 1.5s ease-in-out infinite, super-flash 2s ease-in-out infinite, shake-attention 4s ease-in-out infinite;
+            border: 5px solid rgba(255, 255, 255, 1) !important;
+            box-shadow: 0 0 35px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 255, 255, 0.8), 0 0 80px rgba(255, 165, 0, 0.6) !important;
+            background-color: rgba(255, 215, 0, 0.9) !important;
+            transform: scale(1.1);
+        }
+        
+        .event-marker.super-attention::before {
+            color: #fff !important;
+            text-shadow: 0 0 12px #000, 0 0 20px #ff4500 !important;
+            animation: pulse-content 0.8s ease-in-out infinite !important;
+        }
+        
+        .event-marker.super-attention .arrow-indicator {
+            border-top-color: rgba(255, 255, 255, 1) !important;
+            animation: bounce-arrow 1s ease-in-out infinite !important;
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5));
+        }
+        
+        @keyframes super-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes shake-attention {
+            0%, 100% { transform: scale(1.1) translateX(0); }
+            25% { transform: scale(1.1) translateX(-3px); }
+            75% { transform: scale(1.1) translateX(3px); }
         }
         
         .event-title {
@@ -2179,13 +2254,23 @@
         }
         
         .event-marker:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            transform: scale(1.15);
+            box-shadow: 0 0 35px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 255, 255, 0.6);
+            animation-play-state: paused;
         }
         
         .event-marker:hover .event-title {
             opacity: 1;
+            transform: translateX(-50%) translateY(-8px);
+            background-color: rgba(255, 215, 0, 0.9);
+            color: #2C3E2D;
+            font-weight: bold;
+        }
+        
+        .event-marker:hover .arrow-indicator {
+            animation-play-state: paused;
             transform: translateX(-50%) translateY(-5px);
+            border-top-color: rgba(255, 255, 255, 1);
         }
         
         .rare-event-marker {
@@ -7755,6 +7840,11 @@
                 title.textContent = titleText;
                 marker.appendChild(title);
                 
+                // 添加箭頭指示器
+                const arrow = document.createElement("div");
+                arrow.className = "arrow-indicator";
+                marker.appendChild(arrow);
+                
                 // 添加點擊事件
                 marker.addEventListener("click", () => {
                     showEventModal(event.id);
@@ -7762,6 +7852,14 @@
                 
                 gameScene.appendChild(marker);
             });
+            
+            // 如果是第一次出現事件圓點，給出額外提醒
+            if (gameState.events.length > 0 && (!gameState.hasSeenEventTutorial)) {
+                gameState.hasSeenEventTutorial = true;
+                setTimeout(() => {
+                    activateEventMarkersAttention();
+                }, 1000);
+            }
             
             // 生成天氣效果
             generateWeatherEffects(weatherContainer, currentSeason);
@@ -8217,6 +8315,31 @@
             return button;
         }
         
+        // 激活事件圓點超醒目效果
+        function activateEventMarkersAttention() {
+            const eventMarkers = document.querySelectorAll('.event-marker');
+            eventMarkers.forEach(marker => {
+                marker.classList.add('super-attention');
+            });
+            
+            // 顯示指導通知
+            if (eventMarkers.length > 0) {
+                notificationSystem.show(
+                    "💡 遊戲提示", 
+                    "場景中的閃亮圓點是可點擊的事件！點擊它們可以觸發更多劇情和獲得詩句的機會。", 
+                    "hint", 
+                    6000
+                );
+            }
+            
+            // 10秒後移除超醒目效果，避免過度干擾
+            setTimeout(() => {
+                eventMarkers.forEach(marker => {
+                    marker.classList.remove('super-attention');
+                });
+            }, 10000);
+        }
+        
         // 執行動作
         function performAction(actionId) {
             const action = gameState.character.actions.find(a => a.id === actionId);
@@ -8373,6 +8496,14 @@
             updateGameScene();
             updateActions();
             updateSeasonIndicator();
+            
+            // 如果場景中有事件圓點，激活超醒目效果提醒玩家點擊
+            setTimeout(() => {
+                const eventMarkers = document.querySelectorAll('.event-marker');
+                if (eventMarkers.length > 0) {
+                    activateEventMarkersAttention();
+                }
+            }, 500); // 稍微延遲以確保界面更新完成
             
             // 檢查游戲結束條件，現在手動處理返回值
             const shouldEndGame = checkGameEnd();
