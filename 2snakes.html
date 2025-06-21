@@ -380,9 +380,239 @@
             0% { opacity: 0.7; filter: blur(0px); }
             100% { opacity: 0.9; filter: blur(1px); }
         }
+        /* 移動端提示界面 */
+        .mobile-notice {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 10000;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .mobile-content {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+            color: white;
+            padding: 20px 0;
+        }
+
+        .mobile-title {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-subtitle {
+            font-size: 16px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            letter-spacing: 1px;
+        }
+
+        .game-preview {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .preview-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+
+        .game-features {
+            text-align: left;
+            margin: 25px 0;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .feature-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            min-width: 30px;
+        }
+
+        .desktop-notice {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 25px 0;
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .desktop-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .desktop-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .desktop-text {
+            font-size: 13px;
+            line-height: 1.5;
+            opacity: 0.95;
+        }
+
+        .food-showcase {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .food-showcase-item {
+            text-align: center;
+            padding: 10px 5px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .food-showcase-emoji {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .food-showcase-text {
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* 移動端隱藏桌面版遊戲 */
+        @media (max-width: 768px) {
+            .mobile-notice {
+                display: block;
+            }
+            .game-container {
+                display: none;
+            }
+        }
     </style>
   </head>
 <body>
+    <!-- 移動端提示界面 -->
+    <div class="mobile-notice">
+        <div class="mobile-content">
+            <div class="mobile-title">雙蛇大戰</div>
+            <div class="mobile-subtitle">Snake Clash - 史上最刺激的雙人蛇類對戰遊戲！</div>
+            
+            <div class="game-preview">
+                <div class="preview-icon">🐍⚔️🐍</div>
+                <h3 style="margin: 15px 0; font-size: 20px;">極致對戰體驗</h3>
+                <p style="font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                    兩條蛇在同一個戰場上展開生死較量！吃食物升級，使用特殊道具，
+                    運用策略和技巧擊敗對手。誰能成為最終的蛇王？
+                </p>
+            </div>
+
+            <div class="game-features">
+                <div class="feature-item">
+                    <span class="feature-icon">🎮</span>
+                    <span>雙人即時對戰，支持同屏競技</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <span>多種特殊道具：神速符、幽靈藥水、陷阱道具</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🏆</span>
+                    <span>策略性玩法：頭部碰撞、身體融合、牆壁穿越</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🎯</span>
+                    <span>三種難度設定，適合不同水平玩家</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔊</span>
+                    <span>豐富音效系統，沉浸式遊戲體驗</span>
+                </div>
+            </div>
+
+            <div class="food-showcase">
+                <div class="food-showcase-item">
+                    <div class="food-showcase-emoji">🟡</div>
+                    <div class="food-showcase-text">普通食物<br/>+1級</div>
+                </div>
+                <div class="food-showcase-item">
+                    <div class="food-showcase-emoji">💎</div>
+                    <div class="food-showcase-text">鑽石食物<br/>+3級</div>
+                </div>
+                <div class="food-showcase-item">
+                    <div class="food-showcase-emoji">⚡</div>
+                    <div class="food-showcase-text">神速符<br/>雙倍速度</div>
+                </div>
+                <div class="food-showcase-item">
+                    <div class="food-showcase-emoji">👻</div>
+                    <div class="food-showcase-text">幽靈藥水<br/>穿牆模式</div>
+                </div>
+            </div>
+
+            <div class="desktop-notice">
+                <div class="desktop-icon">💻</div>
+                <div class="desktop-title">需要桌面版體驗</div>
+                <div class="desktop-text">
+                    由於遊戲需要鍵盤操作（WASD + 方向鍵），目前不支持移動設備遊玩。<br/><br/>
+                    <strong>📱➡️💻 請在電腦上打開此頁面，體驗完整的雙人對戰樂趣！</strong><br/><br/>
+                    支持所有現代瀏覽器，無需下載安裝，開啟即玩！
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 15px;">
+                <h4 style="margin: 0 0 15px 0; font-size: 16px;">🎯 遊戲特色</h4>
+                <p style="font-size: 13px; line-height: 1.6; margin: 0; opacity: 0.9;">
+                    • 創新的碰撞機制：頭部相撞比等級，身體相撞會融合升級<br/>
+                    • 豐富的特殊道具系統，每局都有不同的戰術體驗<br/>
+                    • 精美的視覺效果和音效，帶來沉浸式遊戲感受<br/>
+                    • 支持暫停、重置和音效開關等貼心功能
+                </p>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 12px; opacity: 0.7;">
+                🌟 立即在電腦上體驗這款令人上癮的雙人對戰遊戲！
+            </div>
+        </div>
+    </div>
     <div class="game-container">
         <!-- 左側玩家信息 -->
         <div class="side-player-info left">
