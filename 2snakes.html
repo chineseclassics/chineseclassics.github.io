@@ -315,6 +315,60 @@
             cursor: not-allowed;
         }
 
+        /* 自定義提示框樣式 */
+        .difficulty-btn {
+            position: relative;
+        }
+
+        .difficulty-btn:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: nowrap;
+            max-width: 280px;
+            white-space: normal;
+            width: max-content;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: tooltipFadeIn 0.3s ease-out;
+        }
+
+        .difficulty-btn:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid rgba(0, 0, 0, 0.9);
+            z-index: 1001;
+            animation: tooltipFadeIn 0.3s ease-out;
+        }
+
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
         /* 屏幕震動效果 */
         .screen-shake {
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
@@ -641,9 +695,9 @@
         <div class="game-controls">
             <div class="difficulty-selector">
                 <span>難度:</span>
-                <button class="difficulty-btn" onclick="setDifficulty('Hard', this)">困難</button>
-                <button class="difficulty-btn active" onclick="setDifficulty('Normal', this)">正常</button>
-                <button class="difficulty-btn" onclick="setDifficulty('Easy', this)">容易</button>
+                <button class="difficulty-btn" onclick="setDifficulty('Hard', this)" title="🔥 困難模式：移動速度最快，撞牆扣1級，考驗反應速度和操作技巧">困難</button>
+                <button class="difficulty-btn active" onclick="setDifficulty('Normal', this)" title="⚖️ 正常模式：移動速度適中，撞牆扣1級，平衡的遊戲體驗">正常</button>
+                <button class="difficulty-btn" onclick="setDifficulty('Easy', this)" title="🎈 容易模式：移動速度較慢，撞牆可穿越不扣分，適合新手練習">容易</button>
             </div>
             <button class="start-btn" onclick="startGame()">🎮 開始遊戲</button>
             <button class="pause-btn" onclick="togglePause()">⏸️ 暫停</button>
