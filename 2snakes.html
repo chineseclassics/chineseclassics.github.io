@@ -689,37 +689,37 @@
 
         function handleInput() {
             // 玩家1 (WASD) - 立即響應，不等待遊戲循環
-            if (keys['w'] && snake1.direction.y === 0 && snake1.nextDirection.y === 0) {
+            if (keys['w'] && snake1.direction.y === 0) {
                 snake1.nextDirection = {x: 0, y: -1};
                 audioManager.play('click', { volume: 0.2 });
             }
-            if (keys['s'] && snake1.direction.y === 0 && snake1.nextDirection.y === 0) {
+            if (keys['s'] && snake1.direction.y === 0) {
                 snake1.nextDirection = {x: 0, y: 1};
                 audioManager.play('click', { volume: 0.2 });
             }
-            if (keys['a'] && snake1.direction.x === 0 && snake1.nextDirection.x === 0) {
+            if (keys['a'] && snake1.direction.x === 0) {
                 snake1.nextDirection = {x: -1, y: 0};
                 audioManager.play('click', { volume: 0.2 });
             }
-            if (keys['d'] && snake1.direction.x === 0 && snake1.nextDirection.x === 0) {
+            if (keys['d'] && snake1.direction.x === 0) {
                 snake1.nextDirection = {x: 1, y: 0};
                 audioManager.play('click', { volume: 0.2 });
             }
 
             // 玩家2 (方向鍵) - 立即響應，不等待遊戲循環
-            if (keys['arrowup'] && snake2.direction.y === 0 && snake2.nextDirection.y === 0) {
+            if (keys['arrowup'] && snake2.direction.y === 0) {
                 snake2.nextDirection = {x: 0, y: -1};
                 audioManager.play('click', { volume: 0.2 });
             }
-            if (keys['arrowdown'] && snake2.direction.y === 0 && snake2.nextDirection.y === 0) {
+            if (keys['arrowdown'] && snake2.direction.y === 0) {
                 snake2.nextDirection = {x: 0, y: 1};
                 audioManager.play('click', { volume: 0.2 });
             }
-            if (keys['arrowleft'] && snake2.direction.x === 0 && snake2.nextDirection.x === 0) {
+            if (keys['arrowleft'] && snake2.direction.x === 0) {
                 snake2.nextDirection = {x: -1, y: 0};
                 audioManager.play('click', { volume: 0.2 });
             }
-            if (keys['arrowright'] && snake2.direction.x === 0 && snake2.nextDirection.x === 0) {
+            if (keys['arrowright'] && snake2.direction.x === 0) {
                 snake2.nextDirection = {x: 1, y: 0};
                 audioManager.play('click', { volume: 0.2 });
             }

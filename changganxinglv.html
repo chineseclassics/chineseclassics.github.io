@@ -2547,46 +2547,53 @@
         
         .tutorial-container {
             position: fixed;
-            z-index: 50;
+            z-index: 9999;
             padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
-            background-color: var(--paper-light);
-            border: 1px solid var(--primary-light);
+            border-radius: 1rem;
+            box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.25), 
+                        0 15px 15px -5px rgba(0, 0, 0, 0.15),
+                        0 0 0 1px rgba(140, 191, 119, 0.3);
+            background: linear-gradient(135deg, rgba(244, 249, 239, 0.98), rgba(252, 254, 249, 0.95));
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--primary);
             max-width: 380px;
-            animation: fade-slide-up 0.5s ease;
-            transition: all 0.3s ease-in-out;
+            min-width: 280px;
+            animation: fade-slide-up 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
         .tutorial-container::after {
             content: '';
             position: absolute;
-            width: 20px;
-            height: 20px;
-            background-color: var(--paper-light);
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, rgba(244, 249, 239, 0.98), rgba(252, 254, 249, 0.95));
+            border: 2px solid var(--primary);
+            border-top: none;
+            border-left: none;
             transform: rotate(45deg);
             z-index: -1;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
         }
         
         .tutorial-container.position-top::after {
-            bottom: -10px;
-            left: 25px;
+            bottom: -8px;
+            left: 30px;
         }
         
         .tutorial-container.position-right::after {
-            left: -10px;
-            top: 25px;
+            left: -8px;
+            top: 30px;
         }
         
         .tutorial-container.position-bottom::after {
-            top: -10px;
-            left: 25px;
+            top: -8px;
+            left: 30px;
         }
         
         .tutorial-container.position-left::after {
-            right: -10px;
-            top: 25px;
+            right: -8px;
+            top: 30px;
         }
         
         .tutorial-highlight {
@@ -10460,14 +10467,14 @@ function triggerGameEnding() {
         function highlightCurrentStep() {
             // 確保每個步驟都有對應的選擇器（即使是null）
             const targetSelectors = [
-                null,                    // 第1步不高亮任何元素
-                null,                    // 第2步不高亮任何元素
-                ".paper-bg:first-child", // 第3步高亮左側面板
-                "#game-scene",           // 第4步高亮游戲場景
-                "#action-buttons",       // 第5步高亮動作按鈕
-                null,                    // 第6步不高亮任何元素
-                "#poem-fragments",       // 第7步高亮詩句收集區
-                null                     // 第8步不高亮任何元素
+                null,                    // 第1步：歡迎介紹，不高亮任何元素
+                ".season-indicator",     // 第2步：遊戲時長，高亮季節指示器
+                ".character-info",       // 第3步：左側面板，高亮角色信息面板
+                "#game-scene",           // 第4步：遊戲場景，高亮游戲場景
+                "#action-buttons",       // 第5步：動作按鈕，高亮動作按鈕區域
+                ".resource-section",     // 第6步：資源管理，高亮資源區域
+                "#poem-fragments",       // 第7步：詩句收集，高亮詩句收集區
+                null                     // 第8步：結束提示，不高亮任何元素
             ];
             
             console.log("嘗試高亮步驟 " + tutorialStep + " 的元素");
@@ -10497,39 +10504,39 @@ function triggerGameEnding() {
             // 根據步驟設置位置
             switch(tutorialStep) {
                 case 0: // 歡迎介紹
-                    // 中央偏右
+                    // 螢幕中央
                     tutorial.style.top = "50%";
                     tutorial.style.left = "50%";
                     tutorial.style.right = "auto";
                     tutorial.style.bottom = "auto";
-                    tutorial.style.transform = "translate(-30%, -50%)";
-                    tutorial.classList.add("position-left");
+                    tutorial.style.transform = "translate(-50%, -50%)";
+                    tutorial.classList.add("position-bottom");
                     break;
                     
                 case 1: // 遊戲時長
-                    // 右上角
-                    tutorial.style.top = "10%";
+                    // 右上角靠近回合/季節信息
+                    tutorial.style.top = "5%";
                     tutorial.style.right = "1.5rem";
                     tutorial.style.left = "auto";
                     tutorial.style.bottom = "auto";
                     tutorial.style.transform = "none";
-                    tutorial.classList.add("position-left");
+                    tutorial.classList.add("position-bottom");
                     break;
                     
                 case 2: // 左側面板
-                    // 左側中央
-                    tutorial.style.top = "30%";
-                    tutorial.style.left = "25%";
+                    // 指向左側面板的右邊
+                    tutorial.style.top = "40%";
+                    tutorial.style.left = "30%";
                     tutorial.style.right = "auto";
                     tutorial.style.bottom = "auto";
-                    tutorial.style.transform = "translateX(-50%)";
-                    tutorial.classList.add("position-right");
+                    tutorial.style.transform = "translateY(-50%)";
+                    tutorial.classList.add("position-left");
                     break;
                     
                 case 3: // 遊戲場景
-                    // 中央偏上
-                    tutorial.style.top = "25%";
-                    tutorial.style.left = "60%";
+                    // 指向遊戲場景的上方
+                    tutorial.style.top = "15%";
+                    tutorial.style.left = "65%";
                     tutorial.style.right = "auto";
                     tutorial.style.bottom = "auto";
                     tutorial.style.transform = "translateX(-50%)";
@@ -10537,44 +10544,44 @@ function triggerGameEnding() {
                     break;
                     
                 case 4: // 動作按鈕
-                    // 下方中央
-                    tutorial.style.bottom = "1.5rem";
+                    // 指向動作按鈕的上方
+                    tutorial.style.bottom = "8rem";
                     tutorial.style.left = "50%";
                     tutorial.style.right = "auto";
                     tutorial.style.top = "auto";
                     tutorial.style.transform = "translateX(-50%)";
-                    tutorial.classList.add("position-top");
+                    tutorial.classList.add("position-bottom");
                     break;
                     
                 case 5: // 資源管理
-                    // 左下角
-                    tutorial.style.bottom = "1.5rem";
-                    tutorial.style.left = "25%";
+                    // 指向左側資源面板
+                    tutorial.style.top = "25%";
+                    tutorial.style.left = "30%";
                     tutorial.style.right = "auto";
-                    tutorial.style.top = "auto";
-                    tutorial.style.transform = "translateX(-50%)";
-                    tutorial.classList.add("position-top");
+                    tutorial.style.bottom = "auto";
+                    tutorial.style.transform = "translateY(-50%)";
+                    tutorial.classList.add("position-left");
                     break;
                     
                 case 6: // 詩句收集
-                    // 左側下方
-                    tutorial.style.bottom = "30%";
-                    tutorial.style.left = "25%";
+                    // 指向左側詩句收集區域
+                    tutorial.style.bottom = "40%";
+                    tutorial.style.left = "30%";
                     tutorial.style.right = "auto";
                     tutorial.style.top = "auto";
                     tutorial.style.transform = "translateX(-50%)";
-                    tutorial.classList.add("position-right");
+                    tutorial.classList.add("position-left");
                     break;
                     
                 case 7: // 結束提示
                 default:
-                    // 右下角
-                    tutorial.style.bottom = "1.5rem";
-                    tutorial.style.right = "1.5rem";
-                    tutorial.style.left = "auto";
-                    tutorial.style.top = "auto";
-                    tutorial.style.transform = "none";
-                    tutorial.classList.add("position-bottom");
+                    // 螢幕中央偏下
+                    tutorial.style.top = "60%";
+                    tutorial.style.left = "50%";
+                    tutorial.style.right = "auto";
+                    tutorial.style.bottom = "auto";
+                    tutorial.style.transform = "translate(-50%, -50%)";
+                    tutorial.classList.add("position-top");
                     break;
             }
         }
