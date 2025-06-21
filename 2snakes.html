@@ -321,7 +321,7 @@
         }
 
         .difficulty-btn:hover::after {
-            content: attr(title);
+            content: attr(data-tooltip);
             position: absolute;
             bottom: 120%;
             left: 50%;
@@ -695,9 +695,9 @@
         <div class="game-controls">
             <div class="difficulty-selector">
                 <span>難度:</span>
-                <button class="difficulty-btn" onclick="setDifficulty('Hard', this)" title="🔥 困難模式：移動速度最快，撞牆扣1級，考驗反應速度和操作技巧">困難</button>
-                <button class="difficulty-btn active" onclick="setDifficulty('Normal', this)" title="⚖️ 正常模式：移動速度適中，撞牆扣1級，平衡的遊戲體驗">正常</button>
-                <button class="difficulty-btn" onclick="setDifficulty('Easy', this)" title="🎈 容易模式：移動速度較慢，撞牆可穿越不扣分，適合新手練習">容易</button>
+                <button class="difficulty-btn" onclick="setDifficulty('Hard', this)" data-tooltip="🔥 困難模式：移動速度最快，撞牆扣1級，考驗反應速度和操作技巧">困難</button>
+                <button class="difficulty-btn active" onclick="setDifficulty('Normal', this)" data-tooltip="⚖️ 正常模式：移動速度適中，撞牆扣1級，平衡的遊戲體驗">正常</button>
+                <button class="difficulty-btn" onclick="setDifficulty('Easy', this)" data-tooltip="🎈 容易模式：移動速度較慢，撞牆可穿越不扣分，適合新手練習">容易</button>
             </div>
             <button class="start-btn" onclick="startGame()">🎮 開始遊戲</button>
             <button class="pause-btn" onclick="togglePause()">⏸️ 暫停</button>
