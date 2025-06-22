@@ -196,6 +196,21 @@ function createCardDisasterEffect(disasterType) {
         case 'hurricane':
             createCardHurricaneEffect(disasterType);
             break;
+        case 'avalanche':
+            createCardAvalancheEffect(disasterType);
+            break;
+        case 'toxic':
+            createCardToxicEffect(disasterType);
+            break;
+        case 'radiation':
+            createCardRadiationEffect(disasterType);
+            break;
+        case 'mudslide':
+            createCardMudslideEffect(disasterType);
+            break;
+        case 'wildfire':
+            createCardWildfireEffect(disasterType);
+            break;
     }
 }
 
@@ -444,6 +459,470 @@ function createCardHurricaneEffect(disasterType) {
                 Math.sin(angle) * radius
             );
             cloud.rotation.y = angle;
+        });
+    };
+}
+
+// 雪崩特效
+function createCardAvalancheEffect(disasterType) {
+    if (!activeScenes[disasterType]) return;
+    
+    const { scene } = activeScenes[disasterType];
+    
+    // 创建山坡
+    const mountainGeometry = new THREE.ConeGeometry(5, 8, 6);
+    const mountainMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+    mountain.position.set(0, -2, 0);
+    scene.add(mountain);
+    
+    // 创建雪层
+    const snowGeometry = new THREE.ConeGeometry(5.2, 8.5, 6);
+    const snowMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+    const snowLayer = new THREE.Mesh(snowGeometry, snowMaterial);
+    snowLayer.position.set(0, -2, 0);
+    scene.add(snowLayer);
+    
+    // 创建雪崩粒子
+    const snowParticles = [];
+    for (let i = 0; i < 100; i++) {
+        const snowball = new THREE.Mesh(
+            new THREE.SphereGeometry(0.1 + Math.random() * 0.2),
+            new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
+        );
+        snowball.position.set(
+            Math.random() * 8 - 4,
+            Math.random() * 8 + 2,
+            Math.random() * 8 - 4
+        );
+        snowball.velocity = {
+            x: (Math.random() - 0.5) * 0.2,
+            y: -Math.random() * 0.3 - 0.1,
+            z: (Math.random() - 0.5) * 0.2
+        };
+        scene.add(snowball);
+        snowParticles.push(snowball);
+    }
+    
+    // 动画函数
+    activeScenes[disasterType].animation = () => {
+        snowParticles.forEach(snowball => {
+            snowball.position.x += snowball.velocity.x;
+            snowball.position.y += snowball.velocity.y;
+            snowball.position.z += snowball.velocity.z;
+            
+            snowball.velocity.y -= 0.01; // 重力
+            
+            // 重置位置
+            if (snowball.position.y < -5) {
+                snowball.position.set(
+                    Math.random() * 8 - 4,
+                    8,
+                    Math.random() * 8 - 4
+                );
+                snowball.velocity = {
+                    x: (Math.random() - 0.5) * 0.2,
+                    y: -Math.random() * 0.3 - 0.1,
+                    z: (Math.random() - 0.5) * 0.2
+                };
+            }
+        });
+        
+        mountain.rotation.y += 0.005;
+        snowLayer.rotation.y += 0.005;
+    };
+}
+
+// 毒物污染特效
+function createCardToxicEffect(disasterType) {
+    if (!activeScenes[disasterType]) return;
+    
+    const { scene } = activeScenes[disasterType];
+    
+    // 创建工厂建筑
+    const factoryGeometry = new THREE.BoxGeometry(3, 4, 2);
+    const factoryMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+    const factory = new THREE.Mesh(factoryGeometry, factoryMaterial);
+    factory.position.set(0, 0, 0);
+    scene.add(factory);
+    
+    // 创建烟囱
+    const chimneyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3);
+    const chimneyMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+    chimney.position.set(1, 3.5, 0);
+    scene.add(chimney);
+    
+    // 创建毒气粒子
+    const toxicParticles = [];
+    for (let i = 0; i < 50; i++) {
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.1),
+            new THREE.MeshLambertMaterial({ 
+                color: new THREE.Color().setHSL(0.3, 0.7, 0.5),
+                transparent: true,
+                opacity: 0.6
+            })
+        );
+        particle.position.set(
+            1 + Math.random() * 2 - 1,
+            5 + Math.random() * 3,
+            0 + Math.random() * 2 - 1
+        );
+        particle.velocity = {
+            x: (Math.random() - 0.5) * 0.1,
+            y: Math.random() * 0.1 + 0.05,
+            z: (Math.random() - 0.5) * 0.1
+        };
+        scene.add(particle);
+        toxicParticles.push(particle);
+    }
+    
+    // 动画函数
+    activeScenes[disasterType].animation = () => {
+        toxicParticles.forEach(particle => {
+            particle.position.x += particle.velocity.x;
+            particle.position.y += particle.velocity.y;
+            particle.position.z += particle.velocity.z;
+            
+            // 重置位置
+            if (particle.position.y > 10) {
+                particle.position.set(
+                    1 + Math.random() * 2 - 1,
+                    5,
+                    0 + Math.random() * 2 - 1
+                );
+            }
+            
+            // 变色效果
+            const hue = (Date.now() * 0.001 + particle.position.y * 0.1) % 1;
+            particle.material.color.setHSL(hue * 0.3, 0.7, 0.5);
+        });
+        
+        factory.rotation.y += 0.005;
+    };
+}
+
+// 辐射泄漏特效
+function createCardRadiationEffect(disasterType) {
+    if (!activeScenes[disasterType]) return;
+    
+    const { scene } = activeScenes[disasterType];
+    
+    // 创建核电站建筑
+    const reactorGeometry = new THREE.CylinderGeometry(2, 2, 3);
+    const reactorMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+    const reactor = new THREE.Mesh(reactorGeometry, reactorMaterial);
+    reactor.position.set(0, 0, 0);
+    scene.add(reactor);
+    
+    // 创建冷却塔
+    const towerGeometry = new THREE.CylinderGeometry(1.5, 2.5, 4);
+    const towerMaterial = new THREE.MeshLambertMaterial({ color: 0xCCCCCC });
+    const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+    tower.position.set(3, 0, 0);
+    scene.add(tower);
+    
+    // 创建辐射粒子
+    const radiationParticles = [];
+    for (let i = 0; i < 80; i++) {
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.05),
+            new THREE.MeshLambertMaterial({ 
+                color: 0xFFFF00,
+                transparent: true,
+                opacity: 0.8
+            })
+        );
+        particle.position.set(
+            Math.random() * 10 - 5,
+            Math.random() * 10 - 2,
+            Math.random() * 10 - 5
+        );
+        particle.velocity = {
+            x: (Math.random() - 0.5) * 0.2,
+            y: (Math.random() - 0.5) * 0.2,
+            z: (Math.random() - 0.5) * 0.2
+        };
+        scene.add(particle);
+        radiationParticles.push(particle);
+    }
+    
+    // 创建警告符号
+    const warningGeometry = new THREE.RingGeometry(0.5, 1, 3);
+    const warningMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xFFD700,
+        transparent: true,
+        opacity: 0.7
+    });
+    const warning = new THREE.Mesh(warningGeometry, warningMaterial);
+    warning.position.set(0, 3, 0);
+    scene.add(warning);
+    
+    // 动画函数
+    activeScenes[disasterType].animation = () => {
+        radiationParticles.forEach(particle => {
+            particle.position.x += particle.velocity.x;
+            particle.position.y += particle.velocity.y;
+            particle.position.z += particle.velocity.z;
+            
+            // 边界检查
+            if (Math.abs(particle.position.x) > 8 ||
+                Math.abs(particle.position.y) > 8 ||
+                Math.abs(particle.position.z) > 8) {
+                particle.position.set(
+                    Math.random() * 4 - 2,
+                    Math.random() * 4 - 2,
+                    Math.random() * 4 - 2
+                );
+            }
+            
+            // 闪烁效果
+            particle.material.opacity = 0.4 + 0.4 * Math.sin(Date.now() * 0.005 + particle.position.x);
+        });
+        
+        warning.rotation.z += 0.05;
+        reactor.rotation.y += 0.01;
+    };
+}
+
+// 泥石流特效
+function createCardMudslideEffect(disasterType) {
+    if (!activeScenes[disasterType]) return;
+    
+    const { scene } = activeScenes[disasterType];
+    
+    // 创建山坡
+    const slopeGeometry = new THREE.PlaneGeometry(8, 10);
+    const slopeMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7355 });
+    const slope = new THREE.Mesh(slopeGeometry, slopeMaterial);
+    slope.rotation.x = -Math.PI / 3;
+    slope.position.set(0, 0, 2);
+    scene.add(slope);
+    
+    // 创建泥石流粒子
+    const mudParticles = [];
+    for (let i = 0; i < 150; i++) {
+        const size = Math.random() * 0.3 + 0.1;
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(size),
+            new THREE.MeshLambertMaterial({ 
+                color: new THREE.Color().setHSL(0.1, 0.6, 0.3 + Math.random() * 0.3)
+            })
+        );
+        particle.position.set(
+            Math.random() * 6 - 3,
+            4 + Math.random() * 3,
+            Math.random() * 6 - 3
+        );
+        particle.velocity = {
+            x: (Math.random() - 0.5) * 0.3,
+            y: -Math.random() * 0.4 - 0.2,
+            z: Math.random() * 0.3 + 0.2
+        };
+        scene.add(particle);
+        mudParticles.push(particle);
+    }
+    
+    // 创建石块
+    const rocks = [];
+    for (let i = 0; i < 20; i++) {
+        const rock = new THREE.Mesh(
+            new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.3),
+            new THREE.MeshLambertMaterial({ color: 0x696969 })
+        );
+        rock.position.set(
+            Math.random() * 6 - 3,
+            4 + Math.random() * 3,
+            Math.random() * 6 - 3
+        );
+        rock.velocity = {
+            x: (Math.random() - 0.5) * 0.2,
+            y: -Math.random() * 0.3 - 0.1,
+            z: Math.random() * 0.2 + 0.1
+        };
+        scene.add(rock);
+        rocks.push(rock);
+    }
+    
+    // 动画函数
+    activeScenes[disasterType].animation = () => {
+        mudParticles.forEach(particle => {
+            particle.position.x += particle.velocity.x;
+            particle.position.y += particle.velocity.y;
+            particle.position.z += particle.velocity.z;
+            
+            particle.velocity.y -= 0.01; // 重力
+            
+            // 重置位置
+            if (particle.position.y < -3) {
+                particle.position.set(
+                    Math.random() * 6 - 3,
+                    7,
+                    Math.random() * 6 - 3
+                );
+                particle.velocity = {
+                    x: (Math.random() - 0.5) * 0.3,
+                    y: -Math.random() * 0.4 - 0.2,
+                    z: Math.random() * 0.3 + 0.2
+                };
+            }
+        });
+        
+        rocks.forEach(rock => {
+            rock.position.x += rock.velocity.x;
+            rock.position.y += rock.velocity.y;
+            rock.position.z += rock.velocity.z;
+            
+            rock.velocity.y -= 0.01;
+            rock.rotation.x += 0.05;
+            rock.rotation.z += 0.03;
+            
+            if (rock.position.y < -3) {
+                rock.position.set(
+                    Math.random() * 6 - 3,
+                    7,
+                    Math.random() * 6 - 3
+                );
+                rock.velocity = {
+                    x: (Math.random() - 0.5) * 0.2,
+                    y: -Math.random() * 0.3 - 0.1,
+                    z: Math.random() * 0.2 + 0.1
+                };
+            }
+        });
+    };
+}
+
+// 山火特效
+function createCardWildfireEffect(disasterType) {
+    if (!activeScenes[disasterType]) return;
+    
+    const { scene } = activeScenes[disasterType];
+    
+    // 创建地面
+    const groundGeometry = new THREE.PlaneGeometry(10, 10);
+    const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -3;
+    scene.add(ground);
+    
+    // 创建树木
+    const trees = [];
+    for (let i = 0; i < 15; i++) {
+        const trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.2, 2),
+            new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+        );
+        const leaves = new THREE.Mesh(
+            new THREE.SphereGeometry(0.8),
+            new THREE.MeshLambertMaterial({ color: 0x228B22 })
+        );
+        
+        const x = Math.random() * 8 - 4;
+        const z = Math.random() * 8 - 4;
+        
+        trunk.position.set(x, -2, z);
+        leaves.position.set(x, -0.5, z);
+        
+        scene.add(trunk);
+        scene.add(leaves);
+        trees.push({ trunk, leaves });
+    }
+    
+    // 创建火焰粒子
+    const fireParticles = [];
+    for (let i = 0; i < 100; i++) {
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.1),
+            new THREE.MeshLambertMaterial({ 
+                color: new THREE.Color().setHSL(0.1, 1, 0.5),
+                transparent: true,
+                opacity: 0.8
+            })
+        );
+        particle.position.set(
+            Math.random() * 8 - 4,
+            Math.random() * 4 - 2,
+            Math.random() * 8 - 4
+        );
+        particle.velocity = {
+            x: (Math.random() - 0.5) * 0.1,
+            y: Math.random() * 0.2 + 0.1,
+            z: (Math.random() - 0.5) * 0.1
+        };
+        scene.add(particle);
+        fireParticles.push(particle);
+    }
+    
+    // 创建烟雾粒子
+    const smokeParticles = [];
+    for (let i = 0; i < 50; i++) {
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2),
+            new THREE.MeshLambertMaterial({ 
+                color: 0x666666,
+                transparent: true,
+                opacity: 0.4
+            })
+        );
+        particle.position.set(
+            Math.random() * 8 - 4,
+            Math.random() * 4 + 1,
+            Math.random() * 8 - 4
+        );
+        particle.velocity = {
+            x: (Math.random() - 0.5) * 0.05,
+            y: Math.random() * 0.15 + 0.1,
+            z: (Math.random() - 0.5) * 0.05
+        };
+        scene.add(particle);
+        smokeParticles.push(particle);
+    }
+    
+    // 动画函数
+    activeScenes[disasterType].animation = () => {
+        fireParticles.forEach(particle => {
+            particle.position.x += particle.velocity.x;
+            particle.position.y += particle.velocity.y;
+            particle.position.z += particle.velocity.z;
+            
+            // 重置位置
+            if (particle.position.y > 4) {
+                particle.position.set(
+                    Math.random() * 8 - 4,
+                    -2,
+                    Math.random() * 8 - 4
+                );
+            }
+            
+            // 火焰颜色变化
+            const hue = 0.1 - particle.position.y * 0.02;
+            particle.material.color.setHSL(Math.max(0, hue), 1, 0.5);
+            particle.material.opacity = 0.8 - particle.position.y * 0.1;
+        });
+        
+        smokeParticles.forEach(particle => {
+            particle.position.x += particle.velocity.x;
+            particle.position.y += particle.velocity.y;
+            particle.position.z += particle.velocity.z;
+            
+            if (particle.position.y > 8) {
+                particle.position.set(
+                    Math.random() * 8 - 4,
+                    1,
+                    Math.random() * 8 - 4
+                );
+            }
+            
+            particle.material.opacity = 0.4 - particle.position.y * 0.04;
+        });
+        
+        // 树木轻微摇摆
+        trees.forEach(tree => {
+            tree.trunk.rotation.z = Math.sin(Date.now() * 0.002) * 0.1;
+            tree.leaves.rotation.z = Math.sin(Date.now() * 0.002) * 0.1;
         });
     };
 }
