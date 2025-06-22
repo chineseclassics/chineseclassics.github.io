@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自然灾害探索家 - 儿童教育游戏</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1 class="title">
+                <i class="fas fa-globe-americas"></i>
+                自然灾害探索家
+            </h1>
+            <p class="subtitle">学习自然灾害知识，保护我们的世界！</p>
+        </header>
+
+        <!-- 灾害卡片区域 -->
+        <section class="cards-section">
+            <div class="cards-container">
+                <div class="disaster-card-container" data-disaster="earthquake">
+                    <div class="disaster-card">
+                        <div class="card-front">
+                            <div class="card-header">
+                                <i class="fas fa-mountain"></i>
+                                <h3>地震</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>大地摇晃的力量</p>
+                                <div class="card-actions">
+                                    <button class="btn btn-video" onclick="openVideo('earthquake')">
+                                        <i class="fas fa-play"></i> 观看视频
+                                    </button>
+                                    <button class="btn btn-learn" onclick="openLearning('earthquake')">
+                                        <i class="fas fa-book"></i> 学习知识
+                                    </button>
+                                    <button class="btn btn-quiz" onclick="openQuiz('earthquake')">
+                                        <i class="fas fa-question"></i> 测验
+                                    </button>
+                                </div>
+                                <div class="flip-hint">
+                                    <i class="fas fa-sync-alt"></i> 点击查看3D模拟
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="three-scene-container" id="three-scene-earthquake"></div>
+                            <div class="back-controls">
+                                <button class="btn btn-back" onclick="flipCardBack(this)">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disaster-card-container" data-disaster="tsunami">
+                    <div class="disaster-card">
+                        <div class="card-front">
+                            <div class="card-header">
+                                <i class="fas fa-water"></i>
+                                <h3>海啸</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>海洋的巨大力量</p>
+                                <div class="card-actions">
+                                    <button class="btn btn-video" onclick="openVideo('tsunami')">
+                                        <i class="fas fa-play"></i> 观看视频
+                                    </button>
+                                    <button class="btn btn-learn" onclick="openLearning('tsunami')">
+                                        <i class="fas fa-book"></i> 学习知识
+                                    </button>
+                                    <button class="btn btn-quiz" onclick="openQuiz('tsunami')">
+                                        <i class="fas fa-question"></i> 测验
+                                    </button>
+                                </div>
+                                <div class="flip-hint">
+                                    <i class="fas fa-sync-alt"></i> 点击查看3D模拟
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="three-scene-container" id="three-scene-tsunami"></div>
+                            <div class="back-controls">
+                                <button class="btn btn-back" onclick="flipCardBack(this)">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disaster-card-container" data-disaster="volcano">
+                    <div class="disaster-card">
+                        <div class="card-front">
+                            <div class="card-header">
+                                <i class="fas fa-volcano"></i>
+                                <h3>火山爆发</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>地球内部的火焰</p>
+                                <div class="card-actions">
+                                    <button class="btn btn-video" onclick="openVideo('volcano')">
+                                        <i class="fas fa-play"></i> 观看视频
+                                    </button>
+                                    <button class="btn btn-learn" onclick="openLearning('volcano')">
+                                        <i class="fas fa-book"></i> 学习知识
+                                    </button>
+                                    <button class="btn btn-quiz" onclick="openQuiz('volcano')">
+                                        <i class="fas fa-question"></i> 测验
+                                    </button>
+                                </div>
+                                <div class="flip-hint">
+                                    <i class="fas fa-sync-alt"></i> 点击查看3D模拟
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="three-scene-container" id="three-scene-volcano"></div>
+                            <div class="back-controls">
+                                <button class="btn btn-back" onclick="flipCardBack(this)">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disaster-card-container" data-disaster="tornado">
+                    <div class="disaster-card">
+                        <div class="card-front">
+                            <div class="card-header">
+                                <i class="fas fa-wind"></i>
+                                <h3>龙卷风</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>旋转的风之力量</p>
+                                <div class="card-actions">
+                                    <button class="btn btn-video" onclick="openVideo('tornado')">
+                                        <i class="fas fa-play"></i> 观看视频
+                                    </button>
+                                    <button class="btn btn-learn" onclick="openLearning('tornado')">
+                                        <i class="fas fa-book"></i> 学习知识
+                                    </button>
+                                    <button class="btn btn-quiz" onclick="openQuiz('tornado')">
+                                        <i class="fas fa-question"></i> 测验
+                                    </button>
+                                </div>
+                                <div class="flip-hint">
+                                    <i class="fas fa-sync-alt"></i> 点击查看3D模拟
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="three-scene-container" id="three-scene-tornado"></div>
+                            <div class="back-controls">
+                                <button class="btn btn-back" onclick="flipCardBack(this)">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disaster-card-container" data-disaster="flood">
+                    <div class="disaster-card">
+                        <div class="card-front">
+                            <div class="card-header">
+                                <i class="fas fa-house-flood-water"></i>
+                                <h3>洪水</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>水的破坏力量</p>
+                                <div class="card-actions">
+                                    <button class="btn btn-video" onclick="openVideo('flood')">
+                                        <i class="fas fa-play"></i> 观看视频
+                                    </button>
+                                    <button class="btn btn-learn" onclick="openLearning('flood')">
+                                        <i class="fas fa-book"></i> 学习知识
+                                    </button>
+                                    <button class="btn btn-quiz" onclick="openQuiz('flood')">
+                                        <i class="fas fa-question"></i> 测验
+                                    </button>
+                                </div>
+                                <div class="flip-hint">
+                                    <i class="fas fa-sync-alt"></i> 点击查看3D模拟
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="three-scene-container" id="three-scene-flood"></div>
+                            <div class="back-controls">
+                                <button class="btn btn-back" onclick="flipCardBack(this)">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disaster-card-container" data-disaster="hurricane">
+                    <div class="disaster-card">
+                        <div class="card-front">
+                            <div class="card-header">
+                                <i class="fas fa-hurricane"></i>
+                                <h3>台风</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>强风暴雨的威力</p>
+                                <div class="card-actions">
+                                    <button class="btn btn-video" onclick="openVideo('hurricane')">
+                                        <i class="fas fa-play"></i> 观看视频
+                                    </button>
+                                    <button class="btn btn-learn" onclick="openLearning('hurricane')">
+                                        <i class="fas fa-book"></i> 学习知識
+                                    </button>
+                                    <button class="btn btn-quiz" onclick="openQuiz('hurricane')">
+                                        <i class="fas fa-question"></i> 测验
+                                    </button>
+                                </div>
+                                <div class="flip-hint">
+                                    <i class="fas fa-sync-alt"></i> 点击查看3D模拟
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="three-scene-container" id="three-scene-hurricane"></div>
+                            <div class="back-controls">
+                                <button class="btn btn-back" onclick="flipCardBack(this)">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 模态窗口 -->
+        <!-- 视频模态窗口 -->
+        <div id="video-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="video-title">观看视频</h2>
+                    <span class="close" onclick="closeModal('video-modal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="video-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学习模态窗口 -->
+        <div id="learning-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="learning-title">学习知识</h2>
+                    <span class="close" onclick="closeModal('learning-modal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="learning-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 测验模态窗口 -->
+        <div id="quiz-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="quiz-title">知识测验</h2>
+                    <span class="close" onclick="closeModal('quiz-modal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="quiz-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成就系统 -->
+        <div class="achievement-system">
+            <div class="achievement-icon" id="achievement-icon">
+                <i class="fas fa-trophy"></i>
+                <span id="achievement-count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="js/disasters-data.js"></script>
+    <script src="js/three-effects.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 
