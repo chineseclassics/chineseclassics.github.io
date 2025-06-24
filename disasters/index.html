@@ -417,6 +417,42 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="disaster-card-container" data-disaster="drought">
+                    <div class="disaster-card">
+                        <div class="card-front">
+                            <div class="card-header">
+                                <i class="fas fa-tint-slash"></i>
+                                <h3>干旱</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>水资源短缺的挑战</p>
+                                <div class="card-actions">
+                                    <button class="btn btn-video" onclick="openVideo('drought')">
+                                        <i class="fas fa-play"></i> 观看视频
+                                    </button>
+                                    <button class="btn btn-learn" onclick="openLearning('drought')">
+                                        <i class="fas fa-book"></i> 学习知识
+                                    </button>
+                                    <button class="btn btn-quiz" onclick="openQuiz('drought')">
+                                        <i class="fas fa-question"></i> 测验
+                                    </button>
+                                </div>
+                                <div class="flip-hint">
+                                    <i class="fas fa-sync-alt"></i> 点击查看3D模拟
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="three-scene-container" id="three-scene-drought"></div>
+                            <div class="back-controls">
+                                <button class="btn btn-back" onclick="flipCardBack(this)">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

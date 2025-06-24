@@ -4,7 +4,7 @@ const disastersData = {
         name: "地震",
         icon: "fa-mountain",
         color: "#8B4513",
-        video: "https://www.youtube.com/embed/by6Y3x8_d5E", // 为什么会有地震|地震科普|贝小帅
+        video: "https://www.youtube.com/embed/dJpIU1rSOFY", // What Is An Earthquake? | The Dr. Binocs Show
         knowledge: {
             title: "地震小知识",
             sections: [
@@ -74,7 +74,7 @@ const disastersData = {
         name: "海啸",
         icon: "fa-water",
         color: "#006994",
-        video: "https://www.youtube.com/embed/QDto7-5HOxA", // 幼儿教育童话-海啸来了！| 早教启蒙| 幼儿科普
+        video: "https://www.youtube.com/embed/HaEmIakO7f4", // Natural Disasters compilation | The Dr. Binocs Show (Tsunami section)
         knowledge: {
             title: "海啸小知识",
             sections: [
@@ -144,7 +144,7 @@ const disastersData = {
         name: "火山爆发",
         icon: "fa-volcano",
         color: "#FF4500",
-        video: "https://www.youtube.com/embed/fBaHwgbsvvM", // 3-12岁| 儿童科普动画-火山
+        video: "https://www.youtube.com/embed/lAmqsMQG3RM", // Volcano | The Dr. Binocs Show | Learn Videos For Kids
         knowledge: {
             title: "火山小知识",
             sections: [
@@ -214,7 +214,7 @@ const disastersData = {
         name: "龙卷风",
         icon: "fa-wind",
         color: "#708090",
-        video: "https://www.youtube.com/embed/9qlM7L6KI5E", // 龙卷风是怎么来的？| What causes tornadoes?
+        video: "https://www.youtube.com/embed/fR8-yQlZ9Ts", // Storm 101 | Tornadoes, Hurricanes & More | The Dr Binocs Show
         knowledge: {
             title: "龙卷风小知识",
             sections: [
@@ -354,7 +354,7 @@ const disastersData = {
         name: "台风",
         icon: "fa-hurricane",
         color: "#2F4F4F",
-        video: "https://www.youtube.com/embed/NXLPoWcVhLw", // Hurricanes | Educational Videos for Kids
+        video: "https://www.youtube.com/embed/fR8-yQlZ9Ts", // Storm 101 | Tornadoes, Hurricanes & More | The Dr Binocs Show
         knowledge: {
             title: "台风小知识",
             sections: [
@@ -424,7 +424,7 @@ const disastersData = {
         name: "雪崩",
         icon: "fa-mountain",
         color: "#E0E0E0",
-        video: "https://www.youtube.com/embed/jNJdpGODhG8", // 雪崩是怎样形成的
+        video: "https://www.youtube.com/embed/vZoTByhlrt0", // Dr Binocs show - What Causes an Avalanche?
         knowledge: {
             title: "雪崩小知识",
             sections: [
@@ -494,7 +494,7 @@ const disastersData = {
         name: "毒物污染",
         icon: "fa-skull-crossbones",
         color: "#8B008B",
-        video: "https://www.youtube.com/embed/OQoWJUUqEXI", // 有毒化学品安全教育
+        video: "https://www.youtube.com/embed/fephtrPt6wk", // Air Pollution | What Causes Air Pollution? | The Dr Binocs Show
         knowledge: {
             title: "毒物污染小知识",
             sections: [
@@ -564,7 +564,7 @@ const disastersData = {
         name: "辐射泄漏",
         icon: "fa-radiation-alt",
         color: "#FFD700",
-        video: "https://www.youtube.com/embed/TkPpNJ9mIas", // 辐射安全科普教育
+        video: "https://www.youtube.com/embed/GPux33UVG_c", // What Causes Radioactive Pollution? | Radiation | The Dr Binocs Show
         knowledge: {
             title: "辐射泄漏小知识",
             sections: [
@@ -634,7 +634,7 @@ const disastersData = {
         name: "泥石流",
         icon: "fa-hill-rockslide",
         color: "#8B4513",
-        video: "https://www.youtube.com/embed/AiJcFqFxkDE", // 泥石流形成原理科普
+        video: "https://www.youtube.com/embed/krJLnXpemtQ", // LANDSLIDE - The Dr. Binocs Show | Best Learning Videos
         knowledge: {
             title: "泥石流小知识",
             sections: [
@@ -704,7 +704,7 @@ const disastersData = {
         name: "山火",
         icon: "fa-fire",
         color: "#FF6347",
-        video: "https://www.youtube.com/embed/zSMSf_u3Wgw", // 森林火灾安全教育
+        video: "https://www.youtube.com/embed/Xgc90CoJbDI", // Fire Safety Education for Kids | The Dr Binocs Show
         knowledge: {
             title: "山火小知识",
             sections: [
@@ -766,6 +766,75 @@ const disastersData = {
                 ],
                 correct: 2,
                 explanation: "山火发生时应该向没有植被的空旷地带撤离，避免火势蔓延。"
+            }
+        ]
+    },
+    drought: {
+        name: "干旱",
+        icon: "fa-tint-slash",
+        color: "#CD853F",
+        video: "https://www.youtube.com/embed/O5a6yHSI0L0", // Drought - The Dr. Binocs Show
+        knowledge: {
+            title: "干旱小知识",
+            sections: [
+                {
+                    title: "🏜️ 什么是干旱？",
+                    content: "干旱是指一个地区很长一段时间都没有下雨或雨水很少，导致土地变得非常干燥，河流和湖泊的水位下降。"
+                },
+                {
+                    title: "☀️ 干旱是怎么形成的？",
+                    content: "干旱通常是因为天气模式的改变，导致雨云无法到达某个地区。有时候，全球变暖也会让干旱变得更频繁、更严重。"
+                },
+                {
+                    title: "💧 干旱有什么影响？",
+                    content: "干旱会导致农作物枯萎，人们和动物没有足够的水喝。它还会增加发生山火的风险，因为一切都太干燥了。"
+                },
+                {
+                    title: "🌱 我们如何节约用水？",
+                    content: "节约用水是应对干旱的最好方法。每个人都可以做出贡献！",
+                    list: [
+                        "刷牙时关掉水龙头",
+                        "缩短淋浴时间",
+                        "告诉大人修理漏水的水龙头",
+                        "用洗过蔬菜的水来浇花",
+                        "不要玩水龙头或消防栓"
+                    ]
+                }
+            ]
+        },
+        quiz: [
+            {
+                question: "干旱的主要原因是什么？",
+                options: [
+                    "下雨太多",
+                    "长时间不下雨",
+                    "下雪",
+                    "刮大风"
+                ],
+                correct: 1,
+                explanation: "干旱是因为一个地区长时间没有充足的降雨，导致水资源短缺。"
+            },
+            {
+                question: "我们应该如何帮助应对干旱？",
+                options: [
+                    "刷牙时一直开着水龙头",
+                    "每天长时间淋浴",
+                    "发现水龙头漏水要告诉大人",
+                    "玩水"
+                ],
+                correct: 2,
+                explanation: "节约用水是应对干旱的最好方法，比如修理漏水的水龙头，缩短淋浴时间等。"
+            },
+            {
+                question: "干旱会带来什么危险？",
+                options: [
+                    "洪水",
+                    "山火风险增加",
+                    "地面结冰",
+                    "空气更清新"
+                ],
+                correct: 1,
+                explanation: "干旱使植被和土壤变得非常干燥，这会大大增加山火发生的风险。"
             }
         ]
     }
