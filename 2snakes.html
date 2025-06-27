@@ -690,6 +690,10 @@
             <h2>Snake Clash</h2>
         </div>
 
+        <div class="game-status" style="color: white; font-size: 24px; font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            時間剩下: <span id="gameTimerDisplay">3:00</span>
+        </div>
+
         <canvas id="gameCanvas" width="800" height="600"></canvas>
 
         <div class="game-controls">
@@ -714,10 +718,12 @@
                 <div class="food-item">🏅 黃金果 (+5級)</div>
                 <div class="food-item">⚡ 神速符 (雙倍速度5秒)</div>
                 <div class="food-item">👻 幽靈藥水 (穿牆5秒)</div>
+                <div class="food-item">🤝 融合符 (10秒內可融合)</div>
                 <div class="food-item">🖌️ 畫筆 (生成假食物陷阱)</div>
                 <div class="food-item">💩 大便炸彈 (生成3個陷阱)</div>
             </div>
-            <p>💥 頭部相撞：等級高者勝出 | 🤝 身體相撞：等級相加平分 | 🚧 撞牆減1級</p>
+            <p>💥 頭部相撞：等級高者勝出 | 🐍 纏繞攻擊：頭撞對方身體，攻擊方-2級，防守方-5級 (攻擊方需>5級)</p>
+            <p>🏆 勝利條件：率先達到30級 / 3分鐘時間到後等級高者獲勝 | 🤝 融合符可觸發身體融合</p>
             <p>🔊 遊戲包含音效，點擊音量鍵開關</p>
         </div>
     </div>
@@ -894,6 +900,10 @@
         let gamePaused = false;
         let gameLoop;
         let gameDifficulty = 'Normal'; // 新增難度等級變量
+        const targetLevel = 30; // 勝利目標等級
+        const maxGameTime = 180; // 3分鐘
+        let gameTimer = maxGameTime;
+        let gameTimerInterval = null;
 
         // 蛇的初始設置
         let snake1 = {
@@ -903,7 +913,8 @@
             level: 3,
             color: '#4CAF50',
             speedBoost: 0, // 神速符剩餘時間
-            ghostMode: 0   // 幽靈模式剩餘時間
+            ghostMode: 0,   // 幽靈模式剩餘時間
+            fusionMode: 0  // 融合模式剩餘時間
         };
 
         let snake2 = {
@@ -913,7 +924,8 @@
             level: 3,
             color: '#FF5722',
             speedBoost: 0, // 神速符剩餘時間
-            ghostMode: 0   // 幽靈模式剩餘時間
+            ghostMode: 0,   // 幽靈模式剩餘時間
+            fusionMode: 0  // 融合模式剩餘時間
         };
 
         let foods = [];
@@ -929,6 +941,7 @@
             { emoji: '🏅', value: 5, probability: 0.012, color: '#FFD700', type: 'golden' },
             { emoji: '⚡', value: 0, probability: 0.008, color: '#4169E1', type: 'speed' },
             { emoji: '👻', value: 0, probability: 0.004, color: '#F0F8FF', type: 'ghost' },
+            { emoji: '🤝', value: 0, probability: 0.005, color: '#FFFFFF', type: 'fusion' },
             { emoji: '🖌️', value: 0, probability: 0.006, color: '#8B4513', type: 'brush' },
             { emoji: '💩', value: 0, probability: 0.004, color: '#8B4513', type: 'poop' }
         ];
@@ -1213,6 +1226,12 @@
                         showSoundEffect('幽靈模式！', head.x - 25, head.y - 30);
                         break;
                     
+                    case 'fusion':
+                        snake.fusionMode = 100; // 10秒 (100 frames * 100ms/frame on avg)
+                        audioManager.play('powerup', { volume: 1.0, pitch: 1.4 });
+                        showSoundEffect('融合模式！', head.x - 25, head.y - 30);
+                        break;
+                    
                     case 'brush':
                         createFakeFood(snake);
                         audioManager.play('combo', { volume: 0.8, pitch: 1.3 });
@@ -1225,12 +1244,22 @@
                         showSoundEffect('大便炸彈！', head.x - 25, head.y - 30);
                         break;
                 }
+                checkLevelVictory(snake); // 檢查是否達到等級勝利
             } else {
                 // 維持蛇的長度等於等級
                 while (snake.body.length > snake.level) {
                     snake.body.pop();
                 }
             }
+        }
+
+        function checkLevelVictory(snake) {
+            if (snake.level >= targetLevel) {
+                const winnerName = snake === snake1 ? "🟢 綠蛇" : "🔴 紅蛇";
+                endGame(`🏆 ${winnerName}達到${targetLevel}級，獲得勝利！`);
+                return true;
+            }
+            return false;
         }
 
         function checkCollisions() {
@@ -1258,19 +1287,68 @@
                 return true;
             }
 
-            // 檢查蛇1頭部撞到蛇2身體（幽靈模式可穿透）
+            // --- 纏繞攻擊 ---
+            // 檢查蛇1頭部撞到蛇2身體（纏繞攻擊）
+            if (snake1.ghostMode === 0 && snake1.level > 5) { // 攻擊方需>5級
+                for (let i = 1; i < snake2.body.length; i++) {
+                    if (head1.x === snake2.body[i].x && head1.y === snake2.body[i].y) {
+                        audioManager.play('debuff', { volume: 0.9, pitch: 1.2 });
+                        showSoundEffect(`纏繞 -5`, head1.x - 20, head1.y - 30);
+                        triggerScreenShake();
+                        
+                        snake1.level = Math.max(1, snake1.level - 2);
+                        snake2.level = Math.max(1, snake2.level - 5);
+                        
+                        adjustSnakeLength(snake1);
+                        adjustSnakeLength(snake2);
+                        return false; // 碰撞發生，但遊戲不結束
+                    }
+                }
+            }
+
+            // 檢查蛇2頭部撞到蛇1身體（纏繞攻擊）
+            if (snake2.ghostMode === 0 && snake2.level > 5) { // 攻擊方需>5級
+                for (let i = 1; i < snake1.body.length; i++) {
+                    if (head2.x === snake1.body[i].x && head2.y === snake1.body[i].y) {
+                        audioManager.play('debuff', { volume: 0.9, pitch: 1.2 });
+                        showSoundEffect(`纏繞 -5`, head2.x - 20, head2.y - 30);
+                        triggerScreenShake();
+                        
+                        snake2.level = Math.max(1, snake2.level - 2);
+                        snake1.level = Math.max(1, snake1.level - 5);
+
+                        adjustSnakeLength(snake1);
+                        adjustSnakeLength(snake2);
+                        return false; // 碰撞發生，但遊戲不結束
+                    }
+                }
+            }
+
+            // --- 纏繞攻擊 vs 身體融合 ---
+            // 檢查蛇1頭部撞到蛇2身體
             if (snake1.ghostMode === 0) {
                 for (let i = 1; i < snake2.body.length; i++) {
                     if (head1.x === snake2.body[i].x && head1.y === snake2.body[i].y) {
-                        const totalLevel = snake1.level + snake2.level;
-                        const newLevel1 = Math.ceil(totalLevel / 2);
-                        const newLevel2 = Math.floor(totalLevel / 2);
-                        
-                        audioManager.play('combo', { volume: 0.8 });
-                        showSoundEffect(`合體升級！`, head1.x - 20, head1.y - 30);
-                        
-                        snake1.level = newLevel1;
-                        snake2.level = newLevel2;
+                        if (snake1.fusionMode > 0) {
+                            // 身體融合
+                            const totalLevel = snake1.level + snake2.level;
+                            const newLevel1 = Math.ceil(totalLevel / 2);
+                            const newLevel2 = Math.floor(totalLevel / 2);
+                            
+                            audioManager.play('combo', { volume: 0.8 });
+                            showSoundEffect(`融合升級！`, head1.x - 20, head1.y - 30);
+                            
+                            snake1.level = newLevel1;
+                            snake2.level = newLevel2;
+                            snake1.fusionMode = 0; // 消耗融合模式
+                        } else if (snake1.level > 5) {
+                            // 纏繞攻擊
+                            audioManager.play('debuff', { volume: 0.9, pitch: 1.2 });
+                            showSoundEffect(`纏繞 -5`, head1.x - 20, head1.y - 30);
+                            triggerScreenShake();
+                            snake1.level = Math.max(1, snake1.level - 2);
+                            snake2.level = Math.max(1, snake2.level - 5);
+                        }
                         adjustSnakeLength(snake1);
                         adjustSnakeLength(snake2);
                         return false;
@@ -1278,19 +1356,30 @@
                 }
             }
 
-            // 檢查蛇2頭部撞到蛇1身體（幽靈模式可穿透）
+            // 檢查蛇2頭部撞到蛇1身體
             if (snake2.ghostMode === 0) {
                 for (let i = 1; i < snake1.body.length; i++) {
                     if (head2.x === snake1.body[i].x && head2.y === snake1.body[i].y) {
-                        const totalLevel = snake1.level + snake2.level;
-                        const newLevel1 = Math.ceil(totalLevel / 2);
-                        const newLevel2 = Math.floor(totalLevel / 2);
-                        
-                        audioManager.play('combo', { volume: 0.8 });
-                        showSoundEffect(`合體升級！`, head2.x - 20, head2.y - 30);
-                        
-                        snake1.level = newLevel1;
-                        snake2.level = newLevel2;
+                        if (snake2.fusionMode > 0) {
+                             // 身體融合
+                            const totalLevel = snake1.level + snake2.level;
+                            const newLevel1 = Math.ceil(totalLevel / 2);
+                            const newLevel2 = Math.floor(totalLevel / 2);
+                            
+                            audioManager.play('combo', { volume: 0.8 });
+                            showSoundEffect(`融合升級！`, head2.x - 20, head2.y - 30);
+                            
+                            snake1.level = newLevel1;
+                            snake2.level = newLevel2;
+                            snake2.fusionMode = 0; // 消耗融合模式
+                        } else if (snake2.level > 5) {
+                            // 纏繞攻擊
+                            audioManager.play('debuff', { volume: 0.9, pitch: 1.2 });
+                            showSoundEffect(`纏繞 -5`, head2.x - 20, head2.y - 30);
+                            triggerScreenShake();
+                            snake2.level = Math.max(1, snake2.level - 2);
+                            snake1.level = Math.max(1, snake1.level - 5);
+                        }
                         adjustSnakeLength(snake1);
                         adjustSnakeLength(snake2);
                         return false;
@@ -1457,6 +1546,15 @@
                                size + specialGlowSize * 2, size + specialGlowSize * 2);
                 }
 
+                // 融合模式光環
+                if (snake.fusionMode > 0) {
+                    const fusionGlowSize = index === 0 ? 6 : 4;
+                    const fusionOpacity = 0.5 + 0.3 * Math.sin(Date.now() * 0.01);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${fusionOpacity * 0.5})`;
+                    ctx.fillRect(segment.x + offset - fusionGlowSize, segment.y + offset - fusionGlowSize, 
+                               size + fusionGlowSize * 2, size + fusionGlowSize * 2);
+                }
+
                 // 繪製蛇身主體
                 ctx.fillStyle = finalColor + Math.floor(opacity * 255).toString(16).padStart(2, '0');
                 ctx.fillRect(segment.x + offset, segment.y + offset, size, size);
@@ -1515,6 +1613,9 @@
             if (snake1.ghostMode > 0) {
                 effects1 += `<div class="effect-item">👻 幽靈模式 <span class="effect-timer">${Math.ceil(snake1.ghostMode/10)}s</span></div>`;
             }
+            if (snake1.fusionMode > 0) {
+                effects1 += `<div class="effect-item">🤝 融合模式 <span class="effect-timer">${Math.ceil(snake1.fusionMode/10)}s</span></div>`;
+            }
             player1Effects.innerHTML = effects1;
             
             // 更新玩家2特殊效果
@@ -1526,6 +1627,9 @@
             if (snake2.ghostMode > 0) {
                 effects2 += `<div class="effect-item">👻 幽靈模式 <span class="effect-timer">${Math.ceil(snake2.ghostMode/10)}s</span></div>`;
             }
+            if (snake2.fusionMode > 0) {
+                effects2 += `<div class="effect-item">🤝 融合模式 <span class="effect-timer">${Math.ceil(snake2.fusionMode/10)}s</span></div>`;
+            }
             player2Effects.innerHTML = effects2;
         }
 
@@ -1535,8 +1639,10 @@
             // 更新特殊能力計時器
             if (snake1.speedBoost > 0) snake1.speedBoost--;
             if (snake1.ghostMode > 0) snake1.ghostMode--;
+            if (snake1.fusionMode > 0) snake1.fusionMode--;
             if (snake2.speedBoost > 0) snake2.speedBoost--;
             if (snake2.ghostMode > 0) snake2.ghostMode--;
+            if (snake2.fusionMode > 0) snake2.fusionMode--;
 
             // 更新假食物計時器
             if (fakeFood) {
@@ -1594,6 +1700,25 @@
                         ctx.fillText('GO!', canvas.width / 2, canvas.height / 2);
                         audioManager.play('success');
                         
+                        // 啟動遊戲計時器
+                        gameTimer = maxGameTime;
+                        updateTimerDisplay();
+                        if (gameTimerInterval) clearInterval(gameTimerInterval);
+                        gameTimerInterval = setInterval(() => {
+                            if (gamePaused || !gameRunning) return;
+                            gameTimer--;
+                            updateTimerDisplay();
+                            if (gameTimer <= 0) {
+                                if (snake1.level > snake2.level) {
+                                    endGame("⌛️ 時間到！綠蛇等級高獲勝！");
+                                } else if (snake2.level > snake1.level) {
+                                    endGame("⌛️ 時間到！紅蛇等級高獲勝！");
+                                } else {
+                                    endGame("⌛️ 時間到！平手！");
+                                }
+                            }
+                        }, 1000);
+                        
                         setTimeout(() => {
                              // 根據難度設置速度
                             const speedMap = { 'Easy': 180, 'Normal': 120, 'Hard': 80 };
@@ -1616,6 +1741,10 @@
             gameRunning = false;
             gamePaused = false;
             clearInterval(gameLoop);
+            if (gameTimerInterval) {
+                clearInterval(gameTimerInterval);
+                gameTimerInterval = null;
+            }
             audioManager.play('click');
             
             document.querySelectorAll('.difficulty-btn').forEach(btn => btn.disabled = false);
@@ -1628,7 +1757,8 @@
                 level: 3,
                 color: '#4CAF50',
                 speedBoost: 0,
-                ghostMode: 0
+                ghostMode: 0,
+                fusionMode: 0
             };
 
             snake2 = {
@@ -1638,7 +1768,8 @@
                 level: 3,
                 color: '#FF5722',
                 speedBoost: 0,
-                ghostMode: 0
+                ghostMode: 0,
+                fusionMode: 0
             };
 
             foods = [];
@@ -1647,6 +1778,8 @@
             document.getElementById('gameOver').style.display = 'none';
             document.querySelector('.pause-btn').textContent = '⏸️ 暫停';
             
+            gameTimer = maxGameTime;
+            updateTimerDisplay();
             generateFood();
             draw();
         }
@@ -1654,6 +1787,10 @@
         function endGame(message) {
             gameRunning = false;
             clearInterval(gameLoop);
+            if (gameTimerInterval) {
+                clearInterval(gameTimerInterval);
+                gameTimerInterval = null;
+            }
             audioManager.play('gameover', { volume: 1.0 });
             document.getElementById('winnerText').textContent = message;
             document.getElementById('gameOver').style.display = 'block';
@@ -1690,6 +1827,13 @@
             
             canvas.style.width = newWidth + 'px';
             canvas.style.height = newHeight + 'px';
+        }
+
+        // 新增：更新計時器顯示
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameTimer / 60);
+            const seconds = gameTimer % 60;
+            document.getElementById('gameTimerDisplay').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
         // 初始化遊戲
