@@ -1,0 +1,2427 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哲學家格鬥大賽</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        eastern: '#D64045',
+                        western: '#4F86C6',
+                    },
+                    fontFamily: {
+                        philosopher: ['Georgia', 'serif'],
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '75%': { transform: 'translateX(5px)' },
+                        },
+                        flash: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.5' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        pulse: {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.05)' },
+                        },
+                        glow: {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(93, 92, 222, 0.5)' },
+                            '50%': { boxShadow: '0 0 15px rgba(93, 92, 222, 0.8)' },
+                        }
+                    },
+                    animation: {
+                        shake: 'shake 0.5s ease-in-out',
+                        flash: 'flash 0.3s ease-in-out',
+                        fadeIn: 'fadeIn 0.5s ease-in-out',
+                        pulse: 'pulse 1.5s ease-in-out infinite',
+                        glow: 'glow 1.5s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .dark {
+            --bg-color: #181818;
+            --text-color: #e4e4e4;
+        }
+        
+        .light {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+        }
+        
+        .character-avatar {
+            transition: transform 0.3s, filter 0.3s, box-shadow 0.3s;
+        }
+        
+        .character-avatar:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+            box-shadow: 0 0 15px rgba(93, 92, 222, 0.7);
+        }
+        
+        .special-move {
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .special-move:hover:not(:disabled) {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        
+        .special-move:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        
+        .philosopher-sprite {
+            transition: transform 0.3s;
+        }
+        
+        .attack-animation {
+            animation: attackMove 0.5s forwards;
+        }
+        
+        @keyframes attackMove {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(40px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .hurt-animation {
+            animation: hurtMove 0.5s forwards;
+        }
+        
+        @keyframes hurtMove {
+            0% { transform: translateX(0); opacity: 1; }
+            25% { transform: translateX(-20px); opacity: 0.7; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+        
+        .quote-box {
+            border-left: 4px solid;
+            padding-left: 1rem;
+            font-style: italic;
+            margin: 0.5rem 0;
+        }
+        
+        .eastern-quote {
+            border-color: #D64045;
+        }
+        
+        .western-quote {
+            border-color: #4F86C6;
+        }
+        
+        .selected {
+            box-shadow: 0 0 0 4px #5D5CDE, 0 0 20px rgba(93, 92, 222, 0.7);
+            transform: scale(1.1);
+            position: relative;
+            z-index: 10;
+            animation: pulse-border 1.5s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 4px #5D5CDE, 0 0 20px rgba(93, 92, 222, 0.7); }
+            50% { box-shadow: 0 0 0 4px #5D5CDE, 0 0 30px rgba(93, 92, 222, 0.9); }
+            100% { box-shadow: 0 0 0 4px #5D5CDE, 0 0 20px rgba(93, 92, 222, 0.7); }
+        }
+        
+        @keyframes philosophySymbol {
+            0% { transform: rotate(0deg) scale(1); opacity: 0.8; }
+            50% { transform: rotate(180deg) scale(1.2); opacity: 0.5; }
+            100% { transform: rotate(360deg) scale(1); opacity: 0; }
+        }
+        
+        .philosophy-symbol {
+            position: absolute;
+            pointer-events: none;
+            animation: philosophySymbol 2s forwards;
+        }
+        
+        .battle-log-item {
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            padding-left: 0.5rem;
+        }
+        
+        .battle-log-item.eastern {
+            border-color: #D64045;
+        }
+        
+        .battle-log-item.western {
+            border-color: #4F86C6;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300">
+    <div id="game-container" class="w-full max-w-6xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden transition-all duration-300 relative">
+        <!-- Start Screen -->
+        <div id="start-screen" class="flex flex-col items-center justify-center p-8 h-[800px] animate-fadeIn">
+            <h1 class="text-4xl md:text-6xl font-bold text-primary dark:text-primary mb-8 font-philosopher text-center">哲學家格鬥大賽</h1>
+            <div class="flex justify-center mb-8">
+                <div class="relative">
+                    <div class="absolute -left-24 top-0 float-animation" style="animation-delay: 0.2s;">
+                        <div class="text-eastern text-8xl transform -rotate-12">東</div>
+                    </div>
+                    <div class="absolute -right-24 top-0 float-animation" style="animation-delay: 0.5s;">
+                        <div class="text-western text-8xl transform rotate-12">西</div>
+                    </div>
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='90' fill='%23f0f0f0' stroke='%235D5CDE' stroke-width='5'/%3E%3Cpath d='M100 10 A90 90 0 0 1 100 190 A90 90 0 0 0 100 10' fill='%23D64045'/%3E%3Cpath d='M100 10 A90 90 0 0 0 100 190 A90 90 0 0 1 100 10' fill='%234F86C6'/%3E%3C/svg%3E" alt="太極圖" class="w-40 h-40 md:w-64 md:h-64 object-contain">
+                </div>
+            </div>
+            <p class="text-lg md:text-xl text-gray-700 dark:text-gray-300 mb-8 text-center max-w-lg">
+                中西方哲學家使出絕招相互對決！<br>
+                每位哲學家的絕招都源自其核心思想與經典原文。<br>
+                適合中學生「中西經典比較」課程。
+            </p>
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-3 text-center">遊戲模式</h2>
+                <div class="flex space-x-4">
+                    <button id="single-player-mode" class="px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg text-lg font-bold transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+                        <span class="relative z-10">單人模式</span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-eastern to-primary opacity-80 transition-transform duration-300 transform scale-x-0 origin-left group-hover:scale-x-100"></div>
+                    </button>
+                    <button id="two-player-mode" class="px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg text-lg font-bold transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+                        <span class="relative z-10">雙人模式</span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-primary to-western opacity-80 transition-transform duration-300 transform scale-x-0 origin-left group-hover:scale-x-100"></div>
+                    </button>
+                </div>
+            </div>
+            <button id="start-btn" class="px-8 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105">
+                開始遊戲
+            </button>
+        </div>
+
+        <!-- Character Selection Screen -->
+        <div id="character-select" class="hidden h-[800px] animate-fadeIn overflow-y-auto">
+            <div class="p-6">
+                <h2 class="text-3xl font-bold text-primary dark:text-primary mb-4 text-center font-philosopher">選擇你的哲學家</h2>
+                <div class="flex justify-around mb-6">
+                    <div class="text-center">
+                        <h3 class="text-xl font-bold text-eastern mb-2">東方哲學家</h3>
+                        <div class="w-24 h-1 bg-eastern mx-auto rounded-full"></div>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-xl font-bold text-western mb-2">西方哲學家</h3>
+                        <div class="w-24 h-1 bg-western mx-auto rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 px-4">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="character-card" data-id="confucius" data-type="eastern">
+                            <div class="character-avatar bg-eastern bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23D64045' /%3E%3Cpath d='M25 85 Q50 100 75 85 L70 65 Q50 75 30 65 Z' fill='%23D64045' /%3E%3Cpath d='M35 40 Q50 50 65 40' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M30 55 L25 85 M70 55 L75 85' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E" alt="孔子" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">孔子</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">禮之道</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="mencius" data-type="eastern">
+                            <div class="character-avatar bg-eastern bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='35' r='25' fill='%23D64045' /%3E%3Cpath d='M25 85 Q50 100 75 85 L70 65 Q50 80 30 65 Z' fill='%23D64045' /%3E%3Cpath d='M35 40 Q50 45 65 40' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M25 55 Q50 40 75 55' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E" alt="孟子" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">孟子</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">性善論</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="laozi" data-type="eastern">
+                            <div class="character-avatar bg-eastern bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 40 Q50 15 70 40 Q85 60 70 85 Q50 100 30 85 Q15 60 30 40 Z' fill='%23D64045' /%3E%3Cpath d='M35 45 Q50 30 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M40 70 Q50 75 60 70' fill='none' stroke='%23fff' stroke-width='2' /%3E%3C/svg%3E" alt="老子" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">老子</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">道法自然</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="zhuangzi" data-type="eastern">
+                            <div class="character-avatar bg-eastern bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 40 Q50 15 75 40 Q85 60 70 85 Q50 95 30 85 Q15 60 25 40 Z' fill='%23D64045' /%3E%3Cpath d='M35 45 Q50 35 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M35 55 Q50 65 65 55' fill='none' stroke='%23fff' stroke-width='2' /%3E%3C/svg%3E" alt="莊子" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">莊子</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">逍遙遊</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="hanfeizi" data-type="eastern">
+                            <div class="character-avatar bg-eastern bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 35 L50 25 L70 35 L80 70 L50 85 L20 70 Z' fill='%23D64045' /%3E%3Cpath d='M35 45 Q50 40 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M20 70 L30 35 M80 70 L70 35' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E" alt="韓非子" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">韓非子</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">法治思想</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="mozi" data-type="eastern">
+                            <div class="character-avatar bg-eastern bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='35' r='25' fill='%23D64045' /%3E%3Cpath d='M25 60 Q50 70 75 60 L70 85 Q50 95 30 85 Z' fill='%23D64045' /%3E%3Ccircle cx='40' cy='30' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='30' r='3' fill='%23fff' /%3E%3Cpath d='M35 42 Q50 37 65 42' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M35 10 L45 20 M65 10 L55 20' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E" alt="墨子" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">墨子</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">兼愛非攻</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="character-card" data-id="socrates" data-type="western">
+                            <div class="character-avatar bg-western bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 40 Q50 10 75 40 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M40 50 Q50 45 60 50' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M30 25 Q50 5 70 25' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3C/svg%3E" alt="蘇格拉底" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">蘇格拉底</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">辯證詰問</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="plato" data-type="western">
+                            <div class="character-avatar bg-western bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 40 Q50 20 70 40 L65 85 Q50 95 35 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M40 55 Q50 60 60 55' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M25 30 L35 20 M75 30 L65 20' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3C/svg%3E" alt="柏拉圖" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">柏拉圖</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">理想國度</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="aristotle" data-type="western">
+                            <div class="character-avatar bg-western bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 35 Q50 15 75 35 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M35 45 Q50 40 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M20 30 L40 20 M80 30 L60 20' fill='none' stroke='%234F86C6' stroke-width='2' /%3E%3C/svg%3E" alt="亞里斯多德" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">亞里斯多德</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">邏輯論證</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="heraclitus" data-type="western">
+                            <div class="character-avatar bg-western bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 35 Q50 10 75 35 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Cpath d='M30 30 Q50 20 70 30 Q65 50 70 70 Q50 60 30 70 Q35 50 30 30' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M40 55 Q50 60 60 55' fill='none' stroke='%23fff' stroke-width='2' /%3E%3C/svg%3E" alt="赫拉克利特" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">赫拉克利特</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">流變哲學</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="democritus" data-type="western">
+                            <div class="character-avatar bg-western bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 40 Q50 15 70 40 L75 85 Q50 100 25 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M40 50 Q50 55 60 50' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='50' cy='50' r='15' fill='none' stroke='%234F86C6' stroke-width='2' stroke-dasharray='5,3' /%3E%3C/svg%3E" alt="德謨克利特" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">德謨克利特</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">原子論</div>
+                            </div>
+                        </div>
+                        <div class="character-card" data-id="epicurus" data-type="western">
+                            <div class="character-avatar bg-western bg-opacity-10 rounded-lg p-3 text-center cursor-pointer hover:bg-opacity-20">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 40 Q50 15 75 40 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M40 45 Q50 55 60 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M30 20 Q50 35 70 20' fill='none' stroke='%234F86C6' stroke-width='2' /%3E%3C/svg%3E" alt="伊壁鳩魯" class="w-20 h-20 mx-auto">
+                                <div class="mt-2 font-bold">伊壁鳩魯</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">享樂主義</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between p-6">
+                <div id="player-selection" class="text-center">
+                    <h3 class="font-bold">玩家選擇</h3>
+                    <div id="player-selected" class="mt-2 h-16 flex items-center justify-center">
+                        <div class="text-gray-400 italic">尚未選擇哲學家</div>
+                    </div>
+                </div>
+                <div id="opponent-selection" class="text-center">
+                    <h3 class="font-bold">對手</h3>
+                    <div id="opponent-selected" class="mt-2 h-16 flex items-center justify-center">
+                        <div class="text-gray-400 italic">尚未選擇哲學家</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 text-center">
+                <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">提示：您也可以點擊選擇自己的對手</div>
+                <button id="battle-btn" class="px-6 py-2 bg-primary hover:bg-opacity-90 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" disabled="">
+                    開始對戰
+                </button>
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="battle-screen" class="hidden h-[800px] animate-fadeIn relative">
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+                <!-- Player Health Bar -->
+                <div class="w-2/5">
+                    <div class="flex justify-between items-center mb-1">
+                        <span id="player-name" class="font-bold"></span>
+                        <span id="player-health-text" class="text-sm">100/100</span>
+                    </div>
+                    <div class="bg-gray-300 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div id="player-health-bar" class="bg-green-500 h-full rounded-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                    <div class="text-xs mt-1 text-gray-600 dark:text-gray-400 italic" id="player-passive"></div>
+                </div>
+                
+                <!-- Battle Info -->
+                <div class="flex flex-col items-center">
+                    <div class="bg-primary text-white font-bold rounded-lg px-3 py-1 mb-1">
+                        <span id="battle-timer">60</span>s
+                    </div>
+                    <div class="text-xs font-semibold">
+                        回合: <span id="round-counter">1</span>
+                    </div>
+                </div>
+                
+                <!-- Opponent Health Bar -->
+                <div class="w-2/5">
+                    <div class="flex justify-between items-center mb-1">
+                        <span id="opponent-health-text" class="text-sm">100/100</span>
+                        <span id="opponent-name" class="font-bold"></span>
+                    </div>
+                    <div class="bg-gray-300 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div id="opponent-health-bar" class="bg-green-500 h-full rounded-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                    <div class="text-xs mt-1 text-gray-600 dark:text-gray-400 italic text-right" id="opponent-passive"></div>
+                </div>
+            </div>
+
+            <!-- Battle Arena -->
+            <div class="h-full flex flex-col">
+                <div class="flex-grow flex items-end justify-between px-4 pb-4 relative">
+                    <!-- Background -->
+                    <div class="absolute inset-0 z-0 flex items-center justify-center">
+                        <div class="w-96 h-96 rounded-full bg-gray-200 dark:bg-gray-700 opacity-20 absolute"></div>
+                        <div class="w-64 h-64 rounded-full border-8 border-eastern opacity-30 absolute"></div>
+                        <div class="w-64 h-64 rounded-full border-8 border-western opacity-30 absolute transform rotate-90"></div>
+                        
+                        <!-- Battle status display in center -->
+                        <div class="absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                            <div class="text-2xl font-bold text-primary dark:text-primary animate-pulse" id="center-battle-status">
+                                回合 <span id="center-round-counter">1</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Core concepts display -->
+                        <div id="player-concepts" class="absolute bottom-16 left-12 text-center">
+                            <div class="text-xs font-semibold mb-1 text-gray-500 dark:text-gray-400">核心思想：</div>
+                            <div class="flex flex-wrap justify-center gap-1 max-w-[120px]" id="player-concept-tags"></div>
+                        </div>
+                        <div id="opponent-concepts" class="absolute bottom-16 right-12 text-center">
+                            <div class="text-xs font-semibold mb-1 text-gray-500 dark:text-gray-400">核心思想：</div>
+                            <div class="flex flex-wrap justify-center gap-1 max-w-[120px]" id="opponent-concept-tags"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Player Character Area -->
+                    <div class="z-10 text-center">
+                        <!-- Turn indicator for player -->
+                        <div id="player-turn-indicator" class="mb-2 opacity-0 transition-opacity duration-300">
+                            <div class="inline-block bg-primary text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
+                                你的回合
+                            </div>
+                        </div>
+                        
+                        <!-- Player Character -->
+                        <div id="player-character" class="philosopher-sprite w-40 h-40 relative transform scale-x-1 mx-auto">
+                            <!-- Character image will be inserted here -->
+                        </div>
+                        
+                        <!-- Player name display -->
+                        <div class="mt-2 text-center">
+                            <div class="inline-block bg-gray-200 dark:bg-gray-700 rounded-full px-3 py-1">
+                                <span id="player-name-display" class="text-sm font-bold"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Opponent Character Area -->
+                    <div class="z-10 text-center">
+                        <!-- Turn indicator for opponent -->
+                        <div id="opponent-turn-indicator" class="mb-2 opacity-0 transition-opacity duration-300">
+                            <div class="inline-block bg-primary text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
+                                對手回合
+                            </div>
+                        </div>
+                        
+                        <!-- Opponent Character -->
+                        <div id="opponent-character" class="philosopher-sprite w-40 h-40 relative transform scale-x-1 mx-auto">
+                            <!-- Character image will be inserted here -->
+                        </div>
+                        
+                        <!-- Opponent name display -->
+                        <div class="mt-2 text-center">
+                            <div class="inline-block bg-gray-200 dark:bg-gray-700 rounded-full px-3 py-1">
+                                <span id="opponent-name-display" class="text-sm font-bold"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Battle Controls -->
+                <div class="bg-gray-100 dark:bg-gray-900 p-4 rounded-t-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold">哲學絕招</h3>
+                        <div id="battle-status" class="text-sm font-semibold text-primary flex items-center gap-2">
+                            <span id="player-mode-indicator"></span>
+                            <span id="game-timer" class="bg-primary text-white px-2 py-1 rounded-lg">60s</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div id="player-moves" class="space-y-2">
+                            <!-- Player moves will be dynamically added here -->
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                            <div id="battle-message" class="bg-white dark:bg-gray-800 p-3 rounded-lg min-h-16 text-sm overflow-y-auto max-h-48">
+                                選擇一個絕招來攻擊對手！
+                            </div>
+                            <div id="battle-log" class="bg-white dark:bg-gray-800 p-3 rounded-lg text-xs overflow-y-auto max-h-24 hidden md:block">
+                                <!-- Battle log will be dynamically updated here -->
+                            </div>
+                            <button id="next-turn-btn" class="px-4 py-2 bg-primary text-white rounded-lg font-bold hidden">
+                                下一回合
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden h-[800px] flex flex-col items-center justify-center p-8 animate-fadeIn">
+            <h2 id="result-title" class="text-4xl font-bold text-primary dark:text-primary mb-4 font-philosopher text-center"></h2>
+            <div id="result-image" class="w-48 h-48 mb-6"></div>
+            <p id="result-message" class="text-lg text-center mb-8 max-w-lg"></p>
+            <div class="flex space-x-4">
+                <button id="play-again-btn" class="px-6 py-2 bg-primary hover:bg-opacity-90 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105">
+                    再玩一次
+                </button>
+                <button id="change-characters-btn" class="px-6 py-2 bg-gray-600 hover:bg-opacity-90 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105">
+                    更換哲學家
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // 哲學符號元素池 - 用於視覺特效
+        const philosophySymbols = {
+            eastern: [
+                "道", "仁", "義", "禮", "智", "信", "德", "和", "靜", "無"
+            ],
+            western: [
+                "λ", "Φ", "Ω", "∞", "≡", "∃", "∀", "⊢", "¬", "∴"
+            ]
+        };
+        
+        // 創建哲學符號動畫
+        function createPhilosophySymbol(type, x, y) {
+            const symbolText = philosophySymbols[type][Math.floor(Math.random() * philosophySymbols[type].length)];
+            const symbol = document.createElement('div');
+            symbol.className = `philosophy-symbol text-${type === 'eastern' ? 'eastern' : 'western'} text-lg font-bold`;
+            symbol.style.left = `${x}px`;
+            symbol.style.top = `${y}px`;
+            symbol.textContent = symbolText;
+            document.body.appendChild(symbol);
+            
+            // 符號消失後自動移除DOM元素
+            setTimeout(() => {
+                symbol.remove();
+            }, 2000);
+        }
+        
+        // 戰鬥日誌系統
+        const battleLog = [];
+        function addToBattleLog(message, type) {
+            battleLog.push({ message, type });
+            if (battleLog.length > 5) battleLog.shift(); // 只保留最新的5條記錄
+            updateBattleLog();
+        }
+        
+        function updateBattleLog() {
+            if (!document.getElementById('battle-log')) return;
+            
+            const battleLogElement = document.getElementById('battle-log');
+            battleLogElement.innerHTML = '';
+            
+            battleLog.forEach(log => {
+                const logItem = document.createElement('div');
+                logItem.className = `battle-log-item ${log.type} text-sm my-1`;
+                logItem.innerHTML = log.message;
+                battleLogElement.appendChild(logItem);
+            });
+        }
+        
+        // 遊戲回合計數
+        let battleRound = 1;
+                
+        // Game data
+        const philosophers = {
+            // Eastern Philosophers
+            mencius: {
+                name: "孟子",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='35' r='25' fill='%23D64045' /%3E%3Cpath d='M25 85 Q50 100 75 85 L70 65 Q50 80 30 65 Z' fill='%23D64045' /%3E%3Cpath d='M35 40 Q50 45 65 40' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M25 55 Q50 40 75 55' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "孟子（前372年－前289年），名軻，鄒國人，儒家學派重要代表人物，被尊稱為「亞聖」，提出「性善論」等重要思想。",
+                passiveAbility: {
+                    name: "性善養浩然",
+                    description: "人性本善，君子集義養氣。每回合結束時有15%機率激發浩然正氣，恢復8點生命值並使下回合傷害增加15%。",
+                    effect: function(character) {
+                        if (Math.random() < 0.15) {
+                            character.health = Math.min(100, character.health + 8);
+                            return {
+                                triggered: true,
+                                powerBoost: 0.15,
+                                message: `${character.name}的「性善養浩然」被觸發，恢復了8點生命值並激發浩然正氣！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["性善", "義", "仁政", "王道", "四端"],
+                historicalContext: "戰國時期思想家，遊說諸侯推行仁政，發展了孔子的仁學思想，著有《孟子》一書，對後世儒家思想產生重大影響。",
+                moves: [
+                    { 
+                        name: "浩然正氣", 
+                        power: 15, 
+                        description: "激發內在至大至剛的浩然之氣，正面沖擊對手",
+                        quote: "我善養吾浩然之氣。其為氣也，至大至剛，以直養而無害，則塞于天地之間。",
+                        explanation: "孟子認為人透過集義可以培養浩然正氣，此種正氣是一種道德力量，具有強大的感染力與震懾力。"
+                    },
+                    { 
+                        name: "仁政王道", 
+                        power: 20, 
+                        description: "以王道仁政理念感化對手，使其臣服",
+                        quote: "得天下有道：得其民，斯得天下矣。得其民有道：得其心，斯得民矣。",
+                        explanation: "孟子主張施行仁政王道，以民為本，贏得民心。此招展現崇高的政治理想，使對手在道德感召下自願臣服。"
+                    },
+                    { 
+                        name: "性善四端", 
+                        power: 25, 
+                        description: "喚醒對手內心四端之善，使其無法對抗",
+                        quote: "人之有四端也，猶其有四體也。有是四端而自謂不能者，自賊者也；謂其君不能者，賊其君者也。",
+                        explanation: "孟子提出人性本善，人皆有惻隱、羞惡、辭讓、是非四端之心。此招喚醒對手內心善端，使其不忍攻擊。"
+                    }
+                ]
+            },
+            zhuangzi: {
+                name: "莊子",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 40 Q50 15 75 40 Q85 60 70 85 Q50 95 30 85 Q15 60 25 40 Z' fill='%23D64045' /%3E%3Cpath d='M35 45 Q50 35 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M35 55 Q50 65 65 55' fill='none' stroke='%23fff' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "莊子（約前369年－前286年），名周，宋國蒙人，道家學派代表人物，著有《莊子》一書，其思想深邃曠達，充滿詩意與想像力。",
+                passiveAbility: {
+                    name: "逍遙遊化",
+                    description: "逍遙無待，物我兩忘。受到攻擊時有25%機率進入物化境界，使攻擊完全無效並回復5點生命值。",
+                    effect: function(character, damage, attacker) {
+                        if (Math.random() < 0.25) {
+                            character.health = Math.min(100, character.health + 5);
+                            return {
+                                triggered: true,
+                                reducedDamage: damage,
+                                actualDamage: 0,
+                                message: `${character.name}的「逍遙遊化」被觸發，進入物化境界，完全避開了攻擊並回復5點生命值！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["逍遙", "齊物", "無待", "自然", "遊"],
+                historicalContext: "戰國中期思想家，生活於社會動蕩時期，繼承發展了老子的道家思想，創造了大量寓言和逸聞表達其哲理，對中國文學和藝術產生深遠影響。",
+                moves: [
+                    { 
+                        name: "齊物論道", 
+                        power: 15, 
+                        description: "萬物齊一，是非消解，使對手陷入思想混沌",
+                        quote: "物無非彼，物無非是。自彼則不見，自知則知之。故曰彼出於是，是亦因彼。",
+                        explanation: "莊子認為世間萬物本無差別，是非對錯皆為人為劃分。此招消解對手的認知框架，使其無所適從。"
+                    },
+                    { 
+                        name: "化蝶逍遙", 
+                        power: 20, 
+                        description: "物我兩忘，幻化為蝶，超脫攻擊對手",
+                        quote: "昔者莊周夢為蝴蝶，栩栩然蝴蝶也，自喻適志與，不知周也。俄然覺，則蘧蘧然周也。不知周之夢為蝴蝶與，蝴蝶之夢為周與？",
+                        explanation: "莊子「夢蝶」寓言體現了物我、主客、夢醒之間的相對性與轉化。此招使自身超脫形體限制，以意想不到的方式攻擊對手。"
+                    },
+                    { 
+                        name: "坐忘無己", 
+                        power: 25, 
+                        description: "忘卻自我，融入天道，借道之力攻擊",
+                        quote: "墮肢體，黜聰明，離形去知，同於大通，此謂坐忘。",
+                        explanation: "莊子提出「坐忘」境界，指忘卻肢體形骸，忘卻聰明才智，達到與道合一的境界。此招使自身暫時忘卻軀體限制，借天道之力攻擊對手。"
+                    }
+                ]
+            },
+            hanfeizi: {
+                name: "韓非子",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 35 L50 25 L70 35 L80 70 L50 85 L20 70 Z' fill='%23D64045' /%3E%3Cpath d='M35 45 Q50 40 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M20 70 L30 35 M80 70 L70 35' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "韓非子（前280年－前233年），戰國末期韓國人，法家思想集大成者，主張「法、術、勢」三位一體的統治方法。",
+                passiveAbility: {
+                    name: "法術勢",
+                    description: "法不阿貴，繩不撓曲。每回合有20%機率觸發嚴刑峻法，使對手下回合傷害降低25%。",
+                    effect: function(character, opponent) {
+                        if (Math.random() < 0.2) {
+                            return {
+                                triggered: true,
+                                debuff: 0.25,
+                                message: `${character.name}的「法術勢」被觸發，以嚴刑峻法威懾${opponent.name}，使其下回合傷害降低25%！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["法", "術", "勢", "勸賞", "嚴刑"],
+                historicalContext: "生於戰國末期群雄爭霸之際，是韓國貴族出身，後為秦國謀士，著有《韓非子》，對秦國建立法家政治體系和秦始皇統一六國有重要影響。",
+                moves: [
+                    { 
+                        name: "削心之法", 
+                        power: 15, 
+                        description: "以嚴刑峻法懾服對手，制其心智",
+                        quote: "刑重則民威，威行則禁止，禁止則民安，民安則國富，國富則兵強。",
+                        explanation: "韓非子主張以重刑威懾民眾，嚴格執法。此招展現法家峻法，震懾對手心理，迫使其屈服。"
+                    },
+                    { 
+                        name: "二柄之術", 
+                        power: 20, 
+                        description: "運用賞罰二柄，操控對手心理",
+                        quote: "人主之所執者，賞罰也。賞賢而罰暴，則治道通矣。",
+                        explanation: "韓非子認為君主應掌握賞罰二柄，以控制臣民。此招運用賞罰之術，操控對手的心理預期，使其無法有效反抗。"
+                    },
+                    { 
+                        name: "君臣之勢", 
+                        power: 25, 
+                        description: "展現君主權威之勢，俯視壓制對手",
+                        quote: "聖人之治國也，縱意於勢。勢者，勢位之稱號，藏於官府之藏，人主之所執也。",
+                        explanation: "韓非子強調「勢」的重要性，指君主借助權位產生的威嚴和力量。此招展現統治者的威勢，從高處壓制對手。"
+                    }
+                ]
+            },
+            mozi: {
+                name: "墨子",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='35' r='25' fill='%23D64045' /%3E%3Cpath d='M25 60 Q50 70 75 60 L70 85 Q50 95 30 85 Z' fill='%23D64045' /%3E%3Ccircle cx='40' cy='30' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='30' r='3' fill='%23fff' /%3E%3Cpath d='M35 42 Q50 37 65 42' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M35 10 L45 20 M65 10 L55 20' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "墨子（約前479年－前381年），名翟，春秋末期至戰國初期思想家，墨家學派創始人，提倡「兼愛」「非攻」等思想。",
+                passiveAbility: {
+                    name: "兼愛非攻",
+                    description: "愛無差等，交相利也。收到攻擊時反思對手動機，有20%機率感化對手，使其本回合無法發動攻擊。",
+                    effect: function(character, damage, attacker) {
+                        if (Math.random() < 0.2) {
+                            return {
+                                triggered: true,
+                                skipAttackerTurn: true,
+                                message: `${character.name}的「兼愛非攻」被觸發，感化了${attacker.name}，使其放棄了攻擊！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["兼愛", "非攻", "尚賢", "節用", "天志"],
+                historicalContext: "生活於諸侯爭戰不休的時代，出身工匠，創立了墨家學派，墨家弟子被稱為「墨者」，擅長守城技術，活躍於戰國時期的政治舞台，與儒家並稱「顯學」。",
+                moves: [
+                    { 
+                        name: "兼愛互利", 
+                        power: 15, 
+                        description: "施行兼愛理念，感化對手同時強化自身",
+                        quote: "兼相愛，交相利，治之道也。視人之國若視其國，視人之家若視其家，視人之身若視其身。",
+                        explanation: "墨子主張愛無差等，平等對待所有人。此招傳播兼愛思想，使對手被感化，同時強化自身戰鬥力。"
+                    },
+                    { 
+                        name: "非攻止戰", 
+                        power: 20, 
+                        description: "反對侵略戰爭，使敵方無法正當化攻擊",
+                        quote: "夫戰，所以殺人也。今殺一人，則謂之不義，必有一死。若殺眾人，則謂之義，無罪。",
+                        explanation: "墨子強烈反對攻伐戰爭，認為殺一人是犯罪，殺眾人卻被視為義舉，揭露這種邏輯謬誤。此招使敵人失去攻擊的正當性和信心。"
+                    },
+                    { 
+                        name: "天志明鬼", 
+                        power: 25, 
+                        description: "召喚天志鬼神之力，審判懲戒對手",
+                        quote: "天志者，義之經也。天之所欲則為，天所惡則止。欲義而惡不義。天有意志，賞善罰惡。",
+                        explanation: "墨子提出「天志」說，認為天有意志，賞善罰惡。此招呼喚天意和鬼神力量，對不義的對手施加懲罰。"
+                    }
+                ]
+            },
+            confucius: {
+                name: "孔子",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='40' r='25' fill='%23D64045' /%3E%3Cpath d='M25 85 Q50 100 75 85 L70 65 Q50 75 30 65 Z' fill='%23D64045' /%3E%3Cpath d='M35 40 Q50 50 65 40' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M30 55 L25 85 M70 55 L75 85' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "孔子（前551年－前479年），名丘，字仲尼，魯國人，是中國儒家學派創始人。其學說強調「仁義禮智信」，主張「修身齊家治國平天下」。",
+                passiveAbility: {
+                    name: "仁者無敵",
+                    description: "仁者愛人，君子坦蕩蕩。每回合結束時有20%機率恢復5點生命值。",
+                    effect: function(character) {
+                        if (Math.random() < 0.2) {
+                            character.health = Math.min(100, character.health + 5);
+                            return {
+                                triggered: true,
+                                message: `${character.name}的「仁者無敵」被觸發，恢復了5點生命值！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["仁", "義", "禮", "智", "信"],
+                historicalContext: "生活在春秋末期的思想混亂時代，孔子周遊列國推廣其政治理念，影響中國文化兩千多年。",
+                moves: [
+                    { 
+                        name: "禮樂教化", 
+                        power: 15, 
+                        description: "以禮樂之道規範對方行為，使其自我約束",
+                        quote: "不學禮，無以立。",
+                        explanation: "孔子認為禮樂是維持社會秩序的基礎，沒有禮儀和音樂的教化，人無法在社會上立足。"
+                    },
+                    { 
+                        name: "君子之風", 
+                        power: 20, 
+                        description: "展現君子風範，以德服人",
+                        quote: "君子坦蕩蕩，小人長戚戚。",
+                        explanation: "孔子將人分為君子與小人，君子胸懷坦蕩，小人則常有憂慮。通過展現君子氣度使敵人自慚形穢。"
+                    },
+                    { 
+                        name: "正名釋義", 
+                        power: 25, 
+                        description: "正名而後言，讓對方陷入身份混亂",
+                        quote: "名不正則言不順，言不順則事不成，事不成則禮樂不興，禮樂不興則刑罰不中，刑罰不中則民無所措手足。",
+                        explanation: "孔子主張名實相符，認為名分不正確則言語不順暢，事情就難以成功。正名可使對手失去立場。"
+                    }
+                ]
+            },
+            laozi: {
+                name: "老子",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 40 Q50 15 70 40 Q85 60 70 85 Q50 100 30 85 Q15 60 30 40 Z' fill='%23D64045' /%3E%3Cpath d='M35 45 Q50 30 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M40 70 Q50 75 60 70' fill='none' stroke='%23fff' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "老子，名李耳，字伯陽，春秋時期楚國人，道家學派創始人，著有《道德經》，主張「道法自然」、「無為而治」。",
+                passiveAbility: {
+                    name: "無為自化",
+                    description: "虛極靜篤，萬物並作。不爭而善勝。當受到攻擊時，有25%機率反彈一半傷害給對手。",
+                    effect: function(character, damage, attacker) {
+                        if (Math.random() < 0.25) {
+                            const reflectDamage = Math.round(damage / 2);
+                            attacker.health = Math.max(0, attacker.health - reflectDamage);
+                            return {
+                                triggered: true,
+                                message: `${character.name}的「無為自化」被觸發，反彈了${reflectDamage}點傷害給${attacker.name}！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["道", "德", "無為", "自然", "樸"],
+                historicalContext: "生活於春秋末期，百家爭鳴的時代，著有《道德經》五千言，歷來被視為中國哲學的瑰寶，對後世道家及道教影響深遠。",
+                moves: [
+                    { 
+                        name: "無為之道", 
+                        power: 15, 
+                        description: "天下萬物生於有，有生於無，以虛無攻擊對手",
+                        quote: "道生一，一生二，二生三，三生萬物。萬物負陰而抱陽，沖氣以為和。",
+                        explanation: "老子認為世間萬物都源於「道」，而道是無形無狀的。通過返璞歸真的「無」來對抗對手。"
+                    },
+                    { 
+                        name: "反者道之動", 
+                        power: 20, 
+                        description: "弱者強之動，使敵人的力量反噬自身",
+                        quote: "天下莫柔弱於水，而攻堅強者莫之能勝，以其無以易之。弱之勝強，柔之勝剛，天下莫不知，莫能行。",
+                        explanation: "老子主張以柔克剛，認為看似柔弱的事物（如水）能夠戰勝堅硬強大的事物。此招將對手的攻擊力量反彈回去。"
+                    },
+                    { 
+                        name: "道法自然", 
+                        power: 25, 
+                        description: "順應自然，借天地之力攻擊對手",
+                        quote: "人法地，地法天，天法道，道法自然。",
+                        explanation: "老子認為最高的法則是「自然」，人應順應自然規律而行動。此招借助宇宙自然之力打擊對手。"
+                    }
+                ]
+            },
+            sunzi: {
+                name: "孫子",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 35 L50 25 L70 35 L80 70 L50 85 L20 70 Z' fill='%23D64045' /%3E%3Cpath d='M35 45 Q50 40 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M20 70 L30 35 M80 70 L70 35' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "孫子，名孫武，春秋時期軍事家，著有《孫子兵法》，被譽為「兵學聖人」，其思想強調謀略和心理戰。",
+                passiveAbility: {
+                    name: "先勝而後求戰",
+                    description: "善戰者，先為不可勝。20%機率預先洞察對手攻擊，使傷害減少一半。",
+                    effect: function(character, damage, attacker) {
+                        if (Math.random() < 0.2) {
+                            const reducedDamage = Math.floor(damage / 2);
+                            const actualDamage = damage - reducedDamage;
+                            return {
+                                triggered: true,
+                                reducedDamage: reducedDamage,
+                                actualDamage: actualDamage,
+                                message: `${character.name}的「先勝而後求戰」被觸發，預先洞察了攻擊，使傷害減少${reducedDamage}點！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["虛實", "詭道", "先計", "勢", "五行"],
+                historicalContext: "生活于春秋時期的吳國，貢獻的《孫子兵法》十三篇被譽為「兵學聖典」，對軍事、政治、經濟等領域產生深遠影響，被翻譯成多種語言傳播世界各地。",
+                moves: [
+                    { 
+                        name: "兵者詭道", 
+                        power: 15, 
+                        description: "以虛實之計迷惑對手，出其不意",
+                        quote: "兵者，詭道也。故能而示之不能，用而示之不用，近而示之遠，遠而示之近。",
+                        explanation: "孫子認為戰爭就是詭詐之道，要以虛實相生的方式迷惑敵人。此招使對手無法判斷真假，陷入混亂。"
+                    },
+                    { 
+                        name: "知彼知己", 
+                        power: 20, 
+                        description: "洞察對手弱點，精確打擊",
+                        quote: "知彼知己，百戰不殆；不知彼而知己，一勝一負；不知彼，不知己，每戰必殆。",
+                        explanation: "孫子強調了解敵人和自己的重要性。此招能夠分析對手的弱點，進行精準攻擊。"
+                    },
+                    { 
+                        name: "勢如破竹", 
+                        power: 25, 
+                        description: "乘勢而進，一鼓作氣擊潰對手",
+                        quote: "故善戰者，求之於勢，不責於人，故能擇人而任勢。任勢者，其戰人也，如轉木石。",
+                        explanation: "孫子認為勢比個人能力更重要。此招利用戰場態勢的優勢，像破竹般連續打擊對手，不給其喘息機會。"
+                    }
+                ]
+            },
+            buddha: {
+                name: "佛陀",
+                type: "eastern",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='35' r='25' fill='%23D64045' /%3E%3Cpath d='M25 60 Q50 70 75 60 L70 85 Q50 95 30 85 Z' fill='%23D64045' /%3E%3Ccircle cx='40' cy='30' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='30' r='3' fill='%23fff' /%3E%3Cpath d='M40 45 Q50 50 60 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M35 10 L45 20 M65 10 L55 20' fill='none' stroke='%23D64045' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "佛陀，即釋迦牟尼，原名悉達多·喬達摩，古印度迦毗羅衛國人，佛教創始人，悟道後被稱為「佛陀」（覺者）。",
+                passiveAbility: {
+                    name: "明心見性",
+                    description: "見相非相，見如來。當生命值低於30%時，傷害減少30%，反映出捨棄執著後的超然境界。",
+                    effect: function(character, damage, attacker) {
+                        if (character.health < 30) {
+                            const reducedDamage = Math.round(damage * 0.3);
+                            return {
+                                triggered: true,
+                                reducedDamage: reducedDamage,
+                                actualDamage: damage - reducedDamage,
+                                message: `${character.name}的「明心見性」被觸發，已超脫肉體限制，傷害減少${reducedDamage}點！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["空", "無常", "緣起", "中道", "涅槃"],
+                historicalContext: "生於古印度迦毗羅衛國王室，年輕時感受到世間苦難後出家修行，最終在菩提樹下開悟成佛，創立佛教並傳法45年，對東亞文化產生深遠影響。",
+                moves: [
+                    { 
+                        name: "般若波羅蜜", 
+                        power: 15, 
+                        description: "以智慧之光照破對手迷妄",
+                        quote: "色不異空，空不異色，色即是空，空即是色。",
+                        explanation: "《心經》中的核心教義，揭示世間一切事物都是空性的。此招使對手認識到自身的虛幻本質，瓦解其意志。"
+                    },
+                    { 
+                        name: "四聖諦", 
+                        power: 20, 
+                        description: "破解苦集滅道，瓦解對手精神",
+                        quote: "此是苦，此是集，此是滅，此是道。",
+                        explanation: "佛陀的基本教義：苦（痛苦的存在）、集（痛苦的原因）、滅（痛苦的消除）、道（消除痛苦的方法）。此招讓對手直面自身的苦痛根源。"
+                    },
+                    { 
+                        name: "大乘滅諍", 
+                        power: 25, 
+                        description: "消融對立，使對手失去鬥志",
+                        quote: "一切有為法，如夢幻泡影，如露亦如電，應作如是觀。",
+                        explanation: "佛陀教導世間一切都如夢幻泡影，短暫不實。此招讓對手意識到爭鬥的無意義，從而放下執著。"
+                    }
+                ]
+            },
+            
+            // Western Philosophers
+            heraclitus: {
+                name: "赫拉克利特",
+                type: "western",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 35 Q50 10 75 35 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Cpath d='M30 30 Q50 20 70 30 Q65 50 70 70 Q50 60 30 70 Q35 50 30 30' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M40 55 Q50 60 60 55' fill='none' stroke='%23fff' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "赫拉克利特（約前535年－前475年），古希臘以弗所人，前蘇格拉底時期重要哲學家，提出「萬物流變」和「火是萬物的本原」等思想。",
+                passiveAbility: {
+                    name: "萬物流變",
+                    description: "人不能兩次踏入同一條河流。每回合結束時，有25%機率改變戰場性質，使雙方下回合攻擊效果隨機增減10-30%。",
+                    effect: function(character) {
+                        if (Math.random() < 0.25) {
+                            const variationPercent = Math.floor(Math.random() * 21) + 10; // 10-30%
+                            const isBoost = Math.random() > 0.5;
+                            const factor = isBoost ? variationPercent/100 : -variationPercent/100;
+                            return {
+                                triggered: true,
+                                fieldEffect: true,
+                                fieldFactor: factor,
+                                message: `${character.name}的「萬物流變」被觸發，戰場本質發生變化，雙方攻擊${isBoost ? '增強' : '減弱'}${variationPercent}%！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["流變", "火", "對立統一", "邏各斯", "調和"],
+                historicalContext: "生活於波斯戰爭時期的以弗所，被稱為「晦澀者」，因其深奧難懂的表達方式，留下的著作多為格言式的片段，對後來的辯證法思想有重要影響。",
+                moves: [
+                    { 
+                        name: "宇宙之火", 
+                        power: 15, 
+                        description: "召喚萬物本原之火灼燒對手",
+                        quote: "這個世界是永恆的活火，按一定的規律燃燒，按一定的規律熄滅。",
+                        explanation: "赫拉克利特認為火是宇宙的本原，萬物源於火的各種形態變化。此招召喚宇宙原初之火，攻擊對手。"
+                    },
+                    { 
+                        name: "對立統一", 
+                        power: 20, 
+                        description: "利用對立面的統一性混亂對手認知",
+                        quote: "道路向上向下是同一條道路。在圓周上，開始和結束是同一點。",
+                        explanation: "赫拉克利特認為對立面是統一的，如上下、明暗、生死等。此招使對手陷入認知混亂，無法分辨正反。"
+                    },
+                    { 
+                        name: "邏各斯律動", 
+                        power: 25, 
+                        description: "引發宇宙理性律動，摧毀對手秩序",
+                        quote: "人們應當遵循共同的東西。邏各斯是共同的，但多數人像擁有自己的思想那樣生活。",
+                        explanation: "赫拉克利特提出「邏各斯」概念，指宇宙的普遍理性和秩序法則。此招引發宇宙理性的強大律動，摧毀對手的思想秩序。"
+                    }
+                ]
+            },
+            democritus: {
+                name: "德謨克利特",
+                type: "western",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 40 Q50 15 70 40 L75 85 Q50 100 25 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M40 50 Q50 55 60 50' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Ccircle cx='50' cy='50' r='15' fill='none' stroke='%234F86C6' stroke-width='2' stroke-dasharray='5,3' /%3E%3C/svg%3E",
+                introduction: "德謨克利特（約前460年－前370年），古希臘阿布德拉城人，前蘇格拉底時期原子論哲學家，被稱為「笑的哲學家」。",
+                passiveAbility: {
+                    name: "原子虛空",
+                    description: "存在的只有原子與虛空。攻擊時有15%機率將自身分解為原子，穿過對手防禦，造成額外30%傷害。",
+                    effect: function(character, move) {
+                        if (Math.random() < 0.15) {
+                            return {
+                                triggered: true,
+                                powerBoost: 0.3,
+                                message: `${character.name}的「原子虛空」被觸發，攻擊化為原子穿透防禦，造成30%額外傷害！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["原子", "虛空", "必然性", "愉悅", "靜心"],
+                historicalContext: "前蘇格拉底自然哲學家，與老師留基伯共同創立原子論，認為世界由不可再分的原子和虛空構成，其思想對後世物理學和科學方法論產生重要影響。",
+                moves: [
+                    { 
+                        name: "原子切割", 
+                        power: 15, 
+                        description: "將攻擊分解為無數原子，多點打擊對手",
+                        quote: "萬物皆由原子和虛空所構成。原子不可分割，不可被破壞。",
+                        explanation: "德謨克利特提出世界的基本組成是不可分割的原子和虛空。此招將攻擊分解為細微原子，從多個角度同時攻擊對手。"
+                    },
+                    { 
+                        name: "必然因果", 
+                        power: 20, 
+                        description: "展現嚴格的因果法則，預測並制約對手行動",
+                        quote: "宇宙間沒有任何事物是偶然的，一切都是由必然性和理性支配的。",
+                        explanation: "德謨克利特堅信嚴格的因果決定論，認為世間沒有真正的偶然性。此招預測對手行為模式，限制其行動自由。"
+                    },
+                    { 
+                        name: "智者靜心", 
+                        power: 25, 
+                        description: "以智慧和寧靜的心靈壓制對手混亂情緒",
+                        quote: "靜心是幸福的，而過度和缺乏都會導致痛苦和混亂。",
+                        explanation: "德謨克利特主張心靈平靜是幸福的源泉，應保持節制。此招展現哲學家的智慧和平靜心境，對比並壓制對手的混亂情緒。"
+                    }
+                ]
+            },
+            epicurus: {
+                name: "伊壁鳩魯",
+                type: "western",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 40 Q50 15 75 40 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M40 45 Q50 55 60 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M30 20 Q50 35 70 20' fill='none' stroke='%234F86C6' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "伊壁鳩魯（前341年－前270年），古希臘哲學家，享樂主義學派創始人，主張節制的快樂是人生最高境界。",
+                passiveAbility: {
+                    name: "快樂至上",
+                    description: "唯有恰當的快樂才是善的。每回合結束時有20%機率享受生活樂趣，消除所有負面狀態並恢復10點生命值。",
+                    effect: function(character) {
+                        if (Math.random() < 0.2) {
+                            character.health = Math.min(100, character.health + 10);
+                            return {
+                                triggered: true,
+                                clearDebuffs: true,
+                                message: `${character.name}的「快樂至上」被觸發，享受到生活的樂趣，恢復10點生命值並消除所有負面狀態！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["快樂", "友誼", "靜修", "無懼死亡", "原子論"],
+                historicalContext: "生活於希臘化時期早期，創立了「伊壁鳩魯花園」學校，在那裡與弟子們過著簡樸、沉思的生活，著有《自然論》等著作，但大部分作品已散佚。",
+                moves: [
+                    { 
+                        name: "理性享樂", 
+                        power: 15, 
+                        description: "展現節制的快樂理念，對照襯托對手痛苦",
+                        quote: "當我們說快樂是最終的目的時，我們指的不是縱慾者的快樂，而是指身體沒有痛苦和心靈沒有紛擾的狀態。",
+                        explanation: "伊壁鳩魯主張快樂是人生目標，但強調的是精神的寧靜與肉體的無痛。此招展現理性節制的享樂，對比襯托出對手的內心紛擾和痛苦。"
+                    },
+                    { 
+                        name: "友誼之道", 
+                        power: 20, 
+                        description: "呼喚朋友之力，共同面對對手",
+                        quote: "在所有智慧為我們帶來的幸福人生資糧中，友誼的財富是最偉大、最豐富、最甜美的。",
+                        explanation: "伊壁鳩魯極度重視友誼，認為是人生最重要的價值之一。此招呼喚友誼之力，形成一種精神共同體應對對手。"
+                    },
+                    { 
+                        name: "無畏四藥", 
+                        power: 25, 
+                        description: "擺脫四大恐懼，以絕對無畏擊潰對手",
+                        quote: "不要害怕神明，不要擔憂死亡，善是容易獲得的，而惡是易於忍受的。",
+                        explanation: "伊壁鳩魯提出著名的「四藥論」，用於消除人類四大恐懼。此招展現擺脫一切恐懼後的絕對無畏和自由，對比並壓倒對手的恐懼和不安。"
+                    }
+                ]
+            },
+            socrates: {
+                name: "蘇格拉底",
+                type: "western",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 40 Q50 10 75 40 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M40 50 Q50 45 60 50' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M30 25 Q50 5 70 25' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3C/svg%3E",
+                introduction: "蘇格拉底（前469年－前399年），古希臘哲學家，西方哲學的奠基者之一，主張「認識你自己」，採用辯證問答法探索真理。",
+                passiveAbility: {
+                    name: "智者之問",
+                    description: "只知道自己的無知乃是智慧的開始。每回合結束時30%機率使對手回合跳過，反映出辯證法的困惑效果。",
+                    effect: function(character, opponent) {
+                        if (Math.random() < 0.3) {
+                            return {
+                                triggered: true,
+                                skipOpponentTurn: true,
+                                message: `${character.name}的「智者之問」讓${opponent.name}陷入思考困境，無法行動！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["辯證法", "自知", "言行一致", "理性", "倫理"],
+                historicalContext: "雅典城邦時期的知識分子，身為哲學導師卻從不收費，經常在市集與年輕人辯論，最終因「敗壞青年、不敬神明」被處死刑。",
+                moves: [
+                    { 
+                        name: "產婆術", 
+                        power: 15, 
+                        description: "助對手思想分娩，使其陷入自我矛盾",
+                        quote: "我像我母親一樣是個接生婆。唯一不同的是，她幫助女人生孩子，而我幫助男人生出思想。",
+                        explanation: "蘇格拉底自比助產士，認為自己的任務是協助他人「生產」真理。此招透過問題引導對手自我反思，陷入邏輯困境。"
+                    },
+                    { 
+                        name: "辯證詰問", 
+                        power: 20, 
+                        description: "層層追問，暴露敵人論證漏洞",
+                        quote: "未經省察的人生不值得過。",
+                        explanation: "蘇格拉底強調批判性思考的重要。此招通過連串問題，一步步揭露對手思想的漏洞和不一致之處。"
+                    },
+                    { 
+                        name: "無知之知", 
+                        power: 25, 
+                        description: "以無知之知瓦解對手的知識自信",
+                        quote: "我唯一知道的就是我一無所知。",
+                        explanation: "蘇格拉底的著名paradox，表明真正的智慧在於認識到自己的無知。此招讓對手認識到自身知識的有限，動搖其信心。"
+                    }
+                ]
+            },
+            plato: {
+                name: "柏拉圖",
+                type: "western",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30 40 Q50 20 70 40 L65 85 Q50 95 35 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M40 55 Q50 60 60 55' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M25 30 L35 20 M75 30 L65 20' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3C/svg%3E",
+                introduction: "柏拉圖（前427年－前347年），古希臘哲學家，蘇格拉底的學生，亞里斯多德的老師，創立了柏拉圖學院，著有《理想國》等著作。",
+                passiveAbility: {
+                    name: "理型世界",
+                    description: "世間萬物皆有其理型。每回合結束時，有25%機率使自身下回合的攻擊威力增加30%。",
+                    effect: function(character) {
+                        if (Math.random() < 0.25) {
+                            return {
+                                triggered: true,
+                                powerBoost: 0.3, // 30% power boost
+                                message: `${character.name}的「理型世界」被觸發，下次攻擊將更接近完美形式！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["理型", "靈魂", "善", "美", "正義"],
+                historicalContext: "生活於雅典城邦的鼎盛時期，深受其老師蘇格拉底影響，著有《理想國》、《斐多》等對話錄，創立柏拉圖學院，是西方哲學史上最具影響力的思想家之一。",
+                moves: [
+                    { 
+                        name: "理念論", 
+                        power: 15, 
+                        description: "展現理念世界，將對手拉入幻境",
+                        quote: "感官世界中的所有事物都只是永恆理念的影子。",
+                        explanation: "柏拉圖認為現實世界只是理念世界的投影。此招使對手意識到自己所處的世界只是真實的影子，動搖其感知。"
+                    },
+                    { 
+                        name: "洞穴寓言", 
+                        power: 20, 
+                        description: "釋放洞穴之光，使對手目眩神迷",
+                        quote: "想像有些人住在地下洞穴中，他們從出生就面對洞壁，背對洞口，只能看到火光投射在牆上的影子，卻以為這就是現實。",
+                        explanation: "柏拉圖的著名寓言，描述人類被囚禁在無知的洞穴中。此招使對手被真相之光照射，一時無法適應真實世界。"
+                    },
+                    { 
+                        name: "理想國", 
+                        power: 25, 
+                        description: "以理想國制度束縛對手自由意志",
+                        quote: "除非哲學家成為國王，或國王成為哲學家，否則國家永遠不會擺脫邪惡。",
+                        explanation: "柏拉圖設想的完美國家，由哲學家統治。此招將對手納入嚴密的理想國體系中，限制其自由意志。"
+                    }
+                ]
+            },
+            aristotle: {
+                name: "亞里斯多德",
+                type: "western", 
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M25 35 Q50 15 75 35 L70 85 Q50 95 30 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='35' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='35' r='3' fill='%23fff' /%3E%3Cpath d='M35 45 Q50 40 65 45' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M20 30 L40 20 M80 30 L60 20' fill='none' stroke='%234F86C6' stroke-width='2' /%3E%3C/svg%3E",
+                introduction: "亞里斯多德（前384年－前322年），古希臘哲學家、科學家，柏拉圖的學生，亞歷山大大帝的老師，被稱為「科學之父」。",
+                passiveAbility: {
+                    name: "中庸之道",
+                    description: "德性存在於兩個極端之間的中間狀態。使用絕招時，有20%機率使傷害提高40%。",
+                    effect: function(character, move) {
+                        if (Math.random() < 0.2) {
+                            return {
+                                triggered: true,
+                                powerBoost: 0.4,
+                                message: `${character.name}的「中庸之道」找到了完美平衡點，攻擊威力提升40%！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["邏輯", "實體", "目的論", "中庸", "分類學"],
+                historicalContext: "從馬其頓來到雅典，曾在柏拉圖學院學習二十年，後自創歐幾里得學園。其百科全書式的學術著作範圍廣泛，涵蓋物理學、形而上學、詩歌、劇場、音樂、邏輯學、修辭學、語言學、政治學、政府、倫理學、生物學和動物學。",
+                moves: [
+                    { 
+                        name: "形式邏輯", 
+                        power: 15, 
+                        description: "用嚴密邏輯演繹，困住對手思維",
+                        quote: "所有人都會死。蘇格拉底是人。因此，蘇格拉底會死。",
+                        explanation: "亞里斯多德創立了形式邏輯學，建立了三段論等推理形式。此招用嚴密的邏輯規則束縛對手思維。"
+                    },
+                    { 
+                        name: "四因說", 
+                        power: 20, 
+                        description: "分析對手動因，預判並反制攻擊",
+                        quote: "了解事物須知道四種原因：質料因、形式因、動力因和目的因。",
+                        explanation: "亞里斯多德認為理解事物需要從四個方面分析。此招分析對手行為的本質和目的，預判並反制其攻擊。"
+                    },
+                    { 
+                        name: "德性倫理", 
+                        power: 25, 
+                        description: "樹立德性典範，使對手自慚形穢",
+                        quote: "德性存在於中庸之道。過猶不及，皆非善德。",
+                        explanation: "亞里斯多德主張德性在於中道，避免過度或不足。此招展現完美的德性典範，使對手因自身不足而羞愧。"
+                    }
+                ]
+            },
+            nietzsche: {
+                name: "尼采",
+                type: "western",
+                health: 100,
+                avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M20 40 Q50 15 80 40 L75 85 Q50 100 25 85 Z' fill='%234F86C6' /%3E%3Ccircle cx='40' cy='40' r='3' fill='%23fff' /%3E%3Ccircle cx='60' cy='40' r='3' fill='%23fff' /%3E%3Cpath d='M35 55 Q50 50 65 55' fill='none' stroke='%23fff' stroke-width='2' /%3E%3Cpath d='M40 15 L45 30 M60 15 L55 30' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3Cpath d='M25 25 Q50 0 75 25' fill='none' stroke='%234F86C6' stroke-width='3' /%3E%3C/svg%3E",
+                introduction: "尼采（1844年－1900年），德國哲學家、文化評論家、詩人，其思想對存在主義、后現代主義等產生深遠影響。",
+                passiveAbility: {
+                    name: "權力意志",
+                    description: "人的本質在於不斷超越自我與征服障礙。每次受到攻擊時，有機會增強反擊威力。",
+                    effect: function(character, damage) {
+                        if (Math.random() < 0.3) {
+                            return {
+                                triggered: true,
+                                powerBoost: 0.5, // 50% power boost to next attack
+                                message: `${character.name}的「權力意志」被觸發，下次攻擊威力提升50%！`
+                            };
+                        }
+                        return { triggered: false };
+                    }
+                },
+                coreConcepts: ["超人", "權力意志", "永恆輪迴", "悲劇精神", "價值重估"],
+                historicalContext: "出生於普魯士的一個牧師家庭，早年受古典哲學教育，曾任教巴塞爾大學。他猛烈批判基督教道德與西方形而上學傳統，主張以積極的生命態度取代虛無主義。",
+                moves: [
+                    { 
+                        name: "超人意志", 
+                        power: 15, 
+                        description: "喚醒超人意志，蔑視對手平庸之道",
+                        quote: "人是一根繩索，懸於野獸與超人之間。",
+                        explanation: "尼采提出「超人」概念，認為人應超越自我。此招喚醒內在的超人意志，蔑視並壓制對手的平庸意志。"
+                    },
+                    { 
+                        name: "重估價值", 
+                        power: 20, 
+                        description: "顛覆對手價值觀，使其陷入虛無",
+                        quote: "上帝已死！我們殺死了他！我們怎麼能安慰自己？",
+                        explanation: "尼采宣告「上帝已死」，主張重新評估一切價值。此招顛覆對手的價值觀和道德基礎，使其陷入虛無。"
+                    },
+                    { 
+                        name: "永恆輪迴", 
+                        power: 25, 
+                        description: "啟動永恆輪迴，使對手承受存在之重",
+                        quote: "倘若一個惡魔告訴你，你將無數次重複現在的生活，你會怎麼做？",
+                        explanation: "尼采的「永恆輪迴」思想，要求人能夠接受無限重複自己生活的念頭。此招使對手感受到存在的沉重負擔。"
+                    }
+                ]
+            }
+        };
+
+        // Game state
+        let gameState = {
+            player: null,
+            opponent: null,
+            playerCharacter: null,
+            opponentCharacter: null,
+            playerSelected: false,
+            opponentSelected: false,
+            currentTurn: 'player',
+            battleActive: false,
+            timer: 60,
+            timerInterval: null
+        };
+
+        // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const characterSelect = document.getElementById('character-select');
+        const battleScreen = document.getElementById('battle-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const battleBtn = document.getElementById('battle-btn');
+        const playerSelected = document.getElementById('player-selected');
+        const opponentSelected = document.getElementById('opponent-selected');
+        const characterCards = document.querySelectorAll('.character-card');
+        const playerCharacter = document.getElementById('player-character');
+        const opponentCharacter = document.getElementById('opponent-character');
+        const playerName = document.getElementById('player-name');
+        const opponentName = document.getElementById('opponent-name');
+        const playerHealthBar = document.getElementById('player-health-bar');
+        const opponentHealthBar = document.getElementById('opponent-health-bar');
+        const playerHealthText = document.getElementById('player-health-text');
+        const opponentHealthText = document.getElementById('opponent-health-text');
+        const playerMoves = document.getElementById('player-moves');
+        const battleMessage = document.getElementById('battle-message');
+        const nextTurnBtn = document.getElementById('next-turn-btn');
+        const battleTimer = document.getElementById('battle-timer');
+        const resultTitle = document.getElementById('result-title');
+        const resultImage = document.getElementById('result-image');
+        const resultMessage = document.getElementById('result-message');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const changeCharactersBtn = document.getElementById('change-characters-btn');
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        battleBtn.addEventListener('click', startBattle);
+        nextTurnBtn.addEventListener('click', nextTurn);
+        playAgainBtn.addEventListener('click', restartBattle);
+        changeCharactersBtn.addEventListener('click', changeCharacters);
+
+        // Start game
+        function startGame() {
+            startScreen.classList.add('hidden');
+            characterSelect.classList.remove('hidden');
+            initCharacterSelection();
+        }
+
+        // Initialize character selection
+        function initCharacterSelection() {
+            characterCards.forEach(card => {
+                card.addEventListener('click', selectCharacter);
+                
+                // Add hover effect to show philosopher introduction
+                card.addEventListener('mouseenter', showPhilosopherInfo);
+                card.addEventListener('mouseleave', hidePhilosopherInfo);
+            });
+
+            // Reset selections
+            gameState.playerSelected = false;
+            gameState.opponentSelected = false;
+            playerSelected.innerHTML = '<div class="text-gray-400 italic">尚未選擇哲學家</div>';
+            opponentSelected.innerHTML = '<div class="text-gray-400 italic">尚未選擇哲學家</div>';
+            battleBtn.disabled = true;
+            
+            // Remove any selected styles
+            document.querySelectorAll('.character-avatar').forEach(avatar => {
+                avatar.classList.remove('selected');
+            });
+        }
+        
+        // Show philosopher info on hover
+        function showPhilosopherInfo() {
+            const characterId = this.dataset.id;
+            const philosopher = philosophers[characterId];
+            
+            // Create info popup if it doesn't exist
+            if (!document.getElementById('info-popup')) {
+                const popup = document.createElement('div');
+                popup.id = 'info-popup';
+                popup.className = 'fixed bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg max-w-xs z-50 text-sm';
+                popup.style.display = 'none';
+                document.body.appendChild(popup);
+            }
+            
+            const popup = document.getElementById('info-popup');
+            popup.innerHTML = `
+                <h3 class="font-bold text-${philosopher.type === 'eastern' ? 'eastern' : 'western'}">${philosopher.name}</h3>
+                <p class="mt-1">${philosopher.introduction}</p>
+            `;
+            
+            // Position popup near the hovered card
+            const rect = this.getBoundingClientRect();
+            popup.style.top = `${rect.bottom + 10}px`;
+            popup.style.left = `${rect.left + (rect.width / 2) - 100}px`;
+            popup.style.display = 'block';
+        }
+        
+        // Hide philosopher info
+        function hidePhilosopherInfo() {
+            const popup = document.getElementById('info-popup');
+            if (popup) {
+                popup.style.display = 'none';
+            }
+        }
+
+        // Game mode
+        let gameMode = 'single'; // 'single' or 'two-player'
+        const singlePlayerModeBtn = document.getElementById('single-player-mode');
+        const twoPlayerModeBtn = document.getElementById('two-player-mode');
+        
+        singlePlayerModeBtn.addEventListener('click', () => {
+            gameMode = 'single';
+            singlePlayerModeBtn.classList.add('bg-opacity-100', 'ring-4', 'ring-primary', 'ring-opacity-50');
+            twoPlayerModeBtn.classList.remove('bg-opacity-100', 'ring-4', 'ring-primary', 'ring-opacity-50');
+        });
+        
+        twoPlayerModeBtn.addEventListener('click', () => {
+            gameMode = 'two-player';
+            twoPlayerModeBtn.classList.add('bg-opacity-100', 'ring-4', 'ring-primary', 'ring-opacity-50');
+            singlePlayerModeBtn.classList.remove('bg-opacity-100', 'ring-4', 'ring-primary', 'ring-opacity-50');
+        });
+        
+        // Set single-player as default selected
+        singlePlayerModeBtn.classList.add('bg-opacity-100', 'ring-4', 'ring-primary', 'ring-opacity-50');
+        
+        // Select character
+        function selectCharacter() {
+            const characterId = this.dataset.id;
+            const characterType = this.dataset.type;
+            const philosopher = philosophers[characterId];
+            
+            // Check if this card is already selected and which role it has
+            const isCurrentlyPlayer = this.getAttribute('data-role') === 'player';
+            const isCurrentlyOpponent = this.getAttribute('data-role') === 'opponent';
+            const selectedAvatar = this.querySelector('.character-avatar');
+            
+            // If we're clicking on player1's already selected character, allow deselection
+            if (isCurrentlyPlayer) {
+                // Deselect this character as player
+                selectedAvatar.classList.remove('selected');
+                this.removeAttribute('data-role');
+                
+                // Update state
+                gameState.player = null;
+                gameState.playerSelected = false;
+                
+                // Update display
+                playerSelected.innerHTML = '<div class="text-gray-400 italic">尚未選擇哲學家</div>';
+                
+                // In single player mode, clear opponent as well since it's auto-selected
+                if (gameMode === 'single' && gameState.opponentSelected) {
+                    document.querySelectorAll('.character-card[data-role="opponent"] .character-avatar').forEach(avatar => {
+                        avatar.classList.remove('selected');
+                        avatar.closest('.character-card').removeAttribute('data-role');
+                    });
+                    
+                    // Update state
+                    gameState.opponent = null;
+                    gameState.opponentSelected = false;
+                    
+                    // Update display
+                    opponentSelected.innerHTML = '<div class="text-gray-400 italic">尚未選擇哲學家</div>';
+                }
+                
+                // Disable battle button since we no longer have selection
+                battleBtn.disabled = true;
+                return;
+            }
+            
+            // If we're clicking on player2's already selected character, allow deselection
+            if (isCurrentlyOpponent) {
+                // Deselect this character as opponent
+                selectedAvatar.classList.remove('selected');
+                this.removeAttribute('data-role');
+                
+                // Update state
+                gameState.opponent = null;
+                gameState.opponentSelected = false;
+                
+                // Update display
+                opponentSelected.innerHTML = '<div class="text-gray-400 italic">尚未選擇哲學家</div>';
+                
+                // Disable battle button if we no longer have both selections
+                battleBtn.disabled = true;
+                return;
+            }
+            
+            // Determine if this is a player selection or opponent selection
+            let isPlayerSelection = !gameState.playerSelected;
+            let isOpponentSelection = !isPlayerSelection;
+            
+            // In two-player mode, if both are selected, default to changing player selection
+            // unless this character is already the opponent's selection
+            if (gameMode === 'two-player' && gameState.playerSelected && gameState.opponentSelected) {
+                if (characterId === gameState.opponent) {
+                    // Can't select the same character for both players in two-player mode
+                    return;
+                }
+                isPlayerSelection = true;
+                isOpponentSelection = false;
+            }
+            
+            // Handle player selection
+            if (isPlayerSelection) {
+                // Clear any previous player selections
+                document.querySelectorAll('.character-card[data-role="player"] .character-avatar').forEach(avatar => {
+                    avatar.classList.remove('selected');
+                    avatar.closest('.character-card').removeAttribute('data-role');
+                });
+                
+                // Mark this as player's choice
+                selectedAvatar.classList.add('selected');
+                this.setAttribute('data-role', 'player');
+                
+                // Update state
+                gameState.player = characterId;
+                gameState.playerSelected = true;
+                
+                // Update selection display
+                playerSelected.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="relative">
+                            <img src="${philosopher.avatar}" alt="${philosopher.name}" class="w-16 h-16 mr-2 rounded-lg border-2 border-${characterType === 'eastern' ? 'eastern' : 'western'}">
+                            <div class="absolute -bottom-1 -right-1 bg-${characterType === 'eastern' ? 'eastern' : 'western'} text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">P1</div>
+                        </div>
+                        <div>
+                            <div class="font-bold text-lg">${philosopher.name}</div>
+                            <div class="text-sm text-${characterType === 'eastern' ? 'eastern' : 'western'} font-semibold">${characterType === 'eastern' ? '東方' : '西方'}</div>
+                        </div>
+                    </div>
+                `;
+                
+                // In single player mode, auto-select opponent from the opposite side
+                if (gameMode === 'single') {
+                    // Clear any previous opponent selections first
+                    document.querySelectorAll('.character-card[data-role="opponent"] .character-avatar').forEach(avatar => {
+                        avatar.classList.remove('selected');
+                        avatar.closest('.character-card').removeAttribute('data-role');
+                    });
+                    
+                    const oppositeType = characterType === 'eastern' ? 'western' : 'eastern';
+                    const oppositePhilosophers = Object.keys(philosophers).filter(id => philosophers[id].type === oppositeType);
+                    const randomOpponent = oppositePhilosophers[Math.floor(Math.random() * oppositePhilosophers.length)];
+                    
+                    // Update state
+                    gameState.opponent = randomOpponent;
+                    gameState.opponentSelected = true;
+                    const opponentPhilosopher = philosophers[randomOpponent];
+                    
+                    // Update selection display
+                    opponentSelected.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="relative">
+                                <img src="${opponentPhilosopher.avatar}" alt="${opponentPhilosopher.name}" class="w-16 h-16 mr-2 rounded-lg border-2 border-${oppositeType === 'eastern' ? 'eastern' : 'western'}">
+                                <div class="absolute -bottom-1 -right-1 bg-${oppositeType === 'eastern' ? 'eastern' : 'western'} text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">AI</div>
+                            </div>
+                            <div>
+                                <div class="font-bold text-lg">${opponentPhilosopher.name}</div>
+                                <div class="text-sm text-${oppositeType === 'eastern' ? 'eastern' : 'western'} font-semibold">${oppositeType === 'eastern' ? '東方' : '西方'}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Highlight auto-selected opponent
+                    document.querySelectorAll('.character-card').forEach(card => {
+                        if (card.dataset.id === randomOpponent) {
+                            card.querySelector('.character-avatar').classList.add('selected');
+                            card.setAttribute('data-role', 'opponent');
+                        }
+                    });
+                }
+            } else if (isOpponentSelection) {
+                // If selecting opponent...
+                
+                // In two-player mode, don't allow selecting the same character for both players
+                if (gameMode === 'two-player' && characterId === gameState.player) {
+                    return;
+                }
+                
+                // Clear previous opponent selections
+                document.querySelectorAll('.character-card[data-role="opponent"] .character-avatar').forEach(avatar => {
+                    avatar.classList.remove('selected');
+                    avatar.closest('.character-card').removeAttribute('data-role');
+                });
+                
+                // Mark this as opponent's choice
+                selectedAvatar.classList.add('selected');
+                this.setAttribute('data-role', 'opponent');
+                
+                // Update state
+                gameState.opponent = characterId;
+                gameState.opponentSelected = true;
+                
+                // Update selection display
+                opponentSelected.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="relative">
+                            <img src="${philosopher.avatar}" alt="${philosopher.name}" class="w-16 h-16 mr-2 rounded-lg border-2 border-${characterType === 'eastern' ? 'eastern' : 'western'}">
+                            <div class="absolute -bottom-1 -right-1 bg-${characterType === 'eastern' ? 'eastern' : 'western'} text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">${gameMode === 'two-player' ? 'P2' : 'AI'}</div>
+                        </div>
+                        <div>
+                            <div class="font-bold text-lg">${philosopher.name}</div>
+                            <div class="text-sm text-${characterType === 'eastern' ? 'eastern' : 'western'} font-semibold">${characterType === 'eastern' ? '東方' : '西方'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Enable battle button if both characters are selected
+            battleBtn.disabled = !(gameState.playerSelected && gameState.opponentSelected);
+        }
+
+        // Start battle
+        function startBattle() {
+            characterSelect.classList.add('hidden');
+            battleScreen.classList.remove('hidden');
+            
+            // Reset game state
+            gameState.playerCharacter = JSON.parse(JSON.stringify(philosophers[gameState.player]));
+            gameState.opponentCharacter = JSON.parse(JSON.stringify(philosophers[gameState.opponent]));
+            gameState.currentTurn = 'player';
+            gameState.battleActive = true;
+            gameState.timer = 60;
+            battleRound = 1;
+            
+            // Reset battle log
+            battleLog.length = 0;
+            updateBattleLog();
+            
+            // Set up battle screen
+            playerCharacter.innerHTML = `<img src="${gameState.playerCharacter.avatar}" alt="${gameState.playerCharacter.name}" class="w-40 h-40">`;
+            opponentCharacter.innerHTML = `<img src="${gameState.opponentCharacter.avatar}" alt="${gameState.opponentCharacter.name}" class="w-40 h-40">`;
+            opponentCharacter.classList.add('scale-x-[-1]'); // Flip opponent
+            
+            // Set names in the health bar and name displays 
+            playerName.textContent = gameState.playerCharacter.name;
+            opponentName.textContent = gameState.opponentCharacter.name;
+            document.getElementById('player-name-display').textContent = gameState.playerCharacter.name;
+            document.getElementById('opponent-name-display').textContent = gameState.opponentCharacter.name;
+            
+            // Display passive abilities
+            document.getElementById('player-passive').textContent = gameState.playerCharacter.passiveAbility.name + ": " + gameState.playerCharacter.passiveAbility.description;
+            document.getElementById('opponent-passive').textContent = gameState.opponentCharacter.passiveAbility.name + ": " + gameState.opponentCharacter.passiveAbility.description;
+            
+            // Update round number display
+            document.getElementById('round-counter').textContent = battleRound;
+            document.getElementById('center-round-counter').textContent = battleRound;
+            
+            // Show player's turn indicator
+            document.getElementById('player-turn-indicator').style.opacity = '1';
+            document.getElementById('opponent-turn-indicator').style.opacity = '0';
+            
+            // Display mode indicator (single or two-player)
+            const modeIndicator = document.getElementById('player-mode-indicator');
+            modeIndicator.innerHTML = `<span class="bg-primary bg-opacity-20 px-2 py-1 rounded-lg text-xs">${gameMode === 'single' ? '單人模式' : '雙人模式'}</span>`;
+            
+            // Display game timer
+            document.getElementById('game-timer').textContent = `${gameState.timer}s`;
+            
+            // Display core concepts
+            displayCoreConcepts('player-concept-tags', gameState.playerCharacter.coreConcepts, gameState.playerCharacter.type);
+            displayCoreConcepts('opponent-concept-tags', gameState.opponentCharacter.coreConcepts, gameState.opponentCharacter.type);
+            
+            updateHealthBars();
+            populatePlayerMoves();
+            
+            // Add initial battle log entry
+            addToBattleLog(`哲學對決開始：${gameState.playerCharacter.name} vs ${gameState.opponentCharacter.name}`, 'neutral');
+            document.getElementById('battle-log').classList.remove('hidden');
+            
+            // Start timer
+            startTimer();
+        }
+
+        // Populate player moves
+        function populatePlayerMoves() {
+            playerMoves.innerHTML = '';
+            gameState.playerCharacter.moves.forEach(move => {
+                const moveBtn = document.createElement('button');
+                moveBtn.className = 'special-move w-full text-left bg-white dark:bg-gray-800 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200';
+                moveBtn.innerHTML = `
+                    <div class="font-bold">${move.name}</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">${move.description}</div>
+                    <div class="text-xs mt-1 text-primary">威力: ${move.power}</div>
+                `;
+                moveBtn.addEventListener('click', () => useMove(move));
+                playerMoves.appendChild(moveBtn);
+            });
+        }
+
+        // Use move
+        function useMove(move) {
+            if (!gameState.battleActive || gameState.currentTurn !== 'player') return;
+            
+            // Disable all move buttons
+            const moveButtons = playerMoves.querySelectorAll('button');
+            moveButtons.forEach(btn => btn.disabled = true);
+            
+            // Check if passive ability modifies this attack (e.g. Aristotle and Plato)
+            let moveBoost = 0;
+            if (gameState.playerCharacter.pendingBoost) {
+                moveBoost = gameState.playerCharacter.pendingBoost;
+                gameState.playerCharacter.pendingBoost = 0;
+            } else if (gameState.playerCharacter.name === "亞里斯多德") {
+                // Check Aristotle's ability
+                const abilityResult = gameState.playerCharacter.passiveAbility.effect(gameState.playerCharacter, move);
+                if (abilityResult.triggered) {
+                    moveBoost = abilityResult.powerBoost;
+                    battleMessage.innerHTML = `<div class="text-primary font-bold">${abilityResult.message}</div>`;
+                    addToBattleLog(abilityResult.message, gameState.playerCharacter.type);
+                    
+                    // Create philosophy symbols animation when ability triggered
+                    for (let i = 0; i < 5; i++) {
+                        const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                        const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                        setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), i * 100);
+                    }
+                    
+                    // Brief delay to show the ability activation before attack
+                    setTimeout(() => {
+                        continueAttack(move, moveBoost);
+                    }, 1000);
+                    return;
+                }
+            }
+            
+            continueAttack(move, moveBoost);
+            
+            function continueAttack(move, boost) {
+                // Player attack animation
+                playerCharacter.classList.add('attack-animation');
+                
+                // Create philosophy symbols animation
+                const symbolCount = Math.floor(Math.random() * 3) + 2;
+                for (let i = 0; i < symbolCount; i++) {
+                    const x = opponentCharacter.getBoundingClientRect().left + Math.random() * 40;
+                    const y = opponentCharacter.getBoundingClientRect().top + Math.random() * 40;
+                    setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), 250 + i * 150);
+                }
+                
+                setTimeout(() => {
+                    playerCharacter.classList.remove('attack-animation');
+                    opponentCharacter.classList.add('hurt-animation');
+                    
+                    // Calculate damage with some randomness and boost if applicable
+                    const baseDamage = move.power;
+                    const randomFactor = Math.random() * 0.3 + 0.85; // 0.85 to 1.15
+                    let damage = Math.round(baseDamage * randomFactor);
+                    
+                    // Apply boost if any
+                    if (boost > 0) {
+                        const boostAmount = Math.round(damage * boost);
+                        damage += boostAmount;
+                    }
+                    
+                    // Check for opponent passive ability that might reduce damage
+                    let passiveTriggered = false;
+                    let passiveMessage = "";
+                    
+                    // Handle sunzi and buddha passives
+                    if (gameState.opponentCharacter.name === "孫子" || gameState.opponentCharacter.name === "佛陀") {
+                        const abilityResult = gameState.opponentCharacter.passiveAbility.effect(
+                            gameState.opponentCharacter, 
+                            damage, 
+                            gameState.playerCharacter
+                        );
+                        
+                        if (abilityResult.triggered) {
+                            passiveTriggered = true;
+                            passiveMessage = abilityResult.message;
+                            damage = abilityResult.actualDamage;
+                            
+                            // Create philosophy symbols for the passive defense
+                            for (let i = 0; i < 3; i++) {
+                                const x = opponentCharacter.getBoundingClientRect().left + Math.random() * 40;
+                                const y = opponentCharacter.getBoundingClientRect().top + Math.random() * 40;
+                                setTimeout(() => createPhilosophySymbol(gameState.opponentCharacter.type, x, y), i * 100);
+                            }
+                        }
+                    } else if (gameState.opponentCharacter.name === "老子") {
+                        // Handle Laozi's reflection passive
+                        const abilityResult = gameState.opponentCharacter.passiveAbility.effect(
+                            gameState.opponentCharacter, 
+                            damage, 
+                            gameState.playerCharacter
+                        );
+                        
+                        if (abilityResult.triggered) {
+                            passiveTriggered = true;
+                            passiveMessage = abilityResult.message;
+                            
+                            // Create philosophy symbols for the damage reflection
+                            for (let i = 0; i < 4; i++) {
+                                const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                                const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                                setTimeout(() => createPhilosophySymbol(gameState.opponentCharacter.type, x, y), i * 100);
+                            }
+                        }
+                    }
+                    
+                    // Apply damage
+                    gameState.opponentCharacter.health = Math.max(0, gameState.opponentCharacter.health - damage);
+                    updateHealthBars();
+                    
+                    // Add to battle log
+                    addToBattleLog(`${gameState.playerCharacter.name} 使用了 ${move.name}，造成 ${damage} 點傷害！`, gameState.playerCharacter.type);
+                    
+                    // Show message with philosophy quote
+                    const quoteClass = gameState.playerCharacter.type === 'eastern' ? 'eastern-quote' : 'western-quote';
+                    battleMessage.innerHTML = `
+                        <div class="font-bold">${gameState.playerCharacter.name} 使用了 ${move.name}!</div>
+                        <div class="text-sm mt-1">對 ${gameState.opponentCharacter.name} 造成 ${damage} 點傷害!</div>
+                        <div class="quote-box ${quoteClass} text-sm mt-2">${move.quote}</div>
+                        <div class="text-xs mt-1">${move.explanation}</div>
+                    `;
+                    
+                    // If opponent passive was triggered, show it
+                    if (passiveTriggered) {
+                        setTimeout(() => {
+                            battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${passiveMessage}</div>`;
+                            addToBattleLog(passiveMessage, gameState.opponentCharacter.type);
+                            
+                            // Update health after passive
+                            updateHealthBars();
+                        }, 500);
+                    }
+                    
+                    setTimeout(() => {
+                        opponentCharacter.classList.remove('hurt-animation');
+                        
+                        // Check for win
+                        if (gameState.opponentCharacter.health <= 0) {
+                            endBattle('player');
+                            return;
+                        }
+                        
+                        // Check for Nietzsche's power up after being hit
+                        if (gameState.opponentCharacter.name === "尼采") {
+                            const abilityResult = gameState.opponentCharacter.passiveAbility.effect(
+                                gameState.opponentCharacter, 
+                                damage
+                            );
+                            
+                            if (abilityResult.triggered) {
+                                battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${abilityResult.message}</div>`;
+                                addToBattleLog(abilityResult.message, gameState.opponentCharacter.type);
+                                gameState.opponentCharacter.pendingBoost = abilityResult.powerBoost;
+                                
+                                // Visual indication
+                                for (let i = 0; i < 3; i++) {
+                                    const x = opponentCharacter.getBoundingClientRect().left + Math.random() * 40;
+                                    const y = opponentCharacter.getBoundingClientRect().top + Math.random() * 40;
+                                    setTimeout(() => createPhilosophySymbol(gameState.opponentCharacter.type, x, y), i * 100);
+                                }
+                            }
+                        }
+                        
+                        // Switch turn
+                        gameState.currentTurn = 'opponent';
+                        battleMessage.innerHTML += `<div class="text-sm mt-2">對手回合...</div>`;
+                        
+                        // Opponent's turn after a short delay
+                        setTimeout(() => {
+                            opponentTurn();
+                        }, 1000);
+                    }, 1000);
+                }, 500);
+            }
+        }
+
+        // Opponent turn
+        function opponentTurn() {
+            if (!gameState.battleActive) return;
+            
+            // In two-player mode, show the opponent moves instead of auto-playing
+            if (gameMode === 'two-player') {
+                // Switch turn indicators
+                document.getElementById('player-turn-indicator').style.opacity = '0';
+                document.getElementById('opponent-turn-indicator').style.opacity = '1';
+                
+                // Switch to opponent's moves display
+                playerMoves.innerHTML = '';
+                
+                // Update battle status to show whose turn it is
+                document.getElementById('player-mode-indicator').innerHTML = `<span class="bg-${gameState.opponentCharacter.type === 'eastern' ? 'eastern' : 'western'} text-white px-2 py-1 rounded-full text-xs">玩家二回合</span>`;
+                
+                // Display opponent moves for player 2 to select
+                gameState.opponentCharacter.moves.forEach(move => {
+                    const moveBtn = document.createElement('button');
+                    moveBtn.className = `special-move w-full text-left bg-${gameState.opponentCharacter.type === 'eastern' ? 'eastern' : 'western'} bg-opacity-20 p-3 rounded-lg hover:bg-opacity-30 dark:hover:bg-opacity-40 transition-all duration-200`;
+                    moveBtn.innerHTML = `
+                        <div class="font-bold">${move.name}</div>
+                        <div class="text-xs text-gray-700 dark:text-gray-300">${move.description}</div>
+                        <div class="text-xs mt-1 text-${gameState.opponentCharacter.type === 'eastern' ? 'eastern' : 'western'} font-semibold">威力: ${move.power}</div>
+                    `;
+                    moveBtn.addEventListener('click', () => useOpponentMove(move));
+                    playerMoves.appendChild(moveBtn);
+                });
+                
+                battleMessage.innerHTML = `
+                    <div class="text-center py-2">
+                        <div class="inline-block bg-${gameState.opponentCharacter.type === 'eastern' ? 'eastern' : 'western'} text-white px-3 py-1 rounded-full mb-2">玩家二回合</div>
+                        <div>選擇一個絕招來攻擊對手！</div>
+                    </div>
+                `;
+                
+                return;
+            }
+            
+            // Show opponent turn indicator
+            document.getElementById('player-turn-indicator').style.opacity = '0';
+            document.getElementById('opponent-turn-indicator').style.opacity = '1';
+            
+            // Single player mode: AI opponent
+            // Choose random move
+            const opponentMoves = gameState.opponentCharacter.moves;
+            const randomMove = opponentMoves[Math.floor(Math.random() * opponentMoves.length)];
+            
+            // Check for pending boost from passive abilities
+            let moveBoost = 0;
+            if (gameState.opponentCharacter.pendingBoost) {
+                moveBoost = gameState.opponentCharacter.pendingBoost;
+                gameState.opponentCharacter.pendingBoost = 0;
+            }
+            
+            // Opponent attack animation
+            opponentCharacter.classList.add('attack-animation');
+            
+            // Create philosophy symbols animation
+            const symbolCount = Math.floor(Math.random() * 3) + 2;
+            for (let i = 0; i < symbolCount; i++) {
+                const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                setTimeout(() => createPhilosophySymbol(gameState.opponentCharacter.type, x, y), 250 + i * 150);
+            }
+            
+            setTimeout(() => {
+                opponentCharacter.classList.remove('attack-animation');
+                playerCharacter.classList.add('hurt-animation');
+                
+                // Calculate damage with some randomness
+                const baseDamage = randomMove.power;
+                const randomFactor = Math.random() * 0.3 + 0.85; // 0.85 to 1.15
+                let damage = Math.round(baseDamage * randomFactor);
+                
+                // Apply boost if any
+                if (moveBoost > 0) {
+                    const boostAmount = Math.round(damage * moveBoost);
+                    damage += boostAmount;
+                }
+                
+                // Check for player passive ability that might reduce damage
+                let passiveTriggered = false;
+                let passiveMessage = "";
+                
+                // Handle sunzi and buddha passives
+                if (gameState.playerCharacter.name === "孫子" || gameState.playerCharacter.name === "佛陀") {
+                    const abilityResult = gameState.playerCharacter.passiveAbility.effect(
+                        gameState.playerCharacter, 
+                        damage, 
+                        gameState.opponentCharacter
+                    );
+                    
+                    if (abilityResult.triggered) {
+                        passiveTriggered = true;
+                        passiveMessage = abilityResult.message;
+                        damage = abilityResult.actualDamage;
+                        
+                        // Create philosophy symbols for the passive defense
+                        for (let i = 0; i < 3; i++) {
+                            const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                            const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                            setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), i * 100);
+                        }
+                    }
+                } else if (gameState.playerCharacter.name === "老子") {
+                    // Handle Laozi's reflection passive
+                    const abilityResult = gameState.playerCharacter.passiveAbility.effect(
+                        gameState.playerCharacter, 
+                        damage, 
+                        gameState.opponentCharacter
+                    );
+                    
+                    if (abilityResult.triggered) {
+                        passiveTriggered = true;
+                        passiveMessage = abilityResult.message;
+                        
+                        // Create philosophy symbols for the damage reflection
+                        for (let i = 0; i < 4; i++) {
+                            const x = opponentCharacter.getBoundingClientRect().left + Math.random() * 40;
+                            const y = opponentCharacter.getBoundingClientRect().top + Math.random() * 40;
+                            setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), i * 100);
+                        }
+                    }
+                }
+                
+                // Apply damage
+                gameState.playerCharacter.health = Math.max(0, gameState.playerCharacter.health - damage);
+                updateHealthBars();
+                
+                // Add to battle log
+                addToBattleLog(`${gameState.opponentCharacter.name} 使用了 ${randomMove.name}，造成 ${damage} 點傷害！`, gameState.opponentCharacter.type);
+                
+                // Show message with philosophy quote
+                const quoteClass = gameState.opponentCharacter.type === 'eastern' ? 'eastern-quote' : 'western-quote';
+                battleMessage.innerHTML = `
+                    <div class="font-bold">${gameState.opponentCharacter.name} 使用了 ${randomMove.name}!</div>
+                    <div class="text-sm mt-1">對 ${gameState.playerCharacter.name} 造成 ${damage} 點傷害!</div>
+                    <div class="quote-box ${quoteClass} text-sm mt-2">${randomMove.quote}</div>
+                    <div class="text-xs mt-1">${randomMove.explanation}</div>
+                `;
+                
+                // If player passive was triggered, show it
+                if (passiveTriggered) {
+                    setTimeout(() => {
+                        battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${passiveMessage}</div>`;
+                        addToBattleLog(passiveMessage, gameState.playerCharacter.type);
+                        
+                        // Update health after passive
+                        updateHealthBars();
+                    }, 500);
+                }
+                
+                setTimeout(() => {
+                    playerCharacter.classList.remove('hurt-animation');
+                    
+                    // Check for win
+                    if (gameState.playerCharacter.health <= 0) {
+                        endBattle('opponent');
+                        return;
+                    }
+                    
+                    // Check for Nietzsche's power up after being hit
+                    if (gameState.playerCharacter.name === "尼采") {
+                        const abilityResult = gameState.playerCharacter.passiveAbility.effect(
+                            gameState.playerCharacter, 
+                            damage
+                        );
+                        
+                        if (abilityResult.triggered) {
+                            battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${abilityResult.message}</div>`;
+                            addToBattleLog(abilityResult.message, gameState.playerCharacter.type);
+                            gameState.playerCharacter.pendingBoost = abilityResult.powerBoost;
+                            
+                            // Visual indication
+                            for (let i = 0; i < 3; i++) {
+                                const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                                const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                                setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), i * 100);
+                            }
+                        }
+                    }
+                    
+                    // Enable next turn button
+                    nextTurnBtn.classList.remove('hidden');
+                }, 1000);
+            }, 500);
+        }
+        
+        // Player 2's move (for two-player mode)
+        function useOpponentMove(move) {
+            if (!gameState.battleActive || gameState.currentTurn !== 'opponent' || gameMode !== 'two-player') return;
+            
+            // Disable all move buttons
+            const moveButtons = playerMoves.querySelectorAll('button');
+            moveButtons.forEach(btn => btn.disabled = true);
+            
+            // Check if passive ability modifies this attack
+            let moveBoost = 0;
+            if (gameState.opponentCharacter.pendingBoost) {
+                moveBoost = gameState.opponentCharacter.pendingBoost;
+                gameState.opponentCharacter.pendingBoost = 0;
+            } else if (gameState.opponentCharacter.name === "亞里斯多德") {
+                // Check Aristotle's ability for player 2
+                const abilityResult = gameState.opponentCharacter.passiveAbility.effect(gameState.opponentCharacter, move);
+                if (abilityResult.triggered) {
+                    moveBoost = abilityResult.powerBoost;
+                    battleMessage.innerHTML = `<div class="text-primary font-bold">${abilityResult.message}</div>`;
+                    addToBattleLog(abilityResult.message, gameState.opponentCharacter.type);
+                    
+                    // Create philosophy symbols animation when ability triggered
+                    for (let i = 0; i < 5; i++) {
+                        const x = opponentCharacter.getBoundingClientRect().left + Math.random() * 40;
+                        const y = opponentCharacter.getBoundingClientRect().top + Math.random() * 40;
+                        setTimeout(() => createPhilosophySymbol(gameState.opponentCharacter.type, x, y), i * 100);
+                    }
+                    
+                    // Brief delay to show the ability activation before attack
+                    setTimeout(() => {
+                        continueAttack(move, moveBoost);
+                    }, 1000);
+                    return;
+                }
+            }
+            
+            continueAttack(move, moveBoost);
+            
+            function continueAttack(move, boost) {
+                // Opponent attack animation
+                opponentCharacter.classList.add('attack-animation');
+                
+                // Create philosophy symbols animation
+                const symbolCount = Math.floor(Math.random() * 3) + 2;
+                for (let i = 0; i < symbolCount; i++) {
+                    const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                    const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                    setTimeout(() => createPhilosophySymbol(gameState.opponentCharacter.type, x, y), 250 + i * 150);
+                }
+                
+                setTimeout(() => {
+                    opponentCharacter.classList.remove('attack-animation');
+                    playerCharacter.classList.add('hurt-animation');
+                    
+                    // Calculate damage with some randomness
+                    const baseDamage = move.power;
+                    const randomFactor = Math.random() * 0.3 + 0.85; // 0.85 to 1.15
+                    let damage = Math.round(baseDamage * randomFactor);
+                    
+                    // Apply boost if any
+                    if (boost > 0) {
+                        const boostAmount = Math.round(damage * boost);
+                        damage += boostAmount;
+                    }
+                    
+                    // Check for player passive ability that might reduce damage
+                    let passiveTriggered = false;
+                    let passiveMessage = "";
+                    
+                    // Handle sunzi and buddha passives
+                    if (gameState.playerCharacter.name === "孫子" || gameState.playerCharacter.name === "佛陀") {
+                        const abilityResult = gameState.playerCharacter.passiveAbility.effect(
+                            gameState.playerCharacter, 
+                            damage, 
+                            gameState.opponentCharacter
+                        );
+                        
+                        if (abilityResult.triggered) {
+                            passiveTriggered = true;
+                            passiveMessage = abilityResult.message;
+                            damage = abilityResult.actualDamage;
+                            
+                            // Create philosophy symbols for the passive defense
+                            for (let i = 0; i < 3; i++) {
+                                const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                                const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                                setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), i * 100);
+                            }
+                        }
+                    } else if (gameState.playerCharacter.name === "老子") {
+                        // Handle Laozi's reflection passive
+                        const abilityResult = gameState.playerCharacter.passiveAbility.effect(
+                            gameState.playerCharacter, 
+                            damage, 
+                            gameState.opponentCharacter
+                        );
+                        
+                        if (abilityResult.triggered) {
+                            passiveTriggered = true;
+                            passiveMessage = abilityResult.message;
+                            
+                            // Create philosophy symbols for the damage reflection
+                            for (let i = 0; i < 4; i++) {
+                                const x = opponentCharacter.getBoundingClientRect().left + Math.random() * 40;
+                                const y = opponentCharacter.getBoundingClientRect().top + Math.random() * 40;
+                                setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), i * 100);
+                            }
+                        }
+                    }
+                    
+                    // Apply damage
+                    gameState.playerCharacter.health = Math.max(0, gameState.playerCharacter.health - damage);
+                    updateHealthBars();
+                    
+                    // Add to battle log
+                    addToBattleLog(`${gameState.opponentCharacter.name} 使用了 ${move.name}，造成 ${damage} 點傷害！`, gameState.opponentCharacter.type);
+                    
+                    // Show message with philosophy quote
+                    const quoteClass = gameState.opponentCharacter.type === 'eastern' ? 'eastern-quote' : 'western-quote';
+                    battleMessage.innerHTML = `
+                        <div class="font-bold">${gameState.opponentCharacter.name} 使用了 ${move.name}!</div>
+                        <div class="text-sm mt-1">對 ${gameState.playerCharacter.name} 造成 ${damage} 點傷害!</div>
+                        <div class="quote-box ${quoteClass} text-sm mt-2">${move.quote}</div>
+                        <div class="text-xs mt-1">${move.explanation}</div>
+                    `;
+                    
+                    // If player passive was triggered, show it
+                    if (passiveTriggered) {
+                        setTimeout(() => {
+                            battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${passiveMessage}</div>`;
+                            addToBattleLog(passiveMessage, gameState.playerCharacter.type);
+                            
+                            // Update health after passive
+                            updateHealthBars();
+                        }, 500);
+                    }
+                    
+                    setTimeout(() => {
+                        playerCharacter.classList.remove('hurt-animation');
+                        
+                        // Check for win
+                        if (gameState.playerCharacter.health <= 0) {
+                            endBattle('opponent');
+                            return;
+                        }
+                        
+                        // Check for Nietzsche's power up after being hit
+                        if (gameState.playerCharacter.name === "尼采") {
+                            const abilityResult = gameState.playerCharacter.passiveAbility.effect(
+                                gameState.playerCharacter, 
+                                damage
+                            );
+                            
+                            if (abilityResult.triggered) {
+                                battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${abilityResult.message}</div>`;
+                                addToBattleLog(abilityResult.message, gameState.playerCharacter.type);
+                                gameState.playerCharacter.pendingBoost = abilityResult.powerBoost;
+                                
+                                // Visual indication
+                                for (let i = 0; i < 3; i++) {
+                                    const x = playerCharacter.getBoundingClientRect().left + Math.random() * 40;
+                                    const y = playerCharacter.getBoundingClientRect().top + Math.random() * 40;
+                                    setTimeout(() => createPhilosophySymbol(gameState.playerCharacter.type, x, y), i * 100);
+                                }
+                            }
+                        }
+                        
+                        // Switch turn back to player 1
+                        gameState.currentTurn = 'player';
+                        
+                        // Update turn indicators
+                        document.getElementById('player-turn-indicator').style.opacity = '1';
+                        document.getElementById('opponent-turn-indicator').style.opacity = '0';
+                        
+                        // Update the battle status
+                        document.getElementById('player-mode-indicator').innerHTML = `<span class="bg-${gameState.playerCharacter.type === 'eastern' ? 'eastern' : 'western'} text-white px-2 py-1 rounded-full text-xs">玩家一回合</span>`;
+                        
+                        // Show player 1's moves and reset battle message
+                        populatePlayerMoves();
+                        battleMessage.innerHTML += `<div class="text-sm mt-2">玩家一回合...</div>`;
+                        
+                        // Update battle round
+                        battleRound++;
+                        document.getElementById('round-counter').textContent = battleRound;
+                    }, 1000);
+                }, 500);
+            }
+        }
+
+        // Next turn
+        function nextTurn() {
+            if (!gameState.battleActive) return;
+            
+            gameState.currentTurn = 'player';
+            nextTurnBtn.classList.add('hidden');
+            
+            // Re-enable move buttons
+            const moveButtons = playerMoves.querySelectorAll('button');
+            moveButtons.forEach(btn => btn.disabled = false);
+            
+            battleMessage.textContent = '選擇一個絕招來攻擊對手！';
+        }
+
+        // Display core concepts as tags
+        function displayCoreConcepts(elementId, concepts, type) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            
+            concepts.forEach(concept => {
+                const tag = document.createElement('div');
+                tag.className = `text-xs px-2 py-0.5 rounded-full bg-${type === 'eastern' ? 'eastern' : 'western'} bg-opacity-20 text-${type === 'eastern' ? 'eastern' : 'western'}`;
+                tag.textContent = concept;
+                container.appendChild(tag);
+            });
+        }
+        
+        // Update health bars
+        function updateHealthBars() {
+            const playerHealth = gameState.playerCharacter.health;
+            const opponentHealth = gameState.opponentCharacter.health;
+            
+            playerHealthBar.style.width = `${playerHealth}%`;
+            opponentHealthBar.style.width = `${opponentHealth}%`;
+            
+            playerHealthText.textContent = `${playerHealth}/100`;
+            opponentHealthText.textContent = `${opponentHealth}/100`;
+            
+            // Change color based on health
+            if (playerHealth < 25) {
+                playerHealthBar.className = 'bg-red-500 h-full rounded-full transition-all duration-300';
+            } else if (playerHealth < 50) {
+                playerHealthBar.className = 'bg-yellow-500 h-full rounded-full transition-all duration-300';
+            } else {
+                playerHealthBar.className = 'bg-green-500 h-full rounded-full transition-all duration-300';
+            }
+            
+            if (opponentHealth < 25) {
+                opponentHealthBar.className = 'bg-red-500 h-full rounded-full transition-all duration-300';
+            } else if (opponentHealth < 50) {
+                opponentHealthBar.className = 'bg-yellow-500 h-full rounded-full transition-all duration-300';
+            } else {
+                opponentHealthBar.className = 'bg-green-500 h-full rounded-full transition-all duration-300';
+            }
+        }
+
+        // Start timer
+        function startTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            // Update all timer displays
+            battleTimer.textContent = gameState.timer;
+            document.getElementById('game-timer').textContent = `${gameState.timer}s`;
+            
+            gameState.timerInterval = setInterval(() => {
+                gameState.timer--;
+                
+                // Update all timer displays
+                battleTimer.textContent = gameState.timer;
+                document.getElementById('game-timer').textContent = `${gameState.timer}s`;
+                
+                // Warning animation when timer is low
+                if (gameState.timer <= 10) {
+                    document.getElementById('game-timer').classList.add('animate-pulse', 'bg-red-500');
+                }
+                
+                if (gameState.timer <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    
+                    // Time up - compare health to determine winner
+                    if (gameState.playerCharacter.health > gameState.opponentCharacter.health) {
+                        endBattle('player');
+                    } else if (gameState.playerCharacter.health < gameState.opponentCharacter.health) {
+                        endBattle('opponent');
+                    } else {
+                        endBattle('draw');
+                    }
+                }
+            }, 1000);
+        }
+
+        // End battle
+        function endBattle(winner) {
+            gameState.battleActive = false;
+            clearInterval(gameState.timerInterval);
+            
+            // Stop player from making moves
+            const moveButtons = playerMoves.querySelectorAll('button');
+            moveButtons.forEach(btn => btn.disabled = true);
+            
+            // Hide next turn button
+            nextTurnBtn.classList.add('hidden');
+            
+            setTimeout(() => {
+                battleScreen.classList.add('hidden');
+                resultScreen.classList.remove('hidden');
+                
+                if (winner === 'player') {
+                    resultTitle.textContent = '勝利！';
+                    resultImage.innerHTML = `<img src="${gameState.playerCharacter.avatar}" alt="${gameState.playerCharacter.name}" class="w-full h-full">`;
+                    
+                    // Add a random winning quote based on the character
+                    const winningQuotes = [
+                        `${gameState.playerCharacter.name} 的哲學思想征服了戰場！`,
+                        `${gameState.playerCharacter.type === 'eastern' ? '東方' : '西方'}哲學的力量在此刻展現無遺！`,
+                        `通過深刻的思想，${gameState.playerCharacter.name} 擊敗了 ${gameState.opponentCharacter.name}！`
+                    ];
+                    
+                    const randomQuote = winningQuotes[Math.floor(Math.random() * winningQuotes.length)];
+                    
+                    resultMessage.innerHTML = `
+                        ${randomQuote}<br><br>
+                        <span class="text-sm">思考一下：${gameState.playerCharacter.name} 和 ${gameState.opponentCharacter.name} 的思想有何不同？他們對於人生的看法有什麼相似之處？</span>
+                    `;
+                } else if (winner === 'opponent') {
+                    resultTitle.textContent = '失敗！';
+                    resultImage.innerHTML = `<img src="${gameState.opponentCharacter.avatar}" alt="${gameState.opponentCharacter.name}" class="w-full h-full">`;
+                    
+                    // Add a random learning quote
+                    const learningQuotes = [
+                        `從失敗中學習，${gameState.opponentCharacter.name} 的哲學值得深入研究。`,
+                        `即使失敗，這場思想的碰撞也讓我們有所收穫！`,
+                        `${gameState.opponentCharacter.name} 的思想今天佔了上風，下次再戰！`
+                    ];
+                    
+                    const randomQuote = learningQuotes[Math.floor(Math.random() * learningQuotes.length)];
+                    
+                    resultMessage.innerHTML = `
+                        ${randomQuote}<br><br>
+                        <span class="text-sm">思考一下：你能總結出 ${gameState.opponentCharacter.name} 哲學思想的核心觀點嗎？它對現代社會有何啟示？</span>
+                    `;
+                } else {
+                    resultTitle.textContent = '平局！';
+                    resultImage.innerHTML = `
+                        <div class="flex justify-center">
+                            <img src="${gameState.playerCharacter.avatar}" alt="${gameState.playerCharacter.name}" class="w-24 h-24">
+                            <img src="${gameState.opponentCharacter.avatar}" alt="${gameState.opponentCharacter.name}" class="w-24 h-24">
+                        </div>
+                    `;
+                    resultMessage.innerHTML = `
+                        雙方哲學思想不相上下，真理仍有待探索！<br><br>
+                        <span class="text-sm">思考一下：${gameState.playerCharacter.name} 和 ${gameState.opponentCharacter.name} 在哪些問題上可能會達成共識？他們的思想能否互相補充？</span>
+                    `;
+                }
+            }, 1000);
+        }
+
+        // Restart battle
+        function restartBattle() {
+            resultScreen.classList.add('hidden');
+            
+            // Reset health
+            gameState.playerCharacter.health = 100;
+            gameState.opponentCharacter.health = 100;
+            
+            // Start new battle
+            startBattle();
+        }
+
+        // Change characters
+        function changeCharacters() {
+            resultScreen.classList.add('hidden');
+            characterSelect.classList.remove('hidden');
+            
+            // Reset selections
+            gameState.playerSelected = false;
+            gameState.opponentSelected = false;
+            playerSelected.innerHTML = '<div class="text-gray-400 italic">尚未選擇哲學家</div>';
+            opponentSelected.innerHTML = '<div class="text-gray-400 italic">尚未選擇哲學家</div>';
+            battleBtn.disabled = true;
+            
+            // Remove any selected styles
+            document.querySelectorAll('.character-avatar').forEach(avatar => {
+                avatar.classList.remove('selected');
+            });
+        }
+    </script>
+
+</body></html>
