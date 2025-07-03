@@ -13808,12 +13808,14 @@ ${recentChoices.map((choice, index) =>
         puzzleContainer.style.background = 'transparent'; // 設置為透明背景
         puzzleContainer.style.backdropFilter = 'none'; // 移除背景模糊效果
       } else if (gameState.currentChapter === 'chapter7') {
-        // 第七章道歸混沌使用透明背景樣式
+        // 第七章道歸混沌使用透明背景樣式，但確保最高z-index
         puzzleContainer.className = 'max-w-3xl mx-auto p-8 text-center rounded-xl';
         puzzleContainer.style.background = 'transparent'; // 透明背景
         puzzleContainer.style.backdropFilter = 'none'; // 移除背景模糊效果
         puzzleContainer.style.border = 'none'; // 移除邊框
         puzzleContainer.style.boxShadow = 'none'; // 移除陰影
+        puzzleContainer.style.position = 'relative'; // 確保z-index生效
+        puzzleContainer.style.zIndex = '20000'; // 使用超高z-index確保在氣視覺效果和所有其他元素之上
       } else if (gameState.currentChapter === 'epilogue') {
         // 尾聲章節使用垂直居中樣式
         puzzleContainer.className = 'max-w-3xl mx-auto p-8 text-center rounded-xl';
@@ -13932,7 +13934,8 @@ ${recentChoices.map((choice, index) =>
         // 其他章節使用默認顏色
         textColor = 'text-gray-800 dark:text-gray-200';
       }
-      textContainer.className = `text-segment-container text-2xl ${scene.textStyle} ${textColor} relative z-10`;
+      textContainer.className = `text-segment-container text-2xl ${scene.textStyle} ${textColor} relative`;
+      textContainer.style.zIndex = gameState.currentChapter === 'chapter7' ? '15002' : '10';
       
       // Define a fixed width for characters to maintain precise gap positioning
       const CHAR_WIDTH = 30; // Fixed width for each character
@@ -13977,7 +13980,7 @@ ${recentChoices.map((choice, index) =>
           charGap.style.cursor = 'pointer';
           charGap.style.marginLeft = '-6px'; // 左移6px修正偏右问题
           charGap.style.marginBottom = '2px'; // 轻微上移以确保垂直居中
-          charGap.style.zIndex = gameState.currentChapter === 'chapter6' ? '5' : '45'; // 第六章在獨立容器中使用相對較低的z-index
+          charGap.style.zIndex = gameState.currentChapter === 'chapter6' ? '5' : (gameState.currentChapter === 'chapter7' ? '15005' : '45'); // 第七章使用超高z-index確保可點擊
           
           // Create the perfectly centered dot with improved positioning
           const dot = document.createElement('span');
@@ -13998,7 +14001,7 @@ ${recentChoices.map((choice, index) =>
           dot.style.transform = 'translate(-50%, -50%)';
           dot.style.margin = '0';
           dot.style.padding = '0';
-          dot.style.zIndex = gameState.currentChapter === 'chapter6' ? '10' : '50'; // 第六章在獨立容器中使用相對較低的z-index
+          dot.style.zIndex = gameState.currentChapter === 'chapter6' ? '10' : (gameState.currentChapter === 'chapter7' ? '15010' : '50'); // 第七章使用超高z-index確保可見
           
           // Add click-ripple animation
           if (!document.getElementById('click-ripple-animation')) {
@@ -14027,7 +14030,7 @@ ${recentChoices.map((choice, index) =>
           glowEffect.style.left = '50%';
           glowEffect.style.transition = 'all 0.2s ease-out';
           glowEffect.style.boxShadow = '0 0 10px 4px rgba(79, 70, 229, 0.3)';
-          glowEffect.style.zIndex = gameState.currentChapter === 'chapter6' ? '9' : '49'; // 第六章在獨立容器中使用相對較低的z-index
+          glowEffect.style.zIndex = gameState.currentChapter === 'chapter6' ? '9' : (gameState.currentChapter === 'chapter7' ? '15009' : '49'); // 第七章使用超高z-index確保可見
           
           // Active state styling
           if (gameState.segmentationPuzzleState.segments[index]) {
@@ -14068,7 +14071,7 @@ ${recentChoices.map((choice, index) =>
             clickAnimation.style.borderRadius = '50%';
             clickAnimation.style.transform = 'translate(-50%, -50%) scale(0)';
             clickAnimation.style.animation = 'click-ripple 0.6s ease-out forwards';
-            clickAnimation.style.zIndex = '48';
+            clickAnimation.style.zIndex = gameState.currentChapter === 'chapter7' ? '15008' : '48';
             charGap.appendChild(clickAnimation);
             
             // Remove animation element after it completes
@@ -18189,7 +18192,7 @@ ${recentChoices.map((choice, index) =>
           break;
           
         case 'chapter7':
-          // 第七章進入時只有前面章節已解鎖的形態：蝴蝶、魚、鯤、鵬、鵷鶵、鴟鴞、蝸牛、朝菌、蟪蛄、大椿
+          // 第七章進入時只有前面章節已解鎖的形態：蝴蝶、魚、鯤、鵬、鵷鶵、鴟鴞、蝸牛、螻蟻、星辰、朝菌、蟪蛄、大椿
           unlockForm('butterfly');
           unlockForm('fish');
           unlockForm('kun');
@@ -18197,6 +18200,8 @@ ${recentChoices.map((choice, index) =>
           unlockForm('yuanchu');
           unlockForm('chixiao');
           unlockForm('snail');
+          unlockForm('ant');      // 添加螻蟻形態
+          unlockForm('star');     // 添加星辰形態
           unlockForm('morning-fungus');
           unlockForm('cicada');
           unlockForm('great-chun');
@@ -18208,6 +18213,8 @@ ${recentChoices.map((choice, index) =>
             forceShowFormButton('yuanchu');
             forceShowFormButton('chixiao');
             forceShowFormButton('snail');
+            forceShowFormButton('ant');      // 添加螻蟻按鈕
+            forceShowFormButton('star');     // 添加星辰按鈕
             forceShowFormButton('morning-fungus');
             forceShowFormButton('cicada');
             forceShowFormButton('great-chun');
