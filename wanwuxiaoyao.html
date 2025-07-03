@@ -10769,19 +10769,31 @@ ${recentChoices.map((choice, index) =>
         if (gameState.currentForm !== 'human') {
           gameState.currentForm = 'human';
           updateFormView('human');
-          
-          // 更新底部按鈕狀態
-          Object.values(formButtons).forEach(button => {
-            if (button) {
-              button.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-              button.classList.add('bg-gray-500');
-            }
-          });
-          
-          if (formButtons['human']) {
-            formButtons['human'].classList.remove('bg-gray-500');
-            formButtons['human'].classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        }
+        
+        // 更新底部按鈕狀態 - 首先確保所有解鎖的按鈕都可見
+        Object.values(formButtons).forEach(button => {
+          if (button) {
+            button.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            button.classList.add('bg-gray-500');
           }
+        });
+        
+        // 顯示所有已解鎖的形態按鈕
+        console.log('📋 當前已解鎖的形態:', gameState.unlockedForms);
+        gameState.unlockedForms.forEach(form => {
+          if (formButtons[form]) {
+            formButtons[form].classList.remove('hidden');
+            formButtons[form].style.visibility = 'visible';
+            console.log(`📋 顯示已解鎖形態按鈕: ${form}`);
+          } else {
+            console.log(`❌ 形態按鈕不存在: ${form}`);
+          }
+        });
+        
+        if (formButtons['human']) {
+          formButtons['human'].classList.remove('bg-gray-500');
+          formButtons['human'].classList.add('bg-indigo-600', 'hover:bg-indigo-700');
         }
       }
       
@@ -13896,7 +13908,7 @@ ${recentChoices.map((choice, index) =>
         // 其他章節使用默認顏色
         hintTextColor = 'text-gray-600 dark:text-gray-300';
       }
-      hintElement.className = `text-sm ${hintTextColor} mb-6 relative z-10`;
+      hintElement.className = `text-sm ${hintTextColor} mb-6 relative z-10 text-left`;
       
       // 添加斷句位置數量提示
       const segmentCount = scene.solution.length;
@@ -16278,12 +16290,13 @@ ${recentChoices.map((choice, index) =>
       const newChapterForms = ['fish', 'kun', 'peng', 'yuanchu', 'chixiao', 'snail', 'morning-fungus', 'cicada', 'great-chun', 'ant', 'star', 'qi'];
       const deferredUnlock = newChapterForms.includes(form) || (form === 'butterfly' && !isFirstChapterButterfly);
       
-      if (deferredUnlock) {
-        // 新章節形態：只解鎖，不立即顯示按鈕（延遲到收集場景完成）
-        if (!gameState.unlockedForms.includes(form)) {
-          gameState.unlockedForms.push(form);
-          console.log(`預備解鎖新形態: ${form}，按鈕將在收集場景後顯示`);
-        }
+      // 檢查是否已經解鎖過該形態
+      const alreadyUnlocked = gameState.unlockedForms.includes(form);
+      
+      if (deferredUnlock && !alreadyUnlocked) {
+        // 新章節形態首次解鎖：只解鎖，不立即顯示按鈕（延遲到收集場景完成）
+        gameState.unlockedForms.push(form);
+        console.log(`預備解鎖新形態: ${form}，按鈕將在收集場景後顯示`);
         
         // 確保按鈕保持隱藏狀態
         if (formButtons[form]) {
@@ -16292,9 +16305,17 @@ ${recentChoices.map((choice, index) =>
         }
         
         return; // 不執行下面的立即顯示邏輯
+      } else if (alreadyUnlocked) {
+        // 已經解鎖的形態：重新進入章節時應該立即顯示按鈕
+        console.log(`重新顯示已解鎖形態按鈕: ${form}`);
+        if (formButtons[form]) {
+          formButtons[form].classList.remove('hidden');
+          formButtons[form].style.visibility = 'visible';
+        }
+        return;
       }
       
-      if (!gameState.unlockedForms.includes(form)) {
+      if (!alreadyUnlocked) {
         gameState.unlockedForms.push(form);
         console.log(`解鎖形態並立即顯示按鈕: ${form}`);
         
@@ -17175,7 +17196,7 @@ ${recentChoices.map((choice, index) =>
       // 显示切换视角提示
       function showScaleHint() {
         const hint = document.createElement('div');
-        hint.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 text-white p-4 rounded text-center z-50';
+        hint.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 text-white p-4 rounded text-left z-50';
         hint.innerHTML = `
           <p>需要切換到微觀視角才能與國家互動</p>
           <p class="text-sm mt-2 text-indigo-300">使用右側的視角控制器向下滑動</p>
@@ -17364,7 +17385,7 @@ ${recentChoices.map((choice, index) =>
     // 显示切换视角提示
     function showScaleHint() {
       const hint = document.createElement('div');
-      hint.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 text-white p-4 rounded text-center z-50';
+                hint.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-70 text-white p-4 rounded text-left z-50';
       hint.innerHTML = `
         <p>需要切換到微觀視角才能與居民互動</p>
         <p class="text-sm mt-2 text-indigo-300">使用右側的視角控制器向下滑動</p>
@@ -18063,12 +18084,10 @@ ${recentChoices.map((choice, index) =>
           break;
           
         case 'chapter2':
-          // 第二章需要蝴蝶和魚的形態
+          // 第二章進入時只有第一章已解鎖的蝴蝶形態
           unlockForm('butterfly');
-          unlockForm('fish');
           if (isDevMode) {
             forceShowFormButton('butterfly');
-            forceShowFormButton('fish');
           }
           // 收集左目封印
           if (!gameState.collectedApertures.includes('left-eye')) {
@@ -18077,16 +18096,12 @@ ${recentChoices.map((choice, index) =>
           break;
           
         case 'chapter3':
-          // 第三章需要前面所有形態
+          // 第三章進入時只有前面章節已解鎖的形態：蝴蝶、魚
           unlockForm('butterfly');
           unlockForm('fish');
-          unlockForm('kun');
-          unlockForm('peng');
           if (isDevMode) {
             forceShowFormButton('butterfly');
             forceShowFormButton('fish');
-            forceShowFormButton('kun');
-            forceShowFormButton('peng');
           }
           // 收集前面的封印
           if (!gameState.collectedApertures.includes('left-eye')) {
@@ -18098,20 +18113,16 @@ ${recentChoices.map((choice, index) =>
           break;
           
         case 'chapter4':
-          // 第四章需要所有前面的形態
+          // 第四章進入時只有前面章節已解鎖的形態：蝴蝶、魚、鯤、鵬
           unlockForm('butterfly');
           unlockForm('fish');
           unlockForm('kun');
           unlockForm('peng');
-          unlockForm('yuanchu');
-          unlockForm('chixiao');
           if (isDevMode) {
             forceShowFormButton('butterfly');
             forceShowFormButton('fish');
             forceShowFormButton('kun');
             forceShowFormButton('peng');
-            forceShowFormButton('yuanchu');
-            forceShowFormButton('chixiao');
             // 開發者模式下直接啟用視角縮放功能
             enableScaleControl();
           }
@@ -18126,14 +18137,13 @@ ${recentChoices.map((choice, index) =>
           break;
           
         case 'chapter5':
-          // 第五章需要所有前面的形態
+          // 第五章進入時只有前面章節已解鎖的形態：蝴蝶、魚、鯤、鵬、鵷鶵、鴟鴞
           unlockForm('butterfly');
           unlockForm('fish');
           unlockForm('kun');
           unlockForm('peng');
           unlockForm('yuanchu');
           unlockForm('chixiao');
-          unlockForm('snail');
           if (isDevMode) {
             forceShowFormButton('butterfly');
             forceShowFormButton('fish');
@@ -18141,7 +18151,6 @@ ${recentChoices.map((choice, index) =>
             forceShowFormButton('peng');
             forceShowFormButton('yuanchu');
             forceShowFormButton('chixiao');
-            forceShowFormButton('snail');
           }
           // 收集前面所有的封印
           const chapter5Apertures = ['left-eye', 'right-eye', 'left-ear', 'right-ear'];
@@ -18153,7 +18162,7 @@ ${recentChoices.map((choice, index) =>
           break;
           
         case 'chapter6':
-          // 第六章需要所有前面的形態
+          // 第六章進入時只有前面章節已解鎖的形態：蝴蝶、魚、鯤、鵬、鵷鶵、鴟鴞、蝸牛
           unlockForm('butterfly');
           unlockForm('fish');
           unlockForm('kun');
@@ -18161,9 +18170,6 @@ ${recentChoices.map((choice, index) =>
           unlockForm('yuanchu');
           unlockForm('chixiao');
           unlockForm('snail');
-          unlockForm('morning-fungus');
-          unlockForm('cicada');
-          unlockForm('great-chun');
           if (isDevMode) {
             forceShowFormButton('butterfly');
             forceShowFormButton('fish');
@@ -18172,9 +18178,6 @@ ${recentChoices.map((choice, index) =>
             forceShowFormButton('yuanchu');
             forceShowFormButton('chixiao');
             forceShowFormButton('snail');
-            forceShowFormButton('morning-fungus');
-            forceShowFormButton('cicada');
-            forceShowFormButton('great-chun');
           }
           // 收集前面所有的封印
           const chapter6Apertures = ['left-eye', 'right-eye', 'left-ear', 'right-ear', 'left-nose'];
@@ -18186,7 +18189,7 @@ ${recentChoices.map((choice, index) =>
           break;
           
         case 'chapter7':
-          // 第七章需要所有前面的形態和封印
+          // 第七章進入時只有前面章節已解鎖的形態：蝴蝶、魚、鯤、鵬、鵷鶵、鴟鴞、蝸牛、朝菌、蟪蛄、大椿
           unlockForm('butterfly');
           unlockForm('fish');
           unlockForm('kun');
@@ -18197,8 +18200,6 @@ ${recentChoices.map((choice, index) =>
           unlockForm('morning-fungus');
           unlockForm('cicada');
           unlockForm('great-chun');
-          unlockForm('ant');
-          unlockForm('star');
           if (isDevMode) {
             forceShowFormButton('butterfly');
             forceShowFormButton('fish');
@@ -18210,8 +18211,6 @@ ${recentChoices.map((choice, index) =>
             forceShowFormButton('morning-fungus');
             forceShowFormButton('cicada');
             forceShowFormButton('great-chun');
-            forceShowFormButton('ant');
-            forceShowFormButton('star');
             // 開發者模式下自動完成八卦學習和激活萬物尋氣
             gameState.baguaLearningCompleted = true;
             console.log('開發者模式：自動完成八卦學習');
