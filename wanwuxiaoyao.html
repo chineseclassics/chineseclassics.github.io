@@ -3656,6 +3656,20 @@
           <!-- 章節卡片將在這裡動態生成 -->
         </div>
       </div>
+
+      <!-- 和莊子聊聊按鈕（通關後顯示） -->
+      <div id="chat-with-zhuangzi-container" class="w-full max-w-4xl px-4 mb-6 flex flex-col items-center" style="display: none;">
+        <button id="chat-with-zhuangzi-btn" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-3 text-lg">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-md">
+            <span class="text-white font-bold text-lg">🦋</span>
+          </div>
+          <span>和莊子聊聊</span>
+          <span class="text-blue-200">💬</span>
+        </button>
+        <p class="text-xs text-center text-blue-600 dark:text-blue-400 mt-2 max-w-md">
+          🎉 恭喜通關！現在可以和莊子自由對話，探討人生哲理與遊戲感悟
+        </p>
+      </div>
       
       <!-- 控制面板 -->
       <div class="flex flex-col items-center mb-6 space-y-3 flex-shrink-0">
@@ -4591,6 +4605,18 @@
             challengeLevel: '',          // 適合的挑戰難度
             guidanceNeed: ''            // 指導需求程度
           }
+        },
+        
+        // 聊天記錄數據
+        chatHistory: {
+          allQuestions: [],            // 所有問題記錄
+          chapterQuestions: {},        // 各章節問題記錄
+          questionCount: 0,            // 總問題數量
+          chatPatterns: {              // 聊天模式分析
+            questionTypes: {},         // 問題類型統計
+            engagementLevel: 0,        // 參與程度
+            preferredTopics: []        // 偏好主題
+          }
         }
       }
     };
@@ -4816,7 +4842,16 @@
         timingData: gameState.playerChoices.timingData,
         
         // 章節影響
-        chapterInfluences: gameState.playerChoices.chapterInfluences
+        chapterInfluences: gameState.playerChoices.chapterInfluences,
+        
+        // 聊天記錄數據
+        chatHistory: {
+          totalQuestions: gameState.playerChoices.chatHistory?.questionCount || 0,
+          allQuestions: gameState.playerChoices.chatHistory?.allQuestions || [],
+          chapterQuestions: gameState.playerChoices.chatHistory?.chapterQuestions || {},
+          engagementLevel: gameState.playerChoices.chatHistory?.chatPatterns?.engagementLevel || 0,
+          recentQuestions: gameState.playerChoices.chatHistory?.allQuestions?.slice(-10) || [] // 最近10個問題
+        }
       };
     }
     
@@ -4906,45 +4941,69 @@
       // 更新時間統計
       updateTimingStatistics(thinkingTime);
       
-      // 更新哲學傾向分數
-      const oldPhilosophicalTraits = { ...gameState.playerChoices.philosophicalTraits };
-      updatePhilosophicalTraits(choiceData.philosophical || {});
-      console.log('🧠 哲學特質更新:', {
-        更新前: oldPhilosophicalTraits,
-        更新後: gameState.playerChoices.philosophicalTraits,
-        本次增加: choiceData.philosophical
+      // 應用特質影響
+      applyTraitInfluence(choiceRecord.traits);
+      
+      // 記錄章節影響
+      recordChapterInfluence(choiceRecord);
+      
+      console.log('✅ 玩家選擇記錄完成');
+    }
+    
+    // 記錄聊天問題
+    function recordChatQuestion(question) {
+      const timestamp = Date.now();
+      const currentChapter = gameState.currentChapter;
+      
+      // 確保chatHistory結構存在
+      if (!gameState.playerChoices.chatHistory) {
+        console.log('⚠️ chatHistory未初始化，跳過記錄');
+        return;
+      }
+      
+      // 簡單過濾：過短、過長或明顯無效的問題
+      const cleanQuestion = question.trim();
+      if (cleanQuestion.length < 3 || cleanQuestion.length > 200) {
+        console.log('📝 聊天問題過濾：問題長度不符合要求');
+        return;
+      }
+      
+      // 構建問題記錄
+      const questionRecord = {
+        question: cleanQuestion,
+        timestamp: timestamp,
+        chapter: currentChapter,
+        scene: gameState.currentScene
+      };
+      
+      console.log('💬 記錄聊天問題:', {
+        問題: cleanQuestion,
+        章節: currentChapter,
+        場景: gameState.currentScene,
+        時間: new Date(timestamp).toLocaleTimeString()
       });
       
-      // 更新MBTI維度分數
-      const oldMBTITraits = { ...gameState.playerChoices.mbtiTraits };
-      updateMBTITraits(choiceData.mbti || {});
-      console.log('🎭 MBTI特質更新:', {
-        更新前: oldMBTITraits,
-        更新後: gameState.playerChoices.mbtiTraits,
-        本次增加: choiceData.mbti
+      // 添加到總問題記錄
+      gameState.playerChoices.chatHistory.allQuestions.push(questionRecord);
+      
+      // 添加到章節問題記錄
+      if (!gameState.playerChoices.chatHistory.chapterQuestions[currentChapter]) {
+        gameState.playerChoices.chatHistory.chapterQuestions[currentChapter] = [];
+      }
+      gameState.playerChoices.chatHistory.chapterQuestions[currentChapter].push(questionRecord);
+      
+      // 更新問題數量統計
+      gameState.playerChoices.chatHistory.questionCount++;
+      
+      // 簡單的參與度統計
+      gameState.playerChoices.chatHistory.chatPatterns.engagementLevel = 
+        gameState.playerChoices.chatHistory.questionCount;
+      
+      console.log('📊 聊天統計更新:', {
+        總問題數: gameState.playerChoices.chatHistory.questionCount,
+        當前章節問題數: gameState.playerChoices.chatHistory.chapterQuestions[currentChapter]?.length || 0,
+        參與度: gameState.playerChoices.chatHistory.chatPatterns.engagementLevel
       });
-      
-      // 更新故事相關特質
-      const oldStoryTraits = { ...gameState.playerChoices.storyTraits };
-      updateStoryTraits(choiceData.story || {});
-      console.log('📖 故事特質更新:', {
-        更新前: oldStoryTraits,
-        更新後: gameState.playerChoices.storyTraits,
-        本次增加: choiceData.story
-      });
-      
-      // 處理故事分支影響
-      processStoryImpact(choiceData.storyImpact || {});
-      
-      // 分析選擇模式
-      analyzeChoicePatterns();
-      
-      // 準備AI上下文數據
-      updateAIContext();
-      
-      console.log('✅ 選擇記錄完成:', choiceRecord.choiceText);
-      console.log('🎯 當前玩家檔案:', gameState.playerChoices.aiContext?.profileSummary);
-      console.log('========================================');
     }
     
     // 移除舊選擇的特質影響（重新計算法）
@@ -5994,7 +6053,9 @@
         哲學特質數量: Object.keys(gameState.playerChoices.philosophicalTraits || {}).length,
         MBTI特質數量: Object.keys(gameState.playerChoices.mbtiTraits || {}).length,
         故事特質數量: Object.keys(gameState.playerChoices.storyTraits || {}).length,
-        AI上下文可用: !!gameState.playerChoices.aiContext
+        AI上下文可用: !!gameState.playerChoices.aiContext,
+        聊天問題總數: gameState.playerChoices.chatHistory?.questionCount || 0,
+        當前章節問題數: gameState.playerChoices.chatHistory?.chapterQuestions?.[gameState.currentChapter]?.length || 0
       });
       
       console.log('🧠 特質數據詳情:');
@@ -6012,12 +6073,23 @@
         console.log(`     特質: ${JSON.stringify(choice.traits)} | 思考時間: ${Math.round(choice.thinkingTime / 1000)}s`);
       });
       
+      console.log('💬 聊天記錄詳情:');
+      const recentQuestions = gameState.playerChoices.chatHistory?.allQuestions?.slice(-3) || [];
+      if (recentQuestions.length > 0) {
+        recentQuestions.forEach((q, index) => {
+          console.log(`  ${index + 1}. [${q.chapter}] "${q.question}"`);
+        });
+      } else {
+        console.log('  暫無聊天記錄');
+      }
+      
       // 檢查數據完整性
       const dataIntegrity = {
         選擇記錄完整: choiceHistory.length > 0,
         特質數據存在: Object.keys(gameState.playerChoices.philosophicalTraits || {}).length > 0,
         AI上下文存在: !!gameState.playerChoices.aiContext?.profileSummary,
-        遊戲進度有效: !!gameState.currentChapter
+        遊戲進度有效: !!gameState.currentChapter,
+        聊天記錄存在: (gameState.playerChoices.chatHistory?.questionCount || 0) > 0
       };
       
       console.log('✅ 數據完整性檢查:', dataIntegrity);
@@ -6053,6 +6125,15 @@
             situation: choice.context?.situation || choice.context?.speaker || '對話場景'
           }))
         },
+        // 聊天記錄數據 - 用於個性化回應
+        chatHistory: {
+          totalQuestions: gameState.playerChoices.chatHistory?.questionCount || 0,
+          allQuestions: gameState.playerChoices.chatHistory?.allQuestions || [],
+          chapterQuestions: gameState.playerChoices.chatHistory?.chapterQuestions || {},
+          currentChapterQuestions: gameState.playerChoices.chatHistory?.chapterQuestions?.[gameState.currentChapter] || [],
+          engagementLevel: gameState.playerChoices.chatHistory?.chatPatterns?.engagementLevel || 0,
+          recentQuestions: gameState.playerChoices.chatHistory?.allQuestions?.slice(-5) || [] // 最近5個問題
+        },
         suggestedStyle: gameState.playerChoices.aiContext.suggestedResponseStyle
       };
       
@@ -6061,7 +6142,9 @@
         traits數量: Object.keys(analysisData.traits || {}).length,
         choices數量: analysisData.choices.length,
         recentHistory數量: analysisData.context.recentHistory.length,
-        suggestedStyle可用: !!analysisData.suggestedStyle
+        suggestedStyle可用: !!analysisData.suggestedStyle,
+        chatHistory可用: !!analysisData.chatHistory,
+        聊天問題數量: analysisData.chatHistory?.totalQuestions || 0
       });
       
       console.log('========================================');
@@ -10506,7 +10589,7 @@ ${recentChoices.map((choice, index) =>
             text: '萬物尋氣：以萬物之眼，尋找散落各處的氣。按照你的旅程順序，依次進入每個物化視野收集氣。',
             sequence: ['butterfly', 'fish', 'kun', 'peng', 'yuanchu', 'chixiao', 'snail', 'morning-fungus', 'cicada', 'great-chun', 'ant', 'star'],
             nextScene: 18,
-            showSkipButton: true // 開發測試標記：顯示跳過按鈕
+
           },
           {
             type: 'form-unlock-guide',
@@ -10782,6 +10865,7 @@ ${recentChoices.map((choice, index) =>
     // 初始化新功能
     initDevModeAccess();  // 開發者模式密碼保護
     generateChapterCards();  // 生成章節選擇卡片
+    checkGameCompletionAndShowChatButton();  // 檢查通關狀態並顯示聊天按鈕
     
     // 初始化開發者工具事件監聽器
     initDevTools();
@@ -15971,8 +16055,8 @@ ${recentChoices.map((choice, index) =>
       modalHeader.className = 'bg-gradient-to-r from-slate-800 to-slate-700 text-white p-5 flex items-center justify-between flex-shrink-0 border-b border-slate-600';
       modalHeader.innerHTML = `
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-            <span class="text-white font-bold text-lg">莊</span>
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+            <span class="text-white font-bold text-lg">🦋</span>
           </div>
           <div>
             <h2 class="text-2xl font-bold text-white">莊子解讀</h2>
@@ -15997,10 +16081,10 @@ ${recentChoices.map((choice, index) =>
           <!-- 解讀內容 -->
           <div id="interpretation-content" class="space-y-4">
             <!-- 古文原文 -->
-            <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900 dark:to-orange-900 p-4 rounded-lg border-l-4 border-amber-400 shadow-sm">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 p-4 rounded-lg border-l-4 border-blue-400 shadow-sm">
               <div class="flex items-center gap-2 mb-3">
-                <span class="text-amber-600 text-lg">📜</span>
-                <span class="font-semibold text-amber-700 dark:text-amber-300">古文原文</span>
+                <span class="text-blue-600 text-lg">📜</span>
+                <span class="font-semibold text-blue-700 dark:text-blue-300">古文原文</span>
               </div>
               <p class="text-lg text-slate-800 dark:text-slate-200 font-serif leading-relaxed tracking-wide">${puzzleInfo.text}</p>
             </div>
@@ -16050,8 +16134,8 @@ ${recentChoices.map((choice, index) =>
         <div class="p-3 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-700 dark:to-slate-800 flex-shrink-0 border-t border-slate-200 dark:border-slate-600">
           <div class="flex gap-3">
             <input type="text" id="user-question" placeholder="請輸入你想問莊子的問題..." 
-                   class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-slate-700 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 shadow-sm">
-            <button id="ask-question" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                   class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 shadow-sm">
+            <button id="ask-question" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md">
               提問
             </button>
           </div>
@@ -16133,9 +16217,9 @@ ${recentChoices.map((choice, index) =>
         
         const avatar = document.createElement('div');
         avatar.className = `w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md ${
-          isUser ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-amber-400 to-orange-500'
+          isUser ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-blue-400 to-indigo-500'
         }`;
-        avatar.textContent = isUser ? '你' : '莊';
+        avatar.textContent = isUser ? '你' : '🦋';
         
         const messageContent = document.createElement('div');
         messageContent.className = `flex-1 ${isUser ? 'text-right' : ''}`;
@@ -16165,6 +16249,9 @@ ${recentChoices.map((choice, index) =>
       const askQuestion = async () => {
         const question = questionInput.value.trim();
         if (!question) return;
+        
+        // 收集聊天記錄數據
+        recordChatQuestion(question);
         
         // 添加用戶問題到聊天記錄
         addMessageToChat(question, true);
@@ -16311,30 +16398,378 @@ ${recentChoices.map((choice, index) =>
        }
      }
      
-     // 靜態莊子回應（當AI不可用時使用）
-     function getStaticZhuangziResponse(question, puzzleInfo) {
-       const lowerQuestion = question.toLowerCase();
-       
-       // 基於問題關鍵詞提供相應回答
-       if (lowerQuestion.includes('斷句') || lowerQuestion.includes('怎麼') || lowerQuestion.includes('如何')) {
-         return `我的朋友，斷句如同人生的選擇，沒有絕對的對錯。重要的是用心感受文字的韻律和意境。就像${puzzleInfo.theme}一樣，每個人的理解都有其獨特之處。相信你的直覺，大膽嘗試吧！`;
-       }
-       
-       if (lowerQuestion.includes('意思') || lowerQuestion.includes('含義') || lowerQuestion.includes('理解')) {
-         return `這段古文講述的是${puzzleInfo.theme}。在我看來，文字只是載體，真正的智慧在於你的體悟。通過完成這個挑戰，你將更深刻地理解其中的道理。`;
-       }
-       
-       if (lowerQuestion.includes('為什麼') || lowerQuestion.includes('原因')) {
-         return `萬事萬物都有其道理，但道理往往不在於「為什麼」，而在於「如何」。就像這段古文一樣，重要的不是為什麼要這樣斷句，而是如何在過程中體會智慧。`;
-       }
-       
-       if (lowerQuestion.includes('困難') || lowerQuestion.includes('難')) {
-         return `困難是成長的機會，我的朋友。正如水遇到石頭會繞道而行，你也可以換個角度來思考。這段關於${puzzleInfo.theme}的古文，或許能給你新的啟發。`;
-       }
-       
-       // 默認回應
-       return `我的朋友，你的問題很有趣。在這個關於${puzzleInfo.theme}的挑戰中，答案往往藏在實踐裡。不如先完成斷句挑戰，在過程中你可能會找到自己的答案。記住，最好的老師是你自己的體驗。`;
-     }
+         // 靜態莊子回應（當AI不可用時使用）
+    function getStaticZhuangziResponse(question, puzzleInfo) {
+      const lowerQuestion = question.toLowerCase();
+      
+      // 基於問題關鍵詞提供相應回答
+      if (lowerQuestion.includes('斷句') || lowerQuestion.includes('怎麼') || lowerQuestion.includes('如何')) {
+        return `我的朋友，斷句如同人生的選擇，沒有絕對的對錯。重要的是用心感受文字的韻律和意境。就像${puzzleInfo.theme}一樣，每個人的理解都有其獨特之處。相信你的直覺，大膽嘗試吧！`;
+      }
+      
+      if (lowerQuestion.includes('意思') || lowerQuestion.includes('含義') || lowerQuestion.includes('理解')) {
+        return `這段古文講述的是${puzzleInfo.theme}。在我看來，文字只是載體，真正的智慧在於你的體悟。通過完成這個挑戰，你將更深刻地理解其中的道理。`;
+      }
+      
+      if (lowerQuestion.includes('為什麼') || lowerQuestion.includes('原因')) {
+        return `萬事萬物都有其道理，但道理往往不在於「為什麼」，而在於「如何」。就像這段古文一樣，重要的不是為什麼要這樣斷句，而是如何在過程中體會智慧。`;
+      }
+      
+      if (lowerQuestion.includes('困難') || lowerQuestion.includes('難')) {
+        return `困難是成長的機會，我的朋友。正如水遇到石頭會繞道而行，你也可以換個角度來思考。這段關於${puzzleInfo.theme}的古文，或許能給你新的啟發。`;
+      }
+      
+      // 默認回應
+      return `我的朋友，你的問題很有趣。在這個關於${puzzleInfo.theme}的挑戰中，答案往往藏在實踐裡。不如先完成斷句挑戰，在過程中你可能會找到自己的答案。記住，最好的老師是你自己的體驗。`;
+    }
+
+    // ===== 通關後聊天功能 =====
+    
+    // 檢查遊戲通關狀態並顯示聊天按鈕
+    function checkGameCompletionAndShowChatButton() {
+      try {
+        const savedProgress = loadGameProgress();
+        if (savedProgress && savedProgress.maxReachedChapter === 'epilogue') {
+          console.log('🎉 檢測到玩家已通關，顯示和莊子聊聊按鈕');
+          showChatWithZhuangziButton();
+        } else {
+          console.log('🔒 玩家尚未通關，隱藏聊天按鈕');
+          hideChatWithZhuangziButton();
+        }
+      } catch (error) {
+        console.error('❌ 檢查通關狀態時出錯:', error);
+        hideChatWithZhuangziButton();
+      }
+    }
+
+    // 顯示聊天按鈕
+    function showChatWithZhuangziButton() {
+      const container = document.getElementById('chat-with-zhuangzi-container');
+      const button = document.getElementById('chat-with-zhuangzi-btn');
+      
+      if (container && button) {
+        container.style.display = 'flex';
+        
+        // 綁定點擊事件（防止重複綁定）
+        if (!button.hasAttribute('data-event-bound')) {
+          button.addEventListener('click', openChatWithZhuangziModal);
+          button.setAttribute('data-event-bound', 'true');
+        }
+      }
+    }
+
+    // 隱藏聊天按鈕
+    function hideChatWithZhuangziButton() {
+      const container = document.getElementById('chat-with-zhuangzi-container');
+      if (container) {
+        container.style.display = 'none';
+      }
+    }
+
+    // 打開與莊子聊天的模態窗口
+    function openChatWithZhuangziModal() {
+      // 移除現有的模態窗口
+      const existingModal = document.getElementById('chat-with-zhuangzi-modal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // 創建模態窗口
+      const modal = document.createElement('div');
+      modal.id = 'chat-with-zhuangzi-modal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.style.zIndex = '99999'; // 確保在所有元素之上
+      
+      const modalContent = document.createElement('div');
+      modalContent.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-11/12 h-[85vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700';
+      
+      // 模態窗口頭部
+      const modalHeader = document.createElement('div');
+      modalHeader.className = 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-5 flex items-center justify-between flex-shrink-0 border-b border-indigo-600';
+      modalHeader.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+            <span class="text-white font-bold text-lg">🦋</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">和莊子聊聊</h2>
+            <p class="text-blue-100 text-sm">基於你的遊戲歷程，與莊子進行深度對話</p>
+          </div>
+        </div>
+        <button id="close-chat-modal" class="text-blue-200 hover:text-white transition-colors p-2 hover:bg-blue-500 rounded-full">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+      
+      // 模態窗口主體
+      const modalBody = document.createElement('div');
+      modalBody.className = 'flex-1 flex flex-col overflow-hidden';
+      
+      // 聊天記錄區域
+      const chatArea = document.createElement('div');
+      chatArea.className = 'flex-1 flex flex-col min-h-0';
+      chatArea.innerHTML = `
+        <!-- 聊天記錄區域 -->
+        <div id="chat-history" class="flex-1 bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-700 p-4 space-y-4 overflow-y-auto min-h-0">
+          <div class="text-center text-slate-500 dark:text-slate-400 text-sm py-8">
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-3xl">🧘</span>
+            </div>
+            <p class="font-medium text-lg mb-2">歓迎來到莊子的逍遙境界</p>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mb-4">基於你完整的遊戲歷程，莊子將與你進行深度哲學對話</p>
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 p-3 rounded-lg text-xs text-slate-600 dark:text-slate-400 mx-auto max-w-md">
+              💡 你可以問莊子任何關於人生、哲學、遊戲體驗的問題
+            </div>
+          </div>
+        </div>
+        
+        <!-- 輸入區域 -->
+        <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 flex-shrink-0 border-t border-blue-200 dark:border-blue-700">
+          <div class="flex gap-3">
+            <input type="text" id="chat-question" placeholder="請輸入你想問莊子的問題..." 
+                   class="flex-1 px-4 py-3 border border-blue-300 dark:border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-800 dark:text-white placeholder-blue-400 dark:placeholder-blue-500 shadow-sm">
+            <button id="send-chat" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2">
+              <span>發送</span>
+              <span>💬</span>
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // 組裝模態窗口
+      modalBody.appendChild(chatArea);
+      modalContent.appendChild(modalHeader);
+      modalContent.appendChild(modalBody);
+      modal.appendChild(modalContent);
+      
+      // 添加到頁面
+      document.body.appendChild(modal);
+      
+      // 綁定事件
+      setupChatModalEvents(modal);
+      
+      // 聚焦到輸入框
+      setTimeout(() => {
+        const questionInput = modal.querySelector('#chat-question');
+        if (questionInput) {
+          questionInput.focus();
+        }
+      }, 100);
+    }
+
+    // 設置聊天模態窗口事件
+    function setupChatModalEvents(modal) {
+      const closeBtn = modal.querySelector('#close-chat-modal');
+      const sendBtn = modal.querySelector('#send-chat');
+      const questionInput = modal.querySelector('#chat-question');
+      const chatHistory = modal.querySelector('#chat-history');
+      
+      // 關閉模態窗口
+      const closeModal = () => {
+        modal.remove();
+      };
+      
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      
+      // ESC鍵關閉
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          document.removeEventListener('keydown', handleEsc);
+        }
+      };
+      document.addEventListener('keydown', handleEsc);
+      
+      // 添加消息到聊天記錄
+      const addMessageToChat = (message, isUser = false) => {
+        // 如果是第一條消息，清除提示文字
+        const placeholder = chatHistory.querySelector('.text-center');
+        if (placeholder) {
+          placeholder.remove();
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = `w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md ${
+          isUser ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-blue-400 to-indigo-500'
+        }`;
+        avatar.textContent = isUser ? '你' : '🦋';
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = `flex-1 ${isUser ? 'text-right' : ''}`;
+        
+        const messageBubble = document.createElement('div');
+        messageBubble.className = `inline-block max-w-full px-4 py-3 rounded-lg shadow-sm ${
+          isUser 
+            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
+            : 'bg-white dark:bg-slate-600 border border-blue-200 dark:border-blue-600 text-slate-700 dark:text-slate-200'
+        }`;
+        messageBubble.innerHTML = message.replace(/\n/g, '<br>');
+        
+        messageContent.appendChild(messageBubble);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(messageContent);
+        
+        chatHistory.appendChild(messageDiv);
+        
+        // 自動滾動到底部
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        // 返回創建的消息元素
+        return messageDiv;
+      };
+      
+      // 發送消息功能
+      const sendMessage = async () => {
+        const question = questionInput.value.trim();
+        if (!question) return;
+        
+        // 記錄聊天
+        recordChatQuestion(question);
+        
+        // 添加用戶問題到聊天記錄
+        addMessageToChat(question, true);
+        
+        // 在聊天記錄中添加"莊子正在思考..."消息
+        const thinkingMessage = addMessageToChat('莊子正在思考...', false);
+        thinkingMessage.id = 'thinking-message';
+        
+        // 禁用按鈕
+        sendBtn.disabled = true;
+        
+        // 清空輸入框
+        questionInput.value = '';
+        
+        try {
+          // 調用AI生成回應
+          let response;
+          console.log('🤖 準備生成莊子聊天回應...');
+          
+          // 檢查AI系統是否可用
+          if (window.zhuangziAI && window.zhuangziAI.isEnabled) {
+            console.log('🤖 AI系統可用，調用AI生成莊子回應...');
+            try {
+              response = await generateZhuangziChatResponse(question);
+              if (response) {
+                console.log('✅ AI聊天回應生成成功！');
+              } else {
+                console.log('⚠️ AI回應為空，使用靜態回應');
+                response = getStaticZhuangziChatResponse(question);
+              }
+            } catch (error) {
+              console.error('❌ AI聊天調用出錯:', error);
+              response = getStaticZhuangziChatResponse(question);
+            }
+          } else {
+            console.log('📝 AI系統不可用，使用靜態回應...');
+            response = getStaticZhuangziChatResponse(question);
+          }
+          
+          // 移除"思考中"消息
+          const thinkingMsg = document.getElementById('thinking-message');
+          if (thinkingMsg) {
+            thinkingMsg.remove();
+          }
+          
+          // 添加AI回應到聊天記錄
+          addMessageToChat(response, false);
+          
+        } catch (error) {
+          console.error('❌ 生成莊子聊天回應失敗:', error);
+          
+          // 移除"思考中"消息
+          const thinkingMsg = document.getElementById('thinking-message');
+          if (thinkingMsg) {
+            thinkingMsg.remove();
+          }
+          
+          const errorResponse = '抱歉，我現在無法回答你的問題。請稍後再試。';
+          addMessageToChat(errorResponse, false);
+        } finally {
+          sendBtn.disabled = false;
+        }
+      };
+      
+      sendBtn.addEventListener('click', sendMessage);
+      questionInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    }
+
+    // 生成莊子聊天回應（AI版本）
+    async function generateZhuangziChatResponse(question) {
+      try {
+        console.log('🤖 ===== generateZhuangziChatResponse 開始 =====');
+        console.log('❓ 問題:', question);
+        
+        // 構建上下文
+        const context = {
+          chapter: 'post-game-chat',
+          scene: 'free-chat',
+          sceneType: 'zhuangzi-chat',
+          description: '通關後與莊子的自由對話',
+          specificQuestion: question
+        };
+        
+        const playerData = getAIAnalysisData();
+        
+        console.log('📍 聊天上下文:', context);
+        console.log('👤 玩家數據類型:', typeof playerData);
+        
+        console.log('🚀 準備調用AI生成聊天回應...');
+        const response = await window.zhuangziAI.generatePersonalizedResponse(context, playerData);
+        
+        console.log('🎯 AI聊天回應結果:', {
+          '回應存在': !!response,
+          '回應類型': typeof response,
+          '回應長度': response?.length || 0
+        });
+        
+        return response;
+      } catch (error) {
+        console.error('🚫 生成莊子聊天回應時出錯:', error);
+        throw error;
+      }
+    }
+
+    // 靜態莊子聊天回應（當AI不可用時使用）
+    function getStaticZhuangziChatResponse(question) {
+      const lowerQuestion = question.toLowerCase();
+      
+      // 基於問題關鍵詞提供相應回答
+      if (lowerQuestion.includes('遊戲') || lowerQuestion.includes('體驗') || lowerQuestion.includes('感受')) {
+        return '我的朋友，你已經完成了這段奇妙的旅程。遊戲如人生，每個選擇都反映了你的內心。通過七個章節的歷練，你體驗了不同的視角和境界。這些體驗，正是你成長的印記。你覺得在這個過程中，最觸動你的是什麼？';
+      }
+      
+      if (lowerQuestion.includes('人生') || lowerQuestion.includes('生活') || lowerQuestion.includes('現實')) {
+        return '人生如夢，夢如人生。你在遊戲中體驗的物化，其實就是生活中的換位思考。當你以鯤的視角看世界，以鵬的高度俯瞰大地，你是否感受到了不同的人生境界？生活中的煩惱，往往源於視角的局限。試著像遊戲中一樣，換個角度看問題吧。';
+      }
+      
+      if (lowerQuestion.includes('哲學') || lowerQuestion.includes('道理') || lowerQuestion.includes('智慧')) {
+        return '真正的智慧，不在於知道答案，而在於體驗過程。你在遊戲中收集的每一個封印，完成的每一次物化，都是智慧的積累。哲學不是高深的理論，而是生活的藝術。逍遙，就是在任何境況下都能保持內心的自由。';
+      }
+      
+      if (lowerQuestion.includes('選擇') || lowerQuestion.includes('決定') || lowerQuestion.includes('困惑')) {
+        return '選擇從來沒有標準答案，只有適合的答案。你在遊戲中的每個選擇，都展現了你的價值觀和思考方式。面對困惑時，不妨學學混沌 —— 有時候，保持單純和無為，反而能找到最自然的出路。';
+      }
+      
+      if (lowerQuestion.includes('未來') || lowerQuestion.includes('目標') || lowerQuestion.includes('方向')) {
+        return '未來如大鵬展翅，需要積蓄足夠的力量。但記住，真正的自由不是到達某個目標，而是在前行的路上保持內心的逍遙。就像遊戲中的物化一樣，每一種形態都有其獨特的美。珍惜當下，順應自然，這就是最好的未來。';
+      }
+      
+      // 默認回應
+      return '我的朋友，你的問題讓我想起了那句話：「天地與我並生，萬物與我為一。」在這個遊戲中，你體驗了不同的存在方式，這正是理解世界多樣性的開始。每個人都有自己的道，重要的是找到屬於自己的逍遙方式。你想聊聊什麼特別的體驗嗎？';
+    }
     
     // 鵷鶵視角效果函數
     function applyYuanchuView() {
@@ -19904,51 +20339,6 @@ ${recentChoices.map((choice, index) =>
 
     // Initialize the game
     // 開發者工具相關函數
-    // 🔍 場景調試函數：檢查第七章場景結構
-    function debugChapter7Scenes() {
-      console.log('🔍 === 第七章場景結構調試 ===');
-      
-      const chapter7 = gameChapters.chapter7;
-      if (!chapter7) {
-        console.error('❌ 第七章配置不存在！');
-        return;
-      }
-      
-      console.log('✅ 第七章配置存在');
-      console.log('章節標題:', chapter7.title);
-      console.log('場景總數:', chapter7.scenes.length);
-      
-      // 列出所有場景
-      chapter7.scenes.forEach((scene, index) => {
-        console.log(`場景 ${index}:`, {
-          type: scene.type,
-          text: scene.text ? scene.text.substring(0, 50) + '...' : 'N/A',
-          speaker: scene.speaker || 'N/A'
-        });
-      });
-      
-      // 檢查場景39
-      if (chapter7.scenes[39]) {
-        console.log('✅ 場景39存在:', chapter7.scenes[39]);
-      } else {
-        console.error('❌ 場景39不存在！最大索引:', chapter7.scenes.length - 1);
-      }
-      
-      // 檢查道的顯現場景
-      const daoScenes = chapter7.scenes.filter((scene, index) => {
-        return scene.type === 'dao-revelation' || 
-               (scene.text && scene.text.includes('道')) ||
-               (scene.text && scene.text.includes('顯現'));
-      });
-      
-      console.log('包含"道"或"顯現"的場景:', daoScenes.map((scene, index) => ({
-        原索引: chapter7.scenes.indexOf(scene),
-        類型: scene.type,
-        文字: scene.text ? scene.text.substring(0, 50) + '...' : 'N/A'
-      })));
-      
-      console.log('🔍 === 調試結束 ===');
-    }
     
     function initDevTools() {
       // 章節跳轉按鈕
@@ -23806,7 +24196,7 @@ ${recentChoices.map((choice, index) =>
           <div class="progress-text text-sm text-gray-800 dark:text-gray-200 mt-2">0 / ${sequence.length}</div>
         </div>
         <p class="text-sm text-gray-800 dark:text-gray-200 mb-4">進入每個物化視野，尋找並收集對應的氣（每種需收集3個）</p>
-        ${scene.showSkipButton && gameState.devMode ? '<button id="skip-wanwu-xunqi-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded text-sm" style="/* DEV_TEST_BUTTON */">⚡ 跳過萬物尋氣（開發測試）</button>' : ''}
+
       `;
       
       document.body.appendChild(guideContainer);
@@ -23896,49 +24286,7 @@ ${recentChoices.map((choice, index) =>
       // 初始高亮
       highlightCurrentForm();
       
-      // 開發測試：添加跳過按鈕事件監聽器 /* DEV_TEST_FEATURE */
-      const skipButton = document.getElementById('skip-wanwu-xunqi-btn');
-      if (skipButton) {
-        skipButton.addEventListener('click', () => {
-          // 清理萬物尋氣模式
-          gameState.wanwuXunqiActive = false;
-          gameState.handleFormSequenceClick = null;
-          gameState.wanwuXunqiGuideContainer = null;
-          
-          // 移除所有高亮
-          Object.values(formButtons).forEach(btn => {
-            if (btn) {
-              btn.style.boxShadow = '';
-              btn.style.animation = '';
-            }
-          });
-          
-          // 重新顯示物化按鈕
-          const formSelector = document.querySelector('.form-selector');
-          if (formSelector) {
-            formSelector.style.display = 'flex';
-          }
-          
-          // 解鎖氣形態
-          unlockForm('qi');
-          
-          // 設置相關狀態（模擬完成）
-          gameState.baguaLearningCompleted = true;
-          gameState.wanwuXunqiProgress = sequence; // 標記所有形態已完成
-          
-          // 移除引導界面
-          guideContainer.remove();
-          
-          // 顯示跳過消息
-          showMessage('已跳過萬物尋氣！氣形態已解鎖。');
-          
-          // 顯示繼續按鈕，進入下一場景
-          setTimeout(() => {
-            advanceBtn.style.display = 'block';
-            advanceBtn.textContent = '進入氣化體驗';
-          }, 2000);
-        });
-      }
+
     }
     
     // 創建萬物回響引導
@@ -26351,39 +26699,12 @@ ${choiceSummary}
       
       // Initialize audio controls
       initAudioControls();
-      
-      // 🔍 自動運行第七章場景調試
-      console.log('🔍 遊戲初始化完成，自動運行第七章場景調試...');
-      setTimeout(() => {
-        debugChapter7Scenes();
-      }, 1000);
-      
-      // 暴露調試函數到全域，方便控制台調用
-      window.debugChapter7Scenes = debugChapter7Scenes;
-      console.log('💡 提示：可在控制台輸入 debugChapter7Scenes() 重新運行調試');
     }
     
     init();
 
     // ===== Three.js虛空場景增強效果系統 =====
 
-
   </script>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</body></html>
-</body></html>
 </body></html>
