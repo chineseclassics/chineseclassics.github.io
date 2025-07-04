@@ -6,6 +6,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -13,6 +14,7 @@
         extend: {
           fontFamily: {
             'lxgw': ['"LXGW WenKai"', 'serif'],
+            'noto-serif': ['"Noto Serif SC"', 'serif'],
           },
         },
       },
@@ -3526,6 +3528,21 @@
       50% { transform: rotateY(15deg) scaleX(0.8); }
     }
     
+    /* 章節標題專用樣式 - 加粗思源宋體 */
+    .chapter-title-text {
+      font-family: 'Noto Serif SC', serif;
+      font-weight: 900;
+      font-size: 2.5rem;
+      line-height: 1.2;
+      letter-spacing: 0.05em;
+    }
+    
+    @media (min-width: 768px) {
+      .chapter-title-text {
+        font-size: 3.75rem;
+      }
+    }
+    
 
   </style>
 </head>
@@ -3783,10 +3800,10 @@
         
         .dark .chapter-grid {
           border-color: #b8860b;
-          background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 50%, #444444 100%);
+          background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
           box-shadow: 
             0 8px 32px rgba(184, 134, 11, 0.2),
-            0 4px 16px rgba(0, 0, 0, 0.3),
+            0 4px 16px rgba(30, 58, 138, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         
@@ -3873,7 +3890,7 @@
         }
         
         .dark .chapter-card {
-          background: linear-gradient(135deg, rgba(68, 68, 68, 0.4) 0%, rgba(45, 45, 45, 0.3) 100%);
+          background: linear-gradient(135deg, rgba(30, 64, 175, 0.4) 0%, rgba(29, 78, 216, 0.3) 100%);
           border-color: rgba(184, 134, 11, 0.3);
         }
         
@@ -4046,10 +4063,7 @@
           filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.12));
         }
         
-        .dark .chapter-card {
-          background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-          border-color: #6b7280;
-        }
+
         
         .chapter-card:hover {
           background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(212, 175, 55, 0.1) 100%);
@@ -4058,7 +4072,7 @@
         }
         
         .dark .chapter-card:hover {
-          background: linear-gradient(135deg, rgba(184, 134, 11, 0.15) 0%, rgba(68, 68, 68, 0.6) 50%, rgba(184, 134, 11, 0.15) 100%);
+          background: linear-gradient(135deg, rgba(184, 134, 11, 0.15) 0%, rgba(30, 64, 175, 0.7) 50%, rgba(184, 134, 11, 0.15) 100%);
           box-shadow: inset 0 0 20px rgba(184, 134, 11, 0.1);
         }
         
@@ -4164,7 +4178,7 @@
     
     <!-- Chapter Title Display -->
     <div id="chapter-title" class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-80 z-40 opacity-0 pointer-events-none transition-opacity duration-1000">
-      <h2 id="chapter-name" class="text-4xl font-bold text-white mb-4"></h2>
+      <h2 id="chapter-name" class="chapter-title-text text-white mb-4"></h2>
       <p id="chapter-description" class="text-xl text-gray-200 max-w-md text-center"></p>
     </div>
     
@@ -6835,6 +6849,36 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
          };
          
          const currentChapterInfo = chapterContexts[context.chapter] || chapterContexts['chapter1'];
+         
+         // 特殊處理斷句解讀場景
+         if (context.sceneType === 'segmentation-interpretation') {
+           return `🎯 **莊子解讀：古文智慧的個性化指導**
+
+📖 **當前章節背景**：
+- 章節主題：${currentChapterInfo.theme}
+- 故事場景：${currentChapterInfo.setting}
+- 核心概念：${currentChapterInfo.key_concepts}
+
+📜 **古文資訊**：
+${context.puzzleInfo ? `- 古文標題：${context.puzzleInfo.title}
+- 古文主題：${context.puzzleInfo.theme}
+- 古文內容：${context.puzzleInfo.text}
+- 古文出處：${context.puzzleInfo.source}` : ''}
+
+❓ **學生的問題**：
+"${context.specificQuestion}"
+
+🎭 **個性化回應要求**：
+1. 你是莊子本人，請用第一人稱"我"來回應
+2. 基於學生的哲學傾向（${(playerData.patterns?.dominantTraits || []).slice(0, 2).map(t => this.translateTrait(t)).join('、')}）來回答
+3. 結合當前章節的主題和古文內容
+4. 語調親切自然，像朋友聊天一樣，避免文言文
+5. 可以分享"我"的人生智慧和哲學見解
+6. 鼓勵學生在遊戲中的學習和思考
+7. 回答控制在150-200字以內
+
+💡 **重要**：請直接回答學生的問題，不要包含任何前綴或說明。用繁體中文的現代白話文。`;
+         }
         
         return `🎯 **請基於當前章節內容，明確針對學生的最新選擇進行回應**
 
@@ -7180,6 +7224,17 @@ ${recentChoices.map((choice, index) =>
     
     // 創建全局AI實例
     const zhuangziAI = new ZhuangziAI();
+    
+    // 掛載到window對象，使其全局可用
+    window.zhuangziAI = zhuangziAI;
+    
+    // 驗證兩個引用指向同一個對象
+    console.log('🔍 AI實例驗證:', {
+      '局部zhuangziAI存在': !!zhuangziAI,
+      'window.zhuangziAI存在': !!window.zhuangziAI,
+      '兩者是同一個實例': zhuangziAI === window.zhuangziAI,
+      'API密鑰一致': zhuangziAI.apiKey === window.zhuangziAI.apiKey
+    });
     
     // AI調用的便捷函數
     async function getPersonalizedZhuangziResponse(context, specificQuestion = '') {
@@ -10139,7 +10194,7 @@ ${recentChoices.map((choice, index) =>
             type: 'dialog',
             speaker: '莊子',
             text: '弟子們總是擔心我死後會被烏鳶啄食，但他們不明白——在上為烏鳶食，在下為螻蟻食，這有什麼區別呢？偏愛其中一種，豈不是很偏頗嗎？',
-            nextScene: 10
+            nextScene: 9
           },
           {
             type: 'personalized-response',
@@ -11441,7 +11496,7 @@ ${recentChoices.map((choice, index) =>
       
       // 章節標題（黑色文字，適合白色背景）
       const title = document.createElement('h1');
-      title.className = 'text-4xl md:text-6xl font-bold text-black mb-4';
+      title.className = 'chapter-title-text text-black mb-4';
       title.style.cssText = `
         text-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         animation: epilogue-title-emerge 1.5s ease-out forwards;
@@ -11512,7 +11567,7 @@ ${recentChoices.map((choice, index) =>
       
       // 章節標題
       const title = document.createElement('h1');
-      title.className = 'text-4xl md:text-6xl font-bold text-white mb-4';
+      title.className = 'chapter-title-text text-white mb-4';
       title.style.cssText = `
         text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
         animation: chapter-title-emerge 1s ease-out forwards;
@@ -15063,6 +15118,23 @@ ${recentChoices.map((choice, index) =>
       checkButton.addEventListener('click', () => checkSegmentationSolution(scene.solution));
       puzzleContainer.appendChild(checkButton);
       
+      // 添加AI解讀按鈕
+      const aiInterpretButton = document.createElement('button');
+      aiInterpretButton.id = 'ai-interpret-button';
+      aiInterpretButton.className = 'mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-full relative z-10 mx-auto';
+      aiInterpretButton.style.display = 'flex';
+      aiInterpretButton.style.alignItems = 'center';
+      aiInterpretButton.style.gap = '8px';
+      aiInterpretButton.style.justifyContent = 'center';
+      aiInterpretButton.innerHTML = `
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+        </svg>
+        莊子解讀
+      `;
+      aiInterpretButton.addEventListener('click', () => openAIInterpretModal(scene));
+      puzzleContainer.appendChild(aiInterpretButton);
+      
       // Add developer skip button for testing (only in dev mode)
       if (gameState.devMode) {
         const skipButton = document.createElement('button');
@@ -15785,6 +15857,496 @@ ${recentChoices.map((choice, index) =>
       gameContainer.style.transform = 'scale(1)';
       gameContainer.style.filter = 'none';
     }
+    
+    // ===== AI解讀系統 =====
+    
+    // 獲取斷句挑戰的詳細信息
+    function getSegmentationPuzzleInfo(scene) {
+      const chapterMappings = {
+        'prologue': {
+          title: '序章：夢蝶',
+          source: '《莊子·齊物論》',
+          theme: '物我兩忘的變化智慧',
+          text: '昔者莊周夢為胡蝶栩栩然胡蝶也自喻適志與不知周也俄然覺則蘧蘧然周也',
+          interpretation: '這是莊子最著名的故事之一。莊周夢見自己變成蝴蝶，在夢中他完全忘記了自己是莊周，只知道自己是一隻快樂飛舞的蝴蝶。醒來後，他不知道是莊周夢見了蝴蝶，還是蝴蝶夢見了莊周。這個故事揭示了現實與夢境、自我與他物之間界限的模糊性，體現了「物我兩忘」的哲學境界。',
+          gameConnection: '在遊戲中，這段古文是你獲得第一次物化能力的關鍵。通過理解夢蝶的智慧，你開啟了在不同形態間自由轉換的可能性，這正是莊子「齊物論」思想的體現——萬物本質相同，形態只是表象。'
+        },
+                 'chapter1': {
+           title: '第一章：子非魚',
+           source: '《莊子·秋水》',
+           theme: '知魚之樂的認知智慧',
+           text: '莊子與惠子遊於濠梁之上莊子曰儵魚出遊從容是魚樂也惠子曰子非魚安知魚之樂莊子曰子非我安知我不知魚之樂',
+           interpretation: '這是莊子與惠子的經典辯論。莊子看到魚兒悠遊，說這是魚的快樂；惠子質疑：你不是魚，怎麼知道魚的快樂？莊子反問：你不是我，怎麼知道我不知道魚的快樂？這個對話探討了認知的界限和同理心的可能性，展現了不同的思維方式。',
+           gameConnection: '在遊戲的濠梁之上，你親身體驗了這場千古辯論。通過不同的選擇，你展現了自己對認知和同理心的理解。這段古文的解讀將幫助你獲得「左目之竅」的封印，開啟更深層的感知能力。'
+         },
+        'chapter2': {
+          title: '第二章：北冥有魚',
+          source: '《莊子·逍遙遊》',
+          theme: '鯤鵬變化的逍遙境界',
+          text: '北冥有魚其名為鯤鯤之大不知其幾千里也化而為鳥其名為鵬鵬之背不知其幾千里也怒而飛其翼若垂天之雲',
+          interpretation: '這段描述了鯤鵬變化的壯闊場面。在北方的大海中有一條巨魚叫鯤，大到不知道有幾千里。它化身為大鳥叫鵬，背部也不知道有幾千里寬。當它振翅高飛時，翅膀就像天邊的雲彩。這體現了莊子對自由變化和超越束縛的嚮往。',
+          gameConnection: '在雲海之中，你將親身體驗鯤鵬的變化之道。這種從魚到鳥、從水中到天空的轉換，象徵著突破固有形態的束縛。通過解讀這段古文，你將獲得鯤和鵬的物化能力，體驗真正的逍遙自在。'
+        },
+        'chapter3': {
+          title: '第三章：鴟得腐鼠',
+          source: '《莊子·秋水》',
+          theme: '價值觀的相對性',
+          text: '惠子相梁莊子往見之或謂惠子曰莊子來欲代子相於是惠子恐搜於國中三日三夜莊子往見之曰南方有鳥其名為鵷鶵子知之乎',
+          interpretation: '惠子在梁國當宰相，有人告訴他莊子來是要取代他的位置，惠子因此恐慌，在全國搜查了三天三夜。莊子去見他，講了鵷鶵的故事。鵷鶵是神鳥，只吃甘露，不食腐物。這個故事暗示不同的價值觀念，有些人追求的「寶物」，在另一些人眼中可能毫無價值。',
+          gameConnection: '在森林深處，你將遇到鵷鶵和鴟鴞這兩種截然不同的鳥類，體驗它們不同的生活方式和價值觀。這段古文揭示了價值判斷的相對性，幫助你獲得「左耳之竅」的封印，學會以更包容的心態看待世界。'
+        },
+        'chapter4': {
+          title: '第四章：蝸角之爭',
+          source: '《莊子·則陽》',
+          theme: '事物規模的相對性',
+          text: '有國於蝸之左角者曰觸氏有國於蝸之右角者曰蠻氏時相與爭地而戰伏尸數萬逐北旬有五日而後反',
+          interpretation: '在蝸牛的左角上有個國家叫觸氏，右角上有個國家叫蠻氏。它們經常為了爭奪土地而戰爭，死傷數萬，追擊敗軍十五天才回來。這個寓言揭示了人類爭鬥的荒謬性——從更大的視角看，我們的爭鬥就像蝸牛角上的戰爭一樣微不足道。',
+          gameConnection: '在螺旋的幻境中，你將親眼目睹蝸角之爭的荒謬。通過這段古文的理解，你將獲得蝸牛的物化能力，學會從微觀的角度審視世界，同時也理解規模和視角的相對性，最終找到「右耳之竅」的封印。'
+        },
+        'chapter5': {
+          title: '第五章：朝菌大椿',
+          source: '《莊子·逍遙遊》',
+          theme: '時間感知的相對性',
+          text: '朝菌不知晦朔蟪蛄不知春秋此小年也楚之南有冥靈者以五百歲為春五百歲為秋上古有大椿者以八千歲為春八千歲為秋',
+          interpretation: '朝菌不知道月亮的陰晴圓缺，蟪蛄不知道春秋的變化，這是短命的生物。楚國南方有一種叫冥靈的樹，以五百年為春季，五百年為秋季。上古時有大椿樹，以八千年為春季，八千年為秋季。這說明了時間感知的相對性。',
+          gameConnection: '在時間森林中，你將遇到不同壽命的生物，體驗它們對時間的不同感知。這段古文幫助你理解時間的相對性，獲得朝菌、蟪蛄、大椿的物化能力，最終找到「左鼻之竅」的封印，學會以不同的時間尺度看待生命。'
+        },
+        'chapter6': {
+          title: '第六章：天地為棺槨',
+          source: '《莊子·列禦寇》',
+          theme: '生死觀的超脫智慧',
+          text: '莊子將死弟子欲厚葬之莊子曰吾以天地為棺槨以日月為連璧星辰為珠璣萬物為齎送吾葬具豈不備邪何以加此弟子曰吾恐烏鳶之食夫子也莊子曰在上為烏鳶食在下為螻蟻食奪彼與此何其偏也',
+          interpretation: '莊子將要去世時，弟子們想要厚葬他。莊子說：我以天地為棺材，以日月為陪葬的璧玉，以星辰為珠寶，以萬物為送葬品，我的葬具難道不齊備嗎？弟子擔心他被鳥獸吃掉，莊子說：在上面被鳥吃，在下面被螻蟻吃，偏愛其中一種，豈不是很偏頗嗎？這體現了莊子對生死的超脫態度。',
+          gameConnection: '在天地交接的聖地，你將體驗莊子的生死智慧。通過理解這段古文，你將獲得螻蟻和星辰的物化能力，從「在下」和「在上」兩個角度體驗生死的自然性，最終找到「右鼻之竅」的封印。'
+        },
+        'chapter7': {
+          title: '第七章：道歸混沌',
+          source: '《莊子·應帝王》',
+          theme: '渾沌之死的深刻寓意',
+          text: '南海之帝為儵北海之帝為忽中央之帝為渾沌儵與忽時相與遇於渾沌之地渾沌待之甚善儵與忽謀報渾沌之德曰人皆有七竅以視聽食息此獨無有嘗試鑿之日鑿一竅七日而渾沌死',
+          interpretation: '南海的帝王叫儵，北海的帝王叫忽，中央的帝王叫渾沌。儵和忽經常在渾沌的地方相遇，渾沌待他們很好。儵和忽商量報答渾沌的恩德，說：人都有七個竅孔用來視聽飲食呼吸，只有渾沌沒有，我們試著為他鑿開。每天鑿一個竅，七天後渾沌就死了。這個故事揭示了善意可能帶來的悲劇後果。',
+          gameConnection: '在虛空殿中，你將親身經歷渾沌之死的故事。這段古文是整個遊戲的核心寓意——你的使命就是要修復被鑿開的七竅，讓渾沌重新回到無竅的純真狀態。通過理解這個深刻的哲學寓言，你將獲得最終的智慧。'
+        },
+        'epilogue': {
+          title: '尾聲：逍遙遊',
+          source: '《莊子·逍遙遊》',
+          theme: '無用之用的人生智慧',
+          text: '今子有大樹患其無用何不樹之於無何有之鄉廣莫之野徬徨乎無為其側逍遙乎寢臥其下不夭斤斧物無害者無所可用安所困苦哉',
+          interpretation: '現在你有一棵大樹，擔心它沒有用處，為什麼不把它種在空曠無物的地方、廣闊的原野上，在它旁邊自由自在地徘徊，在它下面逍遙地躺臥休息？它不會遭受斧頭的砍伐，沒有什麼能傷害它。沒有用處，哪裡會有困苦呢？這體現了莊子「無用之用」的智慧。',
+          gameConnection: '在逍遙遊的最終境界中，你已經體驗了所有生物的形態，理解了萬物的本質。這段古文總結了整個遊戲的哲學主題——真正的自由來自於超越世俗的「有用」標準，在「無用」中找到真正的價值和快樂。'
+        }
+      };
+      
+      return chapterMappings[gameState.currentChapter] || {
+        title: '未知章節',
+        source: '《莊子》',
+        theme: '莊子哲學',
+        text: scene.text,
+        interpretation: '這段古文蘊含著深刻的哲學智慧。',
+        gameConnection: '通過理解這段古文，你將獲得新的能力和洞察。'
+      };
+    }
+    
+    // 打開AI解讀模態窗口
+    function openAIInterpretModal(scene) {
+      // 移除現有的模態窗口
+      const existingModal = document.getElementById('ai-interpret-modal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      const puzzleInfo = getSegmentationPuzzleInfo(scene);
+      
+      // 創建模態窗口
+      const modal = document.createElement('div');
+      modal.id = 'ai-interpret-modal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.style.zIndex = '99999'; // 確保在所有元素之上
+      
+      const modalContent = document.createElement('div');
+      modalContent.className = 'bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-11/12 h-[85vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700';
+      
+      // 模態窗口頭部
+      const modalHeader = document.createElement('div');
+      modalHeader.className = 'bg-gradient-to-r from-slate-800 to-slate-700 text-white p-5 flex items-center justify-between flex-shrink-0 border-b border-slate-600';
+      modalHeader.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+            <span class="text-white font-bold text-lg">莊</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-white">莊子解讀</h2>
+          </div>
+        </div>
+        <button id="close-modal" class="text-slate-300 hover:text-white transition-colors p-2 hover:bg-slate-600 rounded-full">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+      
+      // 模態窗口主體 - 固定高度，不滾動
+      const modalBody = document.createElement('div');
+      modalBody.className = 'flex-1 flex flex-col overflow-hidden';
+      
+      // 解讀內容區域 - 自適應高度
+      const interpretationSection = document.createElement('div');
+      interpretationSection.className = 'border-b border-gray-200 dark:border-gray-600 flex-shrink-0';
+      interpretationSection.innerHTML = `
+        <div class="p-4 bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-700">
+          <!-- 解讀內容 -->
+          <div id="interpretation-content" class="space-y-4">
+            <!-- 古文原文 -->
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900 dark:to-orange-900 p-4 rounded-lg border-l-4 border-amber-400 shadow-sm">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-amber-600 text-lg">📜</span>
+                <span class="font-semibold text-amber-700 dark:text-amber-300">古文原文</span>
+              </div>
+              <p class="text-lg text-slate-800 dark:text-slate-200 font-serif leading-relaxed tracking-wide">${puzzleInfo.text}</p>
+            </div>
+            
+            <!-- 莊子解讀 -->
+            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900 dark:to-teal-900 border border-emerald-200 dark:border-emerald-700 rounded-lg p-4 shadow-sm">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-emerald-600 text-lg">🧘</span>
+                <span class="font-semibold text-emerald-700 dark:text-emerald-300">莊子的解讀</span>
+              </div>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
+                <span class="font-medium text-emerald-800 dark:text-emerald-200">這段文字出自${puzzleInfo.source}，探討的是${puzzleInfo.theme}的深刻主題。</span>
+              </p>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed">${puzzleInfo.interpretation}</p>
+            </div>
+            
+            <!-- 遊戲聯繫 -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 shadow-sm">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-blue-600 text-lg">🎮</span>
+                <span class="font-semibold text-blue-700 dark:text-blue-300">與遊戲劇情的聯繫</span>
+              </div>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed">${puzzleInfo.gameConnection}</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+
+      
+      // 聊天記錄區域 - 佔據剩餘空間
+      const qaSection = document.createElement('div');
+      qaSection.className = 'flex-1 flex flex-col min-h-0';
+      qaSection.innerHTML = `
+        <!-- 標題區域 -->
+        <div class="p-3 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-700 dark:to-slate-800 flex-shrink-0 border-b border-slate-200 dark:border-slate-600">
+          <h4 class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-3">
+            <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <span class="text-lg">與莊子對話</span>
+          </h4>
+        </div>
+        
+        <!-- 聊天記錄區域 - 佔據剩餘空間 -->
+        <div id="chat-history" class="flex-1 bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-700 p-4 space-y-3 overflow-y-auto min-h-0">
+          <div class="text-center text-slate-500 dark:text-slate-400 text-sm py-8">
+            <div class="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="text-2xl">💬</span>
+            </div>
+            <p class="font-medium">在這裡與莊子對話，探討古文的智慧</p>
+            <p class="text-xs mt-1 text-slate-400">請在下方輸入你的問題</p>
+          </div>
+        </div>
+        
+        <!-- 輸入區域 -->
+        <div class="p-3 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-700 dark:to-slate-800 flex-shrink-0 border-t border-slate-200 dark:border-slate-600">
+          <div class="flex gap-3">
+            <input type="text" id="user-question" placeholder="請輸入你想問莊子的問題..." 
+                   class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-slate-700 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 shadow-sm">
+            <button id="ask-question" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+              提問
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // 組裝模態窗口
+      modalBody.appendChild(interpretationSection);
+      modalBody.appendChild(qaSection);
+      
+      modalContent.appendChild(modalHeader);
+      modalContent.appendChild(modalBody);
+      modal.appendChild(modalContent);
+      
+      // 添加到頁面
+      document.body.appendChild(modal);
+      
+      // 綁定事件
+      setupModalEvents(modal, scene);
+    }
+    
+    // 設置模態窗口事件
+    function setupModalEvents(modal, scene) {
+      const closeBtn = modal.querySelector('#close-modal');
+      const askBtn = modal.querySelector('#ask-question');
+      const questionInput = modal.querySelector('#user-question');
+      const chatHistory = modal.querySelector('#chat-history');
+      
+      // 關閉模態窗口
+      const closeModal = () => {
+        modal.remove();
+      };
+      
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      
+      // ESC鍵關閉
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          document.removeEventListener('keydown', handleEsc);
+        }
+      };
+      document.addEventListener('keydown', handleEsc);
+      
+      // 設置解讀內容自適應高度（不滾動）
+      const interpretationContent = modal.querySelector('#interpretation-content');
+      if (interpretationContent) {
+        interpretationContent.style.maxHeight = 'none'; // 移除高度限制，讓內容自適應
+        interpretationContent.style.overflowY = 'visible'; // 不添加滾動條
+      }
+      
+      // 確保聊天記錄區域使用剩餘空間並可滾動
+      if (chatHistory) {
+        // 移除固定高度設置，讓flex布局自動分配剩餘空間
+        chatHistory.style.minHeight = '0';
+        chatHistory.style.maxHeight = 'none';
+        chatHistory.style.overflowY = 'auto';
+        chatHistory.style.overflowX = 'hidden';
+        
+        // 確保滾動區域正確工作
+        setTimeout(() => {
+          chatHistory.scrollTop = 0; // 重置滾動位置到頂部
+        }, 100);
+      }
+      
+      // 添加消息到聊天記錄
+      const addMessageToChat = (message, isUser = false) => {
+        // 如果是第一條消息，清除提示文字
+        const placeholder = chatHistory.querySelector('.text-center');
+        if (placeholder) {
+          placeholder.remove();
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = `w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md ${
+          isUser ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-amber-400 to-orange-500'
+        }`;
+        avatar.textContent = isUser ? '你' : '莊';
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = `flex-1 ${isUser ? 'text-right' : ''}`;
+        
+        const messageBubble = document.createElement('div');
+        messageBubble.className = `inline-block max-w-full px-4 py-3 rounded-lg shadow-sm ${
+          isUser 
+            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
+            : 'bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 text-slate-700 dark:text-slate-300'
+        }`;
+        messageBubble.textContent = message;
+        
+        messageContent.appendChild(messageBubble);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(messageContent);
+        
+        chatHistory.appendChild(messageDiv);
+        
+        // 自動滾動到底部
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        // 返回創建的消息元素
+        return messageDiv;
+      };
+      
+      // 提問功能
+      const askQuestion = async () => {
+        const question = questionInput.value.trim();
+        if (!question) return;
+        
+        // 添加用戶問題到聊天記錄
+        addMessageToChat(question, true);
+        
+        // 在聊天記錄中添加"莊子正在思考..."消息
+        const thinkingMessage = addMessageToChat('莊子正在思考...', false);
+        thinkingMessage.id = 'thinking-message'; // 添加ID以便後續移除
+        
+        // 禁用按鈕但保持原始文字
+        askBtn.disabled = true;
+        
+        // 清空輸入框
+        questionInput.value = '';
+        
+        try {
+          const puzzleInfo = getSegmentationPuzzleInfo(scene);
+          
+          // 強制調用AI，如果AI不可用則使用靜態回應
+          let response;
+          console.log('🔍 AI系統詳細檢查:', {
+            'window.zhuangziAI存在': !!window.zhuangziAI,
+            'zhuangziAI變量存在': typeof zhuangziAI !== 'undefined',
+            'zhuangziAI.isEnabled': window.zhuangziAI?.isEnabled,
+            'API密鑰存在': !!window.zhuangziAI?.apiKey,
+            'API密鑰長度': window.zhuangziAI?.apiKey?.length || 0,
+            'zhuangziAI類型': typeof zhuangziAI,
+            'zhuangziAI實例': zhuangziAI
+          });
+          
+          // 檢查AI系統是否可用
+          if (window.zhuangziAI && window.zhuangziAI.isEnabled) {
+            console.log('🤖 AI系統可用，調用AI生成莊子回應...');
+            try {
+              response = await generateZhuangziResponse(question, puzzleInfo);
+              if (response && response !== getStaticZhuangziResponse(question, puzzleInfo)) {
+                console.log('✅ AI調用成功！');
+              } else {
+                console.log('⚠️ AI調用返回了靜態回應，可能失敗');
+              }
+            } catch (error) {
+              console.error('❌ AI調用出錯:', error);
+              response = getStaticZhuangziResponse(question, puzzleInfo);
+            }
+          } else {
+            console.log('📝 AI系統不可用，使用靜態回應...');
+            response = getStaticZhuangziResponse(question, puzzleInfo);
+          }
+          
+          // 移除"思考中"消息
+          const thinkingMsg = document.getElementById('thinking-message');
+          if (thinkingMsg) {
+            thinkingMsg.remove();
+          }
+          
+          // 添加AI回應到聊天記錄
+          addMessageToChat(response, false);
+          
+        } catch (error) {
+          console.error('AI回應生成失敗:', error);
+          
+          // 移除"思考中"消息
+          const thinkingMsg = document.getElementById('thinking-message');
+          if (thinkingMsg) {
+            thinkingMsg.remove();
+          }
+          
+          const errorResponse = '抱歉，我現在無法回答你的問題。請稍後再試，或者先專心完成斷句挑戰吧。';
+          addMessageToChat(errorResponse, false);
+        } finally {
+          askBtn.disabled = false;
+        }
+      };
+      
+      askBtn.addEventListener('click', askQuestion);
+      questionInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          askQuestion();
+        }
+      });
+      
+      // 聚焦到輸入框
+      setTimeout(() => questionInput.focus(), 100);
+    }
+    
+         // 生成莊子風格的AI回應
+     async function generateZhuangziResponse(question, puzzleInfo) {
+       try {
+         console.log('🤖 ===== generateZhuangziResponse 開始 =====');
+         console.log('❓ 問題:', question);
+         console.log('📜 古文信息:', puzzleInfo);
+         
+         // 檢查zhuangziAI是否可用
+         console.log('🔍 zhuangziAI狀態檢查:', {
+           'window.zhuangziAI存在': !!window.zhuangziAI,
+           'zhuangziAI類型': typeof window.zhuangziAI,
+           'isEnabled': window.zhuangziAI?.isEnabled,
+           'API密鑰': window.zhuangziAI?.apiKey?.substring(0, 10) + '...',
+           'generatePersonalizedResponse方法存在': typeof window.zhuangziAI?.generatePersonalizedResponse === 'function'
+         });
+         
+         // 構建正確的context和playerData參數
+         const context = {
+           chapter: gameState.currentChapter || 'unknown',
+           scene: gameState.currentScene || 0,
+           sceneType: 'segmentation-interpretation',
+           description: `斷句挑戰：${puzzleInfo.title} - ${puzzleInfo.theme}`,
+           specificQuestion: question,
+           puzzleInfo: puzzleInfo
+         };
+         
+         const playerData = getAIAnalysisData();
+         
+         console.log('📍 調用上下文:', context);
+         console.log('👤 玩家數據類型:', typeof playerData);
+         console.log('👤 玩家數據概要:', {
+           hasProfile: !!playerData.profile,
+           hasPatterns: !!playerData.patterns,
+           hasContext: !!playerData.context,
+           profileType: playerData.profile?.philosophicalProfile
+         });
+         
+         console.log('🚀 準備調用window.zhuangziAI.generatePersonalizedResponse...');
+         const response = await window.zhuangziAI.generatePersonalizedResponse(context, playerData);
+         
+         console.log('🎯 AI回應結果:', {
+           '回應存在': !!response,
+           '回應類型': typeof response,
+           '回應長度': response?.length || 0,
+           '回應預覽': response?.substring(0, 50) + '...'
+         });
+         
+         if (response) {
+           console.log('✅ AI回應生成成功:', response);
+           return response;
+         } else {
+           console.log('⚠️ AI回應為空，使用靜態回應');
+           return getStaticZhuangziResponse(question, puzzleInfo);
+         }
+       } catch (error) {
+         console.error('🚫 生成莊子回應時出錯:', error);
+         console.error('錯誤堆疊:', error.stack);
+         return getStaticZhuangziResponse(question, puzzleInfo);
+       }
+     }
+     
+     // 靜態莊子回應（當AI不可用時使用）
+     function getStaticZhuangziResponse(question, puzzleInfo) {
+       const lowerQuestion = question.toLowerCase();
+       
+       // 基於問題關鍵詞提供相應回答
+       if (lowerQuestion.includes('斷句') || lowerQuestion.includes('怎麼') || lowerQuestion.includes('如何')) {
+         return `我的朋友，斷句如同人生的選擇，沒有絕對的對錯。重要的是用心感受文字的韻律和意境。就像${puzzleInfo.theme}一樣，每個人的理解都有其獨特之處。相信你的直覺，大膽嘗試吧！`;
+       }
+       
+       if (lowerQuestion.includes('意思') || lowerQuestion.includes('含義') || lowerQuestion.includes('理解')) {
+         return `這段古文講述的是${puzzleInfo.theme}。在我看來，文字只是載體，真正的智慧在於你的體悟。通過完成這個挑戰，你將更深刻地理解其中的道理。`;
+       }
+       
+       if (lowerQuestion.includes('為什麼') || lowerQuestion.includes('原因')) {
+         return `萬事萬物都有其道理，但道理往往不在於「為什麼」，而在於「如何」。就像這段古文一樣，重要的不是為什麼要這樣斷句，而是如何在過程中體會智慧。`;
+       }
+       
+       if (lowerQuestion.includes('困難') || lowerQuestion.includes('難')) {
+         return `困難是成長的機會，我的朋友。正如水遇到石頭會繞道而行，你也可以換個角度來思考。這段關於${puzzleInfo.theme}的古文，或許能給你新的啟發。`;
+       }
+       
+       // 默認回應
+       return `我的朋友，你的問題很有趣。在這個關於${puzzleInfo.theme}的挑戰中，答案往往藏在實踐裡。不如先完成斷句挑戰，在過程中你可能會找到自己的答案。記住，最好的老師是你自己的體驗。`;
+     }
     
     // 鵷鶵視角效果函數
     function applyYuanchuView() {
@@ -19105,9 +19667,25 @@ ${recentChoices.map((choice, index) =>
       // 開發者模式標記，用於強制顯示物化按鈕
       const isDevMode = document.documentElement.classList.contains('dev-mode');
       
+      // 先清空所有已收集的封印，然後根據章節重新設置
+      gameState.collectedApertures = [];
+      
       switch (chapter) {
         case 'prologue':
-          // 序章不需要特殊前置條件
+          // 序章特殊處理：重置所有解鎖的形態狀態，只保留人形
+          gameState.unlockedForms = ['human'];
+          
+          // 隱藏所有物化按鈕（除了人形）
+          Object.keys(formButtons).forEach(formType => {
+            if (formType !== 'human' && formButtons[formType]) {
+              formButtons[formType].classList.add('hidden');
+              formButtons[formType].style.visibility = 'hidden';
+            } else if (formType === 'human' && formButtons[formType]) {
+              // 確保人形按鈕始終可見
+              formButtons[formType].classList.remove('hidden');
+              formButtons[formType].style.visibility = 'visible';
+            }
+          });
           break;
           
         case 'chapter1':
@@ -19300,6 +19878,17 @@ ${recentChoices.map((choice, index) =>
           break;
       }
       
+      // 先清除所有七竅指示器的狀態，然後重新設置
+      document.querySelectorAll('.aperture').forEach(aperture => {
+        aperture.classList.remove('active');
+      });
+      
+      // 移除可能存在的太極覆蓋層
+      const existingTaijiOverlay = document.getElementById('taiji-overlay');
+      if (existingTaijiOverlay) {
+        existingTaijiOverlay.remove();
+      }
+      
       // 更新已收集封印的視覺狀態
       gameState.collectedApertures.forEach(apertureType => {
         const targetAperture = document.querySelector(`.aperture-${apertureType}`);
@@ -19470,16 +20059,7 @@ ${recentChoices.map((choice, index) =>
       }, 10);
     }
     
-    function init() {
-      // Pre-show the main menu
-      mainMenu.style.opacity = 1;
-      
-      // Initialize Hunlun apertures
-      initializeHunlunApertures();
-      
-      // Initialize audio controls
-      initAudioControls();
-    }
+
     
     // 創建時間效果場景
     function createTimeEffectScene(scene) {
@@ -24975,8 +25555,8 @@ ${choiceSummary}
       document.body.appendChild(modal);
       
       // 添加按鈕事件
-      document.getElementById('download-report-btn').addEventListener('click', () => {
-        downloadReportAsImage(report);
+      document.getElementById('download-report-btn').addEventListener('click', async () => {
+        await downloadReportAsImage(report);
       });
       
       document.getElementById('close-report-btn').addEventListener('click', () => {
@@ -25052,7 +25632,21 @@ ${choiceSummary}
     }
     
     // 下載莊子的信為圖片
-    function downloadReportAsImage(report) {
+    async function downloadReportAsImage(report) {
+      // 預載logo圖片
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      
+      // 等待logo圖片加載完成
+      await new Promise((resolve, reject) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = () => {
+          console.warn('Logo圖片加載失敗，將繼續生成不含logo的信件');
+          resolve(); // 即使失敗也繼續執行
+        };
+        logoImg.src = 'https://raw.githubusercontent.com/chineseclassics/chineseclassics.github.io/main/images/cclogo.png';
+      });
+      
       // 創建畫布
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -25106,46 +25700,35 @@ ${choiceSummary}
       ctx.lineWidth = 1;
       ctx.strokeRect(40, 60, baseWidth - 80, baseHeight - 120);
       
-      // 設置文字樣式 - 使用古風暖色調
-      ctx.fillStyle = '#8B4513'; // 深褐色標題
-      ctx.font = 'bold 32px "LXGW WenKai", "Noto Serif TC", serif';
+      // 設置文字樣式 - 使用黑體思源宋體標題
+      ctx.fillStyle = '#000000'; // 黑色標題
+      ctx.font = 'bold 36px "Noto Serif SC", "Noto Serif TC", serif';
       ctx.textAlign = 'center';
       
-      // 繪製標題（移除禮物圖標）
-      ctx.fillText('莊子給您的信', baseWidth / 2, 120);
-      
-      // 繪製副標題
-      ctx.fillStyle = '#A0522D'; // 赭石色副標題
-      ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
-      ctx.fillText('穿越時空的智慧與關懷', baseWidth / 2, 145);
-      
-      // 繪製遊戲信息
-      ctx.fillStyle = '#CD853F'; // 秘魯色遊戲信息
-      ctx.font = '14px "LXGW WenKai", "Noto Serif TC", serif';
-      ctx.fillText('《萬物逍遙》- 莊子哲學互動遊戲', baseWidth / 2, 170);
-      ctx.fillText('體驗物化之道，探索內心智慧', baseWidth / 2, 190);
+      // 繪製標題
+      ctx.fillText('莊子給你的信', baseWidth / 2, 120);
       
       // 繪製分隔線
       ctx.strokeStyle = '#D2691E'; // 巧克力色分隔線
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(70, 210);
-      ctx.lineTo(baseWidth - 70, 210);
+      ctx.moveTo(70, 160);
+      ctx.lineTo(baseWidth - 70, 160);
       ctx.stroke();
       
       // 繪製信件內容
       ctx.fillStyle = '#654321'; // 深棕色正文
-      ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.font = '18px "LXGW WenKai", "Noto Serif TC", serif';
       ctx.textAlign = 'left';
       
       // 處理文字換行（調整邊距）
-      const lines = wrapText(ctx, report, baseWidth - 120, 16);
-      const lineHeight = 22; // 稍微緊湊一些
-      let y = 240; // 從更靠上的位置開始
+      const lines = wrapText(ctx, report, baseWidth - 120, 18);
+      const lineHeight = 26; // 增大行高以配合更大字體
+      let y = 190; // 從更靠上的位置開始
       
       // 計算所需的總高度
       const contentHeight = lines.length * lineHeight;
-      const minRequiredHeight = 240 + contentHeight + 80; // 內容開始位置 + 內容高度 + 底部空間（減少空白）
+      const minRequiredHeight = 190 + contentHeight + 160; // 內容開始位置 + 內容高度 + 底部空間（增加空間容納logo和底部文字）
       
       // 如果需要更多空間，動態調整畫布高度
       let actualHeight = baseHeight;
@@ -25184,30 +25767,21 @@ ${choiceSummary}
         ctx.strokeRect(40, 60, baseWidth - 80, actualHeight - 120);
         
         // 重新繪製標題區域
-        ctx.fillStyle = '#8B4513'; // 深褐色標題
-        ctx.font = 'bold 32px "LXGW WenKai", "Noto Serif TC", serif';
+        ctx.fillStyle = '#000000'; // 黑色標題
+        ctx.font = 'bold 36px "Noto Serif SC", "Noto Serif TC", serif';
         ctx.textAlign = 'center';
-        ctx.fillText('莊子給您的信', baseWidth / 2, 120);
-        
-        ctx.fillStyle = '#A0522D'; // 赭石色副標題
-        ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
-        ctx.fillText('穿越時空的智慧與關懷', baseWidth / 2, 145);
-        
-        ctx.fillStyle = '#CD853F'; // 秘魯色遊戲信息
-        ctx.font = '14px "LXGW WenKai", "Noto Serif TC", serif';
-        ctx.fillText('《萬物逍遙》- 莊子哲學互動遊戲', baseWidth / 2, 170);
-        ctx.fillText('體驗物化之道，探索內心智慧', baseWidth / 2, 190);
+        ctx.fillText('莊子給你的信', baseWidth / 2, 120);
         
         ctx.strokeStyle = '#D2691E'; // 巧克力色分隔線
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(70, 210);
-        ctx.lineTo(baseWidth - 70, 210);
+        ctx.moveTo(70, 160);
+        ctx.lineTo(baseWidth - 70, 160);
         ctx.stroke();
         
         // 重新設置信件內容樣式
         ctx.fillStyle = '#654321'; // 深棕色正文
-        ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
+        ctx.font = '18px "LXGW WenKai", "Noto Serif TC", serif';
         ctx.textAlign = 'left';
       }
       
@@ -25217,20 +25791,36 @@ ${choiceSummary}
         y += lineHeight;
       });
       
-      // 繪製底部信息（改善顏色對比度）- 調整位置減少空白
-      ctx.fillStyle = '#4A4A4A'; // 深灰色底部信息，與褐色背景對比更明顯
+      // 繪製logo - 右對齊，底部與米色區域邊線保持間距
+      if (logoImg.complete && logoImg.naturalWidth > 0) {
+        // 計算logo的原始比例
+        const originalWidth = logoImg.naturalWidth;
+        const originalHeight = logoImg.naturalHeight;
+        const aspectRatio = originalWidth / originalHeight;
+        
+        // 設置logo的目標寬度，並根據比例計算高度
+        const logoWidth = 100; // logo寬度
+        const logoHeight = logoWidth / aspectRatio; // 保持原始比例
+        
+        const logoX = baseWidth - logoWidth - 60; // 右對齊，距離右邊60像素
+        const logoY = actualHeight - 70 - logoHeight; // logo底部與米色區域邊線保持20像素間距
+        
+        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+      }
+      
+      // 繪製底部信息 - 向上移動，與日期保持舒適間距
+      ctx.fillStyle = '#4A4A4A'; // 深灰色底部信息
       ctx.font = '14px "LXGW WenKai", "Noto Serif TC", serif';
       ctx.textAlign = 'center';
-      ctx.fillText('此信件由《萬物逍遙》遊戲生成', baseWidth / 2, actualHeight - 50);
-      ctx.fillText('基於您的遊戲數據個性化定制', baseWidth / 2, actualHeight - 30);
+      ctx.fillText('此信件由游戲《萬物逍遙》生成，基於你的游戲歷程數據', baseWidth / 2, actualHeight - 100);
       
-      // 添加日期
+      // 添加日期 - 居中對齊，向上移動
       const now = new Date();
       const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-      ctx.fillStyle = '#2F4F4F'; // 深石板灰色日期，確保清晰可見
+      ctx.fillStyle = '#2F4F4F'; // 深石板灰色日期
       ctx.font = '12px "LXGW WenKai", "Noto Serif TC", serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(dateStr, baseWidth - 60, actualHeight - 10);
+      ctx.textAlign = 'center';
+      ctx.fillText(dateStr, baseWidth / 2, actualHeight - 75);
       
       // 下載圖片 - 使用高質量PNG
       canvas.toBlob((blob) => {
@@ -25507,9 +26097,9 @@ ${choiceSummary}
       textDisplay.style.cssText = `
         font-size: 1.4rem;
         line-height: 1.8;
-        color: #2d3748;
+        color: #7c3aed;
         font-family: "LXGW WenKai", "Noto Serif TC", serif;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        text-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
         letter-spacing: 0.5px;
         text-align: center;
         opacity: 0;
@@ -25564,7 +26154,9 @@ ${choiceSummary}
 
 你的身體、你的心，都在這裡。
 
-在這個自由自在的地方，在這片廣闊的原野上，你終於得到了真正的逍遙。`;
+在這個自由自在的地方，在這片廣闊的原野上，你終於得到了真正的
+
+逍遙。`;
       
       let i = 0;
       let isInHighlight = false;
@@ -25576,7 +26168,7 @@ ${choiceSummary}
           // 檢查是否到達"逍遙"二字
           if (i === fullText.indexOf('逍遙') && !isInHighlight) {
             // 開始高亮標籤
-            element.innerHTML += '<span style="color: #8B4513; font-weight: bold; text-shadow: 0 0 8px rgba(139, 69, 19, 0.6); display: inline-block;">';
+            element.innerHTML += '<span style="color: #8b5cf6; font-weight: bold; text-shadow: 0 0 12px rgba(139, 92, 246, 0.8); display: inline-block;">';
             isInHighlight = true;
           }
           
@@ -25729,6 +26321,12 @@ ${choiceSummary}
 
     // Start the game
     function init() {
+      // Pre-show the main menu
+      mainMenu.style.opacity = 1;
+      
+      // Initialize Hunlun apertures
+      initializeHunlunApertures();
+      
       // 恢復遊戲進度
       const savedProgress = loadGameProgress();
       if (savedProgress) {
@@ -25745,15 +26343,26 @@ ${choiceSummary}
       // 初始化默認形態
       updateFormView('human');
       
-      // 如果已收集所有7個封印，創建太極覆蓋層
-      if (gameState.collectedApertures.length === 7) {
-        setTimeout(() => {
-          createTaijiOverlay();
-          console.log('🌟 遊戲初始化：檢測到所有封印已收集，創建太極覆蓋層');
-        }, 2000); // 延遲2秒確保所有DOM元素已準備好
+      // 根據保存的進度更新七竅指示器的顯示狀態
+      if (gameState.collectedApertures && gameState.collectedApertures.length > 0) {
+        gameState.collectedApertures.forEach(apertureType => {
+          const targetAperture = document.querySelector(`.aperture-${apertureType}`);
+          if (targetAperture) {
+            targetAperture.classList.add('active');
+          }
+        });
+        
+        // 如果已收集所有7個封印，創建太極覆蓋層
+        if (gameState.collectedApertures.length === 7) {
+          setTimeout(() => {
+            createTaijiOverlay();
+            console.log('🌟 主菜單初始化：檢測到所有封印已收集，創建太極覆蓋層');
+          }, 1000);
+        }
       }
       
-
+      // Initialize audio controls
+      initAudioControls();
       
       // 🔍 自動運行第七章場景調試
       console.log('🔍 遊戲初始化完成，自動運行第七章場景調試...');
