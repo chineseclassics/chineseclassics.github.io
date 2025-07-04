@@ -191,6 +191,17 @@
       }
     }
     
+    @keyframes gentle-breathing {
+      0%, 100% { 
+        opacity: 1;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      50% { 
+        opacity: 0.85;
+        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+      }
+    }
+    
     /* Hunlun (Chaos) design and seven apertures */
     .aperture-container {
       position: relative;
@@ -2150,6 +2161,25 @@
           background-position: 30% 20%; 
           opacity: 0.6;
           transform: rotate(0deg) scale(1);
+        }
+      }
+
+      /* 最終場景輕微呼吸光效 */
+      @keyframes gentle-breathing {
+        0% { 
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          transform: scale(1);
+          opacity: 0.95;
+        }
+        50% { 
+          text-shadow: 0 2px 8px rgba(139, 69, 19, 0.15), 0 0 12px rgba(139, 69, 19, 0.08);
+          transform: scale(1.002);
+          opacity: 1;
+        }
+        100% { 
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          transform: scale(1);
+          opacity: 0.95;
         }
       }
 
@@ -4464,25 +4494,16 @@
           }
         },
         
-        // 哲學傾向統計（隱蔽的分數系統）
+        // 哲學傾向統計（隱蔽的分數系統）- 人生價值觀與世界觀
         philosophicalTraits: {
-          // 核心維度
-          compassion: 0,        // 同理心 (0-100)
-          detachment: 0,        // 超脫性 (0-100)  
-          curiosity: 0,         // 求知欲 (0-100)
-          acceptance: 0,        // 接納度 (0-100)
-          intervention: 0,      // 干預傾向 (0-100)
-          aesthetic: 0,         // 美學傾向 (0-100)
-          pragmatism: 0,        // 實用主義 (0-100)
-          idealism: 0,          // 理想主義 (0-100)
-          
-          // 莊子特色維度
-          relativism: 0,        // 相對主義 (0-100)
-          nonJudgmental: 0,     // 不評判 (0-100)
-          harmony: 0,           // 和諧追求 (0-100)
-          spontaneity: 0,       // 自然性 (0-100)
-          wisdom: 0,            // 智慧洞察 (0-100)
-          paradoxical: 0        // 悖論思維 (0-100)
+          compassion: 0,           // 同理心 - "你總是能感受到他人的情感"
+          idealism: 0,             // 理想主義 - "你心中有美好世界的藍圖"
+          harmony: 0,              // 和諧追求 - "你渴望內心與世界的平衡"
+          wisdom_seeking: 0,       // 智慧追求 - "你不滿足於表面答案"
+          acceptance: 0,           // 接納包容 - "你能接受事物的本來面目"
+          beauty_appreciation: 0,  // 美的感受 - "你對美有敏銳的感知"
+          transcendence: 0,        // 超脫境界 - "你能跳出日常的束縛"
+          authenticity: 0          // 真實自然 - "你追求做真實的自己"
         },
         
         // MBTI人格維度評分 (0-100)
@@ -4504,32 +4525,16 @@
           perceiving: 0         // 感知：喜歡靈活性、開放性、探索
         },
         
-        // 故事情節相關數據
+        // 故事情節相關數據 - 個性特質與生活態度
         storyTraits: {
-          // 對莊子哲學的理解深度
-          philosophicalDepth: 0,     // 哲學理解深度 (0-100)
-          transformationOpenness: 0, // 對物化體驗的開放程度
-          ancientWisdomReception: 0, // 對古代智慧的接受程度
-          
-          // 故事角色關係
-          relationshipWithZhuangzi: 50, // 與莊子的關係親密度 (初始中性)
-          trustInGuidance: 50,          // 對指導的信任程度
-          rebelSpirit: 0,               // 反叛精神：質疑權威
-          
-          // 冒險態度
-          riskTolerance: 0,       // 風險承受能力
-          explorationDrive: 0,    // 探索驅動力
-          cautionLevel: 0,        // 謹慎程度
-          
-          // 學習方式
-          analyticalApproach: 0,  // 分析式學習
-          intuitiveApproach: 0,   // 直覺式學習
-          experientialApproach: 0, // 體驗式學習
-          
-          // 社會性
-          leadershipTendency: 0,  // 領導傾向
-          followership: 0,        // 跟隨性
-          independence: 0         // 獨立性
+          gentleness: 0,        // 溫柔細膩 - "你待人溫和，處事細心"
+          curiosity: 0,         // 好奇探索 - "你對未知充滿渴望"
+          resilience: 0,        // 堅韌不拔 - "你能在困難中保持堅強"
+          introspection: 0,     // 內省深思 - "你習慣深入思考自己"
+          courage: 0,           // 勇敢冒險 - "你敢於面對挑戰"
+          creativity: 0,        // 創造想像 - "你有豐富的想像力"
+          independence: 0,      // 獨立自主 - "你喜歡按自己的方式生活"
+          emotional_depth: 0    // 情感豐富 - "你的內心世界很豐富"
         },
         
         // 選擇模式分析
@@ -4807,6 +4812,39 @@
       const thinkingTime = gameState.playerChoices.timingData.choiceStartTime ? 
         timestamp - gameState.playerChoices.timingData.choiceStartTime : 0;
       
+      console.log('📝 ===== 玩家選擇記錄調試信息 =====');
+      console.log('🎯 記錄時間:', new Date().toLocaleTimeString());
+      console.log('📊 輸入的選擇數據:', choiceData);
+      console.log('⏱️ 思考時間:', `${Math.round(thinkingTime / 1000)}秒 (${thinkingTime}ms)`);
+      
+      // 檢查是否已經有這個位置的選擇記錄
+      const existingChoiceIndex = gameState.playerChoices.choiceHistory.findIndex(choice => 
+        choice.chapter === gameState.currentChapter && choice.scene === gameState.currentScene
+      );
+      
+      if (existingChoiceIndex !== -1) {
+        const existingChoice = gameState.playerChoices.choiceHistory[existingChoiceIndex];
+        console.log('🔄 發現同位置的舊選擇:', existingChoice.choiceText);
+        console.log('🔄 新選擇:', choiceData.text);
+        
+        // 如果選擇不同，先移除舊選擇的特質影響
+        if (existingChoice.choiceText !== choiceData.text) {
+          console.log('🔄 選擇不同，移除舊選擇的特質影響...');
+          removeTraitInfluence(existingChoice);
+          
+          // 從歷史記錄中移除舊選擇
+          gameState.playerChoices.choiceHistory.splice(existingChoiceIndex, 1);
+          
+          // 從章節特定選擇中移除
+          removeChapterSpecificChoice(existingChoice);
+          
+          console.log('🔄 舊選擇已移除，準備記錄新選擇');
+        } else {
+          console.log('🔄 選擇相同，跳過重複記錄');
+          return;
+        }
+      }
+      
       // 構建選擇記錄
       const choiceRecord = {
         id: generateChoiceId(),
@@ -4831,8 +4869,22 @@
         storyImpact: choiceData.storyImpact || {}
       };
       
+      console.log('🔍 構建的選擇記錄:', {
+        id: choiceRecord.id,
+        chapter: choiceRecord.chapter,
+        scene: choiceRecord.scene,
+        choiceText: choiceRecord.choiceText,
+        thinkingTime: `${Math.round(choiceRecord.thinkingTime / 1000)}s`,
+        traits: choiceRecord.traits
+      });
+      
       // 添加到歷史記錄
       gameState.playerChoices.choiceHistory.push(choiceRecord);
+      
+      console.log('📚 選擇歷史更新:', {
+        總選擇數: gameState.playerChoices.choiceHistory.length,
+        本章選擇數: gameState.playerChoices.choiceHistory.filter(c => c.chapter === gameState.currentChapter).length
+      });
       
       // 記錄章節特定選擇
       recordChapterSpecificChoice(choiceRecord);
@@ -4841,13 +4893,31 @@
       updateTimingStatistics(thinkingTime);
       
       // 更新哲學傾向分數
+      const oldPhilosophicalTraits = { ...gameState.playerChoices.philosophicalTraits };
       updatePhilosophicalTraits(choiceData.philosophical || {});
+      console.log('🧠 哲學特質更新:', {
+        更新前: oldPhilosophicalTraits,
+        更新後: gameState.playerChoices.philosophicalTraits,
+        本次增加: choiceData.philosophical
+      });
       
       // 更新MBTI維度分數
+      const oldMBTITraits = { ...gameState.playerChoices.mbtiTraits };
       updateMBTITraits(choiceData.mbti || {});
+      console.log('🎭 MBTI特質更新:', {
+        更新前: oldMBTITraits,
+        更新後: gameState.playerChoices.mbtiTraits,
+        本次增加: choiceData.mbti
+      });
       
       // 更新故事相關特質
+      const oldStoryTraits = { ...gameState.playerChoices.storyTraits };
       updateStoryTraits(choiceData.story || {});
+      console.log('📖 故事特質更新:', {
+        更新前: oldStoryTraits,
+        更新後: gameState.playerChoices.storyTraits,
+        本次增加: choiceData.story
+      });
       
       // 處理故事分支影響
       processStoryImpact(choiceData.storyImpact || {});
@@ -4858,7 +4928,97 @@
       // 準備AI上下文數據
       updateAIContext();
       
-      console.log('💭 選擇已記錄:', choiceRecord.choiceText, '思考時間:', thinkingTime + 'ms');
+      console.log('✅ 選擇記錄完成:', choiceRecord.choiceText);
+      console.log('🎯 當前玩家檔案:', gameState.playerChoices.aiContext?.profileSummary);
+      console.log('========================================');
+    }
+    
+    // 移除舊選擇的特質影響（重新計算法）
+    function removeTraitInfluence(oldChoice) {
+      console.log('🔄 移除舊選擇的特質影響...');
+      
+      // 保存當前特質狀態
+      const backupPhilosophical = { ...gameState.playerChoices.philosophicalTraits };
+      const backupMBTI = { ...gameState.playerChoices.mbtiTraits };
+      const backupStory = { ...gameState.playerChoices.storyTraits };
+      
+      // 重置特質分數到初始狀態
+      resetTraitsToInitial();
+      
+      // 重新計算所有選擇的特質影響（除了要移除的那個）
+      const remainingChoices = gameState.playerChoices.choiceHistory.filter(choice => 
+        !(choice.chapter === oldChoice.chapter && choice.scene === oldChoice.scene)
+      );
+      
+      console.log(`🔄 重新計算${remainingChoices.length}個選擇的特質影響...`);
+      
+      remainingChoices.forEach(choice => {
+        if (choice.traits) {
+          // 重新應用哲學特質
+          if (choice.traits.philosophical) {
+            updatePhilosophicalTraits(choice.traits.philosophical);
+          }
+          
+          // 重新應用MBTI特質
+          if (choice.traits.mbti) {
+            updateMBTITraits(choice.traits.mbti);
+          }
+          
+          // 重新應用故事特質
+          if (choice.traits.story) {
+            updateStoryTraits(choice.traits.story);
+          }
+        }
+      });
+      
+      console.log('✅ 特質影響重新計算完成');
+      console.log('🔄 移除前特質:', {
+        philosophical: backupPhilosophical,
+        mbti: backupMBTI,
+        story: backupStory
+      });
+      console.log('🔄 移除後特質:', {
+        philosophical: gameState.playerChoices.philosophicalTraits,
+        mbti: gameState.playerChoices.mbtiTraits,
+        story: gameState.playerChoices.storyTraits
+      });
+    }
+    
+    // 重置特質分數到初始狀態
+    function resetTraitsToInitial() {
+      // 重置哲學特質
+      const philosophicalTraits = gameState.playerChoices.philosophicalTraits;
+      Object.keys(philosophicalTraits).forEach(trait => {
+        philosophicalTraits[trait] = 0;
+      });
+      
+      // 重置MBTI特質
+      const mbtiTraits = gameState.playerChoices.mbtiTraits;
+      Object.keys(mbtiTraits).forEach(trait => {
+        mbtiTraits[trait] = 0;
+      });
+      
+      // 重置故事特質
+      const storyTraits = gameState.playerChoices.storyTraits;
+      Object.keys(storyTraits).forEach(trait => {
+        storyTraits[trait] = 0;
+      });
+      
+      console.log('🔄 特質分數已重置到初始狀態');
+    }
+    
+    // 移除章節特定選擇記錄
+    function removeChapterSpecificChoice(oldChoice) {
+      const chapterInfluences = gameState.playerChoices.chapterInfluences[oldChoice.chapter];
+      if (chapterInfluences && chapterInfluences.choices) {
+        const choiceIndex = chapterInfluences.choices.findIndex(choice => 
+          choice.scene === oldChoice.scene
+        );
+        if (choiceIndex !== -1) {
+          chapterInfluences.choices.splice(choiceIndex, 1);
+          console.log('🔄 已移除章節特定選擇記錄');
+        }
+      }
     }
     
     // 生成選擇ID
@@ -5425,7 +5585,7 @@
         return { type: 'harmonizer', description: '和諧者：包容萬物，追求平和' };
       } else if (traits.curiosity > 50 && traits.paradoxical > 30) {
         return { type: 'seeker', description: '求索者：好奇探索，樂於思辨' };
-      } else if (traits.acceptance > 50 && traits.nonJudgmental > 40) {
+      } else if (traits.acceptance > 50 && traits.beauty_appreciation > 40) {
         return { type: 'acceptor', description: '接納者：寬容理解，不妄下評判' };
       } else if (traits.aesthetic > 50 && traits.spontaneity > 30) {
         return { type: 'artist', description: '藝術家：審美敏銳，崇尚自然' };
@@ -5813,7 +5973,42 @@
     function getAIAnalysisData() {
       const choiceHistory = gameState.playerChoices.choiceHistory;
       
-      return {
+      // 詳細調試日誌
+      console.log('🔍 ===== AI數據收集詳細調試 =====');
+      console.log('📊 基礎數據統計:', {
+        選擇歷史長度: choiceHistory.length,
+        哲學特質數量: Object.keys(gameState.playerChoices.philosophicalTraits || {}).length,
+        MBTI特質數量: Object.keys(gameState.playerChoices.mbtiTraits || {}).length,
+        故事特質數量: Object.keys(gameState.playerChoices.storyTraits || {}).length,
+        AI上下文可用: !!gameState.playerChoices.aiContext
+      });
+      
+      console.log('🧠 特質數據詳情:');
+      console.log('  哲學特質:', gameState.playerChoices.philosophicalTraits);
+      console.log('  MBTI特質:', gameState.playerChoices.mbtiTraits);
+      console.log('  故事特質:', gameState.playerChoices.storyTraits);
+      
+      console.log('📈 選擇模式分析:', gameState.playerChoices.choicePatterns);
+      console.log('👤 玩家檔案:', gameState.playerChoices.aiContext?.profileSummary);
+      console.log('🎨 建議風格:', gameState.playerChoices.aiContext?.suggestedResponseStyle);
+      
+      console.log('🕰️ 最近5個選擇詳情:');
+      choiceHistory.slice(-5).forEach((choice, index) => {
+        console.log(`  ${index + 1}. [${choice.chapter}場景${choice.scene}] "${choice.choiceText}"`);
+        console.log(`     特質: ${JSON.stringify(choice.traits)} | 思考時間: ${Math.round(choice.thinkingTime / 1000)}s`);
+      });
+      
+      // 檢查數據完整性
+      const dataIntegrity = {
+        選擇記錄完整: choiceHistory.length > 0,
+        特質數據存在: Object.keys(gameState.playerChoices.philosophicalTraits || {}).length > 0,
+        AI上下文存在: !!gameState.playerChoices.aiContext?.profileSummary,
+        遊戲進度有效: !!gameState.currentChapter
+      };
+      
+      console.log('✅ 數據完整性檢查:', dataIntegrity);
+      
+      const analysisData = {
         comprehensive: generateComprehensivePlayerAnalysis(),
         profile: gameState.playerChoices.aiContext.profileSummary,
         traits: gameState.playerChoices.philosophicalTraits,
@@ -5846,6 +6041,17 @@
         },
         suggestedStyle: gameState.playerChoices.aiContext.suggestedResponseStyle
       };
+      
+      console.log('📦 最終AI數據包:', {
+        profile可用: !!analysisData.profile,
+        traits數量: Object.keys(analysisData.traits || {}).length,
+        choices數量: analysisData.choices.length,
+        recentHistory數量: analysisData.context.recentHistory.length,
+        suggestedStyle可用: !!analysisData.suggestedStyle
+      });
+      
+      console.log('========================================');
+      return analysisData;
     }
     
     // 獲取遊戲進度摘要
@@ -5897,91 +6103,126 @@
      
      // 從選擇文本中推斷哲學特質（隱蔽系統）
      function extractTraitsFromChoice(choiceText, speaker, chapter) {
-       const traits = {};
+       const traits = {
+         philosophical: {},
+         story: {}
+       };
        const text = choiceText.toLowerCase();
+       
+       // === 哲學層面維度識別 ===
        
        // 同理心相關關鍵詞
        if (text.includes('痛苦') || text.includes('難過') || text.includes('可憐') || 
-           text.includes('理解') || text.includes('感受') || text.includes('不安')) {
-         traits.compassion = 3;
-       }
-       
-       // 超脫性相關關鍵詞
-       if (text.includes('自然') || text.includes('順其') || text.includes('不重要') || 
-           text.includes('都一樣') || text.includes('無所謂') || text.includes('法則')) {
-         traits.detachment = 3;
-       }
-       
-       // 好奇心相關關鍵詞
-       if (text.includes('觀察') || text.includes('看看') || text.includes('為什麼') || 
-           text.includes('如何') || text.includes('想知道') || text.includes('研究')) {
-         traits.curiosity = 3;
-       }
-       
-       // 干預傾向相關關鍵詞
-       if (text.includes('阻止') || text.includes('幫助') || text.includes('做點什麼') || 
-           text.includes('應該') || text.includes('必須') || text.includes('改變')) {
-         traits.intervention = 3;
-       }
-       
-       // 接納度相關關鍵詞
-       if (text.includes('接受') || text.includes('都好') || text.includes('沒關係') || 
-           text.includes('包容') || text.includes('各自') || text.includes('都有道理')) {
-         traits.acceptance = 3;
-       }
-       
-       // 美學傾向相關關鍵詞
-       if (text.includes('美') || text.includes('優雅') || text.includes('純淨') || 
-           text.includes('色彩') || text.includes('詩意') || text.includes('優美')) {
-         traits.aesthetic = 3;
-       }
-       
-       // 實用主義相關關鍵詞
-       if (text.includes('有用') || text.includes('實際') || text.includes('現實') || 
-           text.includes('效果') || text.includes('結果') || text.includes('解決')) {
-         traits.pragmatism = 3;
+           text.includes('理解') || text.includes('感受') || text.includes('不安') ||
+           text.includes('共鳴') || text.includes('體會') || text.includes('心疼')) {
+         traits.philosophical.compassion = 3;
        }
        
        // 理想主義相關關鍵詞
        if (text.includes('理想') || text.includes('完美') || text.includes('應當') || 
-           text.includes('正義') || text.includes('純真') || text.includes('高尚')) {
-         traits.idealism = 3;
-       }
-       
-       // 相對主義相關關鍵詞
-       if (text.includes('相對') || text.includes('也許') || text.includes('不同') || 
-           text.includes('角度') || text.includes('看法') || text.includes('視角')) {
-         traits.relativism = 3;
-       }
-       
-       // 非評判相關關鍵詞
-       if (text.includes('不評判') || text.includes('各有各的') || text.includes('都合理') || 
-           text.includes('沒有對錯') || text.includes('理解') || text.includes('包容')) {
-         traits.nonJudgmental = 3;
+           text.includes('正義') || text.includes('純真') || text.includes('高尚') ||
+           text.includes('美好') || text.includes('崇高') || text.includes('夢想')) {
+         traits.philosophical.idealism = 3;
        }
        
        // 和諧追求相關關鍵詞
        if (text.includes('和諧') || text.includes('平衡') || text.includes('協調') || 
-           text.includes('安寧') || text.includes('平和') || text.includes('融洽')) {
-         traits.harmony = 3;
+           text.includes('安寧') || text.includes('平和') || text.includes('融洽') ||
+           text.includes('統一') || text.includes('調和') || text.includes('穩定')) {
+         traits.philosophical.harmony = 3;
        }
        
-       // 自然性相關關鍵詞
-       if (text.includes('自然而然') || text.includes('天性') || text.includes('本能') || 
-           text.includes('直覺') || text.includes('天然') || text.includes('原始')) {
-         traits.spontaneity = 3;
-       }
-       
-       // 智慧洞察相關關鍵詞
+       // 智慧追求相關關鍵詞
        if (text.includes('領悟') || text.includes('明白') || text.includes('洞察') || 
-           text.includes('深層') || text.includes('本質') || text.includes('真相')) {
-         traits.wisdom = 3;
+           text.includes('深層') || text.includes('本質') || text.includes('真相') ||
+           text.includes('智慧') || text.includes('思考') || text.includes('探索')) {
+         traits.philosophical.wisdom_seeking = 3;
        }
        
-       // 悖論思維相關關鍵詞
-       if (text.includes('矛盾') || text.includes('悖論') || text.includes('反而') || 
-           text.includes('既是又是') || text.includes('兩面') || text.includes('對立統一')) {
-         traits.paradoxical = 3;
+       // 接納包容相關關鍵詞
+       if (text.includes('接受') || text.includes('都好') || text.includes('沒關係') || 
+           text.includes('包容') || text.includes('各自') || text.includes('都有道理') ||
+           text.includes('理解') || text.includes('寬容') || text.includes('容忍')) {
+         traits.philosophical.acceptance = 3;
+       }
+       
+       // 美的感受相關關鍵詞
+       if (text.includes('美') || text.includes('優雅') || text.includes('純淨') || 
+           text.includes('色彩') || text.includes('詩意') || text.includes('優美') ||
+           text.includes('壯觀') || text.includes('美感') || text.includes('美麗')) {
+         traits.philosophical.beauty_appreciation = 3;
+       }
+       
+       // 超脫境界相關關鍵詞
+       if (text.includes('超越') || text.includes('跳出') || text.includes('脫離') || 
+           text.includes('超脫') || text.includes('昇華') || text.includes('境界') ||
+           text.includes('無限') || text.includes('超凡') || text.includes('解脫')) {
+         traits.philosophical.transcendence = 3;
+       }
+       
+       // 真實自然相關關鍵詞
+       if (text.includes('真實') || text.includes('自然') || text.includes('本真') || 
+           text.includes('純粹') || text.includes('本來') || text.includes('原始') ||
+           text.includes('天然') || text.includes('本性') || text.includes('真誠')) {
+         traits.philosophical.authenticity = 3;
+       }
+       
+       // === 故事層面維度識別 ===
+       
+       // 溫柔細膩相關關鍵詞
+       if (text.includes('溫柔') || text.includes('細心') || text.includes('輕柔') || 
+           text.includes('溫和') || text.includes('柔和') || text.includes('細膩') ||
+           text.includes('溫暖') || text.includes('輕聲') || text.includes('小心')) {
+         traits.story.gentleness = 3;
+       }
+       
+       // 好奇探索相關關鍵詞
+       if (text.includes('好奇') || text.includes('探索') || text.includes('想知道') || 
+           text.includes('觀察') || text.includes('研究') || text.includes('發現') ||
+           text.includes('尋找') || text.includes('探尋') || text.includes('調查')) {
+         traits.story.curiosity = 3;
+       }
+       
+       // 堅韌不拔相關關鍵詞
+       if (text.includes('堅持') || text.includes('不放棄') || text.includes('堅強') || 
+           text.includes('堅韌') || text.includes('毅力') || text.includes('堅定') ||
+           text.includes('頑強') || text.includes('不屈') || text.includes('持續')) {
+         traits.story.resilience = 3;
+       }
+       
+       // 內省深思相關關鍵詞
+       if (text.includes('反思') || text.includes('深思') || text.includes('內省') || 
+           text.includes('沉思') || text.includes('思索') || text.includes('思考') ||
+           text.includes('反省') || text.includes('內觀') || text.includes('自省')) {
+         traits.story.introspection = 3;
+       }
+       
+       // 勇敢冒險相關關鍵詞
+       if (text.includes('勇敢') || text.includes('冒險') || text.includes('挑戰') || 
+           text.includes('勇氣') || text.includes('大膽') || text.includes('無畏') ||
+           text.includes('冒險') || text.includes('嘗試') || text.includes('冒險')) {
+         traits.story.courage = 3;
+       }
+       
+       // 創造想像相關關鍵詞
+       if (text.includes('創造') || text.includes('想像') || text.includes('創新') || 
+           text.includes('創意') || text.includes('想象') || text.includes('幻想') ||
+           text.includes('創作') || text.includes('構思') || text.includes('設想')) {
+         traits.story.creativity = 3;
+       }
+       
+       // 獨立自主相關關鍵詞
+       if (text.includes('獨立') || text.includes('自主') || text.includes('自立') || 
+           text.includes('獨特') || text.includes('自己') || text.includes('個人') ||
+           text.includes('獨自') || text.includes('自決') || text.includes('自由')) {
+         traits.story.independence = 3;
+       }
+       
+       // 情感豐富相關關鍵詞
+       if (text.includes('情感') || text.includes('感情') || text.includes('情緒') || 
+           text.includes('內心') || text.includes('心情') || text.includes('感受') ||
+           text.includes('情懷') || text.includes('心境') || text.includes('心靈')) {
+         traits.story.emotional_depth = 3;
        }
        
        // 根據章節特色調整特質權重
@@ -5994,51 +6235,59 @@
      function adjustTraitsByChapter(traits, chapter) {
        switch(chapter) {
          case 'prologue':
-           // 序章：夢境與現實的模糊，增強悖論思維
-           if (traits.paradoxical) traits.paradoxical += 1;
-           if (traits.wisdom) traits.wisdom += 1;
+           // 序章：夢境與現實的模糊，增強智慧追求和超脫境界
+           if (traits.philosophical.wisdom_seeking) traits.philosophical.wisdom_seeking += 1;
+           if (traits.philosophical.transcendence) traits.philosophical.transcendence += 1;
+           if (traits.story.introspection) traits.story.introspection += 1;
            break;
            
          case 'chapter1':
            // 第一章：子非魚，關於認知和同理心
-           if (traits.compassion) traits.compassion += 1;
-           if (traits.relativism) traits.relativism += 1;
+           if (traits.philosophical.compassion) traits.philosophical.compassion += 1;
+           if (traits.philosophical.acceptance) traits.philosophical.acceptance += 1;
+           if (traits.story.emotional_depth) traits.story.emotional_depth += 1;
            break;
            
          case 'chapter2':
            // 第二章：鯤鵬變化，關於視角和超越
-           if (traits.detachment) traits.detachment += 1;
-           if (traits.curiosity) traits.curiosity += 1;
+           if (traits.philosophical.transcendence) traits.philosophical.transcendence += 1;
+           if (traits.story.curiosity) traits.story.curiosity += 1;
+           if (traits.story.courage) traits.story.courage += 1;
            break;
            
          case 'chapter3':
            // 第三章：鴟得腐鼠，關於價值觀多元
-           if (traits.acceptance) traits.acceptance += 1;
-           if (traits.nonJudgmental) traits.nonJudgmental += 1;
+           if (traits.philosophical.acceptance) traits.philosophical.acceptance += 1;
+           if (traits.philosophical.harmony) traits.philosophical.harmony += 1;
+           if (traits.story.gentleness) traits.story.gentleness += 1;
            break;
            
          case 'chapter4':
            // 第四章：蝸角之爭，關於相對性和視角
-           if (traits.relativism) traits.relativism += 1;
-           if (traits.wisdom) traits.wisdom += 1;
+           if (traits.philosophical.wisdom_seeking) traits.philosophical.wisdom_seeking += 1;
+           if (traits.philosophical.authenticity) traits.philosophical.authenticity += 1;
+           if (traits.story.introspection) traits.story.introspection += 1;
            break;
            
          case 'chapter5':
            // 第五章：朝菌大椿，關於時間和生命
-           if (traits.harmony) traits.harmony += 1;
-           if (traits.acceptance) traits.acceptance += 1;
+           if (traits.philosophical.harmony) traits.philosophical.harmony += 1;
+           if (traits.philosophical.acceptance) traits.philosophical.acceptance += 1;
+           if (traits.story.resilience) traits.story.resilience += 1;
            break;
            
          case 'chapter6':
            // 第六章：天地為棺槨，關於生死超脫
-           if (traits.detachment) traits.detachment += 1;
-           if (traits.wisdom) traits.wisdom += 1;
+           if (traits.philosophical.transcendence) traits.philosophical.transcendence += 1;
+           if (traits.philosophical.wisdom_seeking) traits.philosophical.wisdom_seeking += 1;
+           if (traits.story.courage) traits.story.courage += 1;
            break;
            
          case 'chapter7':
            // 第七章：道歸混沌，關於回歸本源
-           if (traits.spontaneity) traits.spontaneity += 1;
-           if (traits.harmony) traits.harmony += 1;
+           if (traits.philosophical.authenticity) traits.philosophical.authenticity += 1;
+           if (traits.philosophical.harmony) traits.philosophical.harmony += 1;
+           if (traits.story.introspection) traits.story.introspection += 1;
            break;
                }
       }
@@ -6117,6 +6366,67 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
         return prompt;
       }
       
+      // 創建初始玩家選擇狀態
+      function createInitialPlayerChoicesState() {
+        return {
+          choiceHistory: [],
+          timingData: {
+            sceneStartTime: null,
+            choiceStartTime: null,
+            totalThinkingTime: 0,
+            averageThinkingTime: 0
+          },
+          philosophicalTraits: {
+            compassion: 0, detachment: 0, curiosity: 0, acceptance: 0,
+            intervention: 0, aesthetic: 0, pragmatism: 0, idealism: 0,
+            relativism: 0, nonJudgmental: 0, harmony: 0, spontaneity: 0,
+            wisdom: 0, paradoxical: 0
+          },
+          mbtiTraits: {
+            extraversion: 0, introversion: 0, sensing: 0, intuition: 0,
+            thinking: 0, feeling: 0, judging: 0, perceiving: 0
+          },
+          storyTraits: {
+            analyticalApproach: 0, intuitiveApproach: 0, experientialApproach: 0,
+            riskTolerance: 0, cautionLevel: 0, explorationDrive: 0,
+            independence: 0, followership: 0, transformationOpenness: 0,
+            relationshipWithZhuangzi: 0, ancientWisdomReception: 0, adventureSpirit: 0
+          },
+          choicePatterns: {
+            consistencyScore: 0, contradictions: [], evolutionTrend: [],
+            dominantTraits: [], secondaryTraits: [], storyBranches: []
+          },
+          chapterInfluences: {},
+          aiContext: {
+            lastUpdateTime: null, profileSummary: '', recentTrends: [],
+            suggestedResponseStyle: '', philosophicalType: '', mbtiType: '',
+            storyPersonalization: {}
+          },
+          transformationData: {
+            transformationHistory: [],
+            formUsageCount: {},
+            firstTimeTransformations: [],
+            dailyTransformations: [],
+            transformationPatterns: {}
+          },
+          segmentationPuzzleData: {
+            puzzleAttempts: {},
+            puzzlePerformance: {
+              averageCompletionTime: 0,
+              averageAccuracy: 0,
+              learningCurve: [],
+              difficultyAdaptation: 0,
+              persistenceLevel: 0
+            }
+          },
+          sceneDwellTime: {
+            sceneDwellTimes: {},
+            totalDwellTime: 0,
+            averageDwellTime: 0
+          }
+        };
+      }
+      
       // 重置選擇記錄（用於測試）
       function resetPlayerChoices() {
         gameState.playerChoices = {
@@ -6133,14 +6443,47 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
             relativism: 0, nonJudgmental: 0, harmony: 0, spontaneity: 0,
             wisdom: 0, paradoxical: 0
           },
+          mbtiTraits: {
+            extraversion: 0, introversion: 0, sensing: 0, intuition: 0,
+            thinking: 0, feeling: 0, judging: 0, perceiving: 0
+          },
+          storyTraits: {
+            analyticalApproach: 0, intuitiveApproach: 0, experientialApproach: 0,
+            riskTolerance: 0, cautionLevel: 0, explorationDrive: 0,
+            independence: 0, followership: 0, transformationOpenness: 0,
+            relationshipWithZhuangzi: 0, ancientWisdomReception: 0, adventureSpirit: 0
+          },
           choicePatterns: {
             consistencyScore: 0, contradictions: [], evolutionTrend: [],
-            dominantTraits: [], secondaryTraits: []
+            dominantTraits: [], secondaryTraits: [], storyBranches: []
           },
-          chapterChoices: {},
+          chapterInfluences: {},
           aiContext: {
             lastUpdateTime: null, profileSummary: '', recentTrends: [],
-            suggestedResponseStyle: ''
+            suggestedResponseStyle: '', philosophicalType: '', mbtiType: '',
+            storyPersonalization: {}
+          },
+          transformationData: {
+            transformationHistory: [],
+            formUsageCount: {},
+            firstTimeTransformations: [],
+            dailyTransformations: [],
+            transformationPatterns: {}
+          },
+          segmentationPuzzleData: {
+            puzzleAttempts: {},
+            puzzlePerformance: {
+              averageCompletionTime: 0,
+              averageAccuracy: 0,
+              learningCurve: [],
+              difficultyAdaptation: 0,
+              persistenceLevel: 0
+            }
+          },
+          sceneDwellTime: {
+            sceneDwellTimes: {},
+            totalDwellTime: 0,
+            averageDwellTime: 0
           }
         };
                  console.log('🔄 玩家選擇記錄已重置');
@@ -6198,39 +6541,184 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
       async generatePersonalizedResponse(context, playerData) {
         const cacheKey = this.generateCacheKey(context, playerData);
         
+        // 詳細調試信息：AI調用開始
+        console.log('🤖 ===== AI個性化回應調試信息 =====');
+        console.log('🎯 調用時間:', new Date().toLocaleTimeString());
+        console.log('📍 調用上下文:', {
+          chapter: context.chapter,
+          scene: context.scene,
+          sceneType: context.sceneType,
+          description: context.description,
+          specificQuestion: context.specificQuestion,
+          responseKey: context.responseKey
+        });
+        
+        // 詳細調試信息：玩家數據分析
+        console.log('👤 玩家數據分析:');
+        console.log('  📊 基本檔案:', {
+          哲學類型: playerData.profile?.philosophicalProfile || 'developing',
+          主導特質: (playerData.patterns?.dominantTraits || []).slice(0, 3),
+          一致性: playerData.profile?.consistencyLevel || 'unknown',
+          思考時間: `${playerData.profile?.averageThinkingTime || 0}ms`,
+          選擇總數: playerData.profile?.totalChoices || 0
+        });
+        
+        console.log('  🧠 哲學特質:', playerData.traits || {});
+        console.log('  🎭 MBTI特質:', playerData.mbtiTraits || {});
+        console.log('  📚 故事特質:', playerData.storyTraits || {});
+        
+        console.log('  📈 選擇模式:', {
+          主導特質: playerData.patterns?.dominantTraits || [],
+          一致性分數: playerData.patterns?.consistencyScore || 0,
+          最近趨勢: playerData.patterns?.recentTrends || []
+        });
+        
+        console.log('  🎨 建議風格:', {
+          語調: playerData.suggestedStyle?.tone || 'balanced',
+          深度: playerData.suggestedStyle?.depth || 'medium',
+          方式: playerData.suggestedStyle?.approach || 'guiding',
+          個性化元素: playerData.suggestedStyle?.personalizedElements || []
+        });
+        
+        console.log('  🕰️ 最近選擇歷史:');
+        const recentChoices = (playerData.context?.recentHistory || []).slice(-5);
+        recentChoices.forEach((choice, index) => {
+          console.log(`    ${index + 1}. [${choice.chapter}] ${choice.choiceText} (${Math.round(choice.thinkingTime / 1000)}s)`);
+          console.log(`       特質: ${JSON.stringify(choice.traits)}`);
+        });
+        
         // 檢查緩存
         if (this.responseCache.has(cacheKey)) {
           console.log('💾 使用緩存的AI回應');
+          console.log('🔍 緩存鍵:', cacheKey.substring(0, 100) + '...');
+          console.log('========================================');
           return this.responseCache.get(cacheKey);
         }
+        
+        // 構建AI調用消息
+        const systemPrompt = this.buildSystemPrompt(playerData);
+        const userPrompt = this.buildUserPrompt(context, playerData);
+        
+        console.log('📝 AI調用消息構建:');
+        console.log('  🔧 系統提示詞長度:', systemPrompt.length, '字符');
+        console.log('  📖 用戶提示詞長度:', userPrompt.length, '字符');
+        console.log('  🌡️ 溫度參數:', this.getTemperatureByProfile(playerData.profile?.philosophicalProfile));
+        
+        // 顯示關鍵提示詞內容
+        console.log('  🎯 關鍵系統提示內容:');
+        console.log('    - 哲學類型:', this.translateProfile(playerData.profile?.philosophicalProfile || 'developing'));
+        console.log('    - 主導特質:', (playerData.patterns?.dominantTraits || []).slice(0, 2).map(t => this.translateTrait(t)).join('、'));
+        console.log('    - 思考方式:', playerData.profile?.averageThinkingTime > 3000 ? '深思熟慮' : '快速決斷');
+        
+        console.log('  🎯 關鍵用戶提示內容:');
+        console.log('    - 當前章節:', context.chapter);
+        console.log('    - 場景類型:', context.sceneType);
+        console.log('    - 具體問題:', context.specificQuestion);
+        console.log('    - 最近選擇:', recentChoices.slice(-1)[0]?.choiceText || '無');
         
         const messages = [
           {
             role: 'system',
-            content: this.buildSystemPrompt(playerData)
+            content: systemPrompt
           },
           {
             role: 'user', 
-            content: this.buildUserPrompt(context, playerData)
+            content: userPrompt
           }
         ];
         
+        console.log('🚀 開始調用DeepSeek API...');
+        const startTime = Date.now();
+        
         const response = await this.callDeepSeekAPI(messages, {
-          temperature: this.getTemperatureByProfile(playerData.profile.philosophicalProfile),
+          temperature: this.getTemperatureByProfile(playerData.profile?.philosophicalProfile),
           maxTokens: 300
         });
         
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        console.log('⏱️ AI調用完成:', `${duration}ms`);
+        
         if (response) {
+          console.log('✅ AI回應成功生成:');
+          console.log('  📏 回應長度:', response.length, '字符');
+          console.log('  📝 回應內容預覽:', response.substring(0, 100) + '...');
+          console.log('  🎯 回應是否包含個性化元素:', this.analyzePersonalization(response, playerData));
+          
           // 緩存回應
           this.responseCache.set(cacheKey, response);
+          console.log('💾 回應已緩存');
+          
           // 限制緩存大小
           if (this.responseCache.size > 50) {
             const firstKey = this.responseCache.keys().next().value;
             this.responseCache.delete(firstKey);
+            console.log('🗑️ 清理舊緩存');
+          }
+        } else {
+          console.error('❌ AI回應生成失敗');
+        }
+        
+        console.log('========================================');
+        return response;
+      }
+      
+      // 新增：分析回應的個性化程度
+      analyzePersonalization(response, playerData) {
+        const analysis = {
+          包含哲學概念: false,
+          回應特質相關: false,
+          使用建議語調: false,
+          長度合適: false,
+          個性化得分: 0
+        };
+        
+        // 檢查是否包含哲學概念
+        const philosophicalKeywords = ['逍遙', '自然', '無為', '道', '變化', '相對', '超越', '和諧'];
+        analysis.包含哲學概念 = philosophicalKeywords.some(keyword => response.includes(keyword));
+        if (analysis.包含哲學概念) analysis.個性化得分 += 20;
+        
+        // 檢查是否回應了玩家特質
+        const dominantTraits = playerData.patterns?.dominantTraits || [];
+        const traitKeywords = {
+          'compassion': ['理解', '同理', '關懷', '溫暖'],
+          'wisdom_seeking': ['探索', '思考', '智慧', '學習'],
+          'harmony': ['和諧', '平衡', '協調', '統一'],
+          'transcendence': ['超越', '解脫', '昇華', '境界']
+        };
+        
+        for (const trait of dominantTraits.slice(0, 2)) {
+          const keywords = traitKeywords[trait] || [];
+          if (keywords.some(keyword => response.includes(keyword))) {
+            analysis.回應特質相關 = true;
+            analysis.個性化得分 += 30;
+            break;
           }
         }
         
-        return response;
+        // 檢查語調是否符合建議
+        const suggestedTone = playerData.suggestedStyle?.tone || 'balanced';
+        const toneKeywords = {
+          'warm': ['溫暖', '親切', '關懷', '理解'],
+          'profound': ['深刻', '深層', '本質', '根本'],
+          'gentle': ['溫和', '柔和', '輕柔', '平靜'],
+          'poetic': ['詩意', '美麗', '優雅', '如詩']
+        };
+        
+        const toneWords = toneKeywords[suggestedTone] || [];
+        if (toneWords.some(word => response.includes(word))) {
+          analysis.使用建議語調 = true;
+          analysis.個性化得分 += 25;
+        }
+        
+        // 檢查回應長度
+        if (response.length >= 60 && response.length <= 120) {
+          analysis.長度合適 = true;
+          analysis.個性化得分 += 25;
+        }
+        
+        return analysis;
       }
       
       // 生成莊子的親筆信
@@ -6506,7 +6994,10 @@ ${recentChoices.map((choice, index) =>
       
       // 生成章節總結
       async generateChapterSummary(chapter, playerData) {
-        console.log('📊 開始生成章節總結:', { chapter, playerDataAvailable: !!playerData });
+        console.log('📊 ===== 章節總結AI調試信息 =====');
+        console.log('🎯 調用時間:', new Date().toLocaleTimeString());
+        console.log('📚 目標章節:', chapter);
+        console.log('📦 玩家數據可用性:', !!playerData);
         
         const chapterNames = {
           'chapter1': '第一章：子非魚',
@@ -6515,7 +7006,8 @@ ${recentChoices.map((choice, index) =>
           'chapter4': '第四章：蝸角之爭',
           'chapter5': '第五章：朝菌大椿',
           'chapter6': '第六章：螻蟻星辰',
-          'chapter7': '第七章：道歸混沌'
+          'chapter7': '第七章：道歸混沌',
+          'epilogue': '尾聲：逍遙遊'
         };
         
         // 確保數據完整性
@@ -6523,22 +7015,60 @@ ${recentChoices.map((choice, index) =>
           choices: playerData.choices || [],
           traits: playerData.traits || {},
           profile: playerData.profile || { dominantTraits: [] },
-          context: playerData.context || { recentHistory: [] }
+          context: playerData.context || { 
+            recentHistory: [],
+            gameProgress: getGameProgressSummary()
+          }
         };
         
         const recentChoices = safePlayerData.context.recentHistory.slice(-5); // 取最近5個選擇
         const chapterName = chapterNames[chapter] || chapter;
         
-        console.log('📊 章節總結數據:', {
-          chapterName,
-          recentChoicesCount: recentChoices.length,
-          dominantTraits: safePlayerData.profile.dominantTraits
+        console.log('📊 章節總結數據詳情:');
+        console.log('  📖 章節名稱:', chapterName);
+        console.log('  📈 最近選擇數量:', recentChoices.length);
+        console.log('  🎯 主導特質:', safePlayerData.profile.dominantTraits);
+        console.log('  🎭 是否為尾聲:', chapter === 'epilogue');
+        console.log('  🎮 遊戲進度:', safePlayerData.context.gameProgress);
+        console.log('  🔢 總選擇數:', safePlayerData.choices.length);
+        
+        console.log('  🕰️ 最近選擇詳情:');
+        recentChoices.forEach((choice, index) => {
+          console.log(`    ${index + 1}. [${choice.chapter}] ${choice.choiceText}`);
+          console.log(`       思考時間: ${Math.round(choice.thinkingTime / 1000)}s, 特質: ${JSON.stringify(choice.traits)}`);
         });
+        
+        console.log('  🧠 當前特質狀態:');
+        console.log('    哲學特質:', safePlayerData.traits);
+        console.log('    MBTI特質:', playerData.mbtiTraits || {});
+        console.log('    故事特質:', playerData.storyTraits || {});
+        
+        console.log('  📋 玩家檔案:');
+        console.log('    哲學類型:', safePlayerData.profile.philosophicalProfile || 'developing');
+        console.log('    一致性:', safePlayerData.profile.consistencyLevel || 'unknown');
+        console.log('    平均思考時間:', safePlayerData.profile.averageThinkingTime || 0, 'ms');
         
         const messages = [
           {
             role: 'system',
-            content: `你是莊子，正在為學生的${chapterName}學習做個性化總結。請根據學生的具體選擇和行為模式，生成一個詳細的章節總結。
+            content: chapter === 'epilogue' ? 
+              `你是莊子，正在為完成整個《萬物逍遙》旅程的學生寫一封告別信。請根據學生在整個遊戲中的表現，生成一封溫暖而深刻的告別信。
+
+重要角色設定：
+- 你就是莊子本人，請用第一人稱表達：說"我看到..."、"我認為..."
+- 絕對不要用第三人稱"莊子認為..."，因為你就是莊子
+- 與學生直接對話，分享你的觀察和建議
+
+告別信要求：
+- 必須針對學生在整個遊戲中的具體選擇和行為進行評價
+- 分析學生展現的哲學特質和思維模式
+- 給出個性化的生活建議和鼓勵
+- 用繁體中文的親切自然現代白話文，避免套話
+- 信長度：200-300字，要有內容深度
+- 體現莊子的智慧和關懷
+- 總結整個遊戲旅程的收穫和感悟
+- 以"致逍遙未至的朋友："開頭，以"你跨越時空的朋友 庄周 于蝴蝶夢醒時分"結尾` :
+              `你是莊子，正在為學生的${chapterName}學習做個性化總結。請根據學生的具體選擇和行為模式，生成一個詳細的章節總結。
 
 重要角色設定：
 - 你就是莊子本人，請用第一人稱表達：說"我看到..."、"我認為..."
@@ -6556,7 +7086,39 @@ ${recentChoices.map((choice, index) =>
           },
           {
             role: 'user',
-            content: `請為我在${chapterName}的學習做詳細總結：
+            content: chapter === 'epilogue' ? 
+              `請為我寫一封告別信，總結我在整個《萬物逍遙》旅程中的表現：
+
+📊 **我的完整遊戲記錄：**
+- 總遊戲時間：${safePlayerData.context.gameProgress.totalPlayTime}分鐘
+- 總選擇次數：${safePlayerData.choices.length}次
+- 解鎖物化形態：${safePlayerData.context.gameProgress.formsUnlocked}種
+- 收集封印數量：${safePlayerData.context.gameProgress.aperturesCollected}個
+- 完成章節：${safePlayerData.context.gameProgress.chaptersCompleted.join('、')}
+
+📝 **我的選擇記錄：**
+${safePlayerData.choices.slice(-10).map((choice, index) => 
+  `${index + 1}. ${choice.chapter}場景${choice.scene}："${choice.choiceText}"
+     - 思考時間：${Math.round((choice.thinkingTime || 0) / 1000 * 10) / 10}秒`
+).join('\n')}
+
+🧠 **我的哲學特質：**
+- 性格類型：${safePlayerData.profile.dominantTraits.join('、') || '探索型'}
+- 主要哲學傾向：${Object.entries(safePlayerData.traits).sort(([,a], [,b]) => b-a).slice(0, 3).map(([k,v]) => k).join('、') || '開放學習'}
+- 平均思考時間：${Math.round((safePlayerData.choices.reduce((sum, c) => sum + (c.thinkingTime || 0), 0) / Math.max(1, safePlayerData.choices.length)) / 1000 * 10) / 10}秒
+
+🎯 **告別信要求：**
+請生成200-300字的溫暖告別信，必須包含：
+1. 對我整個遊戲旅程的深度評價
+2. 我在遊戲中展現的哲學智慧和思維特質
+3. 我的學習方式和思考模式分析
+4. 針對性的生活建議和鼓勵
+5. 對整個遊戲體驗的感悟和收穫
+6. 以"致逍遙未至的朋友："開頭
+7. 以"你跨越時空的朋友 庄周 于蝴蝶夢醒時分"結尾
+
+請用莊子的智慧和溫暖的語調來寫，讓我感受到跨越時空的關懷和指導。` :
+              `請為我在${chapterName}的學習做詳細總結：
 
 📊 **我的選擇記錄：**
 ${recentChoices.map((choice, index) => 
@@ -6648,14 +7210,20 @@ ${recentChoices.map((choice, index) =>
 
                  // AI個性化回應生成函數（直接調用AI，不使用混合系統）
          window.generateSmartResponse = async function(choice, context = {}) {
-             console.log('🤖 直接調用AI生成個性化回應:', {
-                 choice: choice,
-                 sceneType: context.sceneType,
-                 description: context.description
+             console.log('🤖 ===== generateSmartResponse調試信息 =====');
+             console.log('🎯 調用時間:', new Date().toLocaleTimeString());
+             console.log('📝 玩家選擇:', choice);
+             console.log('🎬 場景上下文:', context);
+             console.log('🎮 當前遊戲狀態:', {
+                 chapter: gameState.currentChapter,
+                 scene: gameState.currentScene,
+                 currentForm: gameState.currentForm
              });
              
                 // 準備AI調用的數據格式
+                console.log('📊 準備收集玩家數據...');
                 const playerData = getAIAnalysisData();
+                
                 const aiContext = {
                     chapter: context.chapter || gameState.currentChapter,
                     scene: context.scene || gameState.currentScene,
@@ -6666,8 +7234,40 @@ ${recentChoices.map((choice, index) =>
                  responseKey: context.responseKey || '' // 包含回應鍵
                 };
                 
+                console.log('🎭 AI調用上下文:', aiContext);
+                console.log('👤 玩家數據摘要:', {
+                    總選擇數: playerData.choices?.length || 0,
+                    哲學特質數: Object.keys(playerData.traits || {}).length,
+                    檔案類型: playerData.profile?.philosophicalProfile,
+                    建議風格: playerData.suggestedStyle
+                });
+                
+                console.log('🚀 開始調用AI生成個性化回應...');
+                const aiStartTime = Date.now();
+                
              // 直接調用AI生成個性化回應
                 const response = await zhuangziAI.generatePersonalizedResponse(aiContext, playerData);
+                
+                const aiEndTime = Date.now();
+                const aiDuration = aiEndTime - aiStartTime;
+                
+                console.log('⏱️ AI調用耗時:', `${aiDuration}ms`);
+                
+                if (response) {
+                    console.log('✅ AI個性化回應生成成功!');
+                    console.log('📏 回應長度:', response.length, '字符');
+                    console.log('📝 回應內容:', response);
+                    console.log('🎯 回應品質檢查:', {
+                        包含繁體中文: /[\u4e00-\u9fff]/.test(response),
+                        長度合適: response.length >= 40 && response.length <= 120,
+                        包含個性化元素: response.includes('你') || response.includes('選擇'),
+                        符合莊子風格: response.includes('道') || response.includes('自然') || response.includes('逍遙') || response.includes('無為')
+                    });
+                } else {
+                    console.warn('⚠️ AI回應生成失敗，返回null');
+                }
+                
+                console.log('========================================');
                 return response;
          };
 
@@ -7099,7 +7699,8 @@ ${recentChoices.map((choice, index) =>
           'chapter5': 0.6, // 朝菌大椿章節音量調高
           'chapter6': 0.3,
           'chapter7': 0.3,
-          'epilogue': 0.3
+          'epilogue': 0.3,
+          'mysterious-gift': 0.4 // 神秘禮物音樂音量
         };
         this.defaultVolume = 0.3; // 默認音量
       }
@@ -7213,6 +7814,19 @@ ${recentChoices.map((choice, index) =>
     // 創建全局音頻管理器
     const audioManager = new AudioManager();
     
+    // 切換到神秘禮物專用音樂
+    function switchToMysteriousGiftMusic() {
+      console.log('🎵 切換到神秘禮物音樂');
+      
+      // 神秘禮物音樂URL
+      const mysteriousGiftMusicUrl = 'https://chineseclassics.github.io/files/audio/zhuangzi/credit2.mp4';
+      
+      // 播放神秘禮物音樂，使用淡入效果
+      audioManager.playBackgroundMusic(mysteriousGiftMusicUrl, true, 'mysterious-gift');
+      
+      console.log('🎵 神秘禮物音樂已開始播放');
+    }
+    
     // DOM Elements
     const gameContainer = document.getElementById('game-container');
     const mainMenu = document.getElementById('main-menu');
@@ -7261,9 +7875,33 @@ ${recentChoices.map((choice, index) =>
             speaker: '？？？',
             text: '你來了，由夢而生的旅人。我是莊周，你可以叫我莊子。你能來到這裡，說明你的心靈還沒有被俗世完全束縛。',
             options: [
-              { text: '這裡是什麼地方？', next: 2 },
-              { text: '您找我有什麼事嗎？', next: 3 },
-              { text: '我怎麼會在夢境中？', next: 4 }
+              { 
+                text: '這裡是什麼地方？', 
+                next: 2,
+                traits: { 
+                  philosophical: { idealism: 3, curiosity: 4, openness: 3 },
+                  mbti: { intuition: 4, perception: 3 },
+                  story: { exploration: 4, wonder: 3 }
+                }
+              },
+              { 
+                text: '您找我有什麼事嗎？', 
+                next: 3,
+                traits: { 
+                  philosophical: { pragmatism: 4, responsibility: 3, focus: 3 },
+                  mbti: { thinking: 3, judging: 3 },
+                  story: { purpose: 4, readiness: 3 }
+                }
+              },
+              { 
+                text: '我怎麼會在夢境中？', 
+                next: 4,
+                traits: { 
+                  philosophical: { skepticism: 4, rationality: 3, analysis: 3 },
+                  mbti: { thinking: 4, sensing: 3 },
+                  story: { confusion: 3, questioning: 4 }
+                }
+              }
             ]
           },
           // 分支場景：地點詢問路線
@@ -7310,10 +7948,52 @@ ${recentChoices.map((choice, index) =>
             type: 'dialog',
             speaker: '莊子',
             text: '更糟糕的是，混沌死時，他的七竅化作七個封印，散落到世界各處。只有重新收集這七個封印，才有可能讓混沌重生，恢復萬物的自由。',
+            nextScene: 9
+          },
+          {
+            type: 'dialog',
+            speaker: '莊子',
+            text: '在這段旅程中，你會面臨許多選擇。記住，沒有標準答案，也沒有對錯之分。每個選項都是通往智慧的不同路徑，就像山有千條小徑，都能登頂。',
+            nextScene: 10
+          },
+          {
+            type: 'dialog',
+            speaker: '莊子',
+            text: '重要的是遵從你內心的聲音，選擇最符合你天性的那條路。不要猜測什麼是「正確」答案，因為真正的智慧來自於真實的自己。',
+            nextScene: 11
+          },
+          {
+            type: 'dialog',
+            speaker: '莊子',
+            text: '還有一個小秘密要告訴你——如果你能完整走完這段旅程，收集齊所有的封印，最後會有一份特別的「神秘禮物」等著你。那是我為每一位勇敢的旅人準備的，獨一無二的智慧之書。',
             options: [
-              { text: '這聽起來是一個重要的使命', next: 9 },
-              { text: '為什麼是我來做這件事？', next: 10 },  
-              { text: '這聽起來很困難...', next: 11 }
+              { 
+                text: '這聽起來是一個重要的使命', 
+                next: 12,
+                traits: { 
+                  philosophical: { idealism: 4, compassion: 3, harmony: 2 },
+                  mbti: { feeling: 4, judging: 3 },
+                  story: { courage: 4, curiosity: 3 }
+                }
+              },
+              { 
+                text: '為什麼是我來做這件事？', 
+                next: 13,
+                traits: { 
+                  philosophical: { wisdom_seeking: 4, authenticity: 3, transcendence: 2 },
+                  mbti: { thinking: 4, introversion: 3 },
+                  story: { introspection: 4, independence: 3 }
+                }
+              },
+              { 
+                text: '這聽起來很困難...', 
+                next: 14,
+                traits: { 
+                  philosophical: { acceptance: 3, beauty_appreciation: 2, harmony: 3 },
+                  mbti: { sensing: 4, introversion: 3 },
+                  story: { resilience: 3, gentleness: 4 }
+                }
+              }
             ]
           },
           // 分支場景：積極響應路線
@@ -7321,43 +8001,67 @@ ${recentChoices.map((choice, index) =>
             type: 'dialog',
             speaker: '莊子',
             text: '是的，這確實是宇宙中最重要的使命。七個封印分別是：左目、右目、左耳、右耳、左鼻、右鼻、和口。每一個都隱藏在不同的地方，需要特殊的能力才能獲得。',
-            nextScene: 12
+            nextScene: 15
           },
           // 分支場景：質疑選擇路線
           {
             type: 'dialog',
             speaker: '莊子',
             text: '因為你的心還沒有被固化。你能質疑，能思考，還保持著孩子般的好奇心。這正是完成使命所需要的品質——開放、靈活、不被成見束縛。',
-            nextScene: 12
+            nextScene: 15
           },
           // 分支場景：擔憂困難路線
           {
             type: 'dialog',
             speaker: '莊子',
             text: '困難是相對的。當你掌握了「物化之道」後，你會發現世界有無數種可能性。困難往往源於視角的局限，而物化能讓你獲得不同的視角。',
-            nextScene: 12
+            nextScene: 15
           },
           // 物化機制詳細解釋
           {
             type: 'dialog',
             speaker: '莊子',
             text: '現在讓我教你「物化之道」。這是完成使命的核心能力。物化，就是變換形態，以不同生物的視角和能力去體驗世界。',
-            nextScene: 13
+            nextScene: 16
           },
           {
             type: 'dialog',
             speaker: '莊子',
             text: '每種生物都有獨特的感知方式：蝴蝶能看到花朵的細微色彩，魚兒能感受水流的變化，鳥兒能俯瞰大地全貌。物化讓你獲得這些能力。',
-            nextScene: 14
+            nextScene: 17
           },
           {
             type: 'dialog',
             speaker: '莊子',
             text: '更重要的是，每個封印都隱藏在特定的情境中，需要對應的生物視角才能發現和收集。人類的感官有限，但物化可以突破這些限制。',
             options: [
-              { text: '我準備好學習物化之道了', next: 15 },
-              { text: '這聽起來像是魔法...', next: 16 },
-              { text: '我要如何開始練習？', next: 17 }
+              { 
+                text: '我準備好學習物化之道了', 
+                next: 18,
+                traits: { 
+                  philosophical: { idealism: 3, transcendence: 4, harmony: 2 },
+                  mbti: { intuition: 3, perceiving: 4 },
+                  story: { courage: 4, curiosity: 3 }
+                }
+              },
+              { 
+                text: '這聽起來像是魔法...', 
+                next: 19,
+                traits: { 
+                  philosophical: { wisdom_seeking: 4, authenticity: 3, acceptance: 2 },
+                  mbti: { thinking: 4, sensing: 3 },
+                  story: { introspection: 4, independence: 3 }
+                }
+              },
+              { 
+                text: '我要如何開始練習？', 
+                next: 20,
+                traits: { 
+                  philosophical: { beauty_appreciation: 3, compassion: 2, harmony: 3 },
+                  mbti: { sensing: 4, judging: 3 },
+                  story: { gentleness: 3, resilience: 4 }
+                }
+              }
             ]
           },
           // 分支場景：準備充分路線
@@ -7365,21 +8069,21 @@ ${recentChoices.map((choice, index) =>
             type: 'dialog',
             speaker: '莊子',
             text: '很好的心態！物化之道始於理解古人的智慧。這段古文記錄了我與蝴蝶的相遇，蘊含著變化的奧秘。用心感受其中的韻律。',
-            nextScene: 18
+            nextScene: 21
           },
           // 分支場景：懷疑魔法路線
           {
             type: 'dialog',
             speaker: '莊子',
             text: '不是魔法，而是對本質的認知。萬物本就同源，只是形態不同。當你理解了這個道理，變化就成為可能。就像冰化為水，水化為氣，形態在變，本質不變。',
-            nextScene: 18
+            nextScene: 21
           },
           // 分支場景：詢問練習路線
           {
             type: 'dialog',
             speaker: '莊子',
             text: '很好的問題！物化之道的第一步是理解變化的智慧。古人的文字中蘊含著這種智慧，通過解讀古文，你能感悟到變化的奧秘。',
-            nextScene: 18
+            nextScene: 21
           },
           // 斷句挑戰場景
           {
@@ -7389,31 +8093,31 @@ ${recentChoices.map((choice, index) =>
             solution: [7, 13, 18, 22, 25],
             hint: '這段古文記錄了夢蝶的故事。點擊字符之間的空隙，嘗試正確斷句。感受文字中蘊含的變化智慧...',
             success: '你成功解讀了夢境文字！文字開始發出藍紫色的光芒，圍繞著你旋轉。你感受到了第一次物化能力的覺醒。',
-            nextScene: 19
+            nextScene: 22
           },
           {
             type: 'narrative',
             text: '當最後一個斷句標記落入正確位置，古文化為流光，環繞你的身體。你感到一股神奇的力量流入體內，這是物化之道的第一次覺醒——你獲得了變化的可能性。',
-            nextScene: 20
+            nextScene: 23
           },
           {
             type: 'dialog',
             speaker: '莊子',
             text: '很好！你已經掌握了初步的物化能力。現在你可以在人形與蝴蝶之間自由轉換。這只是開始，隨著旅程的深入，你會解鎖更多生物的形態。',
-            nextScene: 21
+            nextScene: 24
           },
           {
             type: 'form-unlock-guide',
             text: '你感受到一股神秘的力量流入身體，獲得了「蝴蝶」的物化能力！物化按鈕會在遊戲過程中逐漸解鎖。現在點擊物化按鈕，選擇蝴蝶形態來進行第一次物化體驗。',
             effect: 'unlockForm:butterfly',
             highlightForm: 'butterfly',
-            nextScene: 22
+            nextScene: 25
           },
           {
             type: 'transformation-experience',
             formType: 'butterfly',
             text: '你化身為蝴蝶，感受到了前所未有的輕盈和自由。世界變得色彩斑斕，每一朵花都散發著誘人的香氣。你的翅膀輕輕扇動，就能在空中自由飛舞。在這夢幻般的體驗中，你體會到了「物我兩忘」——你既是人，也是蝶，或者說，你超越了固定形態的束縛。',
-            nextScene: 23
+            nextScene: 26
           },
           {
             type: 'dialog',
@@ -7445,24 +8149,27 @@ ${recentChoices.map((choice, index) =>
                 text: '蹲下來看看那條打轉的魚怎麼了', 
                 next: 2,
                 traits: { 
-                  behavioral: { care_response: 3, problem_solving: 3, detail_focus: 4 },
-                  adventure: { investigative: 4, hands_on: 3, individual_focus: 3 }
+                  philosophical: { compassion: 4, wisdom_seeking: 3, beauty_appreciation: 2 },
+                  mbti: { feeling: 4, sensing: 3, extraversion: 2 },
+                  story: { gentleness: 4, curiosity: 3, emotional_depth: 2 }
                 }
               },
               { 
                 text: '觀察整個魚群的反應', 
                 next: 3,
                 traits: { 
-                  behavioral: { pattern_recognition: 4, holistic_view: 4, patience: 3 },
-                  adventure: { analytical: 4, observational: 4, systemic_thinking: 3 }
+                  philosophical: { wisdom: 4, patience: 4, holistic_thinking: 3 },
+                  mbti: { thinking: 3, sensing: 4, introversion: 3 },
+                  story: { analytical_approach: 4, pattern_recognition: 4, systemic_thinking: 3 }
                 }
               },
               { 
                 text: '問莊子是否見過這種現象', 
                 next: 4,
                 traits: { 
-                  behavioral: { knowledge_seeking: 4, collaboration: 3, respect_for_experience: 4 },
-                  adventure: { guidance_seeking: 3, learning_oriented: 4, strategic: 2 }
+                  philosophical: { humility: 4, knowledge_seeking: 3, respect_for_wisdom: 4 },
+                  mbti: { thinking: 3, judging: 3, extraversion: 2 },
+                  story: { guidance_seeking: 4, learning_oriented: 4, collaborative: 3 }
                 }
               }
             ]
@@ -7495,24 +8202,27 @@ ${recentChoices.map((choice, index) =>
                 text: '我們下水看看吧', 
                 next: 6,
                 traits: { 
-                  behavioral: { action_oriented: 4, risk_taking: 3, direct_approach: 4 },
-                  adventure: { bold: 4, physical_exploration: 4, immediate_action: 3 }
+                  philosophical: { idealism: 4, transcendence: 3, harmony: 2 },
+                  mbti: { extraversion: 4, sensing: 3, perceiving: 3 },
+                  story: { courage: 4, curiosity: 3, creativity: 2 }
                 }
               },
               { 
                 text: '先想想有什麼方法能看清水底', 
                 next: 7,
                 traits: { 
-                  behavioral: { planning: 4, caution: 3, method_seeking: 4 },
-                  adventure: { strategic: 4, preparation_focused: 3, risk_assessment: 3 }
+                  philosophical: { wisdom_seeking: 4, beauty_appreciation: 3, authenticity: 2 },
+                  mbti: { thinking: 4, judging: 4, introversion: 2 },
+                  story: { introspection: 4, resilience: 3, independence: 2 }
                 }
               },
               { 
-                text: '或許我們應該尊重魚兒的秘密', 
+                text: '也許它有自己的原因，我們再觀察一下', 
                 next: 8,
                 traits: { 
-                  behavioral: { boundary_respect: 4, non_interference: 3, ethics_consideration: 4 },
-                  adventure: { philosophical: 3, respectful: 4, contemplative: 3 }
+                  philosophical: { acceptance: 4, compassion: 3, harmony: 3 },
+                  mbti: { feeling: 4, judging: 3, introversion: 3 },
+                  story: { gentleness: 4, emotional_depth: 3, resilience: 2 }
                 }
               }
             ]
@@ -7545,24 +8255,27 @@ ${recentChoices.map((choice, index) =>
                 text: '輕聲呼喚，看能不能和魚溝通', 
                 next: 10,
                 traits: { 
-                  behavioral: { empathy: 4, gentle_approach: 4, communication_attempt: 3 },
-                  adventure: { intuitive: 4, peaceful: 4, connection_seeking: 3 }
+                  philosophical: { compassion: 4, harmony: 3, beauty_appreciation: 3 },
+                  mbti: { feeling: 4, intuition: 3, extraversion: 2 },
+                  story: { gentleness: 4, emotional_depth: 3, creativity: 2 }
                 }
               },
               { 
                 text: '用食物引誘魚兒靠近', 
                 next: 11,
                 traits: { 
-                  behavioral: { practical_thinking: 4, tool_use: 3, indirect_approach: 3 },
-                  adventure: { resourceful: 4, strategic: 3, problem_solving: 4 }
+                  philosophical: { authenticity: 3, wisdom_seeking: 3, acceptance: 3 },
+                  mbti: { thinking: 3, sensing: 4, judging: 3 },
+                  story: { resilience: 4, independence: 3, introspection: 2 }
                 }
               },
               { 
-                text: '靜待魚兒自己的決定', 
+                text: '等等看，也許它會主動過來', 
                 next: 12,
                 traits: { 
-                  behavioral: { patience: 4, trust_in_process: 4, non_forcing: 3 },
-                  adventure: { contemplative: 3, patient: 4, natural_flow: 4 }
+                  philosophical: { transcendence: 4, idealism: 3, harmony: 2 },
+                  mbti: { introversion: 4, perceiving: 4, feeling: 2 },
+                  story: { curiosity: 3, courage: 2, emotional_depth: 4 }
                 }
               }
             ]
@@ -7701,27 +8414,27 @@ ${recentChoices.map((choice, index) =>
                 text: '感到自己在這無邊海洋面前是如此渺小', 
                 next: 3,
                 traits: { 
-                  philosophical: { humility: 4, interconnectedness: 3, perspective_awareness: 3 },
-                  mbti: { feeling: 3, sensing: 2, introversion: 3 },
-                  story: { scale_consciousness: 4, emotional_response: 3, self_reflection: 3 }
+                  philosophical: { transcendence: 4, acceptance: 3, beauty_appreciation: 2 },
+                  mbti: { feeling: 4, sensing: 3, introversion: 3 },
+                  story: { introspection: 4, emotional_depth: 3, gentleness: 2 }
                 }
               },
               { 
                 text: '好奇這海里到底隱藏著什麼奧秘', 
                 next: 4,
                 traits: { 
-                  philosophical: { curiosity: 4, mystery_seeking: 3, exploration_drive: 4 },
-                  mbti: { intuition: 4, thinking: 2, extraversion: 2 },
-                  story: { mystery_attraction: 4, intellectual_curiosity: 3, adventure_spirit: 3 }
+                  philosophical: { wisdom_seeking: 4, idealism: 3, harmony: 2 },
+                  mbti: { intuition: 4, thinking: 3, extraversion: 3 },
+                  story: { curiosity: 4, courage: 3, creativity: 2 }
                 }
               },
               { 
                 text: '想像著在這片海中自由遨遊', 
                 next: 5,
                 traits: { 
-                  philosophical: { freedom: 4, imagination: 4, naturalness: 3 },
-                  mbti: { perceiving: 4, intuition: 3, feeling: 2 },
-                  story: { imaginative_engagement: 4, freedom_seeking: 3, embodied_thinking: 3 }
+                  philosophical: { compassion: 3, authenticity: 4, transcendence: 3 },
+                  mbti: { perceiving: 4, intuition: 3, feeling: 3 },
+                  story: { creativity: 4, curiosity: 3, emotional_depth: 3 }
                 }
               }
             ]
@@ -7736,27 +8449,27 @@ ${recentChoices.map((choice, index) =>
                 text: '那麼什麼決定了事物的大小？', 
                 next: 6, // 匯聚到場景6
                 traits: { 
-                  philosophical: { relativism: 4, wisdom_seeking: 3, philosophical_inquiry: 3 },
+                  philosophical: { wisdom_seeking: 4, idealism: 3, authenticity: 2 },
                   mbti: { thinking: 3, intuition: 3, judging: 2 },
-                  story: { conceptual_exploration: 4, systematic_thinking: 2, philosophical_depth: 3 }
+                  story: { curiosity: 4, introspection: 3, independence: 2 }
                 }
               },
               { 
                 text: '我感受到了某種超越大小的存在', 
                 next: 6,
                 traits: { 
-                  philosophical: { transcendence: 4, unity: 3, mystical_awareness: 3 },
+                  philosophical: { transcendence: 4, beauty_appreciation: 3, harmony: 2 },
                   mbti: { intuition: 4, feeling: 3, perceiving: 2 },
-                  story: { transcendent_thinking: 4, spiritual_inclination: 3, boundary_transcendence: 3 }
+                  story: { emotional_depth: 4, creativity: 3, gentleness: 2 }
                 }
               },
               { 
                 text: '這讓我重新思考什麼是真正重要的', 
                 next: 6,
                 traits: { 
-                  philosophical: { value_reflection: 4, wisdom_insight: 3, priority_awareness: 3 },
+                  philosophical: { acceptance: 4, compassion: 3, harmony: 2 },
                   mbti: { feeling: 3, thinking: 2, introversion: 3 },
-                  story: { value_reassessment: 4, life_philosophy: 3, depth_seeking: 3 }
+                  story: { introspection: 4, resilience: 3, emotional_depth: 2 }
                 }
               }
             ]
@@ -7771,27 +8484,27 @@ ${recentChoices.map((choice, index) =>
                 text: '聽起來像神話，但也許有更深的含義', 
                 next: 6,
                 traits: { 
-                  philosophical: { symbolic_thinking: 4, openness_to_metaphor: 3, analytical_approach: 2 },
+                  philosophical: { wisdom_seeking: 4, authenticity: 3, acceptance: 2 },
                   mbti: { intuition: 3, thinking: 3, perceiving: 2 },
-                  story: { metaphorical_understanding: 4, intellectual_balance: 3, meaning_seeking: 3 }
+                  story: { introspection: 4, independence: 3, resilience: 2 }
                 }
               },
               { 
                 text: '如果真有這樣的生物，一定很壯觀', 
                 next: 6,
                 traits: { 
-                  philosophical: { wonder: 4, aesthetic_appreciation: 3, possibility_openness: 3 },
+                  philosophical: { beauty_appreciation: 4, idealism: 3, harmony: 2 },
                   mbti: { feeling: 3, sensing: 2, perceiving: 3 },
-                  story: { imaginative_engagement: 4, aesthetic_sensitivity: 3, wonder_capacity: 4 }
+                  story: { creativity: 4, emotional_depth: 3, curiosity: 3 }
                 }
               },
               { 
-                text: '也許變化本身就是存在的本質', 
+                text: '也許變化本身就是生命的本質', 
                 next: 6,
                 traits: { 
-                  philosophical: { transformation_philosophy: 4, paradoxical_thinking: 3, deep_insight: 3 },
+                  philosophical: { transcendence: 4, compassion: 3, wisdom_seeking: 2 },
                   mbti: { intuition: 4, thinking: 2, perceiving: 3 },
-                  story: { philosophical_depth: 4, abstract_thinking: 3, process_awareness: 3 }
+                  story: { emotional_depth: 4, creativity: 3, courage: 2 }
                 }
               }
             ]
@@ -7806,27 +8519,27 @@ ${recentChoices.map((choice, index) =>
                 text: '像魚一樣在深海中默默游弋', 
                 next: 6,
                 traits: { 
-                  philosophical: { simplicity: 4, contemplative_nature: 3, peace_seeking: 3 },
+                  philosophical: { acceptance: 4, harmony: 3, authenticity: 2 },
                   mbti: { introversion: 4, sensing: 2, feeling: 2 },
-                  story: { inner_peace: 4, contemplative_preference: 3, simplicity_appreciation: 3 }
+                  story: { gentleness: 4, introspection: 3, resilience: 2 }
                 }
               },
               { 
-                text: '能夠自在地在不同世界間變換', 
+                text: '能夠自在地在不同境界間轉換', 
                 next: 6,
                 traits: { 
-                  philosophical: { adaptability: 4, transformation_embracing: 4, boundary_fluidity: 3 },
+                  philosophical: { transcendence: 4, compassion: 3, wisdom_seeking: 2 },
                   mbti: { perceiving: 4, intuition: 3, extraversion: 2 },
-                  story: { adaptability: 4, transformation_comfort: 4, flexibility: 3 }
+                  story: { courage: 4, creativity: 3, independence: 2 }
                 }
               },
               { 
                 text: '既保持魚的純真，又擁有鳥的視野', 
                 next: 6,
                 traits: { 
-                  philosophical: { synthesis_seeking: 4, balance: 3, wisdom_integration: 3 },
+                  philosophical: { beauty_appreciation: 4, idealism: 3, harmony: 2 },
                   mbti: { feeling: 3, intuition: 3, perceiving: 2 },
-                  story: { integration_ability: 4, balance_seeking: 3, wisdom_synthesis: 3 }
+                  story: { emotional_depth: 4, creativity: 3, gentleness: 2 }
                 }
               }
             ]
@@ -7856,27 +8569,27 @@ ${recentChoices.map((choice, index) =>
                 text: '生命總是渴望突破自己的界限', 
                 next: 9,
                 traits: { 
-                  philosophical: { growth_orientation: 4, aspiration: 3, transcendence: 3 },
-                  mbti: { intuition: 3, feeling: 3, judging: 2 },
-                  story: { growth_mindset: 4, aspiration_understanding: 3, self_transcendence: 3 }
+                  philosophical: { idealism: 4, transcendence: 3, wisdom_seeking: 2 },
+                  mbti: { intuition: 4, feeling: 3, judging: 3 },
+                  story: { courage: 4, independence: 3, curiosity: 2 }
                 }
               },
               { 
                 text: '每種存在都有它應該的樣子', 
                 next: 10,
                 traits: { 
-                  philosophical: { acceptance: 4, naturalness: 3, harmony_with_nature: 3 },
-                  mbti: { sensing: 3, feeling: 3, judging: 3 },
-                  story: { natural_order: 4, acceptance_wisdom: 3, harmony_seeking: 3 }
+                  philosophical: { acceptance: 4, harmony: 3, authenticity: 2 },
+                  mbti: { sensing: 4, feeling: 3, judging: 4 },
+                  story: { gentleness: 4, resilience: 3, introspection: 2 }
                 }
               },
               { 
                 text: '變化可能帶來更廣闊的視野', 
                 next: 11,
                 traits: { 
-                  philosophical: { transformation_openness: 4, perspective_expansion: 4, adaptability: 3 },
-                  mbti: { intuition: 4, perceiving: 3, thinking: 2 },
-                  story: { perspective_seeking: 4, transformation_comfort: 3, vision_expansion: 4 }
+                  philosophical: { transcendence: 4, beauty_appreciation: 3, compassion: 2 },
+                  mbti: { intuition: 4, perceiving: 4, thinking: 3 },
+                  story: { creativity: 4, curiosity: 3, emotional_depth: 2 }
                 }
               }
             ]
@@ -7891,27 +8604,27 @@ ${recentChoices.map((choice, index) =>
                 text: '本質不變，只是表現形式不同', 
                 next: 12, // 匯聚到場景12
                 traits: { 
-                  philosophical: { essence_focus: 4, continuity_belief: 3, identity_stability: 3 },
+                  philosophical: { authenticity: 4, wisdom_seeking: 3, harmony: 2 },
                   mbti: { thinking: 3, sensing: 2, judging: 3 },
-                  story: { identity_consistency: 4, philosophical_depth: 3, abstract_thinking: 2 }
+                  story: { introspection: 4, resilience: 3, independence: 2 }
                 }
               },
               { 
                 text: '變化本身就是存在的真諦', 
                 next: 12,
                 traits: { 
-                  philosophical: { transformation_philosophy: 4, process_focus: 4, impermanence_acceptance: 3 },
+                  philosophical: { transcendence: 4, beauty_appreciation: 3, compassion: 2 },
                   mbti: { intuition: 4, perceiving: 4, thinking: 2 },
-                  story: { process_thinking: 4, change_comfort: 4, philosophical_sophistication: 3 }
+                  story: { creativity: 4, emotional_depth: 3, courage: 2 }
                 }
               },
               { 
                 text: '也許「自己」這個概念就是限制', 
                 next: 12,
                 traits: { 
-                  philosophical: { ego_transcendence: 4, boundary_questioning: 4, radical_openness: 3 },
+                  philosophical: { transcendence: 4, wisdom_seeking: 3, idealism: 2 },
                   mbti: { intuition: 4, thinking: 3, perceiving: 3 },
-                  story: { boundary_transcendence: 4, ego_flexibility: 4, radical_thinking: 3 }
+                  story: { independence: 4, curiosity: 3, courage: 2 }
                 }
               }
             ]
@@ -7926,27 +8639,27 @@ ${recentChoices.map((choice, index) =>
                 text: '也許探索和安定都有其價值', 
                 next: 12,
                 traits: { 
-                  philosophical: { balance_seeking: 4, wisdom_integration: 3, paradox_acceptance: 3 },
+                  philosophical: { harmony: 4, compassion: 3, wisdom_seeking: 2 },
                   mbti: { feeling: 3, perceiving: 3, thinking: 2 },
-                  story: { balance_wisdom: 4, integration_ability: 3, nuanced_thinking: 3 }
+                  story: { emotional_depth: 4, gentleness: 3, resilience: 2 }
                 }
               },
               { 
                 text: '真正的和諧包含著變化的可能', 
                 next: 12,
                 traits: { 
-                  philosophical: { dynamic_harmony: 4, change_integration: 3, sophisticated_understanding: 3 },
+                  philosophical: { transcendence: 4, beauty_appreciation: 3, acceptance: 2 },
                   mbti: { intuition: 3, thinking: 2, perceiving: 3 },
-                  story: { sophisticated_thinking: 4, dynamic_balance: 3, philosophical_maturity: 3 }
+                  story: { creativity: 4, introspection: 3, emotional_depth: 2 }
                 }
               },
               { 
                 text: '每種選擇都會帶來不同的人生', 
                 next: 12,
                 traits: { 
-                  philosophical: { path_diversity: 4, choice_awareness: 3, relativism: 3 },
+                  philosophical: { acceptance: 4, authenticity: 3, compassion: 2 },
                   mbti: { thinking: 2, perceiving: 4, feeling: 2 },
-                  story: { choice_consciousness: 4, path_awareness: 3, life_philosophy: 3 }
+                  story: { independence: 4, curiosity: 3, resilience: 2 }
                 }
               }
             ]
@@ -7961,27 +8674,27 @@ ${recentChoices.map((choice, index) =>
                 text: '成長總是要付出代價的', 
                 next: 12,
                 traits: { 
-                  philosophical: { growth_realism: 4, sacrifice_acceptance: 3, maturity: 3 },
+                  philosophical: { wisdom_seeking: 4, acceptance: 3, authenticity: 2 },
                   mbti: { thinking: 3, judging: 3, sensing: 2 },
-                  story: { growth_understanding: 4, realistic_perspective: 3, life_wisdom: 3 }
+                  story: { resilience: 4, introspection: 3, courage: 2 }
                 }
               },
               { 
                 text: '重要的是過程中的體驗', 
                 next: 12,
                 traits: { 
-                  philosophical: { process_focus: 4, experience_valuing: 4, journey_emphasis: 3 },
+                  philosophical: { beauty_appreciation: 4, compassion: 3, harmony: 2 },
                   mbti: { perceiving: 4, feeling: 3, sensing: 2 },
-                  story: { process_awareness: 4, experiential_learning: 4, journey_appreciation: 3 }
+                  story: { emotional_depth: 4, gentleness: 3, creativity: 2 }
                 }
               },
               { 
                 text: '也許得失本身就是一種執著', 
                 next: 12,
                 traits: { 
-                  philosophical: { detachment: 4, non_dualism: 4, advanced_wisdom: 3 },
+                  philosophical: { transcendence: 4, wisdom_seeking: 3, acceptance: 2 },
                   mbti: { intuition: 4, thinking: 3, perceiving: 3 },
-                  story: { advanced_understanding: 4, detachment_wisdom: 4, philosophical_depth: 4 }
+                  story: { independence: 4, introspection: 3, curiosity: 2 }
                 }
               }
             ]
@@ -8005,27 +8718,27 @@ ${recentChoices.map((choice, index) =>
                 text: '想要找到聲音的來源', 
                 next: 14,
                 traits: { 
-                  philosophical: { curiosity: 4, mystery_seeking: 3, action_orientation: 3 },
+                  philosophical: { idealism: 4, wisdom_seeking: 3, beauty_appreciation: 2 },
                   mbti: { extraversion: 3, sensing: 2, thinking: 2 },
-                  story: { exploration_drive: 4, mystery_attraction: 3, active_approach: 3 }
+                  story: { curiosity: 4, courage: 3, independence: 2 }
                 }
               },
               {
                 text: '安靜聆聽，試圖理解其含義', 
                 next: 15,
                 traits: { 
-                  philosophical: { contemplative_nature: 4, mindfulness: 4, patient_understanding: 3 },
+                  philosophical: { acceptance: 4, compassion: 3, harmony: 2 },
                   mbti: { introversion: 4, intuition: 3, feeling: 2 },
-                  story: { contemplative_approach: 4, patience: 3, intuitive_understanding: 3 }
+                  story: { introspection: 4, gentleness: 3, emotional_depth: 2 }
                 }
               },
               {
                 text: '感受這聲音與自己內心的共鳴', 
                 next: 16,
                 traits: { 
-                  philosophical: { inner_awareness: 4, empathy: 3, resonance_sensitivity: 4 },
+                  philosophical: { transcendence: 4, beauty_appreciation: 3, authenticity: 2 },
                   mbti: { feeling: 4, intuition: 3, introversion: 2 },
-                  story: { inner_connection: 4, emotional_resonance: 4, empathetic_understanding: 3 }
+                  story: { emotional_depth: 4, creativity: 3, gentleness: 2 }
                 }
               }
             ]
@@ -8233,9 +8946,33 @@ ${recentChoices.map((choice, index) =>
             type: 'narrative',
             text: '突然，一陣微風吹過，幾片梧桐葉子飄落在你周圍。一片落在你肩膀上，一片掉在不遠處的泉水中激起漣漪，還有一片剛好落在一朵白色小花上面。',
             options: [
-              { text: '輕輕拿起肩膀上的葉子，欣賞它的紋理和色彩', next: 7, traits: { aestheticPurity: 1, beautyAppreciation: 1 } },
-              { text: '走到泉水邊，看著落葉在水中慢慢下沉', next: 8, traits: { contemplation: 1, changeAcceptance: 1 } },
-              { text: '蹲下來觀察被葉子覆蓋的小花', next: 9, traits: { curiosity: 1, attentionToDetail: 1 } }
+              { 
+                text: '輕輕拿起肩膀上的葉子，欣賞它的紋理和色彩', 
+                next: 7, 
+                traits: { 
+                  philosophical: { beauty_appreciation: 4, mindfulness: 3, harmony: 2 },
+                  mbti: { sensing: 4, feeling: 3, perceiving: 2 },
+                  story: { aesthetic_sensitivity: 4, wonder_capacity: 3, emotional_depth: 2 }
+                }
+              },
+              { 
+                text: '走到泉水邊，看著落葉在水中慢慢下沉', 
+                next: 8, 
+                traits: { 
+                  philosophical: { acceptance: 4, transcendence: 3, wisdom_seeking: 2 },
+                  mbti: { introversion: 4, intuition: 3, feeling: 2 },
+                  story: { contemplative_preference: 4, inner_peace: 3, depth_seeking: 2 }
+                }
+              },
+              { 
+                text: '蹲下來觀察被葉子覆蓋的小花', 
+                next: 9, 
+                traits: { 
+                  philosophical: { compassion: 4, wisdom_seeking: 3, mindfulness: 2 },
+                  mbti: { sensing: 4, feeling: 3, introversion: 2 },
+                  story: { intellectual_curiosity: 4, gentleness: 3, balance_seeking: 2 }
+                }
+              }
             ]
           },
           
@@ -8270,9 +9007,33 @@ ${recentChoices.map((choice, index) =>
             type: 'narrative',
             text: '就在這時，鴟鴞發現了死老鼠，正要俯衝下去。鵷鶵注意到了，發出一聲清脆的鳥鳴，似乎在表達什麼。而你剛好站在它們中間，兩隻鳥都看向了你，彷彿在等待你的反應。',
             options: [
-              { text: '微笑著點頭，示意鵷鶵繼續享用花蜜', next: 12, traits: { beautyPreference: 1, eleganceAppreciation: 1 } },
-              { text: '保持安靜，不干擾任何一隻鳥的行為', next: 13, traits: { nonInterference: 1, naturalAcceptance: 1 } },
-              { text: '好奇地觀察兩隻鳥的互動，想了解更多', next: 14, traits: { observationalWisdom: 1, nonjudgmentalCuriosity: 1 } }
+              { 
+                text: '微笑著點頭，示意鵷鶵繼續享用花蜜', 
+                next: 12, 
+                traits: { 
+                  philosophical: { compassion: 4, idealism: 3, harmony: 2 },
+                  mbti: { feeling: 4, extraversion: 3, judging: 2 },
+                  story: { gentleness: 4, emotional_depth: 3, curiosity: 2 }
+                }
+              },
+              { 
+                text: '保持安靜，不干擾任何一隻鳥的行為', 
+                next: 13, 
+                traits: { 
+                  philosophical: { nonJudgmental: 4, acceptance: 3 },
+                  mbti: { introversion: 3, perceiving: 3 },
+                  story: { contemplative_preference: 4, natural_order: 3 }
+                }
+              },
+              { 
+                text: '好奇地觀察兩隻鳥的互動，想了解更多', 
+                next: 14, 
+                traits: { 
+                  philosophical: { curiosity: 4, wisdom: 3 },
+                  mbti: { intuition: 4, perceiving: 2 },
+                  story: { intellectual_curiosity: 4, wisdom_synthesis: 3 }
+                }
+              }
             ]
           },
           
@@ -8307,9 +9068,33 @@ ${recentChoices.map((choice, index) =>
             type: 'narrative',
             text: '一隻松鼠突然從樹上跳下來，在你腳邊找尋果實。同時，一隻蝴蝶輕盈地在花叢中飛舞，而遠處傳來了夜鶯的歌聲。三種不同的生命節拍在你周圍展現。',
             options: [
-              { text: '蹲下來想把手中的果子分給松鼠', next: 17, traits: { empathy: 1, sharingSpirit: 1 } },
-              { text: '安靜地跟隨蝴蝶的飛行軌跡，想看它會去哪裡', next: 18, traits: { aestheticFollowing: 1, naturalCuriosity: 1 } },
-              { text: '停下腳步，仔細聆聽夜鶯的歌聲', next: 19, traits: { deepListening: 1, contemplativeNature: 1 } }
+              { 
+                text: '蹲下來想把手中的果子分給松鼠', 
+                next: 17, 
+                traits: { 
+                  philosophical: { compassion: 4, intervention: 2 },
+                  mbti: { feeling: 4, extraversion: 2 },
+                  story: { emotional_response: 4, balance_seeking: 3 }
+                }
+              },
+              { 
+                text: '安靜地跟隨蝴蝶的飛行軌跡，想看它會去哪裡', 
+                next: 18, 
+                traits: { 
+                  philosophical: { curiosity: 4, aesthetic: 2 },
+                  mbti: { intuition: 4, perceiving: 3 },
+                  story: { aesthetic_sensitivity: 4, intellectual_curiosity: 3 }
+                }
+              },
+              { 
+                text: '停下腳步，仔細聆聽夜鶯的歌聲', 
+                next: 19, 
+                traits: { 
+                  philosophical: { aesthetic: 4, acceptance: 2 },
+                  mbti: { introversion: 4, feeling: 3 },
+                  story: { contemplative_preference: 4, inner_peace: 3 }
+                }
+              }
             ]
           },
           
@@ -8345,9 +9130,33 @@ ${recentChoices.map((choice, index) =>
             speaker: '莊子',
             text: '看這三種夜晚的生靈，如果你要選擇一種生活方式，你會選擇哪一種？',
             options: [
-              { text: '像蛾子一樣，為了理想燃燒自己', next: 22, traits: { passionateIdealism: 1, selfSacrifice: 1 } },
-              { text: '像螢火蟲一樣，安靜地散發自己的光芒', next: 23, traits: { gentleWisdom: 1, innerLight: 1 } },
-              { text: '像蝙蝠一樣，在黑暗中找到自己的道路', next: 24, traits: { independentSpirit: 1, adaptability: 1 } }
+              { 
+                text: '像蛾子一樣，為了理想燃燒自己', 
+                next: 22, 
+                traits: { 
+                  philosophical: { idealism: 4, intervention: 3 },
+                  mbti: { feeling: 4, judging: 3 },
+                  story: { growth_mindset: 4, aspiration_understanding: 3 }
+                }
+              },
+              { 
+                text: '像螢火蟲一樣，安靜地散發自己的光芒', 
+                next: 23, 
+                traits: { 
+                  philosophical: { wisdom: 4, acceptance: 3 },
+                  mbti: { introversion: 4, feeling: 3 },
+                  story: { inner_peace: 4, wisdom_synthesis: 3 }
+                }
+              },
+              { 
+                text: '像蝙蝠一樣，在黑暗中找到自己的道路', 
+                next: 24, 
+                traits: { 
+                  philosophical: { pragmatism: 4, spontaneity: 3 },
+                  mbti: { intuition: 4, perceiving: 3 },
+                  story: { independence: 4, adaptability: 3 }
+                }
+              }
             ]
           },
           
@@ -8383,9 +9192,33 @@ ${recentChoices.map((choice, index) =>
             speaker: '莊子',
             text: '聽到了嗎？每種植物都在用自己的方式歌唱。如果要你為這場自然交響樂選擇一個主題，你會選擇什麼？',
             options: [
-              { text: '和諧共存：每種聲音都有其價值', next: 27, traits: { harmony: 1, inclusiveness: 1 } },
-              { text: '自然之美：追求最純粹的美感', next: 28, traits: { aestheticPursuit: 1, beautyAppreciation: 1 } },
-              { text: '生命律動：感受存在的本質節拍', next: 29, traits: { existentialAwareness: 1, rhythmOfLife: 1 } }
+              { 
+                text: '和諧共存：每種聲音都有其價值', 
+                next: 27, 
+                traits: { 
+                  philosophical: { harmony: 4, acceptance: 3 },
+                  mbti: { feeling: 4, perceiving: 3 },
+                  story: { harmony_seeking: 4, balance_seeking: 3 }
+                }
+              },
+              { 
+                text: '自然之美：追求最純粹的美感', 
+                next: 28, 
+                traits: { 
+                  philosophical: { aesthetic: 4, wisdom: 3 },
+                  mbti: { intuition: 4, feeling: 3 },
+                  story: { aesthetic_sensitivity: 4, wonder_capacity: 3 }
+                }
+              },
+              { 
+                text: '生命律動：感受存在的本質節拍', 
+                next: 29, 
+                traits: { 
+                  philosophical: { wisdom: 4, spontaneity: 3 },
+                  mbti: { intuition: 4, perceiving: 3 },
+                  story: { depth_seeking: 4, life_philosophy: 3 }
+                }
+              }
             ]
           },
           
@@ -8562,24 +9395,27 @@ ${recentChoices.map((choice, index) =>
                 text: '立即上前詢問戰況如何', 
                 next: 2,
                 traits: { 
-                  behavioral: { information_seeking: 4, direct_engagement: 4, urgency_response: 3 },
-                  conflict: { immediate_involvement: 4, fact_gathering: 4, action_oriented: 3 }
+                  philosophical: { idealism: 4, compassion: 3, mindfulness: 2 },
+                  mbti: { extraversion: 4, feeling: 3, judging: 2 },
+                  story: { curiosity: 4, emotional_depth: 3, gentleness: 2 }
                 }
               },
               { 
                 text: '先觀察整個戰場局勢', 
                 next: 3,
                 traits: { 
-                  behavioral: { strategic_thinking: 4, comprehensive_view: 4, cautious_approach: 3 },
-                  conflict: { analytical: 4, situational_awareness: 4, observer_stance: 3 }
+                  philosophical: { wisdom_seeking: 4, acceptance: 3, transcendence: 2 },
+                  mbti: { introversion: 4, thinking: 3, judging: 2 },
+                  story: { introspection: 4, resilience: 3, independence: 2 }
                 }
               },
               { 
                 text: '詢問莊子這場戰爭的起因', 
                 next: 4,
                 traits: { 
-                  behavioral: { context_seeking: 4, wisdom_consultation: 3, root_cause_focus: 4 },
-                  conflict: { historical_perspective: 4, guidance_seeking: 3, deeper_understanding: 4 }
+                  philosophical: { wisdom_seeking: 4, authenticity: 3, mindfulness: 2 },
+                  mbti: { introversion: 3, intuition: 4, thinking: 2 },
+                  story: { introspection: 4, curiosity: 3, depth_seeking: 2 }
                 }
               }
             ]
@@ -8612,24 +9448,27 @@ ${recentChoices.map((choice, index) =>
                 text: '試著調解，讓雙方冷靜對話', 
                 next: 6,
                 traits: { 
-                  behavioral: { mediating: 4, peace_seeking: 4, communication_facilitation: 3 },
-                  conflict: { diplomatic: 4, bridge_building: 4, harmony_oriented: 3 }
+                  philosophical: { harmony: 4, compassion: 3, idealism: 2 },
+                  mbti: { extraversion: 4, feeling: 4, judging: 2 },
+                  story: { gentleness: 4, emotional_depth: 3, cooperation: 2 }
                 }
               },
               { 
                 text: '分別聽取雙方的完整訴求', 
                 next: 7,
                 traits: { 
-                  behavioral: { comprehensive_listening: 4, fairness_pursuit: 4, patience: 3 },
-                  conflict: { balanced_approach: 4, thorough_investigation: 4, neutral_stance: 3 }
+                  philosophical: { acceptance: 4, wisdom_seeking: 3, authenticity: 2 },
+                  mbti: { introversion: 3, thinking: 4, judging: 3 },
+                  story: { introspection: 4, resilience: 3, independence: 2 }
                 }
               },
               { 
                 text: '建議他們暫停戰爭，共同尋找解決方案', 
                 next: 8,
                 traits: { 
-                  behavioral: { solution_oriented: 4, collaborative_thinking: 4, practical_approach: 3 },
-                  conflict: { constructive: 4, future_focused: 4, problem_solving: 3 }
+                  philosophical: { idealism: 4, harmony: 3, compassion: 2 },
+                  mbti: { extraversion: 3, thinking: 3, judging: 4 },
+                  story: { cooperation: 4, creativity: 3, optimism: 2 }
                 }
               }
             ]
@@ -8662,24 +9501,27 @@ ${recentChoices.map((choice, index) =>
                 text: '告訴他們這場戰爭在更大視角下是多麼微小', 
                 next: 10,
                 traits: { 
-                  behavioral: { perspective_shifting: 4, scale_awareness: 4, transcendent_view: 3 },
-                  conflict: { meta_perspective: 4, relativistic: 4, philosophical: 3 }
+                  philosophical: { transcendence: 4, wisdom_seeking: 3, acceptance: 2 },
+                  mbti: { intuition: 4, thinking: 3, judging: 2 },
+                  story: { depth_seeking: 4, introspection: 3, resilience: 2 }
                 }
               },
               { 
                 text: '邀請雙方領袖親自體驗對方的痛苦', 
                 next: 11,
                 traits: { 
-                  behavioral: { empathy_building: 4, experiential_learning: 4, emotional_intelligence: 3 },
-                  conflict: { humanizing: 4, emotional_bridge: 4, compassionate: 3 }
+                  philosophical: { compassion: 4, authenticity: 3, harmony: 2 },
+                  mbti: { feeling: 4, extraversion: 3, perceiving: 2 },
+                  story: { emotional_depth: 4, gentleness: 3, cooperation: 2 }
                 }
               },
               { 
                 text: '建議他們從蝸牛的角度看待這場爭論', 
                 next: 12,
                 traits: { 
-                  behavioral: { creative_thinking: 4, alternative_perspective: 4, imaginative: 3 },
-                  conflict: { innovative_approach: 4, perspective_expansion: 4, unconventional: 3 }
+                  philosophical: { transcendence: 4, beauty_appreciation: 3, wisdom_seeking: 2 },
+                  mbti: { intuition: 4, perceiving: 3, thinking: 2 },
+                  story: { creativity: 4, curiosity: 3, adaptability: 2 }
                 }
               }
             ]
@@ -8849,24 +9691,27 @@ ${recentChoices.map((choice, index) =>
               {
                 text: '走向左側區域，追隨那些快速閃爍的微光',
                 traits: {
-                  behavioral: { curiosity: 2, immediacy: 1 },
-                  conflict: { detail_focus: 1, change_adaptation: 2 }
+                  philosophical: { beauty_appreciation: 3, mindfulness: 2, authenticity: 2 },
+                  mbti: { extraversion: 3, sensing: 3, perceiving: 2 },
+                  story: { curiosity: 3, adaptability: 2, optimism: 2 }
                 },
                 next: 4
               },
               {
                 text: '前往中央林區，仔細聆聽那節律性的蟲鳴',
                 traits: {
-                  behavioral: { observation: 2, pattern_seeking: 1 },
-                  conflict: { rhythm_awareness: 2, balance_seeking: 1 }
+                  philosophical: { harmony: 3, mindfulness: 3, wisdom_seeking: 2 },
+                  mbti: { introversion: 2, sensing: 3, judging: 3 },
+                  story: { introspection: 3, resilience: 2, depth_seeking: 2 }
                 },
                 next: 5
               },
               {
                 text: '靜心走向右側古木，感受深沉的時間氣息',
                 traits: {
-                  behavioral: { contemplation: 2, depth_seeking: 1 },
-                  conflict: { long_term_thinking: 2, stability_preference: 1 }
+                  philosophical: { transcendence: 3, wisdom_seeking: 3, acceptance: 2 },
+                  mbti: { introversion: 4, intuition: 3, judging: 2 },
+                  story: { introspection: 4, depth_seeking: 3, resilience: 2 }
                 },
                 next: 6
               }
@@ -8911,24 +9756,27 @@ ${recentChoices.map((choice, index) =>
               {
                 text: '感嘆生命的短暫，為朝菌的瞬息人生感到惋惜',
                 traits: {
-                  behavioral: { empathy: 2, value_judgment: 1 },
-                  conflict: { emotional_response: 2, attachment_to_length: 1 }
+                  philosophical: { compassion: 4, beauty_appreciation: 2, authenticity: 2 },
+                  mbti: { feeling: 4, sensing: 3, perceiving: 2 },
+                  story: { emotional_depth: 4, gentleness: 3, curiosity: 2 }
                 },
                 next: 9
               },
               {
                 text: '羨慕大椿的悠長歲月，希望能有更多時間',
                 traits: {
-                  behavioral: { ambition: 1, comparison: 2 },
-                  conflict: { longevity_desire: 2, dissatisfaction: 1 }
+                  philosophical: { idealism: 3, wisdom_seeking: 2, authenticity: 2 },
+                  mbti: { intuition: 3, judging: 3, thinking: 2 },
+                  story: { depth_seeking: 3, resilience: 2, independence: 2 }
                 },
                 next: 10
               },
               {
                 text: '認為每種時間感知都有其完整性和意義',
                 traits: {
-                  behavioral: { acceptance: 2, wisdom_seeking: 1 },
-                  conflict: { relativistic_thinking: 2, non_judgment: 1 }
+                  philosophical: { acceptance: 4, transcendence: 3, wisdom_seeking: 2 },
+                  mbti: { thinking: 3, intuition: 3, judging: 2 },
+                  story: { introspection: 4, resilience: 3, depth_seeking: 2 }
                 },
                 next: 11
               }
@@ -8976,24 +9824,27 @@ ${recentChoices.map((choice, index) =>
               {
                 text: '想聽朝菌講述瞬息間的純粹體驗',
                 traits: {
-                  behavioral: { intensity_seeking: 2, present_focus: 1 },
-                  conflict: { moment_appreciation: 2, immediacy_value: 1 }
+                  philosophical: { authenticity: 3, beauty_appreciation: 3, mindfulness: 2 },
+                  mbti: { feeling: 3, sensing: 3, perceiving: 3 },
+                  story: { emotional_depth: 3, curiosity: 3, optimism: 2 }
                 },
                 next: 14
               },
               {
                 text: '想聽蟪蛄分享季節韻律的和諧之美',
                 traits: {
-                  behavioral: { harmony_seeking: 2, cycle_awareness: 1 },
-                  conflict: { rhythm_understanding: 2, balance_appreciation: 1 }
+                  philosophical: { harmony: 4, beauty_appreciation: 3, acceptance: 2 },
+                  mbti: { feeling: 3, sensing: 2, judging: 3 },
+                  story: { gentleness: 3, resilience: 3, depth_seeking: 2 }
                 },
                 next: 15
               },
               {
                 text: '想聽大椿述說千年歲月的深刻感悟',
                 traits: {
-                  behavioral: { wisdom_seeking: 2, depth_preference: 1 },
-                  conflict: { historical_perspective: 2, patience: 1 }
+                  philosophical: { wisdom_seeking: 4, transcendence: 3, acceptance: 2 },
+                  mbti: { introversion: 3, intuition: 4, thinking: 2 },
+                  story: { introspection: 4, depth_seeking: 4, resilience: 2 }
                 },
                 next: 16
               }
@@ -9041,24 +9892,27 @@ ${recentChoices.map((choice, index) =>
               {
                 text: '學會珍惜當下的每一刻，像朝菌般專注',
                 traits: {
-                  behavioral: { mindfulness: 2, present_focus: 1 },
-                  conflict: { moment_mastery: 2, focused_living: 1 }
+                  philosophical: { mindfulness: 4, authenticity: 3, beauty_appreciation: 2 },
+                  mbti: { feeling: 3, sensing: 3, perceiving: 3 },
+                  story: { emotional_depth: 3, curiosity: 3, optimism: 2 }
                 },
                 next: 19
           },
           {
                 text: '尋找生活的節律，像蟪蛄般和諧',
                 traits: {
-                  behavioral: { harmony_seeking: 2, pattern_creation: 1 },
-                  conflict: { rhythm_living: 2, balance_seeking: 1 }
+                  philosophical: { harmony: 4, acceptance: 3, beauty_appreciation: 2 },
+                  mbti: { feeling: 3, judging: 3, sensing: 2 },
+                  story: { gentleness: 3, resilience: 3, cooperation: 2 }
                 },
                 next: 19
               },
               {
                 text: '培養寬廣的時間視野，像大椿般包容',
                 traits: {
-                  behavioral: { patience: 2, perspective_broadening: 1 },
-                  conflict: { long_term_wisdom: 2, acceptance: 1 }
+                  philosophical: { transcendence: 4, acceptance: 3, wisdom_seeking: 2 },
+                  mbti: { introversion: 3, intuition: 3, judging: 3 },
+                  story: { introspection: 4, depth_seeking: 3, resilience: 2 }
                 },
                 next: 19
               }
@@ -9204,30 +10058,27 @@ ${recentChoices.map((choice, index) =>
               {
                 text: '跟隨莊子的手勢仰望星空，數著那些珠璣般的星辰',
                 traits: { 
-                  idealism: 2, 
-                  aesthetic_sense: 2, 
-                  transcendence: 1,
-                  attention_to_beauty: 2
+                  philosophical: { transcendence: 4, beauty_appreciation: 3, idealism: 2 },
+                  mbti: { intuition: 4, feeling: 3, perceiving: 2 },
+                  story: { curiosity: 3, emotional_depth: 3, creativity: 2 }
                 },
                 next: 4
               },
               {
                 text: '蹲下身摸摸腳下的土地，感受大地的溫度',
                 traits: { 
-                  pragmatism: 2, 
-                  earthiness: 2, 
-                  sensory_focus: 2,
-                  grounding: 1
+                  philosophical: { authenticity: 4, mindfulness: 3, acceptance: 2 },
+                  mbti: { sensing: 4, introversion: 3, judging: 2 },
+                  story: { introspection: 3, resilience: 3, depth_seeking: 2 }
                 },
                 next: 4
               },
               {
                 text: '靜靜站在原地，讓目光在天地之間緩緩游移',
                 traits: { 
-                  contemplation: 2, 
-                  balance_seeking: 2, 
-                  holistic_thinking: 2,
-                  patience: 1
+                  philosophical: { harmony: 4, wisdom_seeking: 3, transcendence: 2 },
+                  mbti: { introversion: 3, intuition: 3, judging: 3 },
+                  story: { introspection: 4, depth_seeking: 3, resilience: 2 }
                 },
                 next: 4
               }
@@ -9252,30 +10103,27 @@ ${recentChoices.map((choice, index) =>
               {
                 text: '輕輕走近弟子們，想聽聽他們的完整談話',
                 traits: { 
-                  empathy: 2, 
-                  social_attunement: 2, 
-                  curiosity: 1,
-                  caring: 2
+                  philosophical: { compassion: 4, authenticity: 3, harmony: 2 },
+                  mbti: { extraversion: 3, feeling: 4, perceiving: 2 },
+                  story: { emotional_depth: 4, gentleness: 3, curiosity: 2 }
                 },
                 next: 7
               },
               {
                 text: '在一旁安靜等待，不打擾他們的私人對話',
                 traits: { 
-                  respect_boundaries: 2, 
-                  patience: 2, 
-                  discretion: 2,
-                  self_restraint: 1
+                  philosophical: { acceptance: 4, wisdom_seeking: 3, authenticity: 2 },
+                  mbti: { introversion: 4, thinking: 3, judging: 2 },
+                  story: { introspection: 4, resilience: 3, independence: 2 }
                 },
                 next: 7
               },
               {
                 text: '走向莊子，想問問老師對弟子擔憂的看法',
                 traits: { 
-                  wisdom_seeking: 2, 
-                  direct_approach: 2, 
-                  teacher_orientation: 1,
-                  problem_solving: 2
+                  philosophical: { wisdom_seeking: 4, idealism: 3, authenticity: 2 },
+                  mbti: { extraversion: 3, thinking: 3, judging: 3 },
+                  story: { curiosity: 4, depth_seeking: 3, independence: 2 }
                 },
                 next: 7
               }
@@ -9366,30 +10214,27 @@ ${recentChoices.map((choice, index) =>
               {
                 text: '撿起那些閃閃發光的小石子，放在掌心仔細觀察',
                 traits: { 
-                  detail_oriented: 2, 
-                  material_focus: 2, 
-                  hands_on_exploration: 2,
-                  curiosity_driven: 1
+                  philosophical: { mindfulness: 4, beauty_appreciation: 3, authenticity: 2 },
+                  mbti: { sensing: 4, introversion: 3, perceiving: 2 },
+                  story: { curiosity: 3, depth_seeking: 3, creativity: 2 }
                 },
                 next: 20
               },
               {
                 text: '蹲下研究那些古老的符號痕跡，試圖理解其含義',
                 traits: { 
-                  intellectual_pursuit: 2, 
-                  pattern_seeking: 2, 
-                  historical_interest: 2,
-                  analytical_approach: 1
+                  philosophical: { wisdom_seeking: 4, idealism: 3, transcendence: 2 },
+                  mbti: { intuition: 4, thinking: 3, judging: 2 },
+                  story: { curiosity: 4, depth_seeking: 3, independence: 2 }
                 },
                 next: 20
               },
               {
                 text: '輕撫那些枯葉，感受它們從生到死的自然軌跡',
                 traits: { 
-                  philosophical_reflection: 2, 
-                  life_cycle_awareness: 2, 
-                  poetic_sensibility: 2,
-                  metaphorical_thinking: 1
+                  philosophical: { acceptance: 4, transcendence: 3, beauty_appreciation: 2 },
+                  mbti: { feeling: 4, intuition: 3, perceiving: 2 },
+                  story: { emotional_depth: 4, creativity: 3, gentleness: 2 }
                 },
                 next: 20
               }
@@ -9546,7 +10391,7 @@ ${recentChoices.map((choice, index) =>
           },
           {
             type: 'narrative',
-            text: '記憶如潮水般湧來...你看到了儵與忽的善意，看到了渾沌的無竅之美，也看到了悲劇的必然。要理解這個故事，你需要重新拼湊破碎的太極。',
+            text: '記憶如潮水般湧來...你看到了儵與忽的善意，看到了渾沌的無竅之美，也看到了悲劇的必然。要理解這個故事，你需要轉動太極，讓陰陽重新流動。',
             nextScene: 8
           },
           {
@@ -9557,7 +10402,7 @@ ${recentChoices.map((choice, index) =>
           {
             type: 'dialog',
             speaker: '莊子',
-            text: '很好！你讓太極重新轉動起來，陰陽魚又開始遊動了。看，頂部的太極也因你的行動而顯現。但要真正理解渾沌之死的奧秘，你還需要體會古人的斷句智慧。',
+            text: '很好！你讓太極重新轉動起來，陰陽魚又開始遊動了。看，頂部的太極也因你的行動而顯現。現在，讓我們回到渾沌之死的故事本身。要真正理解這個悲劇的深意，你需要先正確理解這段古文的含義。',
             nextScene: 10
           },
           {
@@ -9852,11 +10697,11 @@ ${recentChoices.map((choice, index) =>
             nextScene: 18
           },
           {
-            type: 'narrative',
+            type: 'final-meditation',
             text: '微風從身邊吹過，你的心變得無比輕鬆。夢境和現實，已經沒有什麼區別了。你靠著大樹，看著雲朵來來去去，聽著風聲和鳥鳴。你的身體、你的心，都在這裡。在這個自由自在的地方，在這片廣闊的原野上，你終於得到了真正的逍遙。',
             nextScene: 19
           },
-          // 終幕：遊戲結束（場景19）
+          // 遊戲結束（場景19）
           {
             type: 'credits',
             title: '萬物逍遙',
@@ -10576,8 +11421,8 @@ ${recentChoices.map((choice, index) =>
               
               console.log('🌅 白色過渡層已完全移除，尾聲章節正常運行');
             }, 500);
-          }, 2000); // 尾聲章節開始後2秒開始移除覆蓋層
-        }, 5000);
+          }, 4000); // 尾聲章節開始後4秒開始移除覆蓋層，給標題更多顯示時間
+        }, 7000); // 延長到7秒，讓標題有更充分的顯示時間
       }, 2000);
     }
     
@@ -10619,11 +11464,11 @@ ${recentChoices.map((choice, index) =>
       whiteOverlay.appendChild(titleContainer);
       
       // 標題打字機效果
-      typeWriterEffect(title, chapter.title, 250, () => {
+      typeWriterEffect(title, chapter.title, 150, () => {
         // 標題完成後，開始描述打字機效果
         setTimeout(() => {
-          typeWriterEffect(description, chapter.description, 200);
-        }, 800);
+          typeWriterEffect(description, chapter.description, 120);
+        }, 500);
       });
     }
 
@@ -10770,14 +11615,14 @@ ${recentChoices.map((choice, index) =>
           gameState.currentForm = 'human';
           updateFormView('human');
         }
-        
+          
         // 更新底部按鈕狀態 - 首先確保所有解鎖的按鈕都可見
-        Object.values(formButtons).forEach(button => {
-          if (button) {
-            button.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-            button.classList.add('bg-gray-500');
-          }
-        });
+          Object.values(formButtons).forEach(button => {
+            if (button) {
+              button.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+              button.classList.add('bg-gray-500');
+            }
+          });
         
         // 顯示所有已解鎖的形態按鈕
         console.log('📋 當前已解鎖的形態:', gameState.unlockedForms);
@@ -10788,12 +11633,12 @@ ${recentChoices.map((choice, index) =>
             console.log(`📋 顯示已解鎖形態按鈕: ${form}`);
           } else {
             console.log(`❌ 形態按鈕不存在: ${form}`);
-          }
-        });
-        
-        if (formButtons['human']) {
-          formButtons['human'].classList.remove('bg-gray-500');
-          formButtons['human'].classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }
+          });
+          
+          if (formButtons['human']) {
+            formButtons['human'].classList.remove('bg-gray-500');
+            formButtons['human'].classList.add('bg-indigo-600', 'hover:bg-indigo-700');
         }
       }
       
@@ -11927,6 +12772,12 @@ ${recentChoices.map((choice, index) =>
               console.log('場景內容:', scene);
               createPhotoDevelopScene(scene);
               break;
+              
+          case 'final-meditation':
+              console.log('✨ 創建最終冥想場景');
+              console.log('場景內容:', scene);
+              createFinalMeditationScene(scene);
+              break;
 
           default:
             console.error('Unknown scene type:', scene.type);
@@ -12210,35 +13061,75 @@ ${recentChoices.map((choice, index) =>
       // 開始生成個性化內容
       let personalizedText;
       try {
-        console.log('🔄 準備生成個性化回應...');
-        const lastChoice = gameState.playerChoices.choiceHistory[gameState.playerChoices.choiceHistory.length - 1];
-        
-        console.log('📊 玩家最近選擇:', {
-          choice: lastChoice?.text || '無選擇記錄',
-          situation: lastChoice?.situation || '未知情境',
-          traits: lastChoice?.traits || {}
+        console.log('🔄 ===== 個性化回應場景調試信息 =====');
+        console.log('🎯 場景調用時間:', new Date().toLocaleTimeString());
+        console.log('📍 場景詳情:', {
+          sceneType: scene.sceneType,
+          speaker: scene.speaker,
+          responseKey: scene.responseKey,
+          context: scene.context,
+          baseText: scene.baseText?.substring(0, 50) + '...'
         });
         
-        console.log('🤖 調用AI生成個性化回應...');
+        const lastChoice = gameState.playerChoices.choiceHistory[gameState.playerChoices.choiceHistory.length - 1];
+        
+        console.log('📊 玩家最近選擇分析:', {
+          選擇文本: lastChoice?.text || lastChoice?.choiceText || '無選擇記錄',
+          選擇情境: lastChoice?.situation || '未知情境',
+          選擇特質: lastChoice?.traits || {},
+          思考時間: lastChoice?.thinkingTime ? `${Math.round(lastChoice.thinkingTime / 1000)}s` : '未記錄',
+          章節: lastChoice?.chapter || '未知章節',
+          場景: lastChoice?.scene || '未知場景'
+        });
+        
+        console.log('🎮 當前遊戲狀態:', {
+          當前章節: gameState.currentChapter,
+          當前場景: gameState.currentScene,
+          當前形態: gameState.currentForm,
+          選擇歷史長度: gameState.playerChoices.choiceHistory.length
+        });
+        
+        console.log('🤖 準備調用AI生成個性化回應...');
+        const aiStartTime = Date.now();
+        
         personalizedText = await generateSmartResponse(
-          lastChoice?.text || '玩家的選擇',
+          lastChoice?.text || lastChoice?.choiceText || '玩家的選擇',
           {
             sceneType: scene.sceneType,
             description: scene.context,
             responseKey: scene.responseKey,
-            specificQuestion: lastChoice?.text // 確保AI知道要回應的具體選擇
+            specificQuestion: lastChoice?.text || lastChoice?.choiceText, // 確保AI知道要回應的具體選擇
+            chapter: gameState.currentChapter,
+            scene: gameState.currentScene
           }
         );
         
+        const aiEndTime = Date.now();
+        const aiDuration = aiEndTime - aiStartTime;
+        
+        console.log('⏱️ AI回應生成耗時:', `${aiDuration}ms`);
+        
         if (personalizedText) {
-          console.log('✅ AI個性化回應生成成功:', personalizedText.substring(0, 50) + '...');
+          console.log('✅ AI個性化回應生成成功:');
+          console.log('  📏 回應長度:', personalizedText.length, '字符');
+          console.log('  📝 回應內容:', personalizedText);
+          console.log('  🎯 回應品質檢查:', {
+            包含繁體中文: /[\u4e00-\u9fff]/.test(personalizedText),
+            長度合適: personalizedText.length >= 50 && personalizedText.length <= 150,
+            包含個性化元素: personalizedText.includes('你') || personalizedText.includes('選擇'),
+            符合莊子風格: personalizedText.includes('道') || personalizedText.includes('自然') || personalizedText.includes('逍遙')
+          });
         } else {
           console.warn('⚠️ AI返回空內容，使用預設內容');
+          console.log('📝 預設內容:', scene.baseText);
           personalizedText = scene.baseText;
         }
+        
+        console.log('========================================');
       } catch (error) {
         console.error('❌ 個性化內容生成失敗:', error);
         console.log('🔄 降級使用預設內容:', scene.baseText);
+        console.log('========================================');
         personalizedText = scene.baseText;
       }
       
@@ -12292,7 +13183,16 @@ ${recentChoices.map((choice, index) =>
       // 添加章節總結標題
       const titleElement = document.createElement('h3');
       titleElement.className = 'text-2xl font-bold text-indigo-800 dark:text-indigo-200 mb-4';
-      titleElement.textContent = `${gameState.currentChapter === 'chapter1' ? '第一章' : '章節'}總結`;
+      
+      // 根據章節類型設置不同的標題
+      if (gameState.currentChapter === 'epilogue') {
+        titleElement.textContent = '莊子的告別信';
+      } else if (gameState.currentChapter === 'chapter1') {
+        titleElement.textContent = '第一章總結';
+      } else {
+        titleElement.textContent = '章節總結';
+      }
+      
       summaryElement.appendChild(titleElement);
       
       // 顯示思考狀態
@@ -12304,7 +13204,7 @@ ${recentChoices.map((choice, index) =>
             莊
           </div>
           <div class="thinking-text text-lg text-gray-600 dark:text-gray-400 text-center" style="animation: text-glow-breathe 2s ease-in-out infinite;">
-            正在回顧你的哲學之旅，生成個性化總結...
+            ${gameState.currentChapter === 'epilogue' ? '正在回顧你的完整旅程，寫下告別信...' : '正在回顧你的哲學之旅，生成個性化總結...'}
           </div>
           <div class="thinking-dots flex justify-center space-x-2">
             <div class="w-3 h-3 bg-indigo-400 rounded-full" style="animation: pulse 1.5s ease-in-out infinite"></div>
@@ -12378,6 +13278,31 @@ ${recentChoices.map((choice, index) =>
           Math.round(gameState.playerChoices.choiceHistory.reduce((sum, choice) => 
             sum + (choice.thinkingTime || 0), 0) / choiceCount / 1000 * 10) / 10 : 0; // 轉換為秒，保留1位小數
         
+        // 根據章節類型顯示不同的統計數據
+        if (gameState.currentChapter === 'epilogue') {
+          // 尾聲章節顯示完整遊戲統計
+          const gameProgress = getGameProgressSummary();
+          statsElement.innerHTML = `
+            <div class="text-center">
+              <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${gameProgress.totalPlayTime}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">分鐘旅程</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${choiceCount}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">個選擇</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${gameProgress.formsUnlocked}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">種形態</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${gameProgress.aperturesCollected}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">個封印</div>
+            </div>
+          `;
+          statsElement.className = 'grid grid-cols-4 gap-4 mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg';
+        } else {
+          // 其他章節顯示選擇統計
         statsElement.innerHTML = `
           <div class="text-center">
             <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${choiceCount}</div>
@@ -12388,6 +13313,8 @@ ${recentChoices.map((choice, index) =>
             <div class="text-sm text-gray-600 dark:text-gray-400">平均思考時間</div>
           </div>
         `;
+          statsElement.className = 'grid grid-cols-2 gap-4 mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg';
+        }
         finalContentElement.appendChild(statsElement);
       }
       
@@ -12629,10 +13556,24 @@ ${recentChoices.map((choice, index) =>
               }
             } else {
               // 使用智能特質提取
+              console.log('🔍 ===== 選擇處理調試信息 (選項場景) =====');
+              console.log('📝 選擇文本:', option.text);
+              console.log('🎭 說話者:', scene.speaker);
+              console.log('📚 章節:', gameState.currentChapter);
+              
               const extractedTraits = extractTraitsFromChoice(option.text, scene.speaker, gameState.currentChapter);
-              choiceData.philosophical = extractedTraits;
+              
+              console.log('🧠 提取的特質結構:', extractedTraits);
+              console.log('  哲學特質:', extractedTraits.philosophical);
+              console.log('  故事特質:', extractedTraits.story);
+              
+              // 正確處理結構化特質數據
+              choiceData.philosophical = extractedTraits.philosophical || {};
               choiceData.mbti = {};
-              choiceData.story = {};
+              choiceData.story = extractedTraits.story || {};
+              
+              console.log('✅ 最終選擇數據:', choiceData);
+              console.log('========================================');
             }
             
             recordPlayerChoice(choiceData);
@@ -13725,10 +14666,24 @@ ${recentChoices.map((choice, index) =>
               }
             } else {
               // 使用智能特質提取
+              console.log('🔍 ===== 選擇處理調試信息 (對話場景) =====');
+              console.log('📝 選擇文本:', option.text);
+              console.log('🎭 說話者:', scene.speaker);
+              console.log('📚 章節:', gameState.currentChapter);
+              
               const extractedTraits = extractTraitsFromChoice(option.text, scene.speaker, gameState.currentChapter);
-              choiceData.philosophical = extractedTraits;
+              
+              console.log('🧠 提取的特質結構:', extractedTraits);
+              console.log('  哲學特質:', extractedTraits.philosophical);
+              console.log('  故事特質:', extractedTraits.story);
+              
+              // 正確處理結構化特質數據
+              choiceData.philosophical = extractedTraits.philosophical || {};
               choiceData.mbti = {};
-              choiceData.story = {};
+              choiceData.story = extractedTraits.story || {};
+              
+              console.log('✅ 最終選擇數據:', choiceData);
+              console.log('========================================');
             }
             
             recordPlayerChoice(choiceData);
@@ -15801,9 +16756,9 @@ ${recentChoices.map((choice, index) =>
         const styleElement = document.createElement('style');
         styleElement.id = 'qi-vision-styles';
         styleElement.textContent = `
-                     /* 氣化視角：黑白濾鏡效果 */
+                     /* 氣化視角：純粹黑白濾鏡效果 */
            body.qi-vision {
-             filter: grayscale(100%) contrast(1.2) brightness(1.1);
+             filter: grayscale(100%) contrast(1.5);
              cursor: crosshair; /* 使用十字光標確保在黑白場景中可見 */
            }
           
@@ -16298,8 +17253,8 @@ ${recentChoices.map((choice, index) =>
       
       if (deferredUnlock && !alreadyUnlocked) {
         // 新章節形態首次解鎖：只解鎖，不立即顯示按鈕（延遲到收集場景完成）
-        gameState.unlockedForms.push(form);
-        console.log(`預備解鎖新形態: ${form}，按鈕將在收集場景後顯示`);
+          gameState.unlockedForms.push(form);
+          console.log(`預備解鎖新形態: ${form}，按鈕將在收集場景後顯示`);
         
         // 確保按鈕保持隱藏狀態
         if (formButtons[form]) {
@@ -16680,6 +17635,13 @@ ${recentChoices.map((choice, index) =>
                   if (soundWaveContainer && soundWaveContainer.parentNode) {
                     soundWaveContainer.remove();
                   }
+                  
+                  // 檢查是否收集了所有7個封印
+                  if (gameState.collectedApertures.length === 7) {
+                    console.log('🌟 所有封印已收集完成，創建轉動的太極emoji覆蓋混沌指示器');
+                    createTaijiOverlay();
+                  }
+                  
                   console.log('✅ 封印收集完成，自動繼續遊戲流程');
                 }, 1500); // 給玩家1.5秒時間欣賞收集效果
               }, 1000); // 等待aperture-fade動畫完成（加速）
@@ -16835,6 +17797,73 @@ ${recentChoices.map((choice, index) =>
           
         }, 2000);
       }, 1000);
+    }
+    
+    // 創建轉動的太極emoji覆蓋混沌指示器
+    function createTaijiOverlay() {
+      const aperturesTracker = document.getElementById('apertures-tracker');
+      if (!aperturesTracker) return;
+      
+      // 檢查是否已經創建了太極覆蓋層
+      let taijiOverlay = document.getElementById('taiji-overlay');
+      if (taijiOverlay) return; // 已經存在，不重複創建
+      
+      // 創建太極覆蓋層
+      taijiOverlay = document.createElement('div');
+      taijiOverlay.id = 'taiji-overlay';
+      taijiOverlay.className = 'absolute inset-0 flex items-center justify-center';
+      taijiOverlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        pointer-events: none;
+      `;
+      
+      // 創建太極emoji
+      const taijiEmoji = document.createElement('div');
+      taijiEmoji.className = 'taiji-emoji';
+      taijiEmoji.textContent = '☯';
+      taijiEmoji.style.cssText = `
+        font-size: 80px;
+        color: rgba(255, 255, 255, 0.9);
+        animation: taiji-rotate-overlay 20s infinite linear;
+        filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.4));
+        transform-origin: center;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      `;
+      
+      taijiOverlay.appendChild(taijiEmoji);
+      aperturesTracker.appendChild(taijiOverlay);
+      
+      // 添加太極轉動動畫（與第七章虛空背景速度一致）
+      if (!document.getElementById('taiji-overlay-animation')) {
+        const styleElement = document.createElement('style');
+        styleElement.id = 'taiji-overlay-animation';
+        styleElement.textContent = `
+          @keyframes taiji-rotate-overlay {
+            0% {
+              transform: rotate(0deg);
+            }
+            100% {
+              transform: rotate(-360deg);
+            }
+          }
+        `;
+        document.head.appendChild(styleElement);
+      }
+      
+      console.log('✨ 太極覆蓋層已創建，開始逆時針轉動');
     }
     
     // Create particles around the activated aperture
@@ -18278,6 +19307,13 @@ ${recentChoices.map((choice, index) =>
           targetAperture.classList.add('active');
         }
       });
+      
+      // 如果已收集所有7個封印，創建太極覆蓋層
+      if (gameState.collectedApertures.length === 7) {
+        setTimeout(() => {
+          createTaijiOverlay();
+        }, 1000); // 延遲1秒確保DOM元素已準備好
+      }
     }
     
     // 開發者模式下強制顯示物化按鈕
@@ -18792,6 +19828,41 @@ ${recentChoices.map((choice, index) =>
     function createTransformationExperienceScene(scene) {
       // 進入新的物化場景時，清除螻蟻視覺效果
       removeAntVisionEffect();
+      
+      // 如果是氣形態，進行徹底的視覺清理
+      if (scene.formType === 'qi') {
+        // 清理所有可能的視覺殘留
+        const existingOverlay = document.querySelector('.transformation-overlay');
+        if (existingOverlay) {
+          existingOverlay.remove();
+        }
+        
+        // 清理萬物尋氣引導界面
+        const wanwuGuideContainer = document.querySelector('.max-w-2xl.mx-auto.p-6.text-center.fixed');
+        if (wanwuGuideContainer) {
+          wanwuGuideContainer.remove();
+        }
+        
+        // 清理萬物尋氣相關的狀態
+        gameState.wanwuXunqiActive = false;
+        gameState.handleFormSequenceClick = null;
+        gameState.wanwuXunqiGuideContainer = null;
+        
+        // 移除所有物化按鈕的高亮效果
+        Object.values(formButtons).forEach(btn => {
+          if (btn) {
+            btn.style.boxShadow = '';
+            btn.style.animation = '';
+          }
+        });
+        
+        // 重置gameContainer的樣式
+        gameContainer.style.transform = 'scale(1)';
+        gameContainer.style.filter = 'none';
+        gameContainer.style.background = '';
+        
+        console.log('氣形態物化體驗：已清理所有視覺殘留');
+      }
       
       // 隱藏底部日常物化按鈕，避免在打字機體驗中的混亂
       hideFormButtons();
@@ -23646,6 +24717,10 @@ ${recentChoices.map((choice, index) =>
       // 點擊事件 - 生成莊子的神秘禮物
       reportButton.addEventListener('click', () => {
         console.log('🎁 神秘禮物按鈕被點擊');
+        
+        // 切換到神秘禮物專用音樂
+        switchToMysteriousGiftMusic();
+        
         generateAIPersonalizedReport();
       });
     }
@@ -23681,6 +24756,12 @@ ${recentChoices.map((choice, index) =>
       const totalPlayTime = Math.round(playerData.totalPlayTime / 1000 / 60); // 轉換為分鐘
       const avgSceneTime = Math.round(playerData.averageSceneDwellTime / 1000); // 轉換為秒
       
+      // 構建選擇歷史摘要
+      const choiceSummary = playerData.choiceHistory.length > 0 ? 
+        playerData.choiceHistory.slice(-10).map((choice, index) => 
+          `${index + 1}. [${choice.chapter}] ${choice.choiceText} (思考時間: ${Math.round(choice.thinkingTime / 1000)}秒)`
+        ).join('\n') : '無選擇記錄';
+      
       return `你是莊子本人，現在要穿越時空，為一位剛剛完成《莊子：萬物逍遙》遊戲的現代玩家寫一封親筆信。
 
 遊戲名稱：《莊子：萬物逍遙》
@@ -23700,11 +24781,33 @@ ${recentChoices.map((choice, index) =>
 - 美學傾向：${playerData.philosophicalTraits.aesthetic}/100
 - 和諧追求：${playerData.philosophicalTraits.harmony}/100
 
+這位玩家的MBTI傾向：
+- 外向性(E)/內向性(I)：${playerData.mbtiTraits.extraversion || 0}/100
+- 感覺(S)/直覺(N)：${playerData.mbtiTraits.sensing || 0}/100
+- 思考(T)/情感(F)：${playerData.mbtiTraits.thinking || 0}/100
+- 判斷(J)/知覺(P)：${playerData.mbtiTraits.judging || 0}/100
+
+這位玩家的故事特質：
+- 冒險精神：${playerData.storyTraits.adventure_spirit || 0}/100
+- 探索驅動力：${playerData.storyTraits.exploration_drive || 0}/100
+- 哲學深度：${playerData.storyTraits.philosophical_depth || 0}/100
+- 和諧追求：${playerData.storyTraits.harmony_seeking || 0}/100
+- 想像力投入：${playerData.storyTraits.imaginative_engagement || 0}/100
+- 美學敏感性：${playerData.storyTraits.aesthetic_sensitivity || 0}/100
+
+這位玩家的關鍵選擇記錄（最近10個）：
+${choiceSummary}
+
 請以莊子的身份，寫一封800-1000字的親筆信，包含：
 
 1. **開場問候**：以莊子的身份，穿越時空向這位現代朋友問候，表達對他們完成遊戲的祝賀
-2. **個性洞察**：基於遊戲數據，深入分析這位朋友的個性特點，讓他們感受到被深度理解
-3. **生活啟示**：針對他們的個性特點，給出具體的生活建議和人生啟示
+2. **個性洞察**：基於遊戲數據和選擇記錄，深入分析這位朋友的個性特點、思考模式和決策風格，讓他們感受到被深度理解。特別關注：
+   - 他們在不同情境下的選擇傾向（如面對未知時的態度、與他人互動的方式、解決問題的思維模式）
+   - 思考時間反映的決策風格（快速決斷vs深思熟慮）
+   - 哲學傾向與實際選擇的一致性
+   - MBTI傾向如何影響他們的決策和互動方式
+   - 故事特質如何體現在他們的冒險精神和價值觀中
+3. **生活啟示**：針對他們的個性特點和選擇模式，給出具體的生活建議和人生啟示
 4. **情感連結**：建立莊子與這位現代朋友之間的情感連結，讓他們感受到莊子的關懷
 5. **未來指引**：針對他們的未來生活、人生發展給出溫暖而智慧的指導
 6. **結語祝福**：以莊子的智慧，給出鼓勵性的結語和美好祝福
@@ -23712,12 +24815,14 @@ ${recentChoices.map((choice, index) =>
 寫作要求：
 - **身份定位**：你就是莊子本人，用第一人稱"我"來寫，就像真的莊子在和這位朋友對話
 - **情感基調**：溫暖、親切、充滿關懷，像長輩對晚輩的慈愛指導
-- **語言風格**：現代白話文，親切自然，避免文言文，但要有莊子的智慧深度
+- **語言風格**：繁體中文，親切自然，避免文言文，但要有莊子的智慧深度
 - **啟示性**：重點在於給出對個性和生活的啟示，讓讀者有所感悟
 - **感動性**：要有情感衝擊力，讓讀者讀完後感到溫暖、感動、有所啟發
 - **實用性**：給出具體的生活建議，不只是抽象的哲學討論
 
-這封信應該讓讀者感受到：莊子真的穿越時空來關心他們，理解他們，並為他們的人生提供智慧的指引。`;
+這封信應該讓讀者感受到：莊子真的穿越時空來關心他們，理解他們，並為他們的人生提供智慧的指引。
+
+**重要：請使用繁體中文書寫整封信件內容。**`;
     }
     
     // 顯示報告加載模態框
@@ -23840,7 +24945,7 @@ ${recentChoices.map((choice, index) =>
           </div>
         </div>
         <div style="text-align: center;">
-          <button id="share-report-btn" style="
+          <button id="download-report-btn" style="
             background: linear-gradient(135deg, #4F46E5, #7C3AED);
             color: white;
             border: none;
@@ -23851,7 +24956,7 @@ ${recentChoices.map((choice, index) =>
             cursor: pointer;
             margin-right: 1rem;
             transition: all 0.3s ease;
-          ">📱 分享這封信</button>
+          ">📥 下載信件</button>
           <button id="close-report-btn" style="
             background: linear-gradient(135deg, #6B7280, #4B5563);
             color: white;
@@ -23870,8 +24975,8 @@ ${recentChoices.map((choice, index) =>
       document.body.appendChild(modal);
       
       // 添加按鈕事件
-      document.getElementById('share-report-btn').addEventListener('click', () => {
-        shareReport(report);
+      document.getElementById('download-report-btn').addEventListener('click', () => {
+        downloadReportAsImage(report);
       });
       
       document.getElementById('close-report-btn').addEventListener('click', () => {
@@ -23923,7 +25028,7 @@ ${recentChoices.map((choice, index) =>
       content.innerHTML = `
         <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
         <h2 style="font-family: 'LXGW WenKai', serif; margin-bottom: 1rem;">莊子的信生成失敗</h2>
-        <p style="color: #FCA5A5; margin-bottom: 2rem;">網絡連接問題，請稍後再試</p>
+        <p style="color: #FCA5A5; margin-bottom: 2rem;">網路連接問題，請稍後再試</p>
         <button id="retry-report-btn" style="
           background: linear-gradient(135deg, #4F46E5, #7C3AED);
           color: white;
@@ -23946,22 +25051,235 @@ ${recentChoices.map((choice, index) =>
       });
     }
     
-    // 分享莊子的信
-    function shareReport(report) {
-      const shareText = `我收到了莊子穿越時空寫給我的信！\n\n${report.substring(0, 200)}...\n\n來體驗《莊子：萬物逍遙》這款深度哲學遊戲吧！`;
+    // 下載莊子的信為圖片
+    function downloadReportAsImage(report) {
+      // 創建畫布
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       
-              if (navigator.share) {
-          navigator.share({
-            title: '莊子給我的信',
-            text: shareText,
-            url: window.location.href
-          }).catch(err => {
-            console.log('分享失敗:', err);
-            copyToClipboard(shareText);
-          });
-        } else {
-          copyToClipboard(shareText);
+      // 獲取設備像素比，提高清晰度
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const scaleFactor = Math.max(devicePixelRatio, 2); // 至少2倍清晰度
+      
+      // 設置高分辨率畫布尺寸 (加長版，確保能容納完整信件)
+      const baseWidth = 800;
+      const baseHeight = 1600; // 增加高度以容納更多內容
+      canvas.width = baseWidth * scaleFactor;
+      canvas.height = baseHeight * scaleFactor;
+      
+      // 設置CSS尺寸保持原始比例
+      canvas.style.width = baseWidth + 'px';
+      canvas.style.height = baseHeight + 'px';
+      
+      // 縮放上下文以匹配設備像素比
+      ctx.scale(scaleFactor, scaleFactor);
+      
+      // 啟用高質量文字渲染
+      ctx.textRenderingOptimization = 'optimizeQuality';
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // 設置古風暖色調背景
+      const gradient = ctx.createLinearGradient(0, 0, 0, baseHeight);
+      gradient.addColorStop(0, '#8B4513'); // 深褐色
+      gradient.addColorStop(0.5, '#A0522D'); // 赭石色
+      gradient.addColorStop(1, '#654321'); // 深棕色
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, baseWidth, baseHeight);
+      
+      // 添加米黃色宣紙質感背景（擴大區域）
+      const paperGradient = ctx.createLinearGradient(0, 0, 0, baseHeight);
+      paperGradient.addColorStop(0, '#F5F5DC'); // 米色
+      paperGradient.addColorStop(0.3, '#FFF8DC'); // 玉米絲色
+      paperGradient.addColorStop(0.7, '#FFFACD'); // 檸檬雪紡色
+      paperGradient.addColorStop(1, '#F0E68C'); // 卡其色
+      ctx.fillStyle = paperGradient;
+      ctx.fillRect(30, 50, baseWidth - 60, baseHeight - 100);
+      
+      // 添加古風邊框
+      ctx.strokeStyle = '#8B4513'; // 深褐色邊框
+      ctx.lineWidth = 3;
+      ctx.strokeRect(30, 50, baseWidth - 60, baseHeight - 100);
+      
+      // 添加內側細邊框
+      ctx.strokeStyle = '#CD853F'; // 秘魯色
+      ctx.lineWidth = 1;
+      ctx.strokeRect(40, 60, baseWidth - 80, baseHeight - 120);
+      
+      // 設置文字樣式 - 使用古風暖色調
+      ctx.fillStyle = '#8B4513'; // 深褐色標題
+      ctx.font = 'bold 32px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.textAlign = 'center';
+      
+      // 繪製標題（移除禮物圖標）
+      ctx.fillText('莊子給您的信', baseWidth / 2, 120);
+      
+      // 繪製副標題
+      ctx.fillStyle = '#A0522D'; // 赭石色副標題
+      ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.fillText('穿越時空的智慧與關懷', baseWidth / 2, 145);
+      
+      // 繪製遊戲信息
+      ctx.fillStyle = '#CD853F'; // 秘魯色遊戲信息
+      ctx.font = '14px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.fillText('《萬物逍遙》- 莊子哲學互動遊戲', baseWidth / 2, 170);
+      ctx.fillText('體驗物化之道，探索內心智慧', baseWidth / 2, 190);
+      
+      // 繪製分隔線
+      ctx.strokeStyle = '#D2691E'; // 巧克力色分隔線
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(70, 210);
+      ctx.lineTo(baseWidth - 70, 210);
+      ctx.stroke();
+      
+      // 繪製信件內容
+      ctx.fillStyle = '#654321'; // 深棕色正文
+      ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.textAlign = 'left';
+      
+      // 處理文字換行（調整邊距）
+      const lines = wrapText(ctx, report, baseWidth - 120, 16);
+      const lineHeight = 22; // 稍微緊湊一些
+      let y = 240; // 從更靠上的位置開始
+      
+      // 計算所需的總高度
+      const contentHeight = lines.length * lineHeight;
+      const minRequiredHeight = 240 + contentHeight + 80; // 內容開始位置 + 內容高度 + 底部空間（減少空白）
+      
+      // 如果需要更多空間，動態調整畫布高度
+      let actualHeight = baseHeight;
+      if (minRequiredHeight > baseHeight) {
+        actualHeight = minRequiredHeight;
+        
+        // 重新設置畫布高度
+        canvas.height = actualHeight * scaleFactor;
+        canvas.style.height = actualHeight + 'px';
+        
+        // 重新繪製古風暖色調背景（因為高度改變了）
+        const newGradient = ctx.createLinearGradient(0, 0, 0, actualHeight);
+        newGradient.addColorStop(0, '#8B4513'); // 深褐色
+        newGradient.addColorStop(0.5, '#A0522D'); // 赭石色
+        newGradient.addColorStop(1, '#654321'); // 深棕色
+        ctx.fillStyle = newGradient;
+        ctx.fillRect(0, 0, baseWidth, actualHeight);
+        
+        // 重新繪製米黃色宣紙背景
+        const newPaperGradient = ctx.createLinearGradient(0, 0, 0, actualHeight);
+        newPaperGradient.addColorStop(0, '#F5F5DC'); // 米色
+        newPaperGradient.addColorStop(0.3, '#FFF8DC'); // 玉米絲色
+        newPaperGradient.addColorStop(0.7, '#FFFACD'); // 檸檬雪紡色
+        newPaperGradient.addColorStop(1, '#F0E68C'); // 卡其色
+        ctx.fillStyle = newPaperGradient;
+        ctx.fillRect(30, 50, baseWidth - 60, actualHeight - 100);
+        
+        // 重新繪製古風邊框
+        ctx.strokeStyle = '#8B4513'; // 深褐色邊框
+        ctx.lineWidth = 3;
+        ctx.strokeRect(30, 50, baseWidth - 60, actualHeight - 100);
+        
+        // 重新繪製內側細邊框
+        ctx.strokeStyle = '#CD853F'; // 秘魯色
+        ctx.lineWidth = 1;
+        ctx.strokeRect(40, 60, baseWidth - 80, actualHeight - 120);
+        
+        // 重新繪製標題區域
+        ctx.fillStyle = '#8B4513'; // 深褐色標題
+        ctx.font = 'bold 32px "LXGW WenKai", "Noto Serif TC", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('莊子給您的信', baseWidth / 2, 120);
+        
+        ctx.fillStyle = '#A0522D'; // 赭石色副標題
+        ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
+        ctx.fillText('穿越時空的智慧與關懷', baseWidth / 2, 145);
+        
+        ctx.fillStyle = '#CD853F'; // 秘魯色遊戲信息
+        ctx.font = '14px "LXGW WenKai", "Noto Serif TC", serif';
+        ctx.fillText('《萬物逍遙》- 莊子哲學互動遊戲', baseWidth / 2, 170);
+        ctx.fillText('體驗物化之道，探索內心智慧', baseWidth / 2, 190);
+        
+        ctx.strokeStyle = '#D2691E'; // 巧克力色分隔線
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(70, 210);
+        ctx.lineTo(baseWidth - 70, 210);
+        ctx.stroke();
+        
+        // 重新設置信件內容樣式
+        ctx.fillStyle = '#654321'; // 深棕色正文
+        ctx.font = '16px "LXGW WenKai", "Noto Serif TC", serif';
+        ctx.textAlign = 'left';
+      }
+      
+      // 繪製所有行，不再截斷
+      lines.forEach((line, index) => {
+        ctx.fillText(line, 60, y);
+        y += lineHeight;
+      });
+      
+      // 繪製底部信息（改善顏色對比度）- 調整位置減少空白
+      ctx.fillStyle = '#4A4A4A'; // 深灰色底部信息，與褐色背景對比更明顯
+      ctx.font = '14px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('此信件由《萬物逍遙》遊戲生成', baseWidth / 2, actualHeight - 50);
+      ctx.fillText('基於您的遊戲數據個性化定制', baseWidth / 2, actualHeight - 30);
+      
+      // 添加日期
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+      ctx.fillStyle = '#2F4F4F'; // 深石板灰色日期，確保清晰可見
+      ctx.font = '12px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(dateStr, baseWidth - 60, actualHeight - 10);
+      
+      // 下載圖片 - 使用高質量PNG
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `莊子的信_${dateStr}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('📥 莊子的信已下載完成！高清版本已保存');
+      }, 'image/png', 1.0); // 最高質量
+    }
+    
+    // 文字換行輔助函數
+    function wrapText(ctx, text, maxWidth, fontSize) {
+      const lines = [];
+      const paragraphs = text.split('\n');
+      
+      paragraphs.forEach(paragraph => {
+        if (paragraph.trim() === '') {
+          lines.push('');
+          return;
         }
+        
+        // 對於中文文字，按字符分割而不是按單詞
+        const chars = paragraph.split('');
+        let currentLine = '';
+        
+        for (let i = 0; i < chars.length; i++) {
+          const testLine = currentLine + chars[i];
+          const metrics = ctx.measureText(testLine);
+          
+          if (metrics.width > maxWidth && currentLine !== '') {
+            lines.push(currentLine);
+            currentLine = chars[i];
+        } else {
+            currentLine = testLine;
+          }
+        }
+        
+        if (currentLine !== '') {
+          lines.push(currentLine);
+        }
+      });
+      
+      return lines;
     }
     
     // 複製到剪貼板
@@ -24158,6 +25476,146 @@ ${recentChoices.map((choice, index) =>
       }, 3000);
     }
 
+    // 創建最終冥想場景
+    function createFinalMeditationScene(scene) {
+      console.log('🧘 createFinalMeditationScene 開始執行');
+      console.log('接收到的場景參數:', scene);
+      
+      // 清空遊戲內容
+      gameContent.innerHTML = '';
+      
+      // 隱藏繼續按鈕，稍後顯示
+      advanceBtn.style.display = 'none';
+      
+      // 創建冥想文字容器
+      const meditationContainer = document.createElement('div');
+      meditationContainer.className = 'final-meditation-container';
+      meditationContainer.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 800px;
+        text-align: center;
+        z-index: 10;
+      `;
+      
+      // 創建文字顯示區域
+      const textDisplay = document.createElement('div');
+      textDisplay.className = 'meditation-text';
+      textDisplay.style.cssText = `
+        font-size: 1.4rem;
+        line-height: 1.8;
+        color: #2d3748;
+        font-family: "LXGW WenKai", "Noto Serif TC", serif;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        letter-spacing: 0.5px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 1s ease;
+        white-space: pre-line;
+      `;
+      
+      meditationContainer.appendChild(textDisplay);
+      gameContent.appendChild(meditationContainer);
+      
+      // 顯示容器
+      setTimeout(() => {
+        textDisplay.style.opacity = '1';
+        textDisplay.style.transform = 'translateY(0)';
+      }, 500);
+      
+      // 開始緩慢的打字機效果
+      setTimeout(() => {
+        startSlowTypewriter(textDisplay, scene.text, () => {
+          // 打字機效果完成後，等待5秒再顯示繼續按鈕
+          setTimeout(() => {
+            // 添加輕微的呼吸光效
+            textDisplay.style.animation = 'gentle-breathing 6s ease-in-out infinite';
+            
+            // 顯示繼續按鈕
+            advanceBtn.style.display = 'block';
+            advanceBtn.style.opacity = '0';
+            advanceBtn.style.transform = 'translateY(20px)';
+            advanceBtn.style.transition = 'all 1s ease';
+            
+            setTimeout(() => {
+              advanceBtn.style.opacity = '1';
+              advanceBtn.style.transform = 'translateY(0)';
+            }, 100);
+          }, 5000); // 從3秒延長到5秒
+        });
+      }, 1000);
+    }
+    
+    // 緩慢打字機效果函數（優化版：分段顯示、重點字詞高亮）
+    function startSlowTypewriter(element, text, callback) {
+      element.innerHTML = '';
+      const speed = 180; // 每個字符180毫秒
+      
+      // 完整文本，使用換行符分段
+      const fullText = `微風從身邊吹過，你的心變得無比輕鬆。
+
+夢境和現實，已經沒有什麼區別了。
+
+你靠著大樹，看著雲朵來來去去，聽著風聲和鳥鳴。
+
+你的身體、你的心，都在這裡。
+
+在這個自由自在的地方，在這片廣闊的原野上，你終於得到了真正的逍遙。`;
+      
+      let i = 0;
+      let isInHighlight = false;
+      
+      function typeNextChar() {
+        if (i < fullText.length) {
+          const char = fullText.charAt(i);
+          
+          // 檢查是否到達"逍遙"二字
+          if (i === fullText.indexOf('逍遙') && !isInHighlight) {
+            // 開始高亮標籤
+            element.innerHTML += '<span style="color: #8B4513; font-weight: bold; text-shadow: 0 0 8px rgba(139, 69, 19, 0.6); display: inline-block;">';
+            isInHighlight = true;
+          }
+          
+          if (char === '\n') {
+            // 換行符轉換為<br>
+            element.innerHTML += '<br>';
+          } else {
+            element.innerHTML += char;
+          }
+          
+          // 檢查是否完成"逍遙"二字
+          if (isInHighlight && i === fullText.indexOf('逍遙') + 1) {
+            element.innerHTML += '</span>';
+            isInHighlight = false;
+          }
+          
+          i++;
+          
+          // 在句號、感嘆號、問號後增加額外停頓
+          let nextDelay = speed;
+          
+          if (char === '。' || char === '！' || char === '？') {
+            nextDelay = speed * 3; // 句子結束後停頓3倍時間
+          } else if (char === '，' || char === '、') {
+            nextDelay = speed * 1.8; // 逗號後停頓1.8倍時間
+          } else if (char === '\n') {
+            nextDelay = speed * 5; // 段落間停頓5倍時間
+          }
+          
+          setTimeout(typeNextChar, nextDelay);
+        } else {
+          // 所有文字完成
+          if (callback) callback();
+        }
+      }
+      
+      typeNextChar();
+    }
+
     // 創建照片顯影場景
     function createPhotoDevelopScene(scene) {
       console.log('📸 createPhotoDevelopScene 開始執行');
@@ -24276,11 +25734,24 @@ ${recentChoices.map((choice, index) =>
       if (savedProgress) {
         // 恢復最高章節記錄
         gameState.maxReachedChapter = savedProgress.maxReachedChapter;
+        // 恢復已收集的封印
+        if (savedProgress.collectedApertures) {
+          gameState.collectedApertures = savedProgress.collectedApertures;
+        }
         console.log('📖 恢復遊戲進度，最高章節:', gameState.maxReachedChapter);
+        console.log('📖 恢復已收集封印:', gameState.collectedApertures);
       }
       
       // 初始化默認形態
       updateFormView('human');
+      
+      // 如果已收集所有7個封印，創建太極覆蓋層
+      if (gameState.collectedApertures.length === 7) {
+        setTimeout(() => {
+          createTaijiOverlay();
+          console.log('🌟 遊戲初始化：檢測到所有封印已收集，創建太極覆蓋層');
+        }, 2000); // 延遲2秒確保所有DOM元素已準備好
+      }
       
 
       
