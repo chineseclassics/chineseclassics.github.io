@@ -4,6 +4,7 @@
       <title>萬物逍遙</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&amp;display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
@@ -134,7 +135,7 @@
     .heaven-earth-text {
       /* 整體發光和呼吸效果 - 極其緩慢柔和 */
       color: #FFD700;
-      animation: text-glow-breathe 60s infinite ease-in-out;
+      animation: text-glow-breathe 180s infinite ease-in-out;
     }
     
     @keyframes text-glow-breathe {
@@ -2117,6 +2118,15 @@
       border-color: rgba(255, 255, 255, 0.6) !important;
     }
 
+    /* 氣物化視角下的混沌呼吸挑戰引導文字強化 - 保持低調設計 */
+    body.qi-vision .breathing-guide-overlay .breathing-phase-text,
+    body.qi-vision .breathing-guide-overlay .cycle-counter,
+    body.qi-vision .breathing-guide-overlay .cycle-info,
+    body.qi-vision .breathing-guide-overlay .breathing-progress {
+      color: #fff !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6) !important;
+    }
+
     /* 尾聲章節美觀紫色文字設計 */
     .epilogue-scene #game-content p,
     .epilogue-scene .max-w-2xl p,
@@ -3618,16 +3628,17 @@
     
     /* 章節標題專用樣式 - 加粗思源宋體 */
     .chapter-title-text {
-      font-family: 'Noto Serif SC', serif;
-      font-weight: 900;
-      font-size: 2.5rem;
-      line-height: 1.2;
-      letter-spacing: 0.05em;
+      font-family: 'Noto Serif SC', serif !important;
+      font-weight: 900 !important;
+      font-size: 2.5rem !important;
+      line-height: 1.2 !important;
+      letter-spacing: 0.05em !important;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5) !important;
     }
     
     @media (min-width: 768px) {
       .chapter-title-text {
-        font-size: 3.75rem;
+        font-size: 3.75rem !important;
       }
     }
     
@@ -3673,7 +3684,7 @@
         <div id="human-icon" class="absolute w-28 h-28 transition-all duration-500 opacity-100 scale-100">
           <div class="emoji-form-icon">
             <div class="emoji-glow-bg emoji-glow-human"></div>
-                            <div class="emoji-unified">🧘</div>
+                            <div class="emoji-unified">🧘🏻‍♀️</div>
           </div>
         </div>
         
@@ -3806,15 +3817,15 @@
         
         <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
           <div class="grid grid-cols-3 gap-2 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="prologue">序章：莊周夢蝶</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter1">第一章：子非魚</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter2">第二章：北冥有魚</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter3">第三章：鴟得腐鼠</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter4">第四章：蝸角之爭</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter5">第五章：朝菌與大椿</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter6">第六章：天地為棺槨</button>
-            <button class="chapter-jump bg-purple-200 hover:bg-purple-300 dark:bg-purple-700 dark:hover:bg-purple-600 py-2 px-2 rounded text-xs" data-chapter="chapter7">第七章：渾沌之死</button>
-            <button class="chapter-jump bg-yellow-200 hover:bg-yellow-300 dark:bg-yellow-700 dark:hover:bg-yellow-600 py-2 px-2 rounded text-xs" data-chapter="epilogue">🌅 尾聲：逍遙遊</button>
+            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="prologue">第一章：莊周夢蝶</button>
+            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter1">第二章：子非魚</button>
+            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter2">第三章：北冥有魚</button>
+            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter3">第四章：鴟得腐鼠</button>
+            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter4">第五章：蝸角之爭</button>
+            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter5">第六章：朝菌與大椿</button>
+            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter6">第七章：螻蟻星辰</button>
+            <button class="chapter-jump bg-purple-200 hover:bg-purple-300 dark:bg-purple-700 dark:hover:bg-purple-600 py-2 px-2 rounded text-xs" data-chapter="chapter7">第八章：道歸混沌</button>
+            <button class="chapter-jump bg-yellow-200 hover:bg-yellow-300 dark:bg-yellow-700 dark:hover:bg-yellow-600 py-2 px-2 rounded text-xs" data-chapter="epilogue">🌅 第九章：逍遙遊</button>
           </div>
         </div>
         
@@ -4290,7 +4301,7 @@
     
     <!-- Chapter Title Display -->
     <div id="chapter-title" class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-80 z-40 opacity-0 pointer-events-none transition-opacity duration-1000">
-      <h2 id="chapter-name" class="chapter-title-text text-white mb-4"></h2>
+      <h1 id="chapter-name" class="chapter-title-text text-white mb-4"></h1>
       <p id="chapter-description" class="text-xl text-gray-200 max-w-md text-center"></p>
     </div>
     
@@ -4383,7 +4394,7 @@
     
     // 统一Emoji物化角色映射系统
     const emojiFormMap = {
-              human: { emoji: '🧘', name: '人形', glow: 'emoji-glow-human' },
+              human: { emoji: '🧘🏻‍♀️', name: '人形', glow: 'emoji-glow-human' },
       butterfly: { emoji: '🦋', name: '蝴蝶', glow: 'emoji-glow-butterfly' },
       fish: { emoji: '🐟', name: '儵魚', glow: 'emoji-glow-fish' },
       kun: { emoji: '🐋', name: '鯤', glow: 'emoji-glow-kun' },
@@ -4755,6 +4766,9 @@
       // 更新物化模式分析
       updateTransformationPatterns();
       
+      // 立即保存遊戲進度，確保物化數據不丟失
+      saveGameProgress();
+      
       console.log(`🔄 物化數據記錄: ${fromForm} -> ${form} (${isDailyTransformation ? '日常' : '劇情'})`);
     }
     
@@ -4810,6 +4824,9 @@
         puzzleRecord.incorrectAttempts++;
       }
       
+      // 立即保存遊戲進度，確保斷句挑戰數據不丟失
+      saveGameProgress();
+      
       console.log(`🧩 斷句挑戰嘗試記錄: ${puzzleKey} - 第${puzzleRecord.attempts}次嘗試 (${isCorrect ? '正確' : '錯誤'})`);
     }
     
@@ -4834,6 +4851,9 @@
       
       // 更新整體表現分析
       updatePuzzlePerformanceAnalysis();
+      
+      // 立即保存遊戲進度，確保斷句挑戰完成數據不丟失
+      saveGameProgress();
       
       // 如果是尾聲章節的斷句挑戰成功完成，設置標志以恢復指示器顯示
       if (isSuccessful && gameState.currentChapter === 'epilogue') {
@@ -5051,7 +5071,10 @@
         updateDebugPanel();
       }
       
-      console.log('✅ 玩家選擇記錄完成');
+      // 立即保存遊戲進度，確保數據不丟失
+      saveGameProgress();
+      
+      console.log('✅ 玩家選擇記錄完成並已保存');
     }
     
     // 記錄聊天問題
@@ -5102,6 +5125,9 @@
       // 簡單的參與度統計
       gameState.playerChoices.chatHistory.chatPatterns.engagementLevel = 
         gameState.playerChoices.chatHistory.questionCount;
+      
+      // 立即保存遊戲進度，確保聊天數據不丟失
+      saveGameProgress();
       
       console.log('📊 聊天統計更新:', {
         總問題數: gameState.playerChoices.chatHistory.questionCount,
@@ -5236,15 +5262,15 @@
     
     // 章節配置數據
     const chapterConfig = {
-      prologue: { title: '序章：莊周夢蝶', emoji: '🦋', description: '夢與現實的界限在何處？' },
-      chapter1: { title: '第一章：子非魚', emoji: '🐟', description: '站在濠梁之上，思考魚的快樂' },
-      chapter2: { title: '第二章：北冥有魚', emoji: '🐋', description: '從鯤到鵬的變化之道' },
-      chapter3: { title: '第三章：鴟得腐鼠', emoji: '🦅', description: '價值觀的相對性與包容' },
-      chapter4: { title: '第四章：蝸角之爭', emoji: '🐌', description: '在微觀中理解爭執的虛妄' },
-      chapter5: { title: '第五章：朝菌與大椿', emoji: '🍄', description: '時間的相對性與生命的意義' },
-      chapter6: { title: '第六章：天地為棺槨', emoji: '⭐', description: '生死之間，超越界限' },
-      chapter7: { title: '第七章：渾沌之死', emoji: '🌪️', description: '七竅既開，渾沌歸一' },
-      epilogue: { title: '尾聲：逍遙遊', emoji: '🌅', description: '回歸本心，自在逍遙' }
+      prologue: { title: '第一章：莊周夢蝶', emoji: '🦋', description: '夢與現實的界限在何處？' },
+      chapter1: { title: '第二章：子非魚', emoji: '🐟', description: '站在濠梁之上，思考魚的快樂' },
+      chapter2: { title: '第三章：北冥有魚', emoji: '🐋', description: '從鯤到鵬的變化之道' },
+      chapter3: { title: '第四章：鴟得腐鼠', emoji: '🦅', description: '價值觀的相對性與包容' },
+      chapter4: { title: '第五章：蝸角之爭', emoji: '🐌', description: '在微觀中理解爭執的虛妄' },
+      chapter5: { title: '第六章：朝菌與大椿', emoji: '🍄', description: '時間的相對性與生命的意義' },
+      chapter6: { title: '第七章：螻蟻星辰', emoji: '⭐', description: '生死之間，超越界限' },
+      chapter7: { title: '第八章：道歸混沌', emoji: '🌪️', description: '七竅既開，渾沌歸一' },
+      epilogue: { title: '第九章：逍遙遊', emoji: '🌅', description: '回歸本心，自在逍遙' }
     };
     
     // 保存遊戲進度
@@ -5411,15 +5437,15 @@
       };
       
       const chapterTitles = {
-        'prologue': '序章：莊周夢蝶',
-        'chapter1': '第一章：濠梁觀魚',
-        'chapter2': '第二章：北冥有魚',
-        'chapter3': '第三章：鴟得腐鼠',
-        'chapter4': '第四章：蝸角之爭',
-        'chapter5': '第五章：朝菌大椿',
-        'chapter6': '第六章：天地棺槨',
-        'chapter7': '第七章：渾沌之死',
-        'epilogue': '尾聲：逍遙歸真'
+        'prologue': '第一章：莊周夢蝶',
+        'chapter1': '第二章：濠梁觀魚',
+        'chapter2': '第三章：北冥有魚',
+        'chapter3': '第四章：鴟得腐鼠',
+        'chapter4': '第五章：蝸角之爭',
+        'chapter5': '第六章：朝菌大椿',
+        'chapter6': '第七章：螻蟻星辰',
+        'chapter7': '第八章：道歸混沌',
+        'epilogue': '第九章：逍遙遊'
       };
       
       const luoshuNumber = luoshuNumbers[chapterId];
@@ -7297,7 +7323,7 @@ ${choiceRecords}
 - 重點分析選擇與章節主題的呼應
 - 評價對本章節哲學焦點的理解
 - 肯定探索態度，給出智慧啟示
-- **語言風格**：現代中文融合莊子文學特色 - 自然流暢、富有詩意、溫暖智慧
+- **語言要求**：使用繁體中文現代白話文，自然流暢、富有詩意、溫暖智慧
 - **莊子風格特徵**：
   * 使用自然意象和生動比喻（如「如水般清澈」、「像風中的葉」、「心如明鏡」）
   * 保持哲學深度但表達簡潔靈動，有淡雅的文學美感
@@ -7309,7 +7335,7 @@ ${choiceRecords}
 - 基於具體選擇行為分析，不要泛泛而談
 - **絕對禁止**：不要在回應中出現任何英文字母標記（如T、F、WU等）
 - **絕對禁止**：不要在回應中出現動作描述（如「輕撫長鬚微笑」、「點頭微笑」等）
-- **語言純淨**：只用純粹的現代中文語言表達，保持莊子的智慧風格但用現代語言
+- **語言純淨**：只用純粹的繁體中文現代語言表達，保持莊子的智慧風格但用現代語言
 
 根據以上數據，請生成專屬於本章節的個性化總結。`;
       }
@@ -7481,6 +7507,7 @@ ${layerData.choiceData.keyChoices}
 - **啟示性**：重點在於給出對個性和生活的啟示，讓讀者有所感悟
 - **感動性**：要有情感衝擊力，讓讀者讀完後感到溫暖、感動、有所啟發
 - **實用性**：給出具體的生活建議，不只是抽象的哲學討論
+- **普適性**：避免針對特定職業或工作環境，保持對所有人生階段和背景的廣泛適用性
 
 **寫作要求：**
 - 開頭："致逍遙未至的朋友："
@@ -7488,6 +7515,8 @@ ${layerData.choiceData.keyChoices}
 - 800-1200字，溫暖親切語調，將數據轉化為人性關懷
 - 用繁體中文現代白話文
 - **🚫 絕對禁止提及MBTI類型**：不得在信中出現任何MBTI字母組合（如INFP、ENFJ等）或類型名稱（如"提倡者"、"建築師"等）
+- **🚫 絕對禁止職場相關內容**：不得提及辦公室、工作、職場、同事、上司、會議、項目、業績、升職、加薪等任何與工作環境相關的詞彙和概念
+- **✅ 保持普適性**：信件內容應該適用於所有人生階段和背景，包括學生、自由職業者、退休人士、家庭主婦等各種生活狀態
 - **✅ 直接使用MBTI經典分析**：根據內部16型人格分析，直接在信中使用該類型的經典描述讓朋友感受到被深度理解：
   * 對ENFJ：描述為"富有同情心的引導者，關心他人成長，有天然的影響力"
   * 對ENFP：描述為"熱情洋溢的理想主義者，富有創造力，能看到無限可能"
@@ -7522,9 +7551,9 @@ ${layerData.choiceData.keyChoices}
 **六大寫作指導：**
 1. **開場問候**：溫暖稱呼，體現朋友情誼，可根據內部MBTI分析調整親密度
 2. **個性洞察**：基於人格傾向和哲學契合度分析，深度分析心靈特質（重點），展現對朋友性格的深度理解
-3. **生活啟示**：結合時間節奏和思考模式，給出符合朋友性格類型的人生智慧
+3. **生活啟示**：結合時間節奏和思考模式，給出符合朋友性格類型的人生智慧（避免職場環境，聚焦個人成長和人際關係）
 4. **情感連結**：用莊子溫度，讓朋友感受理解關懷，將數據轉化為人性關懷
-5. **未來指引**：基於探索學習和互動模式，給出符合朋友性格特點的發展建議
+5. **未來指引**：基於探索學習和互動模式，給出符合朋友性格特點的發展建議（關注個人興趣、學習、人際關係等普適性領域）
 6. **結語祝福**：以莊子身份，給出祝福期許
 
 **💡 根據內部MBTI分析直接使用經典描述的技巧：**
@@ -7555,8 +7584,10 @@ ${layerData.choiceData.keyChoices}
 **最終寫作要求：**
 - **絕對禁止**：不要在信件中出現任何英文字母標記（如T、F、WU、AT、DT等）
 - **絕對禁止**：不要在信件中出現動作描述（如「輕撫長鬚微笑」、「點頭微笑」等）
+- **絕對禁止**：不要在信件中出現任何職場相關詞彙（如工作、辦公室、同事、會議、項目、業績、升職、加薪等）
 - **語言純淨**：只用純粹的中文語言表達，保持莊子的溫暖智慧風格
 - **情感真摯**：重點傳達對朋友的理解和關愛，而非展示分析技巧
+- **內容普適**：信件內容應該適用於所有人生階段和背景，避免針對特定職業或工作環境
 
 請直接寫信，不要前綴說明。這封信應該讓讀者感受到：莊子真的穿越時空來關心他們，理解他們，並為他們的人生提供智慧的指引。`;
       }
@@ -7746,13 +7777,13 @@ ${layerData.choiceData.keyChoices}
         }
         
         const chapterNames = {
-          'chapter1': '第一章：子非魚',
-          'chapter2': '第二章：北冥有魚', 
-          'chapter3': '第三章：鴟得腐鼠',
-          'chapter4': '第四章：蝸角之爭',
-          'chapter5': '第五章：朝菌大椿',
-          'chapter6': '第六章：螻蟻星辰',
-          'chapter7': '第七章：道歸混沌'
+          'chapter1': '第二章：子非魚',
+          'chapter2': '第三章：北冥有魚', 
+          'chapter3': '第四章：鴟得腐鼠',
+          'chapter4': '第五章：蝸角之爭',
+          'chapter5': '第六章：朝菌大椿',
+          'chapter6': '第七章：螻蟻星辰',
+          'chapter7': '第八章：道歸混沌'
         };
         
         // 確保數據完整性
@@ -8254,7 +8285,7 @@ ${layerData.choiceData.keyChoices}
     // Game content
     const gameChapters = {
       prologue: {
-        title: '序章：莊周夢蝶',
+        title: '第一章：莊周夢蝶',
         description: '誰夢見了誰？',
         background: 'dream-scene',
         scenes: [
@@ -8521,7 +8552,7 @@ ${layerData.choiceData.keyChoices}
         ]
       },
       chapter1: {
-        title: '第一章：子非魚',
+        title: '第二章：子非魚',
         description: '你怎麼知道魚的快樂？',
         background: 'water-scene',
         scenes: [
@@ -8782,7 +8813,7 @@ ${layerData.choiceData.keyChoices}
         ]
       },
       chapter2: {
-        title: '第二章：北冥有魚',
+        title: '第三章：北冥有魚',
         description: '魚為何要變成鳥？',
         background: 'cloud-scene',
         scenes: [
@@ -9297,7 +9328,7 @@ ${layerData.choiceData.keyChoices}
         ]
       },
       chapter3: {
-        title: '第三章：鴟得腐鼠',
+        title: '第四章：鴟得腐鼠',
         description: '腐鼠是什麼滋味？',
         background: 'forest-scene',
         scenes: [
@@ -9766,7 +9797,7 @@ ${layerData.choiceData.keyChoices}
       },
       
       chapter4: {
-        title: '第四章：蝸角之爭',
+        title: '第五章：蝸角之爭',
         description: '誰活在蝸牛角上？',
         background: 'spiral-scene',
         scenes: [
@@ -9990,7 +10021,7 @@ ${layerData.choiceData.keyChoices}
           {
             type: 'transformation-experience',
             formType: 'snail',
-            text: '你的意識轉換為蝸牛的視角。世界突然變得遼闊而深邃，你感受到前所未有的緩慢和專注。時間彷彿放慢了十倍，每一個細微的動作都需要巨大的耐心。你的感知變得極其敏銳——觸角上的細微震動、空氣中的濕度變化、土壤的溫度，一切都清晰可感。在這種緩慢而深邃的感知中，你體會到了什麼叫做「包容」和「承載」——不是消極的忍受，而是以最大的耐心和愛意去承受一切。',
+            text: '你的意識轉換為蝸牛的視角。世界突然變得遼闊而深邃，你感受到自己成為了一個承載者——你的觸角上承載著兩個完整的文明，左角是觸氏國，右角是蠻氏國。你的感知變得極其敏銳，能同時感受到兩國的戰爭震動、人民的呼喊、土地的爭奪。在這種承載者的視角中，你體會到了什麼叫做「包容」和「超越」——不是被動地承受，而是以更高的智慧去理解這場爭論的本質。你意識到，對你來說，這不過是觸角上的微小騷動，但對他們而言，卻是整個世界的存亡之戰。',
             nextScene: 21
           },
           {
@@ -9998,45 +10029,43 @@ ${layerData.choiceData.keyChoices}
             text: '當你以蝸牛視角感受世界時，突然，你意識到自己就是那個承載著兩個文明的存在...讓我們將視角轉換，看看這個微觀世界的全貌。',
             nextScene: 22
           },
+          
+          // === 新增：交互式蝸角之爭場景 ===
           {
-            type: 'narrative',
-            text: '在蝸牛視角的體驗中，你獲得了視角轉換的神通。你已獲得了視角轉換的體悟，理解了相對性的智慧，這種超越固化視角的能力，正是收集右耳封印的前提。',
-            effect: 'unlockViewScale',
+            type: 'snail-war-interactive',
+            text: '現在，你將親身體驗蝸角上的戰爭。放大視角，觀察兩國的動態戰爭。請務必點擊「蠻」和「觸」兩個按鈕，分別傾聽兩國國王的話語。只有聽完雙方的聲音，你才能真正理解爭執的虛妄本質，然後才能繼續遊戲。',
             nextScene: 23
           },
-          {
-            type: 'perspective-challenge',
-            text: '你先切換到微觀視角，仔細觀察蝸牛觸角上的戰爭。在那微小的世界中，你聽到了兩國的聲音：觸氏國控訴蠻氏國是侵略者，蠻氏國反駁說觸氏國才是侵佔者。雙方都堅信自己的正義，都有自己的道理。',
-            nextScene: 24
-          },
+          
           {
             type: 'dialog',
             speaker: '莊子',
-            text: '你聽到了嗎？這就是紛爭的根源——站在不同立場，看到的真相截然不同。現在，讓你的視角拉到最高處，從更宏觀的維度來審視這場爭論。',
-            nextScene: 25
+            text: '你聽到了嗎？這就是紛爭的根源——站在不同立場，看到的真相截然不同。現在，讓我們從更宏觀的維度來審視這場爭論。',
+            effect: 'addGlowingSnail',
+            nextScene: 24
           },
           {
             type: 'narrative',
             text: '當你將視角拉到最高處，整個蝸牛變得如同一粒微塵。從這個超然的層次看去，兩國的戰爭不過是蝸角上的微小騷動。就在這個宏觀的視角中，你看到了一道紫色的光芒——那是右耳之竅的封印！它象徵著超越表面爭論、洞察事物本質的智慧。',
-            nextScene: 26
+            nextScene: 25
           },
           {
             type: 'dialog',
             speaker: '莊子',
             text: '這就是右耳之竅——分辨真假、超越爭論的智慧之竅。它教會我們：當陷入無謂爭論時，不妨換個視角，從更高的層次審視問題。',
-            nextScene: 27
+            nextScene: 26
           },
           {
             type: 'narrative',
             text: '你伸手觸摸封印，紫色的光芒瞬間包圍了你。一股清明的感覺湧上心頭——你感到右耳的是非判斷逐漸寧息，不再被爭論聲擾亂，內心回歸超越分別的平靜，理解不同層次的相對性。',
             effect: 'collectAperture:right-ear',
-            nextScene: 28
+            nextScene: 27
           },
           {
             type: 'narrative',
             text: '第四章圓滿結束！隨著封印的獲得，蝸角戰爭漸漸平息，螺旋空間中的紫色光暈也慢慢消散。你感受到內心的清明和開闊，學會了從不同視角看待同一件事。',
             effect: 'cleanupChapter4',
-            nextScene: 29
+            nextScene: 28
           },
           
           // === 第四階段：AI章節總結 ===
@@ -10053,7 +10082,7 @@ ${layerData.choiceData.keyChoices}
       },
       
       chapter5: {
-        title: '第五章：朝菌大椿',
+        title: '第六章：朝菌大椿',
         description: '一天有多長？',
         background: 'time-scene',
         scenes: [
@@ -10423,7 +10452,7 @@ ${layerData.choiceData.keyChoices}
       },
       
       chapter6: {
-        title: '第六章：螻蟻星辰',
+        title: '第七章：螻蟻星辰',
         description: '上下有何不同？',
         background: 'heaven-earth-scene',
         scenes: [
@@ -10761,7 +10790,7 @@ ${layerData.choiceData.keyChoices}
       },
       
       chapter7: {
-        title: '第七章：道歸混沌',
+        title: '第八章：道歸混沌',
         description: '混沌為何死又如何生？',
         background: 'void-scene',
         scenes: [
@@ -10997,7 +11026,7 @@ ${layerData.choiceData.keyChoices}
       },
       
       epilogue: {
-        title: '尾聲：逍遙遊',
+        title: '第九章：逍遙遊',
         description: '無用有什麼用？',
         background: 'epilogue-scene',
         scenes: [
@@ -11124,7 +11153,7 @@ ${layerData.choiceData.keyChoices}
               '本故事基於書院中國古代經典初級課程第一單元',
               '',
               '開發者：',
-              '張老師',
+              '張玉龍',
               'Google Gemini',
               'Anthropic Claude'
             ],
@@ -12304,7 +12333,7 @@ ${layerData.choiceData.keyChoices}
       }
       
       // Remove void scene elements
-      document.querySelectorAll('.void-particles, .chaos-form, .taiji-container, .bagua-symbols').forEach(el => {
+      document.querySelectorAll('.void-particles, .chaos-form, .taiji-container, .bagua-symbols, .bagua-floating-text, .ritual-guide-overlay, .bagua-text-particle, .injection-particle, .bagua-symbol-learning, .bagua-element-learning, .bagua-symbols-demonstration').forEach(el => {
         // 清理八卦符號的定時器
         if (el.classList.contains('bagua-symbols') && el.baguaInterval) {
           clearInterval(el.baguaInterval);
@@ -13019,6 +13048,9 @@ ${layerData.choiceData.keyChoices}
         gameState.playerChoices.sceneDwellTime.sceneDwellTimes[sceneKey] = dwellTime;
         gameState.playerChoices.sceneDwellTime.totalDwellTime += dwellTime;
         
+        // 立即保存遊戲進度，確保場景停留時間數據不丟失
+        saveGameProgress();
+        
         console.log(`📊 場景停留時間記錄: ${sceneKey} = ${dwellTime}ms`);
       }
       
@@ -13164,6 +13196,10 @@ ${layerData.choiceData.keyChoices}
             
           case 'snail-perspective-transition':
             createSnailPerspectiveTransitionScene(scene);
+            break;
+            
+          case 'snail-war-interactive':
+            createSnailWarInteractiveScene(scene);
             break;
             
                       case 'dao-revelation':
@@ -13628,6 +13664,12 @@ ${layerData.choiceData.keyChoices}
     async function createPersonalizedSummaryScene(scene) {
       console.log('📊 創建個性化總結場景:', scene);
       
+      // 多重保險：立即隱藏繼續按鈕，防止玩家跳過AI生成的文字
+      if (advanceBtn) {
+        advanceBtn.style.display = 'none';
+        console.log('🔒 AI章節總結：強制隱藏繼續按鈕');
+      }
+      
       // 先創建總結容器並顯示思考狀態
       const summaryElement = document.createElement('div');
       summaryElement.className = 'max-w-4xl mx-auto p-8 text-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-xl shadow-lg border border-indigo-200 dark:border-indigo-700';
@@ -13672,6 +13714,13 @@ ${layerData.choiceData.keyChoices}
       
       // 生成章節總結
       let summaryText;
+      
+      // 再次確保繼續按鈕隱藏
+      if (advanceBtn) {
+        advanceBtn.style.display = 'none';
+        console.log('🔒 AI章節總結：AI生成前再次隱藏繼續按鈕');
+      }
+      
       try {
         console.log('🔄 準備生成章節總結...');
         const playerData = getAIAnalysisData();
@@ -13700,6 +13749,12 @@ ${layerData.choiceData.keyChoices}
         console.error('❌ 章節總結生成失敗:', error);
         console.log('🔄 降級使用預設內容:', scene.baseText);
         summaryText = scene.baseText;
+        
+        // 錯誤情況下也要確保繼續按鈕隱藏
+        if (advanceBtn) {
+          advanceBtn.style.display = 'none';
+          console.log('🔒 AI章節總結：錯誤情況下隱藏繼續按鈕');
+        }
       }
       
       // AI回應準備好後，創建最終內容
@@ -13772,6 +13827,12 @@ ${layerData.choiceData.keyChoices}
         
         // 開始優雅的過渡動畫
         setTimeout(() => {
+          // 過渡動畫開始前再次確保繼續按鈕隱藏
+          if (advanceBtn) {
+            advanceBtn.style.display = 'none';
+            console.log('🔒 AI章節總結：過渡動畫前隱藏繼續按鈕');
+          }
+          
           const thinkingContainer = summaryElement.querySelector('.thinking-summary-container');
           if (thinkingContainer) {
             thinkingContainer.style.transition = 'opacity 600ms ease-out, transform 600ms ease-out';
@@ -13794,6 +13855,12 @@ ${layerData.choiceData.keyChoices}
                 // 獲取AI總結文字容器並開始打字機效果
                 const aiSummaryTextElement = finalContentElement.querySelector('.ai-summary-text');
                 if (aiSummaryTextElement && summaryText) {
+                  // 打字機效果開始前最後一次確保繼續按鈕隱藏
+                  if (advanceBtn) {
+                    advanceBtn.style.display = 'none';
+                    console.log('🔒 AI章節總結：打字機效果前隱藏繼續按鈕');
+                  }
+                  
                   // 清空初始內容
                   aiSummaryTextElement.innerHTML = '';
                   
@@ -13802,14 +13869,20 @@ ${layerData.choiceData.keyChoices}
                     // 打字機效果完成後才顯示繼續按鈕
                     console.log('📝 AI章節總結打字機效果完成，延遲2秒後顯示繼續按鈕');
                     setTimeout(() => {
-                      advanceBtn.style.display = 'block';
+                      if (advanceBtn) {
+                        advanceBtn.style.display = 'block';
+                        console.log('✅ AI章節總結：打字機效果完成後顯示繼續按鈕');
+                      }
                     }, 2000);
                   });
                 } else {
                   // 如果沒有AI總結文字，直接顯示繼續按鈕
                   console.log('⚠️ 沒有AI總結文字，延遲2秒後顯示繼續按鈕');
                   setTimeout(() => {
-                    advanceBtn.style.display = 'block';
+                    if (advanceBtn) {
+                      advanceBtn.style.display = 'block';
+                      console.log('✅ AI章節總結：無AI文字情況下顯示繼續按鈕');
+                    }
                   }, 2000);
                 }
                 
@@ -13874,6 +13947,8 @@ ${layerData.choiceData.keyChoices}
       narrativeElement.innerHTML = `
         <p class="${textColorClass}">${scene.text}</p>
       `;
+      
+
       
       // 第七章場景39特殊處理：添加到document.body以延續空白效果，使用打字機效果
       if (isChapter7Scene39) {
@@ -14006,9 +14081,9 @@ ${layerData.choiceData.keyChoices}
           console.log('🌟 場景39使用自定義繼續按鈕');
         }
         
-        // 🔧 测试功能：第八章第一个场景添加跳过萬物尋氣按钮
+        // 🔧 测试功能：第八章第一个场景添加跳过萬物尋氣按钮 - 已隐藏
         const isChapter8FirstScene = gameState.currentChapter === 'chapter7' && gameState.currentScene === 0;
-        if (isChapter8FirstScene) {
+        if (isChapter8FirstScene && false) { // 添加 && false 來禁用測試按鈕
           console.log('🔧 第八章第一个场景，添加跳过萬物尋氣测试按钮');
           
           // 为继续按钮添加额外的下边距，为测试按钮预留空间
@@ -14044,6 +14119,9 @@ ${layerData.choiceData.keyChoices}
             // 设置游戏状态：萬物尋氣已完成，气形态已解锁
             gameState.wanwuXunqiCompleted = true;
             gameState.unlockedForms.push('qi');
+            
+            // 立即保存遊戲進度，確保氣形態解鎖數據不丟失
+            saveGameProgress();
             
             // 跳转到场景18（萬物尋氣成功结束后的场景）
             gameState.currentScene = 18;
@@ -14992,10 +15070,209 @@ ${layerData.choiceData.keyChoices}
       gameContainer.style.filter = '';
     }
     
+    // 添加發光的小蝸牛（場景23開始顯示，持續到第四章結束）
+    function addGlowingSnail() {
+      // 檢查是否已經存在發光蝸牛，避免重複創建
+      if (document.getElementById('glowing-snail')) {
+        return;
+      }
+      
+      console.log('🐌 添加發光的小蝸牛');
+      
+      // 創建發光蝸牛容器
+      const glowingSnail = document.createElement('div');
+      glowingSnail.id = 'glowing-snail';
+      glowingSnail.className = 'glowing-snail-container';
+      glowingSnail.style.cssText = `
+        position: fixed;
+        top: 30%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        font-size: 60px;
+        text-align: center;
+        width: 60px;
+        margin-left: -30px;
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)) 
+                drop-shadow(0 0 20px rgba(255, 215, 0, 0.6))
+                drop-shadow(0 0 30px rgba(255, 215, 0, 0.4));
+        animation: snailGlow 2s ease-in-out infinite alternate;
+        pointer-events: auto;
+        user-select: none;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      `;
+      glowingSnail.textContent = '🐌';
+      
+      // 添加發光動畫的CSS
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes snailGlow {
+          0% {
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)) 
+                    drop-shadow(0 0 20px rgba(255, 215, 0, 0.6))
+                    drop-shadow(0 0 30px rgba(255, 215, 0, 0.4));
+            transform: scale(1);
+          }
+          100% {
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)) 
+                    drop-shadow(0 0 25px rgba(255, 215, 0, 0.8))
+                    drop-shadow(0 0 35px rgba(255, 215, 0, 0.6));
+            transform: scale(1.05);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // 添加點擊事件
+      glowingSnail.addEventListener('click', function() {
+        // 點擊反饋效果
+        this.style.transform = 'translateX(-50%) scale(1.1)';
+        setTimeout(() => {
+          this.style.transform = 'translateX(-50%) scale(1)';
+        }, 200);
+        
+        // 顯示座標提示窗
+        showSnailCoordinates();
+      });
+      
+      // 添加懸停效果
+      glowingSnail.addEventListener('mouseenter', function() {
+        this.style.filter = 'drop-shadow(0 0 15px rgba(255, 215, 0, 1)) drop-shadow(0 0 25px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 35px rgba(255, 215, 0, 0.6))';
+      });
+      
+      glowingSnail.addEventListener('mouseleave', function() {
+        this.style.filter = 'drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 30px rgba(255, 215, 0, 0.4))';
+      });
+      
+      // 添加到頁面
+      document.body.appendChild(glowingSnail);
+      
+      console.log('✅ 發光小蝸牛已添加，將持續到第四章結束');
+    }
+    
+    // 顯示蝸牛宇宙座標提示窗
+    function showSnailCoordinates() {
+      // 檢查是否已經存在座標提示窗，避免重複創建
+      if (document.getElementById('snail-coordinates-popup')) {
+        return;
+      }
+      
+      // 生成隨機的宇宙座標
+      const galaxy = ['銀河系', '仙女座星系', '大麥哲倫星雲', '小麥哲倫星雲', '三角座星系'][Math.floor(Math.random() * 5)];
+      const sector = Math.floor(Math.random() * 999) + 1;
+      const quadrant = ['α', 'β', 'γ', 'δ'][Math.floor(Math.random() * 4)];
+      const coordinates = `${galaxy} - 第${sector}扇區 - ${quadrant}象限`;
+      
+      // 創建提示窗
+      const popup = document.createElement('div');
+      popup.id = 'snail-coordinates-popup';
+      popup.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(30, 30, 30, 0.95));
+        color: #ffd700;
+        padding: 20px 30px;
+        border-radius: 15px;
+        border: 2px solid rgba(255, 215, 0, 0.6);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
+        z-index: 1001;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        animation: popupFadeIn 0.3s ease-out;
+        max-width: 300px;
+        word-wrap: break-word;
+      `;
+      
+      popup.innerHTML = `
+        <div style="margin-bottom: 10px; font-size: 16px; font-weight: bold;">🐌 宇宙座標</div>
+        <div style="color: #fff; margin-bottom: 15px;">${coordinates}</div>
+        <div style="font-size: 12px; color: #ccc; margin-bottom: 15px;">「在浩瀚的宇宙中，每個存在都有其獨特的位置」</div>
+        <button id="close-coordinates" style="
+          background: linear-gradient(135deg, #ffd700, #ffed4e);
+          color: #000;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: bold;
+          transition: all 0.2s ease;
+        ">關閉</button>
+      `;
+      
+      // 添加彈出動畫的CSS
+      const popupStyle = document.createElement('style');
+      popupStyle.textContent = `
+        @keyframes popupFadeIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+      `;
+      document.head.appendChild(popupStyle);
+      
+      // 添加到頁面
+      document.body.appendChild(popup);
+      
+      // 關閉按鈕事件
+      document.getElementById('close-coordinates').addEventListener('click', function() {
+        popup.style.animation = 'popupFadeOut 0.3s ease-in forwards';
+        
+        // 添加淡出動畫
+        const fadeOutStyle = document.createElement('style');
+        fadeOutStyle.textContent = `
+          @keyframes popupFadeOut {
+            from {
+              opacity: 1;
+              transform: translate(-50%, -50%) scale(1);
+            }
+            to {
+              opacity: 0;
+              transform: translate(-50%, -50%) scale(0.8);
+            }
+          }
+        `;
+        document.head.appendChild(fadeOutStyle);
+        
+        setTimeout(() => {
+          popup.remove();
+          popupStyle.remove();
+          fadeOutStyle.remove();
+        }, 300);
+      });
+      
+      // 點擊背景關閉
+      popup.addEventListener('click', function(e) {
+        if (e.target === popup) {
+          document.getElementById('close-coordinates').click();
+        }
+      });
+      
+      // 3秒後自動關閉
+      setTimeout(() => {
+        if (document.getElementById('snail-coordinates-popup')) {
+          document.getElementById('close-coordinates').click();
+        }
+      }, 3000);
+    }
+    
     // 清理第四章特定的視覺元素
     function cleanupChapter4Effects() {
       // 移除蝸牛相關元素
       document.querySelectorAll('.snail-shell, .kingdom-left, .kingdom-right, .kingdom-label, .kingdom-building').forEach(el => el.remove());
+      
+      // 移除舊的圓形世界元素（kingdom-circle）- 這是導致性能問題的關鍵
+      document.querySelectorAll('.kingdom-circle, .kingdoms-container').forEach(el => el.remove());
       
       // 移除螺旋背景效果
       document.querySelectorAll('.spiral-container, .spiral-effect, .spiral-particle').forEach(el => el.remove());
@@ -15023,7 +15300,22 @@ ${layerData.choiceData.keyChoices}
       gameContainer.style.transform = 'scale(1)';
       gameContainer.style.filter = 'none';
       
-      console.log('第四章視覺元素已清理完成');
+      // 停止Canvas動畫循環（如果存在）
+      const worldCanvas = document.getElementById('world-canvas');
+      if (worldCanvas) {
+        // 移除Canvas元素會自動停止其動畫循環
+        worldCanvas.remove();
+        console.log('🛑 Canvas動畫循環已停止');
+      }
+      
+      // 移除發光蝸牛（第四章結束時）
+      const glowingSnail = document.getElementById('glowing-snail');
+      if (glowingSnail) {
+        glowingSnail.remove();
+        console.log('🐌 發光小蝸牛已移除');
+      }
+      
+      console.log('第四章視覺元素已清理完成，包括舊的圓形世界元素');
     }
     
     // 清理第五章特定的視覺元素
@@ -15067,9 +15359,9 @@ ${layerData.choiceData.keyChoices}
         transitionElement.style.opacity = '0.5';
         
         setTimeout(() => {
-          // 創建蝸牛實體和視角系統
-          createSnailAndKingdoms();
-          enableScaleControl();
+          // 不再創建舊的蝸牛實體和視角系統，避免與新的Canvas圓形世界衝突
+          // createSnailAndKingdoms(); // 已移除，避免創建舊的圓形世界
+          // enableScaleControl(); // 已移除，避免啟用舊的視角控制
           
           // 移除過渡元素
           transitionElement.remove();
@@ -15078,6 +15370,782 @@ ${layerData.choiceData.keyChoices}
           advanceBtn.style.display = 'block';
         }, 1500);
       }, 2000);
+    }
+    
+    // 創建交互式蝸角之爭場景
+    function createSnailWarInteractiveScene(scene) {
+      // 進入場景前徹底清理上一場景殘留元素
+      cleanupChapter4Effects();
+      console.log('🐌 創建交互式蝸角之爭場景');
+      
+      // 創建場景容器
+      const sceneContainer = document.createElement('div');
+      sceneContainer.className = 'snail-war-interactive-container';
+      sceneContainer.style.cssText = `
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: transparent;
+        overflow: hidden;
+      `;
+      
+                // 創建說明文字
+      const instructionText = document.createElement('div');
+      instructionText.className = 'max-w-2xl mx-auto p-6 text-left bg-gray-50 dark:bg-gray-700 bg-opacity-90 dark:bg-opacity-90 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600';
+      instructionText.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        max-width: 672px;
+        width: calc(100% - 200px);
+      `;
+      instructionText.innerHTML = `
+        <p class="text-lg md:text-xl leading-relaxed text-gray-700 dark:text-gray-300">現在，你將親身體驗蝸角上的戰爭。使用右側的視角控制器放大視角，你會發現蝸牛角上的兩個國家。點擊「蠻」和「觸」兩個按鈕，傾聽兩國國王的話語，理解爭執的虛妄本質。</p>
+      `;
+      
+      // 創建蝸牛容器
+      const snailContainer = document.createElement('div');
+      snailContainer.className = 'snail-container';
+      snailContainer.style.cssText = `
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 300px;
+        height: 300px;
+        transform: scale(1);
+        transition: transform 0.2s ease;
+        transform-origin: center;
+        overflow: visible;
+      `;
+      
+      // 創建蝸牛emoji
+      const snailEmoji = document.createElement('span');
+      snailEmoji.className = 'snail-emoji';
+      snailEmoji.style.cssText = `
+        font-size: 60px;
+        z-index: 10;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+      `;
+      snailEmoji.textContent = '🐌';
+      
+      // 創建圓形世界容器（獨立於蝸牛容器）- 擴大2.5倍
+      const worldContainer = document.createElement('div');
+      worldContainer.className = 'world-container';
+      worldContainer.style.cssText = `
+        position: absolute;
+        top: 47%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 550px;
+        height: 550px;
+        z-index: 5;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      `;
+      
+      // 創建Canvas - 擴大2.5倍
+      const canvas = document.createElement('canvas');
+      canvas.id = 'world-canvas';
+      canvas.style.cssText = `
+        position: relative;
+        width: 550px;
+        height: 550px;
+        cursor: default;
+      `;
+      
+      // 創建按鈕（放在圓形世界容器內）
+      const manButton = document.createElement('button');
+      manButton.className = 'territory-button man-button';
+      manButton.id = 'man-button';
+      manButton.style.cssText = `
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        border: none;
+        border-radius: 50%;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 15;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        background: linear-gradient(135deg, #fff, #f0f0f0);
+        color: black;
+        top: 50%;
+        left: 0;
+        transform: translateX(30px) translateY(-50%);
+        animation: buttonGlow 1s ease-in-out infinite alternate;
+      `;
+      manButton.textContent = '蠻';
+      
+      const touchButton = document.createElement('button');
+      touchButton.className = 'territory-button touch-button';
+      touchButton.id = 'touch-button';
+      touchButton.style.cssText = `
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        border: none;
+        border-radius: 50%;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 15;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        background: linear-gradient(135deg, #333, #000);
+        color: white;
+        top: 50%;
+        left: 0;
+        transform: translateX(280px) translateY(-50%);
+        animation: buttonGlow 1s ease-in-out infinite alternate;
+      `;
+      touchButton.textContent = '觸';
+      
+      // 添加發光動畫的CSS
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes buttonGlow {
+          0% {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px rgba(255, 215, 0, 0.3);
+          }
+          100% {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // 創建縮放控制
+      const zoomContainer = document.createElement('div');
+      zoomContainer.className = 'zoom-slider-container';
+      zoomContainer.style.cssText = `
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(30, 30, 30, 0.9));
+        padding: 25px 15px;
+        border-radius: 20px;
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(123, 104, 238, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        z-index: 100;
+        min-height: 300px;
+        width: 80px;
+      `;
+      
+      // 創建放大圖標（上方）
+      const zoomInIcon = document.createElement('div');
+      zoomInIcon.innerHTML = '🔍';
+      zoomInIcon.style.cssText = `
+        color: #e0e0e0;
+        font-size: 20px;
+        text-align: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 5px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+      `;
+      
+      // 創建縮小圖標（下方）
+      const zoomOutIcon = document.createElement('div');
+      zoomOutIcon.innerHTML = '🌍';
+      zoomOutIcon.style.cssText = `
+        color: #e0e0e0;
+        font-size: 18px;
+        text-align: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 5px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+      `;
+      
+      const zoomSlider = document.createElement('input');
+      zoomSlider.type = 'range';
+      zoomSlider.min = '1';
+      zoomSlider.max = '3';
+      zoomSlider.value = '1';
+      zoomSlider.step = '0.05';
+      zoomSlider.id = 'perspective-slider';
+      zoomSlider.style.cssText = `
+        -webkit-appearance: none;
+        appearance: none;
+        width: 200px;
+        height: 8px;
+        background: linear-gradient(to top, #4a90e2, #7b68ee);
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        transform: rotate(-90deg);
+        transform-origin: center;
+        margin: 80px 0;
+        transition: all 0.2s ease;
+      `;
+      
+      // 為滑塊添加自定義樣式
+      const sliderStyle = document.createElement('style');
+      sliderStyle.textContent = `
+        .zoom-slider-container input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #7b68ee, #4a90e2);
+          cursor: pointer;
+          border: 2px solid rgba(255, 255, 255, 0.8);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          transition: all 0.2s ease;
+        }
+        
+        .zoom-slider-container input[type="range"]::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(123, 104, 238, 0.4);
+        }
+        
+        .zoom-slider-container input[type="range"]::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #7b68ee, #4a90e2);
+          cursor: pointer;
+          border: 2px solid rgba(255, 255, 255, 0.8);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          transition: all 0.2s ease;
+        }
+        
+        .zoom-slider-container input[type="range"]:hover {
+          background: linear-gradient(to top, #5ba0f2, #8b78fe);
+        }
+      `;
+      document.head.appendChild(sliderStyle);
+      
+      // 創建對話框
+      const dialogOverlay = document.createElement('div');
+      dialogOverlay.className = 'dialog-overlay';
+      dialogOverlay.id = 'dialog-overlay';
+      dialogOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      `;
+      
+      const dialogBox = document.createElement('div');
+      dialogBox.className = 'dialog-box';
+      dialogBox.style.cssText = `
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+        width: 80%;
+        max-width: 400px;
+        text-align: center;
+      `;
+      
+      const dialogTitle = document.createElement('h2');
+      dialogTitle.id = 'dialog-title';
+      dialogTitle.style.cssText = `
+        margin-top: 0;
+        color: #333;
+      `;
+      
+      const dialogContent = document.createElement('p');
+      dialogContent.id = 'dialog-content';
+      dialogContent.style.cssText = `
+        color: #555;
+        font-size: 1.1em;
+        line-height: 1.6;
+      `;
+      
+      const closeButton = document.createElement('button');
+      closeButton.id = 'close-dialog';
+      closeButton.textContent = '關閉';
+      closeButton.style.cssText = `
+        margin-top: 15px;
+        padding: 10px 20px;
+        border: none;
+        background-color: #5373a4;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+      `;
+      
+      // 組裝元素
+      dialogBox.appendChild(dialogTitle);
+      dialogBox.appendChild(dialogContent);
+      dialogBox.appendChild(closeButton);
+      dialogOverlay.appendChild(dialogBox);
+      
+      zoomContainer.appendChild(zoomInIcon);
+      zoomContainer.appendChild(zoomSlider);
+      zoomContainer.appendChild(zoomOutIcon);
+      
+      // 蝸牛容器只包含蝸牛emoji
+      snailContainer.appendChild(snailEmoji);
+      
+      // 圓形世界容器包含canvas和按鈕
+      worldContainer.appendChild(canvas);
+      worldContainer.appendChild(manButton);
+      worldContainer.appendChild(touchButton);
+      
+      sceneContainer.appendChild(instructionText);
+      sceneContainer.appendChild(snailContainer);
+      sceneContainer.appendChild(worldContainer);
+      sceneContainer.appendChild(zoomContainer);
+      sceneContainer.appendChild(dialogOverlay);
+      
+      gameContent.appendChild(sceneContainer);
+      
+      // 初始化Canvas - 擴大2.5倍
+      const ctx = canvas.getContext('2d');
+      const size = 550; // 從220擴大到550
+      
+      // 降低Canvas分辨率以提高性能
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const displaySize = size;
+      const resolutionMultiplier = 1; // 從3降低到1，大幅提升性能
+      canvas.width = displaySize * devicePixelRatio * resolutionMultiplier;
+      canvas.height = displaySize * devicePixelRatio * resolutionMultiplier;
+      canvas.style.width = displaySize + 'px';
+      canvas.style.height = displaySize + 'px';
+      
+      ctx.scale(devicePixelRatio * resolutionMultiplier, devicePixelRatio * resolutionMultiplier);
+      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // 高速戰爭系統配置
+      const warConfig = {
+        manColor: '#000000',
+        touchColor: '#ffffff',
+        borderColor: '#ff0000',
+        warSpeed: 0.04, // 從0.02增加到0.08，速度提升4倍
+        emojiSize: 40
+      };
+      
+      // 增強戰爭狀態 - 包含爆炸效果
+      let warState = {
+        time: 0,
+        borderPosition: 0,
+        visualEffects: [], // 戰爭視覺效果
+        explosions: [] // 爆炸效果
+      };
+      
+      // 增強視覺效果初始化 - 包含爆炸效果
+      function initVisualEffects() {
+        // 創建戰爭視覺效果點 - 初始位置設為0，稍後動態更新
+        warState.visualEffects = [
+          { x: 0, y: 0, phase: 0, emoji: '⚔️', type: 'weapon' },
+          { x: 0, y: 0, phase: Math.PI, emoji: '🛡️', type: 'shield' },
+          { x: 0, y: 0, phase: Math.PI * 0.5, emoji: '⚔️', type: 'weapon' },
+          { x: 0, y: 0, phase: Math.PI * 1.5, emoji: '🛡️', type: 'shield' },
+          { x: 0, y: 0, phase: Math.PI * 0.3, emoji: '💀', type: 'skull' },
+          { x: 0, y: 0, phase: Math.PI * 0.8, emoji: '💀', type: 'skull' }
+        ];
+        
+        // 創建高速爆炸效果 - 初始位置設為0，稍後動態更新
+        warState.explosions = [
+          { x: 0, y: 0, life: 0, maxLife: 30, scale: 0, emoji: '💥' },
+          { x: 0, y: 0, life: 15, maxLife: 30, scale: 0, emoji: '💥' },
+          { x: 0, y: 0, life: 22, maxLife: 30, scale: 0, emoji: '💥' }
+        ];
+        
+        // 初始化位置
+        updateEffectPositions();
+      }
+      
+      // 更新效果位置 - 讓它們在國境線附近隨機出現
+      function updateEffectPositions() {
+        const centerX = size / 2;
+        const borderX = centerX + warState.borderPosition * (size / 2) * 0.6;
+        
+        // 更新戰爭視覺效果位置
+        warState.visualEffects.forEach(effect => {
+          // 在國境線附近隨機生成位置
+          const y = Math.random() * size;
+          const sOffset = 60 * Math.sin((y / size) * Math.PI * 2) * Math.sin((y / size) * Math.PI);
+          const borderPosX = borderX + sOffset;
+          
+          // 在國境線兩側隨機偏移
+          const sideOffset = (Math.random() - 0.5) * 100; // 左右各50像素範圍
+          effect.x = Math.max(50, Math.min(size - 50, borderPosX + sideOffset));
+          effect.y = Math.max(50, Math.min(size - 50, y));
+        });
+        
+        // 更新爆炸效果位置
+        warState.explosions.forEach(explosion => {
+          if (explosion.life >= explosion.maxLife) {
+            // 爆炸結束時重新定位到國境線附近
+            const y = Math.random() * size;
+            const sOffset = 60 * Math.sin((y / size) * Math.PI * 2) * Math.sin((y / size) * Math.PI);
+            const borderPosX = borderX + sOffset;
+            
+            // 在國境線兩側隨機偏移
+            const sideOffset = (Math.random() - 0.5) * 80; // 左右各40像素範圍
+            explosion.x = Math.max(50, Math.min(size - 50, borderPosX + sideOffset));
+            explosion.y = Math.max(50, Math.min(size - 50, y));
+          }
+        });
+      }
+      
+      // 高速邊界位置更新
+      function updateBorder() {
+        // 高速正弦波擾動
+        warState.borderPosition = Math.sin(warState.time * 3.5) * 0.15; // 從0.5增加到2.0，速度提升4倍
+        updateButtonPositions();
+      }
+      
+              // 修正按鈕位置計算 - 讓按鈕真正在國境線兩側
+        let lastButtonUpdate = 0;
+        function updateButtonPositions() {
+          // 限制更新頻率到每100ms一次
+          const now = Date.now();
+          if (now - lastButtonUpdate < 100) return;
+          lastButtonUpdate = now;
+          
+          const centerX = size / 2;
+          const borderX = centerX + warState.borderPosition * (size / 2) * 0.6;
+          
+          // 修正按鈕距離 - 蠻國按鈕向左偏移，保持固定邊距
+          const buttonDistance = 80; // 按鈕到國境線的固定距離
+          const manOffset = -100; // 蠻國按鈕向左偏移100像素
+          
+          const manButtonX = Math.max(50, Math.min(size - 50, borderX - buttonDistance + manOffset));
+          const touchButtonX = Math.max(50, Math.min(size - 50, borderX + buttonDistance));
+          
+          // 直接更新，不使用requestAnimationFrame
+          manButton.style.transform = `translateX(${manButtonX}px) translateY(-50%)`;
+          touchButton.style.transform = `translateX(${touchButtonX}px) translateY(-50%)`;
+        }
+      
+      // 優化的繪製函數
+      let animationId = null; // 用於停止動畫循環
+      
+      function draw() {
+        // 檢查Canvas是否還存在，如果不存在則停止動畫
+        if (!canvas || !canvas.parentNode) {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+          return;
+        }
+        
+        ctx.clearRect(0, 0, size, size);
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.clip();
+        
+        // 繪製地球背景
+        ctx.font = `${size * 1.2}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🌏', size / 2, size / 2);
+        
+        // 靜態S形國境線 - 只進行左右移動
+        const centerX = size / 2;
+        const borderX = centerX + warState.borderPosition * (size / 2) * 0.6;
+        
+        // 靜態S形參數
+        const sAmplitude = 60; // S形的幅度
+        const segments = 25; // 段數
+        
+        // 蠻國領土
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, size);
+        
+        for (let i = segments; i >= 0; i--) {
+          const y = (i / segments) * size;
+          // 靜態S形函數 - 使用兩個正弦波組合形成S形
+          const sOffset = sAmplitude * Math.sin((y / size) * Math.PI * 2) * Math.sin((y / size) * Math.PI);
+          const x = borderX + sOffset;
+          ctx.lineTo(x, y);
+        }
+        
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        
+        ctx.fillStyle = warConfig.manColor;
+        ctx.globalAlpha = 0.9;
+        ctx.fill();
+        
+        // 觸國領土
+        ctx.beginPath();
+        ctx.moveTo(size, 0);
+        ctx.lineTo(size, size);
+        
+        for (let i = segments; i >= 0; i--) {
+          const y = (i / segments) * size;
+          // 靜態S形函數 - 使用兩個正弦波組合形成S形
+          const sOffset = sAmplitude * Math.sin((y / size) * Math.PI * 2) * Math.sin((y / size) * Math.PI);
+          const x = borderX + sOffset;
+          ctx.lineTo(x, y);
+        }
+        
+        ctx.lineTo(size, 0);
+        ctx.closePath();
+        
+        ctx.fillStyle = warConfig.touchColor;
+        ctx.fill();
+        
+        // 靜態S形邊界線繪製
+        ctx.strokeStyle = warConfig.borderColor;
+        ctx.lineWidth = 8;
+        ctx.globalAlpha = 1.0;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        
+        for (let i = 0; i <= segments; i++) {
+          const y = (i / segments) * size;
+          // 靜態S形函數 - 使用兩個正弦波組合形成S形
+          const sOffset = sAmplitude * Math.sin((y / size) * Math.PI * 2) * Math.sin((y / size) * Math.PI);
+          const x = borderX + sOffset;
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        
+        ctx.stroke();
+        
+        // 繪製戰爭視覺效果
+        ctx.globalAlpha = 1.0;
+        ctx.font = `${warConfig.emojiSize}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        warState.visualEffects.forEach(effect => {
+          // 大幅減慢閃爍效果速度
+          const opacity = 0.3 + 0.7 * Math.abs(Math.sin(warState.time * 0.6 + effect.phase)); // 從1.5減少到0.6，速度再降低60%
+          ctx.globalAlpha = opacity;
+          
+          // 大幅減慢位置擾動速度
+          const offsetX = Math.sin(warState.time * 0.4 + effect.phase) * 3; // 從1減少到0.4，速度再降低60%
+          const offsetY = Math.cos(warState.time * 0.3 + effect.phase) * 2; // 從0.75減少到0.3，速度再降低60%
+          
+          ctx.fillText(effect.emoji, effect.x + offsetX, effect.y + offsetY);
+        });
+        
+        // 繪製爆炸效果
+        warState.explosions.forEach(explosion => {
+          // 更新爆炸生命週期
+          explosion.life++;
+          
+          if (explosion.life < explosion.maxLife) {
+            // 計算爆炸動畫進度
+            const progress = explosion.life / explosion.maxLife;
+            
+            // 爆炸縮放動畫
+            explosion.scale = progress < 0.5 ? progress * 2 : (1 - progress) * 2;
+            
+            // 爆炸透明度
+            const explosionOpacity = progress < 0.7 ? progress / 0.7 : (1 - progress) / 0.3;
+            ctx.globalAlpha = explosionOpacity;
+            
+            // 繪製爆炸效果
+            const fontSize = warConfig.emojiSize * explosion.scale;
+            ctx.font = `${fontSize}px sans-serif`;
+            ctx.fillText(explosion.emoji, explosion.x, explosion.y);
+          } else {
+            // 重置爆炸效果
+            explosion.life = 0;
+            explosion.scale = 0;
+            // 位置會在updateEffectPositions中更新到國境線附近
+          }
+        });
+        
+        ctx.restore();
+        
+        // 簡化狀態更新
+        updateBorder();
+        updateEffectPositions(); // 更新效果位置到國境線附近
+        warState.time += warConfig.warSpeed;
+        
+        animationId = requestAnimationFrame(draw);
+      }
+      
+      // 初始化並開始繪製
+      initVisualEffects();
+      updateButtonPositions();
+      draw();
+      
+      // 按鈕點擊追蹤狀態
+      let manButtonClicked = false;
+      let touchButtonClicked = false;
+      
+      // 按鈕點擊事件
+      manButton.addEventListener('click', () => {
+        if (!manButtonClicked) {
+          manButtonClicked = true;
+          // 移除發光動畫
+          manButton.style.animation = 'none';
+          manButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3), 0 0 15px rgba(0, 255, 0, 0.6)';
+          manButton.style.transform = 'translateX(30px) translateY(-50%) scale(1.1)';
+          setTimeout(() => {
+            manButton.style.transform = 'translateX(30px) translateY(-50%) scale(1)';
+          }, 200);
+        }
+        showDialog('蠻氏國君', '我們的軍隊正在推進！每一寸土地都將屬於蠻國！蠻國的榮耀不容侵犯！');
+        checkBothButtonsClicked();
+      });
+      
+      touchButton.addEventListener('click', () => {
+        if (!touchButtonClicked) {
+          touchButtonClicked = true;
+          // 移除發光動畫
+          touchButton.style.animation = 'none';
+          touchButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3), 0 0 15px rgba(0, 255, 0, 0.6)';
+          touchButton.style.transform = 'translateX(280px) translateY(-50%) scale(1.1)';
+          setTimeout(() => {
+            touchButton.style.transform = 'translateX(280px) translateY(-50%) scale(1)';
+          }, 200);
+        }
+        showDialog('觸氏國君', '觸國的榮耀不容侵犯！我們將奪回失去的領土！觸國的意志堅不可摧！');
+        checkBothButtonsClicked();
+      });
+      
+      // 檢查兩個按鈕是否都已點擊
+      function checkBothButtonsClicked() {
+        if (manButtonClicked && touchButtonClicked) {
+          // 顯示繼續按鈕
+          advanceBtn.style.display = 'block';
+        }
+      }
+      
+      // Canvas點擊事件
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        if (x > size * 0.3 && x < size * 0.7 && y > size * 0.4 && y < size * 0.8) {
+          showDialog('戰爭觀察者', '在這小小的蝸角之上，兩國為了微不足道的領土而戰。這難道不是莊子所諷刺的嗎？');
+        }
+      });
+      
+      // 對話框功能
+      function showDialog(title, content) {
+        document.getElementById('dialog-title').textContent = title;
+        document.getElementById('dialog-content').textContent = content;
+        document.getElementById('dialog-overlay').style.display = 'flex';
+      }
+      
+      document.getElementById('close-dialog').addEventListener('click', () => {
+        document.getElementById('dialog-overlay').style.display = 'none';
+      });
+      
+            // 雙向視角控制邏輯 - 實現蝸牛和圓形世界的可逆切換
+      zoomSlider.addEventListener('input', function() {
+        const zoomLevel = parseFloat(this.value);
+        
+        // 視角控制器控制蝸牛的放大倍數
+        const snailScaleFactor = Math.pow(zoomLevel, 4.2);
+        snailContainer.style.transform = `scale(${snailScaleFactor})`;
+        
+        // 定義切換閾值
+        const transitionThreshold = 2.5; // 蝸牛和圓形世界切換的閾值
+        const maxZoom = 3.0; // 最大縮放值
+        
+        // 計算蝸牛和圓形世界的透明度（雙向控制）
+        let snailOpacity, worldOpacity;
+        
+        if (zoomLevel <= transitionThreshold) {
+          // 拉遠視角：顯示蝸牛，隱藏圓形世界
+          snailOpacity = 1;
+          worldOpacity = 0;
+        } else {
+          // 拉近視角：隱藏蝸牛，顯示圓形世界
+          const fadeProgress = (zoomLevel - transitionThreshold) / (maxZoom - transitionThreshold);
+          const clampedProgress = Math.max(0, Math.min(fadeProgress, 1));
+          
+          snailOpacity = 1 - clampedProgress;
+          worldOpacity = clampedProgress;
+        }
+        
+        // 應用透明度變化
+        snailEmoji.style.opacity = snailOpacity;
+        worldContainer.style.opacity = worldOpacity;
+        
+        // 調試信息：顯示當前縮放狀態
+        console.log(`🔍 雙向縮放調試 - 滑塊值: ${zoomLevel.toFixed(2)}, 蝸牛放大倍數: ${snailScaleFactor.toFixed(2)}, 蝸牛透明度: ${snailOpacity.toFixed(2)}, 世界透明度: ${worldOpacity.toFixed(2)}`);
+      });
+      
+      // 圖標點擊事件 - 只控制蝸牛的縮放
+      zoomInIcon.addEventListener('click', function() {
+        const currentValue = parseFloat(zoomSlider.value);
+        const newValue = Math.min(3, currentValue + 0.2);
+        zoomSlider.value = newValue;
+        zoomSlider.dispatchEvent(new Event('input'));
+        
+        // 添加點擊反饋效果
+        zoomInIcon.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+          zoomInIcon.style.transform = 'scale(1)';
+        }, 150);
+      });
+      
+      zoomOutIcon.addEventListener('click', function() {
+        const currentValue = parseFloat(zoomSlider.value);
+        const newValue = Math.max(1, currentValue - 0.2);
+        zoomSlider.value = newValue;
+        zoomSlider.dispatchEvent(new Event('input'));
+        
+        // 添加點擊反饋效果
+        zoomOutIcon.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+          zoomOutIcon.style.transform = 'scale(1)';
+        }, 150);
+      });
+      
+      // 添加懸停效果
+      [zoomInIcon, zoomOutIcon].forEach(icon => {
+        icon.addEventListener('mouseenter', function() {
+          this.style.background = 'rgba(255, 255, 255, 0.2)';
+          this.style.transform = 'scale(1.05)';
+        });
+        
+        icon.addEventListener('mouseleave', function() {
+          this.style.background = 'rgba(255, 255, 255, 0.1)';
+          this.style.transform = 'scale(1)';
+        });
+      });
+      
+      // 觸發初始縮放事件
+      zoomSlider.dispatchEvent(new Event('input'));
+      
+      // 初始狀態下隱藏繼續按鈕，直到兩個按鈕都被點擊
+      advanceBtn.style.display = 'none';
     }
     
     function createDialogScene(scene) {
@@ -15189,6 +16257,22 @@ ${layerData.choiceData.keyChoices}
         solved: false,
         segments: new Array(scene.text.length - 1).fill(false)
       };
+      
+      // 初始化斷句挑戰計時（在挑戰開始時就設置startTime）
+      const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
+      const data = gameState.playerChoices.segmentationPuzzleData;
+      
+      // 確保puzzleAttempts存在
+      if (!data.puzzleAttempts[puzzleKey]) {
+        data.puzzleAttempts[puzzleKey] = {
+          attempts: 0,
+          correctAttempts: 0,
+          incorrectAttempts: 0,
+          startTime: Date.now(),
+          lastAttemptTime: null
+        };
+        console.log('⏱️ 斷句挑戰計時初始化:', puzzleKey, 'startTime:', data.puzzleAttempts[puzzleKey].startTime);
+      }
       
       // Fix CSS selector issue with previous circles
       document.querySelectorAll('.segment-gap.active').forEach(el => {
@@ -15346,6 +16430,9 @@ ${layerData.choiceData.keyChoices}
       } else if (gameState.currentChapter === 'epilogue') {
         // 尾聲章節使用黑色文字以在白色背景中更明顯
         textColor = 'text-black';
+      } else if (gameState.currentChapter === 'chapter6') {
+        // 第六章使用空文字顏色類，讓heaven-earth-text樣式完全控制顏色
+        textColor = '';
       } else {
         // 其他章節使用默認顏色
         textColor = 'text-gray-800 dark:text-gray-200';
@@ -15960,6 +17047,9 @@ ${layerData.choiceData.keyChoices}
           // Mark as solved
           gameState.segmentationPuzzleState.solved = true;
           
+          // 記錄斷句挑戰嘗試數據（確保puzzleRecord被正確初始化）
+          recordSegmentationPuzzleAttempt(true);
+          
           // 記錄斷句挑戰完成數據
           recordSegmentationPuzzleCompletion(true);
           
@@ -15969,10 +17059,80 @@ ${layerData.choiceData.keyChoices}
             chaosForm.classList.remove('segmentation-mode');
           }
           
-          // Show success message
-          resultElement.textContent = gameChapters[gameState.currentChapter].scenes[gameState.currentScene].success;
+          // 獲取當前挑戰的數據
+          const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
+          const puzzleData = gameState.playerChoices.segmentationPuzzleData;
+          const puzzleRecord = puzzleData.puzzleAttempts[puzzleKey];
+          
+          // 計算完成時間和嘗試次數
+          const completionTime = puzzleRecord ? Date.now() - puzzleRecord.startTime : 0;
+          const attemptCount = puzzleRecord ? puzzleRecord.attempts : 1;
+          const timeInSeconds = Math.round(completionTime / 1000);
+          
+          // 調試信息
+          console.log('🔍 斷句挑戰計時調試:');
+          console.log('  puzzleKey:', puzzleKey);
+          console.log('  puzzleRecord:', puzzleRecord);
+          console.log('  startTime:', puzzleRecord?.startTime);
+          console.log('  currentTime:', Date.now());
+          console.log('  completionTime (ms):', completionTime);
+          console.log('  timeInSeconds:', timeInSeconds);
+          console.log('  attemptCount:', attemptCount);
+          
+          // 生成成功消息，包含時間和嘗試次數
+          const successMessage = gameChapters[gameState.currentChapter].scenes[gameState.currentScene].success;
+          const statsMessage = `\n\n⏱️ 完成時間：${timeInSeconds}秒\n🎯 嘗試次數：${attemptCount}次`;
+          
+          // Show success message with stats
+          resultElement.innerHTML = `
+            <div style="text-align: center;">
+              <div style="color: #4F46E5; font-size: 1.2rem; margin-bottom: 1rem;">${successMessage}</div>
+              <div style="background: rgba(79, 70, 229, 0.1); border-radius: 10px; padding: 1rem; border: 1px solid rgba(79, 70, 229, 0.3);">
+                <div style="display: flex; justify-content: space-around; align-items: center;">
+                  <div style="text-align: center;">
+                                         <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">0s</div>
+                     <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
+                   </div>
+                   <div style="width: 1px; height: 40px; background: rgba(79, 70, 229, 0.3);"></div>
+                   <div style="text-align: center;">
+                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">0</div>
+                     <div style="color: #C0C0C0; font-size: 0.9rem;">嘗試次數</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
           resultElement.className = 'text-lg mt-6 text-indigo-600 dark:text-indigo-400';
           resultElement.classList.remove('hidden');
+          
+          // 添加統計信息的動畫效果
+          setTimeout(() => {
+            const statsContainer = resultElement.querySelector('div[style*="background: rgba(79, 70, 229, 0.1)"]');
+            if (statsContainer) {
+              statsContainer.style.opacity = '0';
+              statsContainer.style.transform = 'translateY(20px)';
+              statsContainer.style.transition = 'all 0.5s ease';
+              
+              setTimeout(() => {
+                statsContainer.style.opacity = '1';
+                statsContainer.style.transform = 'translateY(0)';
+                
+                // 數字計數動畫
+                const timeElement = statsContainer.querySelector('div[data-value]');
+                const attemptElement = statsContainer.querySelectorAll('div[data-value]')[1];
+                
+                if (timeElement) {
+                  const targetTime = parseInt(timeElement.dataset.value);
+                  animateNumber(timeElement, 0, targetTime, 1000, 's');
+                }
+                
+                if (attemptElement) {
+                  const targetAttempts = parseInt(attemptElement.dataset.value);
+                  animateNumber(attemptElement, 0, targetAttempts, 800);
+                }
+              }, 100);
+            }
+          }, 200);
           
           // Change button text
           checkButton.textContent = '繼續';
@@ -15982,7 +17142,7 @@ ${layerData.choiceData.keyChoices}
           advanceBtn.style.display = 'none';
         }
       } else {
-        // 記錄斷句挑戰嘗試數據
+        // 記錄斷句挑戰嘗試數據（失敗時也要確保puzzleRecord存在）
         recordSegmentationPuzzleAttempt(false);
         // 標識錯誤的位置
         highlightIncorrectSegments(solution, currentState);
@@ -16080,6 +17240,29 @@ ${layerData.choiceData.keyChoices}
       }
     }
     
+    // 數字計數動畫函數
+    function animateNumber(element, start, end, duration, suffix = '') {
+      const startTime = performance.now();
+      const difference = end - start;
+      
+      function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // 使用easeOutQuart緩動函數
+        const easeProgress = 1 - Math.pow(1 - progress, 4);
+        const currentValue = Math.round(start + (difference * easeProgress));
+        
+        element.textContent = currentValue + suffix;
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateNumber);
+        }
+      }
+      
+      requestAnimationFrame(updateNumber);
+    }
+
     // 清除錯誤標識
     function clearErrorHighlights() {
       // 移除所有錯誤標識樣式
@@ -16130,9 +17313,65 @@ ${layerData.choiceData.keyChoices}
       const checkButton = document.getElementById('check-segmentation');
       const skipButton = document.getElementById('skip-segmentation');
       
-      resultElement.textContent = scene.success + ' （開發者跳過）';
+      // 獲取當前挑戰的數據（開發者跳過的情況）
+      const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
+      const puzzleData = gameState.playerChoices.segmentationPuzzleData;
+      const puzzleRecord = puzzleData.puzzleAttempts[puzzleKey];
+      
+      // 計算完成時間和嘗試次數
+      const completionTime = puzzleRecord ? Date.now() - puzzleRecord.startTime : 0;
+      const attemptCount = puzzleRecord ? puzzleRecord.attempts : 1;
+      const timeInSeconds = Math.round(completionTime / 1000);
+      
+      resultElement.innerHTML = `
+        <div style="text-align: center;">
+          <div style="color: #10B981; font-size: 1.2rem; margin-bottom: 1rem;">${scene.success} （開發者跳過）</div>
+          <div style="background: rgba(16, 185, 129, 0.1); border-radius: 10px; padding: 1rem; border: 1px solid rgba(16, 185, 129, 0.3);">
+            <div style="display: flex; justify-content: space-around; align-items: center;">
+              <div style="text-align: center;">
+                                     <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">0s</div>
+                     <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
+                   </div>
+                   <div style="width: 1px; height: 40px; background: rgba(16, 185, 129, 0.3);"></div>
+                   <div style="text-align: center;">
+                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">0</div>
+                     <div style="color: #C0C0C0; font-size: 0.9rem;">嘗試次數</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
       resultElement.className = 'text-lg mt-6 text-green-600 dark:text-green-400';
       resultElement.classList.remove('hidden');
+      
+      // 添加統計信息的動畫效果（開發者跳過）
+      setTimeout(() => {
+        const statsContainer = resultElement.querySelector('div[style*="background: rgba(16, 185, 129, 0.1)"]');
+        if (statsContainer) {
+          statsContainer.style.opacity = '0';
+          statsContainer.style.transform = 'translateY(20px)';
+          statsContainer.style.transition = 'all 0.5s ease';
+          
+          setTimeout(() => {
+            statsContainer.style.opacity = '1';
+            statsContainer.style.transform = 'translateY(0)';
+            
+            // 數字計數動畫（開發者跳過）
+            const timeElement = statsContainer.querySelector('div[data-value]');
+            const attemptElement = statsContainer.querySelectorAll('div[data-value]')[1];
+            
+            if (timeElement) {
+              const targetTime = parseInt(timeElement.dataset.value);
+              animateNumber(timeElement, 0, targetTime, 1000, 's');
+            }
+            
+            if (attemptElement) {
+              const targetAttempts = parseInt(attemptElement.dataset.value);
+              animateNumber(attemptElement, 0, targetAttempts, 800);
+            }
+          }, 100);
+        }
+      }, 200);
       
       // Change button text and hide skip button
       checkButton.textContent = '繼續';
@@ -16270,7 +17509,7 @@ ${layerData.choiceData.keyChoices}
     function getSegmentationPuzzleInfo(scene) {
       const chapterMappings = {
         'prologue': {
-          title: '序章：夢蝶',
+          title: '第一章：夢蝶',
           source: '《莊子·齊物論》',
           theme: '物我兩忘的變化智慧',
           text: '昔者莊周夢為胡蝶栩栩然胡蝶也自喻適志與不知周也俄然覺則蘧蘧然周也',
@@ -16278,7 +17517,7 @@ ${layerData.choiceData.keyChoices}
           gameConnection: '在遊戲中，這段古文是你獲得第一次物化能力的關鍵。通過理解夢蝶的智慧，你開啟了在不同形態間自由轉換的可能性，這正是莊子「齊物論」思想的體現——萬物本質相同，形態只是表象。'
         },
                  'chapter1': {
-           title: '第一章：子非魚',
+           title: '第二章：子非魚',
            source: '《莊子·秋水》',
            theme: '知魚之樂的認知智慧',
            text: '莊子與惠子遊於濠梁之上莊子曰儵魚出遊從容是魚樂也惠子曰子非魚安知魚之樂莊子曰子非我安知我不知魚之樂',
@@ -16286,7 +17525,7 @@ ${layerData.choiceData.keyChoices}
            gameConnection: '在遊戲的濠梁之上，你親身體驗了這場千古辯論。通過不同的選擇，你展現了自己對認知和同理心的理解。這段古文的解讀將幫助你獲得「左目之竅」的封印，開啟更深層的感知能力。'
          },
         'chapter2': {
-          title: '第二章：北冥有魚',
+          title: '第三章：北冥有魚',
           source: '《莊子·逍遙遊》',
           theme: '鯤鵬變化的逍遙境界',
           text: '北冥有魚其名為鯤鯤之大不知其幾千里也化而為鳥其名為鵬鵬之背不知其幾千里也怒而飛其翼若垂天之雲',
@@ -16294,7 +17533,7 @@ ${layerData.choiceData.keyChoices}
           gameConnection: '在雲海之中，你將親身體驗鯤鵬的變化之道。這種從魚到鳥、從水中到天空的轉換，象徵著突破固有形態的束縛。通過解讀這段古文，你將獲得鯤和鵬的物化能力，體驗真正的逍遙自在。'
         },
         'chapter3': {
-          title: '第三章：鴟得腐鼠',
+          title: '第四章：鴟得腐鼠',
           source: '《莊子·秋水》',
           theme: '價值觀的相對性',
           text: '惠子相梁莊子往見之或謂惠子曰莊子來欲代子相於是惠子恐搜於國中三日三夜莊子往見之曰南方有鳥其名為鵷鶵子知之乎',
@@ -16302,7 +17541,7 @@ ${layerData.choiceData.keyChoices}
           gameConnection: '在森林深處，你將遇到鵷鶵和鴟鴞這兩種截然不同的鳥類，體驗它們不同的生活方式和價值觀。這段古文揭示了價值判斷的相對性，幫助你獲得「左耳之竅」的封印，學會以更包容的心態看待世界。'
         },
         'chapter4': {
-          title: '第四章：蝸角之爭',
+          title: '第五章：蝸角之爭',
           source: '《莊子·則陽》',
           theme: '事物規模的相對性',
           text: '有國於蝸之左角者曰觸氏有國於蝸之右角者曰蠻氏時相與爭地而戰伏尸數萬逐北旬有五日而後反',
@@ -16310,7 +17549,7 @@ ${layerData.choiceData.keyChoices}
           gameConnection: '在螺旋的幻境中，你將親眼目睹蝸角之爭的荒謬。通過這段古文的理解，你將獲得蝸牛的物化能力，學會從微觀的角度審視世界，同時也理解規模和視角的相對性，最終找到「右耳之竅」的封印。'
         },
         'chapter5': {
-          title: '第五章：朝菌大椿',
+          title: '第六章：朝菌大椿',
           source: '《莊子·逍遙遊》',
           theme: '時間感知的相對性',
           text: '朝菌不知晦朔蟪蛄不知春秋此小年也楚之南有冥靈者以五百歲為春五百歲為秋上古有大椿者以八千歲為春八千歲為秋',
@@ -16318,7 +17557,7 @@ ${layerData.choiceData.keyChoices}
           gameConnection: '在時間森林中，你將遇到不同壽命的生物，體驗它們對時間的不同感知。這段古文幫助你理解時間的相對性，獲得朝菌、蟪蛄、大椿的物化能力，最終找到「左鼻之竅」的封印，學會以不同的時間尺度看待生命。'
         },
         'chapter6': {
-          title: '第六章：天地為棺槨',
+          title: '第七章：螻蟻星辰',
           source: '《莊子·列禦寇》',
           theme: '生死觀的超脫智慧',
           text: '莊子將死弟子欲厚葬之莊子曰吾以天地為棺槨以日月為連璧星辰為珠璣萬物為齎送吾葬具豈不備邪何以加此弟子曰吾恐烏鳶之食夫子也莊子曰在上為烏鳶食在下為螻蟻食奪彼與此何其偏也',
@@ -16326,7 +17565,7 @@ ${layerData.choiceData.keyChoices}
           gameConnection: '在天地交接的聖地，你將體驗莊子的生死智慧。通過理解這段古文，你將獲得螻蟻和星辰的物化能力，從「在下」和「在上」兩個角度體驗生死的自然性，最終找到「右鼻之竅」的封印。'
         },
         'chapter7': {
-          title: '第七章：道歸混沌',
+          title: '第八章：道歸混沌',
           source: '《莊子·應帝王》',
           theme: '渾沌之死的深刻寓意',
           text: '南海之帝為儵北海之帝為忽中央之帝為渾沌儵與忽時相與遇於渾沌之地渾沌待之甚善儵與忽謀報渾沌之德曰人皆有七竅以視聽食息此獨無有嘗試鑿之日鑿一竅七日而渾沌死',
@@ -16334,7 +17573,7 @@ ${layerData.choiceData.keyChoices}
           gameConnection: '在虛空殿中，你將親身經歷渾沌之死的故事。這段古文是整個遊戲的核心寓意——你的使命就是要修復被鑿開的七竅，讓渾沌重新回到無竅的純真狀態。通過理解這個深刻的哲學寓言，你將獲得最終的智慧。'
         },
         'epilogue': {
-          title: '尾聲：逍遙遊',
+          title: '第九章：逍遙遊',
           source: '《莊子·逍遙遊》',
           theme: '無用之用的人生智慧',
           text: '今子有大樹患其無用何不樹之於無何有之鄉廣莫之野徬徨乎無為其側逍遙乎寢臥其下不夭斤斧物無害者無所可用安所困苦哉',
@@ -16942,7 +18181,7 @@ ${layerData.choiceData.keyChoices}
         <div id="chat-history" class="flex-1 bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-700 p-4 space-y-4 overflow-y-auto min-h-0">
           <div class="text-center text-slate-500 dark:text-slate-400 text-sm py-8">
             <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span class="text-3xl">🧘</span>
+              <span class="text-3xl">🧘🏻‍♀️</span>
             </div>
             <p class="font-medium text-lg mb-2">歓迎來到莊子的逍遙境界</p>
             <p class="text-sm text-slate-400 dark:text-slate-500 mb-4">基於你完整的遊戲歷程，莊子將與你進行深度哲學對話</p>
@@ -18483,6 +19722,9 @@ ${layerData.choiceData.keyChoices}
         case 'cleanupChapter5':
           cleanupChapter5Effects();
           break;
+        case 'addGlowingSnail':
+          addGlowingSnail();
+          break;
       }
     }
     
@@ -18518,9 +19760,17 @@ ${layerData.choiceData.keyChoices}
         // 更新物化指示器和視覺效果
         updateFormView('human');
         
-        // 確保繼續按鈕正常顯示（不隱藏）
-        if (advanceBtn) {
-          advanceBtn.style.display = 'block';
+        // 檢查是否在AI章節總結場景中，如果是則不強制顯示繼續按鈕
+        const currentScene = gameChapters[gameState.currentChapter]?.scenes[gameState.currentScene];
+        const isChapterSummaryScene = currentScene?.type === 'personalized-summary' && currentScene?.sceneType === 'chapter_summary';
+        
+        if (!isChapterSummaryScene) {
+          // 確保繼續按鈕正常顯示（不隱藏）- 但排除AI章節總結場景
+          if (advanceBtn) {
+            advanceBtn.style.display = 'block';
+          }
+        } else {
+          console.log('🔒 AI章節總結場景：保持繼續按鈕隱藏狀態');
         }
         
         // 確保不處於日常物化狀態
@@ -18533,7 +19783,7 @@ ${layerData.choiceData.keyChoices}
           exitButton.remove();
         }
         
-        console.log('✅ 已回到人形，物化指示器已更新，繼續按鈕可見，不觸發日常物化邏輯');
+        console.log('✅ 已回到人形，物化指示器已更新，不觸發日常物化邏輯');
       }, fromForm !== 'human' ? 1500 : 0); // 如果已經是人形，立即執行
     }
     
@@ -18589,6 +19839,10 @@ ${layerData.choiceData.keyChoices}
       if (deferredUnlock && !alreadyUnlocked) {
         // 新章節形態首次解鎖：只解鎖，不立即顯示按鈕（延遲到收集場景完成）
           gameState.unlockedForms.push(form);
+          
+          // 立即保存遊戲進度，確保形態解鎖數據不丟失
+          saveGameProgress();
+          
           console.log(`預備解鎖新形態: ${form}，按鈕將在收集場景後顯示`);
         
         // 確保按鈕保持隱藏狀態
@@ -18610,6 +19864,10 @@ ${layerData.choiceData.keyChoices}
       
       if (!alreadyUnlocked) {
         gameState.unlockedForms.push(form);
+        
+        // 立即保存遊戲進度，確保形態解鎖數據不丟失
+        saveGameProgress();
+        
         console.log(`解鎖形態並立即顯示按鈕: ${form}`);
         
         // 一般形態處理（包括第一章的蝴蝶）
@@ -18880,6 +20138,9 @@ ${layerData.choiceData.keyChoices}
             // 將封印添加到已收集列表
             if (!gameState.collectedApertures.includes(apertureType)) {
               gameState.collectedApertures.push(apertureType);
+              
+              // 立即保存遊戲進度，確保封印收集數據不丟失
+              saveGameProgress();
             }
             
             // 在七竅容器中激活目標封印
@@ -19546,15 +20807,15 @@ ${layerData.choiceData.keyChoices}
       
       gameContent.appendChild(challengeElement);
       
-      // 確保蝸牛和王國已創建
-      if (!document.querySelector('.snail-shell')) {
-        createSnailAndKingdoms();
-      }
+      // 不再創建舊的蝸牛和王國，避免與新的Canvas圓形世界衝突
+      // if (!document.querySelector('.snail-shell')) {
+      //   createSnailAndKingdoms();
+      // }
       
-      // 確保視角縮放功能已啟用
-      if (!gameState.scaleEnabled) {
-        enableScaleControl();
-      }
+      // 不再啟用舊的視角縮放功能，避免與新的視角控制器衝突
+      // if (!gameState.scaleEnabled) {
+      //   enableScaleControl();
+      // }
       
       // 添加两国交互计数
       let visitedTouch = false;
@@ -21578,6 +22839,7 @@ ${layerData.choiceData.keyChoices}
       
       // 獲取形態的中文名稱
       const formNames = {
+        human: '人形',
         butterfly: '蝴蝶',
         fish: '儵魚',
         kun: '鯤',
@@ -21860,7 +23122,7 @@ ${layerData.choiceData.keyChoices}
       };
       
       const emojiFormMap = {
-                    human: '🧘',
+                    human: '🧘🏻‍♀️',
         butterfly: '🦋',
         fish: '🐟',
         kun: '🐋',
@@ -21987,6 +23249,10 @@ ${layerData.choiceData.keyChoices}
          // 確保新形態在解鎖列表中（可能在 unlockForm 中已添加）
          if (!gameState.unlockedForms.includes(formType)) {
            gameState.unlockedForms.push(formType);
+           
+           // 立即保存遊戲進度，確保形態解鎖數據不丟失
+           saveGameProgress();
+           
            console.log(`形態 ${formType} 已添加到解鎖列表`);
          } else {
            console.log(`形態 ${formType} 已在解鎖列表中，現在激活按鈕顯示`);
@@ -23322,9 +24588,10 @@ ${layerData.choiceData.keyChoices}
       guideContainer.className = 'w-full p-4 bg-white dark:bg-gray-800 bg-opacity-95 dark:bg-opacity-95 rounded-lg shadow-xl border border-indigo-200 dark:border-indigo-700';
       guideContainer.style.pointerEvents = 'auto'; // 只有容器本身可以接收點擊
       
-      const formNames = {
+            const formNames = {
+        human: '人形',
         butterfly: '蝴蝶',
-        fish: '儵魚', 
+        fish: '儵魚',
         kun: '鯤',
         peng: '鵬',
         yuanchu: '鵷鶵',
@@ -24584,6 +25851,7 @@ ${layerData.choiceData.keyChoices}
       createBaguaSymbols();
       
       const formNames = {
+        human: '人形',
         butterfly: '蝴蝶',
         fish: '儵魚',
         kun: '鯤',
@@ -24611,7 +25879,7 @@ ${layerData.choiceData.keyChoices}
         <p class="text-sm text-gray-800 dark:text-gray-200 mb-4">進入每個物化視野，尋找並收集對應的氣（每種需收集3個）</p>
         
         <!-- 🔧 臨時測試按鈕 - 測試完成後刪除 START -->
-        <div class="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600">
+        <div class="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600" style="display: none;">
           <button id="skip-wanwu-xunqi-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm">
             ⚠️ 跳過萬物尋氣 (測試用)
           </button>
@@ -24859,6 +26127,7 @@ ${layerData.choiceData.keyChoices}
       gameState.formSequenceGuideActive = true;
       
       const formNames = {
+        human: '人形',
         butterfly: '蝴蝶',
         fish: '儵魚',
         kun: '鯤',
@@ -24995,7 +26264,7 @@ ${layerData.choiceData.keyChoices}
         right: 0;
         bottom: 0;
         z-index: 15;
-        pointer-events: none;
+        pointer-events: auto;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -25515,16 +26784,32 @@ ${layerData.choiceData.keyChoices}
             break;
         }
         
-        // 讓粒子飛向混沌中心
-        if (particles.length > 0) {
-          console.log(`開始粒子飛向中心動畫，共 ${particles.length} 個粒子`);
-          animateParticlesToCenter(Array.from(particles), centerX, centerY);
+        // 特殊處理太極歸復動畫 - 使用獨立的動畫系統
+        if (phase.particleType === 'taiji-symbols') {
+          console.log('太極歸復階段：使用獨立動畫系統');
+          // 創建太極階段配置
+          const taijiPhase = {
+            name: 'taiji-symbols',
+            duration: 3000,
+            existing: '.yin-yang-emoji',
+            generationRate: null,
+            particlesPerGeneration: 0,
+            containerClass: 'taiji-container'
+          };
+          // 調用獨立的太極歸復動畫
+          animateEnhancedParticles(taijiPhase, onComplete);
+        } else {
+          // 其他階段使用原有的粒子動畫
+          if (particles.length > 0) {
+            console.log(`開始粒子飛向中心動畫，共 ${particles.length} 個粒子`);
+            animateParticlesToCenter(Array.from(particles), centerX, centerY);
           } else {
-          console.warn(`${phase.name} 階段沒有找到對應的粒子`);
+            console.warn(`${phase.name} 階段沒有找到對應的粒子`);
+          }
+          
+          // 根據階段持續時間等待動畫完成
+          setTimeout(onComplete, phase.duration);
         }
-        
-        // 根據階段持續時間等待動畫完成
-        setTimeout(onComplete, phase.duration);
       }
       
       // 预生成气注入仪式所需的大量粒子
@@ -26015,7 +27300,7 @@ ${layerData.choiceData.keyChoices}
         },
         {
           name: 'taiji-symbols',
-          duration: 2000,
+          duration: 3000,  // 太極動畫需要3秒
           existing: '.yin-yang-emoji',
           generationRate: null,     // 太極符號只有1個
           particlesPerGeneration: 0,
@@ -26044,6 +27329,12 @@ ${layerData.choiceData.keyChoices}
     
     // 增強的粒子動畫系統（支持動態生成和現有粒子）
     function animateEnhancedParticles(phase, onComplete) {
+      // 特殊處理太極歸復動畫 - 完全獨立於其他粒子系統
+      if (phase.name === 'taiji-symbols') {
+        animateTaijiReturn(phase, onComplete);
+        return;
+      }
+      
       const chaosForm = document.querySelector('.chaos-form');
       const container = document.querySelector(`.${phase.containerClass}`);
       
@@ -26114,6 +27405,59 @@ ${layerData.choiceData.keyChoices}
       }, phase.duration);
     }
     
+    // 完全獨立的太極歸復動畫函數
+    function animateTaijiReturn(phase, onComplete) {
+      console.log('開始太極歸復動畫');
+      
+      // 獲取混沌中心位置
+      const chaosForm = document.querySelector('.chaos-form');
+      if (!chaosForm) {
+        console.log('未找到混沌圖形');
+        onComplete();
+        return;
+      }
+      
+      const chaosRect = chaosForm.getBoundingClientRect();
+      const chaosCenterX = chaosRect.left + chaosRect.width / 2;
+      const chaosCenterY = chaosRect.top + chaosRect.height / 2;
+      
+      // 獲取太極容器
+      const taijiContainer = document.querySelector('.taiji-container');
+      if (!taijiContainer) {
+        console.log('未找到太極容器');
+        onComplete();
+        return;
+      }
+      
+      console.log(`太極容器開始歸復動畫，目標位置: (${chaosCenterX}, ${chaosCenterY})`);
+      
+      // 停止太極容器的旋轉動畫
+      taijiContainer.style.animation = 'none';
+      
+      // 開始太極歸復動畫
+      taijiContainer.style.transition = 'all 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      
+      setTimeout(() => {
+        // 移動到混沌中心並縮小消失
+        taijiContainer.style.left = `${chaosCenterX}px`;
+        taijiContainer.style.top = `${chaosCenterY}px`;
+        taijiContainer.style.transform = 'translate(-50%, -50%) scale(0.1)';
+        taijiContainer.style.opacity = '0.3';
+        taijiContainer.style.filter = 'blur(2px)';
+        
+        console.log('太極容器開始歸復到混沌中心');
+        
+        // 動畫完成後移除太極容器
+        setTimeout(() => {
+          if (taijiContainer.parentNode) {
+            taijiContainer.parentNode.removeChild(taijiContainer);
+            console.log('太極容器歸復完成並移除');
+          }
+          onComplete();
+        }, 3000);
+      }, 100);
+    }
+    
     // 讓粒子飛向混沌中心
     function animateParticlesToCenter(particles, centerX, centerY) {
       console.log(`開始執行粒子飛向中心動畫，共 ${particles.length} 個粒子，目標位置: (${centerX}, ${centerY})`);
@@ -26139,110 +27483,30 @@ ${layerData.choiceData.keyChoices}
           particle.style.left = `${initialCenterX}px`;
           particle.style.top = `${initialCenterY}px`;
           particle.style.margin = '0';
-          particle.style.transform = 'translate(-50%, -50%)';
           particle.style.zIndex = '35';
+          particle.style.transform = 'translate(-50%, -50%)';
           
           // 强制触发重排，确保位置设置生效
           particle.offsetHeight;
           
-          // 特殊處理太極符號 - 實現垂直下落並逐漸縮小的動畫
-          if (particle.classList.contains('yin-yang-emoji') || particle.className.includes('yin-yang-emoji')) {
-            // 停止现有的所有动画
-            particle.style.animation = 'none';
-            particle.style.transition = 'none';
+          // 其他粒子的正常處理
+          particle.style.transition = 'all 2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          
+          setTimeout(() => {
+            particle.style.left = `${centerX}px`;
+            particle.style.top = `${centerY}px`;
+            particle.style.opacity = '0';
+            particle.style.transform = 'translate(-50%, -50%) scale(0.3)';
+            console.log(`粒子 ${index} 开始飞向中心: (${centerX}, ${centerY})`);
             
-            // 確保太極符號在頂部位置開始
-            const taijiContainer = particle.closest('.taiji-container');
-            if (taijiContainer) {
-              // 獲取太極容器的當前位置（應該在頂部10%）
-              const containerRect = taijiContainer.getBoundingClientRect();
-              console.log(`太極容器位置: left=${containerRect.left}, top=${containerRect.top}, width=${containerRect.width}, height=${containerRect.height}`);
-              
-              // 先從太極符號的實際位置開始
-              const particleRect = particle.getBoundingClientRect();
-              const startX = particleRect.left + particleRect.width / 2;
-              const startY = particleRect.top + particleRect.height / 2;
-              
-              console.log(`太極符號 ${index} 初始位置: (${startX}, ${startY})`);
-              
-              particle.style.position = 'fixed';
-              particle.style.left = `${startX}px`;
-              particle.style.top = `${startY}px`;
-              particle.style.transform = 'translate(-50%, -50%)';
-              particle.style.zIndex = '40';
-              
-              // 強制觸發重排，確保位置設置生效
-              particle.offsetHeight;
-              
-              // 設置垂直下落動畫：從頂部垂直落入混沌中心，並逐漸縮小
-              particle.style.transition = 'all 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-              
-              setTimeout(() => {
-                // 垂直下落到混沌中心
-                particle.style.left = `${centerX}px`;  // 水平移動到混沌中心
-                particle.style.top = `${centerY}px`;   // 垂直下落到混沌中心
-                particle.style.transform = 'translate(-50%, -50%) scale(0.1)'; // 逐漸縮小到0.1倍
-                particle.style.opacity = '0.3';        // 逐漸變透明
-                particle.style.filter = 'blur(2px)';   // 輕微模糊效果
-                console.log(`太極符號 ${index} 開始從 (${startX}, ${startY}) 垂直下落到混沌中心: (${centerX}, ${centerY})`);
-                
-                // 動畫完成後移除粒子
-                setTimeout(() => {
-                  if (particle.parentNode) {
-                    particle.parentNode.removeChild(particle);
-                    console.log(`太極符號 ${index} 下落完成並移除`);
-                  }
-                }, 3000);
-              }, index * 100);
-            } else {
-              console.log(`太極符號 ${index} 找不到太極容器，使用預設位置`);
-              // 如果找不到太極容器，使用預設的頂部位置
-              particle.style.position = 'fixed';
-              particle.style.left = `${centerX}px`;  // 水平居中
-              particle.style.top = `${window.innerHeight * 0.1}px`;  // 頂部10%
-              particle.style.transform = 'translate(-50%, -50%)';
-              particle.style.zIndex = '40';
-              
-              particle.offsetHeight;
-              
-              particle.style.transition = 'all 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-              
-              setTimeout(() => {
-                particle.style.left = `${centerX}px`;
-                particle.style.top = `${centerY}px`;
-                particle.style.transform = 'translate(-50%, -50%) scale(0.1)';
-                particle.style.opacity = '0.3';
-                particle.style.filter = 'blur(2px)';
-                console.log(`太極符號 ${index} 從預設位置開始垂直下落到混沌中心: (${centerX}, ${centerY})`);
-                
-                setTimeout(() => {
-                  if (particle.parentNode) {
-                    particle.parentNode.removeChild(particle);
-                    console.log(`太極符號 ${index} 下落完成並移除`);
-                  }
-                }, 3000);
-              }, index * 100);
-            }
-          } else {
-            // 其他粒子的正常處理
-            particle.style.transition = 'all 2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-            
+            // 動畫完成後移除粒子
             setTimeout(() => {
-              particle.style.left = `${centerX}px`;
-              particle.style.top = `${centerY}px`;
-              particle.style.opacity = '0';
-              particle.style.transform = 'translate(-50%, -50%) scale(0.3)';
-              console.log(`粒子 ${index} 开始飞向中心: (${centerX}, ${centerY})`);
-              
-              // 動畫完成後移除粒子
-              setTimeout(() => {
-                if (particle.parentNode) {
-                  particle.parentNode.removeChild(particle);
-                  console.log(`粒子 ${index} 飞入完成并移除`);
-                }
-              }, 2000);
-            }, index * 80);
-          }
+              if (particle.parentNode) {
+                particle.parentNode.removeChild(particle);
+                console.log(`粒子 ${index} 飞入完成并移除`);
+              }
+            }, 2000);
+          }, index * 80);
         }
       });
     }
@@ -26454,15 +27718,17 @@ ${layerData.choiceData.keyChoices}
       const thanksElement = document.createElement('div');
       thanksElement.className = 'credits-thanks';
       thanksElement.style.cssText = `
-        font-size: 1rem;
+        font-size: 1.2rem;
         font-family: "LXGW WenKai", "Noto Serif TC", serif;
-        color: #C0C0C0;
+        color: #FFD700;
         margin-top: 2rem;
         opacity: 0;
         transform: translateY(20px);
         transition: all 2s ease 3s;
+        text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        font-weight: 600;
       `;
-      thanksElement.textContent = '感謝您的遊玩';
+      thanksElement.textContent = '🎉 恭喜通關！​你已獲得「神秘禮物」，請點擊打開。另外，已解鎖「和莊子聊聊」、「和混沌呼吸」功能， 可點擊「返回首頁」體驗。';
       creditsContainer.appendChild(thanksElement);
       
       // 添加到頁面
@@ -26487,11 +27753,12 @@ ${layerData.choiceData.keyChoices}
         thanksElement.style.transform = 'translateY(0)';
       }, 3500);
       
-      // 5秒後創建AI報告按鈕和結束按鈕
+      // 祝贺文字动画完成后（3500ms + 2000ms动画时间 + 500ms延迟）创建按钮
       setTimeout(() => {
         createAIReportButton(creditsContainer);
+        createSegmentationReportButton(creditsContainer);
         createCreditsEndButton(creditsContainer);
-      }, 5000);
+      }, 6000);
     }
     
     // 創建AI個性化報告按鈕
@@ -26512,7 +27779,9 @@ ${layerData.choiceData.keyChoices}
         transition: all 0.4s ease;
         opacity: 0;
         transform: translateY(20px);
-        box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+        box-shadow: 0 6px 25px rgba(79, 70, 229, 0.6), 
+                    0 0 40px rgba(79, 70, 229, 0.3),
+                    inset 0 0 20px rgba(255, 255, 255, 0.1);
         position: relative;
         overflow: hidden;
         display: block;
@@ -26520,6 +27789,7 @@ ${layerData.choiceData.keyChoices}
         max-width: 300px;
         margin-left: auto;
         margin-right: auto;
+        filter: brightness(1.1) saturate(1.2);
       `;
       reportButton.innerHTML = '🎁 神秘禮物';
       
@@ -26527,12 +27797,19 @@ ${layerData.choiceData.keyChoices}
       const breathingAnimation = `
         @keyframes breathing-glow {
           0%, 100% { 
-            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+            box-shadow: 0 6px 25px rgba(79, 70, 229, 0.6), 
+                       0 0 40px rgba(79, 70, 229, 0.3),
+                       inset 0 0 20px rgba(255, 255, 255, 0.1);
             transform: translateY(0) scale(1);
+            filter: brightness(1);
           }
           50% { 
-            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.8);
-            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(79, 70, 229, 1), 
+                       0 0 60px rgba(124, 58, 237, 0.8),
+                       0 0 80px rgba(79, 70, 229, 0.4),
+                       inset 0 0 30px rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px) scale(1.05);
+            filter: brightness(1.2);
           }
         }
       `;
@@ -26551,22 +27828,24 @@ ${layerData.choiceData.keyChoices}
       setTimeout(() => {
         reportButton.style.opacity = '1';
         reportButton.style.transform = 'translateY(0)';
-        reportButton.style.animation = 'breathing-glow 3s ease-in-out infinite';
-      }, 100);
+        reportButton.style.animation = 'breathing-glow 2s ease-in-out infinite';
+      }, 200);
       
       // 懸停效果
       reportButton.addEventListener('mouseenter', () => {
         reportButton.style.background = 'linear-gradient(135deg, #7C3AED, #A855F7)';
-        reportButton.style.transform = 'translateY(-3px) scale(1.05)';
-        reportButton.style.boxShadow = '0 8px 30px rgba(124, 58, 237, 0.8)';
+        reportButton.style.transform = 'translateY(-4px) scale(1.08)';
+        reportButton.style.boxShadow = '0 12px 40px rgba(124, 58, 237, 1), 0 0 60px rgba(124, 58, 237, 0.8)';
         reportButton.style.animation = 'none';
+        reportButton.style.filter = 'brightness(1.3) saturate(1.4)';
       });
       
       reportButton.addEventListener('mouseleave', () => {
         reportButton.style.background = 'linear-gradient(135deg, #4F46E5, #7C3AED)';
         reportButton.style.transform = 'translateY(0) scale(1)';
-        reportButton.style.boxShadow = '0 4px 20px rgba(79, 70, 229, 0.4)';
-        reportButton.style.animation = 'breathing-glow 3s ease-in-out infinite';
+        reportButton.style.boxShadow = '0 6px 25px rgba(79, 70, 229, 0.6), 0 0 40px rgba(79, 70, 229, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.1)';
+        reportButton.style.animation = 'breathing-glow 2s ease-in-out infinite';
+        reportButton.style.filter = 'brightness(1.1) saturate(1.2)';
       });
       
       // 點擊事件 - 生成莊子的神秘禮物
@@ -26847,23 +28126,53 @@ ${layerData.choiceData.keyChoices}
         logoImg.src = 'https://raw.githubusercontent.com/chineseclassics/chineseclassics.github.io/main/images/cclogo.png';
       });
       
-      // 創建畫布
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
       // 獲取設備像素比，提高清晰度
       const devicePixelRatio = window.devicePixelRatio || 1;
       const scaleFactor = Math.max(devicePixelRatio, 2); // 至少2倍清晰度
       
-      // 設置高分辨率畫布尺寸 (加長版，確保能容納完整信件)
+      // 設置基礎尺寸
       const baseWidth = 800;
-      const baseHeight = 1600; // 增加高度以容納更多內容
-      canvas.width = baseWidth * scaleFactor;
-      canvas.height = baseHeight * scaleFactor;
+      const baseHeight = 1200; // 初始高度
       
-      // 設置CSS尺寸保持原始比例
+      // 處理文字換行以計算所需高度
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.font = '18px "LXGW WenKai", "Noto Serif TC", serif';
+      const lines = wrapText(tempCtx, report, baseWidth - 120, 18);
+      const lineHeight = 28;
+      const contentHeight = lines.length * lineHeight;
+      
+      // 精確計算所需的總高度
+      const titleHeight = 120; // 標題區域高度
+      const separatorHeight = 30; // 分隔線區域高度
+      const contentStartY = 190; // 內容開始位置
+      const signatureSpacing = 84; // 正文與落款之間的間距（3行文字）
+      const bottomMargin = 140; // 底部邊距（logo + 底部文字 + 額外間距）
+      
+      // 計算精確的所需高度
+      const minRequiredHeight = titleHeight + separatorHeight + contentHeight + signatureSpacing + bottomMargin;
+      
+      // 設置合理的最小和最大高度範圍
+      const minHeight = 800; // 最小高度
+      const maxHeight = 2000; // 最大高度
+      let actualHeight = Math.max(minHeight, Math.min(maxHeight, minRequiredHeight));
+      
+      // 如果內容很短，適當增加高度以保持視覺平衡
+      if (contentHeight < 400) {
+        actualHeight = Math.max(actualHeight, 1000);
+      }
+      
+      // 創建最終畫布
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 設置畫布尺寸
+      canvas.width = baseWidth * scaleFactor;
+      canvas.height = actualHeight * scaleFactor;
+      
+      // 設置CSS尺寸
       canvas.style.width = baseWidth + 'px';
-      canvas.style.height = baseHeight + 'px';
+      canvas.style.height = actualHeight + 'px';
       
       // 縮放上下文以匹配設備像素比
       ctx.scale(scaleFactor, scaleFactor);
@@ -26873,125 +28182,77 @@ ${layerData.choiceData.keyChoices}
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       
-      // 設置古風暖色調背景
-      const gradient = ctx.createLinearGradient(0, 0, 0, baseHeight);
-      gradient.addColorStop(0, '#8B4513'); // 深褐色
-      gradient.addColorStop(0.5, '#A0522D'); // 赭石色
-      gradient.addColorStop(1, '#654321'); // 深棕色
+      // 使用遊戲中的紫色調背景（莊子故事中蝴蝶的配色）
+      const gradient = ctx.createLinearGradient(0, 0, 0, actualHeight);
+      gradient.addColorStop(0, '#4C1D95'); // 深紫色
+      gradient.addColorStop(0.3, '#6D28D9'); // 主紫色
+      gradient.addColorStop(0.7, '#8B5CF6'); // 亮紫色
+      gradient.addColorStop(1, '#A855F7'); // 淺紫色
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, baseWidth, baseHeight);
+      ctx.fillRect(0, 0, baseWidth, actualHeight);
       
-      // 添加米黃色宣紙質感背景（擴大區域）
-      const paperGradient = ctx.createLinearGradient(0, 0, 0, baseHeight);
-      paperGradient.addColorStop(0, '#F5F5DC'); // 米色
-      paperGradient.addColorStop(0.3, '#FFF8DC'); // 玉米絲色
-      paperGradient.addColorStop(0.7, '#FFFACD'); // 檸檬雪紡色
-      paperGradient.addColorStop(1, '#F0E68C'); // 卡其色
+      // 添加淺色宣紙質感背景，帶有紫色光暈
+      const paperGradient = ctx.createLinearGradient(0, 0, 0, actualHeight);
+      paperGradient.addColorStop(0, '#FEF7FF'); // 極淺紫色
+      paperGradient.addColorStop(0.2, '#F3E8FF'); // 淺紫色
+      paperGradient.addColorStop(0.5, '#EDE9FE'); // 中淺紫色
+      paperGradient.addColorStop(0.8, '#F3E8FF'); // 淺紫色
+      paperGradient.addColorStop(1, '#FEF7FF'); // 極淺紫色
       ctx.fillStyle = paperGradient;
-      ctx.fillRect(30, 50, baseWidth - 60, baseHeight - 100);
+      ctx.fillRect(30, 50, baseWidth - 60, actualHeight - 100);
       
-      // 添加古風邊框
-      ctx.strokeStyle = '#8B4513'; // 深褐色邊框
+      // 添加紫色邊框，符合遊戲風格
+      ctx.strokeStyle = '#6D28D9'; // 主紫色邊框
       ctx.lineWidth = 3;
-      ctx.strokeRect(30, 50, baseWidth - 60, baseHeight - 100);
+      ctx.strokeRect(30, 50, baseWidth - 60, actualHeight - 100);
       
-      // 添加內側細邊框
-      ctx.strokeStyle = '#CD853F'; // 秘魯色
+      // 添加內側細邊框，帶有光暈效果
+      ctx.strokeStyle = '#A855F7'; // 淺紫色內邊框
       ctx.lineWidth = 1;
-      ctx.strokeRect(40, 60, baseWidth - 80, baseHeight - 120);
+      ctx.strokeRect(40, 60, baseWidth - 80, actualHeight - 120);
       
-      // 設置文字樣式 - 使用黑體思源宋體標題
-      ctx.fillStyle = '#000000'; // 黑色標題
+      // 設置標題樣式 - 使用遊戲中的紫色調
+      ctx.fillStyle = '#4C1D95'; // 深紫色標題
       ctx.font = 'bold 36px "Noto Serif SC", "Noto Serif TC", serif';
       ctx.textAlign = 'center';
       
       // 繪製標題
       ctx.fillText('莊子給你的信', baseWidth / 2, 120);
       
-      // 繪製分隔線
-      ctx.strokeStyle = '#D2691E'; // 巧克力色分隔線
+      // 繪製分隔線 - 使用紫色漸變
+      const lineGradient = ctx.createLinearGradient(70, 160, baseWidth - 70, 160);
+      lineGradient.addColorStop(0, '#6D28D9');
+      lineGradient.addColorStop(0.5, '#A855F7');
+      lineGradient.addColorStop(1, '#6D28D9');
+      ctx.strokeStyle = lineGradient;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(70, 160);
       ctx.lineTo(baseWidth - 70, 160);
       ctx.stroke();
       
-      // 繪製信件內容
-      ctx.fillStyle = '#654321'; // 深棕色正文
+      // 繪製信件內容 - 使用深紫色文字
+      ctx.fillStyle = '#4C1D95'; // 深紫色正文
       ctx.font = '18px "LXGW WenKai", "Noto Serif TC", serif';
       ctx.textAlign = 'left';
       
-      // 處理文字換行（調整邊距）
-      const lines = wrapText(ctx, report, baseWidth - 120, 18);
-      const lineHeight = 26; // 增大行高以配合更大字體
+      // 繪製所有行
       let y = 190; // 從更靠上的位置開始
-      
-      // 計算所需的總高度
-      const contentHeight = lines.length * lineHeight;
-      const minRequiredHeight = 190 + contentHeight + 160; // 內容開始位置 + 內容高度 + 底部空間（增加空間容納logo和底部文字）
-      
-      // 如果需要更多空間，動態調整畫布高度
-      let actualHeight = baseHeight;
-      if (minRequiredHeight > baseHeight) {
-        actualHeight = minRequiredHeight;
-        
-        // 重新設置畫布高度
-        canvas.height = actualHeight * scaleFactor;
-        canvas.style.height = actualHeight + 'px';
-        
-        // 重新繪製古風暖色調背景（因為高度改變了）
-        const newGradient = ctx.createLinearGradient(0, 0, 0, actualHeight);
-        newGradient.addColorStop(0, '#8B4513'); // 深褐色
-        newGradient.addColorStop(0.5, '#A0522D'); // 赭石色
-        newGradient.addColorStop(1, '#654321'); // 深棕色
-        ctx.fillStyle = newGradient;
-        ctx.fillRect(0, 0, baseWidth, actualHeight);
-        
-        // 重新繪製米黃色宣紙背景
-        const newPaperGradient = ctx.createLinearGradient(0, 0, 0, actualHeight);
-        newPaperGradient.addColorStop(0, '#F5F5DC'); // 米色
-        newPaperGradient.addColorStop(0.3, '#FFF8DC'); // 玉米絲色
-        newPaperGradient.addColorStop(0.7, '#FFFACD'); // 檸檬雪紡色
-        newPaperGradient.addColorStop(1, '#F0E68C'); // 卡其色
-        ctx.fillStyle = newPaperGradient;
-        ctx.fillRect(30, 50, baseWidth - 60, actualHeight - 100);
-        
-        // 重新繪製古風邊框
-        ctx.strokeStyle = '#8B4513'; // 深褐色邊框
-        ctx.lineWidth = 3;
-        ctx.strokeRect(30, 50, baseWidth - 60, actualHeight - 100);
-        
-        // 重新繪製內側細邊框
-        ctx.strokeStyle = '#CD853F'; // 秘魯色
-        ctx.lineWidth = 1;
-        ctx.strokeRect(40, 60, baseWidth - 80, actualHeight - 120);
-        
-        // 重新繪製標題區域
-        ctx.fillStyle = '#000000'; // 黑色標題
-        ctx.font = 'bold 36px "Noto Serif SC", "Noto Serif TC", serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('莊子給你的信', baseWidth / 2, 120);
-        
-        ctx.strokeStyle = '#D2691E'; // 巧克力色分隔線
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(70, 160);
-        ctx.lineTo(baseWidth - 70, 160);
-        ctx.stroke();
-        
-        // 重新設置信件內容樣式
-        ctx.fillStyle = '#654321'; // 深棕色正文
-        ctx.font = '18px "LXGW WenKai", "Noto Serif TC", serif';
-        ctx.textAlign = 'left';
-      }
-      
-      // 繪製所有行，不再截斷
       lines.forEach((line, index) => {
         ctx.fillText(line, 60, y);
         y += lineHeight;
       });
       
-      // 繪製logo - 右對齊，底部與米色區域邊線保持間距
+      // 添加正文與落款之間的間距（3行文字）
+      y += lineHeight * 3;
+      
+      // 繪製莊子落款
+      ctx.fillStyle = '#6D28D9'; // 主紫色落款
+      ctx.font = 'bold 20px "LXGW WenKai", "Noto Serif TC", serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('莊子', baseWidth - 60, y);
+      
+      // 動態計算logo位置，確保不超出邊距
       if (logoImg.complete && logoImg.naturalWidth > 0) {
         // 計算logo的原始比例
         const originalWidth = logoImg.naturalWidth;
@@ -26999,28 +28260,37 @@ ${layerData.choiceData.keyChoices}
         const aspectRatio = originalWidth / originalHeight;
         
         // 設置logo的目標寬度，並根據比例計算高度
-        const logoWidth = 100; // logo寬度
-        const logoHeight = logoWidth / aspectRatio; // 保持原始比例
+        const logoWidth = 80; // 稍微縮小logo寬度
+        const logoHeight = logoWidth / aspectRatio;
         
-        const logoX = baseWidth - logoWidth - 60; // 右對齊，距離右邊60像素
-        const logoY = actualHeight - 70 - logoHeight; // logo底部與米色區域邊線保持20像素間距
+        // 確保logo不超出邊距
+        const logoX = Math.max(60, baseWidth - logoWidth - 60); // 右對齊，但不超出右邊距
+        const logoY = Math.max(60, actualHeight - logoHeight - 80); // 底部對齊，但不超出下邊距，增加間距
+        
+        // 如果logo會超出邊距，調整位置
+        if (logoX < 60) {
+          logoX = 60;
+        }
+        if (logoY < 60) {
+          logoY = 60;
+        }
         
         ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
       }
       
-      // 繪製底部信息 - 向上移動，與日期保持舒適間距
-      ctx.fillStyle = '#4A4A4A'; // 深灰色底部信息
+      // 繪製底部信息 - 使用紫色調
+      ctx.fillStyle = '#6D28D9'; // 主紫色底部信息
       ctx.font = '14px "LXGW WenKai", "Noto Serif TC", serif';
       ctx.textAlign = 'center';
       ctx.fillText('此信件由游戲《萬物逍遙》生成，基於你的游戲歷程數據', baseWidth / 2, actualHeight - 100);
       
-      // 添加日期 - 居中對齊，向上移動
+      // 添加日期 - 使用深紫色
       const now = new Date();
       const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-      ctx.fillStyle = '#2F4F4F'; // 深石板灰色日期
+      ctx.fillStyle = '#4C1D95'; // 深紫色日期
       ctx.font = '12px "LXGW WenKai", "Noto Serif TC", serif';
       ctx.textAlign = 'center';
-      ctx.fillText(dateStr, baseWidth / 2, actualHeight - 75);
+      ctx.fillText(dateStr, baseWidth / 2, actualHeight - 70);
       
       // 下載圖片 - 使用高質量PNG
       canvas.toBlob((blob) => {
@@ -27119,6 +28389,455 @@ ${layerData.choiceData.keyChoices}
       }, 3000);
     }
     
+    // 創建句讀報告按鈕
+    function createSegmentationReportButton(container) {
+      const reportButton = document.createElement('button');
+      reportButton.className = 'segmentation-report-button';
+      reportButton.style.cssText = `
+        margin: 1rem 0;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: "LXGW WenKai", "Noto Serif TC", serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(20px);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+        overflow: hidden;
+      `;
+      reportButton.innerHTML = '📊 句讀報告';
+      
+      // 添加按鈕到容器
+      container.appendChild(reportButton);
+      
+      // 顯示按鈕動畫
+      setTimeout(() => {
+        reportButton.style.opacity = '1';
+        reportButton.style.transform = 'translateY(0)';
+      }, 700);
+      
+      // 懸停效果
+      reportButton.addEventListener('mouseenter', () => {
+        reportButton.style.background = 'linear-gradient(135deg, #059669, #047857)';
+        reportButton.style.transform = 'translateY(-2px) scale(1.02)';
+        reportButton.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.6)';
+      });
+      
+      reportButton.addEventListener('mouseleave', () => {
+        reportButton.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+        reportButton.style.transform = 'translateY(0) scale(1)';
+        reportButton.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+      });
+      
+      // 點擊事件 - 生成句讀報告
+      reportButton.addEventListener('click', () => {
+        console.log('📊 句讀報告按鈕被點擊');
+        generateSegmentationReport();
+      });
+    }
+
+    // 生成句讀報告
+    function generateSegmentationReport() {
+      console.log('📊 開始生成句讀報告');
+      
+      // 獲取斷句挑戰數據
+      const puzzleData = gameState.playerChoices.segmentationPuzzleData;
+      const performance = puzzleData.puzzlePerformance;
+      
+      // 創建報告容器
+      const reportContainer = document.createElement('div');
+      reportContainer.id = 'segmentation-report-container';
+      reportContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        box-sizing: border-box;
+      `;
+      
+             // 創建報告內容
+       const reportContent = document.createElement('div');
+       reportContent.id = 'segmentation-report-content';
+       reportContent.style.cssText = `
+         background: linear-gradient(135deg, #1a1a2e, #16213e);
+         border-radius: 20px;
+         padding: 3rem;
+         max-width: 800px;
+         width: 100%;
+         max-height: 90vh;
+         overflow-y: auto;
+         color: #ffffff;
+         font-family: "LXGW WenKai", "Noto Serif TC", serif;
+         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+         border: 2px solid #4F46E5;
+         position: relative;
+         opacity: 0;
+         transform: translateY(30px);
+         transition: all 0.5s ease;
+       `;
+      
+      // 報告標題
+      const title = document.createElement('h1');
+      title.style.cssText = `
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #FFD700;
+        margin-bottom: 2rem;
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+      `;
+      title.textContent = '句讀挑戰報告';
+      reportContent.appendChild(title);
+      
+      // 總體統計
+      const overallStats = document.createElement('div');
+      overallStats.style.cssText = `
+        background: rgba(79, 70, 229, 0.1);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(79, 70, 229, 0.3);
+      `;
+      
+      const totalPuzzles = Object.keys(puzzleData.puzzleAttempts).length;
+      const totalAttempts = Object.values(puzzleData.puzzleAttempts)
+        .reduce((sum, record) => sum + record.attempts, 0);
+      const avgCompletionTime = Math.round(performance.averageCompletionTime / 1000);
+      const avgAccuracy = Math.round(performance.averageAccuracy * 100);
+      
+      overallStats.innerHTML = `
+        <h2 style="color: #87CEEB; font-size: 1.5rem; margin-bottom: 1rem;">📈 總體表現</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 2rem; color: #FFD700; font-weight: bold;">${totalPuzzles}</div>
+            <div style="color: #C0C0C0;">完成挑戰</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 2rem; color: #10B981; font-weight: bold;">${totalAttempts}</div>
+            <div style="color: #C0C0C0;">總嘗試次數</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 2rem; color: #F59E0B; font-weight: bold;">${avgCompletionTime}s</div>
+            <div style="color: #C0C0C0;">平均完成時間</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 2rem; color: #EF4444; font-weight: bold;">${avgAccuracy}%</div>
+            <div style="color: #C0C0C0;">平均準確率</div>
+          </div>
+        </div>
+      `;
+      reportContent.appendChild(overallStats);
+      
+      // 學習曲線圖表
+      if (performance.learningCurve.length > 0) {
+        const learningCurve = document.createElement('div');
+        learningCurve.style.cssText = `
+          background: rgba(79, 70, 229, 0.1);
+          border-radius: 15px;
+          padding: 2rem;
+          margin-bottom: 2rem;
+          border: 1px solid rgba(79, 70, 229, 0.3);
+        `;
+        
+        learningCurve.innerHTML = `
+          <h2 style="color: #87CEEB; font-size: 1.5rem; margin-bottom: 1rem;">📊 學習曲線</h2>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            ${performance.learningCurve.map((puzzle, index) => {
+              const chapterName = puzzle.puzzle.split('_')[0];
+              const completionTime = Math.round(puzzle.completionTime / 1000);
+              const accuracy = Math.round(puzzle.accuracy * 100);
+              const progress = ((index + 1) / performance.learningCurve.length * 100).toFixed(0);
+              
+              return `
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 1rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="color: #FFD700; font-weight: bold;">${chapterName}</span>
+                    <span style="color: #C0C0C0;">進度 ${progress}%</span>
+                  </div>
+                  <div style="display: flex; gap: 2rem; font-size: 0.9rem;">
+                    <span style="color: #10B981;">⏱️ ${completionTime}s</span>
+                    <span style="color: #EF4444;">🎯 ${accuracy}%</span>
+                  </div>
+                                     <div style="background: rgba(255, 255, 255, 0.1); height: 4px; border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">
+                     <div style="background: linear-gradient(90deg, #10B981, #EF4444); height: 100%; width: 0%; border-radius: 2px; transition: width 1.5s ease; position: relative;">
+                       <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite;"></div>
+                     </div>
+                   </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        reportContent.appendChild(learningCurve);
+      }
+      
+      // 能力分析
+      const abilityAnalysis = document.createElement('div');
+      abilityAnalysis.style.cssText = `
+        background: rgba(79, 70, 229, 0.1);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(79, 70, 229, 0.3);
+      `;
+      
+      // 計算能力評分
+      const persistenceScore = Math.min(100, Math.round((totalAttempts / totalPuzzles) * 20));
+      const accuracyScore = avgAccuracy;
+      const speedScore = Math.max(0, Math.round(100 - (avgCompletionTime - 30) * 2));
+      const adaptationScore = Math.max(0, Math.round(performance.difficultyAdaptation * 100));
+      
+      abilityAnalysis.innerHTML = `
+        <h2 style="color: #87CEEB; font-size: 1.5rem; margin-bottom: 1rem;">🎯 能力分析</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;">${persistenceScore}</div>
+            <div style="color: #C0C0C0; font-size: 0.9rem;">堅持程度</div>
+            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
+              <div style="background: #10B981; height: 100%; width: ${persistenceScore}%; border-radius: 3px;"></div>
+            </div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 1.5rem; color: #EF4444; font-weight: bold;">${accuracyScore}</div>
+            <div style="color: #C0C0C0; font-size: 0.9rem;">準確性</div>
+            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
+              <div style="background: #EF4444; height: 100%; width: ${accuracyScore}%; border-radius: 3px;"></div>
+            </div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;">${speedScore}</div>
+            <div style="color: #C0C0C0; font-size: 0.9rem;">速度</div>
+            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
+              <div style="background: #F59E0B; height: 100%; width: ${speedScore}%; border-radius: 3px;"></div>
+            </div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <div style="font-size: 1.5rem; color: #8B5CF6; font-weight: bold;">${adaptationScore}</div>
+            <div style="color: #C0C0C0; font-size: 0.9rem;">適應能力</div>
+            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
+              <div style="background: #8B5CF6; height: 100%; width: ${adaptationScore}%; border-radius: 3px;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      reportContent.appendChild(abilityAnalysis);
+      
+      // 哲學評價
+      const philosophicalComment = document.createElement('div');
+      philosophicalComment.style.cssText = `
+        background: rgba(255, 215, 0, 0.1);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        text-align: center;
+      `;
+      
+      let comment = '';
+      if (avgAccuracy >= 90) {
+        comment = '「你的句讀如庖丁解牛，游刃有餘。對古文的領悟已達化境。」';
+      } else if (avgAccuracy >= 80) {
+        comment = '「你的句讀如伯樂相馬，慧眼獨具。對古文的理解頗有心得。」';
+      } else if (avgAccuracy >= 70) {
+        comment = '「你的句讀如匠人琢玉，漸入佳境。對古文的探索值得讚賞。」';
+      } else if (avgAccuracy >= 60) {
+        comment = '「你的句讀如學徒習藝，勤勉好學。對古文的興趣令人欣慰。」';
+      } else {
+        comment = '「你的句讀如初學者，雖有不足，但勇於嘗試的精神可嘉。」';
+      }
+      
+      philosophicalComment.innerHTML = `
+        <h2 style="color: #FFD700; font-size: 1.5rem; margin-bottom: 1rem;">🏛️ 莊子評價</h2>
+        <div style="font-size: 1.2rem; line-height: 1.6; color: #FFD700; font-style: italic;">
+          ${comment}
+        </div>
+      `;
+      reportContent.appendChild(philosophicalComment);
+      
+      // 下載按鈕
+      const downloadButton = document.createElement('button');
+      downloadButton.style.cssText = `
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: "LXGW WenKai", "Noto Serif TC", serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 1rem 0.5rem;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      `;
+             downloadButton.textContent = '📥 下載報告';
+       downloadButton.addEventListener('click', downloadReportAsPNG);
+      
+      // 關閉按鈕
+      const closeButton = document.createElement('button');
+      closeButton.style.cssText = `
+        background: linear-gradient(135deg, #6B7280, #4B5563);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: "LXGW WenKai", "Noto Serif TC", serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 1rem 0.5rem;
+        box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4);
+      `;
+      closeButton.textContent = '✕ 關閉';
+      closeButton.addEventListener('click', () => {
+        reportContainer.remove();
+      });
+      
+      // 按鈕容器
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.cssText = `
+        text-align: center;
+        margin-top: 2rem;
+      `;
+      buttonContainer.appendChild(downloadButton);
+      buttonContainer.appendChild(closeButton);
+      reportContent.appendChild(buttonContainer);
+      
+      // 添加到頁面
+      reportContainer.appendChild(reportContent);
+      document.body.appendChild(reportContainer);
+      
+             // 添加shimmer動畫樣式
+       if (!document.getElementById('shimmer-animation')) {
+         const styleElement = document.createElement('style');
+         styleElement.id = 'shimmer-animation';
+         styleElement.textContent = `
+           @keyframes shimmer {
+             0% { transform: translateX(-100%); }
+             100% { transform: translateX(100%); }
+           }
+         `;
+         document.head.appendChild(styleElement);
+       }
+       
+       // 動畫效果
+       setTimeout(() => {
+         reportContent.style.opacity = '1';
+         reportContent.style.transform = 'translateY(0)';
+         
+         // 為各個部分添加漸入動畫
+         const sections = reportContent.querySelectorAll('div[style*="background: rgba"]');
+         sections.forEach((section, index) => {
+           section.style.opacity = '0';
+           section.style.transform = 'translateY(20px)';
+           section.style.transition = 'all 0.5s ease';
+           
+           setTimeout(() => {
+             section.style.opacity = '1';
+             section.style.transform = 'translateY(0)';
+           }, 200 + index * 200);
+         });
+         
+         // 為進度條添加動畫
+         setTimeout(() => {
+           const progressBars = reportContent.querySelectorAll('div[style*="width: 0%"]');
+           progressBars.forEach((bar, index) => {
+             const progress = bar.parentElement.previousElementSibling.textContent.match(/(\d+)%/);
+             if (progress) {
+               setTimeout(() => {
+                 bar.style.width = progress[1] + '%';
+               }, index * 200);
+             }
+           });
+         }, 1000);
+       }, 100);
+    }
+    
+         // 下載報告為PNG
+     function downloadReportAsPNG() {
+       const reportContent = document.getElementById('segmentation-report-content');
+       if (!reportContent) return;
+       
+       const downloadButton = document.querySelector('#segmentation-report-content button');
+       if (downloadButton) {
+         downloadButton.textContent = '⏳ 生成中...';
+         downloadButton.disabled = true;
+       }
+       
+       // 使用html2canvas庫將報告轉換為圖片
+       if (typeof html2canvas !== 'undefined') {
+         html2canvas(reportContent, {
+           backgroundColor: '#1a1a2e',
+           scale: 2,
+           useCORS: true,
+           allowTaint: true,
+           width: reportContent.offsetWidth,
+           height: reportContent.offsetHeight,
+           logging: false,
+           removeContainer: false
+         }).then(canvas => {
+           // 創建下載鏈接
+           const link = document.createElement('a');
+           const timestamp = new Date().toISOString().slice(0, 10);
+           link.download = `句讀挑戰報告_${timestamp}.png`;
+           link.href = canvas.toDataURL('image/png', 0.9);
+           
+           // 觸發下載
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+           
+           // 恢復按鈕狀態
+           if (downloadButton) {
+             downloadButton.textContent = '✅ 下載完成';
+             setTimeout(() => {
+               downloadButton.textContent = '📥 下載報告';
+               downloadButton.disabled = false;
+             }, 2000);
+           }
+           
+           console.log('📊 句讀報告下載完成');
+         }).catch(error => {
+           console.error('下載報告時發生錯誤:', error);
+           alert('下載報告時發生錯誤，請稍後再試。');
+           
+           // 恢復按鈕狀態
+           if (downloadButton) {
+             downloadButton.textContent = '📥 下載報告';
+             downloadButton.disabled = false;
+           }
+         });
+       } else {
+         // 如果沒有html2canvas庫，提示用戶
+         alert('下載功能需要html2canvas庫支持，請稍後再試。');
+         
+         // 恢復按鈕狀態
+         if (downloadButton) {
+           downloadButton.textContent = '📥 下載報告';
+           downloadButton.disabled = false;
+         }
+       }
+     }
+
     // 創建製作人員名單的結束按鈕
     function createCreditsEndButton(container) {
       const endButton = document.createElement('button');
@@ -27144,7 +28863,7 @@ ${layerData.choiceData.keyChoices}
         margin-left: auto;
         margin-right: auto;
       `;
-      endButton.textContent = '重新開始遊戲';
+      endButton.textContent = '返回首頁';
       
       // 添加按鈕到容器
       container.appendChild(endButton);
@@ -27153,7 +28872,7 @@ ${layerData.choiceData.keyChoices}
       setTimeout(() => {
         endButton.style.opacity = '1';
         endButton.style.transform = 'translateY(0)';
-      }, 100);
+      }, 1200);
       
       // 懸停效果
       endButton.addEventListener('mouseenter', () => {
@@ -27168,9 +28887,9 @@ ${layerData.choiceData.keyChoices}
         endButton.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
       });
       
-      // 點擊事件 - 重新開始遊戲
+      // 點擊事件 - 返回首頁
       endButton.addEventListener('click', () => {
-        console.log('🎬 製作人員名單 - 重新開始遊戲按鈕被點擊');
+        console.log('🎬 製作人員名單 - 返回首頁按鈕被點擊');
         
         // 清理製作人員名單場景
         container.remove();
@@ -27284,7 +29003,7 @@ ${layerData.choiceData.keyChoices}
 
     // 創建最終冥想場景
     function createFinalMeditationScene(scene) {
-      console.log('🧘 createFinalMeditationScene 開始執行');
+      console.log('🧘🏻‍♀️ createFinalMeditationScene 開始執行');
       console.log('接收到的場景參數:', scene);
       
       // 清空遊戲內容
@@ -27351,7 +29070,7 @@ ${layerData.choiceData.keyChoices}
               advanceBtn.style.opacity = '1';
               advanceBtn.style.transform = 'translateY(0)';
             }, 100);
-          }, 5000); // 從3秒延長到5秒
+          }, 3000); // 從5秒改為3秒
         });
       }, 1000);
     }
