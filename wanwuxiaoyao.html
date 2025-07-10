@@ -4552,7 +4552,8 @@
       hasDonePrologue: false,
       segmentationPuzzleState: {
         solved: false,
-        segments: []
+        segments: [],
+        hideTimer: null
       },
               // birdState removed - 鵷鶵 and 鴟鴞 are now independent forms
       viewScale: 100, // 視角縮放值：100為正常比例，0為最微觀，200為最宏觀
@@ -4887,7 +4888,8 @@
         .map(key => ({
           puzzle: key,
           completionTime: data.completionTimes[key],
-          accuracy: data.accuracyRates[key]
+          accuracy: data.accuracyRates[key],
+          attempts: data.puzzleAttempts[key] ? data.puzzleAttempts[key].attempts : 1
         }));
       
       // 計算難度適應能力（後期章節的表現改善程度）
@@ -17083,6 +17085,12 @@ ${layerData.choiceData.keyChoices}
           const successMessage = gameChapters[gameState.currentChapter].scenes[gameState.currentScene].success;
           const statsMessage = `\n\n⏱️ 完成時間：${timeInSeconds}秒\n🎯 嘗試次數：${attemptCount}次`;
           
+          // 清除之前的定時器（如果有的話）
+          if (gameState.segmentationPuzzleState.hideTimer) {
+            clearTimeout(gameState.segmentationPuzzleState.hideTimer);
+            gameState.segmentationPuzzleState.hideTimer = null;
+          }
+          
           // Show success message with stats
           resultElement.innerHTML = `
             <div style="text-align: center;">
@@ -17134,9 +17142,54 @@ ${layerData.choiceData.keyChoices}
             }
           }, 200);
           
-          // Change button text
-          checkButton.textContent = '繼續';
-          checkButton.addEventListener('click', advanceScene, { once: true });
+          // 在數字動畫完成後立即顯示繼續按鈕
+          setTimeout(() => {
+            checkButton.textContent = '繼續';
+            checkButton.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+            checkButton.style.color = '#ffffff';
+            checkButton.style.animation = 'gentle-pulse 2s ease-in-out infinite';
+            checkButton.addEventListener('click', advanceScene, { once: true });
+            
+            // 添加提示文字
+            const hintElement = document.createElement('div');
+            hintElement.style.cssText = `
+              text-align: center;
+              color: #9CA3AF;
+              font-size: 0.9rem;
+              margin-top: 1rem;
+              opacity: 0;
+              transition: opacity 0.5s ease;
+            `;
+            hintElement.textContent = '統計信息已保存，點擊繼續進入下一個場景';
+            
+            // 將提示添加到結果元素後面
+            resultElement.parentNode.insertBefore(hintElement, resultElement.nextSibling);
+            
+            // 顯示提示文字
+            setTimeout(() => {
+              hintElement.style.opacity = '1';
+            }, 100);
+            
+          }, 1200); // 數字動畫完成後立即顯示繼續按鈕
+          
+          // 確保繼續按鈕有足夠的視覺提示
+          if (!document.getElementById('gentle-pulse-animation')) {
+            const styleElement = document.createElement('style');
+            styleElement.id = 'gentle-pulse-animation';
+            styleElement.textContent = `
+              @keyframes gentle-pulse {
+                0%, 100% { 
+                  transform: scale(1);
+                  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+                }
+                50% { 
+                  transform: scale(1.05);
+                  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+                }
+              }
+            `;
+            document.head.appendChild(styleElement);
+          }
           
           // Hide advance button since we're using the check button as continue
           advanceBtn.style.display = 'none';
@@ -17181,7 +17234,7 @@ ${layerData.choiceData.keyChoices}
         resultElement.classList.remove('hidden');
         
         // Hide message after 4 seconds (longer for encouragement)
-        setTimeout(() => {
+        gameState.segmentationPuzzleState.hideTimer = setTimeout(() => {
           resultElement.classList.add('hidden');
           // 不自動清除錯誤標識，讓玩家主動調整
         }, 4000);
@@ -17373,9 +17426,36 @@ ${layerData.choiceData.keyChoices}
         }
       }, 200);
       
-      // Change button text and hide skip button
-      checkButton.textContent = '繼續';
-      checkButton.addEventListener('click', advanceScene, { once: true });
+      // 在數字動畫完成後立即顯示繼續按鈕（開發者跳過）
+      setTimeout(() => {
+        checkButton.textContent = '繼續';
+        checkButton.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+        checkButton.style.color = '#ffffff';
+        checkButton.style.animation = 'gentle-pulse 2s ease-in-out infinite';
+        checkButton.addEventListener('click', advanceScene, { once: true });
+        
+        // 添加提示文字
+        const hintElement = document.createElement('div');
+        hintElement.style.cssText = `
+          text-align: center;
+          color: #9CA3AF;
+          font-size: 0.9rem;
+          margin-top: 1rem;
+          opacity: 0;
+          transition: opacity 0.5s ease;
+        `;
+        hintElement.textContent = '開發者跳過模式 - 統計信息已保存';
+        
+        // 將提示添加到結果元素後面
+        resultElement.parentNode.insertBefore(hintElement, resultElement.nextSibling);
+        
+        // 顯示提示文字
+        setTimeout(() => {
+          hintElement.style.opacity = '1';
+        }, 100);
+        
+      }, 1200); // 數字動畫完成後立即顯示繼續按鈕
+      
       skipButton.style.display = 'none';
       
       // Hide advance button since we're using the check button as continue
@@ -28561,26 +28641,42 @@ ${layerData.choiceData.keyChoices}
           <h2 style="color: #87CEEB; font-size: 1.5rem; margin-bottom: 1rem;">📊 學習曲線</h2>
           <div style="display: flex; flex-direction: column; gap: 1rem;">
             ${performance.learningCurve.map((puzzle, index) => {
-              const chapterName = puzzle.puzzle.split('_')[0];
+              const chapterId = puzzle.puzzle.split('_')[0];
+              const chapterTitles = {
+                'prologue': '第一章：莊周夢蝶',
+                'chapter1': '第二章：濠梁觀魚',
+                'chapter2': '第三章：北冥有魚',
+                'chapter3': '第四章：鴟得腐鼠',
+                'chapter4': '第五章：蝸角之爭',
+                'chapter5': '第六章：朝菌大椿',
+                'chapter6': '第七章：螻蟻星辰',
+                'chapter7': '第八章：道歸混沌',
+                'epilogue': '第九章：逍遙遊'
+              };
+              const chapterName = chapterTitles[chapterId] || chapterId;
               const completionTime = Math.round(puzzle.completionTime / 1000);
               const accuracy = Math.round(puzzle.accuracy * 100);
-              const progress = ((index + 1) / performance.learningCurve.length * 100).toFixed(0);
+              const attempts = puzzle.attempts || 1;
               
               return `
                 <div style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 1rem;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span style="color: #FFD700; font-weight: bold;">${chapterName}</span>
-                    <span style="color: #C0C0C0;">進度 ${progress}%</span>
+                  <div style="color: #FFD700; font-weight: bold; margin-bottom: 0.8rem; font-size: 1rem;">
+                    ${chapterName}
                   </div>
-                  <div style="display: flex; gap: 2rem; font-size: 0.9rem;">
-                    <span style="color: #10B981;">⏱️ ${completionTime}s</span>
-                    <span style="color: #EF4444;">🎯 ${accuracy}%</span>
+                  <div style="display: flex; gap: 2.5rem; font-size: 0.95rem; justify-content: space-around;">
+                    <span style="color: #10B981; display: flex; align-items: center; gap: 0.3rem;">
+                      <span>⏱️</span>
+                      <span>${completionTime}s</span>
+                    </span>
+                    <span style="color: #8B5CF6; display: flex; align-items: center; gap: 0.3rem;">
+                      <span>🔄</span>
+                      <span>${attempts}次</span>
+                    </span>
+                    <span style="color: #EF4444; display: flex; align-items: center; gap: 0.3rem;">
+                      <span>🎯</span>
+                      <span>${accuracy}%</span>
+                    </span>
                   </div>
-                                     <div style="background: rgba(255, 255, 255, 0.1); height: 4px; border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">
-                     <div style="background: linear-gradient(90deg, #10B981, #EF4444); height: 100%; width: 0%; border-radius: 2px; transition: width 1.5s ease; position: relative;">
-                       <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite;"></div>
-                     </div>
-                   </div>
                 </div>
               `;
             }).join('')}
@@ -28600,40 +28696,24 @@ ${layerData.choiceData.keyChoices}
       `;
       
       // 計算能力評分
-      const persistenceScore = Math.min(100, Math.round((totalAttempts / totalPuzzles) * 20));
-      const accuracyScore = avgAccuracy;
+      const resilienceScore = Math.min(100, Math.round((totalAttempts / totalPuzzles) * 20));
       const speedScore = Math.max(0, Math.round(100 - (avgCompletionTime - 30) * 2));
-      const adaptationScore = Math.max(0, Math.round(performance.difficultyAdaptation * 100));
       
       abilityAnalysis.innerHTML = `
         <h2 style="color: #87CEEB; font-size: 1.5rem; margin-bottom: 1rem;">🎯 能力分析</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
-            <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;">${persistenceScore}</div>
-            <div style="color: #C0C0C0; font-size: 0.9rem;">堅持程度</div>
-            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
-              <div style="background: #10B981; height: 100%; width: ${persistenceScore}%; border-radius: 3px;"></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 100%; justify-content: center;">
+          <div style="text-align: center; padding: 1.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; min-width: 0;">
+            <div style="font-size: 1.8rem; color: #10B981; font-weight: bold;">${resilienceScore}</div>
+            <div style="color: #C0C0C0; font-size: 1rem; margin-top: 0.5rem;">韌性</div>
+            <div style="background: rgba(255, 255, 255, 0.1); height: 8px; border-radius: 4px; margin-top: 0.8rem; overflow: hidden;">
+              <div style="background: #10B981; height: 100%; width: ${resilienceScore}%; border-radius: 4px; transition: width 0.3s ease;"></div>
             </div>
           </div>
-          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
-            <div style="font-size: 1.5rem; color: #EF4444; font-weight: bold;">${accuracyScore}</div>
-            <div style="color: #C0C0C0; font-size: 0.9rem;">準確性</div>
-            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
-              <div style="background: #EF4444; height: 100%; width: ${accuracyScore}%; border-radius: 3px;"></div>
-            </div>
-          </div>
-          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
-            <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;">${speedScore}</div>
-            <div style="color: #C0C0C0; font-size: 0.9rem;">速度</div>
-            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
-              <div style="background: #F59E0B; height: 100%; width: ${speedScore}%; border-radius: 3px;"></div>
-            </div>
-          </div>
-          <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
-            <div style="font-size: 1.5rem; color: #8B5CF6; font-weight: bold;">${adaptationScore}</div>
-            <div style="color: #C0C0C0; font-size: 0.9rem;">適應能力</div>
-            <div style="background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 0.5rem;">
-              <div style="background: #8B5CF6; height: 100%; width: ${adaptationScore}%; border-radius: 3px;"></div>
+          <div style="text-align: center; padding: 1.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; min-width: 0;">
+            <div style="font-size: 1.8rem; color: #F59E0B; font-weight: bold;">${speedScore}</div>
+            <div style="color: #C0C0C0; font-size: 1rem; margin-top: 0.5rem;">速度</div>
+            <div style="background: rgba(255, 255, 255, 0.1); height: 8px; border-radius: 4px; margin-top: 0.8rem; overflow: hidden;">
+              <div style="background: #F59E0B; height: 100%; width: ${speedScore}%; border-radius: 4px; transition: width 0.3s ease;"></div>
             </div>
           </div>
         </div>
@@ -28757,18 +28837,7 @@ ${layerData.choiceData.keyChoices}
            }, 200 + index * 200);
          });
          
-         // 為進度條添加動畫
-         setTimeout(() => {
-           const progressBars = reportContent.querySelectorAll('div[style*="width: 0%"]');
-           progressBars.forEach((bar, index) => {
-             const progress = bar.parentElement.previousElementSibling.textContent.match(/(\d+)%/);
-             if (progress) {
-               setTimeout(() => {
-                 bar.style.width = progress[1] + '%';
-               }, index * 200);
-             }
-           });
-         }, 1000);
+
        }, 100);
     }
     
@@ -28777,62 +28846,150 @@ ${layerData.choiceData.keyChoices}
        const reportContent = document.getElementById('segmentation-report-content');
        if (!reportContent) return;
        
-       const downloadButton = document.querySelector('#segmentation-report-content button');
-       if (downloadButton) {
-         downloadButton.textContent = '⏳ 生成中...';
-         downloadButton.disabled = true;
-       }
+       // 創建一個乾淨的報告副本用於截圖
+       const reportClone = reportContent.cloneNode(true);
+       reportClone.id = 'temp-report-for-download';
        
-       // 使用html2canvas庫將報告轉換為圖片
-       if (typeof html2canvas !== 'undefined') {
-         html2canvas(reportContent, {
-           backgroundColor: '#1a1a2e',
-           scale: 2,
-           useCORS: true,
-           allowTaint: true,
-           width: reportContent.offsetWidth,
-           height: reportContent.offsetHeight,
-           logging: false,
-           removeContainer: false
-         }).then(canvas => {
-           // 創建下載鏈接
-           const link = document.createElement('a');
-           const timestamp = new Date().toISOString().slice(0, 10);
-           link.download = `句讀挑戰報告_${timestamp}.png`;
-           link.href = canvas.toDataURL('image/png', 0.9);
-           
-           // 觸發下載
-           document.body.appendChild(link);
-           link.click();
-           document.body.removeChild(link);
-           
-           // 恢復按鈕狀態
-           if (downloadButton) {
-             downloadButton.textContent = '✅ 下載完成';
-             setTimeout(() => {
-               downloadButton.textContent = '📥 下載報告';
+       // 移除克隆中的所有按鈕元素
+       const buttons = reportClone.querySelectorAll('button');
+       buttons.forEach(button => button.remove());
+       
+       // 移除克隆中的按鈕容器
+       const buttonContainers = reportClone.querySelectorAll('div[style*="text-align: center"]');
+       buttonContainers.forEach(container => {
+         if (container.querySelector('button') || container.textContent.includes('下載') || container.textContent.includes('關閉')) {
+           container.remove();
+         }
+       });
+       
+               // 設置克隆的樣式
+        reportClone.style.cssText = `
+          position: fixed;
+          top: -10000px;
+          left: -10000px;
+          width: ${reportContent.offsetWidth}px;
+          background: #1a1a2e;
+          z-index: -1000;
+          opacity: 1;
+          visibility: visible;
+          overflow: visible;
+          height: auto;
+          max-height: none;
+        `;
+        
+        // 將克隆添加到body
+        document.body.appendChild(reportClone);
+        
+        // 更新原始下載按鈕狀態
+        const downloadButton = document.querySelector('#segmentation-report-content button');
+        let originalButtonText = '';
+        if (downloadButton) {
+          originalButtonText = downloadButton.textContent;
+          downloadButton.textContent = '⏳ 生成中...';
+          downloadButton.disabled = true;
+        }
+        
+        // 使用html2canvas庫將乾淨的報告轉換為圖片
+        if (typeof html2canvas !== 'undefined') {
+          // 等待DOM更新和內容完全渲染
+          setTimeout(() => {
+            // 強制重新計算佈局
+            reportClone.style.display = 'block';
+            reportClone.style.position = 'static';
+            reportClone.style.top = 'auto';
+            reportClone.style.left = 'auto';
+            reportClone.style.height = 'auto';
+            
+            // 等待佈局完成後再次計算高度
+            setTimeout(() => {
+              const actualHeight = Math.max(
+                reportClone.scrollHeight,
+                reportClone.offsetHeight,
+                reportClone.clientHeight,
+                reportClone.getBoundingClientRect().height
+              );
+              
+              // 再次設置為屏幕外位置，但保持完整高度
+              reportClone.style.position = 'fixed';
+              reportClone.style.top = '-20000px';
+              reportClone.style.left = '-20000px';
+              reportClone.style.height = actualHeight + 'px';
+              
+              console.log('📊 報告截圖參數:', {
+                width: reportClone.offsetWidth,
+                height: actualHeight,
+                scrollHeight: reportClone.scrollHeight,
+                offsetHeight: reportClone.offsetHeight,
+                boundingHeight: reportClone.getBoundingClientRect().height
+              });
+              
+              html2canvas(reportClone, {
+                backgroundColor: '#1a1a2e',
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                logging: true,
+                removeContainer: false,
+                width: reportClone.offsetWidth,
+                height: actualHeight,
+                scrollX: 0,
+                scrollY: 0,
+                x: 0,
+                y: 0,
+                windowWidth: reportClone.offsetWidth,
+                windowHeight: actualHeight
+              }).then(canvas => {
+             // 移除臨時克隆
+             document.body.removeChild(reportClone);
+             
+             // 創建下載鏈接
+             const link = document.createElement('a');
+             const timestamp = new Date().toISOString().slice(0, 10);
+             link.download = `莊子遊戲_句讀挑戰報告_${timestamp}.png`;
+             link.href = canvas.toDataURL('image/png', 0.95);
+             
+             // 觸發下載
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+             
+             // 恢復按鈕狀態
+             if (downloadButton) {
+               downloadButton.textContent = '✅ 下載完成';
+               setTimeout(() => {
+                 downloadButton.textContent = originalButtonText;
+                 downloadButton.disabled = false;
+               }, 2000);
+             }
+             
+             console.log('📊 句讀報告下載完成');
+           }).catch(error => {
+             console.error('下載報告時發生錯誤:', error);
+             alert('下載報告時發生錯誤，請稍後再試。');
+             
+             // 移除臨時克隆（如果還存在）
+             if (document.body.contains(reportClone)) {
+               document.body.removeChild(reportClone);
+             }
+             
+             // 恢復按鈕狀態
+             if (downloadButton) {
+               downloadButton.textContent = originalButtonText;
                downloadButton.disabled = false;
-             }, 2000);
-           }
-           
-           console.log('📊 句讀報告下載完成');
-         }).catch(error => {
-           console.error('下載報告時發生錯誤:', error);
-           alert('下載報告時發生錯誤，請稍後再試。');
-           
-           // 恢復按鈕狀態
-           if (downloadButton) {
-             downloadButton.textContent = '📥 下載報告';
-             downloadButton.disabled = false;
-           }
-         });
-       } else {
+             }
+                       });
+            }, 300); // 等待佈局完成
+          }, 500);
+        } else {
+          // 移除臨時克隆
+          document.body.removeChild(reportClone);
+         
          // 如果沒有html2canvas庫，提示用戶
          alert('下載功能需要html2canvas庫支持，請稍後再試。');
          
          // 恢復按鈕狀態
          if (downloadButton) {
-           downloadButton.textContent = '📥 下載報告';
+           downloadButton.textContent = originalButtonText;
            downloadButton.disabled = false;
          }
        }
