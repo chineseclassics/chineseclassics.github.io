@@ -89,6 +89,33 @@
         .app-icon:active {
             transform: translateY(0) scale(0.98);
         }
+        
+        /* 推薦遊戲特殊動畫效果 */
+        .app-icon[data-app-id="wanwuxiaoyao"] {
+            animation: featured-pulse 3s ease-in-out infinite;
+        }
+        
+        .app-icon[data-app-id="wanwuxiaoyao"]:hover {
+            animation: featured-bounce 0.6s ease-in-out;
+        }
+        
+        @keyframes featured-pulse {
+            0%, 100% {
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+            50% {
+                box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+            }
+        }
+        
+        @keyframes featured-bounce {
+            0%, 100% {
+                transform: translateY(-2px) scale(1.05);
+            }
+            50% {
+                transform: translateY(-8px) scale(1.08);
+            }
+        }
         .app-icon:focus {
             outline: 2px solid #5D5CDE;
             outline-offset: 2px;
@@ -748,6 +775,14 @@
                         <span class="relative z-10">開始探索</span>
                         <div class="absolute inset-0 bg-gradient-to-r from-amber-400/60 to-stone-500/60 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
                     </button>
+                    
+                    <!-- 推薦提示 -->
+                    <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200/50 dark:border-amber-700/30">
+                        <p class="text-sm text-amber-700 dark:text-amber-300 font-medium">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            推薦體驗「萬物逍遙」：深度探索莊子哲學的物化之道
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -821,6 +856,69 @@
             </div>
 
             <div class="container mx-auto px-4 pb-12">
+                <!-- 新增：推薦遊戲專區 -->
+                <section class="mb-12">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center">
+                            <i class="fas fa-star text-amber-500 mr-3"></i>
+                            推薦體驗
+                        </h2>
+                        <span class="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full font-medium">
+                            新上線
+                        </span>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-6 border border-amber-200/50 dark:border-amber-700/30 relative overflow-hidden">
+                        <!-- 背景裝飾 -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-200/20 to-yellow-200/20 rounded-full -translate-y-16 translate-x-16"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-orange-200/20 to-amber-200/20 rounded-full translate-y-12 -translate-x-12"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="flex flex-col lg:flex-row items-center lg:items-start gap-6">
+                                <!-- 遊戲圖標 -->
+                                <div class="flex-shrink-0">
+                                    <div class="relative group">
+                                        <div class="bg-gradient-to-br from-amber-400 to-yellow-300 rounded-2xl p-6 w-24 h-24 flex items-center justify-center shadow-lg transform group-hover:scale-105 transition-all duration-300">
+                                            <i class="fas fa-leaf text-white text-3xl"></i>
+                                        </div>
+                                        <!-- 閃光效果 -->
+                                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 遊戲信息 -->
+                                <div class="flex-1 text-center lg:text-left">
+                                    <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">萬物逍遙</h3>
+                                    <p class="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                                        深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界
+                                    </p>
+                                    
+                                    <!-- 特色標籤 -->
+                                    <div class="flex flex-wrap gap-2 mb-4 justify-center lg:justify-start">
+                                        <span class="px-3 py-1 bg-amber-100 dark:bg-amber-800/30 text-amber-700 dark:text-amber-300 text-sm rounded-full font-medium">
+                                            <i class="fas fa-brain mr-1"></i>哲學思考
+                                        </span>
+                                        <span class="px-3 py-1 bg-green-100 dark:bg-green-800/30 text-green-700 dark:text-green-300 text-sm rounded-full font-medium">
+                                            <i class="fas fa-book-open mr-1"></i>莊子經典
+                                        </span>
+                                        <span class="px-3 py-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 text-sm rounded-full font-medium">
+                                            <i class="fas fa-magic mr-1"></i>互動體驗
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- 行動按鈕 -->
+                                    <button onclick="openApp('wanwuxiaoyao')" 
+                                            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-medium rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+                                        <i class="fas fa-play mr-2"></i>
+                                        開始體驗
+                                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="mb-12">
                     <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-300">互動小程序</h2>
                     
@@ -1008,7 +1106,9 @@
                 icon: 'fas fa-leaf',
                 gradient: 'from-amber-400 to-yellow-300',
                 url: 'https://chineseclassics.github.io/wanwuxiaoyao.html',
-                description: '深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界'
+                description: '深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界',
+                featured: true,
+                isNew: true
             },
             {
                 id: 'shuangshe',
@@ -1153,8 +1253,12 @@
                 ? `<i class="${app.icon} text-white ${iconSize}" aria-hidden="true"></i>`
                 : `<span class="${iconSize} text-white">${app.icon}</span>`;
             
+            // 為推薦遊戲添加特殊樣式
+            const featuredClass = app.featured ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-gray-900' : '';
+            const newBadge = app.isNew ? '<span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">新</span>' : '';
+            
             return `
-                <button class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200 relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl" 
+                <button class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200 relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl ${featuredClass}" 
                         data-app-id="${app.id}" 
                         onclick="openApp('${app.id}')"
                         onmouseenter="handleMouseEnter(event, '${app.id}')"
@@ -1163,8 +1267,9 @@
                         ontouchend="handleTouchEnd(event, '${app.id}')"
                         ontouchmove="handleTouchMove()"
                         aria-label="打開 ${app.name} 應用">
-                    <div class="bg-gradient-to-br ${app.gradient} rounded-2xl p-4 ${size} flex items-center justify-center shadow-lg">
+                    <div class="bg-gradient-to-br ${app.gradient} rounded-2xl p-4 ${size} flex items-center justify-center shadow-lg relative">
                         ${iconHtml}
+                        ${newBadge}
                     </div>
                     <p class="text-center mt-2 ${textSize}">${app.name}</p>
                 </button>
