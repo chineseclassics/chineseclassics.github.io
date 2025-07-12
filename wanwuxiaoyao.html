@@ -3815,21 +3815,20 @@
           <button id="close-dev-panel" class="text-gray-500 hover:text-red-500 font-bold">✕</button>
         </div>
         
-        <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
-          <div class="grid grid-cols-3 gap-2 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="prologue">第一章：莊周夢蝶</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter1">第二章：子非魚</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter2">第三章：北冥有魚</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter3">第四章：鴟得腐鼠</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter4">第五章：蝸角之爭</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter5">第六章：朝菌與大椿</button>
-            <button class="chapter-jump bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 py-2 px-2 rounded text-xs" data-chapter="chapter6">第七章：螻蟻星辰</button>
-            <button class="chapter-jump bg-purple-200 hover:bg-purple-300 dark:bg-purple-700 dark:hover:bg-purple-600 py-2 px-2 rounded text-xs" data-chapter="chapter7">第八章：道歸混沌</button>
-            <button class="chapter-jump bg-yellow-200 hover:bg-yellow-300 dark:bg-yellow-700 dark:hover:bg-yellow-600 py-2 px-2 rounded text-xs" data-chapter="epilogue">🌅 第九章：逍遙遊</button>
+
+        
+        <!-- 數據管理工具區域 -->
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📊 數據管理工具</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="reset-player-data-btn" class="bg-orange-200 hover:bg-orange-300 dark:bg-orange-700 dark:hover:bg-orange-600 py-2 px-3 rounded text-xs font-medium transition-colors duration-200">
+              🔄 重置玩家數據
+            </button>
+            <button id="view-all-data-btn" class="bg-blue-200 hover:bg-blue-300 dark:bg-blue-700 dark:hover:bg-blue-600 py-2 px-3 rounded text-xs font-medium transition-colors duration-200">
+              📋 查看所有數據
+            </button>
           </div>
         </div>
-        
-        <!-- 開發者工具區域已簡化，只保留章節跳轉功能 -->
       </div>
       
       <style>
@@ -4277,10 +4276,7 @@
         
 
         
-        /* 按鈕漣漪效果 */
-        .chapter-jump:active {
-          transform: scale(0.98);
-        }
+
       </style>
     </div>
     
@@ -4804,31 +4800,36 @@
       const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
       const data = gameState.playerChoices.segmentationPuzzleData;
       
-      // 初始化章節記錄
-      if (!data.puzzleAttempts[puzzleKey]) {
+      // 替換更新：如果已有記錄，則替換；如果沒有，則創建新記錄
+      if (data.puzzleAttempts[puzzleKey]) {
+        // 已有記錄，替換為新的嘗試數據
+        const existingRecord = data.puzzleAttempts[puzzleKey];
+        console.log(`🔄 替換斷句挑戰記錄: ${puzzleKey} - 原記錄: ${existingRecord.attempts}次嘗試`);
+        
+        // 替換為新的嘗試記錄，但保留原有的startTime
+        const originalStartTime = existingRecord.startTime;
         data.puzzleAttempts[puzzleKey] = {
-          attempts: 0,
-          correctAttempts: 0,
-          incorrectAttempts: 0,
-          startTime: Date.now(),
-          lastAttemptTime: null
+          attempts: 1,  // 重置為1次嘗試
+          correctAttempts: isCorrect ? 1 : 0,
+          incorrectAttempts: isCorrect ? 0 : 1,
+          startTime: originalStartTime, // 保留原有的開始時間
+          lastAttemptTime: Date.now()
         };
-      }
-      
-      const puzzleRecord = data.puzzleAttempts[puzzleKey];
-      puzzleRecord.attempts++;
-      puzzleRecord.lastAttemptTime = Date.now();
-      
-      if (isCorrect) {
-        puzzleRecord.correctAttempts++;
       } else {
-        puzzleRecord.incorrectAttempts++;
+        // 沒有記錄，創建新記錄
+        data.puzzleAttempts[puzzleKey] = {
+          attempts: 1,
+          correctAttempts: isCorrect ? 1 : 0,
+          incorrectAttempts: isCorrect ? 0 : 1,
+          startTime: Date.now(), // 只有新記錄才設置開始時間
+          lastAttemptTime: Date.now()
+        };
       }
       
       // 立即保存遊戲進度，確保斷句挑戰數據不丟失
       saveGameProgress();
       
-      console.log(`🧩 斷句挑戰嘗試記錄: ${puzzleKey} - 第${puzzleRecord.attempts}次嘗試 (${isCorrect ? '正確' : '錯誤'})`);
+      console.log(`🧩 斷句挑戰嘗試記錄: ${puzzleKey} - 第1次嘗試 (${isCorrect ? '正確' : '錯誤'})`);
     }
     
     // 記錄斷句挑戰完成數據
@@ -4841,6 +4842,13 @@
       }
       
       const puzzleRecord = data.puzzleAttempts[puzzleKey];
+      
+      // 檢查startTime是否存在，如果不存在則使用當前時間（fallback）
+      if (!puzzleRecord.startTime) {
+        console.warn('⚠️ startTime未設置，使用當前時間作為fallback');
+        puzzleRecord.startTime = Date.now();
+      }
+      
       const completionTime = Date.now() - puzzleRecord.startTime;
       
       // 記錄完成時間
@@ -5284,6 +5292,12 @@
         unlockedForms: gameState.unlockedForms,
         lastPlayTime: Date.now(),
         currentScene: gameState.currentScene,
+        currentForm: gameState.currentForm,
+        audioEnabled: gameState.audioEnabled,
+        baguaLearningCompleted: gameState.baguaLearningCompleted,
+        wanwuXunqiActive: gameState.wanwuXunqiActive,
+        wanwuXunqiProgress: gameState.wanwuXunqiProgress,
+        chatHistoryMap: chatHistoryMap,
         playerChoices: gameState.playerChoices
       };
       
@@ -5806,7 +5820,7 @@
       
       const analysisData = {
         // 移除冗余的哲学性格分析系统，直接使用8维度原始数据
-        profile: gameState.playerChoices.aiContext.profileSummary,
+        profile: gameState.playerChoices.aiContext?.profileSummary || '玩家檔案',
         traits: gameState.playerChoices.traits,
         patterns: gameState.playerChoices.choicePatterns,
         
@@ -5892,7 +5906,7 @@
           }))
         },
         
-        suggestedStyle: gameState.playerChoices.aiContext.suggestedResponseStyle
+        suggestedStyle: gameState.playerChoices.aiContext?.suggestedResponseStyle || '親切自然'
       };
       
       console.log('📦 最終AI數據包（完整5層）:', {
@@ -6838,6 +6852,466 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
       alert('游戏数据重置完成！\n现在可以重新开始第一章，系统将正常收集选择数据。');
     };
     
+    // 新增：開發者工具專用部分重置函數
+    window.resetPlayerChoicesOnly = function() {
+      console.log('🔄 ===== 開發者工具：部分重置玩家選擇數據 =====');
+      
+      // 備份遊戲進度狀態
+      const backupData = {
+        maxReachedChapter: gameState.maxReachedChapter,
+        collectedApertures: [...gameState.collectedApertures],
+        unlockedForms: [...gameState.unlockedForms],
+        currentChapter: gameState.currentChapter,
+        currentScene: gameState.currentScene,
+        currentForm: gameState.currentForm,
+        audioEnabled: gameState.audioEnabled,
+        baguaLearningCompleted: gameState.baguaLearningCompleted,
+        wanwuXunqiActive: gameState.wanwuXunqiActive,
+        wanwuXunqiProgress: [...gameState.wanwuXunqiProgress],
+        chatHistoryMap: {...chatHistoryMap}
+      };
+      
+      console.log('📋 備份的遊戲進度:', backupData);
+      
+      // 重置玩家選擇相關數據
+      gameState.playerChoices = {
+        // 重置選擇歷史
+        choiceHistory: [],
+        
+        // 重置時間數據
+        timingData: {
+          sceneStartTime: null,
+          choiceStartTime: null,
+          totalThinkingTime: 0,
+          averageThinkingTime: 0
+        },
+        
+        // 重置特質分數
+        traits: {
+          // MBTI維度
+          E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0,
+          // 莊子哲學維度
+          AT: 0, DT: 0, IN: 0, WU: 0, DI: 0, EQ: 0, US: 0, UN: 0
+        },
+        
+        // 重置選擇模式分析
+        choicePatterns: {
+          consistencyScore: 0,
+          contradictions: [],
+          evolutionTrend: [],
+          dominantTraits: [],
+          secondaryTraits: [],
+          storyBranches: []
+        },
+        
+        // 重置章節影響
+        chapterInfluences: {},
+        
+        // 重置AI上下文
+        aiContext: {
+          lastUpdateTime: null,
+          profileSummary: '',
+          mbtiType: '',
+          recentTrends: [],
+          suggestedResponseStyle: '',
+          storyPersonalization: {}
+        },
+        
+        // 重置物化體驗數據
+        transformationData: {
+          transformationHistory: [],
+          formUsageCount: {},
+          transformationDurations: {},
+          firstTimeTransformations: [],
+          dailyTransformations: [],
+          transformationPatterns: {}
+        },
+        
+        // 重置斷句挑戰數據
+        segmentationPuzzleData: {
+          puzzleAttempts: {},
+          completionTimes: {},
+          accuracyRates: {},
+          puzzlePerformance: {
+            averageCompletionTime: 0,
+            averageAccuracy: 0,
+            learningCurve: [],
+            difficultyAdaptation: 0,
+            persistenceLevel: 0
+          }
+        },
+        
+        // 重置場景停留時間數據
+        sceneDwellTime: {
+          currentSceneStartTime: null,
+          sceneDwellTimes: {},
+          averageDwellTime: 0,
+          totalDwellTime: 0
+        },
+        
+        // 重置聊天記錄
+        chatHistory: {
+          allQuestions: [],
+          chapterQuestions: {},
+          questionCount: 0,
+          chatPatterns: {
+            questionTypes: {},
+            engagementLevel: 0,
+            preferredTopics: []
+          }
+        }
+      };
+      
+      // 恢復遊戲進度狀態
+      gameState.maxReachedChapter = backupData.maxReachedChapter;
+      gameState.collectedApertures = backupData.collectedApertures;
+      gameState.unlockedForms = backupData.unlockedForms;
+      gameState.currentChapter = backupData.currentChapter;
+      gameState.currentScene = backupData.currentScene;
+      gameState.currentForm = backupData.currentForm;
+      gameState.audioEnabled = backupData.audioEnabled;
+      gameState.baguaLearningCompleted = backupData.baguaLearningCompleted;
+      gameState.wanwuXunqiActive = backupData.wanwuXunqiActive;
+      gameState.wanwuXunqiProgress = backupData.wanwuXunqiProgress;
+      Object.assign(chatHistoryMap, backupData.chatHistoryMap);
+      
+      // 立即保存遊戲進度
+      saveGameProgress();
+      
+      console.log('✅ 部分重置完成！');
+      console.log('🎮 保留的遊戲進度:');
+      console.log('  - 最高章節:', gameState.maxReachedChapter);
+      console.log('  - 已解鎖形態:', gameState.unlockedForms);
+      console.log('  - 已收集封印:', gameState.collectedApertures);
+      console.log('  - 當前章節:', gameState.currentChapter);
+      console.log('  - 當前場景:', gameState.currentScene);
+      console.log('  - 當前形態:', gameState.currentForm);
+      
+      console.log('🔄 重置的玩家數據:');
+      console.log('  - 選擇記錄: 0個');
+      console.log('  - 特質分數: 全部歸零');
+      console.log('  - AI分析數據: 已清空');
+      console.log('  - 物化體驗數據: 已清空');
+      console.log('  - 斷句挑戰數據: 已清空');
+      console.log('  - 場景停留時間: 已清空');
+      console.log('  - 聊天記錄: 已清空');
+      
+      // 更新調試面板（如果存在）
+      if (document.getElementById('debug-panel')) {
+        updateDebugPanel();
+      }
+      
+      console.log('💾 遊戲進度已保存到localStorage');
+      console.log('🎯 現在可以重新收集玩家選擇數據，同時保持遊戲進度不變');
+      
+      return {
+        success: true,
+        message: '部分重置完成！玩家選擇數據已清空，遊戲進度已保留。',
+        preservedData: backupData,
+        resetData: {
+          choiceHistory: 0,
+          traits: Object.keys(gameState.playerChoices.traits).length,
+          transformationData: 0,
+          segmentationPuzzleData: 0,
+          sceneDwellTime: 0,
+          chatHistory: 0
+        }
+      };
+    };
+    
+    // 新增：快速重置函數（無確認對話框）
+    window.quickResetPlayerChoices = function() {
+      console.log('⚡ 快速重置玩家選擇數據（無確認）');
+      return window.resetPlayerChoicesOnly();
+    };
+    
+    // 新增：檢查重置結果的函數
+    window.checkResetResult = function() {
+      const result = {
+        gameProgress: {
+          maxReachedChapter: gameState.maxReachedChapter,
+          currentChapter: gameState.currentChapter,
+          currentScene: gameState.currentScene,
+          unlockedForms: gameState.unlockedForms,
+          collectedApertures: gameState.collectedApertures
+        },
+        playerData: {
+          choiceHistoryLength: gameState.playerChoices.choiceHistory.length,
+          traitsSum: Object.values(gameState.playerChoices.traits).reduce((sum, val) => sum + val, 0),
+          transformationHistoryLength: gameState.playerChoices.transformationData.transformationHistory.length,
+          puzzleAttemptsCount: Object.keys(gameState.playerChoices.segmentationPuzzleData.puzzleAttempts).length,
+          sceneDwellTimesCount: Object.keys(gameState.playerChoices.sceneDwellTime.sceneDwellTimes).length,
+          chatQuestionCount: gameState.playerChoices.chatHistory.questionCount
+        }
+      };
+      
+      console.log('📊 重置結果檢查:', result);
+      return result;
+    };
+    
+    // 新增：顯示所有遊戲數據的函數
+    function showAllGameData() {
+      console.log('📊 ===== 莊子遊戲完整數據報告 =====');
+      
+      // 1. 遊戲進度數據
+      console.log('🎮 遊戲進度數據:');
+      console.log('  - 最高章節:', gameState.maxReachedChapter);
+      console.log('  - 當前章節:', gameState.currentChapter);
+      console.log('  - 當前場景:', gameState.currentScene);
+      console.log('  - 當前形態:', gameState.currentForm);
+      console.log('  - 已解鎖形態:', gameState.unlockedForms);
+      console.log('  - 已收集封印:', gameState.collectedApertures);
+      console.log('  - 音頻啟用:', gameState.audioEnabled);
+      console.log('  - 八卦學習完成:', gameState.baguaLearningCompleted);
+      console.log('  - 萬物尋氣狀態:', gameState.wanwuXunqiActive);
+      console.log('  - 萬物尋氣進度:', gameState.wanwuXunqiProgress);
+      
+      // 2. 玩家選擇數據
+      console.log('\n🎯 玩家選擇數據:');
+      console.log('  - 選擇記錄數量:', gameState.playerChoices.choiceHistory.length);
+      if (gameState.playerChoices.choiceHistory.length > 0) {
+        console.log('  - 最近選擇:', gameState.playerChoices.choiceHistory.slice(-3));
+      }
+      
+      // 3. 特質分數數據
+      console.log('\n🧠 特質分數數據:');
+      const traits = gameState.playerChoices.traits;
+      console.log('  MBTI維度:');
+      console.log('    - E(外向):', traits.E, '| I(內向):', traits.I);
+      console.log('    - S(感覺):', traits.S, '| N(直覺):', traits.N);
+      console.log('    - T(思考):', traits.T, '| F(情感):', traits.F);
+      console.log('    - J(判斷):', traits.J, '| P(知覺):', traits.P);
+      console.log('  莊子哲學維度:');
+      console.log('    - AT(執着):', traits.AT, '| DT(超脫):', traits.DT);
+      console.log('    - IN(干預):', traits.IN, '| WU(無為):', traits.WU);
+      console.log('    - DI(分別):', traits.DI, '| EQ(齊等):', traits.EQ);
+      console.log('    - US(有用):', traits.US, '| UN(無用):', traits.UN);
+      
+      // 4. 時間數據
+      console.log('\n⏱️ 時間數據:');
+      const timingData = gameState.playerChoices.timingData;
+      console.log('  - 總思考時間:', timingData.totalThinkingTime, 'ms');
+      console.log('  - 平均思考時間:', timingData.averageThinkingTime, 'ms');
+      console.log('  - 場景停留時間記錄數量:', Object.keys(gameState.playerChoices.sceneDwellTime.sceneDwellTimes).length);
+      
+      // 5. 物化體驗數據
+      console.log('\n🦋 物化體驗數據:');
+      const transformationData = gameState.playerChoices.transformationData;
+      console.log('  - 物化歷史記錄:', transformationData.transformationHistory.length);
+      console.log('  - 各形態使用次數:', transformationData.formUsageCount);
+      console.log('  - 首次物化記錄:', transformationData.firstTimeTransformations);
+      console.log('  - 日常物化記錄:', transformationData.dailyTransformations);
+      
+      // 6. 斷句挑戰數據
+      console.log('\n🧩 斷句挑戰數據:');
+      const puzzleData = gameState.playerChoices.segmentationPuzzleData;
+      console.log('  - 挑戰記錄數量:', Object.keys(puzzleData.puzzleAttempts).length);
+      console.log('  - 完成時間記錄:', Object.keys(puzzleData.completionTimes).length);
+      console.log('  - 準確率記錄:', Object.keys(puzzleData.accuracyRates).length);
+      console.log('  - 平均完成時間:', puzzleData.puzzlePerformance.averageCompletionTime, 'ms');
+      console.log('  - 平均準確率:', puzzleData.puzzlePerformance.averageAccuracy);
+      
+      // 7. 聊天記錄數據
+      console.log('\n💬 聊天記錄數據:');
+      const chatData = gameState.playerChoices.chatHistory;
+      console.log('  - 總問題數量:', chatData.questionCount);
+      console.log('  - 所有問題:', chatData.allQuestions);
+      console.log('  - 章節問題:', chatData.chapterQuestions);
+      
+      // 8. AI上下文數據
+      console.log('\n🤖 AI上下文數據:');
+      const aiContext = gameState.playerChoices.aiContext;
+      console.log('  - 最後更新時間:', aiContext.lastUpdateTime);
+      console.log('  - 個人檔案摘要:', aiContext.profileSummary);
+      console.log('  - MBTI類型:', aiContext.mbtiType);
+      console.log('  - 最近趨勢:', aiContext.recentTrends);
+      console.log('  - 建議回應風格:', aiContext.suggestedResponseStyle);
+      
+      // 9. 選擇模式分析
+      console.log('\n📈 選擇模式分析:');
+      const choicePatterns = gameState.playerChoices.choicePatterns;
+      console.log('  - 一致性分數:', choicePatterns.consistencyScore);
+      console.log('  - 矛盾選擇:', choicePatterns.contradictions);
+      console.log('  - 演進趨勢:', choicePatterns.evolutionTrend);
+      console.log('  - 主導特質:', choicePatterns.dominantTraits);
+      console.log('  - 次要特質:', choicePatterns.secondaryTraits);
+      
+      // 10. 章節影響數據
+      console.log('\n📚 章節影響數據:');
+      const chapterInfluences = gameState.playerChoices.chapterInfluences;
+      console.log('  - 章節影響記錄:', Object.keys(chapterInfluences));
+      
+      // 11. localStorage數據
+      console.log('\n💾 localStorage數據:');
+      try {
+        const storedData = localStorage.getItem('zhuangziGameProgress');
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          console.log('  - 存儲時間:', new Date(parsedData.lastPlayTime).toLocaleString());
+          console.log('  - 數據大小:', (storedData.length / 1024).toFixed(2), 'KB');
+        } else {
+          console.log('  - 無localStorage數據');
+        }
+      } catch (error) {
+        console.log('  - localStorage讀取錯誤:', error);
+      }
+      
+      // 12. 聊天歷史映射
+      console.log('\n🗺️ 聊天歷史映射:');
+      console.log('  - 聊天記錄數量:', Object.keys(chatHistoryMap).length);
+      console.log('  - 聊天記錄鍵值:', Object.keys(chatHistoryMap));
+      
+      console.log('\n📊 ===== 數據報告結束 =====');
+      
+      // 創建數據摘要彈窗
+      createDataSummaryModal();
+    }
+    
+    // 新增：創建數據摘要彈窗
+    function createDataSummaryModal() {
+      // 移除現有彈窗
+      const existingModal = document.getElementById('data-summary-modal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // 創建彈窗容器
+      const modal = document.createElement('div');
+      modal.id = 'data-summary-modal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.style.backdropFilter = 'blur(4px)';
+      
+      // 創建彈窗內容
+      const modalContent = document.createElement('div');
+      modalContent.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-hidden';
+      modalContent.style.width = '90vw';
+      
+      // 創建標題欄
+      const header = document.createElement('div');
+      header.className = 'flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700';
+      header.innerHTML = `
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">📊 莊子遊戲數據摘要</h2>
+        <button id="close-data-modal" class="text-gray-500 hover:text-red-500 font-bold text-xl">✕</button>
+      `;
+      
+      // 創建內容區域
+      const content = document.createElement('div');
+      content.className = 'p-4 overflow-y-auto max-h-[calc(90vh-120px)]';
+      
+      // 生成數據摘要HTML
+      const summaryHTML = generateDataSummaryHTML();
+      content.innerHTML = summaryHTML;
+      
+      // 組裝彈窗
+      modalContent.appendChild(header);
+      modalContent.appendChild(content);
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      
+      // 添加關閉事件
+      document.getElementById('close-data-modal').addEventListener('click', () => {
+        modal.remove();
+      });
+      
+      // 點擊背景關閉
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      // 添加ESC鍵關閉
+      document.addEventListener('keydown', function closeOnEsc(e) {
+        if (e.key === 'Escape') {
+          modal.remove();
+          document.removeEventListener('keydown', closeOnEsc);
+        }
+      });
+    }
+    
+    // 新增：生成數據摘要HTML
+    function generateDataSummaryHTML() {
+      const traits = gameState.playerChoices.traits;
+      const timingData = gameState.playerChoices.timingData;
+      const transformationData = gameState.playerChoices.transformationData;
+      const puzzleData = gameState.playerChoices.segmentationPuzzleData;
+      const chatData = gameState.playerChoices.chatHistory;
+      
+      return `
+        <div class="space-y-6">
+          <!-- 遊戲進度 -->
+          <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-3">🎮 遊戲進度</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div><span class="font-medium">最高章節:</span> ${gameState.maxReachedChapter}</div>
+              <div><span class="font-medium">當前章節:</span> ${gameState.currentChapter}</div>
+              <div><span class="font-medium">當前場景:</span> ${gameState.currentScene}</div>
+              <div><span class="font-medium">當前形態:</span> ${gameState.currentForm}</div>
+              <div><span class="font-medium">已解鎖形態:</span> ${gameState.unlockedForms.length}個</div>
+              <div><span class="font-medium">已收集封印:</span> ${gameState.collectedApertures.length}個</div>
+              <div><span class="font-medium">音頻啟用:</span> ${gameState.audioEnabled ? '是' : '否'}</div>
+              <div><span class="font-medium">八卦學習:</span> ${gameState.baguaLearningCompleted ? '完成' : '未完成'}</div>
+            </div>
+          </div>
+          
+          <!-- 玩家選擇 -->
+          <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold text-green-800 dark:text-green-200 mb-3">🎯 玩家選擇</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+              <div><span class="font-medium">選擇記錄:</span> ${gameState.playerChoices.choiceHistory.length}個</div>
+              <div><span class="font-medium">聊天問題:</span> ${chatData.questionCount}個</div>
+              <div><span class="font-medium">物化記錄:</span> ${transformationData.transformationHistory.length}次</div>
+              <div><span class="font-medium">斷句挑戰:</span> ${Object.keys(puzzleData.puzzleAttempts).length}個</div>
+              <div><span class="font-medium">場景停留:</span> ${Object.keys(gameState.playerChoices.sceneDwellTime.sceneDwellTimes).length}個</div>
+              <div><span class="font-medium">總思考時間:</span> ${(timingData.totalThinkingTime / 1000).toFixed(1)}秒</div>
+            </div>
+          </div>
+          
+          <!-- 特質分數 -->
+          <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-3">🧠 特質分數</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <div><span class="font-medium">E(外向):</span> ${traits.E}</div>
+              <div><span class="font-medium">I(內向):</span> ${traits.I}</div>
+              <div><span class="font-medium">S(感覺):</span> ${traits.S}</div>
+              <div><span class="font-medium">N(直覺):</span> ${traits.N}</div>
+              <div><span class="font-medium">T(思考):</span> ${traits.T}</div>
+              <div><span class="font-medium">F(情感):</span> ${traits.F}</div>
+              <div><span class="font-medium">J(判斷):</span> ${traits.J}</div>
+              <div><span class="font-medium">P(知覺):</span> ${traits.P}</div>
+              <div><span class="font-medium">AT(執着):</span> ${traits.AT}</div>
+              <div><span class="font-medium">DT(超脫):</span> ${traits.DT}</div>
+              <div><span class="font-medium">IN(干預):</span> ${traits.IN}</div>
+              <div><span class="font-medium">WU(無為):</span> ${traits.WU}</div>
+              <div><span class="font-medium">DI(分別):</span> ${traits.DI}</div>
+              <div><span class="font-medium">EQ(齊等):</span> ${traits.EQ}</div>
+              <div><span class="font-medium">US(有用):</span> ${traits.US}</div>
+              <div><span class="font-medium">UN(無用):</span> ${traits.UN}</div>
+            </div>
+          </div>
+          
+          <!-- 詳細數據鏈接 -->
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">📋 詳細數據</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              完整詳細的數據已輸出到瀏覽器控制台，請按F12打開開發者工具查看。
+            </p>
+            <div class="flex space-x-2">
+              <button onclick="console.log('🎮 遊戲狀態:', gameState)" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                查看遊戲狀態
+              </button>
+              <button onclick="console.log('🎯 玩家選擇:', gameState.playerChoices)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                查看玩家選擇
+              </button>
+              <button onclick="console.log('💾 localStorage:', localStorage.getItem('zhuangziGameProgress'))" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm">
+                查看localStorage
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
     // 重置到1分制系统（用于系统升级）
     function resetToOnePointSystem() {
       console.log('🔄 重置到1分制系统');
@@ -7045,23 +7519,18 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
       
 
       
-      // 生成莊子的親筆信
+      // 生成莊子的親筆信（統一單一prompt函數結構）
       async generatePersonalizedReport(playerData) {
         console.log('🎁 開始生成莊子的親筆信');
         
-        const messages = [
-          {
-            role: 'user',
-            content: this.buildFinalLetterPrompt(playerData)
-          }
-        ];
+        // 使用統一的generateSmartResponse機制
+        const context = {
+          sceneType: 'final-letter',
+          chapter: 'final-letter',
+          specificQuestion: '生成莊子的親筆信'
+        };
         
-        const response = await this.callDeepSeekAPI(messages, {
-          temperature: 0.8,
-          maxTokens: 2000
-        });
-        
-        return response || '抱歉，莊子的信生成失敗，請稍後再試。';
+        return await window.generateSmartResponse('生成莊子的親筆信', context);
       }
       
 
@@ -7302,7 +7771,7 @@ ${context.puzzleInfo ? `- 古文標題：${context.puzzleInfo.title}
         ).join('\n');
         
         const topTraits = Object.entries(playerData.traits).sort(([,a], [,b]) => b-a).slice(0, 3).map(([k,v]) => k).join('、') || '開放學習';
-        const zhuangziAlignment = this.getZhuangziPhilosophyAlignment(playerData.philosophyScores);
+        const zhuangziAlignment = this.getZhuangziPhilosophyAlignment(playerData.traits);
         
         // 精簡的提示詞模板
         return `我是莊子，為你的${chapterName}探索做個性化總結。
@@ -7347,9 +7816,9 @@ ${choiceRecords}
         console.log('🔧 構建最終信件提示詞...');
         
         // 計算基礎數據
-        const totalPlayTime = Math.round(playerData.totalPlayTime / 1000 / 60); // 轉換為分鐘
-        const avgSceneTime = Math.round(playerData.averageSceneDwellTime / 1000); // 轉換為秒
-        const avgThinkTime = Math.round(playerData.timingData?.averageThinkingTime / 1000) || 0; // 平均思考時間(秒)
+        const totalPlayTime = Math.round((playerData.timingData?.totalPlayTime || 0) / 1000 / 60); // 轉換為分鐘
+        const avgSceneTime = Math.round((playerData.timingData?.averageSceneDwellTime || 0) / 1000); // 轉換為秒
+        const avgThinkTime = Math.round((playerData.timingData?.averageThinkingTime || 0) / 1000); // 平均思考時間(秒)
         
         // 構建關鍵選擇
         const getKeyChoices = (choiceHistory) => {
@@ -7365,36 +7834,37 @@ ${choiceRecords}
           }
           
           return keyChoices.map((choice, index) => 
-            `"${choice.choiceText}" (在${choice.chapter}章節中深思${Math.round(choice.thinkingTime / 1000)}秒後的選擇)`
+            `"${choice.choiceText}" (在${choice.chapter || '未知'}章節中深思${Math.round((choice.thinkingTime || 0) / 1000)}秒後的選擇)`
           ).join('\n');
         };
         
-        const keyChoices = getKeyChoices(playerData.choiceHistory);
+        const keyChoices = getKeyChoices(playerData.choices || []);
         
-        // MBTI傾向分析
-        const getMBTITendencies = (mbtiScores) => {
+        // MBTI傾向分析（8維度系統）
+        const getMBTITendencies = (traits) => {
           const tendencies = [];
           
-          const eScore = mbtiScores?.E || 0;
-          const iScore = mbtiScores?.I || 0;
+          // MBTI四維度
+          const eScore = traits?.E || 0;
+          const iScore = traits?.I || 0;
           if (eScore > iScore + 1) tendencies.push('外向活躍');
           else if (iScore > eScore + 1) tendencies.push('內向深思');
           else tendencies.push('外向內向均衡');
           
-          const sScore = mbtiScores?.S || 0;
-          const nScore = mbtiScores?.N || 0;
+          const sScore = traits?.S || 0;
+          const nScore = traits?.N || 0;
           if (sScore > nScore + 1) tendencies.push('感覺實際');
           else if (nScore > sScore + 1) tendencies.push('直覺想像');
           else tendencies.push('感覺直覺均衡');
           
-          const tScore = mbtiScores?.T || 0;
-          const fScore = mbtiScores?.F || 0;
+          const tScore = traits?.T || 0;
+          const fScore = traits?.F || 0;
           if (tScore > fScore + 1) tendencies.push('理性思考');
           else if (fScore > tScore + 1) tendencies.push('情感豐富');
           else tendencies.push('理性情感均衡');
           
-          const jScore = mbtiScores?.J || 0;
-          const pScore = mbtiScores?.P || 0;
+          const jScore = traits?.J || 0;
+          const pScore = traits?.P || 0;
           if (jScore > pScore + 1) tendencies.push('計劃有序');
           else if (pScore > jScore + 1) tendencies.push('靈活隨性');
           else tendencies.push('計劃靈活均衡');
@@ -7403,22 +7873,22 @@ ${choiceRecords}
         };
         
         // 調用統一的哲學契合度分析函數和MBTI類型判斷
-        const mbtiTendencies = getMBTITendencies(playerData.mbtiScores);
-        const zhuangziAlignment = this.getZhuangziPhilosophyAlignment(playerData.philosophyScores);
+        const mbtiTendencies = getMBTITendencies(playerData.traits || {});
+        const zhuangziAlignment = this.getZhuangziPhilosophyAlignment(playerData.traits || {});
         
         // 獲取16型人格類型用於AI內部參考（不在回復中提及）
-        const finalMBTIType = this.determineMBTITypeFromScores(playerData.mbtiScores);
+        const finalMBTIType = this.determineMBTITypeFromScores(playerData.traits || {});
         const mbtiDescription = this.getMBTITypeDescription(finalMBTIType);
         
         // 構建完整的五層數據系統
         const layerData = {
           // 第1層：選擇數據（最高優先級 - 40%）
           choiceData: {
-            totalChoices: playerData.totalChoices || 0,
+            totalChoices: (playerData.choices || []).length,
             keyChoices: keyChoices,
-            dominantTraits: playerData.dominantTraits || [],
+            dominantTraits: playerData.patterns?.dominantTraits || [],
             mbtiTendencies: mbtiTendencies,
-            philosophyScores: playerData.philosophyScores || {},
+            philosophyScores: playerData.traits || {},
             zhuangziAlignment: zhuangziAlignment,
             // AI內部參考數據（不在回復中直接提及）
             internalMBTIType: finalMBTIType,
@@ -7459,7 +7929,7 @@ ${choiceRecords}
           }
         };
         
-        return `我是莊子本人，現在要穿越時空，為一位完成《莊子：萬物逍遙》遊戲的現代朋友寫一封親筆信。
+        return `你是莊子本人，現在要穿越時空，為一位完成《莊子：萬物逍遙》遊戲的現代朋友寫一封親筆信。
 
 **我的身份和任務：**
 1. **我就是莊子**：用第一人稱"我"來寫，就像真的莊子在和這位朋友對話
@@ -7468,40 +7938,6 @@ ${choiceRecords}
 4. **生活啟示**：給出具體的生活建議和人生啟示
 5. **情感連結**：建立我與這位現代朋友之間的情感連結
 6. **未來指引**：針對他們的未來生活給出溫暖而智慧的指導
-
-**五層數據利用優先級（溫度化解讀）：**
-- **選擇數據（40%）**：重點分析人格傾向和哲學傾向，結合關鍵選擇回顧，深度解讀內心世界
-- **聊天互動（25%）**：分析求知之心和朋友情誼，從互動看出探索態度
-- **時間節奏（20%）**：從思考和遊戲節奏看出性格特質和生活態度
-- **物化探索（10%）**：適度肯定探索勇氣和適應精神
-- **學習挑戰（5%）**：輕度肯定堅持品質和文化興趣
-
-**這位朋友的心靈數據：**
-
-🎯 **選擇數據**（40%篇幅 - 重點分析）：
-- 總選擇${layerData.choiceData.totalChoices}次，遊戲${layerData.timingData.totalPlayTime}分鐘
-- 人格傾向：${layerData.choiceData.mbtiTendencies}
-- 🔒 **AI內部參考**（僅供你理解朋友性格，絕對不要在信中提及）：
-  * 推測類型：${layerData.choiceData.internalMBTIType}
-  * 類型特徵：${layerData.choiceData.internalMBTIDescription}
-  * 指導原則：在信中直接使用該類型的經典描述（如"你是富有想像力的理想主義者"）來讓朋友感受到被深度理解，但絕不提及類型字母組合（如INFP）或類型名稱（如調停者）
-- 哲學原始分數：執著${layerData.choiceData.philosophyScores?.執著 || 0}、超脫${layerData.choiceData.philosophyScores?.超脫 || 0}、干預${layerData.choiceData.philosophyScores?.干預 || 0}、無為${layerData.choiceData.philosophyScores?.無為 || 0}、分別${layerData.choiceData.philosophyScores?.分別 || 0}、齊等${layerData.choiceData.philosophyScores?.齊等 || 0}、有用${layerData.choiceData.philosophyScores?.有用 || 0}、無用${layerData.choiceData.philosophyScores?.無用 || 0}
-- 哲學契合度：${layerData.choiceData.zhuangziAlignment.join('、')}
-- 關鍵選擇回顧：
-${layerData.choiceData.keyChoices}
-
-💬 **聊天互動**（25%篇幅 - 深度分析）：
-- 提問${layerData.chatData.totalQuestions}次，互動風格：${layerData.chatData.interactionStyle}
-- 關注焦點：${layerData.chatData.recentQuestions.length > 0 ? layerData.chatData.recentQuestions.slice(-3).map(q => `"${q.question}"`).join('、') : '沉默體驗，內心思辨'}
-
-⏰ **時間節奏**（20%篇幅 - 適度分析）：
-- 思考${layerData.timingData.averageThinkingTime}秒（${layerData.timingData.thinkingPattern}），停留${layerData.timingData.averageSceneDwellTime}秒（${layerData.timingData.playPattern}）
-
-🦋 **物化探索**（10%篇幅 - 適度提及）：
-- 物化${layerData.transformationData.totalTransformations}次，偏好：${layerData.transformationData.preferredForms.join('、') || '自然隨緣'}
-
-📜 **學習挑戰**（5%篇幅 - 輕度肯定）：
-- 謎題${layerData.learningData.totalPuzzles}個，準確率${layerData.learningData.averageAccuracy}%
 
 **寫作風格：**
 - **情感基調**：溫暖、親切、充滿關懷，像長輩對晚輩的慈愛指導
@@ -7519,44 +7955,50 @@ ${layerData.choiceData.keyChoices}
 - **🚫 絕對禁止提及MBTI類型**：不得在信中出現任何MBTI字母組合（如INFP、ENFJ等）或類型名稱（如"提倡者"、"建築師"等）
 - **🚫 絕對禁止職場相關內容**：不得提及辦公室、工作、職場、同事、上司、會議、項目、業績、升職、加薪等任何與工作環境相關的詞彙和概念
 - **✅ 保持普適性**：信件內容應該適用於所有人生階段和背景，包括學生、自由職業者、退休人士、家庭主婦等各種生活狀態
-- **✅ 直接使用MBTI經典分析**：根據內部16型人格分析，直接在信中使用該類型的經典描述讓朋友感受到被深度理解：
-  * 對ENFJ：描述為"富有同情心的引導者，關心他人成長，有天然的影響力"
-  * 對ENFP：描述為"熱情洋溢的理想主義者，富有創造力，能看到無限可能"
-  * 對ENTJ：描述為"天生的領導者，果斷而有遠見，善於制定和執行計劃"
-  * 對ENTP：描述為"聰明好辯的思想家，喜愛智力挑戰，充滿創新精神"
-  * 對ESFJ：描述為"熱心助人的合作者，重視和諧，有強烈的責任感"
-  * 對ESFP：描述為"活潑開朗的表演者，享受當下，善於帶動氣氛"
-  * 對ESTJ：描述為"實用主義的組織者，重視效率，有很強的執行力"
-  * 對ESTP：描述為"精力充沛的實用主義者，適應力強，善於解決問題"
-  * 對INFJ：描述為"富有洞察力的理想主義者，追求意義，有獨特的直覺"
-  * 對INFP：描述為"富有想像力的理想主義者，價值觀驅動，內心豐富"
-  * 對INTJ：描述為"富有想像力的戰略家，追求完美，有系統性思維"
-  * 對INTP：描述為"富有創新精神的發明家，追求理解，善於分析"
-  * 對ISFJ：描述為"溫暖體貼的保護者，樂於助人，有強烈的服務精神"
-  * 對ISFP：描述為"靈活友善的藝術家，追求和諧，有獨特的審美"
-  * 對ISTJ：描述為"實用忠誠的傳統主義者，責任感強，做事有條不紊"
-  * 對ISTP：描述為"靈活務實的技師，擅長解決問題，動手能力強"
 - 嚴禁套話和心靈雞湯：不要用"人生如夢"、"順其自然"、"心靈平靜"等空洞詞彙
 - 必須具體化：針對朋友的具體選擇和行為模式進行分析，避免泛泛而談
 - 避免說教式語言：不要用"你應該"、"你需要"等指令性語言
 - 拒絕萬能金句：不要用"一切都是最好的安排"、"相信自己"等通用句子
 - 基於數據說話：每個洞察都要有具體的選擇或行為作為依據
+- **絕對禁止**：不要在信件中出現任何英文字母標記（如T、F、WU、AT、DT等）
+- **絕對禁止**：不要在信件中出現動作描述（如「輕撫長鬚微笑」、「點頭微笑」等）
+- **語言純淨**：只用純粹的中文語言表達，保持莊子的溫暖智慧風格
+- **情感真摯**：重點傳達對朋友的理解和關愛，而非展示分析技巧
+- **內容普適**：信件內容應該適用於所有人生階段和背景，避免針對特定職業或工作環境
 
-**哲學數據分析指導**：
-- **原始分數解讀**：根據具體數值判斷傾向強度，如執著8分vs超脫2分表示強烈執著傾向
-- **契合度策略應用**：
-  - **深度契合**：表達共鳴和肯定，"我看到了你心中的那份超脫"，鼓勵繼續保持這種智慧
-  - **需要引導**：溫柔建議，"我理解你的執著，但或許可以試著..."，提供具體的生活智慧
-  - **適中平衡**：讚美平衡，"你在二者之間找到了屬於自己的道路"，鼓勵在體驗中深化
-- **綜合分析**：結合原始分數的具體數值和契合度評價，提供更精準的個性化指導
+**五層數據利用優先級（溫度化解讀）：**
+- **選擇數據（40%）**：重點分析人格傾向和哲學傾向，結合關鍵選擇回顧，深度解讀內心世界
+- **聊天互動（25%）**：分析求知之心和朋友情誼，從互動看出探索態度
+- **時間節奏（20%）**：從思考和遊戲節奏看出性格特質和生活態度
+- **物化探索（10%）**：適度肯定探索勇氣和適應精神
+- **學習挑戰（5%）**：輕度肯定堅持品質和文化興趣
 
-**六大寫作指導：**
-1. **開場問候**：溫暖稱呼，體現朋友情誼，可根據內部MBTI分析調整親密度
-2. **個性洞察**：基於人格傾向和哲學契合度分析，深度分析心靈特質（重點），展現對朋友性格的深度理解
-3. **生活啟示**：結合時間節奏和思考模式，給出符合朋友性格類型的人生智慧（避免職場環境，聚焦個人成長和人際關係）
-4. **情感連結**：用莊子溫度，讓朋友感受理解關懷，將數據轉化為人性關懷
-5. **未來指引**：基於探索學習和互動模式，給出符合朋友性格特點的發展建議（關注個人興趣、學習、人際關係等普適性領域）
-6. **結語祝福**：以莊子身份，給出祝福期許
+**這位朋友的心靈數據：**
+
+🎯 **選擇數據**（40%篇幅 - 重點分析）：
+- 總選擇${layerData.choiceData.totalChoices}次，遊戲${layerData.timingData.totalPlayTime}分鐘
+- 人格傾向：${layerData.choiceData.mbtiTendencies}
+- 🔒 **AI內部參考**（僅供你理解朋友性格，絕對不要在信中提及）：
+  * 推測類型：${layerData.choiceData.internalMBTIType}
+  * 類型特徵：${layerData.choiceData.internalMBTIDescription}
+  * 指導原則：在信中直接使用該類型的經典描述（如"你是富有想像力的理想主義者"）來讓朋友感受到被深度理解，但絕不提及類型字母組合（如INFP）或類型名稱（如調停者）
+- 哲學原始分數：執著${layerData.choiceData.philosophyScores?.AT || 0}、超脫${layerData.choiceData.philosophyScores?.DT || 0}、干預${layerData.choiceData.philosophyScores?.IN || 0}、無為${layerData.choiceData.philosophyScores?.WU || 0}、分別${layerData.choiceData.philosophyScores?.DI || 0}、齊等${layerData.choiceData.philosophyScores?.EQ || 0}、有用${layerData.choiceData.philosophyScores?.US || 0}、無用${layerData.choiceData.philosophyScores?.UN || 0}
+- 哲學契合度：${layerData.choiceData.zhuangziAlignment.join('、')}
+- 關鍵選擇回顧：
+${layerData.choiceData.keyChoices}
+
+💬 **聊天互動**（25%篇幅 - 深度分析）：
+- 提問${layerData.chatData.totalQuestions}次，互動風格：${layerData.chatData.interactionStyle}
+- 關注焦點：${layerData.chatData.recentQuestions.length > 0 ? layerData.chatData.recentQuestions.slice(-3).map(q => `"${q.question}"`).join('、') : '沉默體驗，內心思辨'}
+
+⏰ **時間節奏**（20%篇幅 - 適度分析）：
+- 思考${layerData.timingData.averageThinkingTime}秒（${layerData.timingData.thinkingPattern}），停留${layerData.timingData.averageSceneDwellTime}秒（${layerData.timingData.playPattern}）
+
+🦋 **物化探索**（10%篇幅 - 適度提及）：
+- 物化${layerData.transformationData.totalTransformations}次，偏好：${layerData.transformationData.preferredForms.join('、') || '自然隨緣'}
+
+📜 **學習挑戰**（5%篇幅 - 輕度肯定）：
+- 謎題${layerData.learningData.totalPuzzles}個，準確率${layerData.learningData.averageAccuracy}%
 
 **💡 根據內部MBTI分析直接使用經典描述的技巧：**
 - **對ENFJ**：直接描述"你是富有同情心的引導者，關心他人成長，有天然的影響力"
@@ -7583,13 +8025,21 @@ ${layerData.choiceData.keyChoices}
 - 結合具體遊戲數據來支撐MBTI分析，如"你的深思熟慮體現了你戰略家的特質..."
 - **核心要點**：直接使用MBTI經典描述（如"你是富有想像力的理想主義者"）讓玩家感受到被準確理解，而非只是調整語調
 
-**最終寫作要求：**
-- **絕對禁止**：不要在信件中出現任何英文字母標記（如T、F、WU、AT、DT等）
-- **絕對禁止**：不要在信件中出現動作描述（如「輕撫長鬚微笑」、「點頭微笑」等）
-- **絕對禁止**：不要在信件中出現任何職場相關詞彙（如工作、辦公室、同事、會議、項目、業績、升職、加薪等）
-- **語言純淨**：只用純粹的中文語言表達，保持莊子的溫暖智慧風格
-- **情感真摯**：重點傳達對朋友的理解和關愛，而非展示分析技巧
-- **內容普適**：信件內容應該適用於所有人生階段和背景，避免針對特定職業或工作環境
+**哲學數據分析指導**：
+- **原始分數解讀**：根據具體數值判斷傾向強度，如執著8分vs超脫2分表示強烈執著傾向
+- **契合度策略應用**：
+  - **深度契合**：表達共鳴和肯定，"我看到了你心中的那份超脫"，鼓勵繼續保持這種智慧
+  - **需要引導**：溫柔建議，"我理解你的執著，但或許可以試著..."，提供具體的生活智慧
+  - **適中平衡**：讚美平衡，"你在二者之間找到了屬於自己的道路"，鼓勵在體驗中深化
+- **綜合分析**：結合原始分數的具體數值和契合度評價，提供更精準的個性化指導
+
+**六大寫作指導：**
+1. **開場問候**：溫暖稱呼，體現朋友情誼，可根據內部MBTI分析調整親密度
+2. **個性洞察**：基於人格傾向和哲學契合度分析，深度分析心靈特質（重點），展現對朋友性格的深度理解
+3. **生活啟示**：結合時間節奏和思考模式，給出符合朋友性格類型的人生智慧（避免職場環境，聚焦個人成長和人際關係）
+4. **情感連結**：用莊子溫度，讓朋友感受理解關懷，將數據轉化為人性關懷
+5. **未來指引**：基於探索學習和互動模式，給出符合朋友性格特點的發展建議（關注個人興趣、學習、人際關係等普適性領域）
+6. **結語祝福**：以莊子身份，給出祝福期許
 
 請直接寫信，不要前綴說明。這封信應該讓讀者感受到：莊子真的穿越時空來關心他們，理解他們，並為他們的人生提供智慧的指引。`;
       }
@@ -13047,8 +13497,22 @@ ${layerData.choiceData.keyChoices}
       if (gameState.playerChoices.sceneDwellTime.currentSceneStartTime) {
         const dwellTime = Date.now() - gameState.playerChoices.sceneDwellTime.currentSceneStartTime;
         const sceneKey = `${gameState.currentChapter}_${gameState.currentScene}`;
+        
+        // 替換更新：如果已有記錄，則替換；如果沒有，則創建新記錄
+        if (gameState.playerChoices.sceneDwellTime.sceneDwellTimes[sceneKey]) {
+          const existingTime = gameState.playerChoices.sceneDwellTime.sceneDwellTimes[sceneKey];
+          console.log(`🔄 替換場景停留時間: ${sceneKey} - 原時間: ${existingTime}ms -> 新時間: ${dwellTime}ms`);
+          
+          // 更新總停留時間（減去舊時間，加上新時間）
+          gameState.playerChoices.sceneDwellTime.totalDwellTime -= existingTime;
+          gameState.playerChoices.sceneDwellTime.totalDwellTime += dwellTime;
+        } else {
+          // 新記錄，直接累加到總時間
+          gameState.playerChoices.sceneDwellTime.totalDwellTime += dwellTime;
+        }
+        
+        // 替換場景停留時間記錄
         gameState.playerChoices.sceneDwellTime.sceneDwellTimes[sceneKey] = dwellTime;
-        gameState.playerChoices.sceneDwellTime.totalDwellTime += dwellTime;
         
         // 立即保存遊戲進度，確保場景停留時間數據不丟失
         saveGameProgress();
@@ -16260,20 +16724,27 @@ ${layerData.choiceData.keyChoices}
         segments: new Array(scene.text.length - 1).fill(false)
       };
       
-      // 初始化斷句挑戰計時（在挑戰開始時就設置startTime）
+      // 初始化斷句挑戰數據結構（startTime將在第一次點擊時設置）
       const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
       const data = gameState.playerChoices.segmentationPuzzleData;
       
-      // 確保puzzleAttempts存在
+      // 確保puzzleAttempts存在，並重置所有計數器（每次進入場景都重新開始）
       if (!data.puzzleAttempts[puzzleKey]) {
         data.puzzleAttempts[puzzleKey] = {
           attempts: 0,
           correctAttempts: 0,
           incorrectAttempts: 0,
-          startTime: Date.now(),
+          startTime: null, // 將在第一次點擊時設置
           lastAttemptTime: null
         };
-        console.log('⏱️ 斷句挑戰計時初始化:', puzzleKey, 'startTime:', data.puzzleAttempts[puzzleKey].startTime);
+        console.log('⏱️ 斷句挑戰數據結構初始化:', puzzleKey, '等待第一次點擊開始計時');
+      } else {
+        // 如果記錄已存在，重置所有計數器和startTime，等待重新開始
+        data.puzzleAttempts[puzzleKey].attempts = 0;
+        data.puzzleAttempts[puzzleKey].correctAttempts = 0;
+        data.puzzleAttempts[puzzleKey].incorrectAttempts = 0;
+        data.puzzleAttempts[puzzleKey].startTime = null;
+        console.log('⏱️ 斷句挑戰計數器重置:', puzzleKey, '等待重新開始挑戰');
       }
       
       // Fix CSS selector issue with previous circles
@@ -16485,7 +16956,7 @@ ${layerData.choiceData.keyChoices}
           charGap.style.cursor = 'pointer';
           charGap.style.marginLeft = '-6px'; // 左移6px修正偏右问题
           charGap.style.marginBottom = '2px'; // 轻微上移以确保垂直居中
-          charGap.style.zIndex = gameState.currentChapter === 'chapter6' ? '5' : (gameState.currentChapter === 'chapter7' ? '15005' : '45'); // 第七章使用超高z-index確保可點擊
+          charGap.style.zIndex = gameState.currentChapter === 'chapter6' ? '10000' : (gameState.currentChapter === 'chapter7' ? '15005' : (gameState.currentChapter === 'epilogue' ? '10000' : '10000')); // 第六章、第七章和第九章使用超高z-index確保可點擊
           
           // Create the perfectly centered dot with improved positioning
           const dot = document.createElement('span');
@@ -16506,7 +16977,7 @@ ${layerData.choiceData.keyChoices}
           dot.style.transform = 'translate(-50%, -50%)';
           dot.style.margin = '0';
           dot.style.padding = '0';
-          dot.style.zIndex = gameState.currentChapter === 'chapter6' ? '10' : (gameState.currentChapter === 'chapter7' ? '15010' : '50'); // 第七章使用超高z-index確保可見
+          dot.style.zIndex = gameState.currentChapter === 'chapter6' ? '10005' : (gameState.currentChapter === 'chapter7' ? '15010' : (gameState.currentChapter === 'epilogue' ? '10005' : '10005')); // 第六章、第七章和第九章使用超高z-index確保可見
           
           // Add click-ripple animation
           if (!document.getElementById('click-ripple-animation')) {
@@ -16535,7 +17006,7 @@ ${layerData.choiceData.keyChoices}
           glowEffect.style.left = '50%';
           glowEffect.style.transition = 'all 0.2s ease-out';
           glowEffect.style.boxShadow = '0 0 10px 4px rgba(79, 70, 229, 0.3)';
-          glowEffect.style.zIndex = gameState.currentChapter === 'chapter6' ? '9' : (gameState.currentChapter === 'chapter7' ? '15009' : '49'); // 第七章使用超高z-index確保可見
+          glowEffect.style.zIndex = gameState.currentChapter === 'chapter6' ? '10004' : (gameState.currentChapter === 'chapter7' ? '15009' : (gameState.currentChapter === 'epilogue' ? '10004' : '10004')); // 第六章、第七章和第九章使用超高z-index確保可見
           
           // Active state styling
           if (gameState.segmentationPuzzleState.segments[index]) {
@@ -16576,7 +17047,7 @@ ${layerData.choiceData.keyChoices}
             clickAnimation.style.borderRadius = '50%';
             clickAnimation.style.transform = 'translate(-50%, -50%) scale(0)';
             clickAnimation.style.animation = 'click-ripple 0.6s ease-out forwards';
-            clickAnimation.style.zIndex = gameState.currentChapter === 'chapter7' ? '15008' : '48';
+            clickAnimation.style.zIndex = gameState.currentChapter === 'chapter6' ? '10003' : (gameState.currentChapter === 'chapter7' ? '15008' : (gameState.currentChapter === 'epilogue' ? '10003' : '10003'));
             charGap.appendChild(clickAnimation);
             
             // Remove animation element after it completes
@@ -16858,6 +17329,25 @@ ${layerData.choiceData.keyChoices}
     }
     
     function toggleSegment(index) {
+      // 檢查是否是第一次點擊（開始計時）
+      const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
+      const data = gameState.playerChoices.segmentationPuzzleData;
+      
+      // 如果是第一次點擊，設置startTime
+      if (!data.puzzleAttempts[puzzleKey] || !data.puzzleAttempts[puzzleKey].startTime) {
+        if (!data.puzzleAttempts[puzzleKey]) {
+          data.puzzleAttempts[puzzleKey] = {
+            attempts: 0,
+            correctAttempts: 0,
+            incorrectAttempts: 0,
+            startTime: null,
+            lastAttemptTime: null
+          };
+        }
+        data.puzzleAttempts[puzzleKey].startTime = Date.now();
+        console.log('⏱️ 斷句挑戰計時開始（第一次點擊）:', puzzleKey, 'startTime:', data.puzzleAttempts[puzzleKey].startTime);
+      }
+      
       // Toggle segment state
       gameState.segmentationPuzzleState.segments[index] = !gameState.segmentationPuzzleState.segments[index];
       
@@ -17067,7 +17557,12 @@ ${layerData.choiceData.keyChoices}
           const puzzleRecord = puzzleData.puzzleAttempts[puzzleKey];
           
           // 計算完成時間和嘗試次數
-          const completionTime = puzzleRecord ? Date.now() - puzzleRecord.startTime : 0;
+          let completionTime = 0;
+          if (puzzleRecord && puzzleRecord.startTime) {
+            completionTime = Date.now() - puzzleRecord.startTime;
+          } else {
+            console.warn('⚠️ 斷句挑戰完成時startTime未設置，使用0作為完成時間');
+          }
           const attemptCount = puzzleRecord ? puzzleRecord.attempts : 1;
           const timeInSeconds = Math.round(completionTime / 1000);
           
@@ -17098,12 +17593,12 @@ ${layerData.choiceData.keyChoices}
               <div style="background: rgba(79, 70, 229, 0.1); border-radius: 10px; padding: 1rem; border: 1px solid rgba(79, 70, 229, 0.3);">
                 <div style="display: flex; justify-content: space-around; align-items: center;">
                   <div style="text-align: center;">
-                                         <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">0s</div>
-                     <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
-                   </div>
+                    <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">${timeInSeconds}s</div>
+                    <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
+                  </div>
                    <div style="width: 1px; height: 40px; background: rgba(79, 70, 229, 0.3);"></div>
                    <div style="text-align: center;">
-                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">0</div>
+                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">${attemptCount}</div>
                      <div style="color: #C0C0C0; font-size: 0.9rem;">嘗試次數</div>
                   </div>
                 </div>
@@ -17381,13 +17876,13 @@ ${layerData.choiceData.keyChoices}
           <div style="color: #10B981; font-size: 1.2rem; margin-bottom: 1rem;">${scene.success} （開發者跳過）</div>
           <div style="background: rgba(16, 185, 129, 0.1); border-radius: 10px; padding: 1rem; border: 1px solid rgba(16, 185, 129, 0.3);">
             <div style="display: flex; justify-content: space-around; align-items: center;">
-              <div style="text-align: center;">
-                                     <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">0s</div>
-                     <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
-                   </div>
+                                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">${timeInSeconds}s</div>
+                    <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
+                  </div>
                    <div style="width: 1px; height: 40px; background: rgba(16, 185, 129, 0.3);"></div>
                    <div style="text-align: center;">
-                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">0</div>
+                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">${attemptCount}</div>
                      <div style="color: #C0C0C0; font-size: 0.9rem;">嘗試次數</div>
               </div>
             </div>
@@ -22050,32 +22545,30 @@ ${layerData.choiceData.keyChoices}
     // 開發者工具相關函數
     
     function initDevTools() {
-      // 章節跳轉按鈕
-      document.querySelectorAll('.chapter-jump').forEach(button => {
-        button.addEventListener('click', () => {
-          const chapter = button.getAttribute('data-chapter');
-          if (chapter) {
-            // 根據章節預設解鎖相應形態
-            setupChapterPrerequisites(chapter);
-            
-            // 關閉主菜單
-            mainMenu.style.opacity = 0;
-            setTimeout(() => {
-              mainMenu.style.display = 'none';
-              aperturesTracker.style.opacity = 1;
-              gameUI.style.opacity = 1;
-              gameContent.style.opacity = 1;
-              document.getElementById('current-form-indicator').style.opacity = 1;
-              
-              // 開始對應章節
-              startChapter(chapter);
-            }, 500);
+      // 重置玩家數據按鈕
+      const resetPlayerDataBtn = document.getElementById('reset-player-data-btn');
+      if (resetPlayerDataBtn) {
+        resetPlayerDataBtn.addEventListener('click', () => {
+          const confirmReset = confirm('確認要重置所有玩家選擇數據嗎？\n\n這將清除：\n• 所有選擇記錄\n• 特質分數\n• AI分析數據\n• 物化體驗數據\n• 斷句挑戰數據\n• 場景停留時間\n• 聊天記錄\n\n注意：遊戲進度（章節解鎖、形態解鎖、封印收集）將保留。');
+          
+          if (confirmReset) {
+            const result = window.resetPlayerChoicesOnly();
+            if (result && result.success) {
+              showDevMessage('✅ 玩家數據重置完成！遊戲進度已保留。');
+            } else {
+              showDevMessage('❌ 重置失敗，請檢查控制台錯誤信息。');
+            }
           }
         });
-      });
+      }
       
-      // 開發者工具已簡化，只保留章節跳轉功能
-      // 其他開發者工具按鈕已移除
+      // 查看所有數據按鈕
+      const viewAllDataBtn = document.getElementById('view-all-data-btn');
+      if (viewAllDataBtn) {
+        viewAllDataBtn.addEventListener('click', () => {
+          showAllGameData();
+        });
+      }
     }
     
 
@@ -23063,11 +23556,11 @@ ${layerData.choiceData.keyChoices}
         peng: '突然，你感到身體劇烈變化，羽翼伸展開來，化身為九萬里大鵬。你騰空而起，風在你的翅膀下咆哮，大地在你腳下快速縮小。你飛得越來越高，直到雲海都在你的下方翻滾。在這無盡的天空中，你感受到了真正的自由——超越一切束縛的自由。你明白了，真正的逍遙不是逃避現實，而是超越現實的局限。',
         yuanchu: '你化身為美麗的鵷鶵，潔白的羽毛在陽光下閃閃發光。你飛翔在清朝的天空中，每一陣風都帶著花香，每一片雲都純淨無瑕。在這聖潔的視角中，你看到了世界最美好的一面。你體會到什麼是真正的純潔與高貴——不是外在的裝飾，而是內在的清明。',
         chixiao: '夜幕降臨，你化身為鴟鴞，在黑暗中翱翔。你的眼睛在夜色中閃閃發光，能夠看清黑暗中的一切。在這靜謐的夜晚，你感受到了不同於白日的寧靜與智慧。你明白了，黑暗並不可怕，它只是另一種光明。在鴟鴞的視角中，夜晚充滿了神秘的美。',
-        snail: '你慢慢縮小，化身為一隻蝸牛。世界突然變得巨大無比，每一片葉子都如房屋般寬廣，每一滴露珠都如湖泊般深邃。你背著螺旋狀的殼，緩慢而堅定地前行。在這慢節奏的世界裡，你體會到了什麼叫做真正的耐心與堅持。',
+        snail: '你化身為蝸牛，世界突然變得遼闊而深邃。你的觸角上承載著兩個完整的文明——左角是觸氏國，右角是蠻氏國。你能同時感受到兩國的戰爭震動、人民的呼喊、土地的爭奪。在這種承載者的視角中，你體會到了什麼叫做「包容」和「超越」——不是被動地承受，而是以更高的智慧去理解這場爭論的本質。你意識到，對你來說，這不過是觸角上的微小騷動，但對他們而言，卻是整個世界的存亡之戰。',
         'morning-fungus': '你化身為朝菌，體驗著短暫而燦爛的生命。從黎明到日落，就是你的一生。在這短暫的時光中，你感受到了生命的珍貴與美好。你明白了，生命的意義不在於長短，而在於是否活得充實與精彩。',
         cicada: '你化身為蟪蛄，感受著夏日的熱情。你的歌聲響徹樹林，每一聲鳴叫都是對生命的讚美。雖然生命短暫，但你活得熱烈而真實。你體會到了什麼叫做活在當下，珍惜每一刻的美好。',
         'great-chun': '你的意識擴展，化身為大椿樹，感受著千年的時光流逝。你看著四季更替，看著世間變遷，心中充滿了古老的智慧。作為大椿，你體會到了什麼叫做永恆與包容——不是拒絕變化，而是包容一切變化。',
-        ant: '你縮小為螻蟻，在大地上行走。世界變得黑白分明，你專注於尋找食物和建造家園。在這簡單而專注的生活中，你體會到了什麼叫做踏實與勤勞。螻蟻的世界雖然渺小，但每一步都走得堅實。',
+        ant: '你化身為螻蟻，世界突然變得溫暖而踏實。你能感受到大地母親的心跳，泥土的芬芳，根系的力量。作為螻蟻，你明白了什麼叫做「在下」的智慧：不是卑微，而是與大地最親近的連接。死亡對你來說不是恐懼，而是回到這溫暖懷抱的歸宿。在大地的懷抱中，你感受到了生命的踏實和死亡的安詳——它們都是自然循環中不可分割的一部分。',
         star: '你的意識升華，化身為夜空中的星辰。從這無限高遠的視角俯瞰大地，一切都顯得如此渺小而美麗。你感受到了宇宙的廣闊與神秘，體會到了什麼叫做超脫與永恆。在星辰的視角中，你明白了生命的本質是光明。',
         qi: '你化身為氣，身體變得半透明，如雲霧般飄逸。在這超越具象的狀態下，你感受到前所未有的自由。世界在你眼中徹底改變：所有色彩消退，只留下陰陽二氣的純粹對立與統一。每個生命都散發著獨特的氣息，你能感知到它們內在的能量流動。你體會到了「氣者，生之本也」——萬物皆由氣聚散而成，而你已經觸及了存在的根本奧秘。'
       };
@@ -29412,10 +29905,75 @@ ${layerData.choiceData.keyChoices}
       if (savedProgress) {
         // 恢復最高章節記錄
         gameState.maxReachedChapter = savedProgress.maxReachedChapter;
+        
         // 恢復已收集的封印
         if (savedProgress.collectedApertures) {
           gameState.collectedApertures = savedProgress.collectedApertures;
         }
+        
+        // 恢復已解鎖的物化形態
+        if (savedProgress.unlockedForms) {
+          gameState.unlockedForms = savedProgress.unlockedForms;
+          console.log('📖 恢復已解鎖物化形態:', gameState.unlockedForms);
+        }
+        
+        // 恢復最後遊戲時間
+        if (savedProgress.lastPlayTime) {
+          gameState.lastPlayTime = savedProgress.lastPlayTime;
+          console.log('📖 恢復最後遊戲時間:', new Date(gameState.lastPlayTime).toLocaleString());
+        }
+        
+        // 恢復當前場景（如果存在）
+        if (savedProgress.currentScene !== undefined) {
+          gameState.currentScene = savedProgress.currentScene;
+          console.log('📖 恢復當前場景:', gameState.currentScene);
+        }
+        
+        // 恢復當前物化形態
+        if (savedProgress.currentForm) {
+          gameState.currentForm = savedProgress.currentForm;
+          console.log('📖 恢復當前物化形態:', gameState.currentForm);
+        }
+        
+        // 恢復音頻設置
+        if (savedProgress.audioEnabled !== undefined) {
+          gameState.audioEnabled = savedProgress.audioEnabled;
+          console.log('📖 恢復音頻設置:', gameState.audioEnabled);
+        }
+        
+        // 恢復八卦學習狀態
+        if (savedProgress.baguaLearningCompleted !== undefined) {
+          gameState.baguaLearningCompleted = savedProgress.baguaLearningCompleted;
+          console.log('📖 恢復八卦學習狀態:', gameState.baguaLearningCompleted);
+        }
+        
+        // 恢復萬物尋氣模式狀態
+        if (savedProgress.wanwuXunqiActive !== undefined) {
+          gameState.wanwuXunqiActive = savedProgress.wanwuXunqiActive;
+          console.log('📖 恢復萬物尋氣模式狀態:', gameState.wanwuXunqiActive);
+        }
+        
+        // 恢復萬物尋氣進度
+        if (savedProgress.wanwuXunqiProgress) {
+          gameState.wanwuXunqiProgress = savedProgress.wanwuXunqiProgress;
+          console.log('📖 恢復萬物尋氣進度:', gameState.wanwuXunqiProgress);
+        }
+        
+        // 恢復聊天記錄
+        if (savedProgress.chatHistoryMap) {
+          Object.assign(chatHistoryMap, savedProgress.chatHistoryMap);
+          console.log('📖 恢復聊天記錄');
+          console.log('📖 斷句解讀聊天記錄數:', chatHistoryMap['segmentation-chat']?.length || 0);
+          console.log('📖 通關後聊天記錄數:', chatHistoryMap['post-game-chat']?.length || 0);
+        }
+        
+        // 恢復玩家選擇數據（包括斷句數據）
+        if (savedProgress.playerChoices) {
+          gameState.playerChoices = savedProgress.playerChoices;
+          console.log('📖 恢復玩家選擇數據，包括斷句挑戰數據');
+          console.log('📖 斷句挑戰完成數:', Object.keys(gameState.playerChoices.segmentationPuzzleData?.puzzleAttempts || {}).length);
+        }
+        
         console.log('📖 恢復遊戲進度，最高章節:', gameState.maxReachedChapter);
         console.log('📖 恢復已收集封印:', gameState.collectedApertures);
       }
