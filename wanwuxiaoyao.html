@@ -3810,22 +3810,20 @@
 
 
       <!-- 開發者面板（隱藏） -->
-      <div id="dev-panel" class="hidden mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md w-full max-w-2xl">
-        <div class="flex justify-end mb-3">
-          <button id="close-dev-panel" class="text-gray-500 hover:text-red-500 font-bold">✕</button>
+      <div id="dev-panel" class="hidden mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md w-full max-w-lg mx-auto">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">🔧 開發者工具</h3>
+          <button id="close-dev-panel" class="text-gray-500 hover:text-red-500 font-bold text-lg leading-none">✕</button>
         </div>
         
-
-        
         <!-- 數據管理工具區域 -->
-        <div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📊 數據管理工具</h4>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="reset-player-data-btn" class="bg-orange-200 hover:bg-orange-300 dark:bg-orange-700 dark:hover:bg-orange-600 py-2 px-3 rounded text-xs font-medium transition-colors duration-200">
-              🔄 重置玩家數據
+        <div class="space-y-2">
+          <div class="flex gap-2">
+            <button id="reset-player-data-btn" class="flex-1 bg-orange-200 hover:bg-orange-300 dark:bg-orange-700 dark:hover:bg-orange-600 py-1.5 px-2 rounded text-xs font-medium transition-colors duration-200">
+              🔄 重置數據
             </button>
-            <button id="view-all-data-btn" class="bg-blue-200 hover:bg-blue-300 dark:bg-blue-700 dark:hover:bg-blue-600 py-2 px-3 rounded text-xs font-medium transition-colors duration-200">
-              📋 查看所有數據
+            <button id="view-all-data-btn" class="flex-1 bg-blue-200 hover:bg-blue-300 dark:bg-blue-700 dark:hover:bg-blue-600 py-1.5 px-2 rounded text-xs font-medium transition-colors duration-200">
+              📋 查看數據
             </button>
           </div>
         </div>
@@ -3964,6 +3962,22 @@
           
           #main-menu .flex.flex-col.items-center.mb-6 {
             margin-bottom: 1.5rem !important;
+          }
+          
+          /* 開發者面板小屏幕優化 */
+          #dev-panel {
+            margin: 0.5rem 1rem !important;
+            padding: 0.75rem !important;
+            max-width: calc(100% - 2rem) !important;
+          }
+          
+          #dev-panel h3 {
+            font-size: 0.875rem !important;
+          }
+          
+          #dev-panel button {
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.75rem !important;
           }
         }
         
@@ -4795,67 +4809,61 @@
         .map(([form]) => form);
     }
     
-    // 記錄斷句挑戰嘗試數據
+    // 記錄斷句挑戰嘗試數據（僅在內存中累加，不涉及localStorage）
     function recordSegmentationPuzzleAttempt(isCorrect) {
-      const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
-      const data = gameState.playerChoices.segmentationPuzzleData;
+      // 使用內存中的本次斷句數據
+      const currentData = gameState.currentPuzzleData;
       
-      // 替換更新：如果已有記錄，則替換；如果沒有，則創建新記錄
-      if (data.puzzleAttempts[puzzleKey]) {
-        // 已有記錄，替換為新的嘗試數據
-        const existingRecord = data.puzzleAttempts[puzzleKey];
-        console.log(`🔄 替換斷句挑戰記錄: ${puzzleKey} - 原記錄: ${existingRecord.attempts}次嘗試`);
-        
-        // 替換為新的嘗試記錄，但保留原有的startTime
-        const originalStartTime = existingRecord.startTime;
-        data.puzzleAttempts[puzzleKey] = {
-          attempts: 1,  // 重置為1次嘗試
-          correctAttempts: isCorrect ? 1 : 0,
-          incorrectAttempts: isCorrect ? 0 : 1,
-          startTime: originalStartTime, // 保留原有的開始時間
-          lastAttemptTime: Date.now()
-        };
-      } else {
-        // 沒有記錄，創建新記錄
-        data.puzzleAttempts[puzzleKey] = {
-          attempts: 1,
-          correctAttempts: isCorrect ? 1 : 0,
-          incorrectAttempts: isCorrect ? 0 : 1,
-          startTime: Date.now(), // 只有新記錄才設置開始時間
-          lastAttemptTime: Date.now()
-        };
+      // 累加嘗試次數
+      currentData.attempts += 1;
+      currentData.correctAttempts += (isCorrect ? 1 : 0);
+      currentData.incorrectAttempts += (isCorrect ? 0 : 1);
+      
+      // 如果是第一次嘗試，設置開始時間
+      if (!currentData.startTime) {
+        currentData.startTime = Date.now();
       }
       
-      // 立即保存遊戲進度，確保斷句挑戰數據不丟失
-      saveGameProgress();
+      currentData.lastAttemptTime = Date.now();
       
-      console.log(`🧩 斷句挑戰嘗試記錄: ${puzzleKey} - 第1次嘗試 (${isCorrect ? '正確' : '錯誤'})`);
+      console.log(`🧩 本次斷句挑戰嘗試記錄: 第${currentData.attempts}次嘗試 (${isCorrect ? '正確' : '錯誤'})`);
     }
     
-    // 記錄斷句挑戰完成數據
+    // 記錄斷句挑戰完成數據（將本次數據替換更新到localStorage）
     function recordSegmentationPuzzleCompletion(isSuccessful) {
       const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
       const data = gameState.playerChoices.segmentationPuzzleData;
       
-      if (!data.puzzleAttempts[puzzleKey]) {
-        return; // 如果沒有嘗試記錄，直接返回
-      }
+      // 使用本次斷句的內存數據
+      const currentData = gameState.currentPuzzleData;
       
-      const puzzleRecord = data.puzzleAttempts[puzzleKey];
+      if (!currentData || currentData.attempts === 0) {
+        console.warn('⚠️ 沒有本次斷句數據，無法記錄完成');
+        return;
+      }
       
       // 檢查startTime是否存在，如果不存在則使用當前時間（fallback）
-      if (!puzzleRecord.startTime) {
+      if (!currentData.startTime) {
         console.warn('⚠️ startTime未設置，使用當前時間作為fallback');
-        puzzleRecord.startTime = Date.now();
+        currentData.startTime = Date.now();
       }
       
-      const completionTime = Date.now() - puzzleRecord.startTime;
+      const completionTime = Date.now() - currentData.startTime;
+      
+      // 將本次數據替換更新到localStorage
+      data.puzzleAttempts[puzzleKey] = {
+        attempts: currentData.attempts,
+        correctAttempts: currentData.correctAttempts,
+        incorrectAttempts: currentData.incorrectAttempts,
+        startTime: currentData.startTime,
+        lastAttemptTime: currentData.lastAttemptTime
+      };
       
       // 記錄完成時間
       data.completionTimes[puzzleKey] = completionTime;
       
       // 計算準確率
-      const accuracy = puzzleRecord.correctAttempts / puzzleRecord.attempts;
+      const accuracy = currentData.correctAttempts / currentData.attempts;
       data.accuracyRates[puzzleKey] = accuracy;
       
       // 更新整體表現分析
@@ -4870,7 +4878,7 @@
         console.log('✅ 尾聲章節斷句挑戰完成，設置標志以恢復指示器顯示');
       }
       
-      console.log(`✅ 斷句挑戰完成記錄: ${puzzleKey} - 完成時間: ${completionTime}ms, 準確率: ${(accuracy * 100).toFixed(1)}%`);
+      console.log(`✅ 斷句挑戰完成記錄: ${puzzleKey} - 完成時間: ${completionTime}ms, 嘗試次數: ${currentData.attempts}, 準確率: ${(accuracy * 100).toFixed(1)}%`);
     }
     
     // 更新斷句挑戰表現分析
@@ -16724,28 +16732,19 @@ ${layerData.choiceData.keyChoices}
         segments: new Array(scene.text.length - 1).fill(false)
       };
       
-      // 初始化斷句挑戰數據結構（startTime將在第一次點擊時設置）
+      // 初始化本次斷句挑戰的內存數據（不涉及localStorage）
       const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
-      const data = gameState.playerChoices.segmentationPuzzleData;
       
-      // 確保puzzleAttempts存在，並重置所有計數器（每次進入場景都重新開始）
-      if (!data.puzzleAttempts[puzzleKey]) {
-        data.puzzleAttempts[puzzleKey] = {
-          attempts: 0,
-          correctAttempts: 0,
-          incorrectAttempts: 0,
-          startTime: null, // 將在第一次點擊時設置
-          lastAttemptTime: null
-        };
-        console.log('⏱️ 斷句挑戰數據結構初始化:', puzzleKey, '等待第一次點擊開始計時');
-      } else {
-        // 如果記錄已存在，重置所有計數器和startTime，等待重新開始
-        data.puzzleAttempts[puzzleKey].attempts = 0;
-        data.puzzleAttempts[puzzleKey].correctAttempts = 0;
-        data.puzzleAttempts[puzzleKey].incorrectAttempts = 0;
-        data.puzzleAttempts[puzzleKey].startTime = null;
-        console.log('⏱️ 斷句挑戰計數器重置:', puzzleKey, '等待重新開始挑戰');
-      }
+      // 在內存中創建本次斷句的數據結構，不讀取舊數據
+      gameState.currentPuzzleData = {
+        attempts: 0,
+        correctAttempts: 0,
+        incorrectAttempts: 0,
+        startTime: null, // 將在第一次點擊時設置
+        lastAttemptTime: null
+      };
+      
+      console.log('⏱️ 本次斷句挑戰開始:', puzzleKey, '等待第一次點擊開始計時');
       
       // Fix CSS selector issue with previous circles
       document.querySelectorAll('.segment-gap.active').forEach(el => {
@@ -17551,26 +17550,23 @@ ${layerData.choiceData.keyChoices}
             chaosForm.classList.remove('segmentation-mode');
           }
           
-          // 獲取當前挑戰的數據
-          const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
-          const puzzleData = gameState.playerChoices.segmentationPuzzleData;
-          const puzzleRecord = puzzleData.puzzleAttempts[puzzleKey];
+          // 獲取本次斷句的數據
+          const currentData = gameState.currentPuzzleData;
           
           // 計算完成時間和嘗試次數
           let completionTime = 0;
-          if (puzzleRecord && puzzleRecord.startTime) {
-            completionTime = Date.now() - puzzleRecord.startTime;
+          if (currentData && currentData.startTime) {
+            completionTime = Date.now() - currentData.startTime;
           } else {
             console.warn('⚠️ 斷句挑戰完成時startTime未設置，使用0作為完成時間');
           }
-          const attemptCount = puzzleRecord ? puzzleRecord.attempts : 1;
+          const attemptCount = currentData ? currentData.attempts : 1;
           const timeInSeconds = Math.round(completionTime / 1000);
           
           // 調試信息
           console.log('🔍 斷句挑戰計時調試:');
-          console.log('  puzzleKey:', puzzleKey);
-          console.log('  puzzleRecord:', puzzleRecord);
-          console.log('  startTime:', puzzleRecord?.startTime);
+          console.log('  currentData:', currentData);
+          console.log('  startTime:', currentData?.startTime);
           console.log('  currentTime:', Date.now());
           console.log('  completionTime (ms):', completionTime);
           console.log('  timeInSeconds:', timeInSeconds);
@@ -17593,12 +17589,12 @@ ${layerData.choiceData.keyChoices}
               <div style="background: rgba(79, 70, 229, 0.1); border-radius: 10px; padding: 1rem; border: 1px solid rgba(79, 70, 229, 0.3);">
                 <div style="display: flex; justify-content: space-around; align-items: center;">
                   <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">${timeInSeconds}s</div>
+                    <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">0s</div>
                     <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
                   </div>
                    <div style="width: 1px; height: 40px; background: rgba(79, 70, 229, 0.3);"></div>
                    <div style="text-align: center;">
-                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">${attemptCount}</div>
+                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">0</div>
                      <div style="color: #C0C0C0; font-size: 0.9rem;">嘗試次數</div>
                   </div>
                 </div>
@@ -17861,14 +17857,12 @@ ${layerData.choiceData.keyChoices}
       const checkButton = document.getElementById('check-segmentation');
       const skipButton = document.getElementById('skip-segmentation');
       
-      // 獲取當前挑戰的數據（開發者跳過的情況）
-      const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
-      const puzzleData = gameState.playerChoices.segmentationPuzzleData;
-      const puzzleRecord = puzzleData.puzzleAttempts[puzzleKey];
+      // 獲取本次斷句的數據（開發者跳過的情況）
+      const currentData = gameState.currentPuzzleData;
       
       // 計算完成時間和嘗試次數
-      const completionTime = puzzleRecord ? Date.now() - puzzleRecord.startTime : 0;
-      const attemptCount = puzzleRecord ? puzzleRecord.attempts : 1;
+      const completionTime = currentData ? Date.now() - currentData.startTime : 0;
+      const attemptCount = currentData ? currentData.attempts : 1;
       const timeInSeconds = Math.round(completionTime / 1000);
       
       resultElement.innerHTML = `
@@ -17877,12 +17871,12 @@ ${layerData.choiceData.keyChoices}
           <div style="background: rgba(16, 185, 129, 0.1); border-radius: 10px; padding: 1rem; border: 1px solid rgba(16, 185, 129, 0.3);">
             <div style="display: flex; justify-content: space-around; align-items: center;">
                                 <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">${timeInSeconds}s</div>
+                    <div style="font-size: 1.5rem; color: #F59E0B; font-weight: bold;" data-value="${timeInSeconds}">0s</div>
                     <div style="color: #C0C0C0; font-size: 0.9rem;">完成時間</div>
                   </div>
                    <div style="width: 1px; height: 40px; background: rgba(16, 185, 129, 0.3);"></div>
                    <div style="text-align: center;">
-                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">${attemptCount}</div>
+                     <div style="font-size: 1.5rem; color: #10B981; font-weight: bold;" data-value="${attemptCount}">0</div>
                      <div style="color: #C0C0C0; font-size: 0.9rem;">嘗試次數</div>
               </div>
             </div>
@@ -26451,14 +26445,7 @@ ${layerData.choiceData.keyChoices}
         </div>
         <p class="text-sm text-gray-800 dark:text-gray-200 mb-4">進入每個物化視野，尋找並收集對應的氣（每種需收集3個）</p>
         
-        <!-- 🔧 臨時測試按鈕 - 測試完成後刪除 START -->
-        <div class="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600" style="display: none;">
-          <button id="skip-wanwu-xunqi-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm">
-            ⚠️ 跳過萬物尋氣 (測試用)
-          </button>
-          <p class="text-xs text-gray-500 mt-1">僅供測試氣物化視野效果</p>
-        </div>
-        <!-- 🔧 臨時測試按鈕 - 測試完成後刪除 END -->
+
 
       `;
       
@@ -26589,103 +26576,9 @@ ${layerData.choiceData.keyChoices}
       // 初始高亮
       highlightCurrentForm();
       
-      // 🔧 臨時測試功能 - 測試完成後刪除 START
-      // 為跳過按鈕添加事件監聽器
-      const skipBtn = document.getElementById('skip-wanwu-xunqi-btn');
-      if (skipBtn) {
-        skipBtn.addEventListener('click', function() {
-          console.log('🔧 臨時測試：跳過萬物尋氣');
-          skipWanwuXunqiForTesting();
-        });
-      }
-      // 🔧 臨時測試功能 - 測試完成後刪除 END
+
 
     }
-    
-    // 🔧 臨時測試函數 - 測試完成後刪除 START
-    function skipWanwuXunqiForTesting() {
-      console.log('🔧 執行萬物尋氣跳過測試');
-      
-      // 清理萬物尋氣狀態
-      gameState.wanwuXunqiActive = false;
-      gameState.handleFormSequenceClick = null;
-      
-      // 移除引導窗口
-      if (gameState.wanwuXunqiGuideContainer) {
-        gameState.wanwuXunqiGuideContainer.remove();
-        gameState.wanwuXunqiGuideContainer = null;
-      }
-      
-      // 移除所有物化按鈕高亮
-      Object.values(formButtons).forEach(btn => {
-        if (btn) {
-          btn.style.boxShadow = '';
-          btn.style.animation = '';
-          btn.style.border = '';
-          btn.style.transform = '';
-          btn.style.zIndex = '';
-          btn.style.position = '';
-        }
-      });
-      
-      // 確保玩家在人形態
-      if (gameState.currentForm !== 'human') {
-        showTransformationTransition(gameState.currentForm, 'human');
-        setTimeout(() => {
-          gameState.currentForm = 'human';
-          updateFormView('human');
-          
-          // 更新物化按鈕狀態
-          Object.values(formButtons).forEach(button => {
-            button.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-            button.classList.add('bg-gray-500');
-          });
-          
-          if (formButtons['human']) {
-            formButtons['human'].classList.remove('bg-gray-500');
-            formButtons['human'].classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-          }
-          
-          // 直接解鎖氣形態
-          unlockForm('qi');
-          
-          // 重新顯示物化按鈕
-          const formSelector = document.querySelector('.form-selector');
-          if (formSelector) {
-            formSelector.style.display = 'flex';
-          }
-          
-          // 顯示提示信息
-          showMessage('🔧 測試模式：已跳過萬物尋氣，氣形態已解鎖！現在可以點擊氣形態按鈕測試視野效果。');
-          
-          // 顯示繼續按鈕，讓玩家可以繼續到下一個場景
-          advanceBtn.style.display = 'block';
-          advanceBtn.textContent = '繼續測試';
-          
-          console.log('🔧 跳過萬物尋氣完成，氣形態已解鎖');
-        }, 1500);
-      } else {
-        // 如果已經是人形態，直接解鎖氣形態
-        unlockForm('qi');
-        
-        // 重新顯示物化按鈕
-        const formSelector = document.querySelector('.form-selector');
-        if (formSelector) {
-          formSelector.style.display = 'flex';
-        }
-        
-        // 顯示提示信息
-        showMessage('🔧 測試模式：已跳過萬物尋氣，氣形態已解鎖！現在可以點擊氣形態按鈕測試視野效果。');
-        
-        // 顯示繼續按鈕
-        advanceBtn.style.display = 'block';
-        advanceBtn.textContent = '繼續測試';
-        
-        console.log('🔧 跳過萬物尋氣完成，氣形態已解鎖');
-      }
-    }
-    // 🔧 臨時測試函數 - 測試完成後刪除 END
-    
     // 創建萬物回響引導
     function createFormSequenceGuide(scene) {
       const guideContainer = document.createElement('div');
