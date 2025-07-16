@@ -3745,16 +3745,6 @@
       <div class="text-center mb-12 flex-shrink-0">
         <h1 class="text-4xl md:text-6xl font-bold mb-3 text-indigo-800 dark:text-indigo-300 font-serif">萬物逍遙</h1>
         <p class="text-base md:text-lg text-indigo-600 dark:text-indigo-400 font-medium">一場超越物我界限的哲學之旅</p>
-        
-        <!-- 語言切換按鈕 -->
-        <div class="mt-4 flex justify-center">
-          <button id="language-switch-btn" 
-                  class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2 text-sm">
-            <span class="text-lg">🌐</span>
-            <span>English Version</span>
-            <span class="text-blue-200">→</span>
-          </button>
-        </div>
       </div>
       
       <!-- 章節選擇卡片區域 -->
@@ -17339,22 +17329,12 @@ ${layerData.choiceData.keyChoices}
     
     function toggleSegment(index) {
       // 檢查是否是第一次點擊（開始計時）
-      const puzzleKey = `${gameState.currentChapter}_${gameState.currentScene}`;
-      const data = gameState.playerChoices.segmentationPuzzleData;
+      const currentData = gameState.currentPuzzleData;
       
-      // 如果是第一次點擊，設置startTime
-      if (!data.puzzleAttempts[puzzleKey] || !data.puzzleAttempts[puzzleKey].startTime) {
-        if (!data.puzzleAttempts[puzzleKey]) {
-          data.puzzleAttempts[puzzleKey] = {
-            attempts: 0,
-            correctAttempts: 0,
-            incorrectAttempts: 0,
-            startTime: null,
-            lastAttemptTime: null
-          };
-        }
-        data.puzzleAttempts[puzzleKey].startTime = Date.now();
-        console.log('⏱️ 斷句挑戰計時開始（第一次點擊）:', puzzleKey, 'startTime:', data.puzzleAttempts[puzzleKey].startTime);
+      // 如果是第一次點擊，設置startTime（只使用內存數據，不觸及localStorage）
+      if (!currentData.startTime) {
+        currentData.startTime = Date.now();
+        console.log('⏱️ 斷句挑戰計時開始（第一次點擊）:', 'startTime:', currentData.startTime);
       }
       
       // Toggle segment state
@@ -17866,6 +17846,12 @@ ${layerData.choiceData.keyChoices}
       const resultElement = document.getElementById('puzzle-result');
       const checkButton = document.getElementById('check-segmentation');
       const skipButton = document.getElementById('skip-segmentation');
+      
+      // 記錄斷句挑戰嘗試數據（開發者跳過的情況）
+      recordSegmentationPuzzleAttempt(true);
+      
+      // 記錄斷句挑戰完成數據（開發者跳過的情況）
+      recordSegmentationPuzzleCompletion(true);
       
       // 獲取本次斷句的數據（開發者跳過的情況）
       const currentData = gameState.currentPuzzleData;
@@ -29794,23 +29780,6 @@ ${layerData.choiceData.keyChoices}
       console.log('📸 照片顯影場景創建完成');
     }
 
-    // 語言切換功能
-    function initLanguageSwitch() {
-      const languageSwitchBtn = document.getElementById('language-switch-btn');
-      if (languageSwitchBtn) {
-        languageSwitchBtn.addEventListener('click', function() {
-          // 顯示切換確認對話框
-          const confirmed = confirm('確定要切換到英文版本嗎？\n\n您將被重定向到英文版「萬物逍遙」遊戲。\n\nAre you sure you want to switch to the English version?\n\nYou will be redirected to the English version of "All Things Wander Free".');
-          
-          if (confirmed) {
-            // 重定向到英文版本
-            window.location.href = 'https://chineseclassics.github.io/wanwuxiaoyaoenglish.html';
-          }
-        });
-        
-        console.log('🌐 語言切換按鈕已初始化');
-      }
-    }
 
     // Start the game
     function init() {
@@ -29921,9 +29890,6 @@ ${layerData.choiceData.keyChoices}
       
       // Initialize audio controls
       initAudioControls();
-      
-      // 初始化語言切換功能
-      initLanguageSwitch();
       
       // 初始化調試模式（如果需要）
       initDebugForDeveloperMode();
