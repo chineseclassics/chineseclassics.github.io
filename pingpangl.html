@@ -126,6 +126,7 @@
             flex: 1;
             overflow-y: auto;
             background: #1a1a1a;
+            position: relative;
         }
 
         .contact-item {
@@ -153,22 +154,77 @@
             font-size: 16px;
             font-weight: bold;
             margin-right: 12px;
+            overflow: hidden;
+        }
+
+        .contact-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .contact-info {
             flex: 1;
+            min-width: 0;
         }
 
         .contact-name {
             color: #fff;
             font-size: 16px;
             font-weight: 500;
-            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .contact-status {
             color: #999;
             font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 字母索引 */
+        .alphabet-index {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            z-index: 10;
+        }
+
+        .alphabet-item {
+            color: #999;
+            font-size: 10px;
+            font-weight: 500;
+            padding: 1px 2px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 12px;
+            text-align: center;
+        }
+
+        .alphabet-item:hover,
+        .alphabet-item.active {
+            color: #07c160;
+            background: rgba(7, 193, 96, 0.1);
+        }
+
+        /* 字母分組標題 */
+        .letter-section {
+            background: #2f3237;
+            padding: 8px 16px;
+            color: #999;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 1px solid #1e1e1e;
         }
 
         /* 聊天列表頭部 */
@@ -805,65 +861,16 @@
 
             <!-- 通訊錄界面 -->
             <div class="contacts-view" id="contactsView">
-                <div class="chat-list-header">
-                    <h1>🏓 乒乓球運動員</h1>
+                <div class="contacts-header">
+                    <div class="contacts-title">通訊錄</div>
+                    <button class="contacts-add-btn">👤+</button>
                 </div>
-                <div class="contacts-list">
-                    <div class="contact-item" data-athlete="孫穎莎">
-                        <div class="contact-avatar">
-                            <img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                        </div>
-                        <div class="contact-info">
-                            <div class="contact-name">孫穎莎</div>
-                            <div class="contact-status">小魔王 · 在線</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-athlete="王楚欽">
-                        <div class="contact-avatar">
-                            <img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                        </div>
-                        <div class="contact-info">
-                            <div class="contact-name">王楚欽</div>
-                            <div class="contact-status">未來之星 · 在線</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-athlete="林高遠">
-                        <div class="contact-avatar">林</div>
-                        <div class="contact-info">
-                            <div class="contact-name">林高遠</div>
-                            <div class="contact-status">🐰 兔子 · 在線</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-athlete="王曼昱">
-                        <div class="contact-avatar">王</div>
-                        <div class="contact-info">
-                            <div class="contact-name">王曼昱</div>
-                            <div class="contact-status">🐟 魚 · 在線</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-athlete="蒯曼">
-                        <div class="contact-avatar">
-                            <img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                        </div>
-                        <div class="contact-info">
-                            <div class="contact-name">蒯曼</div>
-                            <div class="contact-status">新星 · 在線</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-athlete="林詩棟">
-                        <div class="contact-avatar">林</div>
-                        <div class="contact-info">
-                            <div class="contact-name">林詩棟</div>
-                            <div class="contact-status">🪨 石頭 · 在線</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-athlete="梁靖崑">
-                        <div class="contact-avatar">梁</div>
-                        <div class="contact-info">
-                            <div class="contact-name">梁靖崑</div>
-                            <div class="contact-status">🏆 冠軍 · 在線</div>
-                        </div>
-                    </div>
+                <div class="contacts-list" id="contactsList">
+                    <!-- 通訊錄項目將由JavaScript動態生成 -->
+                </div>
+                <!-- 字母索引 -->
+                <div class="alphabet-index" id="alphabetIndex">
+                    <!-- 字母索引將由JavaScript動態生成 -->
                 </div>
             </div>
 
@@ -1035,9 +1042,7 @@
         const navItems = document.querySelectorAll('.nav-item');
 
         // 事件監聽器
-        contactItems.forEach(item => {
-            item.addEventListener('click', () => selectAthlete(item.dataset.athlete));
-        });
+        // 通訊錄項目的事件監聽器將在動態生成時添加
 
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
@@ -1075,10 +1080,12 @@
                     break;
                 case 'contacts':
                     contactsView.style.display = 'flex';
+                    updateContactsList();
                     break;
                 case 'discover':
                     // 暫時顯示通訊錄
                     contactsView.style.display = 'flex';
+                    updateContactsList();
                     break;
                 case 'me':
                     meView.style.display = 'flex';
@@ -1170,6 +1177,120 @@
         // 獲取未讀消息數量（暫時返回0，可以根據需要實現）
         function getUnreadCount(athlete) {
             return 0; // 可以根據實際需求實現未讀消息統計
+        }
+
+        // 更新通訊錄列表
+        function updateContactsList() {
+            const contactsListContainer = document.getElementById('contactsList');
+            const alphabetIndexContainer = document.getElementById('alphabetIndex');
+            
+            contactsListContainer.innerHTML = '';
+            alphabetIndexContainer.innerHTML = '';
+            
+            // 按字母分組運動員
+            const groupedAthletes = groupAthletesByLetter();
+            
+            // 生成通訊錄項目
+            Object.keys(groupedAthletes).forEach(letter => {
+                // 添加字母分組標題
+                const letterSection = document.createElement('div');
+                letterSection.className = 'letter-section';
+                letterSection.textContent = letter;
+                contactsListContainer.appendChild(letterSection);
+                
+                // 添加該字母下的運動員
+                groupedAthletes[letter].forEach(athlete => {
+                    const contactItem = createContactItem(athlete);
+                    contactsListContainer.appendChild(contactItem);
+                });
+            });
+            
+            // 生成字母索引
+            generateAlphabetIndex();
+            
+            // 重新綁定事件
+            document.querySelectorAll('.contact-item').forEach(item => {
+                item.addEventListener('click', () => selectAthlete(item.dataset.athlete));
+            });
+        }
+
+        // 按字母分組運動員
+        function groupAthletesByLetter() {
+            const athletes = Object.keys(athleteStatus);
+            const grouped = {};
+            
+            athletes.forEach(athlete => {
+                const firstChar = athlete.charAt(0);
+                if (!grouped[firstChar]) {
+                    grouped[firstChar] = [];
+                }
+                grouped[firstChar].push(athlete);
+            });
+            
+            // 按字母排序
+            return Object.keys(grouped)
+                .sort()
+                .reduce((result, key) => {
+                    result[key] = grouped[key].sort();
+                    return result;
+                }, {});
+        }
+
+        // 創建通訊錄項目
+        function createContactItem(athlete) {
+            const div = document.createElement('div');
+            div.className = 'contact-item';
+            div.dataset.athlete = athlete;
+            
+            let avatar;
+            if (athlete === '王楚欽') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽">';
+            } else if (athlete === '孫穎莎') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎">';
+            } else if (athlete === '蒯曼') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼">';
+            } else {
+                avatar = athlete.charAt(0);
+            }
+            
+            div.innerHTML = `
+                <div class="contact-avatar">
+                    ${avatar}
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">${athlete}</div>
+                    <div class="contact-status">${athleteStatus[athlete]}</div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // 生成字母索引
+        function generateAlphabetIndex() {
+            const alphabetIndexContainer = document.getElementById('alphabetIndex');
+            const letters = Object.keys(groupAthletesByLetter());
+            
+            letters.forEach(letter => {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = 'alphabet-item';
+                letterDiv.textContent = letter;
+                letterDiv.onclick = () => scrollToLetter(letter);
+                alphabetIndexContainer.appendChild(letterDiv);
+            });
+        }
+
+        // 滾動到指定字母
+        function scrollToLetter(letter) {
+            const contactsList = document.getElementById('contactsList');
+            const letterSections = contactsList.querySelectorAll('.letter-section');
+            
+            for (let section of letterSections) {
+                if (section.textContent === letter) {
+                    section.scrollIntoView({ behavior: 'smooth' });
+                    break;
+                }
+            }
         }
 
         // 選擇運動員
@@ -1549,6 +1670,9 @@
             
             // 初始化聊天列表
             updateChatList();
+            
+            // 初始化通訊錄
+            updateContactsList();
         }
 
         // 添加樣本對話
