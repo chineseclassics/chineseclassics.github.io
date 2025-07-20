@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乒乓球運動員聊天</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #000;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .wechat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #1a1a1a;
+            max-width: 414px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* 主內容區域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 聊天列表界面 */
+        .chat-list-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #1a1a1a;
+        }
+
+        /* 通訊錄界面 */
+        .contacts-view {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            background: #1a1a1a;
+        }
+
+        .contacts-view.active {
+            display: flex;
+        }
+
+        /* 通訊錄頭部 */
+        .contacts-header {
+            background: #2f3237;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1e1e1e;
+            min-height: 44px;
+        }
+
+        .contacts-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+        }
+
+        .contacts-add-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .contacts-add-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 聊天界面 */
+        .chat-view {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            background: #1a1a1a;
+        }
+
+        .chat-view.active {
+            display: flex;
+        }
+
+        /* 我的界面 */
+        .me-view {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            background: #1a1a1a;
+        }
+
+        .me-view.active {
+            display: flex;
+        }
+
+        /* 通訊錄列表 */
+        .contacts-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #1a1a1a;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #2f2f2f;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .contact-item:hover {
+            background: #2f2f2f;
+        }
+
+        .contact-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .contact-status {
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* 聊天列表頭部 */
+        .chat-list-header {
+            background: #2f3237;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1e1e1e;
+            min-height: 44px;
+        }
+
+        .chat-list-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+        }
+
+        .chat-list-add-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .chat-list-add-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 聊天列表項目 */
+        .chat-list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #2f2f2f;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chat-list-item:hover {
+            background: #2f2f2f;
+        }
+
+        .chat-list-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-list-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .unread-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .chat-list-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-list-name {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-list-last-message {
+            color: #999;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-list-time {
+            color: #999;
+            font-size: 12px;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        /* 右側聊天區域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a1a;
+            width: 100%;
+        }
+
+        /* 聊天頭部 */
+        .chat-header {
+            background: #2f3237;
+            padding: 12px 16px;
+            border-bottom: 1px solid #1e1e1e;
+            display: flex;
+            align-items: center;
+            position: relative;
+            min-height: 44px;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .chat-info {
+            flex: 1;
+        }
+
+        .chat-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .chat-status {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* 聊天消息區域 */
+        .chat-messages {
+            flex: 1;
+            background: #1a1a1a;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            animation: fadeIn 0.3s ease;
+            margin-bottom: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .user .message-avatar {
+            background: #07c160;
+        }
+
+        .athlete .message-avatar {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            word-wrap: break-word;
+            line-height: 1.4;
+            position: relative;
+            font-size: 15px;
+        }
+
+        .user .message-bubble {
+            background: #07c160;
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .athlete .message-bubble {
+            background: #2f3237;
+            color: #fff;
+            border-bottom-left-radius: 6px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            opacity: 0.5;
+            margin-top: 4px;
+            text-align: center;
+            color: #999;
+        }
+
+        .user .message-time {
+            text-align: right;
+        }
+
+        .athlete .message-time {
+            text-align: left;
+        }
+
+        .message-timestamp {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin: 16px 0 8px 0;
+            padding: 0 16px;
+        }
+
+        .system-message {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin: 8px 0;
+            padding: 0 16px;
+        }
+
+        /* 輸入區域 */
+        .chat-input-area {
+            background: #2f3237;
+            border-top: 1px solid #1e1e1e;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 60px;
+        }
+
+        .input-container {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 20px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #333;
+        }
+
+        .message-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 15px;
+            line-height: 1.4;
+            max-height: 80px;
+            resize: none;
+            font-family: inherit;
+            color: #fff;
+        }
+
+        .message-input:disabled {
+            color: #666;
+        }
+
+        .message-input::placeholder {
+            color: #666;
+        }
+
+        .send-button {
+            background: #07c160;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #06ad56;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 加載動畫 */
+        .loading-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .loading-dots span {
+            width: 4px;
+            height: 4px;
+            background: #07c160;
+            border-radius: 50%;
+            animation: loading 1.4s infinite ease-in-out;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loading {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* 歡迎消息 */
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            margin: 40px 0;
+            font-size: 14px;
+        }
+
+        /* 錯誤消息 */
+        .error-message {
+            background: #2f1a1a;
+            color: #ff6b6b;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #4a2a2a;
+            font-size: 13px;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .wechat-container {
+                max-width: 100%;
+            }
+            
+            .message-bubble {
+                max-width: 75%;
+            }
+        }
+
+        /* 底部導航欄 */
+        .bottom-nav {
+            display: flex;
+            background: #2f3237;
+            border-top: 1px solid #1e1e1e;
+            height: 60px;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: color 0.2s;
+            color: #999;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .nav-item.active {
+            color: #07c160;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 8px;
+            right: 50%;
+            transform: translateX(50%);
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* 滾動條樣式 */
+        .contacts-list::-webkit-scrollbar,
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .contacts-list::-webkit-scrollbar-track,
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .contacts-list::-webkit-scrollbar-thumb,
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .contacts-list::-webkit-scrollbar-thumb:hover,
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        /* 我的界面樣式 */
+        .me-profile-section {
+            background: #2f3237;
+            padding: 20px 16px;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            margin-right: 16px;
+            overflow: hidden;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .profile-wechat-id {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .profile-action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 20px;
+            padding: 6px 12px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .profile-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .profile-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-action-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .header-action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .me-menu-list {
+            flex: 1;
+            background: #1a1a1a;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #2f2f2f;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #2f2f2f;
+        }
+
+        .menu-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .menu-text {
+            flex: 1;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .menu-arrow {
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wechat-container">
+        <!-- 主內容區域 -->
+        <div class="main-content">
+            <!-- 聊天列表界面 -->
+            <div class="chat-list-view" id="chatListView">
+                <div class="chat-list-header">
+                    <div class="chat-list-title">🏓 乒乓球運動員 (7)</div>
+                    <button class="chat-list-add-btn">+</button>
+                </div>
+                <div class="contacts-list">
+                    <!-- 聊天列表項目將由JavaScript動態生成 -->
+                </div>
+            </div>
+
+            <!-- 通訊錄界面 -->
+            <div class="contacts-view" id="contactsView">
+                <div class="chat-list-header">
+                    <h1>🏓 乒乓球運動員</h1>
+                </div>
+                <div class="contacts-list">
+                    <div class="contact-item" data-athlete="孫穎莎">
+                        <div class="contact-avatar">
+                            <img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-name">孫穎莎</div>
+                            <div class="contact-status">小魔王 · 在線</div>
+                        </div>
+                    </div>
+                    <div class="contact-item" data-athlete="王楚欽">
+                        <div class="contact-avatar">
+                            <img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-name">王楚欽</div>
+                            <div class="contact-status">未來之星 · 在線</div>
+                        </div>
+                    </div>
+                    <div class="contact-item" data-athlete="林高遠">
+                        <div class="contact-avatar">林</div>
+                        <div class="contact-info">
+                            <div class="contact-name">林高遠</div>
+                            <div class="contact-status">🐰 兔子 · 在線</div>
+                        </div>
+                    </div>
+                    <div class="contact-item" data-athlete="王曼昱">
+                        <div class="contact-avatar">王</div>
+                        <div class="contact-info">
+                            <div class="contact-name">王曼昱</div>
+                            <div class="contact-status">🐟 魚 · 在線</div>
+                        </div>
+                    </div>
+                    <div class="contact-item" data-athlete="蒯曼">
+                        <div class="contact-avatar">
+                            <img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-name">蒯曼</div>
+                            <div class="contact-status">新星 · 在線</div>
+                        </div>
+                    </div>
+                    <div class="contact-item" data-athlete="林詩棟">
+                        <div class="contact-avatar">林</div>
+                        <div class="contact-info">
+                            <div class="contact-name">林詩棟</div>
+                            <div class="contact-status">🪨 石頭 · 在線</div>
+                        </div>
+                    </div>
+                    <div class="contact-item" data-athlete="梁靖崑">
+                        <div class="contact-avatar">梁</div>
+                        <div class="contact-info">
+                            <div class="contact-name">梁靖崑</div>
+                            <div class="contact-status">🏆 冠軍 · 在線</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 聊天界面 -->
+            <div class="chat-view" id="chatView">
+                <!-- 聊天頭部 -->
+                <div class="chat-header" id="chatHeader">
+                    <button class="action-btn" onclick="backToChatList()" style="margin-right: 12px; font-size: 20px;">‹</button>
+                    <div class="chat-avatar" id="chatAvatar">選</div>
+                    <div class="chat-info">
+                        <div class="chat-name" id="chatName">選擇運動員開始聊天</div>
+                        <div class="chat-status" id="chatStatus">請從通訊錄選擇一位運動員</div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="action-btn" style="font-size: 18px;">⋯</button>
+                    </div>
+                </div>
+
+                <!-- 聊天消息區域 -->
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        歡迎來到乒乓球運動員聊天室！<br>
+                        請從通訊錄選擇一位運動員開始對話。
+                    </div>
+                </div>
+
+                <!-- 輸入區域 -->
+                <div class="chat-input-area">
+                    <div class="input-container">
+                        <textarea 
+                            class="message-input" 
+                            id="messageInput" 
+                            placeholder="輸入消息..." 
+                            rows="1"
+                            disabled
+                        ></textarea>
+                        <button class="send-button" id="sendBtn" disabled>➤</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的界面 -->
+            <div class="me-view" id="meView">
+                <!-- 個人資料區域 -->
+                <div class="me-profile-section">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <img src="https://chineseclassics.github.io/images/pingpang/paipai.jpg" alt="派派">
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-name">派派</div>
+                            <div class="profile-wechat-id">WeChat ID: paipai</div>
+                            <div class="profile-actions">
+                                <button class="profile-action-btn">+ 狀態</button>
+                                <button class="profile-action-btn">📍 鎮江</button>
+                            </div>
+                        </div>
+                        <div class="profile-header-actions">
+                            <button class="header-action-btn">📱</button>
+                            <button class="header-action-btn">›</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 菜單列表 -->
+                <div class="me-menu-list">
+                    <div class="menu-item">
+                        <div class="menu-icon">💳</div>
+                        <div class="menu-text">支付與服務</div>
+                        <div class="menu-arrow">›</div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon">⭐</div>
+                        <div class="menu-text">收藏</div>
+                        <div class="menu-arrow">›</div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon">📷</div>
+                        <div class="menu-text">朋友圈</div>
+                        <div class="menu-arrow">›</div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon">🎫</div>
+                        <div class="menu-text">票證 & 卡券</div>
+                        <div class="menu-arrow">›</div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon">😊</div>
+                        <div class="menu-text">貼圖市集</div>
+                        <div class="menu-arrow">›</div>
+                    </div>
+                    <div class="menu-item">
+                        <div class="menu-icon">⚙️</div>
+                        <div class="menu-text">設定</div>
+                        <div class="menu-arrow">›</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部導航欄 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchView('chat')">
+                <div class="nav-icon">💬</div>
+                <div>聊天</div>
+                <div class="nav-badge">8</div>
+            </div>
+            <div class="nav-item" onclick="switchView('contacts')">
+                <div class="nav-icon">👥</div>
+                <div>通訊錄</div>
+            </div>
+            <div class="nav-item" onclick="switchView('discover')">
+                <div class="nav-icon">🔍</div>
+                <div>發現</div>
+            </div>
+            <div class="nav-item" onclick="switchView('me')">
+                <div class="nav-icon">👤</div>
+                <div>我</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'sk-d850478e8977454abc9975d544ffd4e3';
+        const API_URL = 'https://api.deepseek.com/v1/chat/completions';
+        
+        let selectedAthlete = null;
+        let isWaitingForResponse = false;
+        let conversationHistory = {}; // 存儲每個運動員的對話歷史
+        let currentView = 'chat'; // 當前顯示的界面
+        let chatListData = {}; // 存儲聊天列表數據
+
+        // 運動員個性設定
+        const athletePersonalities = {
+            '孫穎莎': '你是孫穎莎，中國女子乒乓球運動員，世界冠軍。你性格大大咧咧、活潑開朗、直接幽默，技術全面，被稱為"小魔王"。說話風格自然隨性，喜歡開玩笑，說話直接不拐彎抹角。你喜歡和粉絲分享訓練心得和比賽經驗。用戶的名字是"派派"，請在對話中適當地稱呼他為"派派"。',
+            '王楚欽': '你是王楚欽，中國男子乒乓球運動員，世界冠軍。你技術精湛，性格幽默風趣，說話帶有東北味，喜歡半開玩笑的說話方式。你是中國男乒的未來之星，樂於分享乒乓球技術要領。用戶的名字是"派派"，請在對話中適當地稱呼他為"派派"。',
+            '林高遠': '你是林高遠，中國男子乒乓球運動員。你技術細膩，打法靈活，被稱為"小胖"。你性格幽默，喜歡和粉絲互動。用戶的名字是"派派"，請在對話中適當地稱呼他為"派派"。',
+            '王曼昱': '你是王曼昱，中國女子乒乓球運動員，世界冠軍。你技術全面，意志堅強，被稱為"大魔王"。你認真負責，樂於分享比賽經驗。用戶的名字是"派派"，請在對話中適當地稱呼他為"派派"。',
+            '蒯曼': '你是蒯曼，中國女子乒乓球運動員。你年輕有為，技術進步很快，是中國女乒的新星。你充滿活力，喜歡和粉絲交流。用戶的名字是"派派"，請在對話中適當地稱呼他為"派派"。',
+            '林詩棟': '你是林詩棟，中國男子乒乓球運動員。你技術紮實，打法穩健，是中國男乒的重要力量。你謙遜有禮，樂於分享乒乓球知識。用戶的名字是"派派"，請在對話中適當地稱呼他為"派派"。',
+            '梁靖崑': '你是梁靖崑，中國男子乒乓球運動員，世界冠軍。你技術全面，實力強勁，是中國男乒的重要選手。你性格穩重，說話誠懇，喜歡分享比賽經驗和技術心得。你對乒乓球有著深厚的理解和熱愛。用戶的名字是"派派"，請在對話中適當地稱呼他為"派派"。'
+        };
+
+        // 運動員狀態
+        const athleteStatus = {
+            '孫穎莎': '小魔王 · 在線',
+            '王楚欽': '未來之星 · 在線',
+            '林高遠': '🐰 兔子 · 在線',
+            '王曼昱': '🐟 魚 · 在線',
+            '蒯曼': '新星 · 在線',
+            '林詩棟': '🪨 石頭 · 在線',
+            '梁靖崑': '🏆 冠軍 · 在線'
+        };
+
+        // DOM 元素
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatListItems = document.querySelectorAll('.chat-list-item');
+        const contactItems = document.querySelectorAll('.contact-item');
+        const chatHeader = document.getElementById('chatHeader');
+        const chatAvatar = document.getElementById('chatAvatar');
+        const chatName = document.getElementById('chatName');
+        const chatStatus = document.getElementById('chatStatus');
+        const chatListView = document.getElementById('chatListView');
+        const contactsView = document.getElementById('contactsView');
+        const chatView = document.getElementById('chatView');
+        const meView = document.getElementById('meView');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        // 事件監聽器
+        contactItems.forEach(item => {
+            item.addEventListener('click', () => selectAthlete(item.dataset.athlete));
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !isWaitingForResponse) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        messageInput.addEventListener('input', () => {
+            // 自動調整文本框高度
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px';
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        // 切換界面
+        function switchView(view) {
+            currentView = view;
+            
+            // 更新導航欄狀態
+            navItems.forEach(item => item.classList.remove('active'));
+            event.target.closest('.nav-item').classList.add('active');
+            
+            // 隱藏所有界面
+            chatListView.style.display = 'none';
+            contactsView.style.display = 'none';
+            chatView.style.display = 'none';
+            meView.style.display = 'none';
+            
+            // 顯示對應界面
+            switch(view) {
+                case 'chat':
+                    chatListView.style.display = 'flex';
+                    break;
+                case 'contacts':
+                    contactsView.style.display = 'flex';
+                    break;
+                case 'discover':
+                    // 暫時顯示通訊錄
+                    contactsView.style.display = 'flex';
+                    break;
+                case 'me':
+                    meView.style.display = 'flex';
+                    break;
+            }
+        }
+
+        // 返回聊天列表
+        function backToChatList() {
+            // 更新聊天列表顯示
+            updateChatList();
+            
+            // 顯示聊天列表，隱藏聊天界面
+            chatListView.style.display = 'flex';
+            chatView.style.display = 'none';
+        }
+
+        // 更新聊天列表
+        function updateChatList() {
+            const chatListContainer = document.querySelector('#chatListView .contacts-list');
+            chatListContainer.innerHTML = '';
+            
+            // 為每個運動員創建聊天列表項目
+            Object.keys(athleteStatus).forEach(athlete => {
+                const hasHistory = conversationHistory[athlete] && conversationHistory[athlete].length > 1;
+                const lastMessage = hasHistory ? getLastMessage(athlete) : athleteStatus[athlete];
+                const unreadCount = hasHistory ? getUnreadCount(athlete) : 0;
+                
+                const chatItem = createChatListItem(athlete, lastMessage, unreadCount);
+                chatListContainer.appendChild(chatItem);
+            });
+            
+            // 重新綁定事件
+            document.querySelectorAll('.chat-list-item').forEach(item => {
+                item.addEventListener('click', () => selectAthlete(item.dataset.athlete));
+            });
+        }
+
+        // 創建聊天列表項目
+        function createChatListItem(athlete, lastMessage, unreadCount) {
+            const div = document.createElement('div');
+            div.className = 'chat-list-item';
+            div.dataset.athlete = athlete;
+            
+            let avatar;
+            if (athlete === '王楚欽') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽">';
+            } else if (athlete === '孫穎莎') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎">';
+            } else if (athlete === '蒯曼') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼">';
+            } else {
+                avatar = athlete.charAt(0);
+            }
+            
+            const timeDisplay = getFormattedTime(athlete);
+            
+            div.innerHTML = `
+                <div class="chat-list-avatar">
+                    ${avatar}
+                    ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                </div>
+                <div class="chat-list-info">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="chat-list-name">${athlete}</div>
+                        <div class="chat-list-time">${timeDisplay}</div>
+                    </div>
+                    <div class="chat-list-last-message">${lastMessage}</div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // 獲取最後一條消息
+        function getLastMessage(athlete) {
+            if (!conversationHistory[athlete] || conversationHistory[athlete].length <= 1) {
+                return athleteStatus[athlete];
+            }
+            
+            const lastMessage = conversationHistory[athlete][conversationHistory[athlete].length - 1];
+            if (lastMessage.role === 'user') {
+                return `派派: ${lastMessage.content.substring(0, 25)}${lastMessage.content.length > 25 ? '...' : ''}`;
+            } else {
+                return `${lastMessage.content.substring(0, 30)}${lastMessage.content.length > 30 ? '...' : ''}`;
+            }
+        }
+
+        // 獲取未讀消息數量（暫時返回0，可以根據需要實現）
+        function getUnreadCount(athlete) {
+            return 0; // 可以根據實際需求實現未讀消息統計
+        }
+
+        // 選擇運動員
+        function selectAthlete(athlete) {
+            selectedAthlete = athlete;
+            
+            // 隱藏聊天列表，顯示聊天界面
+            chatListView.style.display = 'none';
+            chatView.style.display = 'flex';
+
+            // 更新聊天頭部
+            updateChatHeader(athlete);
+
+            // 啟用輸入
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus();
+
+            // 檢查是否有現有的對話歷史
+            if (!conversationHistory[athlete]) {
+                // 初始化對話歷史
+                conversationHistory[athlete] = [
+                    {
+                        role: "system",
+                        content: `${athletePersonalities[athlete]} 請以${athlete}的身份回覆用戶的問題，保持友好和專業的態度。回覆要簡潔自然，符合運動員的身份。請使用簡體中文回覆。`
+                    }
+                ];
+                
+                // 顯示歡迎消息
+                showWelcomeMessage(athlete);
+            } else {
+                // 恢復之前的對話記錄
+                restoreConversation(athlete);
+            }
+        }
+
+        // 更新聊天頭部
+        function updateChatHeader(athlete) {
+            if (athlete === '王楚欽') {
+                chatAvatar.innerHTML = '<img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (athlete === '孫穎莎') {
+                chatAvatar.innerHTML = '<img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (athlete === '蒯曼') {
+                chatAvatar.innerHTML = '<img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else {
+                chatAvatar.textContent = athlete.charAt(0);
+            }
+            chatName.textContent = athlete;
+            chatStatus.textContent = athleteStatus[athlete];
+        }
+
+        // 顯示歡迎消息
+        function showWelcomeMessage(athlete) {
+            let welcomeAvatar;
+            if (athlete === '王楚欽') {
+                welcomeAvatar = '<img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (athlete === '蒯曼') {
+                welcomeAvatar = '<img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (athlete === '孫穎莎') {
+                welcomeAvatar = '<img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else {
+                welcomeAvatar = athlete.charAt(0);
+            }
+            
+            const currentDate = new Date().toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            chatMessages.innerHTML = `
+                <div class="message-timestamp">${currentDate} ${getCurrentTime()}</div>
+                <div class="message athlete">
+                    <div class="message-avatar">${welcomeAvatar}</div>
+                    <div class="message-bubble">
+                        你好！我是${athlete}，很高興和你聊天！有什麼想問我的嗎？
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                </div>
+                <div class="system-message">以上是打招呼的內容</div>
+                <div class="message-timestamp">${currentDate} ${getCurrentTime()}</div>
+                <div class="system-message">你已加 ${athlete} 為朋友，現在可以聊天了。</div>
+            `;
+        }
+
+        // 恢復對話記錄
+        function restoreConversation(athlete) {
+            chatMessages.innerHTML = '';
+            
+            // 添加時間戳
+            const currentDate = new Date().toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // 跳過system消息，從第二條開始顯示
+            for (let i = 1; i < conversationHistory[athlete].length; i++) {
+                const message = conversationHistory[athlete][i];
+                const sender = message.role === 'user' ? 'user' : 'athlete';
+                
+                // 為第一條消息添加時間戳
+                if (i === 1) {
+                    const timestampDiv = document.createElement('div');
+                    timestampDiv.className = 'message-timestamp';
+                    timestampDiv.textContent = `${currentDate} ${getCurrentTime()}`;
+                    chatMessages.appendChild(timestampDiv);
+                }
+                
+                addMessageToUI(message.content, sender); // 只顯示到UI，不添加到歷史記錄
+            }
+        }
+
+        // 添加消息到UI（不添加到歷史記錄）
+        function addMessageToUI(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let avatar;
+            if (sender === 'user') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/paipai.jpg" alt="派派" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '王楚欽') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '蒯曼') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '孫穎莎') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else {
+                avatar = selectedAthlete.charAt(0);
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-bubble">
+                    ${content}
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 發送消息
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || !selectedAthlete || isWaitingForResponse) return;
+
+            // 檢查是否需要添加時間戳
+            const shouldAddTimestamp = chatMessages.children.length === 0 || 
+                !chatMessages.lastElementChild.classList.contains('message');
+
+            // 添加用戶消息到UI和歷史記錄
+            addMessage(message, 'user', true, shouldAddTimestamp);
+            
+            // 添加到對話歷史
+            conversationHistory[selectedAthlete].push({
+                role: "user",
+                content: message
+            });
+            
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+
+            // 顯示加載狀態
+            const loadingId = addLoadingMessage();
+
+            try {
+                isWaitingForResponse = true;
+                sendBtn.disabled = true;
+                messageInput.disabled = true;
+
+                const response = await callDeepSeekAPI(selectedAthlete);
+                
+                // 移除加載消息
+                removeLoadingMessage(loadingId);
+                
+                // 添加運動員回覆到UI和歷史記錄
+                addMessage(response, 'athlete');
+                conversationHistory[selectedAthlete].push({
+                    role: "assistant",
+                    content: response
+                });
+                
+                // 更新聊天列表（如果當前在聊天列表界面）
+                if (chatListView.style.display === 'flex') {
+                    updateChatList();
+                }
+
+            } catch (error) {
+                console.error('API 調用錯誤:', error);
+                removeLoadingMessage(loadingId);
+                addErrorMessage('抱歉，我現在無法回應，請稍後再試。');
+            } finally {
+                isWaitingForResponse = false;
+                sendBtn.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // 調用 DeepSeek API
+        async function callDeepSeekAPI(athlete) {
+            const requestBody = {
+                model: "deepseek-chat",
+                messages: conversationHistory[athlete],
+                max_tokens: 500,
+                temperature: 0.7
+            };
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API_KEY}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API 請求失敗: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+
+        // 添加消息到聊天界面
+        function addMessage(content, sender, addToHistory = true, addTimestamp = false) {
+            // 如果需要添加時間戳
+            if (addTimestamp) {
+                const currentDate = new Date().toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                const timestampDiv = document.createElement('div');
+                timestampDiv.className = 'message-timestamp';
+                timestampDiv.textContent = `${currentDate} ${getCurrentTime()}`;
+                chatMessages.appendChild(timestampDiv);
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let avatar;
+            if (sender === 'user') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/paipai.jpg" alt="派派" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '王楚欽') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '蒯曼') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '孫穎莎') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else {
+                avatar = selectedAthlete.charAt(0);
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-bubble">
+                    ${content}
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 添加加載消息
+        function addLoadingMessage() {
+            const loadingId = 'loading-' + Date.now();
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message athlete';
+            loadingDiv.id = loadingId;
+            
+            let avatar;
+            if (selectedAthlete === '王楚欽') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/wangchuqing.jpg" alt="王楚欽" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '孫穎莎') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/sunyingsha.jpg" alt="孫穎莎" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else if (selectedAthlete === '蒯曼') {
+                avatar = '<img src="https://chineseclassics.github.io/images/pingpang/kuaiman.jpg" alt="蒯曼" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else {
+                avatar = selectedAthlete.charAt(0);
+            }
+            
+            loadingDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-bubble">
+                    <div class="loading-message">
+                        <span>正在輸入</span>
+                        <div class="loading-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loadingId;
+        }
+
+        // 移除加載消息
+        function removeLoadingMessage(loadingId) {
+            const loadingElement = document.getElementById(loadingId);
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+        }
+
+        // 添加錯誤消息
+        function addErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            chatMessages.appendChild(errorDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 獲取當前時間
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
+        // 獲取格式化的時間顯示
+        function getFormattedTime(athlete) {
+            if (!conversationHistory[athlete] || conversationHistory[athlete].length <= 1) {
+                return '';
+            }
+            
+            const now = new Date();
+            const lastMessageTime = new Date(); // 這裡可以存儲實際的消息時間
+            
+            const diffInHours = (now - lastMessageTime) / (1000 * 60 * 60);
+            
+            if (diffInHours < 1) {
+                return now.toLocaleTimeString('zh-CN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } else if (diffInHours < 24) {
+                return '昨天 ' + lastMessageTime.toLocaleTimeString('zh-CN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } else {
+                return lastMessageTime.toLocaleDateString('zh-CN', { 
+                    month: '2-digit', 
+                    day: '2-digit' 
+                });
+            }
+        }
+
+        // 初始化
+        function initializeChat() {
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            isWaitingForResponse = false;
+            
+            // 設置初始界面
+            chatListView.style.display = 'flex';
+            contactsView.style.display = 'none';
+            chatView.style.display = 'none';
+            meView.style.display = 'none';
+            
+            // 添加一些模擬的聊天記錄
+            addSampleConversations();
+            
+            // 初始化聊天列表
+            updateChatList();
+        }
+
+        // 添加樣本對話
+        function addSampleConversations() {
+            // 孫穎莎的樣本對話
+            conversationHistory['孫穎莎'] = [
+                {
+                    role: "system",
+                    content: `${athletePersonalities['孫穎莎']} 請以孫穎莎的身份回覆用戶的問題，保持友好和專業的態度。回覆要簡潔自然，符合運動員的身份。請使用簡體中文回覆。`
+                },
+                {
+                    role: "user",
+                    content: "你好，孫穎莎！"
+                },
+                {
+                    role: "assistant",
+                    content: "嗨派派！你好啊～今天怎麼樣？"
+                }
+            ];
+
+            // 王楚欽的樣本對話
+            conversationHistory['王楚欽'] = [
+                {
+                    role: "system",
+                    content: `${athletePersonalities['王楚欽']} 請以王楚欽的身份回覆用戶的問題，保持友好和專業的態度。回覆要簡潔自然，符合運動員的身份。請使用簡體中文回覆。`
+                },
+                {
+                    role: "user",
+                    content: "王楚欽，你的技術真厲害！"
+                },
+                {
+                    role: "assistant",
+                    content: "哈哈，謝謝派派誇獎！其實還有很多需要改進的地方呢～"
+                }
+            ];
+
+            // 林高遠的樣本對話
+            conversationHistory['林高遠'] = [
+                {
+                    role: "system",
+                    content: `${athletePersonalities['林高遠']} 請以林高遠的身份回覆用戶的問題，保持友好和專業的態度。回覆要簡潔自然，符合運動員的身份。請使用簡體中文回覆。`
+                },
+                {
+                    role: "user",
+                    content: "林高遠，你最近訓練怎麼樣？"
+                },
+                {
+                    role: "assistant",
+                    content: "訓練還不錯，派派！正在為下一個比賽做準備。"
+                }
+            ];
+        }
+
+        // 頁面加載時初始化
+        initializeChat();
+
+        // 重置聊天狀態（用於調試）
+        function resetChatState() {
+            isWaitingForResponse = false;
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus();
+        }
+
+        // 清除當前運動員的對話歷史
+        function clearConversation() {
+            if (selectedAthlete && conversationHistory[selectedAthlete]) {
+                delete conversationHistory[selectedAthlete];
+                // 重新選擇運動員來初始化新的對話
+                selectAthlete(selectedAthlete);
+            }
+        }
+
+        // 添加全局重置函數（可在控制台調用）
+        window.resetChat = resetChatState;
+        window.clearConversation = clearConversation;
+    </script>
+</body>
+</html>
