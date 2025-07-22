@@ -9705,7 +9705,7 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             return interactions[Math.floor(Math.random() * interactions.length)];
         }
 
-        // 生成安全的AI回應（統一流程）
+        // 生成安全的AI回應（優化版本：兩次API調用）
         async function generateSafeAIResponses(userMessage, mentions = []) {
             // 獲取當前群組配置
             const currentGroup = CONFIG.groups[groupManager.currentGroup];
@@ -9735,195 +9735,63 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 return;
             }
             
-            // 統一使用 selectRespondingCharacters 進行角色選擇和AI回應生成
+            // 使用智能規則選擇1-3個角色
+            console.log('使用智能規則選擇回應角色...');
+            const selectedCharacters = useIntelligentRuleBasedSelection(userMessage, activeCharacters);
+            
+            console.log('規則選擇的角色:', selectedCharacters.map(id => characters[id].name));
+            
+            if (!selectedCharacters || selectedCharacters.length === 0) {
+                console.warn('沒有選中任何角色');
+                return;
+            }
+            
+            // 立即顯示第一個角色的打字動畫
+            if (selectedCharacters.length > 0) {
+                showTypingAnimation(selectedCharacters[0]);
+            }
+            
             try {
-                const result = await selectRespondingCharacters(userMessage);
-                const respondingCharacters = result;
-                const aiGeneratedResponses = result.aiGeneratedResponses;
+                // 驗證上下文傳遞
+                validateContextFlow(userMessage, selectedCharacters);
                 
-                console.log('選中的角色:', respondingCharacters);
-                console.log('AI預生成回應:', aiGeneratedResponses);
+                // 第一次API調用：生成第一個角色的回應
+                console.log('=== 第一次API調用：生成第一個角色回應 ===');
+                const firstCharacterResponse = await generateFirstCharacterResponse(selectedCharacters[0], userMessage);
                 
-                if (!respondingCharacters || respondingCharacters.length === 0) {
-                    console.warn('沒有選中任何角色');
-                    return;
-                    }
+                // 顯示第一個角色的回應
+                await displayCharacterResponse(selectedCharacters[0], firstCharacterResponse);
                 
-                // 立即顯示第一個角色的打字動畫
-                if (respondingCharacters.length > 0) {
-                    showTypingAnimation(respondingCharacters[0]);
-            }
-            
-            console.log('最終選中的回應角色:', respondingCharacters);
-            
-                // 記錄回應歷史，用於角色間互動
-            let responseHistory = [];
-            
-                // 按順序依次處理角色回應
-            async function processCharacterResponsesSequentially(characterList, index = 0) {
-                console.log(`=== 串行处理调用，index=${index}，总长度=${characterList.length} ===`);
+                // 將第一個角色的回應添加到群聊上下文中，供第二次API調用使用
+                groupChatContext.messages.push({
+                    character: selectedCharacters[0],
+                    content: firstCharacterResponse.response,
+                    timestamp: Date.now()
+                });
                 
-                if (index >= characterList.length) {
-                    console.log('=== 所有角色处理完成 ===');
-                    return;
+                // 如果有更多角色，進行第二次API調用
+                if (selectedCharacters.length > 1) {
+                    const remainingCharacters = selectedCharacters.slice(1);
+                    console.log('=== 第二次API調用：生成剩餘角色互動式回應 ===');
+                    
+                    // 立即顯示第二個角色的打字動畫（去除第一個和第二個之間的延遲）
+                    showTypingAnimation(remainingCharacters[0]);
+                    
+                    // 第二次API調用：生成剩餘角色的互動式回應
+                    const remainingResponses = await generateRemainingCharactersResponse(
+                        remainingCharacters, 
+                        firstCharacterResponse, 
+                        userMessage
+                    );
+                    
+                    // 顯示剩餘角色的回應（保持角色間的延遲）
+                    await displayRemainingCharactersResponses(remainingCharacters, remainingResponses);
                 }
-                
-                const characterKey = characterList[index];
-                const isFirstCharacter = index === 0;
-                
-                console.log(`准备处理第${index + 1}个角色: ${characterKey}`);
-                
-                // 检查角色是否存在
-                if (!characters[characterKey]) {
-                    console.error(`角色 ${characterKey} 不存在，跳过`);
-                    setTimeout(() => {
-                        processCharacterResponsesSequentially(characterList, index + 1);
-                    }, 100);
-                    return;
-                }
-                
-                                    // 設置角色間隔延遲：第一個角色0秒（立即開始），後續角色2秒
-                const baseDelay = isFirstCharacter ? 0 : 2000;
-                const startDelay = baseDelay + Math.random() * 500; // 減少隨機因子
-                
-                setTimeout(async () => {
-                        console.log(`=== 开始处理角色 ${characterKey} (${characters[characterKey]?.name}) - 第${index + 1}個 ===`);
-                    
-                        // 顯示該角色的打字動畫
-                        console.log(`為 ${characterKey} 顯示打字動畫`);
-                    showTypingAnimation(characterKey);
-                    
-                    // 5%概率模拟"重新思考"（先移除再显示思考动画）
-                    if (Math.random() < 0.05) {
-                            const rethinkDelay = 800 + Math.random() * 1000; // 縮短重新思考時間
-                        setTimeout(() => {
-                            removeTypingAnimation(characterKey);
-                            setTimeout(() => {
-                                showTypingAnimation(characterKey);
-                            }, 200 + Math.random() * 300);
-                        }, rethinkDelay);
-                    }
-                    
-                    let characterResponse;
-                    
-                    try {
-                            // 優先使用AI預生成的回應（群聊效果）
-                            console.log(`🔍 檢查 ${characterKey} 的AI預生成回應:`, {
-                                hasAiGeneratedResponses: !!aiGeneratedResponses,
-                                hasCharacterResponse: aiGeneratedResponses ? !!aiGeneratedResponses[characterKey] : false,
-                                aiGeneratedResponses: aiGeneratedResponses
-                            });
-                            
-                            if (aiGeneratedResponses && aiGeneratedResponses[characterKey]) {
-                                console.log(`✅ ${characterKey} 使用AI預生成的群聊回應`);
-                                characterResponse = aiGeneratedResponses[characterKey].response;
-                        } else {
-                                console.log(`❌ ${characterKey} 沒有AI預生成回應，使用備用回應`);
-                                characterResponse = generateSimpleResponse(characterKey, userMessage);
-                        }
-                    } catch (error) {
-                            console.error(`${characterKey} 生成回應時出錯:`, error);
-                            characterResponse = generateSimpleResponse(characterKey, userMessage);
-                    }
-                    
-                    if (characterResponse && characterResponse.trim()) {
-                        console.log(`${characterKey} 准备发送回应:`, characterResponse);
-                        
-                        // 移除打字动画
-                        removeTypingAnimation(characterKey);
-                        
-                        // 安全性过滤
-                        const safeResponse = safetyFilter.filterAIResponse(characterResponse);
-                        console.log(`${characterKey} 过滤后的回应:`, safeResponse);
-                        
-                        if (safeResponse && safeResponse.trim()) {
-                            // 记录回应历史
-                            responseHistory.push({
-                                characterKey: characterKey,
-                                characterName: characters[characterKey]?.name || characterKey,
-                                content: safeResponse
-                            });
-                            
-                            // 分段发送长消息
-                                const segments = splitMessageIntoSegments(safeResponse, 60);
-                            console.log(`${characterKey} 消息分段:`, segments);
-                            
-                            if (segments.length > 1) {
-                                // 等待分段消息完成发送
-                                await sendMessageSegmentsSequentially(characterKey, segments);
-                                console.log(`${characterKey} 分段消息发送完成`);
-                                
-                                setTimeout(() => {
-                                    const chatContainer = document.getElementById('chatMessages');
-                                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                                }, 100);
-                                
-                                    // 縮短分段消息完成後的延遲
-                                    const nextDelay = 1500 + Math.random() * 1000; // 1.5-2.5秒
-                                setTimeout(() => {
-                                    console.log(`${characterKey} 分段完成，延迟${nextDelay}ms处理下一个角色 (index=${index + 1})`);
-                                    processCharacterResponsesSequentially(characterList, index + 1);
-                                }, nextDelay);
-                            } else {
-                                    // 单条消息直接发送
-                                addMessage({
-                                    type: 'message',
-                                    character: characterKey,
-                                    content: safeResponse,
-                                    contentType: 'text'
-                                });
-                                
-                                setTimeout(() => {
-                                    const chatContainer = document.getElementById('chatMessages');
-                                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                                }, 100);
-                                
-                                    // 單條消息完成後的延遲
-                                    const nextDelay = 1000 + Math.random() * 500; // 1-1.5秒
-                                setTimeout(() => {
-                                        console.log(`${characterKey} 單條消息完成，延迟${nextDelay}ms处理下一个角色 (index=${index + 1})`);
-                                    processCharacterResponsesSequentially(characterList, index + 1);
-                                    }, nextDelay);
-                            }
-                        } else {
-                            // 如果过滤后回应为空，立即处理下一个角色
-                            setTimeout(() => {
-                                console.log(`${characterKey} 过滤后回应为空，处理下一个角色 (index=${index + 1})`);
-                                processCharacterResponsesSequentially(characterList, index + 1);
-                            }, 500);
-                        }
-                    } else {
-                        // 如果没有回应，移除动画并处理下一个角色
-                        console.warn(`${characterKey} 没有生成有效回应`);
-                        removeTypingAnimation(characterKey);
-                        setTimeout(() => {
-                            console.log(`${characterKey} 没有有效回应，处理下一个角色 (index=${index + 1})`);
-                            processCharacterResponsesSequentially(characterList, index + 1);
-                        }, 500);
-                    }
-                }, startDelay);
-            }
-            
-            // 开始串行处理
-            processCharacterResponsesSequentially(respondingCharacters);
                 
             } catch (error) {
-                console.error('generateSafeAIResponses 出錯:', error);
+                console.error('AI回應生成失敗:', error);
                 // 使用備用方案
-                const backupCharacters = getRandomCharacters();
-                if (backupCharacters.length > 0) {
-                    backupCharacters.forEach((charId, index) => {
-                        setTimeout(() => {
-                            const backupResponse = generateSimpleResponse(charId, userMessage);
-                            addMessage({
-                                type: 'message',
-                                character: charId,
-                                content: backupResponse,
-                                contentType: 'text'
-                            });
-                        }, index * 1000);
-                    });
-                }
+                await generateBackupResponses(selectedCharacters, userMessage);
             }
         }
         
@@ -13003,6 +12871,456 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 });
             });
         };
+        
+        // 第一次API調用：生成第一個角色的回應
+        async function generateFirstCharacterResponse(firstCharacterId, userMessage) {
+            console.log(`生成第一個角色 ${firstCharacterId} 的回應...`);
+            
+            const character = characters[firstCharacterId];
+            if (!character) {
+                throw new Error(`角色 ${firstCharacterId} 不存在`);
+            }
+            
+            // 構建第一個角色的系統提示
+            const systemPrompt = buildFirstCharacterPrompt(firstCharacterId, userMessage);
+            
+            const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${AI_CONFIG.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: AI_CONFIG.model,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。'
+                        },
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        {
+                            role: 'user',
+                            content: userMessage
+                        }
+                    ],
+                    max_tokens: 400,
+                    temperature: 0.8
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`第一次API調用失敗: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const aiResponse = data.choices[0].message.content;
+            
+            console.log(`第一個角色 ${character.name} 的AI回應:`, aiResponse);
+            
+            // 後處理：替換英文省略號為中文省略號
+            const processedResponse = postProcessAIResponse(aiResponse);
+            
+            return {
+                characterId: firstCharacterId,
+                characterName: character.name,
+                response: processedResponse
+            };
+        }
+        
+        // 第二次API調用：生成剩餘角色的互動式回應
+        async function generateRemainingCharactersResponse(remainingCharacters, firstCharacterResponse, userMessage) {
+            console.log(`生成剩餘角色 ${remainingCharacters.map(id => characters[id].name).join(', ')} 的互動式回應...`);
+            
+            // 構建第二次API調用的prompt
+            const systemPrompt = buildSecondApiPrompt(remainingCharacters, firstCharacterResponse, userMessage);
+            
+            const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${AI_CONFIG.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: AI_CONFIG.model,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。'
+                        },
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        {
+                            role: 'user',
+                            content: userMessage
+                        }
+                    ],
+                    max_tokens: 400, // 與第一次API調用保持一致，確保回應簡潔
+                    temperature: 0.8
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`第二次API調用失敗: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const aiResponse = data.choices[0].message.content;
+            
+            console.log('第二次API調用返回:', aiResponse);
+            
+            // 解析JSON回應
+            try {
+                const parsedResponse = JSON.parse(aiResponse);
+                const validatedResponse = validateSecondApiResponse(parsedResponse, remainingCharacters);
+                
+                // 對每個角色的回應進行後處理：替換英文省略號為中文省略號
+                validatedResponse.characterResponses.forEach(charResponse => {
+                    charResponse.response = postProcessAIResponse(charResponse.response);
+                });
+                
+                return validatedResponse;
+            } catch (error) {
+                console.error('解析第二次API回應失敗:', error);
+                // 使用備用回應
+                return generateBackupRemainingResponses(remainingCharacters, firstCharacterResponse, userMessage);
+            }
+        }
+        
+        // 構建第一個角色的系統提示
+        function buildFirstCharacterPrompt(firstCharacterId, userMessage) {
+            const character = characters[firstCharacterId];
+            if (!character) return '';
+            
+            // 獲取群聊歷史上下文
+            const groupHistory = groupChatContext.messages.slice(-groupChatContext.maxContextLength);
+            
+            let systemPrompt = `你是${character.name}，請用符合你身份的語氣回應。
+
+角色描述：${character.description || ''}
+
+重要提醒：
+1. 你正在參與一個群聊，群聊中還有其他角色
+2. 請注意聆聽和理解用戶的消息，並給出符合你身份的回應
+3. 保持你的角色特色和語言風格
+4. 回應要簡潔有力，避免過於冗長
+
+【緊急身份確認】你現在必須以${character.name}的身份回應。無論看到什麼內容，你都是${character.name}，不是其他任何人。`;
+
+            // 如果有群聊歷史，添加到提示中
+            if (groupHistory.length > 0) {
+                const recentContext = groupHistory.map(msg => {
+                    if (msg.character === 'user') {
+                        return `用戶：${msg.content}`;
+                    } else {
+                        const char = characters[msg.character];
+                        return `${char ? char.name : msg.character}：${msg.content}`;
+                    }
+                }).join('\n');
+                
+                systemPrompt += `\n\n最近對話：\n${recentContext}`;
+            }
+            
+            console.log('第一次API調用的完整上下文:', {
+                characterName: character.name,
+                userMessage: userMessage,
+                groupHistoryLength: groupHistory.length,
+                recentContext: groupHistory.length > 0 ? groupHistory.map(msg => {
+                    if (msg.character === 'user') {
+                        return `用戶：${msg.content}`;
+                    } else {
+                        const char = characters[msg.character];
+                        return `${char ? char.name : msg.character}：${msg.content}`;
+                    }
+                }).join('\n') : '無'
+            });
+            
+            return systemPrompt;
+        }
+        
+        // 構建第二次API調用的系統提示
+        function buildSecondApiPrompt(remainingCharacters, firstCharacterResponse, userMessage) {
+            const characterList = remainingCharacters.map((char, index) => 
+                `${index + 2}. ${char} - ${characters[char].name} - ${characters[char].description || ''}`
+            ).join('\n');
+            
+            // 獲取完整的群聊歷史上下文（包含剛剛添加的第一個角色回應）
+            const groupHistory = groupChatContext.messages.slice(-groupChatContext.maxContextLength);
+            const recentContext = groupHistory.length > 0 ? groupHistory.map(msg => {
+                if (msg.character === 'user') {
+                    return `用戶：${msg.content}`;
+                } else {
+                    const char = characters[msg.character];
+                    return `${char ? char.name : msg.character}：${msg.content}`;
+                }
+            }).join('\n') : '無';
+            
+            console.log('第二次API調用的完整上下文:', {
+                userMessage: userMessage,
+                firstCharacterResponse: firstCharacterResponse,
+                groupHistoryLength: groupHistory.length,
+                recentContext: recentContext
+            });
+            
+            return `你是群聊中的AI助手，現在需要為指定的角色生成互動式回應。
+
+【當前對話狀態】
+用戶消息：${userMessage}
+
+第一個角色的回應：
+${firstCharacterResponse.characterName}：${firstCharacterResponse.response}
+
+群聊歷史：${recentContext}
+
+【你的任務】
+為以下指定的角色生成互動式回應：
+
+指定角色：
+${characterList}
+
+【互動要求】
+1. 第二個角色（如果有）：
+   - 主要回應第一個角色"${firstCharacterResponse.characterName}"的觀點
+   - 同時可以回應用戶消息
+   - 保持自己的語言風格和性格特點
+
+2. 第三個角色（如果有）：
+   - 回應第一個角色"${firstCharacterResponse.characterName}"的觀點
+   - 回應第二個角色的觀點（如果有第二個角色）
+   - 可以基於前兩個角色的觀點提出新見解
+   - 形成真正的三方互動對話
+
+【互動示例】
+- 第二個角色："${firstCharacterResponse.characterName}說得有道理，不過我認為..."
+- 第三個角色："我同意${firstCharacterResponse.characterName}的觀點，同時[第二個角色名稱]提到的...也很重要"
+
+【嚴格輸出格式】
+你必須嚴格按照以下JSON格式返回，不能修改角色ID：
+
+{
+  "characterResponses": [
+    ${remainingCharacters.map((char, index) => `{
+      "characterId": "${char}",
+      "characterName": "${characters[char].name}",
+      "response": "角色${index + 2}的互動式回應內容"
+    }`).join(',\n    ')}
+  ]
+}
+
+【重要提醒】
+- 只能為上述指定的角色生成回應
+- 第二個角色要體現對第一個角色的互動
+- 第三個角色要體現對前兩個角色的互動
+- 如果有多個角色，要形成連貫的對話鏈條
+- 每個角色的回應要簡潔有力，避免過於冗長
+- 保持每個角色的語言風格和性格特點
+- 必須嚴格按照JSON格式返回
+- 必須使用繁體中文回應，絕對不能使用簡體中文`;
+        }
+        
+        // 驗證第二次API回應
+        function validateSecondApiResponse(response, expectedCharacters) {
+            // 驗證JSON格式
+            if (!response.characterResponses || !Array.isArray(response.characterResponses)) {
+                throw new Error('響應格式錯誤：缺少characterResponses數組');
+            }
+            
+            // 驗證角色數量
+            if (response.characterResponses.length !== expectedCharacters.length) {
+                throw new Error(`角色數量不匹配：期望${expectedCharacters.length}個，實際${response.characterResponses.length}個`);
+            }
+            
+            // 驗證角色ID匹配
+            const expectedIds = expectedCharacters;
+            const actualIds = response.characterResponses.map(r => r.characterId);
+            
+            for (const expectedId of expectedIds) {
+                if (!actualIds.includes(expectedId)) {
+                    throw new Error(`角色ID不匹配：期望包含${expectedId}，實際包含${actualIds.join(', ')}`);
+                }
+            }
+            
+            // 驗證回應內容
+            for (const charResponse of response.characterResponses) {
+                if (!charResponse.response || charResponse.response.trim() === '') {
+                    throw new Error(`角色${charResponse.characterId}的回應內容為空`);
+                }
+            }
+            
+            return response;
+        }
+        
+        // 顯示第一個角色的回應
+        async function displayCharacterResponse(characterId, characterResponse) {
+            console.log(`顯示第一個角色 ${characterId} 的回應...`);
+            
+            // 移除打字動畫
+            removeTypingAnimation(characterId);
+            
+            // 安全性過濾
+            const safeResponse = safetyFilter.filterAIResponse(characterResponse.response);
+            
+            if (safeResponse && safeResponse.trim()) {
+                // 分段發送長消息
+                const segments = splitMessageIntoSegments(safeResponse, 60);
+                
+                if (segments.length > 1) {
+                    await sendMessageSegmentsSequentially(characterId, segments);
+                } else {
+                    addMessage({
+                        type: 'message',
+                        character: characterId,
+                        content: safeResponse,
+                        contentType: 'text'
+                    });
+                }
+                
+                setTimeout(() => {
+                    const chatContainer = document.getElementById('chatMessages');
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 100);
+            }
+        }
+        
+        // 顯示剩餘角色的回應
+        async function displayRemainingCharactersResponses(remainingCharacters, remainingResponses) {
+            console.log(`顯示剩餘角色回應，角色數量：${remainingCharacters.length}`);
+            
+            // 按順序處理每個角色（保持角色間的延遲）
+            for (let i = 0; i < remainingCharacters.length; i++) {
+                const characterId = remainingCharacters[i];
+                const characterResponse = remainingResponses.characterResponses.find(r => r.characterId === characterId);
+                
+                if (!characterResponse) {
+                    console.warn(`角色 ${characterId} 沒有找到回應`);
+                    continue;
+                }
+                
+                // 如果不是第一個剩餘角色，添加延遲
+                if (i > 0) {
+                    const delay = 2000 + Math.random() * 500; // 2-2.5秒延遲
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+                
+                // 顯示該角色的打字動畫
+                showTypingAnimation(characterId);
+                
+                // 模擬思考時間
+                const thinkingTime = 1000 + Math.random() * 1000; // 1-2秒
+                await new Promise(resolve => setTimeout(resolve, thinkingTime));
+                
+                // 移除打字動畫
+                removeTypingAnimation(characterId);
+                
+                // 安全性過濾
+                const safeResponse = safetyFilter.filterAIResponse(characterResponse.response);
+                
+                if (safeResponse && safeResponse.trim()) {
+                    // 分段發送長消息
+                    const segments = splitMessageIntoSegments(safeResponse, 60);
+                    
+                    if (segments.length > 1) {
+                        await sendMessageSegmentsSequentially(characterId, segments);
+                    } else {
+                        addMessage({
+                            type: 'message',
+                            character: characterId,
+                            content: safeResponse,
+                            contentType: 'text'
+                        });
+                    }
+                    
+                    setTimeout(() => {
+                        const chatContainer = document.getElementById('chatMessages');
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, 100);
+                }
+            }
+        }
+        
+        // 生成備用回應
+        async function generateBackupResponses(selectedCharacters, userMessage) {
+            console.log('使用備用回應方案...');
+            
+            for (let i = 0; i < selectedCharacters.length; i++) {
+                const characterId = selectedCharacters[i];
+                
+                // 如果不是第一個角色，添加延遲
+                if (i > 0) {
+                    const delay = 2000 + Math.random() * 500;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+                
+                // 顯示打字動畫
+                showTypingAnimation(characterId);
+                
+                // 模擬思考時間
+                const thinkingTime = 1000 + Math.random() * 1000;
+                await new Promise(resolve => setTimeout(resolve, thinkingTime));
+                
+                // 移除打字動畫
+                removeTypingAnimation(characterId);
+                
+                // 生成簡單回應
+                const backupResponse = generateSimpleResponse(characterId, userMessage);
+                
+                addMessage({
+                    type: 'message',
+                    character: characterId,
+                    content: backupResponse,
+                    contentType: 'text'
+                });
+                
+                setTimeout(() => {
+                    const chatContainer = document.getElementById('chatMessages');
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 100);
+            }
+        }
+        
+        // 生成備用剩餘角色回應
+        function generateBackupRemainingResponses(remainingCharacters, firstCharacterResponse, userMessage) {
+            console.log('生成備用剩餘角色回應...');
+            
+            return {
+                characterResponses: remainingCharacters.map(charId => {
+                    const simpleResponse = generateSimpleResponse(charId, userMessage);
+                    return {
+                        characterId: charId,
+                        characterName: characters[charId]?.name,
+                        response: postProcessAIResponse(simpleResponse)
+                    };
+                })
+            };
+        }
+        
+        // 驗證上下文傳遞的調試函數
+        function validateContextFlow(userMessage, selectedCharacters) {
+            console.log('=== 上下文傳遞驗證 ===');
+            console.log('1. 用戶消息:', userMessage);
+            console.log('2. 選中的角色:', selectedCharacters.map(id => characters[id].name));
+            console.log('3. 當前群聊上下文長度:', groupChatContext.messages.length);
+            console.log('4. 群聊上下文內容:', groupChatContext.messages.map(msg => {
+                if (msg.character === 'user') {
+                    return `用戶：${msg.content}`;
+                } else {
+                    const char = characters[msg.character];
+                    return `${char ? char.name : msg.character}：${msg.content}`;
+                }
+            }));
+            
+            // 驗證用戶消息是否在上下文中
+            const userMessageInContext = groupChatContext.messages.some(msg => 
+                msg.character === 'user' && msg.content === userMessage
+            );
+            console.log('5. 用戶消息是否在上下文中:', userMessageInContext);
+            
+            return userMessageInContext;
+        }
     </script>
     
 

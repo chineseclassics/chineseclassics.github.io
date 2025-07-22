@@ -131,12 +131,18 @@
         }
         
         .app-container {
-            height: calc(100vh - 64px);
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 40;
         }
         
         @media (max-width: 768px) {
             .app-container {
-                height: calc(100vh - 64px);
+                height: 100vh;
+                width: 100vw;
             }
         }
         
@@ -241,7 +247,7 @@
         
         /* 应用切换器样式优化 */
         .switcher-content {
-            max-height: calc(85vh - 100px);
+            max-height: calc(85vh - 140px);
             overflow-y: auto;
             /* 隐藏滚动条但保持滚动功能 */
             scrollbar-width: none; /* Firefox */
@@ -719,6 +725,29 @@
             white-space: nowrap;
             border: 0;
         }
+        
+        /* 悬浮logo样式优化 */
+        #floatingLogo {
+            transition: all 0.3s ease;
+        }
+        
+        #floatingLogo:hover {
+            transform: scale(1.05);
+        }
+        
+        #floatingLogo:active {
+            transform: scale(0.95);
+        }
+        
+        /* 应用视图全屏样式 */
+        #appView {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 30;
+        }
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
@@ -816,8 +845,18 @@
         </div>
     </nav>
 
+    <!-- 悬浮Logo图标 -->
+    <div id="floatingLogo" class="fixed top-4 left-4 z-50 hidden cursor-move select-none" style="left: 16px; top: 16px;">
+        <div class="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg border border-gray-200 dark:border-gray-600 hover:shadow-xl transition-all duration-300 transform hover:scale-110">
+            <img src="https://chineseclassics.github.io/images/cclogo.png" 
+                 alt="書院中文經典" 
+                 class="h-10 w-10 object-contain cursor-pointer"
+                 onclick="showFloatingAppSwitcher()">
+        </div>
+    </div>
+
     <!-- 主内容区域 -->
-    <main class="pt-16">
+    <main class="pt-16 relative z-20">
         <!-- 首页视图 -->
         <div id="homeView">
             <div class="py-8 px-4 mb-10 relative overflow-hidden">
@@ -992,6 +1031,11 @@
             <button id="closeSwitcherBtn" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black bg-opacity-30 hover:bg-opacity-50 text-white hover:text-gray-200 transition-all duration-200 flex items-center justify-center backdrop-blur-sm">
                 <i class="fas fa-times text-sm"></i>
             </button>
+            
+            <!-- 标题区域 -->
+            <div class="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 text-center">太虛幻境：書院中文經典數字體驗學習</h2>
+            </div>
             
             <!-- 应用网格区域 -->
             <div class="switcher-content h-full">
@@ -1401,10 +1445,23 @@
             `;
         }
 
+        // 渲染返回主页按钮
+        function renderHomeButton() {
+            return `
+                <div class="switcher-app-icon text-center" 
+                     onclick="showHome()">
+                    <div class="icon-container bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl p-3 w-14 h-14 flex items-center justify-center shadow-lg mx-auto mb-2">
+                        <i class="fas fa-home text-white text-lg"></i>
+                    </div>
+                    <p class="switcher-app-name text-center">返回主頁</p>
+                </div>
+            `;
+        }
+
         // 渲染应用网格
         function renderApps() {
             appGrid.innerHTML = apps.map(app => renderAppIcon(app)).join('');
-            switcherAppGrid.innerHTML = apps.map(app => renderSwitcherAppIcon(app)).join('');
+            switcherAppGrid.innerHTML = renderHomeButton() + apps.map(app => renderSwitcherAppIcon(app)).join('');
         }
 
         // 打开应用
@@ -1414,12 +1471,14 @@
 
             currentApp = app;
             currentView = 'app';
-            // 保持固定标题，不改变文本内容
-            // currentAppName.textContent = app.name;
 
             // 切换视图
             homeView.classList.add('hidden');
             appView.classList.remove('hidden');
+            
+            // 隐藏顶部导航栏，显示悬浮logo
+            document.querySelector('nav').classList.add('hidden');
+            document.getElementById('floatingLogo').classList.remove('hidden');
 
             // 显示加载状态
             loadingState.classList.remove('hidden');
@@ -1474,12 +1533,14 @@
         // 回到首页
         function showHome() {
             currentView = 'home';
-            // 保持固定标题，不改变文本内容
-            // currentAppName.textContent = '太虛幻境';
             homeView.classList.remove('hidden');
             appView.classList.add('hidden');
             appFrame.src = 'about:blank';
             currentApp = null;
+            
+            // 显示顶部导航栏，隐藏悬浮logo
+            document.querySelector('nav').classList.remove('hidden');
+            document.getElementById('floatingLogo').classList.add('hidden');
         }
 
         // 事件监听
@@ -1487,6 +1548,13 @@
         
         // 显示应用切换器（带动画）
         function showAppSwitcher() {
+            appSwitcherModal.classList.add('switcher-modal-show');
+            // 防止背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 显示悬浮logo的应用切换器
+        function showFloatingAppSwitcher() {
             appSwitcherModal.classList.add('switcher-modal-show');
             // 防止背景滚动
             document.body.style.overflow = 'hidden';
@@ -1625,8 +1693,97 @@
             });
         }, observerOptions);
 
+        // 悬浮logo拖拽功能
+        function initFloatingLogoDrag() {
+            const floatingLogo = document.getElementById('floatingLogo');
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
+            floatingLogo.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'IMG') return; // 如果点击的是图片，不启动拖拽
+                
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = parseInt(floatingLogo.style.left) || 16;
+                initialY = parseInt(floatingLogo.style.top) || 16;
+                
+                floatingLogo.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                let newX = initialX + deltaX;
+                let newY = initialY + deltaY;
+                
+                // 边界检查
+                const maxX = window.innerWidth - floatingLogo.offsetWidth - 16;
+                const maxY = window.innerHeight - floatingLogo.offsetHeight - 16;
+                
+                newX = Math.max(16, Math.min(newX, maxX));
+                newY = Math.max(16, Math.min(newY, maxY));
+                
+                floatingLogo.style.left = newX + 'px';
+                floatingLogo.style.top = newY + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    floatingLogo.style.cursor = 'move';
+                }
+            });
+
+            // 触摸设备支持
+            floatingLogo.addEventListener('touchstart', (e) => {
+                if (e.target.tagName === 'IMG') return;
+                
+                isDragging = true;
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                initialX = parseInt(floatingLogo.style.left) || 16;
+                initialY = parseInt(floatingLogo.style.top) || 16;
+                
+                e.preventDefault();
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - startX;
+                const deltaY = touch.clientY - startY;
+                
+                let newX = initialX + deltaX;
+                let newY = initialY + deltaY;
+                
+                // 边界检查
+                const maxX = window.innerWidth - floatingLogo.offsetWidth - 16;
+                const maxY = window.innerHeight - floatingLogo.offsetHeight - 16;
+                
+                newX = Math.max(16, Math.min(newX, maxX));
+                newY = Math.max(16, Math.min(newY, maxY));
+                
+                floatingLogo.style.left = newX + 'px';
+                floatingLogo.style.top = newY + 'px';
+                
+                e.preventDefault();
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        }
+
         // 初始化
         renderApps();
+        initFloatingLogoDrag();
         
         // 觀察所有應用圖標
         setTimeout(() => {
