@@ -878,29 +878,6 @@
             transform: scale(0.95);
         }
         
-        /* 移动端禁用悬停效果 */
-        @media (max-width: 768px) {
-            #floatingLogo:hover > div {
-                opacity: 0.6;
-                transform: scale(0.9);
-            }
-            
-            #floatingLogo:active > div {
-                transform: scale(0.85);
-            }
-            
-            /* 移动端触摸优化 */
-            #floatingLogo {
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: transparent;
-            }
-            
-            #floatingLogo > div {
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: transparent;
-            }
-        }
-        
         /* 确保logo在右侧垂直居中 */
         #floatingLogo {
             right: 16px !important;
@@ -912,8 +889,6 @@
         #floatingLogo > div {
             transform-origin: center;
         }
-        
-
         
         /* 应用视图全屏样式 */
         #appView {
@@ -1046,11 +1021,40 @@
             
             #floatingLogo > div {
                 padding: 4px !important;
+                /* 移动端移除悬停效果，确保点击响应 */
+                transition: none !important;
             }
             
             #floatingLogo img {
                 width: 20px !important;
                 height: 20px !important;
+            }
+            
+            /* 移动端移除所有悬停效果 */
+            #floatingLogo:hover > div {
+                opacity: 0.6 !important;
+                transform: scale(0.9) !important;
+            }
+            
+            #floatingLogo:active > div {
+                transform: scale(0.9) !important;
+            }
+            
+            /* 移动端移除hover:scale-110效果 */
+            .mobile-no-hover:hover {
+                transform: scale(1) !important;
+            }
+            
+            /* 移动端优化点击区域 */
+            #floatingLogo {
+                touch-action: manipulation !important;
+                -webkit-tap-highlight-color: transparent !important;
+            }
+            
+            #floatingLogo img {
+                touch-action: manipulation !important;
+                -webkit-tap-highlight-color: transparent !important;
+                pointer-events: auto !important;
             }
         }
     </style>
@@ -1152,11 +1156,11 @@
 
     <!-- 悬浮Logo图标 -->
     <div id="floatingLogo" class="fixed z-50 hidden cursor-move select-none" style="right: 16px; top: 50%; margin-top: -24px;">
-        <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300 hover:scale-110 cursor-pointer"
-             onclick="showFloatingAppSwitcher()">
+        <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300 hover:scale-110 mobile-no-hover">
             <img src="https://chineseclassics.github.io/images/cclogo.png" 
                  alt="書院中文經典" 
-                 class="h-8 w-8 object-contain">
+                 class="h-8 w-8 object-contain cursor-pointer"
+                 onclick="showFloatingAppSwitcher()">
         </div>
     </div>
 
@@ -1777,19 +1781,9 @@
             currentApp = app;
             currentView = 'app';
 
-            // 直接打开应用
-            continueOpenApp();
-        }
-        
-
-        
-        // 创建粒子效果
-
-        
-        // 继续打开应用的逻辑
-        function continueOpenApp() {
-            const app = currentApp;
-            if (!app) return;
+            // 切换视图
+            homeView.classList.add('hidden');
+            appView.classList.remove('hidden');
             
             // 隐藏顶部导航栏，显示悬浮logo
             document.querySelector('nav').classList.add('hidden');
@@ -1953,7 +1947,14 @@
 
         // 显示悬浮logo的应用切换器
         function showFloatingAppSwitcher() {
-            appSwitcherModal.classList.add('switcher-modal-show');
+            // 移动端优化：立即响应，不等待动画
+            if (isMobile()) {
+                appSwitcherModal.classList.add('switcher-modal-show');
+                appSwitcherModal.style.opacity = '1';
+                appSwitcherModal.style.transform = 'scale(1)';
+            } else {
+                appSwitcherModal.classList.add('switcher-modal-show');
+            }
             // 防止背景滚动
             document.body.style.overflow = 'hidden';
         }
@@ -2108,8 +2109,8 @@
 
             // 鼠标事件
             floatingLogo.addEventListener('mousedown', (e) => {
-                // 在移动端，如果点击的是整个logo区域，优先处理点击事件
-                if (isMobile()) {
+                // 如果点击的是图片，不启动拖拽，只触发点击事件
+                if (e.target.tagName === 'IMG') {
                     return;
                 }
                 
@@ -2161,57 +2162,61 @@
                 }
             });
 
-            // 触摸设备支持 - 移动端禁用拖拽
-            if (!isMobile()) {
-                floatingLogo.addEventListener('touchstart', (e) => {
-                    isDragging = true;
-                    const touch = e.touches[0];
-                    startX = touch.clientX;
-                    startY = touch.clientY;
-                    
-                    // 获取当前位置
-                    const currentPos = getCurrentPosition();
-                    initialX = currentPos.x;
-                    initialY = currentPos.y;
-                    
-                    // 切换到left/top定位以便拖拽
-                    floatingLogo.style.right = '';
-                    floatingLogo.style.top = '';
-                    floatingLogo.style.marginTop = '';
-                    floatingLogo.style.left = initialX + 'px';
-                    floatingLogo.style.top = initialY + 'px';
-                    
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
-
-                document.addEventListener('touchmove', (e) => {
-                    if (!isDragging) return;
-                    
-                    const touch = e.touches[0];
-                    const deltaX = touch.clientX - startX;
-                    const deltaY = touch.clientY - startY;
-                    
-                    let newX = initialX + deltaX;
-                    let newY = initialY + deltaY;
-                    
-                    // 边界检查
-                    const maxX = window.innerWidth - 60;
-                    const maxY = window.innerHeight - 60;
-                    
-                    newX = Math.max(16, Math.min(newX, maxX));
-                    newY = Math.max(16, Math.min(newY, maxY));
-                    
-                    floatingLogo.style.left = newX + 'px';
-                    floatingLogo.style.top = newY + 'px';
-                    
-                    e.preventDefault();
-                });
-
-                document.addEventListener('touchend', () => {
+            // 触摸设备支持
+            floatingLogo.addEventListener('touchstart', (e) => {
+                // 如果点击的是图片，不启动拖拽，让点击事件正常处理
+                if (e.target.tagName === 'IMG') {
                     isDragging = false;
-                });
-            }
+                    return;
+                }
+                
+                isDragging = true;
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                
+                // 获取当前位置
+                const currentPos = getCurrentPosition();
+                initialX = currentPos.x;
+                initialY = currentPos.y;
+                
+                // 切换到left/top定位以便拖拽
+                floatingLogo.style.right = '';
+                floatingLogo.style.top = '';
+                floatingLogo.style.marginTop = '';
+                floatingLogo.style.left = initialX + 'px';
+                floatingLogo.style.top = initialY + 'px';
+                
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - startX;
+                const deltaY = touch.clientY - startY;
+                
+                let newX = initialX + deltaX;
+                let newY = initialY + deltaY;
+                
+                // 边界检查
+                const maxX = window.innerWidth - 60;
+                const maxY = window.innerHeight - 60;
+                
+                newX = Math.max(16, Math.min(newX, maxX));
+                newY = Math.max(16, Math.min(newY, maxY));
+                
+                floatingLogo.style.left = newX + 'px';
+                floatingLogo.style.top = newY + 'px';
+                
+                e.preventDefault();
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
 
             // 防止拖拽时触发点击事件
             floatingLogo.addEventListener('click', (e) => {
@@ -2222,19 +2227,15 @@
                 }
             });
             
-            // 移动端优化：确保点击事件能够正确触发
+            // 移动端优化：确保图片点击立即响应
             if (isMobile()) {
-                floatingLogo.addEventListener('touchend', (e) => {
-                    // 在移动端，如果只是点击而不是拖拽，确保点击事件能够触发
-                    if (!isDragging) {
-                        // 延迟触发点击事件，确保拖拽状态已经重置
-                        setTimeout(() => {
-                            if (!isDragging) {
-                                showFloatingAppSwitcher();
-                            }
-                        }, 50);
-                    }
-                });
+                const logoImg = floatingLogo.querySelector('img');
+                if (logoImg) {
+                    logoImg.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        showFloatingAppSwitcher();
+                    }, { passive: true });
+                }
             }
         }
 
