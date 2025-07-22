@@ -1014,8 +1014,9 @@
         /* 超小屏幕优化 */
         @media (max-width: 480px) {
             #floatingLogo {
-                top: 8px !important;
-                left: 8px !important;
+                right: 8px !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
             }
             
             #floatingLogo > div {
@@ -1125,7 +1126,7 @@
     </nav>
 
     <!-- 悬浮Logo图标 -->
-    <div id="floatingLogo" class="fixed z-50 hidden cursor-move select-none" style="left: 16px; top: 16px;">
+    <div id="floatingLogo" class="fixed z-50 hidden cursor-move select-none" style="right: 16px; top: 50%; transform: translateY(-50%);">
         <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300 transform hover:scale-110">
             <img src="https://chineseclassics.github.io/images/cclogo.png" 
                  alt="書院中文經典" 
@@ -2061,6 +2062,15 @@
             let isDragging = false;
             let startX, startY, initialX, initialY;
 
+            // 获取logo当前位置的函数
+            function getCurrentPosition() {
+                const rect = floatingLogo.getBoundingClientRect();
+                return {
+                    x: rect.left,
+                    y: rect.top
+                };
+            }
+
             // 鼠标事件
             floatingLogo.addEventListener('mousedown', (e) => {
                 // 如果点击的是图片，不启动拖拽，只触发点击事件
@@ -2071,8 +2081,18 @@
                 isDragging = true;
                 startX = e.clientX;
                 startY = e.clientY;
-                initialX = parseInt(floatingLogo.style.left) || 16;
-                initialY = parseInt(floatingLogo.style.top) || 16;
+                
+                // 获取当前位置
+                const currentPos = getCurrentPosition();
+                initialX = currentPos.x;
+                initialY = currentPos.y;
+                
+                // 切换到left/top定位以便拖拽
+                floatingLogo.style.right = '';
+                floatingLogo.style.top = '';
+                floatingLogo.style.transform = '';
+                floatingLogo.style.left = initialX + 'px';
+                floatingLogo.style.top = initialY + 'px';
                 
                 floatingLogo.style.cursor = 'grabbing';
                 e.preventDefault();
@@ -2117,8 +2137,18 @@
                 const touch = e.touches[0];
                 startX = touch.clientX;
                 startY = touch.clientY;
-                initialX = parseInt(floatingLogo.style.left) || 16;
-                initialY = parseInt(floatingLogo.style.top) || 16;
+                
+                // 获取当前位置
+                const currentPos = getCurrentPosition();
+                initialX = currentPos.x;
+                initialY = currentPos.y;
+                
+                // 切换到left/top定位以便拖拽
+                floatingLogo.style.right = '';
+                floatingLogo.style.top = '';
+                floatingLogo.style.transform = '';
+                floatingLogo.style.left = initialX + 'px';
+                floatingLogo.style.top = initialY + 'px';
                 
                 e.preventDefault();
                 e.stopPropagation();
