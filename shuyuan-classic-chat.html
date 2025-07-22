@@ -1187,48 +1187,100 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #07c160;
-            border-radius: 50%;
-            color: white;
+            background: none;
+            border: none;
+            outline: none;
             cursor: pointer;
             margin-right: 8px;
             transition: all 0.2s ease;
-            font-size: 18px;
+            font-size: 20px;
             line-height: 1;
-            border: none;
-            outline: none;
-            padding: 0;
-            box-sizing: border-box;
+            color: #ccc;
             /* 移動端優化 */
             -webkit-tap-highlight-color: transparent;
             -webkit-user-select: none;
             user-select: none;
-            /* emoji字符優化 */
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "EmojiSymbols", "EmojiOne Mozilla", "Twemoji Mozilla", "Segoe UI Symbol", Arial, sans-serif;
-            font-feature-settings: "liga" 1, "kern" 1;
-            text-rendering: optimizeLegibility;
-            /* 確保完美居中 */
-            text-align: center;
-            vertical-align: middle;
+            /* 優化點擊區域 */
+            position: relative;
+            border-radius: 50%;
         }
         
-        .wx-send-btn:hover {
-            background-color: #06ad56;
-            transform: scale(1.05);
+        /* 點擊區域優化 */
+        .wx-send-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 32px;
+            height: 32px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background-color: transparent;
+            transition: background-color 0.2s ease;
         }
         
-        .wx-send-btn:active {
-            background-color: #059a4c;
+        .wx-send-btn:hover::before {
+            background-color: rgba(7, 193, 96, 0.1);
+        }
+        
+        .wx-send-btn:active::before {
+            background-color: rgba(7, 193, 96, 0.2);
+        }
+        
+        /* 啟用狀態 */
+        .wx-send-btn:not(:disabled) {
+            color: #07c160;
+            transform: scale(1);
+        }
+        
+        .wx-send-btn:not(:disabled):hover {
+            transform: scale(1.1);
+            color: #06ad56;
+        }
+        
+        .wx-send-btn:not(:disabled):active {
             transform: scale(0.95);
+            color: #059a4c;
         }
         
+        /* 禁用狀態 */
         .wx-send-btn:disabled {
-            background-color: #ccc;
+            color: #ccc;
             cursor: not-allowed;
-            transform: none;
+            transform: scale(0.9);
         }
         
-
+        .wx-send-btn:disabled::before {
+            background-color: transparent;
+        }
+        
+        /* 優化emoji視覺效果 */
+        .wx-send-btn {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+        }
+        
+        .wx-send-btn:not(:disabled) {
+            text-shadow: 0 1px 3px rgba(7, 193, 96, 0.3);
+            filter: drop-shadow(0 1px 2px rgba(7, 193, 96, 0.2));
+        }
+        
+        .wx-send-btn:not(:disabled):hover {
+            text-shadow: 0 2px 4px rgba(6, 173, 86, 0.4);
+            filter: drop-shadow(0 2px 3px rgba(6, 173, 86, 0.3));
+        }
+        
+        /* 移動端優化 */
+        @media (max-width: 768px) {
+            .wx-send-btn {
+                font-size: 22px; /* 移動端稍微放大一點 */
+            }
+            
+            .wx-send-btn::before {
+                width: 36px; /* 移動端點擊區域稍微放大 */
+                height: 36px;
+            }
+        }
         
         /* @某人功能樣式 */
         .mention-popup {
@@ -10112,14 +10164,9 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 const hasContent = inputBox.value.trim().length > 0;
                 sendBtn.disabled = !hasContent;
                 
-                // 視覺反饋
-                if (hasContent) {
-                    sendBtn.style.opacity = '1';
-                    sendBtn.style.transform = 'scale(1)';
-                } else {
-                    sendBtn.style.opacity = '0.6';
-                    sendBtn.style.transform = 'scale(0.9)';
-                }
+                // 視覺反饋現在由CSS控制
+                // 有內容時：綠色且可點擊
+                // 無內容時：灰色且禁用
             }
         }
         
