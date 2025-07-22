@@ -753,6 +753,7 @@
         /* 悬浮logo样式优化 */
         #floatingLogo {
             transition: all 0.3s ease;
+            pointer-events: auto;
         }
         
         #floatingLogo:hover {
@@ -760,6 +761,46 @@
         }
         
         #floatingLogo:active {
+            transform: scale(0.95);
+        }
+        
+        /* 确保悬浮logo不影响iframe内容 */
+        #floatingLogo {
+            z-index: 1000;
+            position: fixed !important;
+            pointer-events: auto;
+        }
+        
+        /* 确保悬浮logo不会占用文档流空间 */
+        #floatingLogo {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* 悬浮logo容器样式 */
+        #floatingLogo > div {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
+        
+        /* 悬浮logo默认状态 - 更加低调 */
+        #floatingLogo > div {
+            opacity: 0.6;
+            transform: scale(0.9);
+        }
+        
+        /* 悬浮logo悬停状态 */
+        #floatingLogo:hover > div {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* 悬浮logo激活状态 */
+        #floatingLogo:active > div {
             transform: scale(0.95);
         }
         
@@ -789,6 +830,7 @@
             position: absolute;
             top: 0;
             left: 0;
+            z-index: 1;
         }
     </style>
 </head>
@@ -888,11 +930,11 @@
     </nav>
 
     <!-- 悬浮Logo图标 -->
-    <div id="floatingLogo" class="fixed top-4 left-4 z-50 hidden cursor-move select-none" style="left: 16px; top: 16px;">
-        <div class="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg border border-gray-200 dark:border-gray-600 hover:shadow-xl transition-all duration-300 transform hover:scale-110">
+    <div id="floatingLogo" class="fixed z-50 hidden cursor-move select-none" style="left: 16px; top: 16px;">
+        <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300 transform hover:scale-110">
             <img src="https://chineseclassics.github.io/images/cclogo.png" 
                  alt="書院中文經典" 
-                 class="h-10 w-10 object-contain cursor-pointer"
+                 class="h-8 w-8 object-contain cursor-pointer"
                  onclick="showFloatingAppSwitcher()">
         </div>
     </div>
@@ -1748,8 +1790,12 @@
             let isDragging = false;
             let startX, startY, initialX, initialY;
 
+            // 鼠标事件
             floatingLogo.addEventListener('mousedown', (e) => {
-                if (e.target.tagName === 'IMG') return; // 如果点击的是图片，不启动拖拽
+                // 如果点击的是图片，不启动拖拽，只触发点击事件
+                if (e.target.tagName === 'IMG') {
+                    return;
+                }
                 
                 isDragging = true;
                 startX = e.clientX;
@@ -1759,6 +1805,7 @@
                 
                 floatingLogo.style.cursor = 'grabbing';
                 e.preventDefault();
+                e.stopPropagation();
             });
 
             document.addEventListener('mousemove', (e) => {
@@ -1771,8 +1818,8 @@
                 let newY = initialY + deltaY;
                 
                 // 边界检查
-                const maxX = window.innerWidth - floatingLogo.offsetWidth - 16;
-                const maxY = window.innerHeight - floatingLogo.offsetHeight - 16;
+                const maxX = window.innerWidth - 60; // 60px是logo的大概宽度
+                const maxY = window.innerHeight - 60; // 60px是logo的大概高度
                 
                 newX = Math.max(16, Math.min(newX, maxX));
                 newY = Math.max(16, Math.min(newY, maxY));
@@ -1790,7 +1837,10 @@
 
             // 触摸设备支持
             floatingLogo.addEventListener('touchstart', (e) => {
-                if (e.target.tagName === 'IMG') return;
+                // 如果点击的是图片，不启动拖拽
+                if (e.target.tagName === 'IMG') {
+                    return;
+                }
                 
                 isDragging = true;
                 const touch = e.touches[0];
@@ -1800,6 +1850,7 @@
                 initialY = parseInt(floatingLogo.style.top) || 16;
                 
                 e.preventDefault();
+                e.stopPropagation();
             });
 
             document.addEventListener('touchmove', (e) => {
@@ -1813,8 +1864,8 @@
                 let newY = initialY + deltaY;
                 
                 // 边界检查
-                const maxX = window.innerWidth - floatingLogo.offsetWidth - 16;
-                const maxY = window.innerHeight - floatingLogo.offsetHeight - 16;
+                const maxX = window.innerWidth - 60;
+                const maxY = window.innerHeight - 60;
                 
                 newX = Math.max(16, Math.min(newX, maxX));
                 newY = Math.max(16, Math.min(newY, maxY));
@@ -1828,11 +1879,31 @@
             document.addEventListener('touchend', () => {
                 isDragging = false;
             });
+
+            // 防止拖拽时触发点击事件
+            floatingLogo.addEventListener('click', (e) => {
+                if (isDragging) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
         }
 
         // 初始化
         renderApps();
-        initFloatingLogoDrag();
+        
+        // 等待DOM完全加载后初始化拖拽功能
+        document.addEventListener('DOMContentLoaded', () => {
+            initFloatingLogoDrag();
+        });
+        
+        // 如果DOM已经加载完成，立即初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFloatingLogoDrag);
+        } else {
+            initFloatingLogoDrag();
+        }
         
         // 觀察所有應用圖標
         setTimeout(() => {
