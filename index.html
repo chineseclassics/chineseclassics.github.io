@@ -212,8 +212,8 @@
         }
         
         .app-container {
-            height: 100vh !important;
-            width: 100vw !important;
+            height: 100% !important;
+            width: 100% !important;
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -908,8 +908,8 @@
         /* iframe全屏样式 */
         #appFrame {
             display: block;
-            width: 100vw !important;
-            height: 100vh !important;
+            width: 100% !important;
+            height: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
@@ -923,6 +923,14 @@
             /* 确保iframe完全贴合 */
             transform: translateZ(0);
             will-change: transform;
+            /* 确保iframe内容正确缩放 */
+            box-sizing: border-box;
+        }
+        
+        /* 确保iframe内容正确显示 */
+        #appFrame:not([src="about:blank"]) {
+            width: 100% !important;
+            height: 100% !important;
         }
         
         /* 确保应用视图显示时，iframe完全填满屏幕 */
@@ -947,8 +955,8 @@
             left: 0 !important;
             right: 0 !important;
             bottom: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
+            width: 100% !important;
+            height: 100% !important;
             z-index: 50 !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -969,16 +977,14 @@
             
             /* 移动端iframe优化 */
             #appView:not(.hidden) #appFrame {
-                width: 100vw !important;
-                height: 100vh !important;
-                /* 移动端视口高度优化 */
-                height: 100dvh !important; /* 动态视口高度 */
+                width: 100% !important;
+                height: 100% !important;
             }
             
             /* 移动端应用容器优化 */
             .app-container {
-                height: 100dvh !important; /* 动态视口高度 */
-                width: 100vw !important;
+                height: 100% !important;
+                width: 100% !important;
             }
         }
         
@@ -1754,6 +1760,31 @@
             loadingState.classList.remove('hidden');
             errorState.classList.add('hidden');
 
+            // 立即设置iframe尺寸，不等待加载
+            const frameWidth = window.innerWidth;
+            const frameHeight = window.innerHeight;
+            
+            appFrame.style.width = frameWidth + 'px';
+            appFrame.style.height = frameHeight + 'px';
+            appFrame.style.margin = '0';
+            appFrame.style.padding = '0';
+            appFrame.style.border = 'none';
+            appFrame.style.position = 'absolute';
+            appFrame.style.top = '0';
+            appFrame.style.left = '0';
+            appFrame.style.right = '0';
+            appFrame.style.bottom = '0';
+            appFrame.style.zIndex = '1';
+            appFrame.style.overflow = 'hidden';
+            appFrame.scrolling = 'no';
+            
+            // 确保容器也正确设置
+            appContainer.style.width = frameWidth + 'px';
+            appContainer.style.height = frameHeight + 'px';
+            appContainer.style.margin = '0';
+            appContainer.style.padding = '0';
+            appContainer.style.overflow = 'hidden';
+            
             // 加载iframe
             appFrame.src = app.url;
 
@@ -1767,14 +1798,12 @@
                 setTimeout(() => {
                     loadingState.classList.add('hidden');
                     
-                    // 确保iframe尺寸正确
-                    appFrame.style.width = '100vw';
-                    // 移动端使用动态视口高度
-                    if (window.innerWidth <= 768) {
-                        appFrame.style.height = '100dvh';
-                    } else {
-                        appFrame.style.height = '100vh';
-                    }
+                    // 再次确保iframe尺寸正确（双重保险）
+                    const currentWidth = window.innerWidth;
+                    const currentHeight = window.innerHeight;
+                    
+                    appFrame.style.width = currentWidth + 'px';
+                    appFrame.style.height = currentHeight + 'px';
                     appFrame.style.margin = '0';
                     appFrame.style.padding = '0';
                     appFrame.style.border = 'none';
@@ -1783,7 +1812,12 @@
                     appFrame.style.left = '0';
                     appFrame.style.right = '0';
                     appFrame.style.bottom = '0';
-                }, 1000);
+                    
+                    // 强制重新计算布局
+                    appFrame.style.display = 'none';
+                    appFrame.offsetHeight; // 触发重排
+                    appFrame.style.display = 'block';
+                }, 500);
             };
 
             appFrame.onerror = () => {
@@ -2112,6 +2146,21 @@
         // 等待DOM完全加载后初始化拖拽功能
         document.addEventListener('DOMContentLoaded', () => {
             initFloatingLogoDrag();
+            
+            // 监听窗口大小变化，确保iframe尺寸正确
+            window.addEventListener('resize', () => {
+                if (!appView.classList.contains('hidden')) {
+                    const newWidth = window.innerWidth;
+                    const newHeight = window.innerHeight;
+                    
+                    appFrame.style.width = newWidth + 'px';
+                    appFrame.style.height = newHeight + 'px';
+                    appContainer.style.width = newWidth + 'px';
+                    appContainer.style.height = newHeight + 'px';
+                    appView.style.width = newWidth + 'px';
+                    appView.style.height = newHeight + 'px';
+                }
+            });
         });
         
         // 如果DOM已经加载完成，立即初始化
