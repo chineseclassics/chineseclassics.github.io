@@ -1005,6 +1005,36 @@
         /* 為打字動畫添加脈動效果 */
         .wx-typing {
             animation: typingPulse 2s infinite;
+            margin-bottom: 8px; /* 為打字動畫添加底部間距 */
+            position: relative;
+        }
+        
+        /* 打字動畫的視覺指示器 */
+        .wx-typing::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #07c160, transparent);
+            animation: typingIndicator 2s infinite;
+        }
+        
+        @keyframes typingIndicator {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scaleX(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: scaleX(1);
+            }
+        }
+        
+        /* 打字動畫消息的額外間距 */
+        [class*="typing-message-"] {
+            margin-bottom: 20px !important;
         }
         
         @keyframes typingPulse {
@@ -1297,6 +1327,15 @@
             /* 移動端最後一條消息額外間距 */
             .wx-msg:last-child {
                 margin-bottom: 30px;
+            }
+            
+            /* 移動端打字動畫額外間距 */
+            [class*="typing-message-"] {
+                margin-bottom: 30px !important;
+            }
+            
+            .wx-typing {
+                margin-bottom: 12px;
             }
         }
         
@@ -10289,6 +10328,65 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 }
             }, delay);
         }
+        
+        // 專門用於打字動畫的滾動函數
+        function scrollToBottomForTypingAnimation(container, delay = 100) {
+            setTimeout(() => {
+                if (container) {
+                    // 等待DOM完全更新
+                    requestAnimationFrame(() => {
+                        // 計算輸入區域的實際高度
+                        const inputArea = document.querySelector('.wx-input-area');
+                        const inputHeight = inputArea ? inputArea.offsetHeight : 83;
+                        
+                        // 獲取打字動畫元素
+                        const typingElements = container.querySelectorAll('[class*="typing-message-"]');
+                        const generalTypingElement = container.querySelector('#general-typing-animation');
+                        
+                        let extraOffset = 50; // 打字動畫的默認額外間距
+                        
+                        // 如果有打字動畫元素，計算其高度
+                        if (typingElements.length > 0) {
+                            const lastTypingElement = typingElements[typingElements.length - 1];
+                            const typingHeight = lastTypingElement.offsetHeight;
+                            extraOffset = Math.max(50, typingHeight + 30);
+                        } else if (generalTypingElement) {
+                            const typingHeight = generalTypingElement.offsetHeight;
+                            extraOffset = Math.max(50, typingHeight + 30);
+                        }
+                        
+                        // 滾動到確保打字動畫完全可見
+                        const scrollTarget = container.scrollHeight + inputHeight + extraOffset;
+                        container.scrollTop = scrollTarget;
+                        
+                        // 再次確保滾動到位，使用更長的延遲
+                        setTimeout(() => {
+                            const finalScrollTarget = container.scrollHeight + inputHeight + 40;
+                            container.scrollTop = finalScrollTarget;
+                        }, 200);
+                        
+                        // 移動端額外優化
+                        if (window.innerWidth <= 768) {
+                            setTimeout(() => {
+                                const mobileScrollTarget = container.scrollHeight + inputHeight + 60;
+                                container.scrollTop = mobileScrollTarget;
+                            }, 300);
+                        }
+                        
+                        // 調試信息
+                        console.log('打字動畫滾動調試:', {
+                            containerHeight: container.scrollHeight,
+                            inputHeight: inputHeight,
+                            extraOffset: extraOffset,
+                            scrollTarget: scrollTarget,
+                            typingElementsCount: typingElements.length,
+                            hasGeneralTyping: !!generalTypingElement,
+                            isMobile: window.innerWidth <= 768
+                        });
+                    });
+                }
+            }, delay);
+        }
 
         // 添加用戶消息到群聊上下文
         function addUserMessageToGroupContext(userMessage) {
@@ -11006,7 +11104,7 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             chatContainer.appendChild(typingElement);
             
             // 滾動到底部以顯示打字動畫
-            scrollToBottom(chatContainer, 50);
+            scrollToBottomForTypingAnimation(chatContainer, 50);
             
             console.log(`顯示 ${character.name} 的打字動畫`);
         }
@@ -11040,7 +11138,7 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             `;
             
             chatContainer.appendChild(typingElement);
-            scrollToBottom(chatContainer, 50);
+            scrollToBottomForTypingAnimation(chatContainer, 50);
             
             console.log('顯示通用「正在輸入中」動畫');
         }
