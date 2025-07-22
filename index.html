@@ -943,16 +943,6 @@
             to { box-shadow: 0 0 16px rgba(139, 92, 246, 0.8); }
         }
         
-        /* 首页飞向logo动画的容器样式 */
-        #homeToLogoAnimation {
-            pointer-events: none;
-        }
-        
-        /* 确保动画元素不被其他元素遮挡 */
-        #homeToLogoAnimation * {
-            pointer-events: none;
-        }
-        
         /* 应用视图全屏样式 */
         #appView {
             position: fixed !important;
@@ -1831,18 +1821,6 @@
             const logoRect = floatingLogo.getBoundingClientRect();
             const homeRect = homeView.getBoundingClientRect();
             
-            // 计算logo的中心位置
-            const logoCenterX = logoRect.left + logoRect.width / 2;
-            const logoCenterY = logoRect.top + logoRect.height / 2;
-            
-            // 计算首页的中心位置
-            const homeCenterX = homeRect.left + homeRect.width / 2;
-            const homeCenterY = homeRect.top + homeRect.height / 2;
-            
-            // 计算移动距离
-            const deltaX = logoCenterX - homeCenterX;
-            const deltaY = logoCenterY - homeCenterY;
-            
             // 创建动画容器
             const animationContainer = document.createElement('div');
             animationContainer.id = 'homeToLogoAnimation';
@@ -1893,14 +1871,14 @@
             
             // 开始动画
             setTimeout(() => {
-                // 首页移动到logo位置并缩小
+                // 首页缩小并飞向logo位置
                 homeClone.style.cssText = `
                     position: absolute;
-                    top: ${homeRect.top}px;
-                    left: ${homeRect.left}px;
-                    width: ${homeRect.width}px;
-                    height: ${homeRect.height}px;
-                    transform: translate(${deltaX}px, ${deltaY}px) scale(0.1);
+                    top: ${logoRect.top}px;
+                    left: ${logoRect.left}px;
+                    width: ${logoRect.width}px;
+                    height: ${logoRect.height}px;
+                    transform: scale(0.1);
                     opacity: 0;
                     transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
                     z-index: 1;
@@ -1914,17 +1892,11 @@
                         left: ${logoRect.left}px;
                         width: ${logoRect.width}px;
                         height: ${logoRect.height}px;
-                        transform: scale(1.2);
+                        transform: scale(1);
                         opacity: 1;
                         transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
                         z-index: 2;
                     `;
-                    
-                    // logo回弹效果
-                    setTimeout(() => {
-                        logoClone.style.transform = 'scale(1)';
-                        logoClone.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                    }, 600);
                 }, 400);
                 
                 // 动画完成后清理
@@ -1946,26 +1918,22 @@
         
         // 创建粒子效果
         function createParticleEffect(logoRect, container) {
-            const particleCount = 8;
+            const particleCount = 12;
             const centerX = logoRect.left + logoRect.width / 2;
             const centerY = logoRect.top + logoRect.height / 2;
             
-            // 获取首页区域，粒子从首页随机位置飞向logo
-            const homeView = document.getElementById('homeView');
-            const homeRect = homeView.getBoundingClientRect();
-            
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
-                
-                // 粒子从首页随机位置开始
-                const startX = homeRect.left + Math.random() * homeRect.width;
-                const startY = homeRect.top + Math.random() * homeRect.height;
+                const angle = (i / particleCount) * Math.PI * 2;
+                const distance = 30 + Math.random() * 20;
+                const startX = centerX + Math.cos(angle) * distance;
+                const startY = centerY + Math.sin(angle) * distance;
                 
                 particle.className = 'particle';
                 particle.style.cssText = `
                     position: absolute;
-                    width: 3px;
-                    height: 3px;
+                    width: 4px;
+                    height: 4px;
                     background: linear-gradient(45deg, #3b82f6, #8b5cf6);
                     border-radius: 50%;
                     top: ${startY}px;
@@ -1982,8 +1950,8 @@
                 setTimeout(() => {
                     particle.style.cssText = `
                         position: absolute;
-                        width: 3px;
-                        height: 3px;
+                        width: 4px;
+                        height: 4px;
                         background: linear-gradient(45deg, #3b82f6, #8b5cf6);
                         border-radius: 50%;
                         top: ${startY}px;
@@ -1998,8 +1966,8 @@
                     setTimeout(() => {
                         particle.style.cssText = `
                             position: absolute;
-                            width: 3px;
-                            height: 3px;
+                            width: 4px;
+                            height: 4px;
                             background: linear-gradient(45deg, #3b82f6, #8b5cf6);
                             border-radius: 50%;
                             top: ${centerY}px;
@@ -2009,8 +1977,8 @@
                             transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
                             z-index: 3;
                         `;
-                    }, 300);
-                }, 200 + i * 100);
+                    }, 200);
+                }, 600 + i * 50);
             }
         }
         

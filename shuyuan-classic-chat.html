@@ -82,6 +82,23 @@
                 font-size: 16px !important;
                 transform: none;
             }
+            
+            /* 移動端發送按鈕優化 */
+            .wx-send-btn {
+                /* 確保觸摸區域足夠大 */
+                min-width: 44px;
+                min-height: 44px;
+                /* 優化觸摸體驗 */
+                -webkit-tap-highlight-color: transparent;
+                /* 確保圓形 */
+                border-radius: 50% !important;
+            }
+            
+            .wx-send-btn svg {
+                /* 移動端圖標大小 */
+                width: 18px;
+                height: 18px;
+            }
         }
         
         /* 新增成員資料頁面樣式 */
@@ -1196,33 +1213,70 @@
             font-size: 16px;
             border: none;
             outline: none;
+            /* 確保完美圓形 */
+            border-radius: 50% !important;
             /* 移動端優化 */
             -webkit-tap-highlight-color: transparent;
             -webkit-user-select: none;
             user-select: none;
+            /* 防止變形 */
+            flex-shrink: 0;
+            box-sizing: border-box;
         }
         
         .wx-send-btn:hover {
             background-color: #06ad56;
             transform: scale(1.05);
+            border-radius: 50% !important;
         }
         
         .wx-send-btn:active {
             background-color: #059a4c;
             transform: scale(0.95);
+            border-radius: 50% !important;
         }
         
         .wx-send-btn:disabled {
             background-color: #ccc;
             cursor: not-allowed;
             transform: none;
+            border-radius: 50% !important;
         }
         
         /* 發送按鈕圖標 */
         .wx-send-btn svg {
             width: 16px;
             height: 16px;
-            fill: currentColor;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            /* 確保圖標居中 */
+            display: block;
+            margin: auto;
+        }
+        
+        /* 確保發送按鈕在所有情況下都是圓形 */
+        .wx-send-btn,
+        .wx-send-btn * {
+            border-radius: 50% !important;
+        }
+        
+        /* 發送按鈕的額外優化 */
+        .wx-send-btn {
+            /* 確保按鈕內容不會影響形狀 */
+            overflow: hidden;
+            /* 添加陰影效果 */
+            box-shadow: 0 2px 4px rgba(7, 193, 96, 0.3);
+        }
+        
+        .wx-send-btn:hover {
+            box-shadow: 0 4px 8px rgba(7, 193, 96, 0.4);
+        }
+        
+        .wx-send-btn:active {
+            box-shadow: 0 1px 2px rgba(7, 193, 96, 0.3);
         }
         
         /* @某人功能樣式 */
