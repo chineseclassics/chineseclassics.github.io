@@ -837,16 +837,10 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            padding-bottom: 120px; /* 增加底部間距，確保最後一條消息完全可見 */
             z-index: 1;
             min-height: 0; /* 允許flex子項縮小 */
-            height: calc(100% - 83px); /* 總高度減去輸入框實際高度（66px + 17px padding） */
-            /* 移動端視口高度支持 */
-            height: calc(100vh - 83px);
-            height: calc(var(--vh, 1vh) * 100 - 83px);
-            /* 滾動優化 */
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
+            /* 確保最後一條消息不被輸入區域遮擋 */
+            padding-bottom: 20px;
         }
         
         /* 時間戳 */
@@ -864,11 +858,6 @@
             margin-bottom: 16px;
             position: relative;
             width: 100%;
-        }
-        
-        /* 最後一條消息的額外間距 */
-        .wx-msg:last-child {
-            margin-bottom: 20px;
         }
         
         .wx-msg-self {
@@ -1005,36 +994,6 @@
         /* 為打字動畫添加脈動效果 */
         .wx-typing {
             animation: typingPulse 2s infinite;
-            margin-bottom: 8px; /* 為打字動畫添加底部間距 */
-            position: relative;
-        }
-        
-        /* 打字動畫的視覺指示器 */
-        .wx-typing::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #07c160, transparent);
-            animation: typingIndicator 2s infinite;
-        }
-        
-        @keyframes typingIndicator {
-            0%, 100% {
-                opacity: 0.3;
-                transform: scaleX(0.5);
-            }
-            50% {
-                opacity: 1;
-                transform: scaleX(1);
-            }
-        }
-        
-        /* 打字動畫消息的額外間距 */
-        [class*="typing-message-"] {
-            margin-bottom: 20px !important;
         }
         
         @keyframes typingPulse {
@@ -1076,11 +1035,6 @@
             display: flex;
             align-items: center;
             padding: 0 8px 17px;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
             flex-shrink: 0; /* 防止輸入框被壓縮 */
             box-sizing: border-box;
             /* 移動端優化 */
@@ -1317,25 +1271,6 @@
             .wx-send-btn::before {
                 width: 36px; /* 移動端點擊區域稍微放大 */
                 height: 36px;
-            }
-            
-            /* 移動端聊天容器優化 */
-            .wx-chat-container {
-                padding-bottom: 140px; /* 移動端增加更多底部間距 */
-            }
-            
-            /* 移動端最後一條消息額外間距 */
-            .wx-msg:last-child {
-                margin-bottom: 30px;
-            }
-            
-            /* 移動端打字動畫額外間距 */
-            [class*="typing-message-"] {
-                margin-bottom: 30px !important;
-            }
-            
-            .wx-typing {
-                margin-bottom: 12px;
             }
         }
         
@@ -5747,7 +5682,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 // 滾動到底部
                 setTimeout(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    if (chatMessages) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
                 }, 100);
                 
                 return history.length;
@@ -7664,7 +7601,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             // 音效已移除
             
             // 滾動到底部
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
         }
         
 
@@ -10063,7 +10002,9 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                             
                             setTimeout(() => {
                                 const chatContainer = document.getElementById('chatMessages');
-                                scrollToBottom(chatContainer, 50);
+                                if (chatContainer) {
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
                             }, 100);
                             
                             // 分段消息完成后，延迟处理下一个角色
@@ -10082,7 +10023,9 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                             
                             setTimeout(() => {
                                 const chatContainer = document.getElementById('chatMessages');
-                                scrollToBottom(chatContainer, 50);
+                                if (chatContainer) {
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
                             }, 100);
                             
                             // 单条消息发送后，短暂延迟处理下一个角色
@@ -10253,140 +10196,6 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 lastTouchEnd = now;
             }, false);
         }
-        
-        // 優化的滾動到底部函數
-        function scrollToBottom(container, delay = 100) {
-            setTimeout(() => {
-                if (container) {
-                    // 使用 requestAnimationFrame 確保在下一幀執行滾動
-                    requestAnimationFrame(() => {
-                        // 計算輸入區域的實際高度
-                        const inputArea = document.querySelector('.wx-input-area');
-                        const inputHeight = inputArea ? inputArea.offsetHeight : 83;
-                        
-                        // 滾動到最底部並添加額外間距確保完全可見
-                        const scrollTarget = container.scrollHeight + inputHeight + 20;
-                        container.scrollTop = scrollTarget;
-                        
-                        // 再次確保滾動到位，使用更精確的計算
-                        setTimeout(() => {
-                            const finalScrollTarget = container.scrollHeight + inputHeight + 10;
-                            container.scrollTop = finalScrollTarget;
-                        }, 100);
-                        
-                        // 移動端額外優化：確保滾動平滑
-                        if (window.innerWidth <= 768) {
-                            container.style.scrollBehavior = 'smooth';
-                            setTimeout(() => {
-                                container.style.scrollBehavior = '';
-                            }, 300);
-                        }
-                    });
-                }
-            }, delay);
-        }
-        
-        // 專門用於新消息的滾動函數
-        function scrollToBottomForNewMessage(container, delay = 150) {
-            setTimeout(() => {
-                if (container) {
-                    // 等待DOM完全更新
-                    requestAnimationFrame(() => {
-                        // 計算輸入區域的實際高度
-                        const inputArea = document.querySelector('.wx-input-area');
-                        const inputHeight = inputArea ? inputArea.offsetHeight : 83;
-                        
-                        // 獲取最後一條消息元素
-                        const lastMessage = container.querySelector('.wx-msg:last-child');
-                        let extraOffset = 30; // 默認額外間距
-                        
-                        if (lastMessage) {
-                            // 計算最後一條消息的高度
-                            const messageHeight = lastMessage.offsetHeight;
-                            extraOffset = Math.max(30, messageHeight * 0.5);
-                        }
-                        
-                        // 滾動到確保最後一條消息完全可見
-                        const scrollTarget = container.scrollHeight + inputHeight + extraOffset;
-                        container.scrollTop = scrollTarget;
-                        
-                        // 再次確保滾動到位
-                        setTimeout(() => {
-                            const finalScrollTarget = container.scrollHeight + inputHeight + 20;
-                            container.scrollTop = finalScrollTarget;
-                        }, 150);
-                        
-                        // 調試信息
-                        console.log('滾動調試:', {
-                            containerHeight: container.scrollHeight,
-                            inputHeight: inputHeight,
-                            extraOffset: extraOffset,
-                            scrollTarget: scrollTarget,
-                            lastMessageHeight: lastMessage ? lastMessage.offsetHeight : 'N/A'
-                        });
-                    });
-                }
-            }, delay);
-        }
-        
-        // 專門用於打字動畫的滾動函數
-        function scrollToBottomForTypingAnimation(container, delay = 100) {
-            setTimeout(() => {
-                if (container) {
-                    // 等待DOM完全更新
-                    requestAnimationFrame(() => {
-                        // 計算輸入區域的實際高度
-                        const inputArea = document.querySelector('.wx-input-area');
-                        const inputHeight = inputArea ? inputArea.offsetHeight : 83;
-                        
-                        // 獲取打字動畫元素
-                        const typingElements = container.querySelectorAll('[class*="typing-message-"]');
-                        const generalTypingElement = container.querySelector('#general-typing-animation');
-                        
-                        let extraOffset = 50; // 打字動畫的默認額外間距
-                        
-                        // 如果有打字動畫元素，計算其高度
-                        if (typingElements.length > 0) {
-                            const lastTypingElement = typingElements[typingElements.length - 1];
-                            const typingHeight = lastTypingElement.offsetHeight;
-                            extraOffset = Math.max(50, typingHeight + 30);
-                        } else if (generalTypingElement) {
-                            const typingHeight = generalTypingElement.offsetHeight;
-                            extraOffset = Math.max(50, typingHeight + 30);
-                        }
-                        
-                        // 滾動到確保打字動畫完全可見
-                        const scrollTarget = container.scrollHeight + inputHeight + extraOffset;
-                        container.scrollTop = scrollTarget;
-                        
-                        // 再次確保滾動到位，使用更長的延遲
-                        setTimeout(() => {
-                            const finalScrollTarget = container.scrollHeight + inputHeight + 40;
-                            container.scrollTop = finalScrollTarget;
-                        }, 200);
-                        
-                        // 移動端額外優化
-                        if (window.innerWidth <= 768) {
-                            setTimeout(() => {
-                                const mobileScrollTarget = container.scrollHeight + inputHeight + 60;
-                                container.scrollTop = mobileScrollTarget;
-                            }, 300);
-                        }
-                        
-                        // 調試信息
-                        console.log('打字動畫滾動調試:', {
-                            containerHeight: container.scrollHeight,
-                            inputHeight: inputHeight,
-                            extraOffset: extraOffset,
-                            scrollTarget: scrollTarget,
-                            typingElementsCount: typingElements.length,
-                            hasGeneralTyping: !!generalTypingElement,
-                            isMobile: window.innerWidth <= 768
-                        });
-                    });
-                }
-            }, delay);
-        }
 
         // 添加用戶消息到群聊上下文
         function addUserMessageToGroupContext(userMessage) {
@@ -10477,8 +10286,17 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             // 音效已移除
             
             // 滾動到底部
-            const chatContainer = document.getElementById('chatMessages');
-            scrollToBottomForNewMessage(chatContainer, 100);
+            setTimeout(() => {
+                const chatContainer = document.getElementById('chatMessages');
+                if (chatContainer) {
+                    // 使用更可靠的滾動方法
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    // 確保滾動到真正的底部
+                    setTimeout(() => {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, 50);
+                }
+            }, 100);
             
             // 触发AI回应
             if (isPrivateChat) {
@@ -11104,7 +10922,9 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             chatContainer.appendChild(typingElement);
             
             // 滾動到底部以顯示打字動畫
-            scrollToBottomForTypingAnimation(chatContainer, 50);
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
             
             console.log(`顯示 ${character.name} 的打字動畫`);
         }
@@ -11138,7 +10958,9 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             `;
             
             chatContainer.appendChild(typingElement);
-            scrollToBottomForTypingAnimation(chatContainer, 50);
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
             
             console.log('顯示通用「正在輸入中」動畫');
         }
@@ -13610,7 +13432,9 @@ ${characterList}
                 
                 setTimeout(() => {
                     const chatContainer = document.getElementById('chatMessages');
-                    scrollToBottom(chatContainer, 50);
+                    if (chatContainer) {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
                 }, 100);
             }
         }
@@ -13665,7 +13489,9 @@ ${characterList}
                     
                     setTimeout(() => {
                         const chatContainer = document.getElementById('chatMessages');
-                        scrollToBottom(chatContainer, 50);
+                        if (chatContainer) {
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }
                     }, 100);
                 }
             }
@@ -13706,7 +13532,9 @@ ${characterList}
                 
                 setTimeout(() => {
                     const chatContainer = document.getElementById('chatMessages');
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    if (chatContainer) {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
                 }, 100);
             }
         }
