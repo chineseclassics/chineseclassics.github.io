@@ -80,11 +80,32 @@
     <style>
         /* 确保html和body不影响iframe显示 */
         html, body {
-            margin: 0;
-            padding: 0;
+            margin: 0 !important;
+            padding: 0 !important;
             overflow-x: hidden;
             height: 100%;
             width: 100%;
+            position: relative;
+        }
+        
+        /* 强制重置所有默认边距 */
+        * {
+            box-sizing: border-box;
+        }
+        
+        html {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+        }
+        
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+            line-height: 1;
         }
         
         /* 移动端优化 */
@@ -203,6 +224,9 @@
             padding: 0 !important;
             overflow: hidden;
             box-sizing: border-box;
+            /* 确保没有额外的空间 */
+            transform: translateZ(0);
+            will-change: transform;
         }
         
         @media (max-width: 768px) {
@@ -896,6 +920,9 @@
             right: 0;
             bottom: 0;
             z-index: 1;
+            /* 确保iframe完全贴合 */
+            transform: translateZ(0);
+            will-change: transform;
         }
         
         /* 确保应用视图显示时，iframe完全填满屏幕 */
@@ -911,6 +938,21 @@
             right: 0 !important;
             bottom: 0 !important;
             z-index: 1 !important;
+        }
+        
+        /* 确保应用视图不受任何父元素影响 */
+        #appView {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 50 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
         }
         
         /* 移动端特定优化 */
@@ -1191,45 +1233,45 @@
             </div>
         </div>
 
-        <!-- 应用视图 -->
-        <div id="appView" class="hidden">
-            <div id="appContainer" class="app-container">
-                <iframe id="appFrame" class="w-full h-full border-0" src="about:blank"></iframe>
-                
-                <!-- 優化的加载状态 -->
-                <div id="loadingState" class="absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
-                    <div class="enhanced-loading text-center">
-                        <div class="loading-spinner mb-4"></div>
-                        <div class="loading-text">正在加載應用...</div>
-                        <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                            首次載入可能需要幾秒鐘時間
-                        </div>
+
+    </main>
+
+    <!-- 应用视图 - 移出main标签以确保完全全屏 -->
+    <div id="appView" class="hidden">
+        <div id="appContainer" class="app-container">
+            <iframe id="appFrame" class="w-full h-full border-0" src="about:blank"></iframe>
+            
+            <!-- 優化的加载状态 -->
+            <div id="loadingState" class="absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
+                <div class="enhanced-loading text-center">
+                    <div class="loading-spinner mb-4"></div>
+                    <div class="loading-text">正在加載應用...</div>
+                    <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                        首次載入可能需要幾秒鐘時間
                     </div>
                 </div>
-                
-                <!-- 優化的错误状态 -->
-                <div id="errorState" class="hidden absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
-                    <div class="error-container max-w-md mx-auto">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">無法載入應用</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-6">該應用可能不支援嵌入模式或網路連線有問題</p>
-                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                            <button id="openInNewTabBtn" 
-                                    class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-                                在新標籤頁打開
-                            </button>
-                            <button id="retryLoadBtn" 
-                                    class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                                重新嘗試
-                            </button>
-                        </div>
+            </div>
+            
+            <!-- 優化的错误状态 -->
+            <div id="errorState" class="hidden absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
+                <div class="error-container max-w-md mx-auto">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">無法載入應用</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">該應用可能不支援嵌入模式或網路連線有問題</p>
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button id="openInNewTabBtn" 
+                                class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                            在新標籤頁打開
+                        </button>
+                        <button id="retryLoadBtn" 
+                                class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            重新嘗試
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
-
-
+    </div>
 
     <!-- 应用切换器弹窗 -->
     <div id="appSwitcherModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-20 opacity-0 pointer-events-none transition-all duration-300 ease-out">
@@ -1695,6 +1737,18 @@
             document.documentElement.style.overflow = 'hidden';
             document.documentElement.style.margin = '0';
             document.documentElement.style.padding = '0';
+            
+            // 确保应用视图完全覆盖
+            appView.style.position = 'fixed';
+            appView.style.top = '0';
+            appView.style.left = '0';
+            appView.style.right = '0';
+            appView.style.bottom = '0';
+            appView.style.width = '100vw';
+            appView.style.height = '100vh';
+            appView.style.margin = '0';
+            appView.style.padding = '0';
+            appView.style.zIndex = '50';
 
             // 显示加载状态
             loadingState.classList.remove('hidden');
@@ -1782,6 +1836,18 @@
             document.documentElement.style.overflow = '';
             document.documentElement.style.margin = '';
             document.documentElement.style.padding = '';
+            
+            // 恢复应用视图的样式
+            appView.style.position = '';
+            appView.style.top = '';
+            appView.style.left = '';
+            appView.style.right = '';
+            appView.style.bottom = '';
+            appView.style.width = '';
+            appView.style.height = '';
+            appView.style.margin = '';
+            appView.style.padding = '';
+            appView.style.zIndex = '';
         }
 
         // 事件监听
