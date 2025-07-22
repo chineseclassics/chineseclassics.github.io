@@ -88,6 +88,17 @@
             position: relative;
         }
         
+        /* 确保首页可以正常滚动 */
+        body {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 应用视图显示时的body样式 */
+        body.app-view-active {
+            overflow: hidden !important;
+        }
+        
         /* 强制重置所有默认边距 */
         * {
             box-sizing: border-box;
@@ -975,16 +986,28 @@
                 height: 24px !important;
             }
             
-            /* 移动端iframe优化 */
+            /* 移动端iframe优化 - 只在应用视图显示时应用 */
             #appView:not(.hidden) #appFrame {
                 width: 100% !important;
                 height: 100% !important;
             }
             
-            /* 移动端应用容器优化 */
-            .app-container {
+            /* 移动端应用容器优化 - 只在应用视图显示时应用 */
+            #appView:not(.hidden) .app-container {
                 height: 100% !important;
                 width: 100% !important;
+            }
+            
+            /* 确保首页可以正常滚动 */
+            #homeView:not(.hidden) {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* 移动端首页滚动优化 */
+            body:not(.app-view-active) {
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
             }
         }
         
@@ -1736,11 +1759,10 @@
             document.querySelector('nav').classList.add('hidden');
             document.getElementById('floatingLogo').classList.remove('hidden');
             
-            // 确保body和html不会影响布局
-            document.body.style.overflow = 'hidden';
+            // 确保body和html不会影响布局 - 只在应用视图显示时
+            document.body.classList.add('app-view-active');
             document.body.style.margin = '0';
             document.body.style.padding = '0';
-            document.documentElement.style.overflow = 'hidden';
             document.documentElement.style.margin = '0';
             document.documentElement.style.padding = '0';
             
@@ -1864,10 +1886,9 @@
             document.getElementById('floatingLogo').classList.add('hidden');
             
             // 恢复body和html的正常布局
-            document.body.style.overflow = '';
+            document.body.classList.remove('app-view-active');
             document.body.style.margin = '';
             document.body.style.padding = '';
-            document.documentElement.style.overflow = '';
             document.documentElement.style.margin = '';
             document.documentElement.style.padding = '';
             
