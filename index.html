@@ -78,6 +78,23 @@
         });
     </script>
     <style>
+        /* 确保html和body不影响iframe显示 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        /* 应用视图显示时的样式 */
+        #appView:not(.hidden) {
+            z-index: 50 !important;
+        }
+        
+        #appView:not(.hidden) ~ main,
+        #appView:not(.hidden) + main {
+            display: none !important;
+        }
+        
         .app-icon {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
@@ -131,18 +148,25 @@
         }
         
         .app-container {
-            height: 100vh;
-            width: 100vw;
-            position: fixed;
-            top: 0;
-            left: 0;
+            height: 100vh !important;
+            width: 100vw !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
             z-index: 40;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+            box-sizing: border-box;
         }
         
         @media (max-width: 768px) {
             .app-container {
                 height: 100vh;
                 width: 100vw;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
             }
         }
         
@@ -741,16 +765,34 @@
         
         /* 应用视图全屏样式 */
         #appView {
-            position: fixed;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 30;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        
+        /* iframe全屏样式 */
+        #appFrame {
+            display: block;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            overflow: hidden;
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 30;
         }
     </style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen" style="margin: 0; padding: 0; overflow-x: hidden;">
     <!-- 欢迎弹窗 - 優化版 -->
     <div id="welcomeModal" 
          class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm opacity-0 transform scale-95 transition-all duration-300 ease-out"
@@ -856,7 +898,7 @@
     </div>
 
     <!-- 主内容区域 -->
-    <main class="pt-16 relative z-20">
+    <main class="pt-16 relative z-20" id="mainContent">
         <!-- 首页视图 -->
         <div id="homeView">
             <div class="py-8 px-4 mb-10 relative overflow-hidden">
@@ -985,7 +1027,7 @@
 
         <!-- 应用视图 -->
         <div id="appView" class="hidden">
-            <div id="appContainer" class="app-container w-full relative">
+            <div id="appContainer" class="app-container">
                 <iframe id="appFrame" class="w-full h-full border-0" src="about:blank"></iframe>
                 
                 <!-- 優化的加载状态 -->
@@ -1496,6 +1538,13 @@
                 clearTimeout(timeoutId);
                 setTimeout(() => {
                     loadingState.classList.add('hidden');
+                    
+                    // 确保iframe尺寸正确
+                    appFrame.style.width = '100vw';
+                    appFrame.style.height = '100vh';
+                    appFrame.style.margin = '0';
+                    appFrame.style.padding = '0';
+                    appFrame.style.border = 'none';
                 }, 1000);
             };
 
