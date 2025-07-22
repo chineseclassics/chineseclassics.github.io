@@ -837,32 +837,13 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            padding-bottom: 90px; /* 增加底部間距，為輸入框留出足夠空間 */
+            padding-bottom: 100px; /* 增加底部間距，為輸入框留出足夠空間 */
             z-index: 1;
             min-height: 0; /* 允許flex子項縮小 */
             height: calc(100% - 66px); /* 總高度減去輸入框高度 */
             /* 移動端視口高度支持 */
             height: calc(100vh - 66px);
             height: calc(var(--vh, 1vh) * 100 - 66px);
-        }
-        
-        /* 確保最後一條消息不被輸入框擋住 */
-        .wx-chat-container::after {
-            content: '';
-            display: block;
-            height: 20px; /* 額外的底部間距 */
-            flex-shrink: 0;
-        }
-        
-        /* 移動端額外優化 */
-        @media (max-width: 768px) {
-            .wx-chat-container {
-                padding-bottom: 100px; /* 移動端增加更多底部間距 */
-            }
-            
-            .wx-chat-container::after {
-                height: 30px; /* 移動端額外間距 */
-            }
         }
         
         /* 時間戳 */
@@ -10024,7 +10005,8 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                             console.log(`${characterKey} 分段消息发送完成 (旧版本)`);
                             
                             setTimeout(() => {
-                                scrollToChatBottom();
+                                const chatContainer = document.getElementById('chatMessages');
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
                             }, 100);
                             
                             // 分段消息完成后，延迟处理下一个角色
@@ -10042,7 +10024,8 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                             });
                             
                             setTimeout(() => {
-                                scrollToChatBottom();
+                                const chatContainer = document.getElementById('chatMessages');
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
                             }, 100);
                             
                             // 单条消息发送后，短暂延迟处理下一个角色
@@ -10213,27 +10196,6 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 lastTouchEnd = now;
             }, false);
         }
-        
-        // 滾動到聊天底部，確保最後一條消息完全可見
-        function scrollToChatBottom() {
-            const chatContainer = document.getElementById('chatMessages');
-            if (chatContainer) {
-                // 先滾動到容器底部
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-                
-                // 然後確保最後一條消息完全可見
-                setTimeout(() => {
-                    const lastMessage = chatContainer.lastElementChild;
-                    if (lastMessage) {
-                        lastMessage.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'end',
-                            inline: 'nearest'
-                        });
-                    }
-                }, 50);
-            }
-        }
 
         // 添加用戶消息到群聊上下文
         function addUserMessageToGroupContext(userMessage) {
@@ -10325,7 +10287,8 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             
             // 滾動到底部
             setTimeout(() => {
-                scrollToChatBottom();
+                const chatContainer = document.getElementById('chatMessages');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             }, 100);
             
             // 触发AI回应
@@ -13457,7 +13420,8 @@ ${characterList}
                 }
                 
                 setTimeout(() => {
-                    scrollToChatBottom();
+                    const chatContainer = document.getElementById('chatMessages');
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
                 }, 100);
             }
         }
@@ -13511,7 +13475,8 @@ ${characterList}
                     }
                     
                     setTimeout(() => {
-                        scrollToChatBottom();
+                        const chatContainer = document.getElementById('chatMessages');
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
                     }, 100);
                 }
             }
@@ -13551,7 +13516,8 @@ ${characterList}
                 });
                 
                 setTimeout(() => {
-                    scrollToChatBottom();
+                    const chatContainer = document.getElementById('chatMessages');
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
                 }, 100);
             }
         }
