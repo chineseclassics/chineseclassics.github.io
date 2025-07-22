@@ -836,21 +836,11 @@
             pointer-events: auto;
         }
         
-        #floatingLogo:hover {
-            transform: scale(1.05);
-        }
-        
-        #floatingLogo:active {
-            transform: scale(0.95);
-        }
-        
         /* 确保悬浮logo不影响iframe内容 */
         #floatingLogo {
             z-index: 1000;
             position: fixed !important;
             pointer-events: auto;
-            top: 0 !important;
-            left: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
             width: auto !important;
@@ -860,8 +850,6 @@
         /* 确保悬浮logo不会占用文档流空间 */
         #floatingLogo {
             position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
         }
@@ -888,6 +876,18 @@
         /* 悬浮logo激活状态 */
         #floatingLogo:active > div {
             transform: scale(0.95);
+        }
+        
+        /* 确保logo在右侧垂直居中 */
+        #floatingLogo {
+            right: 16px !important;
+            top: 50% !important;
+            margin-top: -24px !important; /* 假设logo高度为48px，向上偏移一半 */
+        }
+        
+        /* 内部div的transform应该相对于父元素 */
+        #floatingLogo > div {
+            transform-origin: center;
         }
         
         /* 应用视图全屏样式 */
@@ -1016,7 +1016,7 @@
             #floatingLogo {
                 right: 8px !important;
                 top: 50% !important;
-                transform: translateY(-50%) !important;
+                margin-top: -20px !important; /* 移动端logo更小，调整偏移 */
             }
             
             #floatingLogo > div {
@@ -1126,8 +1126,8 @@
     </nav>
 
     <!-- 悬浮Logo图标 -->
-    <div id="floatingLogo" class="fixed z-50 hidden cursor-move select-none" style="right: 16px; top: 50%; transform: translateY(-50%);">
-        <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300 transform hover:scale-110">
+    <div id="floatingLogo" class="fixed z-50 hidden cursor-move select-none" style="right: 16px; top: 50%; margin-top: -24px;">
+        <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300 hover:scale-110">
             <img src="https://chineseclassics.github.io/images/cclogo.png" 
                  alt="書院中文經典" 
                  class="h-8 w-8 object-contain cursor-pointer"
