@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no, minimal-ui">
     <title>太虛幻聊 - 與古今名士暢談千古</title>
     <style>
         /* ===== 太虛幻聊統一設計規範 ===== */
@@ -28,6 +28,11 @@
         
         /* 基礎樣式 - 模擬微信風格 */
         
+        /* CSS變量定義 */
+        :root {
+            --vh: 1vh; /* 動態視口高度 */
+        }
+        
         /* 全局移动端优化 */
         * {
             -webkit-tap-highlight-color: transparent;
@@ -50,6 +55,33 @@
         body {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
+        }
+        
+        /* 移動端輸入優化 */
+        @media (max-width: 768px) {
+            /* 防止輸入時頁面縮放 */
+            input[type="text"], 
+            input[type="search"], 
+            textarea {
+                font-size: 16px !important;
+                -webkit-appearance: none;
+                border-radius: 0;
+            }
+            
+            /* 優化輸入框在移動端的顯示 */
+            .wx-input-box {
+                -webkit-appearance: none;
+                border-radius: 18px;
+                font-size: 16px !important;
+                line-height: 32px;
+                padding: 0 12px;
+            }
+            
+            /* 防止iOS Safari的縮放 */
+            .wx-input-box:focus {
+                font-size: 16px !important;
+                transform: none;
+            }
         }
         
         /* 新增成員資料頁面樣式 */
@@ -348,8 +380,11 @@
             position: relative;
             width: 100vw;
             height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
             min-height: 100vh;
+            min-height: calc(var(--vh, 1vh) * 100);
             max-height: 100vh;
+            max-height: calc(var(--vh, 1vh) * 100);
             overflow: hidden;
         }
         
@@ -360,6 +395,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
             overflow: hidden;
             z-index: 0;
             pointer-events: none;
@@ -805,6 +841,9 @@
             z-index: 1;
             min-height: 0; /* 允許flex子項縮小 */
             height: calc(100% - 66px); /* 總高度減去輸入框高度 */
+            /* 移動端視口高度支持 */
+            height: calc(100vh - 66px);
+            height: calc(var(--vh, 1vh) * 100 - 66px);
         }
         
         /* 時間戳 */
@@ -1006,6 +1045,9 @@
             z-index: 100;
             flex-shrink: 0; /* 防止輸入框被壓縮 */
             box-sizing: border-box;
+            /* 移動端優化 */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
         }
         
         .wx-voice-btn {
@@ -1121,10 +1163,66 @@
             padding: 0 10px;
             color: #333;
             font-size: 16px;
+            /* 移動端優化 */
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: text;
+            user-select: text;
+            /* 防止移動端縮放 */
+            font-size: 16px !important;
+            transform: translateZ(0);
+            /* 優化輸入體驗 */
+            line-height: 32px;
+            vertical-align: middle;
         }
         
         .wx-input-box::placeholder {
             color: #aaa;
+        }
+        
+        /* 發送按鈕樣式 */
+        .wx-send-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #07c160;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            margin-right: 8px;
+            transition: all 0.2s ease;
+            font-size: 16px;
+            border: none;
+            outline: none;
+            /* 移動端優化 */
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .wx-send-btn:hover {
+            background-color: #06ad56;
+            transform: scale(1.05);
+        }
+        
+        .wx-send-btn:active {
+            background-color: #059a4c;
+            transform: scale(0.95);
+        }
+        
+        .wx-send-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 發送按鈕圖標 */
+        .wx-send-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
         }
         
         /* @某人功能樣式 */
@@ -4442,6 +4540,12 @@
             </svg>
         </div>
             <input type="text" class="wx-input-box" id="messageInput" placeholder="請輸入... 可@角色">
+            <button type="button" class="wx-send-btn" id="sendBtn" title="發送">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                </svg>
+            </button>
             <div class="wx-emoji-btn" id="emojiBtn">😊</div>
             <div class="wx-plus-btn" id="plusBtn">+</div>
         </div>
@@ -9898,11 +10002,40 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
         // 聊天輸入功能
         function setupChatInput() {
             const inputBox = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
             
             if (inputBox) {
                 // 確保輸入框可以交互
                 inputBox.style.pointerEvents = 'auto';
                 inputBox.disabled = false;
+                
+                // 移動端優化：防止輸入時頁面縮放
+                inputBox.addEventListener('focus', function() {
+                    // 防止移動端輸入時頁面縮放
+                    if (window.innerWidth <= 768) {
+                        // 延遲執行，確保在鍵盤彈出後執行
+                        setTimeout(() => {
+                            window.scrollTo(0, 0);
+                            document.body.style.position = 'fixed';
+                            document.body.style.width = '100%';
+                        }, 100);
+                    }
+                    
+                    // 關閉emoji和功能面板，但不關閉@面板（輸入框獲得焦點時可能正在@某人）
+                    document.getElementById('emojiPanel').style.display = 'none';
+                    document.getElementById('functionPanel').style.display = 'none';
+                    
+                    // 更新發送按鈕狀態
+                    updateSendButtonState();
+                });
+                
+                // 輸入框失去焦點時恢復頁面狀態
+                inputBox.addEventListener('blur', function() {
+                    if (window.innerWidth <= 768) {
+                        document.body.style.position = '';
+                        document.body.style.width = '';
+                    }
+                });
                 
                 // 回車發送
                 inputBox.addEventListener('keypress', function(e) {
@@ -9912,26 +10045,21 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                     }
                 });
                 
-                // 輸入框焦點處理
-                inputBox.addEventListener('focus', function() {
-                    // 關閉emoji和功能面板，但不關閉@面板（輸入框獲得焦點時可能正在@某人）
-                    document.getElementById('emojiPanel').style.display = 'none';
-                    document.getElementById('functionPanel').style.display = 'none';
-                });
-                
                 // 添加點擊事件確保輸入框可以被點擊
                 inputBox.addEventListener('click', function(e) {
                     console.log('輸入框被點擊');
                     this.focus();
                 });
                 
-                // 添加input事件監聽，支持@功能（只在群聊模式下）
+                // 添加input事件監聽，支持@功能和發送按鈕狀態更新
                 inputBox.addEventListener('input', function(e) {
                     console.log('輸入框內容變化:', this.value);
                     // 只在群聊模式下處理@功能
                     if (!isPrivateChatMode()) {
                         handleMentionInput(this);
                     }
+                    // 更新發送按鈕狀態
+                    updateSendButtonState();
                 });
                 
                 // 處理鍵盤事件
@@ -9958,6 +10086,68 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             } else {
                 console.error('找不到messageInput元素');
             }
+            
+            // 設置發送按鈕事件
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    sendUserMessage();
+                });
+                
+                // 初始化發送按鈕狀態
+                updateSendButtonState();
+                
+                console.log('發送按鈕事件監聽器已設置');
+            } else {
+                console.error('找不到sendBtn元素');
+            }
+        }
+        
+        // 更新發送按鈕狀態
+        function updateSendButtonState() {
+            const inputBox = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (inputBox && sendBtn) {
+                const hasContent = inputBox.value.trim().length > 0;
+                sendBtn.disabled = !hasContent;
+                
+                // 視覺反饋
+                if (hasContent) {
+                    sendBtn.style.opacity = '1';
+                    sendBtn.style.transform = 'scale(1)';
+                } else {
+                    sendBtn.style.opacity = '0.6';
+                    sendBtn.style.transform = 'scale(0.9)';
+                }
+            }
+        }
+        
+        // 移動端視口優化
+        function optimizeMobileViewport() {
+            if (window.innerWidth <= 768) {
+                // 設置視口高度為實際可用高度
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+                
+                // 監聽視口變化（鍵盤彈出/收起）
+                window.addEventListener('resize', () => {
+                    const newVh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', `${newVh}px`);
+                });
+            }
+        }
+        
+        // 防止移動端雙擊縮放
+        function preventDoubleTapZoom() {
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
         }
 
         // 添加用戶消息到群聊上下文
@@ -10039,6 +10229,9 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             
             // 清空輸入框
             inputBox.value = '';
+            
+            // 更新發送按鈕狀態
+            updateSendButtonState();
             
             // 隱藏@面板
             hideMentionPopup();
@@ -13321,6 +13514,18 @@ ${characterList}
             
             return userMessageInContext;
         }
+        
+        // 頁面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移動端優化
+            optimizeMobileViewport();
+            preventDoubleTapZoom();
+            
+            // 初始化聊天輸入
+            setupChatInput();
+            
+            console.log('太虛幻聊移動端優化已初始化');
+        });
     </script>
     
 
