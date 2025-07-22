@@ -913,35 +913,7 @@
             transform-origin: center;
         }
         
-        /* 首页飞向logo动画的样式 */
-        #homeToLogoAnimation {
-            pointer-events: none;
-        }
-        
-        #homeToLogoAnimation * {
-            pointer-events: none;
-        }
-        
-        /* 动画过程中的logo效果 */
-        #floatingLogo.animating {
-            animation: logoPulse 1.2s ease-in-out;
-        }
-        
-        @keyframes logoPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-        
-        /* 粒子效果样式 */
-        .particle {
-            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
-            animation: particleGlow 1s ease-in-out infinite alternate;
-        }
-        
-        @keyframes particleGlow {
-            from { box-shadow: 0 0 8px rgba(59, 130, 246, 0.6); }
-            to { box-shadow: 0 0 16px rgba(139, 92, 246, 0.8); }
-        }
+
         
         /* 应用视图全屏样式 */
         #appView {
@@ -1805,182 +1777,14 @@
             currentApp = app;
             currentView = 'app';
 
-            // 创建首页飞向logo的动画
-            createHomeToLogoAnimation(appId);
+            // 直接打开应用
+            continueOpenApp();
         }
         
-        // 创建首页飞向logo的动画
-        function createHomeToLogoAnimation(appId) {
-            const homeView = document.getElementById('homeView');
-            const floatingLogo = document.getElementById('floatingLogo');
-            
-            // 给logo添加动画类
-            floatingLogo.classList.add('animating');
-            
-            // 获取logo的位置和尺寸
-            const logoRect = floatingLogo.getBoundingClientRect();
-            const homeRect = homeView.getBoundingClientRect();
-            
-            // 创建动画容器
-            const animationContainer = document.createElement('div');
-            animationContainer.id = 'homeToLogoAnimation';
-            animationContainer.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                z-index: 9999;
-                pointer-events: none;
-                overflow: hidden;
-            `;
-            document.body.appendChild(animationContainer);
-            
-            // 创建首页的克隆元素用于动画
-            const homeClone = homeView.cloneNode(true);
-            homeClone.style.cssText = `
-                position: absolute;
-                top: ${homeRect.top}px;
-                left: ${homeRect.left}px;
-                width: ${homeRect.width}px;
-                height: ${homeRect.height}px;
-                transform-origin: center;
-                transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                opacity: 1;
-                z-index: 1;
-            `;
-            animationContainer.appendChild(homeClone);
-            
-            // 创建logo的克隆元素
-            const logoClone = floatingLogo.cloneNode(true);
-            logoClone.style.cssText = `
-                position: absolute;
-                top: ${logoRect.top}px;
-                left: ${logoRect.left}px;
-                width: ${logoRect.width}px;
-                height: ${logoRect.height}px;
-                transform: scale(0);
-                opacity: 0;
-                transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                z-index: 2;
-            `;
-            animationContainer.appendChild(logoClone);
-            
-            // 创建粒子效果
-            createParticleEffect(logoRect, animationContainer);
-            
-            // 开始动画
-            setTimeout(() => {
-                // 首页缩小并飞向logo位置
-                homeClone.style.cssText = `
-                    position: absolute;
-                    top: ${logoRect.top}px;
-                    left: ${logoRect.left}px;
-                    width: ${logoRect.width}px;
-                    height: ${logoRect.height}px;
-                    transform: scale(0.1);
-                    opacity: 0;
-                    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                    z-index: 1;
-                `;
-                
-                // logo放大并显示
-                setTimeout(() => {
-                    logoClone.style.cssText = `
-                        position: absolute;
-                        top: ${logoRect.top}px;
-                        left: ${logoRect.left}px;
-                        width: ${logoRect.width}px;
-                        height: ${logoRect.height}px;
-                        transform: scale(1);
-                        opacity: 1;
-                        transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                        z-index: 2;
-                    `;
-                }, 400);
-                
-                // 动画完成后清理
-                setTimeout(() => {
-                    document.body.removeChild(animationContainer);
-                    
-                    // 移除logo动画类
-                    floatingLogo.classList.remove('animating');
-                    
-                    // 切换视图
-                    homeView.classList.add('hidden');
-                    appView.classList.remove('hidden');
-                    
-                    // 继续原有的应用打开逻辑
-                    continueOpenApp();
-                }, 1200);
-            }, 100);
-        }
+
         
         // 创建粒子效果
-        function createParticleEffect(logoRect, container) {
-            const particleCount = 12;
-            const centerX = logoRect.left + logoRect.width / 2;
-            const centerY = logoRect.top + logoRect.height / 2;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                const angle = (i / particleCount) * Math.PI * 2;
-                const distance = 30 + Math.random() * 20;
-                const startX = centerX + Math.cos(angle) * distance;
-                const startY = centerY + Math.sin(angle) * distance;
-                
-                particle.className = 'particle';
-                particle.style.cssText = `
-                    position: absolute;
-                    width: 4px;
-                    height: 4px;
-                    background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-                    border-radius: 50%;
-                    top: ${startY}px;
-                    left: ${startX}px;
-                    opacity: 0;
-                    transform: scale(0);
-                    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                    z-index: 3;
-                `;
-                
-                container.appendChild(particle);
-                
-                // 延迟显示粒子
-                setTimeout(() => {
-                    particle.style.cssText = `
-                        position: absolute;
-                        width: 4px;
-                        height: 4px;
-                        background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-                        border-radius: 50%;
-                        top: ${startY}px;
-                        left: ${startX}px;
-                        opacity: 1;
-                        transform: scale(1);
-                        transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                        z-index: 3;
-                    `;
-                    
-                    // 粒子飞向logo中心
-                    setTimeout(() => {
-                        particle.style.cssText = `
-                            position: absolute;
-                            width: 4px;
-                            height: 4px;
-                            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-                            border-radius: 50%;
-                            top: ${centerY}px;
-                            left: ${centerX}px;
-                            opacity: 0;
-                            transform: scale(0);
-                            transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                            z-index: 3;
-                        `;
-                    }, 200);
-                }, 600 + i * 50);
-            }
-        }
+
         
         // 继续打开应用的逻辑
         function continueOpenApp() {
