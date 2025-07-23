@@ -1027,11 +1027,23 @@
                 -webkit-overflow-scrolling: touch;
             }
             
-            /* 移动端首页滚动优化 */
-            body:not(.app-view-active) {
-                overflow-y: auto !important;
-                -webkit-overflow-scrolling: touch;
-            }
+                    /* 移动端首页滚动优化 */
+        body:not(.app-view-active) {
+            overflow: hidden !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 首頁固定標題區域樣式 */
+        #homeView {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* 可滾動區域樣式 */
+        #homeView .flex-1 {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         }
         
         /* 超小屏幕优化 */
@@ -1065,99 +1077,8 @@
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen" style="margin: 0; padding: 0; overflow-x: hidden;">
-    <!-- 欢迎弹窗 - 優化版 -->
-    <div id="welcomeModal" 
-         class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm opacity-0 transform scale-95 transition-all duration-300 ease-out"
-         role="dialog" 
-         aria-labelledby="welcomeTitle" 
-         aria-describedby="welcomeDescription"
-         aria-modal="true">
-        <div class="relative bg-gradient-to-br from-stone-50 via-amber-50/50 to-rose-50/30 dark:from-stone-800 dark:via-stone-700 dark:to-rose-900/30 rounded-3xl max-w-2xl w-full shadow-2xl border border-stone-200/60 dark:border-stone-600/60 overflow-hidden">
-            <!-- 關閉按鈕 -->
-            <button id="skipWelcomeBtn" 
-                    class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black bg-opacity-20 hover:bg-opacity-40 text-white hover:text-gray-200 transition-all duration-200 flex items-center justify-center backdrop-blur-sm"
-                    aria-label="跳過歡迎訊息">
-                <i class="fas fa-times text-sm"></i>
-            </button>
-            <!-- 装饰性边框 -->
-            <div class="absolute inset-0 bg-gradient-to-br from-amber-50/20 via-transparent to-rose-50/20 pointer-events-none"></div>
-            
-            <!-- 主要内容区域 -->
-            <div class="relative p-8 md:p-12 text-center">
-                <!-- 标题装饰 -->
-                <div class="mb-8">
-                    <div class="w-16 h-1 bg-gradient-to-r from-transparent via-stone-400/60 to-transparent mx-auto mb-4"></div>
-                    <h2 id="welcomeTitle" class="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-600 via-amber-700/80 to-stone-600 dark:from-stone-300 dark:via-amber-400/70 dark:to-stone-300">
-                        太虛幻境
-                    </h2>
-                    <div class="w-16 h-1 bg-gradient-to-r from-transparent via-stone-400/60 to-transparent mx-auto mt-4"></div>
-                </div>
 
-                <!-- 诗词部分 -->
-                <div id="welcomeDescription" class="mb-8 space-y-2 text-lg md:text-xl leading-relaxed text-stone-700 dark:text-stone-200 font-serif" role="poem">
-                    <p class="hover:text-amber-700/80 dark:hover:text-amber-300/80 transition-colors duration-300">方寸靈臺入太虛，</p>
-                    <p class="hover:text-amber-700/80 dark:hover:text-amber-300/80 transition-colors duration-300">詩魄劍魂幻境居。</p>
-                    <p class="hover:text-amber-700/80 dark:hover:text-amber-300/80 transition-colors duration-300">玉屏一點越千載，</p>
-                    <p class="hover:text-amber-700/80 dark:hover:text-amber-300/80 transition-colors duration-300">古意今情兩不渝。</p>
-                </div>
 
-                <!-- 分隔线 -->
-                <div class="w-24 h-0.5 bg-gradient-to-r from-transparent via-stone-300/60 to-transparent mx-auto mb-6"></div>
-
-                <!-- 说明文字 -->
-                <div class="mb-8 text-sm md:text-base leading-relaxed text-stone-600 dark:text-stone-300 font-serif max-w-lg mx-auto">
-                    <p class="mb-3">此「太虛幻境」者，乃師者運心，借數字靈犀，化經典為遊戲而成。</p>
-                    <p class="mb-3">願諸君神遊，悅目啟智，亦得雅趣。</p>
-                    <p>縱代碼茫茫，bug時現，莫謂虛而不實，蓋經典之義理情懷，無關今古，真實不虛。</p>
-                </div>
-
-                <!-- 开始探索按钮和选项 -->
-                <div class="flex flex-col items-center space-y-4">
-                    <button id="startExploreBtn" 
-                            class="group relative inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-white bg-gradient-to-r from-stone-500/80 to-amber-600/80 hover:from-amber-600/90 hover:to-stone-600/90 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
-                        <span class="relative z-10">開始探索</span>
-                        <div class="absolute inset-0 bg-gradient-to-r from-amber-400/60 to-stone-500/60 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    </button>
-                    
-                    <!-- 推薦提示 -->
-                    <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200/50 dark:border-amber-700/30">
-                        <p class="text-sm text-amber-700 dark:text-amber-300 font-medium">
-                            <i class="fas fa-lightbulb mr-2"></i>
-                            推薦體驗「萬物逍遙」：深度探索莊子哲學的物化之道
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 底部装饰 -->
-            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-stone-300/60 via-amber-400/60 to-stone-300/60"></div>
-        </div>
-    </div>
-    <!-- 顶部导航栏 -->
-    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 fixed top-0 left-0 right-0 z-50">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <!-- 网站Logo -->
-                <img src="https://chineseclassics.github.io/images/cclogo.png" 
-                     alt="書院中文經典" 
-                     class="h-12 w-12 object-contain cursor-pointer hover:opacity-80 transition-opacity"
-                     onclick="showHome()">
-                
-                <button id="homeBtn" class="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors">
-                    <i class="fas fa-home"></i>
-                    <span class="hidden sm:inline">首頁</span>
-                </button>
-                <div class="hidden sm:block text-gray-400 dark:text-gray-600">|</div>
-                <h1 id="currentAppName" class="text-lg sm:text-lg text-sm font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap overflow-hidden text-ellipsis">太虛幻境：書院中文經典數字體驗學習</h1>
-            </div>
-            
-            <div class="flex items-center space-x-2">
-                <button id="appSwitcherBtn" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors">
-                    <i class="fas fa-th"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
 
     <!-- 悬浮Logo图标 -->
     <div id="floatingLogo" class="fixed z-50 hidden cursor-pointer select-none" style="right: 16px; top: 50%; margin-top: -24px;">
@@ -1170,10 +1091,11 @@
     </div>
 
     <!-- 主内容区域 -->
-    <main class="pt-16 relative z-20" id="mainContent">
+    <main class="relative z-20" id="mainContent">
         <!-- 首页视图 -->
-        <div id="homeView">
-            <div class="py-8 px-4 mb-10 relative overflow-hidden">
+        <div id="homeView" class="h-screen flex flex-col">
+            <!-- 固定標題區域 -->
+            <div class="flex-shrink-0 py-8 px-4 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-primary/20 to-indigo-900/10 dark:from-indigo-900/30 dark:via-primary/40 dark:to-indigo-900/30"></div>
                 
                 <!-- 幻境光效 -->
@@ -1205,10 +1127,20 @@
                     <h2 class="text-xl md:text-2xl font-medium text-gray-700 dark:text-gray-300 text-center mt-2">書院中文經典數字體驗學習</h2>
                     
                     <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4"></div>
+                    
+                    <!-- 網站Logo -->
+                    <div class="flex justify-center mt-6">
+                        <img src="https://chineseclassics.github.io/images/cclogo.png" 
+                             alt="書院中文經典" 
+                             class="h-16 w-16 md:h-20 md:w-20 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                             onclick="showHome()">
+                    </div>
                 </div>
             </div>
 
-            <div class="container mx-auto px-4 pb-12">
+            <!-- 可滾動的應用區域 -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="container mx-auto px-4 pb-12">
                 <!-- 新增：推薦遊戲專區 -->
                 <section class="mb-12">
                     <div class="flex items-center justify-between mb-6">
@@ -1790,8 +1722,7 @@
             homeView.classList.add('hidden');
             appView.classList.remove('hidden');
             
-            // 隐藏顶部导航栏，显示悬浮logo
-            document.querySelector('nav').classList.add('hidden');
+            // 显示悬浮logo
             document.getElementById('floatingLogo').classList.remove('hidden');
             
             // 确保body和html不会影响布局 - 只在应用视图显示时
@@ -1916,8 +1847,7 @@
             appFrame.src = 'about:blank';
             currentApp = null;
             
-            // 显示顶部导航栏，隐藏悬浮logo
-            document.querySelector('nav').classList.remove('hidden');
+            // 隐藏悬浮logo
             document.getElementById('floatingLogo').classList.add('hidden');
             
             // 恢复body和html的正常布局
@@ -1940,9 +1870,6 @@
             appView.style.zIndex = '';
         }
 
-        // 事件监听
-        document.getElementById('homeBtn').onclick = showHome;
-        
         // 显示应用切换器（带动画）
         function showAppSwitcher() {
             appSwitcherModal.classList.add('switcher-modal-show');
@@ -1963,8 +1890,6 @@
             // 恢复背景滚动
             document.body.style.overflow = '';
         }
-
-        document.getElementById('appSwitcherBtn').onclick = showAppSwitcher;
         
         document.getElementById('closeSwitcherBtn').onclick = hideAppSwitcher;
 
@@ -1987,60 +1912,7 @@
             return window.innerWidth <= 768;
         }
 
-        // 歡迎弹窗控制 - 優化版
-        const welcomeModal = document.getElementById('welcomeModal');
-        const startExploreBtn = document.getElementById('startExploreBtn');
-        const skipWelcomeBtn = document.getElementById('skipWelcomeBtn');
 
-        // 檢查是否應該顯示歡迎弹窗
-        function shouldShowWelcome() {
-            return true;
-        }
-
-        // 隱藏歡迎弹窗
-        function hideWelcomeModal() {
-            welcomeModal.style.opacity = '0';
-            welcomeModal.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                welcomeModal.style.display = 'none';
-                document.body.style.overflow = ''; // 恢復滾動
-            }, 300);
-        }
-
-        // 點擊開始探索按鈕
-        startExploreBtn.onclick = hideWelcomeModal;
-        
-        // 點擊跳過按鈕
-        skipWelcomeBtn.onclick = hideWelcomeModal;
-
-        // 頁面加載時的邏輯 - 優化版
-        document.addEventListener('DOMContentLoaded', () => {
-            // 檢查是否需要顯示歡迎弹窗
-            if (shouldShowWelcome()) {
-                // 防止背景滾動
-                document.body.style.overflow = 'hidden';
-                
-                // 延遲300ms顯示動畫，讓頁面先渲染
-                setTimeout(() => {
-                    welcomeModal.style.opacity = '1';
-                    welcomeModal.style.transform = 'scale(1)';
-                }, 300);
-            } else {
-                // 如果不需要顯示歡迎弹窗，直接隱藏
-                welcomeModal.style.display = 'none';
-            }
-        });
-
-        // 阻止ESC键关闭欢迎弹窗，因为这是首次访问必看的内容
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                // 优先处理应用切换器
-                if (appSwitcherModal.classList.contains('switcher-modal-show')) {
-                    hideAppSwitcher();
-                }
-                // 不处理欢迎弹窗的ESC，用户必须点击按钮
-            }
-        });
 
         // 鍵盤導航支援
         document.addEventListener('keydown', (e) => {
