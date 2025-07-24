@@ -858,78 +858,108 @@
             margin-bottom: 16px;
             position: relative;
             width: 100%;
+            align-items: flex-start;
         }
         
         .wx-msg-self {
             flex-direction: row-reverse;
         }
         
+        /* 頭像容器 */
+        .wx-avatar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 8px;
+            flex-shrink: 0;
+        }
+        
+        .wx-msg-self .wx-avatar-wrapper {
+            align-items: center;
+        }
+        
         /* 頭像樣式 */
         .wx-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background-color: #f0f0f0;
+            width: 42px;
+            height: 42px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 5px;
             flex-shrink: 0;
-            font-size: 26px;
+            font-size: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s ease;
         }
         
-        /* 消息泡泡 */
+        .wx-avatar:hover {
+            transform: scale(1.05);
+        }
+        
+        /* 用户名显示在頭像上方 */
+        .wx-name {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+            font-weight: 500;
+            text-align: center;
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* 消息内容容器 */
         .wx-content-wrapper {
-            max-width: calc(100% - 100px);
+            max-width: calc(100% - 60px);
             display: flex;
             flex-direction: column;
+            position: relative;
+            margin-top: 16px;
         }
         
         .wx-msg-bubble {
-            max-width: 100%;
-            padding: 8px 11px;
             position: relative;
             word-wrap: break-word;
             display: inline-block;
             text-align: left;
-            font-size: 14px;
-            line-height: 1.3;
+            font-size: 16px;
+            line-height: 1.4;
+            padding: 10px 16px;
+            min-height: 20px;
+            box-sizing: border-box;
+            max-width: 280px;
+            animation: messageSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
         
         .wx-msg-self .wx-msg-bubble {
-            background-color: var(--wx-bubble-self);
-            border-radius: 18px 0px 18px 18px; /* 右上角改為直角，與尖角連接 */
-            margin-right: 10px;
+            background: linear-gradient(135deg, #95ec69 0%, #7ed321 100%);
+            color: #000;
+            border-radius: 20px 20px 0px 20px; /* 左上角直角，靠近头像 */
+            margin-left: auto;
+            box-shadow: 0 2px 8px rgba(149, 236, 105, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .wx-msg-others .wx-msg-bubble {
-            background-color: var(--wx-bubble-others);
-            border-radius: 0px 18px 18px 18px; /* 左上角改為直角，與尖角連接 */
-            margin-left: 10px;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-        }
-        
-        /* 添加微信泡泡的尖角 */
-        .wx-msg-self .wx-msg-bubble:after {
-            content: '';
-            position: absolute;
-            right: -6px;
-            top: 0;
-            width: 0;
-            height: 0;
-            border-top: 6px solid var(--wx-bubble-self);
-            border-right: 6px solid transparent;
-        }
-        
-        .wx-msg-others .wx-msg-bubble:after {
-            content: '';
-            position: absolute;
-            left: -6px;
-            top: 0;
-            width: 0;
-            height: 0;
-            border-top: 6px solid var(--wx-bubble-others);
-            border-left: 6px solid transparent;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+            color: #333;
+            border-radius: 0px 20px 20px 20px; /* 左上角直角，靠近头像 */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         /* 正在輸入提示樣式 */
@@ -937,24 +967,13 @@
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            min-height: 36px; /* 改为最小高度以适应文字 */
-            padding: 8px 12px;
-            background-color: var(--wx-bubble-others);
-            border-radius: 0px 18px 18px 18px; /* 左上角改為直角，與尖角連接 */
-            margin-left: 10px;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-            position: relative;
-        }
-        
-        .wx-typing:after {
-            content: '';
-            position: absolute;
-            left: -6px;
-            top: 0;
-            width: 0;
-            height: 0;
-            border-top: 6px solid var(--wx-bubble-others);
-            border-left: 6px solid transparent;
+            min-height: 36px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+            border-radius: 0px 20px 20px 20px; /* 左上角直角，靠近头像 */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            animation: messageSlideIn 0.3s ease-out;
         }
         
         .typing-dots {
@@ -2520,34 +2539,40 @@
              }
              
              .wx-avatar {
-                 width: 36px;
-                 height: 36px;
-                 font-size: 20px;
+                 width: 38px;
+                 height: 38px;
+                 font-size: 22px;
                  border-radius: 6px;
              }
              
+             .wx-avatar-wrapper {
+                 margin: 0 6px;
+             }
+             
              .wx-content-wrapper {
-                 max-width: calc(100% - 80px);
+                 max-width: calc(100% - 54px);
+                 margin-top: 14px;
              }
              
              .wx-msg-bubble {
-                 padding: 10px 12px;
+                 padding: 10px 14px;
                  font-size: 16px; /* 防止iOS自动缩放 */
                  line-height: 1.4;
-                 border-radius: 16px;
+                 max-width: 270px;
              }
              
              .wx-msg-self .wx-msg-bubble {
-                 border-radius: 16px 0px 16px 16px; /* 右上角改為直角，與尖角連接 */
+                 border-radius: 18px 18px 0px 18px; /* 左上角直角，靠近头像 */
              }
              
-             .wx-msg-other .wx-msg-bubble {
-                 border-radius: 0px 16px 16px 16px; /* 左上角改為直角，與尖角連接 */
+             .wx-msg-others .wx-msg-bubble {
+                 border-radius: 0px 18px 18px 18px; /* 左上角直角，靠近头像 */
              }
              
              .wx-name {
-                 font-size: 12px;
+                 font-size: 11px;
                  margin-bottom: 3px;
+                 max-width: 50px;
              }
              
              .wx-time {
@@ -2645,18 +2670,32 @@
              }
              
              .wx-avatar {
-                 width: 32px;
-                 height: 32px;
-                 font-size: 18px;
+                 width: 36px;
+                 height: 36px;
+                 font-size: 20px;
+                 border-radius: 6px;
+             }
+             
+             .wx-avatar-wrapper {
+                 margin: 0 5px;
              }
              
              .wx-content-wrapper {
-                 max-width: calc(100% - 70px);
+                 max-width: calc(100% - 50px);
+                 margin-top: 12px;
              }
              
              .wx-msg-bubble {
-                 padding: 8px 10px;
+                 padding: 8px 12px;
                  font-size: 15px;
+                 line-height: 1.4;
+                 max-width: 260px;
+             }
+             
+             .wx-name {
+                 font-size: 11px;
+                 margin-bottom: 3px;
+                 max-width: 46px;
              }
              
              .wx-input-area {
@@ -5717,14 +5756,16 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 const chatMessages = document.getElementById('chatMessages');
                 const messageElement = document.createElement('div');
-                messageElement.className = 'wx-msg wx-msg-others'; // 修正類名以匹配CSS樣式
+                messageElement.className = 'wx-msg wx-msg-others';
                 
                 messageElement.innerHTML = `
-                    <div class="wx-avatar" onclick="handleAvatarClick('${message.character}', event)">
-                        ${character.avatar}
+                    <div class="wx-avatar-wrapper">
+                        <div class="wx-name">${character.name}</div>
+                        <div class="wx-avatar" onclick="handleAvatarClick('${message.character}', event)">
+                            ${character.avatar}
+                        </div>
                     </div>
                     <div class="wx-content-wrapper">
-                        <div class="wx-name">${character.name}</div>
                         <div class="wx-msg-bubble">
                             ${message.content}
                         </div>
@@ -5738,10 +5779,13 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             renderUserMessage(message) {
                 const chatMessages = document.getElementById('chatMessages');
                 const messageElement = document.createElement('div');
-                messageElement.className = 'wx-msg wx-msg-self'; // 修正類名以匹配CSS樣式
+                messageElement.className = 'wx-msg wx-msg-self';
                 
                 messageElement.innerHTML = `
-                    <div class="wx-avatar">👤</div>
+                    <div class="wx-avatar-wrapper">
+                        <div class="wx-name">我</div>
+                        <div class="wx-avatar">👤</div>
+                    </div>
                     <div class="wx-content-wrapper">
                         <div class="wx-msg-bubble">
                             ${message.content}
@@ -5854,8 +5898,8 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 this.setupMainEvents();
                 this.updateBadges();
                 
-                // 初始化朋友圈
-                momentsManager.init();
+                // 朋友圈延迟加载 - 只有用户点击时才初始化
+                // momentsManager.init(); // 移除立即初始化
             }
             
             // 初始化示例私聊
@@ -6881,6 +6925,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 this.currentPage = 0;
                 this.pageSize = 20;
                 this.currentCharacterId = null; // 記錄當前查看的角色ID（用於區分全局朋友圈和角色朋友圈）
+                this.initialized = false; // 添加初始化标志
             }
             
             // 初始化朋友圈
@@ -7619,20 +7664,24 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 messageElement.className = `wx-msg ${isSelf ? 'wx-msg-self' : 'wx-msg-others'} wx-fade-in`;
                 
+                // 创建头像包装器
+                const avatarWrapper = document.createElement('div');
+                avatarWrapper.className = 'wx-avatar-wrapper';
+                
+                // 添加用户名
+                const nameElement = document.createElement('div');
+                nameElement.className = 'wx-name';
+                nameElement.textContent = isSelf ? '我' : character.name;
+                avatarWrapper.appendChild(nameElement);
+                
+                // 添加头像
                 const avatar = document.createElement('div');
                 avatar.className = 'wx-avatar';
                 avatar.textContent = character.avatar;
+                avatarWrapper.appendChild(avatar);
                 
                 const contentWrapper = document.createElement('div');
                 contentWrapper.className = 'wx-content-wrapper';
-                
-                // 只有非用戶消息顯示名稱
-                if (!isSelf) {
-                    const nameElement = document.createElement('div');
-                    nameElement.className = 'wx-name';
-                    nameElement.textContent = character.name;
-                    contentWrapper.appendChild(nameElement);
-                }
                 
                 const bubbleElement = document.createElement('div');
                 bubbleElement.className = 'wx-msg-bubble';
@@ -7645,7 +7694,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 }
                 
                 contentWrapper.appendChild(bubbleElement);
-                messageElement.appendChild(avatar);
+                messageElement.appendChild(avatarWrapper);
                 messageElement.appendChild(contentWrapper);
             }
             
@@ -10649,14 +10698,14 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             typingElement.className = `wx-msg wx-msg-others wx-fade-in typing-message-${characterId}`;
             
             typingElement.innerHTML = `
-                <div class="wx-avatar">
-                    ${character.avatar}
+                <div class="wx-avatar-wrapper">
+                    <div class="wx-name">${character.name}</div>
+                    <div class="wx-avatar">
+                        ${character.avatar}
+                    </div>
                 </div>
                 <div class="wx-content-wrapper">
-                    <div class="wx-name">
-                        ${character.name}
-                    </div>
-                    <div class="wx-typing" style="display: flex; align-items: center; padding: 8px 12px; background-color: #f0f0f0; border-radius: 18px; max-width: 200px;">
+                    <div class="wx-typing" style="display: flex; align-items: center; max-width: 200px;">
                         <div class="typing-dots">
                             <div class="typing-dot"></div>
                             <div class="typing-dot"></div>
@@ -12417,6 +12466,13 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
         
         // 打开朋友圈的全局函数
         function openMoments() {
+            // 延迟初始化朋友圈 - 只有首次打开时才初始化
+            if (!momentsManager.initialized) {
+                console.log('首次打开朋友圈，正在初始化...');
+                momentsManager.init();
+                momentsManager.initialized = true;
+            }
+            
             momentsManager.openMoments();
         }
         
@@ -12512,191 +12568,133 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             }, 200);
         }
         
-        // 生成銀河系粒子效果
+        // 简化的星空旋转效果
         function createGalaxyParticles() {
             const galaxyContainer = document.querySelector('.galaxy-container');
-            const numberOfArms = 2; // 兩條主要螺旋臂（更符合銀河系實際結構）
             
-            // 創建螺旋臂
-            for (let armIndex = 0; armIndex < numberOfArms; armIndex++) {
-                const spiralArm = document.createElement('div');
-                spiralArm.className = 'spiral-arm';
-                
-                // 大幅擴展螺旋臂範圍，增加更多段落
-                for (let segment = 0; segment < 8; segment++) {
-                    const particlesInSegment = 35 - segment * 2; // 更多粒子，衰減更緩慢
-                    
-                    for (let i = 0; i < particlesInSegment; i++) {
-                        const particle = document.createElement('div');
-                        particle.className = 'particle';
-                        
-                        // 大幅擴展銀河系半徑範圍
-                        const baseRadius = 60 + segment * 120; // 從60px開始，每段120px間隔
-                        const spiralTightness = 0.15; // 稍微降低螺旋緊密度
-                        const armAngle = armIndex * Math.PI; // 180度間隔的兩條臂
-                        
-                        // 在每個段落內隨機分佈粒子
-                        const randomRadius = baseRadius + (Math.random() - 0.5) * 60;
-                        const randomAngle = (i / particlesInSegment) * Math.PI * 1.2 + (Math.random() - 0.5) * 0.8;
-                        
-                        // 對數螺旋公式
-                        const spiralAngle = armAngle + randomAngle + spiralTightness * Math.log(randomRadius / 60);
-                        
-                        const x = Math.cos(spiralAngle) * randomRadius;
-                        const y = Math.sin(spiralAngle) * randomRadius;
-                        
-                        particle.style.left = x + 'px';
-                        particle.style.top = y + 'px';
-                        
-                        // 根據距離中心的遠近決定粒子大小和亮度
-                        const distanceFromCenter = Math.sqrt(x*x + y*y);
-                        const intensity = Math.max(0.15, 1 - distanceFromCenter / 800); // 擴大亮度衰減範圍
-                        
-                        // 分配粒子大小，中心區域更大更亮
-                        if (segment < 3) {
-                            const rand = Math.random();
-                            if (rand < 0.3) {
-                                particle.classList.add('medium');
-                            } else if (rand < 0.6) {
-                                particle.classList.add('large');
-                            } else {
-                                particle.classList.add('small');
-                            }
-                        } else if (segment < 6) {
-                            const rand = Math.random();
-                            if (rand < 0.7) {
-                                particle.classList.add('small');
-                            } else {
-                                particle.classList.add('medium');
-                            }
-                        } else {
-                            particle.classList.add('small');
-                        }
-                        
-                        // 根據位置添加顏色變化
-                        if (Math.random() < 0.25) {
-                            const colorChance = Math.random();
-                            if (segment < 3 && colorChance < 0.4) {
-                                particle.classList.add('gold'); // 中心區域金色
-                            } else if (segment < 5 && colorChance < 0.6) {
-                                particle.classList.add('blue'); // 中等距離藍色星體
-                            } else {
-                                particle.classList.add('colored'); // 外圍紫色星體
-                            }
-                        }
-                        
-                        // 設置透明度
-                        particle.style.opacity = intensity * (0.5 + Math.random() * 0.5);
-                        particle.style.animationDelay = Math.random() * 3 + 's';
-                        
-                        spiralArm.appendChild(particle);
-                    }
-                }
-                
-                // 為每條螺旋臂添加更多散亂的星體，延伸到更遠的距離
-                for (let i = 0; i < 25; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle small';
-                    
-                    const randomRadius = 100 + Math.random() * 600; // 大幅擴展到600px範圍
-                    const randomAngle = armIndex * Math.PI + (Math.random() - 0.5) * Math.PI * 0.8;
-                    
-                    const x = Math.cos(randomAngle) * randomRadius;
-                    const y = Math.sin(randomAngle) * randomRadius;
-                    
-                    particle.style.position = 'absolute';
-                    particle.style.left = `calc(50% + ${x}px)`;
-                    particle.style.top = `calc(50% + ${y}px)`;
-                    particle.style.opacity = Math.max(0.1, Math.random() * 0.6 + 0.1);
-                    particle.style.animationDelay = Math.random() * 3 + 's';
-                    
-                    // 遠距離的彩色星體
-                    if (Math.random() < 0.15) {
-                        const colorType = Math.random();
-                        if (colorType < 0.5) {
-                            particle.classList.add('blue');
-                        } else {
-                            particle.classList.add('colored');
-                        }
-                    }
-                    
-                    spiralArm.appendChild(particle);
-                }
-                
-                galaxyContainer.appendChild(spiralArm);
+            if (!galaxyContainer) {
+                console.warn('Galaxy container not found');
+                return;
             }
             
-            // 增加背景星星來填充擴展的空間
-            for (let i = 0; i < 200; i++) {
-                const star = document.createElement('div');
-                star.className = 'particle small';
-                star.style.position = 'absolute';
+            console.log('创建简化的旋转星空效果...');
+            
+            // 清空容器
+            galaxyContainer.innerHTML = '';
+            
+            // 创建三个旋转层
+            const layers = [
+                { name: 'inner', radius: 150, count: 120, speed: 60, direction: 1 },   // 内层：60秒顺时针
+                { name: 'middle', radius: 300, count: 180, speed: 120, direction: -1 }, // 中层：120秒逆时针  
+                { name: 'outer', radius: 500, count: 200, speed: 180, direction: 1 }    // 外层：180秒顺时针
+            ];
+            
+            layers.forEach(layer => {
+                const layerDiv = document.createElement('div');
+                layerDiv.className = `rotation-layer ${layer.name}-layer`;
+                layerDiv.style.cssText = `
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    width: ${layer.radius * 2}px;
+                    height: ${layer.radius * 2}px;
+                    animation: rotate-${layer.direction > 0 ? 'clockwise' : 'counter'} ${layer.speed}s linear infinite;
+                    pointer-events: none;
+                `;
                 
-                // 确保星星分布更均匀，避免聚集
-                const x = (Math.random() * 150 - 75); // -75% 到 +75%
-                const y = (Math.random() * 150 - 75);
-                star.style.left = `calc(50% + ${x}vw)`;
-                star.style.top = `calc(50% + ${y}vh)`;
-                
-                star.style.animationDelay = Math.random() * 3 + 's';
-                star.style.opacity = Math.random() * 0.4 + 0.1;
-                
-                // 背景彩色星星
-                if (Math.random() < 0.08) {
-                    const colorType = Math.random();
-                    if (colorType < 0.4) {
-                        star.classList.add('blue');
-                    } else if (colorType < 0.7) {
-                        star.classList.add('colored');
+                // 在圆形区域内随机生成星星
+                for (let i = 0; i < layer.count; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'particle';
+                    
+                    // 在圆形区域内随机分布 (使用极坐标)
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.sqrt(Math.random()) * layer.radius; // 平方根分布确保均匀
+                    
+                    const x = Math.cos(angle) * distance;
+                    const y = Math.sin(angle) * distance;
+                    
+                    star.style.cssText = `
+                        position: absolute;
+                        left: calc(50% + ${x}px);
+                        top: calc(50% + ${y}px);
+                        transform: translate(-50%, -50%);
+                    `;
+                    
+                    // 根据距离中心的远近设置星星属性
+                    const distanceRatio = distance / layer.radius;
+                    
+                    // 大小分配：中心区域更多大星星
+                    const sizeRand = Math.random();
+                    if (distanceRatio < 0.3) {
+                        // 内圈：更多大中型星星
+                        if (sizeRand < 0.4) star.classList.add('large');
+                        else if (sizeRand < 0.7) star.classList.add('medium');
+                        else star.classList.add('small');
+                    } else if (distanceRatio < 0.7) {
+                        // 中圈：平衡分布
+                        if (sizeRand < 0.2) star.classList.add('large');
+                        else if (sizeRand < 0.5) star.classList.add('medium');
+                        else star.classList.add('small');
                     } else {
-                        star.classList.add('gold');
+                        // 外圈：主要是小星星
+                        if (sizeRand < 0.1) star.classList.add('medium');
+                        else star.classList.add('small');
                     }
+                    
+                    // 颜色分配：内层更亮更彩色
+                    const colorRand = Math.random();
+                    if (layer.name === 'inner' && colorRand < 0.4) {
+                        if (colorRand < 0.15) star.classList.add('gold');
+                        else if (colorRand < 0.3) star.classList.add('blue');
+                        else star.classList.add('colored');
+                    } else if (layer.name === 'middle' && colorRand < 0.25) {
+                        if (colorRand < 0.1) star.classList.add('gold');
+                        else if (colorRand < 0.18) star.classList.add('blue');
+                        else star.classList.add('colored');
+                    } else if (layer.name === 'outer' && colorRand < 0.15) {
+                        if (colorRand < 0.05) star.classList.add('blue');
+                        else star.classList.add('colored');
+                    }
+                    
+                    // 透明度：越远越暗
+                    const baseOpacity = layer.name === 'inner' ? 0.8 : layer.name === 'middle' ? 0.6 : 0.4;
+                    const opacity = baseOpacity * (0.3 + Math.random() * 0.7) * (1 - distanceRatio * 0.3);
+                    star.style.opacity = Math.max(0.1, opacity);
+                    
+                    // 闪烁动画延迟
+                    star.style.animationDelay = Math.random() * 3 + 's';
+                    
+                    layerDiv.appendChild(star);
                 }
                 
-                galaxyContainer.appendChild(star);
+                galaxyContainer.appendChild(layerDiv);
+            });
+            
+            // 添加旋转动画样式（如果不存在）
+            if (!document.getElementById('galaxy-rotation-styles')) {
+                const style = document.createElement('style');
+                style.id = 'galaxy-rotation-styles';
+                style.textContent = `
+                    @keyframes rotate-clockwise {
+                        from { transform: translate(-50%, -50%) rotate(0deg); }
+                        to { transform: translate(-50%, -50%) rotate(360deg); }
+                    }
+                    
+                    @keyframes rotate-counter {
+                        from { transform: translate(-50%, -50%) rotate(0deg); }
+                        to { transform: translate(-50%, -50%) rotate(-360deg); }
+                    }
+                    
+                    .rotation-layer {
+                        will-change: transform;
+                    }
+                `;
+                document.head.appendChild(style);
             }
             
-            // 擴展銀河中心區域，但不完全遮擋螺旋臂
-            for (let i = 0; i < 60; i++) {
-                const centralStar = document.createElement('div');
-                centralStar.className = 'particle';
-                centralStar.style.position = 'absolute';
-                
-                const centerRadius = Math.random() * 80; // 擴展中心範圍到80px
-                const centerAngle = Math.random() * Math.PI * 2;
-                
-                const x = Math.cos(centerAngle) * centerRadius;
-                const y = Math.sin(centerAngle) * centerRadius;
-                
-                centralStar.style.left = `calc(50% + ${x}px)`;
-                centralStar.style.top = `calc(50% + ${y}px)`;
-                
-                // 中心區域星體更大更亮
-                const rand = Math.random();
-                if (rand < 0.4) {
-                    centralStar.classList.add('large');
-                } else if (rand < 0.7) {
-                    centralStar.classList.add('medium');
-                } else {
-                    centralStar.classList.add('small');
-                }
-                
-                // 中心區域金色星體更多
-                if (Math.random() < 0.5) {
-                    centralStar.classList.add('gold');
-                } else if (Math.random() < 0.3) {
-                    centralStar.classList.add('colored');
-                }
-                
-                centralStar.style.opacity = 0.7 + Math.random() * 0.3;
-                centralStar.style.animationDelay = Math.random() * 3 + 's';
-                
-                galaxyContainer.appendChild(centralStar);
-            }
-            
-            // 外圍環狀星體已移除
-            
-            console.log('大尺寸銀河系螺旋臂結構已生成 - 半徑達800px的壯麗銀河系，總計約600+個星體');
+            console.log('简化旋转星空效果创建完成 - 三层旋转，总计500个星体');
         }
         
         // App圖標點擊處理函數
@@ -12770,12 +12768,15 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             console.log('角色個性化歷史已清空');
         }
         
+        // 當DOM內容加載完成後立即顯示星空效果
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM內容已加載，創建銀河系背景效果...');
+            createGalaxyParticles();
+        });
+        
         // 啟動應用
         window.onload = function() {
             console.log('應用開始初始化...');
-            
-            // 創建銀河系背景效果
-            createGalaxyParticles();
             
             // 設置app圖標點擊事件
             const appIcon = document.getElementById('appIcon');
