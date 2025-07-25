@@ -4588,7 +4588,7 @@
         <div class="main-header">
             <div class="main-title">
                 <span>TheyChat</span>
-                <span class="main-title-count">(41)</span>
+                <span class="main-title-count">(95)</span>
             </div>
         </div>
         
@@ -5391,8 +5391,8 @@
                         avoidTopics: ['政治敏感', '現代政治', '爭議歷史'],
                         encourageTopics: ['古代歷史', '人物傳記', '史學方法', '文化傳承']
                     },
-                    members: ['simaqian', 'confucius', 'baiqi', 'hanxin'],
-                    maxMembers: 20,
+                    members: ['simaqian', 'confucius', 'baiqi', 'hanxin', 'xiangyu', 'liubang', 'qinshihuang', 'jingke', 'gaojianli', 'zhangliang', 'fanhui', 'fanzeng', 'yuji', 'taizidan', 'niezheng', 'lvhou', 'hanwudi', 'daji', 'zhouwuwang', 'shangzhouwang', 'baosi', 'zhouyouwang', 'zhouwenwang', 'wuzixu', 'qihuangong', 'jinwengong', 'goujian', 'fuchai', 'chuhuaiwang', 'liling', 'jiayi', 'zhangqian', 'suqin', 'zhangyi', 'zhaokuo', 'lianpo', 'lvbuwei', 'laoai', 'lisi', 'zhaogao', 'gongzifusu', 'weizifu', 'chenajiao', 'huhai'],
+                    maxMembers: 50,
                     isActive: true
                 },
                 'philosophy_group': {
@@ -5815,9 +5815,15 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 if (currentGroup) {
                     const groupTitle = document.querySelector('.wx-header-title');
                     if (groupTitle) {
-                        groupTitle.textContent = `${currentGroup.name} (${currentGroup.members.length})`;
+                        groupTitle.textContent = `${currentGroup.name}（${currentGroup.members.length}人）`;
                         console.log(`群組標題已設置為: ${groupTitle.textContent}`);
                     }
+                }
+                
+                // 如果當前在群組詳情頁面，更新詳情內容
+                const groupDetailsPage = document.getElementById('groupDetailsPage');
+                if (groupDetailsPage && groupDetailsPage.style.display === 'flex') {
+                    updateGroupDetailsContent();
                 }
                 
                 // 更新群組列表中的活躍狀態
@@ -6154,6 +6160,10 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 this.setupMainEvents();
                 this.updateBadges();
                 
+                // 初始化時設置當前標籤頁和正確的標題
+                this.currentTab = 'chatListTab';
+                this.updateMainHeader('chatListTab');
+                
                 // 朋友圈延迟加载 - 只有用户点击时才初始化
                 // momentsManager.init(); // 移除立即初始化
             }
@@ -6211,9 +6221,15 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 if (currentGroup) {
                     const groupTitle = document.querySelector('.wx-header-title');
                     if (groupTitle) {
-                        groupTitle.textContent = `${currentGroup.name} (${currentGroup.members.length})`;
+                        groupTitle.textContent = `${currentGroup.name}（${currentGroup.members.length}人）`;
                         console.log(`群組標題已設置為: ${groupTitle.textContent}`);
                     }
+                }
+                
+                // 如果當前在群組詳情頁面，更新詳情內容
+                const groupDetailsPage = document.getElementById('groupDetailsPage');
+                if (groupDetailsPage && groupDetailsPage.style.display === 'flex') {
+                    updateGroupDetailsContent();
                 }
                 
                 // 載入歷史聊天記錄
@@ -6330,7 +6346,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                         ${chat.avatar}
                     </div>
                     <div class="chat-info">
-                        <div class="chat-name">${chat.name}</div>
+                        <div class="chat-name">${chat.name}${chat.type === 'group' ? `（${CONFIG.groups[chat.id].members.length}人）` : ''}</div>
                         <div class="chat-preview">${chat.lastMessage}</div>
                     </div>
                     <div class="chat-meta">
@@ -6522,19 +6538,29 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             setupMainEvents() {
                 // 底部導航切換
                 const navItems = document.querySelectorAll('.nav-item');
-                navItems.forEach(item => {
+                
+                navItems.forEach((item, index) => {
+                    const targetTab = item.getAttribute('data-tab');
+                    
                     item.addEventListener('click', () => {
-                        const targetTab = item.getAttribute('data-tab');
                         this.switchTab(targetTab);
                     });
                 });
                 
-                // 初始化header状态
-                this.updateMainHeader('chatListTab');
+                // 返回主界面按鈕
+                const backToMainBtn = document.getElementById('backToMainBtn');
+                if (backToMainBtn) {
+                    backToMainBtn.addEventListener('click', () => {
+                        this.backToMain();
+                    });
+                }
             }
             
             // 切換標籤頁
             switchTab(targetTab) {
+                // 設置當前標籤頁
+                this.currentTab = targetTab;
+                
                 // 隱藏所有標籤頁
                 const tabs = ['chatListTab', 'contactsTab', 'discoverTab', 'profileTab'];
                 tabs.forEach(tabId => {
@@ -6565,8 +6591,9 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 const mainTitle = document.querySelector('.main-title');
                 
                 if (targetTab === 'profileTab') {
-                    // "我"页面隐藏header
-                    mainHeader.style.display = 'none';
+                    // "我"页面保持header高度，但隐藏文字
+                    mainHeader.style.display = 'flex';
+                    mainTitle.innerHTML = '';
                 } else {
                     // 其他页面显示header
                     mainHeader.style.display = 'flex';
@@ -6574,11 +6601,12 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     // 根据不同tab更新标题
                     switch(targetTab) {
                         case 'chatListTab':
-                            const unreadCount = this.getUnreadCount();
-                            mainTitle.innerHTML = `TheyChat <span class="main-title-count">(${unreadCount})</span>`;
+                            const totalContacts = this.getTotalContactsCount();
+                            mainTitle.innerHTML = `TheyChat <span class="main-title-count">(${totalContacts})</span>`;
                         break;
                         case 'contactsTab':
-                            mainTitle.innerHTML = '通訊錄';
+                            const totalContacts2 = this.getTotalContactsCount();
+                            mainTitle.innerHTML = `通訊錄（${totalContacts2}人）`;
                         break;
                         case 'discoverTab':
                             mainTitle.innerHTML = '發現';
@@ -6610,9 +6638,32 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 return 41;
             }
             
+            // 獲取通訊錄總角色數
+            getTotalContactsCount() {
+                const addedIds = new Set(); // 防止重複添加
+                let totalCount = 0;
+                
+                Object.values(CONFIG.groups).forEach(group => {
+                    group.members.forEach(id => {
+                        const char = characters[id];
+                        if (char && id !== 'user' && id !== 'system' && !addedIds.has(id)) {
+                            totalCount++;
+                            addedIds.add(id);
+                        }
+                    });
+                });
+                
+                return totalCount;
+            }
+            
             // 刷新聊天列表（用於發送消息後更新）
             refreshChatList() {
                 this.generateChatList();
+            }
+
+            // 刷新通訊錄（用於角色更新後重新生成）
+            refreshContacts() {
+                this.generateContacts();
             }
 
             // 生成通訊錄
@@ -6622,12 +6673,25 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 // 收集所有角色
                 const allCharacters = [];
+                const addedIds = new Set(); // 防止重複添加
                 Object.values(CONFIG.groups).forEach(group => {
                     group.members.forEach(id => {
                         const char = characters[id];
-                        if (char && id !== 'user' && id !== 'system') allCharacters.push(char);
+                        if (char && id !== 'user' && id !== 'system' && !addedIds.has(id)) {
+                            allCharacters.push(char);
+                            addedIds.add(id);
+                        }
                     });
                 });
+                
+                console.log('通訊錄生成 - 總角色數:', allCharacters.length);
+                console.log('通訊錄角色列表:', allCharacters.map(char => `${char.name} (${char.dynasty})`));
+                
+                // 更新通訊錄標題 - 移除currentTab檢查，讓updateMainHeader處理
+                // const mainTitle = document.querySelector('.main-title');
+                // if (mainTitle && this.currentTab === 'contactsTab') {
+                //     mainTitle.innerHTML = `通訊錄（${allCharacters.length}人）`;
+                // }
                 
                 // 按朝代分組
                 const charactersByDynasty = {};
@@ -6642,14 +6706,15 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 // 定義朝代排序順序
                 const dynastyOrder = [
                     '神話傳說',
-                    '春秋戰國',
-                    '漢代',
+                    '商朝',
+                    '西周',
+                    '春秋',
+                    '戰國',
+                    '秦漢',
+                    '西漢',
                     '三國兩晉南北朝',
-                    '五代十國',
                     '唐代',
                     '宋代',
-                    '元代',
-                    '明代',
                     '清代',
                     '現代',
                     '未分類'
@@ -6791,44 +6856,12 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 momentsManager.openMoments();
             }
             
-            // 切換標籤頁
-            switchTab(tabId) {
-                // 隱藏所有標籤內容
-                document.querySelectorAll('.main-content > div').forEach(tab => {
-                    tab.style.display = 'none';
-                });
-                
-                // 顯示選中的標籤
-                document.getElementById(tabId).style.display = 'block';
-                this.currentTab = tabId;
-                
-                // 更新導航欄狀態
-                document.querySelectorAll('.nav-item').forEach(nav => {
-                    nav.classList.remove('active');
-                });
-                document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-            }
+
             
             // 更新徽章
             updateBadges() {
                 document.getElementById('chatBadge').classList.add('show');
                 document.getElementById('discoverBadge').classList.add('show');
-            }
-            
-            // 設置主界面事件
-            setupMainEvents() {
-                // 底部導航切換
-                document.querySelectorAll('.nav-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const tabId = item.getAttribute('data-tab');
-                        this.switchTab(tabId);
-                    });
-                });
-                
-                // 返回主界面按鈕
-                document.getElementById('backToMainBtn').addEventListener('click', () => {
-                    this.backToMain();
-                });
             }
             
             // 返回主界面
@@ -7550,7 +7583,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "👨‍🏫",
                 description: "春秋時期思想家、教育家，儒家學派創始人。",
                 inGroup: true,
-                dynasty: "春秋戰國"
+                dynasty: "春秋"
             },
             quyuan: {
                 name: "屈原",
@@ -7558,7 +7591,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "🌊",
                 description: "戰國時期楚國詩人，字靈均，創立楚辭體，代表作《離騷》。",
                 inGroup: true,
-                dynasty: "春秋戰國"
+                dynasty: "戰國"
             },
             laozi: {
                 name: "老子",
@@ -7566,7 +7599,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "🧙‍♂️",
                 description: "春秋時期哲學家，道家學派創始人，著《道德經》。",
                 inGroup: true,
-                dynasty: "春秋戰國"
+                dynasty: "春秋"
             },
             zhuangzi: {
                 name: "莊子",
@@ -7574,7 +7607,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "🦋", 
                 description: "戰國時期哲學家，道家學派代表人物，著《莊子》。",
                 inGroup: true,
-                dynasty: "春秋戰國"
+                dynasty: "戰國"
             },
             mencius: {
                 name: "孟子",
@@ -7582,7 +7615,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "📖",
                 description: "戰國時期思想家，儒家學派代表人物，被稱為「亞聖」。",
                 inGroup: true,
-                dynasty: "春秋戰國"
+                dynasty: "戰國"
             },
             huizi: {
                 name: "惠子",
@@ -7590,7 +7623,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "🤔",
                 description: "戰國時期哲學家，名家學派代表人物，莊子的好友。",
                 inGroup: true,
-                dynasty: "春秋戰國"
+                dynasty: "戰國"
             },
             baiqi: {
                 name: "白起",
@@ -7598,7 +7631,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "⚔️",
                 description: "戰國時期秦國名將，被稱為「戰神」，軍事才能卓越。",
                 inGroup: true,
-                dynasty: "春秋戰國"
+                dynasty: "戰國"
             },
 
             // 三國兩晉南北朝
@@ -7658,7 +7691,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "📚",
                 description: "西漢史學家，著《史記》，被譽為「史聖」。",
                 inGroup: true,
-                dynasty: "漢代"
+                dynasty: "西漢"
             },
             hanxin: {
                 name: "韓信",
@@ -7666,7 +7699,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 avatar: "🏹",
                 description: "西漢初年軍事家，被劉邦稱為「兵仙」，助漢建國。",
                 inGroup: true,
-                dynasty: "漢代"
+                dynasty: "秦漢"
             },
 
             // 唐代
@@ -7947,6 +7980,328 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 description: "賈府嫡孫，居怡紅院，性情叛逆，厭惡功名利祿，崇尚真情，與黛玉相知相惜。",
                 inGroup: true,
                 dynasty: "清代"
+            },
+
+            // 史記群新增歷史人物
+            xiangyu: {
+                name: "項羽",
+                nickname: "西楚霸王",
+                avatar: "⚔️",
+                description: "西楚霸王，秦末農民起義領袖，力拔山兮氣蓋世，與劉邦爭奪天下。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            liubang: {
+                name: "劉邦",
+                nickname: "漢高祖",
+                avatar: "👑",
+                description: "漢高祖，西漢開國皇帝，從亭長起家，最終建立大漢王朝。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            qinshihuang: {
+                name: "秦始皇",
+                nickname: "始皇帝",
+                avatar: "🏛️",
+                description: "中國歷史上第一個皇帝，統一六國，建立中央集權制度。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            jingke: {
+                name: "荊軻",
+                nickname: "刺客",
+                avatar: "🗡️",
+                description: "戰國時期著名刺客，為燕太子丹刺殺秦王，風蕭蕭兮易水寒。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            gaojianli: {
+                name: "高漸離",
+                nickname: "擊筑者",
+                avatar: "🎵",
+                description: "荊軻好友，善擊筑，荊軻刺秦時為其擊筑送行。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            zhangliang: {
+                name: "張良",
+                nickname: "留侯",
+                avatar: "📚",
+                description: "漢初三傑之一，劉邦重要謀士，運籌帷幄之中，決勝千里之外。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            fanhui: {
+                name: "樊噲",
+                nickname: "舞陽侯",
+                avatar: "🛡️",
+                description: "劉邦重要將領，鴻門宴上保護劉邦，勇猛善戰。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            fanzeng: {
+                name: "范增",
+                nickname: "亞父",
+                avatar: "🧙‍♂️",
+                description: "項羽重要謀士，被尊為亞父，多次勸項羽殺劉邦未果。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            yuji: {
+                name: "虞姬",
+                nickname: "虞美人",
+                avatar: "🌸",
+                description: "項羽愛姬，垓下之戰中自刎殉情，霸王別姬的悲劇主角。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            taizidan: {
+                name: "太子丹",
+                nickname: "燕太子",
+                avatar: "👨‍💼",
+                description: "燕國太子，派荊軻刺殺秦王，後被燕王喜所殺。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            niezheng: {
+                name: "聶政",
+                nickname: "刺客",
+                avatar: "⚔️",
+                description: "戰國時期著名刺客，為嚴仲子刺殺韓相俠累。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            lvhou: {
+                name: "呂后",
+                nickname: "呂太后",
+                avatar: "👸",
+                description: "漢高祖劉邦皇后，中國歷史上第一位臨朝稱制的女性。",
+                inGroup: true,
+                dynasty: "西漢"
+            },
+            hanwudi: {
+                name: "漢武帝",
+                nickname: "武帝",
+                avatar: "🏹",
+                description: "西漢第七位皇帝，開創漢武盛世，北擊匈奴，開拓疆土。",
+                inGroup: true,
+                dynasty: "西漢"
+            },
+            daji: {
+                name: "妲己",
+                nickname: "妖妃",
+                avatar: "🦊",
+                description: "商紂王寵妃，傳說為九尾狐化身，導致商朝滅亡。",
+                inGroup: true,
+                dynasty: "商朝"
+            },
+            zhouwuwang: {
+                name: "周武王",
+                nickname: "武王",
+                avatar: "⚔️",
+                description: "周朝開國君主，率軍滅商，建立周朝。",
+                inGroup: true,
+                dynasty: "西周"
+            },
+            shangzhouwang: {
+                name: "商紂王",
+                nickname: "紂王",
+                avatar: "👑",
+                description: "商朝末代君主，荒淫無道，被周武王推翻。",
+                inGroup: true,
+                dynasty: "商朝"
+            },
+            baosi: {
+                name: "褒姒",
+                nickname: "褒姒",
+                avatar: "🌹",
+                description: "周幽王寵妃，烽火戲諸侯的主角，導致西周滅亡。",
+                inGroup: true,
+                dynasty: "西周"
+            },
+            zhouyouwang: {
+                name: "周幽王",
+                nickname: "幽王",
+                avatar: "👑",
+                description: "西周末代君主，寵愛褒姒，烽火戲諸侯，導致西周滅亡。",
+                inGroup: true,
+                dynasty: "西周"
+            },
+            zhouwenwang: {
+                name: "周文王",
+                nickname: "文王",
+                avatar: "📖",
+                description: "周朝奠基者，被囚羑里而演周易，為武王滅商奠定基礎。",
+                inGroup: true,
+                dynasty: "西周"
+            },
+            wuzixu: {
+                name: "伍子胥",
+                nickname: "伍員",
+                avatar: "🗡️",
+                description: "春秋時期吳國重臣，為父兄報仇，後被吳王夫差賜死。",
+                inGroup: true,
+                dynasty: "春秋"
+            },
+            qihuangong: {
+                name: "齊桓公",
+                nickname: "桓公",
+                avatar: "👑",
+                description: "春秋五霸之首，任用管仲，稱霸諸侯。",
+                inGroup: true,
+                dynasty: "春秋"
+            },
+            jinwengong: {
+                name: "晉文公",
+                nickname: "文公",
+                avatar: "⚔️",
+                description: "春秋五霸之一，重耳流亡十九年後回國稱霸。",
+                inGroup: true,
+                dynasty: "春秋"
+            },
+            goujian: {
+                name: "勾踐",
+                nickname: "越王",
+                avatar: "🏹",
+                description: "越國君主，臥薪嘗膽，最終滅吳稱霸。",
+                inGroup: true,
+                dynasty: "春秋"
+            },
+            fuchai: {
+                name: "夫差",
+                nickname: "吳王",
+                avatar: "👑",
+                description: "吳國君主，打敗越國後驕傲自滿，最終被勾踐滅國。",
+                inGroup: true,
+                dynasty: "春秋"
+            },
+            chuhuaiwang: {
+                name: "楚懷王",
+                nickname: "懷王",
+                avatar: "👑",
+                description: "楚國君主，被秦國欺騙，客死秦國。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            liling: {
+                name: "李陵",
+                nickname: "李將軍",
+                avatar: "🏹",
+                description: "漢朝名將李廣之孫，投降匈奴，司馬遷為其辯護而受宮刑。",
+                inGroup: true,
+                dynasty: "西漢"
+            },
+            jiayi: {
+                name: "賈誼",
+                nickname: "賈生",
+                avatar: "📝",
+                description: "西漢著名文學家、政論家，著有《過秦論》等。",
+                inGroup: true,
+                dynasty: "西漢"
+            },
+            zhangqian: {
+                name: "張騫",
+                nickname: "博望侯",
+                avatar: "🐪",
+                description: "西漢外交家，開通絲綢之路，出使西域。",
+                inGroup: true,
+                dynasty: "西漢"
+            },
+            suqin: {
+                name: "蘇秦",
+                nickname: "合縱家",
+                avatar: "🤝",
+                description: "戰國時期縱橫家，主張合縱抗秦，佩六國相印。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            zhangyi: {
+                name: "張儀",
+                nickname: "連橫家",
+                avatar: "🔗",
+                description: "戰國時期縱橫家，主張連橫事秦，與蘇秦齊名。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            zhaokuo: {
+                name: "趙括",
+                nickname: "紙上談兵",
+                avatar: "📜",
+                description: "趙國名將趙奢之子，長平之戰中紙上談兵，導致趙軍大敗。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            lianpo: {
+                name: "廉頗",
+                nickname: "老將",
+                avatar: "🛡️",
+                description: "趙國名將，與藺相如將相和，後因趙括而敗。",
+                inGroup: true,
+                dynasty: "戰國"
+            },
+            lvbuwei: {
+                name: "呂不韋",
+                nickname: "仲父",
+                avatar: "💰",
+                description: "秦國丞相，商人出身，輔佐嬴政，著有《呂氏春秋》。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            laoai: {
+                name: "嫪毐",
+                nickname: "假父",
+                avatar: "🎭",
+                description: "秦國宦官，與太后私通，後發動叛亂被殺。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            lisi: {
+                name: "李斯",
+                nickname: "丞相",
+                avatar: "📜",
+                description: "秦朝丞相，法家代表人物，輔佐秦始皇統一六國。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            zhaogao: {
+                name: "趙高",
+                nickname: "中車府令",
+                avatar: "🐍",
+                description: "秦朝宦官，指鹿為馬，導致秦朝滅亡。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            gongzifusu: {
+                name: "公子扶蘇",
+                nickname: "扶蘇",
+                avatar: "👨‍💼",
+                description: "秦始皇長子，仁義寬厚，被趙高陷害自殺。",
+                inGroup: true,
+                dynasty: "秦漢"
+            },
+            weizifu: {
+                name: "衛子夫",
+                nickname: "衛皇后",
+                avatar: "👸",
+                description: "漢武帝皇后，衛青之姐，霍去病之姨。",
+                inGroup: true,
+                dynasty: "西漢"
+            },
+            chenajiao: {
+                name: "陳阿嬌",
+                nickname: "陳皇后",
+                avatar: "👸",
+                description: "漢武帝第一任皇后，金屋藏嬌的主角。",
+                inGroup: true,
+                dynasty: "西漢"
+            },
+            huhai: {
+                name: "胡亥",
+                nickname: "秦二世",
+                avatar: "👑",
+                description: "秦朝第二位皇帝，昏庸無能，被趙高控制，導致秦朝滅亡。",
+                inGroup: true,
+                dynasty: "秦漢"
             }
         };
 
@@ -9749,6 +10104,168 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 'change': [
                     // 嫦娥的所有別名（包含繁體簡體）
                     '嫦娥', '月宮仙子', '月宫仙子', '廣寒仙子', '广寒仙子', '月仙子', '嫦娥仙子', '月宮', '月宫'
+                ],
+
+                // 史記群新增歷史人物別名映射
+                'xiangyu': [
+                    // 項羽的所有別名（包含繁體簡體）
+                    '項羽', '项羽', '西楚霸王', '霸王', '項王', '项王', '楚霸王', '項將軍', '项将军'
+                ],
+                'liubang': [
+                    // 劉邦的所有別名（包含繁體簡體）
+                    '劉邦', '刘邦', '漢高祖', '汉高祖', '高祖', '劉季', '刘季', '沛公', '漢王', '汉王'
+                ],
+                'qinshihuang': [
+                    // 秦始皇的所有別名（包含繁體簡體）
+                    '秦始皇', '始皇帝', '嬴政', '秦王', '秦始皇帝', '政', '秦王政'
+                ],
+                'jingke': [
+                    // 荊軻的所有別名（包含繁體簡體）
+                    '荊軻', '荆轲', '刺客', '荊卿', '荆卿', '荊先生', '荆先生'
+                ],
+                'gaojianli': [
+                    // 高漸離的所有別名（包含繁體簡體）
+                    '高漸離', '高渐离', '擊筑者', '击筑者', '高先生', '漸離', '渐离'
+                ],
+                'zhangliang': [
+                    // 張良的所有別名（包含繁體簡體）
+                    '張良', '张良', '留侯', '子房', '張子房', '张子房', '張先生', '张先生'
+                ],
+                'fanhui': [
+                    // 樊噲的所有別名（包含繁體簡體）
+                    '樊噲', '樊哙', '舞陽侯', '舞阳侯', '樊將軍', '樊将军', '樊先生'
+                ],
+                'fanzeng': [
+                    // 范增的所有別名（包含繁體簡體）
+                    '范增', '亞父', '亚父', '范先生', '增', '范亞父', '范亚父'
+                ],
+                'yuji': [
+                    // 虞姬的所有別名（包含繁體簡體）
+                    '虞姬', '虞美人', '美人', '虞', '虞姬夫人'
+                ],
+                'taizidan': [
+                    // 太子丹的所有別名（包含繁體簡體）
+                    '太子丹', '燕太子', '燕太子丹', '丹', '太子', '燕丹'
+                ],
+                'niezheng': [
+                    // 聶政的所有別名（包含繁體簡體）
+                    '聶政', '聂政', '刺客', '聶先生', '聂先生', '政'
+                ],
+                'lvhou': [
+                    // 呂后的所有別名（包含繁體簡體）
+                    '呂后', '吕后', '呂太后', '吕太后', '呂雉', '吕雉', '太后', '呂皇后', '吕皇后'
+                ],
+                'hanwudi': [
+                    // 漢武帝的所有別名（包含繁體簡體）
+                    '漢武帝', '汉武帝', '武帝', '劉徹', '刘彻', '漢武', '汉武', '徹', '彻'
+                ],
+                'daji': [
+                    // 妲己的所有別名（包含繁體簡體）
+                    '妲己', '妖妃', '妲己娘娘', '妲己夫人', '妲'
+                ],
+                'zhouwuwang': [
+                    // 周武王的所有別名（包含繁體簡體）
+                    '周武王', '武王', '姬發', '姬发', '武', '發', '发'
+                ],
+                'shangzhouwang': [
+                    // 商紂王的所有別名（包含繁體簡體）
+                    '商紂王', '商纣王', '紂王', '纣王', '帝辛', '辛', '紂', '纣'
+                ],
+                'baosi': [
+                    // 褒姒的所有別名（包含繁體簡體）
+                    '褒姒', '褒姒', '褒姒娘娘', '褒姒夫人', '姒'
+                ],
+                'zhouwenwang': [
+                    // 周文王的所有別名（包含繁體簡體）
+                    '周文王', '文王', '姬昌', '昌', '文', '西伯', '西伯昌'
+                ],
+                'zhouyouwang': [
+                    // 周幽王的所有別名（包含繁體簡體）
+                    '周幽王', '幽王', '姬宮湦', '宮湦', '宮', '湦', '幽', '周幽'
+                ],
+                'wuzixu': [
+                    // 伍子胥的所有別名（包含繁體簡體）
+                    '伍子胥', '伍员', '伍員', '子胥', '胥', '伍先生', '伍將軍', '伍将军'
+                ],
+                'qihuangong': [
+                    // 齊桓公的所有別名（包含繁體簡體）
+                    '齊桓公', '齐桓公', '桓公', '小白', '齊公', '齐公', '桓'
+                ],
+                'jinwengong': [
+                    // 晉文公的所有別名（包含繁體簡體）
+                    '晉文公', '晋文公', '文公', '重耳', '晉公', '晋公', '文'
+                ],
+                'goujian': [
+                    // 勾踐的所有別名（包含繁體簡體）
+                    '勾踐', '勾践', '越王', '勾踐王', '勾践王', '踐', '践'
+                ],
+                'fuchai': [
+                    // 夫差的所有別名（包含繁體簡體）
+                    '夫差', '吳王', '吴王', '夫差王', '差', '吳王夫差', '吴王夫差'
+                ],
+                'chuhuaiwang': [
+                    // 楚懷王的所有別名（包含繁體簡體）
+                    '楚懷王', '楚怀王', '懷王', '怀王', '熊槐', '槐', '楚王'
+                ],
+                'liling': [
+                    // 李陵的所有別名（包含繁體簡體）
+                    '李陵', '李將軍', '李将军', '陵', '李陵將軍', '李陵将军'
+                ],
+                'jiayi': [
+                    // 賈誼的所有別名（包含繁體簡體）
+                    '賈誼', '贾谊', '賈生', '贾生', '誼', '谊', '賈先生', '贾先生'
+                ],
+                'zhangqian': [
+                    // 張騫的所有別名（包含繁體簡體）
+                    '張騫', '张骞', '博望侯', '騫', '骞', '張先生', '张先生'
+                ],
+                'suqin': [
+                    // 蘇秦的所有別名（包含繁體簡體）
+                    '蘇秦', '苏秦', '合縱家', '合纵家', '蘇先生', '苏先生', '秦'
+                ],
+                'zhangyi': [
+                    // 張儀的所有別名（包含繁體簡體）
+                    '張儀', '张仪', '連橫家', '连横家', '張先生', '张先生', '儀', '仪'
+                ],
+                'zhaokuo': [
+                    // 趙括的所有別名（包含繁體簡體）
+                    '趙括', '赵括', '紙上談兵', '纸上谈兵', '括', '趙先生', '赵先生'
+                ],
+                'lianpo': [
+                    // 廉頗的所有別名（包含繁體簡體）
+                    '廉頗', '廉颇', '老將', '老将', '頗', '颇', '廉將軍', '廉将军'
+                ],
+                'lvbuwei': [
+                    // 呂不韋的所有別名（包含繁體簡體）
+                    '呂不韋', '吕不韦', '仲父', '呂相', '吕相', '不韋', '不韦', '呂先生', '吕先生'
+                ],
+                'laoai': [
+                    // 嫪毐的所有別名（包含繁體簡體）
+                    '嫪毐', '嫪毐', '假父', '嫪', '毐', '嫪先生'
+                ],
+                'lisi': [
+                    // 李斯的所有別名（包含繁體簡體）
+                    '李斯', '丞相', '斯', '李丞相', '李先生', '斯先生'
+                ],
+                'zhaogao': [
+                    // 趙高的所有別名（包含繁體簡體）
+                    '趙高', '赵高', '中車府令', '中车府令', '高', '趙先生', '赵先生'
+                ],
+                'gongzifusu': [
+                    // 公子扶蘇的所有別名（包含繁體簡體）
+                    '公子扶蘇', '公子扶苏', '扶蘇', '扶苏', '扶蘇公子', '扶苏公子', '蘇', '苏'
+                ],
+                'weizifu': [
+                    // 衛子夫的所有別名（包含繁體簡體）
+                    '衛子夫', '卫子夫', '衛皇后', '卫皇后', '子夫', '衛夫人', '卫夫人'
+                ],
+                'chenajiao': [
+                    // 陳阿嬌的所有別名（包含繁體簡體）
+                    '陳阿嬌', '陈阿娇', '陳皇后', '陈皇后', '阿嬌', '阿娇', '嬌', '娇'
+                ],
+                'huhai': [
+                    // 胡亥的所有別名（包含繁體簡體）
+                    '胡亥', '秦二世', '二世', '亥', '秦二世皇帝', '二世皇帝'
                 ]
             };
             
@@ -10580,11 +11097,12 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             
             console.log(`更新群組詳情: ${currentGroup.name}`);
             
-            // 更新群組名稱
-            const groupNameElement = document.querySelector('.detail-item-value:first-child');
+            // 更新群組名稱 - 使用更精確的選擇器
+            const groupNameElement = document.querySelector('.detail-item:first-child .detail-item-value');
             if (groupNameElement) {
+                const memberCount = currentGroup.members.length;
                 groupNameElement.innerHTML = `
-                    ${currentGroup.name}
+                    ${currentGroup.name}（${memberCount}人）
                     <span class="detail-arrow">›</span>
                 `;
             }
