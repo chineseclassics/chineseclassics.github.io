@@ -86,14 +86,14 @@
         
         /* 新增成員資料頁面樣式 */
         .profile-nav-bar {
-            height: 88px; /* 充足header高度：32px頂部 + 46px按鈕懸停空間 + 10px底部間距 */
+            height: 64px; /* 与主界面保持一致 */
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 36px 15px 10px 15px; /* 適度增加頂部間距，減少底部間距以平衡 */
+            padding: 0 15px; /* 移除顶部padding，确保按钮垂直居中 */
             background-color: var(--wx-header-bg);
             position: relative;
-            min-height: 88px; /* 確保最小高度 */
+            min-height: 64px; /* 确保最小高度 */
         }
         
         /* 統一後退按鈕樣式 */
@@ -442,6 +442,10 @@
             animation: twinkle 3s ease-in-out infinite;
         }
         
+        .particle.enhanced-twinkle {
+            animation: twinkle-enhanced 4s ease-in-out infinite;
+        }
+        
         /* 不同大小的粒子 */
         .particle.small {
             width: 1px;
@@ -509,8 +513,25 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 20; /* 提高z-index確保在所有銀河系元素之上 */
+            z-index: 100; /* 大幅提高z-index確保在最上層 */
             animation: appIconFloat 8s ease-in-out infinite;
+        }
+        
+        .app-icon-container::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            right: -40px;
+            bottom: -40px;
+            background: 
+                radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, rgba(138, 43, 226, 0.2) 50%, transparent 80%),
+                radial-gradient(circle, rgba(255, 215, 0, 0.25) 0%, transparent 60%);
+            border-radius: 50%;
+            animation: outerGlow 4s ease-in-out infinite alternate;
+            pointer-events: none;
+            filter: blur(4px);
+            z-index: -1;
         }
         
         .app-icon {
@@ -526,6 +547,7 @@
             box-shadow: 
                 0 8px 32px rgba(102, 126, 234, 0.4),
                 0 4px 16px rgba(138, 43, 226, 0.3),
+                0 0 20px rgba(255, 215, 0, 0.3),
                 inset 0 2px 4px rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
             position: relative;
@@ -548,6 +570,7 @@
             box-shadow: 
                 0 12px 40px rgba(102, 126, 234, 0.5),
                 0 6px 20px rgba(138, 43, 226, 0.4),
+                0 0 30px rgba(255, 215, 0, 0.5),
                 inset 0 2px 4px rgba(255, 255, 255, 0.3);
             }
             
@@ -577,14 +600,18 @@
         
         .app-icon-glow {
             position: absolute;
-            top: -20px;
-            left: -20px;
-            right: -20px;
-            bottom: -20px;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            top: -30px;
+            left: -30px;
+            right: -30px;
+            bottom: -30px;
+            background: 
+                radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, rgba(102, 126, 234, 0.5) 30%, rgba(138, 43, 226, 0.3) 60%, transparent 80%),
+                radial-gradient(circle, rgba(255, 215, 0, 0.6) 0%, rgba(255, 140, 0, 0.3) 40%, transparent 70%);
             border-radius: 50%;
-            animation: iconGlow 4s ease-in-out infinite alternate;
+            animation: iconGlow 3s ease-in-out infinite alternate;
             pointer-events: none;
+            filter: blur(2px);
+            z-index: 1;
             }
             
         /* App圖標浮動動畫 */
@@ -606,12 +633,38 @@
         /* 圖標光暈動畫 */
         @keyframes iconGlow {
             0% {
-                opacity: 0.5;
-                transform: scale(1);
+                opacity: 0.4;
+                transform: scale(0.9);
+                filter: blur(2px) brightness(0.8);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+                filter: blur(3px) brightness(1.2);
             }
             100% {
-                opacity: 0.8;
+                opacity: 0.6;
+                transform: scale(1.15);
+                filter: blur(2px) brightness(1);
+            }
+        }
+        
+        /* 外層光暈動畫 */
+        @keyframes outerGlow {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.8);
+                filter: blur(4px) brightness(0.7);
+            }
+            50% {
+                opacity: 0.6;
                 transform: scale(1.1);
+                filter: blur(6px) brightness(1.3);
+            }
+            100% {
+                opacity: 0.4;
+                transform: scale(1.2);
+                filter: blur(4px) brightness(1);
             }
         }
         
@@ -684,12 +737,43 @@
         
         @keyframes twinkle {
             0%, 100% {
-                opacity: 0.3;
-                transform: scale(0.8);
+                opacity: 0.2;
+                transform: scale(0.7);
+            }
+            25% {
+                opacity: 0.8;
+                transform: scale(1.1);
             }
             50% {
                 opacity: 1;
+                transform: scale(1.4);
+            }
+            75% {
+                opacity: 0.6;
+                transform: scale(1.0);
+            }
+        }
+        
+        @keyframes twinkle-enhanced {
+            0%, 100% {
+                opacity: 0.1;
+                transform: scale(0.6);
+            }
+            20% {
+                opacity: 0.9;
                 transform: scale(1.2);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.6);
+            }
+            60% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+            80% {
+                opacity: 0.4;
+                transform: scale(0.9);
             }
         }
         
@@ -722,7 +806,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 15px; /* 移除顶部多余空间 */
+            padding: 0 15px; /* 移除顶部padding，确保按钮垂直居中 */
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             position: relative;
             z-index: 50;
@@ -1053,7 +1137,7 @@
             border-top: 1px solid rgba(0, 0, 0, 0.1);
             display: flex;
             align-items: center;
-            padding: 0 8px 17px;
+            padding: 17px 8px;
             flex-shrink: 0; /* 防止輸入框被壓縮 */
             box-sizing: border-box;
             /* 移動端優化 */
@@ -1521,32 +1605,35 @@
             z-index: 100;
             display: none;
             flex-direction: column;
-            overflow: auto;
+            overflow: hidden; /* 改为hidden，让内容区域单独滚动 */
             box-sizing: border-box;
         }
         
         .detail-header {
             background-color: var(--wx-header-bg);
-            height: 64px;
+            height: 64px; /* 与主界面保持一致 */
             display: flex;
             align-items: center;
-            padding: 0 15px; /* 移除顶部多余空间 */
+            justify-content: space-between;
+            padding: 0 15px; /* 与主界面保持一致 */
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: relative;
+            flex-shrink: 0; /* 防止header被压缩 */
+            z-index: 10; /* 确保header在最上层 */
         }
         
         .detail-back {
             width: 44px;
             height: 44px;
-            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0;
-            margin-left: -4px;
+            font-size: 20px;
+            color: #000;
             cursor: pointer;
             border-radius: 50%;
             transition: all 0.2s ease;
-            color: #000;
+            margin-left: -4px;
             font-weight: normal;
         }
         
@@ -1560,11 +1647,44 @@
             transform: scale(0.95);
         }
         
+        .detail-placeholder {
+            width: 44px;
+            height: 44px;
+        }
+        
         .detail-title {
-            flex: 1;
-            text-align: center;
-            font-size: 17px;
-            font-weight: normal;
+            /* 標題居中定位 */
+            position: absolute !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            
+            /* 清除干擾樣式 */
+            display: block !important;
+            visibility: visible !important;
+            background: none !important;
+            background-color: transparent !important;
+            background-image: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            outline: none !important;
+            pointer-events: none !important;
+            white-space: nowrap !important;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif !important;
+            
+            /* 文字樣式 */
+            font-size: 17px !important;
+            font-weight: 500 !important;
+            color: #000 !important;
+            text-align: center !important;
+        }
+        
+        .group-details-content {
+            flex: 1; /* 占据剩余空间 */
+            overflow-y: auto; /* 允许垂直滚动 */
+            min-height: 0; /* 允许flex子元素收缩 */
         }
         
         .group-members-grid {
@@ -1651,7 +1771,7 @@
             z-index: 150;
             display: none;
             flex-direction: column;
-            overflow: auto;
+            overflow: hidden; /* 改为hidden，让内容区域单独滚动 */
             color: #333;
             box-sizing: border-box;
         }
@@ -1675,6 +1795,12 @@
         
         .private-chat-details .detail-title {
             color: #000;
+        }
+        
+        .private-chat-details-content {
+            flex: 1; /* 占据剩余空间 */
+            overflow-y: auto; /* 允许垂直滚动 */
+            min-height: 0; /* 允许flex子元素收缩 */
         }
         
         .private-chat-user-section {
@@ -1947,6 +2073,85 @@
             to { opacity: 1; }
         }
         
+        /* 容器呼吸動畫 - 增強版 */
+        @keyframes containerGlowBreathe {
+            0%, 100% {
+                box-shadow: 
+                    0 0 15px rgba(138, 43, 226, 0.5),
+                    0 0 25px rgba(102, 126, 234, 0.4),
+                    0 0 40px rgba(75, 0, 130, 0.3),
+                    0 0 60px rgba(147, 112, 219, 0.25),
+                    0 0 80px rgba(106, 90, 205, 0.2),
+                    0 0 100px rgba(72, 61, 139, 0.15),
+                    0 0 120px rgba(128, 0, 128, 0.12),
+                    0 0 140px rgba(75, 0, 130, 0.08),
+                    0 0 160px rgba(138, 43, 226, 0.05),
+                    0 0 20px rgba(255, 215, 0, 0.3),
+                    0 0 40px rgba(255, 140, 0, 0.2);
+            }
+            25% {
+                box-shadow: 
+                    0 0 20px rgba(138, 43, 226, 0.6),
+                    0 0 35px rgba(102, 126, 234, 0.5),
+                    0 0 50px rgba(75, 0, 130, 0.4),
+                    0 0 70px rgba(147, 112, 219, 0.3),
+                    0 0 90px rgba(106, 90, 205, 0.25),
+                    0 0 110px rgba(72, 61, 139, 0.2),
+                    0 0 130px rgba(128, 0, 128, 0.15),
+                    0 0 150px rgba(75, 0, 130, 0.1),
+                    0 0 170px rgba(138, 43, 226, 0.06),
+                    0 0 30px rgba(255, 215, 0, 0.4),
+                    0 0 50px rgba(255, 140, 0, 0.3);
+            }
+            50% {
+                box-shadow: 
+                    0 0 25px rgba(138, 43, 226, 0.7),
+                    0 0 40px rgba(102, 126, 234, 0.6),
+                    0 0 60px rgba(75, 0, 130, 0.5),
+                    0 0 80px rgba(147, 112, 219, 0.4),
+                    0 0 100px rgba(106, 90, 205, 0.3),
+                    0 0 120px rgba(72, 61, 139, 0.25),
+                    0 0 140px rgba(128, 0, 128, 0.2),
+                    0 0 160px rgba(75, 0, 130, 0.15),
+                    0 0 180px rgba(138, 43, 226, 0.1),
+                    0 0 40px rgba(255, 215, 0, 0.5),
+                    0 0 60px rgba(255, 140, 0, 0.4);
+            }
+            75% {
+                box-shadow: 
+                    0 0 20px rgba(138, 43, 226, 0.6),
+                    0 0 35px rgba(102, 126, 234, 0.5),
+                    0 0 50px rgba(75, 0, 130, 0.4),
+                    0 0 70px rgba(147, 112, 219, 0.3),
+                    0 0 90px rgba(106, 90, 205, 0.25),
+                    0 0 110px rgba(72, 61, 139, 0.2),
+                    0 0 130px rgba(128, 0, 128, 0.15),
+                    0 0 150px rgba(75, 0, 130, 0.1),
+                    0 0 170px rgba(138, 43, 226, 0.06),
+                    0 0 30px rgba(255, 215, 0, 0.4),
+                    0 0 50px rgba(255, 140, 0, 0.3);
+            }
+        }
+        
+        /* 外層容器發光動畫 */
+        @keyframes outerContainerGlow {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.95);
+                filter: blur(8px) brightness(0.8);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.05);
+                filter: blur(10px) brightness(1.2);
+            }
+            100% {
+                opacity: 0.4;
+                transform: scale(1.1);
+                filter: blur(8px) brightness(1);
+            }
+        }
+        
         .wx-fade-in {
             animation: fadeIn 0.2s ease-out forwards;
         }
@@ -1961,8 +2166,20 @@
             transform: translate(-50%, -50%);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(138, 43, 226, 0.3), 0 0 40px rgba(75, 0, 130, 0.2);
+            box-shadow: 
+                0 0 15px rgba(138, 43, 226, 0.5),
+                0 0 25px rgba(102, 126, 234, 0.4),
+                0 0 40px rgba(75, 0, 130, 0.3),
+                0 0 60px rgba(147, 112, 219, 0.25),
+                0 0 80px rgba(106, 90, 205, 0.2),
+                0 0 100px rgba(72, 61, 139, 0.15),
+                0 0 120px rgba(128, 0, 128, 0.12),
+                0 0 140px rgba(75, 0, 130, 0.08),
+                0 0 160px rgba(138, 43, 226, 0.05),
+                0 0 20px rgba(255, 215, 0, 0.3),
+                0 0 40px rgba(255, 140, 0, 0.2);
             box-sizing: border-box;
+            animation: containerGlowBreathe 4s ease-in-out infinite;
             z-index: 5;
             opacity: 0; /* 初始不可见 */
             visibility: hidden; /* 初始隐藏 */
@@ -1973,6 +2190,24 @@
         .app-universal-container.show {
             opacity: 1;
             visibility: visible;
+        }
+        
+        /* 主界面外層發光效果 */
+        .app-universal-container::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: 
+                radial-gradient(ellipse at center, rgba(138, 43, 226, 0.2) 0%, rgba(102, 126, 234, 0.15) 30%, transparent 70%),
+                radial-gradient(ellipse at center, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.1) 40%, transparent 80%);
+            border-radius: 20px;
+            animation: outerContainerGlow 5s ease-in-out infinite alternate;
+            pointer-events: none;
+            filter: blur(8px);
+            z-index: -1;
         }
         
         /* 登入頁面樣式 */
@@ -2437,9 +2672,9 @@
             
             .main-header {
                 height: 56px;
-                padding: 8px 0;
+                padding: 0;
                 /* 适配安全区域 */
-                padding-top: max(8px, env(safe-area-inset-top));
+                padding-top: max(0px, env(safe-area-inset-top));
             }
             
             .main-title {
@@ -2748,16 +2983,37 @@
                  padding: 0 12px;
                  padding-top: max(0px, env(safe-area-inset-top));
                  height: calc(56px + max(0px, env(safe-area-inset-top)));
+                 display: flex;
+                 align-items: center;
+                 justify-content: space-between;
+                 position: relative;
              }
              
-             .detail-back-btn {
+             .detail-back {
                  width: 40px;
                  height: 40px;
                  font-size: 18px;
              }
              
+             .detail-placeholder {
+                 width: 40px;
+                 height: 40px;
+             }
+             
              .detail-title {
-                 font-size: 16px;
+                 font-size: 16px !important;
+             }
+             
+             .group-details-content {
+                 flex: 1;
+                 overflow-y: auto;
+                 min-height: 0;
+             }
+             
+             .private-chat-details-content {
+                 flex: 1;
+                 overflow-y: auto;
+                 min-height: 0;
              }
              
              .group-info {
@@ -3161,8 +3417,8 @@
              
              .moments-header {
                  height: 56px;
-                 padding: 0 15px;
-                 padding-top: max(0px, env(safe-area-inset-top));
+                 padding: 76px 15px 15px 15px;
+                 padding-top: calc(76px + max(0px, env(safe-area-inset-top)));
                  height: calc(56px + max(0px, env(safe-area-inset-top)));
                  background-color: rgba(0, 0, 0, 0.5);
                  color: white;
@@ -3269,7 +3525,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 8px 0; /* 移除狀態欄適配 */
+            padding: 0; /* 移除顶部padding，确保标题垂直居中 */
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             margin: 0;
             border: none;
@@ -3834,7 +4090,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding: 15px 15px 15px 15px; /* 移除顶部多余空间 */
+            padding: 76px 15px 15px 15px; /* 符合设计规范 */
         }
         
 
@@ -4103,7 +4359,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 15px; /* 移除顶部多余空间 */
+            padding: 0 15px; /* 移除顶部padding，确保按钮垂直居中 */
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
@@ -4727,9 +4983,11 @@
         <div class="detail-header">
             <div class="detail-back" id="closeGroupDetails">&#10094;</div>
             <div class="detail-title">聊天資訊</div>
+            <div class="detail-placeholder"></div>
         </div>
         
-        <div class="group-members-grid">
+        <div class="group-details-content">
+            <div class="group-members-grid">
             <div class="member-item" data-character="libai">
                 <div class="member-avatar">🥂</div>
                 <div class="member-name">李白</div>
@@ -4825,6 +5083,7 @@
                     <span class="detail-arrow">›</span>
                 </div>
             </div>
+            </div>
         </div>
     </div>
     
@@ -4833,9 +5092,11 @@
         <div class="detail-header">
             <div class="detail-back" id="closePrivateChatDetails">&#10094;</div>
             <div class="detail-title">對話詳情</div>
+            <div class="detail-placeholder"></div>
         </div>
         
-        <div class="private-chat-user-section">
+        <div class="private-chat-details-content">
+            <div class="private-chat-user-section">
             <div class="private-user-info">
                 <div class="private-user-avatar" id="privateChatAvatar">🥂</div>
                 <div class="private-user-name" id="privateChatUserName">李白</div>
@@ -4894,6 +5155,7 @@
                 <div class="private-detail-item-arrow">›</div>
             </div>
         </div>
+        </div>
     </div>
 
     <!-- 成員資料頁面 -->
@@ -4938,16 +5200,16 @@
                 <div class="menu-item-label">朋友圈</div>
                 <div class="moments-preview">
                     <div class="moment-preview-image">
-                        <img src="https://i.imgur.com/OYAcubJ.jpg" alt="友人合影" style="width:45px;height:45px;object-fit:cover;border-radius:3px;">
+                        <div style="width:45px;height:45px;background:linear-gradient(135deg, #ff6b6b, #feca57);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:20px;">👫</div>
                     </div>
                     <div class="moment-preview-image">
-                        <img src="https://i.imgur.com/6cJlgVD.jpg" alt="海邊" style="width:45px;height:45px;object-fit:cover;border-radius:3px;">
+                        <div style="width:45px;height:45px;background:linear-gradient(135deg, #48cae4, #023047);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:20px;">🌊</div>
                     </div>
                     <div class="moment-preview-image">
-                        <img src="https://i.imgur.com/yB0g0Kk.jpg" alt="旅遊照" style="width:45px;height:45px;object-fit:cover;border-radius:3px;">
+                        <div style="width:45px;height:45px;background:linear-gradient(135deg, #f72585, #4361ee);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:20px;">✈️</div>
                     </div>
                     <div class="moment-preview-image">
-                        <img src="https://i.imgur.com/Q7gZnZ2.jpg" alt="花園" style="width:45px;height:45px;object-fit:cover;border-radius:3px;">
+                        <div style="width:45px;height:45px;background:linear-gradient(135deg, #2d6a4f, #95d5b2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:20px;">🌺</div>
                     </div>
                 </div>
                 <div class="menu-item-arrow">
@@ -5049,18 +5311,23 @@
             
             // 推入新頁面
             pushPage(pageId) {
+                console.log('pushPage被调用, 目標頁面:', pageId, '當前頁面:', this.currentPage);
                 if (this.currentPage && this.currentPage !== pageId) {
                     this.history.push(this.currentPage);
                     console.log('推入頁面歷史:', this.currentPage, '歷史棧:', this.history);
+                } else {
+                    console.log('跳過推入歷史 (當前頁面相同或為空)');
                 }
                 this.currentPage = pageId;
+                console.log('更新當前頁面為:', this.currentPage);
             }
             
             // 返回上一頁
             goBack() {
+                console.log('goBack被调用, 當前歷史棧:', this.history);
                 if (this.history.length > 0) {
                     const previousPage = this.history.pop();
-                    console.log('返回上一頁:', previousPage, '歷史棧:', this.history);
+                    console.log('返回上一頁:', previousPage, '剩餘歷史棧:', this.history);
                     this.currentPage = previousPage;
                     this.showPage(previousPage);
                     return true;
@@ -7085,19 +7352,22 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             
             // 設置事件監聽
             setupEvents() {
-                // 返回按鈕
-                document.getElementById('momentsBackBtn').addEventListener('click', () => {
-                    this.closeMoments();
-                });
+                // 返回按鈕事件已由全局事件監聽器處理，這裡不再重複綁定
+                // 避免重複點擊問題
                 
                 // 朋友圈互動事件
-                document.getElementById('momentsContent').addEventListener('click', (e) => {
-                    if (e.target.classList.contains('moment-action')) {
-                        const action = e.target.getAttribute('data-action');
-                        const momentId = e.target.closest('.moment-item').getAttribute('data-moment-id');
-                        this.handleMomentAction(action, momentId);
-                    }
-                });
+                
+                // 朋友圈互動事件
+                const momentsContent = document.getElementById('momentsContent');
+                if (momentsContent) {
+                    momentsContent.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('moment-action')) {
+                            const action = e.target.getAttribute('data-action');
+                            const momentId = e.target.closest('.moment-item').getAttribute('data-moment-id');
+                            this.handleMomentAction(action, momentId);
+                        }
+                    });
+                }
             }
             
             // 處理朋友圈互動
@@ -7136,24 +7406,42 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 pageHistory.pushPage('momentsContainer');
                 pageHistory.showPage('momentsContainer');
                 this.renderMoments();
+                
+                // 重新設置事件監聽器
+                setTimeout(() => {
+                    this.setupEvents();
+                }, 100);
             }
             
             // 打開指定角色的朋友圈
             openCharacterMoments(characterId) {
                 console.log('openCharacterMoments被调用, 角色ID:', characterId);
+                console.log('打開朋友圈前的頁面歷史:', pageHistory.history);
+                console.log('打開朋友圈前的當前頁面:', pageHistory.currentPage);
+                
                 this.currentCharacterId = characterId;
                 
                 // 推入頁面歷史並顯示朋友圈
                 pageHistory.pushPage('momentsContainer');
                 pageHistory.showPage('momentsContainer');
                 
+                console.log('打開朋友圈後的頁面歷史:', pageHistory.history);
+                console.log('打開朋友圈後的當前頁面:', pageHistory.currentPage);
+                
                 console.log('准备渲染角色朋友圈数据');
                 this.renderCharacterMoments(characterId);
+                
+                // 重新設置事件監聽器
+                setTimeout(() => {
+                    this.setupEvents();
+                }, 100);
             }
             
             // 關閉朋友圈
             closeMoments() {
                 console.log('closeMoments被调用');
+                console.log('當前頁面歷史:', pageHistory.history);
+                console.log('當前頁面:', pageHistory.currentPage);
                 
                 // 使用頁面歷史管理器返回上一頁
                 pageHistory.goBack();
@@ -7165,6 +7453,33 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         
         // 全局朋友圈管理器實例
         const momentsManager = new MomentsManager();
+        
+        // 防抖變量，防止重複點擊
+        let isClosingMoments = false;
+        
+        // 全局事件監聽器 - 確保朋友圈後退按鈕正常工作
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'momentsBackBtn' || e.target.closest('#momentsBackBtn')) {
+                console.log('全局事件監聽器：朋友圈返回按鈕被點擊');
+                
+                // 防止重複點擊
+                if (isClosingMoments) {
+                    console.log('正在關閉朋友圈，跳過重複點擊');
+                    return;
+                }
+                
+                e.stopPropagation();
+                e.preventDefault();
+                
+                isClosingMoments = true;
+                momentsManager.closeMoments();
+                
+                // 500ms後重置防抖狀態
+                setTimeout(() => {
+                    isClosingMoments = false;
+                }, 500);
+            }
+        });
         
         // 游戲數據 - 角色定義
         const characters = {
@@ -9293,6 +9608,127 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 'nalanxingde': [
                     // 所有別名（包含繁體簡體）
                     '納蘭性德', '纳兰性德', '容若', '納蘭容若', '纳兰容若', '飲水詞人', '饮水词人', '容若先生'
+                ],
+                // 紅樓夢角色別名映射
+                'jiabaoyu': [
+                    // 賈寶玉的所有別名（包含繁體簡體）
+                    '賈寶玉', '贾宝玉', '寶玉', '宝玉', '怡紅公子', '怡红公子', '寶二爺', '宝二爷', '二哥哥', '寶哥哥', '宝哥哥', '賈二爺', '贾二爷'
+                ],
+                'lindaiyu': [
+                    // 林黛玉的所有別名（包含繁體簡體）
+                    '林黛玉', '黛玉', '瀟湘妃子', '潇湘妃子', '林妹妹', '黛玉妹妹', '林姑娘', '林小姐'
+                ],
+                'xuebaochai': [
+                    // 薛寶釵的所有別名（包含繁體簡體）
+                    '薛寶釵', '薛宝钗', '寶釵', '宝钗', '蘅蕪君', '蘅芜君', '寶姐姐', '宝姐姐', '薛姑娘', '薛小姐'
+                ],
+                'jiatanchun': [
+                    // 賈探春的所有別名（包含繁體簡體）
+                    '賈探春', '贾探春', '探春', '蕉下客', '三妹妹', '探春妹妹', '賈三姑娘', '贾三姑娘'
+                ],
+                'jiayingchun': [
+                    // 賈迎春的所有別名（包含繁體簡體）
+                    '賈迎春', '贾迎春', '迎春', '菱洲', '二妹妹', '迎春妹妹', '賈二姑娘', '贾二姑娘'
+                ],
+                'jiaxichun': [
+                    // 賈惜春的所有別名（包含繁體簡體）
+                    '賈惜春', '贾惜春', '惜春', '藕榭', '四妹妹', '惜春妹妹', '賈四姑娘', '贾四姑娘'
+                ],
+                'shixiangyun': [
+                    // 史湘雲的所有別名（包含繁體簡體）
+                    '史湘雲', '史湘云', '湘雲', '湘云', '枕霞舊友', '枕霞旧友', '雲妹妹', '云妹妹', '史姑娘', '史小姐'
+                ],
+                'liwan': [
+                    // 李紈的所有別名（包含繁體簡體）
+                    '李紈', '李纨', '稻香老農', '稻香老农', '大嫂子', '李嫂子', '李姑娘'
+                ],
+                'miaoyu': [
+                    // 妙玉的所有別名（包含繁體簡體）
+                    '妙玉', '檻外人', '槛外人', '妙玉師父', '妙玉师父', '妙玉姑娘'
+                ],
+                // 春秋戰國角色別名映射
+                'confucius': [
+                    // 孔子的所有別名（包含繁體簡體）
+                    '孔子', '孔丘', '孔仲尼', '至聖先師', '至圣先师', '孔夫子', '夫子', '孔先生', '仲尼', '孔聖人', '孔圣人'
+                ],
+                'quyuan': [
+                    // 屈原的所有別名（包含繁體簡體）
+                    '屈原', '屈平', '楚辭之祖', '楚辞之祖', '靈均', '灵均', '屈大夫', '屈先生', '楚大夫'
+                ],
+                'laozi': [
+                    // 老子的所有別名（包含繁體簡體）
+                    '老子', '李耳', '道德天尊', '老聃', '老聃', '太上老君', '李伯陽', '李伯阳', '老君', '老子先生'
+                ],
+                'zhuangzi': [
+                    // 莊子的所有別名（包含繁體簡體）
+                    '莊子', '庄子', '莊周', '庄周', '南華真人', '南华真人', '漆園吏', '漆园吏', '莊先生', '庄先生', '南華', '南华'
+                ],
+                'mencius': [
+                    // 孟子的所有別名（包含繁體簡體）
+                    '孟子', '孟軻', '孟轲', '亞聖', '亚圣', '孟先生', '軻', '轲', '孟夫子'
+                ],
+                // 三國兩晉南北朝角色別名映射
+                'caozhi': [
+                    // 曹植的所有別名（包含繁體簡體）
+                    '曹植', '曹子建', '陳王', '陈王', '陳思王', '陈思王', '子建', '曹公子', '曹先生'
+                ],
+                'caocao': [
+                    // 曹操的所有別名（包含繁體簡體）
+                    '曹操', '曹孟德', '魏武帝', '孟德', '曹丞相', '曹公', '魏王', '曹先生'
+                ],
+                'caopi': [
+                    // 曹丕的所有別名（包含繁體簡體）
+                    '曹丕', '曹子桓', '魏文帝', '子桓', '曹太子', '曹先生'
+                ],
+                'taoyuanming': [
+                    // 陶淵明的所有別名（包含繁體簡體）
+                    '陶淵明', '陶渊明', '陶潛', '陶潜', '採菊東籬', '采菊东篱', '五柳先生', '陶先生', '淵明', '渊明', '潛', '潜'
+                ],
+                'liuling': [
+                    // 劉伶的所有別名（包含繁體簡體）
+                    '劉伶', '刘伶', '酒中仙', '劉先生', '刘先生', '竹林七賢', '竹林七贤'
+                ],
+                // 唐代角色別名映射
+                'libai': [
+                    // 李白的所有別名（包含繁體簡體）
+                    '李白', '李太白', '謫仙人', '谪仙人', '青蓮居士', '青莲居士', '詩仙', '诗仙', '太白', '李謫仙', '李谪仙', '李先生'
+                ],
+                'dufu': [
+                    // 杜甫的所有別名（包含繁體簡體）
+                    '杜甫', '杜子美', '少陵野老', '少陵野老', '詩聖', '诗圣', '杜工部', '子美', '杜先生', '老杜'
+                ],
+                'wangwei': [
+                    // 王維的所有別名（包含繁體簡體）
+                    '王維', '王维', '王摩詰', '王摩诘', '詩佛', '诗佛', '摩詰', '摩诘', '王先生', '王右丞'
+                ],
+                'menghaoran': [
+                    // 孟浩然的所有別名（包含繁體簡體）
+                    '孟浩然', '孟襄陽', '孟襄阳', '浩然', '孟先生', '襄陽', '襄阳'
+                ],
+                'ligui': [
+                    // 李龜年的所有別名（包含繁體簡體）
+                    '李龜年', '李龟年', '宮廷樂師', '宫廷乐师', '龜年', '龟年', '李樂師', '李乐师'
+                ],
+                'yuzhen': [
+                    // 玉真公主的所有別名（包含繁體簡體）
+                    '玉真公主', '玉真', '唐玄宗妹妹', '公主', '玉真公主殿下'
+                ],
+                'yangguifei': [
+                    // 楊貴妃的所有別名（包含繁體簡體）
+                    '楊貴妃', '杨贵妃', '楊玉環', '杨玉环', '天生麗質', '天生丽质', '貴妃', '贵妃', '玉環', '玉环', '楊妃', '杨妃'
+                ],
+                // 神話傳說角色別名映射
+                'xiwangmu': [
+                    // 西王母的所有別名（包含繁體簡體）
+                    '西王母', '瑤池金母', '瑶池金母', '王母娘娘', '王母', '瑤池', '瑶池', '金母'
+                ],
+                'yutu': [
+                    // 玉兔的所有別名（包含繁體簡體）
+                    '玉兔', '搗藥翁', '捣药翁', '月兔', '兔兒爺', '兔儿爷', '搗藥', '捣药'
+                ],
+                'change': [
+                    // 嫦娥的所有別名（包含繁體簡體）
+                    '嫦娥', '月宮仙子', '月宫仙子', '廣寒仙子', '广寒仙子', '月仙子', '嫦娥仙子', '月宮', '月宫'
                 ]
             };
             
@@ -10189,7 +10625,29 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
 6. 文明交流，和諧共處🤝
 7. 分享故事，共賞奇聞📚
 
-子不語怪力亂神，但我們專門討論！歡迎分享奇聞異事！`
+子不語怪力亂神，但我們專門討論！歡迎分享奇聞異事！`,
+                
+                'dahua_group': `【大觀園業主群•群規】
+1. 紅樓夢故事，人物交流🏛️
+2. 詩詞歌賦，文學創作📝
+3. 大觀園生活，情感抒發💕
+4. 尊重原著，傳承文化📚
+5. 文明討論，理性交流💬
+6. 分享心得，共同學習📖
+7. 歡迎提問，互相解答❓
+
+大觀園中，與諸位紅樓人物共賞詩詞，暢談人生！`,
+                
+                'ci_poets_group': `【詞人群•群規】
+1. 詞學創作，音律格律📝
+2. 情感表達，詞牌探討🎵
+3. 婉約豪放，各有所長🌸
+4. 尊重經典，傳承文化📚
+5. 文明討論，理性交流💬
+6. 分享心得，共同學習📖
+7. 歡迎提問，互相解答❓
+
+詞者，詩之餘也。與諸位詞人共賞詞章，暢談音律！`
             };
             
             return announcements[groupId] || '歡迎加入本群！請遵守群組規則，文明交流。';
@@ -11207,8 +11665,14 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             }
             
             // 推入頁面歷史並顯示個人資料頁面
+            console.log('打開個人詳情頁面前的頁面歷史:', pageHistory.history);
+            console.log('打開個人詳情頁面前的當前頁面:', pageHistory.currentPage);
+            
             pageHistory.pushPage('memberProfilePage');
             pageHistory.showPage('memberProfilePage');
+            
+            console.log('打開個人詳情頁面後的頁面歷史:', pageHistory.history);
+            console.log('打開個人詳情頁面後的當前頁面:', pageHistory.currentPage);
         }
         
 
@@ -11374,10 +11838,18 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             return momentsDB[characterId] || [];
         }
         
+        // 朋友圈數據庫緩存系統
+        let momentsDBCache = null;
+        
         // 獲取朋友圈數據庫
         function getMomentsDB() {
+            if (momentsDBCache) {
+                return momentsDBCache;
+            }
+            
+            console.log('正在延遲加載朋友圈數據庫...');
             // 返回朋友圈數據庫對象
-            return {
+            const momentsDatabase = {
                 libai: [
                     {
                         id: 'libai_14',
@@ -12166,8 +12638,11 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
 
             };
             
-            // 返回角色的朋友圈，如果沒有則返回空陣列
-            return momentsDB[characterId] || [];
+            // 緩存數據庫以提高性能
+            momentsDBCache = momentsDatabase;
+            console.log('朋友圈數據庫已緩存，總計角色數:', Object.keys(momentsDatabase).length);
+            
+            return momentsDBCache;
         }
         
         // 獲取當前系統時間
@@ -12568,133 +13043,178 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             }, 200);
         }
         
-        // 简化的星空旋转效果
+        // 生成銀河系粒子效果 - 優化版本
         function createGalaxyParticles() {
             const galaxyContainer = document.querySelector('.galaxy-container');
-            
             if (!galaxyContainer) {
-                console.warn('Galaxy container not found');
+                console.error('找不到galaxy-container元素');
                 return;
             }
             
-            console.log('创建简化的旋转星空效果...');
+            console.log('開始創建銀河系粒子效果...');
             
-            // 清空容器
-            galaxyContainer.innerHTML = '';
-            
-            // 创建三个旋转层
-            const layers = [
-                { name: 'inner', radius: 150, count: 120, speed: 60, direction: 1 },   // 内层：60秒顺时针
-                { name: 'middle', radius: 300, count: 180, speed: 120, direction: -1 }, // 中层：120秒逆时针  
-                { name: 'outer', radius: 500, count: 200, speed: 180, direction: 1 }    // 外层：180秒顺时针
+            // 8層星空結構，總計900顆星，減少密度
+            const layerConfigs = [
+                { count: 200, minRadius: 150, maxRadius: 350, size: 'large', speed: 0.8, opacity: 0.9 },
+                { count: 175, minRadius: 350, maxRadius: 550, size: 'medium', speed: 0.9, opacity: 0.8 },
+                { count: 150, minRadius: 550, maxRadius: 750, size: 'small', speed: 1.0, opacity: 0.7 },
+                { count: 125, minRadius: 750, maxRadius: 950, size: 'tiny', speed: 1.1, opacity: 0.6 },
+                { count: 100, minRadius: 950, maxRadius: 1150, size: 'small', speed: 1.2, opacity: 0.5 },
+                { count: 75, minRadius: 1150, maxRadius: 1350, size: 'medium', speed: 1.3, opacity: 0.4 },
+                { count: 50, minRadius: 1350, maxRadius: 1550, size: 'small', speed: 1.4, opacity: 0.3 },
+                { count: 25, minRadius: 1550, maxRadius: 1750, size: 'medium', speed: 1.5, opacity: 0.2 }
             ];
             
-            layers.forEach(layer => {
-                const layerDiv = document.createElement('div');
-                layerDiv.className = `rotation-layer ${layer.name}-layer`;
-                layerDiv.style.cssText = `
-                    position: absolute;
-                    left: 50%;
-                    top: 50%;
-                    transform: translate(-50%, -50%);
-                    width: ${layer.radius * 2}px;
-                    height: ${layer.radius * 2}px;
-                    animation: rotate-${layer.direction > 0 ? 'clockwise' : 'counter'} ${layer.speed}s linear infinite;
-                    pointer-events: none;
-                `;
+            // 添加動態CSS動畫 - 所有星星順時針旋轉
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes rotate-0_8 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes rotate-0_9 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes rotate-1_0 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes rotate-1_1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes rotate-1_2 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes rotate-1_3 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes rotate-1_4 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes rotate-1_5 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .particle.bright { box-shadow: 0 0 8px currentColor; }
+                .particle.tiny { width: 0.8px; height: 0.8px; }
+            `;
+            document.head.appendChild(style);
+            
+            // 創建多層星空系統
+            layerConfigs.forEach((config, layerIndex) => {
+                const layerElement = document.createElement('div');
+                layerElement.className = 'starfield-layer layer-' + layerIndex;
+                layerElement.style.cssText = 
+                    'position: absolute;' +
+                    'width: 100%;' +
+                    'height: 100%;' +
+                    'animation: rotate-' + config.speed.toFixed(1).replace('.', '_') + ' ' + (120 / config.speed).toFixed(1) + 's linear infinite;';
                 
-                // 在圆形区域内随机生成星星
-                for (let i = 0; i < layer.count; i++) {
+                // 為每層創建星星
+                for (let i = 0; i < config.count; i++) {
                     const star = document.createElement('div');
-                    star.className = 'particle';
+                    star.className = 'particle ' + config.size;
                     
-                    // 在圆形区域内随机分布 (使用极坐标)
-                    const angle = Math.random() * Math.PI * 2;
-                    const distance = Math.sqrt(Math.random()) * layer.radius; // 平方根分布确保均匀
+                    // 避免中心150px區域，讓中央星星向四周擴散
+                    let radius, angle, x, y;
+                    do {
+                        angle = Math.random() * Math.PI * 2;
+                        radius = config.minRadius + Math.random() * (config.maxRadius - config.minRadius);
+                        x = Math.cos(angle) * radius;
+                        y = Math.sin(angle) * radius;
+                    } while (Math.sqrt(x*x + y*y) < 150);
                     
-                    const x = Math.cos(angle) * distance;
-                    const y = Math.sin(angle) * distance;
+                    star.style.cssText = 
+                        'position: absolute;' +
+                        'left: calc(50% + ' + x + 'px);' +
+                        'top: calc(50% + ' + y + 'px);' +
+                        'opacity: ' + (config.opacity * (0.3 + Math.random() * 0.7)) + ';' +
+                        'animation-delay: ' + (Math.random() * 10) + 's;';
                     
-                    star.style.cssText = `
-                        position: absolute;
-                        left: calc(50% + ${x}px);
-                        top: calc(50% + ${y}px);
-                        transform: translate(-50%, -50%);
-                    `;
-                    
-                    // 根据距离中心的远近设置星星属性
-                    const distanceRatio = distance / layer.radius;
-                    
-                    // 大小分配：中心区域更多大星星
-                    const sizeRand = Math.random();
-                    if (distanceRatio < 0.3) {
-                        // 内圈：更多大中型星星
-                        if (sizeRand < 0.4) star.classList.add('large');
-                        else if (sizeRand < 0.7) star.classList.add('medium');
-                        else star.classList.add('small');
-                    } else if (distanceRatio < 0.7) {
-                        // 中圈：平衡分布
-                        if (sizeRand < 0.2) star.classList.add('large');
-                        else if (sizeRand < 0.5) star.classList.add('medium');
-                        else star.classList.add('small');
-                    } else {
-                        // 外圈：主要是小星星
-                        if (sizeRand < 0.1) star.classList.add('medium');
-                        else star.classList.add('small');
+                    // 外層星星更亮更明顯，並增強閃爍效果
+                    if (layerIndex >= 4) {
+                        star.style.opacity = Math.min(1, parseFloat(star.style.opacity) * 1.5);
+                        if (Math.random() < 0.4) {
+                            star.classList.add('bright');
+                        }
+                        if (Math.random() < 0.3) {
+                            star.classList.add('enhanced-twinkle');
+                        }
                     }
                     
-                    // 颜色分配：内层更亮更彩色
+                    // 隨機顏色和增強閃爍
                     const colorRand = Math.random();
-                    if (layer.name === 'inner' && colorRand < 0.4) {
-                        if (colorRand < 0.15) star.classList.add('gold');
-                        else if (colorRand < 0.3) star.classList.add('blue');
-                        else star.classList.add('colored');
-                    } else if (layer.name === 'middle' && colorRand < 0.25) {
-                        if (colorRand < 0.1) star.classList.add('gold');
-                        else if (colorRand < 0.18) star.classList.add('blue');
-                        else star.classList.add('colored');
-                    } else if (layer.name === 'outer' && colorRand < 0.15) {
-                        if (colorRand < 0.05) star.classList.add('blue');
-                        else star.classList.add('colored');
+                    if (colorRand < 0.15) star.classList.add('gold');
+                    else if (colorRand < 0.25) star.classList.add('blue');
+                    else if (colorRand < 0.35) star.classList.add('colored');
+                    
+                    // 隨機增強閃爍效果
+                    if (Math.random() < 0.2) {
+                        star.classList.add('enhanced-twinkle');
                     }
                     
-                    // 透明度：越远越暗
-                    const baseOpacity = layer.name === 'inner' ? 0.8 : layer.name === 'middle' ? 0.6 : 0.4;
-                    const opacity = baseOpacity * (0.3 + Math.random() * 0.7) * (1 - distanceRatio * 0.3);
-                    star.style.opacity = Math.max(0.1, opacity);
-                    
-                    // 闪烁动画延迟
-                    star.style.animationDelay = Math.random() * 3 + 's';
-                    
-                    layerDiv.appendChild(star);
+                    layerElement.appendChild(star);
                 }
                 
-                galaxyContainer.appendChild(layerDiv);
+                galaxyContainer.appendChild(layerElement);
             });
             
-            // 添加旋转动画样式（如果不存在）
-            if (!document.getElementById('galaxy-rotation-styles')) {
-                const style = document.createElement('style');
-                style.id = 'galaxy-rotation-styles';
-                style.textContent = `
-                    @keyframes rotate-clockwise {
-                        from { transform: translate(-50%, -50%) rotate(0deg); }
-                        to { transform: translate(-50%, -50%) rotate(360deg); }
-                    }
-                    
-                    @keyframes rotate-counter {
-                        from { transform: translate(-50%, -50%) rotate(0deg); }
-                        to { transform: translate(-50%, -50%) rotate(-360deg); }
-                    }
-                    
-                    .rotation-layer {
-                        will-change: transform;
-                    }
-                `;
-                document.head.appendChild(style);
+            // 減少背景星星數量，降低密度
+            for (let i = 0; i < 250; i++) { // 從500減少到250
+                const star = document.createElement('div');
+                star.className = 'particle small';
+                star.style.position = 'absolute';
+                
+                // 使用位運算優化隨機分布，擴大範圍到頁面周邊
+                const x = ((Math.random() * 200) | 0) - 100;
+                const y = ((Math.random() * 200) | 0) - 100;
+                star.style.left = 'calc(50% + ' + x + 'vw)';
+                star.style.top = 'calc(50% + ' + y + 'vh)';
+                
+                const delay = Math.round(Math.random() * 30) / 10;
+                star.style.animationDelay = delay + 's';
+                
+                const opacity = Math.round((Math.random() * 0.4 + 0.1) * 100) / 100;
+                star.style.opacity = opacity;
+                
+                // 增強背景彩色星星和閃爍效果
+                const colorRand = (Math.random() * 100) | 0;
+                if (colorRand < 12) {
+                    if (colorRand < 4) star.classList.add('blue');
+                    else if (colorRand < 8) star.classList.add('colored');
+                    else star.classList.add('gold');
+                }
+                
+                // 隨機增強閃爍效果
+                if (Math.random() < 0.25) {
+                    star.classList.add('enhanced-twinkle');
+                }
+                
+                galaxyContainer.appendChild(star);
             }
             
-            console.log('简化旋转星空效果创建完成 - 三层旋转，总计500个星体');
+            // 減少中心區域星體數量，降低密度
+            for (let i = 0; i < 15; i++) { // 從30減少到15
+                const centralStar = document.createElement('div');
+                centralStar.className = 'particle';
+                centralStar.style.position = 'absolute';
+                
+                // 擴大中心區域範圍，讓星星向四周擴散
+                const centerRadius = Math.random() * 120 + 50; // 50-170px範圍
+                const centerAngle = Math.random() * Math.PI * 2;
+                
+                const x = Math.cos(centerAngle) * centerRadius;
+                const y = Math.sin(centerAngle) * centerRadius;
+                
+                centralStar.style.left = 'calc(50% + ' + x + 'px)';
+                centralStar.style.top = 'calc(50% + ' + y + 'px)';
+                
+                // 簡化大小分配
+                const rand = (Math.random() * 100) | 0;
+                if (rand < 40) centralStar.classList.add('large');
+                else if (rand < 70) centralStar.classList.add('medium');
+                else centralStar.classList.add('small');
+                
+                // 增強顏色分配和閃爍效果
+                if (rand < 50) centralStar.classList.add('gold');
+                else if (rand < 30) centralStar.classList.add('colored');
+                
+                const opacity = Math.round((0.7 + Math.random() * 0.3) * 100) / 100;
+                centralStar.style.opacity = opacity;
+                
+                const delay = Math.round(Math.random() * 30) / 10;
+                centralStar.style.animationDelay = delay + 's';
+                
+                // 中央星星增強閃爍效果
+                if (Math.random() < 0.4) {
+                    centralStar.classList.add('enhanced-twinkle');
+                }
+                
+                galaxyContainer.appendChild(centralStar);
+            }
+            
+            console.log('優化版銀河系螺旋臂結構已生成 - 總計約1165個星體，密度降低50%，所有星星順時針旋轉，閃爍效果保持，範圍擴大到頁面周邊');
         }
         
         // App圖標點擊處理函數
