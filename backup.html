@@ -12674,7 +12674,65 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
 
 
 
-
+        // 電池管理系統
+        class BatteryManager {
+            constructor() {
+                this.batteryLevel = 65; // 初始電量65%
+                this.maxLevel = 100;
+                this.minLevel = 1;
+                this.drainRate = 0.5; // 每分鐘掉0.5%
+            }
+            
+            // 初始化電池管理
+            initialize() {
+                this.updateAllBatteryDisplays();
+                
+                // 電池管理已移除，不再定期更新
+            }
+            
+            // 電池放電
+            drainBattery() {
+                this.batteryLevel = Math.max(this.minLevel, this.batteryLevel - this.drainRate);
+                
+                // 當電量低於20%時，減慢放電速度
+                if (this.batteryLevel < 20) {
+                    this.drainRate = 0.2;
+                }
+            }
+            
+            // 更新全局電池顯示
+            updateAllBatteryDisplays() {
+                // 只更新全局狀態欄中的電池
+                const globalBatteryLevel = document.querySelector('.global-status-bar .battery-level');
+                const globalBatteryText = document.querySelector('.global-status-bar .battery-text');
+                
+                const roundedLevel = Math.round(this.batteryLevel);
+                
+                if (globalBatteryLevel) {
+                    globalBatteryLevel.style.width = `${roundedLevel}%`;
+                    
+                    // 根據電量改變顏色
+                    if (roundedLevel < 20) {
+                        globalBatteryLevel.style.backgroundColor = '#ff4444'; // 紅色
+                    } else if (roundedLevel < 50) {
+                        globalBatteryLevel.style.backgroundColor = '#ff8800'; // 橙色
+                    } else {
+                        globalBatteryLevel.style.backgroundColor = 'white'; // 正常顏色
+                    }
+                }
+                
+                if (globalBatteryText) {
+                    globalBatteryText.textContent = roundedLevel.toString();
+                }
+            }
+            
+            // 獲取當前電量
+            getCurrentLevel() {
+                return Math.round(this.batteryLevel);
+            }
+        }
+        
+        // 電池管理器實例已刪除
         
         // 初始化並持續更新狀態欄時間
         function initializeStatusBarTime() {
