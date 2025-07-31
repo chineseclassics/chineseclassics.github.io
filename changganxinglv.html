@@ -2882,17 +2882,45 @@
         .dark .unlock-hint {
             background: var(--paper);
         }
+        
+        /* 移動端Safari iframe適應性修復 */
+        :root {
+            --vh: 1vh;
+        }
+        
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari specific fixes */
+            body {
+                height: -webkit-fill-available;
+                min-height: -webkit-fill-available;
+            }
+        }
+        
+        /* 確保iframe中的100vh正確計算 */
+        body {
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100); /* 使用自定義變量 */
+        }
+        
+        /* 針對小屏幕的額外優化 */
+        @media screen and (max-height: 600px) {
+            #game-container {
+                padding: 0.5rem;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen max-h-screen overflow-hidden flex flex-col"
+      style="height: 100vh; height: 100dvh; /* fallback for older browsers */"
+>
     <!-- 通知容器 -->
     <div class="notification-container">
         <!-- 通知會自動填充到這裡 -->
     </div>
     
-    <div id="game-container" class="max-w-5xl mx-auto p-4 flex-grow">
+    <div id="game-container" class="max-w-5xl mx-auto p-4 flex-grow min-h-0 overflow-y-auto">
         <!-- 開始畫面 -->
-        <div id="start-screen" class="fade-in min-h-screen flex flex-col justify-center">
+        <div id="start-screen" class="fade-in h-full flex flex-col justify-center">
             <div class="text-center relative z-10 py-4 px-4">
                 <!-- 標題與詩句並排顯示 -->
                 <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-5">
@@ -3254,6 +3282,32 @@
     </div>
     
     <script>
+        // 移動端Safari iframe視口修復
+        function fixMobileViewport() {
+            // 處理移動端Safari在iframe中的視口高度問題
+            const isMobileSafari = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
+            
+            if (isMobileSafari || window.parent !== window) {
+                // 在iframe中或是移動端Safari
+                const setViewportHeight = () => {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', `${vh}px`);
+                    
+                    // 更新body高度
+                    document.body.style.height = `${window.innerHeight}px`;
+                };
+                
+                // 初始設定
+                setViewportHeight();
+                
+                // 視窗大小改變時重新計算
+                window.addEventListener('resize', setViewportHeight);
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(setViewportHeight, 100); // 延遲執行以確保新尺寸生效
+                });
+            }
+        }
+
         // 檢測暗色模式
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
@@ -3266,6 +3320,9 @@
                 document.documentElement.classList.remove('dark');
             }
         });
+        
+        // 頁面載入完成後初始化視口修復
+        document.addEventListener('DOMContentLoaded', fixMobileViewport);
         
         // 通知系統類
         class NotificationSystem {
