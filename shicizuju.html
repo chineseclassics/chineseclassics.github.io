@@ -221,10 +221,38 @@
         .character-btn:disabled {
             cursor: not-allowed;
         }
+        
+        /* iframe環境優化 */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari 在 iframe 中的特殊處理 */
+            html, body {
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                -webkit-overflow-scrolling: touch;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+            }
+        }
+        
+        /* 強制元素不超出邊界 */
+        * {
+            box-sizing: border-box;
+        }
+        
+        /* 確保字符按鈕可點擊 */
+        .character-btn {
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
     </style>
 </head>
-<body class="bg-chinese-light dark:bg-chinese-dark text-ink dark:text-gray-200 min-h-screen max-h-screen overflow-hidden transition-colors duration-300 font-text">
-    <div class="container mx-auto px-2 py-4 max-w-5xl max-h-full flex flex-col overflow-hidden">
+<body class="font-text" style="margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; background: #f9f5e9;">
+    <div class="container mx-auto px-2 py-4 max-w-5xl" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
         <div class="flex justify-between items-center mb-3">
             <!-- 左侧得分显示 -->
             <div class="paper-effect p-2 sm:p-3 rounded-lg border border-secondary/30 flex items-center">
@@ -376,14 +404,14 @@
         </div>
         
         <!-- 汉字选择区域 -->
-        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30 flex-grow min-h-0 flex flex-col">
+        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
             <h2 class="text-lg font-kai font-semibold mb-2 text-primary">點選漢字組成詩句</h2>
-            <div id="charactersGrid" class="grid grid-cols-5 gap-2 flex-grow overflow-y-auto">
+            <div id="charactersGrid" class="grid grid-cols-5 gap-2" style="flex: 1; overflow-y: auto; min-height: 200px;">
                 <!-- Characters will be inserted here by JavaScript -->
             </div>
             
             <!-- 把按钮移动到选字界面下方并居中布局 -->
-            <div class="flex justify-center space-x-20 mt-4 flex-shrink-0">
+            <div class="flex justify-center space-x-20 mt-4" style="flex-shrink: 0;">
                 <button id="clearSelection" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-md transition-colors font-kai shadow-md text-lg">清除選擇</button>
                 <button id="submitPoem" class="bg-secondary hover:bg-secondary/80 text-white px-8 py-3 rounded-md transition-colors font-kai shadow-md text-lg">提交</button>
             </div>
@@ -414,6 +442,83 @@
     </div>
 
     <script>
+        // 檢測iframe環境並優化布局
+        function optimizeForIframe() {
+            // 檢測是否在iframe中
+            const inIframe = window.parent !== window;
+            
+            if (inIframe) {
+                // 強制設置body尺寸以匹配iframe
+                const updateBodySize = () => {
+                    const body = document.body;
+                    const container = document.querySelector('.container');
+                    
+                    // 使用window的實際尺寸
+                    const width = window.innerWidth;
+                    const height = window.innerHeight;
+                    
+                    // 設置body尺寸
+                    body.style.width = width + 'px';
+                    body.style.height = height + 'px';
+                    body.style.maxWidth = width + 'px';
+                    body.style.maxHeight = height + 'px';
+                    body.style.overflow = 'hidden';
+                    
+                    // 設置容器尺寸
+                    if (container) {
+                        container.style.height = height + 'px';
+                        container.style.maxHeight = height + 'px';
+                    }
+                    
+                    // 特別處理字符網格區域
+                    const charactersGrid = document.getElementById('charactersGrid');
+                    if (charactersGrid) {
+                        // 計算可用高度
+                        const headerHeight = 120; // 估算頭部高度
+                        const poemAreaHeight = 150; // 詩句顯示區域高度
+                        const buttonHeight = 80; // 按鈕區域高度
+                        const padding = 60; // 內邊距
+                        
+                        const availableHeight = height - headerHeight - poemAreaHeight - buttonHeight - padding;
+                        const minHeight = Math.max(200, availableHeight * 0.6);
+                        
+                        charactersGrid.style.maxHeight = minHeight + 'px';
+                        charactersGrid.style.minHeight = minHeight + 'px';
+                    }
+                };
+                
+                // 初始設置
+                updateBodySize();
+                
+                // 監聽窗口大小變化
+                window.addEventListener('resize', updateBodySize);
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(updateBodySize, 100); // 延遲執行
+                });
+                
+                // 針對移動端Safari的特殊處理
+                const isMobileSafari = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
+                if (isMobileSafari) {
+                    // 禁用觸摸縮放
+                    document.addEventListener('touchstart', (e) => {
+                        if (e.touches.length > 1) {
+                            e.preventDefault();
+                        }
+                    });
+                    
+                    // 防止雙擊縮放
+                    let lastTouchEnd = 0;
+                    document.addEventListener('touchend', (e) => {
+                        const now = (new Date()).getTime();
+                        if (now - lastTouchEnd <= 300) {
+                            e.preventDefault();
+                        }
+                        lastTouchEnd = now;
+                    });
+                }
+            }
+        }
+
         // Check for dark mode preference
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
@@ -1726,6 +1831,10 @@
         // 初始化游戏
         const initGame = () => {
             console.log("初始化遊戲...");
+            
+            // 首先優化iframe布局
+            optimizeForIframe();
+            
             // 設置事件監聽器
             setupEventListeners();
             
