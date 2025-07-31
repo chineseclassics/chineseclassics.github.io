@@ -94,10 +94,9 @@
             -webkit-overflow-scrolling: touch;
         }
         
-        /* 应用视图显示时的body样式 - 允許iframe內容滾動 */
+        /* 应用视图显示时的body样式 - 完全交给iframe处理滚动 */
         body.app-view-active {
-            /* 移除overflow限制，允許iframe應用內容滾動 */
-            /* overflow: hidden !important; */
+            /* 完全移除overflow限制，让iframe应用自主处理滚动 */
         }
         
         /* 强制重置所有默认边距 */
@@ -222,8 +221,7 @@
             z-index: 100; /* 提高层级，但低于floatingLogo */
             margin: 0 !important;
             padding: 0 !important;
-            /* 移除overflow: hidden，允許iframe內容滾動 */
-            /* overflow: hidden; */
+            /* 完全移除overflow限制，让iframe应用自主处理滚动 */
             box-sizing: border-box;
             /* 确保没有额外的空间 */
             transform: translateZ(0);
@@ -236,8 +234,7 @@
                 width: 100vw;
                 margin: 0;
                 padding: 0;
-                /* 移除overflow: hidden，允許移動端滾動 */
-                /* overflow: hidden; */
+                /* 完全移除overflow限制，让iframe应用处理移动端滚动 */
             }
         }
         
@@ -893,17 +890,17 @@
             transform-origin: center;
         }
         
-        /* 应用视图全屏样式 */
+        /* 应用视图全屏样式 - 统一z-index层级 */
         #appView {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            z-index: 30;
+            z-index: 90; /* 统一层级：低于floatingLogo(1000)，高于其他内容 */
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden;
+            /* 完全交给iframe处理滚动 */
             box-sizing: border-box;
         }
         
@@ -916,10 +913,10 @@
             bottom: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            z-index: 50 !important;
+            z-index: 90 !important; /* 统一层级 */
         }
         
-        /* iframe全屏样式 - 優化版：允許滾動 */
+        /* iframe全屏样式 - 方案一：完全交给iframe处理滚动 */
         #appFrame {
             display: block;
             width: 100% !important;
@@ -927,8 +924,7 @@
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
-            /* 移除 overflow: hidden，允許內容滾動 */
-            /* overflow: hidden; */
+            /* 完全移除overflow限制，让iframe内应用自主处理滚动 */
             position: absolute;
             top: 0;
             left: 0;
@@ -940,8 +936,7 @@
             will-change: transform;
             /* 确保iframe内容正确缩放 */
             box-sizing: border-box;
-            /* 移動端滾動優化 */
-            -webkit-overflow-scrolling: touch;
+            /* 移動端滾動完全交给iframe应用处理 */
         }
         
         /* 确保iframe内容正确显示 */
@@ -950,7 +945,7 @@
             height: 100% !important;
         }
         
-        /* 确保应用视图显示时，iframe完全填满屏幕 - 移動端優化 */
+        /* 确保应用视图显示时，iframe完全填满屏幕 - 方案一优化 */
         #appView:not(.hidden) #appFrame {
             width: 100vw !important;
             /* 使用100dvh作为主要高度，100vh作为后备 */
@@ -965,9 +960,10 @@
             right: 0 !important;
             bottom: 0 !important;
             z-index: 1 !important;
+            /* 滚动完全交给iframe内应用处理 */
         }
         
-        /* 确保应用视图不受任何父元素影响 */
+        /* 确保应用视图不受任何父元素影响 - 方案一：清理冗余设置 */
         #appView {
             position: fixed !important;
             top: 0 !important;
@@ -979,8 +975,7 @@
             z-index: 90 !important; /* 统一z-index层级 */
             margin: 0 !important;
             padding: 0 !important;
-            /* 移除overflow: hidden，允許iframe應用滾動 */
-            /* overflow: hidden; */
+            /* 滚动责任完全交给iframe应用 */
         }
         
         /* 移动端特定优化 */
@@ -1471,12 +1466,12 @@
         let resizeListener = null;
         let orientationListener = null;
         
-        // 统一的iframe尺寸设置函数
+        // 统一的iframe尺寸设置函数 - 方案一简化版
         function setIframeSize(width = window.innerWidth, height = window.innerHeight) {
             const frameElement = appFrame;
             const containerElement = appContainer;
             
-            // 批量设置iframe样式
+            // 只设置基本的尺寸，滚动完全交给iframe处理
             Object.assign(frameElement.style, {
                 width: width + 'px',
                 height: height + 'px',
@@ -1490,7 +1485,7 @@
                 bottom: '0'
             });
             
-            // 批量设置容器样式
+            // 容器也简化设置
             Object.assign(containerElement.style, {
                 width: width + 'px',
                 height: height + 'px',
@@ -1513,7 +1508,7 @@
             }
         }
         
-        // 浏览器兼容性检查和优化
+        // 浏览器兼容性检查和优化 - 方案一简化版
         function setupBrowserCompatibility() {
             // 检查100dvh支持
             const testElement = document.createElement('div');
@@ -1535,20 +1530,7 @@
                 document.head.appendChild(style);
             }
             
-            // 检查-webkit-overflow-scrolling支持（iOS Safari优化）
-            if ('WebkitOverflowScrolling' in document.documentElement.style) {
-                // 支持，已在CSS中设置
-            } else {
-                // 不支持，使用替代方案
-                const style = document.createElement('style');
-                style.textContent = `
-                    .iframe-optimized { 
-                        scroll-behavior: smooth;
-                        overscroll-behavior: contain;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
+            // 简化版：移除滚动相关的兼容性处理，交给iframe应用自己处理
         }
         
         // 键盘导航支持增强
@@ -1596,7 +1578,7 @@
             });
         }
         
-        // 增强的状态管理函数
+        // 增强的状态管理函数 - 方案一简化版  
         function setAppViewState(isActive) {
             if (isActive) {
                 // 激活应用视图
@@ -1613,7 +1595,7 @@
                     appFrame.setAttribute('aria-label', `${currentApp.name} - ${currentApp.description || '應用程序'}`);
                 }
                 
-                // 只设置必要的动态样式，其他由CSS处理
+                // 最小化外层样式设置，滚动交给iframe处理
                 Object.assign(document.body.style, {
                     margin: '0',
                     padding: '0'
@@ -1937,14 +1919,14 @@
                 setTimeout(() => {
                     loadingState.classList.add('hidden');
                     
-                    // 再次确保iframe尺寸正确（双重保险）
+                    // 确保iframe尺寸正确
                     setIframeSize();
                     
-                    // 优化的重排处理
+                    // 简化的重排处理 - 方案一版本
                     requestAnimationFrame(() => {
-                        appFrame.style.display = 'none';
+                        appFrame.style.visibility = 'hidden';
                         appFrame.offsetHeight; // 触发重排
-                        appFrame.style.display = 'block';
+                        appFrame.style.visibility = 'visible';
                     });
                 }, 500);
             };
@@ -2157,24 +2139,24 @@
             };
         }
         
-        // 优化的resize处理函数
+        // 优化的resize处理函数 - 方案一简化版
         const handleResize = debounce(() => {
             if (!appView.classList.contains('hidden')) {
+                // 只需要基本的尺寸设置，滚动交给iframe处理
                 setIframeSize();
             }
         }, 150);
         
-        // 优化的方向变化处理函数
+        // 优化的方向变化处理函数 - 方案一简化版
         const handleOrientationChange = debounce(() => {
             if (!appView.classList.contains('hidden')) {
                 setTimeout(() => {
                     setIframeSize();
-                    
-                    // 使用requestAnimationFrame优化重排
+                    // 简单的重排优化
                     requestAnimationFrame(() => {
-                        appFrame.style.display = 'none';
+                        appFrame.style.visibility = 'hidden';
                         appFrame.offsetHeight; // 触发重排
-                        appFrame.style.display = 'block';
+                        appFrame.style.visibility = 'visible';
                     });
                 }, 300);
             }

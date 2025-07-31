@@ -193,6 +193,21 @@
             .container {
                 padding-bottom: 3rem !important; /* 為底部版權留出空間 */
             }
+            
+            /* 卡片模態窗口移動端優化 */
+            .card-modal {
+                padding: 0.5rem !important;
+                /* 確保移動端滾動流暢 */
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior: contain !important;
+            }
+            
+            .card-modal-content {
+                margin: 0.25rem auto !important;
+                width: calc(100% - 0.5rem) !important;
+                /* 確保在小屏幕上內容不會超出 */
+                max-width: none !important;
+            }
         }
         
         /* 背景裝飾元素 */
@@ -1552,6 +1567,8 @@
             z-index: 50;
             overflow-y: auto;
             padding: 1rem;
+            /* 確保外層容器處理滾動 */
+            -webkit-overflow-scrolling: touch;
         }
 
         .card-modal-content {
@@ -1563,8 +1580,9 @@
             width: 100%;
             margin: 0.5rem auto;
             animation: modalAppear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-height: 94vh;
-            overflow-y: auto;
+            /* 移除內部滾動，讓外層容器處理滾動 */
+            max-height: none;
+            overflow: visible;
             display: flex;
             flex-direction: column;
         }
@@ -1573,7 +1591,8 @@
             .card-modal-content {
                 padding: 1.25rem;
                 margin: 1rem auto;
-                max-height: 90vh;
+                /* 移除max-height限制，讓外層容器處理滾動 */
+                max-height: none;
             }
         }
         
@@ -1644,7 +1663,8 @@
 
         .card-modal-body {
             flex: 1;
-            overflow-y: auto;
+            /* 移除內部滾動，讓外層模態框處理所有滾動 */
+            overflow: visible;
             padding-right: 0.25rem;
         }
 
