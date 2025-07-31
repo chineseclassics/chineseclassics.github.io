@@ -873,8 +873,9 @@
         }
         
         .vocabulary-list {
-            max-height: 280px;
-            overflow-y: auto;
+            /* 移除高度限制，允許自然延展 */
+            /* max-height: 280px; */
+            /* overflow-y: auto; */
         }
         
         .vocabulary-item {
@@ -1106,7 +1107,8 @@
         
         .vocabulary-modal-body {
             flex: 1;
-            overflow-y: auto;
+            /* 移除固定滾動，改為自適應 */
+            /* overflow-y: auto; */
             padding: 20px;
         }
         
@@ -3181,8 +3183,9 @@
 
         .achievements-modal-body {
             padding: 20px;
-            max-height: 60vh;
-            overflow-y: auto;
+            /* 移除高度限制和滾動條，允許模態框自適應 */
+            /* max-height: 60vh; */
+            /* overflow-y: auto; */
         }
 
         .achievements-modal-list {
@@ -3966,6 +3969,45 @@
     </div>
     
     <script>
+        // 檢測iframe環境並優化布局
+        function optimizeForIframe() {
+            // 檢測是否在iframe中
+            const inIframe = window.parent !== window;
+            
+            if (inIframe) {
+                // 確保body可以自然滾動
+                const updateBodySize = () => {
+                    const body = document.body;
+                    const width = window.innerWidth;
+                    
+                    // 設置寬度但允許高度自然延展
+                    body.style.width = width + 'px';
+                    body.style.maxWidth = width + 'px';
+                    body.style.overflow = 'auto'; // 允許滾動
+                    body.style.overflowX = 'hidden'; // 防止水平滾動
+                    
+                    // 確保沒有多餘的邊距問題
+                    body.style.boxSizing = 'border-box';
+                    
+                    // 移除任何高度限制，允許自然延展
+                    body.style.height = 'auto';
+                    body.style.minHeight = '100vh'; // 至少填滿視口
+                };
+                
+                // 初始設置
+                updateBodySize();
+                
+                // 監聽窗口大小變化
+                window.addEventListener('resize', updateBodySize);
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(updateBodySize, 100);
+                });
+            }
+        }
+
+        // 立即執行iframe優化
+        optimizeForIframe();
+
         document.addEventListener('DOMContentLoaded', function() {
             
             // 墨寶積分系統 - 完整的玩家數據結構
