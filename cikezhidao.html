@@ -639,10 +639,63 @@
         .home-achievement-badge:hover .home-achievement-tooltip {
             transform: translateX(-50%) scale(1);
         }
+
+        /* iframe環境滾動優化 - 修復雙重滾動條問題 */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow: hidden !important;
+            box-sizing: border-box;
+        }
+
+        /* 主容器高度限制 */
+        .container {
+            height: 100vh !important;
+            height: 100dvh !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.5rem !important;
+            box-sizing: border-box;
+        }
+
+        /* 移動端優化 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0.25rem !important;
+                height: 100vh !important;
+                height: 100dvh !important;
+            }
+            
+            html, body {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+            }
+        }
+
+        /* 確保內容區域適應新的滾動方案 */
+        #game-container {
+            min-height: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 故事容器優化 */
+        #story-content {
+            min-height: 0;
+            max-height: none;
+            overflow: visible;
+        }
     </style>
 </head>
-<body class="bg-light dark:bg-dark text-gray-800 dark:text-gray-200 transition-colors duration-200 scroll-bg">
-    <div class="container mx-auto px-4 py-4 max-w-6xl">
+<body class="bg-light dark:bg-dark text-gray-800 dark:text-gray-200 transition-colors duration-200 scroll-bg" style="margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;">
+    <div class="container mx-auto max-w-6xl" style="height: 100vh; height: 100dvh; overflow-y: auto; overflow-x: hidden; padding: 0.5rem; box-sizing: border-box; -webkit-overflow-scrolling: touch;">
         <!-- 遊戲標題 -->
         <div class="text-center mb-6">
             <div class="mb-3">
@@ -1004,7 +1057,7 @@
                     <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         以下是解鎖不同結局的關鍵決策點。探索不同的選擇可能會引導你到達不同的結局。
                     </div>
-                    <div id="decision-tree-container" class="space-y-4 max-h-[60vh] overflow-y-auto">
+                    <div id="decision-tree-container" class="space-y-4" style="max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 4px;">
                         <!-- 決策樹將在JS中動態生成 -->
                     </div>
                 </div>
@@ -1014,7 +1067,7 @@
 
     <!-- 成就系統彈窗 -->
     <div id="achievements-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-7xl w-full flex flex-col" style="max-height: 95vh;">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-7xl w-full flex flex-col" style="max-height: 90vh; overflow: hidden;">
             <div class="p-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h3 class="text-xl font-bold text-primary">刺客之道成就</h3>
                 <button id="close-achievements" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
@@ -1050,7 +1103,7 @@
     
     <!-- 新增：結局收集庫彈窗 -->
     <div id="endings-collection-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full" style="max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch;">
             <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h3 class="text-xl font-bold text-primary">結局收集庫</h3>
                 <button id="close-endings-collection" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
@@ -1104,7 +1157,7 @@
                 </div>
                 
                 <!-- 結局卡片容器 -->
-                <div id="endings-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[70vh] overflow-y-auto pr-1">
+                <div id="endings-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pr-1" style="max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 4px;">
                     <!-- 結局卡片將在JS中動態生成 -->
                 </div>
             </div>
