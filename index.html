@@ -94,9 +94,10 @@
             -webkit-overflow-scrolling: touch;
         }
         
-        /* 应用视图显示时的body样式 */
+        /* 应用视图显示时的body样式 - 允許iframe內容滾動 */
         body.app-view-active {
-            overflow: hidden !important;
+            /* 移除overflow限制，允許iframe應用內容滾動 */
+            /* overflow: hidden !important; */
         }
         
         /* 强制重置所有默认边距 */
@@ -119,15 +120,22 @@
             line-height: 1;
         }
         
-        /* 移动端优化 */
+        /* 移动端优化 - 修改為僅在首頁時防止滾動 */
         @media (max-width: 768px) {
-            html, body {
+            /* 只有在非應用視圖時才限制滾動 */
+            body:not(.app-view-active) {
                 /* 移动端防止缩放和滚动 */
                 overflow: hidden;
                 position: fixed;
                 width: 100vw;
                 height: 100vh;
                 /* 移动端视口高度 */
+                height: 100dvh;
+            }
+            
+            html {
+                width: 100vw;
+                height: 100vh;
                 height: 100dvh;
             }
             
@@ -233,7 +241,8 @@
             z-index: 40;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden;
+            /* 移除overflow: hidden，允許iframe內容滾動 */
+            /* overflow: hidden; */
             box-sizing: border-box;
             /* 确保没有额外的空间 */
             transform: translateZ(0);
@@ -246,7 +255,8 @@
                 width: 100vw;
                 margin: 0;
                 padding: 0;
-                overflow: hidden;
+                /* 移除overflow: hidden，允許移動端滾動 */
+                /* overflow: hidden; */
             }
         }
         
@@ -988,7 +998,8 @@
             z-index: 50 !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden;
+            /* 移除overflow: hidden，允許iframe應用滾動 */
+            /* overflow: hidden; */
         }
         
         /* 移动端特定优化 */
@@ -1033,8 +1044,8 @@
                 -webkit-overflow-scrolling: touch;
             }
             
-                    /* 移动端首页滚动优化 */
-        body:not(.app-view-active) {
+                    /* 移动端首页滚动优化 - 僅適用於首頁 */
+        body:not(.app-view-active) #homeView {
             overflow: hidden !important;
             -webkit-overflow-scrolling: touch;
         }
