@@ -75,6 +75,124 @@
             position: relative;
             min-height: 100vh;
             overflow-x: hidden;
+            /* 移動端滾動優化 */
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+        
+        /* iframe環境優化 */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari 在 iframe 中的特殊處理 */
+            html, body {
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-overflow-scrolling: touch;
+                position: relative !important;
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+            }
+        }
+        
+        /* 移動端優化 */
+        @media (max-width: 768px) {
+            body {
+                /* 使用100dvh作為主要高度，100vh作為後備 */
+                min-height: 100vh;
+                min-height: 100dvh;
+                /* 確保移動端可以滾動 */
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                /* 防止橫向滾動 */
+                overflow-x: hidden;
+                /* 移動端防止雙擊縮放 */
+                touch-action: manipulation;
+            }
+            
+            /* 移動端容器優化 */
+            .container {
+                min-height: 100vh;
+                min-height: 100dvh;
+                display: flex;
+                flex-direction: column;
+                padding: 0.75rem !important; /* 減少padding以提供更多空間 */
+            }
+            
+            /* 遊戲容器移動端優化 */
+            .game-container {
+                min-height: auto !important;
+                height: auto !important;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 1rem !important; /* 減少內部padding */
+            }
+            
+            /* 詩詞容器移動端優化 */
+            .poem-container {
+                height: 7rem !important; /* 減少高度以節省空間 */
+                min-height: 7rem !important;
+            }
+            
+            /* 按鈕區域優化 */
+            .grid {
+                gap: 0.75rem !important; /* 減少間距 */
+            }
+            
+            /* 確保emoji按鈕適當大小 */
+            .emoji-button {
+                min-height: 3rem !important;
+                padding: 0.5rem !important;
+            }
+        }
+        
+        /* 觸摸滾動優化 */
+        * {
+            /* 確保所有元素都支持觸摸操作 */
+            touch-action: manipulation;
+            /* 防止意外選中文字 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* 允許文字內容選中（如詩詞文本） */
+        .poem-text, .poem-title, .poem-author, p, span:not(.emoji-button span) {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        
+        /* 增強滾動性能 */
+        .scrollable {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            transform: translateZ(0); /* 啟用硬件加速 */
+        }
+        
+        /* 移動端模態框滾動優化 */
+        @media (max-width: 768px) {
+            .modal-content {
+                max-height: 85vh !important;
+                max-height: 85dvh !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            
+            /* 確保統計模態框可滾動 */
+            .stats-content {
+                max-height: 75vh !important;
+                max-height: 75dvh !important;
+                overflow-y: auto !important;
+            }
+            
+            /* 確保底部版權不會覆蓋內容 */
+            .container {
+                padding-bottom: 3rem !important; /* 為底部版權留出空間 */
+            }
         }
         
         /* 背景裝飾元素 */
@@ -1640,7 +1758,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 h-screen overflow-hidden transition-colors duration-300">
+<body class="bg-gray-50 min-h-screen transition-colors duration-300">
     <!-- 背景裝飾元素 -->
     <div class="bg-pattern"></div>
     <div class="bg-characters">詩 詞 意 境 韻 律</div>
@@ -1824,7 +1942,7 @@
     <div class="particles-container" id="particles-container"></div>
     
     <!-- 版權信息 - 顯示在游戲窗口的底部（防止換行） -->
-    <div class="py-2 text-center text-xs sm:text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-800 shadow-sm mt-2 whitespace-nowrap overflow-hidden text-ellipsis px-2">
+    <div class="py-2 text-center text-xs sm:text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-800 shadow-sm mt-2 whitespace-nowrap overflow-hidden text-ellipsis px-2 relative">
         ©意moji - 古詩詞意象配對遊戲 | 設計製作：書院中文經典
     </div>
     
@@ -5620,7 +5738,99 @@
         const tabs = document.querySelectorAll('.tab');
         
         // 初始化遊戲
+        // 檢測iframe環境並優化布局
+        function optimizeForIframe() {
+            // 檢測是否在iframe中
+            const inIframe = window.parent !== window;
+            
+            if (inIframe) {
+                console.log('檢測到iframe環境，進行滾動優化');
+                
+                // 確保body使用實際的iframe尺寸
+                const updateBodySize = () => {
+                    const body = document.body;
+                    const html = document.documentElement;
+                    const width = window.innerWidth;
+                    const height = window.innerHeight;
+                    
+                    // 強制設置精確尺寸
+                    html.style.width = '100%';
+                    html.style.height = 'auto';
+                    html.style.margin = '0';
+                    html.style.padding = '0';
+                    html.style.overflowX = 'hidden';
+                    html.style.overflowY = 'auto';
+                    
+                    body.style.width = '100%';
+                    body.style.height = 'auto';
+                    body.style.minHeight = height + 'px';
+                    body.style.margin = '0';
+                    body.style.padding = '0';
+                    body.style.overflowX = 'hidden';
+                    body.style.overflowY = 'auto';
+                    body.style.webkitOverflowScrolling = 'touch';
+                    body.style.touchAction = 'manipulation';
+                    
+                    // 移動端特殊處理
+                    if (window.innerWidth <= 768) {
+                        body.style.position = 'relative';
+                        body.style.transform = 'translateZ(0)'; // 啟用硬件加速
+                    }
+                };
+                
+                // 初始設置
+                updateBodySize();
+                
+                // 監聽窗口大小變化
+                window.addEventListener('resize', updateBodySize);
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(updateBodySize, 100);
+                });
+                
+                // 確保容器可以滾動
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.minHeight = 'auto';
+                    container.style.height = 'auto';
+                    container.classList.add('scrollable');
+                }
+                
+                // 為所有模態框添加滾動類
+                const modals = document.querySelectorAll('.modal-content, .stats-content');
+                modals.forEach(modal => {
+                    modal.classList.add('scrollable');
+                });
+                
+                // 動態調整遊戲區域高度
+                const adjustGameHeight = () => {
+                    const gameContainer = document.querySelector('.game-container');
+                    const viewportHeight = window.innerHeight;
+                    
+                    if (gameContainer && viewportHeight < 700) {
+                        // 在小屏幕上進一步壓縮
+                        gameContainer.style.padding = '0.75rem';
+                        
+                        const poemContainer = document.querySelector('.poem-container');
+                        if (poemContainer) {
+                            poemContainer.style.height = '6rem';
+                            poemContainer.style.minHeight = '6rem';
+                        }
+                    }
+                };
+                
+                adjustGameHeight();
+                window.addEventListener('resize', adjustGameHeight);
+            } else {
+                // 非iframe環境，確保正常滾動
+                document.body.style.overflowY = 'auto';
+                document.documentElement.style.overflowY = 'auto';
+            }
+        }
+
         function initGame() {
+            // 首先優化iframe布局
+            optimizeForIframe();
+            
             // 初始化音頻
             initAudio();
             
