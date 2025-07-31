@@ -949,6 +949,8 @@
             will-change: transform;
             /* 确保iframe内容正确缩放 */
             box-sizing: border-box;
+            /* 移動端滾動優化 */
+            -webkit-overflow-scrolling: touch;
         }
         
         /* 确保iframe内容正确显示 */
@@ -957,10 +959,12 @@
             height: 100% !important;
         }
         
-        /* 确保应用视图显示时，iframe完全填满屏幕 */
+        /* 确保应用视图显示时，iframe完全填满屏幕 - 移動端優化 */
         #appView:not(.hidden) #appFrame {
             width: 100vw !important;
             height: 100vh !important;
+            /* 移動端Safari視口優化 */
+            height: 100dvh !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
@@ -1237,7 +1241,10 @@
     <!-- 应用视图 - 移出main标签以确保完全全屏 -->
     <div id="appView" class="hidden">
         <div id="appContainer" class="app-container">
-            <iframe id="appFrame" class="w-full h-full border-0" src="about:blank"></iframe>
+            <iframe id="appFrame" class="w-full h-full border-0" src="about:blank" 
+                    allow="fullscreen; camera; microphone; geolocation" 
+                    referrerpolicy="no-referrer-when-downgrade"
+                    loading="eager"></iframe>
             
             <!-- 優化的加载状态 -->
             <div id="loadingState" class="absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
@@ -1779,7 +1786,8 @@
             appContainer.style.height = frameHeight + 'px';
             appContainer.style.margin = '0';
             appContainer.style.padding = '0';
-            appContainer.style.overflow = 'hidden';
+            // 移除容器滾動限制，允許內容自然滾動
+            // appContainer.style.overflow = 'hidden';
             
             // 加载iframe
             appFrame.src = app.url;
@@ -1989,6 +1997,30 @@
                     appContainer.style.height = newHeight + 'px';
                     appView.style.width = newWidth + 'px';
                     appView.style.height = newHeight + 'px';
+                }
+            });
+            
+            // 移動端方向變化優化處理
+            window.addEventListener('orientationchange', () => {
+                if (!appView.classList.contains('hidden')) {
+                    // 延遲處理，等待方向變化完成
+                    setTimeout(() => {
+                        const newWidth = window.innerWidth;
+                        const newHeight = window.innerHeight;
+                        
+                        // 強制重新設置iframe尺寸
+                        appFrame.style.width = newWidth + 'px';
+                        appFrame.style.height = newHeight + 'px';
+                        appContainer.style.width = newWidth + 'px';
+                        appContainer.style.height = newHeight + 'px';
+                        appView.style.width = newWidth + 'px';
+                        appView.style.height = newHeight + 'px';
+                        
+                        // 觸發重排以確保正確顯示
+                        appFrame.style.display = 'none';
+                        appFrame.offsetHeight; // 觸發重排
+                        appFrame.style.display = 'block';
+                    }, 300); // 給足夠時間讓方向變化完成
                 }
             });
         });
