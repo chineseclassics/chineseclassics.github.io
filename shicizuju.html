@@ -293,12 +293,14 @@
                 font-size: 1.25rem !important;
             }
 
-            /* 诗歌显示框移动端优化 */
+            /* 诗歌显示框移动端优化 - 保持一行高度 */
             #poemDisplay {
                 font-size: 1.25rem !important;
                 height: 2.5rem !important;
                 line-height: 2.5rem !important;
                 padding: 0.25rem !important;
+                overflow: hidden !important;
+                white-space: nowrap !important;
             }
 
             /* 按钮区域压缩 */
@@ -312,11 +314,19 @@
                 font-size: 1rem !important;
             }
 
-            /* 字符网格优化 - 确保显示3行 */
+            /* 字符网格优化 - 确保显示3行，去掉滚动条 */
             #charactersGrid {
                 grid-template-rows: repeat(3, 1fr) !important;
                 gap: 0.25rem !important;
                 min-height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+                padding: 4px !important;
+            }
+
+            /* 汉字选择区域容器优化 */
+            .paper-effect.p-3.rounded-lg.shadow-md.border.border-secondary\/30 {
+                overflow: visible !important;
                 max-height: none !important;
             }
 
@@ -342,6 +352,8 @@
                 font-size: 1.125rem !important;
                 height: 2.25rem !important;
                 line-height: 2.25rem !important;
+                overflow: hidden !important;
+                white-space: nowrap !important;
             }
 
             .font-title {
@@ -498,14 +510,14 @@
             </div>
             
             <div class="flex-grow flex items-center justify-center my-2">
-                <textarea id="poemDisplay" class="w-full p-2 rounded-lg shadow-inner bg-imperial/70 dark:bg-gray-700/80 text-2xl font-kai font-bold text-center focus:outline-none" readonly style="resize: none; text-align-last: center; height: 3rem; line-height: 3rem; overflow: hidden;"></textarea>
+                <textarea id="poemDisplay" class="w-full p-2 rounded-lg shadow-inner bg-imperial/70 dark:bg-gray-700/80 text-2xl font-kai font-bold text-center focus:outline-none" readonly style="resize: none; text-align-last: center; height: 3rem; line-height: 3rem; overflow: hidden; white-space: nowrap;"></textarea>
             </div>
         </div>
         
         <!-- 汉字选择区域 -->
-        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30" style="flex: 1; min-height: 0; display: flex; flex-direction: column; max-height: none;">
+        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30" style="flex: 1; min-height: 0; display: flex; flex-direction: column; max-height: none; overflow: visible;">
             <h2 class="text-lg font-kai font-semibold mb-2 text-primary" style="flex-shrink: 0;">點選漢字組成詩句</h2>
-            <div id="charactersGrid" class="grid grid-cols-5 gap-2" style="flex: 1; overflow: visible; padding: 4px; display: grid; align-content: start;">
+            <div id="charactersGrid" class="grid grid-cols-5 gap-2" style="flex: 1; overflow: visible; padding: 4px; display: grid; align-content: start; max-height: none;">
                 <!-- Characters will be inserted here by JavaScript -->
             </div>
             
@@ -1537,7 +1549,7 @@
                 // 显示正确答案，移動端優化
                 correctAnswer.classList.remove('hidden');
                 correctAnswer.textContent = currentPoem.line;
-                correctAnswer.className = 'mt-2 text-xl sm:text-2xl font-kai font-bold text-primary';
+                correctAnswer.className = 'mt-2 text-lg sm:text-xl font-kai font-bold text-primary';
             } else {
                 // 播放錯誤/時間到音效
                 soundManager.play('timeUp');
@@ -1554,7 +1566,7 @@
                 // 显示正确答案，移動端優化尺寸
                 correctAnswer.classList.remove('hidden');
                 correctAnswer.textContent = currentPoem.line;
-                correctAnswer.className = 'mt-2 sm:mt-4 text-2xl sm:text-4xl font-kai font-bold text-primary py-2 sm:py-3 border-t-2 border-primary/30 pt-2 sm:pt-4';
+                correctAnswer.className = 'mt-2 text-lg sm:text-xl font-kai font-bold text-primary py-1 sm:py-2 border-t border-primary/30 pt-2';
             }
         };
 
