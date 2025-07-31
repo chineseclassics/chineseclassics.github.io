@@ -928,7 +928,7 @@
             z-index: 50 !important;
         }
         
-        /* iframe全屏样式 */
+        /* iframe全屏样式 - 優化版：允許滾動 */
         #appFrame {
             display: block;
             width: 100% !important;
@@ -936,7 +936,8 @@
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
-            overflow: hidden;
+            /* 移除 overflow: hidden，允許內容滾動 */
+            /* overflow: hidden; */
             position: absolute;
             top: 0;
             left: 0;
@@ -1769,8 +1770,9 @@
             appFrame.style.right = '0';
             appFrame.style.bottom = '0';
             appFrame.style.zIndex = '1';
-            appFrame.style.overflow = 'hidden';
-            appFrame.scrolling = 'no';
+            // 允許iframe內容滾動以解決移動端適配問題
+            // appFrame.style.overflow = 'hidden';
+            // appFrame.scrolling = 'no';
             
             // 确保容器也正确设置
             appContainer.style.width = frameWidth + 'px';
