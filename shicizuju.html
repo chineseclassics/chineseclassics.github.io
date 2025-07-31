@@ -223,8 +223,8 @@
         }
     </style>
 </head>
-<body class="bg-chinese-light dark:bg-chinese-dark text-ink dark:text-gray-200 h-screen overflow-hidden transition-colors duration-300 font-text">
-    <div class="container mx-auto px-2 py-4 max-w-5xl h-full flex flex-col">
+<body class="bg-chinese-light dark:bg-chinese-dark text-ink dark:text-gray-200 min-h-screen max-h-screen overflow-hidden transition-colors duration-300 font-text">
+    <div class="container mx-auto px-2 py-4 max-w-5xl max-h-full flex flex-col overflow-hidden">
         <div class="flex justify-between items-center mb-3">
             <!-- 左侧得分显示 -->
             <div class="paper-effect p-2 sm:p-3 rounded-lg border border-secondary/30 flex items-center">
@@ -376,14 +376,14 @@
         </div>
         
         <!-- 汉字选择区域 -->
-        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30 flex-grow">
+        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30 flex-grow min-h-0 flex flex-col">
             <h2 class="text-lg font-kai font-semibold mb-2 text-primary">點選漢字組成詩句</h2>
-            <div id="charactersGrid" class="grid grid-cols-5 gap-2 max-h-[35vh] overflow-y-auto">
+            <div id="charactersGrid" class="grid grid-cols-5 gap-2 flex-grow overflow-y-auto">
                 <!-- Characters will be inserted here by JavaScript -->
             </div>
             
             <!-- 把按钮移动到选字界面下方并居中布局 -->
-            <div class="flex justify-center space-x-20 mt-6">
+            <div class="flex justify-center space-x-20 mt-4 flex-shrink-0">
                 <button id="clearSelection" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-md transition-colors font-kai shadow-md text-lg">清除選擇</button>
                 <button id="submitPoem" class="bg-secondary hover:bg-secondary/80 text-white px-8 py-3 rounded-md transition-colors font-kai shadow-md text-lg">提交</button>
             </div>
