@@ -466,6 +466,12 @@
                     // 移除任何高度限制
                     body.style.height = 'auto';
                     body.style.minHeight = '100vh'; // 至少填滿視口
+                    
+                    // 確保iframe內的滾動行為平滑
+                    body.style.scrollBehavior = 'smooth';
+                    
+                    // 添加額外的padding底部，確保內容不會被遮擋
+                    body.style.paddingBottom = '20px';
                 };
                 
                 // 初始設置
@@ -476,6 +482,11 @@
                 window.addEventListener('orientationchange', () => {
                     setTimeout(updateBodySize, 100);
                 });
+                
+                // 提供更好的觸摸滾動支持（移動端）
+                if ('ontouchstart' in window) {
+                    body.style.webkitOverflowScrolling = 'touch';
+                }
             }
         }
 
@@ -1374,6 +1385,14 @@
                     endRound(false);
                 }
             }, 1000);
+            
+            // 滾動到頂部，讓用戶專注於新的詩句提示
+            setTimeout(() => {
+                window.scrollTo({ 
+                    top: 0, 
+                    behavior: 'smooth' 
+                });
+            }, 100);
         };
 
         // End the current round
@@ -1458,6 +1477,16 @@
                 correctAnswer.textContent = currentPoem.line;
                 correctAnswer.className = 'mt-4 text-4xl font-kai font-bold text-primary py-3 border-t-2 border-primary/30 pt-4';
             }
+            
+            // 添加滾動到底部的功能，確保用戶能看到結果和下一輪按鈕
+            setTimeout(() => {
+                // 滾動到下一輪按鈕位置，確保用戶能看到完整內容
+                nextRoundButtonContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'end', 
+                    inline: 'nearest' 
+                });
+            }, 100); // 稍微延遲以確保DOM更新完成
         };
 
         // Verify if the current input matches the poem
