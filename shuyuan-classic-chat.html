@@ -2062,82 +2062,27 @@
             to { opacity: 1; }
         }
         
-        /* 容器呼吸動畫 - 增強版 */
-        @keyframes containerGlowBreathe {
+        /* V2性能優化：呼吸效果動畫 */
+        @keyframes breatheOpacity {
             0%, 100% {
-                box-shadow: 
-                    0 0 15px rgba(138, 43, 226, 0.5),
-                    0 0 25px rgba(102, 126, 234, 0.4),
-                    0 0 40px rgba(75, 0, 130, 0.3),
-                    0 0 60px rgba(147, 112, 219, 0.25),
-                    0 0 80px rgba(106, 90, 205, 0.2),
-                    0 0 100px rgba(72, 61, 139, 0.15),
-                    0 0 120px rgba(128, 0, 128, 0.12),
-                    0 0 140px rgba(75, 0, 130, 0.08),
-                    0 0 160px rgba(138, 43, 226, 0.05),
-                    0 0 20px rgba(255, 215, 0, 0.3),
-                    0 0 40px rgba(255, 140, 0, 0.2);
-            }
-            25% {
-                box-shadow: 
-                    0 0 20px rgba(138, 43, 226, 0.6),
-                    0 0 35px rgba(102, 126, 234, 0.5),
-                    0 0 50px rgba(75, 0, 130, 0.4),
-                    0 0 70px rgba(147, 112, 219, 0.3),
-                    0 0 90px rgba(106, 90, 205, 0.25),
-                    0 0 110px rgba(72, 61, 139, 0.2),
-                    0 0 130px rgba(128, 0, 128, 0.15),
-                    0 0 150px rgba(75, 0, 130, 0.1),
-                    0 0 170px rgba(138, 43, 226, 0.06),
-                    0 0 30px rgba(255, 215, 0, 0.4),
-                    0 0 50px rgba(255, 140, 0, 0.3);
+                opacity: 0;
+                transform: scale(0.98);
             }
             50% {
-                box-shadow: 
-                    0 0 25px rgba(138, 43, 226, 0.7),
-                    0 0 40px rgba(102, 126, 234, 0.6),
-                    0 0 60px rgba(75, 0, 130, 0.5),
-                    0 0 80px rgba(147, 112, 219, 0.4),
-                    0 0 100px rgba(106, 90, 205, 0.3),
-                    0 0 120px rgba(72, 61, 139, 0.25),
-                    0 0 140px rgba(128, 0, 128, 0.2),
-                    0 0 160px rgba(75, 0, 130, 0.15),
-                    0 0 180px rgba(138, 43, 226, 0.1),
-                    0 0 40px rgba(255, 215, 0, 0.5),
-                    0 0 60px rgba(255, 140, 0, 0.4);
-            }
-            75% {
-                box-shadow: 
-                    0 0 20px rgba(138, 43, 226, 0.6),
-                    0 0 35px rgba(102, 126, 234, 0.5),
-                    0 0 50px rgba(75, 0, 130, 0.4),
-                    0 0 70px rgba(147, 112, 219, 0.3),
-                    0 0 90px rgba(106, 90, 205, 0.25),
-                    0 0 110px rgba(72, 61, 139, 0.2),
-                    0 0 130px rgba(128, 0, 128, 0.15),
-                    0 0 150px rgba(75, 0, 130, 0.1),
-                    0 0 170px rgba(138, 43, 226, 0.06),
-                    0 0 30px rgba(255, 215, 0, 0.4),
-                    0 0 50px rgba(255, 140, 0, 0.3);
+                opacity: 1;
+                transform: scale(1);
             }
         }
         
-        /* 外層容器發光動畫 */
-        @keyframes outerContainerGlow {
-            0% {
-                opacity: 0.3;
-                transform: scale(0.95);
-                filter: blur(8px) brightness(0.8);
+        /* V2性能優化：外部輝光脈衝動畫 */
+        @keyframes outerGlowPulse {
+            from {
+                opacity: 0.5;
+                transform: scale(1.0);
             }
-            50% {
-                opacity: 0.6;
+            to {
+                opacity: 0.8;
                 transform: scale(1.05);
-                filter: blur(10px) brightness(1.2);
-            }
-            100% {
-                opacity: 0.4;
-                transform: scale(1.1);
-                filter: blur(8px) brightness(1);
             }
         }
         
@@ -2145,57 +2090,62 @@
             animation: fadeIn 0.2s ease-out forwards;
         }
         
-        /* 統一父容器 - 控制所有頁面的圓角和尺寸 */
+        /* 統一父容器 - 控制所有頁面的圓角和尺寸 (V2性能優化) */
         .app-universal-container {
             width: 390px;
             height: 844px;
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
             border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 
-                0 0 15px rgba(138, 43, 226, 0.5),
-                0 0 25px rgba(102, 126, 234, 0.4),
-                0 0 40px rgba(75, 0, 130, 0.3),
-                0 0 60px rgba(147, 112, 219, 0.25),
-                0 0 80px rgba(106, 90, 205, 0.2),
-                0 0 100px rgba(72, 61, 139, 0.15),
-                0 0 120px rgba(128, 0, 128, 0.12),
-                0 0 140px rgba(75, 0, 130, 0.08),
-                0 0 160px rgba(138, 43, 226, 0.05),
-                0 0 20px rgba(255, 215, 0, 0.3),
-                0 0 40px rgba(255, 140, 0, 0.2);
+            overflow: visible; /* 允許偽元素的陰影顯示 */
+            /* 基礎靜態陰影 */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             box-sizing: border-box;
-            animation: containerGlowBreathe 4s ease-in-out infinite;
             z-index: 5;
-            opacity: 0; /* 初始不可见 */
-            visibility: hidden; /* 初始隐藏 */
-            transition: opacity 0.4s ease, visibility 0.4s ease; /* 平滑过渡 */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            will-change: transform, opacity;
+            transform: translate(-50%, -50%) translateZ(0);
         }
-        
+
         /* 父容器显示状态 */
         .app-universal-container.show {
             opacity: 1;
             visibility: visible;
         }
-        
-        /* 主界面外層發光效果 */
+
+        /* 外部大範圍輝光 (V2性能優化) - 不再動畫filter */
         .app-universal-container::before {
             content: '';
             position: absolute;
-            top: -20px;
-            left: -20px;
-            right: -20px;
-            bottom: -20px;
-            background: 
-                radial-gradient(ellipse at center, rgba(138, 43, 226, 0.2) 0%, rgba(102, 126, 234, 0.15) 30%, transparent 70%),
-                radial-gradient(ellipse at center, rgba(255, 215, 0, 0.15) 0%, rgba(255, 140, 0, 0.1) 40%, transparent 80%);
+            top: -20px; left: -20px; right: -20px; bottom: -20px;
+            background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.15) 0%, transparent 70%);
             border-radius: 20px;
-            animation: outerContainerGlow 5s ease-in-out infinite alternate;
+            animation: outerGlowPulse 4s ease-in-out infinite alternate;
             pointer-events: none;
-            filter: blur(8px);
+            filter: blur(10px);
+            z-index: -2;
+            will-change: transform, opacity;
+            transform: translateZ(0);
+        }
+
+        /* 呼吸式輝光 (V2性能優化) - 使用opacity動畫代替box-shadow動畫 */
+        .app-universal-container::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 16px;
+            /* 這是輝光最強狀態的靜態陰影 */
+            box-shadow: 
+                0 0 30px rgba(138, 43, 226, 0.7),
+                0 0 50px rgba(102, 126, 234, 0.5),
+                0 0 35px rgba(255, 215, 0, 0.5);
+            animation: breatheOpacity 4s ease-in-out infinite;
+            opacity: 0;
+            will-change: opacity, transform;
+            pointer-events: none;
             z-index: -1;
         }
         
