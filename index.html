@@ -1505,29 +1505,11 @@
             if (appFrame) {
                 appFrame.onload = null;
                 appFrame.onerror = null;
-                
-                // Safari 專用：清理 iframe 的渲染資源
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                if (isSafari) {
-                    // 重置 iframe 的變換屬性以釋放 GPU 資源
-                    appFrame.style.transform = '';
-                    appFrame.style.webkitTransform = '';
-                    appFrame.style.backfaceVisibility = '';
-                    appFrame.style.webkitBackfaceVisibility = '';
-                    appFrame.style.perspective = '';
-                    appFrame.style.webkitPerspective = '';
-                }
             }
-            
-            // 恢復背景動畫（如果還沒恢復的話）
-            resumeBackgroundAnimations();
         }
         
-        // 瀏覽器兼容性檢查和優化 - Safari iframe 優化版
+        // 浏览器兼容性检查和优化 - 方案一简化版
         function setupBrowserCompatibility() {
-            // 檢查是否為 Safari
-            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            
             // 检查100dvh支持
             const testElement = document.createElement('div');
             testElement.style.height = '100dvh';
@@ -1548,42 +1530,7 @@
                 document.head.appendChild(style);
             }
             
-            // Safari 專用 iframe 性能優化
-            if (isSafari) {
-                const safariOptimizations = document.createElement('style');
-                safariOptimizations.textContent = `
-                    /* Safari iframe 性能優化 */
-                    #appFrame {
-                        /* 使用 GPU 硬件加速，但避免與父頁面衝突 */
-                        transform: translate3d(0, 0, 0) !important;
-                        -webkit-transform: translate3d(0, 0, 0) !important;
-                        /* 優化 Safari 的重繪性能 */
-                        -webkit-backface-visibility: hidden !important;
-                        backface-visibility: hidden !important;
-                        /* 減少 Safari 的複合層創建 */
-                        will-change: auto !important;
-                        /* 優化渲染 */
-                        -webkit-perspective: 1000px !important;
-                        perspective: 1000px !important;
-                    }
-                    
-                    /* 當應用視圖活躍時，隱藏可能造成性能影響的元素 */
-                    body.app-view-active .cloud-particle,
-                    body.app-view-active .mystic-glow {
-                        visibility: hidden !important;
-                        opacity: 0 !important;
-                        pointer-events: none !important;
-                    }
-                    
-                    /* Safari 中減少不必要的 GPU 層 */
-                    body.app-view-active #homeView * {
-                        transform: none !important;
-                        -webkit-transform: none !important;
-                    }
-                `;
-                document.head.appendChild(safariOptimizations);
-                console.log('Safari iframe 性能優化已啟用');
-            }
+            // 简化版：移除滚动相关的兼容性处理，交给iframe应用自己处理
         }
         
         // 键盘导航支持增强
@@ -1631,60 +1578,12 @@
             });
         }
         
-        // 性能優化：暫停/恢復背景動畫
-        function pauseBackgroundAnimations() {
-            // 暫停雲氣粒子動畫
-            const cloudParticles = document.querySelectorAll('.cloud-particle');
-            cloudParticles.forEach(particle => {
-                particle.style.animationPlayState = 'paused';
-            });
-            
-            // 暫停幻境光效動畫
-            const mysticGlows = document.querySelectorAll('.mystic-glow');
-            mysticGlows.forEach(glow => {
-                glow.style.animationPlayState = 'paused';
-            });
-            
-            // 暫停主頁面的所有動畫
-            const homeView = document.getElementById('homeView');
-            if (homeView) {
-                homeView.style.animationPlayState = 'paused';
-            }
-            
-            console.log('背景動畫已暫停以優化 iframe 性能');
-        }
-        
-        function resumeBackgroundAnimations() {
-            // 恢復雲氣粒子動畫
-            const cloudParticles = document.querySelectorAll('.cloud-particle');
-            cloudParticles.forEach(particle => {
-                particle.style.animationPlayState = 'running';
-            });
-            
-            // 恢復幻境光效動畫
-            const mysticGlows = document.querySelectorAll('.mystic-glow');
-            mysticGlows.forEach(glow => {
-                glow.style.animationPlayState = 'running';
-            });
-            
-            // 恢復主頁面的所有動畫
-            const homeView = document.getElementById('homeView');
-            if (homeView) {
-                homeView.style.animationPlayState = 'running';
-            }
-            
-            console.log('背景動畫已恢復');
-        }
-
         // 增强的状态管理函数 - 方案一简化版  
         function setAppViewState(isActive) {
             if (isActive) {
                 // 激活应用视图
                 document.body.classList.add('app-view-active');
                 document.getElementById('floatingLogo').classList.remove('hidden');
-                
-                // 【新增】暫停背景動畫以優化 Safari iframe 性能
-                pauseBackgroundAnimations();
                 
                 // 设置aria-hidden属性
                 const homeView = document.getElementById('homeView');
@@ -1710,9 +1609,6 @@
                 // 恢复首页状态
                 document.body.classList.remove('app-view-active');
                 document.getElementById('floatingLogo').classList.add('hidden');
-                
-                // 【新增】恢復背景動畫
-                resumeBackgroundAnimations();
                 
                 // 恢复aria-hidden属性
                 const homeView = document.getElementById('homeView');
@@ -2026,37 +1922,12 @@
                     // 确保iframe尺寸正确
                     setIframeSize();
                     
-                    // Safari 專用：iframe 加載完成後的額外優化
-                    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                    if (isSafari) {
-                        // 強制清理父頁面的渲染緩存
-                        requestAnimationFrame(() => {
-                            // 暫時隱藏 iframe
-                            appFrame.style.visibility = 'hidden';
-                            appFrame.offsetHeight; // 強制重排
-                            
-                            // 優化 Safari 的複合層
-                            appFrame.style.transform = 'translate3d(0, 0, 0)';
-                            appFrame.style.webkitTransform = 'translate3d(0, 0, 0)';
-                            
-                            // 恢復顯示
-                            appFrame.style.visibility = 'visible';
-                            
-                            console.log('Safari iframe 載入優化完成');
-                        });
-                        
-                        // 進一步確保背景動畫已完全暫停
-                        setTimeout(() => {
-                            pauseBackgroundAnimations();
-                        }, 100);
-                    } else {
-                        // 其他瀏覽器的簡化重排處理
-                        requestAnimationFrame(() => {
-                            appFrame.style.visibility = 'hidden';
-                            appFrame.offsetHeight; // 触发重排
-                            appFrame.style.visibility = 'visible';
-                        });
-                    }
+                    // 简化的重排处理 - 方案一版本
+                    requestAnimationFrame(() => {
+                        appFrame.style.visibility = 'hidden';
+                        appFrame.offsetHeight; // 触发重排
+                        appFrame.style.visibility = 'visible';
+                    });
                 }, 500);
             };
 
