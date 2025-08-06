@@ -9406,145 +9406,108 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
              return extractedCharacters;
          }
          
-         // 智能規則選擇系統（確保提及的角色一定被選中）
+                 // 智能規則選擇系統（確保總回應人數為1-3人，且提及的角色優先）
         function useIntelligentRuleBasedSelection(userMessage, activeCharacters) {
-            console.log('開始智能規則選擇...');
+            console.log('🚀 開始智能規則選擇...');
             
-            const selectedCharacters = [];
+            // 1. 決定本次回應的總角色數（1-3個）
+            const totalDesired = Math.min(activeCharacters.length, Math.floor(Math.random() * 3) + 1);
+            console.log(`🎯 本次回應目標總人數: ${totalDesired}`);
+            
+            const selectedCharacters = new Set();
             const characterScores = {};
             
-            // 初始化所有角色的分數
-            activeCharacters.forEach(charId => {
-                characterScores[charId] = 0;
-            });
-            
-            // 1. 最高優先級：直接提及的角色（@或名字）
+            // 2. 檢測所有提及類型
             const directMentions = detectDirectMentions(userMessage, activeCharacters);
-            if (directMentions.length > 0) {
-                selectedCharacters.push(...directMentions);
-                console.log('檢測到直接提及:', directMentions.map(id => characters[id].name));
-            }
-            
-            // 2. 高優先級：間接提及的角色（「你」指向前一個角色）
             const indirectMentions = detectIndirectMentions(userMessage, activeCharacters);
-            if (indirectMentions.length > 0) {
-                selectedCharacters.push(...indirectMentions);
-                console.log('檢測到間接提及:', indirectMentions.map(id => characters[id].name));
-            }
-            
-            // 3. 中優先級：AI提及的角色
             const aiMentions = detectAIMentions(userMessage, activeCharacters);
-            if (aiMentions.length > 0) {
-                selectedCharacters.push(...aiMentions);
-                console.log('檢測到AI提及:', aiMentions.map(id => characters[id].name));
-            }
             
-            // 4. 上下文分析：對話連續性和意圖
-            const context = analyzeConversationContext(userMessage, activeCharacters);
-            
-            // 5. 為未選中的角色計算分數
-            const unselectedCharacters = activeCharacters.filter(id => !selectedCharacters.includes(id));
-            unselectedCharacters.forEach(charId => {
-                let score = 0;
-                
-                // 對話連續性
-                if (context.lastSpeaker === charId && context.userIntent === 'continue_conversation') {
-                    score += 50;
-                    console.log(`對話連續性：${characters[charId].name} +50分`);
+            // 3. 按優先級填充提及的角色，直到達到期望總數
+            const fillMentionedCharacters = (mentions, type) => {
+                for (const charId of mentions) {
+                    if (selectedCharacters.size < totalDesired) {
+                        if (!selectedCharacters.has(charId)) {
+                            selectedCharacters.add(charId);
+                            console.log(`🌟 (${type}) ${characters[charId].name} 被選中`);
+                        }
+                    } else {
+                        break;
+                    }
                 }
-                
-                // 提問回應
-                if (context.lastSpeaker === charId && context.userIntent === 'ask_question') {
-                    score += 40;
-                    console.log(`提問回應：${characters[charId].name} +40分`);
-                }
-                
-                // 群組平衡（避免同一個角色過於頻繁回應）
-                const recentSpeakers = groupChatContext.messages.slice(-5)
-                    .filter(msg => msg.character && msg.character !== 'user')
-                    .map(msg => msg.character);
-                const recentCount = recentSpeakers.filter(speaker => speaker === charId).length;
-                if (recentCount > 2) {
-                    score -= recentCount * 10;
-                    console.log(`群組平衡：${characters[charId].name} -${recentCount * 10}分`);
-                }
-                
-                // 隨機因子
-                const randomBonus = Math.random() * 20;
-                score += randomBonus;
-                console.log(`隨機因子：${characters[charId].name} +${randomBonus.toFixed(1)}分`);
-                
-                characterScores[charId] = score;
-            });
+            };
             
-            // 6. 決定額外角色數量（保持1-3個角色的隨機性）
-            let totalDesired = Math.min(activeCharacters.length, Math.floor(Math.random() * 3) + 1);
+            fillMentionedCharacters(directMentions, '直接提及');
+            fillMentionedCharacters(indirectMentions, '間接提及');
+            fillMentionedCharacters(aiMentions, 'AI提及');
             
-            // 如果只有提及的角色，隨機決定是否添加互動角色（0-2個）
-            if (selectedCharacters.length === 1) {
-                const shouldAddInteraction = Math.random() < 0.7; // 70%概率添加互動角色
-                if (shouldAddInteraction) {
-                    const additionalCount = Math.min(activeCharacters.length - 1, Math.floor(Math.random() * 2) + 1); // 隨機添加1-2個
-                    totalDesired = Math.min(activeCharacters.length, selectedCharacters.length + additionalCount);
-                    console.log(`提及角色，隨機添加${additionalCount}個互動角色`);
-                } else {
-                    console.log('提及角色，保持單角色回應（無互動）');
-                }
-            }
-            
-            const additionalNeeded = Math.max(0, totalDesired - selectedCharacters.length);
+            // 4. 如果名額未滿，通過評分選擇額外角色
+            const additionalNeeded = totalDesired - selectedCharacters.size;
             
             if (additionalNeeded > 0) {
-                // 按分數排序選擇額外角色
+                console.log(`📊 仍需 ${additionalNeeded} 個角色，開始評分...`);
+                
+                const unselectedCharacters = activeCharacters.filter(id => !selectedCharacters.has(id));
+                
+                unselectedCharacters.forEach(charId => {
+                    let score = 0;
+                    const context = analyzeConversationContext(userMessage, activeCharacters);
+                    
+                    // 對話連續性
+                    if (context.lastSpeaker === charId && context.userIntent === 'continue_conversation') {
+                        score += 50;
+                    }
+                    // 提問回應
+                    if (context.lastSpeaker === charId && context.userIntent === 'ask_question') {
+                        score += 40;
+                    }
+                    // 群組平衡
+                    const recentSpeakers = groupChatContext.messages.slice(-5)
+                        .filter(msg => msg.character && msg.character !== 'user')
+                        .map(msg => msg.character);
+                    const recentCount = recentSpeakers.filter(speaker => speaker === charId).length;
+                    if (recentCount > 2) {
+                        score -= recentCount * 10;
+                    }
+                    // 隨機因子
+                    score += Math.random() * 20;
+                    
+                    characterScores[charId] = score;
+                });
+                
                 const sortedUnselected = unselectedCharacters.sort((a, b) => 
                     (characterScores[b] || 0) - (characterScores[a] || 0)
                 );
                 
                 const additionalCharacters = sortedUnselected.slice(0, additionalNeeded);
-                selectedCharacters.push(...additionalCharacters);
-                console.log('額外選擇的角色:', additionalCharacters.map(id => characters[id].name));
+                additionalCharacters.forEach(charId => {
+                    selectedCharacters.add(charId);
+                    console.log(`🏆 (評分) ${characters[charId].name} 被選中`);
+                });
             }
             
-            // 7. 重新排序：確保提及的角色按正確優先級排序
-            const finalSelection = [...new Set(selectedCharacters)];
-            
-            // 按優先級重新排序：直接提及 > 間接提及 > AI提及 > 其他角色
+            // 5. 按優先級重新排序最終結果
+            const finalSelection = Array.from(selectedCharacters);
             const reorderedSelection = [];
-            
-            // 第一優先級：直接提及的角色（@或名字）
-            directMentions.forEach(charId => {
-                if (finalSelection.includes(charId) && !reorderedSelection.includes(charId)) {
-                    reorderedSelection.push(charId);
-                }
-            });
-            
-            // 第二優先級：間接提及的角色（「你」指向前一個角色）
-            indirectMentions.forEach(charId => {
-                if (finalSelection.includes(charId) && !reorderedSelection.includes(charId)) {
-                    reorderedSelection.push(charId);
-                }
-            });
-            
-            // 第三優先級：AI提及的角色
-            aiMentions.forEach(charId => {
-                if (finalSelection.includes(charId) && !reorderedSelection.includes(charId)) {
-                    reorderedSelection.push(charId);
-                }
-            });
-            
-            // 最後添加其他角色
+
+            const addToFinal = (mentions) => {
+                mentions.forEach(charId => {
+                    if (finalSelection.includes(charId) && !reorderedSelection.includes(charId)) {
+                        reorderedSelection.push(charId);
+                    }
+                });
+            };
+
+            addToFinal(directMentions);
+            addToFinal(indirectMentions);
+            addToFinal(aiMentions);
+
             finalSelection.forEach(charId => {
                 if (!reorderedSelection.includes(charId)) {
                     reorderedSelection.push(charId);
                 }
             });
-            
-            console.log('最終選擇的角色（按優先級排序）:', {
-                '直接提及': directMentions.map(id => characters[id].name),
-                '間接提及': indirectMentions.map(id => characters[id].name),
-                'AI提及': aiMentions.map(id => characters[id].name),
-                '最終順序': reorderedSelection.map(id => characters[id].name)
-            });
+
+            console.log('✅ 最終選擇的角色（按優先級排序）:', reorderedSelection.map(id => characters[id].name));
             return reorderedSelection;
         }
         
