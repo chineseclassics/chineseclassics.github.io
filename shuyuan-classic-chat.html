@@ -5408,6 +5408,22 @@
                     members: ['lindaiyu', 'xuebaochai', 'jiatanchun', 'jiayingchun', 'jiaxichun', 'shixiangyun', 'liwan', 'miaoyu', 'jiabaoyu'],
                     maxMembers: 20,
                     isActive: true
+                },
+                'tarot_club': {
+                    id: 'tarot_club',
+                    name: '《詭秘之主》塔羅會',
+                    description: '灰霧之上的祕密會議，成員以塔羅牌為代號',
+                    theme: '神秘學交流、途徑序列與占卜推演',
+                    owner: 'fool',
+                    aiStyle: {
+                        tone: '神秘克制，理性而有禮',
+                        focus: '神秘學、序列經驗、占卜與調查、會議規訓',
+                        avoidTopics: ['政治敏感', '暴力血腥', '現代爭議'],
+                        encourageTopics: ['代號互動', '灰霧規則', '序列見聞', '祕聞分享', '理性推演']
+                    },
+                    members: ['fool', 'world', 'justice', 'hanged_man', 'sun', 'magician', 'hermit', 'moon', 'judgement', 'star', 'temperance'],
+                    maxMembers: 20,
+                    isActive: true
                 }
             },
             
@@ -5682,13 +5698,15 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                     'poets_group': '📝',
                     'history_group': '📚', 
                     'philosophy_group': '🧘',
-                    'mystery_group': '👻'
+                    'mystery_group': '👻',
+                    'tarot_club': '🃏'
                 };
                 this.groupClasses = {
                     'poets_group': 'poets',
                     'history_group': 'history',
                     'philosophy_group': 'philosophy', 
-                    'mystery_group': 'mystery'
+                    'mystery_group': 'mystery',
+                    'tarot_club': 'tarot'
                 };
             }
             
@@ -8252,6 +8270,96 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 description: "秦朝第二位皇帝，昏庸無能，被趙高控制，導致秦朝滅亡。",
                 inGroup: true,
                 dynasty: "秦漢"
+            }
+            ,
+            // 《詭秘之主》塔羅會
+            fool: {
+                name: "愚者",
+                nickname: "克萊恩·莫雷蒂",
+                avatar: "🎩",
+                description: "灰霧之上的主持者與創建者，以古老存在之姿維繫塔羅會秩序。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            world: {
+                name: "世界",
+                nickname: "克萊恩的化身",
+                avatar: "🌫️",
+                description: "愚者的馬甲，用於在會中與成員互動與試探。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            justice: {
+                name: "正義",
+                nickname: "奧黛麗·霍爾",
+                avatar: "⚖️",
+                description: "霍爾伯爵之女，觀眾途徑，善良而敏銳，擅長心靈分析。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            hanged_man: {
+                name: "倒吊人",
+                nickname: "阿爾傑·威爾遜",
+                avatar: "🪝",
+                description: "風暴教會出身，後為海盜，心思縝密，擅長情報與航海。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            sun: {
+                name: "太陽",
+                nickname: "戴里克·伯格",
+                avatar: "☀️",
+                description: "白銀城少年，質樸堅定，承載希望與光明的探路者。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            magician: {
+                name: "魔術師",
+                nickname: "佛爾思·沃爾",
+                avatar: "🪄",
+                description: "暢銷作家，門途徑，機敏幽默，與休為摯友。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            hermit: {
+                name: "隱者",
+                nickname: "嘉德麗雅",
+                avatar: "🧭",
+                description: "星之上將，學識淵博，航海與祕學兼修。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            moon: {
+                name: "月亮",
+                nickname: "埃姆林·懷特",
+                avatar: "🌙",
+                description: "血族青年，傲嬌而執著，對人偶情有獨鍾。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            judgement: {
+                name: "審判",
+                nickname: "休·迪爾查",
+                avatar: "🗡️",
+                description: "審判者途徑，身手敏捷，行事乾脆利落。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            star: {
+                name: "星星",
+                nickname: "倫納德·米切爾",
+                avatar: "⭐",
+                description: "不眠者途徑的詩人，與天使帕列斯共生。",
+                inGroup: true,
+                dynasty: "現代幻想"
+            },
+            temperance: {
+                name: "節制",
+                nickname: "莎倫",
+                avatar: "🎭",
+                description: "囚犯途徑，冷靜克制，可操縱傀儡，與馬里奇搭檔。",
+                inGroup: true,
+                dynasty: "現代幻想"
             }
         };
 
