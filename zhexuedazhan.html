@@ -171,10 +171,25 @@
         .battle-log-item.western {
             border-color: #4F86C6;
         }
+        
+        /* 水墨背景氛圍層 */
+        .ink-bg::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(60% 40% at 20% 30%, rgba(0,0,0,0.05), transparent 70%),
+                radial-gradient(50% 35% at 80% 20%, rgba(0,0,0,0.04), transparent 70%),
+                radial-gradient(70% 50% at 50% 80%, rgba(0,0,0,0.03), transparent 70%);
+            mix-blend-mode: multiply;
+            animation: float 12s ease-in-out infinite alternate;
+            opacity: 0.35;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 h-screen overflow-hidden flex flex-col items-center justify-center p-4 transition-colors duration-300">
-    <div id="game-container" class="w-full max-w-6xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden transition-all duration-300 relative">
+    <div id="game-container" class="w-full max-w-6xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden transition-all duration-300 relative ink-bg">
         <!-- Start Screen -->
         <div id="start-screen" class="flex flex-col items-center justify-center p-8 h-[800px] animate-fadeIn">
             <h1 class="text-4xl md:text-6xl font-bold text-primary dark:text-primary mb-8 font-philosopher text-center">哲學家格鬥大賽</h1>
@@ -197,11 +212,11 @@
             <div class="mb-6">
                 <h2 class="text-xl font-bold mb-3 text-center">遊戲模式</h2>
                 <div class="flex space-x-4">
-                    <button id="single-player-mode" class="px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg text-lg font-bold transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+                    <button id="single-player-mode" class="group px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg text-lg font-bold transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
                         <span class="relative z-10">單人模式</span>
                         <div class="absolute inset-0 bg-gradient-to-r from-eastern to-primary opacity-80 transition-transform duration-300 transform scale-x-0 origin-left group-hover:scale-x-100"></div>
                     </button>
-                    <button id="two-player-mode" class="px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg text-lg font-bold transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+                    <button id="two-player-mode" class="group px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg text-lg font-bold transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
                         <span class="relative z-10">雙人模式</span>
                         <div class="absolute inset-0 bg-gradient-to-r from-primary to-western opacity-80 transition-transform duration-300 transform scale-x-0 origin-left group-hover:scale-x-100"></div>
                     </button>
@@ -503,17 +518,18 @@
     </div>
 
     <script>
-        // Initialize dark mode
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        });
+        // 移除自動深色模式切換（全站已不再使用暗色模式）
+
+        // 簡易音效資源（提升互動回饋）
+        const sfx = {
+            click: new Audio('files/audio/cilong/click.mp3'),
+            success: new Audio('files/audio/cilong/success.mp3'),
+            powerup: new Audio('files/audio/cilong/powerup.mp3'),
+            debuff: new Audio('files/audio/cilong/debuff.mp3'),
+            gameover: new Audio('files/audio/cilong/gameover.mp3'),
+            score: new Audio('files/audio/cilong/score.mp3'),
+        };
+        Object.values(sfx).forEach(a => { try { a.volume = 0.35; } catch(e) {} });
 
         // 哲學符號元素池 - 用於視覺特效
         const philosophySymbols = {
@@ -1328,6 +1344,7 @@
 
         // Start game
         function startGame() {
+            try { sfx.click.play(); } catch(e) {}
             startScreen.classList.add('hidden');
             characterSelect.classList.remove('hidden');
             initCharacterSelection();
@@ -1413,6 +1430,7 @@
         
         // Select character
         function selectCharacter() {
+            try { sfx.click.play(); } catch(e) {}
             const characterId = this.dataset.id;
             const characterType = this.dataset.type;
             const philosopher = philosophers[characterId];
@@ -1600,6 +1618,7 @@
 
         // Start battle
         function startBattle() {
+            try { sfx.click.play(); } catch(e) {}
             characterSelect.classList.add('hidden');
             battleScreen.classList.remove('hidden');
             
@@ -1617,8 +1636,7 @@
             
             // Set up battle screen
             playerCharacter.innerHTML = `<img src="${gameState.playerCharacter.avatar}" alt="${gameState.playerCharacter.name}" class="w-40 h-40">`;
-            opponentCharacter.innerHTML = `<img src="${gameState.opponentCharacter.avatar}" alt="${gameState.opponentCharacter.name}" class="w-40 h-40">`;
-            opponentCharacter.classList.add('scale-x-[-1]'); // Flip opponent
+            opponentCharacter.innerHTML = `<img src="${gameState.opponentCharacter.avatar}" alt="${gameState.opponentCharacter.name}" class="w-40 h-40" style="transform: scaleX(-1);">`;
             
             // Set names in the health bar and name displays 
             playerName.textContent = gameState.playerCharacter.name;
@@ -1671,7 +1689,10 @@
                     <div class="text-xs text-gray-600 dark:text-gray-400">${move.description}</div>
                     <div class="text-xs mt-1 text-primary">威力: ${move.power}</div>
                 `;
-                moveBtn.addEventListener('click', () => useMove(move));
+                moveBtn.addEventListener('click', () => {
+                    try { sfx.click.play(); } catch(e) {}
+                    useMove(move);
+                });
                 playerMoves.appendChild(moveBtn);
             });
         }
@@ -1696,6 +1717,7 @@
                     moveBoost = abilityResult.powerBoost;
                     battleMessage.innerHTML = `<div class="text-primary font-bold">${abilityResult.message}</div>`;
                     addToBattleLog(abilityResult.message, gameState.playerCharacter.type);
+                    try { sfx.powerup.play(); } catch(e) {}
                     
                     // Create philosophy symbols animation when ability triggered
                     for (let i = 0; i < 5; i++) {
@@ -1757,6 +1779,7 @@
                             passiveTriggered = true;
                             passiveMessage = abilityResult.message;
                             damage = abilityResult.actualDamage;
+                            try { sfx.debuff.play(); } catch(e) {}
                             
                             // Create philosophy symbols for the passive defense
                             for (let i = 0; i < 3; i++) {
@@ -1776,6 +1799,7 @@
                         if (abilityResult.triggered) {
                             passiveTriggered = true;
                             passiveMessage = abilityResult.message;
+                            try { sfx.debuff.play(); } catch(e) {}
                             
                             // Create philosophy symbols for the damage reflection
                             for (let i = 0; i < 4; i++) {
@@ -1789,6 +1813,7 @@
                     // Apply damage
                     gameState.opponentCharacter.health = Math.max(0, gameState.opponentCharacter.health - damage);
                     updateHealthBars();
+                    try { sfx.score.play(); } catch(e) {}
                     
                     // Add to battle log
                     addToBattleLog(`${gameState.playerCharacter.name} 使用了 ${move.name}，造成 ${damage} 點傷害！`, gameState.playerCharacter.type);
@@ -1833,6 +1858,7 @@
                                 battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${abilityResult.message}</div>`;
                                 addToBattleLog(abilityResult.message, gameState.opponentCharacter.type);
                                 gameState.opponentCharacter.pendingBoost = abilityResult.powerBoost;
+                                try { sfx.powerup.play(); } catch(e) {}
                                 
                                 // Visual indication
                                 for (let i = 0; i < 3; i++) {
@@ -1881,7 +1907,7 @@
                         <div class="text-xs text-gray-700 dark:text-gray-300">${move.description}</div>
                         <div class="text-xs mt-1 text-${gameState.opponentCharacter.type === 'eastern' ? 'eastern' : 'western'} font-semibold">威力: ${move.power}</div>
                     `;
-                    moveBtn.addEventListener('click', () => useOpponentMove(move));
+                    moveBtn.addEventListener('click', () => { try { sfx.click.play(); } catch(e) {} useOpponentMove(move); });
                     playerMoves.appendChild(moveBtn);
                 });
                 
@@ -1985,6 +2011,7 @@
                 // Apply damage
                 gameState.playerCharacter.health = Math.max(0, gameState.playerCharacter.health - damage);
                 updateHealthBars();
+                try { sfx.score.play(); } catch(e) {}
                 
                 // Add to battle log
                 addToBattleLog(`${gameState.opponentCharacter.name} 使用了 ${randomMove.name}，造成 ${damage} 點傷害！`, gameState.opponentCharacter.type);
@@ -2019,7 +2046,7 @@
                     }
                     
                     // Check for Nietzsche's power up after being hit
-                    if (gameState.playerCharacter.name === "尼采") {
+                        if (gameState.playerCharacter.name === "尼采") {
                         const abilityResult = gameState.playerCharacter.passiveAbility.effect(
                             gameState.playerCharacter, 
                             damage
@@ -2029,6 +2056,7 @@
                             battleMessage.innerHTML += `<div class="text-primary font-bold mt-2">${abilityResult.message}</div>`;
                             addToBattleLog(abilityResult.message, gameState.playerCharacter.type);
                             gameState.playerCharacter.pendingBoost = abilityResult.powerBoost;
+                                try { sfx.powerup.play(); } catch(e) {}
                             
                             // Visual indication
                             for (let i = 0; i < 3; i++) {
@@ -2041,6 +2069,10 @@
                     
                     // Enable next turn button
                     nextTurnBtn.classList.remove('hidden');
+                        // 單人模式在敵方回合後更新回合數並同步中央顯示
+                        battleRound++;
+                        document.getElementById('round-counter').textContent = battleRound;
+                        document.getElementById('center-round-counter').textContent = battleRound;
                 }, 1000);
             }, 500);
         }
@@ -2065,6 +2097,7 @@
                     moveBoost = abilityResult.powerBoost;
                     battleMessage.innerHTML = `<div class="text-primary font-bold">${abilityResult.message}</div>`;
                     addToBattleLog(abilityResult.message, gameState.opponentCharacter.type);
+                    try { sfx.powerup.play(); } catch(e) {}
                     
                     // Create philosophy symbols animation when ability triggered
                     for (let i = 0; i < 5; i++) {
@@ -2158,6 +2191,7 @@
                     // Apply damage
                     gameState.playerCharacter.health = Math.max(0, gameState.playerCharacter.health - damage);
                     updateHealthBars();
+                    try { sfx.score.play(); } catch(e) {}
                     
                     // Add to battle log
                     addToBattleLog(`${gameState.opponentCharacter.name} 使用了 ${move.name}，造成 ${damage} 點傷害！`, gameState.opponentCharacter.type);
@@ -2226,9 +2260,10 @@
                         populatePlayerMoves();
                         battleMessage.innerHTML += `<div class="text-sm mt-2">玩家一回合...</div>`;
                         
-                        // Update battle round
+                        // Update battle round，同步中央顯示
                         battleRound++;
                         document.getElementById('round-counter').textContent = battleRound;
+                        document.getElementById('center-round-counter').textContent = battleRound;
                     }, 1000);
                 }, 500);
             }
@@ -2240,6 +2275,7 @@
             
             gameState.currentTurn = 'player';
             nextTurnBtn.classList.add('hidden');
+            try { sfx.click.play(); } catch(e) {}
             
             // Re-enable move buttons
             const moveButtons = playerMoves.querySelectorAll('button');
@@ -2344,6 +2380,7 @@
                 resultScreen.classList.remove('hidden');
                 
                 if (winner === 'player') {
+                    try { sfx.success.play(); } catch(e) {}
                     resultTitle.textContent = '勝利！';
                     resultImage.innerHTML = `<img src="${gameState.playerCharacter.avatar}" alt="${gameState.playerCharacter.name}" class="w-full h-full">`;
                     
@@ -2361,6 +2398,7 @@
                         <span class="text-sm">思考一下：${gameState.playerCharacter.name} 和 ${gameState.opponentCharacter.name} 的思想有何不同？他們對於人生的看法有什麼相似之處？</span>
                     `;
                 } else if (winner === 'opponent') {
+                    try { sfx.gameover.play(); } catch(e) {}
                     resultTitle.textContent = '失敗！';
                     resultImage.innerHTML = `<img src="${gameState.opponentCharacter.avatar}" alt="${gameState.opponentCharacter.name}" class="w-full h-full">`;
                     
