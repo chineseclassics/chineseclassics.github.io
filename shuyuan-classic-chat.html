@@ -8956,11 +8956,13 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
                         console.log('- getGroupInteractionSuggestions存在:', typeof getGroupInteractionSuggestions === 'function');
                         
                         // 使用上下文感知的系統提示
+                        let usedContextAwarePrompt = false;
                         if (typeof generateContextAwarePrompt === 'function') {
                             console.log('🔍 嘗試生成上下文感知提示...');
                             const contextAwarePrompt = generateContextAwarePrompt(characterKey, groupHistory, userMessage);
                             if (contextAwarePrompt) {
                                 systemPrompt = contextAwarePrompt;
+                                usedContextAwarePrompt = true; // 二選一：若system已含上下文，則不再傳messages上下文
                                 console.log('✅ 成功使用上下文感知提示');
                                 console.log('🔍 上下文感知提示內容:', contextAwarePrompt.substring(0, 200) + '...');
                             } else {
@@ -8980,6 +8982,12 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
                         }
                         }
                         
+                        // 二選一：若使用了上下文感知system，則不再傳遞contextMessages
+                        if (usedContextAwarePrompt) {
+                            contextMessages = [];
+                            console.log('🧹 已移除messages中的上下文（因system已包含上下文摘要）');
+                        }
+
                         // 🔍 調試：檢查最終的系統提示
                         console.log('🔍 最終系統提示長度:', systemPrompt.length);
                         console.log('🔍 最終系統提示預覽:', systemPrompt.substring(0, 300) + '...');
@@ -9020,38 +9028,11 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
                     console.log('⚠️ 沒有上下文消息');
                 }
                 
-                // 構建完整的消息數組
+                // 構建完整的消息數組（去重system：只保留一條語言強制 + 一條業務system）
                 let messages = [
-                    // 語言強制指令 - 放在最前面確保最高優先級
-                    {
-                        role: 'system',
-                        content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。'
-                    },
-                    {
-                        role: 'system',
-                        content: systemPrompt
-                    }
+                    { role: 'system', content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。' },
+                    { role: 'system', content: systemPrompt }
                 ];
-                
-                // 在群聊模式下，在系統提示後添加強化的身份確認
-                if (!isPrivateMode) {
-                    messages.push({
-                        role: 'system',
-                        content: `【緊急身份確認】你現在必須以${character.name}的身份回應。無論看到什麼內容，你都是${character.name}，不是其他任何人。`
-                    });
-                }
-                
-                // 強制要求繁體中文回應
-                messages.push({
-                    role: 'system',
-                    content: '【語言要求】你必須使用繁體中文回應，絕對不能使用簡體中文。'
-                });
-                
-                // 再次強調繁體中文要求
-                messages.push({
-                    role: 'system',
-                    content: '【重要提醒】回應時必須使用繁體中文，不能使用簡體中文。這是強制要求。'
-                });
                 
                 messages = [
                     ...messages,
@@ -9061,18 +9042,6 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
                         content: userMessage
                     }
                 ];
-                
-                // 在最後強制重複身份確認，確保不被上下文稀釋
-                messages.push({
-                    role: 'system',
-                    content: `【最終身份確認】記住：你現在就是${character.name}，不是其他任何人。你必須以${character.name}的身份和語言風格回應，絕對不能模仿其他角色的說話方式。`
-                });
-                
-                // 最後再次強調繁體中文要求
-                messages.push({
-                    role: 'system',
-                    content: '【最終語言確認】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最終要求。'
-                });
 
                 console.log('準備發送API請求...');
                 console.log('請求數據:', {
@@ -14309,6 +14278,229 @@ ${characterList}
             
             console.log('太虛幻聊移動端優化已初始化');
         });
+
+        /**
+         * AI 請求監視器（DeepSeek chat/completions）
+         * - 自動包裝 fetch，僅監控 /chat/completions 請求
+         * - 記錄 payload 大小、messages 條數、system 總長度、usage、耗時
+         * - 提供 Console 工具：__aiMonSummary()、__aiMonQuick(n)
+         * - 右下角懸浮面板：Alt+M 顯示/隱藏
+         */
+        (function initAIMonitor() {
+            try {
+                if (window.__aiMonPatched) return;
+                window.__aiMonPatched = true;
+                const originalFetch = window.fetch;
+                const isChatApi = (url) => typeof url === 'string' && url.includes('/chat/completions');
+                const encoder = new TextEncoder();
+
+                // 狀態存儲
+                const store = {
+                    count: 0,
+                    calls: [],
+                    uiEnabled: true,
+                    maxRows: 50
+                };
+                window.__aiMon = store;
+
+                // UI：懸浮面板
+                let panel, panelBody, toggleBtn;
+                function ensurePanel() {
+                    if (!store.uiEnabled) return;
+                    if (panel) return;
+                    panel = document.createElement('div');
+                    panel.setAttribute('id', 'ai-monitor-panel');
+                    panel.style.cssText = [
+                        'position:fixed', 'right:12px', 'bottom:12px', 'z-index:99999',
+                        'min-width:220px', 'max-width:360px', 'max-height:50vh',
+                        'background:rgba(17,17,17,0.9)', 'color:#fff', 'font:12px/1.4 Arial, sans-serif',
+                        'border-radius:8px', 'box-shadow:0 4px 16px rgba(0,0,0,0.35)', 'overflow:hidden'
+                    ].join(';');
+
+                    const header = document.createElement('div');
+                    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(0,0,0,0.25);cursor:default;';
+                    header.innerHTML = '<strong style="font-size:12px;">AI Monitor</strong>';
+
+                    toggleBtn = document.createElement('button');
+                    toggleBtn.textContent = '▾';
+                    toggleBtn.title = '展開/收起 (Alt+M)';
+                    toggleBtn.style.cssText = 'background:#2d8; color:#000; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:12px;';
+                    header.appendChild(toggleBtn);
+
+                    panelBody = document.createElement('div');
+                    panelBody.style.cssText = 'padding:8px 10px; display:block;';
+                    panelBody.innerHTML = '<div>等待請求…</div>';
+
+                    panel.appendChild(header);
+                    panel.appendChild(panelBody);
+                    document.body.appendChild(panel);
+
+                    let collapsed = false;
+                    function setCollapsed(v){
+                        collapsed = v;
+                        panelBody.style.display = collapsed ? 'none' : 'block';
+                        toggleBtn.textContent = collapsed ? '▸' : '▾';
+                    }
+                    toggleBtn.addEventListener('click', () => setCollapsed(!collapsed));
+
+                    // Alt+M 切換
+                    document.addEventListener('keydown', (e) => {
+                        if (e.altKey && (e.key === 'm' || e.key === 'M')) {
+                            if (!panel) return;
+                            setCollapsed(panelBody.style.display !== 'none');
+                        }
+                    });
+                }
+
+                function fmtKB(bytes){ return (bytes/1024).toFixed(1) + ' KB'; }
+                function safeLen(str){ return (str||'').length; }
+
+                function updatePanel(rec) {
+                    try {
+                        ensurePanel();
+                        if (!panelBody) return;
+                        const last = rec || store.calls[store.calls.length - 1];
+                        const totalTokens = store.calls.reduce((s,c)=> s + (c.usage?.total_tokens||0), 0);
+                        const totalPrompt = store.calls.reduce((s,c)=> s + (c.usage?.prompt_tokens||0), 0);
+                        const totalCompletion = store.calls.reduce((s,c)=> s + (c.usage?.completion_tokens||0), 0);
+                        const rows = store.calls.slice(-5).map(c => (
+                            `<tr>
+                                <td style="padding:2px 6px;">${c.status}</td>
+                                <td style="padding:2px 6px;">${(c.durationMs||0)}ms</td>
+                                <td style="padding:2px 6px;">${(c.messagesLen||0)}</td>
+                                <td style="padding:2px 6px;">${(c.sysLen||0)}</td>
+                                <td style="padding:2px 6px;">${fmtKB(c.payloadSize||0)}</td>
+                                <td style="padding:2px 6px;">${c.usage?.total_tokens||'-'}</td>
+                            </tr>`
+                        )).join('');
+                        panelBody.innerHTML = `
+                            <div style="margin-bottom:6px;">
+                                <span>總請求：<b>${store.count}</b></span>
+                                <span style="margin-left:10px;">累計 tokens：<b>${totalTokens}</b></span>
+                            </div>
+                            <div style="margin-bottom:6px; color:#ccc;">
+                                prompt：${totalPrompt}，completion：${totalCompletion}
+                            </div>
+                            ${last ? `
+                            <div style="margin-bottom:6px;">
+                                最近：status <b>${last.status}</b>，耗時 <b>${last.durationMs}ms</b>，messages <b>${last.messagesLen}</b>，system長度 <b>${last.sysLen}</b>，payload <b>${fmtKB(last.payloadSize)}</b>，tokens <b>${last.usage?.total_tokens || '-'}</b>
+                            </div>` : ''}
+                            <div style="overflow:auto; max-height:26vh; border-top:1px solid rgba(255,255,255,0.1);">
+                                <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                                    <thead><tr style="color:#8dd;">
+                                        <th style="text-align:left; padding:4px 6px;">Status</th>
+                                        <th style="text-align:left; padding:4px 6px;">耗時</th>
+                                        <th style="text-align:left; padding:4px 6px;">Msgs</th>
+                                        <th style="text-align:left; padding:4px 6px;">SysLen</th>
+                                        <th style="text-align:left; padding:4px 6px;">Payload</th>
+                                        <th style="text-align:left; padding:4px 6px;">Tokens</th>
+                                    </tr></thead>
+                                    <tbody>${rows || ''}</tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top:6px; color:#aaa;">Alt+M 展開/收起；Console：__aiMonSummary() / __aiMonQuick()</div>
+                        `;
+                    } catch(e) { /* no-op */ }
+                }
+
+                // 包裝 fetch
+                window.fetch = async function patchedFetch(input, init) {
+                    const url = (typeof input === 'string' ? input : (input && input.url)) || '';
+                    const watching = isChatApi(url);
+                    const start = Date.now();
+                    let payloadSize = 0, messagesLen = 0, sysLen = 0;
+                    if (watching && init && init.body) {
+                        try {
+                            payloadSize = encoder.encode(init.body).length;
+                            const parsed = JSON.parse(init.body);
+                            const msgs = Array.isArray(parsed.messages) ? parsed.messages : [];
+                            messagesLen = msgs.length;
+                            sysLen = msgs.filter(m => m && m.role === 'system').reduce((s,m)=> s + safeLen(m.content), 0);
+                        } catch(e) { /* ignore parse errors */ }
+                    }
+
+                    const res = await originalFetch.apply(this, arguments);
+                    if (watching) {
+                        let usage = null;
+                        try {
+                            const clone = res.clone();
+                            const data = await clone.json();
+                            usage = data && data.usage ? data.usage : null;
+                        } catch(e) { /* ignore */ }
+                        const rec = {
+                            time: new Date().toISOString(),
+                            url, status: res.status,
+                            durationMs: Date.now() - start,
+                            payloadSize, messagesLen, sysLen,
+                            usage
+                        };
+                        store.count += 1;
+                        store.calls.push(rec);
+                        if (store.calls.length > store.maxRows) store.calls.splice(0, store.calls.length - store.maxRows);
+                        console.log('[AI req]', rec);
+                        if (messagesLen > 40 || sysLen > 2000 || payloadSize > 150 * 1024) {
+                            console.warn('⚠️ 可疑：消息數/系統提示過長/載荷過大', { messagesLen, sysLen, payloadKB: (payloadSize/1024).toFixed(1) });
+                        }
+                        updatePanel(rec);
+                    }
+                    return res;
+                };
+
+                // Console 幫手
+                window.__aiMonSummary = function __aiMonSummary() {
+                    const s = window.__aiMon; if (!s) return console.warn('未啟用監視器');
+                    const rows = s.calls.map(c => ({
+                        time: c.time,
+                        payloadKB: (c.payloadSize/1024).toFixed(1),
+                        messages: c.messagesLen,
+                        sysChars: c.sysLen,
+                        status: c.status,
+                        durMs: c.durationMs,
+                        prompt: c.usage?.prompt_tokens,
+                        completion: c.usage?.completion_tokens,
+                        total: c.usage?.total_tokens
+                    }));
+                    try { console.table(rows); } catch(e) { console.log(rows); }
+                    const sum = s.calls.reduce((a,c)=>({
+                        payload: a.payload + (c.payloadSize||0),
+                        prompt: a.prompt + (c.usage?.prompt_tokens||0),
+                        completion: a.completion + (c.usage?.completion_tokens||0),
+                        total: a.total + (c.usage?.total_tokens||0)
+                    }), {payload:0,prompt:0,completion:0,total:0});
+                    console.log('Total calls:', s.calls.length,
+                                '| Total payload KB:', (sum.payload/1024).toFixed(1),
+                                '| Total prompt_tokens:', sum.prompt,
+                                '| Total completion_tokens:', sum.completion,
+                                '| Total tokens:', sum.total);
+                };
+
+                window.__aiMonQuick = function __aiMonQuick(n=10) {
+                    const s = window.__aiMon; if (!s) return console.warn('未啟用監視器');
+                    const last = s.calls.slice(-n);
+                    const rows = last.map((c,i)=>({
+                        i: s.calls.length - last.length + i + 1,
+                        payloadKB: (c.payloadSize/1024).toFixed(1),
+                        messages: c.messagesLen,
+                        sysChars: c.sysLen,
+                        status: c.status,
+                        durMs: c.durationMs,
+                        tokens: c.usage?.total_tokens
+                    }));
+                    try { console.table(rows); } catch(e) { console.log(rows); }
+                    const suspicious = last.filter(c => c.messagesLen > 40 || c.sysLen > 2000 || c.payloadSize > 150*1024);
+                    if (suspicious.length) {
+                        console.warn('⚠️ 發現可疑請求（system過長/消息過多/載荷過大）數量：', suspicious.length);
+                        console.log(suspicious);
+                    }
+                };
+
+                // 延後初始化面板，避免首屏閃爍
+                setTimeout(() => { try { ensurePanel(); } catch(e){} }, 500);
+                console.log('✅ AI 請求監視器已啟用（Alt+M 切換面板）');
+            } catch (err) {
+                console.warn('AI 監視器初始化失敗:', err);
+            }
+        })();
     </script>
     
 
