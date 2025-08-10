@@ -8461,12 +8461,15 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         
 
         
-        // AI聊天系統配置
+        // AI聊天系統配置（改為使用可配置的 Vercel 代理端點）
         const AI_CONFIG = {
-            apiKey: 'sk-d850478e8977454abc9975d544ffd4e3',
-            baseURL: 'https://api.deepseek.com/v1',
+            baseURL: (window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || 'https://YOUR_VERCEL_PROJECT.vercel.app/api/deepseek'),
             model: 'deepseek-chat'
         };
+
+        if (typeof AI_CONFIG.baseURL === 'string' && AI_CONFIG.baseURL.includes('YOUR_VERCEL_PROJECT')) {
+            console.warn('請設定 window.DEEPSEEK_PROXY_URL 或 localStorage.DEEPSEEK_PROXY_URL 為你的 Vercel 代理 URL（例如：https://deepseek-proxy-chi.vercel.app/api/deepseek）');
+        }
 
         // 對話歷史管理 - 增強多輪對話能力
         const conversationHistory = new Map();
@@ -9049,11 +9052,10 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
                     temperature: 0.8
                 });
 
-                const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+                const response = await fetch(`${AI_CONFIG.baseURL}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${AI_CONFIG.apiKey}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         model: AI_CONFIG.model,
@@ -9383,11 +9385,10 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
              
              console.log(`為 ${character.name} 構建個性化提示...`);
              
-             const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+              const response = await fetch(`${AI_CONFIG.baseURL}`, {
                  method: 'POST',
                  headers: {
-                     'Content-Type': 'application/json',
-                     'Authorization': `Bearer ${AI_CONFIG.apiKey}`
+                    'Content-Type': 'application/json'
                  },
                  body: JSON.stringify({
                      model: AI_CONFIG.model,
@@ -10337,11 +10338,10 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 const combinedPrompt = buildCombinedSelectionAndResponsePrompt(userMessage, activeCharacters);
                 
                 console.log('發送AI角色選擇和回應生成請求...');
-                const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+              const response = await fetch(`${AI_CONFIG.baseURL}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${AI_CONFIG.apiKey}`
+                    'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         model: AI_CONFIG.model,
@@ -13918,11 +13918,10 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             // 構建第一個角色的系統提示
             const systemPrompt = buildFirstCharacterPrompt(firstCharacterId, userMessage);
             
-            const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+            const response = await fetch(`${AI_CONFIG.baseURL}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${AI_CONFIG.apiKey}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     model: AI_CONFIG.model,

@@ -9251,9 +9251,8 @@
         
         // 使用DeepSeek API调用AI进行评价
         async function callDeepSeekAPI(evaluationData) {
-            // DeepSeek API配置
-            const apiKey = 'sk-d850478e8977454abc9975d544ffd4e3'; // 您的API密钥
-            const apiUrl = 'https://api.deepseek.com/chat/completions'; // 根据文档的正确端点
+            // DeepSeek 代理配置
+            const apiUrl = (window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || 'https://deepseek-proxy-chi.vercel.app/api/deepseek');
             
             // 构建评价提示词
             const prompt = `请作为一位专业的古典诗词专家，对用户填写的词作进行详细评价。
@@ -9322,12 +9321,11 @@ ${evaluationData.userContent}
 
                 console.log('发送DeepSeek API请求...');
                 
-                // 发送请求到DeepSeek API
+                // 发送请求到代理
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(requestBody)
                 });

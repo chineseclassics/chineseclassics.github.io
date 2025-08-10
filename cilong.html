@@ -2295,9 +2295,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         const config = {
-            // WARNING: Storing API keys in client-side code is insecure and should be avoided in production.
-            // This is for demonstration purposes only, as requested.
-            deepSeekApiKey: 'sk-d850478e8977454abc9975d544ffd4e3'
+            deepSeekProxyUrl: (window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || 'https://deepseek-proxy-chi.vercel.app/api/deepseek')
         };
 
         // --- 釋義管理器 ---
@@ -2349,15 +2347,12 @@
 
         // --- AI 故事生成器 ---
         class AIStoryGenerator {
-            constructor(apiKey) {
-                this.apiKey = apiKey;
-                this.apiBaseUrl = 'https://api.deepseek.com/chat/completions';
+            constructor(proxyUrl) {
+                this.apiBaseUrl = proxyUrl;
             }
 
             async generate(words) {
-                if (!this.apiKey || this.apiKey.includes('placeholder')) {
-                    return { error: '尚未設定 DeepSeek API Key。' };
-                }
+                // 代理模式下無需前端金鑰
                 if (words.length < 3) {
                     return { error: '請至少收藏 3 個生詞才能生成故事喔！' };
                 }
@@ -2368,8 +2363,7 @@
                     const response = await fetch(this.apiBaseUrl, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${this.apiKey}`
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
                             model: 'deepseek-chat',
@@ -5127,7 +5121,7 @@
             console.log("拼 PinyinManager initialized.");
             definitionManager = new DefinitionManager();
             console.log("📖 DefinitionManager initialized.");
-            aiStoryGenerator = new AIStoryGenerator(config.deepSeekApiKey);
+            aiStoryGenerator = new AIStoryGenerator(config.deepSeekProxyUrl);
             console.log("🤖 AIStoryGenerator initialized.");
             vocabBook = new VocabularyBook();
             console.log("📚 VocabularyBook object created.");
