@@ -13970,11 +13970,10 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             // 構建第二次API調用的prompt
             const systemPrompt = buildSecondApiPrompt(remainingCharacters, firstCharacterResponse, userMessage);
             
-            const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+            const response = await fetch(`${AI_CONFIG.baseURL}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${AI_CONFIG.apiKey}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     model: AI_CONFIG.model,
@@ -14309,8 +14308,8 @@ ${characterList}
         });
 
         /**
-         * AI 請求監視器（DeepSeek chat/completions）
-         * - 自動包裝 fetch，僅監控 /chat/completions 請求
+         * AI 請求監視器（DeepSeek 代理與 /chat/completions）
+         * - 自動包裝 fetch，監控 /api/deepseek 與 /chat/completions 請求
          * - 記錄 payload 大小、messages 條數、system 總長度、usage、耗時
          * - 提供 Console 工具：__aiMonSummary()、__aiMonQuick(n)
          * - 右下角懸浮面板：Alt+M 顯示/隱藏
@@ -14320,7 +14319,17 @@ ${characterList}
                 if (window.__aiMonPatched) return;
                 window.__aiMonPatched = true;
                 const originalFetch = window.fetch;
-                const isChatApi = (url) => typeof url === 'string' && url.includes('/chat/completions');
+                const isChatApi = (url) => {
+                    if (typeof url !== 'string') return false;
+                    // 兼容：舊版 OpenAI 風格 /chat/completions 與 Vercel 代理 /api/deepseek
+                    if (url.includes('/chat/completions')) return true;
+                    if (url.includes('/api/deepseek')) return true;
+                    // 若已配置 AI_CONFIG.baseURL，亦納入監控
+                    try {
+                        if (typeof AI_CONFIG?.baseURL === 'string' && AI_CONFIG.baseURL && url.startsWith(AI_CONFIG.baseURL)) return true;
+                    } catch(e) { /* ignore */ }
+                    return false;
+                };
                 const encoder = new TextEncoder();
 
                 // 狀態存儲
