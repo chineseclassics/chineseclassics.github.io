@@ -5217,18 +5217,116 @@
     </div> <!-- 關閉統一父容器 -->
     
     <script>
-        // 檢測深色模式
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
+        // ===== 全域除錯與工具 =====
+        // DEBUG 開關：?debug=1 或 localStorage.DEBUG='1'/'true'
+        const DEBUG = (() => {
+            try {
+                const qs = new URLSearchParams(location.search);
+                const lv = (localStorage.getItem('DEBUG') || '').toLowerCase();
+                return qs.get('debug') === '1' || qs.get('debug') === 'true' || lv === '1' || lv === 'true';
+            } catch (e) { return false; }
+        })();
+
+        // 屏蔽大部分 console.log / console.debug（保留 warn / error）
+        if (!DEBUG) {
+            try {
+                console.log = function () {};
+                console.debug = function () {};
+            } catch (e) {}
         }
-        
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
+
+        // rAF 與節流/防抖工具
+        function throttle(fn, wait = 150) {
+            let lastTime = 0;
+            let timeoutId = null;
+            let lastArgs = null;
+            let lastThis = null;
+            return function throttled(...args) {
+                const now = Date.now();
+                const remaining = wait - (now - lastTime);
+                lastArgs = args; lastThis = this;
+                const later = () => {
+                    lastTime = Date.now();
+                    timeoutId = null;
+                    requestAnimationFrame(() => fn.apply(lastThis, lastArgs));
+                    lastArgs = lastThis = null;
+                };
+                if (remaining <= 0 || remaining > wait) {
+                    if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+                    later();
+                } else if (!timeoutId) {
+                    timeoutId = setTimeout(later, remaining);
+                }
+            };
+        }
+        function debounce(fn, wait = 200) {
+            let id = null; let lastArgs = null; let lastThis = null;
+            return function debounced(...args) {
+                lastArgs = args; lastThis = this;
+                if (id) cancelAnimationFrame(id);
+                id = requestAnimationFrame(() => {
+                    setTimeout(() => { fn.apply(lastThis, lastArgs); id = null; }, wait);
+                });
+            };
+        }
+
+        // 基礎 HTML 消毒（白名單法）
+        function sanitizeHTML(unsafeHtml) {
+            try {
+                const allowedTags = new Set(['b','i','em','strong','p','br','ul','ol','li','a','span','code','pre']);
+                const allowedAttrs = {
+                    'a': new Set(['href','target','rel']),
+                    'span': new Set([]),
+                    'code': new Set([]),
+                    'pre': new Set([])
+                };
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<div>${unsafeHtml || ''}</div>`, 'text/html');
+                const container = doc.body.firstChild;
+
+                const sanitizeNode = (node) => {
+                    // 移除 script/style 及註解
+                    if (node.nodeType === 8) { node.remove(); return; }
+                    if (node.nodeType === 1) {
+                        const tag = node.tagName.toLowerCase();
+                        if (!allowedTags.has(tag)) {
+                            // 用其文字內容替換未知標籤
+                            const text = doc.createTextNode(node.textContent || '');
+                            node.replaceWith(text);
+                            return;
+                        }
+                        // 清理危險屬性
+                        [...node.attributes].forEach(attr => {
+                            const name = attr.name.toLowerCase();
+                            const value = attr.value || '';
+                            if (name.startsWith('on')) { node.removeAttribute(attr.name); return; }
+                            if (tag === 'a') {
+                                if (!allowedAttrs['a'].has(name)) { node.removeAttribute(attr.name); return; }
+                                if (name === 'href') {
+                                    const v = value.trim().toLowerCase();
+                                    if (!(v.startsWith('http:') || v.startsWith('https:') || v.startsWith('mailto:') || v.startsWith('#'))) {
+                                        node.removeAttribute('href');
+                                    }
+                                }
+                                if (name === 'target') { if (value !== '_blank' && value !== '_self') node.removeAttribute('target'); }
+                                if (name === 'rel') { if (!/noopener|noreferrer/.test(value)) node.setAttribute('rel','noopener noreferrer'); }
+                            } else {
+                                // 非 a 標籤不保留任何屬性
+                                node.removeAttribute(attr.name);
+                            }
+                        });
+                    }
+                    // 遞迴處理子節點
+                    [...node.childNodes].forEach(sanitizeNode);
+                };
+                sanitizeNode(container);
+                return container.innerHTML;
+            } catch (e) {
+                return '';
             }
-        });
+        }
+        // 檢測深色模式
+        // 已移除暗色模式，避免冗餘監聽
 
         // 全局變量，標記是否完成過任意結局
         let hasCompletedAnyEnding = false;
@@ -8436,7 +8534,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 
                 // 根據消息內容類型處理
                     if (message.isHtml) {
-                        bubbleElement.innerHTML = message.content;
+                        bubbleElement.innerHTML = sanitizeHTML(message.content);
                     } else {
                         bubbleElement.textContent = message.content;
                 }
@@ -8466,6 +8564,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             baseURL: (window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || 'https://YOUR_VERCEL_PROJECT.vercel.app/api/deepseek'),
             model: 'deepseek-chat'
         };
+        const MAX_CONTEXT_LENGTH = 20;
 
         if (typeof AI_CONFIG.baseURL === 'string' && AI_CONFIG.baseURL.includes('YOUR_VERCEL_PROJECT')) {
             console.warn('請設定 window.DEEPSEEK_PROXY_URL 或 localStorage.DEEPSEEK_PROXY_URL 為你的 Vercel 代理 URL（例如：https://deepseek-proxy-chi.vercel.app/api/deepseek）');
@@ -8477,12 +8576,40 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         // 群聊上下文管理 - 記錄群聊中的完整對話流程
         const groupChatContext = {
             messages: [], // 群聊中的所有消息
-            maxContextLength: 20, // 最大上下文長度
+            maxContextLength: MAX_CONTEXT_LENGTH, // 最大上下文長度
             lastUpdateTime: Date.now()
         };
         
         // 私聊上下文管理
         const privateChatContext = new Map(); // 每個角色的私聊上下文
+
+        // 統一 AI 請求：帶 AbortController，避免競態與重覆請求
+        const __aiControllers = new Map();
+        async function fetchAI(body, options = {}) {
+            const { signalKey = 'default' } = options;
+            try {
+                if (signalKey) {
+                    const prev = __aiControllers.get(signalKey);
+                    if (prev) { try { prev.abort(); } catch (e) {} }
+                }
+                const controller = new AbortController();
+                if (signalKey) __aiControllers.set(signalKey, controller);
+                const res = await fetch(`${AI_CONFIG.baseURL}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    signal: controller.signal
+                });
+                if (!res.ok) {
+                    const text = await res.text().catch(() => '');
+                    throw new Error(`AI 請求失敗: ${res.status} ${text}`);
+                }
+                const data = await res.json();
+                return data;
+            } finally {
+                if (signalKey) __aiControllers.delete(signalKey);
+            }
+        }
 
         // 為群聊模式增強系統提示
         function enhanceGroupChatPrompt(characterKey, basePrompt) {
@@ -9052,28 +9179,12 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
                     temperature: 0.8
                 });
 
-                const response = await fetch(`${AI_CONFIG.baseURL}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: AI_CONFIG.model,
-                        messages: messages,
-                        max_tokens: 400, // 从200增加到400，允许更长的回应
-                        temperature: 0.8
-                    })
-                });
-
-                console.log('API響應狀態:', response.status);
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('API請求失敗詳情:', errorText);
-                    throw new Error(`API請求失敗: ${response.status} - ${errorText}`);
-                }
-
-                const data = await response.json();
+                const data = await fetchAI({
+                    model: AI_CONFIG.model,
+                    messages: messages,
+                    max_tokens: 400,
+                    temperature: 0.8
+                }, { signalKey: 'general-reply' });
                 console.log('API響應數據:', data);
                 
                 if (!data.choices || !data.choices[0] || !data.choices[0].message) {
@@ -9312,120 +9423,10 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
         // 統一智能角色選擇和互動回應生成（已刪除）
         // 注意：此函數已被刪除，統一使用 generateSafeAIResponses 中的邏輯
         
-        // 優化：群聊角色選擇和互動回應生成的合併prompt（支持1-3個角色）
-        function buildCombinedSelectionAndResponsePrompt(userMessage, activeCharacters) {
-            const groupMembers = activeCharacters.map(id => ({
-                id: id,
-                name: characters[id].name,
-                description: characters[id].description || ''
-            }));
-            
-            // 取最近5條消息，提供充分的上下文信息
-            const recentMessages = groupChatContext.messages.slice(-5);
-            const recentContext = recentMessages.map(msg => {
-                if (msg.character === 'user') {
-                    return `用戶：${msg.content}`;
-                } else {
-                    const character = characters[msg.character];
-                    return `${character ? character.name : msg.character}：${msg.content}`;
-                }
-            }).join('\n');
-            
-            return `你是群組聊天助手。從當前群組成員中智能選擇1-3個最適合回應的角色，並生成包含角色間互動的完整回應。
-
-群組成員：
-${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
-
-用戶消息：「${userMessage}」
-
-最近對話：${recentContext || '無'}
-
-選擇和回應原則：
-1. 根據用戶消息的複雜度和群組情況，智能選擇1-3個角色
-2. 簡單問題選擇1個角色，複雜討論選擇2-3個角色
-3. 多個角色時，後續角色要回應前面角色的內容
-4. 角色間要有自然的互動和討論
-5. 保持每個角色的獨特性格和語言風格
-
-返回JSON格式：
-{
-    "selectedCharacters": [
-        {
-            "characterId": "角色ID",
-            "characterName": "角色名稱",
-            "response": "該角色的回應內容（240字以內）",
-            "reasoning": "選擇理由"
-        }
-    ]
-}
-
-回應要求：
-- 如果選擇1個角色：直接回應用戶消息
-- 如果選擇2個角色：
-  * 第一個角色：直接回應用戶消息
-  * 第二個角色：既回應用戶，也回應第一個角色的觀點
-- 如果選擇3個角色：
-  * 第一個角色：直接回應用戶消息
-  * 第二個角色：回應第一個角色的觀點
-  * 第三個角色：回應前面角色的討論，形成多方對話
-- 回應要自然、有互動性，符合角色性格
-- 每個回應控制在240字內
-- 必須使用繁體中文回應，絕對不能使用簡體中文`;
-                 }
+        // 已廢棄：AI 參與選角的合併 prompt（移除）
          
          // 為單個角色生成回應
-         async function generateIndividualCharacterResponse(characterId, userMessage, allSelectedCharacters) {
-             const character = characters[characterId];
-             if (!character) {
-                 throw new Error(`角色 ${characterId} 不存在`);
-             }
-             
-             // 構建個性化的系統提示
-             const systemPrompt = buildIndividualCharacterPrompt(characterId, userMessage, allSelectedCharacters);
-             
-             console.log(`為 ${character.name} 構建個性化提示...`);
-             
-              const response = await fetch(`${AI_CONFIG.baseURL}`, {
-                 method: 'POST',
-                 headers: {
-                    'Content-Type': 'application/json'
-                 },
-                 body: JSON.stringify({
-                     model: AI_CONFIG.model,
-                     messages: [
-                         // 語言強制指令 - 放在最前面確保最高優先級
-                         {
-                             role: 'system',
-                             content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。'
-                         },
-                         {
-                             role: 'system',
-                             content: systemPrompt
-                         },
-                         {
-                             role: 'user',
-                             content: userMessage
-                         }
-                     ],
-                     max_tokens: 400,
-                     temperature: 0.8
-                 })
-             });
-
-             if (!response.ok) {
-                 throw new Error(`個體角色回應API請求失敗: ${response.status}`);
-             }
-
-             const data = await response.json();
-             const aiResponse = data.choices[0].message.content;
-             
-             console.log(`${character.name} 的AI回應:`, aiResponse);
-             
-             // 後處理：替換英文省略號為中文省略號
-             const processedResponse = postProcessAIResponse(aiResponse);
-             
-             return processedResponse;
-         }
+        // 已移除：單角色直接回應的舊函數（generateIndividualCharacterResponse）
          
          // 構建個體角色的系統提示（優化版本 - 強化身份確認）
          function buildIndividualCharacterPrompt(characterId, userMessage, allSelectedCharacters) {
@@ -9460,27 +9461,7 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
          }
          
          // 從選擇結果中提取角色信息（備用方案）
-         function extractCharactersFromSelection(text, activeCharacters) {
-             const extractedCharacters = [];
-             
-             // 嘗試從文本中匹配角色名稱
-             activeCharacters.forEach(charId => {
-                 const character = characters[charId];
-                 if (character && text.includes(character.name)) {
-                     extractedCharacters.push(charId);
-                 }
-             });
-             
-             // 如果沒有找到，返回隨機選擇
-             if (extractedCharacters.length === 0) {
-                 const randomCount = Math.min(activeCharacters.length, Math.floor(Math.random() * 2) + 1);
-                 return activeCharacters
-                         .sort(() => Math.random() - 0.5)
-                     .slice(0, randomCount);
-             }
-             
-             return extractedCharacters;
-         }
+        // 已移除：AI 選角的備援解析（extractCharactersFromSelection）
          
                  // 智能規則選擇系統（確保總回應人數為1-3人，且提及的角色優先）
         function useIntelligentRuleBasedSelection(userMessage, activeCharacters) {
@@ -10331,100 +10312,7 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             return mentionedCharacters;
         }
         
-        // 修改為角色選擇和回應生成合併處理
-        async function intelligentCharacterSelectionAndResponse(userMessage, activeCharacters) {
-            try {
-                // 構建角色選擇和回應生成的prompt
-                const combinedPrompt = buildCombinedSelectionAndResponsePrompt(userMessage, activeCharacters);
-                
-                console.log('發送AI角色選擇和回應生成請求...');
-              const response = await fetch(`${AI_CONFIG.baseURL}`, {
-                    method: 'POST',
-                    headers: {
-                    'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: AI_CONFIG.model,
-                        messages: [
-                            // 語言強制指令 - 放在最前面確保最高優先級
-                            {
-                                role: 'system',
-                                content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。'
-                            },
-                            {
-                                role: 'system',
-                                content: combinedPrompt
-                            },
-                            {
-                                role: 'user',
-                                content: userMessage
-                            }
-                        ],
-                        max_tokens: 400,
-                        temperature: 0.7
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`AI請求失敗: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const aiResponse = data.choices[0].message.content;
-                
-                console.log('AI角色選擇和回應生成結果:', aiResponse);
-                
-                // 後處理：替換英文省略號為中文省略號
-                const processedResponse = postProcessAIResponse(aiResponse);
-                
-                // 解析結果
-                let selectedCharacters = [];
-                let characterResponses = {};
-                
-                try {
-                    const parsedResult = JSON.parse(processedResponse);
-                    if (parsedResult.selectedCharacters && Array.isArray(parsedResult.selectedCharacters)) {
-                        // 驗證選中的角色是否在當前群組中
-                        const validCharacters = parsedResult.selectedCharacters.filter(char => 
-                            activeCharacters.includes(char.characterId)
-                        );
-                        
-                        selectedCharacters = validCharacters.map(char => char.characterId);
-                        
-                        // 提取回應內容
-                        validCharacters.forEach(char => {
-                            if (char.response && char.response.trim()) {
-                                characterResponses[char.characterId] = {
-                                    response: char.response,
-                                    reasoning: char.reasoning || `角色 ${characters[char.characterId].name} 被選中回應`,
-                                    responseType: char.responseType || 'combined_response'
-                                };
-                            }
-                        });
-                    }
-                } catch (parseError) {
-                    console.warn('AI返回格式錯誤，使用備用方案:', parseError);
-                    selectedCharacters = extractCharactersFromSelection(processedResponse, activeCharacters);
-                }
-                
-                if (selectedCharacters.length === 0) {
-                    console.warn('AI角色選擇失敗，使用隨機選擇');
-                    selectedCharacters = getRandomCharacters();
-                }
-                
-                console.log('選中的角色:', selectedCharacters.map(id => characters[id].name));
-                
-                return {
-                    selectedCharacters: selectedCharacters,
-                    characterResponses: characterResponses,
-                    overallReasoning: `AI選擇了 ${selectedCharacters.length} 個角色並生成了回應`
-                };
-                
-            } catch (error) {
-                console.error('智能角色選擇和回應生成失敗:', error);
-                throw error;
-            }
-        }
+        // 已廢棄：AI 角色選擇與回應合併流程（移除）
         
         // 為已選中的角色生成互動回應（已刪除）
         // 注意：此函數已被刪除，統一使用 generateSafeAIResponses 中的邏輯
@@ -10907,15 +10795,14 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
                 });
                 
                 // 添加input事件監聽，支持@功能和發送按鈕狀態更新
-                inputBox.addEventListener('input', function(e) {
-                    console.log('輸入框內容變化:', this.value);
+                const handleInput = throttle(function(e) {
                     // 只在群聊模式下處理@功能
                     if (!isPrivateChatMode()) {
-                        handleMentionInput(this);
+                        handleMentionInput(inputBox);
                     }
-                    // 更新發送按鈕狀態
                     updateSendButtonState();
-                });
+                }, 120);
+                inputBox.addEventListener('input', handleInput);
                 
                 // 處理鍵盤事件
                 inputBox.addEventListener('keydown', function(e) {
@@ -10976,15 +10863,20 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
         // 移動端視口優化
         function optimizeMobileViewport() {
             if (window.innerWidth <= 768) {
-                // 設置視口高度為實際可用高度
-                const vh = window.innerHeight * 0.01;
-                document.documentElement.style.setProperty('--vh', `${vh}px`);
-                
-                // 監聽視口變化（鍵盤彈出/收起）
-                window.addEventListener('resize', () => {
-                    const newVh = window.innerHeight * 0.01;
-                    document.documentElement.style.setProperty('--vh', `${newVh}px`);
-                });
+                const applyVh = () => {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', `${vh}px`);
+                };
+                applyVh();
+                const onResize = throttle(applyVh, 150);
+                // 全域保存與釋放，避免重複綁定
+                try {
+                    if (window.__mobileVhResizeHandler) {
+                        window.removeEventListener('resize', window.__mobileVhResizeHandler);
+                    }
+                } catch(e) {}
+                window.__mobileVhResizeHandler = onResize;
+                window.addEventListener('resize', window.__mobileVhResizeHandler);
             }
         }
         
@@ -13782,7 +13674,7 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             }
             
             // 設置群聊上下文的最大長度
-            groupChatContext.maxContextLength = 15; // 增加上下文長度，確保有足夠的歷史記錄
+            groupChatContext.maxContextLength = MAX_CONTEXT_LENGTH; // 與全域常量一致
             
             // 初始化私聊上下文Map
             privateChatContext.clear();
@@ -13889,11 +13781,24 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             }
             
             // 點擊聊天界面任意位置關閉面板
-            document.getElementById('chatMessages').addEventListener('click', function() {
-                toggleEmojiPanel(false);
-                document.getElementById('functionPanel').style.display = 'none';
-                hideMentionPopup();
-            });
+            const chatMessagesEl = document.getElementById('chatMessages');
+            if (chatMessagesEl) {
+                const onChatClick = (e) => {
+                    requestAnimationFrame(() => {
+                        toggleEmojiPanel(false);
+                        const fp = document.getElementById('functionPanel');
+                        if (fp) fp.style.display = 'none';
+                        hideMentionPopup();
+                    });
+                };
+                try {
+                    if (window.__chatClickCloseHandler) {
+                        chatMessagesEl.removeEventListener('click', window.__chatClickCloseHandler);
+                    }
+                } catch (e) {}
+                window.__chatClickCloseHandler = onChatClick;
+                chatMessagesEl.addEventListener('click', window.__chatClickCloseHandler);
+            }
             
             
             
@@ -13918,37 +13823,16 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             // 構建第一個角色的系統提示
             const systemPrompt = buildFirstCharacterPrompt(firstCharacterId, userMessage);
             
-            const response = await fetch(`${AI_CONFIG.baseURL}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: AI_CONFIG.model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。'
-                        },
-                        {
-                            role: 'system',
-                            content: systemPrompt
-                        },
-                        {
-                            role: 'user',
-                            content: userMessage
-                        }
-                    ],
-                    max_tokens: 400,
-                    temperature: 0.8
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`第一次API調用失敗: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = await fetchAI({
+                model: AI_CONFIG.model,
+                messages: [
+                    { role: 'system', content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。' },
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userMessage }
+                ],
+                max_tokens: 400,
+                temperature: 0.8
+            }, { signalKey: `first-${firstCharacterId}` });
             const aiResponse = data.choices[0].message.content;
             
             console.log(`第一個角色 ${character.name} 的AI回應:`, aiResponse);
@@ -13970,37 +13854,16 @@ ${groupMembers.map(m => `- ${m.name} (${m.id}): ${m.description}`).join('\n')}
             // 構建第二次API調用的prompt
             const systemPrompt = buildSecondApiPrompt(remainingCharacters, firstCharacterResponse, userMessage);
             
-            const response = await fetch(`${AI_CONFIG.baseURL}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: AI_CONFIG.model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。'
-                        },
-                        {
-                            role: 'system',
-                            content: systemPrompt
-                        },
-                        {
-                            role: 'user',
-                            content: userMessage
-                        }
-                    ],
-                    max_tokens: 400, // 與第一次API調用保持一致，確保回應簡潔
-                    temperature: 0.8
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`第二次API調用失敗: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = await fetchAI({
+                model: AI_CONFIG.model,
+                messages: [
+                    { role: 'system', content: '【語言強制指令】你必須使用繁體中文回應，絕對不能使用簡體中文。這是最高優先級要求。' },
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userMessage }
+                ],
+                max_tokens: 400,
+                temperature: 0.8
+            }, { signalKey: 'second-batch' });
             const aiResponse = data.choices[0].message.content;
             
             console.log('第二次API調用返回:', aiResponse);
