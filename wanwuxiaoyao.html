@@ -6624,8 +6624,19 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
       // 新增：显示8维度系统状态
       show8DimensionSystemStatus();
       
-      // 新增：显示莊子哲学契合度分析
-      showZhuangziPhilosophyAlignment();
+      // 新增：显示莊子哲学契合度分析（若AI未就緒，稍後重試）
+      if (window.zhuangziAI) {
+        showZhuangziPhilosophyAlignment();
+      } else {
+        console.warn('⚠️ zhuangziAI 未就緒，2秒後重試顯示哲學契合度');
+        setTimeout(() => {
+          if (window.zhuangziAI) {
+            showZhuangziPhilosophyAlignment();
+          } else {
+            console.warn('⚠️ zhuangziAI 仍未就緒，略過哲學契合度顯示');
+          }
+        }, 2000);
+      }
       
       console.log('🎮 调试模式已启用！');
       console.log('🎯 快捷键: Ctrl+F2 - 显示/隐藏调试面板');
@@ -6706,9 +6717,14 @@ ${(data.context?.recentHistory || []).map(h => `- ${h.choiceText || '未知選�
     // 新增：莊子哲學契合度調試函數
     function showZhuangziPhilosophyAlignment() {
       const traits = gameState.playerChoices.traits;
-      
+
+      if (!window.zhuangziAI || typeof window.zhuangziAI.getZhuangziPhilosophyAlignment !== 'function') {
+        console.warn('⚠️ AI系統尚未初始化，暫不執行哲學契合度分析');
+        return;
+      }
+
       console.log('🏛️ ===== 莊子哲學契合度分析 =====');
-      
+
       // 使用修復後的哲學契合度分析函數
       const alignments = window.zhuangziAI.getZhuangziPhilosophyAlignment(traits);
       
@@ -8403,7 +8419,8 @@ ${layerData.choiceData.keyChoices}
       '局部zhuangziAI存在': !!zhuangziAI,
       'window.zhuangziAI存在': !!window.zhuangziAI,
       '兩者是同一個實例': zhuangziAI === window.zhuangziAI,
-      'API密鑰一致': zhuangziAI.apiKey === window.zhuangziAI.apiKey
+      '模型': window.zhuangziAI?.model,
+      '代理URL': window.zhuangziAI?.baseUrl?.toString().slice(0, 80) + '...'
     });
 
 
