@@ -8455,7 +8455,7 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
         
         // AI聊天系統配置（改為使用可配置的 Vercel 代理端點）
         const AI_CONFIG = {
-            baseURL: (window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || 'https://YOUR_VERCEL_PROJECT.vercel.app/api/deepseek'),
+            baseURL: (window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || 'https://deepseek-proxy-chi.vercel.app/api/deepseek'),
             model: 'deepseek-chat'
         };
         const MAX_CONTEXT_LENGTH = 20;
