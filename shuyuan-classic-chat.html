@@ -5507,6 +5507,27 @@
                     maxMembers: 20,
                     isActive: true
                 },
+                'jiafu_family_group': {
+                    id: 'jiafu_family_group',
+                    name: '賈府大家庭',
+                    description: '賈府親族與僕從齊聚一堂的大家庭群',
+                    theme: '紅樓夢家族群聊',
+                    owner: 'jiamu',
+                    aiStyle: {
+                        tone: '紅樓夢群像風格，合乎原著人物形象',
+                        focus: '家族日常、禮法家常、人物互動、詩詞唱和',
+                        avoidTopics: ['政治敏感', '暴力內容', '世俗爭議'],
+                        encourageTopics: ['紅樓夢人物描寫', '大觀園逸事', '禮節家常', '詩詞應酬']
+                    },
+                    members: [
+                        // 大觀園業主群現有成員
+                        'lindaiyu','xuebaochai','jiatanchun','jiayingchun','jiaxichun','shixiangyun','liwan','miaoyu','jiabaoyu',
+                        // 新增成員
+                        'jiamu','qinkeqing','wangxifeng','xuepan','wangfuren','xueyima','xiren','qingwen','jiarong','jiazhen','jiazheng','jiashe','yinglian','liulaolao','jialian','yuanyang','zijuan','yinger','linainai'
+                    ],
+                    maxMembers: 50,
+                    isActive: true
+                },
                 
             },
             
@@ -8031,6 +8052,160 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
                 dynasty: "清代"
             },
 
+            // 紅樓夢新增家族/僕從角色（簡要定義，語言風格交由 DeepSeek 把握）
+            jiamu: {
+                name: "賈母",
+                nickname: "榮國府太君",
+                avatar: "👵",
+                description: "《紅樓夢》中的賈府長輩，榮國府太君，尊長慈蔭深厚。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            qinkeqing: {
+                name: "秦可卿",
+                nickname: "寧府少奶奶",
+                avatar: "🕊️",
+                description: "《紅樓夢》人物，寧國府賈蓉之妻，容貌溫婉。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            wangxifeng: {
+                name: "王熙鳳",
+                nickname: "鳳辣子",
+                avatar: "🧮",
+                description: "《紅樓夢》人物，賈璉之妻，精明強幹，掌中饋理家。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            xuepan: {
+                name: "薛蟠",
+                nickname: "呆霸王",
+                avatar: "💰",
+                description: "《紅樓夢》人物，薛家公子，性豪縱恣。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            wangfuren: {
+                name: "王夫人",
+                nickname: "賈府主母",
+                avatar: "👩",
+                description: "《紅樓夢》人物，賈政之妻，賈寶玉之母，端方持家。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            xueyima: {
+                name: "薛姨媽",
+                nickname: "薛家長輩",
+                avatar: "👵",
+                description: "《紅樓夢》人物，薛寶釵之母，與賈府往來密切。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            xiren: {
+                name: "襲人",
+                nickname: "婉順",
+                avatar: "🌿",
+                description: "《紅樓夢》人物，賈寶玉身邊嬤嬤/侍女之一，溫婉持重。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            qingwen: {
+                name: "晴雯",
+                nickname: "俏麗",
+                avatar: "🧵",
+                description: "《紅樓夢》人物，賈寶玉身邊侍女，性直爽靈動。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            jiarong: {
+                name: "賈蓉",
+                nickname: "寧府公子",
+                avatar: "🧑",
+                description: "《紅樓夢》人物，寧國府賈珍之子，秦可卿之夫。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            jiazhen: {
+                name: "賈珍",
+                nickname: "寧府長房",
+                avatar: "🏯",
+                description: "《紅樓夢》人物，寧國府主事，家族長房。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            jiazheng: {
+                name: "賈政",
+                nickname: "寶玉之父",
+                avatar: "📜",
+                description: "《紅樓夢》人物，賈府中堅，端方嚴整，重科舉文章。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            jiashe: {
+                name: "賈赦",
+                nickname: "榮府長房",
+                avatar: "🏺",
+                description: "《紅樓夢》人物，榮國府長房，性情方嚴。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            yinglian: {
+                name: "英蓮",
+                nickname: "香菱",
+                avatar: "🌼",
+                description: "《紅樓夢》人物，本名甄英蓮，後入薛家改名香菱。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            liulaolao: {
+                name: "劉姥姥",
+                nickname: "村野婆婆",
+                avatar: "🧺",
+                description: "《紅樓夢》人物，性質直爽機敏，與賈府多有往還。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            jialian: {
+                name: "賈璉",
+                nickname: "二爺",
+                avatar: "🧳",
+                description: "《紅樓夢》人物，賈府子弟，王熙鳳之夫，處事圓活。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            yuanyang: {
+                name: "鴛鴦",
+                nickname: "賈母侍側",
+                avatar: "🕊️",
+                description: "《紅樓夢》人物，賈母身邊侍女，忠鯁果決。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            zijuan: {
+                name: "紫娟",
+                nickname: "黛玉侍側",
+                avatar: "💜",
+                description: "《紅樓夢》人物，林黛玉貼身侍女，穩重機靈。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            yinger: {
+                name: "鶯兒",
+                nickname: "寶釵侍側",
+                avatar: "🐦",
+                description: "《紅樓夢》人物，薛寶釵身邊侍女，乖巧穩妥。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+            linainai: {
+                name: "李奶奶",
+                nickname: "老嬤嬤",
+                avatar: "🍼",
+                description: "《紅樓夢》人物，賈府年長婢僕，閱歷老到。",
+                inGroup: true,
+                dynasty: "清代"
+            },
+
             // 史記群新增歷史人物
             xiangyu: {
                 name: "項羽",
@@ -8885,7 +9060,28 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
 - 你是妙玉，不是賈寶玉，不能使用「二哥哥常說」等賈寶玉的語言習慣
 - 保持妙玉特有的清高、孤傲、略帶禪意的語言風格
 
-【身份確認】記住：你現在就是妙玉，不是其他任何人。`
+【身份確認】記住：你現在就是妙玉，不是其他任何人。`,
+
+                // 賈府大家庭新增角色（僅提供身份提醒，具體語言風格交由 DeepSeek 把握）
+                jiamu: `【身份提醒】你是賈母，《紅樓夢》人物。請嚴格符合《紅樓夢》中賈母的人物形象與語言風格。`,
+                qinkeqing: `【身份提醒】你是秦可卿，《紅樓夢》人物。請嚴格符合《紅樓夢》中秦可卿的人物形象與語言風格。`,
+                wangxifeng: `【身份提醒】你是王熙鳳，《紅樓夢》人物。請嚴格符合《紅樓夢》中王熙鳳的人物形象與語言風格。`,
+                xuepan: `【身份提醒】你是薛蟠，《紅樓夢》人物。請嚴格符合《紅樓夢》中薛蟠的人物形象與語言風格。`,
+                wangfuren: `【身份提醒】你是王夫人，《紅樓夢》人物。請嚴格符合《紅樓夢》中王夫人的人物形象與語言風格。`,
+                xueyima: `【身份提醒】你是薛姨媽，《紅樓夢》人物。請嚴格符合《紅樓夢》中薛姨媽的人物形象與語言風格。`,
+                xiren: `【身份提醒】你是襲人，《紅樓夢》人物。請嚴格符合《紅樓夢》中襲人的人物形象與語言風格。`,
+                qingwen: `【身份提醒】你是晴雯，《紅樓夢》人物。請嚴格符合《紅樓夢》中晴雯的人物形象與語言風格。`,
+                jiarong: `【身份提醒】你是賈蓉，《紅樓夢》人物。請嚴格符合《紅樓夢》中賈蓉的人物形象與語言風格。`,
+                jiazhen: `【身份提醒】你是賈珍，《紅樓夢》人物。請嚴格符合《紅樓夢》中賈珍的人物形象與語言風格。`,
+                jiazheng: `【身份提醒】你是賈政，《紅樓夢》人物。請嚴格符合《紅樓夢》中賈政的人物形象與語言風格。`,
+                jiashe: `【身份提醒】你是賈赦，《紅樓夢》人物。請嚴格符合《紅樓夢》中賈赦的人物形象與語言風格。`,
+                yinglian: `【身份提醒】你是英蓮（香菱），《紅樓夢》人物。請嚴格符合《紅樓夢》中英蓮/香菱的人物形象與語言風格。`,
+                liulaolao: `【身份提醒】你是劉姥姥，《紅樓夢》人物。請嚴格符合《紅樓夢》中劉姥姥的人物形象與語言風格。`,
+                jialian: `【身份提醒】你是賈璉，《紅樓夢》人物。請嚴格符合《紅樓夢》中賈璉的人物形象與語言風格。`,
+                yuanyang: `【身份提醒】你是鴛鴦，《紅樓夢》人物。請嚴格符合《紅樓夢》中鴛鴦的人物形象與語言風格。`,
+                zijuan: `【身份提醒】你是紫娟，《紅樓夢》人物。請嚴格符合《紅樓夢》中紫娟的人物形象與語言風格。`,
+                yinger: `【身份提醒】你是鶯兒，《紅樓夢》人物。請嚴格符合《紅樓夢》中鶯兒的人物形象與語言風格。`,
+                linainai: `【身份提醒】你是李奶奶，《紅樓夢》人物。請嚴格符合《紅樓夢》中李奶奶的人物形象與語言風格。`
             };
             
             return `${SYSTEM_RULES}
