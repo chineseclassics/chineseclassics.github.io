@@ -4,12 +4,16 @@
 
 - 代理 URL：`https://deepseek-proxy-chi.vercel.app/api/deepseek`
 
+本網站已預設上述代理為「默認代理 URL」。也就是說：
+- 所有需要 AI 的頁面均已內建此代理作為預設後備，不需手動設定即可使用；
+- 仍支援用 `window.DEEPSEEK_PROXY_URL` 或 `localStorage.DEPPSEEK_PROXY_URL` 進行覆寫（進階/臨時測試用）。
+
 原理：前端把請求 POST 到你的代理；代理在伺服器端使用金鑰向 DeepSeek 轉發並回傳結果。
 
 
-### A. 在任意前端的最小整合步驟
+### A. 在任意前端的最小整合步驟（若需覆寫或在其他專案整合）
 
-1) 設定代理 URL（擇一）
+1) 設定代理 URL（擇一，若不覆寫可略過）
 - 臨時（僅當前瀏覽器）：
 ```javascript
 localStorage.setItem('DEEPSEEK_PROXY_URL','https://deepseek-proxy-chi.vercel.app/api/deepseek')
@@ -56,7 +60,16 @@ console.log('AI 回覆：', reply);
 ```
 
 
-### B. Vercel 端維護（偶爾需要）
+### B. 跨設備/跨瀏覽器一致性說明
+
+- 已統一各頁面之默認代理 URL，首次進入即可直接連線，桌面與行動端路徑一致。
+- 如先前在某裝置手動設定過錯誤的 `localStorage.DEPPSEEK_PROXY_URL`，可清除後重載：
+```javascript
+localStorage.removeItem('DEEPSEEK_PROXY_URL');
+location.reload();
+```
+
+### C. Vercel 端維護（偶爾需要）
 
 1) 允許你的前端網域（CORS 白名單）
 - 代理應回傳 CORS 標頭，並限制允許的來源域名。`api/deepseek.js` 範例：
@@ -131,7 +144,7 @@ export default async function handler(req, res) {
 - 將程式編輯提交到 main，Vercel 會自動部署；或至 Deployments 頁點 Redeploy。
 
 
-### C. 測試方式（快速檢查）
+### D. 測試方式（快速檢查）
 
 在你的頁面打開瀏覽器 Console，依序執行：
 
@@ -156,7 +169,7 @@ fetch(localStorage.getItem('DEEPSEEK_PROXY_URL'), {
 - 正常會拿到 `choices[0].message.content` 的回應。
 
 
-### D. 常見錯誤與排解
+### E. 常見錯誤與排解
 
 - CORS 錯誤（No 'Access-Control-Allow-Origin'）
   - 原因：代理未允許你的前端網域。
@@ -173,12 +186,12 @@ fetch(localStorage.getItem('DEEPSEEK_PROXY_URL'), {
   - 可能是上游 DeepSeek 回覆錯誤或參數超限；確認 `model/messages/max_tokens` 等參數。
 
 
-### E. 進階（需要串流 SSE 時）
+### F. 進階（需要串流 SSE 時）
 
 目前指南為非串流版；若要逐字串流，需要把 Vercel 函數改為 Edge runtime 並回傳 `text/event-stream`。等你需要時再調整即可。
 
 
-### F. 安全建議（務必遵守）
+### G. 安全建議（務必遵守）
 
 - 前端永遠不要放 API Key（不要變相注入、不要混淆）。
 - 金鑰只放在代理（伺服器）環境變數；必要時定期旋轉金鑰。
