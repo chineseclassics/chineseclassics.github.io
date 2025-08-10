@@ -14361,9 +14361,14 @@ ${characterList}
          * - 記錄 payload 大小、messages 條數、system 總長度、usage、耗時
          * - 提供 Console 工具：__aiMonSummary()、__aiMonQuick(n)
          * - 右下角懸浮面板：Alt+M 顯示/隱藏
+         *
+         * 全局開關：如需暫時關閉 AI 監控（UI 與攔截），將下行設為 false；
+         * 需要恢復時改為 true 即可。
          */
+        window.AI_MONITOR_ENABLED = false;
         (function initAIMonitor() {
             try {
+                if (window.AI_MONITOR_ENABLED === false) return;
                 if (window.__aiMonPatched) return;
                 window.__aiMonPatched = true;
                 const originalFetch = window.fetch;
