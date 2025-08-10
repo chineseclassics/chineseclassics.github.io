@@ -5,11 +5,15 @@
   "main": "index.html",
   "scripts": {
     "dev": "python -m http.server 8000",
-    "build": "echo 'Static site, no build needed'",
+    "build": "npm run build:css",
+    "build:css": "mkdir -p assets && npx tailwindcss -i styles/tailwind.css -o assets/tailwind.css --minify",
     "start": "python -m http.server 8000"
   },
   "dependencies": {
     "@vercel/speed-insights": "^1.0.12"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.10"
   },
   "keywords": [
     "chinese-classics",
@@ -18,4 +22,4 @@
   ],
   "author": "書院中文經典",
   "license": "MIT"
-} 
+}

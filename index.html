@@ -25,12 +25,11 @@
     <meta property="twitter:image" content="https://chineseclassics.github.io/images/cclogo.png">
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="preload" href="assets/tailwind.css" as="style">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
     <link rel="preload" href="https://chineseclassics.github.io/images/cclogo.png" as="image">
     
-    <!-- Vercel Analytics & Speed Insights -->
-    <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+    <!-- 移除 Vercel Insights（GitHub Pages 上會導致 405） -->
     
     <!-- Microsoft Clarity -->
     <script type="text/javascript">
@@ -51,20 +50,9 @@
       gtag('config', 'G-5QLKSHKQ71');
     </script>
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="assets/tailwind.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#5D5CDE',
-                    }
-                }
-            },
-            darkMode: 'class'
-        }
-
         // 檢測暗黑模式
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
