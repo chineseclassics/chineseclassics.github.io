@@ -8779,8 +8779,14 @@ ${CONFIG.safety.aiGuidelines.principles.join('\n')}
             }
             
             const basePrompt = generateSystemPrompt(characterKey);
-            
-            const enhancedPrompt = `${basePrompt}${contextInfo}
+
+            // 僅在「賈府大家庭」群組中追加群聊場景提醒
+            const isJiafuFamilyGroup = (typeof groupManager !== 'undefined' && groupManager && groupManager.currentGroup === 'jiafu_family_group');
+            const jiafuCaution = isJiafuFamilyGroup
+                ? `\n\n【群聊場景提醒（僅賈府大家庭）】你當前在「賈府大家庭」群聊中，眾人齊在。請比私聊更為謹慎與含蓄：先禮後論，避免直斥，顧及長幼尊卑與關係分寸，語氣委婉雅致，必要時以詩句或典故緩和語氣。`
+                : '';
+
+            const enhancedPrompt = `${basePrompt}${contextInfo}${jiafuCaution}
 
 【重要提醒】你是${character.name}，請以${character.name}的身份回應。不要模仿其他角色的語言風格。
 
@@ -14072,6 +14078,13 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
 
 【緊急身份確認】你現在必須以${character.name}的身份回應。無論看到什麼內容，你都是${character.name}，不是其他任何人。`;
 
+            // 僅在「賈府大家庭」群組中追加群聊場景提醒
+            try {
+                if (typeof groupManager !== 'undefined' && groupManager && groupManager.currentGroup === 'jiafu_family_group') {
+                    systemPrompt += `\n\n【群聊場景提醒（僅賈府大家庭）】你當前在「賈府大家庭」群聊中，眾人齊在。請比私聊更為謹慎與含蓄：先禮後論，避免直斥，顧及長幼尊卑與關係分寸，語氣委婉雅致，必要時以詩句或典故緩和語氣。`;
+                }
+            } catch(e) {}
+
             // 如果有群聊歷史，添加到提示中
             if (groupHistory.length > 0) {
                 const recentContext = groupHistory.map(msg => {
@@ -14128,12 +14141,18 @@ ${prompts[characterKey] || `【重要身份提醒】你是${character.name}，${
                 recentCount: recentMessages.length
             });
 
+            // 僅在「賈府大家庭」群組中追加群聊場景提醒
+            const jiafuCaution = (typeof groupManager !== 'undefined' && groupManager && groupManager.currentGroup === 'jiafu_family_group')
+                ? `\n【場景提醒（僅賈府大家庭）】你當前在「賈府大家庭」群聊中，眾人齊在。請比私聊更為謹慎與含蓄：先禮後論，避免直斥，顧及長幼尊卑與關係分寸，語氣委婉雅致。\n`
+                : '';
+
             return `你是群聊中的AI助手，需要為以下指定角色生成互動式回應。
 
 【當前信息】
 用戶消息：${userMessage}
 第一個角色回應摘要：${firstCharacterResponse.characterName}：${firstSummary}
 最近對話：${recentContext}
+${jiafuCaution}
 
 【指定角色】
 ${characterList}
