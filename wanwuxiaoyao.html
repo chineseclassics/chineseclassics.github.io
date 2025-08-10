@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com https://chineseclassics.github.io https://*.github.io https://*.githubusercontent.com https://deepseek-proxy-chi.vercel.app; connect-src 'self' https://deepseek-proxy-chi.vercel.app; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
       <title>萬物逍遙</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -2116,6 +2116,57 @@
     body.qi-vision #advance-btn:hover {
       background: rgba(255, 255, 255, 0.4) !important;
       border-color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    /* 行動端優化：固定「繼續」按鈕於底部安全區，避免被內容覆蓋 */
+    @media (max-width: 767.98px) {
+      #advance-btn {
+        position: fixed !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+        /* iOS 舊版兼容 */
+        bottom: calc(16px + constant(safe-area-inset-bottom)) !important;
+        top: auto !important;
+        width: calc(100% - 32px) !important;
+        max-width: 420px !important;
+        padding: 14px 18px !important;
+        font-size: 16px !important;
+        border-radius: 14px !important;
+        z-index: 9999 !important;
+      }
+
+      /* 物化體驗文字下方留白，避免遮擋底部按鈕 */
+      .transformation-experience-text {
+        padding-bottom: 100px !important;
+      }
+
+      /* 初次物化按鈕移至底部安全區上方，與「繼續」按鈕錯層排列 */
+      .first-time-transform-button {
+        position: fixed !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+        bottom: calc(100px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
+        top: auto !important;
+        width: calc(100% - 32px) !important;
+        max-width: 420px !important;
+        border-radius: 14px !important;
+      }
+
+      /* 「新的物化能力已解鎖」通知在行動端縮放並靠近底部，避免遮住按鈕 */
+      .form-unlock-guide {
+        top: auto !important;
+        bottom: calc(180px + env(safe-area-inset-bottom)) !important;
+        bottom: calc(180px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100% - 32px) !important;
+        max-width: 480px !important;
+        max-height: 55vh !important;
+        overflow-y: auto !important;
+        text-align: left !important;
+      }
     }
 
     /* 氣物化視角下的混沌呼吸挑戰引導文字強化 - 保持低調設計 */
@@ -23359,7 +23410,7 @@ ${layerData.choiceData.keyChoices}
       hideFormButtons();
       
       const guideElement = document.createElement('div');
-      guideElement.className = 'max-w-2xl mx-auto p-6 text-center fixed top-8 left-1/2 transform -translate-x-1/2 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-900 dark:to-orange-900 bg-opacity-95 dark:bg-opacity-95 rounded-lg shadow-lg z-20 border-2 border-amber-400 dark:border-amber-600';
+      guideElement.className = 'form-unlock-guide max-w-2xl mx-auto p-6 text-center fixed top-8 left-1/2 transform -translate-x-1/2 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-900 dark:to-orange-900 bg-opacity-95 dark:bg-opacity-95 rounded-lg shadow-lg z-20 border-2 border-amber-400 dark:border-amber-600';
       
       guideElement.innerHTML = `
         <div class="flex items-center justify-center mb-4">
