@@ -2139,11 +2139,41 @@
         z-index: 2147483647 !important; /* 確保高於任何打字機/覆蓋層 */
       }
 
+      /* 允許整體頁面在行動端垂直滾動，避免內容溢出無法閱讀 */
+      html, body {
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important;
+      }
+
+      /* 遊戲容器在行動端不強制占滿視窗高度，允許內容自然撐開並可滾動 */
+      #game-container {
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important; /* 行動端允許容器滾動 */
+        -webkit-overflow-scrolling: touch !important; /* iOS 惯性滾動 */
+      }
+
+      /* 內容區頂部對齊並留出底部空間（避免被固定在底部的按鈕遮住） */
+      #game-content {
+        justify-content: flex-start !important;
+        align-items: stretch !important;
+        padding-top: 12px !important;
+        padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
+        padding-bottom: calc(160px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
+      }
+
       /* 物化體驗文字下方留白，避免遮擋底部按鈕 */
       .transformation-experience-text {
         /* 優化底部留白，避免過多空白且不遮擋底部按鈕 */
         padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
         padding-bottom: calc(24px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
+        /* 確保文字窗口本身不會延伸到按鈕下方，且可內部滾動 */
+        margin-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+        margin-bottom: calc(120px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
+        max-height: calc(100vh - 180px - env(safe-area-inset-bottom)) !important;
+        max-height: calc(100vh - 180px - constant(safe-area-inset-bottom)) !important; /* 兼容 */
+        overflow-y: auto !important;
       }
 
       /* 初次物化按鈕移至底部安全區上方，與「繼續」按鈕錯層排列 */
@@ -3701,8 +3731,8 @@
 
   </style>
 </head>
-<body class="font-lxgw h-screen overflow-hidden">
-  <div id="game-container" class="game-container relative h-screen w-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-500 ease-in-out">
+<body class="font-lxgw h-screen overflow-hidden md:overflow-hidden">
+  <div id="game-container" class="game-container relative h-screen w-screen overflow-hidden md:overflow-hidden flex flex-col items-center justify-center transition-all duration-500 ease-in-out">
     
     <!-- Current Form Indicator - Enlarged and Enhanced -->
     <div id="current-form-indicator" class="absolute top-4 left-4 md:top-6 md:left-6 z-0 opacity-0 transition-opacity duration-500">
