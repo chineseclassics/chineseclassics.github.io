@@ -2123,10 +2123,10 @@
       #advance-btn {
         position: fixed !important;
         left: 50% !important;
-        transform: translateX(-50%) !important;
-        bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+        transform: translateX(-50%) translateY(var(--advance-ty, 0)) !important;
+        bottom: calc(96px + env(safe-area-inset-bottom)) !important; /* 上移，避免與底部物化按鈕重疊 */
         /* iOS 舊版兼容 */
-        bottom: calc(16px + constant(safe-area-inset-bottom)) !important;
+        bottom: calc(96px + constant(safe-area-inset-bottom)) !important;
         top: auto !important;
         width: calc(100% - 32px) !important;
         max-width: 420px !important;
@@ -2146,8 +2146,8 @@
         position: fixed !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        bottom: calc(100px + env(safe-area-inset-bottom)) !important;
-        bottom: calc(100px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
+        bottom: calc(168px + env(safe-area-inset-bottom)) !important; /* 與上移後的繼續按鈕保持間距 */
+        bottom: calc(168px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
         top: auto !important;
         width: calc(100% - 32px) !important;
         max-width: 420px !important;
@@ -4373,7 +4373,7 @@
     
     <!-- 繼續按鈕，放置在遊戲內容下方，與物化按鈕間保持適當距離 -->
     <div class="fixed left-0 right-0 flex justify-center" style="top: 78%;">
-      <button id="advance-btn" class="hidden pointer-events-auto z-20">
+      <button id="advance-btn" class="hidden pointer-events-auto z-20" style="left:50%;transform:translateX(-50%);">
         繼續
       </button>
     </div>
@@ -16795,6 +16795,12 @@ ${layerData.choiceData.keyChoices}
       if (chaosForm) {
         chaosForm.classList.add('segmentation-mode');
       }
+
+      // 行動端：確保左上角的形態指示器位於斷句挑戰窗口下方（不遮擋）
+      const formIndicator = document.getElementById('current-form-indicator');
+      if (formIndicator) {
+        formIndicator.style.zIndex = '1';
+      }
       
       // 在第六章斷句挑戰出現時，清空浮現的古老文字效果，並標記為已禁用
       if (gameState.currentChapter === 'chapter6') {
@@ -16866,10 +16872,10 @@ ${layerData.choiceData.keyChoices}
         puzzleContainer.style.position = 'relative'; // 確保z-index生效
         puzzleContainer.style.zIndex = '20000'; // 使用超高z-index確保在氣視覺效果和所有其他元素之上
       } else if (gameState.currentChapter === 'epilogue') {
-        // 尾聲章節使用垂直居中樣式
+      // 尾聲章節使用垂直居中樣式
         puzzleContainer.className = 'max-w-3xl mx-auto p-8 text-center rounded-xl';
         puzzleContainer.style.position = 'fixed';
-        puzzleContainer.style.top = '50%';
+      puzzleContainer.style.top = '55%'; // 行動端避免與左上角指示器的視覺擠壓
         puzzleContainer.style.left = '50%';
         puzzleContainer.style.transform = 'translate(-50%, -50%)';
         puzzleContainer.style.zIndex = '9999';
