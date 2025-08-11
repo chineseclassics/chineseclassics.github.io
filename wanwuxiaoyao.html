@@ -2080,7 +2080,10 @@
       
       /* 確保按鈕層級 */
       position: relative !important;
-      z-index: 1000 !important;
+      /* iOS/Safari 疊層保險：提高層級並建立單獨合成層 */
+      z-index: 2147483647 !important;
+      transform: translateZ(0) !important;
+      will-change: transform !important;
     }
 
     /* 桌面端樣式 */
@@ -2133,12 +2136,14 @@
         padding: 14px 18px !important;
         font-size: 16px !important;
         border-radius: 14px !important;
-        z-index: 9999 !important;
+        z-index: 2147483647 !important; /* 確保高於任何打字機/覆蓋層 */
       }
 
       /* 物化體驗文字下方留白，避免遮擋底部按鈕 */
       .transformation-experience-text {
-        padding-bottom: 100px !important;
+        /* 為小尺寸行動機型（如 iPhone 13 mini）增加更大下邊距 */
+        padding-bottom: calc(180px + env(safe-area-inset-bottom)) !important;
+        padding-bottom: calc(180px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
       }
 
       /* 初次物化按鈕移至底部安全區上方，與「繼續」按鈕錯層排列 */
@@ -4372,7 +4377,7 @@
     </div>
     
     <!-- 繼續按鈕，放置在遊戲內容下方，與物化按鈕間保持適當距離 -->
-    <div class="fixed left-0 right-0 flex justify-center" style="top: 78%;">
+    <div class="fixed left-0 right-0 flex justify-center pointer-events-none" style="top: 78%;">
       <button id="advance-btn" class="hidden pointer-events-auto z-20" style="left:50%;transform:translateX(-50%);">
         繼續
       </button>
@@ -8808,6 +8813,35 @@ ${layerData.choiceData.keyChoices}
       qi: document.getElementById('qi-form')
     };
     
+    // 行動端：統一維持「繼續」按鈕水平置中與Y位移控制
+    function ensureAdvanceBtnCentered() {
+      if (!advanceBtn) return;
+      // 使用 !important 覆蓋任何場景動畫對 transform 的覆寫
+      advanceBtn.style.setProperty('position', 'fixed', 'important');
+      advanceBtn.style.setProperty('left', '50%', 'important');
+      advanceBtn.style.setProperty('transform', 'translateX(-50%) translateY(var(--advance-ty, 0))', 'important');
+      advanceBtn.style.setProperty('top', 'auto', 'important');
+    }
+    
+    function setAdvanceBtnTranslateY(value) {
+      if (!advanceBtn) return;
+      advanceBtn.style.setProperty('--advance-ty', value);
+      ensureAdvanceBtnCentered();
+    }
+    
+    // 初始執行一次
+    ensureAdvanceBtnCentered();
+    
+    // 監聽樣式/類變化，確保任何場景顯示時仍保持置中
+    if (advanceBtn) {
+      const advObserver = new MutationObserver(() => {
+        ensureAdvanceBtnCentered();
+      });
+      advObserver.observe(advanceBtn, { attributes: true, attributeFilter: ['style', 'class'] });
+      window.addEventListener('resize', ensureAdvanceBtnCentered);
+      document.addEventListener('visibilitychange', ensureAdvanceBtnCentered);
+    }
+
     // Game content
     const gameChapters = {
       prologue: {
@@ -29682,15 +29716,15 @@ ${layerData.choiceData.keyChoices}
             // 添加輕微的呼吸光效
             textDisplay.style.animation = 'gentle-breathing 6s ease-in-out infinite';
             
-            // 顯示繼續按鈕
+            // 顯示繼續按鈕（保持置中，不覆寫translateX）
             advanceBtn.style.display = 'block';
             advanceBtn.style.opacity = '0';
-            advanceBtn.style.transform = 'translateY(20px)';
-            advanceBtn.style.transition = 'all 1s ease';
+            advanceBtn.style.setProperty('--advance-ty', '20px');
+            advanceBtn.style.transition = 'opacity 1s ease, transform 1s ease';
             
             setTimeout(() => {
               advanceBtn.style.opacity = '1';
-              advanceBtn.style.transform = 'translateY(0)';
+              advanceBtn.style.setProperty('--advance-ty', '0');
             }, 100);
           }, 3000); // 從5秒改為3秒
         });
