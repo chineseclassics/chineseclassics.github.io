@@ -2141,9 +2141,9 @@
 
       /* 物化體驗文字下方留白，避免遮擋底部按鈕 */
       .transformation-experience-text {
-        /* 為小尺寸行動機型（如 iPhone 13 mini）增加更大下邊距 */
-        padding-bottom: calc(180px + env(safe-area-inset-bottom)) !important;
-        padding-bottom: calc(180px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
+        /* 優化底部留白，避免過多空白且不遮擋底部按鈕 */
+        padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+        padding-bottom: calc(24px + constant(safe-area-inset-bottom)) !important; /* 兼容 */
       }
 
       /* 初次物化按鈕移至底部安全區上方，與「繼續」按鈕錯層排列 */
@@ -23141,6 +23141,28 @@ ${layerData.choiceData.keyChoices}
       // 隱藏底部日常物化按鈕，避免在打字機體驗中的混亂
       hideFormButtons();
       
+      // 行動端/場景保險：將「繼續」按鈕移動到 body，脫離任何疊層上下文，保證位於最上層且可點擊
+      try {
+        if (advanceBtn && advanceBtn.parentNode !== document.body) {
+          document.body.appendChild(advanceBtn);
+        }
+        if (advanceBtn) {
+          advanceBtn.style.setProperty('position', 'fixed', 'important');
+          advanceBtn.style.setProperty('left', '50%', 'important');
+          advanceBtn.style.setProperty('transform', 'translateX(-50%) translateY(var(--advance-ty, 0))', 'important');
+          advanceBtn.style.setProperty('top', 'auto', 'important');
+          advanceBtn.style.setProperty('bottom', 'calc(96px + env(safe-area-inset-bottom))', 'important');
+          advanceBtn.style.setProperty('bottom', 'calc(96px + constant(safe-area-inset-bottom))', 'important');
+          advanceBtn.style.setProperty('z-index', '2147483647', 'important');
+          advanceBtn.style.setProperty('pointer-events', 'auto', 'important');
+          if (typeof ensureAdvanceBtnCentered === 'function') {
+            ensureAdvanceBtnCentered();
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ 調整繼續按鈕到頂層時發生異常:', e);
+      }
+      
       const experienceElement = document.createElement('div');
       experienceElement.className = 'max-w-2xl mx-auto p-6 text-left relative z-10';
       
@@ -23331,8 +23353,13 @@ ${layerData.choiceData.keyChoices}
         //   addQiVisionEffect(); // 已經在前面調用過了
         // }
         
-        // 打字完成後顯示繼續按鈕
+      // 打字完成後顯示繼續按鈕（再次保險提升層級與可點擊性）
+      if (advanceBtn) {
         advanceBtn.style.display = 'block';
+        advanceBtn.style.setProperty('z-index', '2147483647', 'important');
+        advanceBtn.style.setProperty('pointer-events', 'auto', 'important');
+        ensureAdvanceBtnCentered && ensureAdvanceBtnCentered();
+      }
         // 移除背景效果（如果存在）
         setTimeout(() => {
           if (experienceBackground) {
