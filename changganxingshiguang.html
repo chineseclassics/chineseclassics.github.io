@@ -323,7 +323,8 @@
         @media (min-width: 768px) {
             .main-content {
                 flex-direction: row;
-                overflow: hidden;
+                /* 保留可見內容，避免裁切 */
+                overflow: visible;
             }
         }
         
@@ -364,7 +365,7 @@
                 margin-top: 5px; /* 減少頂部間距 */
                 position: sticky; /* 使導航欄固定 */
                 top: 0; /* 固定在頂部 */
-                z-index: 20; /* 確保在最上層 */
+                z-index: 5; /* 降低層級，避免遮擋toast/提示 */
                 background-color: #f5f2ea; /* 與頁面背景相同，防止透明背景造成視覺混亂 */
                 border-radius: 0 0 10px 10px; /* 添加底部圓角 */
                 box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* 添加輕微陰影，增強分離感 */
@@ -462,6 +463,12 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
+
+        @media (max-width: 767px) {
+            .content-area {
+                overflow-y: visible; /* 行動端不做內層滾動，避免裁切 */
+            }
+        }
         
         @media (max-width: 767px) {
             body {
@@ -471,7 +478,7 @@
             
             #app {
                 overflow-y: visible;
-                min-height: 100vh;
+                min-height: 100dvh;
                 height: auto;
             }
             
@@ -688,8 +695,15 @@
         .tab-content-scroll {
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            max-height: calc(100vh - 210px);
+            max-height: calc(100dvh - 210px);
             padding-right: 10px;
+        }
+
+        @media (max-width: 767px) {
+            .tab-content-scroll {
+                max-height: none; /* 行動端不限制高度，交由 body 滾動 */
+                overflow-y: visible;
+            }
         }
         
         @media (prefers-color-scheme: dark) {
@@ -1113,10 +1127,10 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
-    </style>
+</style>
 </head>
-<body class="h-screen overflow-hidden">
-    <div id="app" class="container mx-auto px-4 py-4 max-w-6xl h-full flex flex-col">
+<body>
+    <div id="app" class="container mx-auto px-4 py-4 max-w-6xl flex flex-col">
         <!-- 背景音樂播放器 -->
         <audio id="background-music" loop preload="auto" style="display:none;">
             <source src="https://dl.dropboxusercontent.com/scl/fi/p0docwf6s28hm08k3qjmc/music.mp3?rlkey=5vwue7zhitw4mx3yvon9c2wwo&st=16rjoefj&dl=1" type="audio/mpeg">
