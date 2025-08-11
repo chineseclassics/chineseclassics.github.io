@@ -98,8 +98,9 @@
         body {
             font-family: var(--font-serif);
             background-color: #f5f2ea; /* 淡雅的米色背景 */
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         
         /* 青梅圖標 SVG */
@@ -1953,6 +1954,10 @@
         let offsetX, offsetY;       // 鼠標在元素內的偏移
         let dropIndicator = null;   // 放置指示器
         let emotionChart = null;
+        // 觸控長按拖拽控制
+        let longPressTimer = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
         
         // 显示错误消息的函数
         function showError(message) {
@@ -3382,25 +3387,42 @@
                         offsetY = e.clientY - rect.top;
                     });
                     
-                    // 觸摸開始事件 (移動設備支持)
+                    // 觸摸開始事件 (移動設備支持) - 使用長按啟動拖拽，避免攔截正常滾動
                     card.addEventListener('touchstart', function(e) {
-                        // 防止滾動
-                        e.preventDefault();
-                        
-                        if (e.touches.length === 1) {
-                            const touch = e.touches[0];
-                            
-                            // 開始拖拽
-                            startDrag(this, touch.clientX, touch.clientY);
-                            
-                            // 設置初始位置和偏移
-                            const rect = this.getBoundingClientRect();
-                            initialMouseX = touch.clientX;
-                            initialMouseY = touch.clientY;
-                            offsetX = touch.clientX - rect.left;
-                            offsetY = touch.clientY - rect.top;
+                        if (e.touches.length !== 1) return;
+                        const touch = e.touches[0];
+                        touchStartX = touch.clientX;
+                        touchStartY = touch.clientY;
+
+                        // 預先計算偏移，供長按後使用
+                        const rect = this.getBoundingClientRect();
+                        offsetX = touch.clientX - rect.left;
+                        offsetY = touch.clientY - rect.top;
+                        initialMouseX = touch.clientX;
+                        initialMouseY = touch.clientY;
+
+                        // 設置長按計時器（約280ms）
+                        clearTimeout(longPressTimer);
+                        longPressTimer = setTimeout(() => {
+                            // 若在長按期間無明顯移動，開始拖拽並阻止滾動
+                            startDrag(this, initialMouseX, initialMouseY);
+                        }, 280);
+                    }, { passive: true });
+
+                    // 觸摸移動：若在長按觸發前移動幅度過大，視為滾動，取消拖拽啟動
+                    card.addEventListener('touchmove', function(e) {
+                        if (!longPressTimer) return;
+                        if (e.touches.length !== 1) return;
+                        const t = e.touches[0];
+                        const dx = t.clientX - touchStartX;
+                        const dy = t.clientY - touchStartY;
+                        const moveDist = Math.hypot(dx, dy);
+                        if (moveDist > 10) {
+                            clearTimeout(longPressTimer);
+                            longPressTimer = null;
+                            // 不阻止默認，讓頁面可正常滾動
                         }
-                    }, { passive: false }); // 非被動模式以允許阻止默認行為
+                    }, { passive: true });
                 });
                 
                 // 滑鼠移動事件 - 更新拖拽位置
@@ -3417,17 +3439,16 @@
                 // 觸摸移動事件
                 document.addEventListener('touchmove', function(e) {
                     if (!isDragging || !draggedElement || e.touches.length === 0) return;
-                    
                     const touch = e.touches[0];
-                    
+
+                    // 只有在已進入拖拽狀態時才阻止頁面滾動
+                    e.preventDefault();
+
                     // 移動克隆體
                     updateDragPosition(touch.clientX, touch.clientY);
                     
                     // 檢測放置位置
                     detectDropTarget(touch.clientX, touch.clientY);
-                    
-                    // 防止頁面滾動
-                    e.preventDefault();
                 }, { passive: false });
                 
                 // 滑鼠釋放事件 - 完成拖拽
@@ -3437,13 +3458,16 @@
                     }
                 });
                 
-                // 觸摸結束事件
-                document.addEventListener('touchend', function(e) {
-                    if (isDragging && e.changedTouches.length > 0) {
-                        const touch = e.changedTouches[0];
-                        finishDrag(touch.clientX, touch.clientY);
-                    }
-                });
+                    // 觸摸結束事件
+                    document.addEventListener('touchend', function(e) {
+                        // 結束長按等待
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                        if (isDragging && e.changedTouches.length > 0) {
+                            const touch = e.changedTouches[0];
+                            finishDrag(touch.clientX, touch.clientY);
+                        }
+                    });
                 
                 // 防止離開視窗時元素懸掛
                 document.addEventListener('mouseleave', function() {
