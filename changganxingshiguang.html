@@ -449,9 +449,10 @@
                 max-height: 220px !important;
             }
             
-            /* 調整圖表及內容顯示區域的總體間距 */
+            /* 移動端：緊貼心境變化圖，去除多餘空白 */
             .content-area {
-                margin-top: 60px !important; /* 極大程度減少與心境變化圖區域之間的空白 */
+                margin-top: 0 !important;
+                padding-top: 6px !important;
             }
         }
         
@@ -585,6 +586,7 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(93, 92, 222, 0.1), 0 1px 3px rgba(93, 92, 222, 0.08);
+            white-space: nowrap; /* 按鈕文字單行顯示 */
         }
         
         .btn-primary:hover {
