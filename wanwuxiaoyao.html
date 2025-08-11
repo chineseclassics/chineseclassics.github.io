@@ -2202,6 +2202,41 @@
         overflow-y: auto !important;
         text-align: left !important;
       }
+
+      /* 移動端排版優化：啟用垂直滾動佈局並避免重疊 */
+      /* 1) 避免橫向滾動；容器寬度隨螢幕而不是視窗單位 */
+      html, body {
+        overflow-x: hidden !important;
+      }
+      #game-container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      /* 2) 主選單不再覆蓋整屏，改為正常文流排列，可隨頁面垂直滾動 */
+      #main-menu {
+        position: static !important;
+        inset: initial !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        z-index: auto !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        box-sizing: border-box !important;
+        margin-top: 8px !important;
+        margin-bottom: 16px !important;
+      }
+      /* 主選單內的區塊之間保持一致的垂直間距 */
+      #main-menu > * + * {
+        margin-top: 12px !important;
+      }
+
+      /* 3) 內容區頂部留出安全區間距，避免被狹長瀏海/系統列遮擋 */
+      #game-content {
+        padding-top: calc(12px + env(safe-area-inset-top)) !important;
+        padding-top: calc(12px + constant(safe-area-inset-top)) !important; /* 兼容 */
+      }
     }
 
     /* 氣物化視角下的混沌呼吸挑戰引導文字強化 - 保持低調設計 */
