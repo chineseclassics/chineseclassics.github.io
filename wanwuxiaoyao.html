@@ -2736,7 +2736,7 @@
     
     /* 斷句界面時的低層級樣式 */
     .chaos-form.segmentation-mode {
-      z-index: 1 !important;
+      z-index: 0 !important; /* 放到底層，低於斷句窗口 */
       opacity: 0.3;
       pointer-events: none;
     }
@@ -3705,7 +3705,7 @@
   <div id="game-container" class="game-container relative h-screen w-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-500 ease-in-out">
     
     <!-- Current Form Indicator - Enlarged and Enhanced -->
-    <div id="current-form-indicator" class="absolute top-4 left-4 md:top-6 md:left-6 z-30 opacity-0 transition-opacity duration-500">
+    <div id="current-form-indicator" class="absolute top-4 left-4 md:top-6 md:left-6 z-0 opacity-0 transition-opacity duration-500">
       <div class="form-icon-container bg-gradient-to-br from-white/90 to-indigo-50/70 dark:from-gray-800/90 dark:to-indigo-900/70 rounded-full p-4 
                   shadow-lg flex items-center justify-center w-[140px] h-[140px] overflow-hidden 
                   border-2 border-indigo-400/70 dark:border-indigo-500/70 
@@ -4351,7 +4351,7 @@
     </div>
     
     <!-- Hunlun (Chaos) Container with Seven Apertures -->
-    <div id="apertures-tracker" class="absolute top-4 right-4 md:top-6 md:right-6 aperture-container opacity-0 transition-opacity duration-500">
+    <div id="apertures-tracker" class="absolute top-4 right-4 md:top-6 md:right-6 aperture-container opacity-0 transition-opacity duration-500 z-0">
       <!-- Subtle face pattern -->
       <div class="face-pattern" id="face-pattern"></div>
       
@@ -16830,10 +16830,14 @@ ${layerData.choiceData.keyChoices}
         chaosForm.classList.add('segmentation-mode');
       }
 
-      // 行動端：確保左上角的形態指示器位於斷句挑戰窗口下方（不遮擋）
+      // 行動端：確保左上角形態指示器與右上角七竅指示器均位於整個斷句窗口下層，且層級一致
       const formIndicator = document.getElementById('current-form-indicator');
       if (formIndicator) {
-        formIndicator.style.zIndex = '1';
+        formIndicator.style.zIndex = '0';
+      }
+      const aperturesTracker = document.getElementById('apertures-tracker');
+      if (aperturesTracker) {
+        aperturesTracker.style.zIndex = '0';
       }
       
       // 在第六章斷句挑戰出現時，清空浮現的古老文字效果，並標記為已禁用
@@ -16918,8 +16922,9 @@ ${layerData.choiceData.keyChoices}
         puzzleContainer.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.15)';
         puzzleContainer.style.backdropFilter = 'blur(8px)';
       } else {
-        // 其他章節使用原有樣式
+        // 其他章節使用原有樣式，但確保整個容器位於指示器之上
         puzzleContainer.className = 'max-w-3xl mx-auto p-8 text-center bg-white dark:bg-gray-800 bg-opacity-80 dark:bg-opacity-80 rounded-xl shadow-lg';
+        puzzleContainer.style.zIndex = '10';
       }
       
       // For chapter 2, add special cloud effects
