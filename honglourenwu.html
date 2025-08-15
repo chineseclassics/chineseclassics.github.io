@@ -703,14 +703,6 @@
     const btnHint = document.getElementById('gameHint');
     const btnSkip = document.getElementById('gameSkip');
 
-    const clueTemplates = [
-      (n) => `我是「${n.id}」的${pickRelationWord('parent')}，請找出我的孩子。`,
-      (n) => `與「${n.id}」為${pickRelationWord('sibling')}者是誰？`,
-      (n) => `和「${n.id}」是${pickRelationWord('marriage')}關係的是誰？`,
-      (n) => `誰是「${n.id}」的${pickRelationWord('cousin')}？`,
-      (n) => `與「${n.id}」為${pickRelationWord('friend')}（知交）的人是誰？`,
-    ];
-
     function pickRelationWord(type){
       const m = { parent:'父母/子女', sibling:'兄妹/手足', marriage:'配偶', cousin:'表親', friend:'好友'};
       return m[type] || type;
@@ -735,18 +727,33 @@
         const deg = links.filter(l=> l.source.id===n.id || l.target.id===n.id).length;
         return deg>=2; });
       const src = randomPick(candidates);
-      // 隨機選一種關係，且確保有至少一個答案
+      // 隨機選一種關係，優先保證有答案；"parent" 類型使用有方向的提示
       const types = ['parent','sibling','marriage','cousin','friend'];
-      let type, targets = [];
-      for (let i=0;i<10;i++){
+      let type = null; let targets = []; let clue = '';
+      for (let i=0;i<12;i++){
         type = randomPick(types);
-        targets = neighborsByType(src.id, type);
-        if (targets.length>0) break;
+        if (type==='parent'){
+          const children = links.filter(l=>l.type==='parent' && l.source.id===src.id).map(l=>l.target.id);
+          const parents = links.filter(l=>l.type==='parent' && l.target.id===src.id).map(l=>l.source.id);
+          if (children.length>0 && parents.length>0){
+            if (Math.random()<0.5){ targets = children; clue = `誰是「${src.id}」的子女？`; }
+            else { targets = parents; clue = `誰是「${src.id}」的父或母？`; }
+          } else if (children.length>0){ targets = children; clue = `誰是「${src.id}」的子女？`; }
+          else if (parents.length>0){ targets = parents; clue = `誰是「${src.id}」的父或母？`; }
+          else { continue; }
+        } else {
+          targets = neighborsByType(src.id, type);
+          if (targets.length===0) continue;
+          const map = { sibling: '兄妹/手足', marriage: '配偶', cousin: '表親', friend: '好友' };
+          const word = map[type] || pickRelationWord(type);
+          clue = `與「${src.id}」為${word}的是誰？`;
+        }
+        break;
       }
-      if (targets.length===0) { nextQuestion(); return; }
+      if (!type || targets.length===0){ nextQuestion(); return; }
       game.current = { src, type, answers: new Set(targets) };
       game.total += 1; gameStatus.textContent = `題目：${game.total}｜得分：${game.score}`;
-      gameClue.textContent = randomPick(clueTemplates)(src);
+      gameClue.textContent = clue;
       // 聚焦出題源
       showDetails(src);
       game.listening = true;
@@ -757,7 +764,7 @@
       setTimeout(()=> node.filter(d=>d.id===id).select('rect').classed(cls, false), duration);
     }
 
-    // 監聽答題：點圖中任意人物
+    // 監聽答題：點圖中任意人物（不覆蓋原本點擊詳情邏輯）
     node.on('click.game', (_, d) => {
       if (!game.listening || !game.current) { showDetails(d); return; }
       const { answers, src } = game.current;
@@ -770,6 +777,9 @@
       } else {
         // 錯誤反饋
         markNode(d.id, 'wrongShake');
+        // 額外提示：高亮出題人節點
+        node.filter(n=>n.id===src.id).select('rect').classed('focus', true);
+        setTimeout(()=> node.filter(n=>n.id===src.id).select('rect').classed('focus', false), 600);
       }
     });
 
