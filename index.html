@@ -390,289 +390,77 @@
             transform: scale(1) !important;
         }
         
-        /* 云气粒子动画效果 */
-        .cloud-particle {
+        /* 太虛幻境標題區雲氣效果（輕量、高效） */
+        .tx-hero {
+            position: relative;
+            overflow: hidden;
+        }
+        .tx-layer {
             position: absolute;
+            inset: 0;
             pointer-events: none;
-            opacity: 0;
-            filter: blur(6px);
-            animation: float-clouds 25s infinite linear;
         }
-        
-        /* 云朵形状 - 使用多个圆形重叠创建真实云朵轮廓，每朵云有独特的配色 */
-        
-        /* 月白云 - 经典纯净白色 */
-        .cloud-1 {
-            width: 120px;
-            height: 60px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(248, 250, 252, 0.3) 40%, transparent 70%);
-            border-radius: 60px;
-            animation-delay: 0s;
+        .tx-bg {
+            background:
+                linear-gradient(90deg, rgba(30, 58, 138, 0.06), rgba(99, 102, 241, 0.08), rgba(30, 58, 138, 0.06)),
+                radial-gradient(120% 120% at 30% 20%, rgba(99, 102, 241, 0.10) 0%, rgba(99, 102, 241, 0) 60%),
+                radial-gradient(120% 120% at 75% 70%, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 60%);
+            animation: tx-bg-breathe 10s ease-in-out infinite;
         }
-        
-        .cloud-1::before {
-            content: '';
+        @keyframes tx-bg-breathe {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .tx-clouds-back { z-index: 1; }
+        .tx-content { position: relative; z-index: 2; }
+        .tx-clouds-front { z-index: 3; }
+        .tx-cloud {
             position: absolute;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(248, 250, 252, 0.2) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -20px;
-            left: 10px;
+            border-radius: 9999px;
+            background: radial-gradient(circle at 40% 40%, rgba(245, 247, 255, 0.88), rgba(220, 230, 255, 0.38) 44%, rgba(248, 250, 252, 0) 70%);
+            opacity: 0.9;
+            will-change: transform, opacity;
+            box-shadow: 0 18px 56px rgba(99, 102, 241, 0.12), 0 4px 18px rgba(59, 130, 246, 0.08);
         }
-        
-        .cloud-1::after {
-            content: '';
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(248, 250, 252, 0.25) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -15px;
-            right: 15px;
+        .tx-cloud--lg { width: clamp(220px, 32vw, 420px); height: clamp(110px, 16vw, 220px); }
+        .tx-cloud--md { width: clamp(160px, 24vw, 320px); height: clamp(90px, 12vw, 160px); }
+        .tx-cloud--sm { width: clamp(120px, 18vw, 220px); height: clamp(70px, 10vw, 120px); opacity: 0.75; }
+        .tx-cloud--tint { background: radial-gradient(circle at 40% 40%, rgba(236, 233, 255, 0.55), rgba(239,246,255,0.22) 42%, rgba(248,250,252,0.0) 70%); }
+        .tx-cloud--front { opacity: 0.9; }
+        .tx-drift-1 { animation: tx-drift-1 26s ease-in-out infinite alternate; }
+        .tx-drift-2 { animation: tx-drift-2 32s ease-in-out infinite alternate; }
+        .tx-drift-3 { animation: tx-drift-3 22s ease-in-out infinite alternate; }
+        @keyframes tx-drift-1 {
+            0%   { transform: translate3d(-12vw, 0px, 0) scale(1); opacity: 0.65; }
+            50%  { transform: translate3d(  8vw, -4px, 0) scale(1.03); opacity: 0.8; }
+            100% { transform: translate3d(-12vw, 1px, 0) scale(1); opacity: 0.65; }
         }
-        
-        /* 薰衣草紫云 - 优雅淡紫色 */
-        .cloud-2 {
-            width: 100px;
-            height: 50px;
-            background: radial-gradient(circle, rgba(196, 181, 253, 0.4) 0%, rgba(221, 214, 254, 0.25) 40%, transparent 70%);
-            border-radius: 50px;
-            animation-delay: 4s;
+        @keyframes tx-drift-2 {
+            0%   { transform: translate3d(10vw, -2px, 0) scale(1); opacity: 0.6; }
+            50%  { transform: translate3d(-10vw, 2px, 0) scale(1.04); opacity: 0.75; }
+            100% { transform: translate3d(10vw, -1px, 0) scale(1); opacity: 0.6; }
         }
-        
-        .cloud-2::before {
-            content: '';
-            position: absolute;
-            width: 70px;
-            height: 70px;
-            background: radial-gradient(circle, rgba(196, 181, 253, 0.35) 0%, rgba(221, 214, 254, 0.2) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -25px;
-            left: 5px;
+        @keyframes tx-drift-3 {
+            0%   { transform: translate3d(-8vw, 1px, 0) scale(1); opacity: 0.5; }
+            50%  { transform: translate3d(6vw, -2px, 0) scale(1.02); opacity: 0.6; }
+            100% { transform: translate3d(-8vw, 0px, 0) scale(1); opacity: 0.5; }
         }
-        
-        .cloud-2::after {
-            content: '';
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background: radial-gradient(circle, rgba(196, 181, 253, 0.4) 0%, rgba(221, 214, 254, 0.22) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -20px;
-            right: 10px;
+        @media (max-width: 768px) {
+            .tx-cloud--lg { display: none; }
         }
-        
-        /* 天青云 - 清新天蓝色 */
-        .cloud-3 {
-            width: 140px;
-            height: 70px;
-            background: radial-gradient(circle, rgba(147, 197, 253, 0.4) 0%, rgba(186, 230, 253, 0.25) 40%, transparent 70%);
-            border-radius: 70px;
-            animation-delay: 8s;
+        @media (prefers-reduced-motion: reduce) {
+            .tx-bg { animation: none; }
+            .tx-drift-1, .tx-drift-2, .tx-drift-3 { animation: none; }
         }
-        
-        .cloud-3::before {
-            content: '';
-            position: absolute;
-            width: 90px;
-            height: 90px;
-            background: radial-gradient(circle, rgba(147, 197, 253, 0.35) 0%, rgba(186, 230, 253, 0.2) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -30px;
-            left: 15px;
+        .dark .tx-bg {
+            background:
+                linear-gradient(90deg, rgba(30, 58, 138, 0.12), rgba(99, 102, 241, 0.14), rgba(30, 58, 138, 0.12)),
+                radial-gradient(120% 120% at 30% 20%, rgba(129, 140, 248, 0.16) 0%, rgba(99, 102, 241, 0) 60%),
+                radial-gradient(120% 120% at 75% 70%, rgba(79, 70, 229, 0.14) 0%, rgba(79, 70, 229, 0) 60%);
         }
-        
-        .cloud-3::after {
-            content: '';
-            position: absolute;
-            width: 65px;
-            height: 65px;
-            background: radial-gradient(circle, rgba(147, 197, 253, 0.38) 0%, rgba(186, 230, 253, 0.23) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -25px;
-            right: 20px;
-        }
-        
-        /* 香槟金云 - 温暖金色调 */
-        .cloud-4 {
-            width: 80px;
-            height: 40px;
-            background: radial-gradient(circle, rgba(254, 240, 138, 0.4) 0%, rgba(255, 251, 235, 0.25) 40%, transparent 70%);
-            border-radius: 40px;
-            animation-delay: 12s;
-        }
-        
-        .cloud-4::before {
-            content: '';
-            position: absolute;
-            width: 55px;
-            height: 55px;
-            background: radial-gradient(circle, rgba(254, 240, 138, 0.35) 0%, rgba(255, 251, 235, 0.2) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -20px;
-            left: 8px;
-        }
-        
-        .cloud-4::after {
-            content: '';
-            position: absolute;
-            width: 45px;
-            height: 45px;
-            background: radial-gradient(circle, rgba(254, 240, 138, 0.38) 0%, rgba(255, 251, 235, 0.23) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -15px;
-            right: 12px;
-        }
-        
-        /* 玫瑰云 - 柔和粉紫色 */
-        .cloud-5 {
-            width: 110px;
-            height: 55px;
-            background: radial-gradient(circle, rgba(244, 114, 182, 0.3) 0%, rgba(251, 207, 232, 0.2) 40%, transparent 70%);
-            border-radius: 55px;
-            animation-delay: 16s;
-        }
-        
-        .cloud-5::before {
-            content: '';
-            position: absolute;
-            width: 75px;
-            height: 75px;
-            background: radial-gradient(circle, rgba(244, 114, 182, 0.25) 0%, rgba(251, 207, 232, 0.15) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -25px;
-            left: 12px;
-        }
-        
-        .cloud-5::after {
-            content: '';
-            position: absolute;
-            width: 55px;
-            height: 55px;
-            background: radial-gradient(circle, rgba(244, 114, 182, 0.28) 0%, rgba(251, 207, 232, 0.18) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -20px;
-            right: 18px;
-        }
-        
-        /* 青玉云 - 清雅青绿色 */
-        .cloud-6 {
-            width: 130px;
-            height: 65px;
-            background: radial-gradient(circle, rgba(134, 239, 172, 0.35) 0%, rgba(220, 252, 231, 0.22) 40%, transparent 70%);
-            border-radius: 65px;
-            animation-delay: 20s;
-        }
-        
-        .cloud-6::before {
-            content: '';
-            position: absolute;
-            width: 85px;
-            height: 85px;
-            background: radial-gradient(circle, rgba(134, 239, 172, 0.3) 0%, rgba(220, 252, 231, 0.18) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -28px;
-            left: 18px;
-        }
-        
-        .cloud-6::after {
-            content: '';
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: radial-gradient(circle, rgba(134, 239, 172, 0.33) 0%, rgba(220, 252, 231, 0.2) 40%, transparent 70%);
-            border-radius: 50%;
-            top: -22px;
-            right: 22px;
-        }
-        
-        @keyframes float-clouds {
-            0% {
-                opacity: 0;
-                transform: translateX(-150px) translateY(0px) scale(0.5) rotate(0deg);
-            }
-            5% {
-                opacity: 0.6;
-                transform: translateX(-120px) translateY(-5px) scale(0.7) rotate(1deg);
-            }
-            15% {
-                opacity: 0.8;
-                transform: translateX(-80px) translateY(8px) scale(1) rotate(-1deg);
-            }
-            25% {
-                opacity: 1;
-                transform: translateX(-40px) translateY(-12px) scale(1.1) rotate(0.5deg);
-            }
-            35% {
-                opacity: 0.9;
-                transform: translateX(0px) translateY(15px) scale(1.2) rotate(-0.5deg);
-            }
-            45% {
-                opacity: 0.8;
-                transform: translateX(40px) translateY(-8px) scale(1.1) rotate(1deg);
-            }
-            55% {
-                opacity: 0.7;
-                transform: translateX(80px) translateY(20px) scale(1) rotate(-1deg);
-            }
-            65% {
-                opacity: 0.6;
-                transform: translateX(120px) translateY(-15px) scale(0.9) rotate(0.5deg);
-            }
-            75% {
-                opacity: 0.5;
-                transform: translateX(160px) translateY(10px) scale(0.8) rotate(-0.5deg);
-            }
-            85% {
-                opacity: 0.3;
-                transform: translateX(200px) translateY(-5px) scale(0.7) rotate(1deg);
-            }
-            95% {
-                opacity: 0.1;
-                transform: translateX(240px) translateY(5px) scale(0.6) rotate(0deg);
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(280px) translateY(0px) scale(0.5) rotate(0deg);
-            }
-        }
-        
-        /* 幻境光效 */
-        .mystic-glow {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(93, 92, 222, 0.1) 0%, transparent 70%);
-            animation: mystic-pulse 6s ease-in-out infinite;
-        }
-        
-        .mystic-glow:nth-child(2) {
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, rgba(129, 140, 248, 0.08) 0%, transparent 70%);
-            animation-delay: 2s;
-            animation-duration: 8s;
-        }
-        
-        .mystic-glow:nth-child(3) {
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(165, 180, 252, 0.06) 0%, transparent 70%);
-            animation-delay: 4s;
-            animation-duration: 10s;
-        }
-        
-        @keyframes mystic-pulse {
-            0%, 100% {
-                opacity: 0.3;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.6;
-                transform: scale(1.1);
-            }
+        .dark .tx-cloud {
+            background: radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.58), rgba(226, 232, 240, 0.26) 44%, rgba(226, 232, 240, 0) 70%);
+            box-shadow: 0 18px 56px rgba(129, 140, 248, 0.18), 0 4px 18px rgba(165, 180, 252, 0.12);
         }
 
         /* 响应式网格调整 */
@@ -1053,46 +841,32 @@
         <!-- 首页视图 -->
         <div id="homeView" class="h-screen flex flex-col">
             <!-- 固定標題區域 -->
-            <div class="flex-shrink-0 py-8 px-4 relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-indigo-900/10 via-primary/20 to-indigo-900/10 dark:from-indigo-900/30 dark:via-primary/40 dark:to-indigo-900/30"></div>
-                
-                <!-- 幻境光效 -->
-                <div class="mystic-glow absolute top-1/4 left-1/4"></div>
-                <div class="mystic-glow absolute top-3/4 right-1/3"></div>
-                <div class="mystic-glow absolute top-1/2 left-2/3"></div>
-                
-                <!-- 浮动云气 -->
-                <div class="cloud-particle cloud-1 absolute" style="left: 5%; top: 15%;"></div>
-                <div class="cloud-particle cloud-2 absolute" style="left: 75%; top: 25%;"></div>
-                <div class="cloud-particle cloud-3 absolute" style="left: 25%; top: 55%;"></div>
-                <div class="cloud-particle cloud-4 absolute" style="left: 85%; top: 10%;"></div>
-                <div class="cloud-particle cloud-5 absolute" style="left: 45%; top: 75%;"></div>
-                <div class="cloud-particle cloud-6 absolute" style="left: 15%; top: 65%;"></div>
-                <div class="cloud-particle cloud-1 absolute" style="left: 95%; top: 45%;"></div>
-                <div class="cloud-particle cloud-2 absolute" style="left: 10%; top: 35%;"></div>
-                <div class="cloud-particle cloud-3 absolute" style="left: 80%; top: 70%;"></div>
-                <div class="cloud-particle cloud-4 absolute" style="left: 35%; top: 20%;"></div>
-                <div class="cloud-particle cloud-5 absolute" style="left: 55%; top: 85%;"></div>
-                <div class="cloud-particle cloud-6 absolute" style="left: 20%; top: 5%;"></div>
-                
-                <div class="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 border-l-2 border-t-2 border-primary opacity-30 dark:opacity-40"></div>
-                <div class="absolute bottom-0 right-0 w-16 h-16 md:w-24 md:h-24 border-r-2 border-b-2 border-primary opacity-30 dark:opacity-40"></div>
-                
-                <div class="container mx-auto relative z-10">
-                    <h1 class="text-3xl md:text-5xl font-bold text-center">
-                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-primary to-indigo-700 dark:from-indigo-400 dark:via-primary dark:to-indigo-400">太虛幻境</span>
-                    </h1>
-                    <h2 class="text-xl md:text-2xl font-medium text-gray-700 dark:text-gray-300 text-center mt-2">書院中文經典數字體驗學習</h2>
-                    
-                    <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4"></div>
-                    
-                    <!-- 網站Logo -->
-                    <div class="flex justify-center mt-6">
-                        <img src="https://chineseclassics.github.io/images/cclogo.png" 
-                             alt="書院中文經典" 
-                             class="h-16 w-16 md:h-20 md:w-20 object-contain cursor-pointer hover:opacity-80 transition-opacity"
-                             onclick="showHome()">
+            <div class="flex-shrink-0 py-8 px-4 relative overflow-hidden tx-hero">
+                <div class="tx-layer tx-bg"></div>
+                <div class="tx-layer tx-clouds-back">
+                    <div class="tx-cloud tx-cloud--lg tx-drift-1" style="left: 6%; top: 34%;"></div>
+                    <div class="tx-cloud tx-cloud--md tx-drift-2 tx-cloud--tint" style="right: 8%; top: 46%;"></div>
+                </div>
+                <div class="tx-content">
+                    <div class="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 border-l-2 border-t-2 border-primary opacity-30 dark:opacity-40"></div>
+                    <div class="absolute bottom-0 right-0 w-16 h-16 md:w-24 md:h-24 border-r-2 border-b-2 border-primary opacity-30 dark:opacity-40"></div>
+                    <div class="container mx-auto relative">
+                        <h1 class="text-3xl md:text-5xl font-bold text-center">
+                            <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-primary to-indigo-700 dark:from-indigo-400 dark:via-primary dark:to-indigo-400">太虛幻境</span>
+                        </h1>
+                        <h2 class="text-xl md:text-2xl font-medium text-gray-700 dark:text-gray-300 text-center mt-2">書院中文經典數字體驗學習</h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4"></div>
+                        <div class="flex justify-center mt-6">
+                            <img src="https://chineseclassics.github.io/images/cclogo.png" 
+                                 alt="書院中文經典" 
+                                 class="h-16 w-16 md:h-20 md:w-20 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                                 onclick="showHome()">
+                        </div>
                     </div>
+                </div>
+                <div class="tx-layer tx-clouds-front">
+                    <div class="tx-cloud tx-cloud--sm tx-drift-3" style="left: 18%; top: 18%;"></div>
+                    <div class="tx-cloud tx-cloud--md tx-drift-1 tx-cloud--tint" style="right: 18%; top: 14%;"></div>
                 </div>
             </div>
 
