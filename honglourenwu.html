@@ -351,7 +351,7 @@
       { source: '劉姥姥', target: '王熙鳳', type: 'friend' },
       { source: '劉姥姥', target: '巧姐', type: 'friend' },
       { source: '板兒', target: '巧姐', type: 'friend' },
-      { source: '賈瑞', target: '王熙鳳', type: 'friend' },
+      
     ];
 
     const relationTypes = ['parent','marriage','sibling','cousin','friend'];
@@ -463,7 +463,6 @@
       [pairKey('劉姥姥','王熙鳳'), '鳳姐機鋒周旋，後與劉姥姥合力護巧姐。'],
       [pairKey('劉姥姥','巧姐'), '劉姥姥出力救巧姐脫險。'],
       [pairKey('板兒','巧姐'), '兒時玩伴，曾同住劉姥姥家。'],
-      [pairKey('賈瑞','王熙鳳'), '賈瑞迷戀鳳姐，終遭教訓而亡。'],
     ]);
     function getRelationSummary(d){
       const k = pairKey(d.source.id, d.target.id);
@@ -722,6 +721,21 @@
 
     function nextQuestion(){
       resetFocus();
+      // 首題：賈瑞對王熙鳳起色心，最終被設計害死（情節題）
+      if (!game._askedJiarui) {
+        const src = nodes.find(n => n.id === '王熙鳳');
+        const target = nodes.find(n => n.id === '賈瑞');
+        if (src && target) {
+          game.current = { src, type: 'custom', answers: new Set([target.id]) };
+          game.total += 1; gameStatus.textContent = `題目：${game.total}｜得分：${game.score}`;
+          gameClue.textContent = '誰是對「王熙鳳」起色心，最終被其設計害死的人？';
+          showDetails(src);
+          game.listening = true;
+          game._askedJiarui = true;
+          return;
+        }
+        game._askedJiarui = true; // 安全處理：若節點缺失則跳過
+      }
       // 抽一個有人際關係較多的人作為出題源
       const candidates = nodes.filter(n=>{
         const deg = links.filter(l=> l.source.id===n.id || l.target.id===n.id).length;
