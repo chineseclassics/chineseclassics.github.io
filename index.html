@@ -1307,7 +1307,7 @@
                 id: 'cikeyishou',
                 name: '刺客之道 1.0',
                 icon: 'fas fa-user-ninja',
-                gradient: 'from-purple-500 to-pink-500',
+                gradient: 'from-pink-400 to-rose-300',
                 url: 'https://chineseclassics.github.io/cikezhidao.html',
                 description: '扮演《史記·刺客列傳》中的五位古代刺客，在生死抉擇中體驗千秋義勇與歷史風雲'
             },
@@ -1423,8 +1423,8 @@
             {
                 id: 'honglourenwu',
                 name: '《紅樓夢》人物圖譜',
-                icon: 'fas fa-sitemap',
-                gradient: 'from-fuchsia-500 to-pink-500',
+                icon: 'fa-solid fa-sitemap',
+                gradient: 'from-purple-500 to-pink-500',
                 url: 'https://chineseclassics.github.io/honglourenwu.html',
                 description: '基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。'
             }
@@ -1688,7 +1688,8 @@
             const iconSize = isCompact ? 'text-xl' : 'text-4xl';
             const textSize = isCompact ? 'text-xs' : 'font-medium';
 
-            const iconHtml = app.icon.startsWith('fas ')
+            const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
+            const iconHtml = isFaIcon
                 ? `<i class="${app.icon} text-white ${iconSize}" aria-hidden="true"></i>`
                 : `<span class="${iconSize} text-white">${app.icon}</span>`;
             
@@ -1815,7 +1816,8 @@
 
         // 渲染切换器应用图标（优化版）
         function renderSwitcherAppIcon(app) {
-            const iconHtml = app.icon.startsWith('fas ')
+            const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
+            const iconHtml = isFaIcon
                 ? `<i class="${app.icon} text-white text-lg"></i>`
                 : `<span class="text-lg text-white">${app.icon}</span>`;
 
