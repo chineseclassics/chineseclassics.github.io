@@ -290,6 +290,7 @@
       { id: '賈蓉', family: 'jia', brief: '賈珍之子，娶秦可卿。' },
       { id: '尤二姐', family: 'other', brief: '尤氏之妹，後為賈琏之妾。' },
       { id: '尤三姐', family: 'other', brief: '尤氏之妹，性烈。' },
+      { id: '尤老娘', family: 'other', brief: '尤氏之繼母；尤二姐、尤三姐之生母。' },
       { id: '元春', family: 'jia', brief: '賈政、王夫人長女，貴妃。' },
       { id: '迎春', family: 'jia', brief: '二小姐，性懦弱。' },
       { id: '探春', family: 'jia', brief: '三小姐，理家有方。' },
@@ -344,12 +345,14 @@
       { source: '賈蓉', target: '秦可卿', type: 'marriage' },
       { source: '賈琏', target: '尤二姐', type: 'marriage' },
       { source: '林如海', target: '賈敏', type: 'marriage' },
+      { source: '賈政', target: '趙姨娘', type: 'marriage' },
 
       { source: '賈母', target: '賈政', type: 'parent' },
       { source: '賈母', target: '賈赦', type: 'parent' },
       { source: '賈母', target: '賈敏', type: 'parent' },
       { source: '賈敬', target: '賈珍', type: 'parent' },
       { source: '賈敬', target: '惜春', type: 'parent' },
+      { source: '賈母', target: '史湘雲', type: 'parent' },
       { source: '賈珍', target: '賈蓉', type: 'parent' },
       { source: '尤氏', target: '賈蓉', type: 'parent' },
       { source: '賈政', target: '賈寶玉', type: 'parent' },
@@ -361,6 +364,9 @@
       { source: '賈政', target: '賈珠', type: 'parent' },
       { source: '王夫人', target: '賈珠', type: 'parent' },
       { source: '賈赦', target: '賈琏', type: 'parent' },
+      { source: '尤老娘', target: '尤氏', type: 'parent' },
+      { source: '尤老娘', target: '尤二姐', type: 'parent' },
+      { source: '尤老娘', target: '尤三姐', type: 'parent' },
       { source: '王熙鳳', target: '巧姐', type: 'parent' },
       { source: '賈琏', target: '巧姐', type: 'parent' },
       { source: '賈珠', target: '賈蘭', type: 'parent' },
@@ -507,11 +513,27 @@
       { source: '探春', target: '侍書', type: 'servant' },
     ];
 
+    // 連線去重：以無向對（source/target排序後）與類型為鍵去重
+    (function dedupeLinks(){
+      const seen = new Set();
+      const unique = [];
+      for (const l of links) {
+        const a = typeof l.source === 'string' ? l.source : l.source?.id;
+        const b = typeof l.target === 'string' ? l.target : l.target?.id;
+        if (!a || !b) { unique.push(l); continue; }
+        const key = [a,b].sort((x,y)=>x.localeCompare(y)).join('|') + '|' + l.type;
+        if (!seen.has(key)) { seen.add(key); unique.push(l); }
+      }
+      links.splice(0, links.length, ...unique);
+    })();
+
     const relationTypes = ['parent','marriage','sibling','cousin','friend','servant'];
 
     const svg = d3.select('#svg');
     // 當前聚焦的人物ID（若有）
     let focusedNodeId = null;
+    // 取得節點ID（兼容字串或物件）
+    const getId = (v) => (typeof v === 'string' ? v : v?.id);
     // SVG filters for soft shadow and glow
     const defs = svg.append('defs');
     const softShadow = defs.append('filter').attr('id','softShadow').attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
@@ -572,22 +594,16 @@
       [pairKey('賈蓉','秦可卿'), '寧國府賈蓉與其妻秦可卿。'],
       [pairKey('賈琏','尤二姐'), '賈琏納尤二姐為妾，鳳姐後發難。'],
       [pairKey('林如海','賈敏'), '林如海與賈政之妹賈敏為夫婦。'],
+      [pairKey('賈政','趙姨娘'), '賈政之側室，按婚姻夫妻處理。'],
       // 血親
       [pairKey('賈母','賈政'), '賈政之母，史太君。'],
       [pairKey('賈母','賈赦'), '賈赦之母，史太君。'],
       [pairKey('賈母','賈敏'), '賈敏之母，史太君。'],
       [pairKey('賈敬','賈珍'), '賈珍之父。'],
       [pairKey('賈敬','惜春'), '惜春之父，寧國府。'],
+      [pairKey('賈母','史湘雲'), '姑祖母與侄孫女。'],
       [pairKey('賈珍','賈蓉'), '賈珍之子。'],
       [pairKey('尤氏','賈蓉'), '賈蓉之母。'],
-      [pairKey('賈政','元春'), '元春之父。'],
-      [pairKey('王夫人','元春'), '元春之母。'],
-      [pairKey('賈赦','迎春'), '迎春之父，長房。'],
-      [pairKey('賈政','探春'), '探春之父，庶出。'],
-      [pairKey('賈政','賈珠'), '賈政長子。'],
-      [pairKey('王夫人','賈珠'), '王夫人長子。'],
-      [pairKey('林如海','林黛玉'), '林黛玉之父。'],
-      [pairKey('賈敏','林黛玉'), '林黛玉之母。'],
       [pairKey('王熙鳳','巧姐'), '巧姐之母。'],
       [pairKey('賈琏','巧姐'), '巧姐之父。'],
       [pairKey('賈珠','賈蘭'), '賈蘭之父。'],
@@ -656,6 +672,9 @@
       [pairKey('賈政','賈環'), '賈環之父。'],
       [pairKey('趙姨娘','賈環'), '賈環之母。'],
       [pairKey('趙姨娘','探春'), '探春之母。'],
+      [pairKey('尤老娘','尤氏'), '繼母。'],
+      [pairKey('尤老娘','尤二姐'), '生母。'],
+      [pairKey('尤老娘','尤三姐'), '生母。'],
     ]);
     function getRelationSummary(d){
       const k = pairKey(d.source.id, d.target.id);
@@ -759,14 +778,17 @@
     // 邊的懸停互動：加粗並顯示標籤（由 hit 線觸發）
     linkHit.on('mouseenter', function(e,d){
       // 若處於聚焦狀態，僅允許與聚焦人物相連的邊顯示說明
-      if (focusedNodeId && !(d.source.id===focusedNodeId || d.target.id===focusedNodeId)) return;
+      const a = getId(d.source), b = getId(d.target);
+      if (focusedNodeId && !(a===focusedNodeId || b===focusedNodeId)) return;
       link.filter(l=>l===d).classed('hovered', true);
       // 確保標籤在最上層，避免被其他元素遮擋
       linkLabelLayer.raise();
       linkLabels.filter(l=>l===d).raise().transition().duration(120).style('opacity',1);
-      node.filter(n=>n.id===d.source.id || n.id===d.target.id).select('rect').classed('focusSoft', true);
+      node.filter(n=>n.id===a || n.id===b).select('rect').classed('focusSoft', true);
     }).on('mouseleave', function(e,d){
-      if (focusedNodeId && !(d.source.id===focusedNodeId || d.target.id===focusedNodeId)) return;
+      // 若處於聚焦狀態，僅允許與聚焦人物相連的邊顯示說明
+      const a = getId(d.source), b = getId(d.target);
+      if (focusedNodeId && !(a===focusedNodeId || b===focusedNodeId)) return;
       link.filter(l=>l===d).classed('hovered', false);
       linkLabels.filter(l=>l===d).transition().duration(120).style('opacity',0);
       node.select('rect').classed('focusSoft', false);
@@ -787,14 +809,27 @@
       focusedNodeId = d.id;
       d3.selectAll('.node rect').classed('focus', n => n.id === d.id);
       const neighbors = new Set([d.id]);
-      links.forEach(l => { if (l.source.id === d.id) neighbors.add(l.target.id); if (l.target.id === d.id) neighbors.add(l.source.id); });
+      links.forEach(l => {
+        const a = getId(l.source), b = getId(l.target);
+        if (a === d.id) neighbors.add(b);
+        if (b === d.id) neighbors.add(a);
+      });
       d3.selectAll('.node').classed('hidden', n => !neighbors.has(n.id));
       d3.selectAll('.link')
-        .classed('hidden', l => !(l.source.id === d.id || l.target.id === d.id))
-        .classed('active', l => (l.source.id === d.id || l.target.id === d.id));
+        .classed('hidden', l => {
+          const a = getId(l.source), b = getId(l.target);
+          return !(a === d.id || b === d.id);
+        })
+        .classed('active', l => {
+          const a = getId(l.source), b = getId(l.target);
+          return (a === d.id || b === d.id);
+        });
 
       // 僅允許與聚焦人物相關的 hit 線可交互，避免無關邊觸發標籤
-      linkHit.style('pointer-events', l => (l.source.id===focusedNodeId || l.target.id===focusedNodeId) ? 'stroke' : 'none');
+      linkHit.style('pointer-events', l => {
+        const a = getId(l.source), b = getId(l.target);
+        return (a===focusedNodeId || b===focusedNodeId) ? 'stroke' : 'none';
+      });
 
       const rels = links.filter(l => l.source.id === d.id || l.target.id === d.id);
       const info = document.getElementById('details');
@@ -816,8 +851,12 @@
       const ul = document.createElement('ul');
       ul.style.paddingLeft = '18px';
       ul.style.margin = '6px 0 0';
+      const seenRelItems = new Set();
       rels.forEach(r => {
         const other = r.source.id === d.id ? r.target.id : r.source.id;
+        const key = `${other}|${r.type}`;
+        if (seenRelItems.has(key)) return;
+        seenRelItems.add(key);
         const li = document.createElement('li');
         const map = { parent: '血親', marriage: '婚姻', sibling: '手足', cousin: '表親', friend: '知交', servant: '主僕' };
         li.textContent = `${other}（${map[r.type]}）`;
@@ -888,16 +927,20 @@
         const edgeNodes = new Set();
         links.forEach(l => {
           if (l.type !== activeRelationFilter) return;
-          if (!baseIds.has(l.source.id) || !baseIds.has(l.target.id)) return;
-          edgeNodes.add(l.source.id);
-          edgeNodes.add(l.target.id);
+          const a = getId(l.source), b = getId(l.target);
+          if (!baseIds.has(a) || !baseIds.has(b)) return;
+          edgeNodes.add(a);
+          edgeNodes.add(b);
         });
         visibleNodeIds = edgeNodes;
       } else {
         visibleNodeIds = baseIds;
       }
       // 邊可見條件
-      const edgeVisible = (l) => visibleNodeIds.has(l.source.id) && visibleNodeIds.has(l.target.id) && (!activeRelationFilter || l.type === activeRelationFilter);
+      const edgeVisible = (l) => {
+        const a = getId(l.source), b = getId(l.target);
+        return visibleNodeIds.has(a) && visibleNodeIds.has(b) && (!activeRelationFilter || l.type === activeRelationFilter);
+      };
       // 應用節點與邊顯示
       d3.selectAll('.node').classed('hidden', d => !visibleNodeIds.has(d.id));
       d3.selectAll('.link')

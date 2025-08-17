@@ -1,0 +1,1038 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聶隱娘傳 - 文字角色扮演遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'bg-light': '#FFFFFF',
+                        'bg-dark': '#181818'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .scroll-container {
+            scrollbar-width: thin;
+            scrollbar-color: #5D5CDE transparent;
+        }
+        .scroll-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: #5D5CDE;
+            border-radius: 3px;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .combat-target {
+            transition: all 0.3s ease;
+        }
+        .combat-target:hover {
+            transform: scale(1.1);
+        }
+        .hit-effect {
+            animation: hitFlash 0.3s ease;
+        }
+        @keyframes hitFlash {
+            0% { background-color: #ef4444; }
+            100% { background-color: transparent; }
+        }
+        .ancient-text {
+            font-family: serif;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body class="bg-bg-light dark:bg-bg-dark text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-primary text-white p-4 shadow-lg">
+            <div class="max-w-4xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">聶隱娘傳</h1>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm">
+                        <span id="playerLevel">等級: 1</span>
+                    </div>
+                    <button id="showStats" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm hover:bg-opacity-30">
+                        屬性面板
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Panel Modal -->
+        <div id="statsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <h3 class="text-xl font-bold mb-4">聶隱娘 - 屬性面板</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>等級:</span>
+                        <span id="modalLevel">1</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>經驗值:</span>
+                        <span id="modalExp">0/100</span>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span>情感羈絆:</span>
+                            <span id="emotionValue">50</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div id="emotionBar" class="bg-pink-500 h-2 rounded-full" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span>江湖聲望:</span>
+                            <span id="reputationValue">50</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div id="reputationBar" class="bg-yellow-500 h-2 rounded-full" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span>內心平靜:</span>
+                            <span id="peaceValue">50</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div id="peaceBar" class="bg-blue-500 h-2 rounded-full" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span>武學造詣:</span>
+                            <span id="skillValue">50</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div id="skillBar" class="bg-red-500 h-2 rounded-full" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <h4 class="font-bold mt-4 mb-2">戰鬥屬性:</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>攻擊力: <span id="attackValue">5</span></div>
+                        <div>防禦力: <span id="defenseValue">5</span></div>
+                        <div>生命值: <span id="healthValue">5/5</span></div>
+                        <div>法術值: <span id="magicValue">5/5</span></div>
+                    </div>
+                </div>
+                <button onclick="closeStatsModal()" class="w-full mt-4 bg-primary text-white py-2 rounded hover:opacity-90">
+                    關閉
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="max-w-4xl mx-auto p-4">
+            <!-- Chapter Navigation -->
+            <div id="chapterNav" class="mb-6">
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button onclick="goToChapter(1)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors" data-chapter="1">
+                        第一章：童年抉擇
+                    </button>
+                    <button onclick="goToChapter(2)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="2" disabled="">
+                        第二章：山中修行
+                    </button>
+                    <button onclick="goToChapter(3)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="3" disabled="">
+                        第三章：回歸塵世
+                    </button>
+                    <button onclick="goToChapter(4)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="4" disabled="">
+                        第四章：忠誠考驗
+                    </button>
+                    <button onclick="goToChapter(5)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="5" disabled="">
+                        第五章：人生抉擇
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Content -->
+            <div id="gameContent" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 min-h-96">
+                <!-- Story content will be inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Game State
+        let gameState = {
+            currentChapter: 1,
+            currentScene: 0,
+            level: 1,
+            exp: 0,
+            expToNext: 100,
+            stats: {
+                emotion: 50,      // 情感羈絆
+                reputation: 50,   // 江湖聲望
+                peace: 50,        // 內心平靜
+                skill: 50         // 武學造詣
+            },
+            combat: {
+                attack: 5,        // 攻擊力
+                defense: 5,       // 防禦力
+                health: 5,        // 當前生命值
+                magic: 5,         // 當前法術值
+                maxHealth: 5,     // 最大生命值
+                maxMagic: 5       // 最大法術值
+            },
+            choices: [],          // 記錄所有選擇
+            unlockedChapters: [1] // 已解鎖的章節
+        };
+
+        // Chapter Data
+        const chapters = {
+            1: {
+                title: "第一章：童年抉擇",
+                scenes: [
+                    {
+                        text: `貞元年間，魏博大將聶鋒府中。十歲的妳正在院中習字，筆下字跡工整秀麗。忽然，一位神秘的尼姑出現在門前，向父親乞食。
+
+她看向妳，眼中閃爍著奇異的光芒："施主，可否將此女交予貧尼教導？"
+
+父親聶鋒勃然大怒："妖尼休得胡言！"
+
+尼姑淡然一笑："任憑施主將女兒鎖在鐵櫃中，貧尼也能將她帶走。"
+
+此時的妳，心中湧起什麼想法？`,
+                        choices: [
+                            {
+                                text: "主動走向尼姑，好奇她的來歷",
+                                effects: { emotion: -5, reputation: +5, peace: -10, skill: +5 },
+                                combat: { attack: +1 },
+                                exp: 20,
+                                next: 1
+                            },
+                            {
+                                text: "躲在父親身後，靜觀其變",
+                                effects: { emotion: +5, reputation: 0, peace: +5, skill: 0 },
+                                combat: { defense: +1 },
+                                exp: 10,
+                                next: 1
+                            },
+                            {
+                                text: "大聲斥責尼姑，要她立即離開",
+                                effects: { emotion: +10, reputation: -5, peace: -5, skill: 0 },
+                                combat: { health: +1, maxHealth: +1 },
+                                exp: 15,
+                                next: 1
+                            }
+                        ]
+                    },
+                    {
+                        text: `夜深人靜，妳躺在床上，卻發現那個尼姑竟然出現在妳的房間裡。
+
+"孩子，跟我走吧。我將教妳這世間最精妙的武藝。"她的聲音如絲如縷，帶著不容抗拒的力量。
+
+妳感到一陣眩暈，意識漸漸模糊...`,
+                        choices: [
+                            {
+                                text: "努力保持清醒，試圖反抗",
+                                effects: { emotion: 0, reputation: +5, peace: -5, skill: +10 },
+                                combat: { magic: +1, maxMagic: +1 },
+                                exp: 25,
+                                next: "chapter2"
+                            },
+                            {
+                                text: "順從地閉上眼睛，接受命運",
+                                effects: { emotion: +5, reputation: 0, peace: +10, skill: 0 },
+                                combat: { defense: +1 },
+                                exp: 20,
+                                next: "chapter2"
+                            }
+                        ]
+                    }
+                ]
+            },
+            2: {
+                title: "第二章：山中修行",
+                scenes: [
+                    {
+                        text: `五年來，妳在深山石穴中修行。師父教導妳劍術、輕功，更重要的是殺戮之技。
+
+今日，師父指著山中的一只靈猿說道："去，取它的性命。"
+
+妳手持寶劍，看著那只無辜的猿猴，牠正在樹上嬉戲，毫無防備...`,
+                        choices: [
+                            {
+                                text: "毫不猶豫地出手",
+                                effects: { emotion: -10, reputation: +10, peace: -15, skill: +15 },
+                                combat: { attack: +2 },
+                                exp: 30,
+                                next: 1
+                            },
+                            {
+                                text: "心存憐憫，故意偏離要害",
+                                effects: { emotion: +10, reputation: -5, peace: +10, skill: +5 },
+                                combat: { magic: +1, maxMagic: +1 },
+                                exp: 25,
+                                next: 1
+                            },
+                            {
+                                text: "質疑師父的教導",
+                                effects: { emotion: +5, reputation: 0, peace: +5, skill: 0 },
+                                combat: { defense: +1 },
+                                exp: 20,
+                                next: 1
+                            }
+                        ]
+                    },
+                    {
+                        text: `師父看出了妳的心思，冷冷說道："心存仁慈，如何能成大器？今日妳需要通過最終試煉。"
+
+說罷，她召來了妳的兩位師姐。她們身形矯健，眼神冷漠，手中各持利刃。
+
+"擊敗她們，證明妳的實力！"`,
+                        choices: [
+                            {
+                                text: "開始戰鬥試煉",
+                                effects: {},
+                                exp: 0,
+                                next: "combat"
+                            }
+                        ]
+                    }
+                ]
+            },
+            3: {
+                title: "第三章：回歸塵世",
+                scenes: [
+                    {
+                        text: `五年後，妳被師父送回家中。父親聶鋒看到妳，既喜又驚。妳已不再是當年那個天真的孩子。
+
+某日，一個磨鏡的少年來到府中。他身材清瘦，雙手靈巧，專注地打磨著銅鏡。陽光灑在他的臉上，映出溫和的笑容。
+
+妳看著他，心中湧起一種從未有過的感覺...`,
+                        choices: [
+                            {
+                                text: "主動與他交談",
+                                effects: { emotion: +15, reputation: 0, peace: +10, skill: 0 },
+                                exp: 20,
+                                next: 1
+                            },
+                            {
+                                text: "默默觀察，保持距離",
+                                effects: { emotion: +5, reputation: +5, peace: +5, skill: 0 },
+                                exp: 15,
+                                next: 1
+                            },
+                            {
+                                text: "將他視為普通工匠，漠不關心",
+                                effects: { emotion: -5, reputation: +5, peace: -5, skill: +5 },
+                                exp: 10,
+                                next: 1
+                            }
+                        ]
+                    },
+                    {
+                        text: `妳對父親說："此人可與我為夫。"
+
+父親大驚，但看到妳堅定的眼神，不敢反對。
+
+婚後的日子平靜而溫馨，但妳必須執行一些暗殺任務...`,
+                        choices: [
+                            {
+                                text: "接受刺殺大僚的任務",
+                                effects: { emotion: -5, reputation: +10, peace: -10, skill: +5 },
+                                exp: 25,
+                                next: "vocab_quiz"
+                            },
+                            {
+                                text: "先向丈夫坦白身份",
+                                effects: { emotion: +10, reputation: -5, peace: +5, skill: 0 },
+                                exp: 20,
+                                next: 2
+                            }
+                        ]
+                    },
+                    {
+                        text: `丈夫聽了妳的坦白，沉默良久。最後他握住妳的手："無論妳是誰，妳都是我的妻子。"
+
+這份信任讓妳內心溫暖，但同時也讓接下來的任務變得更加沉重...`,
+                        choices: [
+                            {
+                                text: "開始執行任務",
+                                effects: { emotion: +5, reputation: 0, peace: -5, skill: +5 },
+                                exp: 30,
+                                next: "punctuation_quiz"
+                            }
+                        ]
+                    }
+                ]
+            },
+            4: {
+                title: "第四章：忠誠考驗",
+                scenes: [
+                    {
+                        text: `元和年間，魏帥與陳許節度使劉昌裔不和。某日，魏帥召妳前來：
+
+"隱娘，妳的武藝我早有耳聞。現在有一個任務需要妳來完成——刺殺劉昌裔。"
+
+妳知道這是一個重大的抉擇，將決定妳今後的命運...`,
+                        choices: [
+                            {
+                                text: "毫不猶豫地接受任務",
+                                effects: { emotion: -5, reputation: +15, peace: -10, skill: +10 },
+                                exp: 30,
+                                next: 1
+                            },
+                            {
+                                text: "表面接受，心中卻有所保留",
+                                effects: { emotion: +5, reputation: +5, peace: 0, skill: +5 },
+                                exp: 25,
+                                next: 1
+                            },
+                            {
+                                text: "直接拒絕這個任務",
+                                effects: { emotion: +10, reputation: -15, peace: +15, skill: 0 },
+                                exp: 20,
+                                next: 1
+                            }
+                        ]
+                    },
+                    {
+                        text: `妳來到許昌，準備執行任務。但劉昌裔似乎早已知曉妳的來意。
+
+他派衙將在城北等候，說道："我欲相見，故遠相祗迎也。"
+
+面對這位能夠預知未來的神人，妳如何選擇？`,
+                        choices: [
+                            {
+                                text: "佩服其神機妙算，決定投靠",
+                                effects: { emotion: +10, reputation: +20, peace: +20, skill: +10 },
+                                exp: 50,
+                                next: "chapter5"
+                            },
+                            {
+                                text: "依然嘗試完成刺殺任務",
+                                effects: { emotion: -10, reputation: +10, peace: -20, skill: +15 },
+                                exp: 40,
+                                next: "chapter5"
+                            },
+                            {
+                                text: "選擇中立，觀察形勢",
+                                effects: { emotion: +5, reputation: 0, peace: +10, skill: +5 },
+                                exp: 30,
+                                next: "chapter5"
+                            }
+                        ]
+                    }
+                ]
+            },
+            5: {
+                title: "第五章：人生抉擇",
+                scenes: [
+                    {
+                        text: `元和八年，劉昌裔即將入京覲見。妳站在人生的十字路口。
+
+回首往昔，從十歲被尼姑帶走，到如今的江湖傳奇，妳經歷了太多愛恨情仇、生死離別...
+
+現在，是時候做出最終的選擇了。`,
+                        choices: [
+                            {
+                                text: "跟隨劉昌裔入京，繼續仕途",
+                                effects: { emotion: +10, reputation: +20, peace: 0, skill: +5 },
+                                exp: 40,
+                                next: "ending"
+                            },
+                            {
+                                text: "尋山訪水，追尋至人",
+                                effects: { emotion: 0, reputation: -10, peace: +30, skill: +10 },
+                                exp: 50,
+                                next: "ending"
+                            },
+                            {
+                                text: "回歸平凡，與夫君過普通生活",
+                                effects: { emotion: +30, reputation: -20, peace: +20, skill: -5 },
+                                exp: 35,
+                                next: "ending"
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // Quiz Data
+        const vocabQuiz = {
+            title: "文言詞語考驗",
+            subtitle: "在執行任務前，先測試妳對文言文的理解",
+            questions: [
+                {
+                    word: "汝",
+                    options: ["你", "我", "他", "她"],
+                    correct: 0
+                },
+                {
+                    word: "度",
+                    options: ["測量", "估計", "穿越", "角度"],
+                    correct: 1
+                },
+                {
+                    word: "叱",
+                    options: ["吆喝", "詢問", "哭泣", "歌唱"],
+                    correct: 0
+                },
+                {
+                    word: "伏",
+                    options: ["站立", "行走", "藏匿", "攻擊"],
+                    correct: 2
+                },
+                {
+                    word: "如是",
+                    options: ["像這樣", "這麼", "如果", "是否"],
+                    correct: 1
+                }
+            ]
+        };
+
+        const punctuationQuiz = {
+            title: "斷句練習",
+            subtitle: "正確理解文言文的句讀",
+            text: "受以羊角匕首，刀廣三寸。遂白日刺其人於都市，人莫能見。以首入囊，返主人舍，以藥化之為水。五年，又曰:『某大僚有罪，無故害人若干，夜可入其室，決其首來。』又攜匕首入室，度其門隙，無有障礙，伏之樑上。至瞑，",
+            correctPunctuation: [
+                "受以羊角匕首，刀廣三寸。",
+                "遂白日刺其人於都市，人莫能見。",
+                "以首入囊，返主人舍，以藥化之為水。",
+                "五年，又曰:『某大僚有罪，無故害人若干，夜可入其室，決其首來。』",
+                "又攜匕首入室，度其門隙，無有障礙，伏之樑上。",
+                "至瞑，"
+            ]
+        };
+
+        // Combat Game for Chapter 2
+        function startCombatGame() {
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <div class="combat-arena">
+                    <h3 class="text-2xl font-bold mb-4 text-center">武學試煉</h3>
+                    <div class="mb-4 text-center">
+                        <div class="text-lg">生命值: <span id="playerHealth" class="text-green-500 font-bold">100</span></div>
+                        <div class="text-lg">得分: <span id="combatScore" class="text-blue-500 font-bold">0</span></div>
+                        <div class="text-lg">時間: <span id="combatTime" class="text-red-500 font-bold">30</span>秒</div>
+                    </div>
+                    
+                    <div id="combatTargets" class="grid grid-cols-3 gap-4 mb-6" style="min-height: 300px;">
+                        <!-- Combat targets will appear here -->
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                            擊敗師姐和猛獸獲得分數，小心不要傷害無辜的小動物！
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            let health = 100;
+            let score = 0;
+            let timeLeft = 30;
+            let gameActive = true;
+
+            const targets = ['🥷', '⚔️', '🐅', '🐺', '🦔']; // 可擊敗的目標
+            const innocents = ['🐰', '🦆', '🐿️']; // 無辜的小動物
+
+            function spawnTarget() {
+                if (!gameActive) return;
+
+                const targetsContainer = document.getElementById('combatTargets');
+                const isInnocent = Math.random() < 0.2;
+                const targetType = isInnocent ? 
+                    innocents[Math.floor(Math.random() * innocents.length)] : 
+                    targets[Math.floor(Math.random() * targets.length)];
+
+                const targetDiv = document.createElement('div');
+                targetDiv.className = `combat-target cursor-pointer text-6xl text-center p-4 rounded-lg border-2 ${isInnocent ? 'border-green-300' : 'border-red-300'} hover:shadow-lg`;
+                targetDiv.innerHTML = targetType;
+                targetDiv.dataset.innocent = isInnocent;
+
+                const position = Math.floor(Math.random() * 9);
+                const cells = targetsContainer.children;
+                if (cells[position]) {
+                    cells[position].innerHTML = '';
+                    cells[position].appendChild(targetDiv);
+                } else {
+                    targetsContainer.appendChild(targetDiv);
+                }
+
+                targetDiv.addEventListener('click', () => {
+                    if (!gameActive) return;
+                    
+                    targetDiv.classList.add('hit-effect');
+                    if (isInnocent) {
+                        health -= 20;
+                        score -= 10;
+                        updateCombatStats();
+                        if (health <= 0) {
+                            endCombat(false);
+                            return;
+                        }
+                    } else {
+                        score += 10;
+                        updateCombatStats();
+                    }
+                    
+                    setTimeout(() => {
+                        targetDiv.remove();
+                    }, 300);
+                });
+
+                // Auto remove after 2 seconds
+                setTimeout(() => {
+                    if (targetDiv.parentNode && gameActive) {
+                        targetDiv.remove();
+                    }
+                }, 2000);
+            }
+
+            function updateCombatStats() {
+                document.getElementById('playerHealth').textContent = health;
+                document.getElementById('combatScore').textContent = score;
+                document.getElementById('combatTime').textContent = timeLeft;
+            }
+
+            function endCombat(success) {
+                gameActive = false;
+                const message = success ? 
+                    `試煉成功！妳的得分：${score}` : 
+                    `試煉失敗！妳的得分：${score}`;
+                
+                setTimeout(() => {
+                    showCustomAlert(message, () => {
+                        // Award experience and stats based on performance
+                        const expGain = Math.max(30, Math.floor(score / 2));
+                        const combatGain = Math.max(1, Math.floor(score / 20));
+                        
+                        gainExp(expGain);
+                        adjustStats({ skill: Math.floor(score / 10), peace: success ? 5 : -5 });
+                        adjustCombat({ 
+                            attack: combatGain, 
+                            defense: combatGain,
+                            health: combatGain,
+                            maxHealth: combatGain
+                        });
+                        
+                        // Continue to next chapter
+                        proceedToNextChapter();
+                    });
+                }, 500);
+            }
+
+            // Initialize grid
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'aspect-square border border-gray-300 dark:border-gray-600 rounded flex items-center justify-center';
+                document.getElementById('combatTargets').appendChild(cell);
+            }
+
+            // Game loop
+            const targetInterval = setInterval(spawnTarget, 800);
+            const timeInterval = setInterval(() => {
+                timeLeft--;
+                updateCombatStats();
+                if (timeLeft <= 0) {
+                    clearInterval(targetInterval);
+                    clearInterval(timeInterval);
+                    endCombat(score >= 50);
+                }
+            }, 1000);
+        }
+
+        // Vocabulary Quiz
+        function startVocabQuiz() {
+            let currentQuestion = 0;
+            let score = 0;
+            
+            function displayQuestion() {
+                if (currentQuestion >= vocabQuiz.questions.length) {
+                    endQuiz();
+                    return;
+                }
+                
+                const question = vocabQuiz.questions[currentQuestion];
+                const content = document.getElementById('gameContent');
+                content.innerHTML = `
+                    <div class="fade-in">
+                        <h3 class="text-2xl font-bold mb-4 text-center">${vocabQuiz.title}</h3>
+                        <p class="text-center mb-6 text-gray-600 dark:text-gray-400">${vocabQuiz.subtitle}</p>
+                        <div class="mb-6 text-center">
+                            <div class="text-lg mb-2">題目 ${currentQuestion + 1} / ${vocabQuiz.questions.length}</div>
+                            <div class="text-3xl font-bold mb-4">"${question.word}" 的意思是？</div>
+                        </div>
+                        <div class="space-y-3">
+                            ${question.options.map((option, index) => `
+                                <button class="w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors"
+                                        onclick="answerQuestion(${index})">
+                                    ${option}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            window.answerQuestion = (answerIndex) => {
+                const question = vocabQuiz.questions[currentQuestion];
+                if (answerIndex === question.correct) {
+                    score++;
+                    showCustomAlert("正確！", () => {
+                        currentQuestion++;
+                        displayQuestion();
+                    });
+                } else {
+                    showCustomAlert(`錯誤！正確答案是：${question.options[question.correct]}`, () => {
+                        currentQuestion++;
+                        displayQuestion();
+                    });
+                }
+            };
+            
+            function endQuiz() {
+                const expGain = score * 10;
+                const statGain = score * 2;
+                
+                gainExp(expGain);
+                adjustStats({ skill: statGain, reputation: Math.floor(statGain/2) });
+                
+                showCustomAlert(`測驗完成！正確率：${score}/${vocabQuiz.questions.length}`, () => {
+                    proceedToNextChapter();
+                });
+            }
+            
+            displayQuestion();
+        }
+
+        // Punctuation Quiz  
+        function startPunctuationQuiz() {
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <div class="fade-in">
+                    <h3 class="text-2xl font-bold mb-4 text-center">${punctuationQuiz.title}</h3>
+                    <p class="text-center mb-6 text-gray-600 dark:text-gray-400">${punctuationQuiz.subtitle}</p>
+                    <div class="mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg ancient-text">
+                        <div class="text-lg leading-relaxed">${punctuationQuiz.text}</div>
+                    </div>
+                    <div class="mb-4">
+                        <h4 class="font-bold mb-2">正確的斷句應該是：</h4>
+                        <div id="punctuationOptions" class="space-y-2">
+                            ${punctuationQuiz.correctPunctuation.map((sentence, index) => `
+                                <div class="p-2 bg-white dark:bg-gray-800 rounded border">
+                                    ${index + 1}. ${sentence}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button onclick="completePunctuationQuiz()" class="px-6 py-3 bg-primary text-white rounded-lg hover:opacity-90">
+                            完成練習
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            window.completePunctuationQuiz = () => {
+                const expGain = 40;
+                const statGain = 8;
+                
+                gainExp(expGain);
+                adjustStats({ skill: statGain, peace: 5 });
+                
+                showCustomAlert("斷句練習完成！對古文的理解更深了。", () => {
+                    proceedToNextChapter();
+                });
+            };
+        }
+
+        // Utility Functions
+        function showCustomAlert(message, onConfirm) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full mx-4">
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">${message}</p>
+                    <div class="flex justify-end">
+                        <button class="px-4 py-2 bg-primary text-white hover:opacity-90 rounded">確定</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Store onConfirm function globally
+            if (onConfirm) {
+                window.tempConfirmHandler = onConfirm;
+                modal.querySelector('button').onclick = () => {
+                    modal.remove();
+                    window.tempConfirmHandler();
+                    delete window.tempConfirmHandler;
+                };
+            } else {
+                modal.querySelector('button').onclick = () => modal.remove();
+            }
+        }
+
+        function adjustStats(changes) {
+            for (const [stat, change] of Object.entries(changes)) {
+                gameState.stats[stat] = Math.max(0, Math.min(100, gameState.stats[stat] + change));
+            }
+            updateUI();
+        }
+
+        function adjustCombat(changes) {
+            for (const [stat, change] of Object.entries(changes)) {
+                if (stat === 'health' || stat === 'magic') {
+                    gameState.combat[stat] = Math.max(0, Math.min(gameState.combat[`max${stat.charAt(0).toUpperCase() + stat.slice(1)}`], gameState.combat[stat] + change));
+                } else {
+                    gameState.combat[stat] = Math.max(1, Math.min(gameState.level + 9, gameState.combat[stat] + change));
+                }
+            }
+            updateUI();
+        }
+
+        function gainExp(amount) {
+            gameState.exp += amount;
+            checkLevelUp();
+            updateUI();
+        }
+
+        function checkLevelUp() {
+            while (gameState.exp >= gameState.expToNext && gameState.level < 10) {
+                gameState.exp -= gameState.expToNext;
+                gameState.level++;
+                gameState.expToNext = Math.floor(gameState.expToNext * 1.2);
+                
+                // Level up bonuses
+                adjustCombat({ 
+                    attack: 1, 
+                    defense: 1, 
+                    maxHealth: 1, 
+                    maxMagic: 1,
+                    health: 1,
+                    magic: 1
+                });
+                
+                showCustomAlert(`恭喜！等級提升至 ${gameState.level} 級！所有能力值提升！`, null);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('playerLevel').textContent = `等級: ${gameState.level}`;
+            document.getElementById('modalLevel').textContent = gameState.level;
+            document.getElementById('modalExp').textContent = `${gameState.exp}/${gameState.expToNext}`;
+            
+            // Update stat bars
+            const stats = ['emotion', 'reputation', 'peace', 'skill'];
+            stats.forEach(stat => {
+                const value = gameState.stats[stat];
+                document.getElementById(`${stat}Value`).textContent = value;
+                document.getElementById(`${stat}Bar`).style.width = `${value}%`;
+            });
+
+            // Update combat stats
+            document.getElementById('attackValue').textContent = gameState.combat.attack;
+            document.getElementById('defenseValue').textContent = gameState.combat.defense;
+            document.getElementById('healthValue').textContent = `${gameState.combat.health}/${gameState.combat.maxHealth}`;
+            document.getElementById('magicValue').textContent = `${gameState.combat.magic}/${gameState.combat.maxMagic}`;
+
+            // Update chapter buttons
+            document.querySelectorAll('.chapter-btn').forEach(btn => {
+                const chapter = parseInt(btn.dataset.chapter);
+                btn.disabled = !gameState.unlockedChapters.includes(chapter);
+            });
+        }
+
+        function unlockChapter(chapterNum) {
+            if (!gameState.unlockedChapters.includes(chapterNum)) {
+                gameState.unlockedChapters.push(chapterNum);
+                updateUI();
+            }
+        }
+
+        function displayScene(chapter, scene) {
+            const chapterData = chapters[chapter];
+            const sceneData = chapterData.scenes[scene];
+            
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <div class="fade-in">
+                    <h2 class="text-3xl font-bold mb-6 text-primary">${chapterData.title}</h2>
+                    <div class="prose dark:prose-invert max-w-none mb-6">
+                        <p class="text-lg leading-relaxed whitespace-pre-line ancient-text">${sceneData.text}</p>
+                    </div>
+                    <div class="space-y-3">
+                        ${sceneData.choices.map((choice, index) => `
+                            <button class="choice-btn w-full text-left p-4 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors"
+                                    onclick="makeChoice(${chapter}, ${scene}, ${index})">
+                                ${choice.text}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function makeChoice(chapter, scene, choiceIndex) {
+            const sceneData = chapters[chapter].scenes[scene];
+            const choice = sceneData.choices[choiceIndex];
+            
+            // Record choice
+            gameState.choices.push({
+                chapter,
+                scene,
+                choice: choiceIndex,
+                text: choice.text
+            });
+
+            // Apply effects
+            if (choice.effects) {
+                adjustStats(choice.effects);
+            }
+            
+            if (choice.combat) {
+                adjustCombat(choice.combat);
+            }
+            
+            if (choice.exp) {
+                gainExp(choice.exp);
+            }
+
+            // Handle next action
+            if (choice.next === "combat") {
+                startCombatGame();
+            } else if (choice.next === "vocab_quiz") {
+                startVocabQuiz();
+            } else if (choice.next === "punctuation_quiz") {
+                startPunctuationQuiz();
+            } else if (choice.next === "ending") {
+                showEnding();
+            } else if (typeof choice.next === "string" && choice.next.startsWith("chapter")) {
+                const nextChapter = parseInt(choice.next.replace("chapter", ""));
+                unlockChapter(nextChapter);
+                goToChapter(nextChapter);
+            } else if (typeof choice.next === "number") {
+                gameState.currentScene = choice.next;
+                displayScene(chapter, choice.next);
+            }
+        }
+
+        function goToChapter(chapterNum) {
+            if (!gameState.unlockedChapters.includes(chapterNum)) {
+                showCustomAlert("此章節尚未解鎖！", null);
+                return;
+            }
+            
+            gameState.currentChapter = chapterNum;
+            gameState.currentScene = 0;
+            displayScene(chapterNum, 0);
+        }
+
+        function proceedToNextChapter() {
+            const nextChapter = gameState.currentChapter + 1;
+            if (nextChapter <= 5) {
+                unlockChapter(nextChapter);
+                goToChapter(nextChapter);
+            } else {
+                showEnding();
+            }
+        }
+
+        function showEnding() {
+            const { emotion, reputation, peace, skill } = gameState.stats;
+            let ending = "";
+            
+            if (peace >= 70) {
+                ending = `
+                    <h3 class="text-2xl font-bold text-green-600 mb-4">逍遙山水的結局</h3>
+                    <p class="ancient-text">妳選擇了遠離塵世，尋山訪水。在深山中，妳找到了內心的平靜，成為了一代宗師。後世傳說，時有人在名山大川中見到一位飄逸的女子，身法如仙，便是聶隱娘的傳說。</p>
+                `;
+            } else if (reputation >= 70 && emotion >= 60) {
+                ending = `
+                    <h3 class="text-2xl font-bold text-yellow-600 mb-4">忠義雙全的結局</h3>
+                    <p class="ancient-text">妳成為了一代名將，既有高超武藝，又有忠義之心。妳的傳奇故事被後世傳頌，成為武林中人人敬仰的楷模。</p>
+                `;
+            } else if (emotion >= 70) {
+                ending = `
+                    <h3 class="text-2xl font-bold text-pink-600 mb-4">情深義重的結局</h3>
+                    <p class="ancient-text">妳選擇了愛情和家庭，與磨鏡少年過上了平凡而幸福的生活。雖然江湖上少了一位傳奇，但妳找到了屬於自己的幸福。</p>
+                `;
+            } else if (skill >= 80) {
+                ending = `
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">武學至尊的結局</h3>
+                    <p class="ancient-text">妳成為了江湖上最頂尖的刺客，武功蓋世。但內心的孤獨也如影隨形。妳是江湖的傳說，也是孤獨的王者。</p>
+                `;
+            } else {
+                ending = `
+                    <h3 class="text-2xl font-bold text-gray-600 mb-4">平凡人生的結局</h3>
+                    <p class="ancient-text">妳選擇了平凡的生活，雖然沒有驚天動地的傳奇，但也沒有太多的痛苦。在平靜中度過了一生。</p>
+                `;
+            }
+
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <div class="fade-in text-center">
+                    <h2 class="text-4xl font-bold mb-8 text-primary">聶隱娘傳 - 完</h2>
+                    ${ending}
+                    <div class="mt-8 p-6 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <h4 class="text-xl font-bold mb-4">最終屬性</h4>
+                        <div class="grid grid-cols-2 gap-4 text-left">
+                            <div>等級: ${gameState.level}</div>
+                            <div>經驗值: ${gameState.exp}</div>
+                            <div>情感羈絆: ${emotion}</div>
+                            <div>江湖聲望: ${reputation}</div>
+                            <div>內心平靜: ${peace}</div>
+                            <div>武學造詣: ${skill}</div>
+                            <div>攻擊力: ${gameState.combat.attack}</div>
+                            <div>防禦力: ${gameState.combat.defense}</div>
+                        </div>
+                    </div>
+                    <button onclick="location.reload()" class="mt-6 px-8 py-3 bg-primary text-white rounded-lg hover:opacity-90">
+                        重新開始遊戲
+                    </button>
+                </div>
+            `;
+        }
+
+        // Event Listeners
+        document.getElementById('showStats').addEventListener('click', () => {
+            document.getElementById('statsModal').classList.remove('hidden');
+        });
+
+        function closeStatsModal() {
+            document.getElementById('statsModal').classList.add('hidden');
+        }
+
+        // Initialize Game
+        function initGame() {
+            updateUI();
+            displayScene(1, 0);
+        }
+
+        // Start the game
+        initGame();
+    </script>
+
+</body></html>
