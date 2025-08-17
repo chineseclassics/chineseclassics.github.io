@@ -8,29 +8,39 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <style>
+    /* 主題字體（僅標題使用，保持正文易讀） */
+    @font-face {
+      font-family: "JiA JinWen";
+      src: url('/files/jiajinwen.ttf') format('truetype');
+      font-display: swap;
+    }
+
     :root {
-      --bg: #faf7ff;
+      /* 主題色：胭脂紅、鎏金、玉色，營造古雅又現代的視覺 */
+      --bg: #fdf6f3;
       --panel: #ffffff;
-      --ink: #2b2b2b;
-      --muted: #7d7d7d;
-      --brand: #7c3aed;
-      --edge: #c8c8d2;
-      --accent: #06b6d4;
-      --shadow: 0 8px 24px rgba(0,0,0,.08);
-      --radius: 14px;
-      --family-jia: #fbbf24;
-      --family-wang: #60a5fa;
-      --family-xue: #34d399;
-      --family-shi: #f472b6;
-      --family-lin: #fda4af;
-      --family-others: #94a3b8;
-      --family-servant: #a78bfa;
-      --link-parent: #64748b;
-      --link-marriage: #ef4444;
-      --link-sibling: #3b82f6;
-      --link-cousin: #22c55e;
-      --link-friend: #f59e0b;
-      --link-servant: #8b5cf6;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --brand: #b91c1c;      /* 胭脂紅 */
+      --edge: #d7c4b0;       /* 宣紙描邊 */
+      --accent: #10b981;     /* 玉色 */
+      --shadow: 0 10px 28px rgba(0,0,0,.08);
+      --radius: 16px;
+      /* 家族色：和諧而區分明確 */
+      --family-jia: #c81e1e;     /* 賈家：朱紅 */
+      --family-wang: #1e3a8a;    /* 王家：帝藍/權勢 */
+      --family-xue: #eab308;     /* 薛家：金黃/財富 */
+      --family-shi: #7c3aed;     /* 史家：高貴紫 */
+      --family-lin: #16a34a;     /* 林家：翠綠/玉色 */
+      --family-others: #94a3b8;  /* 其他：青灰 */
+      --family-servant: #0d9488; /* 僕役：青綠（與藍綠分開） */
+      /* 關係色：偏中性、在各族色上都有對比 */
+      --link-parent: #7c2d12;    /* 血親：赭棕 */
+      --link-marriage: #dc2626;  /* 婚姻：赤紅 */
+      --link-sibling: #2563eb;   /* 兄弟姊妹：青藍 */
+      --link-cousin: #059669;    /* 表親：玉綠 */
+      --link-friend: #b45309;    /* 交誼：琥珀 */
+      --link-servant: #7c3aed;   /* 主僕：紫 */
     }
 
     html, body { height: 100%; }
@@ -38,9 +48,12 @@
       margin: 0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Roboto, Arial, sans-serif;
       color: var(--ink);
-      background: radial-gradient(1200px 800px at 20% -10%, #ede9fe 0%, transparent 60%),
-                  radial-gradient(1200px 800px at 110% 20%, #cffafe 0%, transparent 60%),
-                  var(--bg);
+      /* 宣紙質感的柔和漸層背景：胭脂紅與鎏金的淡淡暈染 */
+      background:
+        radial-gradient(1200px 800px at 20% -10%, rgba(185,28,28,.08) 0%, transparent 60%),
+        radial-gradient(1200px 800px at 110% 20%, rgba(245,158,11,.10) 0%, transparent 60%),
+        radial-gradient(800px 600px at -10% 90%, rgba(16,185,129,.08) 0%, transparent 60%),
+        var(--bg);
     }
 
     .topbar {
@@ -51,13 +64,15 @@
       align-items: center;
       gap: 12px;
       padding: 14px 18px;
-      background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.75));
+      background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.75));
       backdrop-filter: blur(8px);
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid #f1e6da;
     }
     .topbar .title {
       font-weight: 800;
       letter-spacing: .5px;
+      font-family: "JiA JinWen", ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "PingFang TC";
+      color: #7f1d1d;
     }
     .container {
       display: grid;
@@ -75,6 +90,7 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+      border: 1px solid #f2e8dd;
     }
     .panel h3 { margin: 0 0 6px; font-size: 16px; }
     .panel .group { border-top: 1px dashed #eee; padding-top: 10px; }
@@ -83,10 +99,11 @@
       align-items: center;
       gap: 8px;
       padding: 8px 10px;
-      background: #f4f4f8;
+      background: #faf5ef;
       border-radius: 999px;
       font-size: 12px;
-      color: #475569;
+      color: #6b7280;
+      border: 1px solid #efe2d3;
     }
     .legend { display: flex; flex-wrap: wrap; gap: 8px; }
     .legend .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
@@ -99,21 +116,26 @@
       border: 1px solid #e5e7eb;
       outline: none;
       transition: box-shadow .2s ease;
+      background: #fffdfb;
     }
     .row input[type="text"]:focus { box-shadow: 0 0 0 4px rgba(124,58,237,.15); }
     button {
-      border: 0; background: var(--brand); color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+      border: 0; background: linear-gradient(180deg, #be123c, #991b1b); color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer;
       box-shadow: var(--shadow);
+      transition: transform .12s ease, filter .15s ease;
     }
     button.ghost { background: #e9d5ff; color: #5b21b6; }
     button.flat { background: #f1f5f9; color: #334155; }
+    button:hover { filter: brightness(1.02); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
 
     .graph {
       position: relative;
-      background: var(--panel);
+      background: linear-gradient(180deg, #fffefd, #fff9f2);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow: hidden;
+      border: 1px solid #f3e7d7;
     }
     .graph-controls {
       position: absolute;
@@ -125,17 +147,25 @@
       border-radius: 12px;
       background: rgba(255,255,255,.85);
       backdrop-filter: blur(6px);
-      border: 1px solid #e5e7eb;
+      border: 1px solid #efe2d3;
       z-index: 5;
     }
     .tooltip {
       position: absolute; pointer-events: none; background: #111827; color: #fff; font-size: 12px;
       padding: 6px 8px; border-radius: 8px; opacity: 0; transform: translate(-50%, -120%);
       white-space: nowrap;
+      border: 1px solid rgba(255,255,255,.08);
     }
 
-    .node rect { rx: 12px; ry: 12px; }
-    .node text { font-size: 12px; pointer-events: none; user-select: none; }
+    .node rect {
+      rx: 12px; ry: 12px;
+      transition: filter .2s ease, stroke-width .18s ease;
+      transform-origin: center;
+      paint-order: stroke fill;
+    }
+    .node text { font-size: 13px; pointer-events: none; user-select: none; }
+    .node:hover rect { filter: brightness(1.05); }
+    .node rect.main { stroke-width: 2.5; }
     .node .badge { font-size: 10px; fill: #334155; }
     .link { stroke: var(--edge); stroke-opacity: .85; }
     .link.marriage { stroke: var(--link-marriage); }
@@ -175,6 +205,7 @@
       .container { grid-template-columns: 1fr; height: auto; }
       .graph { height: 68vh; }
     }
+    ::selection { background: rgba(185,28,28,.18); color: #111827; }
   </style>
 </head>
 <body>
@@ -564,6 +595,25 @@
     });
 
     const colorByFamily = (f) => families[f]?.color || families.other.color;
+    // 根據背景色亮度自動決定字色（深背景→白字；淺背景→深字）
+    function hexToRgb(hex){
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+      return m ? { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) } : { r: 0, g: 0, b: 0 };
+    }
+    function getLuminance(hex){
+      const { r, g, b } = hexToRgb(hex);
+      const [R, G, B] = [r, g, b].map(v => {
+        const p = v/255;
+        return p <= 0.03928 ? p/12.92 : Math.pow((p+0.055)/1.055, 2.4);
+      });
+      return 0.2126*R + 0.7152*G + 0.0722*B;
+    }
+    function textColorByFamily(f){
+      const bg = colorByFamily(f);
+      const L = getLuminance(bg);
+      // 閾值約 0.55：金黃、淺灰走深字；藍、紅、紫、青綠走白字
+      return L > 0.55 ? '#0f172a' : '#ffffff';
+    }
     const sizeByImportance = (d) => mainCast.has(d.id) ? 90 : 70;
 
     const sim = d3.forceSimulation(nodes)
@@ -724,7 +774,8 @@
       .attr('y', -18)
       .attr('fill', d => colorByFamily(d.family))
       .attr('stroke', '#0f172a1a')
-      .attr('stroke-width', 1.5)
+      .attr('stroke-width', 1.6)
+      .attr('class', d => mainCast.has(d.id) ? 'main' : null)
       .attr('filter', 'url(#softShadow)')
       .style('opacity', 0)
       .transition().duration(500).style('opacity', 1);
@@ -732,7 +783,7 @@
     node.append('text')
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'central')
-      .attr('fill', '#0f172a')
+      .attr('fill', d => textColorByFamily(d.family))
       .text(d => d.id);
     // 移除家族文字徽標（顏色已表明家族）
 
