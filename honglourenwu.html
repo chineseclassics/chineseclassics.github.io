@@ -24,11 +24,13 @@
       --family-shi: #f472b6;
       --family-lin: #fda4af;
       --family-others: #94a3b8;
+      --family-servant: #a78bfa;
       --link-parent: #64748b;
       --link-marriage: #ef4444;
       --link-sibling: #3b82f6;
       --link-cousin: #22c55e;
       --link-friend: #f59e0b;
+      --link-servant: #8b5cf6;
     }
 
     html, body { height: 100%; }
@@ -113,6 +115,19 @@
       box-shadow: var(--shadow);
       overflow: hidden;
     }
+    .graph-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(6px);
+      border: 1px solid #e5e7eb;
+      z-index: 5;
+    }
     .tooltip {
       position: absolute; pointer-events: none; background: #111827; color: #fff; font-size: 12px;
       padding: 6px 8px; border-radius: 8px; opacity: 0; transform: translate(-50%, -120%);
@@ -128,6 +143,7 @@
     .link.sibling { stroke: var(--link-sibling); stroke-dasharray: 4 4; }
     .link.cousin { stroke: var(--link-cousin); stroke-dasharray: 6 4; }
     .link.friend { stroke: var(--link-friend); stroke-dasharray: 2 3; }
+    .link.servant { stroke: var(--link-servant); }
     .link { transition: opacity .25s ease, stroke-width .25s ease; }
     .link.active { stroke-width: 3.5; }
     .link.hovered { stroke-width: 5; filter: url(#glow); }
@@ -182,6 +198,7 @@
           <span class="pill"><i class="dot" style="background: var(--family-xue)"></i>薛家</span>
           <span class="pill"><i class="dot" style="background: var(--family-shi)"></i>史家</span>
           <span class="pill"><i class="dot" style="background: var(--family-lin)"></i>林家</span>
+          <span class="pill"><i class="dot" style="background: var(--family-servant)"></i>僕役</span>
           <span class="pill"><i class="dot" style="background: var(--family-others)"></i>其他</span>
         </div>
         <div class="chips" id="familyFilters"></div>
@@ -195,6 +212,7 @@
           <span class="pill"><i class="line" style="border-color: var(--link-sibling)"></i>兄弟姊妹</span>
           <span class="pill"><i class="line" style="border-color: var(--link-cousin)"></i>表親/堂親</span>
           <span class="pill"><i class="line" style="border-color: var(--link-friend)"></i>知交/情誼</span>
+          <span class="pill"><i class="line" style="border-color: var(--link-servant)"></i>主僕</span>
         </div>
         <div class="chips" id="relationFilters"></div>
       </div>
@@ -240,6 +258,7 @@
       xue: { name: '薛家', color: getComputedStyle(document.documentElement).getPropertyValue('--family-xue').trim() },
       shi: { name: '史家', color: getComputedStyle(document.documentElement).getPropertyValue('--family-shi').trim() },
       lin: { name: '林家', color: getComputedStyle(document.documentElement).getPropertyValue('--family-lin').trim() },
+      servant: { name: '僕役', color: getComputedStyle(document.documentElement).getPropertyValue('--family-servant').trim() },
       other: { name: '其他', color: getComputedStyle(document.documentElement).getPropertyValue('--family-others').trim() },
     };
 
@@ -263,7 +282,7 @@
       { id: '史湘雲', family: 'shi', brief: '賈母侄孫女，性爽直。' },
       { id: '王熙鳳', family: 'wang', brief: '鳳辣子，理家能手。' },
       { id: '賈琏', family: 'jia', brief: '賈赦之子，與鳳姐主理榮府。' },
-      { id: '平兒', family: 'other', brief: '王熙鳳貼身心腹。' },
+      { id: '平兒', family: 'servant', brief: '王熙鳳貼身心腹，通房大丫鬟。' },
       { id: '秦可卿', family: 'other', brief: '寧國府潤玉，與榮府往來密切。' },
       { id: '賈敬', family: 'jia', brief: '寧國府老爺，嗜道煉丹。' },
       { id: '賈珍', family: 'jia', brief: '寧國府當家，奢靡放縱。' },
@@ -279,10 +298,34 @@
       { id: '賈瑞', family: 'jia', brief: '賈氏旁支，迷戀王熙鳳，中邪而亡。' },
       { id: '板兒', family: 'other', brief: '劉姥姥之外孫，淳樸機靈。' },
       { id: '妙玉', family: 'other', brief: '女尼，嗜茶潔癖。' },
-      { id: '晴雯', family: 'other', brief: '機敏剛烈，金釧之妹。' },
-      { id: '襲人', family: 'other', brief: '柔婉穩重，照拂寶玉。' },
-      { id: '李嬤嬤', family: 'other', brief: '榮府老人，照看子弟。' },
+      { id: '晴雯', family: 'servant', brief: '機敏剛烈，金釧之妹，後被逐。' },
+      { id: '襲人', family: 'servant', brief: '柔婉穩重，寶玉貼身大丫鬟。' },
+      { id: '李嬤嬤', family: 'servant', brief: '榮府老人，久侍賈母。' },
       { id: '巧姐', family: 'jia', brief: '王熙鳳、賈琏之女。' },
+      { id: '王子騰', family: 'wang', brief: '王家長輩，顯宦；與王夫人為兄妹。' },
+      { id: '賈環', family: 'jia', brief: '賈政庶子，性情偏狹，與寶玉多有龃龉。' },
+      { id: '趙姨娘', family: 'other', brief: '賈政之側室，探春與賈環之母。' },
+      { id: '賈敏', family: 'jia', brief: '賈政之妹，林黛玉之母。' },
+      { id: '林如海', family: 'lin', brief: '林黛玉之父，江南巡鹽御史。' },
+      // 僕役新增
+      { id: '鴛鴦', family: 'servant', brief: '賈母貼身首席大丫鬟。' },
+      { id: '傻大姐', family: 'servant', brief: '賈府粗使丫頭，天真烏託。' },
+      { id: '金釧', family: 'servant', brief: '王夫人丫鬟，後跳井自盡。' },
+      { id: '玉釧', family: 'servant', brief: '王夫人丫鬟，金釧之妹。' },
+      { id: '彩雲', family: 'servant', brief: '王夫人身邊丫鬟。' },
+      { id: '彩霞', family: 'servant', brief: '王夫人身邊丫鬟。' },
+      { id: '周瑞家的', family: 'servant', brief: '王夫人陪房，庶務管事。' },
+      { id: '吳新登家的', family: 'servant', brief: '庫房總管。' },
+      { id: '小紅', family: 'servant', alias: '林紅玉', brief: '王熙鳳調用之丫鬟。' },
+      { id: '興兒', family: 'servant', brief: '王熙鳳所用小廝。' },
+      { id: '旺兒', family: 'servant', brief: '王熙鳳心腹小廝。' },
+      { id: '來旺媳婦', family: 'servant', brief: '王熙鳳身邊婆子。' },
+      { id: '麝月', family: 'servant', brief: '賈寶玉貼身大丫鬟。' },
+      { id: '芳官', family: 'servant', brief: '小丫鬟，戲班散後分入園中。' },
+      { id: '茗煙', family: 'servant', brief: '賈寶玉書僮，最得信任。' },
+      { id: '紫鵑', family: 'servant', brief: '林黛玉貼身丫鬟，原名鸚哥。' },
+      { id: '雪雁', family: 'servant', brief: '林黛玉從林家帶來幼婢。' },
+      { id: '鶯兒', family: 'servant', brief: '薛寶釵貼身丫鬟，擅編織。' },
     ];
 
     const links = [
@@ -293,9 +336,11 @@
       { source: '賈珍', target: '尤氏', type: 'marriage' },
       { source: '賈蓉', target: '秦可卿', type: 'marriage' },
       { source: '賈琏', target: '尤二姐', type: 'marriage' },
+      { source: '林如海', target: '賈敏', type: 'marriage' },
 
       { source: '賈母', target: '賈政', type: 'parent' },
       { source: '賈母', target: '賈赦', type: 'parent' },
+      { source: '賈母', target: '賈敏', type: 'parent' },
       { source: '賈敬', target: '賈珍', type: 'parent' },
       { source: '賈敬', target: '惜春', type: 'parent' },
       { source: '賈珍', target: '賈蓉', type: 'parent' },
@@ -314,6 +359,8 @@
       { source: '賈珠', target: '賈蘭', type: 'parent' },
       { source: '李紈', target: '賈蘭', type: 'parent' },
       { source: '劉姥姥', target: '板兒', type: 'parent' },
+      { source: '林如海', target: '林黛玉', type: 'parent' },
+      { source: '賈敏', target: '林黛玉', type: 'parent' },
 
       { source: '賈寶玉', target: '元春', type: 'sibling' },
       { source: '賈寶玉', target: '探春', type: 'sibling' },
@@ -323,7 +370,7 @@
       { source: '賈寶玉', target: '迎春', type: 'cousin' },
       { source: '賈寶玉', target: '惜春', type: 'cousin' },
       { source: '秦鐘', target: '秦可卿', type: 'sibling' },
-
+      { source: '薛姨媽', target: '王夫人', type: 'sibling' },
       { source: '賈寶玉', target: '林黛玉', type: 'cousin' },
       { source: '賈寶玉', target: '薛寶釵', type: 'cousin' },
       { source: '史湘雲', target: '賈寶玉', type: 'cousin' },
@@ -334,12 +381,10 @@
       { source: '薛姨媽', target: '薛蟠', type: 'parent' },
       { source: '薛蟠', target: '薛寶釵', type: 'sibling' },
 
-      { source: '賈琏', target: '賈政', type: 'cousin' },
-      { source: '王熙鳳', target: '王夫人', type: 'cousin' },
       { source: '賈瑞', target: '賈珍', type: 'cousin' },
+      { source: '王熙鳳', target: '王夫人', type: 'cousin' },
+      { source: '賈琏', target: '賈政', type: 'cousin' },
 
-      { source: '賈寶玉', target: '襲人', type: 'friend' },
-      { source: '賈寶玉', target: '晴雯', type: 'friend' },
       { source: '賈寶玉', target: '妙玉', type: 'friend' },
       { source: '賈寶玉', target: '王熙鳳', type: 'friend' },
       { source: '賈寶玉', target: '秦鐘', type: 'friend' },
@@ -351,12 +396,40 @@
       { source: '劉姥姥', target: '王熙鳳', type: 'friend' },
       { source: '劉姥姥', target: '巧姐', type: 'friend' },
       { source: '板兒', target: '巧姐', type: 'friend' },
-      
+
+      // 主僕關係（新）
+      { source: '賈母', target: '鴛鴦', type: 'servant' },
+      { source: '賈母', target: '傻大姐', type: 'servant' },
+      { source: '賈母', target: '李嬤嬤', type: 'servant' },
+      { source: '王夫人', target: '金釧', type: 'servant' },
+      { source: '王夫人', target: '玉釧', type: 'servant' },
+      { source: '王夫人', target: '彩雲', type: 'servant' },
+      { source: '王夫人', target: '彩霞', type: 'servant' },
+      { source: '王夫人', target: '周瑞家的', type: 'servant' },
+      { source: '王夫人', target: '吳新登家的', type: 'servant' },
+      { source: '王熙鳳', target: '平兒', type: 'servant' },
+      { source: '王熙鳳', target: '小紅', type: 'servant' },
+      { source: '王熙鳳', target: '興兒', type: 'servant' },
+      { source: '王熙鳳', target: '旺兒', type: 'servant' },
+      { source: '王熙鳳', target: '來旺媳婦', type: 'servant' },
+      { source: '賈寶玉', target: '襲人', type: 'servant' },
+      { source: '賈寶玉', target: '晴雯', type: 'servant' },
+      { source: '賈寶玉', target: '麝月', type: 'servant' },
+      { source: '賈寶玉', target: '芳官', type: 'servant' },
+      { source: '賈寶玉', target: '茗煙', type: 'servant' },
+      { source: '林黛玉', target: '紫鵑', type: 'servant' },
+      { source: '林黛玉', target: '雪雁', type: 'servant' },
+      { source: '薛寶釵', target: '鶯兒', type: 'servant' },
+      { source: '賈政', target: '賈環', type: 'parent' },
+      { source: '趙姨娘', target: '賈環', type: 'parent' },
+      { source: '趙姨娘', target: '探春', type: 'parent' },
     ];
 
-    const relationTypes = ['parent','marriage','sibling','cousin','friend'];
+    const relationTypes = ['parent','marriage','sibling','cousin','friend','servant'];
 
     const svg = d3.select('#svg');
+    // 當前聚焦的人物ID（若有）
+    let focusedNodeId = null;
     // SVG filters for soft shadow and glow
     const defs = svg.append('defs');
     const softShadow = defs.append('filter').attr('id','softShadow').attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
@@ -370,22 +443,28 @@
     feMerge.append('feMergeNode').attr('in','SourceGraphic');
     const g = svg.append('g');
     const linkGroup = g.append('g').attr('stroke-width', 2);
-    // 線上浮標籤
-    const linkLabelLayer = g.append('g').attr('pointer-events','none');
     const linkHitGroup = g.append('g');
     const nodeGroup = g.append('g');
+    // 線上浮標籤（放在最上層，避免被節點遮擋）
+    const linkLabelLayer = g.append('g').attr('pointer-events','none');
 
     const zoom = d3.zoom()
       .scaleExtent([0.25, 3])
       .on('zoom', (e) => g.attr('transform', e.transform));
     svg.call(zoom);
+    // 右側視圖區空白處點擊：全域重置（清空家族/關係聚焦與人物聚焦）
+    svg.on('click.reset', (event) => {
+      if (event.target === svg.node()) {
+        resetAllView();
+      }
+    });
 
     const colorByFamily = (f) => families[f]?.color || families.other.color;
     const sizeByImportance = (d) => mainCast.has(d.id) ? 90 : 70;
 
     const sim = d3.forceSimulation(nodes)
       .force('link', d3.forceLink(links).id(d => d.id)
-        .distance(l => ({ parent: 90, marriage: 90, sibling: 120, cousin: 130, friend: 150 }[l.type] || 120))
+        .distance(l => ({ parent: 90, marriage: 90, sibling: 120, cousin: 130, friend: 150, servant: 100 }[l.type] || 120))
         .strength(l => l.type === 'marriage' ? 0.8 : 0.5))
       .force('charge', d3.forceManyBody().strength(-500))
       .force('collide', d3.forceCollide().radius(d => (sizeByImportance(d) / 2) + 14))
@@ -399,7 +478,7 @@
       .attr('data-type', d => d.type);
 
     // 關係中文映射與具體概述
-    const relationMap = { parent:'血親', marriage:'婚姻', sibling:'兄妹', cousin:'表親', friend:'知交' };
+    const relationMap = { parent:'血親', marriage:'婚姻', sibling:'兄妹', cousin:'表親', friend:'知交', servant:'主僕' };
     const pairKey = (a,b) => [a,b].sort((x,y)=>x.localeCompare(y)).join('|');
     const relationSummary = new Map([
       // 婚姻
@@ -410,22 +489,23 @@
       [pairKey('賈珍','尤氏'), '寧國府當家夫妻。'],
       [pairKey('賈蓉','秦可卿'), '寧國府賈蓉與其妻秦可卿。'],
       [pairKey('賈琏','尤二姐'), '賈琏納尤二姐為妾，鳳姐後發難。'],
+      [pairKey('林如海','賈敏'), '林如海與賈政之妹賈敏為夫婦。'],
       // 血親
       [pairKey('賈母','賈政'), '賈政之母，史太君。'],
       [pairKey('賈母','賈赦'), '賈赦之母，史太君。'],
+      [pairKey('賈母','賈敏'), '賈敏之母，史太君。'],
       [pairKey('賈敬','賈珍'), '賈珍之父。'],
       [pairKey('賈敬','惜春'), '惜春之父，寧國府。'],
       [pairKey('賈珍','賈蓉'), '賈珍之子。'],
       [pairKey('尤氏','賈蓉'), '賈蓉之母。'],
-      [pairKey('賈政','賈寶玉'), '賈寶玉之父。'],
-      [pairKey('王夫人','賈寶玉'), '賈寶玉之母。'],
       [pairKey('賈政','元春'), '元春之父。'],
       [pairKey('王夫人','元春'), '元春之母。'],
       [pairKey('賈赦','迎春'), '迎春之父，長房。'],
       [pairKey('賈政','探春'), '探春之父，庶出。'],
       [pairKey('賈政','賈珠'), '賈政長子。'],
       [pairKey('王夫人','賈珠'), '王夫人長子。'],
-      [pairKey('賈赦','賈琏'), '賈琏之父。'],
+      [pairKey('林如海','林黛玉'), '林黛玉之父。'],
+      [pairKey('賈敏','林黛玉'), '林黛玉之母。'],
       [pairKey('王熙鳳','巧姐'), '巧姐之母。'],
       [pairKey('賈琏','巧姐'), '巧姐之父。'],
       [pairKey('賈珠','賈蘭'), '賈蘭之父。'],
@@ -437,7 +517,11 @@
       [pairKey('賈寶玉','賈珠'), '兄弟，賈珠為兄。'],
       [pairKey('賈珠','元春'), '同父母的兄妹。'],
       [pairKey('賈珠','探春'), '同父異母的姐弟。'],
+      [pairKey('賈政','賈敏'), '親兄妹。'],
+      [pairKey('賈環','探春'), '同母兄妹。'],
+      [pairKey('賈寶玉','賈環'), '同父異母的兄弟。'],
       [pairKey('秦鐘','秦可卿'), '秦可卿之弟與其姊。'],
+      [pairKey('薛姨媽','王夫人'), '姊妹。'],
       // 表親/族親
       [pairKey('賈寶玉','迎春'), '榮國府與長房之間的堂兄妹。'],
       [pairKey('賈寶玉','惜春'), '寧國府一支，與寶玉為族親。'],
@@ -448,10 +532,10 @@
       [pairKey('賈政','賈珍'), '榮寧兩府的族兄弟。'],
       [pairKey('賈琏','賈政'), '叔侄。'],
       [pairKey('王熙鳳','王夫人'), '王夫人之侄女。'],
+      [pairKey('王夫人','王子騰'), '王夫人之兄。'],
+      [pairKey('王熙鳳','王子騰'), '叔侄/族親，王家長輩與侄女。'],
       [pairKey('賈瑞','賈珍'), '同族晚輩，與寧府有親。'],
       // 交誼
-      [pairKey('賈寶玉','襲人'), '主僕相依，情分甚篤。'],
-      [pairKey('賈寶玉','晴雯'), '主僕相投，後因風波被逐。'],
       [pairKey('賈寶玉','妙玉'), '大觀園中相交，寶玉敬其清潔。'],
       [pairKey('賈寶玉','王熙鳳'), '嬸侄往來，鳳姐常照拂寶玉。'],
       [pairKey('賈寶玉','秦鐘'), '同窗金蘭，情誼深篤。'],
@@ -463,6 +547,32 @@
       [pairKey('劉姥姥','王熙鳳'), '鳳姐機鋒周旋，後與劉姥姥合力護巧姐。'],
       [pairKey('劉姥姥','巧姐'), '劉姥姥出力救巧姐脫險。'],
       [pairKey('板兒','巧姐'), '兒時玩伴，曾同住劉姥姥家。'],
+      // 主僕
+      [pairKey('賈母','鴛鴦'), '賈母貼身首席大丫鬟。'],
+      [pairKey('賈母','傻大姐'), '賈府粗使丫頭。'],
+      [pairKey('賈母','李嬤嬤'), '久侍之僕，照看子弟。'],
+      [pairKey('王夫人','金釧'), '王夫人丫鬟，後跳井自盡。'],
+      [pairKey('王夫人','玉釧'), '金釧之妹，侍王夫人。'],
+      [pairKey('王夫人','彩雲'), '王夫人身邊丫鬟。'],
+      [pairKey('王夫人','彩霞'), '王夫人身邊丫鬟。'],
+      [pairKey('王夫人','周瑞家的'), '王夫人之陪房，庶務管事。'],
+      [pairKey('王夫人','吳新登家的'), '庫房總管。'],
+      [pairKey('王熙鳳','平兒'), '鳳姐心腹通房大丫鬟。'],
+      [pairKey('王熙鳳','小紅'), '林紅玉，後被鳳姐調用。'],
+      [pairKey('王熙鳳','興兒'), '王熙鳳所用小廝。'],
+      [pairKey('王熙鳳','旺兒'), '王熙鳳心腹小廝。'],
+      [pairKey('王熙鳳','來旺媳婦'), '身邊婆子。'],
+      [pairKey('賈寶玉','襲人'), '貼身大丫鬟，後成準姨娘。'],
+      [pairKey('賈寶玉','晴雯'), '貼身大丫鬟，後被逐。'],
+      [pairKey('賈寶玉','麝月'), '貼身大丫鬟。'],
+      [pairKey('賈寶玉','芳官'), '小丫鬟，戲班散後分入。'],
+      [pairKey('賈寶玉','茗煙'), '書僮，最得信任。'],
+      [pairKey('林黛玉','紫鵑'), '貼身丫鬟，原名鸚哥。'],
+      [pairKey('林黛玉','雪雁'), '從林家帶來幼婢。'],
+      [pairKey('薛寶釵','鶯兒'), '貼身丫鬟，擅編織。'],
+      [pairKey('賈政','賈環'), '賈環之父。'],
+      [pairKey('趙姨娘','賈環'), '賈環之母。'],
+      [pairKey('趙姨娘','探春'), '探春之母。'],
     ]);
     function getRelationSummary(d){
       const k = pairKey(d.source.id, d.target.id);
@@ -522,13 +632,7 @@
       .attr('dominant-baseline', 'central')
       .attr('fill', '#0f172a')
       .text(d => d.id);
-
-    node.append('text')
-      .attr('class', 'badge')
-      .attr('text-anchor', 'end')
-      .attr('x', d => sizeByImportance(d)/2 - 8)
-      .attr('y', -22)
-      .text(d => families[d.family]?.name || '');
+    // 移除家族文字徽標（顏色已表明家族）
 
     const tooltip = d3.select('#tooltip');
     node.on('mouseenter', (e, d) => {
@@ -571,16 +675,23 @@
 
     // 邊的懸停互動：加粗並顯示標籤（由 hit 線觸發）
     linkHit.on('mouseenter', function(e,d){
+      // 若處於聚焦狀態，僅允許與聚焦人物相連的邊顯示說明
+      if (focusedNodeId && !(d.source.id===focusedNodeId || d.target.id===focusedNodeId)) return;
       link.filter(l=>l===d).classed('hovered', true);
-      linkLabels.filter(l=>l===d).transition().duration(120).style('opacity',1);
+      // 確保標籤在最上層，避免被其他元素遮擋
+      linkLabelLayer.raise();
+      linkLabels.filter(l=>l===d).raise().transition().duration(120).style('opacity',1);
       node.filter(n=>n.id===d.source.id || n.id===d.target.id).select('rect').classed('focusSoft', true);
     }).on('mouseleave', function(e,d){
+      if (focusedNodeId && !(d.source.id===focusedNodeId || d.target.id===focusedNodeId)) return;
       link.filter(l=>l===d).classed('hovered', false);
       linkLabels.filter(l=>l===d).transition().duration(120).style('opacity',0);
       node.select('rect').classed('focusSoft', false);
     });
 
     function showDetails(d) {
+      // 設置聚焦人物ID
+      focusedNodeId = d.id;
       d3.selectAll('.node rect').classed('focus', n => n.id === d.id);
       const neighbors = new Set([d.id]);
       links.forEach(l => { if (l.source.id === d.id) neighbors.add(l.target.id); if (l.target.id === d.id) neighbors.add(l.source.id); });
@@ -588,6 +699,9 @@
       d3.selectAll('.link')
         .classed('hidden', l => !(l.source.id === d.id || l.target.id === d.id))
         .classed('active', l => (l.source.id === d.id || l.target.id === d.id));
+
+      // 僅允許與聚焦人物相關的 hit 線可交互，避免無關邊觸發標籤
+      linkHit.style('pointer-events', l => (l.source.id===focusedNodeId || l.target.id===focusedNodeId) ? 'stroke' : 'none');
 
       const rels = links.filter(l => l.source.id === d.id || l.target.id === d.id);
       const info = document.getElementById('details');
@@ -612,7 +726,7 @@
       rels.forEach(r => {
         const other = r.source.id === d.id ? r.target.id : r.source.id;
         const li = document.createElement('li');
-        const map = { parent: '血親', marriage: '婚姻', sibling: '手足', cousin: '表親', friend: '知交' };
+        const map = { parent: '血親', marriage: '婚姻', sibling: '手足', cousin: '表親', friend: '知交', servant: '主僕' };
         li.textContent = `${other}（${map[r.type]}）`;
         ul.appendChild(li);
       });
@@ -621,13 +735,34 @@
     }
 
     function resetFocus() {
+      // 清除聚焦人物ID，恢復所有邊可交互
+      focusedNodeId = null;
       d3.selectAll('.node, .link').classed('hidden', false);
       d3.selectAll('.link').classed('active', false);
       d3.selectAll('.node rect').classed('focus', false);
+      linkHit.style('pointer-events', 'stroke');
     }
 
     function fitView() {
       resetFocus();
+      svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(0,0).scale(1));
+    }
+
+    // 全域重置：清除家族/關係聚焦與人物聚焦，並復位視圖
+    function resetAllView(){
+      activeFamilyFilter = null;
+      activeRelationFilter = null;
+      // 還原圖例透明度
+      const legends = Array.from(document.querySelectorAll('#controls .legend'));
+      const familyLegend = legends[0];
+      const relationLegend = legends[1];
+      if (familyLegend) Array.from(familyLegend.querySelectorAll('.pill')).forEach(el => el.style.opacity = '1');
+      if (relationLegend) Array.from(relationLegend.querySelectorAll('.pill')).forEach(el => el.style.opacity = '1');
+      // 恢復顯示與互動
+      resetFocus();
+      d3.selectAll('.node, .link').classed('hidden', false);
+      linkHit.style('pointer-events', 'stroke');
+      // 復位視圖
       svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(0,0).scale(1));
     }
 
@@ -638,37 +773,122 @@
       d3.selectAll('.node').classed('hidden', d => !keep.has(d.id));
       d3.selectAll('.link').classed('hidden', l => !(keep.has(l.source.id) && keep.has(l.target.id)));
     });
-
-    const famContainer = document.getElementById('familyFilters');
-    Object.entries(families).forEach(([key, val]) => {
-      const btn = document.createElement('button');
-      btn.className = 'flat';
-      btn.style.background = '#f8fafc';
-      btn.style.border = '1px solid #e5e7eb';
-      btn.style.color = '#0f172a';
-      btn.innerHTML = `<span class="dot" style="background:${val.color}; margin-right:8px"></span>${val.name}`;
-      let on = true;
-      btn.addEventListener('click', () => {
-        on = !on; btn.style.opacity = on ? '1' : '.35';
-        d3.selectAll('.node').each(function(d){ if (d.family === key) this.classList.toggle('hidden', !on); });
-        d3.selectAll('.link').classed('hidden', l => l.source instanceof Object && (l.source.hidden || l.target.hidden));
-      });
-      famContainer.appendChild(btn);
+    // 左側面板空白/非互動區點擊：全域重置
+    const controlsEl = document.getElementById('controls');
+    controlsEl.addEventListener('click', (e) => {
+      const isInteractive = e.target.closest('button, input, .pill, .legend, .row');
+      if (!isInteractive) resetAllView();
     });
 
-    const relContainer = document.getElementById('relationFilters');
-    relationTypes.forEach(rt => {
-      const map = { parent: '血親', marriage: '婚姻', sibling: '兄妹', cousin: '表親', friend: '知交' };
-      const btn = document.createElement('button');
-      btn.className = 'flat';
-      btn.textContent = map[rt];
-      let on = true;
-      btn.addEventListener('click', () => {
-        on = !on; btn.style.opacity = on ? '1' : '.35';
-        d3.selectAll(`.link.${rt}`).classed('hidden', !on);
+    // 單選過濾狀態
+    let activeFamilyFilter = null; // 'jia' | 'wang' | ... | null
+    let activeRelationFilter = null; // 'parent' | 'marriage' | 'sibling' | 'cousin' | 'friend' | null
+
+    function applyFilters() {
+      // 基於家族過濾的初始可見集合
+      const baseIds = new Set(
+        activeFamilyFilter ? nodes.filter(n => n.family === activeFamilyFilter).map(n => n.id) : nodes.map(n => n.id)
+      );
+      // 若選擇了關係類型，則僅保留該類型邊涉及的節點（同時滿足家族過濾）
+      let visibleNodeIds;
+      if (activeRelationFilter) {
+        const edgeNodes = new Set();
+        links.forEach(l => {
+          if (l.type !== activeRelationFilter) return;
+          if (!baseIds.has(l.source.id) || !baseIds.has(l.target.id)) return;
+          edgeNodes.add(l.source.id);
+          edgeNodes.add(l.target.id);
+        });
+        visibleNodeIds = edgeNodes;
+      } else {
+        visibleNodeIds = baseIds;
+      }
+      // 邊可見條件
+      const edgeVisible = (l) => visibleNodeIds.has(l.source.id) && visibleNodeIds.has(l.target.id) && (!activeRelationFilter || l.type === activeRelationFilter);
+      // 應用節點與邊顯示
+      d3.selectAll('.node').classed('hidden', d => !visibleNodeIds.has(d.id));
+      d3.selectAll('.link')
+        .classed('hidden', l => !edgeVisible(l))
+        .classed('active', l => edgeVisible(l) && !!activeRelationFilter);
+      // 命中層交互
+      linkHit
+        .classed('hidden', l => !edgeVisible(l))
+        .style('pointer-events', l => edgeVisible(l) ? 'stroke' : 'none');
+    }
+
+    // 使家族圖例成為可點擊的單選按鈕
+    const legends = Array.from(document.querySelectorAll('#controls .legend'));
+    const familyLegend = legends[0];
+    const relationLegend = legends[1];
+    if (familyLegend) {
+      const familyNameToKey = Object.fromEntries(Object.entries(families).map(([k, v]) => [v.name, k]));
+      Array.from(familyLegend.querySelectorAll('.pill')).forEach(pill => {
+        pill.style.cursor = 'pointer';
+        pill.addEventListener('click', () => {
+          resetFocus();
+          const name = pill.textContent.trim();
+          const key = familyNameToKey[name];
+          if (!key) return;
+          if (activeFamilyFilter === key) {
+            activeFamilyFilter = null;
+            // 還原所有家族圖例的透明度
+            Array.from(familyLegend.querySelectorAll('.pill')).forEach(el => el.style.opacity = '1');
+          } else {
+            activeFamilyFilter = key;
+            Array.from(familyLegend.querySelectorAll('.pill')).forEach(el => el.style.opacity = (el === pill) ? '1' : '.35');
+          }
+          applyFilters();
+        });
       });
-      relContainer.appendChild(btn);
-    });
+    }
+
+    // 使關係類型圖例成為可點擊的單選突出顯示
+    if (relationLegend) {
+      const detectType = (labelText) => {
+        if (labelText.includes('血親')) return 'parent';
+        if (labelText.includes('婚姻')) return 'marriage';
+        if (labelText.includes('兄') || labelText.includes('姊妹')) return 'sibling';
+        if (labelText.includes('表親') || labelText.includes('堂親')) return 'cousin';
+        if (labelText.includes('知交') || labelText.includes('情誼')) return 'friend';
+        if (labelText.includes('主僕')) return 'servant';
+        return null;
+      };
+      Array.from(relationLegend.querySelectorAll('.pill')).forEach(pill => {
+        pill.style.cursor = 'pointer';
+        pill.addEventListener('click', () => {
+          resetFocus();
+          const t = detectType(pill.textContent.trim());
+          if (!t) return;
+          if (activeRelationFilter === t) {
+            activeRelationFilter = null;
+            Array.from(relationLegend.querySelectorAll('.pill')).forEach(el => el.style.opacity = '1');
+          } else {
+            activeRelationFilter = t;
+            Array.from(relationLegend.querySelectorAll('.pill')).forEach(el => el.style.opacity = (el === pill) ? '1' : '.35');
+          }
+          applyFilters();
+        });
+      });
+    }
+
+    // 將「重置視圖/只看主線人物」移動到右側視圖區浮層
+    (function mountGraphControls(){
+      const graphEl = document.querySelector('.graph');
+      if (!graphEl) return;
+      let box = graphEl.querySelector('.graph-controls');
+      if (!box) {
+        box = document.createElement('div');
+        box.className = 'graph-controls';
+        graphEl.appendChild(box);
+      }
+      const fitBtn = document.getElementById('fit');
+      const isoBtn = document.getElementById('isolateMain');
+      if (fitBtn) box.appendChild(fitBtn);
+      if (isoBtn) box.appendChild(isoBtn);
+      // 隱藏左側殘留的「視圖」欄位
+      const viewGroup = Array.from(controlsEl.querySelectorAll('.group')).find(g => g.querySelector('h3')?.textContent?.trim() === '視圖');
+      if (viewGroup) viewGroup.style.display = 'none';
+    })();
 
     const searchInput = document.getElementById('search');
     const clearBtn = document.getElementById('clearSearch');
@@ -703,7 +923,7 @@
     const btnSkip = document.getElementById('gameSkip');
 
     function pickRelationWord(type){
-      const m = { parent:'父母/子女', sibling:'兄妹/手足', marriage:'配偶', cousin:'表親', friend:'好友'};
+      const m = { parent:'父母/子女', sibling:'兄妹/手足', marriage:'配偶', cousin:'表親', friend:'好友', servant:'主僕'};
       return m[type] || type;
     }
 
@@ -742,7 +962,7 @@
         return deg>=2; });
       const src = randomPick(candidates);
       // 隨機選一種關係，優先保證有答案；"parent" 類型使用有方向的提示
-      const types = ['parent','sibling','marriage','cousin','friend'];
+      const types = ['parent','sibling','marriage','cousin','friend','servant'];
       let type = null; let targets = []; let clue = '';
       for (let i=0;i<12;i++){
         type = randomPick(types);
@@ -758,7 +978,7 @@
         } else {
           targets = neighborsByType(src.id, type);
           if (targets.length===0) continue;
-          const map = { sibling: '兄妹/手足', marriage: '配偶', cousin: '表親', friend: '好友' };
+          const map = { sibling: '兄妹/手足', marriage: '配偶', cousin: '表親', friend: '好友', servant: '主僕' };
           const word = map[type] || pickRelationWord(type);
           clue = `與「${src.id}」為${word}的是誰？`;
         }

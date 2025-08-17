@@ -541,11 +541,11 @@
                                                 隱忍堅韌
                                             </div>
                                         </button>
-                                        <button class="character-btn sound-btn button-highlight flex flex-col items-center bg-gradient-to-br from-indigo-800 to-indigo-900 hover:from-indigo-700 hover:to-indigo-800 rounded p-1.5 transition-all text-xs shadow-md transform hover:scale-105" data-character="繁漪" data-quote="熱極了，悶極了，這裡真是再也不能住的。" data-act="一幕" data-ability="情感庇護" data-activation="空格鍵/長按" data-cooldown="25秒冷卻">
+                                        <button class="character-btn sound-btn button-highlight flex flex-col items-center bg-gradient-to-br from-indigo-800 to-indigo-900 hover:from-indigo-700 hover:to-indigo-800 rounded p-1.5 transition-all text-xs shadow-md transform hover:scale-105" data-character="繁漪" data-quote="熱極了，悶極了，這裡真是再也不能住的。" data-act="一幕" data-ability="開窗清風" data-activation="空格鍵/長按" data-cooldown="25秒冷卻">
                                             <span class="font-bold text-blue-50">繁漪</span>
                                             <span class="text-[10px] text-blue-200">現妻</span>
                                             <div class="mt-1 px-1.5 py-0.5 bg-red-500 bg-opacity-70 rounded-full text-[10px] text-white whitespace-nowrap shadow-sm">
-                                                情感庇護
+                                                開窗清風
                                             </div>
                                         </button>
                                         <button class="character-btn sound-btn button-highlight flex flex-col items-center bg-gradient-to-br from-indigo-800 to-indigo-900 hover:from-indigo-700 hover:to-indigo-800 rounded p-1.5 transition-all text-xs shadow-md transform hover:scale-105" data-character="四鳳" data-quote="讓天上的雷劈了我吧！" data-act="四幕" data-ability="預知閃避" data-activation="空格鍵/長按" data-cooldown="40秒冷卻">
@@ -1082,13 +1082,12 @@
                             volume: 0.2
                         };
                     } else if (type === 'ability_繁漪') {
-                        // 情感庇護 - 情感化、波動的音效
+                        // 開窗清風 - 清亮而帶氣流感
                         soundProfile = {
-                            frequency: [150, 180],
-                            type: 'sine',
-                            duration: 0.4,
-                            volume: 0.18,
-                            // 情感波動效果
+                            frequency: [200, 260],
+                            type: 'triangle',
+                            duration: 0.45,
+                            volume: 0.2,
                             modulation: true
                         };
                     } else if (type === 'ability_四鳳') {
@@ -1291,7 +1290,7 @@
                     '周萍': '優柔瞬移',
                     '周沖': '青春衝刺',
                     '魯侍萍': '隱忍堅韌',
-                    '繁漪': '情感庇護',
+                    '繁漪': '開窗清風',
                     '四鳳': '預知閃避'
                 };
                 
@@ -1779,8 +1778,8 @@
                     case '隱忍堅韌':
                         abilityIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 mr-1 text-purple-300"><path fill-rule="evenodd" d="M12.516 2.17a.75.75 0 00-1.032 0 11.209 11.209 0 01-7.877 3.08.75.75 0 00-.722.515A12.74 12.74 0 002.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.75.75 0 00.374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 00-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08zm3.094 8.016a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" /></svg>';
                         break;
-                    case '情感庇護':
-                        abilityIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 mr-1 text-pink-300"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" /></svg>';
+                    case '開窗清風':
+                        abilityIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 mr-1 text-pink-300"><path d="M4 3h16v2H4V3zm0 4h10v10H4V7zm12 0h4v10h-4V7zm-12 12h16v2H4v-2z"/></svg>';
                         break;
                     case '預知閃避':
                         abilityIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 mr-1 text-amber-300"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" /><path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" /></svg>';
@@ -1910,17 +1909,17 @@
                         </div>
                     </div>
                 `,
-                '情感庇護': `
+                '開窗清風': `
                     <div class="bg-thunder-deep bg-opacity-70 p-2 rounded-lg">
                         <div class="text-center mb-1">
-                            <strong class="text-[#ADE2FF] text-xs">情感庇護</strong>
+                            <strong class="text-[#ADE2FF] text-xs">開窗清風</strong>
                         </div>
                         <div class="bg-black bg-opacity-30 rounded-lg p-2">
                             <div class="flex justify-between items-center mb-1">
-                                <p class="text-[10px] text-lightning-white">創造短暫護盾減少傷害</p>
+                                <p class="text-[10px] text-lightning-white">清風驅散閃電、吸引善意、推開惡意</p>
                                 <span class="text-[9px] bg-gray-800 px-1 rounded">空格/長按</span>
                             </div>
-                            <p class="text-[9px] text-yellow-200">象徵繁漪的情感浪潮 • 25秒冷卻</p>
+                            <p class="text-[9px] text-yellow-200">象徵繁漪打開窗扉，讓新風入室 • 25秒冷卻</p>
                         </div>
                     </div>
                 `,
@@ -2133,9 +2132,9 @@
                                 noteElement.textContent = "象徵魯侍萍的堅忍不拔";
                                 usageElement.textContent = "主動激活";
                                 break;
-                            case '情感庇護':
-                                descElement.textContent = "創造短暫護盾減少傷害";
-                                noteElement.textContent = "象徵繁漪的情感浪潮";
+                            case '開窗清風':
+                                descElement.textContent = "清風驅散附近閃電，吸引加分道具並推開負面道具";
+                                noteElement.textContent = "象徵繁漪打開窗扉，讓新風入室";
                                 usageElement.textContent = "主動激活";
                                 break;
                             case '預知閃避':
@@ -2668,7 +2667,7 @@
             function getAbilityDuration() {
                 switch (characterAbility) {
                     case '威權力場': return 480; // 8秒
-                    case '情感庇護': return 180; // 3秒
+                    case '開窗清風': return 240; // 4秒（略延長以體感明顯）
                     case '青春衝刺': return 240; // 4秒
                     case '優柔瞬移': return 1; // 瞬間效果
                     case '預知閃避': return 720; // 12秒 (大幅延長持續時間)
@@ -2679,13 +2678,13 @@
             // 獲取能力冷卻時間 - 進一步縮短冷卻時間提升遊戲體驗
             function getAbilityCooldown() {
                 switch (characterAbility) {
-                    case '威權力場': return 600; // 10秒 (顯著縮短)
-                    case '隱忍堅韌': return 900; // 15秒 (顯著縮短)
-                    case '優柔瞬移': return 480; // 8秒 (顯著縮短)
-                    case '青春衝刺': return 360; // 6秒 (顯著縮短)
-                    case '情感庇護': return 480; // 8秒 (顯著縮短)
-                    case '預知閃避': return 600; // 10秒 (顯著縮短)
-                    default: return 600; // 10秒
+                    case '威權力場': return 1800; // 30秒
+                    case '隱忍堅韌': return 3600; // 60秒
+                    case '優柔瞬移': return 1200; // 20秒
+                    case '青春衝刺': return 900;  // 15秒
+                    case '開窗清風': return 1500; // 25秒
+                    case '預知閃避': return 2400; // 40秒
+                    default: return 1200; // 20秒（通用）
                 }
             }
             
@@ -2780,29 +2779,19 @@
                         showAbilityEffectHint('堅韌之盾 | 閃電傷害轉為積分', '#9C27B0');
                         break;
                         
-                    case '情感庇護':
-                        // 改進：情感殘影具有吸引閃電的能力
-                        activeEffects.createAfterimagePath = true;
-                        activeEffects.decoyAttractsLightning = true;
-                        
-                        // 新增效果：情感力場保護角色
-                        activeEffects.emotionalShield = true;
-                        
-                        // 清除現有殘影
-                        const allDecoys = document.querySelectorAll('.character-decoy');
-                        allDecoys.forEach(decoy => decoy.remove());
-                        
-                        // 添加情感護盾視覺效果 - 強化版
-                        createShieldEffect('#E91E63', true);
-                        
-                        // 創建情感粒子系統
-                        createEmotionalParticles();
-                        
-                        // 播放特殊音效
+                    case '開窗清風':
+                        // 新：開窗清風 - 創建風場，驅散附近閃電、吸引正面道具、推開負面道具
+                        activeEffects.breezeField = true;            // 風場開啟
+                        activeEffects.attractPositiveItems = true;   // 吸引加分道具
+                        activeEffects.pushNegativeItems = true;      // 推開減分道具
+                        activeEffects.breezeDissipate = true;        // 使近距離閃電消散
+
+                        // 建立風場視覺效果
+                        createBreezeFieldEffect();
+
+                        // 播放音效與提示
                         playThunderSound('ability_繁漪');
-                        
-                        // 顯示效果提示
-                        showAbilityEffectHint('殘影吸引閃電 | 減少30%傷害', '#E91E63');
+                        showAbilityEffectHint('清風驅散閃電 | 吸引善意道具', '#E91E63');
                         break;
                         
                     case '預知閃避':
@@ -2829,7 +2818,7 @@
                 }
                 
                 // 主要激活音效（如果未播放特殊音效）
-                if (!['威權力場', '優柔瞬移', '青春衝刺', '隱忍堅韌', '情感庇護', '預知閃避'].includes(characterAbility)) {
+                if (!['威權力場', '優柔瞬移', '青春衝刺', '隱忍堅韌', '開窗清風', '預知閃避'].includes(characterAbility)) {
                     playThunderSound('button');
                 }
                 
@@ -3123,18 +3112,65 @@
                 playThunderSound('ability_周萍');
             }
             
-            // 創建情感粒子系統 - 情感庇護增強效果
+            // 創建風場特效 - 開窗清風
+            function createBreezeFieldEffect() {
+                if (!characterElement) return;
+                // 移除舊風場
+                const old = document.getElementById('breeze-field');
+                if (old) old.remove();
+
+                const field = document.createElement('div');
+                field.id = 'breeze-field';
+                field.className = 'absolute pointer-events-none z-10';
+                field.style.left = `${characterX}px`;
+                field.style.bottom = `${characterHeight / 2}px`;
+                field.style.transform = 'translate(-50%, 0)';
+                field.style.width = `${Math.max(160, gameWidth * 0.35)}px`;
+                field.style.height = '120px';
+                field.style.borderRadius = '9999px';
+                field.style.background = 'radial-gradient(ellipse at center, rgba(233,30,99,0.18) 0%, rgba(233,30,99,0.06) 60%, rgba(233,30,99,0) 80%)';
+                field.style.boxShadow = '0 0 12px rgba(233,30,99,0.35) inset';
+
+                // 內部流線
+                const stripe = document.createElement('div');
+                stripe.className = 'absolute inset-0 overflow-hidden';
+                stripe.innerHTML = `
+                    <div style="position:absolute;left:10%;top:35%;width:80%;height:2px;background:linear-gradient(90deg, transparent, rgba(233,30,99,0.6), transparent);filter:blur(0.5px);animation: breezeMove 1.8s linear infinite;"></div>
+                    <div style="position:absolute;left:5%;top:55%;width:70%;height:2px;background:linear-gradient(90deg, transparent, rgba(233,30,99,0.4), transparent);filter:blur(0.5px);animation: breezeMove 2.2s linear infinite;"></div>
+                `;
+                field.appendChild(stripe);
+
+                // 動畫keyframes
+                const style = document.createElement('style');
+                style.textContent = `@keyframes breezeMove {0%{transform:translateX(-20%)}100%{transform:translateX(120%)}}`;
+                document.head.appendChild(style);
+
+                gameContainer.appendChild(field);
+
+                // 跟隨角色
+                const update = () => {
+                    if (!isGameRunning || !abilityActive || !activeEffects.breezeField) {
+                        if (field && field.parentNode) field.remove();
+                        return;
+                    }
+                    field.style.left = `${characterX}px`;
+                    requestAnimationFrame(update);
+                };
+                requestAnimationFrame(update);
+            }
+
+            // 創建情感粒子系統 - 保留api供其他處呼叫
             function createEmotionalParticles() {
                 if (!characterElement) return;
                 
                 // 創建情感粒子系統
                 const emotionalParticles = new ParticleSystem('game-container', {
-                    maxParticles: 100,
-                    particleSize: { min: 3, max: 8 },
-                    speed: { min: 0.5, max: 2 },
+                    maxParticles: 40,
+                    particleSize: { min: 2, max: 6 },
+                    speed: { min: 0.4, max: 1.5 },
                     colors: ['#FF416C', '#FF4B2B', '#E91E63', '#FFC1E3'],
-                    duration: 3000,
-                    spread: { x: 50, y: 30 },
+                    duration: 1800,
+                    spread: { x: 30, y: 20 },
                     friction: 0.96,
                     gravity: -0.03, // 微弱上浮
                     blendMode: 'screen',
@@ -3177,9 +3213,11 @@
                         return;
                     }
                     
-                    // 創建吸引閃電的情感殘影
-                    createAttractiveDecoy(characterX, gameHeight - characterHeight);
-                }, 800); // 每0.8秒創建一個殘影
+                    // 限量創建吸引閃電的情感殘影（頻率降低）
+                    if (document.querySelectorAll('.attractive-decoy').length < 2) {
+                        createAttractiveDecoy(characterX, gameHeight - characterHeight);
+                    }
+                }, 1200); // 每1.2秒最多生成一次
                 
                 // 清理定時器
                 setTimeout(() => {
@@ -3699,20 +3737,20 @@
                 }, getAbilityDuration() * 1000 / 60);
             }
             
-            // 殘影效果（用於情感庇護和優柔瞬移）
+            // 殘影效果（用於優柔瞬移）
             function createAfterimage(positionX, color = '#E91E63') {
                 if (!characterElement) return;
                 
                 const decoy = document.createElement('div');
-                decoy.className = 'character-decoy absolute bottom-6 h-16 w-16 transform -translate-x-1/2 pointer-events-none';
+                decoy.className = 'character-decoy absolute bottom-6 h-14 w-14 transform -translate-x-1/2 pointer-events-none';
                 decoy.style.left = `${positionX}px`;
-                decoy.style.opacity = '0.7';
+                decoy.style.opacity = '0.5';
                 
                 // 克隆角色圖像
                 const decoyImg = document.createElement('img');
                 decoyImg.src = characterImg.src;
                 decoyImg.className = 'w-full h-full';
-                decoyImg.style.filter = `drop-shadow(0 0 5px ${color})`;
+                decoyImg.style.filter = `drop-shadow(0 0 3px ${color})`;
                 
                 decoy.appendChild(decoyImg);
                 gameContainer.appendChild(decoy);
@@ -3720,15 +3758,15 @@
                 // 淡出效果
                 setTimeout(() => {
                     decoy.style.opacity = '0';
-                    decoy.style.transition = 'opacity 0.8s, transform 1s';
-                    decoy.style.transform = 'translate(-50%, 10px) scale(0.9)';
+                    decoy.style.transition = 'opacity 0.6s, transform 0.8s';
+                    decoy.style.transform = 'translate(-50%, 8px) scale(0.92)';
                     
                     setTimeout(() => {
                         if (decoy.parentNode) {
                             decoy.remove();
                         }
-                    }, 1000);
-                }, 300);
+                    }, 800);
+                }, 250);
             }
             
             // 威嚴力場效果 - 修復位置跟隨問題
@@ -3915,14 +3953,14 @@
                 shield.id = 'character-shield';
                 shield.style.left = `${characterX}px`;
                 shield.style.bottom = '0';
-                shield.style.width = `${characterWidth * 2}px`;
-                shield.style.height = `${characterHeight * 1.5}px`;
+                shield.style.width = `${characterWidth * 1.6}px`;
+                shield.style.height = `${characterHeight * 1.3}px`;
                 shield.style.borderRadius = '50%';
                 shield.style.transform = 'translateX(-50%)';
-                shield.style.background = `radial-gradient(ellipse at center, ${color}44 0%, ${color}22 60%, transparent 80%)`;
-                shield.style.boxShadow = `0 0 15px ${color}88`;
-                shield.style.opacity = '0.8';
-                shield.style.animation = 'pulse 2s infinite';
+                shield.style.background = `radial-gradient(ellipse at center, ${color}33 0%, ${color}14 60%, transparent 80%)`;
+                shield.style.boxShadow = `0 0 8px ${color}66`;
+                shield.style.opacity = '0.6';
+                shield.style.animation = 'pulse 2.2s infinite';
                 
                 // 添加到遊戲容器
                 gameContainer.appendChild(shield);
@@ -4027,6 +4065,27 @@
                 
                 for (let i = 0; i < items.length; i++) {
                     if (items[i].active) {
+                        // 開窗清風：吸引正面道具靠近角色
+                        if (abilityActive && activeEffects.attractPositiveItems && items[i].isPositive) {
+                            const itemCenterX = items[i].x + items[i].width / 2;
+                            const dir = itemCenterX < characterX ? 1 : -1;
+                            const pullStrength = 130 * dt; // 向內拉力
+                            if (Math.abs(itemCenterX - characterX) > 5) {
+                                items[i].x += dir * pullStrength;
+                            }
+                        }
+
+                        // 開窗清風：推開負面道具遠離角色
+                        if (abilityActive && activeEffects.pushNegativeItems && !items[i].isPositive) {
+                            const itemCenterX = items[i].x + items[i].width / 2;
+                            const distanceToCharacter = Math.abs(itemCenterX - characterX);
+                            const repelRadius = gameWidth * 0.25;
+                            if (distanceToCharacter < repelRadius) {
+                                const pushDir = itemCenterX < characterX ? -1 : 1;
+                                items[i].x += pushDir * 140 * dt;
+                            }
+                        }
+
                         // 檢查威權力場是否阻隔負面道具
                         if (items[i].effect === 'subtractPoints' && 
                             characterAbility === '威權力場' && 
@@ -4154,6 +4213,24 @@
                     }
                     
                     score += pointValue;
+
+                    // 開窗清風：加分時追加淡粉色風之粒子
+                    if (abilityActive && activeEffects.breezeField) {
+                        const particles = new ParticleSystem('game-container', {
+                            maxParticles: 25,
+                            particleSize: { min: 2, max: 5 },
+                            speed: { min: 0.4, max: 1.8 },
+                            colors: ['#E91E63', '#FFC1E3', '#FF6F91'],
+                            duration: 1200,
+                            spread: { x: 30, y: 20 },
+                            gravity: -0.02,
+                            blendMode: 'screen',
+                            shape: 'circle',
+                            emitFromCenter: true
+                        });
+                        particles.start(characterX, gameHeight - characterHeight / 2);
+                        setTimeout(() => particles.stop(), 1200);
+                    }
                     
                     // 播放積極音效
                     playThunderSound('button');
@@ -4690,6 +4767,19 @@
                     if (lightning[i].active) {
                         // 距離 = 速度 × 時間差值 (dt)
                         lightning[i].y += lightning[i].speed * dt;
+
+                        // 開窗清風：若閃電接近角色一定半徑內，生成消散效果並移除
+                        if (abilityActive && activeEffects.breezeDissipate) {
+                            const dx = Math.abs(lightning[i].x - characterX);
+                            const dy = Math.abs((gameHeight - characterHeight / 2) - (lightning[i].y + lightning[i].height / 2));
+                            const distance = Math.hypot(dx, dy);
+                            const dissipateRadius = gameWidth * 0.22;
+                            if (distance < dissipateRadius) {
+                                createLightningDissipateEffect(lightning[i].x, lightning[i].y, lightning[i].width, lightning[i].height);
+                                lightning[i].active = false;
+                                continue;
+                            }
+                        }
                         
                         // 檢查是否擊中角色
                         if (characterElement) {
@@ -5167,7 +5257,7 @@
                 cleanupSprintEffects();
                 
                 // 移除所有能力視覺效果
-                const specialEffects = document.querySelectorAll('#pressure-field, #character-shield, #sprint-effect, #resilience-aura, #timeslow-overlay');
+                const specialEffects = document.querySelectorAll('#pressure-field, #character-shield, #sprint-effect, #resilience-aura, #timeslow-overlay, #breeze-field');
                 specialEffects.forEach(effect => {
                     if (effect && effect.parentNode) {
                         effect.remove();
@@ -5273,9 +5363,9 @@
                     speed *= 1.5; // 適度衝刺
                 }
                 
-                // 情感庇護的加速效果 - 降低加速幅度
-                if (characterAbility === '情感庇護' && activeEffects.emotionalSpeed) {
-                    speed *= 1.8; // 情感庇護時較快，但不至於太快
+                // 開窗清風的加速效果 - 降低加速幅度
+                if (characterAbility === '開窗清風' && activeEffects.emotionalSpeed) {
+                    speed *= 1.8; // 開窗清風時較快，但不至於太快
                 }
                 
                 if (e.key === 'ArrowLeft' || e.key === 'a') {
@@ -5283,19 +5373,13 @@
                     characterElement.style.left = `${characterX}px`;
                     updateQuoteBubblePosition();
                     
-                    // 繁漪能力的殘影效果
-                    if (activeEffects.createAfterimagePath && Math.random() < 0.4) {
-                        createAfterimage(characterX + speed, '#E91E63');
-                    }
+                    // 開窗清風不使用殘影效果
                 } else if (e.key === 'ArrowRight' || e.key === 'd') {
                     characterX = Math.min(gameWidth - characterWidth / 2, characterX + speed);
                     characterElement.style.left = `${characterX}px`;
                     updateQuoteBubblePosition();
                     
-                    // 繁漪能力的殘影效果
-                    if (activeEffects.createAfterimagePath && Math.random() < 0.4) {
-                        createAfterimage(characterX - speed, '#E91E63');
-                    }
+                    // 開窗清風不使用殘影效果
                 } else if (e.key === ' ' || e.key === 'Spacebar') {
                     // 空格鍵激活角色能力 - 所有角色都可使用
                     if (!abilityCooldown) {
@@ -5323,9 +5407,9 @@
                 const rect = canvas.getBoundingClientRect();
                 touchStartX = touch.clientX - rect.left;
                 
-                // 檢查雙擊 (適用於情感庇護)
+                // 檢查雙擊 (適用於開窗清風)
                 if (currentTime - lastTapTime < 300) {
-                    if (characterAbility === '情感庇護' && !abilityCooldown) {
+                    if (characterAbility === '開窗清風' && !abilityCooldown) {
                         activateAbility();
                         return; // 激活能力後不執行移動
                     }
@@ -5379,8 +5463,8 @@
                     speed *= 2;
                 }
                 
-                // 情感庇護的加速效果
-                if (characterAbility === '情感庇護' && activeEffects.emotionalSpeed) {
+                // 開窗清風的加速效果
+                if (characterAbility === '開窗清風' && activeEffects.emotionalSpeed) {
                     speed *= 2.5;
                 }
                 
@@ -5407,7 +5491,7 @@
                 
                 // 檢查雙擊
                 if (currentTime - lastClickTime < 300) {
-                    if (characterAbility === '情感庇護' && !abilityCooldown) {
+                    if (characterAbility === '開窗清風' && !abilityCooldown) {
                         activateAbility();
                         return; // 激活能力後不執行移動
                     } else if (characterAbility === '威權力場' && !abilityCooldown) {
