@@ -420,6 +420,8 @@
       { source: '史湘雲', target: '賈寶玉', type: 'cousin' },
       { source: '賈琏', target: '賈珍', type: 'cousin' },
       { source: '賈政', target: '賈珍', type: 'cousin' },
+      { source: '賈赦', target: '賈珍', type: 'cousin' },
+      { source: '賈寶玉', target: '賈珍', type: 'cousin' },
 
       { source: '薛姨媽', target: '薛寶釵', type: 'parent' },
       { source: '薛姨媽', target: '薛蟠', type: 'parent' },
@@ -678,7 +680,9 @@
       [pairKey('賈寶玉','薛寶釵'), '姨表兄妹（薛姨媽為王夫人之妹）。'],
       [pairKey('史湘雲','賈寶玉'), '賈母侄孫女，與寶玉為從表親。'],
       [pairKey('賈琏','賈珍'), '榮寧兩府的族兄弟。'],
-      [pairKey('賈政','賈珍'), '榮寧兩府的族兄弟。'],
+      [pairKey('賈政','賈珍'), '叔侄。'],
+      [pairKey('賈赦','賈珍'), '叔侄。'],
+      [pairKey('賈寶玉','賈珍'), '榮寧兩府的族兄弟。'],
       [pairKey('賈琏','賈政'), '叔侄。'],
       [pairKey('王熙鳳','王夫人'), '王夫人之侄女。'],
       [pairKey('王夫人','王子騰'), '王夫人之兄。'],
@@ -910,7 +914,9 @@
         seenRelItems.add(key);
         const li = document.createElement('li');
         const map = { parent: '血親', marriage: '婚姻', sibling: '手足', cousin: '表親', friend: '知交', servant: '主僕' };
-        li.textContent = `${other}（${map[r.type]}）`;
+        const summaryText = getRelationSummary(r);
+        const short = summaryText && summaryText.includes('叔侄') ? '叔侄' : (map[r.type] || r.type);
+        li.textContent = `${other}（${short}）`;
         ul.appendChild(li);
       });
       list.appendChild(ul);

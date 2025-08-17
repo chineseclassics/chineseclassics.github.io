@@ -59,110 +59,68 @@
 </head>
 <body class="bg-bg-light dark:bg-bg-dark text-gray-900 dark:text-gray-100 transition-colors duration-300">
     <div id="app" class="min-h-screen">
-        <!-- Header -->
-        <header class="bg-primary text-white p-4 shadow-lg">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-                <h1 class="text-2xl font-bold">聶隱娘傳</h1>
-                <div class="flex items-center space-x-4">
-                    <div class="text-sm">
-                        <span id="playerLevel">等級: 1</span>
-                    </div>
-                    <button id="showStats" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm hover:bg-opacity-30">
-                        屬性面板
-                    </button>
+        <main class="max-w-5xl mx-auto p-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6" id="gameContent">
+                    <!-- 故事與互動內容會插入在此 -->
                 </div>
-            </div>
-        </header>
-
-        <!-- Stats Panel Modal -->
-        <div id="statsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <h3 class="text-xl font-bold mb-4">聶隱娘 - 屬性面板</h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between">
-                        <span>等級:</span>
-                        <span id="modalLevel">1</span>
+                <aside id="statsPanel" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">角色屬性</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>當前等級:</span>
+                            <span id="modalLevel">1</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>經驗值:</span>
+                            <span id="modalExp">0/100</span>
+                        </div>
+                        <div class="text-sm text-gray-500">狀態：<span id="playerLevel">等級: 1</span></div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>情感羈絆:</span>
+                                <span id="emotionValue">50</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div id="emotionBar" class="bg-pink-500 h-2 rounded-full" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>江湖聲望:</span>
+                                <span id="reputationValue">50</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div id="reputationBar" class="bg-yellow-500 h-2 rounded-full" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>內心平靜:</span>
+                                <span id="peaceValue">50</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div id="peaceBar" class="bg-blue-500 h-2 rounded-full" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>武學造詣:</span>
+                                <span id="skillValue">50</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div id="skillBar" class="bg-red-500 h-2 rounded-full" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <h4 class="font-bold mt-4 mb-2">戰鬥屬性</h4>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>攻擊力: <span id="attackValue">5</span></div>
+                            <div>防禦力: <span id="defenseValue">5</span></div>
+                            <div>生命值: <span id="healthValue">5/5</span></div>
+                            <div>法術值: <span id="magicValue">5/5</span></div>
+                        </div>
                     </div>
-                    <div class="flex justify-between">
-                        <span>經驗值:</span>
-                        <span id="modalExp">0/100</span>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span>情感羈絆:</span>
-                            <span id="emotionValue">50</span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div id="emotionBar" class="bg-pink-500 h-2 rounded-full" style="width: 50%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span>江湖聲望:</span>
-                            <span id="reputationValue">50</span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div id="reputationBar" class="bg-yellow-500 h-2 rounded-full" style="width: 50%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span>內心平靜:</span>
-                            <span id="peaceValue">50</span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div id="peaceBar" class="bg-blue-500 h-2 rounded-full" style="width: 50%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span>武學造詣:</span>
-                            <span id="skillValue">50</span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div id="skillBar" class="bg-red-500 h-2 rounded-full" style="width: 50%"></div>
-                        </div>
-                    </div>
-                    <h4 class="font-bold mt-4 mb-2">戰鬥屬性:</h4>
-                    <div class="grid grid-cols-2 gap-2 text-sm">
-                        <div>攻擊力: <span id="attackValue">5</span></div>
-                        <div>防禦力: <span id="defenseValue">5</span></div>
-                        <div>生命值: <span id="healthValue">5/5</span></div>
-                        <div>法術值: <span id="magicValue">5/5</span></div>
-                    </div>
-                </div>
-                <button onclick="closeStatsModal()" class="w-full mt-4 bg-primary text-white py-2 rounded hover:opacity-90">
-                    關閉
-                </button>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <main class="max-w-4xl mx-auto p-4">
-            <!-- Chapter Navigation -->
-            <div id="chapterNav" class="mb-6">
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <button onclick="goToChapter(1)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors" data-chapter="1">
-                        第一章：童年抉擇
-                    </button>
-                    <button onclick="goToChapter(2)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="2" disabled="">
-                        第二章：山中修行
-                    </button>
-                    <button onclick="goToChapter(3)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="3" disabled="">
-                        第三章：回歸塵世
-                    </button>
-                    <button onclick="goToChapter(4)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="4" disabled="">
-                        第四章：忠誠考驗
-                    </button>
-                    <button onclick="goToChapter(5)" class="chapter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-primary hover:text-white transition-colors disabled:opacity-50" data-chapter="5" disabled="">
-                        第五章：人生抉擇
-                    </button>
-                </div>
-            </div>
-
-            <!-- Game Content -->
-            <div id="gameContent" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 min-h-96">
-                <!-- Story content will be inserted here -->
+                </aside>
             </div>
         </main>
     </div>
@@ -202,7 +160,13 @@
                 maxMagic: 5       // 最大法術值
             },
             choices: [],          // 記錄所有選擇
-            unlockedChapters: [1] // 已解鎖的章節
+            unlockedChapters: [1], // 已解鎖的章節
+            flags: {
+                hasHornDagger: false,
+                hairTokenSent: false,
+                defeatedJingjing: false,
+                defeatedKongkong: false
+            }
         };
 
         // Chapter Data
@@ -426,7 +390,7 @@
                                 text: "佩服其神機妙算，決定投靠",
                                 effects: { emotion: +10, reputation: +20, peace: +20, skill: +10 },
                                 exp: 50,
-                                next: "chapter5"
+                                next: "hair_token"
                             },
                             {
                                 text: "依然嘗試完成刺殺任務",
@@ -507,6 +471,36 @@
                     word: "如是",
                     options: ["像這樣", "這麼", "如果", "是否"],
                     correct: 1
+                },
+                {
+                    word: "欻",
+                    options: ["忽然", "緩慢", "安靜", "猛烈"],
+                    correct: 0
+                },
+                {
+                    word: "嵌空",
+                    options: ["洞穴凹陷處", "城門", "屋樑", "山頂"],
+                    correct: 0
+                },
+                {
+                    word: "捷猱",
+                    options: ["敏捷的猿猴", "急促的腳步", "快速的刀法", "輕盈的衣物"],
+                    correct: 0
+                },
+                {
+                    word: "羊角匕首",
+                    options: ["短匕，柄似羊角", "長劍", "斧鉞", "飛鏢"],
+                    correct: 0
+                },
+                {
+                    word: "瞑",
+                    options: ["天黑、入夜", "黎明", "午時", "日中"],
+                    correct: 0
+                },
+                {
+                    word: "度其門隙",
+                    options: ["從門縫穿過", "量門寬", "修門縫", "看門外"],
+                    correct: 0
                 }
             ]
         };
@@ -530,22 +524,18 @@
             const content = document.getElementById('gameContent');
             content.innerHTML = `
                 <div class="combat-arena">
-                    <h3 class="text-2xl font-bold mb-4 text-center">武學試煉</h3>
-                    <div class="mb-4 text-center">
-                        <div class="text-lg">生命值: <span id="playerHealth" class="text-green-500 font-bold">100</span></div>
-                        <div class="text-lg">得分: <span id="combatScore" class="text-blue-500 font-bold">0</span></div>
-                        <div class="text-lg">時間: <span id="combatTime" class="text-red-500 font-bold">30</span>秒</div>
-                    </div>
-                    
-                    <div id="combatTargets" class="grid grid-cols-3 gap-4 mb-6" style="min-height: 300px;">
-                        <!-- Combat targets will appear here -->
-                    </div>
-                    
-                    <div class="text-center">
-                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            擊敗師姐和猛獸獲得分數，小心不要傷害無辜的小動物！
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xl font-bold">武學試煉</h3>
+                        <div class="flex items-center gap-4 text-sm">
+                            <div>生命值: <span id="playerHealth" class="text-green-600 font-bold">100</span></div>
+                            <div>得分: <span id="combatScore" class="text-blue-600 font-bold">0</span></div>
+                            <div>時間: <span id="combatTime" class="text-red-600 font-bold">30</span>s</div>
                         </div>
                     </div>
+                    <div id="combatTargets" class="grid grid-cols-3 gap-2 mb-2" style="height: 260px;">
+                        <!-- 9 cells will be inserted here -->
+                    </div>
+                    <div class="text-center text-xs text-gray-600 dark:text-gray-400">擊敗敵方目標加分，誤擊無辜扣分。</div>
                 </div>
             `;
 
@@ -554,8 +544,8 @@
             let timeLeft = 30;
             let gameActive = true;
 
-            const targets = ['🥷', '⚔️', '🐅', '🐺', '🦔']; // 可擊敗的目標
-            const innocents = ['🐰', '🦆', '🐿️']; // 無辜的小動物
+            const targets = ['🥷', '⚔️', '🐅', '🐺']; // 可擊敗的目標
+            const innocents = ['🐰', '🦆']; // 無辜的小動物
 
             function spawnTarget() {
                 if (!gameActive) return;
@@ -567,7 +557,7 @@
                     targets[Math.floor(Math.random() * targets.length)];
 
                 const targetDiv = document.createElement('div');
-                targetDiv.className = `combat-target cursor-pointer text-6xl text-center p-4 rounded-lg border-2 ${isInnocent ? 'border-green-300' : 'border-red-300'} hover:shadow-lg`;
+                targetDiv.className = `combat-target cursor-pointer text-4xl text-center p-2 rounded-lg border ${isInnocent ? 'border-green-300' : 'border-red-300'} hover:shadow`;
                 targetDiv.innerHTML = targetType;
                 targetDiv.dataset.innocent = isInnocent;
 
@@ -585,15 +575,15 @@
                     
                     targetDiv.classList.add('hit-effect');
                     if (isInnocent) {
-                        health -= 20;
-                        score -= 10;
+                        health = Math.max(0, health - 20);
+                        score = Math.max(0, score - 5);
                         updateCombatStats();
                         if (health <= 0) {
                             endCombat(false);
                             return;
                         }
                     } else {
-                        score += 10;
+                        score += 8;
                         updateCombatStats();
                     }
                     
@@ -602,12 +592,12 @@
                     }, 300);
                 });
 
-                // Auto remove after 2 seconds
+                // Auto remove after 1.5 seconds
                 setTimeout(() => {
                     if (targetDiv.parentNode && gameActive) {
                         targetDiv.remove();
                     }
-                }, 2000);
+                }, 1500);
             }
 
             function updateCombatStats() {
@@ -618,9 +608,11 @@
 
             function endCombat(success) {
                 gameActive = false;
+                clearInterval(targetInterval);
+                clearInterval(timeInterval);
                 const message = success ? 
-                    `試煉成功！妳的得分：${score}` : 
-                    `試煉失敗！妳的得分：${score}`;
+                    `試煉成功！妳的得分：${score}\n師父取出一柄『羊角匕首』授予妳，並囑以秘術：『若事成，取首以藥化之為水，勿留痕跡。』` : 
+                    `試煉結束。妳的得分：${score}`;
                 
                 setTimeout(() => {
                     showCustomAlert(message, () => {
@@ -629,16 +621,19 @@
                         const combatGain = Math.max(1, Math.floor(score / 20));
                         
                         gainExp(expGain);
-                        adjustStats({ skill: Math.floor(score / 10), peace: success ? 5 : -5 });
+                        adjustStats({ skill: Math.floor(score / 12), peace: success ? 5 : -5 });
                         adjustCombat({ 
                             attack: combatGain, 
                             defense: combatGain,
                             health: combatGain,
                             maxHealth: combatGain
                         });
-                        
+                        if (success) {
+                            gameState.flags.hasHornDagger = true;
+                        }
                         // Continue to next chapter
                         proceedToNextChapter();
+                        
                     });
                 }, 500);
             }
@@ -651,14 +646,14 @@
             }
 
             // Game loop
-            const targetInterval = setInterval(spawnTarget, 800);
+            const targetInterval = setInterval(spawnTarget, 700);
             const timeInterval = setInterval(() => {
                 timeLeft--;
                 updateCombatStats();
                 if (timeLeft <= 0) {
                     clearInterval(targetInterval);
                     clearInterval(timeInterval);
-                    endCombat(score >= 50);
+                    endCombat(score >= 40);
                 }
             }, 1000);
         }
@@ -795,6 +790,167 @@
             }
         }
 
+        // Side Missions and Boss Fights
+        function startHairTokenMission() {
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <div class="fade-in">
+                    <h3 class="text-2xl font-bold mb-4 text-center">剪髮紅綃送信</h3>
+                    <p class="ancient-text mb-4">劉昌裔道：「彼未知汝心，必使人繼至。今宵請剪髮，繫之以紅綃，送於魏帥枕前，以表不回。」</p>
+                    <p class="mb-4">請在 5 秒內按下「剪髮」與「送達」兩個按鈕，完成投誠儀式。</p>
+                    <div class="flex gap-3 justify-center">
+                        <button id="btnCut" class="px-4 py-2 bg-primary text-white rounded">剪髮</button>
+                        <button id="btnDeliver" class="px-4 py-2 bg-primary text-white rounded" disabled>送達</button>
+                    </div>
+                    <div class="text-center mt-3">剩餘時間：<span id="hairTimer" class="font-bold text-red-500">5</span> 秒</div>
+                </div>
+            `;
+            let cut = false;
+            let delivered = false;
+            let timeLeft = 5;
+            const timerEl = document.getElementById('hairTimer');
+            const timer = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    if (cut && delivered) {
+                        gameState.flags.hairTokenSent = true;
+                        gainExp(30);
+                        adjustStats({ reputation: 10, peace: 5 });
+                        showCustomAlert("紅綃信物已送至魏帥枕前。夜深，風過幡動，機鋒暗轉。", () => {
+                            // 觸發精精兒來襲
+                            startJingjingFight();
+                        });
+                    } else {
+                        showCustomAlert("猶豫未決，事機已逝。劉公仍願相留，然風波將更險。", () => {
+                            proceedToNextChapter();
+                        });
+                    }
+                }
+            }, 1000);
+            document.getElementById('btnCut').onclick = () => {
+                cut = true;
+                document.getElementById('btnDeliver').disabled = false;
+            };
+            document.getElementById('btnDeliver').onclick = () => {
+                if (!cut) return;
+                delivered = true;
+                timeLeft = Math.max(0, timeLeft); // allow immediate success if time just hit 0
+            };
+        }
+
+        function startJingjingFight() {
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <div class="fade-in">
+                    <h3 class="text-2xl font-bold mb-4 text-center">夜半對決：精精兒</h3>
+                    <p class="ancient-text mb-4">是夜，紅白二幡飄然如擊床四隅。忽聞重墜，一人自空而踣，身首異處——精精兒至！</p>
+                    <div class="text-center mb-4">點擊出現的目標以出手，誤擊無辜將扣分。</div>
+                    <div class="grid grid-cols-3 gap-4 mb-6" id="jjGrid"></div>
+                    <div class="text-center">
+                        <div>得分：<span id="jjScore" class="font-bold text-blue-500">0</span></div>
+                        <div>時間：<span id="jjTime" class="font-bold text-red-500">20</span> 秒</div>
+                    </div>
+                </div>
+            `;
+            let score = 0;
+            let timeLeft = 20;
+            const grid = document.getElementById('jjGrid');
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'aspect-square border border-gray-300 dark:border-gray-600 rounded flex items-center justify-center text-5xl cursor-pointer';
+                grid.appendChild(cell);
+            }
+            const targets = ['🥷','⚔️'];
+            const innocents = ['🦆','🐰'];
+            function spawn() {
+                const cells = Array.from(grid.children);
+                const cell = cells[Math.floor(Math.random()*cells.length)];
+                const innocent = Math.random() < 0.25;
+                const el = document.createElement('div');
+                el.textContent = innocent ? innocents[Math.floor(Math.random()*innocents.length)] : targets[Math.floor(Math.random()*targets.length)];
+                el.dataset.innocent = innocent ? '1' : '0';
+                cell.innerHTML = '';
+                cell.appendChild(el);
+                el.onclick = () => {
+                    if (el.dataset.innocent === '1') { score -= 5; } else { score += 10; }
+                    document.getElementById('jjScore').textContent = score;
+                    el.remove();
+                };
+                setTimeout(() => { if (el.parentNode) el.remove(); }, 1200);
+            }
+            const spawner = setInterval(spawn, 600);
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('jjTime').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(spawner);
+                    clearInterval(timer);
+                    gameState.flags.defeatedJingjing = score >= 40;
+                    const ok = gameState.flags.defeatedJingjing;
+                    gainExp(Math.max(30, Math.floor(score/2)));
+                    adjustStats({ skill: ok ? 10 : 4, peace: ok ? 5 : -5, reputation: 5 });
+                    showCustomAlert(ok ? "精精兒已斃。以藥化之為水，毛髮不存。" : "精精兒遁去，劉公仍保汝周全。", () => {
+                        startKongkongStealth();
+                    });
+                }
+            }, 1000);
+        }
+
+        function startKongkongStealth() {
+            const content = document.getElementById('gameContent');
+            content.innerHTML = `
+                <div class="fade-in">
+                    <h3 class="text-2xl font-bold mb-4 text-center">妙手空空兒</h3>
+                    <p class="ancient-text mb-4">次夜，妙手空空兒至。此人神術莫測，鬼莫能躡其蹤。請在幡影搖動間，僅於紅幡亮起時出手，勿誤。三次誤擊將失敗。</p>
+                    <div class="text-center mb-4">紅燈出手（+10），白燈誤擊（-1 次機會）。</div>
+                    <div class="flex items-center justify-center gap-6 mb-4">
+                        <div id="redLamp" class="w-16 h-16 rounded-full bg-red-200"></div>
+                        <div id="whiteLamp" class="w-16 h-16 rounded-full bg-gray-200"></div>
+                    </div>
+                    <div class="text-center">剩餘機會：<span id="kkLives" class="font-bold">3</span>｜得分：<span id="kkScore" class="font-bold">0</span></div>
+                    <div class="text-center mt-2">時間：<span id="kkTime" class="font-bold text-red-500">20</span> 秒</div>
+                </div>
+            `;
+            let lives = 3;
+            let score = 0;
+            let timeLeft = 20;
+            const red = document.getElementById('redLamp');
+            const white = document.getElementById('whiteLamp');
+            function cycle() {
+                const showRed = Math.random() < 0.5;
+                red.style.backgroundColor = showRed ? '#ef4444' : '#fecaca';
+                white.style.backgroundColor = showRed ? '#e5e7eb' : '#ffffff';
+            }
+            const cycler = setInterval(cycle, 700);
+            function clickHandler() {
+                if (red.style.backgroundColor === 'rgb(239, 68, 68)') {
+                    score += 10; document.getElementById('kkScore').textContent = score;
+                } else {
+                    lives--; document.getElementById('kkLives').textContent = lives;
+                    if (lives <= 0) finish();
+                }
+            }
+            red.onclick = clickHandler; white.onclick = clickHandler;
+            const timer = setInterval(() => {
+                timeLeft--; document.getElementById('kkTime').textContent = timeLeft;
+                if (timeLeft <= 0) finish();
+            }, 1000);
+            function finish() {
+                clearInterval(cycler); clearInterval(timer);
+                red.onclick = null; white.onclick = null;
+                const ok = score >= 40 && lives > 0;
+                gameState.flags.defeatedKongkong = ok;
+                gainExp(Math.max(40, Math.floor(score/2)));
+                adjustStats({ skill: ok ? 12 : 6, reputation: ok ? 10 : 5, peace: ok ? 6 : -6 });
+                showCustomAlert(ok ? "妙手空空兒亦斃。劉公歎曰：『各親其主，人之常事。』今後無相疑矣。" : "空空兒去，風聲更急。然劉公寬厚，仍加庇護。", () => {
+                    unlockChapter(5);
+                    goToChapter(5);
+                });
+            }
+        }
+
         function adjustStats(changes) {
             for (const [stat, change] of Object.entries(changes)) {
                 gameState.stats[stat] = Math.max(0, Math.min(100, gameState.stats[stat] + change));
@@ -927,6 +1083,12 @@
                 startVocabQuiz();
             } else if (choice.next === "punctuation_quiz") {
                 startPunctuationQuiz();
+            } else if (choice.next === "hair_token") {
+                startHairTokenMission();
+            } else if (choice.next === "fight_jingjing") {
+                startJingjingFight();
+            } else if (choice.next === "fight_kongkong") {
+                startKongkongStealth();
             } else if (choice.next === "ending") {
                 showEnding();
             } else if (typeof choice.next === "string" && choice.next.startsWith("chapter")) {
@@ -1007,6 +1169,8 @@
                             <div>武學造詣: ${skill}</div>
                             <div>攻擊力: ${gameState.combat.attack}</div>
                             <div>防禦力: ${gameState.combat.defense}</div>
+                            <div>羊角匕首：${gameState.flags.hasHornDagger ? '已獲' : '未得'}</div>
+                            <div>剪髮紅綃：${gameState.flags.hairTokenSent ? '已送達' : '未送達'}</div>
                         </div>
                     </div>
                     <button onclick="location.reload()" class="mt-6 px-8 py-3 bg-primary text-white rounded-lg hover:opacity-90">
@@ -1016,14 +1180,7 @@
             `;
         }
 
-        // Event Listeners
-        document.getElementById('showStats').addEventListener('click', () => {
-            document.getElementById('statsModal').classList.remove('hidden');
-        });
-
-        function closeStatsModal() {
-            document.getElementById('statsModal').classList.add('hidden');
-        }
+        // Event Listeners（已改為右側常駐屬性面板，無需彈窗）
 
         // Initialize Game
         function initGame() {
