@@ -206,6 +206,56 @@
       .graph { height: 68vh; }
     }
     ::selection { background: rgba(185,28,28,.18); color: #111827; }
+
+    /* 可拖動聊天視窗 */
+    .chat-modal {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 420px;
+      height: 540px;
+      max-width: calc(100vw - 32px);
+      max-height: calc(100vh - 32px);
+      background: #ffffff;
+      border: 1px solid #efe2d3;
+      box-shadow: var(--shadow);
+      border-radius: 14px;
+      display: none; /* 由 JS 切換為 flex */
+      flex-direction: column;
+      z-index: 50;
+      overflow: hidden;
+    }
+    .chat-header {
+      cursor: move;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #fff, #faf7f3);
+      border-bottom: 1px solid #f2e8dd;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .chat-header .title { font-weight: 700; color: #7f1d1d; }
+    .chat-close { background: #f1f5f9; color: #334155; border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+    .chat-body { flex: 1; padding: 10px 12px; overflow-y: auto; background: #fffdfb; }
+    .chat-input { border-top: 1px solid #f2e8dd; padding: 10px; display: flex; gap: 8px; align-items: stretch; }
+    .chat-input .input-wrap { flex: 1; border: 1px solid #e5e7eb; border-radius: 12px; padding: 8px 10px; background: #ffffff; display: flex; align-items: center; }
+    .chat-input textarea {
+      width: 100%;
+      min-height: 44px; /* 基本高度 */
+      max-height: 120px; /* 上限，超出則出現捲軸 */
+      height: auto;
+      resize: none;
+      padding: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      line-height: 1.5;
+      white-space: pre-wrap; /* 超出水平自動換行 */
+      word-break: break-word;
+      overflow-y: auto;
+    }
+    #chatSend { min-width: 84px; padding: 0 14px; border-radius: 10px; border: 0; background: linear-gradient(180deg, #be123c, #991b1b); color: #fff; cursor: pointer; }
+    .chat-msg { max-width: 78%; margin: 8px 0; padding: 8px 10px; border-radius: 12px; line-height: 1.5; font-size: 14px; word-break: break-word; white-space: pre-wrap; }
+    .chat-msg.user { margin-left: auto; background: #eef2ff; color: #1e293b; border-top-right-radius: 4px; }
+    .chat-msg.ai { margin-right: auto; background: #f8fafc; color: #0f172a; border-top-left-radius: 4px; }
   </style>
 </head>
 <body>
@@ -282,7 +332,103 @@
     </main>
   </div>
 
+  <!-- 可拖動聊天視窗（單例，點不同人物切換上下文） -->
+  <div id="chatModal" class="chat-modal" aria-hidden="true">
+    <div class="chat-header" id="chatDragHandle">
+      <div class="title" id="chatTitle">和誰聊天</div>
+      <button id="chatClose" class="chat-close">關閉</button>
+    </div>
+    <div id="chatBody" class="chat-body"></div>
+    <div class="chat-input">
+      <div class="input-wrap"><textarea id="chatInput"></textarea></div>
+      <button id="chatSend">發送</button>
+    </div>
+  </div>
+
   <script>
+    // DeepSeek 代理端點：採用全域變數或 localStorage 覆寫，否則用默認值
+    const DEEPSEEK_DEFAULT = 'https://deepseek-proxy-chi.vercel.app/api/deepseek';
+    function getProxyUrl(){
+      return (window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || DEEPSEEK_DEFAULT);
+    }
+    async function callDeepSeekAs(roleName, messages){
+      const url = getProxyUrl();
+      const sys = {
+        role: 'system',
+        content: `請你扮演《紅樓夢》中的「${roleName}」。保持該角色在書中的性格、說話語氣與知識背景，用繁體中文回覆。簡潔自然、切題應答。`
+      };
+      const payload = { model: 'deepseek-chat', messages: [sys, ...messages], temperature: 0.7, max_tokens: 512 };
+      const resp = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+
+    // 簡易聊天狀態（按人物ID分上下文）
+    const chatStates = new Map(); // id -> { messages: [{role:'user'|'assistant', content}], title }
+    const chatModal = document.getElementById('chatModal');
+    const chatTitleEl = document.getElementById('chatTitle');
+    const chatBodyEl = document.getElementById('chatBody');
+    const chatInputEl = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSend');
+    const chatCloseBtn = document.getElementById('chatClose');
+    let chatCurrentId = null;
+
+    function ensureChatState(id, title){
+      if (!chatStates.has(id)) chatStates.set(id, { title, messages: [] });
+      return chatStates.get(id);
+    }
+    function renderChat(id){
+      const state = chatStates.get(id); if (!state) return;
+      chatTitleEl.textContent = `${state.title} · 角色聊天`;
+      chatBodyEl.innerHTML = '';
+      state.messages.forEach(m => {
+        const div = document.createElement('div');
+        div.className = `chat-msg ${m.role==='user' ? 'user':'ai'}`;
+        div.textContent = m.content;
+        chatBodyEl.appendChild(div);
+      });
+      chatBodyEl.scrollTop = chatBodyEl.scrollHeight;
+    }
+    async function sendChat(){
+      const text = chatInputEl.value.trim();
+      if (!chatCurrentId || !text) return;
+      const state = chatStates.get(chatCurrentId); if (!state) return;
+      state.messages.push({ role:'user', content: text });
+      renderChat(chatCurrentId);
+      chatInputEl.value='';
+      try{
+        const reply = await callDeepSeekAs(state.title, state.messages);
+        state.messages.push({ role:'assistant', content: reply });
+      }catch(err){
+        state.messages.push({ role:'assistant', content: `【系統】抱歉，暫時無法回覆：${String(err)}` });
+      }
+      renderChat(chatCurrentId);
+    }
+    function openChatFor(d){
+      const title = d.id + (d.alias ? `（${d.alias}）` : '');
+      const st = ensureChatState(d.id, d.id);
+      chatCurrentId = d.id;
+      renderChat(chatCurrentId);
+      chatModal.style.display = 'flex';
+    }
+    function closeChat(){ chatModal.style.display='none'; }
+    chatSendBtn?.addEventListener('click', sendChat);
+    chatInputEl?.addEventListener('keydown', (e)=>{
+      if (e.key==='Enter'){ e.preventDefault(); sendChat(); }
+    });
+    chatCloseBtn?.addEventListener('click', closeChat);
+
+    // 拖動（僅頭部可拖動）
+    (function enableDrag(){
+      const el = chatModal; const handle = document.getElementById('chatDragHandle');
+      let dragging=false, sx=0, sy=0, ox=0, oy=0;
+      handle.addEventListener('mousedown', (e)=>{ dragging=true; sx=e.clientX; sy=e.clientY; const r=el.getBoundingClientRect(); ox=r.left; oy=r.top; document.body.style.userSelect='none'; });
+      window.addEventListener('mousemove', (e)=>{
+        if (!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; el.style.left=`${ox+dx}px`; el.style.top=`${oy+dy}px`; el.style.right='auto'; el.style.bottom='auto';
+      });
+      window.addEventListener('mouseup', ()=>{ dragging=false; document.body.style.userSelect=''; });
+    })();
     const families = {
       jia: { name: '賈家', color: getComputedStyle(document.documentElement).getPropertyValue('--family-jia').trim() },
       wang: { name: '王家', color: getComputedStyle(document.documentElement).getPropertyValue('--family-wang').trim() },
@@ -911,9 +1057,21 @@
       const rels = links.filter(l => l.source.id === d.id || l.target.id === d.id);
       const info = document.getElementById('details');
       info.innerHTML = '';
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.alignItems = 'center';
+      header.style.gap = '8px';
       const title = document.createElement('h2');
       title.textContent = d.id + (d.alias ? `（${d.alias}）` : '');
-      info.appendChild(title);
+      const chatBtn = document.createElement('button');
+      chatBtn.className = 'ghost';
+      chatBtn.textContent = '和我聊聊？';
+      chatBtn.style.fontWeight = '700';
+      chatBtn.style.letterSpacing = '.3px';
+      chatBtn.addEventListener('click', ()=> openChatFor(d));
+      header.appendChild(title);
+      header.appendChild(chatBtn);
+      info.appendChild(header);
       if (d.brief) {
         const p = document.createElement('p');
         p.textContent = d.brief;
