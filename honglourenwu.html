@@ -205,7 +205,18 @@
     }
 
     .details { font-size: 14px; color: #475569; }
-    .details h2 { margin: 0 0 8px; font-size: 20px; color: #0f172a; }
+    .details h2 { margin: 0; font-size: 18px; color: #0f172a; line-height: 36px; }
+    .details .details-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .details .chat-cta {
+      height: 36px; padding: 0 12px; border-radius: 999px; border: 0; cursor: pointer;
+      background: linear-gradient(180deg, #be123c, #991b1b); color: #fff; font-weight: 800; letter-spacing: .3px;
+      box-shadow: 0 0 0 0 rgba(185,18,60,.45);
+      animation: chatBreath 2.2s ease-in-out infinite;
+    }
+    .details .chat-cta:hover { filter: brightness(1.06); }
+    @keyframes chatBreath { 0% { box-shadow: 0 0 0 0 rgba(185,18,60,.45); transform: translateY(0); }
+      50% { box-shadow: 0 0 0 10px rgba(185,18,60,.0); transform: translateY(-1px); }
+      100% { box-shadow: 0 0 0 0 rgba(185,18,60,.0); transform: translateY(0); } }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
     .chip { padding: 6px 10px; background: #f1f5f9; border-radius: 999px; font-size: 12px; }
     .game { background: #fafafa; border: 1px dashed #e5e7eb; border-radius: 12px; padding: 12px; }
@@ -299,13 +310,13 @@
     <aside class="panel" id="controls">
       <div class="panel-header">《紅樓夢》人物圖譜</div>
       <div class="panel-scroll">
-      <div class="row">
+      <div class="row panel-top">
         <input id="search" type="text" placeholder="搜尋人物（例：寶玉 / 黛玉 / 熙鳳）">
         <button class="flat" id="clearSearch">清除</button>
       </div>
 
       <div class="group">
-        <h3>四大家族</h3>
+        <h3>人物群組</h3>
         <div class="legend">
           <span class="pill"><i class="dot" style="background: var(--family-jia)"></i>賈家</span>
           <span class="pill"><i class="dot" style="background: var(--family-wang)"></i>王家</span>
@@ -318,7 +329,7 @@
         <div class="chips" id="familyFilters"></div>
       </div>
 
-      <div class="group">
+      <div class="group panel-top">
         <h3>關係類型</h3>
         <div class="legend">
           <span class="pill"><i class="line" style="border-color: var(--link-parent)"></i>血親（父母/子女）</span>
@@ -344,19 +355,7 @@
         <div class="empty">點擊圖中任一人物查看。</div>
       </div>
 
-      <div class="group">
-        <h3>小遊戲</h3>
-        <div class="game" id="gameBox">
-          <h4>關係偵探</h4>
-          <div class="clue" id="gameClue">點「開始出題」後，依線索在圖上點選人物。</div>
-          <div class="status" id="gameStatus">題目：0｜得分：0</div>
-          <div class="row">
-            <button id="gameStart" class="ghost">開始出題</button>
-            <button id="gameHint" class="flat">提示</button>
-            <button id="gameSkip" class="flat">換一題</button>
-          </div>
-        </div>
-      </div>
+      
       </div>
     </aside>
 
@@ -1122,16 +1121,12 @@
       const info = document.getElementById('details');
       info.innerHTML = '';
       const header = document.createElement('div');
-      header.style.display = 'flex';
-      header.style.alignItems = 'center';
-      header.style.gap = '8px';
+      header.className = 'details-bar';
       const title = document.createElement('h2');
       title.textContent = d.id + (d.alias ? `（${d.alias}）` : '');
       const chatBtn = document.createElement('button');
-      chatBtn.className = 'ghost';
+      chatBtn.className = 'chat-cta';
       chatBtn.textContent = '和我聊聊？';
-      chatBtn.style.fontWeight = '700';
-      chatBtn.style.letterSpacing = '.3px';
       chatBtn.addEventListener('click', ()=> openChatFor(d));
       header.appendChild(title);
       header.appendChild(chatBtn);
@@ -1360,127 +1355,7 @@
     window.addEventListener('resize', layoutSidebar);
 
     window.addEventListener('resize', () => setTimeout(() => svg.dispatch('resize'), 50));
-    // ----------------------
-    // 關係偵探 · 小遊戲
-    // ----------------------
-    const game = {
-      total: 0,
-      score: 0,
-      current: null,
-      listening: false,
-    };
-
-    const gameClue = document.getElementById('gameClue');
-    const gameStatus = document.getElementById('gameStatus');
-    const btnStart = document.getElementById('gameStart');
-    const btnHint = document.getElementById('gameHint');
-    const btnSkip = document.getElementById('gameSkip');
-
-    function pickRelationWord(type){
-      const m = { parent:'父母/子女', sibling:'兄妹/手足', marriage:'配偶', cousin:'表親', friend:'好友', servant:'主僕'};
-      return m[type] || type;
-    }
-
-    function neighborsByType(id, type){
-      const set = new Set();
-      links.forEach(l=>{
-        if (l.type!==type) return;
-        if (l.source.id===id) set.add(l.target.id);
-        if (l.target.id===id) set.add(l.source.id);
-      });
-      return [...set];
-    }
-
-    function randomPick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-    function nextQuestion(){
-      resetFocus();
-      // 首題：賈瑞對王熙鳳起色心，最終被設計害死（情節題）
-      if (!game._askedJiarui) {
-        const src = nodes.find(n => n.id === '王熙鳳');
-        const target = nodes.find(n => n.id === '賈瑞');
-        if (src && target) {
-          game.current = { src, type: 'custom', answers: new Set([target.id]) };
-          game.total += 1; gameStatus.textContent = `題目：${game.total}｜得分：${game.score}`;
-          gameClue.textContent = '誰是對「王熙鳳」起色心，最終被其設計害死的人？';
-          showDetails(src);
-          game.listening = true;
-          game._askedJiarui = true;
-          return;
-        }
-        game._askedJiarui = true; // 安全處理：若節點缺失則跳過
-      }
-      // 抽一個有人際關係較多的人作為出題源
-      const candidates = nodes.filter(n=>{
-        const deg = links.filter(l=> l.source.id===n.id || l.target.id===n.id).length;
-        return deg>=2; });
-      const src = randomPick(candidates);
-      // 隨機選一種關係，優先保證有答案；"parent" 類型使用有方向的提示
-      const types = ['parent','sibling','marriage','cousin','friend','servant'];
-      let type = null; let targets = []; let clue = '';
-      for (let i=0;i<12;i++){
-        type = randomPick(types);
-        if (type==='parent'){
-          const children = links.filter(l=>l.type==='parent' && l.source.id===src.id).map(l=>l.target.id);
-          const parents = links.filter(l=>l.type==='parent' && l.target.id===src.id).map(l=>l.source.id);
-          if (children.length>0 && parents.length>0){
-            if (Math.random()<0.5){ targets = children; clue = `誰是「${src.id}」的子女？`; }
-            else { targets = parents; clue = `誰是「${src.id}」的父或母？`; }
-          } else if (children.length>0){ targets = children; clue = `誰是「${src.id}」的子女？`; }
-          else if (parents.length>0){ targets = parents; clue = `誰是「${src.id}」的父或母？`; }
-          else { continue; }
-        } else {
-          targets = neighborsByType(src.id, type);
-          if (targets.length===0) continue;
-          const map = { sibling: '兄妹/手足', marriage: '配偶', cousin: '表親', friend: '好友', servant: '主僕' };
-          const word = map[type] || pickRelationWord(type);
-          clue = `與「${src.id}」為${word}的是誰？`;
-        }
-        break;
-      }
-      if (!type || targets.length===0){ nextQuestion(); return; }
-      game.current = { src, type, answers: new Set(targets) };
-      game.total += 1; gameStatus.textContent = `題目：${game.total}｜得分：${game.score}`;
-      gameClue.textContent = clue;
-      // 聚焦出題源
-      showDetails(src);
-      game.listening = true;
-    }
-
-    function markNode(id, cls, duration=700){
-      node.filter(d=>d.id===id).select('rect').classed(cls, true);
-      setTimeout(()=> node.filter(d=>d.id===id).select('rect').classed(cls, false), duration);
-    }
-
-    // 監聽答題：點圖中任意人物（不覆蓋原本點擊詳情邏輯）
-    node.on('click.game', (_, d) => {
-      if (!game.listening || !game.current) { showDetails(d); return; }
-      const { answers, src } = game.current;
-      if (answers.has(d.id)){
-        game.score += 1;
-        game.listening = false;
-        markNode(d.id, 'correctPulse');
-        gameStatus.textContent = `題目：${game.total}｜得分：${game.score}`;
-        setTimeout(nextQuestion, 600);
-      } else {
-        // 錯誤反饋
-        markNode(d.id, 'wrongShake');
-        // 額外提示：高亮出題人節點
-        node.filter(n=>n.id===src.id).select('rect').classed('focus', true);
-        setTimeout(()=> node.filter(n=>n.id===src.id).select('rect').classed('focus', false), 600);
-      }
-    });
-
-    btnStart?.addEventListener('click', () => { nextQuestion(); });
-    btnSkip?.addEventListener('click', () => { if (game.listening) nextQuestion(); });
-    btnHint?.addEventListener('click', () => {
-      if (!game.current) return;
-      const { answers } = game.current;
-      // 高亮其中一個正確答案位置作為提示
-      const one = randomPick([...answers]);
-      node.filter(d=>d.id===one).select('rect').classed('focus', true);
-      setTimeout(()=> node.filter(d=>d.id===one).select('rect').classed('focus', false), 1000);
-    });
+    // 小遊戲已移除
   </script>
 </body>
 </html>
