@@ -48,6 +48,7 @@
       margin: 0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Roboto, Arial, sans-serif;
       color: var(--ink);
+      overflow: hidden; /* 全頁不滾動，交給左側側欄滾動 */
       /* 宣紙質感的柔和漸層背景：胭脂紅與鎏金的淡淡暈染 */
       background:
         radial-gradient(1200px 800px at 20% -10%, rgba(185,28,28,.08) 0%, transparent 60%),
@@ -79,7 +80,7 @@
       grid-template-columns: 320px 1fr;
       gap: 16px;
       padding: 16px;
-      height: calc(100% - 60px);
+      height: 100vh;
       box-sizing: border-box;
     }
     .panel {
@@ -91,7 +92,22 @@
       flex-direction: column;
       gap: 14px;
       border: 1px solid #f2e8dd;
+      overflow: hidden; /* 內部由 panel-scroll 控制滾動 */
     }
+    .panel-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 8px 8px 12px;
+      background: var(--panel);
+      border-bottom: 1px solid #f2e8dd;
+      font-weight: 800;
+      letter-spacing: .5px;
+      font-family: "JiA JinWen", ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "PingFang TC";
+      color: #7f1d1d;
+      font-size: 18px;
+    }
+    .panel-scroll { overflow: auto; padding-top: 4px; }
     .panel h3 { margin: 0 0 6px; font-size: 16px; }
     .panel .group { border-top: 1px dashed #eee; padding-top: 10px; }
     .pill {
@@ -136,6 +152,7 @@
       box-shadow: var(--shadow);
       overflow: hidden;
       border: 1px solid #f3e7d7;
+      height: 100%;
     }
     .graph-controls {
       position: absolute;
@@ -202,8 +219,10 @@
     @keyframes wrong { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
     @media (max-width: 968px) {
-      .container { grid-template-columns: 1fr; height: auto; }
-      .graph { height: 68vh; }
+      .container { grid-template-columns: 1fr; height: 100vh; }
+      .graph { height: 50vh; }
+      .panel { height: 50vh; }
+      .panel-scroll { height: calc(50vh - 48px); }
     }
     ::selection { background: rgba(185,28,28,.18); color: #111827; }
 
@@ -256,16 +275,30 @@
     .chat-msg { max-width: 78%; margin: 8px 0; padding: 8px 10px; border-radius: 12px; line-height: 1.5; font-size: 14px; word-break: break-word; white-space: pre-wrap; }
     .chat-msg.user { margin-left: auto; background: #eef2ff; color: #1e293b; border-top-right-radius: 4px; }
     .chat-msg.ai { margin-right: auto; background: #f8fafc; color: #0f172a; border-top-left-radius: 4px; }
+
+    /* 新增：訊息排版與頭像 */
+    .chat-row { display: flex; align-items: flex-end; gap: 8px; margin: 8px 0; }
+    .chat-row.user { justify-content: flex-end; flex-direction: row-reverse; }
+    .chat-avatar { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; user-select: none; }
+    .chat-avatar.user { width: 28px; height: 28px; border-radius: 6px; background: #b91c1c; color: #fff; }
+    .chat-avatar.ai { max-width: 160px; padding: 4px 8px; border-radius: 999px; background: #fff7ed; color: #7c2d12; border: 1px solid #fde68a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-bubble { max-width: 78%; padding: 8px 10px; border-radius: 12px; line-height: 1.6; font-size: 14px; word-break: break-word; white-space: pre-wrap; background: #f8fafc; color: #0f172a; border-top-left-radius: 4px; }
+    .chat-row.user .chat-bubble { background: #eef2ff; color: #1e293b; border-top-left-radius: 12px; border-top-right-radius: 4px; }
+
+    /* 正在輸入微動畫 */
+    .typing { opacity: .8; }
+    .typing .dots { display: inline-flex; gap: 3px; margin-left: 4px; }
+    .typing .dot { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; opacity: .3; animation: blink 1.2s infinite ease-in-out; }
+    .typing .dot:nth-child(2) { animation-delay: .2s; }
+    .typing .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: .9; transform: translateY(-2px); } }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="title">《紅樓夢》人物關係 · 交互圖譜</div>
-    <span class="pill">使用方法：拖拽節點、滾輪縮放、點擊查看詳情、搜索關鍵字</span>
-  </div>
-
   <div class="container">
     <aside class="panel" id="controls">
+      <div class="panel-header">《紅樓夢》人物圖譜</div>
+      <div class="panel-scroll">
       <div class="row">
         <input id="search" type="text" placeholder="搜尋人物（例：寶玉 / 黛玉 / 熙鳳）">
         <button class="flat" id="clearSearch">清除</button>
@@ -323,6 +356,7 @@
             <button id="gameSkip" class="flat">換一題</button>
           </div>
         </div>
+      </div>
       </div>
     </aside>
 
@@ -383,10 +417,31 @@
       chatTitleEl.textContent = `${state.title} · 角色聊天`;
       chatBodyEl.innerHTML = '';
       state.messages.forEach(m => {
-        const div = document.createElement('div');
-        div.className = `chat-msg ${m.role==='user' ? 'user':'ai'}`;
-        div.textContent = m.content;
-        chatBodyEl.appendChild(div);
+        if (m.type === 'typing') {
+          const row = document.createElement('div');
+          row.className = 'chat-row ai typing';
+          const avatar = document.createElement('div');
+          avatar.className = 'chat-avatar ai';
+          avatar.textContent = state.title;
+          const bubble = document.createElement('div');
+          bubble.className = 'chat-bubble';
+          bubble.innerHTML = `正在輸入中<span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
+          row.appendChild(avatar); row.appendChild(bubble);
+          chatBodyEl.appendChild(row);
+          return;
+        }
+        const isUser = m.role === 'user';
+        const row = document.createElement('div');
+        row.className = `chat-row ${isUser ? 'user' : 'ai'}`;
+        const avatar = document.createElement('div');
+        avatar.className = `chat-avatar ${isUser ? 'user' : 'ai'}`;
+        avatar.textContent = isUser ? '我' : state.title;
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        bubble.textContent = m.content;
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+        chatBodyEl.appendChild(row);
       });
       chatBodyEl.scrollTop = chatBodyEl.scrollHeight;
     }
@@ -395,12 +450,21 @@
       if (!chatCurrentId || !text) return;
       const state = chatStates.get(chatCurrentId); if (!state) return;
       state.messages.push({ role:'user', content: text });
+      // 插入正在輸入中
+      state.messages.push({ type:'typing' });
       renderChat(chatCurrentId);
       chatInputEl.value='';
       try{
-        const reply = await callDeepSeekAs(state.title, state.messages);
+        // 組合傳給模型的 messages（過濾 typing）
+        const toModel = state.messages.filter(m=>!m.type).map(m=>({ role: m.role==='assistant'?'assistant':'user', content: m.content }));
+        const reply = await callDeepSeekAs(state.title, toModel);
+        // 移除 typing
+        const lastTyping = state.messages.findIndex(m=>m.type==='typing');
+        if (lastTyping !== -1) state.messages.splice(lastTyping,1);
         state.messages.push({ role:'assistant', content: reply });
       }catch(err){
+        const lastTyping = state.messages.findIndex(m=>m.type==='typing');
+        if (lastTyping !== -1) state.messages.splice(lastTyping,1);
         state.messages.push({ role:'assistant', content: `【系統】抱歉，暫時無法回覆：${String(err)}` });
       }
       renderChat(chatCurrentId);
@@ -1142,9 +1206,10 @@
       d3.selectAll('.node').classed('hidden', d => !keep.has(d.id));
       d3.selectAll('.link').classed('hidden', l => !(keep.has(l.source.id) && keep.has(l.target.id)));
     });
-    // 左側面板空白/非互動區點擊：全域重置
+    // 左側面板空白/非互動區點擊：全域重置（限制在可滾動區域）
     const controlsEl = document.getElementById('controls');
-    controlsEl.addEventListener('click', (e) => {
+    const controlsScroll = controlsEl.querySelector('.panel-scroll');
+    controlsScroll.addEventListener('click', (e) => {
       const isInteractive = e.target.closest('button, input, .pill, .legend, .row');
       if (!isInteractive) resetAllView();
     });
@@ -1281,6 +1346,18 @@
     }
     searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
     clearBtn.addEventListener('click', () => { searchInput.value = ''; resetFocus(); });
+
+    // 固定面板高度並啟用內部滾動
+    const panelEl = document.getElementById('controls');
+    function layoutSidebar(){
+      const rect = panelEl.getBoundingClientRect();
+      const header = panelEl.querySelector('.panel-header');
+      const scroll = panelEl.querySelector('.panel-scroll');
+      const headerH = header?.offsetHeight || 0;
+      scroll.style.height = `calc(100% - ${headerH}px)`;
+    }
+    layoutSidebar();
+    window.addEventListener('resize', layoutSidebar);
 
     window.addEventListener('resize', () => setTimeout(() => svg.dispatch('resize'), 50));
     // ----------------------
