@@ -557,6 +557,8 @@
       { source: '王夫人', target: '王子騰', type: 'sibling' },
       { source: '薛姨媽', target: '王子騰', type: 'sibling' },
       { source: '王熙鳳', target: '王子騰', type: 'cousin' },
+      // 新增：賈寶玉與賈琏表兄弟
+      { source: '賈寶玉', target: '賈琏', type: 'cousin' },
     ];
 
     // 連線去重：以無向對（source/target排序後）與類型為鍵去重
@@ -693,6 +695,7 @@
       [pairKey('賈寶玉','林黛玉'), '姑舅表兄妹（賈敏為賈政之妹）。'],
       [pairKey('賈寶玉','薛寶釵'), '姨表兄妹（薛姨媽為王夫人之妹）。'],
       [pairKey('史湘雲','賈寶玉'), '賈母侄孫女，與寶玉為從表親。'],
+      [pairKey('賈寶玉','賈琏'), '榮國府表兄弟。'],
       [pairKey('賈琏','賈珍'), '榮寧兩府的族兄弟。'],
       [pairKey('賈政','賈珍'), '叔侄。'],
       [pairKey('賈赦','賈珍'), '叔侄。'],
