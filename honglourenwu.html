@@ -265,32 +265,32 @@
     .chat-header .title { font-weight: 700; color: #7f1d1d; }
     .chat-close { background: #f1f5f9; color: #334155; border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
     .chat-body { flex: 1; padding: 10px 12px; overflow-y: auto; background: #fffdfb; }
-    .chat-input { border-top: 1px solid #f2e8dd; padding: 10px; display: flex; gap: 8px; align-items: stretch; background: linear-gradient(180deg, #fff, #fffaf7); }
+    .chat-input { border-top: 1px solid #f2e8dd; padding: 10px; display: flex; gap: 8px; align-items: center; background: linear-gradient(180deg, #fff, #fffaf7); }
     .chat-input .input-wrap { flex: 1; border: 1px solid #e5e7eb; border-radius: 12px; padding: 8px 10px; background: #ffffff; display: flex; align-items: center; }
     .chat-input textarea {
       width: 100%;
-      min-height: 44px; /* 基本高度 */
-      max-height: 120px; /* 上限，超出則出現捲軸 */
-      height: auto;
+      height: 20px; /* 單行高度 */
+      min-height: 20px;
+      max-height: 20px;
       resize: none;
       padding: 0;
       border: 0;
       outline: none;
       background: transparent;
-      line-height: 1.5;
-      white-space: pre-wrap; /* 超出水平自動換行 */
-      word-break: break-word;
-      overflow-y: auto;
+      line-height: 1.4;
+      white-space: nowrap; /* 禁止換行 */
+      overflow: hidden; /* 隱藏溢出內容 */
     }
-    #chatSend { min-width: 84px; padding: 0 14px; border-radius: 10px; border: 0; background: linear-gradient(180deg, #be123c, #991b1b); color: #fff; cursor: pointer; }
+    #chatSend { min-width: 84px; height: 36px; padding: 0 14px; border-radius: 10px; border: 0; background: linear-gradient(180deg, #be123c, #991b1b); color: #fff; cursor: pointer; }
     .chat-msg { max-width: 78%; margin: 8px 0; padding: 8px 10px; border-radius: 12px; line-height: 1.5; font-size: 14px; word-break: break-word; white-space: pre-wrap; }
     .chat-msg.user { margin-left: auto; background: #eef2ff; color: #1e293b; border-top-right-radius: 4px; }
     .chat-msg.ai { margin-right: auto; background: #f8fafc; color: #0f172a; border-top-left-radius: 4px; }
 
     /* 新增：訊息排版與頭像 */
-    .chat-row { display: flex; align-items: flex-end; gap: 8px; margin: 10px 0; }
-    .chat-row.user { justify-content: flex-end; flex-direction: row-reverse; }
-    .chat-avatar { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; user-select: none; width: 28px; height: 28px; border-radius: 6px; color: #fff; }
+    .chat-row { display: flex; align-items: flex-start; gap: 8px; margin: 10px 0; width: 100%; }
+    .chat-row.user { margin-left: auto; width: fit-content; flex-direction: row-reverse; }
+    .chat-row.ai { margin-right: auto; width: fit-content; }
+    .chat-avatar { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; user-select: none; width: 50px; height: 50px; border-radius: 8px; color: #fff; flex-shrink: 0; }
     .chat-avatar.user { background: var(--brand); }
     .chat-avatar.ai { background: var(--accent); }
     .chat-bubble { max-width: 78%; padding: 10px 12px; border-radius: 14px; line-height: 1.65; font-size: 14px; word-break: break-word; white-space: pre-wrap; background: #f8fafc; color: #0f172a; border: 1px solid #eef2ff; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
@@ -421,7 +421,12 @@
           row.className = 'chat-row ai typing';
           const avatar = document.createElement('div');
           avatar.className = 'chat-avatar ai';
-          avatar.textContent = '人';
+          avatar.textContent = state.title || '角色';
+          // 給打字中頭像也加上角色的家族顏色
+          const currentNode = nodes.find(n => n.id === state.title);
+          if (currentNode && currentNode.family && families[currentNode.family]) {
+            avatar.style.background = families[currentNode.family].color;
+          }
           const bubble = document.createElement('div');
           bubble.className = 'chat-bubble';
           bubble.innerHTML = `正在輸入中<span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>`;
@@ -434,7 +439,23 @@
         row.className = `chat-row ${isUser ? 'user' : 'ai'}`;
         const avatar = document.createElement('div');
         avatar.className = `chat-avatar ${isUser ? 'user' : 'ai'}`;
-        avatar.textContent = isUser ? '我' : '人';
+        if (isUser) {
+          avatar.textContent = '我';
+        } else {
+          // 角色名：優先 m.speaker，其次當前 state.title
+          const label = m.speaker || state.title || '角色';
+          avatar.textContent = label;
+          // 根據人物群組上色（若存在 family）
+          if (m.family && families[m.family]) {
+            avatar.style.background = families[m.family].color;
+          } else {
+            // 如果沒有family信息，嘗試從當前對話角色獲取
+            const currentNode = nodes.find(n => n.id === (m.speaker || state.title));
+            if (currentNode && currentNode.family && families[currentNode.family]) {
+              avatar.style.background = families[currentNode.family].color;
+            }
+          }
+        }
         const bubble = document.createElement('div');
         bubble.className = 'chat-bubble';
         bubble.textContent = m.content;
@@ -448,7 +469,10 @@
       const text = chatInputEl.value.trim();
       if (!chatCurrentId || !text) return;
       const state = chatStates.get(chatCurrentId); if (!state) return;
-      state.messages.push({ role:'user', content: text });
+      // 嘗試從當前聚焦人物獲取家族，供頭像著色
+      const currentNode = nodes.find(n=>n.id===chatCurrentId);
+      const speakerFamily = currentNode?.family;
+      state.messages.push({ role:'user', content: text, speaker:'我' });
       // 插入正在輸入中
       state.messages.push({ type:'typing' });
       renderChat(chatCurrentId);
@@ -460,7 +484,7 @@
         // 移除 typing
         const lastTyping = state.messages.findIndex(m=>m.type==='typing');
         if (lastTyping !== -1) state.messages.splice(lastTyping,1);
-        state.messages.push({ role:'assistant', content: reply });
+        state.messages.push({ role:'assistant', content: reply, speaker: state.title, family: speakerFamily });
       }catch(err){
         const lastTyping = state.messages.findIndex(m=>m.type==='typing');
         if (lastTyping !== -1) state.messages.splice(lastTyping,1);
