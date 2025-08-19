@@ -309,6 +309,8 @@
       { id: '林黛玉', family: 'lin', brief: '林如海與賈敏之女，聰慧多感。' },
       { id: '薛寶釵', family: 'xue', brief: '薛姨媽之女，穩重雍容。' },
       { id: '薛蟠', family: 'xue', brief: '寶釵之兄。' },
+      { id: '薛寶琴', family: 'xue', brief: '薛家女眷，文雅靈慧。' },
+      { id: '薛蝌', family: 'xue', brief: '薛家子弟，與寶琴為兄妹。' },
       { id: '薛姨媽', family: 'wang', brief: '王夫人之妹，薛家女主人。' },
       { id: '史湘雲', family: 'shi', brief: '賈母侄孫女，性爽直。' },
       { id: '王熙鳳', family: 'wang', brief: '鳳辣子，理家能手。' },
@@ -544,6 +546,17 @@
       { source: '惜春', target: '入畫', type: 'servant' },
       { source: '元春', target: '抱琴', type: 'servant' },
       { source: '探春', target: '侍書', type: 'servant' },
+      // 新增：薛氏親屬（表親關係）
+      { source: '薛寶琴', target: '薛寶釵', type: 'cousin' },
+      { source: '薛寶琴', target: '薛蟠', type: 'cousin' },
+      { source: '薛蝌', target: '薛寶釵', type: 'cousin' },
+      { source: '薛蝌', target: '薛蟠', type: 'cousin' },
+      // 新增：薛蝌與薛寶琴兄妹
+      { source: '薛蝌', target: '薛寶琴', type: 'sibling' },
+      // 新增：王子騰族親（王夫人、薛姨媽之兄；與王熙鳳為叔侄/族親）
+      { source: '王夫人', target: '王子騰', type: 'sibling' },
+      { source: '薛姨媽', target: '王子騰', type: 'sibling' },
+      { source: '王熙鳳', target: '王子騰', type: 'cousin' },
     ];
 
     // 連線去重：以無向對（source/target排序後）與類型為鍵去重
@@ -673,6 +686,7 @@
       [pairKey('賈寶玉','賈環'), '同父異母的兄弟。'],
       [pairKey('秦鐘','秦可卿'), '秦可卿之弟與其姊。'],
       [pairKey('薛姨媽','王夫人'), '姊妹。'],
+      [pairKey('薛蝌','薛寶琴'), '薛家兄妹。'],
       // 表親/族親
       [pairKey('賈寶玉','迎春'), '榮國府與長房之間的堂兄妹。'],
       [pairKey('賈寶玉','惜春'), '寧國府一支，與寶玉為族親。'],
@@ -686,8 +700,13 @@
       [pairKey('賈琏','賈政'), '叔侄。'],
       [pairKey('王熙鳳','王夫人'), '王夫人之侄女。'],
       [pairKey('王夫人','王子騰'), '王夫人之兄。'],
+      [pairKey('薛姨媽','王子騰'), '薛姨媽之兄。'],
       [pairKey('王熙鳳','王子騰'), '叔侄/族親，王家長輩與侄女。'],
       [pairKey('賈瑞','賈珍'), '同族晚輩，與寧府有親。'],
+      [pairKey('薛寶琴','薛寶釵'), '薛家女眷與寶釵為表姐妹。'],
+      [pairKey('薛寶琴','薛蟠'), '薛家表親。'],
+      [pairKey('薛蝌','薛寶釵'), '薛家表親。'],
+      [pairKey('薛蝌','薛蟠'), '薛家表親。'],
       // 交誼
       [pairKey('賈寶玉','妙玉'), '大觀園中相交，寶玉敬其清潔。'],
       [pairKey('賈寶玉','王熙鳳'), '嬸侄往來，鳳姐常照拂寶玉。'],
@@ -974,36 +993,40 @@
     let activeRelationFilter = null; // 'parent' | 'marriage' | 'sibling' | 'cousin' | 'friend' | null
 
     function applyFilters() {
-      // 基於家族過濾的初始可見集合
-      const baseIds = new Set(
+      // 1) 基於家族過濾的集合（若未選家族，則為所有人）
+      const baseFamilyIds = new Set(
         activeFamilyFilter ? nodes.filter(n => n.family === activeFamilyFilter).map(n => n.id) : nodes.map(n => n.id)
       );
-      // 若選擇了關係類型，則僅保留該類型邊涉及的節點（同時滿足家族過濾）
+      // 2) 當同時選了「家族」與「關係」時：
+      //    顯示該關係中「至少一端屬於所選家族」的邊，並將兩端節點都顯示
+      //    若只選了「關係」不選家族，則顯示該關係的所有邊與涉及節點
+      //    若僅選家族，顯示該家族成員與其內部邊
       let visibleNodeIds;
       if (activeRelationFilter) {
         const edgeNodes = new Set();
         links.forEach(l => {
           if (l.type !== activeRelationFilter) return;
           const a = getId(l.source), b = getId(l.target);
-          if (!baseIds.has(a) || !baseIds.has(b)) return;
+          const familyOk = !activeFamilyFilter || baseFamilyIds.has(a) || baseFamilyIds.has(b);
+          if (!familyOk) return;
           edgeNodes.add(a);
           edgeNodes.add(b);
         });
         visibleNodeIds = edgeNodes;
       } else {
-        visibleNodeIds = baseIds;
+        visibleNodeIds = baseFamilyIds;
       }
-      // 邊可見條件
       const edgeVisible = (l) => {
         const a = getId(l.source), b = getId(l.target);
-        return visibleNodeIds.has(a) && visibleNodeIds.has(b) && (!activeRelationFilter || l.type === activeRelationFilter);
+        if (!visibleNodeIds.has(a) || !visibleNodeIds.has(b)) return false;
+        if (!activeRelationFilter) return true;
+        const familyOk = !activeFamilyFilter || baseFamilyIds.has(a) || baseFamilyIds.has(b);
+        return l.type === activeRelationFilter && familyOk;
       };
-      // 應用節點與邊顯示
       d3.selectAll('.node').classed('hidden', d => !visibleNodeIds.has(d.id));
       d3.selectAll('.link')
         .classed('hidden', l => !edgeVisible(l))
         .classed('active', l => edgeVisible(l) && !!activeRelationFilter);
-      // 命中層交互
       linkHit
         .classed('hidden', l => !edgeVisible(l))
         .style('pointer-events', l => edgeVisible(l) ? 'stroke' : 'none');
