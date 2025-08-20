@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>《紅樓夢》人物關係圖 · 互動學習</title>
   <meta name="description" content="基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -303,6 +303,71 @@
     .typing .dot:nth-child(2) { animation-delay: .2s; }
     .typing .dot:nth-child(3) { animation-delay: .4s; }
     @keyframes blink { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: .9; transform: translateY(-2px); } }
+
+    /* 移動設備優化 */
+    @media (max-width: 768px) {
+      .chat-modal {
+        position: fixed !important;
+        top: 50px !important;
+        left: 10px !important;
+        right: 10px !important;
+        bottom: 10px !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: none !important;
+        max-height: none !important;
+        transform: none !important;
+      }
+      
+      /* 當鍵盤彈出時，調整聊天窗口 */
+      .chat-modal.keyboard-active {
+        bottom: 50vh !important;
+        height: auto !important;
+      }
+      
+      .chat-header {
+        cursor: default; /* 移動設備禁用拖拽 */
+        touch-action: none;
+      }
+      
+      .chat-input textarea {
+        font-size: 16px; /* 防止iOS縮放 */
+      }
+      
+      /* 移動設備下的側邊欄調整 */
+      .panel {
+        max-height: 100vh;
+      }
+      
+      .container {
+        flex-direction: column;
+      }
+      
+      .panel {
+        width: 100%;
+        height: 200px;
+        order: 2;
+      }
+      
+      .graph {
+        flex: 1;
+        order: 1;
+        min-height: 400px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .chat-modal {
+        top: 20px !important;
+        left: 5px !important;
+        right: 5px !important;
+        bottom: 5px !important;
+      }
+      
+      .chat-modal.keyboard-active {
+        bottom: 55vh !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -526,7 +591,7 @@
       other: { name: '其他', color: getComputedStyle(document.documentElement).getPropertyValue('--family-others').trim() },
     };
 
-    const mainCast = new Set(['賈寶玉','林黛玉','薛寶釵','王熙鳳','賈母','王夫人','賈政','史湘雲','妙玉','探春','迎春','惜春','元春','李紈']);
+    const mainCast = new Set(['賈寶玉','林黛玉','薛寶釵','王熙鳳','賈母','史湘雲','妙玉','探春','迎春','惜春','元春','李紈','秦可卿']);
 
     const nodes = [
       { id: '賈母', family: 'shi', alias: '史太君', brief: '榮國府最高長輩，慈嚴並重。' },
@@ -741,6 +806,8 @@
       { source: '林黛玉', target: '薛寶釵', type: 'friend' },
       { source: '林黛玉', target: '史湘雲', type: 'friend' },
       { source: '襲人', target: '鴛鴦', type: 'friend' },
+      { source: '襲人', target: '平兒', type: 'friend' },
+      { source: '平兒', target: '鴛鴦', type: 'friend' },
       { source: '賈寶玉', target: '蔣玉菡', type: 'friend' },
       { source: '賈寶玉', target: '柳湘蓮', type: 'friend' },
       { source: '王熙鳳', target: '平兒', type: 'friend' },
@@ -984,6 +1051,10 @@
       [pairKey('尤老娘','尤氏'), '繼母。'],
       [pairKey('尤老娘','尤二姐'), '生母。'],
       [pairKey('尤老娘','尤三姐'), '生母。'],
+      // 大丫鬟友誼
+      [pairKey('襲人','平兒'), '府中大丫鬟，地位相當，相互扶持。'],
+      [pairKey('平兒','鴛鴦'), '府中大丫鬟，情同姐妹。'],
+      [pairKey('襲人','鴛鴦'), '府中大丫鬟，相知相惜。'],
     ]);
     function getRelationSummary(d){
       const k = pairKey(d.source.id, d.target.id);
@@ -1379,6 +1450,75 @@
     window.addEventListener('resize', layoutSidebar);
 
     window.addEventListener('resize', () => setTimeout(() => svg.dispatch('resize'), 50));
+    
+    // 移動設備鍵盤處理
+    function setupMobileKeyboardHandling() {
+      const chatModal = document.getElementById('chatModal');
+      const chatInput = document.getElementById('chatInput');
+      let initialViewportHeight = window.innerHeight;
+      
+      // 檢測是否為移動設備
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+      
+      if (!isMobile) return;
+      
+      // 禁用移動設備上的拖拽功能
+      chatModal.style.cursor = 'default';
+      
+      // 監聽視窗大小變化（鍵盤彈出/收起）
+      function handleViewportChange() {
+        const currentHeight = window.innerHeight;
+        const heightDiff = initialViewportHeight - currentHeight;
+        
+        // 如果高度減少超過150px，認為是鍵盤彈出
+        if (heightDiff > 150) {
+          chatModal.classList.add('keyboard-active');
+        } else {
+          chatModal.classList.remove('keyboard-active');
+        }
+      }
+      
+      // 輸入框獲得焦點時
+      chatInput.addEventListener('focus', () => {
+        // 延遲檢測，等待鍵盤完全彈出
+        setTimeout(() => {
+          handleViewportChange();
+          // 確保輸入框可見
+          chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+      
+      // 輸入框失去焦點時
+      chatInput.addEventListener('blur', () => {
+        setTimeout(() => {
+          chatModal.classList.remove('keyboard-active');
+        }, 100);
+      });
+      
+      // 監聽視窗大小變化
+      window.addEventListener('resize', handleViewportChange);
+      
+      // 防止iOS Safari的縮放
+      document.addEventListener('touchstart', function(event) {
+        if (event.touches.length > 1) {
+          event.preventDefault();
+        }
+      });
+      
+      // 防止雙擊縮放
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+    }
+    
+    // 頁面加載完成後初始化移動設備處理
+    document.addEventListener('DOMContentLoaded', setupMobileKeyboardHandling);
+    
     // 小遊戲已移除
   </script>
 </body>
