@@ -251,7 +251,7 @@
     <!-- 聊天模態窗口 -->
     <div id="chat-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl h-[600px] flex flex-col">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg h-[600px] flex flex-col">
                 <!-- 聊天窗口標題 -->
                 <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-t-lg flex items-center justify-between">
                     <div class="flex items-center space-x-3">
@@ -720,9 +720,36 @@
         const timelineContainer = document.getElementById('timeline-container');
         const biographyContainer = document.getElementById('biography-timeline');
 
-        // 創建作品標題到ID的映射
+        // 創建年份到年齡的映射
+        const yearToAge = {};
+        biographyData.forEach(item => {
+            yearToAge[item.year] = item.age;
+        });
+
+        // 排序作品數據的函數
+        function getSortedWorksData() {
+            return [...worksData].sort((a, b) => {
+                const yearA = parseInt(a.year.match(/(\d{4})/)[1]);
+                const yearB = parseInt(b.year.match(/(\d{4})/)[1]);
+                return yearA - yearB;
+            });
+        }
+
+        // 從作品年份中提取年份並獲取對應的年齡
+        function getAgeFromWorkYear(workYear) {
+            // 提取年份（如"1057年"、"1061年十一月十九日（農曆）" -> "1057年"、"1061年"）
+            const yearMatch = workYear.match(/(\d{4})年/);
+            if (yearMatch) {
+                const year = yearMatch[1] + '年';
+                return yearToAge[year] || '';
+            }
+            return '';
+        }
+
+        // 創建作品標題到ID的映射（基於排序後的作品）
         const workTitleToId = {};
-        worksData.forEach((work, index) => {
+        const sortedWorksData = getSortedWorksData();
+        sortedWorksData.forEach((work, index) => {
             workTitleToId[work.title] = `work-${index}`;
         });
 
@@ -760,9 +787,11 @@
             biographyContainer.appendChild(biographyItem);
         });
 
-        // 生成作品內容
-        worksData.forEach((item, index) => {
+        // 生成作品內容（按時間順序排列）
+        getSortedWorksData().forEach((item, index) => {
             const workId = `work-${index}`;
+            const age = getAgeFromWorkYear(item.year);
+            const yearWithAge = age ? `${item.year} · ${age}` : item.year;
             
             // Populate Timeline Content
             const element = document.createElement('div');
@@ -803,7 +832,7 @@
             
             element.innerHTML = `
                 <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 w-full">
-                    <p class="text-sm text-gray-500 mb-2">${item.year}</p>
+                    <p class="text-sm text-gray-500 mb-2">${yearWithAge}</p>
                     <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-3">${item.title}</h2>
                     <p class="text-base text-gray-600 mb-6 italic">${item.context}</p>
                     <hr class="my-6 border-gray-200">
@@ -1024,6 +1053,7 @@
 - 語言自然流暢，不事雕琢
 - 情感真摯，富有人文關懷
 - 時常引用自己的詩詞作品
+- 使用繁體中文表達，保持古典文學的韻味
 
 現在你正在與一位"中文經典讀書會"的成員聊天，這位成員正在研讀你的作品。請以蘇軾的身份和語言風格回應，展現你的才華、智慧和人生感悟。你可以：
 - 談論你的作品創作背景和心得
@@ -1032,7 +1062,7 @@
 - 引用你的詩詞作品來闡述觀點
 - 展現你對生活的熱愛和對美的追求
 
-請用優雅的古文或半文半白的語言回應，保持蘇軾的風度和才情。
+請用優雅的古文或半文半白的語言回應，保持蘇軾的風度和才情。務必使用繁體中文進行回應。
 
 重要：請記住我們之前的對話內容，保持對話的連貫性。如果用戶提到了之前討論過的話題，請自然地延續和深化討論。
 
