@@ -221,6 +221,7 @@
                              </svg>
                              <span>和東坡聊聊</span>
                          </button>
+                         <p class="text-xs text-gray-500 mt-2 text-center">信息可能不準確，此功能僅供娛樂</p>
                      </div>
             </div>
             
@@ -254,31 +255,34 @@
                 <!-- 聊天窗口標題 -->
                 <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-t-lg flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-2xl">
+                            🍣
                         </div>
                         <div>
                             <h3 class="text-lg font-semibold">東坡居士</h3>
                             <p class="text-sm opacity-90">北宋文學家・書法家・畫家</p>
                         </div>
                     </div>
-                    <button id="close-chat" class="text-white hover:text-gray-200 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button id="clear-chat" class="text-white hover:text-gray-200 transition-colors" title="清除聊天記錄">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                        <button id="close-chat" class="text-white hover:text-gray-200 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 聊天消息區域 -->
                 <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                     <!-- 歡迎消息 -->
                     <div class="flex items-start space-x-3">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-lg">
+                            🍣
                         </div>
                         <div class="bg-white rounded-lg p-3 shadow-sm max-w-xs">
                             <p class="text-sm text-gray-800">歡迎來到中文經典讀書會！我是東坡居士蘇軾。聽說你正在研讀我的作品，真是令人欣喜。不知今日想與我談論何事？</p>
@@ -828,19 +832,76 @@
         const chatButton = document.getElementById('chat-button');
         const chatModal = document.getElementById('chat-modal');
         const closeChat = document.getElementById('close-chat');
+        const clearChat = document.getElementById('clear-chat');
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const sendMessage = document.getElementById('send-message');
+
+        // 聊天上下文管理
+        let chatHistory = [];
+        const maxHistoryLength = 10; // 保留最近10輪對話
+        let conversationTopics = []; // 追蹤對話主題
+        let userPreferences = {}; // 記錄用戶偏好
+
+        // localStorage 鍵名
+        const STORAGE_KEYS = {
+            CHAT_HISTORY: 'sushi_chat_history',
+            CONVERSATION_TOPICS: 'sushi_conversation_topics',
+            USER_PREFERENCES: 'sushi_user_preferences',
+            LAST_CHAT_TIME: 'sushi_last_chat_time'
+        };
 
         // 打開聊天窗口
         chatButton.addEventListener('click', () => {
             chatModal.classList.remove('hidden');
             chatInput.focus();
+            
+            // 加載聊天記錄
+            const { hasData, lastChatTime } = loadChatData();
+            
+            // 檢查是否過期
+            if (hasData && lastChatTime && isChatDataExpired(lastChatTime)) {
+                clearChatData();
+                showSmartSuggestions();
+                return;
+            }
+            
+            // 如果有聊天記錄，恢復對話
+            if (hasData && chatHistory.length > 0) {
+                restoreChatHistory();
+            } else {
+                // 如果這是第一次打開聊天，顯示智能提示
+                showSmartSuggestions();
+            }
         });
 
         // 關閉聊天窗口
         closeChat.addEventListener('click', () => {
             chatModal.classList.add('hidden');
+        });
+
+        // 清除聊天記錄
+        clearChat.addEventListener('click', () => {
+            if (confirm('確定要清除所有聊天記錄嗎？此操作無法撤銷。')) {
+                clearChatData();
+                chatMessages.innerHTML = '';
+                showSmartSuggestions();
+                
+                // 顯示清除成功提示
+                const clearDiv = document.createElement('div');
+                clearDiv.className = 'mt-4 p-2 bg-blue-50 rounded-lg text-center';
+                clearDiv.innerHTML = `
+                    <p class="text-sm text-blue-700">🗑️ 聊天記錄已清除</p>
+                `;
+                chatMessages.appendChild(clearDiv);
+                
+                // 3秒後自動移除提示
+                setTimeout(() => {
+                    if (clearDiv.parentNode) {
+                        clearDiv.remove();
+                    }
+                }, 3000);
+            }
         });
 
         // 點擊背景關閉
@@ -855,9 +916,20 @@
             const message = chatInput.value.trim();
             if (!message) return;
 
+            // 分析對話主題並更新偏好
+            const topics = analyzeConversationTopics(message);
+            updateUserPreferences(topics);
+            conversationTopics = [...new Set([...conversationTopics, ...topics])];
+
             // 添加用戶消息
             addMessage(message, 'user');
             chatInput.value = '';
+
+            // 添加到聊天歷史
+            chatHistory.push({ role: 'user', content: message });
+
+            // 保存聊天記錄
+            saveChatData();
 
             // 顯示加載狀態
             const loadingId = addLoadingMessage();
@@ -877,18 +949,14 @@
                     <div class="bg-blue-500 text-white rounded-lg p-3 shadow-sm max-w-xs">
                         <p class="text-sm">${content}</p>
                     </div>
-                    <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
+                    <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0 text-lg">
+                        📚
                     </div>
                 `;
             } else {
                 messageDiv.innerHTML = `
-                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-lg">
+                        🍣
                     </div>
                     <div class="bg-white rounded-lg p-3 shadow-sm max-w-xs">
                         <p class="text-sm text-gray-800">${content}</p>
@@ -906,10 +974,8 @@
             loadingDiv.className = 'flex items-start space-x-3';
             loadingDiv.id = 'loading-message';
             loadingDiv.innerHTML = `
-                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-lg">
+                    🍣
                 </div>
                 <div class="bg-white rounded-lg p-3 shadow-sm">
                     <div class="flex space-x-1">
@@ -966,11 +1032,21 @@
 - 引用你的詩詞作品來闡述觀點
 - 展現你對生活的熱愛和對美的追求
 
-請用優雅的古文或半文半白的語言回應，保持蘇軾的風度和才情。`;
+請用優雅的古文或半文半白的語言回應，保持蘇軾的風度和才情。
 
+重要：請記住我們之前的對話內容，保持對話的連貫性。如果用戶提到了之前討論過的話題，請自然地延續和深化討論。
+
+上下文感知提示：
+- 如果用戶之前詢問過某個作品，你可以深入討論該作品的細節
+- 如果用戶對某個人生階段感興趣，可以分享更多該時期的經歷
+- 如果用戶展現出對特定哲學觀點的興趣，可以進一步闡釋
+- 根據對話的發展，適時引用相關的詩詞作品來支持你的觀點
+- 保持對話的自然流暢，避免重複之前已經詳細解釋過的內容`;
+
+                // 構建包含聊天歷史的消息數組
                 const messages = [
                     { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userMessage }
+                    ...chatHistory.slice(-maxHistoryLength * 2) // 保留最近10輪對話（20條消息）
                 ];
 
                 const url = 'https://deepseek-proxy-chi.vercel.app/api/deepseek';
@@ -992,6 +1068,12 @@
                 const data = await response.json();
                 const aiResponse = data.choices?.[0]?.message?.content || '抱歉，我現在無法回應，請稍後再試。';
 
+                // 添加到聊天歷史
+                chatHistory.push({ role: 'assistant', content: aiResponse });
+
+                // 保存聊天記錄
+                saveChatData();
+
                 // 移除加載消息並添加AI回應
                 const loadingElement = document.getElementById(loadingId);
                 if (loadingElement) {
@@ -1009,6 +1091,188 @@
                 }
                 addMessage('抱歉，我現在無法回應，請稍後再試。', 'ai');
             }
+        }
+
+        // 恢復聊天記錄到界面
+        function restoreChatHistory() {
+            // 清空現有消息
+            chatMessages.innerHTML = '';
+            
+            // 重新顯示所有歷史消息
+            chatHistory.forEach(message => {
+                if (message.role === 'user') {
+                    addMessage(message.content, 'user');
+                } else if (message.role === 'assistant') {
+                    addMessage(message.content, 'ai');
+                }
+            });
+            
+            // 顯示恢復提示
+            const restoreDiv = document.createElement('div');
+            restoreDiv.className = 'mt-4 p-2 bg-green-50 rounded-lg text-center';
+            restoreDiv.innerHTML = `
+                <p class="text-sm text-green-700">✅ 已恢復之前的對話記錄</p>
+            `;
+            chatMessages.appendChild(restoreDiv);
+            
+            // 3秒後自動移除提示
+            setTimeout(() => {
+                if (restoreDiv.parentNode) {
+                    restoreDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // 智能提示功能
+        function showSmartSuggestions() {
+            // 檢查是否已有聊天記錄
+            if (chatHistory.length > 0) {
+                return; // 如果有聊天記錄，不顯示建議
+            }
+            
+            const suggestions = [
+                "請談談您的《水調歌頭・明月幾時有》的創作背景",
+                "您在黃州時期的生活是怎樣的？",
+                "能分享一下您的人生哲學嗎？",
+                "您最喜歡自己的哪首詩詞？",
+                "請解釋一下《前赤壁賦》中的哲理"
+            ];
+            
+            const suggestionsHtml = suggestions.map(suggestion => 
+                `<button class="suggestion-btn bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm transition-colors" onclick="useSuggestion('${suggestion}')">${suggestion}</button>`
+            ).join('');
+            
+            const suggestionsDiv = document.createElement('div');
+            suggestionsDiv.className = 'mt-4 p-3 bg-blue-50 rounded-lg';
+            suggestionsDiv.innerHTML = `
+                <p class="text-sm text-blue-700 mb-2 font-medium">💡 不知道聊什麼？試試這些話題：</p>
+                <div class="flex flex-wrap gap-2">
+                    ${suggestionsHtml}
+                </div>
+            `;
+            
+            chatMessages.appendChild(suggestionsDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 使用建議話題
+        function useSuggestion(suggestion) {
+            chatInput.value = suggestion;
+            // 移除建議區域
+            const suggestionsDiv = chatMessages.querySelector('.bg-blue-50');
+            if (suggestionsDiv) {
+                suggestionsDiv.remove();
+            }
+        }
+
+        // 將函數設為全局，以便HTML按鈕調用
+        window.useSuggestion = useSuggestion;
+
+        // 保存聊天記錄到localStorage
+        function saveChatData() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.CHAT_HISTORY, JSON.stringify(chatHistory));
+                localStorage.setItem(STORAGE_KEYS.CONVERSATION_TOPICS, JSON.stringify(conversationTopics));
+                localStorage.setItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(userPreferences));
+                localStorage.setItem(STORAGE_KEYS.LAST_CHAT_TIME, new Date().toISOString());
+            } catch (error) {
+                console.error('保存聊天記錄失敗:', error);
+            }
+        }
+
+        // 從localStorage加載聊天記錄
+        function loadChatData() {
+            try {
+                const savedHistory = localStorage.getItem(STORAGE_KEYS.CHAT_HISTORY);
+                const savedTopics = localStorage.getItem(STORAGE_KEYS.CONVERSATION_TOPICS);
+                const savedPreferences = localStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
+                const lastChatTime = localStorage.getItem(STORAGE_KEYS.LAST_CHAT_TIME);
+
+                if (savedHistory) {
+                    chatHistory = JSON.parse(savedHistory);
+                }
+                if (savedTopics) {
+                    conversationTopics = JSON.parse(savedTopics);
+                }
+                if (savedPreferences) {
+                    userPreferences = JSON.parse(savedPreferences);
+                }
+
+                return { hasData: savedHistory !== null, lastChatTime };
+            } catch (error) {
+                console.error('加載聊天記錄失敗:', error);
+                return { hasData: false, lastChatTime: null };
+            }
+        }
+
+        // 清除聊天記錄
+        function clearChatData() {
+            try {
+                localStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
+                localStorage.removeItem(STORAGE_KEYS.CONVERSATION_TOPICS);
+                localStorage.removeItem(STORAGE_KEYS.USER_PREFERENCES);
+                localStorage.removeItem(STORAGE_KEYS.LAST_CHAT_TIME);
+                
+                chatHistory = [];
+                conversationTopics = [];
+                userPreferences = {};
+                
+                console.log('聊天記錄已清除');
+            } catch (error) {
+                console.error('清除聊天記錄失敗:', error);
+            }
+        }
+
+        // 檢查聊天記錄是否過期（7天）
+        function isChatDataExpired(lastChatTime) {
+            if (!lastChatTime) return true;
+            
+            const lastChat = new Date(lastChatTime);
+            const now = new Date();
+            const daysDiff = (now - lastChat) / (1000 * 60 * 60 * 24);
+            
+            return daysDiff > 7; // 7天後過期
+        }
+
+        // 分析對話主題
+        function analyzeConversationTopics(userMessage) {
+            const topics = [];
+            
+            // 檢測作品相關話題
+            const works = ['水調歌頭', '念奴嬌', '江城子', '赤壁賦', '海棠', '東欄梨花', '題西林壁', '心經'];
+            works.forEach(work => {
+                if (userMessage.includes(work)) {
+                    topics.push(`作品：${work}`);
+                }
+            });
+            
+            // 檢測人生階段
+            const lifeStages = ['黃州', '杭州', '密州', '徐州', '惠州', '儋州', '貶謫', '烏臺詩案'];
+            lifeStages.forEach(stage => {
+                if (userMessage.includes(stage)) {
+                    topics.push(`人生階段：${stage}`);
+                }
+            });
+            
+            // 檢測哲學話題
+            const philosophies = ['人生', '哲學', '處世', '豁達', '樂觀', '逆境', '智慧'];
+            philosophies.forEach(philosophy => {
+                if (userMessage.includes(philosophy)) {
+                    topics.push(`哲學：${philosophy}`);
+                }
+            });
+            
+            return topics;
+        }
+
+        // 更新用戶偏好
+        function updateUserPreferences(topics) {
+            topics.forEach(topic => {
+                if (!userPreferences[topic]) {
+                    userPreferences[topic] = 0;
+                }
+                userPreferences[topic]++;
+            });
         }
 
         // 發送消息事件監聽
