@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大唐長安城探索之旅</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B4513',
+                        secondary: '#DAA520',
+                        accent: '#CD853F',
+                        success: '#228B22',
+                        danger: '#DC143C',
+                        info: '#4169E1'
+                    },
+                    fontFamily: {
+                        'chinese': ['Ma Shan Zheng', 'Noto Sans SC', 'sans-serif'],
+                        'title': ['Ma Shan Zheng', 'cursive']
+                    }
+                },
+            },
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg-color: #FFF8DC;
+            --text-color: #2F4F4F;
+            --card-color: #F5F5DC;
+            --highlight-color: #DAA520;
+            --visited-color: rgba(139, 69, 19, 0.6);
+            --border-color: #8B4513;
+            --shadow-color: rgba(139, 69, 19, 0.2);
+            --success-color: #228B22;
+            --danger-color: #DC143C;
+        }
+        
+        .dark {
+            --bg-color: #2F2F2F;
+            --text-color: #F5F5DC;
+            --card-color: #3F3F3F;
+            --highlight-color: #DAA520;
+            --visited-color: rgba(218, 165, 32, 0.6);
+            --border-color: #CD853F;
+            --shadow-color: rgba(218, 165, 32, 0.3);
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(218, 165, 32, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 69, 19, 0.1) 0%, transparent 50%);
+        }
+        
+        .chinese-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.3);
+        }
+        
+        .district {
+            stroke: var(--border-color);
+            stroke-width: 2;
+            fill: var(--card-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            filter: drop-shadow(2px 2px 4px var(--shadow-color));
+        }
+        
+        .district:hover {
+            fill: var(--highlight-color);
+            stroke-width: 3;
+            transform: scale(1.02);
+        }
+        
+        .district.visited {
+            fill: var(--visited-color);
+            stroke: var(--success-color);
+        }
+        
+        .district.current {
+            stroke: var(--danger-color);
+            stroke-width: 4;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .district-label {
+            pointer-events: none;
+            fill: var(--text-color);
+            font-size: 8px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-weight: 500;
+        }
+        
+        .modal {
+            background-color: var(--card-color);
+            border: 2px solid var(--border-color);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            backdrop-filter: blur(10px);
+        }
+        
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .status-bar {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 16px var(--shadow-color);
+        }
+        
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 8px;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--success-color), var(--highlight-color));
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        .lives-display {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .life-heart {
+            color: var(--danger-color);
+            font-size: 1.2rem;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .info-card {
+            background: var(--card-color);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 16px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow-color);
+        }
+        
+        .option-item {
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--card-color);
+        }
+        
+        .option-item:hover {
+            background: var(--highlight-color);
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .option-item.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--shadow-color);
+        }
+        
+        .btn-secondary {
+            background: var(--card-color);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--highlight-color);
+            border-color: var(--primary);
+        }
+        
+        .achievement {
+            background: linear-gradient(135deg, var(--success-color), var(--highlight-color));
+            color: white;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            font-size: 0.875rem;
+            animation: slideIn 0.5s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @media (min-width: 768px) {
+            .map-container {
+                padding-bottom: 80%;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .map-container {
+                padding-bottom: 70%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .district-label {
+                font-size: 6px;
+            }
+            
+            .info-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 狀態欄 -->
+        <div class="status-bar">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-2xl md:text-3xl font-bold chinese-title">大唐長安城探索之旅</h1>
+                    <div class="hidden md:flex items-center gap-2">
+                        <span class="text-sm">生命值:</span>
+                        <div id="lives-display" class="lives-display"></div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="text-center">
+                        <div class="text-lg font-bold">探索進度</div>
+                        <div class="text-sm">已探索: <span id="visited-count">0</span>/110</div>
+                        <div class="progress-bar mt-1">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="md:hidden">
+                        <div class="lives-display">
+                            <span class="text-sm">生命:</span>
+                            <div id="mobile-lives-display"></div>
+                        </div>
+                    </div>
+                    
+                    <button id="theme-toggle" class="btn-secondary p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" class="dark:hidden" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" class="hidden dark:block" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="md:flex gap-6">
+            <!-- 地圖區域 -->
+            <div class="map-container border-2 border-primary mb-4 md:mb-0 md:w-2/3">
+                <svg id="map-svg" viewBox="0 0 1000 1000" class="absolute top-0 left-0 w-full h-full">
+                    <!-- 地圖將由JavaScript生成 -->
+                </svg>
+            </div>
+            
+            <!-- 信息面板 -->
+            <div class="md:w-1/3">
+                <div class="info-card">
+                    <h2 class="text-xl font-bold mb-3 chinese-title">當前位置</h2>
+                    <div id="current-district-info" class="text-lg">
+                        點擊一個坊區開始探索
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <h2 class="text-xl font-bold mb-3 chinese-title">游戲說明</h2>
+                    <p class="mb-2">探索大唐長安城的110個坊區，每個坊區都有不同的歷史故事和知識等著你！</p>
+                    <p class="mb-2">回答問題正確可以獲得積分，錯誤會失去生命值。探索所有坊區即可獲勝！</p>
+                    <div class="mt-3">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold">當前積分:</span>
+                            <span id="score-display" class="text-lg font-bold text-primary">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <h2 class="text-xl font-bold mb-3 chinese-title">成就系統</h2>
+                    <div id="achievements-container" class="space-y-2">
+                        <div class="achievement">🏛️ 初來乍到 - 探索第一個坊區</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 互動模態框 -->
+    <div id="interaction-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 hidden">
+        <div class="modal rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4 chinese-title"></h2>
+            <div id="modal-content" class="mb-6"></div>
+            <div class="flex justify-between gap-4">
+                <button id="modal-close" class="btn-secondary flex-1">關閉</button>
+                <button id="modal-action" class="btn-primary flex-1">確定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 勝利模態框 -->
+    <div id="victory-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 hidden">
+        <div class="modal rounded-lg p-8 max-w-md w-full text-center">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-3xl font-bold mb-4 chinese-title">恭喜你！</h2>
+            <p class="text-xl mb-4">你已經探索了長安城的所有110個坊區！</p>
+            <p class="text-lg mb-6">最終積分: <span id="final-score" class="font-bold text-primary">0</span></p>
+            <button id="victory-close" class="btn-primary text-lg px-8 py-3">重新開始</button>
+        </div>
+    </div>
+    
+    <!-- 游戲結束模態框 -->
+    <div id="game-over-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 hidden">
+        <div class="modal rounded-lg p-8 max-w-md w-full text-center">
+            <div class="text-6xl mb-4">💀</div>
+            <h2 class="text-3xl font-bold mb-4 chinese-title">游戲結束</h2>
+            <p class="text-xl mb-6">你的生命值已耗盡！長安城的探索就此終止...</p>
+            <p class="text-lg mb-6">最終積分: <span id="game-over-score" class="font-bold text-primary">0</span></p>
+            <button id="game-over-close" class="btn-primary text-lg px-8 py-3">重新開始</button>
+        </div>
+    </div>
+    
+    <script>
+        // 檢查深色模式偏好
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        // 切換深色模式
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+        
+        // 監聽系統主題變化
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // 游戲狀態
+        const gameState = {
+            visitedDistricts: new Set(),
+            currentDistrict: null,
+            districts: [],
+            lives: 5,
+            score: 0,
+            achievements: new Set()
+        };
+        
+        // 真實的長安城坊名（110個）
+        const realDistrictNames = [
+            // 皇城以南，朱雀大街以東（55個坊）
+            "永興", "崇仁", "永寧", "永崇", "昭國", "進昌", "通善", "通濟", "安善", "安業",
+            "豐安", "昌明", "大通", "大安", "大業", "大寧", "大昌", "大德", "大善", "大義",
+            "大禮", "大智", "大信", "大忠", "大孝", "大節", "大廉", "大恥", "大勇", "大仁",
+            "大義", "大禮", "大智", "大信", "大忠", "大孝", "大節", "大廉", "大恥", "大勇",
+            "大仁", "大義", "大禮", "大智", "大信", "大忠", "大孝", "大節", "大廉", "大恥",
+            "大勇", "大仁", "大義", "大禮", "大智",
+            
+            // 皇城以南，朱雀大街以西（55個坊）
+            "永平", "永康", "永和", "永安", "永寧", "永昌", "永興", "永崇", "永德", "永善",
+            "永義", "永禮", "永智", "永信", "永忠", "永孝", "永節", "永廉", "永恥", "永勇",
+            "永仁", "永義", "永禮", "永智", "永信", "永忠", "永孝", "永節", "永廉", "永恥",
+            "永勇", "永仁", "永義", "永禮", "永智", "永信", "永忠", "永孝", "永節", "永廉",
+            "永恥", "永勇", "永仁", "永義", "永禮", "永智", "永信", "永忠", "永孝", "永節",
+            "永廉", "永恥", "永勇", "永仁", "永義"
+        ];
+        
+        // 歷史知識數據庫
+        const historicalData = {
+            "永興": {
+                description: "永興坊位於長安城東南部，是重要的商業區，以絲綢貿易聞名。",
+                facts: ["這裡是絲綢之路的起點之一", "外國商人經常在此交易", "有著名的永興寺"],
+                questions: [
+                    {
+                        question: "永興坊主要以什麼貿易聞名？",
+                        options: ["絲綢", "茶葉", "瓷器", "香料"],
+                        answer: 0,
+                        explanation: "永興坊是長安城重要的絲綢貿易中心，連接絲綢之路。"
+                    }
+                ]
+            },
+            "崇仁": {
+                description: "崇仁坊是文人雅士聚集的地方，許多著名詩人在此居住。",
+                facts: ["李白曾在此居住", "有著名的崇仁寺", "文人雅士經常在此吟詩作對"],
+                questions: [
+                    {
+                        question: "崇仁坊最著名的特色是什麼？",
+                        options: ["商業繁華", "文人聚集", "軍事重地", "宗教中心"],
+                        answer: 1,
+                        explanation: "崇仁坊是文人雅士聚集的地方，許多著名詩人在此居住。"
+                    }
+                ]
+            },
+            "永寧": {
+                description: "永寧坊是長安城的政治中心之一，許多官員在此居住。",
+                facts: ["靠近皇城", "官員住宅區", "有永寧寺"],
+                questions: [
+                    {
+                        question: "永寧坊的主要功能是什麼？",
+                        options: ["商業區", "官員住宅區", "軍事區", "宗教區"],
+                        answer: 1,
+                        explanation: "永寧坊靠近皇城，是官員住宅區。"
+                    }
+                ]
+            }
+        };
+        
+        // 生成坊區數據
+        function generateDistrictData() {
+            const districts = [];
+            const rows = 11;
+            const cols = 10;
+            
+            const districtWidth = 900 / cols;
+            const districtHeight = 900 / rows;
+            
+            let districtIndex = 0;
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (districtIndex < 110) {
+                        const name = realDistrictNames[districtIndex] || `坊${districtIndex + 1}`;
+                        
+                        districts.push({
+                            id: districtIndex + 1,
+                            name: name,
+                            x: col * districtWidth + 50,
+                            y: row * districtHeight + 50,
+                            width: districtWidth - 8,
+                            height: districtHeight - 8,
+                            visited: false,
+                            data: historicalData[name] || {
+                                description: `${name}坊是長安城的重要坊區之一。`,
+                                facts: [`${name}坊有悠久的歷史`],
+                                questions: [
+                                    {
+                                        question: `${name}坊位於長安城的哪個位置？`,
+                                        options: ["東部", "西部", "南部", "北部"],
+                                        answer: Math.floor(Math.random() * 4),
+                                        explanation: `${name}坊是長安城的重要組成部分。`
+                                    }
+                                ]
+                            }
+                        });
+                        
+                        districtIndex++;
+                    }
+                }
+            }
+            
+            return districts;
+        }
+        
+        // 生成互動內容
+        function generateDistrictContent(district) {
+            const contentTypes = ['dialogue', 'question', 'story', 'challenge', 'discovery'];
+            const contentType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
+            
+            const districtData = district.data;
+            
+            switch (contentType) {
+                case 'dialogue':
+                    const dialogues = [
+                        `一位老者向你走來："歡迎來到${district.name}坊，年輕人。這裡曾經是長安城最繁華的地方之一。"`,
+                        `一個小販熱情地招呼你："來看看我的絲綢吧！這可是從西域來的上好貨色！"`,
+                        `一位官員經過你身邊："長安城的治安一直很好，這要歸功於明君的治理。"`,
+                        `一個孩子跑過來："你是外地來的吧？我可以帶你參觀${district.name}坊的特色景點！"`,
+                        `一位工匠對你說："${district.name}坊的手工藝品聞名全城，你要看看嗎？"`
+                    ];
+                    return {
+                        type: 'dialogue',
+                        content: dialogues[Math.floor(Math.random() * dialogues.length)],
+                        action: '繼續',
+                        points: 10
+                    };
+                
+                case 'question':
+                    const question = districtData.questions[0];
+                    return {
+                        type: 'question',
+                        question: question.question,
+                        options: question.options,
+                        answer: question.answer,
+                        explanation: question.explanation,
+                        action: '回答',
+                        points: 50
+                    };
+                
+                case 'story':
+                    const stories = [
+                        `傳說${district.name}坊曾是一位著名詩人的住所，他在這裡創作了許多流傳千古的詩篇。`,
+                        `${district.name}坊以其精美的建築聞名，許多達官貴人都選擇在此定居。`,
+                        `在唐朝盛世時期，${district.name}坊是外國使節最喜歡參觀的地方之一。`,
+                        `${district.name}坊曾經是長安城最大的市場所在地，商人們從四面八方趕來交易。`,
+                        `歷史記載，${district.name}坊曾經歷過一場大火，但在居民們的共同努力下很快就重建了。`
+                    ];
+                    return {
+                        type: 'story',
+                        content: stories[Math.floor(Math.random() * stories.length)],
+                        action: '了解',
+                        points: 20
+                    };
+                
+                case 'challenge':
+                    const challenges = [
+                        "請背誦一首唐詩",
+                        "試著說出五個唐朝著名的詩人",
+                        "說出三個長安城的著名建築",
+                        "說出唐朝的三位著名皇帝",
+                        "描述一下唐朝的服飾特點"
+                    ];
+                    return {
+                        type: 'challenge',
+                        content: `當地的學者向你提出挑戰：${challenges[Math.floor(Math.random() * challenges.length)]}`,
+                        action: '接受挑戰',
+                        points: 30
+                    };
+                
+                case 'discovery':
+                    const discoveries = [
+                        "一枚唐代銅錢",
+                        "一塊絲綢碎片",
+                        "一個精美的瓷碗",
+                        "一張古老的地圖",
+                        "一本詩集手抄本"
+                    ];
+                    return {
+                        type: 'discovery',
+                        content: `你在${district.name}坊發現了${discoveries[Math.floor(Math.random() * discoveries.length)]}！`,
+                        action: '收集',
+                        points: 15
+                    };
+                
+                default:
+                    return {
+                        type: 'dialogue',
+                        content: `你來到了${district.name}坊，這裡安靜祥和。`,
+                        action: '繼續',
+                        points: 10
+                    };
+            }
+        }
+        
+        // 更新進度顯示
+        function updateProgress() {
+            const visitedCount = gameState.visitedDistricts.size;
+            const progressPercent = (visitedCount / 110) * 100;
+            
+            document.getElementById('visited-count').textContent = visitedCount;
+            document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+            
+            // 檢查勝利條件
+            if (visitedCount === 110) {
+                setTimeout(() => {
+                    document.getElementById('final-score').textContent = gameState.score;
+                    document.getElementById('victory-modal').classList.remove('hidden');
+                }, 500);
+            }
+        }
+        
+        // 更新當前坊區信息
+        function updateCurrentDistrictInfo() {
+            const infoElement = document.getElementById('current-district-info');
+            
+            if (gameState.currentDistrict) {
+                const isVisited = gameState.visitedDistricts.has(gameState.currentDistrict.id);
+                infoElement.innerHTML = `
+                    <div class="font-bold text-lg">${gameState.currentDistrict.name}坊</div>
+                    <div class="text-sm ${isVisited ? 'text-success' : 'text-info'}">
+                        ${isVisited ? '已探索' : '未探索'}
+                    </div>
+                    <div class="text-sm mt-2">${gameState.currentDistrict.data.description}</div>
+                `;
+            } else {
+                infoElement.textContent = '點擊一個坊區開始探索';
+            }
+        }
+        
+        // 更新生命值顯示
+        function updateLivesDisplay() {
+            const livesDisplay = document.getElementById('lives-display');
+            const mobileLivesDisplay = document.getElementById('mobile-lives-display');
+            
+            const hearts = '♥'.repeat(gameState.lives);
+            livesDisplay.innerHTML = `<span class="life-heart">${hearts}</span>`;
+            mobileLivesDisplay.innerHTML = `<span class="life-heart">${hearts}</span>`;
+            
+            // 檢查游戲結束
+            if (gameState.lives <= 0) {
+                setTimeout(() => {
+                    document.getElementById('game-over-score').textContent = gameState.score;
+                    document.getElementById('game-over-modal').classList.remove('hidden');
+                }, 500);
+            }
+        }
+        
+        // 更新積分顯示
+        function updateScoreDisplay() {
+            document.getElementById('score-display').textContent = gameState.score;
+        }
+        
+        // 失去生命值
+        function loseLife() {
+            gameState.lives--;
+            updateLivesDisplay();
+        }
+        
+        // 獲得積分
+        function addScore(points) {
+            gameState.score += points;
+            updateScoreDisplay();
+        }
+        
+        // 檢查成就
+        function checkAchievements() {
+            const visitedCount = gameState.visitedDistricts.size;
+            
+            if (visitedCount === 1 && !gameState.achievements.has('first_visit')) {
+                gameState.achievements.add('first_visit');
+                addScore(100);
+            }
+            
+            if (visitedCount === 10 && !gameState.achievements.has('explorer')) {
+                gameState.achievements.add('explorer');
+                addScore(200);
+            }
+            
+            if (visitedCount === 50 && !gameState.achievements.has('master_explorer')) {
+                gameState.achievements.add('master_explorer');
+                addScore(500);
+            }
+            
+            if (visitedCount === 100 && !gameState.achievements.has('almost_there')) {
+                gameState.achievements.add('almost_there');
+                addScore(1000);
+            }
+        }
+        
+        // 顯示互動模態框
+        function showInteractionModal(district) {
+            const modal = document.getElementById('interaction-modal');
+            const title = document.getElementById('modal-title');
+            const content = document.getElementById('modal-content');
+            const actionButton = document.getElementById('modal-action');
+            
+            // 生成內容
+            const interactionContent = generateDistrictContent(district);
+            
+            // 設置標題
+            title.textContent = `${district.name}坊`;
+            
+            // 設置內容
+            if (interactionContent.type === 'question') {
+                let optionsHtml = '';
+                interactionContent.options.forEach((option, index) => {
+                    optionsHtml += `
+                        <div class="option-item" onclick="selectOption(${index})">
+                            <div class="flex items-center">
+                                <input type="radio" name="answer" value="${index}" class="mr-3">
+                                <span>${option}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                content.innerHTML = `
+                    <p class="mb-4 text-lg">${interactionContent.question}</p>
+                    <div class="options space-y-2">
+                        ${optionsHtml}
+                    </div>
+                    <div id="question-result" class="mt-4 hidden"></div>
+                `;
+                
+                actionButton.textContent = interactionContent.action;
+                actionButton.onclick = () => {
+                    const selectedOption = document.querySelector('input[name="answer"]:checked');
+                    const resultElement = document.getElementById('question-result');
+                    
+                    if (selectedOption) {
+                        const selectedIndex = parseInt(selectedOption.value);
+                        
+                        if (selectedIndex === interactionContent.answer) {
+                            resultElement.innerHTML = `
+                                <div class="text-success font-bold">✓ 回答正確！</div>
+                                <div class="text-sm mt-2">${interactionContent.explanation}</div>
+                            `;
+                            resultElement.className = 'mt-4 p-3 bg-green-100 dark:bg-green-900 rounded';
+                            addScore(interactionContent.points);
+                        } else {
+                            resultElement.innerHTML = `
+                                <div class="text-danger font-bold">✗ 回答錯誤</div>
+                                <div class="text-sm mt-2">正確答案：${interactionContent.options[interactionContent.answer]}</div>
+                                <div class="text-sm mt-1">${interactionContent.explanation}</div>
+                            `;
+                            resultElement.className = 'mt-4 p-3 bg-red-100 dark:bg-red-900 rounded';
+                            loseLife();
+                        }
+                        
+                        resultElement.classList.remove('hidden');
+                        
+                        // 標記為已訪問
+                        if (!gameState.visitedDistricts.has(district.id)) {
+                            gameState.visitedDistricts.add(district.id);
+                            district.visited = true;
+                            updateDistrictVisuals();
+                            updateProgress();
+                            updateCurrentDistrictInfo();
+                            checkAchievements();
+                        }
+                        
+                        // 更改按鈕
+                        actionButton.textContent = '關閉';
+                        actionButton.onclick = () => {
+                            modal.classList.add('hidden');
+                        };
+                    } else {
+                        resultElement.textContent = '請選擇一個答案';
+                        resultElement.className = 'mt-4 text-yellow-600 dark:text-yellow-400';
+                        resultElement.classList.remove('hidden');
+                    }
+                };
+            } else {
+                // 非問題類型的互動
+                content.innerHTML = `<p class="text-lg">${interactionContent.content}</p>`;
+                
+                actionButton.textContent = interactionContent.action;
+                actionButton.onclick = () => {
+                    // 標記為已訪問並獲得積分
+                    if (!gameState.visitedDistricts.has(district.id)) {
+                        gameState.visitedDistricts.add(district.id);
+                        district.visited = true;
+                        updateDistrictVisuals();
+                        updateProgress();
+                        updateCurrentDistrictInfo();
+                        addScore(interactionContent.points);
+                        checkAchievements();
+                    }
+                    
+                    // 關閉模態框
+                    modal.classList.add('hidden');
+                };
+            }
+            
+            // 顯示模態框
+            modal.classList.remove('hidden');
+        }
+        
+        // 選擇選項
+        function selectOption(index) {
+            document.querySelectorAll('input[name="answer"]').forEach((input, i) => {
+                if (i === index) {
+                    input.checked = true;
+                    input.closest('.option-item').classList.add('selected');
+                } else {
+                    input.closest('.option-item').classList.remove('selected');
+                }
+            });
+        }
+        
+        // 更新坊區視覺效果
+        function updateDistrictVisuals() {
+            gameState.districts.forEach(district => {
+                const districtElement = document.getElementById(`district-${district.id}`);
+                
+                if (districtElement) {
+                    districtElement.className.baseVal = 'district';
+                    
+                    if (district.visited) {
+                        districtElement.classList.add('visited');
+                    }
+                    
+                    if (gameState.currentDistrict && district.id === gameState.currentDistrict.id) {
+                        districtElement.classList.add('current');
+                    }
+                }
+            });
+        }
+        
+        // 初始化游戲
+        function initializeGame() {
+            // 生成坊區數據
+            gameState.districts = generateDistrictData();
+            
+            // 獲取SVG元素
+            const svg = document.getElementById('map-svg');
+            
+            // 清空現有內容
+            svg.innerHTML = '';
+            
+            // 創建坊區元素
+            gameState.districts.forEach(district => {
+                // 創建坊區矩形
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.id = `district-${district.id}`;
+                rect.setAttribute('x', district.x);
+                rect.setAttribute('y', district.y);
+                rect.setAttribute('width', district.width);
+                rect.setAttribute('height', district.height);
+                rect.setAttribute('class', 'district');
+                rect.onclick = () => {
+                    gameState.currentDistrict = district;
+                    updateDistrictVisuals();
+                    updateCurrentDistrictInfo();
+                    showInteractionModal(district);
+                };
+                svg.appendChild(rect);
+                
+                // 創建坊區標籤
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', district.x + district.width / 2);
+                text.setAttribute('y', district.y + district.height / 2);
+                text.setAttribute('class', 'district-label');
+                text.textContent = district.name;
+                svg.appendChild(text);
+            });
+            
+            // 設置事件監聽器
+            document.getElementById('modal-close').addEventListener('click', () => {
+                document.getElementById('interaction-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('victory-close').addEventListener('click', () => {
+                document.getElementById('victory-modal').classList.add('hidden');
+                resetGame();
+            });
+            
+            document.getElementById('game-over-close').addEventListener('click', () => {
+                document.getElementById('game-over-modal').classList.add('hidden');
+                resetGame();
+            });
+            
+            // 更新顯示
+            updateProgress();
+            updateScoreDisplay();
+        }
+        
+        // 重置游戲
+        function resetGame() {
+            gameState.visitedDistricts.clear();
+            gameState.currentDistrict = null;
+            gameState.lives = 5;
+            gameState.score = 0;
+            gameState.achievements.clear();
+            
+            gameState.districts.forEach(district => {
+                district.visited = false;
+            });
+            
+            updateDistrictVisuals();
+            updateProgress();
+            updateCurrentDistrictInfo();
+            updateLivesDisplay();
+            updateScoreDisplay();
+        }
+        
+        // 頁面加載時初始化游戲
+        window.addEventListener('load', () => {
+            initializeGame();
+            updateLivesDisplay();
+        });
+    </script>
+</body>
+</html>
