@@ -5627,11 +5627,13 @@
                 showStrokeHint(0);
                 
                 // 启动Quiz模式
+                const isCoarsePointer = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || window.innerWidth <= 768;
                 quizWriter.quiz({
                     showHintAfterMisses: 1, // 错一次就显示提示
                     highlightOnComplete: true, // 完成时高亮显示整个字符
-                    strokeHighlightSpeed: 2, // 高亮速度
-                    drawingFadeDuration: 600, // 用户绘制的笔画淡出时间
+                    // 行動端降低高亮與淡出時長，讓下一筆可以更快開始
+                    strokeHighlightSpeed: isCoarsePointer ? 0.8 : 1.5, // 高亮速度（行動端更快）
+                    drawingFadeDuration: isCoarsePointer ? 150 : 400, // 用戶筆畫淡出時間（行動端更短）
                     onMistake: function(strokeNumber) {
                         console.log('用户点击错误，笔画索引:', strokeNumber);
                         // 震动提示
@@ -5648,9 +5650,10 @@
                         updateQuizProgress(strokeNumber);
                         
                         // 移动提示到下一笔
+                        const nextHintDelay = isCoarsePointer ? 60 : 200;
                         setTimeout(() => {
                             showStrokeHint(strokeNumber + 1);
-                        }, 300);
+                        }, nextHintDelay);
                     },
                     onComplete: function() {
                         console.log('完成所有笔画');
