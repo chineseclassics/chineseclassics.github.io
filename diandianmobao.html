@@ -457,6 +457,8 @@
             background-color: rgba(255, 255, 255, 0.4);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .character-input {
@@ -469,6 +471,7 @@
             transition: all 0.3s ease;
             color: var(--text);
             font-family: 'Noto Serif TC', serif;
+            min-width: 0; /* 允許在flex容器中縮小，避免小螢幕溢出 */
         }
         
         .character-input:focus {
@@ -489,6 +492,7 @@
             display: flex;
             align-items: center;
             font-family: 'Noto Serif TC', serif;
+            flex-shrink: 0; /* 防止按鈕被擠壓變形 */
         }
         
         .search-button:hover {
@@ -904,11 +908,7 @@
             font-family: 'Noto Sans TC', sans-serif;
         }
         
-        .vocabulary-list {
-            /* 移除高度限制，允許自然延展 */
-            /* max-height: 280px; */
-            /* overflow-y: auto; */
-        }
+        /* .vocabulary-list 先移除空規則，避免 Linter 警告 */
         
         .vocabulary-item {
             display: flex;
@@ -3390,7 +3390,8 @@
                 gap: 8px;
             }
         }
-
+        
+        @media (max-width: 480px) {
             .achievement {
                 padding: 10px;
                 gap: 10px;
@@ -3522,6 +3523,43 @@
                 right: 10px;
                 max-width: 250px;
                 padding: 12px;
+            }
+            /* 追加：行動端置中與滿寬調整，避免擠壓與錯位 */
+            .player-info,
+            .streak-info {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            .progress-section {
+                width: 100%;
+                max-width: 100%;
+                margin: 0;
+            }
+            .progress-bar {
+                height: 16px;
+            }
+            .progress-text {
+                font-size: 11px;
+            }
+            .character-search {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .character-input {
+                min-width: 0;
+            }
+            .search-button {
+                padding: 8px 12px;
+                white-space: nowrap;
+            }
+            .word-search {
+                gap: 8px;
+            }
+            .word-input {
+                min-width: 0;
+                max-width: none;
+                flex: 1;
             }
         }
     </style>
