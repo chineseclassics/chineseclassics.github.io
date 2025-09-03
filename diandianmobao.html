@@ -1263,8 +1263,8 @@
         }
         
         .quiz-target {
-            width: 220px;  /* 與HanziWriter尺寸一致 */
-            height: 220px;  /* 與HanziWriter尺寸一致 */
+            width: 260px;  /* 行動端放大以提升短筆畫識別 */
+            height: 260px;  /* 行動端放大以提升短筆畫識別 */
             margin: 0 auto 25px;  /* 增加底部間距從10px到25px */
             position: relative;
             border-radius: 5px;
@@ -1609,6 +1609,8 @@
             height: 100%;
             z-index: 5;
             cursor: pointer;
+            touch-action: none;
+            overscroll-behavior: contain;
         }
         
         #quiz-target-field svg {
@@ -2005,8 +2007,8 @@
             }
             
             .character-board, .quiz-target {
-                width: 220px;
-                height: 220px;
+                width: 260px;  /* 行動端放大 */
+                height: 260px; /* 行動端放大 */
             }
             
             .game-card {
@@ -5293,8 +5295,8 @@
                 
                 // 初始化漢字筆順
                 writer = HanziWriter.create('character-target', character, {
-                    width: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
-                    height: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    width: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
+                    height: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
                     padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
@@ -5522,13 +5524,13 @@
                 
                 // 创建新的笔顺练习实例
                 quizWriter = HanziWriter.create('quiz-target-field', currentCharacter, {
-                    width: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
-                    height: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    width: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
+                    height: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
                     padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
                     radicalColor: '#8E3E1A',
-                    drawingWidth: 25, // 增加笔画宽度使点击更容易
+                    drawingWidth: 30, // 提高命中率
                     drawingColor: '#8E3E1A', // 用户绘制笔画的颜色
                     showOutline: true, // 显示轮廓
                     onLoadCharDataSuccess: function() {
@@ -5582,13 +5584,13 @@
                 
                 // 创建新的笔顺练习实例
                 quizWriter = HanziWriter.create('quiz-target-field', currentCharacter, {
-                    width: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
-                    height: window.innerWidth > 768 ? 240 : 220,  // 調整為與田字格一致
+                    width: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
+                    height: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
                     padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
                     radicalColor: '#8E3E1A',
-                    drawingWidth: 25, // 增加笔画宽度使点击更容易
+                    drawingWidth: 30, // 提高命中率
                     drawingColor: '#8E3E1A', // 用户绘制笔画的颜色
                     showOutline: true, // 显示轮廓
                     onLoadCharDataSuccess: function() {
@@ -5631,7 +5633,7 @@
                     showHintAfterMisses: 1, // 错一次就显示提示
                     highlightOnComplete: true, // 完成时高亮显示整个字符
                     strokeHighlightSpeed: 2, // 高亮速度
-                    drawingFadeDuration: 600, // 用户绘制的笔画淡出时间
+                    drawingFadeDuration: 0, // 移除淡出時間，加快下一筆
                     onMistake: function(strokeNumber) {
                         console.log('用户点击错误，笔画索引:', strokeNumber);
                         // 震动提示
@@ -5647,10 +5649,8 @@
                         // 更新進度
                         updateQuizProgress(strokeNumber);
                         
-                        // 移动提示到下一笔
-                        setTimeout(() => {
-                            showStrokeHint(strokeNumber + 1);
-                        }, 300);
+                        // 立即提示下一筆（移除300ms延遲）
+                        showStrokeHint(strokeNumber + 1);
                     },
                     onComplete: function() {
                         console.log('完成所有笔画');
@@ -5706,7 +5706,7 @@
                 
                 // 获取笔画开始坐标
                 const startPoint = stroke.getStartingPoint();
-                const width = window.innerWidth > 768 ? 240 : 220;  // 與HanziWriter尺寸一致
+                const width = window.innerWidth > 768 ? 240 : 260;  // 與HanziWriter尺寸一致（行動端放大）
                 const padding = 20;  // 與HanziWriter padding一致
                 const startX = (startPoint.x * (width - padding * 2) / 1024) + padding;
                 const startY = (startPoint.y * (width - padding * 2) / 1024) + padding;

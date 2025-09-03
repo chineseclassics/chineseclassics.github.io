@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>長安城模型（基於 SVG）</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { font-family: system-ui, -apple-system, "Noto Sans TC", Arial, sans-serif; background:#fafafa; color:#222; }
+    .toolbar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid #eee; padding: 8px 12px; display: flex; gap: 8px; align-items: center; }
+    .wrap { display: grid; grid-template-columns: 1fr 320px; gap: 12px; padding: 12px; }
+    .stage { position: relative; background:#fff; border:1px solid #e5e5e5; border-radius:8px; overflow:hidden; }
+    .stage canvas { display:block; width:100%; height:auto; }
+    .overlay { position:absolute; inset:0; pointer-events:none; }
+    .sidebar { background:#fff; border:1px solid #e5e5e5; border-radius:8px; padding:10px; overflow:auto; max-height: calc(100vh - 80px); }
+    .meta { font-size:12px; color:#666; }
+    .badge { display:inline-block; padding:2px 6px; font-size:12px; border-radius:4px; background:#eef; color:#225; margin-right:6px; }
+    .btn { padding:6px 10px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer; }
+    .btn:disabled { opacity:.5; cursor:default; }
+    .list { font-size:13px; line-height:1.5; }
+    .row { display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px dotted #eee; }
+    .row:last-child { border-bottom:none; }
+    .row small { color:#666; }
+    .hover-tip { position: absolute; padding:4px 6px; background: rgba(0,0,0,.7); color:#fff; font-size:12px; pointer-events:none; border-radius:4px; transform:translate(8px, -8px); white-space:nowrap; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <span class="badge">長安城模型</span>
+    <button id="btnDetect" class="btn">生成模型</button>
+    <button id="btnExport" class="btn" disabled>匯出 JSON</button>
+    <span class="meta" id="status">載入中...</span>
+  </div>
+  <div class="wrap">
+    <div class="stage">
+      <canvas id="base"></canvas>
+      <canvas id="overlay" class="overlay"></canvas>
+      <div id="hoverTip" class="hover-tip" style="display:none"></div>
+    </div>
+    <aside class="sidebar">
+      <div style="margin-bottom:8px"><strong>區域列表</strong></div>
+      <div id="regionList" class="list"></div>
+    </aside>
+  </div>
+
+  <!-- OpenCV.js 可選（若用影像法）-->
+  <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()" onerror="onOpenCvError()"></script>
+  <script>
+    const SVG_PATH = 'Map_of_Chang\'an_in_Tang_Dynasty.svg';
+
+    const state = {
+      img: new Image(),
+      scale: 0.6,
+      model: [], // { id, name, kind, clickable, bbox? or points? }
+      viewBox: [0,0,0,0],
+      imperialMerged: false,
+      hoveringId: null
+    };
+
+    const els = {
+      base: document.getElementById('base'),
+      overlay: document.getElementById('overlay'),
+      status: document.getElementById('status'),
+      btnDetect: document.getElementById('btnDetect'),
+      btnExport: document.getElementById('btnExport'),
+      regionList: document.getElementById('regionList'),
+      hoverTip: document.getElementById('hoverTip')
+    };
+
+    function setStatus(text) { els.status.textContent = text; }
+
+    function onOpenCvReady() {}
+    function onOpenCvError() { setStatus('OpenCV.js 載入失敗，將使用簡化流程'); }
+
+    // 載入底圖 SVG
+    (function init() {
+      state.img.onload = () => {
+        const w = Math.floor(state.img.naturalWidth * state.scale);
+        const h = Math.floor(state.img.naturalHeight * state.scale);
+        els.base.width = w; els.base.height = h;
+        els.overlay.width = w; els.overlay.height = h;
+        const ctx = els.base.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(state.img, 0, 0, w, h);
+        setStatus('底圖就緒（可點「解析新版 SVG 生成模型」）');
+      };
+      state.img.src = SVG_PATH;
+    })();
+
+    // 主流程：偵測格線 → 生成候選區域 → 合併皇城 → 繪製與列出
+    els.btnDetect.addEventListener('click', async () => {
+      try {
+        setStatus('解析新版 SVG 中...');
+        const svgDoc = await fetch(SVG_PATH).then(r=>r.text());
+        const parsed = new DOMParser().parseFromString(svgDoc, 'image/svg+xml');
+        const svgEl = parsed.querySelector('svg');
+        const vbStr = svgEl.getAttribute('viewBox') || `0 0 ${svgEl.getAttribute('width')||0} ${svgEl.getAttribute('height')||0}`;
+        state.viewBox = vbStr.split(/\s+/).map(Number);
+
+        const ROAD_COLOR = ['#d7b37a'];
+        const DASH_BLACK = '#000000';
+        const WATER_COLOR = ['#0030be','#00d7f2'];
+        const ROAD_WIDTH = 4;
+        const WATER_WIDTH = 6;
+
+        const areas = [];
+
+        parsed.querySelectorAll('rect').forEach((r, idx) => {
+          const x = parseFloat(r.getAttribute('x')||'0');
+          const y = parseFloat(r.getAttribute('y')||'0');
+          const w = parseFloat(r.getAttribute('width')||'0');
+          const h = parseFloat(r.getAttribute('height')||'0');
+          if (!isFinite(x)||!isFinite(y)||w<=0||h<=0) return;
+          const stroke = (r.getAttribute('stroke')||r.style?.stroke||'').toLowerCase();
+          const fill = (r.getAttribute('fill')||r.style?.fill||'').toLowerCase();
+          if (fill==='#000000' && Math.max(w,h) < 30) return;
+          const kind = inferRectKind(fill, stroke);
+          areas.push({ id:`rect-${idx}`, name:'', kind, clickable:true, bbox:[x,y,w,h] });
+        });
+
+        const roadPolys = [];
+        parsed.querySelectorAll('path, line, polyline').forEach((el, i) => {
+          const stroke = (el.getAttribute('stroke')||el.style?.stroke||'').toLowerCase();
+          const dash = (el.getAttribute('stroke-dasharray')||el.style?.strokeDasharray||'');
+          const isRoadColor = ROAD_COLOR.includes(stroke);
+          const isDashedBlack = stroke==='#000000' && dash && dash!=='none';
+          if (!(isRoadColor || isDashedBlack)) return;
+          const pts = extractPolylinePoints(el);
+          if (pts.length<2) return;
+          const poly = bufferPolyline(pts, ROAD_WIDTH);
+          if (poly && poly.length>=3) roadPolys.push(poly);
+        });
+        roadPolys.forEach((pts, i)=> areas.push({ id:`road-${i}`, name:'道路', kind:'road', clickable:false, points:pts }));
+
+        const waterPolys = [];
+        parsed.querySelectorAll('path, line, polyline').forEach((el, i) => {
+          const stroke = (el.getAttribute('stroke')||el.style?.stroke||'').toLowerCase();
+          if (!WATER_COLOR.includes(stroke)) return;
+          const pts = extractPolylinePoints(el);
+          if (pts.length<2) return;
+          const poly = bufferPolyline(pts, WATER_WIDTH);
+          if (poly && poly.length>=3) waterPolys.push(poly);
+        });
+        waterPolys.forEach((pts, i)=> areas.push({ id:`water-${i}`, name:'水系', kind:'water', clickable:false, points:pts }));
+
+        state.model = areas;
+        drawOverlay();
+        renderList();
+        els.btnExport.disabled = state.model.length === 0;
+        setStatus(`完成。區域/道路/水系共 ${state.model.length} 個元素`);
+      } catch (err) {
+        console.error(err);
+        setStatus('發生錯誤：' + err.message);
+      }
+    });
+
+    // 匯出 JSON
+    els.btnExport.addEventListener('click', () => {
+      const data = { meta:{ version:2, source: SVG_PATH, viewBox: state.viewBox }, areas: state.model };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'changan-layout-draft_v2.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    // 視覺化
+    function drawOverlay() {
+      const ctx = els.overlay.getContext('2d');
+      ctx.clearRect(0,0,els.overlay.width, els.overlay.height);
+      for (const r of state.model) {
+        ctx.save();
+        ctx.lineWidth = 1.5;
+        let stroke = '#1e90ff', fill = 'rgba(30,144,255,0.10)';
+        if (r.kind==='road'){ stroke='#8B7355'; fill='rgba(139,115,85,0.20)'; }
+        else if (r.kind==='water'){ stroke='#2b70ff'; fill='rgba(43,112,255,0.18)'; }
+        else if (r.kind==='palace'){ stroke='#d33'; fill='rgba(210,50,50,0.12)'; }
+        else { stroke='#666'; fill='rgba(100,100,100,0.08)'; }
+        if (state.hoveringId===r.id) fill='rgba(255,200,0,0.25)';
+        ctx.strokeStyle=stroke; ctx.fillStyle=fill;
+        if (r.points && r.points.length){
+          ctx.beginPath();
+          ctx.moveTo(r.points[0][0]*state.scale, r.points[0][1]*state.scale);
+          for (let i=1;i<r.points.length;i++) ctx.lineTo(r.points[i][0]*state.scale, r.points[i][1]*state.scale);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+        } else if (r.bbox){
+          const [x,y,w,h] = r.bbox.map((v,i)=> i<2? v*state.scale : v*state.scale);
+          roundRect(ctx, x, y, w, h, 3);
+          ctx.fill(); ctx.stroke();
+        }
+        ctx.fillStyle = '#333';
+        ctx.font = '12px system-ui, -apple-system, Arial';
+        const label = r.name || r.kind || r.id;
+        let lx=0, ly=0;
+        if (r.bbox){ const [x,y]=[r.bbox[0]*state.scale, r.bbox[1]*state.scale]; lx=x+6; ly=y+14; }
+        else if (r.points && r.points.length){ lx=r.points[0][0]*state.scale+6; ly=r.points[0][1]*state.scale+14; }
+        ctx.fillText(label, lx, ly);
+        ctx.restore();
+      }
+    }
+
+    // 列表與 hover
+    function renderList() {
+      els.regionList.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (const r of state.model) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.dataset.id = r.id;
+        const sizeText = r.bbox? `${Math.round(r.bbox[2])}×${Math.round(r.bbox[3])}` : (r.points? `${r.points.length}點` : '');
+        row.innerHTML = `<span>[${escapeHtml(r.kind||'unknown')}] ${escapeHtml(r.name || r.id)}</span><small>${sizeText}</small>`;
+        row.addEventListener('mouseenter', () => { state.hoveringId = r.id; drawOverlay(); });
+        row.addEventListener('mouseleave', () => { state.hoveringId = null; drawOverlay(); });
+        frag.appendChild(row);
+      }
+      els.regionList.appendChild(frag);
+    }
+
+    // 滑鼠 hover 顯示座標
+    els.overlay.addEventListener('mousemove', (e) => {
+      const rect = els.overlay.getBoundingClientRect();
+      const x = Math.round(e.clientX - rect.left);
+      const y = Math.round(e.clientY - rect.top);
+      let found = null;
+      for (const r of state.model) {
+        if (r.bbox){
+          const [rx,ry,rw,rh] = r.bbox;
+          if (x>=rx && x<=rx+rw && y>=ry && y<=ry+rh) { found = r; break; }
+        }
+      }
+      if (found) {
+        els.hoverTip.style.display = 'block';
+        els.hoverTip.style.left = e.clientX + 'px';
+        els.hoverTip.style.top = e.clientY + 'px';
+        els.hoverTip.textContent = `${found.name || found.kind}  (${x},${y})`;
+        state.hoveringId = found.id; drawOverlay();
+      } else {
+        els.hoverTip.style.display = 'none';
+        if (state.hoveringId) { state.hoveringId = null; drawOverlay(); }
+      }
+    });
+
+    // 使用 OpenCV 的建模流程
+    async function buildModelWithOpenCV() {
+      const w = els.base.width, h = els.base.height;
+      const src = cv.imread(els.base);
+      const gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+      const blur = new cv.Mat();
+      cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
+      const edges = new cv.Mat();
+      cv.Canny(blur, edges, 60, 180);
+      const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3,3));
+      const closed = new cv.Mat();
+      cv.morphologyEx(edges, closed, cv.MORPH_CLOSE, kernel);
+
+      // 霍夫線偵測
+      const lines = new cv.Mat();
+      cv.HoughLinesP(closed, lines, 1, Math.PI/180, 120, 40, 12);
+      const segments = [];
+      for (let i=0; i<lines.rows; i++) {
+        const x1 = lines.intPtr(i,0)[0], y1 = lines.intPtr(i,0)[1];
+        const x2 = lines.intPtr(i,0)[2], y2 = lines.intPtr(i,0)[3];
+        const dx = x2-x1, dy = y2-y1;
+        const len = Math.hypot(dx, dy) || 1;
+        const ang = Math.atan2(dy, dx);
+        segments.push({ x1,y1,x2,y2, ang, len });
+      }
+
+      // 分群成水平/垂直
+      const horizontals = segments.filter(s => Math.abs(Math.sin(s.ang)) < 0.2);
+      const verticals = segments.filter(s => Math.abs(Math.cos(s.ang)) < 0.2);
+
+      const mergeLines = (arr, isVertical) => {
+        // 以投影座標聚合
+        const groups = [];
+        const tol = 6;
+        for (const s of arr) {
+          const key = isVertical ? Math.round((s.x1 + s.x2)/2) : Math.round((s.y1 + s.y2)/2);
+          let g = groups.find(g => Math.abs(g.key - key) <= tol);
+          if (!g) { g = { key, items: [] }; groups.push(g); }
+          g.items.push(s);
+        }
+        // 合併為無限長線再裁切
+        return groups.map(g => {
+          if (isVertical) {
+            const x = Math.round(g.items.reduce((a,s)=>a+(s.x1+s.x2)/2,0)/g.items.length);
+            let yMin = Infinity, yMax = -Infinity;
+            for (const s of g.items) { yMin = Math.min(yMin, s.y1, s.y2); yMax = Math.max(yMax, s.y1, s.y2); }
+            return { x1:x, y1:0, x2:x, y2:h };
+          } else {
+            const y = Math.round(g.items.reduce((a,s)=>a+(s.y1+s.y2)/2,0)/g.items.length);
+            return { x1:0, y1:y, x2:w, y2:y };
+          }
+        }).sort((a,b)=> (isVertical? a.x1-b.x1 : a.y1-b.y1));
+      };
+
+      const vLines = dedupeLines(mergeLines(verticals, true), true);
+      const hLines = dedupeLines(mergeLines(horizontals, false), false);
+
+      // 以交點形成格子
+      const boxes = [];
+      for (let i=0;i<vLines.length-1;i++) {
+        for (let j=0;j<hLines.length-1;j++) {
+          const x = vLines[i].x1, x2 = vLines[i+1].x1;
+          const y = hLines[j].y1, y2 = hLines[j+1].y1;
+          const wbox = x2-x, hbox = y2-y;
+          if (wbox>12 && hbox>12) boxes.push([x,y,wbox,hbox]);
+        }
+      }
+
+      // 計算每格黑像素密度，濾掉空格
+      const mask = new cv.Mat();
+      cv.threshold(gray, mask, 0, 255, cv.THRESH_BINARY_INV+cv.THRESH_OTSU);
+
+      const regions = [];
+      for (const b of boxes) {
+        const [bx,by,bw,bh] = b.map(Math.round);
+        const roi = mask.roi(new cv.Rect(bx,by,bw,bh));
+        const nonZero = cv.countNonZero(roi);
+        roi.delete();
+        const density = nonZero / (bw*bh);
+        if (density > 0.05) { // 有內容
+          regions.push({ id: 'r'+regions.length, name: '', bbox:[bx,by,bw,bh], centroid:[bx+bw/2, by+bh/2], area:bw*bh, type:'ward' });
+        }
+      }
+
+      src.delete(); gray.delete(); blur.delete(); edges.delete(); kernel.delete(); closed.delete(); lines.delete(); mask.delete();
+      return regions;
+    }
+
+    // 簡化後備（不依賴霍夫線）：以形態學膨脹 + 連通區取外接框
+    async function buildModelFallback() {
+      const w = els.base.width, h = els.base.height;
+      const ctx = els.base.getContext('2d');
+      const imgData = ctx.getImageData(0,0,w,h);
+      // 轉灰 + 簡單閾值
+      const bw = new Uint8ClampedArray(w*h);
+      for (let i=0, p=0; i<imgData.data.length; i+=4, p++) {
+        const r = imgData.data[i], g = imgData.data[i+1], b = imgData.data[i+2];
+        const Y = (r*0.299 + g*0.587 + b*0.114);
+        bw[p] = Y < 200 ? 1 : 0; // 邊線/建築為 1
+      }
+      // 簡單連通區（四連通）
+      const seen = new Uint8Array(w*h);
+      const boxes = [];
+      const stack = [];
+      for (let y=0;y<h;y++) {
+        for (let x=0;x<w;x++) {
+          const idx = y*w+x;
+          if (bw[idx]===1 && !seen[idx]) {
+            let minx=x, miny=y, maxx=x, maxy=y, count=0;
+            stack.length=0; stack.push(idx); seen[idx]=1;
+            while (stack.length) {
+              const cur = stack.pop();
+              const cy = Math.floor(cur/w), cx = cur - cy*w;
+              minx = Math.min(minx,cx); miny=Math.min(miny,cy);
+              maxx = Math.max(maxx,cx); maxy=Math.max(maxy,cy);
+              count++;
+              // 四鄰
+              const nb = [cur-1, cur+1, cur-w, cur+w];
+              for (const n of nb) if (n>=0 && n<w*h && !seen[n] && bw[n]===1) { seen[n]=1; stack.push(n); }
+            }
+            const bwBox = maxx-minx+1, bhBox = maxy-miny+1;
+            if (bwBox>16 && bhBox>16) boxes.push([minx,miny,bwBox,bhBox]);
+          }
+        }
+      }
+      // 合併重疊框
+      const merged = mergeOverlappingBoxes(boxes, 0.15);
+      return merged.map((b,i)=>({ id:'r'+i, bbox:b, centroid:[b[0]+b[2]/2,b[1]+b[3]/2], area:b[2]*b[3], type:'ward', name:'' }));
+    }
+
+    // 後處理：合併上部中央的皇城區域
+    function postprocessModel(regions) {
+      if (!regions.length) return regions;
+      const W = els.base.width, H = els.base.height;
+      const topY = 0.06 * H;
+      const midL = 0.33 * W, midR = 0.67 * W;
+      const cand = regions.filter(r => r.bbox[1] < 0.35*H && r.centroid[0] > midL && r.centroid[0] < midR);
+      if (cand.length >= 3) {
+        let minx=Infinity, miny=Infinity, maxx=-Infinity, maxy=-Infinity;
+        for (const r of cand) {
+          minx = Math.min(minx, r.bbox[0]);
+          miny = Math.min(miny, r.bbox[1]);
+          maxx = Math.max(maxx, r.bbox[0]+r.bbox[2]);
+          maxy = Math.max(maxy, r.bbox[1]+r.bbox[3]);
+        }
+        const merged = { id:'imperial-1', name:'皇城', type:'imperial', bbox:[minx,miny,maxx-minx,maxy-miny], centroid:[(minx+maxx)/2,(miny+maxy)/2], area:(maxx-minx)*(maxy-miny) };
+        const rest = regions.filter(r => !cand.includes(r));
+        state.imperialMerged = true;
+        return [merged, ...rest].sort((a,b)=> a.bbox[1]-b.bbox[1] || a.bbox[0]-b.bbox[0]);
+      }
+      return regions;
+    }
+
+    // 工具們
+    function mergeOverlappingBoxes(boxes, iouThresh=0.2) {
+      const kept = [];
+      boxes.sort((a,b)=> (b[2]*b[3]) - (a[2]*a[3]));
+      while (boxes.length) {
+        const cur = boxes.shift();
+        kept.push(cur);
+        for (let i=boxes.length-1;i>=0;i--) {
+          if (iou(cur, boxes[i]) > iouThresh) boxes.splice(i,1);
+        }
+      }
+      return kept;
+    }
+    function iou(a,b){
+      const ax2=a[0]+a[2], ay2=a[1]+a[3], bx2=b[0]+b[2], by2=b[1]+b[3];
+      const ix=Math.max(0, Math.min(ax2,bx2)-Math.max(a[0],b[0]));
+      const iy=Math.max(0, Math.min(ay2,by2)-Math.max(a[1],b[1]));
+      const inter=ix*iy; if(!inter) return 0; const ua=a[2]*a[3]+b[2]*b[3]-inter; return inter/ua;
+    }
+    function dedupeLines(lines, isVertical){
+      const out=[]; const tol = 6;
+      for (const ln of lines){
+        const k = isVertical? ln.x1 : ln.y1;
+        if (!out.find(x=>Math.abs((isVertical?x.x1:x.y1)-k)<=tol)) out.push(ln);
+      }
+      return out.sort((a,b)=> (isVertical? a.x1-b.x1 : a.y1-b.y1));
+    }
+    function roundRect(ctx, x, y, w, h, r){
+      r = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.arcTo(x+w, y, x+w, y+h, r);
+      ctx.arcTo(x+w, y+h, x, y+h, r);
+      ctx.arcTo(x, y+h, x, y, r);
+      ctx.arcTo(x, y, x+w, y, r);
+      ctx.closePath();
+    }
+    function escapeHtml(s){ return (s+"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+    function inferRectKind(fill, stroke){
+      if (!fill && !stroke) return 'unknown';
+      if (fill==='#ffd16f' || fill==='#ffbeac' || fill==='#eccca1') return 'ward';
+      return 'ward';
+    }
+    function extractPolylinePoints(el){
+      const tag = el.tagName.toLowerCase();
+      if (tag==='line'){
+        const x1=parseFloat(el.getAttribute('x1')||'0');
+        const y1=parseFloat(el.getAttribute('y1')||'0');
+        const x2=parseFloat(el.getAttribute('x2')||'0');
+        const y2=parseFloat(el.getAttribute('y2')||'0');
+        return [[x1,y1],[x2,y2]];
+      }
+      if (tag==='polyline'){
+        const pts=(el.getAttribute('points')||'').trim().split(/\s+/).map(p=>p.split(',').map(Number)).filter(p=>p.length===2 && isFinite(p[0]) && isFinite(p[1]));
+        return pts;
+      }
+      const d = el.getAttribute('d')||'';
+      const tokens = d.match(/[a-zA-Z]|-?\d*\.?\d+/g) || [];
+      const pts=[]; let i=0; let cx=0, cy=0; let cmd='';
+      while (i<tokens.length){
+        const t=tokens[i];
+        if (/[a-zA-Z]/.test(t)){ cmd=t; i++; continue; }
+        if (cmd==='M' || cmd==='L'){ const x=parseFloat(tokens[i++]); const y=parseFloat(tokens[i++]); cx=x; cy=y; pts.push([cx,cy]); continue; }
+        if (cmd==='m' || cmd==='l'){ const dx=parseFloat(tokens[i++]); const dy=parseFloat(tokens[i++]); cx+=dx; cy+=dy; pts.push([cx,cy]); continue; }
+        if (cmd==='H'){ const x=parseFloat(tokens[i++]); cx=x; pts.push([cx,cy]); continue; }
+        if (cmd==='h'){ const dx=parseFloat(tokens[i++]); cx+=dx; pts.push([cx,cy]); continue; }
+        if (cmd==='V'){ const y=parseFloat(tokens[i++]); cy=y; pts.push([cx,cy]); continue; }
+        if (cmd==='v'){ const dy=parseFloat(tokens[i++]); cy+=dy; pts.push([cx,cy]); continue; }
+        i++;
+      }
+      return pts;
+    }
+    function bufferPolyline(points, width){
+      if (!points || points.length<2) return null;
+      const half = width/2;
+      const left=[]; const right=[];
+      for (let i=0;i<points.length-1;i++){
+        const [x1,y1]=points[i]; const [x2,y2]=points[i+1];
+        const dx=x2-x1, dy=y2-y1; const len=Math.hypot(dx,dy)||1;
+        const nx=-dy/len, ny=dx/len;
+        left.push([x1+nx*half, y1+ny*half]);
+        right.push([x1-nx*half, y1-ny*half]);
+        if (i===points.length-2){
+          left.push([x2+nx*half, y2+ny*half]);
+          right.push([x2-nx*half, y2-ny*half]);
+        }
+      }
+      right.reverse();
+      return left.concat(right);
+    }
+  </script>
+</body>
+</html>
+
+
