@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>點點墨寶</title>
+    <title>漢字樹</title>
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -3570,7 +3570,7 @@
     <div class="app-container">
         <header>
             <div class="content">
-                            <h1>點點墨寶</h1>
+                            <h1>漢字樹</h1>
             <p class="tagline">弘立書院中文經典AI實驗室出品</p>
             </div>
         </header>
@@ -4360,13 +4360,23 @@
             // 顯示今日隨機漢字
             showDailyCharacter();
 
+            // 本地存儲鍵名（新/舊）
+            const STORAGE_KEYS = {
+                playerData: 'hanzishu_player_data',
+                playerDataLegacy: 'diandianmobao_player_data',
+                vocabularyBook: 'hanzishu_vocabulary_book',
+                vocabularyBookLegacy: 'vocabularyBook'
+            };
+
             // ===== 墨寶積分系統核心功能 =====
             
             // 載入玩家數據
             function loadPlayerData() {
-                const saved = localStorage.getItem('diandianmobao_player_data');
-                if (saved) {
-                    const data = JSON.parse(saved);
+                const savedNew = localStorage.getItem(STORAGE_KEYS.playerData);
+                const savedOld = localStorage.getItem(STORAGE_KEYS.playerDataLegacy);
+                const raw = savedNew || savedOld;
+                if (raw) {
+                    const data = JSON.parse(raw);
                     // 轉換Set類型的數據
                     if (data.functionsUsed && Array.isArray(data.functionsUsed)) {
                         data.functionsUsed = new Set(data.functionsUsed);
@@ -4378,6 +4388,21 @@
                         data.achievements = new Set(data.achievements);
                     }
                     Object.assign(playerData, data);
+
+                    // 若來自舊鍵且新鍵尚未存在，執行遷移並刪除舊鍵
+                    if (!savedNew && savedOld) {
+                        const dataToSave = {
+                            ...playerData,
+                            functionsUsed: Array.from(playerData.functionsUsed),
+                            firstTimeActions: Array.from(playerData.firstTimeActions),
+                            achievements: Array.from(playerData.achievements)
+                        };
+                        localStorage.setItem(STORAGE_KEYS.playerData, JSON.stringify(dataToSave));
+                        try { localStorage.removeItem(STORAGE_KEYS.playerDataLegacy); } catch (e) {}
+                    } else if (savedNew && savedOld) {
+                        // 新舊鍵同時存在時，刪除舊鍵確保只保留一份
+                        try { localStorage.removeItem(STORAGE_KEYS.playerDataLegacy); } catch (e) {}
+                    }
                 }
                 
                 // 檢查每日重置
@@ -4404,7 +4429,7 @@
                     firstTimeActions: Array.from(playerData.firstTimeActions),
                     achievements: Array.from(playerData.achievements)
                 };
-                localStorage.setItem('diandianmobao_player_data', JSON.stringify(dataToSave));
+                localStorage.setItem(STORAGE_KEYS.playerData, JSON.stringify(dataToSave));
             }
 
             // 處理每日登入
@@ -6335,9 +6360,11 @@
             // 初始化字詞本
             function initVocabularyBook() {
                 // 從本地存儲載入字詞本
-                const savedVocabularyBook = localStorage.getItem('vocabularyBook');
-                if (savedVocabularyBook) {
-                    const data = JSON.parse(savedVocabularyBook);
+                const savedNew = localStorage.getItem(STORAGE_KEYS.vocabularyBook);
+                const savedOld = localStorage.getItem(STORAGE_KEYS.vocabularyBookLegacy);
+                const raw = savedNew || savedOld;
+                if (raw) {
+                    const data = JSON.parse(raw);
                     // 兼容舊版本數據
                     if (data.characters || data.words) {
                         vocabularyBook.items = [];
@@ -6353,9 +6380,18 @@
                         }
                         // 按時間戳排序
                         vocabularyBook.items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                        saveVocabularyBook(); // 保存為新格式
+                        saveVocabularyBook(); // 保存為新格式（也會寫入新鍵）
                     } else {
                         vocabularyBook = data;
+                    }
+
+                    // 若來源為舊鍵且新鍵尚未存在，執行遷移並刪除舊鍵
+                    if (!savedNew && savedOld) {
+                        saveVocabularyBook();
+                        try { localStorage.removeItem(STORAGE_KEYS.vocabularyBookLegacy); } catch (e) {}
+                    } else if (savedNew && savedOld) {
+                        // 新舊鍵同時存在時，刪除舊鍵確保只保留一份
+                        try { localStorage.removeItem(STORAGE_KEYS.vocabularyBookLegacy); } catch (e) {}
                     }
                 }
                 updateVocabularyBookDisplay();
@@ -6364,7 +6400,7 @@
             
             // 保存字詞本到本地存儲
             function saveVocabularyBook() {
-                localStorage.setItem('vocabularyBook', JSON.stringify(vocabularyBook));
+                localStorage.setItem(STORAGE_KEYS.vocabularyBook, JSON.stringify(vocabularyBook));
             }
             
             // 添加字詞到收藏
