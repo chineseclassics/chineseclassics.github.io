@@ -616,8 +616,10 @@
         
         .character-target {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
             height: 100%;
             z-index: 2;
@@ -5090,6 +5092,53 @@
             const quizTargetField = document.getElementById('quiz-target-field');
             const strokeHint = document.getElementById('stroke-hint');
             const strokeAnimationHint = document.getElementById('stroke-animation-hint');
+            const characterBoardEl = document.querySelector('.character-board');
+            const quizTargetEl = document.querySelector('.quiz-target');
+
+            // 尺寸與置中修復：統一以容器實際尺寸驅動
+            let lastCharacterWidth = 0;
+            let lastQuizWidth = 0;
+            let resizeTimer = null;
+
+            function getSquareContainerSize(containerEl, fallbackSize) {
+                try {
+                    if (!containerEl) return fallbackSize;
+                    const rect = containerEl.getBoundingClientRect();
+                    const width = Math.round(rect.width);
+                    const height = Math.round(rect.height);
+                    const size = Math.max(0, Math.min(width || 0, height || 0));
+                    return size > 0 ? size : fallbackSize;
+                } catch (e) {
+                    return fallbackSize;
+                }
+            }
+
+            function updateWriterDimensions(force = false) {
+                // 以容器寬度為準，忽略僅高度變動（如地址列收合）
+                if (characterBoardEl && writer) {
+                    const rect = characterBoardEl.getBoundingClientRect();
+                    const containerWidth = Math.round(rect.width);
+                    if (force || (containerWidth > 0 && containerWidth !== lastCharacterWidth)) {
+                        const size = getSquareContainerSize(characterBoardEl, (window.innerWidth > 768 ? 240 : 260));
+                        try {
+                            writer.updateDimensions({ width: size, height: size });
+                            lastCharacterWidth = containerWidth;
+                        } catch (e) {}
+                    }
+                }
+
+                if (quizTargetEl && quizWriter) {
+                    const rect = quizTargetEl.getBoundingClientRect();
+                    const containerWidth = Math.round(rect.width);
+                    if (force || (containerWidth > 0 && containerWidth !== lastQuizWidth)) {
+                        const size = getSquareContainerSize(quizTargetEl, (window.innerWidth > 768 ? 240 : 260));
+                        try {
+                            quizWriter.updateDimensions({ width: size, height: size });
+                            lastQuizWidth = containerWidth;
+                        } catch (e) {}
+                    }
+                }
+            }
             
             // 記憶遊戲相關元素
             const memoryCharacters = document.getElementById('memory-characters');
@@ -5379,9 +5428,10 @@
                 updateFavoriteButtonState('character', character);
                 
                 // 初始化漢字筆順
+                const charInitSize = getSquareContainerSize(characterBoardEl, (window.innerWidth > 768 ? 240 : 260));
                 writer = HanziWriter.create('character-target', character, {
-                    width: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
-                    height: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
+                    width: Math.max(200, charInitSize),
+                    height: Math.max(200, charInitSize),
                     padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
@@ -5608,9 +5658,10 @@
                 console.log('开始创建quizWriter，字符:', currentCharacter);
                 
                 // 创建新的笔顺练习实例
+                const quizInitSize = getSquareContainerSize(quizTargetEl, (window.innerWidth > 768 ? 240 : 260));
                 quizWriter = HanziWriter.create('quiz-target-field', currentCharacter, {
-                    width: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
-                    height: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
+                    width: Math.max(200, quizInitSize),
+                    height: Math.max(200, quizInitSize),
                     padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
@@ -5668,9 +5719,10 @@
                 console.log('开始创建quizWriter，字符:', currentCharacter);
                 
                 // 创建新的笔顺练习实例
+                const quizInitSize2 = getSquareContainerSize(quizTargetEl, (window.innerWidth > 768 ? 240 : 260));
                 quizWriter = HanziWriter.create('quiz-target-field', currentCharacter, {
-                    width: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
-                    height: window.innerWidth > 768 ? 240 : 260,  // 行動端放大
+                    width: Math.max(200, quizInitSize2),
+                    height: Math.max(200, quizInitSize2),
                     padding: 20,  // 增加內邊距確保漢字在田字格內
                     strokeColor: '#232D52',
                     outlineColor: '#DDD8C8',
@@ -6967,32 +7019,10 @@
                 });
             });
             
-            // 調整大小時更新漢字顯示
+            // 調整大小時更新漢字顯示（僅在寬度改變時，使用容器實際尺寸）
             window.addEventListener('resize', function() {
-                const isWide = window.innerWidth > 768;
-                const size = isWide ? 280 : 220;
-                
-                if (writer) {
-                    try {
-                        writer.updateDimensions({
-                            width: size,
-                            height: size
-                        });
-                    } catch(e) {
-                        console.error('调整大小时出错:', e);
-                    }
-                }
-                
-                if (quizWriter) {
-                    try {
-                        quizWriter.updateDimensions({
-                            width: size,
-                            height: size
-                        });
-                    } catch(e) {
-                        console.error('调整大小时出错:', e);
-                    }
-                }
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => updateWriterDimensions(false), 120);
             });
             
             // 初始化記憶挑戰難度
