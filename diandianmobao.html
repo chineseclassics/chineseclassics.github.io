@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>漢字樹</title>
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.2/wordcloud2.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -2784,10 +2785,7 @@
             opacity: 0.9;
         }
         
-        .achievement-notification {
-            background: linear-gradient(135deg, #51CF66, #FFE66D);
-            color: white;
-        }
+        /* 成就系統已移除 */
         
         .achievement-content {
             display: flex;
@@ -3989,55 +3987,98 @@
             
             <!-- 側邊面板區域 -->
             <div class="side-panel-container">
-                <!-- 成就面板 -->
-                <div class="panel panel-compact side-panel" id="achievements-panel">
+                
+                <!-- 我的漢字樹（樹形文字雲） -->
+                <div class="panel panel-compact side-panel" id="hanzi-tree-panel">
                     <div class="side-panel-header">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"></path>
+                            <circle cx="8.5" cy="9" r="4"></circle>
+                            <circle cx="15.5" cy="10.5" r="3.5"></circle>
+                            <rect x="10.5" y="13" width="3" height="7" rx="1"></rect>
                         </svg>
-                        <h2 class="chinese-text">我的成就</h2>
-                        <span class="achievement-count" id="achievement-count">(0/40)</span>
+                        <h2 class="chinese-text">我的漢字樹</h2>
+                        <button id="hanzi-tree-expand-btn" class="btn btn-outline" style="margin-left:auto">放大查看</button>
                     </div>
-                    <div class="achievements-summary">
-                        <div class="recent-achievements" id="recent-achievements">
-                            <!-- 最近獲得的成就 -->
+                    <div class="hanzi-tree-cloud" id="hanzi-tree-cloud">
+                        <div class="hanzi-tree-decor" aria-hidden="true">
+                            <div class="decor-sun"></div>
+                            <div class="decor-cloud cloud-1"></div>
+                            <div class="decor-cloud cloud-2"></div>
+                            <div class="decor-cloud cloud-3"></div>
+                            <div class="decor-ground"></div>
+                            <div class="decor-trunk"></div>
                         </div>
-                        <div class="achievement-progress-overview">
-                            <div class="progress-item">
-                                <span class="progress-label">基礎探索</span>
-                                <span class="progress-value" id="basic-progress">0/4</span>
-                            </div>
-                            <div class="progress-item">
-                                <span class="progress-label">筆順修煉</span>
-                                <span class="progress-value" id="stroke-progress">0/4</span>
-                            </div>
-                            <div class="progress-item">
-                                <span class="progress-label">記憶挑戰</span>
-                                <span class="progress-value" id="memory-progress">0/4</span>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline btn-view-all" id="view-all-achievements">
-                            查看全部成就
-                        </button>
+                        <canvas id="hanzi-tree-trunk" class="trunk-canvas"></canvas>
+                        <canvas id="hanzi-tree-canvas"></canvas>
                     </div>
                 </div>
 
-                <!-- 全部成就模態窗口 -->
-                <div class="achievements-modal" id="achievements-modal" style="display: none;">
-                    <div class="achievements-modal-content">
-                        <div class="achievements-modal-header">
-                            <h3>🏆 全部成就</h3>
-                            <span class="achievements-modal-count" id="achievements-modal-count">(0/40)</span>
-                            <button class="achievements-modal-close" id="achievements-modal-close">×</button>
+                <!-- 放大版：漢字樹文字雲模態窗口 -->
+                <div class="vocabulary-modal" id="hanzi-tree-modal" style="display: none;">
+                    <div class="vocabulary-modal-content" style="max-width: 90vw; width: 90vw; height: 80vh; display:flex; flex-direction:column;">
+                        <div class="vocabulary-modal-header">
+                            <h3>我的漢字樹（放大）</h3>
+                            <button class="vocabulary-modal-close" id="hanzi-tree-modal-close">×</button>
                         </div>
-                        <div class="achievements-modal-body">
-                            <div class="achievements-modal-list" id="achievements-modal-list">
-                                <!-- 動態生成完整成就列表 -->
+                        <div style="flex:1; position:relative;">
+                            <div class="hanzi-tree-cloud hanzi-tree-cloud-large" id="hanzi-tree-cloud-large" style="position:absolute; inset:0;">
+                                <div class="hanzi-tree-decor" aria-hidden="true">
+                                    <div class="decor-sun"></div>
+                                    <div class="decor-cloud cloud-1"></div>
+                                    <div class="decor-cloud cloud-2"></div>
+                                    <div class="decor-cloud cloud-3"></div>
+                                    <div class="decor-ground"></div>
+                                    <div class="decor-trunk"></div>
+                                </div>
+                                <canvas id="hanzi-tree-trunk-large" class="trunk-canvas"></canvas>
+                                <canvas id="hanzi-tree-canvas-large"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- 局部樣式：漢字樹 -->
+                <style>
+                    /* 固定高度，無滾動 */
+                    #hanzi-tree-panel .hanzi-tree-cloud { height: 380px; position: relative; border-radius: 12px; background: linear-gradient(180deg, rgba(163, 230, 53, 0.10), rgba(163, 230, 53, 0.04)); overflow: hidden; }
+                    #hanzi-tree-panel canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 2; }
+                    #hanzi-tree-panel canvas.trunk-canvas { z-index: 1; }
+                    #hanzi-tree-panel .hanzi-tree-decor { position: absolute; inset: 0; z-index: 0; }
+                    /* 陽光 */
+                    #hanzi-tree-panel .decor-sun { position: absolute; right: 16px; top: 14px; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #FFE66D 0%, #FFB366 70%); box-shadow: 0 0 22px rgba(255, 230, 109, 0.65); opacity: 0.95; }
+                    /* 雲朵 */
+                    #hanzi-tree-panel .decor-cloud { position: absolute; background: #FFFFFF; box-shadow: 0 6px 18px rgba(0,0,0,0.06); border-radius: 50px; opacity: 0.9; }
+                    #hanzi-tree-panel .cloud-1 { left: 14px; top: 20px; width: 80px; height: 26px; }
+                    #hanzi-tree-panel .cloud-2 { left: 120px; top: 46px; width: 110px; height: 30px; }
+                    #hanzi-tree-panel .cloud-3 { right: 100px; top: 70px; width: 90px; height: 28px; }
+                    /* 平坦土地（佔用較少高度） */
+                    #hanzi-tree-panel .decor-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 14%; background: linear-gradient(180deg, rgba(76, 175, 80, 0.9), rgba(56, 142, 60, 1)); border-top-left-radius: 12px; border-top-right-radius: 12px; }
+                    /* 樹幹：落在土地上 */
+                    /* 以SVG樹幹替代矩形樹幹 */
+                    #hanzi-tree-panel .decor-trunk { display: none; }
+                    /* 小螢幕高度略小 */
+                    @media (max-width: 768px) {
+                        #hanzi-tree-panel .hanzi-tree-cloud { height: 300px; }
+                        #hanzi-tree-panel .decor-sun { width: 44px; height: 44px; }
+                    }
+                    /* 提示氣泡 */
+                    .hanzi-tree-tooltip { position: fixed; z-index: 9999; background: rgba(0,0,0,0.8); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; pointer-events: none; transform: translate(-50%, -120%); white-space: nowrap; }
+
+                    /* 放大模態版本：與側邊一致的自然場景與層級 */
+                    #hanzi-tree-modal .hanzi-tree-cloud-large { position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(180deg, rgba(163, 230, 53, 0.10), rgba(163, 230, 53, 0.04)); overflow: hidden; }
+                    #hanzi-tree-modal canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 2; }
+                    #hanzi-tree-modal canvas.trunk-canvas { z-index: 1; }
+                    #hanzi-tree-modal .hanzi-tree-decor { position: absolute; inset: 0; z-index: 0; }
+                    #hanzi-tree-modal .decor-sun { position: absolute; right: 16px; top: 14px; width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #FFE66D 0%, #FFB366 70%); box-shadow: 0 0 24px rgba(255, 230, 109, 0.65); opacity: 0.95; }
+                    #hanzi-tree-modal .decor-cloud { position: absolute; background: #FFFFFF; box-shadow: 0 8px 18px rgba(0,0,0,0.06); border-radius: 50px; opacity: 0.9; }
+                    #hanzi-tree-modal .cloud-1 { left: 20px; top: 24px; width: 120px; height: 36px; }
+                    #hanzi-tree-modal .cloud-2 { left: 160px; top: 60px; width: 160px; height: 42px; }
+                    #hanzi-tree-modal .cloud-3 { right: 140px; top: 90px; width: 130px; height: 36px; }
+                    #hanzi-tree-modal .decor-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 14%; background: linear-gradient(180deg, rgba(76, 175, 80, 0.9), rgba(56, 142, 60, 1)); border-top-left-radius: 12px; border-top-right-radius: 12px; }
+                    /* 以SVG樹幹替代矩形樹幹 */
+                    #hanzi-tree-modal .decor-trunk { display: none; }
+                </style>
+
                 <!-- 字詞本 -->
                 <div class="panel panel-compact side-panel" id="vocabulary-book-panel">
                     <div class="side-panel-header">
@@ -4567,125 +4608,16 @@
             }
 
             // 檢查成就
-            function checkAchievement(achievementId) {
-                if (playerData.achievements.has(achievementId)) return;
-                
-                // 查找成就
-                let achievement = null;
-                for (const category of Object.values(achievementCategories)) {
-                    achievement = category.achievements.find(a => a.id === achievementId);
-                    if (achievement) break;
-                }
-                
-                if (!achievement) return;
-                
-                // 檢查成就條件
-                let unlocked = false;
-                
-                switch (achievementId) {
-                    case 'first_character':
-                    case 'first_word':
-                    case 'first_collection':
-                    case 'first_login':
-                    case 'memory_first':
-                    case 'radical_first':
-                        unlocked = true;
-                        break;
-                        
-                    case 'stroke_beginner':
-                        unlocked = playerData.totalStrokePractices >= 5;
-                        break;
-                    case 'stroke_intermediate':
-                        unlocked = playerData.totalStrokePractices >= 20;
-                        break;
-                    case 'stroke_advanced':
-                        unlocked = playerData.totalStrokePractices >= 50;
-                        break;
-                    case 'stroke_master':
-                        unlocked = playerData.totalStrokePractices >= 100;
-                        break;
-                        
-                    case 'memory_good':
-                        unlocked = playerData.totalMemoryGames >= 10;
-                        break;
-                    case 'memory_expert':
-                        unlocked = playerData.totalMemoryGames >= 25;
-                        break;
-                    case 'memory_legend':
-                        unlocked = playerData.totalMemoryGames >= 50;
-                        break;
-                        
-                    case 'radical_builder':
-                        unlocked = playerData.totalRadicalGames >= 15;
-                        break;
-                    case 'radical_master':
-                        unlocked = playerData.totalRadicalGames >= 30;
-                        break;
-                        
-                    case 'char_collector':
-                        unlocked = playerData.totalCharactersLearned >= 50;
-                        break;
-                    case 'char_scholar':
-                        unlocked = playerData.totalCharactersLearned >= 150;
-                        break;
-                    case 'char_master':
-                        unlocked = playerData.totalCharactersLearned >= 300;
-                        break;
-                    case 'word_starter':
-                        unlocked = playerData.totalWordsLearned >= 30;
-                        break;
-                    case 'word_expert':
-                        unlocked = playerData.totalWordsLearned >= 100;
-                        break;
-                        
-                    case 'collector':
-                        unlocked = playerData.totalCollections >= 20;
-                        break;
-                    case 'treasure_hunter':
-                        unlocked = playerData.totalCollections >= 50;
-                        break;
-                    case 'archive_keeper':
-                        unlocked = playerData.totalCollections >= 100;
-                        break;
-                        
-                    case 'streak_3':
-                        unlocked = playerData.dailyLoginStreak >= 3;
-                        break;
-                    case 'streak_7':
-                        unlocked = playerData.dailyLoginStreak >= 7;
-                        break;
-                    case 'streak_30':
-                        unlocked = playerData.dailyLoginStreak >= 30;
-                        break;
-                        
-                    case 'explorer':
-                        unlocked = playerData.functionsUsed.size >= 5;
-                        break;
-                    case 'game_master':
-                        unlocked = playerData.functionsUsed.has('memory') && playerData.functionsUsed.has('radical');
-                        break;
-                        
-                    case 'perfectionist':
-                        unlocked = (playerData.perfectMemoryGames + playerData.perfectRadicalGames) >= 10;
-                        break;
-                        
-                    case 'night_owl':
-                        unlocked = new Date().getHours() >= 22;
-                        break;
-                    case 'early_bird':
-                        unlocked = new Date().getHours() <= 6;
-                        break;
-                }
-                
-                if (unlocked) {
-                    playerData.achievements.add(achievementId);
-                    awardPoints(achievement.points, `🏆 ${achievement.name} +${achievement.points} 🖌️`);
-                    showAchievementNotification(achievement);
-                    updateAchievementsDisplay();
-                }
+            // 成就系統已移除
+            function checkAchievement() {
+                // 成就系統已移除：空實作以保持兼容
             }
 
-            // 更新UI顯示
+            function updateAchievements() {
+                // 成就系統已移除：空實作以保持兼容
+            }
+
+            // 更新UI顯示（成就相關已移除）
             function updateUI() {
                 // 更新頂部狀態欄
                 document.getElementById('player-level').textContent = playerData.level;
@@ -4702,16 +4634,9 @@
                     document.getElementById('level-progress-text').textContent = 
                         `${playerData.points - currentLevelData.minPoints}/${currentLevelData.maxPoints - currentLevelData.minPoints}`;
                 }
-                
-                updateAchievementsDisplay();
             }
 
-            // 更新成就顯示
-            function updateAchievementsDisplay() {
-                updateRecentAchievements();
-                updateAchievementProgress();
-                updateAchievementCounts();
-            }
+            // 成就顯示已移除
 
             // 更新最近獲得的成就
             function updateRecentAchievements() {
@@ -4898,24 +4823,9 @@
                 }, 3500);
             }
 
-            // 顯示成就通知
-            function showAchievementNotification(achievement) {
-                const notification = document.createElement('div');
-                notification.className = 'achievement-notification';
-                notification.innerHTML = `
-                    <div class="achievement-title">${achievement.icon} ${achievement.name}</div>
-                    <div class="achievement-desc">${achievement.desc}</div>
-                `;
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 4000);
-            }
+            // 成就通知已移除
 
-            // 初始化積分系統
+            // 初始化積分系統（成就相關已移除）
             loadPlayerData();
 
             // 設置成就模態窗口事件監聽器
@@ -4950,8 +4860,7 @@
                 });
             }
 
-            // 初始化成就模態窗口
-            setupAchievementsModal();
+            // 成就系統已移除：不再初始化成就模態窗口
             
             // 獲取所有DOM元素（必須在函數定義之前）
             const navLookup = document.getElementById('nav-lookup');
@@ -6016,43 +5925,7 @@
                 }
             }
             
-            // 更新成就
-            function updateAchievements() {
-                const uniqueCharsCount = learnedCharacters.length;
-                
-                // 更新所有成就進度
-                document.querySelectorAll('.achievement').forEach(achievement => {
-                    const progressElement = achievement.querySelector('.achievement-progress');
-                    const nameElement = achievement.querySelector('.achievement-name');
-                    
-                    if (nameElement.textContent === '筆順新手') {
-                        progressElement.textContent = `${Math.min(uniqueCharsCount, 1)}/1`;
-                        if (uniqueCharsCount >= 1) {
-                            achievement.classList.remove('locked');
-                        }
-                    } else if (nameElement.textContent === '筆順高手') {
-                        progressElement.textContent = `${Math.min(uniqueCharsCount, 5)}/5`;
-                        if (uniqueCharsCount >= 5) {
-                            achievement.classList.remove('locked');
-                        }
-                    } else if (nameElement.textContent === '筆順達人') {
-                        progressElement.textContent = `${Math.min(uniqueCharsCount, 10)}/10`;
-                        if (uniqueCharsCount >= 10) {
-                            achievement.classList.remove('locked');
-                        }
-                    } else if (nameElement.textContent === '筆順大師') {
-                        progressElement.textContent = `${Math.min(uniqueCharsCount, 25)}/25`;
-                        if (uniqueCharsCount >= 25) {
-                            achievement.classList.remove('locked');
-                        }
-                    } else if (nameElement.textContent === '筆順王者') {
-                        progressElement.textContent = `${Math.min(uniqueCharsCount, 50)}/50`;
-                        if (uniqueCharsCount >= 50) {
-                            achievement.classList.remove('locked');
-                        }
-                    }
-                });
-            }
+            // 成就系統已移除
             
             // 移除了選項卡切換功能，因為新界面不再使用選項卡
             
@@ -6644,6 +6517,8 @@
                         vocabularyMore.style.display = 'none';
                     }
                 }
+                // 觸發漢字樹重繪（節流）
+                try { if (typeof requestHanziTreeRerender === 'function') { requestHanziTreeRerender(); } } catch (e) {}
             }
             
             // 打開模態窗口
@@ -6705,7 +6580,8 @@
                 const characterFavoriteBtn = document.getElementById('character-favorite-btn');
                 if (characterFavoriteBtn) {
                     characterFavoriteBtn.addEventListener('click', () => {
-                        const currentChar = lastLookedUpCharacter;
+                        // 以目前顯示的字符為主，回退到最近查過的字符
+                        const currentChar = (typeof currentCharacter !== 'undefined' && currentCharacter) ? currentCharacter : lastLookedUpCharacter;
                         const currentPinyin = lastLookedUpCharacterPinyin;
                         
                         if (!currentChar) {
@@ -6734,7 +6610,8 @@
                 const wordFavoriteBtn = document.getElementById('word-favorite-btn');
                 if (wordFavoriteBtn) {
                     wordFavoriteBtn.addEventListener('click', () => {
-                        const currentWord = lastLookedUpWord;
+                        // 以目前顯示的詞為主，回退到最近查過的詞
+                        const currentWord = (typeof window.currentWord !== 'undefined' && window.currentWord) ? window.currentWord : lastLookedUpWord;
                         const currentPinyin = lastLookedUpWordPinyin;
                         
                         if (!currentWord) {
@@ -8006,6 +7883,339 @@
             characterInput.value = '人';
             hideCharacterSelector();
             switchToCharacter('人', 'init');
+
+            // ============ 我的漢字樹：資料、遮罩與渲染 ============
+            const hanziTree = {
+                sidebar: {
+                    canvas: document.getElementById('hanzi-tree-canvas'),
+                    trunkCanvas: document.getElementById('hanzi-tree-trunk'),
+                    container: document.getElementById('hanzi-tree-cloud')
+                },
+                modal: {
+                    canvas: document.getElementById('hanzi-tree-canvas-large'),
+                    trunkCanvas: document.getElementById('hanzi-tree-trunk-large'),
+                    container: document.getElementById('hanzi-tree-cloud-large'),
+                    root: document.getElementById('hanzi-tree-modal'),
+                    openBtn: document.getElementById('hanzi-tree-expand-btn'),
+                    closeBtn: document.getElementById('hanzi-tree-modal-close')
+                },
+                svg: {
+                    loaded: false,
+                    promise: null,
+                    viewBox: '0 0 1024 1024',
+                    crownMaskSVG: null,
+                    trunkSVG: null
+                },
+                tooltipEl: null,
+                rerenderTimer: null
+            };
+
+            // 建立簡單可愛樹形遮罩（之後可替換為圖片/SVG）
+            function drawCuteTreeMaskToCanvas(canvas) {
+                if (!canvas) return null;
+                const ctx = canvas.getContext('2d');
+                // 兼容脫離DOM情況：優先使用既有width/height，其次用offset/父容器尺寸，最後使用預設值
+                const domW = canvas.offsetWidth || (canvas.parentElement ? canvas.parentElement.clientWidth : 0);
+                const domH = canvas.offsetHeight || (canvas.parentElement ? canvas.parentElement.clientHeight : 0);
+                const w = canvas.width || domW || 300;
+                const h = canvas.height || domH || 200;
+                canvas.width = w;
+                canvas.height = h;
+                ctx.clearRect(0, 0, w, h);
+
+                // 樹冠：多個圓形疊加（加粗輪廓，有助於填滿形狀邊緣）
+                ctx.fillStyle = '#000';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = Math.max(2, Math.round(Math.min(w, h) * 0.01));
+                const cx = w * 0.5;
+                // 提升樹冠位置與尺度，盡量利用水平空間
+                const cy = h * 0.32;
+                const r = Math.min(w, h) * 0.35;
+                const circles = [
+                    {x: cx - r*1.05, y: cy - r*0.22, r: r*1.05},
+                    {x: cx + r*1.05, y: cy - r*0.22, r: r*1.0},
+                    {x: cx - r*0.25, y: cy - r*1.1, r: r*0.95},
+                    {x: cx + r*0.35, y: cy + r*0.24, r: r*1.0},
+                    {x: cx - r*0.65, y: cy + r*0.35, r: r*0.9}
+                ];
+                ctx.beginPath();
+                circles.forEach(c => { ctx.moveTo(c.x + c.r, c.y); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); });
+                ctx.fill();
+                ctx.stroke();
+
+                // 注意：遮罩僅用於樹冠，樹幹與土地改由背景裝飾呈現
+                return canvas;
+            }
+
+            function buildWordCloudListFromFavorites() {
+                const items = (vocabularyBook.items || []).slice();
+                if (items.length === 0) return [];
+                // 依時間排序（新→舊），確保有明顯權重差
+                items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const maxW = Math.min(12, Math.max(8, items.length + 4));
+                const minW = 2;
+                const span = Math.max(1, maxW - minW);
+                return items.map((item, index) => {
+                    const isChar = item.text.length === 1;
+                    // 基於排名的權重，確保有梯度；詞語略加權
+                    let w = Math.max(minW, maxW - index);
+                    if (!isChar) w += 1;
+                    // 長詞（>=3字）再略加權
+                    if (item.text.length >= 3) w += 1;
+                    const color = isChar ? '#2E7D32' : '#43A047';
+                    return [item.text, w, { color, data: item }];
+                });
+            }
+
+            function renderHanziTree(target, opts = {}) {
+                const container = target.container;
+                const canvas = target.canvas;
+                if (!container || !canvas || typeof WordCloud === 'undefined') return;
+                const rect = container.getBoundingClientRect();
+                const dpr = (window.devicePixelRatio || 1);
+                canvas.width = Math.floor(rect.width * dpr);
+                canvas.height = Math.floor(rect.height * dpr);
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
+
+                // 準備遮罩畫布
+                const maskCanvas = document.createElement('canvas');
+                maskCanvas.width = canvas.width;
+                maskCanvas.height = canvas.height;
+                const maskCtx = maskCanvas.getContext('2d');
+
+                // 先畫SVG樹幹（在文字雲下層的trunkCanvas）
+                drawTreeTrunk(target);
+
+                // 製作樹冠遮罩（使用tree.svg的綠色部分）
+                ensureHanziTreeSvgLoaded().then(() => {
+                    return drawSvgStringToCtx(maskCtx, hanziTree.svg.crownMaskSVG, maskCanvas.width, maskCanvas.height, { alignBottom: false })
+                        .then(() => {
+                            try {
+                                // 將非透明像素標準化為黑色遮罩
+                                const imgData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+                                const data = imgData.data;
+                                for (let i = 0; i < data.length; i += 4) {
+                                    const a = data[i + 3];
+                                    if (a > 10) {
+                                        data[i] = 0; data[i + 1] = 0; data[i + 2] = 0; data[i + 3] = 255;
+                                    } else {
+                                        data[i + 3] = 0;
+                                    }
+                                }
+                                maskCtx.putImageData(imgData, 0, 0);
+                            } catch (e) {
+                                // 忽略，使用已有像素
+                            }
+                            // 裁切底部，避免覆蓋樹幹與土地
+                            const cutY = Math.floor(maskCanvas.height * 0.56);
+                            maskCtx.clearRect(0, cutY, maskCanvas.width, maskCanvas.height - cutY);
+                            doWordCloud();
+                        });
+                }).catch(() => {
+                    // 任何錯誤，使用回退遮罩
+                    const temp = document.createElement('canvas');
+                    temp.width = rect.width; temp.height = rect.height;
+                    temp.style.width = rect.width + 'px'; temp.style.height = rect.height + 'px';
+                    drawCuteTreeMaskToCanvas(temp);
+                    maskCtx.drawImage(temp, 0, 0, rect.width, rect.height, 0, 0, canvas.width, canvas.height);
+                    doWordCloud();
+                });
+
+                function doWordCloud() {
+                    const list = buildWordCloudListFromFavorites();
+                    const itemCount = list.length;
+                    // 依項目數自適應密度與字級範圍（CSS像素）
+                    const gridSizeCss = itemCount <= 8 ? 1 : Math.max(2, Math.floor((rect.width + rect.height) / 360));
+                    const gridSize = Math.max(1, Math.floor(gridSizeCss * dpr));
+                    const maxFontCss = opts.maxFont || (itemCount <= 8 ? Math.max(22, Math.floor(rect.height * 0.20)) : Math.max(18, Math.floor(rect.height * 0.14)));
+                    const minFontCss = opts.minFont || (itemCount <= 8 ? Math.max(10, Math.floor(rect.height * 0.065)) : Math.max(9, Math.floor(rect.height * 0.048)));
+                    // 擴大嘗試次數，盡量填滿遮罩
+                    WordCloud(canvas, {
+                        list,
+                        gridSize,
+                        weightFactor: function(size) {
+                            // 依權重在[min,max]之間映射，並乘以dpr以保持CSS像素大小
+                            return dpr * (minFontCss + (maxFontCss - minFontCss) * (size - 2) / 10);
+                        },
+                        rotateRatio: 0,
+                        shrinkToFit: false,
+                        drawOutOfBound: false,
+                        fontFamily: 'Noto Serif TC, serif',
+                        backgroundColor: 'rgba(0,0,0,0)',
+                        color: function(word, weight) {
+                            const entry = list.find(e => e[0] === word && e[1] === weight);
+                            return entry && entry[2] && entry[2].color ? entry[2].color : '#2E7D32';
+                        },
+                        clearCanvas: true,
+                        drawMask: true,
+                        maskCanvas: maskCanvas,
+                        maskColor: 'rgba(46, 125, 50, 0.08)',
+                        abortThreshold: 6000, // 預設2000，增大
+                        abort: function() { return false; },
+                        hover: function(item, dimension, evt) { handleTreeHover(item, dimension, evt); },
+                        click: function(item) { handleTreeClick(item); }
+                    });
+                }
+            }
+
+            function ensureHanziTreeSvgLoaded() {
+                if (hanziTree.svg.loaded) return Promise.resolve();
+                if (hanziTree.svg.promise) return hanziTree.svg.promise;
+                const url = 'images/hanzishu/tree.svg';
+                hanziTree.svg.promise = fetch(url).then(r => r.text()).then(txt => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(txt, 'image/svg+xml');
+                    const svgEl = doc.querySelector('svg');
+                    const viewBox = svgEl && svgEl.getAttribute('viewBox') ? svgEl.getAttribute('viewBox') : '0 0 1024 1024';
+                    hanziTree.svg.viewBox = viewBox;
+                    const paths = Array.from(doc.querySelectorAll('path'));
+                    // 綠色樹冠與棕色樹幹
+                    const crown = paths.find(p => (p.getAttribute('fill') || '').toLowerCase() === '#1ca538');
+                    const trunk = paths.find(p => (p.getAttribute('fill') || '').toLowerCase() === '#65320b');
+                    // 構造樹冠遮罩SVG（填充黑色）
+                    if (crown) {
+                        const d = crown.getAttribute('d') || '';
+                        hanziTree.svg.crownMaskSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}"><path d="${d}" fill="#000000"/></svg>`;
+                    }
+                    // 構造樹幹SVG（保留原棕色）
+                    if (trunk) {
+                        const d = trunk.getAttribute('d') || '';
+                        const fill = trunk.getAttribute('fill') || '#65320b';
+                        hanziTree.svg.trunkSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}"><path d="${d}" fill="${fill}"/></svg>`;
+                    }
+                    hanziTree.svg.loaded = true;
+                });
+                return hanziTree.svg.promise;
+            }
+
+            function drawSvgStringToCtx(ctx, svgString, targetW, targetH, opts = {}) {
+                if (!svgString) return Promise.resolve();
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(svgBlob);
+                    img.onload = () => {
+                        try {
+                            ctx.clearRect(0, 0, targetW, targetH);
+                            const vw = 1024, vh = 1024; // 根據viewBox比例繪製
+                            const ar = vw / vh;
+                            let dw, dh;
+                            if ((targetW / targetH) >= ar) { dh = targetH; dw = dh * ar; } else { dw = targetW; dh = dw / ar; }
+                            const dx = Math.floor((targetW - dw) / 2);
+                            const alignBottom = !!opts.alignBottom;
+                            const dy = alignBottom ? Math.floor(targetH - dh) : Math.floor((targetH - dh) / 2);
+                            ctx.drawImage(img, dx, dy, dw, dh);
+                        } finally {
+                            URL.revokeObjectURL(url);
+                            resolve();
+                        }
+                    };
+                    img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                    img.src = url;
+                });
+            }
+
+            function drawTreeTrunk(target) {
+                const canvas = target.trunkCanvas;
+                const container = target.container;
+                if (!canvas || !container) return;
+                const rect = container.getBoundingClientRect();
+                const dpr = (window.devicePixelRatio || 1);
+                canvas.width = Math.floor(rect.width * dpr);
+                canvas.height = Math.floor(rect.height * dpr);
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // 使用簡潔垂直樹幹（去除分叉），對齊地面上方
+                const groundRatio = 0.14; // 與CSS土地高度一致
+                const trunkHeightRatio = 0.28; // 與原設計接近，與樹冠銜接
+                const trunkWidthRatio = 0.06; // 視覺上適中的寬度
+                const trunkHeight = Math.floor(canvas.height * trunkHeightRatio);
+                const trunkWidth = Math.floor(canvas.width * trunkWidthRatio);
+                const x = Math.floor(canvas.width / 2 - trunkWidth / 2);
+                const y = Math.floor(canvas.height * (1 - groundRatio) - trunkHeight);
+                const grad = ctx.createLinearGradient(0, y, 0, y + trunkHeight);
+                grad.addColorStop(0, '#8D6E63');
+                grad.addColorStop(1, '#5D4037');
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, trunkWidth, trunkHeight);
+            }
+
+            function handleTreeHover(item, dimension, evt) {
+                if (!item) { destroyTreeTooltip(); return; }
+                const data = item[2] && item[2].data;
+                if (!data) { destroyTreeTooltip(); return; }
+                const text = data.text || '';
+                const pinyin = data.pinyin || '';
+                const tip = pinyin ? `${text} · ${pinyin}` : text;
+                if (!hanziTree.tooltipEl) {
+                    const el = document.createElement('div');
+                    el.className = 'hanzi-tree-tooltip';
+                    document.body.appendChild(el);
+                    hanziTree.tooltipEl = el;
+                }
+                hanziTree.tooltipEl.textContent = tip;
+                hanziTree.tooltipEl.style.left = evt.clientX + 'px';
+                hanziTree.tooltipEl.style.top = evt.clientY + 'px';
+            }
+
+            function destroyTreeTooltip() {
+                if (hanziTree.tooltipEl && hanziTree.tooltipEl.parentElement) {
+                    hanziTree.tooltipEl.parentElement.removeChild(hanziTree.tooltipEl);
+                }
+                hanziTree.tooltipEl = null;
+            }
+
+            function handleTreeClick(item) {
+                if (!item) return;
+                const data = item[2] && item[2].data; if (!data) return;
+                const text = data.text; if (!text) return;
+                if (text.length === 1) {
+                    const navLookup = document.getElementById('nav-lookup');
+                    const characterDisplaySection = document.getElementById('character-display-section');
+                    switchMainFunction(navLookup, characterDisplaySection);
+                    const characterInput = document.getElementById('character-input');
+                    if (characterInput) { characterInput.value = text; hideCharacterSelector(); switchToCharacter(text, 'tree'); }
+                } else {
+                    const navWordLookup = document.getElementById('nav-word-lookup');
+                    const wordLookupContainer = document.getElementById('word-lookup-container');
+                    switchMainFunction(navWordLookup, wordLookupContainer);
+                    const wordInput = document.getElementById('word-input');
+                    if (wordInput) { wordInput.value = text; fetchWordDefinition(text, 'tree'); }
+                }
+            }
+
+            function requestHanziTreeRerender() {
+                if (hanziTree.rerenderTimer) clearTimeout(hanziTree.rerenderTimer);
+                hanziTree.rerenderTimer = setTimeout(() => {
+                    renderHanziTree(hanziTree.sidebar);
+                    if (hanziTree.modal.root && hanziTree.modal.root.style.display === 'flex') {
+                        renderHanziTree(hanziTree.modal);
+                    }
+                }, 200);
+            }
+
+            if (hanziTree.modal.openBtn) {
+                hanziTree.modal.openBtn.addEventListener('click', () => {
+                    if (hanziTree.modal.root) {
+                        hanziTree.modal.root.style.display = 'flex';
+                        requestHanziTreeRerender();
+                    }
+                });
+            }
+            if (hanziTree.modal.closeBtn) {
+                hanziTree.modal.closeBtn.addEventListener('click', () => {
+                    if (hanziTree.modal.root) {
+                        hanziTree.modal.root.style.display = 'none';
+                        destroyTreeTooltip();
+                    }
+                });
+            }
+
+            // 初次渲染
+            requestHanziTreeRerender();
             
         }); // 關閉DOMContentLoaded事件監聽器
     </script>
