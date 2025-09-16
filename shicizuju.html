@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>詩詞摘句</title>
+    <title>南風詩詞組句</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -35,10 +35,26 @@
             box-shadow: 0 0 0 2px rgba(59,121,96,0.35) inset;
             color: #0f172a;
         }
+        .character-btn.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.9rem;
+            color: #3B7960;
+            opacity: 0.95;
+        }
+        /* 選中字保持選中樣式，不受 hover 綠色影響 */
+        .character-btn.selected:hover {
+            background-color: rgba(59, 121, 96, 0.15);
+            border-color: #3B7960;
+            box-shadow: 0 0 0 2px rgba(59,121,96,0.35) inset;
+            color: #0f172a;
+        }
         /* 字符按钮点击动画 */
         @keyframes buttonPulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(157, 41, 51, 0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(59, 121, 96, 0.5); }
             100% { transform: scale(1); }
         }
         
@@ -142,7 +158,7 @@
         /* 新增：點擊波紋 */
         .ripple {
             position: absolute; border-radius: 9999px; transform: translate(-50%, -50%);
-            background: rgba(157, 41, 51, 0.25); pointer-events: none; width: 10px; height: 10px;
+            background: rgba(59, 121, 96, 0.25); pointer-events: none; width: 10px; height: 10px;
             animation: ripple 600ms ease-out forwards;
         }
         @keyframes ripple {
@@ -421,6 +437,19 @@
 <body class="font-text" style="margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; background: #f9f5e9;">
     <div class="max-w-5xl mx-auto" style="height: 100%; width: 100%; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box;">
         <div class="flex justify-between items-center mb-3">
+            <!-- 現代化頂部欄 -->
+            <div class="w-full mb-2">
+                <div class="flex items-center justify-between bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 border border-secondary/20 shadow-sm">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold">南</div>
+                        <div class="text-base sm:text-lg font-title text-ink">南風詩詞組句</div>
+                    </div>
+                    <div class="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+                        <span class="px-2 py-1 rounded-md bg-imperial/80 border border-secondary/20">語文·練習</span>
+                        <span class="px-2 py-1 rounded-md bg-imperial/80 border border-secondary/20">組句</span>
+                    </div>
+                </div>
+            </div>
             <!-- 左侧得分显示 -->
             <div class="paper-effect p-2 sm:p-3 rounded-lg border border-secondary/30 flex items-center animate-fade-up" style="animation-delay:40ms">
                 <span class="font-kai text-lg sm:text-xl">分數</span>
@@ -434,7 +463,7 @@
                 
                 <!-- 主标题 -->
                 <h1 class="font-title text-3xl sm:text-5xl text-primary relative inline-block text-center px-4 py-1 mb-4">
-                    詩詞摘句
+                    南風詩詞組句
                     <span class="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary opacity-70"></span>
                 </h1>
                 
@@ -456,8 +485,8 @@
         </div>
         
         <!-- 倒計時進度條 -->
-        <div id="timeBarContainer" class="w-full h-2 bg-primary/20 rounded overflow-hidden mb-2 animate-scale-in">
-            <div id="timeBarFill" class="h-full bg-primary" style="width: 100%"></div>
+        <div id="timeBarContainer" class="w-full h-2 bg-gradient-to-r from-primary/15 to-secondary/15 rounded-full overflow-hidden mb-2 animate-scale-in">
+            <div id="timeBarFill" class="h-full bg-gradient-to-r from-primary to-secondary" style="width: 100%"></div>
         </div>
         
         <div class="flex items-center justify-end space-x-2 mb-2">
@@ -564,7 +593,7 @@
         </div>
         
         <!-- 诗句显示区域 -->
-        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30 seal flex flex-col justify-between mb-4">
+        <div class="paper-effect p-4 sm:p-5 rounded-xl shadow-md border border-secondary/30 seal flex flex-col justify-between mb-4">
             <div>
                 <h2 class="text-lg font-kai font-semibold mb-2 text-primary">請找出以下詩詞名句：</h2>
                 <div id="poemHint" class="text-lg font-kai p-2 rounded-md shadow-inner mb-2 bg-imperial/30 border border-secondary/20"></div>
@@ -584,7 +613,7 @@
             </div>
             
             <!-- 把按钮移动到选字界面下方并居中布局 -->
-            <div class="flex justify-center space-x-20 mt-4" style="flex-shrink: 0;">
+            <div class="flex justify-center space-x-4 sm:space-x-20 mt-4" style="flex-shrink: 0;">
                 <button id="clearSelection" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-md transition-colors font-kai shadow-md text-lg interactive">退一字</button>
                 <button id="submitPoem" class="bg-secondary hover:bg-secondary/80 text-white px-8 py-3 rounded-md transition-colors font-kai shadow-md text-lg">提交</button>
             </div>
@@ -1436,13 +1465,25 @@
             shuffledCharacters.forEach(char => {
                 const charButton = document.createElement('button');
                 charButton.textContent = char;
-                charButton.className = 'character-btn bg-imperial/70 hover:bg-primary hover:text-white border border-secondary/30 rounded-md p-2 md:p-3 text-xl md:text-2xl font-kai font-bold transition-colors animate-fade-up';
+                charButton.className = 'character-btn bg-imperial/70 hover:bg-secondary hover:text-white border border-secondary/30 rounded-md p-2 md:p-3 text-xl md:text-2xl font-kai font-bold transition-colors animate-fade-up';
                 charButton.dataset.char = char;
                 charButton.style.animationDelay = `${20 * idx}ms`;
                 idx++;
                 
                 charButton.addEventListener('click', (ev) => {
                     if (isGameActive) {
+                        // 達上限則不允許再選（除非是取消選中）
+                        const targetLen = currentPoem ? currentPoem.line.length : 0;
+                        if (!charButton.classList.contains('selected') && selectionStack.length >= targetLen) {
+                            soundManager.play('wrong');
+                            charButton.classList.add('animate-wrong');
+                            setTimeout(() => charButton.classList.remove('animate-wrong'), 500);
+                            if (typeof showNotification === 'function') {
+                                showNotification('已達本句字數上限');
+                            }
+                            return;
+                        }
+
                         // 播放漢字點擊音效
                         soundManager.play('charClick');
                         
@@ -1466,6 +1507,8 @@
                         // 切換選中狀態
                         const wasSelected = charButton.classList.toggle('selected');
                         if (wasSelected) {
+                            // 選中後移除 hover 綠色，保持選中視覺
+                            charButton.classList.remove('hover:bg-secondary', 'hover:text-white');
                             selectionStack.push({ char, btn: charButton });
                         } else {
                             // 取消選中需從堆疊移除最近一次對應該字的記錄
@@ -1475,6 +1518,8 @@
                                     break;
                                 }
                             }
+                            // 取消選中恢復 hover 綠色
+                            charButton.classList.add('hover:bg-secondary', 'hover:text-white');
                         }
 
                         // 重建顯示的詩句字串
@@ -1716,6 +1761,8 @@
                 const last = selectionStack.pop();
                 if (last && last.btn) {
                     last.btn.classList.remove('selected');
+                    // 恢復 hover 綠色
+                    last.btn.classList.add('hover:bg-secondary', 'hover:text-white');
                 }
                 poemDisplay.value = selectionStack.map(x => x.char).join('');
                 updateSelectionStatus();
@@ -1925,7 +1972,7 @@
                         document.querySelectorAll('.character-btn').forEach(btn => {
                             btn.disabled = false;
                             btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                            btn.classList.add('hover:bg-primary', 'hover:text-white');
+                            btn.classList.add('hover:bg-secondary', 'hover:text-white');
                         });
                     }
                 });
