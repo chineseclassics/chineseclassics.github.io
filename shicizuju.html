@@ -10,19 +10,51 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#C03A5C', // 牡丹粉·主色（活潑、友好）
-                        secondary: '#2E7D6D', // 青玉綠·輔色（自然、舒適）
-                        accent: '#FDBA21', // 琥珀金·強調
-                        imperial: '#FFF6E5', // 暖宣紙·底色
-                        ink: '#0F172A', // 墨色（深靛）
+                        // 现代蓝紫渐变主色系
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe', 
+                            400: '#38bdf8',
+                            500: '#0ea5e9', // 主蓝色
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e'
+                        },
+                        // 现代薄荷绿辅助色
+                        secondary: {
+                            400: '#4ade80',
+                            500: '#22c55e', // 主绿色
+                            600: '#16a34a',
+                            700: '#15803d'
+                        },
+                        // 现代紫色强调色
+                        accent: {
+                            400: '#a78bfa',
+                            500: '#8b5cf6', // 紫色强调
+                            600: '#7c3aed'
+                        },
+                        // 现代中性色背景
+                        surface: {
+                            50: '#fafafa',
+                            100: '#f4f4f5',
+                            200: '#e4e4e7',
+                            800: '#27272a',
+                            900: '#18181b'
+                        }
                     },
                     fontFamily: {
-                        'song': ['SimSun', 'STSong', 'serif'],
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
                         'kai': ['KaiTi', 'SimKai', 'serif'],
+                        'modern': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                        'bounce-gentle': 'bounceGentle 2s ease-in-out infinite',
+                        'pulse-modern': 'pulseModern 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scale-in': 'scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }
                 }
-            },
-            darkMode: 'class',
+            }
         }
     </script>
     
@@ -145,6 +177,77 @@
         }
         .interactive:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
         .interactive:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+
+        /* 對戰模式積分卡片樣式 */
+        #battleScoreboard { pointer-events: none; }
+        #battleScoreboard .player-score-card { pointer-events: auto; }
+        .player-score-card {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 1rem;
+            border-radius: 1.25rem; /* 20px */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            text-align: center;
+        }
+
+        .player-score-card.active {
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.9);
+            animation: pulse-gentle 1.5s infinite;
+        }
+        
+        /* 6种不同的玩家主题色 (背景渐变) */
+        .player-theme-1 { background: linear-gradient(180deg, rgba(142, 68, 173, 0.3), rgba(142, 68, 173, 0.1)); } /* 紫 */
+        .player-theme-2 { background: linear-gradient(180deg, rgba(41, 128, 185, 0.3), rgba(41, 128, 185, 0.1)); } /* 蓝 */
+        .player-theme-3 { background: linear-gradient(180deg, rgba(39, 174, 96, 0.3), rgba(39, 174, 96, 0.1)); } /* 绿 */
+        .player-theme-4 { background: linear-gradient(180deg, rgba(241, 196, 15, 0.3), rgba(241, 196, 15, 0.1)); } /* 黄 */
+        .player-theme-5 { background: linear-gradient(180deg, rgba(230, 126, 34, 0.3), rgba(230, 126, 34, 0.1)); } /* 橙 */
+        .player-theme-6 { background: linear-gradient(180deg, rgba(192, 57, 43, 0.3), rgba(192, 57, 43, 0.1)); } /* 红 */
+
+        .player-theme-1.active { box-shadow: 0 0 30px rgba(142, 68, 173, 0.8); }
+        .player-theme-2.active { box-shadow: 0 0 30px rgba(41, 128, 185, 0.8); }
+        .player-theme-3.active { box-shadow: 0 0 30px rgba(39, 174, 96, 0.8); }
+        .player-theme-4.active { box-shadow: 0 0 30px rgba(241, 196, 15, 0.8); }
+        .player-theme-5.active { box-shadow: 0 0 30px rgba(230, 126, 34, 0.8); }
+        .player-theme-6.active { box-shadow: 0 0 30px rgba(192, 57, 43, 0.8); }
+
+        .player-name {
+            font-family: 'modern', 'KaiTi', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem; 
+            color: #1F2937; /* 深灰色，提高对比度 */
+            margin-bottom: 0.5rem;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.2);
+        }
+        
+        .player-score {
+            font-family: 'modern', sans-serif;
+            font-size: 2.25rem;
+            font-weight: 900;
+            color: #FFFFFF;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5); /* 加深阴影 */
+        }
+
+        .current-turn-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            background-color: #34D399; /* 鲜绿色指示灯 */
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 10px #34D399, 0 0 20px #34D399;
+            animation: pulse-gentle 1.5s infinite;
+        }
+
+        @keyframes pulse-gentle {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
 
         /* 新增：字卡微動效與點擊波紋容器 */
         .character-btn {
@@ -402,14 +505,20 @@
                 max-height: none !important;
             }
 
-            /* 游戏消息区域压缩 */
+            /* 游戏消息区域移动端优化 */
             #gameMessage {
-                padding: 0.5rem !important;
-                margin-bottom: 0.5rem !important;
+                width: 95vw !important;
+                top: 50% !important;
+                left: 50% !important;
+            }
+
+            #gameMessage .glass-card-strong {
+                padding: 1rem !important;
             }
 
             #correctAnswer {
-                font-size: 1.5rem !important;
+                font-size: 2rem !important; /* 移动端适中大小 */
+                padding: 0.75rem !important;
             }
         }
 
@@ -432,207 +541,537 @@
                 font-size: 1.25rem !important;
             }
         }
+
+        /* 现代化动画效果 */
+        @keyframes slideUp {
+            0% { 
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            100% { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes bounceGentle {
+            0%, 100% { 
+                transform: translateY(0); 
+            }
+            50% { 
+                transform: translateY(-4px); 
+            }
+        }
+
+        @keyframes pulseModern {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.03);
+                opacity: 0.9;
+            }
+        }
+
+        /* 浮窗专用动画 */
+        @keyframes modalSlideIn {
+            0% { 
+                transform: translate(-50%, -50%) scale(0.9);
+                opacity: 0;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes modalSlideOut {
+            0% { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(0.9);
+                opacity: 0;
+            }
+        }
+
+        /* 玻璃拟态效果 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-card-strong {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 设置模态窗口专用样式 - 毛玻璃效果，透明度很低 */
+        .glass-modal {
+            background: rgba(245, 245, 245, 0.9);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 自定义滚动条样式 - 适配低透明度背景 */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.4);
+            background-clip: content-box;
+        }
+
+        /* 现代化按钮效果 */
+        .modern-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+
+        .modern-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .modern-button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 字符按钮现代化 */
+        .char-modern {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .char-modern:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* 渐变背景 */
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%);
+        }
+
+        .gradient-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+        }
+
+        .gradient-secondary {
+            background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+        }
+
+        .gradient-accent {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+        }
+
+        /* 对战结果窗口美化 */
+        #battleResultModal .winner-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+            border: 2px solid rgba(255, 215, 0, 0.5);
+        }
+
+        #battleResultModal .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideIn 0.5s forwards;
+        }
+
+        #battleResultModal .rank-item:hover {
+            transform: translateX(-10px) scale(1.02);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        .font-ma-shan-zheng {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
     </style>
 </head>
-<body class="font-text" style="margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; background: #f9f5e9;">
-    <div class="max-w-5xl mx-auto" style="height: 100%; width: 100%; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box;">
+<body class="font-modern gradient-bg" style="margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column;">
+    <div class="max-w-5xl mx-auto" style="height: 100%; width: 100%; display: flex; flex-direction: column; padding: 6px; box-sizing: border-box; position: relative;">
+        <!-- 選手積分顯示區域（左右兩側固定） -->
+        <div id="battleScoreboard" class="hidden z-10">
+            <!-- 左側選手積分（固定在左） -->
+            <div id="leftPlayers" class="fixed left-2 top-1/2 -translate-y-1/2 flex flex-col space-y-2 w-40"></div>
+            
+            <!-- 右側選手積分（固定在右） -->
+            <div id="rightPlayers" class="fixed right-2 top-1/2 -translate-y-1/2 flex flex-col space-y-2 w-40"></div>
+        </div>
         <div class="flex justify-between items-center mb-3">
-            <!-- 現代化頂部欄 -->
-            <div class="w-full mb-2">
-                <div class="flex items-center justify-between bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 border border-secondary/20 shadow-sm">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold">南</div>
-                        <div class="text-base sm:text-lg font-title text-ink">南風詩詞組句</div>
-                    </div>
-                    <div class="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
-                        <span class="px-2 py-1 rounded-md bg-imperial/80 border border-secondary/20">語文·練習</span>
-                        <span class="px-2 py-1 rounded-md bg-imperial/80 border border-secondary/20">組句</span>
-                    </div>
-                </div>
-            </div>
-            <!-- 左侧得分显示 -->
-            <div class="paper-effect p-2 sm:p-3 rounded-lg border border-secondary/30 flex items-center animate-fade-up" style="animation-delay:40ms">
-                <span class="font-kai text-lg sm:text-xl">分數</span>
-                <span id="score" class="text-3xl sm:text-5xl font-bold text-primary ml-2 sm:ml-3">0</span>
+            <!-- 左侧得分显示 - 现代化 -->
+            <div class="glass-card p-3 sm:p-4 rounded-2xl flex items-center animate-slide-up modern-button" style="animation-delay:40ms">
+                <span class="font-modern text-sm sm:text-base text-surface-800 font-medium">分數</span>
+                <span id="score" class="text-2xl sm:text-4xl font-bold text-primary-500 ml-2 sm:ml-3">0</span>
             </div>
             
-            <!-- 中间标题 - 增强中国风样式 -->
-            <div class="flex-grow flex flex-col items-center justify-center mx-2 relative animate-fade-up" style="animation-delay:80ms">
-                <!-- 背景装饰 -->
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-primary/5 rounded-full blur-xl -z-10"></div>
-                
-                <!-- 主标题 -->
-                <h1 class="font-title text-3xl sm:text-5xl text-primary relative inline-block text-center px-4 py-1 mb-4">
-                    南風詩詞組句
-                    <span class="absolute -bottom-2 left-0 right-0 h-0.5 bg-primary opacity-70"></span>
-                </h1>
+            <!-- 中间标题 - 现代化 -->
+            <div class="flex-grow flex flex-col items-center justify-center mx-3 relative animate-slide-up" style="animation-delay:80ms">
+                <!-- 游戏标题 -->
+                <div class="flex-grow flex items-center justify-center">
+                    <h1 class="text-3xl sm:text-4xl text-black font-ma-shan-zheng font-black leading-none" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.2);">南風詩詞組句</h1>
+                </div>
                 
                 <!-- 副标题 -->
-                <div class="text-xs sm:text-sm text-gray-500 mt-2 mb-1 font-kai tracking-wider">
+                <div class="text-xs text-surface-800/70 mt-1 font-modern tracking-wide">
                     中文經典AI實驗室
                 </div>
-                
-                <!-- 墨迹装饰 -->
-                <div class="absolute -bottom-3 -right-8 text-primary/20 text-4xl transform rotate-12 font-kai hidden sm:block">詩</div>
-                <div class="absolute -top-3 -left-8 text-primary/20 text-4xl transform -rotate-12 font-kai hidden sm:block">詞</div>
             </div>
             
-            <!-- 右侧倒计时 -->
-            <div class="paper-effect p-2 sm:p-3 rounded-lg border border-secondary/30 bg-primary/10 flex items-center animate-fade-up" style="animation-delay:120ms">
-                <span id="timer" class="text-3xl sm:text-5xl font-mono font-bold text-primary">30</span>
-                <span class="font-kai text-lg sm:text-xl ml-1">秒</span>
+            <!-- 右侧倒计时 - 现代化 -->
+            <div class="glass-card-strong p-3 sm:p-4 rounded-2xl flex items-center animate-slide-up modern-button gradient-accent" style="animation-delay:120ms">
+                <span id="timer" class="text-2xl sm:text-4xl font-bold text-white font-modern">30</span>
+                <span class="font-modern text-sm sm:text-base text-white/90 ml-1 font-medium">秒</span>
             </div>
         </div>
         
-        <!-- 倒計時進度條 -->
-        <div id="timeBarContainer" class="w-full h-2 bg-gradient-to-r from-primary/15 to-secondary/15 rounded-full overflow-hidden mb-2 animate-scale-in">
-            <div id="timeBarFill" class="h-full bg-gradient-to-r from-primary to-secondary" style="width: 100%"></div>
+        <!-- 倒計時進度條 - 现代化 -->
+        <div id="timeBarContainer" class="w-full h-3 bg-surface-200 rounded-full overflow-hidden mb-3 animate-scale-in shadow-inner">
+            <div id="timeBarFill" class="h-full gradient-primary rounded-full transition-all duration-300 ease-out" style="width: 100%"></div>
         </div>
         
-        <div class="flex items-center justify-end space-x-2 mb-2">
-            <div id="difficultySelector" class="inline-block paper-effect px-3 py-1 rounded-lg border border-secondary/30 hidden">
-                <span class="font-kai mr-1">難度：</span>
-                <select id="difficultySelect" class="bg-white/80 rounded-md px-2 py-1 text-sm border-none focus:ring-2 focus:ring-primary">
+        <div class="flex items-center justify-end space-x-3 mb-2">
+            <div id="difficultySelector" class="inline-block glass-card px-3 py-2 rounded-xl hidden animate-slide-up">
+                <span class="font-modern text-xs text-surface-800 mr-2 font-medium">難度：</span>
+                <select id="difficultySelect" class="bg-white/90 rounded-lg px-3 py-1 text-xs border-none focus:ring-2 focus:ring-primary-400 font-modern">
                     <option value="easy">簡單</option>
                     <option value="medium" selected>中等</option>
                     <option value="hard">困難</option>
                 </select>
             </div>
-            <button id="soundToggle" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-md text-sm flex items-center mr-2 interactive">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+            <button id="soundToggle" class="glass-card hover:glass-card-strong text-surface-800 px-3 py-2 rounded-xl text-xs flex items-center modern-button font-modern">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 mr-1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
                 </svg>
                 音效開
             </button>
-            <button id="adminModeToggle" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded-md text-sm flex items-center interactive">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+            <button id="adminModeToggle" class="glass-card hover:glass-card-strong text-surface-800 px-3 py-2 rounded-xl text-xs flex items-center modern-button font-modern">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 mr-1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                管理員
+                設置
             </button>
         </div>
         
-        <div id="adminPanel" class="mb-6 paper-effect p-5 rounded-lg shadow-md hidden border border-secondary/30">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-kai font-semibold">遊戲設置</h2>
-                <div class="flex items-center">
-                    <span class="mr-2 font-kai">模式：</span>
-                    <select id="gameMode" class="bg-white/80 rounded-md px-2 py-1 text-base border-none focus:ring-2 focus:ring-primary">
-                        <option value="preset" selected>經典詩詞</option>
-                        <option value="custom">自定義詩句</option>
-                    </select>
+        <!-- 對戰結束總結窗口 -->
+        <div id="battleResultModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
+            <div class="glass-modal rounded-3xl shadow-2xl w-[min(500px,90vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
+                <!-- 窗口標題 -->
+                <div class="flex justify-center items-center p-6 border-b border-white/20 gradient-primary rounded-t-3xl flex-shrink-0">
+                    <h2 class="text-2xl font-modern font-bold text-white">🏆 對戰結果</h2>
                 </div>
-            </div>
-            
-            <div class="flex items-center justify-between mb-3">
-                <span class="mr-2 font-kai">詩詞數據庫：</span>
-                <select id="poemDatabase" class="bg-white/80 rounded-md px-2 py-1 text-base border-none focus:ring-2 focus:ring-primary">
-                    <option value="default" selected>經典唐詩</option>
-                    <option value="elementary">小學生詩詞</option>
-                </select>
-            </div>
-            
-            <div id="difficultySettings" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="timeLimit" class="block text-lg font-medium mb-2">時間限制 (秒)</label>
-                    <input type="range" id="timeLimit" min="10" max="60" step="5" value="30" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                    <div class="flex justify-between mt-1">
-                        <span>10</span>
-                        <span id="timeLimitValue" class="font-medium text-primary">30</span>
-                        <span>60</span>
+                
+                <!-- 可滚动内容区域 -->
+                <div class="overflow-y-auto custom-scrollbar flex-grow p-6 text-white">
+                    <!-- 获胜者卡片 -->
+                    <div id="winnerCard" class="winner-card p-6 rounded-2xl text-center mb-6 transform transition-all duration-500 hover:scale-105">
+                        <div class="text-2xl font-modern font-bold mb-2 text-surface-800" id="winnerAnnouncement"></div>
+                        <div class="text-lg text-surface-600" id="winnerScore"></div>
                     </div>
-                </div>
-                <div>
-                    <label for="charCount" class="block text-lg font-medium mb-2">字元數量 (5的倍數)</label>
-                    <input type="range" id="charCount" min="10" max="30" step="5" value="20" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                    <div class="flex justify-between mt-1">
-                        <span>10</span>
-                        <span id="charCountValue" class="font-medium text-primary">20</span>
-                        <span>30</span>
-                    </div>
-                </div>
-            </div>
             
-            <div id="customPoemSettings" class="mt-4 hidden">
-                <div class="border-t border-gray-300 pt-4 mb-3">
-                    <h3 class="text-lg font-medium mb-2">自定義詩句</h3>
-                    <div class="grid grid-cols-1 gap-3">
-                        <div>
-                            <label for="customLine" class="block text-base font-medium mb-1">詩句內容：</label>
-                            <input type="text" id="customLine" placeholder="例如：床前明月光" class="w-full p-2 rounded-md border border-gray-300 bg-white text-base">
+                    <!-- 选手排行榜 -->
+                    <div>
+                        <h3 class="text-xl font-modern font-semibold mb-4 text-center text-surface-800">📊 最终排行榜</h3>
+                        <div id="battleRankings" class="space-y-3">
+                            <!-- 排行榜将由JavaScript动态生成 -->
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label for="customAuthor" class="block text-base font-medium mb-1">作者：</label>
-                                <input type="text" id="customAuthor" placeholder="例如：李白" class="w-full p-2 rounded-md border border-gray-300 bg-white text-base">
-                            </div>
-                            <div>
-                                <label for="customPoem" class="block text-base font-medium mb-1">詩名：</label>
-                                <input type="text" id="customPoem" placeholder="例如：靜夜思" class="w-full p-2 rounded-md border border-gray-300 bg-white text-base">
-                            </div>
-                        </div>
-                        <button id="saveCustomPoem" class="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors mt-1">保存詩句</button>
                     </div>
                 </div>
                 
-                <div class="mt-3">
-                    <h3 class="text-lg font-medium mb-2">已保存的自定義詩句</h3>
-                    <div id="savedPoemsContainer" class="max-h-40 overflow-y-auto bg-white dark:bg-gray-700 p-2 rounded-md">
-                        <p id="noSavedPoems" class="text-gray-500 dark:text-gray-400 text-center py-2">尚未保存任何自定義詩句</p>
-                        <ul id="savedPoemsList" class="hidden"></ul>
+                <!-- 底部按鈕 -->
+                <div class="flex justify-center space-x-4 p-6 border-t border-white/20 glass-card rounded-b-3xl flex-shrink-0">
+                    <button id="newBattleBtn" class="gradient-primary text-white px-6 py-3 rounded-xl font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">
+                        🔄 再來一局
+                    </button>
+                    <button id="exitBattleBtn" class="glass-card text-surface-800 px-6 py-3 rounded-xl font-modern font-semibold border border-white/30 modern-button transform transition-transform hover:scale-105">
+                        🏠 回到單人模式
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 設置模態彈窗 -->
+        <div id="settingsModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
+            <div class="glass-modal rounded-3xl shadow-2xl w-[min(600px,90vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
+                <!-- 彈窗標題 -->
+                <div class="flex justify-between items-center p-6 border-b border-white/20 gradient-primary rounded-t-3xl flex-shrink-0">
+                    <h2 class="text-2xl font-modern font-bold text-white">⚙️ 遊戲設置</h2>
+                    <button id="closeSettingsModal" class="text-white/80 hover:text-white text-2xl font-bold transform transition-transform hover:scale-110">&times;</button>
+                </div>
+                
+                <!-- 可滚动内容区域 -->
+                <div class="overflow-y-auto custom-scrollbar flex-grow">
+                    <!-- 設置內容 -->
+                    <div class="p-6 space-y-6">
+                        <!-- 1. 遊戲模式選擇 -->
+                        <div class="glass-card rounded-2xl p-4 border border-white/10">
+                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">🎮 遊戲模式</h3>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="radio" name="gameMode" value="single" checked class="text-primary focus:ring-primary">
+                                    <span class="font-modern">單人模式</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="radio" name="gameMode" value="battle" class="text-primary focus:ring-primary">
+                                    <span class="font-modern">對戰模式</span>
+                                </label>
+                            </div>
+            
+                            <!-- 1.1 對戰模式設置（緊跟在遊戲模式後） -->
+                            <div id="battleModeSettings" class="mt-4 pt-4 border-t border-white/20 hidden">
+                                <h4 class="text-md font-modern font-semibold text-surface-700 mb-3">🏆 對戰設置</h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-modern text-sm text-surface-800">選手數量：</span>
+                                        <select id="playerCount" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern">
+                                            <option value="2" selected>2名選手</option>
+                                            <option value="3">3名選手</option>
+                                            <option value="4">4名選手</option>
+                                            <option value="5">5名選手</option>
+                                            <option value="6">6名選手</option>
+                                        </select>
+                                    </div>
+                                    <div id="playerNamesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <!-- 選手名稱輸入框將由JavaScript動態生成 -->
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-modern text-sm text-surface-800">每輪題目數：</span>
+                                        <select id="roundsPerPlayer" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern">
+                                            <option value="1" selected>1題</option>
+                                            <option value="2">2題</option>
+                                            <option value="3">3題</option>
+                                            <option value="5">5題</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            
+                        <!-- 2. 詩詞庫選擇 -->
+                        <div class="glass-card rounded-2xl p-4 border border-white/10">
+                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">📚 詩詞庫</h3>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="radio" name="poemDatabase" value="default" checked class="text-primary focus:ring-primary">
+                                    <span class="font-modern">經典唐詩</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="radio" name="poemDatabase" value="elementary" class="text-primary focus:ring-primary">
+                                    <span class="font-modern">小學生詩詞</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="radio" name="poemDatabase" value="custom" class="text-primary focus:ring-primary">
+                                    <span class="font-modern">自定義詩句</span>
+                                </label>
+                            </div>
+                        
+                            <!-- 2.1 自定義詩句設置（緊跟在詩詞庫後） -->
+                            <div id="customPoemSettings" class="mt-4 pt-4 border-t border-white/20 hidden">
+                                <h4 class="text-md font-modern font-semibold text-surface-700 mb-3">✏️ 自定義詩句</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-modern font-medium mb-1 text-surface-800">詩句內容：</label>
+                                        <input type="text" id="customLine" placeholder="例如：床前明月光" class="w-full p-2 rounded-lg border border-white/30 glass-card text-sm font-modern">
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-modern font-medium mb-1 text-surface-800">作者：</label>
+                                            <input type="text" id="customAuthor" placeholder="例如：李白" class="w-full p-2 rounded-lg border border-white/30 glass-card text-sm font-modern">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-modern font-medium mb-1 text-surface-800">詩名：</label>
+                                            <input type="text" id="customPoem" placeholder="例如：靜夜思" class="w-full p-2 rounded-lg border border-white/30 glass-card text-sm font-modern">
+                                        </div>
+                                    </div>
+                                    <button id="saveCustomPoem" class="gradient-secondary text-white px-4 py-2 rounded-lg modern-button font-modern text-sm transform transition-transform hover:scale-105">保存詩句</button>
+                                
+                                    <div class="mt-4">
+                                        <h5 class="font-modern font-medium mb-2 text-sm text-surface-800">已保存的自定義詩句</h5>
+                                        <div id="savedPoemsContainer" class="max-h-32 overflow-y-auto glass-card p-2 rounded-lg border border-white/30">
+                                            <p id="noSavedPoems" class="text-surface-500 text-center py-2 text-sm font-modern">尚未保存任何自定義詩句</p>
+                                            <ul id="savedPoemsList" class="hidden"></ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            
+                        <!-- 3. 遊戲難度設置 -->
+                        <div class="glass-card rounded-2xl p-4 border border-white/10">
+                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">⚙️ 遊戲難度</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-modern font-medium mb-2 text-surface-800">時間限制 (秒)</label>
+                                    <input type="range" id="timeLimit" min="10" max="60" step="5" value="30" class="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer">
+                                    <div class="flex justify-between mt-1 text-sm text-surface-600">
+                                        <span>10</span>
+                                        <span id="timeLimitValue" class="font-medium text-primary">30</span>
+                                        <span>60</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-modern font-medium mb-2 text-surface-800">字元數量</label>
+                                    <input type="range" id="charCount" min="10" max="30" step="5" value="20" class="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer">
+                                    <div class="flex justify-between mt-1 text-sm text-surface-600">
+                                        <span>10</span>
+                                        <span id="charCountValue" class="font-medium text-primary">20</span>
+                                        <span>30</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 彈窗底部按鈕 -->
+                <div class="flex justify-end items-center p-6 border-t border-white/20 glass-card rounded-b-3xl flex-shrink-0">
+                    <div class="flex space-x-3">
+                        <button id="cancelSettings" class="glass-card text-surface-800 px-6 py-3 rounded-xl font-modern font-semibold border border-white/30 modern-button transform transition-transform hover:scale-105">
+                            取消
+                        </button>
+                        <button id="saveSettings" class="gradient-primary text-white px-6 py-3 rounded-xl font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">
+                            保存設置
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- 游戏消息区域 (结果公布) -->
-        <div id="gameMessage" class="hidden mb-3 paper-effect p-3 rounded-lg border border-secondary/30 text-center">
-            <p class="text-lg font-kai font-bold"></p>
-            <div id="correctAnswer" class="hidden mt-2 text-2xl font-kai font-bold text-primary"></div>
+
+        <!-- 诗句显示区域 - 现代化 -->
+        <div class="glass-card-strong p-4 rounded-3xl mb-4 animate-slide-up" style="animation-delay:160ms">
+            <!-- 题目作者信息和字数 - 同一行显示 -->
+            <div class="text-center mb-5">
+                <div class="inline-flex items-center space-x-6">
+                    <!-- 题目作者信息 -->
+                    <div id="poemHint" class="text-base md:text-lg font-kai font-bold px-5 py-3 rounded-2xl glass-card text-surface-800 transform transition-all duration-500 hover:scale-105 animate-pulse-modern modern-button"></div>
+                    
+                    <!-- 字数显示 -->
+                    <div class="inline-flex items-center space-x-2">
+                        <span id="charCountDisplay" class="text-xl font-modern font-black text-white bg-gradient-to-br from-accent-500 to-accent-600 rounded-full w-12 h-12 flex items-center justify-center shadow-lg animate-bounce-gentle modern-button"></span>
+                        <span class="text-sm font-modern text-surface-800 font-semibold">字</span>
+            </div>
         </div>
-        
-        <!-- 诗句显示区域 -->
-        <div class="paper-effect p-4 sm:p-5 rounded-xl shadow-md border border-secondary/30 seal flex flex-col justify-between mb-4">
-            <div>
-                <h2 class="text-lg font-kai font-semibold mb-2 text-primary">請找出以下詩詞名句：</h2>
-                <div id="poemHint" class="text-lg font-kai p-2 rounded-md shadow-inner mb-2 bg-imperial/30 border border-secondary/20"></div>
             </div>
             
-            <div class="flex-grow flex items-center justify-center my-2">
-                <input id="poemDisplay" type="text" class="w-full px-3 rounded-lg shadow-inner bg-imperial/70 text-2xl font-kai font-bold text-center focus:outline-none" readonly style="height: 3rem; line-height: 3rem;">
+            <!-- 诗句输入框 - 更大字体现代化 -->
+            <div class="flex items-center justify-center mb-3">
+                <div class="relative w-full">
+                    <input id="poemDisplay" type="text" class="w-full px-4 rounded-2xl glass-card text-4xl font-kai font-bold text-center focus:outline-none text-surface-800 transition-all duration-300" readonly style="height: 4.5rem; line-height: 4.5rem; text-align-last: center;">
+                    <!-- 错误图标 - 动态定位在文字右侧 -->
+                    <div id="poemErrorIcon" class="hidden absolute top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center animate-pulse">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="selectionStatus" class="text-right text-sm text-gray-600 font-kai mt-1">已選 0 / 0</div>
+            
+            <!-- 游戏结果区域 - 位于诗句输入框下方 -->
+            <div id="gameMessage" class="hidden mb-3">
+                <div class="glass-card p-3 rounded-2xl text-center border border-white/20 backdrop-blur-lg">
+                    <!-- 正确答案显示 -->
+                    <div id="correctAnswer" class="hidden mb-3">
+                        <div class="text-xs font-modern text-surface-800/60 mb-2">正確答案</div>
+                        <div id="correctAnswerText" class="text-4xl font-kai font-bold text-primary-600 py-2 px-3 glass-card rounded-xl"></div>
+                    </div>
+                    
+                    <!-- 成功时只显示图标，不显示额外文字 -->
+                    <div id="successIcon" class="hidden mb-3">
+                        <div class="w-12 h-12 mx-auto rounded-full gradient-secondary flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- 下一轮按钮 -->
+                    <button id="closeGameMessage" class="gradient-primary text-white px-6 py-2 rounded-xl font-modern font-semibold text-sm shadow-md modern-button transform transition-transform hover:scale-105">
+                        下一輪
+                    </button>
+                </div>
+            </div>
+            
+            <div id="selectionStatus" class="text-right text-xs text-surface-800/70 font-modern font-medium">已選 0 / 0</div>
         </div>
         
-        <!-- 汉字选择区域 -->
-        <div class="paper-effect p-3 rounded-lg shadow-md border border-secondary/30" style="flex: 1; min-height: 0; display: flex; flex-direction: column; max-height: none; overflow: visible;">
-            <h2 class="text-lg font-kai font-semibold mb-2 text-primary animate-fade-up" style="flex-shrink: 0;">點選漢字組成詩句</h2>
-            <div id="charactersGrid" class="grid grid-cols-5 gap-2" style="flex: 1; overflow: visible; padding: 4px; display: grid; align-content: start; max-height: none;">
+        <!-- 汉字选择区域 - 现代化 -->
+        <div class="glass-card-strong rounded-3xl p-4 animate-slide-up" style="flex: 1; min-height: 0; display: flex; flex-direction: column; max-height: none; overflow: visible; animation-delay:200ms">
+            <h2 class="text-sm font-modern font-semibold mb-3 text-surface-800 animate-slide-up" style="flex-shrink: 0; animation-delay:240ms">點選漢字組成詩句</h2>
+            <div id="charactersGrid" class="grid grid-cols-5 gap-3" style="flex: 1; overflow: visible; padding: 8px; display: grid; align-content: start; max-height: none;">
                 <!-- Characters will be inserted here by JavaScript -->
             </div>
             
-            <!-- 把按钮移动到选字界面下方并居中布局 -->
-            <div class="flex justify-center space-x-4 sm:space-x-20 mt-4" style="flex-shrink: 0;">
-                <button id="clearSelection" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-md transition-colors font-kai shadow-md text-lg interactive">退一字</button>
-                <button id="submitPoem" class="bg-secondary hover:bg-secondary/80 text-white px-8 py-3 rounded-md transition-colors font-kai shadow-md text-lg">提交</button>
+            <!-- 现代化按钮布局 -->
+            <div class="flex justify-center space-x-8 mt-4" style="flex-shrink: 0;">
+                <button id="clearSelection" class="gradient-secondary text-white px-6 py-3 rounded-2xl font-modern font-semibold text-sm shadow-lg modern-button animate-slide-up" style="animation-delay:280ms">退一字</button>
+                <button id="submitPoem" class="gradient-primary text-white px-8 py-3 rounded-2xl font-modern font-semibold text-sm shadow-lg modern-button animate-slide-up" style="animation-delay:320ms">提交</button>
             </div>
         </div>
         
-        <!-- Custom notification element -->
-        <div id="notification" class="fixed top-4 right-4 left-4 transform transition-transform duration-300 translate-y-[-150%] z-50">
-            <div class="max-w-md mx-auto bg-white border-l-4 border-yellow-500 shadow-lg p-4 rounded-r">
+        <!-- Custom notification element - 现代化 -->
+        <div id="notification" class="fixed top-6 right-6 left-6 transform transition-all duration-500 ease-out translate-y-[-150%] z-50">
+            <div class="max-w-md mx-auto glass-card-strong border border-white/30 shadow-2xl p-4 rounded-2xl animate-slide-up">
                 <div class="flex items-center">
-                    <div class="text-yellow-500 flex-shrink-0">
+                    <div class="text-accent-500 flex-shrink-0">
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <p id="notificationText" class="text-sm text-gray-700"></p>
+                        <p id="notificationText" class="text-sm text-surface-800 font-modern font-medium"></p>
                     </div>
                     <div class="ml-auto pl-3">
-                        <button id="closeNotification" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <button id="closeNotification" class="text-surface-800/60 hover:text-surface-800 focus:outline-none modern-button">
                             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
@@ -1318,12 +1757,18 @@
         const charactersGrid = document.getElementById('charactersGrid');
         const poemDisplay = document.getElementById('poemDisplay');
         const poemHint = document.getElementById('poemHint');
+        const charCountDisplay = document.getElementById('charCountDisplay');
         const timerElement = document.getElementById('timer');
         const clearSelectionButton = document.getElementById('clearSelection');
         const submitButton = document.getElementById('submitPoem');
         const scoreElement = document.getElementById('score');
         const gameMessage = document.getElementById('gameMessage');
-        const gameMessageText = gameMessage.querySelector('p');
+        const resultIcon = document.getElementById('resultIcon');
+        const poemErrorIcon = document.getElementById('poemErrorIcon');
+        const successIcon = document.getElementById('successIcon');
+        const correctAnswer = document.getElementById('correctAnswer');
+        const correctAnswerText = document.getElementById('correctAnswerText');
+        const closeGameMessage = document.getElementById('closeGameMessage');
         
         // Notification elements
         const notification = document.getElementById('notification');
@@ -1348,11 +1793,21 @@
         let isGameActive = false;
         let poemCharacters = [];
         let shuffledCharacters = [];
-        let currentGameMode = 'preset'; // 'preset' or 'custom'
+        let currentGameMode = 'preset'; // 'preset', 'custom', or 'battle'
         let customPoems = [];
         let roundTimeLimit = 30; // 當前回合時間上限，用於進度條比例
         let areCoreListenersBound = false; // 防止重複綁定
         let selectionStack = []; // 已選字堆疊（支持撤回）
+        
+        // 對戰模式相關變量
+        let battleMode = {
+            isActive: false,
+            players: [],
+            currentPlayerIndex: 0,
+            roundsPerPlayer: 1,
+            currentRound: 0,
+            totalRounds: 0
+        };
         
         // Difficulty settings elements
         const difficultySelect = document.getElementById('difficultySelect');
@@ -1361,11 +1816,35 @@
         const charCountSlider = document.getElementById('charCount');
         const charCountValue = document.getElementById('charCountValue');
         
-        // Custom poem elements
-        const gameMode = document.getElementById('gameMode');
+        // Custom poem elements (gameMode 已移至設置模態彈窗中的radio按鈕)
         const customPoemSettings = document.getElementById('customPoemSettings');
         const customLineInput = document.getElementById('customLine');
         const customAuthorInput = document.getElementById('customAuthor');
+        
+        // 設置模態彈窗元素
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsModal = document.getElementById('closeSettingsModal');
+        const cancelSettings = document.getElementById('cancelSettings');
+        const saveSettings = document.getElementById('saveSettings');
+        const adminModeToggle = document.getElementById('adminModeToggle');
+        
+        // 對戰結束總結窗口元素
+        const battleResultModal = document.getElementById('battleResultModal');
+        const winnerAnnouncement = document.getElementById('winnerAnnouncement');
+        const winnerScore = document.getElementById('winnerScore');
+        const battleRankings = document.getElementById('battleRankings');
+        const newBattleBtn = document.getElementById('newBattleBtn');
+        const exitBattleBtn = document.getElementById('exitBattleBtn');
+        
+        // 對戰模式元素
+        const battleModeSettings = document.getElementById('battleModeSettings');
+        const playerCountSelect = document.getElementById('playerCount');
+        const playerNamesContainer = document.getElementById('playerNamesContainer');
+        const roundsPerPlayerSelect = document.getElementById('roundsPerPlayer');
+        const battleScoreboard = document.getElementById('battleScoreboard');
+        const leftPlayersContainer = document.getElementById('leftPlayers');
+        const rightPlayersContainer = document.getElementById('rightPlayers');
+        // startBattleBtn 已移除，對戰模式通過保存設置自動啟動
         const customPoemInput = document.getElementById('customPoem');
         const saveCustomPoemButton = document.getElementById('saveCustomPoem');
         const savedPoemsList = document.getElementById('savedPoemsList');
@@ -1389,6 +1868,109 @@
             notification.classList.add('translate-y-[-150%]');
         });
 
+        // Close game message manually
+        closeGameMessage.addEventListener('click', () => {
+            hideResultModal();
+            // 如果是对战模式且游戏结束，则进入下一轮
+            if (battleMode.isActive && !isGameActive) {
+                // 延迟一下让用户看到关闭动画
+                setTimeout(() => {
+                    startBattleRound();
+                }, 250);
+            } else if (!isGameActive) {
+                // 单人模式，开始新一轮
+                setTimeout(() => {
+                    startNewRound();
+                }, 250);
+            }
+        });
+
+        // 计算并设置错误图标位置
+        const positionErrorIcon = () => {
+            if (!poemDisplay.value || poemDisplay.value === '時間到') return;
+            
+            // 创建一个临时元素来测量文字宽度
+            const tempSpan = document.createElement('span');
+            tempSpan.style.font = window.getComputedStyle(poemDisplay).font;
+            tempSpan.style.visibility = 'hidden';
+            tempSpan.style.position = 'absolute';
+            tempSpan.style.whiteSpace = 'nowrap';
+            tempSpan.textContent = poemDisplay.value;
+            document.body.appendChild(tempSpan);
+            
+            const textWidth = tempSpan.offsetWidth;
+            document.body.removeChild(tempSpan);
+            
+            // 计算图标位置：容器中心 + 文字宽度的一半 + 间距
+            const containerWidth = poemDisplay.offsetWidth;
+            const iconLeft = (containerWidth / 2) + (textWidth / 2) + 8; // 8px间距
+            
+            // 确保图标不超出容器边界
+            const maxLeft = containerWidth - 32; // 32px = 图标宽度 + 边距
+            poemErrorIcon.style.left = Math.min(iconLeft, maxLeft) + 'px';
+        };
+
+        // 显示结果浮窗
+        const showResultModal = (isSuccess, message, answer = null) => {
+            if (isSuccess) {
+                // 答对了：只显示成功图标，用户答案保持绿色
+                successIcon.classList.remove('hidden');
+                correctAnswer.classList.add('hidden');
+                poemErrorIcon.classList.add('hidden');
+                
+                // 保持用户答案的绿色样式（在endRound中已设置）
+            } else {
+                // 答错了：显示错误图标在用户答案旁，用户答案变红
+                if (poemDisplay.value && poemDisplay.value !== '時間到') {
+                    // 只有当有用户答案时才显示错误图标
+                    positionErrorIcon();
+                    poemErrorIcon.classList.remove('hidden');
+                    
+                    // 将用户选择的诗句变为红色
+                    poemDisplay.classList.remove('text-surface-800', 'text-secondary');
+                    poemDisplay.classList.add('text-red-600');
+                } else {
+                    poemErrorIcon.classList.add('hidden');
+                }
+                
+                if (answer) {
+                    correctAnswerText.textContent = answer;
+                    correctAnswer.classList.remove('hidden');
+                } else {
+                    correctAnswer.classList.add('hidden');
+                }
+                successIcon.classList.add('hidden');
+            }
+
+            // 显示浮窗，使用简单的滑入动画
+            gameMessage.classList.remove('hidden');
+            const modalContent = gameMessage.querySelector('div');
+            modalContent.style.animation = 'slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        };
+
+        // 隐藏结果浮窗
+        const hideResultModal = () => {
+            const modalContent = gameMessage.querySelector('div');
+            modalContent.style.transform = 'translateY(10px)';
+            modalContent.style.opacity = '0';
+            modalContent.style.transition = 'all 0.2s ease-out';
+            
+            // 等待动画完成后隐藏元素
+            setTimeout(() => {
+                gameMessage.classList.add('hidden');
+                modalContent.style.transform = '';
+                modalContent.style.opacity = '';
+                modalContent.style.transition = '';
+                // 清理所有状态
+                successIcon.classList.add('hidden');
+                correctAnswer.classList.add('hidden');
+                poemErrorIcon.classList.add('hidden');
+                // 重置用户答案颜色
+                poemDisplay.classList.remove('text-red-600', 'text-secondary', 'font-bold');
+                poemDisplay.classList.add('text-surface-800');
+            }, 200);
+        };
+
         // Shuffle array (Fisher-Yates algorithm)
         const shuffleArray = (array) => {
             for (let i = array.length - 1; i > 0; i--) {
@@ -1399,7 +1981,7 @@
         };
 
         // 詩詞數據庫選項
-        const poemDatabase = document.getElementById('poemDatabase');
+        // poemDatabase 已移至設置模態彈窗中，使用radio按鈕
         let activeDatabase = tangPoetryLines; // 默認使用經典唐詩庫
         
         // 根據選擇的數據庫選擇詩句
@@ -1407,20 +1989,7 @@
             return activeDatabase[Math.floor(Math.random() * activeDatabase.length)];
         };
         
-        // 詩詞數據庫切換事件
-        poemDatabase.addEventListener('change', () => {
-            if (poemDatabase.value === 'default') {
-                activeDatabase = tangPoetryLines;
-                showNotification('已切換至經典唐詩數據庫');
-            } else if (poemDatabase.value === 'elementary') {
-                activeDatabase = elementaryPoemLines;
-                showNotification('已切換至小學生詩詞數據庫');
-            }
-            
-            if (isGameActive) {
-                showNotification('數據庫已變更，將在下一輪生效');
-            }
-        });
+        // 詩詞數據庫切換功能已移至設置模態彈窗處理
 
         // Generate characters for the game
         const generateGameCharacters = () => {
@@ -1465,7 +2034,7 @@
             shuffledCharacters.forEach(char => {
                 const charButton = document.createElement('button');
                 charButton.textContent = char;
-                charButton.className = 'character-btn bg-imperial/70 hover:bg-secondary hover:text-white border border-secondary/30 rounded-md p-2 md:p-3 text-xl md:text-2xl font-kai font-bold transition-colors animate-fade-up';
+                charButton.className = 'character-btn char-modern rounded-2xl p-3 md:p-4 text-2xl md:text-3xl font-kai font-bold animate-slide-up';
                 charButton.dataset.char = char;
                 charButton.style.animationDelay = `${20 * idx}ms`;
                 idx++;
@@ -1561,6 +2130,9 @@
                     return null;
                 }
                 return customPoems[Math.floor(Math.random() * customPoems.length)];
+            } else if (currentGameMode === 'battle') {
+                // 對戰模式使用預設詩庫抽題
+                return selectRandomPoem();
             }
             return null;
         };
@@ -1572,8 +2144,12 @@
             poemDisplay.value = '';
             gameMessage.classList.add('hidden');
             
-            // 清除上一輪的綠色文字顏色
-            poemDisplay.classList.remove('text-secondary', 'dark:text-secondary', 'font-bold');
+            // 清除上一輪的所有颜色和图标状态
+            poemDisplay.classList.remove('text-secondary', 'text-red-600', 'font-bold');
+            poemDisplay.classList.add('text-surface-800');
+            poemErrorIcon.classList.add('hidden');
+            successIcon.classList.add('hidden');
+            correctAnswer.classList.add('hidden');
             
             // 播放新回合音效
             soundManager.play('newRound');
@@ -1586,9 +2162,15 @@
                 return;
             }
             
-            // Display the poem hint (author and name) with character count
+            // Display the poem hint (author and name) without character count
+            poemHint.textContent = `《${currentPoem.poem}》 - ${currentPoem.author}`;
+            
+            // Display character count separately
             const targetLen = currentPoem.line.length;
-            poemHint.innerHTML = `《${currentPoem.poem}》 - ${currentPoem.author} <span class="text-primary font-bold">(${targetLen}字)</span>`;
+            const charCountDisplay = document.getElementById('charCountDisplay');
+            if (charCountDisplay) {
+                charCountDisplay.textContent = targetLen;
+            }
             
             // 應用下回合的字元數（不小於詩句長度）
             charCount = Math.max(parseInt(charCountSlider.value), currentPoem.line.length);
@@ -1605,6 +2187,15 @@
                 timeBarFill.classList.remove('bg-red-500');
                 timeBarFill.classList.add('bg-primary');
             }
+            
+            // 确保按钮区域显示和状态正确
+            const buttonContainer = clearSelectionButton.parentElement;
+            if (buttonContainer) {
+                buttonContainer.classList.remove('hidden');
+            }
+            
+            // 重置按钮状态
+            updateSelectionStatus();
             
             // Start the game
             isGameActive = true;
@@ -1638,37 +2229,12 @@
         };
 
         // End the current round
-        const endRound = (success) => {
+        const endRound = (success, reason = 'timeout') => {
             // Stop the timer
             clearInterval(timerInterval);
             isGameActive = false;
             
-            // Hide clear and submit buttons when showing answer
-            clearSelectionButton.parentElement.classList.add('hidden');
-            
-            // Show "Next Round" button in the character area with mobile optimization
-            const nextRoundButtonContainer = document.createElement('div');
-            nextRoundButtonContainer.className = 'flex justify-center mt-2 sm:mt-4';
-            nextRoundButtonContainer.innerHTML = `
-                <button id="nextRoundBtn" class="bg-primary hover:bg-primary/80 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-md transition-colors font-kai shadow-md text-base sm:text-lg">下一輪</button>
-            `;
-            charactersGrid.parentNode.appendChild(nextRoundButtonContainer);
-            
-            // Add event listener to the new next round button
-            document.getElementById('nextRoundBtn').addEventListener('click', () => {
-                // Play new round sound
-                soundManager.play('newRound');
-                
-                // Remove the next round button container when starting new round
-                nextRoundButtonContainer.remove();
-                // Show clear and submit buttons again
-                clearSelectionButton.parentElement.classList.remove('hidden');
-                startNewRound();
-            });
-            
-            // Update UI based on success/failure with mobile optimization
-            gameMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'animate-fade-in');
-            const correctAnswer = document.getElementById('correctAnswer');
+            // 不再隐藏按钮，保持按钮区域可见
             
             if (success) {
                 // 播放正確音效
@@ -1686,7 +2252,11 @@
                 }, 1000);
                 
                 // 更新分数
-                score++;
+                if (battleMode.isActive) {
+                    // 對戰模式下，分數由endBattleRound處理
+                } else {
+                    score++;
+                }
                 
                 // 添加分数变化动画
                 scoreElement.classList.add('animate-score');
@@ -1695,30 +2265,36 @@
                     scoreElement.classList.remove('animate-score');
                 }, 800);
                 
-                gameMessage.classList.add('bg-green-100', 'text-green-800', 'animate-fade-in');
-                gameMessageText.textContent = '恭喜！答對了！';
-                
-                // 显示正确答案，移動端優化
-                correctAnswer.classList.remove('hidden');
-                correctAnswer.textContent = currentPoem.line;
-                correctAnswer.className = 'mt-2 text-lg sm:text-xl font-kai font-bold text-primary';
+                // 显示成功结果浮窗
+                showResultModal(true, '恭喜！答對了！');
             } else {
                 // 播放錯誤/時間到音效
                 soundManager.play('timeUp');
                 
-                // 显示答错动画
-                poemDisplay.classList.add('animate-wrong');
-                setTimeout(() => {
-                    poemDisplay.classList.remove('animate-wrong');
-                }, 500);
+                // 根据失败原因显示不同内容
+                if (reason === 'timeout') {
+                    // 时间到：显示红色"時間到"文字
+                    poemDisplay.value = '時間到';
+                    poemDisplay.classList.remove('text-surface-800');
+                    poemDisplay.classList.add('text-red-600', 'font-bold');
+                    // 不显示错误图标，因为没有用户答案
+                    poemErrorIcon.classList.add('hidden');
+                } else {
+                    // 用户答错：显示答错动画
+                    poemDisplay.classList.add('animate-wrong');
+                    setTimeout(() => {
+                        poemDisplay.classList.remove('animate-wrong');
+                    }, 500);
+                }
                 
-                gameMessage.classList.add('bg-red-100', 'text-red-800', 'animate-fade-in');
-                gameMessageText.textContent = '時間到！';
-                
-                // 显示正确答案，移動端優化尺寸
-                correctAnswer.classList.remove('hidden');
-                correctAnswer.textContent = currentPoem.line;
-                correctAnswer.className = 'mt-2 text-lg sm:text-xl font-kai font-bold text-primary py-1 sm:py-2 border-t border-primary/30 pt-2';
+                // 显示失败结果浮窗，包含正确答案
+                showResultModal(false, reason === 'timeout' ? '時間到！' : '答錯了！', currentPoem.line);
+            }
+            
+            // 對戰模式處理 - 改为手动控制
+            if (battleMode.isActive) {
+                // 记录结果，但不自动进入下一轮
+                endBattleRound(success);
             }
         };
 
@@ -1780,7 +2356,7 @@
                 }
                 
                 const isCorrect = verifyPoem();
-                endRound(isCorrect);
+                endRound(isCorrect, isCorrect ? 'correct' : 'wrong');
             }
         });
 
@@ -1889,62 +2465,22 @@
             });
         };
         
-        // Game mode change event listener
-        gameMode.addEventListener('change', () => {
-            currentGameMode = gameMode.value;
-            
-            if (currentGameMode === 'custom') {
-                customPoemSettings.classList.remove('hidden');
-                updateSavedPoemsList();
-            } else {
-                customPoemSettings.classList.add('hidden');
-            }
-            
-            if (isGameActive) {
-                showNotification('模式已變更，將在下一輪生效');
-            }
-        });
+        // 舊的事件監聽器已移至設置模態彈窗中處理
         
-        // Save custom poem event listener
-        saveCustomPoemButton.addEventListener('click', saveCustomPoem);
+        // Save custom poem event listener (已在設置模態彈窗中處理)
         
-        // Admin mode toggle
-        const adminModeToggle = document.getElementById('adminModeToggle');
-        const adminPanel = document.getElementById('adminPanel');
+        // Admin mode toggle (舊功能已移至設置模態彈窗)
         const difficultySelector = document.getElementById('difficultySelector');
         let isAdminMode = false;
         
-        // Toggle admin mode
-        adminModeToggle.addEventListener('click', () => {
-            isAdminMode = !isAdminMode;
-            
-            if (isAdminMode) {
-                // 显示管理面板
-                adminPanel.classList.remove('hidden');
-                difficultySelector.classList.remove('hidden');
-                adminModeToggle.classList.add('bg-primary', 'text-white');
-                adminModeToggle.classList.remove('bg-gray-200', 'text-gray-700');
-                
-                // 根据当前难度更新设置滑块
-                const difficulty = difficultySelect.value;
-                timeLimitSlider.value = difficultySettings[difficulty].timeLimit;
-                timeLimitValue.textContent = difficultySettings[difficulty].timeLimit;
-                charCountSlider.value = difficultySettings[difficulty].charCount;
-                charCountValue.textContent = difficultySettings[difficulty].charCount;
-            } else {
-                adminPanel.classList.add('hidden');
-                difficultySelector.classList.add('hidden');
-                adminModeToggle.classList.remove('bg-primary', 'text-white');
-                adminModeToggle.classList.add('bg-gray-200', 'text-gray-700');
-            }
-        });
+        // 舊的 Toggle admin mode 功能已移至設置模態彈窗
         
         // Enhance characters display
         const enhanceCharacterDisplay = () => {
             // Make the characters larger in the grid
             document.querySelectorAll('.character-btn').forEach(btn => {
-                btn.classList.remove('p-3', 'text-xl');
-                btn.classList.add('p-4', 'text-2xl');
+                btn.classList.remove('p-3', 'text-xl', 'text-2xl');
+                btn.classList.add('p-4', 'text-3xl');
             });
         };
         
@@ -1987,7 +2523,7 @@
                         }
                         
                         const isCorrect = verifyPoem();
-                        endRound(isCorrect);
+                        endRound(isCorrect, isCorrect ? 'correct' : 'wrong');
                     }
                 });
             }
@@ -2046,31 +2582,7 @@
                 saveCustomPoemButton.addEventListener('click', saveCustomPoem);
             }
 
-            if (adminModeToggle) {
-                adminModeToggle.addEventListener('click', () => {
-                    isAdminMode = !isAdminMode;
-                    
-                    if (isAdminMode) {
-                        // 显示管理面板
-                        adminPanel.classList.remove('hidden');
-                        difficultySelector.classList.remove('hidden');
-                        adminModeToggle.classList.add('bg-primary', 'text-white');
-                        adminModeToggle.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-                        
-                        // 根据当前难度更新设置滑块
-                        const difficulty = difficultySelect.value;
-                        timeLimitSlider.value = difficultySettings[difficulty].timeLimit;
-                        timeLimitValue.textContent = difficultySettings[difficulty].timeLimit;
-                        charCountSlider.value = difficultySettings[difficulty].charCount;
-                        charCountValue.textContent = difficultySettings[difficulty].charCount;
-                    } else {
-                        adminPanel.classList.add('hidden');
-                        difficultySelector.classList.add('hidden');
-                        adminModeToggle.classList.remove('bg-primary', 'text-white');
-                        adminModeToggle.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-                    }
-                });
-            }
+            // 舊的 adminModeToggle 事件監聽器已移至 setupSettingsEventListeners
 
             if (closeNotification) {
                 closeNotification.addEventListener('click', () => {
@@ -2088,7 +2600,7 @@
             optimizeForIframe();
             
             // 設置事件監聽器
-            setupEventListeners();
+            // setupEventListeners(); // 已移至setupSettingsEventListeners
             
             // 應用初始難度設置
             if (difficultySelect) {
@@ -2131,54 +2643,435 @@
                 });
             }
             
-            // 確保管理員按鈕功能正常
-            if (adminModeToggle) {
-                console.log("綁定管理員按鈕事件");
-                // 移除所有已有的事件監聽器
-                const newAdminButton = adminModeToggle.cloneNode(true);
-                adminModeToggle.parentNode.replaceChild(newAdminButton, adminModeToggle);
-                
-                // 重新獲取元素引用
-                const adminModeToggleNew = document.getElementById('adminModeToggle');
-                
-                // 添加新的事件監聽器
-                adminModeToggleNew.addEventListener('click', function() {
-                    // 播放按鈕點擊音效
-                    soundManager.play('buttonClick');
-                    
-                    console.log("管理員按鈕被點擊");
-                    isAdminMode = !isAdminMode;
-                    
-                    if (isAdminMode) {
-                        // 顯示管理面板
-                        adminPanel.classList.remove('hidden');
-                        difficultySelector.classList.remove('hidden');
-                        adminModeToggleNew.classList.add('bg-primary', 'text-white');
-                adminModeToggleNew.classList.remove('bg-gray-200', 'text-gray-700');
-                        
-                        // 根據當前難度更新設置滑塊
-                        const difficulty = difficultySelect.value;
-                        timeLimitSlider.value = difficultySettings[difficulty].timeLimit;
-                        timeLimitValue.textContent = difficultySettings[difficulty].timeLimit;
-                        charCountSlider.value = difficultySettings[difficulty].charCount;
-                        charCountValue.textContent = difficultySettings[difficulty].charCount;
-                    } else {
-                        adminPanel.classList.add('hidden');
-                        difficultySelector.classList.add('hidden');
-                        adminModeToggleNew.classList.remove('bg-primary', 'text-white');
-                        adminModeToggleNew.classList.add('bg-gray-200', 'text-gray-700');
-                    }
-                });
-            }
+            // 舊的管理員按鈕功能已移至 setupSettingsEventListeners 中的設置模態彈窗
             
             startNewRound();
         };
 
+        // 設置模態彈窗相關函數
+        let gameWasPaused = false;
+        let timerWasActive = false;
+        
+        function openSettingsModal() {
+            // 暫停遊戲
+            gameWasPaused = isGameActive;
+            timerWasActive = !!timerInterval;
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            isGameActive = false;
+            
+            // 顯示模態彈窗
+            settingsModal.classList.remove('hidden');
+            
+            // 同步當前設置到模態彈窗
+            syncSettingsToModal();
+        }
+        
+        function closeSettingsModalFunc() {
+            settingsModal.classList.add('hidden');
+            
+            // 如果遊戲之前是活躍的，恢復遊戲狀態
+            if (gameWasPaused && timerWasActive) {
+                isGameActive = true;
+                startTimer();
+            }
+        }
+        
+        function syncSettingsToModal() {
+            // 同步遊戲模式
+            const currentMode = battleMode.isActive ? 'battle' : 'single';
+            document.querySelector(`input[name="gameMode"][value="${currentMode}"]`).checked = true;
+            
+            // 同步詩詞庫選擇
+            const dbRadios = document.querySelectorAll('input[name="poemDatabase"]');
+            if (currentGameMode === 'custom') {
+                document.querySelector('input[name="poemDatabase"][value="custom"]').checked = true;
+            } else if (activeDatabase === elementaryPoemLines) {
+                document.querySelector('input[name="poemDatabase"][value="elementary"]').checked = true;
+                    } else {
+                document.querySelector('input[name="poemDatabase"][value="default"]').checked = true;
+            }
+            
+            // 根據模式顯示/隱藏相關設置
+            updateModalSections();
+        }
+        
+        function updateModalSections() {
+            const selectedMode = document.querySelector('input[name="gameMode"]:checked').value;
+            const selectedDB = document.querySelector('input[name="poemDatabase"]:checked').value;
+            
+            // 顯示/隱藏對戰模式設置
+            if (selectedMode === 'battle') {
+                battleModeSettings.classList.remove('hidden');
+                // 生成選手名稱輸入框
+                generatePlayerNameInputs();
+            } else {
+                battleModeSettings.classList.add('hidden');
+            }
+            
+            // 顯示/隱藏自定義詩句設置
+            if (selectedDB === 'custom') {
+                customPoemSettings.classList.remove('hidden');
+            } else {
+                customPoemSettings.classList.add('hidden');
+            }
+        }
+        
+        function saveSettingsFromModal() {
+            const selectedMode = document.querySelector('input[name="gameMode"]:checked').value;
+            const selectedDB = document.querySelector('input[name="poemDatabase"]:checked').value;
+            
+            // 保存遊戲模式
+            if (selectedMode === 'battle') {
+                currentGameMode = 'battle';
+            } else {
+                currentGameMode = selectedDB === 'custom' ? 'custom' : 'preset';
+            }
+            
+            // 保存詩詞庫設置
+            if (selectedDB === 'default') {
+                activeDatabase = tangPoetryLines;
+            } else if (selectedDB === 'elementary') {
+                activeDatabase = elementaryPoemLines;
+            }
+            // custom 模式不改變 activeDatabase
+            
+            // 關閉設置模態彈窗
+            closeSettingsModalFunc();
+            
+            // 如果是對戰模式，自動開始對戰
+            if (selectedMode === 'battle') {
+                startBattleMode();
+                showNotification('對戰模式已啟動！');
+            } else {
+                showNotification('設置已保存');
+            }
+        }
+        
+        function startTimer() {
+            if (timeLeft > 0) {
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    if (timeBarFill && roundTimeLimit > 0) {
+                        const pct = Math.max(0, Math.min(100, (timeLeft / roundTimeLimit) * 100));
+                        timeBarFill.style.width = pct + '%';
+                        if (timeLeft <= 10 && timeLeft > 0) {
+                            timeBarFill.classList.remove('bg-primary');
+                            timeBarFill.classList.add('bg-red-500');
+                        }
+                    }
+                    
+                    if (timeLeft === 10) {
+                        soundManager.play('timeWarning');
+                    }
+                    
+                    if (timeLeft <= 0) {
+                        endRound(false);
+                    }
+                }, 1000);
+            }
+        }
+
+        // 對戰模式相關函數
+        function initializeBattleMode() {
+            // 生成選手名稱輸入框
+            generatePlayerNameInputs();
+            
+            // 綁定選手數量變更事件
+            if (playerCountSelect) {
+                playerCountSelect.addEventListener('change', generatePlayerNameInputs);
+            }
+            
+            // 開始對戰功能已整合到保存設置中
+        }
+        
+        function generatePlayerNameInputs() {
+            const playerCount = parseInt(playerCountSelect.value);
+            playerNamesContainer.innerHTML = '';
+            
+            for (let i = 0; i < playerCount; i++) {
+                const inputDiv = document.createElement('div');
+                inputDiv.innerHTML = `
+                    <label class="block text-sm font-medium mb-1">選手 ${i + 1}：</label>
+                    <input type="text" id="player${i + 1}Name" placeholder="輸入選手名稱" 
+                           class="w-full p-2 rounded-md border border-gray-300 bg-white text-base" 
+                           value="選手${i + 1}">
+                `;
+                playerNamesContainer.appendChild(inputDiv);
+            }
+        }
+        
+        function startBattleMode() {
+            // 收集選手名稱
+            const playerCount = parseInt(playerCountSelect.value);
+            battleMode.players = [];
+            
+            for (let i = 0; i < playerCount; i++) {
+                const nameInput = document.getElementById(`player${i + 1}Name`);
+                const playerName = nameInput ? nameInput.value || `選手${i + 1}` : `選手${i + 1}`;
+                battleMode.players.push({
+                    name: playerName,
+                    score: 0,
+                    isActive: i === 0
+                });
+            }
+            
+            // 設置對戰模式參數
+            battleMode.isActive = true;
+            battleMode.currentPlayerIndex = 0;
+            battleMode.roundsPerPlayer = parseInt(roundsPerPlayerSelect.value);
+            battleMode.currentRound = 0;
+            battleMode.totalRounds = battleMode.players.length * battleMode.roundsPerPlayer;
+            
+            // 顯示積分板
+            updateBattleScoreboard();
+            battleScoreboard.classList.remove('hidden');
+            
+            // 開始第一輪
+            startBattleRound();
+        }
+        
+        function updateBattleScoreboard() {
+            leftPlayersContainer.innerHTML = '';
+            rightPlayersContainer.innerHTML = '';
+            
+            const leftCount = Math.ceil(battleMode.players.length / 2);
+            
+            battleMode.players.forEach((player, index) => {
+                const isLeftSide = index < leftCount;
+                const container = isLeftSide ? leftPlayersContainer : rightPlayersContainer;
+                
+                const playerCard = document.createElement('div');
+                const themeClass = `player-theme-${(index % 6) + 1}`;
+                playerCard.className = `player-score-card ${themeClass} ${player.isActive ? 'active' : ''}`;
+                
+                playerCard.innerHTML = `
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-score">${player.score}</div>
+                    ${player.isActive ? '<div class="current-turn-indicator"></div>' : ''}
+                `;
+                
+                container.appendChild(playerCard);
+            });
+        }
+        
+        function startBattleRound() {
+            const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
+            showNotification(`${currentPlayer.name} 的回合開始！`);
+            
+            // 開始新的一輪遊戲
+            startNewRound();
+        }
+        
+        function endBattleRound(isCorrect) {
+            const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
+            
+            if (isCorrect) {
+                currentPlayer.score += 10; // 每題10分
+                showNotification(`${currentPlayer.name} 答對了！獲得10分`);
+            } else {
+                showNotification(`${currentPlayer.name} 答錯了`);
+            }
+            
+            // 更新積分板
+            updateBattleScoreboard();
+            
+            // 檢查是否完成所有回合
+            battleMode.currentRound++;
+            if (battleMode.currentRound >= battleMode.totalRounds) {
+                endBattleMode();
+                return;
+            }
+            
+            // 切換到下一個選手
+            battleMode.players[battleMode.currentPlayerIndex].isActive = false;
+            battleMode.currentPlayerIndex = (battleMode.currentPlayerIndex + 1) % battleMode.players.length;
+            battleMode.players[battleMode.currentPlayerIndex].isActive = true;
+            
+            // 開始下一輪 - 移除自动延迟，改为手动控制
+            // startBattleRound() 将由浮窗的"下一輪"按钮调用
+        }
+        
+        function endBattleMode() {
+            battleMode.isActive = false;
+            
+            // 隱藏積分板
+            battleScoreboard.classList.add('hidden');
+            
+            // 顯示對戰結果總結窗口
+            showBattleResultModal();
+        }
+        
+        function showBattleResultModal() {
+            // 1. 对选手按分数降序排序
+            const sortedPlayers = [...battleMode.players].sort((a, b) => b.score - a.score);
+            
+            // 2. 找出最高分
+            const highScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
+            
+            // 3. 找出所有获得最高分的玩家
+            const winners = sortedPlayers.filter(player => player.score === highScore);
+
+            // 4. 设置获胜者信息
+            if (winners.length > 1) {
+                // 平局或多人并列第一
+                const winnerNames = winners.map(p => p.name).join(', ');
+                winnerAnnouncement.textContent = `🏆 平局！`;
+                winnerScore.textContent = `${winnerNames} 并列第一!`;
+            } else if (winners.length === 1) {
+                // 单独获胜者
+                const winner = winners[0];
+                winnerAnnouncement.textContent = `🎉 恭喜 ${winner.name} 获胜！`;
+                winnerScore.textContent = `最终得分: ${winner.score}`;
+            } else {
+                // 没有玩家的情况
+                winnerAnnouncement.textContent = '比赛结束';
+                winnerScore.textContent = '没有玩家参与';
+            }
+            
+            // 5. 生成排行榜 (处理并列排名)
+            battleRankings.innerHTML = '';
+            const medals = ['🥇', '🥈', '🥉'];
+            let rank = 1;
+            for (let i = 0; i < sortedPlayers.length; i++) {
+                const player = sortedPlayers[i];
+
+                // 如果当前玩家分数低于前一个玩家，更新排名
+                if (i > 0 && player.score < sortedPlayers[i-1].score) {
+                    rank = i + 1;
+                }
+
+                const rankItem = document.createElement('div');
+                rankItem.className = 'rank-item';
+                rankItem.style.animationDelay = `${i * 0.1}s`;
+
+                const rankText = rank <= 3 ? medals[rank - 1] : `#${rank}`;
+                
+                rankItem.innerHTML = `
+                    <div class="font-bold text-xl w-12 text-center text-yellow-500">${rankText}</div>
+                    <div class="flex-grow font-semibold text-lg text-surface-800">${player.name}</div>
+                    <div class="font-bold text-xl text-surface-700">${player.score} <span class="text-sm">分</span></div>
+                `;
+                
+                battleRankings.appendChild(rankItem);
+            }
+            
+            // 6. 顯示總結窗口
+            battleResultModal.classList.remove('hidden');
+        }
+        
+        function startNewBattle() {
+            // 重置對戰數據但保持選手設置
+            battleMode.players.forEach(player => {
+                player.score = 0;
+                player.isActive = false;
+            });
+            battleMode.players[0].isActive = true;
+            battleMode.currentPlayerIndex = 0;
+            battleMode.currentRound = 0;
+            battleMode.isActive = true;
+            
+            // 關閉總結窗口
+            battleResultModal.classList.add('hidden');
+            
+            // 重新開始對戰
+            updateBattleScoreboard();
+            battleScoreboard.classList.remove('hidden');
+            startBattleRound();
+            
+            showNotification('新的對戰開始！');
+        }
+        
+        function exitBattleMode() {
+            // 關閉總結窗口
+            battleResultModal.classList.add('hidden');
+            
+            // 重置對戰模式
+            battleMode.isActive = false;
+            battleMode.players = [];
+            currentGameMode = 'preset';
+            
+            // 開始單人模式
+            showNotification('已切換到單人模式');
+            startNewRound();
+        }
+
+        // 設置模態彈窗事件監聽器
+        function setupSettingsEventListeners() {
+            // 設置按鈕點擊事件
+            if (adminModeToggle) {
+                adminModeToggle.addEventListener('click', openSettingsModal);
+            }
+            
+            // 關閉按鈕事件
+            if (closeSettingsModal) {
+                closeSettingsModal.addEventListener('click', closeSettingsModalFunc);
+            }
+            
+            if (cancelSettings) {
+                cancelSettings.addEventListener('click', closeSettingsModalFunc);
+            }
+            
+            // 保存設置按鈕事件
+            if (saveSettings) {
+                saveSettings.addEventListener('click', saveSettingsFromModal);
+            }
+            
+            // 遊戲模式變更事件
+            document.querySelectorAll('input[name="gameMode"]').forEach(radio => {
+                radio.addEventListener('change', updateModalSections);
+            });
+            
+            // 詩詞庫變更事件
+            document.querySelectorAll('input[name="poemDatabase"]').forEach(radio => {
+                radio.addEventListener('change', updateModalSections);
+            });
+            
+            // 滑動條事件
+            if (timeLimitSlider) {
+                timeLimitSlider.addEventListener('input', () => {
+                    timeLimitValue.textContent = timeLimitSlider.value;
+                });
+            }
+            
+            if (charCountSlider) {
+                charCountSlider.addEventListener('input', () => {
+                    charCountValue.textContent = charCountSlider.value;
+                });
+            }
+            
+            // 自定義詩句保存事件
+            if (saveCustomPoemButton) {
+                saveCustomPoemButton.addEventListener('click', saveCustomPoem);
+            }
+            
+            // 對戰模式選手數量變更事件
+            if (playerCountSelect) {
+                playerCountSelect.addEventListener('change', generatePlayerNameInputs);
+            }
+            
+            // 對戰結束總結窗口事件
+            if (newBattleBtn) {
+                newBattleBtn.addEventListener('click', startNewBattle);
+            }
+            
+            if (exitBattleBtn) {
+                exitBattleBtn.addEventListener('click', exitBattleMode);
+            }
+        }
+
         // 確保DOM完全加載後初始化遊戲
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initGame);
+            document.addEventListener('DOMContentLoaded', () => {
+                initGame();
+                setupSettingsEventListeners();
+            });
         } else {
             initGame();
+            setupSettingsEventListeners();
         }
     </script>
 </body>
