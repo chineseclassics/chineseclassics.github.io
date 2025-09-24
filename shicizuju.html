@@ -795,6 +795,17 @@
             padding: 6px 10px;
         }
 
+        /* AI 載入動畫 */
+        @keyframes aiSpin { to { transform: rotate(360deg); } }
+        .ai-loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 18px 0; }
+        .ai-spinner {
+            width: 28px; height: 28px; border-radius: 9999px;
+            border: 3px solid rgba(15,23,42,0.15);
+            border-top-color: #8b5cf6; /* 與 accent 協調 */
+            animation: aiSpin 1s linear infinite;
+        }
+        .ai-loading-text { margin-top: 10px; font-size: 0.9rem; color: #334155; }
+
         /* 對戰結果窗口美化 */
         #battleResultModal .winner-card {
             position: relative;
@@ -2296,8 +2307,8 @@
             const author = poemObj?.author || '';
             const poemTitle = poemObj?.poem || '';
             return [
-                { role: 'system', content: '你是一位溫柔而專業的國學導師，擅長用清晰、優美、貼近中學生的語言講解古典詩詞。請嚴格控制總字數在300字以內，語言精煉、易懂。' },
-                { role: 'user', content: `請幫我解讀下面這句詩，輸出結構為三段，並控制在300字以內：\n【譯文】用1-2句給出準確、優美的現代文翻譯；\n【原作】說明詩句出處，給出原作全文（若過長可節選核心段落），保持排版清晰；\n【賞析】用2-3句指出整首作品的氣氛與情感，並用高亮標出題目該句「${line}」的美（意象/節奏/對仗等）。\n請使用繁體中文回答，風格友善，適合中學生。\n詩句：${line}\n作者：${author}\n詩題：${poemTitle}` }
+                { role: 'system', content: '你是一位溫柔而專業的國學導師，擅長用清晰、優美、貼近中學生的語言講解古典詩詞。請將總字數控制在約300字，語言精煉、易懂。不要使用粗體或任何 Markdown 語法強調。' },
+                { role: 'user', content: `請幫我解讀下面這句詩，輸出結構為三段（約300字）：\n【譯文】用1-2句給出準確、優美的現代文翻譯；\n【原作】說明詩句出處，給出原作全文（若過長可節選核心段落），保持排版清晰；\n【賞析】用2-3句指出整首作品的氣氛與情感，並著重評點題目該句「${line}」的美（意象/節奏/對仗等）。\n請使用繁體中文回答，風格友善，適合中學生。\n詩句：${line}\n作者：${author}\n詩題：${poemTitle}` }
             ];
         }
 
@@ -2305,7 +2316,7 @@
             if (!currentPoem) return;
             aiExplainError.classList.add('hidden');
             aiExplainError.textContent = '';
-            aiExplainContent.innerHTML = '<div class="text-surface-700">正在生成解讀，請稍候…</div>';
+            aiExplainContent.innerHTML = '<div class="ai-loading-wrap"><div class="ai-spinner"></div><div class="ai-loading-text">正在生成解讀，請稍候…</div></div>';
             aiExplainLine.textContent = currentPoem.line || '';
             aiExplainMeta.textContent = currentPoem.author && currentPoem.poem ? `出自《${currentPoem.poem}》·${currentPoem.author}` : '';
             aiExplainModal.classList.remove('hidden');
@@ -2331,9 +2342,12 @@
 
         // 將模型輸出格式化為本站美學風格，並做長度控制與高亮
         function formatAiContent(raw, targetLine) {
-            const text = (raw || '').replace(/^[\s\u200B\ufeff]+|[\s\u200B\ufeff]+$/g, '');
+            // 去除左右空白與可能的 Markdown 粗體星號
+            const text = (raw || '')
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/^[\s\u200B\ufeff]+|[\s\u200B\ufeff]+$/g, '');
             // 粗略截斷至約300字
-            const limited = text.length > 360 ? text.slice(0, 360) + '…' : text;
+            const limited = text.length > 420 ? text.slice(0, 420) + '…' : text;
             // 切分段落（以【】標題或空行為界）
             const parts = limited.split(/\n{2,}|(?=【譯文|【原作|【賞析)/).map(p=>p.trim()).filter(Boolean);
             const esc = (s)=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
