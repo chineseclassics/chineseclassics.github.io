@@ -743,6 +743,58 @@
         .ai-explain-button:hover { filter: brightness(1.05); }
         .ai-explain-loading { opacity: 0.7; pointer-events: none; }
 
+        /* AI 內容美化 */
+        .ai-section {
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(14px);
+            padding: 12px 14px;
+        }
+        .ai-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #0f172a;
+            background: linear-gradient(135deg, #e0f2fe, #fae8ff);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 999px;
+            padding: 4px 10px;
+            margin-bottom: 8px;
+        }
+        .ai-body { color: #0f172a; line-height: 1.7; font-size: 0.95rem; }
+        .ai-poem-block {
+            white-space: pre-wrap;
+            font-family: ui-serif, Georgia, "Noto Serif CJK TC", serif;
+            font-size: 1rem;
+            color: #0f172a;
+            background: rgba(255,255,255,0.75);
+            border: 1px dashed rgba(15,23,42,0.2);
+            border-radius: 0.75rem;
+            padding: 10px 12px;
+        }
+        .ai-highlight {
+            background: linear-gradient(180deg, rgba(250,204,21,0.45), rgba(250,204,21,0.15));
+            border-radius: 8px;
+            padding: 0 4px;
+            font-weight: 800;
+            color: #92400e;
+        }
+        .ai-toggle {
+            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #0f172a;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 999px;
+            padding: 6px 10px;
+        }
+
         /* 對戰結果窗口美化 */
         #battleResultModal .winner-card {
             position: relative;
@@ -1067,7 +1119,7 @@
                         <div id="aiExplainLine" class="text-2xl font-kai font-bold text-primary-700"></div>
                         <div id="aiExplainMeta" class="text-xs font-modern text-surface-700 mt-1"></div>
                     </div>
-                    <div id="aiExplainContent" class="prose prose-sm max-w-none font-modern leading-relaxed text-surface-800"></div>
+                    <div id="aiExplainContent" class="font-modern text-surface-800 space-y-3"></div>
                     <div id="aiExplainError" class="hidden text-red-600 text-sm font-modern"></div>
                 </div>
                 <!-- 底部按鈕 -->
@@ -2244,8 +2296,8 @@
             const author = poemObj?.author || '';
             const poemTitle = poemObj?.poem || '';
             return [
-                { role: 'system', content: '你是一位溫柔而專業的國學導師，擅長用清晰、優美、貼近中學生的語言講解古典詩詞。' },
-                { role: 'user', content: `請幫我解讀下面這句詩。要求：\n1) 先給出這句詩的準確、優美的現代文翻譯；\n2) 說明這句詩出自哪一首詩（給出原作品的全文），並保持原詩格式清晰；\n3) 對整首詩做一段簡要的賞析，語言不要太學術，重點指出題目中的這句詩好在哪裡，如何體現意象、情感或節奏之美；\n4) 請使用繁體中文回答，風格友善，讓中學生能讀懂並被打動。\n\n這句詩：${line}\n作者：${author}\n詩題：${poemTitle}` }
+                { role: 'system', content: '你是一位溫柔而專業的國學導師，擅長用清晰、優美、貼近中學生的語言講解古典詩詞。請嚴格控制總字數在300字以內，語言精煉、易懂。' },
+                { role: 'user', content: `請幫我解讀下面這句詩，輸出結構為三段，並控制在300字以內：\n【譯文】用1-2句給出準確、優美的現代文翻譯；\n【原作】說明詩句出處，給出原作全文（若過長可節選核心段落），保持排版清晰；\n【賞析】用2-3句指出整首作品的氣氛與情感，並用高亮標出題目該句「${line}」的美（意象/節奏/對仗等）。\n請使用繁體中文回答，風格友善，適合中學生。\n詩句：${line}\n作者：${author}\n詩題：${poemTitle}` }
             ];
         }
 
@@ -2265,9 +2317,8 @@
                 aiExplainReload && aiExplainReload.classList.add('ai-explain-loading');
                 const messages = buildAiPrompt(currentPoem);
                 const content = await callDeepSeek(messages);
-                // 簡單格式優化：換行轉段落
-                const safeHtml = (content || '').split('\n').map(p => p.trim()).filter(Boolean).map(p => `<p>${p}</p>`).join('');
-                aiExplainContent.innerHTML = safeHtml || '<div class="text-surface-700">暫無內容</div>';
+                const pretty = formatAiContent(content || '', currentPoem.line || '');
+                aiExplainContent.innerHTML = pretty || '<div class="text-surface-700">暫無內容</div>';
                 aiExplainError.classList.add('hidden');
             } catch (err) {
                 aiExplainError.textContent = '生成失敗，請稍後重試。' + '（' + String(err) + '）';
@@ -2276,6 +2327,36 @@
                 if (triggerButton) triggerButton.classList.remove('ai-explain-loading');
                 aiExplainReload && aiExplainReload.classList.remove('ai-explain-loading');
             }
+        }
+
+        // 將模型輸出格式化為本站美學風格，並做長度控制與高亮
+        function formatAiContent(raw, targetLine) {
+            const text = (raw || '').replace(/^[\s\u200B\ufeff]+|[\s\u200B\ufeff]+$/g, '');
+            // 粗略截斷至約300字
+            const limited = text.length > 360 ? text.slice(0, 360) + '…' : text;
+            // 切分段落（以【】標題或空行為界）
+            const parts = limited.split(/\n{2,}|(?=【譯文|【原作|【賞析)/).map(p=>p.trim()).filter(Boolean);
+            const esc = (s)=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+            // 目標詩句高亮
+            const highlight = (s)=>s.replace(new RegExp(targetLine.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'), `<span class=\"ai-highlight\">${esc(targetLine)}</span>`);
+
+            const sections = [];
+            let y = parts.join('\n');
+            // 盡量提取三段
+            const yiz = /【譯文】([\s\S]*?)(?=【|$)/.exec(y);
+            const yuanz = /【原作】([\s\S]*?)(?=【|$)/.exec(y);
+            const shang = /【賞析】([\s\S]*?)(?=【|$)/.exec(y);
+
+            if (yiz) sections.push(`<div class=\"ai-section\"><div class=\"ai-title\">📘 譯文</div><div class=\"ai-body\">${esc(yiz[1].trim())}</div></div>`);
+            if (yuanz) sections.push(`<div class=\"ai-section\"><div class=\"ai-title\">📜 原作</div><div class=\"ai-poem-block\">${esc(yuanz[1].trim())}</div></div>`);
+            if (shang) sections.push(`<div class=\"ai-section\"><div class=\"ai-title\">🌟 賞析</div><div class=\"ai-body\">${highlight(esc(shang[1].trim()))}</div></div>`);
+
+            if (!sections.length) {
+                // 後備：以段落拆分
+                const paras = parts.map(p=>`<p>${highlight(esc(p))}</p>`).join('');
+                return `<div class=\"ai-section\">${paras}</div>`;
+            }
+            return sections.join('<div style=\"height:8px\"></div>');
         }
         
         if (aiExplainBtnSuccess) {
