@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜數字遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow: hidden; /* 隱藏 confetti 造成的滾動條 */
+            background: radial-gradient(circle, #89f7fe 0%, #66a6ff 100%);
+        }
+
+        /* 神秘盒子動畫 */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        /* 神秘盒子發光動畫 */
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+            50% { box-shadow: 0 0 35px rgba(251, 191, 36, 1); }
+        }
+
+        .bouncing-box {
+            animation: bounce 2s infinite ease-in-out, glow 3s infinite ease-in-out;
+        }
+
+        /* 錯誤時的搖晃動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+            20%, 40%, 60%, 80% { transform: translateX(8px); }
+        }
+        .shake-animation {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* 提示訊息出現的動畫 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* 隱藏數字輸入框的箭頭 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        /* 勝利時的 confetti 效果 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0.7;
+            border-radius: 50%;
+            animation: fall 3s linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* 分數增加動畫 */
+        @keyframes fadeUp {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -200%) scale(1.2); opacity: 0; }
+        }
+        .score-animation {
+            animation: fadeUp 1.5s ease-out forwards;
+        }
+
+        /* 一次猜中的慶祝動畫 */
+        @keyframes firstTryGlow {
+            0%, 100% { box-shadow: 0 0 40px 10px rgba(255, 215, 0, 0.7); }
+            50% { box-shadow: 0 0 70px 25px rgba(255, 215, 0, 1); }
+        }
+        .first-try-win {
+            animation: firstTryGlow 2.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div id="game-container" class="relative bg-white w-11/12 max-w-md p-6 md:p-8 rounded-2xl shadow-2xl text-center transition-all duration-500">
+        <!-- Language Switcher -->
+        <div class="absolute top-4 right-4 flex space-x-2">
+            <button id="lang-zh" class="px-3 py-1 text-sm rounded-md transition shadow-md">中文</button>
+            <button id="lang-en" class="px-3 py-1 text-sm rounded-md transition shadow-md">EN</button>
+        </div>
+
+        <span id="score-plus" class="absolute top-1/2 left-1/2 text-5xl font-bold text-yellow-400 opacity-0" style="transform: translate(-50%, -50%); text-shadow: 2px 2px 4px rgba(0,0,0,0.5); pointer-events: none; z-index: 10;"></span>
+        
+        <h1 data-i18n-key="title" class="text-3xl md:text-4xl font-bold text-blue-600 mb-4"></h1>
+        <p data-i18n-key="prompt" class="text-gray-500 mb-6"></p>
+
+        <!-- 神秘盒子 -->
+        <div id="mystery-box-container" class="mb-6">
+            <div id="mystery-box" class="bouncing-box w-32 h-32 md:w-40 md:h-40 mx-auto bg-gradient-to-br from-yellow-300 to-orange-400 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300">
+                <span id="mystery-text" class="text-6xl md:text-7xl font-bold text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">?</span>
+            </div>
+        </div>
+
+        <!-- 遊戲互動區 -->
+        <div id="interaction-area">
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
+                <input type="number" id="guess-input" data-i18n-placeholder="inputPlaceholder" class="w-full sm:w-48 text-center text-xl p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
+                <button id="guess-button" data-i18n-key="guessButton" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl py-3 px-8 rounded-xl shadow-md transform hover:scale-105 transition"></button>
+            </div>
+        </div>
+        
+        <!-- 提示訊息 -->
+        <div id="hint-container" class="h-16 flex flex-col justify-center items-center">
+            <p id="main-hint" class="text-xl font-semibold text-gray-700"></p>
+            <p id="secondary-hint" class="text-md text-teal-600 font-medium mt-1"></p>
+        </div>
+
+        <!-- 數字範圍指示器 -->
+        <div class="w-full bg-gray-200 rounded-full h-6 my-4 p-1 shadow-inner">
+            <div id="range-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-500 ease-out flex items-center justify-between text-white text-xs px-2 font-bold" style="margin-left: 0%; width: 100%;">
+                <span id="range-min">1</span>
+                <span class="opacity-75">--</span>
+                <span id="range-max">100</span>
+            </div>
+        </div>
+
+        <!-- 遊戲資訊 -->
+        <div class="mt-4 text-gray-500 flex justify-center items-center space-x-6">
+            <p><span data-i18n-key="scoreLabel"></span><span id="score-display" class="font-bold text-lg text-blue-600">0</span></p>
+            <p><span data-i18n-key="attemptsLabel"></span><span id="guess-count" class="font-bold">0</span></p>
+        </div>
+
+        <!-- 勝利畫面 -->
+        <div id="win-screen" class="hidden text-center">
+            <div id="number-facts" class="mt-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-800 text-left rounded-lg">
+                <!-- 數學小知識會顯示在這裡 -->
+            </div>
+            <button id="restart-button" data-i18n-key="restartButton" class="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl shadow-md transform hover:scale-105 transition-transform text-lg"></button>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // DOM 元素
+        const guessInput = document.getElementById('guess-input');
+        const guessButton = document.getElementById('guess-button');
+        const restartButton = document.getElementById('restart-button');
+        const mainHint = document.getElementById('main-hint');
+        const secondaryHint = document.getElementById('secondary-hint');
+        const guessCountDisplay = document.getElementById('guess-count');
+        const mysteryBox = document.getElementById('mystery-box');
+        const mysteryText = document.getElementById('mystery-text');
+        const gameContainer = document.getElementById('game-container');
+        const rangeBar = document.getElementById('range-bar');
+        const rangeMin = document.getElementById('range-min');
+        const rangeMax = document.getElementById('range-max');
+        const winScreen = document.getElementById('win-screen');
+        const numberFacts = document.getElementById('number-facts');
+        const scoreDisplay = document.getElementById('score-display');
+        const scorePlus = document.getElementById('score-plus');
+        const langZhBtn = document.getElementById('lang-zh');
+        const langEnBtn = document.getElementById('lang-en');
+
+        const translations = {
+            title: { zh: '神秘數字盒子', en: 'Mystery Number Box' },
+            prompt: { zh: '我從 1 到 100 選了一個數字，你猜得到嗎？', en: 'I picked a number from 1 to 100. Can you guess it?' },
+            inputPlaceholder: { zh: '輸入你的猜測...', en: 'Enter your guess...' },
+            guessButton: { zh: '猜猜看！', en: 'Guess!' },
+            scoreLabel: { zh: '總分：', en: 'Score: ' },
+            attemptsLabel: { zh: '已猜次數：', en: 'Attempts: ' },
+            restartButton: { zh: '重新玩一次', en: 'Play Again' },
+            invalidInput: { zh: '請輸入 1 到 100 之間的數字！', en: 'Please enter a number between 1 and 100!' },
+            tooHigh: { zh: '太大了！', en: 'Too high!' },
+            tooLow: { zh: '太小了！', en: 'Too low!' },
+            gettingWarmer: { zh: ' 越來越熱了！', en: ' Getting warmer!' },
+            gettingColder: { zh: ' 有點冷掉了...', en: ' Getting colder...' },
+            correct: { zh: '答對了！就是 {secretNumber}！', en: 'Correct! The number is {secretNumber}!' },
+            winJackpot: { zh: '天啊！一次就猜中！你是神選之人！獲得 {points} 分！', en: 'Whoa! First try! You must be psychic! You get {points} points!' },
+            winBonus: { zh: '太厲害了！只用了 {guessCount} 次就猜對，獲得 {points} 分！', en: 'Amazing! Guessed in {guessCount} tries and got {points} points!' },
+            winNoBonus: { zh: '你總共猜了 {guessCount} 次！太棒了！', en: 'You guessed it in {guessCount} tries! Great job!' },
+            hintOdd: { zh: '提示：神秘數字是個「奇數」喔！', en: 'Hint: The mystery number is an odd number!' },
+            hintEven: { zh: '提示：神秘數字是個「偶數」喔！', en: 'Hint: The mystery number is an even number!' },
+            hintMultiple10: { zh: '提示：這個數字是 10 的倍數。', en: 'Hint: The number is a multiple of 10.' },
+            hintMultiple5: { zh: '提示：這個數字可以被 5 整除。', en: 'Hint: The number is divisible by 5.' },
+            hintPrime: { zh: '提示：這是一個「質數」！', en: 'Hint: It\'s a prime number!' },
+            hintSumOfDigits: { zh: '提示：數字的位數加總是 {sum}。', en: 'Hint: The sum of its digits is {sum}.' },
+            hintPerfectSquare: { zh: '提示：它是一個「平方數」喔！(某個整數乘以自己)', en: 'Hint: It\'s a perfect square! (an integer multiplied by itself)' },
+            hintTensDigit: { zh: '提示：它的十位數是 {digit}。', en: 'Hint: Its tens digit is {digit}.' },
+            factsTitle: { zh: '關於 {secretNumber} 的小知識：', en: 'Fun facts about {secretNumber}:' },
+            factOdd: { zh: '它是一個奇數。', en: 'It is an odd number.' },
+            factEven: { zh: '它是一個偶數。', en: 'It is an even number.' },
+            factPrime: { zh: '它是一個質數。', en: 'It is a prime number.' },
+            factPerfectSquare: { zh: '它是 {sqrt} 的平方。', en: 'It is the square of {sqrt}.' },
+            factMultiple3: { zh: '它是 3 的倍數。', en: 'It is a multiple of 3.' },
+            factMultiple5: { zh: '它是 5 的倍數。', en: 'It is a multiple of 5.' },
+            factSumOfDigits: { zh: '它的位數總和是 {sum}。', en: 'The sum of its digits is {sum}.' }
+        };
+
+        // 遊戲狀態變數
+        let secretNumber, guessCount, isGameOver;
+        let totalScore = 0;
+        let givenHints = [];
+        let minRange, maxRange, previousGuess;
+        let currentLanguage = 'zh';
+        let lastHint = { mainKey: '', status: '', secondaryKey: '', params: {}, warmerColderKey: '' };
+
+        // --- 輔助函式 ---
+        const isPrime = num => { if (num <= 1) return false; for (let i = 2; i * i <= num; i++) if (num % i === 0) return false; return true; };
+        const getSumOfDigits = num => String(num).split('').reduce((acc, digit) => acc + Number(digit), 0);
+        const isPerfectSquare = num => Math.sqrt(num) % 1 === 0;
+        const t = (key, params = {}) => {
+            let text = translations[key]?.[currentLanguage] || key;
+            for (const [paramKey, paramValue] of Object.entries(params)) {
+                text = text.replace(`{${paramKey}}`, paramValue);
+            }
+            return text;
+        };
+
+        // --- 遊戲核心邏輯 ---
+        function initGame() {
+            secretNumber = Math.floor(Math.random() * 100) + 1;
+            guessCount = 0;
+            isGameOver = false;
+            givenHints = [];
+            minRange = 1;
+            maxRange = 100;
+            previousGuess = null;
+            lastHint = { mainKey: '', status: '', secondaryKey: '', params: {}, warmerColderKey: '' };
+            
+            mainHint.textContent = '';
+            secondaryHint.textContent = '';
+            guessCountDisplay.textContent = '0';
+            guessInput.value = '';
+            guessInput.disabled = false;
+            guessButton.disabled = false;
+            winScreen.classList.add('hidden');
+            document.getElementById('interaction-area').style.display = 'block';
+            
+            gameContainer.classList.remove('first-try-win');
+            mysteryBox.classList.remove('bg-green-500');
+            mysteryBox.classList.add('bg-gradient-to-br', 'from-yellow-300', 'to-orange-400');
+            mysteryText.textContent = '?';
+            mysteryBox.classList.add('bouncing-box');
+            updateRangeIndicator();
+            updateLanguageUI();
+        }
+
+        function handleGuess() {
+            if (isGameOver) return;
+            const userGuess = parseInt(guessInput.value);
+            if (isNaN(userGuess) || userGuess < 1 || userGuess > 100) {
+                displayHint('invalidInput', 'warning');
+                return;
+            }
+            guessCount++;
+            guessCountDisplay.textContent = guessCount;
+            guessInput.value = '';
+            guessInput.focus();
+            if (userGuess === secretNumber) {
+                winGame();
+            } else {
+                giveFeedback(userGuess);
+                updateRange(userGuess);
+            }
+            previousGuess = userGuess;
+        }
+
+        function updateRange(guess) {
+            if (guess < secretNumber) minRange = Math.max(minRange, guess + 1);
+            else maxRange = Math.min(maxRange, guess - 1);
+            updateRangeIndicator();
+        }
+
+        function winGame(isLangUpdate = false) {
+            if (!isLangUpdate) {
+                isGameOver = true;
+                guessInput.disabled = true;
+                guessButton.disabled = true;
+                mysteryBox.classList.remove('bouncing-box', 'bg-gradient-to-br', 'from-yellow-300', 'to-orange-400');
+                mysteryBox.classList.add('bg-green-500');
+                mysteryText.textContent = secretNumber;
+                document.getElementById('interaction-area').style.display = 'none';
+                winScreen.classList.remove('hidden');
+            }
+
+            mainHint.textContent = t('correct', { secretNumber });
+            mainHint.className = 'text-2xl font-bold text-green-600';
+            
+            const scoreMap = { 1: 100, 2: 40, 3: 30, 4: 20, 5: 10 };
+            const points = scoreMap[guessCount] || 0;
+
+            if (!isLangUpdate && points > 0) {
+                totalScore += points;
+                scoreDisplay.textContent = totalScore;
+                showScoreAnimation(`+${points}`);
+            }
+            
+            if (guessCount === 1) {
+                secondaryHint.textContent = t('winJackpot', { points: 100 });
+                 if (!isLangUpdate) {
+                    gameContainer.classList.add('first-try-win');
+                    setTimeout(() => gameContainer.classList.remove('first-try-win'), 2500);
+                    createConfetti(250, true);
+                }
+            } else if (points > 0) {
+                secondaryHint.textContent = t('winBonus', { guessCount, points });
+                if (!isLangUpdate) createConfetti();
+            } else {
+                secondaryHint.textContent = t('winNoBonus', { guessCount });
+                if (!isLangUpdate) createConfetti();
+            }
+
+            displayNumberFacts();
+        }
+
+        // --- UI 更新函式 ---
+        function updateLanguageUI() {
+            document.querySelectorAll('[data-i18n-key]').forEach(el => el.textContent = t(el.getAttribute('data-i18n-key')));
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = t(el.getAttribute('data-i18n-placeholder')));
+            
+            if (currentLanguage === 'zh') {
+                langZhBtn.classList.replace('bg-white', 'bg-blue-500');
+                langZhBtn.classList.replace('text-gray-600', 'text-white');
+                langEnBtn.classList.replace('bg-blue-500', 'bg-white');
+                langEnBtn.classList.replace('text-white', 'text-gray-600');
+            } else {
+                langEnBtn.classList.replace('bg-white', 'bg-blue-500');
+                langEnBtn.classList.replace('text-gray-600', 'text-white');
+                langZhBtn.classList.replace('bg-blue-500', 'bg-white');
+                langZhBtn.classList.replace('text-white', 'text-gray-600');
+            }
+            
+            if (lastHint.mainKey) displayHint(lastHint.mainKey, lastHint.status, lastHint.secondaryKey, lastHint.params, lastHint.warmerColderKey);
+            if (isGameOver) winGame(true);
+        }
+
+        function updateRangeIndicator() {
+            const leftPercent = ((minRange - 1) / 99) * 100;
+            const widthPercent = ((maxRange - minRange + 1) / 100) * 100;
+            rangeBar.style.marginLeft = `${leftPercent}%`;
+            rangeBar.style.width = `${widthPercent}%`;
+            rangeMin.textContent = minRange;
+            rangeMax.textContent = maxRange;
+        }
+
+        function displayHint(mainKey, status = 'info', secondaryKey = '', params = {}, warmerColderKey = '') {
+            lastHint = { mainKey, status, secondaryKey, params, warmerColderKey };
+
+            let mainText = t(mainKey, params);
+            if (warmerColderKey) {
+                mainText += t(warmerColderKey);
+            }
+            mainHint.textContent = mainText;
+
+            mainHint.classList.remove('fade-in'); void mainHint.offsetWidth; mainHint.classList.add('fade-in');
+            
+            secondaryHint.textContent = secondaryKey ? t(secondaryKey, params) : '';
+            if(secondaryKey) { secondaryHint.classList.remove('fade-in'); void secondaryHint.offsetWidth; secondaryHint.classList.add('fade-in'); }
+            const colorMap = { 'too-high':'text-red-500', 'too-low':'text-blue-500', 'warning':'text-yellow-600', 'info':'text-gray-700' };
+            mainHint.className = `text-xl font-semibold ${colorMap[status] || colorMap['info']}`;
+        }
+        
+        function giveFeedback(guess) {
+            gameContainer.classList.remove('shake-animation'); void gameContainer.offsetWidth; gameContainer.classList.add('shake-animation');
+            let mainKey = guess > secretNumber ? 'tooHigh' : 'tooLow';
+            let status = guess > secretNumber ? 'too-high' : 'too-low';
+            let warmerColderKey = '';
+            
+            if (previousGuess !== null) {
+                const prevDiff = Math.abs(secretNumber - previousGuess);
+                const currDiff = Math.abs(secretNumber - guess);
+                if (currDiff < prevDiff) warmerColderKey = 'gettingWarmer';
+                else if (currDiff > prevDiff) warmerColderKey = 'gettingColder';
+            }
+
+            const funHint = getFunHint();
+            displayHint(mainKey, status, funHint.key, funHint.params, warmerColderKey);
+        }
+
+        function getFunHint() {
+            const hintFunctions = [];
+            const add = (key, func) => { if (!givenHints.includes(key)) hintFunctions.push(() => { givenHints.push(key); return func(); }); };
+            add('oddEven', () => ({ key: secretNumber % 2 === 0 ? 'hintEven' : 'hintOdd' }));
+            if (secretNumber % 10 === 0) add('multiple10', () => ({ key: 'hintMultiple10' }));
+            else if (secretNumber % 5 === 0) add('multiple5', () => ({ key: 'hintMultiple5' }));
+            if (isPrime(secretNumber)) add('prime', () => ({ key: 'hintPrime' }));
+            if (secretNumber > 9) add('sumOfDigits', () => ({ key: 'hintSumOfDigits', params: { sum: getSumOfDigits(secretNumber) }}));
+            if (isPerfectSquare(secretNumber)) add('perfectSquare', () => ({ key: 'hintPerfectSquare' }));
+            if (secretNumber > 9) add('tensDigit', () => ({ key: 'hintTensDigit', params: { digit: Math.floor(secretNumber / 10) }}));
+            if (hintFunctions.length > 0) return hintFunctions[Math.floor(Math.random() * hintFunctions.length)]();
+            return { key: '', params: {} };
+        }
+        
+        function displayNumberFacts() {
+            let facts = `<p class="font-bold text-lg mb-2">${t('factsTitle', { secretNumber })}</p><ul class="list-disc list-inside space-y-1">`;
+            facts += `<li>${t(secretNumber % 2 === 0 ? 'factEven' : 'factOdd')}</li>`;
+            if (isPrime(secretNumber)) facts += `<li>${t('factPrime')}</li>`;
+            if (isPerfectSquare(secretNumber)) facts += `<li>${t('factPerfectSquare', { sqrt: Math.sqrt(secretNumber) })}</li>`;
+            if (secretNumber % 3 === 0) facts += `<li>${t('factMultiple3')}</li>`;
+            if (secretNumber % 5 === 0) facts += `<li>${t('factMultiple5')}</li>`;
+            if (secretNumber > 9) facts += `<li>${t('factSumOfDigits', { sum: getSumOfDigits(secretNumber) })}</li>`;
+            facts += '</ul>';
+            numberFacts.innerHTML = facts;
+        }
+
+        function showScoreAnimation(text) { scorePlus.textContent = text; scorePlus.classList.remove('score-animation'); void scorePlus.offsetWidth; scorePlus.classList.add('score-animation'); }
+        
+        function createConfetti(count = 100, isJackpot = false) {
+            for (let i = 0; i < count; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.top = -20 + 'px';
+                c.style.animationDelay = Math.random() * 3 + 's';
+                c.style.animationDuration = (Math.random() * 2 + 3) + 's';
+                if (isJackpot) {
+                    const colors = ['#ffd700', '#ffdf00', '#f0e68c', '#ffffff', '#c0c0c0'];
+                    c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    c.style.transform = `scale(${Math.random() * 0.5 + 0.75})`;
+                } else {
+                    c.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                }
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 5000);
+            }
+        }
+
+        // 事件監聽
+        guessButton.addEventListener('click', handleGuess);
+        guessInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleGuess(); });
+        restartButton.addEventListener('click', initGame);
+        langZhBtn.addEventListener('click', () => { currentLanguage = 'zh'; updateLanguageUI(); });
+        langEnBtn.addEventListener('click', () => { currentLanguage = 'en'; updateLanguageUI(); });
+
+        // 啟動遊戲
+        initGame();
+    })();
+    </script>
+</body>
+</html>
+
+

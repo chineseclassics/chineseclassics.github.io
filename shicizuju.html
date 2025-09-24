@@ -1424,9 +1424,9 @@
                             tags
                         });
                     });
-                    const lib = loadUserLibrary();
-                    lib.poems = mergePoemsUnique([...(lib.poems||[]), ...incoming]);
-                    saveUserLibrary(lib);
+                    // 覆蓋模式：以本次 Excel 的內容完全替換用戶庫
+                    const replaced = mergePoemsUnique(incoming);
+                    saveUserLibrary({ poems: replaced });
                     populateUserTagSelect();
                     showNotification(`已導入 ${incoming.length} 首詩（Excel）`);
                 } catch (e) {
