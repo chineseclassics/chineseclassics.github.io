@@ -1095,7 +1095,7 @@
             </div>
             
             <!-- 诗句输入框 - 更大字体现代化 -->
-            <div class="flex items-center justify-center mb-3">
+            <div class="flex items-center justify-center mb-2">
                 <div class="relative w-full">
                     <input id="poemDisplay" type="text" class="w-full px-4 rounded-2xl glass-card text-4xl font-kai font-bold text-center focus:outline-none text-surface-800 transition-all duration-300" readonly style="height: 4.5rem; line-height: 4.5rem; text-align-last: center;">
                     <!-- 错误图标 - 动态定位在文字右侧 -->
@@ -1108,18 +1108,22 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 答對情況：AI 解讀按鈕置於玩家答案正下方，同區塊內 -->
+            <div id="aiExplainSuccessRow" class="hidden mb-3 flex justify-center">
+                <button id="aiExplainBtnSuccess" class="ai-explain-button px-4 py-2 rounded-2xl font-modern font-semibold text-xs shadow-md modern-button" title="AI 解讀此句">✨ AI 解讀</button>
+            </div>
             
             <!-- 游戏结果区域 - 位于诗句输入框下方 -->
             <div id="gameMessage" class="hidden mb-3">
                 <div class="glass-card p-3 rounded-2xl text-center border border-white/20 backdrop-blur-lg">
                     <!-- 正确答案显示 -->
-                    <div id="correctAnswer" class="hidden mb-3">
+                    <div id="correctAnswer" class="hidden mb-2">
                         <div class="text-xs font-modern text-surface-800/60 mb-2">正確答案</div>
-                        <div class="flex items-center gap-3">
-                            <div id="correctAnswerText" class="flex-1 text-4xl font-kai font-bold text-primary-600 py-2 px-3 glass-card rounded-xl"></div>
-                            <button id="aiExplainBtn" class="ai-explain-button px-4 py-2 rounded-2xl font-modern font-semibold text-xs shadow-md modern-button" title="AI 解讀此句">
-                                ✨ AI 解讀
-                            </button>
+                        <div id="correctAnswerText" class="text-4xl font-kai font-bold text-primary-600 py-2 px-3 glass-card rounded-xl"></div>
+                        <!-- 答錯情況：AI 解讀按鈕置於正確詩句正下方，同區塊內 -->
+                        <div id="aiExplainFailRow" class="hidden mt-2 flex justify-center">
+                            <button id="aiExplainBtnFail" class="ai-explain-button px-4 py-2 rounded-2xl font-modern font-semibold text-xs shadow-md modern-button" title="AI 解讀此句">✨ AI 解讀</button>
                         </div>
                     </div>
                     
@@ -2020,7 +2024,10 @@
         const correctAnswer = document.getElementById('correctAnswer');
         const correctAnswerText = document.getElementById('correctAnswerText');
         const closeGameMessage = document.getElementById('closeGameMessage');
-        const aiExplainBtn = document.getElementById('aiExplainBtn');
+        const aiExplainSuccessRow = document.getElementById('aiExplainSuccessRow');
+        const aiExplainBtnSuccess = document.getElementById('aiExplainBtnSuccess');
+        const aiExplainFailRow = document.getElementById('aiExplainFailRow');
+        const aiExplainBtnFail = document.getElementById('aiExplainBtnFail');
         const aiExplainModal = document.getElementById('aiExplainModal');
         const aiExplainClose = document.getElementById('aiExplainClose');
         const aiExplainOK = document.getElementById('aiExplainOK');
@@ -2173,10 +2180,11 @@
             if (isSuccess) {
                 // 答对了：只显示成功图标，用户答案保持绿色
                 successIcon.classList.remove('hidden');
-                // 顯示正確答案與 AI 解讀按鈕
-                correctAnswerText.textContent = currentPoem.line;
-                correctAnswer.classList.remove('hidden');
+                // 不顯示正確答案區（沿用原先邏輯），僅顯示 AI 按鈕
+                correctAnswer.classList.add('hidden');
                 poemErrorIcon.classList.add('hidden');
+                if (aiExplainSuccessRow) aiExplainSuccessRow.classList.remove('hidden');
+                if (aiExplainFailRow) aiExplainFailRow.classList.add('hidden');
                 
                 // 保持用户答案的绿色样式（在endRound中已设置）
             } else {
@@ -2200,6 +2208,8 @@
                     correctAnswer.classList.add('hidden');
                 }
                 successIcon.classList.add('hidden');
+                if (aiExplainFailRow) aiExplainFailRow.classList.remove('hidden');
+                if (aiExplainSuccessRow) aiExplainSuccessRow.classList.add('hidden');
             }
 
             // 显示浮窗，使用简单的滑入动画
@@ -2249,9 +2259,9 @@
             aiExplainModal.classList.remove('hidden');
         }
 
-        async function generateAiExplanation() {
+        async function generateAiExplanation(triggerButton) {
             try {
-                aiExplainBtn && aiExplainBtn.classList.add('ai-explain-loading');
+                if (triggerButton) triggerButton.classList.add('ai-explain-loading');
                 aiExplainReload && aiExplainReload.classList.add('ai-explain-loading');
                 const messages = buildAiPrompt(currentPoem);
                 const content = await callDeepSeek(messages);
@@ -2263,15 +2273,21 @@
                 aiExplainError.textContent = '生成失敗，請稍後重試。' + '（' + String(err) + '）';
                 aiExplainError.classList.remove('hidden');
             } finally {
-                aiExplainBtn && aiExplainBtn.classList.remove('ai-explain-loading');
+                if (triggerButton) triggerButton.classList.remove('ai-explain-loading');
                 aiExplainReload && aiExplainReload.classList.remove('ai-explain-loading');
             }
         }
-
-        if (aiExplainBtn) {
-            aiExplainBtn.addEventListener('click', () => {
+        
+        if (aiExplainBtnSuccess) {
+            aiExplainBtnSuccess.addEventListener('click', (e) => {
                 openAiExplainModal();
-                generateAiExplanation();
+                generateAiExplanation(e.currentTarget);
+            });
+        }
+        if (aiExplainBtnFail) {
+            aiExplainBtnFail.addEventListener('click', (e) => {
+                openAiExplainModal();
+                generateAiExplanation(e.currentTarget);
             });
         }
         if (aiExplainClose) {
@@ -2307,6 +2323,8 @@
                 successIcon.classList.add('hidden');
                 correctAnswer.classList.add('hidden');
                 poemErrorIcon.classList.add('hidden');
+                if (aiExplainSuccessRow) aiExplainSuccessRow.classList.add('hidden');
+                if (aiExplainFailRow) aiExplainFailRow.classList.add('hidden');
                 // 重置用户答案颜色
                 poemDisplay.classList.remove('text-red-600', 'text-secondary', 'font-bold');
                 poemDisplay.classList.add('text-surface-800');
