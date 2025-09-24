@@ -58,6 +58,7 @@
         }
         input[type=number] {
           -moz-appearance: textfield;
+          appearance: textfield;
         }
 
         /* 勝利時的 confetti 效果 */
@@ -98,11 +99,13 @@
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-    <div id="game-container" class="relative bg-white w-11/12 max-w-md p-6 md:p-8 rounded-2xl shadow-2xl text-center transition-all duration-500">
-        <!-- Language Switcher -->
-        <div class="absolute top-4 right-4 flex space-x-2">
-            <button id="lang-zh" class="px-3 py-1 text-sm rounded-md transition shadow-md">中文</button>
-            <button id="lang-en" class="px-3 py-1 text-sm rounded-md transition shadow-md">EN</button>
+    <div id="game-container" class="relative bg-white w-11/12 max-w-md p-6 md:p-8 pb-20 md:pb-24 rounded-2xl shadow-2xl text-center transition-all duration-500 overflow-y-auto max-h-[90vh] md:max-h-[85vh]">
+        <!-- Language Switcher (moved to bottom) -->
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 transform">
+            <div class="bg-gray-100 rounded-full p-1 shadow-inner flex space-x-1">
+                <button id="lang-zh" class="px-4 py-1.5 md:py-2 text-sm rounded-full transition shadow-sm bg-blue-500 text-white">中文</button>
+                <button id="lang-en" class="px-4 py-1.5 md:py-2 text-sm rounded-full transition shadow-sm bg-white text-gray-600">EN</button>
+            </div>
         </div>
 
         <span id="score-plus" class="absolute top-1/2 left-1/2 text-5xl font-bold text-yellow-400 opacity-0" style="transform: translate(-50%, -50%); text-shadow: 2px 2px 4px rgba(0,0,0,0.5); pointer-events: none; z-index: 10;"></span>
@@ -132,7 +135,7 @@
         </div>
 
         <!-- 數字範圍指示器 -->
-        <div class="w-full bg-gray-200 rounded-full h-6 my-4 p-1 shadow-inner">
+        <div id="range-container" class="w-full bg-gray-200 rounded-full h-6 my-4 p-1 shadow-inner">
             <div id="range-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-500 ease-out flex items-center justify-between text-white text-xs px-2 font-bold" style="margin-left: 0%; width: 100%;">
                 <span id="range-min">1</span>
                 <span class="opacity-75">--</span>
@@ -140,15 +143,33 @@
             </div>
         </div>
 
-        <!-- 遊戲資訊 -->
+        <!-- 遊戲資訊（分數、次數、等級） -->
         <div class="mt-4 text-gray-500 flex justify-center items-center space-x-6">
             <p><span data-i18n-key="scoreLabel"></span><span id="score-display" class="font-bold text-lg text-blue-600">0</span></p>
             <p><span data-i18n-key="attemptsLabel"></span><span id="guess-count" class="font-bold">0</span></p>
+            <p><span data-i18n-key="levelLabel" class="hidden sm:inline"></span><span id="level-name" class="font-bold text-lg text-purple-600">—</span></p>
+        </div>
+
+        <!-- 等級進度條 -->
+        <div id="level-progress-container" class="mt-3 px-2">
+            <div class="bg-gray-200 rounded-full h-3 w-full overflow-hidden shadow-inner">
+                <div id="level-progress-bar" class="h-full bg-gradient-to-r from-purple-400 to-indigo-500 transition-all duration-500" style="width: 0%;"></div>
+            </div>
+            <div class="mt-1 text-xs text-gray-600 text-center"><span id="level-progress-text">0 / 0</span></div>
+        </div>
+
+        <!-- 徽章區域 -->
+        <div id="badge-area" class="mt-4">
+            <div class="flex items-center justify-center mb-2 text-gray-600 text-sm">
+                <span data-i18n-key="badgesLabel" class="mr-2"></span>
+                <span id="badge-count" class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="badge-list" class="flex gap-2 flex-wrap justify-center"></div>
         </div>
 
         <!-- 勝利畫面 -->
         <div id="win-screen" class="hidden text-center">
-            <div id="number-facts" class="mt-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-800 text-left rounded-lg">
+            <div id="number-facts" class="mt-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-800 text-left rounded-lg max-h-40 md:max-h-56 overflow-auto">
                 <!-- 數學小知識會顯示在這裡 -->
             </div>
             <button id="restart-button" data-i18n-key="restartButton" class="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl shadow-md transform hover:scale-105 transition-transform text-lg"></button>
@@ -176,6 +197,12 @@
         const scorePlus = document.getElementById('score-plus');
         const langZhBtn = document.getElementById('lang-zh');
         const langEnBtn = document.getElementById('lang-en');
+        const levelNameEl = document.getElementById('level-name');
+        const levelProgressBar = document.getElementById('level-progress-bar');
+        const levelProgressText = document.getElementById('level-progress-text');
+        const badgeCountEl = document.getElementById('badge-count');
+        const badgeListEl = document.getElementById('badge-list');
+        let currentLanguage = 'zh';
 
         const translations = {
             title: { zh: '神秘數字盒子', en: 'Mystery Number Box' },
@@ -184,6 +211,8 @@
             guessButton: { zh: '猜猜看！', en: 'Guess!' },
             scoreLabel: { zh: '總分：', en: 'Score: ' },
             attemptsLabel: { zh: '已猜次數：', en: 'Attempts: ' },
+            levelLabel: { zh: '等級：', en: 'Level: ' },
+            badgesLabel: { zh: '徽章', en: 'Badges' },
             restartButton: { zh: '重新玩一次', en: 'Play Again' },
             invalidInput: { zh: '請輸入 1 到 100 之間的數字！', en: 'Please enter a number between 1 and 100!' },
             tooHigh: { zh: '太大了！', en: 'Too high!' },
@@ -212,12 +241,152 @@
             factSumOfDigits: { zh: '它的位數總和是 {sum}。', en: 'The sum of its digits is {sum}.' }
         };
 
+        // 等級與徽章系統
+        const levels = [
+            { name: { zh: '見習探險家', en: 'Novice Explorer' }, min: 0,   max: 49 },
+            { name: { zh: '數字學徒',   en: 'Number Apprentice' }, min: 50,  max: 99 },
+            { name: { zh: '邏輯小能手', en: 'Logic Adept' },      min: 100, max: 199 },
+            { name: { zh: '智慧行者',   en: 'Wise Walker' },      min: 200, max: 349 },
+            { name: { zh: '心算達人',   en: 'Mind Master' },      min: 350, max: 549 },
+            { name: { zh: '謎題大師',   en: 'Puzzle Maestro' },   min: 550, max: 799 },
+            { name: { zh: '數字王者',   en: 'Number Champion' },  min: 800, max: 1199 },
+            { name: { zh: '猜數宗師',   en: 'Grand Guesser' },    min: 1200, max: Infinity }
+        ];
+
+        const badgeCatalog = [
+            { id: 'first-try', icon: '🏆', color: 'bg-amber-100 text-amber-700', rule: (ctx) => ctx.guessCount === 1, name: { zh: '神來一筆', en: 'First Shot' } },
+            { id: 'under-3', icon: '⚡', color: 'bg-yellow-100 text-yellow-700', rule: (ctx) => ctx.guessCount <= 3, name: { zh: '電光火石', en: 'Lightning Fast' } },
+            { id: 'over-10', icon: '🧩', color: 'bg-gray-100 text-gray-700', rule: (ctx) => ctx.guessCount >= 10, name: { zh: '耐心挑戰', en: 'Patient Solver' } },
+            { id: 'is-prime', icon: '🔷', color: 'bg-blue-100 text-blue-700', rule: (ctx) => ctx.isPrimeSecret, name: { zh: '質數獵人', en: 'Prime Hunter' } },
+            { id: 'perfect-square', icon: '■', color: 'bg-indigo-100 text-indigo-700', rule: (ctx) => ctx.isPerfectSquare, name: { zh: '平方觀察家', en: 'Square Spotter' } },
+            { id: 'multiple-10', icon: '🔟', color: 'bg-teal-100 text-teal-700', rule: (ctx) => ctx.isMultiple10, name: { zh: '整十妙手', en: 'Deca Master' } },
+            { id: 'score-200', icon: '🎯', color: 'bg-green-100 text-green-700', rule: (ctx) => ctx.totalScore >= 200, name: { zh: '百步穿楊', en: 'Sharpshooter' } },
+            { id: 'score-500', icon: '💎', color: 'bg-purple-100 text-purple-700', rule: (ctx) => ctx.totalScore >= 500, name: { zh: '寶石獵人', en: 'Gem Hunter' } },
+            { id: 'score-1000', icon: '👑', color: 'bg-rose-100 text-rose-700', rule: (ctx) => ctx.totalScore >= 1000, name: { zh: '王者加冕', en: 'Crowned' } },
+            // 新增：連勝 & 快速連勝 & 連續登入徽章
+            { id: 'win-3', icon: '🏅', color: 'bg-slate-100 text-slate-700', rule: (ctx) => (ctx.winStreak || 0) >= 3, name: { zh: '連勝三局', en: 'Win Streak x3' } },
+            { id: 'win-5', icon: '🥇', color: 'bg-amber-100 text-amber-700', rule: (ctx) => (ctx.winStreak || 0) >= 5, name: { zh: '連勝五局', en: 'Win Streak x5' } },
+            { id: 'quick-3', icon: '🔥', color: 'bg-orange-100 text-orange-700', rule: (ctx) => (ctx.quickWinStreak || 0) >= 3, name: { zh: '三連速勝', en: 'Triple Quick Win' } },
+            { id: 'daily-3', icon: '📅', color: 'bg-teal-100 text-teal-700', rule: (ctx) => (ctx.loginStreak || 0) >= 3, name: { zh: '連登三日', en: 'Daily x3' } },
+            { id: 'daily-7', icon: '📆', color: 'bg-blue-100 text-blue-700', rule: (ctx) => (ctx.loginStreak || 0) >= 7, name: { zh: '連登七日', en: 'Daily x7' } },
+            { id: 'daily-14', icon: '🗓️', color: 'bg-indigo-100 text-indigo-700', rule: (ctx) => (ctx.loginStreak || 0) >= 14, name: { zh: '連登十四日', en: 'Daily x14' } }
+        ];
+
+        function getLevelByScore(score) {
+            return levels.find(l => score >= l.min && score <= l.max) || levels[levels.length - 1];
+        }
+
+        function getNextLevelThreshold(score) {
+            const level = getLevelByScore(score);
+            return level.max === Infinity ? { currentMin: level.min, next: null } : { currentMin: level.min, next: level.max + 1 };
+        }
+
+        function renderLevel() {
+            const level = getLevelByScore(totalScore);
+            const name = level.name[currentLanguage];
+            levelNameEl.textContent = name;
+            const { currentMin, next } = getNextLevelThreshold(totalScore);
+            if (next === null) {
+                levelProgressBar.style.width = '100%';
+                levelProgressText.textContent = `${totalScore - currentMin} / ∞`;
+            } else {
+                const span = next - currentMin;
+                const progressed = Math.max(0, totalScore - currentMin);
+                const pct = Math.min(100, Math.round((progressed / span) * 100));
+                levelProgressBar.style.width = pct + '%';
+                levelProgressText.textContent = `${progressed} / ${span}`;
+            }
+        }
+
+        // 徽章存取
+        const STORAGE_KEY = 'caishuzi_profile_v1';
+        function loadProfile() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { totalScore: 0, badges: [] }; } catch { return { totalScore: 0, badges: [] }; }
+        }
+        function saveProfile(profile) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+        }
+
+        let totalScore = 0;
+        let profile = loadProfile();
+        let earnedBadges = new Set(profile.badges || []);
+        if (!isNaN(profile.totalScore)) totalScore = profile.totalScore; // 覆蓋初始總分
+        profile.loginStreak = Number(profile.loginStreak || 0);
+        profile.winStreak = Number(profile.winStreak || 0);
+        profile.quickWinStreak = Number(profile.quickWinStreak || 0);
+
+        function getTodayDateStr() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function updateDailyStreak() {
+            const today = getTodayDateStr();
+            const last = profile.lastLoginDate;
+            if (!last) {
+                profile.lastLoginDate = today;
+                profile.loginStreak = 1;
+                saveProfile(profile);
+                return true;
+            }
+            if (today === last) return false;
+            const lastDate = new Date(last + 'T00:00:00');
+            const todayDate = new Date(today + 'T00:00:00');
+            const diffDays = Math.round((todayDate - lastDate) / 86400000);
+            if (diffDays === 1) profile.loginStreak = (profile.loginStreak || 0) + 1; else profile.loginStreak = 1;
+            profile.lastLoginDate = today;
+            saveProfile(profile);
+            return true;
+        }
+
+        // 更新每日登入連續天數並嘗試授予登入徽章
+        updateDailyStreak();
+        tryAwardBadges({
+            guessCount: 0,
+            totalScore,
+            isPrimeSecret: false,
+            isPerfectSquare: false,
+            isMultiple10: false,
+            loginStreak: profile.loginStreak,
+            winStreak: profile.winStreak,
+            quickWinStreak: profile.quickWinStreak
+        });
+        renderBadges();
+
+        function tryAwardBadges(context) {
+            let newly = [];
+            badgeCatalog.forEach(b => {
+                if (!earnedBadges.has(b.id) && b.rule(context)) {
+                    earnedBadges.add(b.id);
+                    newly.push(b.id);
+                }
+            });
+            if (newly.length > 0) {
+                profile.totalScore = totalScore;
+                profile.badges = Array.from(earnedBadges);
+                saveProfile(profile);
+                renderBadges();
+            }
+        }
+
+        function renderBadges() {
+            const list = Array.from(earnedBadges);
+            badgeCountEl.textContent = String(list.length);
+            badgeListEl.innerHTML = list.map(id => {
+                const b = badgeCatalog.find(x => x.id === id);
+                if (!b) return '';
+                const label = b.name[currentLanguage];
+                return `<span class="${b.color} px-2 py-1 rounded-full text-xs shadow-sm inline-flex items-center gap-1" title="${label}">${b.icon}<span>${label}</span></span>`;
+            }).join('');
+        }
+
         // 遊戲狀態變數
         let secretNumber, guessCount, isGameOver;
-        let totalScore = 0;
         let givenHints = [];
         let minRange, maxRange, previousGuess;
-        let currentLanguage = 'zh';
         let lastHint = { mainKey: '', status: '', secondaryKey: '', params: {}, warmerColderKey: '' };
 
         // --- 輔助函式 ---
@@ -259,7 +428,17 @@
             mysteryBox.classList.add('bouncing-box');
             updateRangeIndicator();
             updateLanguageUI();
+            renderLevel();
+            renderBadges();
+            // 重新開始時恢復被收起的區塊
+            document.getElementById('hint-container').classList.remove('hidden');
+            document.getElementById('range-container').classList.remove('hidden');
+            document.getElementById('level-progress-container').classList.remove('hidden');
+            document.getElementById('badge-area').classList.remove('hidden');
         }
+
+        // 重開遊戲視為新局開始：若上一局未勝利結束，重置連勝
+        // 此處保持現邏輯：只有在勝利時才遞增連勝，玩家按重新開始不影響已累積連勝
 
         function handleGuess() {
             if (isGameOver) return;
@@ -305,10 +484,24 @@
             const scoreMap = { 1: 100, 2: 40, 3: 30, 4: 20, 5: 10 };
             const points = scoreMap[guessCount] || 0;
 
-            if (!isLangUpdate && points > 0) {
-                totalScore += points;
-                scoreDisplay.textContent = totalScore;
-                showScoreAnimation(`+${points}`);
+            if (!isLangUpdate) {
+                if (points > 0) {
+                    totalScore += points;
+                    scoreDisplay.textContent = totalScore;
+                    profile.totalScore = totalScore;
+                    // 連勝計數更新
+                    profile.winStreak = (profile.winStreak || 0) + 1;
+                    // 快速連勝：本局≤5次即視為快速勝
+                    if (guessCount <= 5) profile.quickWinStreak = (profile.quickWinStreak || 0) + 1; else profile.quickWinStreak = 0;
+                    saveProfile(profile);
+                    renderLevel();
+                    showScoreAnimation(`+${points}`);
+                } else {
+                    // 無加分也計為勝利，維持連勝但重置快速連勝（若>5次）
+                    profile.winStreak = (profile.winStreak || 0) + 1;
+                    if (guessCount <= 5) profile.quickWinStreak = (profile.quickWinStreak || 0) + 1; else profile.quickWinStreak = 0;
+                    saveProfile(profile);
+                }
             }
             
             if (guessCount === 1) {
@@ -327,6 +520,25 @@
             }
 
             displayNumberFacts();
+
+            // 授予徽章
+            const context = {
+                guessCount,
+                totalScore,
+                isPrimeSecret: isPrime(secretNumber),
+                isPerfectSquare: isPerfectSquare(secretNumber),
+                isMultiple10: secretNumber % 10 === 0,
+                loginStreak: profile.loginStreak,
+                winStreak: profile.winStreak,
+                quickWinStreak: profile.quickWinStreak
+            };
+            tryAwardBadges(context);
+
+            // 勝利後收起次要區塊，給「再次挑戰」騰位置
+            document.getElementById('hint-container').classList.add('hidden');
+            document.getElementById('range-container').classList.add('hidden');
+            document.getElementById('level-progress-container').classList.add('hidden');
+            document.getElementById('badge-area').classList.add('hidden');
         }
 
         // --- UI 更新函式 ---
@@ -348,6 +560,9 @@
             
             if (lastHint.mainKey) displayHint(lastHint.mainKey, lastHint.status, lastHint.secondaryKey, lastHint.params, lastHint.warmerColderKey);
             if (isGameOver) winGame(true);
+            // 多語言同步
+            renderLevel();
+            renderBadges();
         }
 
         function updateRangeIndicator() {
