@@ -735,6 +735,14 @@
             background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
         }
 
+        /* AI 解讀專用樣式，與主按鈕色系區分且協調 */
+        .ai-explain-button {
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+            color: #111827;
+        }
+        .ai-explain-button:hover { filter: brightness(1.05); }
+        .ai-explain-loading { opacity: 0.7; pointer-events: none; }
+
         /* 對戰結果窗口美化 */
         #battleResultModal .winner-card {
             position: relative;
@@ -794,6 +802,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'XiqueGuZiDian';
+            src: url('https://chineseclassics.github.io/files/fonts/%E5%96%9C%E9%B9%8A%E5%8F%A4%E5%AD%97%E5%85%B8%E4%BD%93(%E7%AE%80+%E7%B9%81%E4%BD%93).ttf') format('truetype');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'HuaKangGuJiMiLiuGBK';
+            src: url('https://chineseclassics.github.io/files/fonts/%E5%8D%8E%E5%BA%B7%E5%8F%A4%E7%B1%8D%E7%B3%B8%E6%9F%B3GBK.TTF') format('truetype');
+            font-display: swap;
+        }
+        .font-xique-guzidian {
+            font-family: 'XiqueGuZiDian', serif;
+        }
+        .font-huakang-miliu {
+            font-family: 'HuaKangGuJiMiLiuGBK', serif;
+        }
         .font-ma-shan-zheng {
             font-family: 'Ma Shan Zheng', cursive;
         }
@@ -820,7 +844,7 @@
             <div class="flex-grow flex flex-col items-center justify-center mx-3 relative animate-slide-up" style="animation-delay:80ms">
                 <!-- 游戏标题 -->
                 <div class="flex-grow flex items-center justify-center">
-                    <h1 class="text-3xl sm:text-4xl text-black font-ma-shan-zheng font-black leading-none" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.2);">南風詩詞組句</h1>
+                    <h1 class="text-3xl sm:text-4xl text-black font-huakang-miliu font-black leading-none" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.2);">南風詩詞組句</h1>
                 </div>
                 
                 <!-- 副标题 -->
@@ -946,14 +970,13 @@
                                     <div id="playerNamesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <!-- 選手名稱輸入框將由JavaScript動態生成 -->
                                     </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-modern text-sm text-surface-800">每輪題目數：</span>
-                                        <select id="roundsPerPlayer" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern">
-                                            <option value="1" selected>1題</option>
-                                            <option value="2">2題</option>
-                                            <option value="3">3題</option>
-                                            <option value="5">5題</option>
-                                        </select>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <label for="roundsPerPlayer" class="font-modern text-sm text-surface-800">每輪題目數：</label>
+                                        <input id="roundsPerPlayer" type="number" min="1" max="50" value="5" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern w-28" />
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <label for="speedMode" class="font-modern text-sm text-surface-800">速度模式（答題越快得分越高）</label>
+                                        <input id="speedMode" type="checkbox" class="w-5 h-5 accent-blue-600" />
                                     </div>
                                 </div>
                             </div>
@@ -1029,6 +1052,32 @@
             </div>
         </div>
 
+        <!-- AI 解讀模態彈窗 -->
+        <div id="aiExplainModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
+            <div class="glass-modal rounded-3xl shadow-2xl w-[min(680px,92vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
+                <!-- 標題區 -->
+                <div class="flex justify-between items-center p-5 border-b border-white/20 gradient-accent rounded-t-3xl flex-shrink-0">
+                    <h2 class="text-xl font-modern font-bold text-white">✨ AI 解讀</h2>
+                    <button id="aiExplainClose" class="text-white/90 hover:text-white text-2xl font-bold transform transition-transform hover:scale-110">&times;</button>
+                </div>
+                <!-- 內容區 -->
+                <div class="p-5 overflow-auto space-y-4">
+                    <div class="glass-card rounded-2xl p-4">
+                        <div class="text-xs font-modern text-surface-800/70 mb-1">詩句</div>
+                        <div id="aiExplainLine" class="text-2xl font-kai font-bold text-primary-700"></div>
+                        <div id="aiExplainMeta" class="text-xs font-modern text-surface-700 mt-1"></div>
+                    </div>
+                    <div id="aiExplainContent" class="prose prose-sm max-w-none font-modern leading-relaxed text-surface-800"></div>
+                    <div id="aiExplainError" class="hidden text-red-600 text-sm font-modern"></div>
+                </div>
+                <!-- 底部按鈕 -->
+                <div class="flex justify-end items-center gap-3 p-4 border-t border-white/20 glass-card rounded-b-3xl flex-shrink-0">
+                    <button id="aiExplainReload" class="glass-card text-surface-800 px-4 py-2 rounded-xl font-modern font-semibold border border-white/30 modern-button">重新生成</button>
+                    <button id="aiExplainOK" class="gradient-primary text-white px-5 py-2 rounded-xl font-modern font-semibold modern-button">關閉</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 诗句显示区域 - 现代化 -->
         <div class="glass-card-strong p-4 rounded-3xl mb-4 animate-slide-up" style="animation-delay:160ms">
             <!-- 题目作者信息和字数 - 同一行显示 -->
@@ -1066,7 +1115,12 @@
                     <!-- 正确答案显示 -->
                     <div id="correctAnswer" class="hidden mb-3">
                         <div class="text-xs font-modern text-surface-800/60 mb-2">正確答案</div>
-                        <div id="correctAnswerText" class="text-4xl font-kai font-bold text-primary-600 py-2 px-3 glass-card rounded-xl"></div>
+                        <div class="flex items-center gap-3">
+                            <div id="correctAnswerText" class="flex-1 text-4xl font-kai font-bold text-primary-600 py-2 px-3 glass-card rounded-xl"></div>
+                            <button id="aiExplainBtn" class="ai-explain-button px-4 py-2 rounded-2xl font-modern font-semibold text-xs shadow-md modern-button" title="AI 解讀此句">
+                                ✨ AI 解讀
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- 成功时只显示图标，不显示额外文字 -->
@@ -1182,7 +1236,7 @@
                 charCount: 20,
                 difficulty: 'medium',
                 soundOn: true,
-                battle: { playerCount: 2, roundsPerPlayer: 1, playerNames: [] }
+                battle: { playerCount: 2, roundsPerPlayer: 5, speedMode: false, playerNames: [] }
             });
         }
 
@@ -1966,6 +2020,15 @@
         const correctAnswer = document.getElementById('correctAnswer');
         const correctAnswerText = document.getElementById('correctAnswerText');
         const closeGameMessage = document.getElementById('closeGameMessage');
+        const aiExplainBtn = document.getElementById('aiExplainBtn');
+        const aiExplainModal = document.getElementById('aiExplainModal');
+        const aiExplainClose = document.getElementById('aiExplainClose');
+        const aiExplainOK = document.getElementById('aiExplainOK');
+        const aiExplainReload = document.getElementById('aiExplainReload');
+        const aiExplainLine = document.getElementById('aiExplainLine');
+        const aiExplainMeta = document.getElementById('aiExplainMeta');
+        const aiExplainContent = document.getElementById('aiExplainContent');
+        const aiExplainError = document.getElementById('aiExplainError');
         
         // Notification elements
         const notification = document.getElementById('notification');
@@ -2034,7 +2097,8 @@
         const battleModeSettings = document.getElementById('battleModeSettings');
         const playerCountSelect = document.getElementById('playerCount');
         const playerNamesContainer = document.getElementById('playerNamesContainer');
-        const roundsPerPlayerSelect = document.getElementById('roundsPerPlayer');
+        const roundsPerPlayerInput = document.getElementById('roundsPerPlayer');
+        const speedModeCheckbox = document.getElementById('speedMode');
         const battleScoreboard = document.getElementById('battleScoreboard');
         const leftPlayersContainer = document.getElementById('leftPlayers');
         const rightPlayersContainer = document.getElementById('rightPlayers');
@@ -2109,7 +2173,9 @@
             if (isSuccess) {
                 // 答对了：只显示成功图标，用户答案保持绿色
                 successIcon.classList.remove('hidden');
-                correctAnswer.classList.add('hidden');
+                // 顯示正確答案與 AI 解讀按鈕
+                correctAnswerText.textContent = currentPoem.line;
+                correctAnswer.classList.remove('hidden');
                 poemErrorIcon.classList.add('hidden');
                 
                 // 保持用户答案的绿色样式（在endRound中已设置）
@@ -2140,7 +2206,89 @@
             gameMessage.classList.remove('hidden');
             const modalContent = gameMessage.querySelector('div');
             modalContent.style.animation = 'slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+            // 確保「下一輪」獨立一行：此處結構上已在另一個容器中，不同 flex 行
         };
+
+        // DeepSeek 代理調用（非串流）
+        async function callDeepSeek(messages) {
+            const DEFAULT_PROXY = 'https://deepseek-proxy-chi.vercel.app/api/deepseek';
+            const url = window.DEEPSEEK_PROXY_URL || localStorage.getItem('DEEPSEEK_PROXY_URL') || DEFAULT_PROXY;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages,
+                    temperature: 0.7,
+                    max_tokens: 900
+                })
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const data = await resp.json();
+            return data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content ? data.choices[0].message.content : '';
+        }
+
+        // 準備提示詞（適合中學生、先譯文、再原作全文與簡要賞析、重點說明此句之美）
+        function buildAiPrompt(poemObj) {
+            const line = poemObj?.line || '';
+            const author = poemObj?.author || '';
+            const poemTitle = poemObj?.poem || '';
+            return [
+                { role: 'system', content: '你是一位溫柔而專業的國學導師，擅長用清晰、優美、貼近中學生的語言講解古典詩詞。' },
+                { role: 'user', content: `請幫我解讀下面這句詩。要求：\n1) 先給出這句詩的準確、優美的現代文翻譯；\n2) 說明這句詩出自哪一首詩（給出原作品的全文），並保持原詩格式清晰；\n3) 對整首詩做一段簡要的賞析，語言不要太學術，重點指出題目中的這句詩好在哪裡，如何體現意象、情感或節奏之美；\n4) 請使用繁體中文回答，風格友善，讓中學生能讀懂並被打動。\n\n這句詩：${line}\n作者：${author}\n詩題：${poemTitle}` }
+            ];
+        }
+
+        function openAiExplainModal() {
+            if (!currentPoem) return;
+            aiExplainError.classList.add('hidden');
+            aiExplainError.textContent = '';
+            aiExplainContent.innerHTML = '<div class="text-surface-700">正在生成解讀，請稍候…</div>';
+            aiExplainLine.textContent = currentPoem.line || '';
+            aiExplainMeta.textContent = currentPoem.author && currentPoem.poem ? `出自《${currentPoem.poem}》·${currentPoem.author}` : '';
+            aiExplainModal.classList.remove('hidden');
+        }
+
+        async function generateAiExplanation() {
+            try {
+                aiExplainBtn && aiExplainBtn.classList.add('ai-explain-loading');
+                aiExplainReload && aiExplainReload.classList.add('ai-explain-loading');
+                const messages = buildAiPrompt(currentPoem);
+                const content = await callDeepSeek(messages);
+                // 簡單格式優化：換行轉段落
+                const safeHtml = (content || '').split('\n').map(p => p.trim()).filter(Boolean).map(p => `<p>${p}</p>`).join('');
+                aiExplainContent.innerHTML = safeHtml || '<div class="text-surface-700">暫無內容</div>';
+                aiExplainError.classList.add('hidden');
+            } catch (err) {
+                aiExplainError.textContent = '生成失敗，請稍後重試。' + '（' + String(err) + '）';
+                aiExplainError.classList.remove('hidden');
+            } finally {
+                aiExplainBtn && aiExplainBtn.classList.remove('ai-explain-loading');
+                aiExplainReload && aiExplainReload.classList.remove('ai-explain-loading');
+            }
+        }
+
+        if (aiExplainBtn) {
+            aiExplainBtn.addEventListener('click', () => {
+                openAiExplainModal();
+                generateAiExplanation();
+            });
+        }
+        if (aiExplainClose) {
+            aiExplainClose.addEventListener('click', () => {
+                aiExplainModal.classList.add('hidden');
+            });
+        }
+        if (aiExplainOK) {
+            aiExplainOK.addEventListener('click', () => {
+                aiExplainModal.classList.add('hidden');
+            });
+        }
+        if (aiExplainReload) {
+            aiExplainReload.addEventListener('click', () => {
+                generateAiExplanation();
+            });
+        }
 
         // 隐藏结果浮窗
         const hideResultModal = () => {
@@ -2835,42 +2983,28 @@
         }
         
         function syncSettingsToModal() {
-            // 同步遊戲模式
+            // 同步遊戲模式（僅處理單人/對戰）
             const currentMode = battleMode.isActive ? 'battle' : 'single';
-            document.querySelector(`input[name="gameMode"][value="${currentMode}"]`).checked = true;
-            
-            // 同步詩詞庫選擇
-            const dbRadios = document.querySelectorAll('input[name="poemDatabase"]');
-            if (currentGameMode === 'custom') {
-                document.querySelector('input[name="poemDatabase"][value="custom"]').checked = true;
-            } else if (activeDatabase === elementaryPoemLines) {
-                document.querySelector('input[name="poemDatabase"][value="elementary"]').checked = true;
-                    } else {
-                document.querySelector('input[name="poemDatabase"][value="default"]').checked = true;
-            }
-            
+            const modeRadio = document.querySelector(`input[name="gameMode"][value="${currentMode}"]`);
+            if (modeRadio) modeRadio.checked = true;
+
             // 根據模式顯示/隱藏相關設置
             updateModalSections();
         }
         
         function updateModalSections() {
-            const selectedMode = document.querySelector('input[name="gameMode"]:checked').value;
-            const selectedDB = document.querySelector('input[name="poemDatabase"]:checked').value;
-            
-            // 顯示/隱藏對戰模式設置
-            if (selectedMode === 'battle') {
-                battleModeSettings.classList.remove('hidden');
-                // 生成選手名稱輸入框
-                generatePlayerNameInputs();
-            } else {
-                battleModeSettings.classList.add('hidden');
-            }
-            
-            // 顯示/隱藏自定義詩句設置
-            if (selectedDB === 'custom') {
-                customPoemSettings.classList.remove('hidden');
-            } else {
-                customPoemSettings.classList.add('hidden');
+            const selectedModeEl = document.querySelector('input[name="gameMode"]:checked');
+            const selectedMode = selectedModeEl ? selectedModeEl.value : 'single';
+
+            // 顯示/隱藏對戰模式設置（安全判斷節點存在）
+            if (battleModeSettings) {
+                if (selectedMode === 'battle') {
+                    battleModeSettings.classList.remove('hidden');
+                    // 生成選手名稱輸入框
+                    generatePlayerNameInputs();
+                } else {
+                    battleModeSettings.classList.add('hidden');
+                }
             }
         }
         
@@ -2905,7 +3039,8 @@
                 soundOn: !!window.soundEnabled,
                 battle: {
                     playerCount: parseInt(playerCountSelect?.value || '2'),
-                    roundsPerPlayer: parseInt(roundsPerPlayerSelect?.value || '1'),
+                    roundsPerPlayer: Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput?.value || '5'))),
+                    speedMode: !!(speedModeCheckbox && speedModeCheckbox.checked),
                     playerNames: Array.from({ length: parseInt(playerCountSelect?.value || '2') }, (_, i) => {
                         const input = document.getElementById(`player${i + 1}Name`);
                         return input ? input.value || `選手${i + 1}` : `選手${i + 1}`;
@@ -2960,6 +3095,12 @@
             if (playerCountSelect) {
                 playerCountSelect.addEventListener('change', generatePlayerNameInputs);
             }
+            if (roundsPerPlayerInput) {
+                roundsPerPlayerInput.addEventListener('input', () => {
+                    const v = Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput.value || '5')));
+                    roundsPerPlayerInput.value = String(isNaN(v) ? 5 : v);
+                });
+            }
             
             // 開始對戰功能已整合到保存設置中
         }
@@ -3009,14 +3150,15 @@
             const s = loadSettings();
             s.battle = s.battle || {}; 
             s.battle.playerCount = playerCount;
-            s.battle.roundsPerPlayer = parseInt(roundsPerPlayerSelect.value);
+            s.battle.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput.value || '5')));
+            s.battle.speedMode = !!(speedModeCheckbox && speedModeCheckbox.checked);
             s.battle.playerNames = battleMode.players.map(p => p.name);
             persistSettings(s);
             
             // 設置對戰模式參數
             battleMode.isActive = true;
             battleMode.currentPlayerIndex = 0;
-            battleMode.roundsPerPlayer = parseInt(roundsPerPlayerSelect.value);
+            battleMode.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput.value || '5')));
             battleMode.currentRound = 0;
             battleMode.totalRounds = battleMode.players.length * battleMode.roundsPerPlayer;
             
@@ -3098,8 +3240,18 @@
             const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
             
             if (isCorrect) {
-                currentPlayer.score += 10; // 每題10分
-                showNotification(`${currentPlayer.name} 答對了！獲得10分`);
+                // 基礎分
+                let gained = 10;
+                // 速度模式加成
+                if (speedModeCheckbox && speedModeCheckbox.checked && roundTimeLimit > 0) {
+                    const ratio = Math.max(0, Math.min(1, timeLeft / roundTimeLimit));
+                    const bonus = Math.floor(gained * 0.5 * ratio);
+                    gained += bonus;
+                    showNotification(`${currentPlayer.name} 答對！速度加成 +${bonus} 分`);
+                } else {
+                    showNotification(`${currentPlayer.name} 答對了！獲得${gained}分`);
+                }
+                currentPlayer.score += gained;
             } else {
                 showNotification(`${currentPlayer.name} 答錯了`);
             }
@@ -3273,9 +3425,17 @@
                 tagSel.addEventListener('change', () => saveActiveTag(tagSel.value || ''));
             }
             
-            // 詩詞庫變更事件
-            document.querySelectorAll('input[name="poemDatabase"]').forEach(radio => {
-                radio.addEventListener('change', updateModalSections);
+            // 詩詞庫變更事件（若詩詞庫選項不存在則跳過）
+            const poemDBRadios = document.querySelectorAll('input[name="poemDatabase"]');
+            if (poemDBRadios && poemDBRadios.length) {
+                poemDBRadios.forEach(radio => radio.addEventListener('change', updateModalSections));
+            }
+            
+            // 遊戲模式變更事件（單人/對戰）
+            document.querySelectorAll('input[name="gameMode"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    updateModalSections();
+                });
             });
             
             // 滑動條事件
@@ -3352,7 +3512,8 @@
             // 對戰設置
             if (s.battle) {
                 if (playerCountSelect) playerCountSelect.value = String(s.battle.playerCount || 2);
-                if (roundsPerPlayerSelect) roundsPerPlayerSelect.value = String(s.battle.roundsPerPlayer || 1);
+                if (roundsPerPlayerInput) roundsPerPlayerInput.value = String(Math.max(1, Math.min(50, s.battle.roundsPerPlayer || 5)));
+                if (speedModeCheckbox) speedModeCheckbox.checked = !!s.battle.speedMode;
                 generatePlayerNameInputs();
                 if (Array.isArray(s.battle.playerNames)) {
                     s.battle.playerNames.forEach((name, i) => {
