@@ -2354,6 +2354,19 @@
                 if (aiExplainSuccessRow) aiExplainSuccessRow.classList.add('hidden');
             }
 
+            // 根據模式切換下一步按鈕文案：
+            // 單人=「下一首」；對戰=「XX 開始答題」（下一位選手）
+            if (closeGameMessage) {
+                if (battleMode.isActive && Array.isArray(battleMode.players) && battleMode.players.length > 0) {
+                    const nextIndex = (battleMode.currentPlayerIndex + 1) % battleMode.players.length;
+                    const nextPlayer = battleMode.players[nextIndex];
+                    const name = (nextPlayer && nextPlayer.name) ? nextPlayer.name : '選手';
+                    closeGameMessage.textContent = `${name} 開始答題`;
+                } else {
+                    closeGameMessage.textContent = '下一首';
+                }
+            }
+
             // 显示浮窗，使用简单的滑入动画
             gameMessage.classList.remove('hidden');
             const modalContent = gameMessage.querySelector('div');
@@ -3305,13 +3318,22 @@
             };
             persistSettings(settingsToSave);
             
-            // 對戰模式先顯示預覽模態；其他模式直接提示
+            // 對戰模式先顯示預覽模態；單人模式需安全退出對戰
             if (selectedMode === 'battle') {
                 closeSettingsModalFunc();
                 openBattlePreviewModal(settingsToSave);
             } else {
+                // 若正處於對戰模式，安全退出並切回單人模式
+                if (battleMode.isActive) {
+                    battleMode.isActive = false;
+                    battleMode.players = [];
+                    battleScoreboard && battleScoreboard.classList.add('hidden');
+                }
+                currentGameMode = 'preset';
                 closeSettingsModalFunc();
-                showNotification('設置已保存');
+                showNotification('已切換到單人模式');
+                // 立即開始單人新回合
+                startNewRound();
             }
         }
         
@@ -3466,8 +3488,8 @@
                 playerCard.className = `player-score-card ${themeClass} ${player.isActive ? 'active' : ''}`;
                 
                 playerCard.innerHTML = `
-                    <div class="player-name">${player.name}</div>
-                    <div class="player-score">${typeof player.displayedScore === 'number' ? player.displayedScore : player.score}</div>
+                    <div class="player-name text-lg md:text-xl font-bold">${player.name}</div>
+                    <div class="player-score text-2xl md:text-3xl">${typeof player.displayedScore === 'number' ? player.displayedScore : player.score}</div>
                     ${player.isActive ? '<div class="current-turn-indicator"></div>' : ''}
                 `;
                 
