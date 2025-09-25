@@ -1115,6 +1115,72 @@
             </div>
         </div>
 
+        <!-- 對戰模式開場預覽 -->
+        <div id="battlePreviewModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/40 flex items-center justify-center animate-slide-up">
+            <div class="glass-modal rounded-3xl shadow-2xl w-[min(640px,92vw)] max-h-[88vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center p-6 border-b border-white/20 gradient-accent rounded-t-3xl flex-shrink-0">
+                    <div>
+                        <h2 class="text-2xl font-modern font-bold text-white">⚔️ 對戰即將開始</h2>
+                        <p class="text-sm text-white/80 mt-1 font-modern">確認參賽資訊，準備華麗的詩詞對決</p>
+                    </div>
+                    <button id="battlePreviewClose" class="text-white/80 hover:text-white text-2xl font-bold transform transition-transform hover:scale-110">&times;</button>
+                </div>
+                <div class="overflow-y-auto custom-scrollbar flex-grow p-6 space-y-5">
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div class="glass-card rounded-2xl p-4 border border-white/15 shadow-sm">
+                            <h3 class="text-sm font-modern text-surface-600 mb-2">參賽隊伍</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-3xl font-bold text-primary-600" id="battlePreviewPlayerCount">0</span>
+                                <span class="text-sm font-modern text-surface-700">位選手輪流應戰</span>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-4 border border-white/15 shadow-sm">
+                            <h3 class="text-sm font-modern text-surface-600 mb-2">每位題數</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-3xl font-bold text-secondary-600" id="battlePreviewRounds">0</span>
+                                <span class="text-sm font-modern text-surface-700">題／選手</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div class="glass-card rounded-2xl p-4 border border-white/15 shadow-sm">
+                            <h3 class="text-sm font-modern text-surface-600 mb-2">總題數</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-3xl font-bold text-amber-600" id="battlePreviewTotalQuestions">0</span>
+                                <span class="text-sm font-modern text-surface-700">題即將出題</span>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-4 border border-white/15 shadow-sm">
+                            <h3 class="text-sm font-modern text-surface-600 mb-2">回合設定</h3>
+                            <div class="space-y-1 text-sm font-modern text-surface-700">
+                                <div>答題時限：<span class="font-semibold text-surface-900" id="battlePreviewTimeLimit">0 秒</span></div>
+                                <div>待選字數：<span class="font-semibold text-surface-900" id="battlePreviewCharCount">0 字</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-white/15 shadow-md">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-base font-modern font-semibold text-surface-800">參賽名單</h3>
+                            <span class="text-xs text-surface-500 font-modern">將依次上場答題</span>
+                        </div>
+                        <div id="battlePreviewPlayersList" class="grid gap-3 sm:grid-cols-2"></div>
+                    </div>
+                    <div id="battlePreviewSpeedRow" class="glass-card rounded-2xl p-4 border border-accent-200/60 bg-accent-50 shadow-inner hidden">
+                        <h3 class="text-base font-modern font-semibold text-accent-700 mb-2">⏱️ 速度模式加分</h3>
+                        <p id="battlePreviewSpeedText" class="text-sm font-modern text-accent-700"></p>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-white/15">
+                        <h3 class="text-base font-modern font-semibold text-surface-800 mb-2">對戰提示</h3>
+                        <p id="battlePreviewNote" class="text-sm font-modern text-surface-600 leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center p-6 border-t border-white/20 glass-card rounded-b-3xl flex-shrink-0">
+                    <button id="battlePreviewBack" class="glass-card text-surface-800 px-5 py-2.5 rounded-xl font-modern font-semibold border border-white/30 modern-button transform transition-transform hover:scale-105">返回設置</button>
+                    <button id="battlePreviewStart" class="gradient-primary text-white px-6 py-3 rounded-xl font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">開始對戰</button>
+                </div>
+            </div>
+        </div>
+
         <!-- AI 解讀模態彈窗 -->
         <div id="aiExplainModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
             <div class="glass-modal rounded-3xl shadow-2xl w-[min(680px,92vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
@@ -2172,6 +2238,19 @@
         const battleScoreboard = document.getElementById('battleScoreboard');
         const leftPlayersContainer = document.getElementById('leftPlayers');
         const rightPlayersContainer = document.getElementById('rightPlayers');
+        const battlePreviewModal = document.getElementById('battlePreviewModal');
+        const battlePreviewClose = document.getElementById('battlePreviewClose');
+        const battlePreviewBack = document.getElementById('battlePreviewBack');
+        const battlePreviewStart = document.getElementById('battlePreviewStart');
+        const battlePreviewPlayerCount = document.getElementById('battlePreviewPlayerCount');
+        const battlePreviewRounds = document.getElementById('battlePreviewRounds');
+        const battlePreviewTotalQuestions = document.getElementById('battlePreviewTotalQuestions');
+        const battlePreviewTimeLimit = document.getElementById('battlePreviewTimeLimit');
+        const battlePreviewCharCount = document.getElementById('battlePreviewCharCount');
+        const battlePreviewPlayersList = document.getElementById('battlePreviewPlayersList');
+        const battlePreviewSpeedRow = document.getElementById('battlePreviewSpeedRow');
+        const battlePreviewSpeedText = document.getElementById('battlePreviewSpeedText');
+        const battlePreviewNote = document.getElementById('battlePreviewNote');
         // startBattleBtn 已移除，對戰模式通過保存設置自動啟動
         const customPoemInput = document.getElementById('customPoem');
         const saveCustomPoemButton = document.getElementById('saveCustomPoem');
@@ -3121,6 +3200,70 @@
             }
         }
         
+        function openBattlePreviewModal(settings) {
+            if (!battlePreviewModal) return;
+
+            const playerCount = settings.battle?.playerCount || 0;
+            const roundsPerPlayer = settings.battle?.roundsPerPlayer || 0;
+            const players = settings.battle?.playerNames || [];
+            const totalRounds = playerCount * roundsPerPlayer;
+            const totalQuestions = totalRounds;
+
+            if (battlePreviewPlayerCount) battlePreviewPlayerCount.textContent = String(playerCount);
+            if (battlePreviewRounds) battlePreviewRounds.textContent = String(roundsPerPlayer);
+            if (battlePreviewTotalQuestions) battlePreviewTotalQuestions.textContent = String(totalQuestions);
+
+            const tl = typeof settings.timeLimit === 'number' ? settings.timeLimit : roundTimeLimit;
+            if (battlePreviewTimeLimit) battlePreviewTimeLimit.textContent = `${tl} 秒`;
+
+            const cc = typeof settings.charCount === 'number' ? settings.charCount : charCount;
+            if (battlePreviewCharCount) battlePreviewCharCount.textContent = `${cc} 字`;
+
+            if (battlePreviewPlayersList) {
+                battlePreviewPlayersList.innerHTML = '';
+                players.forEach((name, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'glass-card rounded-2xl p-3 border border-white/20 flex items-center gap-3 shadow-sm';
+                    card.innerHTML = `
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center text-primary-600 font-modern font-bold">${index + 1}</div>
+                        <div>
+                            <div class="text-base font-modern font-semibold text-surface-800">${name}</div>
+                            <div class="text-xs text-surface-500 font-modern">第 ${index + 1} 位上場</div>
+                        </div>
+                    `;
+                    battlePreviewPlayersList.appendChild(card);
+                });
+            }
+
+            const isSpeed = !!settings.battle?.speedMode;
+            if (battlePreviewSpeedRow) {
+                if (isSpeed) {
+                    battlePreviewSpeedRow.classList.remove('hidden');
+                    if (battlePreviewSpeedText) {
+                        battlePreviewSpeedText.textContent = '速度模式已開啟：越快完成答題，越可以獲得額外加分（最高可再加 50%）。';
+                    }
+                } else {
+                    battlePreviewSpeedRow.classList.add('hidden');
+                }
+            }
+
+            if (battlePreviewNote) {
+                const noteLines = [
+                    '將按照名單順序輪流答題，系統會自動記錄分數。',
+                    '若答錯或超時將不加分，請專心完成每題詩句組合。',
+                    isSpeed ? '速度加分會依照剩餘時間即時計算。' : '此場對戰以準確度為主，保持穩定節奏即可。'
+                ];
+                battlePreviewNote.innerHTML = noteLines.map(line => `<div class="flex items-start gap-2"><span class="text-primary-500">•</span><span>${line}</span></div>`).join('');
+            }
+
+            battlePreviewModal.classList.remove('hidden');
+        }
+
+        function closeBattlePreviewModal() {
+            if (!battlePreviewModal) return;
+            battlePreviewModal.classList.add('hidden');
+        }
+
         function saveSettingsFromModal() {
             const selectedMode = document.querySelector('input[name="gameMode"]:checked')?.value || 'single';
             const selectedDB = 'tag';
@@ -3146,8 +3289,8 @@
             const settingsToSave = {
                 gameMode: selectedMode,
                 poemDatabase: selectedDB,
-                timeLimit: parseInt(timeLimit?.value || '30'),
-                charCount: parseInt(charCount?.value || '20'),
+                timeLimit: parseInt(timeLimitSlider?.value || '30'),
+                charCount: parseInt(charCountSlider?.value || '20'),
                 difficulty: difficultySelect?.value || 'medium',
                 soundOn: !!window.soundEnabled,
                 battle: {
@@ -3162,14 +3305,12 @@
             };
             persistSettings(settingsToSave);
             
-            // 關閉設置模態彈窗
-            closeSettingsModalFunc();
-            
-            // 如果是對戰模式，自動開始對戰
+            // 對戰模式先顯示預覽模態；其他模式直接提示
             if (selectedMode === 'battle') {
-                startBattleMode();
-                showNotification('對戰模式已啟動！');
+                closeSettingsModalFunc();
+                openBattlePreviewModal(settingsToSave);
             } else {
+                closeSettingsModalFunc();
                 showNotification('設置已保存');
             }
         }
@@ -3243,7 +3384,7 @@
             }
         }
         
-        function startBattleMode() {
+        function confirmStartBattleMode() {
             // 收集選手名稱
             const playerCount = parseInt(playerCountSelect.value);
             battleMode.players = [];
@@ -3280,7 +3421,14 @@
             battleScoreboard.classList.remove('hidden');
             
             // 開始第一輪
+            // 如果遊戲暫停或尚未啟動，直接開始；若已有計時，重置狀態
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            isGameActive = false;
             startBattleRound();
+            showNotification('對戰模式已啟動！');
         }
         
         // 分數數字動畫（從 from 到 to，時長毫秒）
@@ -3581,6 +3729,24 @@
             
             if (exitBattleBtn) {
                 exitBattleBtn.addEventListener('click', exitBattleMode);
+            }
+
+            if (battlePreviewClose) {
+                battlePreviewClose.addEventListener('click', closeBattlePreviewModal);
+            }
+
+            if (battlePreviewBack) {
+                battlePreviewBack.addEventListener('click', () => {
+                    closeBattlePreviewModal();
+                    openSettingsModal();
+                });
+            }
+
+            if (battlePreviewStart) {
+                battlePreviewStart.addEventListener('click', () => {
+                    closeBattlePreviewModal();
+                    confirmStartBattleMode();
+                });
             }
         }
 
