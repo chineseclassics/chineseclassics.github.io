@@ -297,6 +297,12 @@
         .character-btn:active { transform: translateY(0); }
         .character-btn:disabled { transform: none !important; box-shadow: none !important; }
 
+        /* 適度放大桌面端待選字，不改padding，避免影響點擊與排版 */
+        .character-btn.char-modern { font-size: 1.75rem; line-height: 1; }
+        @media (min-width: 768px) {
+            .character-btn.char-modern { font-size: 2rem; }
+        }
+
         /* 新增：點擊波紋 */
         .ripple {
             position: absolute; border-radius: 9999px; transform: translate(-50%, -50%);
@@ -897,9 +903,9 @@
             <div id="rightPlayers" class="fixed right-2 top-1/2 -translate-y-1/2 flex flex-col space-y-2 w-40"></div>
         </div>
         <div class="flex justify-between items-center mb-3">
-            <!-- 左侧得分显示 - 现代化 -->
+            <!-- 左侧得分/輪次显示 - 现代化 -->
             <div class="glass-card p-3 sm:p-4 rounded-2xl flex items-center animate-slide-up modern-button" style="animation-delay:40ms">
-                <span class="font-modern text-sm sm:text-base text-surface-800 font-medium">分數</span>
+                <span id="scoreLabel" class="font-modern text-sm sm:text-base text-surface-800 font-medium">分數</span>
                 <span id="score" class="text-2xl sm:text-4xl font-bold text-primary-500 ml-2 sm:ml-3">0</span>
             </div>
             
@@ -2146,6 +2152,7 @@
         const clearSelectionButton = document.getElementById('clearSelection');
         const submitButton = document.getElementById('submitPoem');
         const scoreElement = document.getElementById('score');
+        const scoreLabel = document.getElementById('scoreLabel');
         const gameMessage = document.getElementById('gameMessage');
         const resultIcon = document.getElementById('resultIcon');
         const poemErrorIcon = document.getElementById('poemErrorIcon');
@@ -3517,6 +3524,12 @@
             
             // 開始新的一輪遊戲
             startNewRound();
+
+            // 左上角顯示對戰輪次（替代分數）
+            if (scoreLabel && scoreElement) {
+                scoreLabel.textContent = '輪次';
+                scoreElement.textContent = `${battleMode.currentRound + 1} / ${battleMode.totalRounds}`;
+            }
         }
         
         function endBattleRound(isCorrect) {
@@ -3541,6 +3554,11 @@
             
             // 檢查是否完成所有回合
             battleMode.currentRound++;
+            // 更新左上角輪次顯示
+            if (scoreLabel && scoreElement) {
+                scoreLabel.textContent = '輪次';
+                scoreElement.textContent = `${Math.min(battleMode.currentRound + 1, battleMode.totalRounds)} / ${battleMode.totalRounds}`;
+            }
             if (battleMode.currentRound >= battleMode.totalRounds) {
                 endBattleMode();
                 return;
@@ -3566,6 +3584,12 @@
             
             // 顯示對戰結果總結窗口
             showBattleResultModal();
+
+            // 恢復單人模式左上角顯示為分數
+            if (scoreLabel && scoreElement) {
+                scoreLabel.textContent = '分數';
+                scoreElement.textContent = String(score);
+            }
         }
         
         function showBattleResultModal() {
