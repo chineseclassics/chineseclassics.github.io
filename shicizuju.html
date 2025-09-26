@@ -2495,8 +2495,9 @@
             });
         }
         if (aiExplainReload) {
-            aiExplainReload.addEventListener('click', () => {
-                generateAiExplanation();
+            aiExplainReload.addEventListener('click', (e) => {
+                openAiExplainModal();
+                generateAiExplanation(e.currentTarget);
             });
         }
 
