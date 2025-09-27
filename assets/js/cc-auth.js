@@ -10,7 +10,11 @@
     }
     if (!window.sb) {
       try {
-        window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            redirectTo: 'https://chineseclassics.github.io'
+          }
+        });
       } catch (e) {
         console.error('[cc-auth] 建立 Supabase Client 失敗：', e);
         return null;
@@ -91,11 +95,17 @@
       btnGoogle.textContent = '用 Google 登入';
       styleButton(btnGoogle);
       btnGoogle.onclick = async function () {
-        var redirectTo = location.href;
+        var redirectTo = location.href.trim(); // 移除可能的空格
         try {
           var res = await sb.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: redirectTo }
+            options: { 
+              redirectTo: redirectTo,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent'
+              }
+            }
           });
           if (res && res.error) alert(res.error.message);
         } catch (e) {

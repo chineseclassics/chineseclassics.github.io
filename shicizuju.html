@@ -10,6 +10,22 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
     <script src="assets/js/cc-auth.js"></script>
     <script>
+        // 調試：檢查登入按鈕是否正確創建
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const authBar = document.getElementById('cc-auth-bar');
+                if (!authBar) {
+                    console.error('登入狀態欄未創建！');
+                    console.log('Supabase 可用:', !!window.supabase);
+                    console.log('ccAuth 可用:', !!window.ccAuth);
+                    console.log('sb 客戶端可用:', !!window.sb);
+                } else {
+                    console.log('登入狀態欄已創建:', authBar);
+                }
+            }, 1000);
+        });
+    </script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
