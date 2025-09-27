@@ -24,7 +24,7 @@
   }
 
   var sb = ensureSupabaseClient();
-  if (!sb) return;
+  // 不再在此直接返回；若當前尚未就緒，後續會採用延遲重試機制確保最終初始化成功
 
   // ---------- DOM：頂部登入狀態列（全站共用） ----------
   var authState = { user: null };
@@ -50,10 +50,8 @@
   }
 
   function renderAuthBar() {
-    console.log('[cc-auth] 渲染登入狀態欄...');
     var el = document.getElementById('cc-auth-bar');
     if (!el) {
-      console.log('[cc-auth] 創建新的登入狀態欄元素');
       el = document.createElement('div');
       el.id = 'cc-auth-bar';
       el.style.position = 'fixed';
@@ -69,15 +67,7 @@
       el.style.background = 'rgba(255,255,255,0.75)';
       el.style.backdropFilter = 'blur(10px)';
       el.style.webkitBackdropFilter = 'blur(10px)';
-      
-      // 確保 body 存在
-      if (document.body) {
-        document.body.appendChild(el);
-        console.log('[cc-auth] 登入狀態欄已添加到 body');
-      } else {
-        console.error('[cc-auth] document.body 不存在，無法添加登入狀態欄');
-        return;
-      }
+      document.body.appendChild(el);
     }
     el.innerHTML = '';
 
@@ -88,46 +78,8 @@
     if (authState.user) {
       var name = authState.user.user_metadata && authState.user.user_metadata.name;
       var email = authState.user.email;
-      var avatar = authState.user.user_metadata && authState.user.user_metadata.avatar_url;
-      
-      // 創建用戶信息容器
-      var userInfo = document.createElement('div');
-      userInfo.style.display = 'flex';
-      userInfo.style.alignItems = 'center';
-      userInfo.style.gap = '8px';
-      
-      // 添加頭像（如果有的話）
-      if (avatar) {
-        var avatarImg = document.createElement('img');
-        avatarImg.src = avatar;
-        avatarImg.style.width = '24px';
-        avatarImg.style.height = '24px';
-        avatarImg.style.borderRadius = '50%';
-        avatarImg.style.border = '2px solid rgba(255,255,255,0.8)';
-        avatarImg.style.objectFit = 'cover';
-        userInfo.appendChild(avatarImg);
-      } else {
-        // 沒有頭像時顯示默認圖標
-        var defaultAvatar = document.createElement('div');
-        defaultAvatar.style.width = '24px';
-        defaultAvatar.style.height = '24px';
-        defaultAvatar.style.borderRadius = '50%';
-        defaultAvatar.style.background = 'linear-gradient(135deg, #0ea5e9, #38bdf8)';
-        defaultAvatar.style.display = 'flex';
-        defaultAvatar.style.alignItems = 'center';
-        defaultAvatar.style.justifyContent = 'center';
-        defaultAvatar.style.color = 'white';
-        defaultAvatar.style.fontSize = '12px';
-        defaultAvatar.style.fontWeight = 'bold';
-        defaultAvatar.textContent = (name || email || '用').charAt(0).toUpperCase();
-        userInfo.appendChild(defaultAvatar);
-      }
-      
-      // 添加用戶名稱
       label.textContent = name || email || '已登入';
-      userInfo.appendChild(label);
-      
-      // 添加登出按鈕
+
       var btnOut = document.createElement('button');
       btnOut.textContent = '登出';
       styleGhostButton(btnOut);
@@ -135,7 +87,7 @@
         try { await sb.auth.signOut(); } catch(e) { console.error(e); }
       };
 
-      el.appendChild(userInfo);
+      el.appendChild(label);
       el.appendChild(btnOut);
     } else {
       label.textContent = '未登入';
@@ -143,9 +95,15 @@
       btnGoogle.textContent = '用 Google 登入';
       styleButton(btnGoogle);
       btnGoogle.onclick = async function () {
-        var redirectTo = location.href.trim(); // 移除可能的空格
+        var redirectTo = location.href.trim();
+        // 確保客戶端存在；若尚未載入，嘗試即時建立
+        var client = ensureSupabaseClient();
+        if (!client) {
+          alert('登入元件尚未載入，請稍候或重新整理頁面');
+          return;
+        }
         try {
-          var res = await sb.auth.signInWithOAuth({
+          var res = await client.auth.signInWithOAuth({
             provider: 'google',
             options: { 
               redirectTo: redirectTo,
@@ -157,7 +115,7 @@
           });
           if (res && res.error) alert(res.error.message);
         } catch (e) {
-          alert(String(e && e.message || e));
+          alert(String((e && e.message) || e));
         }
       };
 
@@ -167,39 +125,71 @@
   }
 
   async function refreshAuth() {
-    console.log('[cc-auth] 刷新登入狀態...');
     try {
-      var data = (await sb.auth.getUser()).data;
-      authState.user = (data && data.user) ? data.user : null;
-      if (authState.user) {
-        console.log('[cc-auth] 用戶已登入:', {
-          name: authState.user.user_metadata?.name,
-          email: authState.user.email,
-          avatar: authState.user.user_metadata?.avatar_url
-        });
+      // sb 可能尚未就緒，需容錯
+      if (sb && sb.auth) {
+        var data = (await sb.auth.getUser()).data;
+        authState.user = (data && data.user) ? data.user : null;
       } else {
-        console.log('[cc-auth] 用戶未登入');
+        authState.user = null;
       }
     } catch (e) {
-      console.error('[cc-auth] 獲取用戶狀態失敗:', e);
       authState.user = null;
     }
     renderAuthBar();
   }
 
-  // 初始與狀態變更監聽
-  function initAuth() {
-    console.log('[cc-auth] 初始化登入狀態欄...');
+  // 綁定 onAuthStateChange（若尚未就緒則等到就緒後再綁定）
+  function bindAuthStateListenerWhenReady() {
+    if (sb && sb.auth) {
+      sb.auth.onAuthStateChange(function () { refreshAuth(); });
+      return true;
+    }
+    return false;
+  }
+
+  // 延遲重試：等待 Supabase UMD 載入並成功建立 client
+  (function setupDeferredInit() {
+    // 嘗試立即綁定（若此時已就緒）
+    bindAuthStateListenerWhenReady();
+
+    var retryCount = 0;
+    var maxRetries = 40; // 最多重試約 20 秒（500ms * 40）
+    var timer = setInterval(function () {
+      // 若全域 client 尚未建立，嘗試建立
+      if (!window.sb) {
+        // 若 UMD 尚未載入，ensureSupabaseClient 會無動作並返回 null
+        var maybe = ensureSupabaseClient();
+        if (maybe) {
+          sb = maybe; // 更新閉包內的 sb 引用
+        }
+      } else if (!sb) {
+        sb = window.sb;
+      }
+
+      // 一旦可用，執行初始刷新並綁定狀態監聽
+      if (sb && sb.auth) {
+        clearInterval(timer);
+        refreshAuth();
+        bindAuthStateListenerWhenReady();
+        return;
+      }
+
+      retryCount++;
+      if (retryCount >= maxRetries) {
+        clearInterval(timer);
+        // 即便最終仍不可用，也先渲染未登入狀態列，避免頁面上完全沒有登入入口
+        renderAuthBar();
+      }
+    }, 500);
+  })();
+
+  // 初始刷新（與 DOMContentLoaded 兼容）
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', refreshAuth);
+  } else {
     refreshAuth();
   }
-  
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAuth);
-  } else {
-    // 延遲執行以確保 DOM 完全準備好
-    setTimeout(initAuth, 100);
-  }
-  sb.auth.onAuthStateChange(function () { refreshAuth(); });
 
   // 導出全域 API，提供給各遊戲頁使用
   window.ccAuth = window.ccAuth || {
