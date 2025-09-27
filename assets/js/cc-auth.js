@@ -107,13 +107,30 @@
             provider: 'google',
             options: { 
               redirectTo: redirectTo,
+              skipBrowserRedirect: true, // 取得 URL 後自行以頂層視窗跳轉，避免在 iframe 內載入
               queryParams: {
                 access_type: 'offline',
                 prompt: 'consent'
               }
             }
           });
-          if (res && res.error) alert(res.error.message);
+          if (res && res.error) {
+            alert(res.error.message);
+            return;
+          }
+          if (res && res.data && res.data.url) {
+            try {
+              // 優先以頂層視窗跳轉，避開 iframe 限制
+              if (window.top && window.top !== window) {
+                window.top.location.assign(res.data.url);
+              } else {
+                window.location.assign(res.data.url);
+              }
+            } catch (_) {
+              // 某些環境下改用 _top 目標
+              window.open(res.data.url, '_top');
+            }
+          }
         } catch (e) {
           alert(String((e && e.message) || e));
         }
@@ -197,7 +214,32 @@
     getUser: async function () { return (await sb.auth.getUser()).data.user || null; },
     loginGoogle: async function () {
       var redirectTo = location.href;
-      return sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo } });
+      var client = ensureSupabaseClient();
+      if (!client) throw new Error('Supabase 尚未就緒');
+      var res = await client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+          skipBrowserRedirect: true,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+      if (res && res.error) throw res.error;
+      if (res && res.data && res.data.url) {
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.assign(res.data.url);
+          } else {
+            window.location.assign(res.data.url);
+          }
+        } catch (_) {
+          window.open(res.data.url, '_top');
+        }
+      }
+      return res;
     },
     signOut: function () { return sb.auth.signOut(); }
   };
