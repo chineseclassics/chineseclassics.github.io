@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js"></script>
+    <script src="assets/js/cc-auth.js?v=20250927"></script>
     <script>
         // 調試：檢查登入按鈕是否正確創建
         window.addEventListener('load', function() {
@@ -684,7 +684,6 @@
             border: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
         }
-
         /* 自定义滚动条样式 - 适配低透明度背景 */
         .custom-scrollbar {
             scrollbar-width: thin;
@@ -1676,7 +1675,6 @@
                 this.sounds[soundName].play();
             }
         }
-        
         // 創建全局音效管理器
         const soundManager = new SoundManager();
         // 首次使用者互動時再解鎖音訊，避免自動播放政策警告
@@ -2023,7 +2021,6 @@
             // 杜牧《江南春》
             { line: "南朝四百八十寺", author: "杜牧", poem: "江南春" },
             { line: "多少樓臺煙雨中", author: "杜牧", poem: "江南春" },
-            
             // 張志和《漁歌子》
             { line: "青箬笠", author: "張志和", poem: "漁歌子" },
             { line: "綠蓑衣", author: "張志和", poem: "漁歌子" },
