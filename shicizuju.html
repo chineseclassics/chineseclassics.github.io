@@ -317,7 +317,6 @@
             to { opacity: 0; transform: translate(-50%, -50%) scale(16); }
         }
     </style>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
         
@@ -661,7 +660,6 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
-
         /* 設置模態窗口 - 現代玻璃擬態與更高對比 */
         .glass-modal {
             background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.88));
@@ -1005,7 +1003,6 @@
                 </div>
             </div>
         </div>
-
         <!-- 設置模態彈窗 -->
         <div id="settingsModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
             <div class="glass-modal rounded-3xl shadow-2xl w-[min(600px,90vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
@@ -1329,7 +1326,6 @@
             </div>
         </div>
     </div>
-
     <script>
         // 檢測iframe環境並優化布局
         function optimizeForIframe() {
@@ -1653,7 +1649,6 @@
         
         // 創建全局音效管理器
         const soundManager = new SoundManager();
-
         // 小學生詩詞數據庫 - 從提供的文件中選取的經典詩句
         const elementaryPoemLines = [
             // 蘇軾作品
@@ -2002,7 +1997,6 @@
             { line: "千里共嬋娟", author: "蘇軾", poem: "水調歌頭" },
             { line: "人有悲歡離合", author: "蘇軾", poem: "水調歌頭" },
             { line: "月有陰晴圓缺", author: "蘇軾", poem: "水調歌頭" },
-            
             // 蘇軾《題西林壁》
             { line: "不識廬山真面目", author: "蘇軾", poem: "題西林壁" },
             { line: "只緣身在此山中", author: "蘇軾", poem: "題西林壁" },
@@ -2334,7 +2328,6 @@
             const maxLeft = containerWidth - 32; // 32px = 图标宽度 + 边距
             poemErrorIcon.style.left = Math.min(iconLeft, maxLeft) + 'px';
         };
-
         // 显示结果浮窗
         const showResultModal = (isSuccess, message, answer = null) => {
             if (isSuccess) {
@@ -2684,7 +2677,6 @@
                             // 取消選中恢復 hover 綠色
                             charButton.classList.add('hover:bg-secondary', 'hover:text-white');
                         }
-
                         // 重建顯示的詩句字串
                         poemDisplay.value = selectionStack.map(x => x.char).join('');
 
@@ -2820,10 +2812,12 @@
         };
 
         // End the current round
-        const endRound = (success, reason = 'timeout') => {
+        let endRound = (success, reason = 'timeout') => {
+            if (!isGameActive) return;
+            isGameActive = false;
+            
             // Stop the timer
             clearInterval(timerInterval);
-            isGameActive = false;
             
             // 不再隐藏按钮，保持按钮区域可见
             
@@ -3008,7 +3002,6 @@
                 element.addEventListener(event, handler);
             }
         };
-
         // 安全地检查和添加所有事件监听器
         const setupEventListeners = () => {
             // 已有核心監聽在上方綁定，這裡避免重複
@@ -3355,7 +3348,6 @@
                 startNewRound();
             }
         }
-        
         function startTimer() {
             if (timeLeft > 0) {
                 timerInterval = setInterval(() => {
@@ -3698,7 +3690,6 @@
             showNotification('已切換到單人模式');
             startNewRound();
         }
-
         // 設置模態彈窗事件監聽器
         function setupSettingsEventListeners() {
             // 設置按鈕點擊事件
