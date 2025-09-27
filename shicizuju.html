@@ -19,10 +19,26 @@
                     console.log('Supabase 可用:', !!window.supabase);
                     console.log('ccAuth 可用:', !!window.ccAuth);
                     console.log('sb 客戶端可用:', !!window.sb);
+                    console.log('是否在 iframe 中:', window.parent !== window);
+                    console.log('document.body 存在:', !!document.body);
+                    
+                    // 嘗試手動觸發登入狀態欄創建
+                    if (window.ccAuth && typeof window.ccAuth.getClient === 'function') {
+                        console.log('嘗試手動觸發登入狀態欄創建...');
+                        // 觸發一次狀態刷新
+                        setTimeout(() => {
+                            const authBar2 = document.getElementById('cc-auth-bar');
+                            if (authBar2) {
+                                console.log('手動觸發成功，登入狀態欄已創建');
+                            } else {
+                                console.error('手動觸發失敗，登入狀態欄仍未創建');
+                            }
+                        }, 500);
+                    }
                 } else {
                     console.log('登入狀態欄已創建:', authBar);
                 }
-            }, 1000);
+            }, 2000); // 增加等待時間
         });
     </script>
     <script>

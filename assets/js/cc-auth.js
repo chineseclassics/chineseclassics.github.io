@@ -50,8 +50,10 @@
   }
 
   function renderAuthBar() {
+    console.log('[cc-auth] 渲染登入狀態欄...');
     var el = document.getElementById('cc-auth-bar');
     if (!el) {
+      console.log('[cc-auth] 創建新的登入狀態欄元素');
       el = document.createElement('div');
       el.id = 'cc-auth-bar';
       el.style.position = 'fixed';
@@ -67,7 +69,15 @@
       el.style.background = 'rgba(255,255,255,0.75)';
       el.style.backdropFilter = 'blur(10px)';
       el.style.webkitBackdropFilter = 'blur(10px)';
-      document.body.appendChild(el);
+      
+      // 確保 body 存在
+      if (document.body) {
+        document.body.appendChild(el);
+        console.log('[cc-auth] 登入狀態欄已添加到 body');
+      } else {
+        console.error('[cc-auth] document.body 不存在，無法添加登入狀態欄');
+        return;
+      }
     }
     el.innerHTML = '';
 
@@ -119,20 +129,29 @@
   }
 
   async function refreshAuth() {
+    console.log('[cc-auth] 刷新登入狀態...');
     try {
       var data = (await sb.auth.getUser()).data;
       authState.user = (data && data.user) ? data.user : null;
+      console.log('[cc-auth] 用戶狀態:', authState.user ? '已登入' : '未登入');
     } catch (e) {
+      console.error('[cc-auth] 獲取用戶狀態失敗:', e);
       authState.user = null;
     }
     renderAuthBar();
   }
 
   // 初始與狀態變更監聽
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', refreshAuth);
-  } else {
+  function initAuth() {
+    console.log('[cc-auth] 初始化登入狀態欄...');
     refreshAuth();
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuth);
+  } else {
+    // 延遲執行以確保 DOM 完全準備好
+    setTimeout(initAuth, 100);
   }
   sb.auth.onAuthStateChange(function () { refreshAuth(); });
 
