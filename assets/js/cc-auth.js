@@ -96,7 +96,26 @@
       btnOut.textContent = '登出';
       styleGhostButton(btnOut);
       btnOut.onclick = async function () {
-        try { await sb.auth.signOut(); } catch(e) { console.error(e); }
+        try {
+          btnOut.disabled = true;
+          var client = ensureSupabaseClient() || sb;
+          if (!client || !client.auth) {
+            btnOut.disabled = false;
+            alert('登出模組尚未就緒，請稍候或刷新頁面');
+            return;
+          }
+          await client.auth.signOut({ scope: 'local' });
+          await refreshAuth();
+          // 若仍殘留登入狀態，保險起見強制刷新
+          if (authState.user) {
+            setTimeout(function(){ try { location.reload(); } catch(_){} }, 100);
+          }
+        } catch(e) {
+          console.error(e);
+          alert(String((e && e.message) || e));
+        } finally {
+          btnOut.disabled = false;
+        }
       };
 
       if (avatar) el.appendChild(img);
@@ -293,7 +312,13 @@
       }
       return res;
     },
-    signOut: function () { return sb.auth.signOut(); }
+    signOut: async function () {
+      var client = ensureSupabaseClient() || sb;
+      if (!client || !client.auth) throw new Error('登出模組尚未就緒');
+      var res = await client.auth.signOut({ scope: 'local' });
+      try { await refreshAuth(); } catch(_) {}
+      return res;
+    }
   };
 })();
 
