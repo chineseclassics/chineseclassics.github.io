@@ -78,7 +78,19 @@
     if (authState.user) {
       var name = authState.user.user_metadata && authState.user.user_metadata.name;
       var email = authState.user.email;
+      var avatar = (authState.user.user_metadata && (authState.user.user_metadata.avatar_url || authState.user.user_metadata.picture)) || '';
       label.textContent = name || email || '已登入';
+
+      if (avatar) {
+        var img = document.createElement('img');
+        img.src = avatar;
+        img.alt = 'avatar';
+        img.style.width = '20px';
+        img.style.height = '20px';
+        img.style.borderRadius = '50%';
+        img.style.objectFit = 'cover';
+        img.style.border = '1px solid rgba(0,0,0,0.08)';
+      }
 
       var btnOut = document.createElement('button');
       btnOut.textContent = '登出';
@@ -87,6 +99,7 @@
         try { await sb.auth.signOut(); } catch(e) { console.error(e); }
       };
 
+      if (avatar) el.appendChild(img);
       el.appendChild(label);
       el.appendChild(btnOut);
     } else {
@@ -141,6 +154,39 @@
     }
   }
 
+  // 解析回跳並交換 Session
+  async function handleOauthRedirectIfNeeded() {
+    try {
+      var url = new URL(window.location.href);
+      var code = url.searchParams.get('code');
+      var error = url.searchParams.get('error');
+      var errorDescription = url.searchParams.get('error_description');
+      if (error) {
+        // 保留渲染未登入，但提示錯誤
+        console.warn('[cc-auth] OAuth error:', error, errorDescription || '');
+        return false;
+      }
+      if (!code) return false;
+      if (!sb || !sb.auth) return false;
+      // 與 Supabase 交換並建立本地 session
+      await sb.auth.exchangeCodeForSession({ code: code });
+      // 清理 URL 上的 code/state 參數
+      try {
+        url.searchParams.delete('code');
+        url.searchParams.delete('state');
+        url.searchParams.delete('provider');
+        url.searchParams.delete('scope');
+        url.searchParams.delete('authuser');
+        url.searchParams.delete('prompt');
+        window.history.replaceState({}, document.title, url.toString());
+      } catch (_) {}
+      return true;
+    } catch (e) {
+      console.warn('[cc-auth] exchangeCodeForSession 失敗：', e && e.message || e);
+      return false;
+    }
+  }
+
   async function refreshAuth() {
     try {
       // sb 可能尚未就緒，需容錯
@@ -187,7 +233,10 @@
       // 一旦可用，執行初始刷新並綁定狀態監聽
       if (sb && sb.auth) {
         clearInterval(timer);
-        refreshAuth();
+        // 若為 OAuth 回跳，先交換 Session 再刷新
+        handleOauthRedirectIfNeeded().then(function(){
+          refreshAuth();
+        });
         bindAuthStateListenerWhenReady();
         return;
       }
@@ -203,9 +252,12 @@
 
   // 初始刷新（與 DOMContentLoaded 兼容）
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', refreshAuth);
+    document.addEventListener('DOMContentLoaded', function(){
+      // 嘗試處理可能已存在的回跳參數
+      handleOauthRedirectIfNeeded().finally(refreshAuth);
+    });
   } else {
-    refreshAuth();
+    handleOauthRedirectIfNeeded().finally(refreshAuth);
   }
 
   // 導出全域 API，提供給各遊戲頁使用
