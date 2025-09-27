@@ -215,7 +215,8 @@ console.log('[診斷] cc-auth.js：腳本開始執行。版本 v=20250927_2');
     
     // 等待 DOMContentLoaded 事件，確保 document.body 可用
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', runAuthSetup);
+        // 改為監聽 window.onload，確保所有資源（包括頁面自己的腳本）都已載入完成
+        window.addEventListener('load', runAuthSetup);
     } else {
         // 如果腳本被延遲加載，此時 DOM 可能已經就緒
         runAuthSetup();
