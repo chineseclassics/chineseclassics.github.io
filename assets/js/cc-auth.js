@@ -67,8 +67,32 @@
       el.style.background = 'rgba(255,255,255,0.75)';
       el.style.backdropFilter = 'blur(10px)';
       el.style.webkitBackdropFilter = 'blur(10px)';
+
+      // 添加到 body 並確保不會被移除
       document.body.appendChild(el);
+      console.log('[cc-auth] 登入狀態欄已建立並添加至 DOM:', el);
+
+      // 添加 MutationObserver 監測是否被移除
+      if (window.MutationObserver) {
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+              const wasRemoved = Array.from(mutation.removedNodes).some(node =>
+                node.id === 'cc-auth-bar'
+              );
+              if (wasRemoved) {
+                console.warn('[cc-auth] 登入狀態欄被移除！重新建立...');
+                setTimeout(() => renderAuthBar(), 100);
+              }
+            }
+          });
+        });
+        observer.observe(document.body, { childList: true });
+      }
+    } else {
+      console.log('[cc-auth] 找到現有的登入狀態欄:', el);
     }
+
     el.innerHTML = '';
 
     var label = document.createElement('span');
@@ -212,6 +236,7 @@
   window.ccAuth = window.ccAuth || {
     getClient: function () { return sb; },
     getUser: async function () { return (await sb.auth.getUser()).data.user || null; },
+    _renderAuthBar: renderAuthBar, // 暴露手動渲染函數供調試用
     loginGoogle: async function () {
       var redirectTo = location.href;
       var client = ensureSupabaseClient();
