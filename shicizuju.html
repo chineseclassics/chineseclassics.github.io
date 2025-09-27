@@ -8,22 +8,19 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js?v=final_attempt_20250927"></script>
+    <script src="assets/js/cc-auth.js"></script>
     <script>
-        console.log('[診斷] shicizuju.html：開始解析登入腳本。');
         // 調試：檢查登入按鈕是否正確創建
         window.addEventListener('load', function() {
-            console.log('[診斷] shicizuju.html：頁面已完全載入 (window.onload)。');
             setTimeout(function() {
                 const authBar = document.getElementById('cc-auth-bar');
                 if (!authBar) {
-                    console.error('【錯誤】登入狀態欄 cc-auth-bar 在1秒後仍未被創建！');
-                    console.log('[診斷] Supabase 可用:', !!window.supabase);
-                    console.log('[診斷] ccAuth 可用:', !!window.ccAuth);
-                    console.log('[診斷] sb 客戶端可用:', !!window.sb);
-                    console.log('[診斷] Body 存在:', !!document.body);
+                    console.error('登入狀態欄未創建！');
+                    console.log('Supabase 可用:', !!window.supabase);
+                    console.log('ccAuth 可用:', !!window.ccAuth);
+                    console.log('sb 客戶端可用:', !!window.sb);
                 } else {
-                    console.log('【成功】登入狀態欄已創建:', authBar);
+                    console.log('登入狀態欄已創建:', authBar);
                 }
             }, 1000);
         });
@@ -200,6 +197,7 @@
         }
         .interactive:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
         .interactive:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+
         /* 下一輪按鈕：尺寸+10% 並加入吸引點擊的柔和脈動與光暈 */
         .next-round-button {
             border-radius: 1rem; /* 與 rounded-2xl 對齊 */
@@ -389,6 +387,7 @@
             position: relative;
             border: 1px solid rgba(46, 125, 109, 0.18);
         }
+        
         .paper-effect::before {
             content: '';
             position: absolute;
@@ -400,6 +399,7 @@
             opacity: 0.5;
             z-index: 0;
         }
+        
         .paper-effect > * {
             position: relative;
             z-index: 1;
@@ -584,6 +584,7 @@
                 padding: 0.75rem !important;
             }
         }
+
         /* 超小屏幕进一步优化 */
         @media (max-width: 480px) {
             .character-btn {
@@ -683,6 +684,7 @@
             border: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
         }
+
         /* 自定义滚动条样式 - 适配低透明度背景 */
         .custom-scrollbar {
             scrollbar-width: thin;
@@ -980,6 +982,7 @@
                 設置
             </button>
         </div>
+        
         <!-- 對戰結束總結窗口 -->
         <div id="battleResultModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
             <div class="glass-modal rounded-3xl shadow-2xl w-[min(500px,90vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
@@ -1141,6 +1144,7 @@
                 </div>
             </div>
         </div>
+
         <!-- 對戰模式開場預覽 -->
         <div id="battlePreviewModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/40 flex items-center justify-center animate-slide-up">
             <div class="glass-modal rounded-3xl shadow-2xl w-[min(640px,92vw)] max-h-[88vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
@@ -1526,7 +1530,9 @@
             };
             reader.readAsArrayBuffer(file);
         }
+
         // 已移除暗色模式自動切換，統一使用亮色主題
+        
         // 音效管理類
         class SoundManager {
             constructor() {
@@ -1670,6 +1676,7 @@
                 this.sounds[soundName].play();
             }
         }
+        
         // 創建全局音效管理器
         const soundManager = new SoundManager();
         // 首次使用者互動時再解鎖音訊，避免自動播放政策警告
@@ -1880,6 +1887,7 @@
             { line: "小松初數尺", author: "王建", poem: "小松" },
             { line: "未有直生枝", author: "王建", poem: "小松" }
         ];
+        
         // 詩詞庫 - 從詩詞庫AI遊戲.docx中導入的詩句
         const tangPoetryLines = [
             // 漢樂府《長歌行》
@@ -2015,6 +2023,7 @@
             // 杜牧《江南春》
             { line: "南朝四百八十寺", author: "杜牧", poem: "江南春" },
             { line: "多少樓臺煙雨中", author: "杜牧", poem: "江南春" },
+            
             // 張志和《漁歌子》
             { line: "青箬笠", author: "張志和", poem: "漁歌子" },
             { line: "綠蓑衣", author: "張志和", poem: "漁歌子" },
@@ -2070,11 +2079,13 @@
             { line: "白露為霜", author: "詩經", poem: "蒹葭" },
             { line: "所謂伊人", author: "詩經", poem: "蒹葭" },
             { line: "在水一方", author: "詩經", poem: "蒹葭" },
+            
             // 曹植《七哀詩》
             { line: "明月照高樓", author: "曹植", poem: "七哀詩" },
             { line: "流光正徘徊", author: "曹植", poem: "七哀詩" },
             { line: "願為西南風", author: "曹植", poem: "七哀詩" },
             { line: "長逝入君懷", author: "曹植", poem: "七哀詩" },
+            
             // 陶淵明《歸園田居》其一
             { line: "羈鳥戀舊林", author: "陶淵明", poem: "歸園田居" },
             { line: "池魚思故淵", author: "陶淵明", poem: "歸園田居" },
@@ -2266,6 +2277,7 @@
         const cancelSettings = document.getElementById('cancelSettings');
         const saveSettingsBtn = document.getElementById('saveSettings');
         const adminModeToggle = document.getElementById('adminModeToggle');
+        
         // 對戰結束總結窗口元素
         const battleResultModal = document.getElementById('battleResultModal');
         const winnerAnnouncement = document.getElementById('winnerAnnouncement');
@@ -2273,6 +2285,7 @@
         const battleRankings = document.getElementById('battleRankings');
         const newBattleBtn = document.getElementById('newBattleBtn');
         const exitBattleBtn = document.getElementById('exitBattleBtn');
+        
         // 對戰模式元素
         const battleModeSettings = document.getElementById('battleModeSettings');
         const playerCountSelect = document.getElementById('playerCount');
@@ -2456,6 +2469,7 @@
             aiExplainMeta.textContent = currentPoem.author && currentPoem.poem ? `出自《${currentPoem.poem}》·${currentPoem.author}` : '';
             aiExplainModal.classList.remove('hidden');
         }
+
         async function generateAiExplanation(triggerButton) {
             try {
                 if (triggerButton) triggerButton.classList.add('ai-explain-loading');
@@ -2473,6 +2487,7 @@
                 aiExplainReload && aiExplainReload.classList.remove('ai-explain-loading');
             }
         }
+
         // 將模型輸出格式化為本站美學風格，並做長度控制與高亮
         function formatAiContent(raw, targetLine) {
             // 去除左右空白與可能的 Markdown 粗體星號
@@ -2643,6 +2658,7 @@
             // Combine poem characters with distractors and shuffle
             shuffledCharacters = shuffleArray([...poemCharacters, ...selectedDistractors]);
         };
+
         // Populate the characters grid with the game characters
         const populateCharactersGrid = () => {
             charactersGrid.innerHTML = '';
@@ -2839,6 +2855,7 @@
                 }
             }, 1000);
         };
+
         // End the current round
         let endRound = (success, reason = 'timeout') => {
             if (!isGameActive) return;
@@ -3226,6 +3243,7 @@
                 startTimer();
             }
         }
+        
         function syncSettingsToModal() {
             // 同步遊戲模式（僅處理單人/對戰）
             const currentMode = battleMode.isActive ? 'battle' : 'single';
@@ -3418,6 +3436,7 @@
             
             // 開始對戰功能已整合到保存設置中
         }
+        
         function generatePlayerNameInputs() {
             const playerCount = parseInt(playerCountSelect.value);
             playerNamesContainer.innerHTML = '';
@@ -3603,8 +3622,9 @@
             updateBattleScoreboard();
             
             // 開始下一輪 - 移除自动延迟，改为手动控制
-            // startBattleRound() 將由浮窗的"下一輪"按钮调用
+            // startBattleRound() 将由浮窗的"下一輪"按钮调用
         }
+        
         function endBattleMode() {
             battleMode.isActive = false;
             
@@ -3804,6 +3824,7 @@
             if (exitBattleBtn) {
                 exitBattleBtn.addEventListener('click', exitBattleMode);
             }
+
             if (battlePreviewClose) {
                 battlePreviewClose.addEventListener('click', closeBattlePreviewModal);
             }
@@ -3984,6 +4005,7 @@
 
                 await net.channel.subscribe();
             }
+
             function startRoundAsHost() {
                 if (!net.enabled || !net.isHost) return;
                 // 以主機當前邏輯選題
