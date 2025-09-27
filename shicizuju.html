@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js?v=20250127"></script>
+    <script src="assets/js/cc-auth.js?v=20250128"></script>
     <script>
         // 調試：檢查登入按鈕是否正確創建，並提供手動重試機制
         window.addEventListener('load', function() {
@@ -54,11 +54,31 @@
             const authBar = document.getElementById('cc-auth-bar');
             if (authBar) {
                 console.log('登入狀態欄存在:', authBar);
+                // 強制刷新狀態
+                if (window.ccAuth && window.ccAuth._renderAuthBar) {
+                    window.ccAuth._renderAuthBar();
+                }
             } else {
                 console.log('登入狀態欄不存在，嘗試重新建立...');
                 if (window.ccAuth && window.ccAuth.getClient) {
                     // 強制重新渲染
                     window.ccAuth._renderAuthBar && window.ccAuth._renderAuthBar();
+                }
+            }
+        };
+
+        // 測試用：強制刷新登入狀態
+        window.forceRefreshAuth = async function() {
+            console.log('強制刷新登入狀態...');
+            if (window.ccAuth) {
+                try {
+                    const user = await window.ccAuth.getUser();
+                    console.log('當前用戶:', user);
+                    if (window.ccAuth._renderAuthBar) {
+                        window.ccAuth._renderAuthBar();
+                    }
+                } catch(e) {
+                    console.error('刷新失敗:', e);
                 }
             }
         };
