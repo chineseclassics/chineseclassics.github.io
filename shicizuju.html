@@ -8,17 +8,38 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js"></script>
+    <script src="assets/js/cc-auth.js?v=20250127"></script>
     <script>
-        // 調試：檢查登入按鈕是否正確創建
+        // 調試：檢查登入按鈕是否正確創建，並提供手動重試機制
         window.addEventListener('load', function() {
             setTimeout(function() {
                 const authBar = document.getElementById('cc-auth-bar');
                 if (!authBar) {
-                    console.error('登入狀態欄未創建！');
+                    console.error('登入狀態欄未創建！Chrome 可能載入了舊版快取');
                     console.log('Supabase 可用:', !!window.supabase);
                     console.log('ccAuth 可用:', !!window.ccAuth);
                     console.log('sb 客戶端可用:', !!window.sb);
+                    
+                    // 提供手動重試：若所有元件可用但狀態欄仍未建立，嘗試手動呼叫
+                    if (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) {
+                        console.log('嘗試手動觸發狀態欄建立...');
+                        try {
+                            // 手動呼叫 renderAuthBar（若 cc-auth.js 正確載入但未執行）
+                            if (typeof window.ccAuth._manualInit === 'function') {
+                                window.ccAuth._manualInit();
+                            } else {
+                                // 後備方案：直接建立最基本的登入按鈕
+                                const basicAuthBar = document.createElement('div');
+                                basicAuthBar.id = 'cc-auth-bar-fallback';
+                                basicAuthBar.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9999;padding:6px 8px;border-radius:12px;background:rgba(255,255,255,0.9);border:1px solid rgba(0,0,0,0.1);';
+                                basicAuthBar.innerHTML = '<button onclick="window.ccAuth.loginGoogle()" style="padding:6px 10px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff;font-size:12px;cursor:pointer;">用 Google 登入</button>';
+                                document.body.appendChild(basicAuthBar);
+                                console.log('已建立後備登入按鈕');
+                            }
+                        } catch(e) {
+                            console.error('手動建立登入按鈕失敗:', e);
+                        }
+                    }
                 } else {
                     console.log('登入狀態欄已創建:', authBar);
                 }

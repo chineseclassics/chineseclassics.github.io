@@ -241,7 +241,11 @@
       }
       return res;
     },
-    signOut: function () { return sb.auth.signOut(); }
+    signOut: function () { return sb.auth.signOut(); },
+    _manualInit: function () {
+      // 手動觸發初始化（Chrome 快取問題的後備方案）
+      refreshAuth();
+    }
   };
 })();
 
