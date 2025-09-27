@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js?v=20250927_2"></script>
+    <script src="assets/js/cc-auth.js?v=final_attempt_20250927"></script>
     <script>
         console.log('[診斷] shicizuju.html：開始解析登入腳本。');
         // 調試：檢查登入按鈕是否正確創建
@@ -389,7 +389,6 @@
             position: relative;
             border: 1px solid rgba(46, 125, 109, 0.18);
         }
-        
         .paper-effect::before {
             content: '';
             position: absolute;
@@ -1528,7 +1527,6 @@
             reader.readAsArrayBuffer(file);
         }
         // 已移除暗色模式自動切換，統一使用亮色主題
-        
         // 音效管理類
         class SoundManager {
             constructor() {
@@ -2072,7 +2070,6 @@
             { line: "白露為霜", author: "詩經", poem: "蒹葭" },
             { line: "所謂伊人", author: "詩經", poem: "蒹葭" },
             { line: "在水一方", author: "詩經", poem: "蒹葭" },
-            
             // 曹植《七哀詩》
             { line: "明月照高樓", author: "曹植", poem: "七哀詩" },
             { line: "流光正徘徊", author: "曹植", poem: "七哀詩" },
@@ -2269,7 +2266,6 @@
         const cancelSettings = document.getElementById('cancelSettings');
         const saveSettingsBtn = document.getElementById('saveSettings');
         const adminModeToggle = document.getElementById('adminModeToggle');
-        
         // 對戰結束總結窗口元素
         const battleResultModal = document.getElementById('battleResultModal');
         const winnerAnnouncement = document.getElementById('winnerAnnouncement');
@@ -2460,7 +2456,6 @@
             aiExplainMeta.textContent = currentPoem.author && currentPoem.poem ? `出自《${currentPoem.poem}》·${currentPoem.author}` : '';
             aiExplainModal.classList.remove('hidden');
         }
-
         async function generateAiExplanation(triggerButton) {
             try {
                 if (triggerButton) triggerButton.classList.add('ai-explain-loading');
