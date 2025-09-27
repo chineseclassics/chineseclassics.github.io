@@ -937,6 +937,14 @@
             <div id="timeBarFill" class="h-full gradient-primary rounded-full transition-all duration-300 ease-out" style="width: 100%"></div>
         </div>
         
+        <!-- 連線對戰（最小可用）：建立房間 / 加入房間 -->
+        <div id="netBox" class="glass-card p-2 rounded-2xl mb-2 flex items-center justify-center gap-2">
+            <button id="btnCreateRoom" class="gradient-secondary text-white px-3 py-1 rounded-xl font-modern text-sm">建立房間</button>
+            <input id="roomCodeInput" placeholder="輸入房間碼" class="px-3 py-1 rounded-xl border border-white/30 bg-white/90 text-sm" style="width: 120px">
+            <button id="btnJoinRoom" class="gradient-primary text-white px-3 py-1 rounded-xl font-modern text-sm">加入房間</button>
+            <span id="roomStatus" class="ml-2 text-surface-800 text-sm"></span>
+        </div>
+        
         <div class="flex items-center justify-end space-x-3 mb-2">
             <div id="difficultySelector" class="inline-block glass-card px-3 py-2 rounded-xl hidden animate-slide-up">
                 <span class="font-modern text-xs text-surface-800 mr-2 font-medium">難度：</span>
@@ -3865,6 +3873,175 @@
             initGame();
             setupSettingsEventListeners();
         }
+
+        // ============================
+        // 最小可用：連線對戰 + DB 寫入（profiles/matches/moves）
+        // ============================
+        (function(){
+            const sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
+            if (!sb) { console.warn('Supabase client 未就緒'); return; }
+
+            const net = { enabled:false, isHost:false, channel:null, room:'', matchId:null, started:false };
+
+            function genRoomCode() {
+                return Math.random().toString(36).slice(2,7).toUpperCase();
+            }
+
+            async function ensureLoggedIn() {
+                const { data } = await sb.auth.getUser();
+                const user = data && data.user;
+                if (!user) { alert('請先登入再使用對戰功能'); throw new Error('not_logged_in'); }
+                return user;
+            }
+
+            async function ensureProfile(user) {
+                try {
+                    const { data, error } = await sb.from('profiles').select('id').eq('id', user.id).maybeSingle();
+                    if (error) throw error;
+                    if (!data) {
+                        const nickname = (user.user_metadata && (user.user_metadata.name || user.user_metadata.full_name)) || user.email || '玩家';
+                        const { error: e2 } = await sb.from('profiles').insert({ id: user.id, nickname });
+                        if (e2) throw e2;
+                    }
+                } catch (e) {
+                    console.warn('ensureProfile 失敗：', e);
+                }
+            }
+
+            async function createRoom() {
+                const user = await ensureLoggedIn();
+                await ensureProfile(user);
+                const code = genRoomCode();
+                const { data, error } = await sb.from('matches')
+                    .insert({ room_code: code, host_id: user.id, status: 'waiting', game_key: 'shicizuju' })
+                    .select('*').single();
+                if (error) { alert(error.message); return; }
+                net.matchId = data.id;
+                await joinRealtime(code, true);
+                const s = document.getElementById('roomStatus'); if (s) s.textContent = '房間碼：' + code + '（等另一位加入）';
+            }
+
+            async function joinRoom() {
+                const user = await ensureLoggedIn();
+                await ensureProfile(user);
+                const input = document.getElementById('roomCodeInput');
+                const code = (input && input.value || '').trim().toUpperCase();
+                if (!code) { alert('請輸入房間碼'); return; }
+
+                const { data: m1, error: e1 } = await sb.from('matches').select('*').eq('room_code', code).maybeSingle();
+                if (e1 || !m1) { alert('找不到房間碼'); return; }
+                if (m1.status !== 'waiting' && m1.status !== 'playing') { alert('房間已結束'); return; }
+
+                if (!m1.guest_id && m1.host_id !== user.id) {
+                    const { data: m2, error: e2 } = await sb.from('matches')
+                        .update({ guest_id: user.id, status: 'playing', updated_at: new Date().toISOString() })
+                        .eq('id', m1.id).select('*').single();
+                    if (e2) { alert(e2.message); return; }
+                    net.matchId = m2.id;
+                } else {
+                    net.matchId = m1.id;
+                }
+                await joinRealtime(code, false);
+                const s = document.getElementById('roomStatus'); if (s) s.textContent = '已加入房間：' + code;
+            }
+
+            async function joinRealtime(code, asHost) {
+                net.enabled = true; net.isHost = !!asHost; net.room = 'shicizuju-' + code;
+                const u = (await sb.auth.getUser()).data.user;
+                net.channel = sb.channel(net.room, { config: { presence: { key: u ? u.id : 'anon' } } });
+
+                net.channel.on('presence', { event: 'sync' }, () => {
+                    const state = net.channel.presenceState();
+                    const total = Object.values(state).reduce((a,b)=> a + b.length, 0);
+                    if (net.isHost && total >= 2 && !net.started) {
+                        net.started = true;
+                        startRoundAsHost();
+                    }
+                });
+
+                net.channel.on('broadcast', { event: 'start_round' }, ({ payload }) => {
+                    startRoundFromHost(payload);
+                });
+
+                net.channel.on('broadcast', { event: 'result' }, ({ payload }) => {
+                    // 可選：顯示對手結果
+                });
+
+                await net.channel.subscribe();
+            }
+
+            function startRoundAsHost() {
+                if (!net.enabled || !net.isHost) return;
+                // 以主機當前邏輯選題
+                startNewRound();
+                const payload = {
+                    poem: currentPoem,
+                    timeLimit: parseInt(timeLimitSlider.value),
+                    charCount: Math.max(parseInt(charCountSlider.value), currentPoem.line.length)
+                };
+                applyRoundPayloadLocally(payload); // 本地確保一致
+                net.channel.send({ type:'broadcast', event:'start_round', payload });
+
+                // 記錄到 moves（用於驗證 RLS）
+                if (net.matchId) {
+                    sb.from('moves').insert({
+                        match_id: net.matchId,
+                        user_id: (sb.auth.getUser()).data.user?.id,
+                        type: 'start_round',
+                        payload: { line: currentPoem?.line, poem: currentPoem?.poem, author: currentPoem?.author }
+                    }).then(()=>{}).catch(()=>{});
+                }
+            }
+
+            function startRoundFromHost(payload) {
+                if (!net.enabled) return;
+                applyRoundPayloadLocally(payload);
+            }
+
+            function applyRoundPayloadLocally(payload) {
+                currentPoem = payload.poem;
+                poemHint.textContent = `《${currentPoem.poem}》 - ${currentPoem.author}`;
+                const targetLen = currentPoem.line.length;
+                const ccd = document.getElementById('charCountDisplay');
+                if (ccd) ccd.textContent = targetLen;
+                charCount = Math.max(payload.charCount, targetLen);
+                generateGameCharacters();
+                populateCharactersGrid();
+                roundTimeLimit = parseInt(payload.timeLimit);
+                timeLeft = roundTimeLimit;
+                timerElement.textContent = timeLeft;
+                if (timeBarFill) timeBarFill.style.width = '100%';
+                isGameActive = true;
+                clearInterval(timerInterval);
+                startTimer();
+            }
+
+            // wrap endRound -> 廣播結果並寫 moves
+            const __oldEndRound = endRound;
+            endRound = function(success, reason) {
+                __oldEndRound(success, reason);
+                if (net.enabled && net.channel) {
+                    net.channel.send({ type:'broadcast', event:'result', payload:{ success, timeLeft } });
+                }
+                if (net.enabled && net.matchId) {
+                    const userIdPromise = sb.auth.getUser();
+                    userIdPromise.then(({data}) => {
+                        const uid = data && data.user && data.user.id;
+                        if (!uid) return;
+                        sb.from('moves').insert({
+                            match_id: net.matchId,
+                            user_id: uid,
+                            type: 'result',
+                            payload: { success, timeLeft, line: currentPoem?.line }
+                        }).then(()=>{}).catch(()=>{});
+                    });
+                }
+            };
+
+            // 綁定 UI
+            document.getElementById('btnCreateRoom')?.addEventListener('click', createRoom);
+            document.getElementById('btnJoinRoom')?.addEventListener('click', joinRoom);
+        })();
     </script>
 </body>
 </html>
