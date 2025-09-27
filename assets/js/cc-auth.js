@@ -173,49 +173,63 @@ console.log('[診斷] cc-auth.js：腳本開始執行。版本 v=20250927_2');
 
   // 延遲重試：等待 Supabase UMD 載入並成功建立 client
   (function setupDeferredInit() {
-    // 嘗試立即綁定（若此時已就緒）
-    bindAuthStateListenerWhenReady();
-
-    console.log('[診斷] cc-auth.js：啟動延遲重試機制來初始化 Supabase Client。');
-    var retryCount = 0;
-    var maxRetries = 40; // 最多重試約 20 秒（500ms * 40）
-    var timer = setInterval(function () {
-      // 若全域 client 尚未建立，嘗試建立
-      if (!window.sb) {
-        // 若 UMD 尚未載入，ensureSupabaseClient 會無動作並返回 null
-        var maybe = ensureSupabaseClient();
-        if (maybe) {
-          sb = maybe; // 更新閉包內的 sb 引用
-        }
-      } else if (!sb) {
-        sb = window.sb;
-      }
-
-      // 一旦可用，執行初始刷新並綁定狀態監聽
-      if (sb && sb.auth) {
-        clearInterval(timer);
-        console.log('[診斷] cc-auth.js：Supabase Client 已就緒，執行 refreshAuth()。');
-        refreshAuth();
+    // 核心邏輯：確保在 DOM 完全就緒後才執行，避免被頁面腳本覆蓋
+    function runAuthSetup() {
+        console.log('[診斷] cc-auth.js：DOM 已就緒 (DOMContentLoaded)，開始執行 Auth 設定。');
+        // 嘗試立即綁定（若此時已就緒）
         bindAuthStateListenerWhenReady();
-        return;
-      }
 
-      retryCount++;
-      if (retryCount >= maxRetries) {
-        clearInterval(timer);
-        console.warn('[診斷] cc-auth.js：重試超時，Supabase Client 仍未就緒。將渲染一個基本的未登入狀態欄。');
-        // 即便最終仍不可用，也先渲染未登入狀態列，避免頁面上完全沒有登入入口
-        renderAuthBar();
-      }
-    }, 500);
+        console.log('[診斷] cc-auth.js：啟動延遲重試機制來初始化 Supabase Client。');
+        var retryCount = 0;
+        var maxRetries = 40; // 最多重試約 20 秒（500ms * 40）
+        var timer = setInterval(function () {
+        // 若全域 client 尚未建立，嘗試建立
+        if (!window.sb) {
+            // 若 UMD 尚未載入，ensureSupabaseClient 會無動作並返回 null
+            var maybe = ensureSupabaseClient();
+            if (maybe) {
+            sb = maybe; // 更新閉包內的 sb 引用
+            }
+        } else if (!sb) {
+            sb = window.sb;
+        }
+
+        // 一旦可用，執行初始刷新並綁定狀態監聽
+        if (sb && sb.auth) {
+            clearInterval(timer);
+            console.log('[診斷] cc-auth.js：Supabase Client 已就緒，執行 refreshAuth()。');
+            refreshAuth();
+            bindAuthStateListenerWhenReady();
+            return;
+        }
+
+        retryCount++;
+        if (retryCount >= maxRetries) {
+            clearInterval(timer);
+            console.warn('[診斷] cc-auth.js：重試超時，Supabase Client 仍未就緒。將渲染一個基本的未登入狀態欄。');
+            // 即便最終仍不可用，也先渲染未登入狀態列，避免頁面上完全沒有登入入口
+            renderAuthBar();
+        }
+        }, 500);
+    }
+    
+    // 等待 DOMContentLoaded 事件，確保 document.body 可用
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runAuthSetup);
+    } else {
+        // 如果腳本被延遲加載，此時 DOM 可能已經就緒
+        runAuthSetup();
+    }
   })();
 
-  // 初始刷新（與 DOMContentLoaded 兼容）
+  // 初始刷新（與 DOMContentLoaded 兼容） - 此部分邏輯已移至 runAuthSetup 中
+  /*
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', refreshAuth);
   } else {
     refreshAuth();
   }
+  */
 
   // 導出全域 API，提供給各遊戲頁使用
   window.ccAuth = window.ccAuth || {
