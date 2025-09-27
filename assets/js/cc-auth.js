@@ -88,8 +88,46 @@
     if (authState.user) {
       var name = authState.user.user_metadata && authState.user.user_metadata.name;
       var email = authState.user.email;
+      var avatar = authState.user.user_metadata && authState.user.user_metadata.avatar_url;
+      
+      // 創建用戶信息容器
+      var userInfo = document.createElement('div');
+      userInfo.style.display = 'flex';
+      userInfo.style.alignItems = 'center';
+      userInfo.style.gap = '8px';
+      
+      // 添加頭像（如果有的話）
+      if (avatar) {
+        var avatarImg = document.createElement('img');
+        avatarImg.src = avatar;
+        avatarImg.style.width = '24px';
+        avatarImg.style.height = '24px';
+        avatarImg.style.borderRadius = '50%';
+        avatarImg.style.border = '2px solid rgba(255,255,255,0.8)';
+        avatarImg.style.objectFit = 'cover';
+        userInfo.appendChild(avatarImg);
+      } else {
+        // 沒有頭像時顯示默認圖標
+        var defaultAvatar = document.createElement('div');
+        defaultAvatar.style.width = '24px';
+        defaultAvatar.style.height = '24px';
+        defaultAvatar.style.borderRadius = '50%';
+        defaultAvatar.style.background = 'linear-gradient(135deg, #0ea5e9, #38bdf8)';
+        defaultAvatar.style.display = 'flex';
+        defaultAvatar.style.alignItems = 'center';
+        defaultAvatar.style.justifyContent = 'center';
+        defaultAvatar.style.color = 'white';
+        defaultAvatar.style.fontSize = '12px';
+        defaultAvatar.style.fontWeight = 'bold';
+        defaultAvatar.textContent = (name || email || '用').charAt(0).toUpperCase();
+        userInfo.appendChild(defaultAvatar);
+      }
+      
+      // 添加用戶名稱
       label.textContent = name || email || '已登入';
-
+      userInfo.appendChild(label);
+      
+      // 添加登出按鈕
       var btnOut = document.createElement('button');
       btnOut.textContent = '登出';
       styleGhostButton(btnOut);
@@ -97,7 +135,7 @@
         try { await sb.auth.signOut(); } catch(e) { console.error(e); }
       };
 
-      el.appendChild(label);
+      el.appendChild(userInfo);
       el.appendChild(btnOut);
     } else {
       label.textContent = '未登入';
@@ -133,7 +171,15 @@
     try {
       var data = (await sb.auth.getUser()).data;
       authState.user = (data && data.user) ? data.user : null;
-      console.log('[cc-auth] 用戶狀態:', authState.user ? '已登入' : '未登入');
+      if (authState.user) {
+        console.log('[cc-auth] 用戶已登入:', {
+          name: authState.user.user_metadata?.name,
+          email: authState.user.email,
+          avatar: authState.user.user_metadata?.avatar_url
+        });
+      } else {
+        console.log('[cc-auth] 用戶未登入');
+      }
     } catch (e) {
       console.error('[cc-auth] 獲取用戶狀態失敗:', e);
       authState.user = null;
