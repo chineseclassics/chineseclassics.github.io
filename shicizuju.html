@@ -1539,7 +1539,7 @@
                 this.audioContext = null;
                 this.isMuted = false;
                 this.sounds = {};
-                this.init();
+                this.isUnlocked = false;
             }
             
             init() {
@@ -1552,6 +1552,20 @@
                     this.createSounds();
                 } catch (e) {
                     console.error('Web Audio API 不支持:', e);
+                }
+            }
+
+            async unlock() {
+                try {
+                    if (!this.audioContext) {
+                        this.init();
+                    }
+                    if (this.audioContext && this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+                    this.isUnlocked = !!this.audioContext && this.audioContext.state === 'running';
+                } catch (e) {
+                    // 解鎖失敗不拋錯，後續可重試
                 }
             }
             
@@ -1665,6 +1679,21 @@
         
         // 創建全局音效管理器
         const soundManager = new SoundManager();
+        // 首次使用者互動時再解鎖音訊，避免自動播放政策警告
+        (function(){
+            const unlockOnce = async () => {
+                document.removeEventListener('pointerdown', unlockOnce);
+                document.removeEventListener('keydown', keyHandler);
+                await soundManager.unlock();
+            };
+            const keyHandler = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    unlockOnce();
+                }
+            };
+            document.addEventListener('pointerdown', unlockOnce, { once: true, passive: true });
+            document.addEventListener('keydown', keyHandler, { passive: true });
+        })();
         // 小學生詩詞數據庫 - 從提供的文件中選取的經典詩句
         const elementaryPoemLines = [
             // 蘇軾作品
