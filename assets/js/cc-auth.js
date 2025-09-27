@@ -1,4 +1,6 @@
+console.log('[診斷] cc-auth.js：腳本開始執行。版本 v=20250927_2');
 (function () {
+  console.log('[診斷] cc-auth.js：IIFE 立即執行函數已進入。');
   // ---------- Supabase 初始化 ----------
   var SUPABASE_URL = window.SUPABASE_URL || 'https://onregacmigwiyomhmjyt.supabase.co';
   var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ucmVnYWNtaWd3aXlvbWhtanl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NzIzMDcsImV4cCI6MjA3NDU0ODMwN30.VxLyR3SMlnVYubFLdQNJqYMyJnT5foo7wUkVEmi4QcY';
@@ -50,8 +52,10 @@
   }
 
   function renderAuthBar() {
+    console.log('[診斷] cc-auth.js：renderAuthBar() 函數被呼叫。');
     var el = document.getElementById('cc-auth-bar');
     if (!el) {
+      console.log('[診斷] cc-auth.js：#cc-auth-bar 不存在，正在創建...');
       el = document.createElement('div');
       el.id = 'cc-auth-bar';
       el.style.position = 'fixed';
@@ -68,6 +72,7 @@
       el.style.backdropFilter = 'blur(10px)';
       el.style.webkitBackdropFilter = 'blur(10px)';
       document.body.appendChild(el);
+      console.log('[診斷] cc-auth.js：#cc-auth-bar 已創建並附加到 body。', el);
     }
     el.innerHTML = '';
 
@@ -144,6 +149,7 @@
   async function refreshAuth() {
     try {
       // sb 可能尚未就緒，需容錯
+      console.log('[診斷] cc-auth.js：refreshAuth() 函數被呼叫。');
       if (sb && sb.auth) {
         var data = (await sb.auth.getUser()).data;
         authState.user = (data && data.user) ? data.user : null;
@@ -170,6 +176,7 @@
     // 嘗試立即綁定（若此時已就緒）
     bindAuthStateListenerWhenReady();
 
+    console.log('[診斷] cc-auth.js：啟動延遲重試機制來初始化 Supabase Client。');
     var retryCount = 0;
     var maxRetries = 40; // 最多重試約 20 秒（500ms * 40）
     var timer = setInterval(function () {
@@ -187,6 +194,7 @@
       // 一旦可用，執行初始刷新並綁定狀態監聽
       if (sb && sb.auth) {
         clearInterval(timer);
+        console.log('[診斷] cc-auth.js：Supabase Client 已就緒，執行 refreshAuth()。');
         refreshAuth();
         bindAuthStateListenerWhenReady();
         return;
@@ -195,6 +203,7 @@
       retryCount++;
       if (retryCount >= maxRetries) {
         clearInterval(timer);
+        console.warn('[診斷] cc-auth.js：重試超時，Supabase Client 仍未就緒。將渲染一個基本的未登入狀態欄。');
         // 即便最終仍不可用，也先渲染未登入狀態列，避免頁面上完全沒有登入入口
         renderAuthBar();
       }
