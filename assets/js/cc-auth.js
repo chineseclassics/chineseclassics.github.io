@@ -49,15 +49,20 @@
     btn.style.cursor = 'pointer';
   }
 
+  function getAuthBarEl() {
+    return document.getElementById('cc-status-bar') || document.getElementById('cc-auth-bar');
+  }
+
   function renderAuthBar() {
-    var el = document.getElementById('cc-auth-bar');
+    var el = getAuthBarEl();
     if (!el) {
       el = document.createElement('div');
-      el.id = 'cc-auth-bar';
+      // 使用更不易被擴充規則誤殺的 id
+      el.id = 'cc-status-bar';
       el.style.position = 'fixed';
       el.style.top = '8px';
       el.style.right = '8px';
-      el.style.zIndex = '9999';
+      el.style.zIndex = '2147483647';
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.gap = '8px';
@@ -69,6 +74,13 @@
       el.style.webkitBackdropFilter = 'blur(10px)';
       document.body.appendChild(el);
     }
+    // 防止被樣式隱藏
+    try {
+      el.style.setProperty('display', 'flex', 'important');
+      el.style.setProperty('visibility', 'visible', 'important');
+      el.style.setProperty('opacity', '1', 'important');
+      el.style.setProperty('pointer-events', 'auto', 'important');
+    } catch(_) {}
     el.innerHTML = '';
 
     var label = document.createElement('span');
@@ -201,6 +213,21 @@
     }, 500);
   })();
 
+  // 監看是否被擴充套件移除，若消失就自動重建
+  (function keepAliveAuthBar(){
+    var observer;
+    try {
+      observer = new MutationObserver(function(){
+        if (!getAuthBarEl()) {
+          renderAuthBar();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    } catch(_) {}
+    // 定時器雙保險
+    setInterval(function(){ if (!getAuthBarEl()) renderAuthBar(); }, 2000);
+  })();
+
   // 初始刷新（與 DOMContentLoaded 兼容）
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', refreshAuth);
@@ -241,7 +268,8 @@
       }
       return res;
     },
-    signOut: function () { return sb.auth.signOut(); }
+    signOut: function () { return sb.auth.signOut(); },
+    ensureBar: function () { try { renderAuthBar(); } catch(_) {} }
   };
 })();
 
