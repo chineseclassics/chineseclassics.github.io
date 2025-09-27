@@ -19,18 +19,6 @@
                     console.log('Supabase 可用:', !!window.supabase);
                     console.log('ccAuth 可用:', !!window.ccAuth);
                     console.log('sb 客戶端可用:', !!window.sb);
-                    // 針對 Chrome 強快取：動態追加帶時間戳的 cc-auth.js 再嘗試一次
-                    try {
-                        const s = document.createElement('script');
-                        s.src = 'assets/js/cc-auth.js?ts=' + Date.now();
-                        s.onload = function(){
-                            setTimeout(function(){
-                                const again = document.getElementById('cc-auth-bar');
-                                if (!again) console.warn('二次載入後仍未找到登入狀態欄');
-                            }, 600);
-                        };
-                        document.head.appendChild(s);
-                    } catch(_) {}
                 } else {
                     console.log('登入狀態欄已創建:', authBar);
                 }
