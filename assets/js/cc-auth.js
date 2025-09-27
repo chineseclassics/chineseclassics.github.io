@@ -67,32 +67,8 @@
       el.style.background = 'rgba(255,255,255,0.75)';
       el.style.backdropFilter = 'blur(10px)';
       el.style.webkitBackdropFilter = 'blur(10px)';
-
-      // 添加到 body 並確保不會被移除
       document.body.appendChild(el);
-      console.log('[cc-auth] 登入狀態欄已建立並添加至 DOM:', el);
-
-      // 添加 MutationObserver 監測是否被移除
-      if (window.MutationObserver) {
-        const observer = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
-              const wasRemoved = Array.from(mutation.removedNodes).some(node =>
-                node.id === 'cc-auth-bar'
-              );
-              if (wasRemoved) {
-                console.warn('[cc-auth] 登入狀態欄被移除！重新建立...');
-                setTimeout(() => renderAuthBar(), 100);
-              }
-            }
-          });
-        });
-        observer.observe(document.body, { childList: true });
-      }
-    } else {
-      console.log('[cc-auth] 找到現有的登入狀態欄:', el);
     }
-
     el.innerHTML = '';
 
     var label = document.createElement('span');
@@ -100,47 +76,19 @@
     label.style.color = '#0f172a';
 
     if (authState.user) {
-      // 清空現有內容
-      el.innerHTML = '';
-
       var name = authState.user.user_metadata && authState.user.user_metadata.name;
       var email = authState.user.email;
-      var avatar = authState.user.user_metadata && authState.user.user_metadata.avatar_url;
-
-      // 建立用戶頭像
-      if (avatar) {
-        var avatarImg = document.createElement('img');
-        avatarImg.src = avatar;
-        avatarImg.alt = '用戶頭像';
-        avatarImg.style.width = '24px';
-        avatarImg.style.height = '24px';
-        avatarImg.style.borderRadius = '50%';
-        avatarImg.style.marginRight = '6px';
-        avatarImg.style.verticalAlign = 'middle';
-        el.appendChild(avatarImg);
-      }
-
-      // 更新標籤內容
       label.textContent = name || email || '已登入';
-      label.style.marginRight = '8px';
 
       var btnOut = document.createElement('button');
       btnOut.textContent = '登出';
       styleGhostButton(btnOut);
       btnOut.onclick = async function () {
-        try {
-          console.log('[cc-auth] 執行登出...');
-          await sb.auth.signOut();
-          console.log('[cc-auth] 登出成功');
-        } catch(e) {
-          console.error('[cc-auth] 登出失敗:', e);
-        }
+        try { await sb.auth.signOut(); } catch(e) { console.error(e); }
       };
 
       el.appendChild(label);
       el.appendChild(btnOut);
-
-      console.log('[cc-auth] 顯示已登入狀態:', { name, email, avatar: !!avatar });
     } else {
       label.textContent = '未登入';
       var btnGoogle = document.createElement('button');
@@ -199,13 +147,10 @@
       if (sb && sb.auth) {
         var data = (await sb.auth.getUser()).data;
         authState.user = (data && data.user) ? data.user : null;
-        console.log('[cc-auth] refreshAuth - 用戶狀態:', authState.user ? '已登入' : '未登入');
       } else {
         authState.user = null;
-        console.log('[cc-auth] refreshAuth - Supabase 客戶端未就緒');
       }
     } catch (e) {
-      console.error('[cc-auth] refreshAuth 失敗:', e);
       authState.user = null;
     }
     renderAuthBar();
@@ -214,24 +159,10 @@
   // 綁定 onAuthStateChange（若尚未就緒則等到就緒後再綁定）
   function bindAuthStateListenerWhenReady() {
     if (sb && sb.auth) {
-      sb.auth.onAuthStateChange(function (event, session) {
-        console.log('[cc-auth] Auth state changed:', event, session ? '有 session' : '無 session');
-        refreshAuth();
-      });
+      sb.auth.onAuthStateChange(function () { refreshAuth(); });
       return true;
     }
     return false;
-  }
-
-  // 處理URL中的登入信息（當從OAuth重新導向回來時）
-  function handleAuthCallback() {
-    const hash = window.location.hash;
-    const search = window.location.search;
-
-    if ((hash && hash.includes('access_token')) || (search && search.includes('access_token'))) {
-      console.log('[cc-auth] 檢測到登入回調，嘗試刷新狀態...');
-      setTimeout(() => refreshAuth(), 100);
-    }
   }
 
   // 延遲重試：等待 Supabase UMD 載入並成功建立 client
@@ -256,7 +187,6 @@
       // 一旦可用，執行初始刷新並綁定狀態監聽
       if (sb && sb.auth) {
         clearInterval(timer);
-        handleAuthCallback(); // 檢查URL中的登入信息
         refreshAuth();
         bindAuthStateListenerWhenReady();
         return;
@@ -273,12 +203,8 @@
 
   // 初始刷新（與 DOMContentLoaded 兼容）
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      handleAuthCallback(); // 檢查URL中的登入信息
-      refreshAuth();
-    });
+    document.addEventListener('DOMContentLoaded', refreshAuth);
   } else {
-    handleAuthCallback(); // 檢查URL中的登入信息
     refreshAuth();
   }
 
@@ -286,7 +212,6 @@
   window.ccAuth = window.ccAuth || {
     getClient: function () { return sb; },
     getUser: async function () { return (await sb.auth.getUser()).data.user || null; },
-    _renderAuthBar: renderAuthBar, // 暴露手動渲染函數供調試用
     loginGoogle: async function () {
       var redirectTo = location.href;
       var client = ensureSupabaseClient();
