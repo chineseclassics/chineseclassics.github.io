@@ -3953,7 +3953,7 @@
         // 最小可用：連線對戰 + DB 寫入（profiles/matches/moves）
         // ============================
         (function(){
-            const sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
+            const sb = (window.appAuth && window.appAuth.getClient && window.appAuth.getClient());
             if (!sb) { console.warn('Supabase client 未就緒'); return; }
 
             const net = { enabled:false, isHost:false, channel:null, room:'', matchId:null, started:false };
