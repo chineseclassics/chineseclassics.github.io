@@ -109,6 +109,7 @@
                 log('exchangeCodeForSession result:', ex && ex.data ? 'ok' : ex);
                 // 清理 URL 參數
                 try { ['code','state','provider','scope','authuser','prompt'].forEach(p=>url.searchParams.delete(p)); history.replaceState({}, document.title, url.toString()); } catch(_){}
+                try { await window.ccAuth?.refresh(); } catch(_) {}
                 await refreshDump();
             } catch (e) {
                 alert(String(e && e.message || e));

@@ -318,6 +318,7 @@
   window.ccAuth = window.ccAuth || {
     getClient: function () { return sb; },
     getUser: async function () { return (await sb.auth.getUser()).data.user || null; },
+    refresh: async function () { return refreshAuth(); },
     loginGoogle: async function () {
       var redirectTo = location.href;
       var client = ensureSupabaseClient();
