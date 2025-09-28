@@ -18,23 +18,95 @@
     </header>
 
     <main class="flex-1 p-4">
-        <div class="max-w-xl mx-auto bg-white/90 border border-slate-200 rounded-xl p-4 shadow">
-            <h2 class="font-semibold mb-2">使用者資訊（即時）</h2>
+        <div class="max-w-3xl mx-auto bg-white/90 border border-slate-200 rounded-xl p-4 shadow space-y-4">
+            <h2 class="font-semibold">使用者資訊（即時）</h2>
             <pre id="userDump" class="text-xs p-2 bg-slate-100 rounded overflow-auto" style="max-height:260px"></pre>
-            <div class="mt-3 text-sm text-slate-600">若上方為 null，請點右上角「用 Google 登入」。授權後應回到本頁並顯示使用者資訊。</div>
+            <div class="mt-1 text-sm text-slate-600">若為 null，請點右上角「用 Google 登入」。授權後應回到本頁並顯示使用者資訊。</div>
+
+            <hr class="my-2 border-slate-200">
+
+            <h3 class="font-semibold">除錯資訊</h3>
+            <div class="grid md:grid-cols-2 gap-3">
+                <div class="bg-slate-50 rounded p-3 border border-slate-200">
+                    <div class="text-xs text-slate-600">當前 URL</div>
+                    <pre id="urlDump" class="text-xs p-2 bg-white rounded border border-slate-200 overflow-auto"></pre>
+                </div>
+                <div class="bg-slate-50 rounded p-3 border border-slate-200">
+                    <div class="text-xs text-slate-600">URL 查詢參數</div>
+                    <pre id="qsDump" class="text-xs p-2 bg-white rounded border border-slate-200 overflow-auto"></pre>
+                </div>
+                <div class="bg-slate-50 rounded p-3 border border-slate-200">
+                    <div class="text-xs text-slate-600">Supabase Session</div>
+                    <pre id="sessionDump" class="text-xs p-2 bg-white rounded border border-slate-200 overflow-auto"></pre>
+                </div>
+                <div class="bg-slate-50 rounded p-3 border border-slate-200">
+                    <div class="text-xs text-slate-600">localStorage（sb-*）</div>
+                    <pre id="lsDump" class="text-xs p-2 bg-white rounded border border-slate-200 overflow-auto"></pre>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <button id="btnRefresh" class="px-3 py-1.5 rounded bg-slate-800 text-white text-sm">刷新資訊</button>
+                <button id="btnExchange" class="px-3 py-1.5 rounded bg-blue-600 text-white text-sm">手動交換 code</button>
+                <button id="btnSignOut" class="px-3 py-1.5 rounded bg-rose-600 text-white text-sm">登出並重新整理</button>
+                <button id="btnLogin" class="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm">用 Google 登入</button>
+            </div>
         </div>
     </main>
 
     <script>
     (function(){
+        function dumpQS(qs){
+            var o = {}; qs.forEach((v,k)=>{ o[k]=v; }); return o;
+        }
+        function setText(id, value){
+            var el = document.getElementById(id);
+            if (el) el.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+        }
         async function refreshDump(){
             try {
+                var url = new URL(location.href);
+                var qs = dumpQS(url.searchParams);
+                setText('urlDump', location.href);
+                setText('qsDump', qs);
                 var user = await (window.ccAuth && window.ccAuth.getUser ? window.ccAuth.getUser() : Promise.resolve(null));
-                document.getElementById('userDump').textContent = JSON.stringify(user, null, 2);
+                setText('userDump', user);
+                var sess = await (window.sb && window.sb.auth ? window.sb.auth.getSession() : Promise.resolve({data:null}));
+                setText('sessionDump', sess);
+                var lsKeys = Object.keys(localStorage).filter(k=>k.includes('sb-'));
+                var ls = {}; lsKeys.forEach(k=> ls[k] = localStorage.getItem(k));
+                setText('lsDump', ls);
             } catch (e) {
-                document.getElementById('userDump').textContent = String(e && e.message || e);
+                setText('userDump', String(e && e.message || e));
             }
         }
+        async function manualExchange(){
+            try {
+                var url = new URL(location.href);
+                var code = url.searchParams.get('code');
+                if (!code) { alert('URL 中沒有 code'); return; }
+                if (!window.sb || !window.sb.auth) { alert('Supabase client 未就緒'); return; }
+                await window.sb.auth.exchangeCodeForSession({ code: code });
+                // 清理 URL 參數
+                try { ['code','state','provider','scope','authuser','prompt'].forEach(p=>url.searchParams.delete(p)); history.replaceState({}, document.title, url.toString()); } catch(_){}
+                await refreshDump();
+            } catch (e) {
+                alert(String(e && e.message || e));
+            }
+        }
+        async function doSignOut(){
+            try { await window.sb?.auth?.signOut({ scope:'local' }); } catch(_){}
+            location.reload();
+        }
+        async function doLogin(){
+            try { await window.ccAuth?.loginGoogle(); } catch(e){ alert(String(e && e.message || e)); }
+        }
+
+        document.getElementById('btnRefresh').addEventListener('click', refreshDump);
+        document.getElementById('btnExchange').addEventListener('click', manualExchange);
+        document.getElementById('btnSignOut').addEventListener('click', doSignOut);
+        document.getElementById('btnLogin').addEventListener('click', doLogin);
+
         document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshDump(); });
         window.addEventListener('focus', refreshDump);
         if (document.readyState === 'loading') {
@@ -46,5 +118,6 @@
     </script>
 </body>
 </html>
+
 
 
