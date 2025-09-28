@@ -58,24 +58,41 @@
   }
 
   function renderAuthBar() {
+    var mount = document.getElementById('authMount');
+    var usingInlineMount = false;
     var el = document.getElementById('cc-auth-bar');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'cc-auth-bar';
-      el.style.position = 'fixed';
-      el.style.top = '8px';
-      el.style.right = '8px';
-      el.style.zIndex = '2147483647';
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.gap = '8px';
-      el.style.padding = '6px 8px';
-      el.style.borderRadius = '12px';
-      el.style.border = '1px solid rgba(0,0,0,0.08)';
-      el.style.background = 'rgba(255,255,255,0.75)';
-      el.style.backdropFilter = 'blur(10px)';
-      el.style.webkitBackdropFilter = 'blur(10px)';
-      document.body.appendChild(el);
+    if (mount) {
+      usingInlineMount = true;
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'cc-auth-bar';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.gap = '8px';
+      }
+      mount.innerHTML = '';
+      mount.appendChild(el);
+      mount.classList.remove('hidden');
+    }
+    if (!usingInlineMount) {
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'cc-auth-bar';
+        el.style.position = 'fixed';
+        el.style.top = '8px';
+        el.style.right = '8px';
+        el.style.zIndex = '2147483647';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.gap = '8px';
+        el.style.padding = '6px 8px';
+        el.style.borderRadius = '12px';
+        el.style.border = '1px solid rgba(0,0,0,0.08)';
+        el.style.background = 'rgba(255,255,255,0.75)';
+        el.style.backdropFilter = 'blur(10px)';
+        el.style.webkitBackdropFilter = 'blur(10px)';
+        document.body.appendChild(el);
+      }
     }
     el.innerHTML = '';
 

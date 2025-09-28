@@ -1030,6 +1030,8 @@
         </div>
         
         <div class="flex items-center justify-end space-x-3 mb-2">
+            <!-- 登入狀態掛載點：若存在，優先在此顯示使用者名稱與登出按鈕 -->
+            <div id="authMount" class="hidden sm:flex items-center"></div>
             <div id="difficultySelector" class="inline-block glass-card px-3 py-2 rounded-xl hidden animate-slide-up">
                 <span class="font-modern text-xs text-surface-800 mr-2 font-medium">難度：</span>
                 <select id="difficultySelect" class="bg-white/90 rounded-lg px-3 py-1 text-xs border-none focus:ring-2 focus:ring-primary-400 font-modern">
