@@ -8,23 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js?v=20250927b"></script>
-    <script>
-        // 調試：檢查登入按鈕是否正確創建
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                const authBar = document.getElementById('cc-auth-bar');
-                if (!authBar) {
-                    console.error('登入狀態欄未創建！');
-                    console.log('Supabase 可用:', !!window.supabase);
-                    console.log('ccAuth 可用:', !!window.ccAuth);
-                    console.log('sb 客戶端可用:', !!window.sb);
-                } else {
-                    console.log('登入狀態欄已創建:', authBar);
-                }
-            }, 1000);
-        });
-    </script>
+    <script src="assets/js/cc-auth.js?v=20250929"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -197,7 +181,6 @@
         }
         .interactive:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
         .interactive:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
-
         /* 下一輪按鈕：尺寸+10% 並加入吸引點擊的柔和脈動與光暈 */
         .next-round-button {
             border-radius: 1rem; /* 與 rounded-2xl 對齊 */
@@ -399,7 +382,6 @@
             opacity: 0.5;
             z-index: 0;
         }
-        
         .paper-effect > * {
             position: relative;
             z-index: 1;
@@ -584,7 +566,6 @@
                 padding: 0.75rem !important;
             }
         }
-
         /* 超小屏幕进一步优化 */
         @media (max-width: 480px) {
             .character-btn {
@@ -958,7 +939,6 @@
             <button id="btnJoinRoom" class="gradient-primary text-white px-3 py-1 rounded-xl font-modern text-sm">加入房間</button>
             <span id="roomStatus" class="ml-2 text-surface-800 text-sm"></span>
         </div>
-        
         <div class="flex items-center justify-end space-x-3 mb-2">
             <div id="difficultySelector" class="inline-block glass-card px-3 py-2 rounded-xl hidden animate-slide-up">
                 <span class="font-modern text-xs text-surface-800 mr-2 font-medium">難度：</span>
@@ -1144,7 +1124,6 @@
                 </div>
             </div>
         </div>
-
         <!-- 對戰模式開場預覽 -->
         <div id="battlePreviewModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/40 flex items-center justify-center animate-slide-up">
             <div class="glass-modal rounded-3xl shadow-2xl w-[min(640px,92vw)] max-h-[88vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
@@ -1530,7 +1509,6 @@
             };
             reader.readAsArrayBuffer(file);
         }
-
         // 已移除暗色模式自動切換，統一使用亮色主題
         
         // 音效管理類
@@ -1887,7 +1865,6 @@
             { line: "小松初數尺", author: "王建", poem: "小松" },
             { line: "未有直生枝", author: "王建", poem: "小松" }
         ];
-        
         // 詩詞庫 - 從詩詞庫AI遊戲.docx中導入的詩句
         const tangPoetryLines = [
             // 漢樂府《長歌行》
@@ -2085,7 +2062,6 @@
             { line: "流光正徘徊", author: "曹植", poem: "七哀詩" },
             { line: "願為西南風", author: "曹植", poem: "七哀詩" },
             { line: "長逝入君懷", author: "曹植", poem: "七哀詩" },
-            
             // 陶淵明《歸園田居》其一
             { line: "羈鳥戀舊林", author: "陶淵明", poem: "歸園田居" },
             { line: "池魚思故淵", author: "陶淵明", poem: "歸園田居" },
@@ -2285,7 +2261,6 @@
         const battleRankings = document.getElementById('battleRankings');
         const newBattleBtn = document.getElementById('newBattleBtn');
         const exitBattleBtn = document.getElementById('exitBattleBtn');
-        
         // 對戰模式元素
         const battleModeSettings = document.getElementById('battleModeSettings');
         const playerCountSelect = document.getElementById('playerCount');
@@ -2487,7 +2462,6 @@
                 aiExplainReload && aiExplainReload.classList.remove('ai-explain-loading');
             }
         }
-
         // 將模型輸出格式化為本站美學風格，並做長度控制與高亮
         function formatAiContent(raw, targetLine) {
             // 去除左右空白與可能的 Markdown 粗體星號
@@ -2658,7 +2632,6 @@
             // Combine poem characters with distractors and shuffle
             shuffledCharacters = shuffleArray([...poemCharacters, ...selectedDistractors]);
         };
-
         // Populate the characters grid with the game characters
         const populateCharactersGrid = () => {
             charactersGrid.innerHTML = '';
@@ -2855,7 +2828,6 @@
                 }
             }, 1000);
         };
-
         // End the current round
         let endRound = (success, reason = 'timeout') => {
             if (!isGameActive) return;
@@ -3053,98 +3025,6 @@
             if (areCoreListenersBound) return;
             areCoreListenersBound = true;
             return;
-            
-            // 现有的事件监听器设置
-            if (clearSelectionButton) {
-                clearSelectionButton.addEventListener('click', () => {
-                    if (isGameActive) {
-                        poemDisplay.value = '';
-                        // Re-enable all character buttons
-                        document.querySelectorAll('.character-btn').forEach(btn => {
-                            btn.disabled = false;
-                            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                            btn.classList.add('hover:bg-secondary', 'hover:text-white');
-                        });
-                    }
-                });
-            }
-
-            if (submitButton) {
-                submitButton.addEventListener('click', () => {
-                    if (isGameActive) {
-                        if (poemDisplay.value.trim().length === 0) {
-                            showNotification('請先選擇漢字再提交！');
-                            return;
-                        }
-                        
-                        const isCorrect = verifyPoem();
-                        endRound(isCorrect, isCorrect ? 'correct' : 'wrong');
-                    }
-                });
-            }
-
-            if (difficultySelect) {
-                difficultySelect.addEventListener('change', () => {
-                    const difficulty = difficultySelect.value;
-                    applyDifficultySettings(difficulty);
-                    
-                    if (isGameActive) {
-                        showNotification('難度已變更，將在下一輪生效');
-                    }
-                });
-            }
-
-            if (timeLimitSlider) {
-                timeLimitSlider.addEventListener('input', () => {
-                    timeLeft = parseInt(timeLimitSlider.value);
-                    timeLimitValue.textContent = timeLeft;
-                    
-                    if (isGameActive) {
-                        showNotification('時間限制已變更，將在下一輪生效');
-                    }
-                });
-            }
-
-            if (charCountSlider) {
-                charCountSlider.addEventListener('input', () => {
-                    charCount = parseInt(charCountSlider.value);
-                    charCountValue.textContent = charCount;
-                    
-                    if (isGameActive) {
-                        showNotification('待選字數量已變更，將在下一輪生效');
-                    }
-                });
-            }
-
-            if (gameMode) {
-                gameMode.addEventListener('change', () => {
-                    currentGameMode = gameMode.value;
-                    
-                    if (currentGameMode === 'custom') {
-                        customPoemSettings.classList.remove('hidden');
-                        updateSavedPoemsList();
-                    } else {
-                        customPoemSettings.classList.add('hidden');
-                    }
-                    
-                    if (isGameActive) {
-                        showNotification('模式已變更，將在下一輪生效');
-                    }
-                });
-            }
-
-            if (saveCustomPoemButton) {
-                saveCustomPoemButton.addEventListener('click', saveCustomPoem);
-            }
-
-            // 舊的 adminModeToggle 事件監聽器已移至 setupSettingsEventListeners
-
-            if (closeNotification) {
-                closeNotification.addEventListener('click', () => {
-                    notification.classList.remove('translate-y-0');
-                    notification.classList.add('translate-y-[-150%]');
-                });
-            }
         };
 
         // 初始化游戏
@@ -3243,7 +3123,6 @@
                 startTimer();
             }
         }
-        
         function syncSettingsToModal() {
             // 同步遊戲模式（僅處理單人/對戰）
             const currentMode = battleMode.isActive ? 'battle' : 'single';
@@ -3436,7 +3315,6 @@
             
             // 開始對戰功能已整合到保存設置中
         }
-        
         function generatePlayerNameInputs() {
             const playerCount = parseInt(playerCountSelect.value);
             playerNamesContainer.innerHTML = '';
@@ -3624,7 +3502,6 @@
             // 開始下一輪 - 移除自动延迟，改为手动控制
             // startBattleRound() 将由浮窗的"下一輪"按钮调用
         }
-        
         function endBattleMode() {
             battleMode.isActive = false;
             
@@ -3735,96 +3612,6 @@
             showNotification('已切換到單人模式');
             startNewRound();
         }
-        // 設置模態彈窗事件監聽器
-        function setupSettingsEventListeners() {
-            // 設置按鈕點擊事件
-            if (adminModeToggle) {
-                adminModeToggle.addEventListener('click', openSettingsModal);
-            }
-            
-            // 關閉按鈕事件
-            if (closeSettingsModal) {
-                closeSettingsModal.addEventListener('click', closeSettingsModalFunc);
-            }
-            
-            if (cancelSettings) {
-                cancelSettings.addEventListener('click', closeSettingsModalFunc);
-            }
-            
-            // 保存設置按鈕事件
-            if (saveSettingsBtn) {
-                saveSettingsBtn.addEventListener('click', () => {
-                    saveSettingsFromModal();
-                    // 立即刷新 UI 以反映可能的顯示改變
-                    updateModalSections();
-                });
-            }
-
-            // 詩詞庫導出/導入
-            const exportExcelBtn = document.getElementById('exportExcelBtn');
-            const importExcelBtn = document.getElementById('importExcelBtn');
-            const importExcelInput = document.getElementById('importExcelInput');
-            if (exportExcelBtn) exportExcelBtn.addEventListener('click', exportAsExcel);
-            if (importExcelBtn && importExcelInput) {
-                importExcelBtn.addEventListener('click', () => importExcelInput.click());
-                importExcelInput.addEventListener('change', (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) importFromExcelFile(file);
-                    importExcelInput.value = '';
-                });
-            }
-            
-            // 詩詞庫標籤變更事件
-            const tagSel = document.getElementById('userLibraryTagSelect');
-            if (tagSel) {
-                tagSel.addEventListener('change', () => saveActiveTag(tagSel.value || ''));
-            }
-            
-            // 詩詞庫變更事件（若詩詞庫選項不存在則跳過）
-            const poemDBRadios = document.querySelectorAll('input[name="poemDatabase"]');
-            if (poemDBRadios && poemDBRadios.length) {
-                poemDBRadios.forEach(radio => radio.addEventListener('change', updateModalSections));
-            }
-            
-            // 遊戲模式變更事件（單人/對戰）
-            document.querySelectorAll('input[name="gameMode"]').forEach(radio => {
-                radio.addEventListener('change', () => {
-                    updateModalSections();
-                });
-            });
-            
-            // 滑動條事件
-            if (timeLimitSlider) {
-                timeLimitSlider.addEventListener('input', () => {
-                    timeLimitValue.textContent = timeLimitSlider.value;
-                });
-            }
-            
-            if (charCountSlider) {
-                charCountSlider.addEventListener('input', () => {
-                    charCountValue.textContent = charCountSlider.value;
-                });
-            }
-            
-            // 自定義詩句保存事件
-            if (saveCustomPoemButton) {
-                saveCustomPoemButton.addEventListener('click', saveCustomPoem);
-            }
-            
-            // 對戰模式選手數量變更事件
-            if (playerCountSelect) {
-                playerCountSelect.addEventListener('change', generatePlayerNameInputs);
-            }
-            
-            // 對戰結束總結窗口事件
-            if (newBattleBtn) {
-                newBattleBtn.addEventListener('click', startNewBattle);
-            }
-            
-            if (exitBattleBtn) {
-                exitBattleBtn.addEventListener('click', exitBattleMode);
-            }
-
             if (battlePreviewClose) {
                 battlePreviewClose.addEventListener('click', closeBattlePreviewModal);
             }
@@ -4005,7 +3792,6 @@
 
                 await net.channel.subscribe();
             }
-
             function startRoundAsHost() {
                 if (!net.enabled || !net.isHost) return;
                 // 以主機當前邏輯選題
