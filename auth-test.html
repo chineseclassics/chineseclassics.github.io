@@ -43,6 +43,10 @@
                     <div class="text-xs text-slate-600">localStorage（sb-*）</div>
                     <pre id="lsDump" class="text-xs p-2 bg-white rounded border border-slate-200 overflow-auto"></pre>
                 </div>
+                <div class="bg-amber-50 rounded p-3 border border-amber-200 md:col-span-2">
+                    <div class="text-xs text-amber-700">日誌</div>
+                    <pre id="logDump" class="text-xs p-2 bg-white rounded border border-amber-200 overflow-auto" style="max-height:160px"></pre>
+                </div>
             </div>
 
             <div class="flex flex-wrap gap-2">
@@ -63,43 +67,65 @@
             var el = document.getElementById(id);
             if (el) el.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
         }
+        function log(){
+            var el = document.getElementById('logDump');
+            if (!el) return;
+            var msg = Array.from(arguments).map(function(x){
+                try { return typeof x === 'string' ? x : JSON.stringify(x); } catch(_) { return String(x); }
+            }).join(' ');
+            el.textContent += (new Date().toISOString() + ' ') + msg + '\n';
+            el.scrollTop = el.scrollHeight;
+        }
         async function refreshDump(){
             try {
+                log('refreshDump');
                 var url = new URL(location.href);
                 var qs = dumpQS(url.searchParams);
                 setText('urlDump', location.href);
                 setText('qsDump', qs);
                 var user = await (window.ccAuth && window.ccAuth.getUser ? window.ccAuth.getUser() : Promise.resolve(null));
                 setText('userDump', user);
-                var sess = await (window.sb && window.sb.auth ? window.sb.auth.getSession() : Promise.resolve({data:null}));
+                var client = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
+                var sess = await (client && client.auth ? client.auth.getSession() : Promise.resolve({data:null}));
                 setText('sessionDump', sess);
                 var lsKeys = Object.keys(localStorage).filter(k=>k.includes('sb-'));
                 var ls = {}; lsKeys.forEach(k=> ls[k] = localStorage.getItem(k));
                 setText('lsDump', ls);
+                log('refreshDump done. user=', !!user, 'session=', !!(sess && sess.data && sess.data.session));
             } catch (e) {
                 setText('userDump', String(e && e.message || e));
+                log('refreshDump error:', e && e.message || e);
             }
         }
         async function manualExchange(){
             try {
+                log('manualExchange clicked');
                 var url = new URL(location.href);
                 var code = url.searchParams.get('code');
-                if (!code) { alert('URL 中沒有 code'); return; }
-                if (!window.sb || !window.sb.auth) { alert('Supabase client 未就緒'); return; }
-                await window.sb.auth.exchangeCodeForSession({ code: code });
+                if (!code) { alert('URL 中沒有 code'); log('no code in URL'); return; }
+                var client = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
+                if (!client || !client.auth) { alert('Supabase client 未就緒'); log('client not ready'); return; }
+                var ex = await client.auth.exchangeCodeForSession({ code: code });
+                log('exchangeCodeForSession result:', ex && ex.data ? 'ok' : ex);
                 // 清理 URL 參數
                 try { ['code','state','provider','scope','authuser','prompt'].forEach(p=>url.searchParams.delete(p)); history.replaceState({}, document.title, url.toString()); } catch(_){}
                 await refreshDump();
             } catch (e) {
                 alert(String(e && e.message || e));
+                log('manualExchange error:', e && e.message || e);
             }
         }
         async function doSignOut(){
-            try { await window.sb?.auth?.signOut({ scope:'local' }); } catch(_){}
+            try {
+                log('signOut clicked');
+                var client = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
+                await client?.auth?.signOut({ scope:'local' });
+                log('signOut done');
+            } catch(e){ log('signOut error:', e && e.message || e); }
             location.reload();
         }
         async function doLogin(){
-            try { await window.ccAuth?.loginGoogle(); } catch(e){ alert(String(e && e.message || e)); }
+            try { log('login clicked'); await window.ccAuth?.loginGoogle(); } catch(e){ alert(String(e && e.message || e)); log('login error:', e && e.message || e); }
         }
 
         document.getElementById('btnRefresh').addEventListener('click', refreshDump);
@@ -114,6 +140,7 @@
         } else {
             refreshDump();
         }
+        log('page ready. flags:', 'supabase=', !!window.supabase, 'sb=', !!window.sb, 'ccAuth=', !!window.ccAuth);
     })();
     </script>
 </body>
