@@ -12,7 +12,11 @@
       try {
         window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
-            redirectTo: 'https://chineseclassics.github.io'
+            redirectTo: 'https://chineseclassics.github.io',
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: false,
+            flowType: 'pkce'
           }
         });
       } catch (e) {
@@ -224,7 +228,17 @@
   // 綁定 onAuthStateChange（若尚未就緒則等到就緒後再綁定）
   function bindAuthStateListenerWhenReady() {
     if (sb && sb.auth) {
-      sb.auth.onAuthStateChange(function () { refreshAuth(); });
+      sb.auth.onAuthStateChange(function (_event, session) {
+        // 在嵌入/跨域情況下，確保本地持久化 session
+        try {
+          if (session && session.access_token) {
+            // 觸發一次刷新，更新狀態列
+            refreshAuth();
+          } else {
+            refreshAuth();
+          }
+        } catch (_) { refreshAuth(); }
+      });
       return true;
     }
     return false;
