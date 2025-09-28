@@ -10,17 +10,18 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
     <script src="assets/js/cc-auth.js?v=20250927b"></script>
     <script>
-        // 調試：檢查登入按鈕是否正確創建
+        // 調試：檢查任一狀態列是否存在（全域或本頁強插）
         window.addEventListener('load', function() {
             setTimeout(function() {
-                const authBar = document.getElementById('cc-auth-bar');
-                if (!authBar) {
-                    console.error('登入狀態欄未創建！');
+                const globalBar = document.getElementById('cc-auth-bar');
+                const pageBar = document.getElementById('page-auth-bar');
+                if (globalBar || pageBar) {
+                    console.log('登入狀態列存在：', globalBar || pageBar);
+                } else {
+                    console.log('狀態列尚未渲染（將由頁面腳本/cc-auth.js 續作）');
                     console.log('Supabase 可用:', !!window.supabase);
                     console.log('ccAuth 可用:', !!window.ccAuth);
                     console.log('sb 客戶端可用:', !!window.sb);
-                } else {
-                    console.log('登入狀態欄已創建:', authBar);
                 }
             }, 1000);
         });
