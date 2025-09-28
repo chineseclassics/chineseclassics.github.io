@@ -3612,6 +3612,8 @@
             showNotification('已切換到單人模式');
             startNewRound();
         }
+
+        function setupBattlePreviewListeners() {
             if (battlePreviewClose) {
                 battlePreviewClose.addEventListener('click', closeBattlePreviewModal);
             }
@@ -3691,10 +3693,12 @@
             document.addEventListener('DOMContentLoaded', () => {
                 initGame();
                 setupSettingsEventListeners();
+                setupBattlePreviewListeners();
             });
         } else {
             initGame();
             setupSettingsEventListeners();
+            setupBattlePreviewListeners();
         }
 
         // ============================
