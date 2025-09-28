@@ -4030,7 +4030,7 @@
             if (state.dbChannel) { try { state.dbChannel.unsubscribe(); } catch(_){} }
             const ch = sb.channel('db:'+room_id)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_events', filter: `room_id=eq.${room_id}` }, (c)=>{
-                    handleIncomingMove({ type: c.new.event_type, payload: c.new.payload, fromDb: true });
+                    handleIncomingMove({ type: c.new.event_type, payload: c.new.payload, fromDb: true, from: c.new.user_id, ts: Date.now() });
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${room_id}` }, (c)=>{
                     handleRoomUpdate(c.new);
@@ -4121,13 +4121,12 @@
                 const players = (conf.players || []).filter(Boolean);
                 const names = players.map(p => (typeof p === 'string' ? p : ((p && p.name) || '玩家')));
                 const ids = players.map(p => (typeof p === 'string' ? null : ((p && p.id) || null)));
-                bm.players = names.map(name => ({ name, score: 0, displayedScore: 0, isActive: false }));
+                bm.players = names.map((name, i) => ({ name: name || '玩家', score: 0, displayedScore: 0, isActive: i === 0 }));
                 state.rosterUserIds = ids;
                 bm.currentPlayerIndex = 0;
                 bm.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(conf.roundsPerPlayer || '5')));
                 bm.currentRound = 0;
                 bm.totalRounds = bm.players.length * bm.roundsPerPlayer;
-                if (bm.players[0]) bm.players[0].isActive = true;
                 if (typeof window.updateBattleScoreboard === 'function') window.updateBattleScoreboard();
                 const board = document.getElementById('battleScoreboard');
                 if (board) board.classList.remove('hidden');
@@ -4303,6 +4302,13 @@
                         console.warn('[remote] startBattleRound skipped: no players');
                         return;
                     }
+                    // 容錯：若 currentPlayerIndex 超界，重設為 0
+                    if (typeof window.battleMode.currentPlayerIndex !== 'number' || window.battleMode.currentPlayerIndex < 0 || window.battleMode.currentPlayerIndex >= window.battleMode.players.length) {
+                        window.battleMode.currentPlayerIndex = 0;
+                    }
+                    // 容錯：缺少姓名時給預設名
+                    const p = window.battleMode.players[window.battleMode.currentPlayerIndex];
+                    if (p && !p.name) p.name = '玩家';
                     const r = _origStart.apply(this, arguments);
                     if (window.RemoteBattle?.isHost()) {
                         const idx = (window.battleMode && window.battleMode.currentPlayerIndex) || 0;
