@@ -959,8 +959,8 @@
                 var sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
                 if (!sb || !sb.auth || !sb.auth.exchangeCodeForSession) return false;
                 console.log('[page-auth] Detected code. Exchanging...');
-                await sb.auth.exchangeCodeForSession({ code: code });
-                console.log('[page-auth] exchangeCodeForSession OK');
+                var ex = await sb.auth.exchangeCodeForSession({ code: code });
+                console.log('[page-auth] exchangeCodeForSession result =', ex);
                 try {
                     url.searchParams.delete('code');
                     url.searchParams.delete('state');
@@ -971,7 +971,7 @@
                     window.history.replaceState({}, document.title, url.toString());
                 } catch(_) {}
                 return true;
-            } catch(_) { return false; }
+            } catch(e) { console.warn('[page-auth] exchange failed:', e && e.message || e); return false; }
         }
 
         async function checkAndGuardLogin(){
