@@ -3932,9 +3932,11 @@
 
         // 確保匿名登入
         async function ensureAnonLogin(){
+            if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
             const sess = await sb.auth.getSession();
             if (!sess.data.session) await sb.auth.signInAnonymously();
             state.user = (await sb.auth.getUser()).data.user;
+            console.log('[remote] auth user', state.user && state.user.id);
         }
 
         function genRoomCode(){
@@ -3945,13 +3947,19 @@
 
         async function createRoom(name, nickname){
             await ensureAnonLogin();
-            const code = genRoomCode();
-            const { data: room, error: er1 } = await sb
-                .from('rooms')
-                .insert({ code, host_id: state.user.id, name })
-                .select()
-                .single();
-            if (er1) throw er1;
+            let room = null; let lastErr = null;
+            for (let i=0;i<5;i++) {
+                const code = genRoomCode();
+                const { data, error } = await sb
+                    .from('rooms')
+                    .insert({ code, host_id: state.user.id, name })
+                    .select()
+                    .single();
+                if (!error && data) { room = data; break; }
+                lastErr = error;
+                if (!(error && String(error.code) === '23505')) break; // 唯一鍵衝突才重試
+            }
+            if (!room) throw lastErr || new Error('建立房間失敗');
 
             const { error: er2 } = await sb
                 .from('room_players')
@@ -4118,24 +4126,34 @@
 
         createBtn?.addEventListener('click', async () => {
             try {
+                console.log('[remote] create clicked');
+                if (!sb) { alert('Supabase 未就緒'); return; }
                 const nickname = (nicknameInput?.value || '').trim() || '玩家';
                 const name = (roomNameInput?.value || '').trim() || '';
+                if (createBtn) { createBtn.disabled = true; createBtn.textContent = '建立中…'; }
                 const room = await createRoom(name, nickname);
+                console.log('[remote] room created', room && room.code);
                 if (codeDisplay) codeDisplay.textContent = room.code;
                 createdInfo?.classList.remove('hidden');
+                if (createBtn) { createBtn.textContent = '已建立'; setTimeout(()=>{ createBtn.disabled = false; createBtn.textContent = '建立房間'; }, 1200); }
             } catch (e) {
+                console.warn('[remote] create error', e);
+                if (createBtn) { createBtn.disabled = false; createBtn.textContent = '建立房間'; }
                 alert('建立失敗：' + (e?.message || e));
             }
         });
 
         joinBtn?.addEventListener('click', async () => {
             try {
+                console.log('[remote] join clicked');
                 const nickname = (nicknameInput?.value || '').trim() || '玩家';
                 const code = (joinCodeInput?.value || '').trim();
                 const room = await joinRoomByCode(code, nickname);
+                console.log('[remote] joined room', room && room.code);
                 if (codeDisplay) codeDisplay.textContent = room.code;
                 createdInfo?.classList.remove('hidden');
             } catch (e) {
+                console.warn('[remote] join error', e);
                 alert('加入失敗：' + (e?.message || e));
             }
         });
