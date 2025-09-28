@@ -942,8 +942,24 @@
             try {
                 if (!window.ccAuth || !window.ccAuth.getUser) { showLoginModal(); return; }
                 const user = await window.ccAuth.getUser();
-                if (user) { hideLoginModal(); }
-                else { showLoginModal(); }
+                if (user) {
+                    hideLoginModal();
+                    // 保障：若已登入但狀態列尚未渲染，延遲重試後仍無則顯示模態，供用戶重新登入同步狀態
+                    setTimeout(function(){
+                        var bar = document.getElementById('cc-auth-bar');
+                        if (!bar) {
+                            // 再等一個短延遲
+                            setTimeout(function(){
+                                var bar2 = document.getElementById('cc-auth-bar');
+                                if (!bar2) {
+                                    showLoginModal();
+                                }
+                            }, 600);
+                        }
+                    }, 400);
+                } else {
+                    showLoginModal();
+                }
             } catch(_) { showLoginModal(); }
         }
 
