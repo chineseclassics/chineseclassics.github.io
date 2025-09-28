@@ -6,24 +6,63 @@
     <title>南風詩詞組句</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Supabase UMD 與全域登入狀態列 -->
+    <!-- Supabase UMD 與本頁專用登入模組（不自動插入 DOM） -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js?v=20250927b"></script>
+    <script src="assets/js/app-auth.js?v=20250928"></script>
     <script>
-        // 調試：檢查登入按鈕是否正確創建
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                const authBar = document.getElementById('cc-auth-bar');
-                if (!authBar) {
-                    console.error('登入狀態欄未創建！');
-                    console.log('Supabase 可用:', !!window.supabase);
-                    console.log('ccAuth 可用:', !!window.ccAuth);
-                    console.log('sb 客戶端可用:', !!window.sb);
-                } else {
-                    console.log('登入狀態欄已創建:', authBar);
+        // 本頁登入 UI 掛載（固定右上角，僅本 app 顯示）
+        (function(){
+            function style(btn){
+                btn.style.padding='6px 10px';
+                btn.style.borderRadius='10px';
+                btn.style.border='1px solid rgba(0,0,0,0.08)';
+                btn.style.fontSize='12px';
+                btn.style.cursor='pointer';
+            }
+            function render(user){
+                var m = document.getElementById('authMount');
+                if (!m){
+                    m = document.createElement('div');
+                    m.id='authMount';
+                    m.style.position='fixed';
+                    m.style.top='8px';
+                    m.style.right='8px';
+                    m.style.zIndex='2147483647';
+                    m.style.display='flex';
+                    m.style.alignItems='center';
+                    m.style.gap='8px';
+                    m.style.padding='6px 8px';
+                    m.style.borderRadius='12px';
+                    m.style.border='1px solid rgba(0,0,0,0.08)';
+                    m.style.background='rgba(255,255,255,0.75)';
+                    m.style.backdropFilter='blur(10px)';
+                    m.style.webkitBackdropFilter='blur(10px)';
+                    document.body.appendChild(m);
                 }
-            }, 1000);
-        });
+                m.innerHTML='';
+                if (user){
+                    var avatar = (user.user_metadata && (user.user_metadata.avatar_url || user.user_metadata.picture)) || '';
+                    if (avatar){
+                        var img=document.createElement('img');
+                        img.src=avatar; img.alt='avatar'; img.style.width='20px'; img.style.height='20px'; img.style.borderRadius='50%'; img.style.objectFit='cover'; img.style.border='1px solid rgba(0,0,0,0.08)';
+                        m.appendChild(img);
+                    }
+                    var span=document.createElement('span');
+                    span.textContent=(user.user_metadata && user.user_metadata.name) || user.email || '已登入';
+                    span.style.fontSize='12px'; span.style.color='#0f172a';
+                    m.appendChild(span);
+                    var out=document.createElement('button'); out.textContent='登出'; style(out); out.style.background='rgba(255,255,255,0.9)'; out.style.color='#0f172a';
+                    out.onclick=function(){ appAuth.logout().catch(function(e){ alert(String((e&&e.message)||e)); }); };
+                    m.appendChild(out);
+                } else {
+                    var span=document.createElement('span'); span.textContent='未登入'; span.style.fontSize='12px'; span.style.color='#0f172a'; m.appendChild(span);
+                    var btn=document.createElement('button'); btn.textContent='用 Google 登入'; style(btn); btn.style.background='linear-gradient(135deg,#0ea5e9,#38bdf8)'; btn.style.color='#fff';
+                    btn.onclick=function(){ appAuth.loginGoogle({ ux:'tab', redirectTo: location.href }).catch(function(e){ alert(String((e&&e.message)||e)); }); };
+                    m.appendChild(btn);
+                }
+            }
+            document.addEventListener('DOMContentLoaded', function(){ appAuth.initAuth({ onChange: render }); });
+        })();
     </script>
     <script>
         tailwind.config = {
