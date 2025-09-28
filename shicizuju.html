@@ -980,6 +980,7 @@
                     url.searchParams.delete('prompt');
                     window.history.replaceState({}, document.title, url.toString());
                 } catch(_) {}
+                try { await refresh(); } catch(_) {}
                 return true;
             } catch(e) { console.warn('[page-auth] exchange failed:', e && e.message || e); return false; }
         }
