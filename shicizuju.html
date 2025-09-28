@@ -3907,6 +3907,13 @@
                         <button id="rbStartBtn" class="w-full mt-2 py-2 rounded-lg bg-primary-500 text-white interactive">開始對戰（僅房主）</button>
                         <div class="text-xs text-slate-500">開始後，記分牌將自動採用已加入玩家暱稱並按加入順序輪流作答。</div>
                     </div>
+
+                    <div class="mt-4 space-y-2 border-t pt-3">
+                        <div class="text-sm text-slate-600">限時競賽（分鐘，1-10）</div>
+                        <input id="rbTimedMinutes" type="number" min="1" max="10" value="3" class="w-24 border rounded-lg px-3 py-2">
+                        <button id="rbStartTimedBtn" class="w-full mt-2 py-2 rounded-lg bg-rose-500 text-white interactive">開始限時競賽（僅房主）</button>
+                        <div class="text-xs text-slate-500">限時內所有選手可同時作答，分數即時同步，時間到自動結算。</div>
+                    </div>
                 </div>
 
                 <div class="space-y-3">
@@ -4117,6 +4124,17 @@
                     case 'battle_end':
                         if (typeof window.endBattleMode === 'function') window.endBattleMode();
                         break;
+                    case 'timed_start':
+                        // 接收限時開始：同步狀態
+                        state.timedMode = true;
+                        state.timedEndsAt = msg.payload?.endsAt || (Date.now() + (msg.payload?.mins || 3) * 60000);
+                        beginTimedTicker();
+                        break;
+                    case 'timed_end':
+                        state.timedMode = false;
+                        try { clearInterval(state.timedTimer); } catch(_){}
+                        if (typeof showBattleResultModal === 'function') showBattleResultModal();
+                        break;
                     default:
                         console.log('[remote] unhandled move', msg);
                 }
@@ -4201,6 +4219,8 @@
         const joinBtn = $('rbJoinBtn');
         const roundsInput = $('rbRoundsPerPlayer');
         const startBtn = $('rbStartBtn');
+        const timedMinInput = $('rbTimedMinutes');
+        const startTimedBtn = $('rbStartTimedBtn');
 
         function openModal(){ modal?.classList.remove('hidden'); }
         function closeModal(){ modal?.classList.add('hidden'); }
@@ -4296,7 +4316,8 @@
         const submitBtnEl = document.getElementById('submitPoem');
         if (submitBtnEl) {
             submitBtnEl.addEventListener('click', function(e){
-                if (!isMyTurn()) {
+                // 在限時模式下，所有人可答題；輪流模式才限制
+                if (!state.timedMode && !isMyTurn()) {
                     e.stopImmediatePropagation();
                     e.preventDefault();
                     try { window.showNotification && window.showNotification('尚未輪到你作答'); } catch(_){}
@@ -4352,14 +4373,63 @@
                     const r = _origEnd.apply(this, arguments);
                     if (window.RemoteBattle?.isHost()) {
                         window.RemoteBattle.sendGameEvent('round_end', { isCorrect: !!isCorrect });
-                        // 自動進下一輪
-                        setTimeout(() => {
-                            if (typeof window.startBattleRound === 'function') window.startBattleRound();
-                        }, 600);
+                        // 限時模式不輪換；輪流模式自動下一輪
+                        if (!state.timedMode) {
+                            setTimeout(() => {
+                                if (typeof window.startBattleRound === 'function') window.startBattleRound();
+                            }, 600);
+                        }
                     }
                     return r;
                 };
             }
+
+        // ===== 限時競賽：開始、計時與結算 =====
+        state.timedMode = false;
+        state.timedEndsAt = 0;
+        state.timedTimer = null;
+
+        startTimedBtn?.addEventListener('click', async () => {
+            try {
+                if (!window.RemoteBattle?.isHost()) { alert('僅房主可開始'); return; }
+                await refreshRoster();
+                const roster = state.roster || [];
+                if (roster.length === 0) { alert('尚無玩家加入'); return; }
+                const mins = Math.max(1, Math.min(10, parseInt((timedMinInput?.value || '3'), 10)));
+                const endsAt = Date.now() + mins * 60 * 1000;
+                // 建立對戰板（玩家名單），但不開啟輪流限制
+                const conf = { players: roster.map(p => ({ id: p.user_id, name: p.nickname || '玩家' })), roundsPerPlayer: 1 };
+                applyBattleConfig(conf);
+                state.timedMode = true;
+                state.timedEndsAt = endsAt;
+                window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins });
+                beginTimedTicker();
+            } catch (e) {
+                alert('無法開始限時競賽：' + (e?.message || e));
+            }
+        });
+
+        function beginTimedTicker(){
+            try { clearInterval(state.timedTimer); } catch(_){}
+            updateTimedUI();
+            state.timedTimer = setInterval(() => {
+                updateTimedUI();
+                if (!state.timedMode) { clearInterval(state.timedTimer); return; }
+                if (Date.now() >= state.timedEndsAt) {
+                    clearInterval(state.timedTimer);
+                    state.timedMode = false;
+                    window.RemoteBattle.sendGameEvent('timed_end', {});
+                    showBattleResultModal && showBattleResultModal();
+                }
+            }, 1000);
+        }
+
+        function updateTimedUI(){
+            const remainMs = Math.max(0, state.timedEndsAt - Date.now());
+            const remainSec = Math.ceil(remainMs / 1000);
+            const timer = document.getElementById('timer');
+            if (timer && state.timedMode) timer.textContent = String(remainSec);
+        }
             if (typeof window.endBattleMode === 'function') {
                 const _origEndMode = window.endBattleMode;
                 window.endBattleMode = function(){
