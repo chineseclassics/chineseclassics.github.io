@@ -206,6 +206,13 @@
       console.log('[cc-auth] Detected code param. Exchanging session...');
       var ex = await sb.auth.exchangeCodeForSession({ code: code });
       console.log('[cc-auth] exchangeCodeForSession result =', ex);
+      try {
+        var uFromEx = (ex && ex.data && (ex.data.user || (ex.data.session && ex.data.session.user))) || null;
+        if (uFromEx) {
+          authState.user = uFromEx;
+          renderAuthBar();
+        }
+      } catch(_) {}
       // 清理 URL 上的 code/state 參數
       try {
         url.searchParams.delete('code');

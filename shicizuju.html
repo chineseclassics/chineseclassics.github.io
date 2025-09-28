@@ -962,6 +962,16 @@
                 var ex = await sb.auth.exchangeCodeForSession({ code: code });
                 console.log('[page-auth] exchangeCodeForSession result =', ex);
                 try {
+                    var u = (ex && ex.data && (ex.data.user || (ex.data.session && ex.data.session.user))) || null;
+                    if (u) {
+                        // 立即刷新頁面狀態列
+                        var pageBar = document.getElementById('page-auth-bar');
+                        if (pageBar) {
+                            pageBar.innerHTML = '';
+                        }
+                    }
+                } catch(_) {}
+                try {
                     url.searchParams.delete('code');
                     url.searchParams.delete('state');
                     url.searchParams.delete('provider');
