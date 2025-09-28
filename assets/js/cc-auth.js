@@ -61,7 +61,7 @@
       el.style.position = 'fixed';
       el.style.top = '8px';
       el.style.right = '8px';
-      el.style.zIndex = '9999';
+      el.style.zIndex = '2147483647';
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.gap = '8px';

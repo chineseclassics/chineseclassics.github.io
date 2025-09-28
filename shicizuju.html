@@ -26,60 +26,6 @@
         });
     </script>
     <script>
-        // 保底：1.5 秒後仍無登入列時，建立簡易登入列
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                if (document.getElementById('cc-auth-bar')) return;
-                try {
-                    var el = document.createElement('div');
-                    el.id = 'cc-auth-bar';
-                    el.style.position = 'fixed';
-                    el.style.top = '8px';
-                    el.style.right = '8px';
-                    el.style.zIndex = '2147483647';
-                    el.style.display = 'flex';
-                    el.style.alignItems = 'center';
-                    el.style.gap = '8px';
-                    el.style.padding = '6px 8px';
-                    el.style.borderRadius = '12px';
-                    el.style.border = '1px solid rgba(0,0,0,0.08)';
-                    el.style.background = 'rgba(255,255,255,0.85)';
-                    el.style.backdropFilter = 'blur(10px)';
-                    el.style.webkitBackdropFilter = 'blur(10px)';
-                    var label = document.createElement('span');
-                    label.textContent = '未登入';
-                    label.style.fontSize = '12px';
-                    label.style.color = '#0f172a';
-                    var btn = document.createElement('button');
-                    btn.textContent = '用 Google 登入';
-                    btn.style.padding = '6px 10px';
-                    btn.style.borderRadius = '10px';
-                    btn.style.border = '1px solid rgba(0,0,0,0.08)';
-                    btn.style.background = 'linear-gradient(135deg, #0ea5e9, #38bdf8)';
-                    btn.style.color = '#fff';
-                    btn.style.fontSize = '12px';
-                    btn.style.cursor = 'pointer';
-                    btn.onclick = async function() {
-                        try {
-                            if (window.ccAuth && window.ccAuth.loginGoogle) {
-                                await window.ccAuth.loginGoogle();
-                            } else {
-                                alert('登入模組尚未載入，請稍候再試或刷新頁面');
-                            }
-                        } catch (e) {
-                            alert(String((e && e.message) || e));
-                        }
-                    };
-                    el.appendChild(label);
-                    el.appendChild(btn);
-                    document.body.appendChild(el);
-                } catch (e) {
-                    console.warn('建立保底登入列失敗：', e);
-                }
-            }, 1500);
-        });
-    </script>
-    <script>
         tailwind.config = {
             theme: {
                 extend: {
