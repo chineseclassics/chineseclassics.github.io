@@ -61,7 +61,11 @@
                     m.appendChild(btn);
                 }
             }
-            document.addEventListener('DOMContentLoaded', function(){ appAuth.initAuth({ onChange: render }); });
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function(){ appAuth.initAuth({ onChange: render }); });
+            } else {
+                try { appAuth.initAuth({ onChange: render }); } catch(_) {}
+            }
         })();
     </script>
     <script>
