@@ -595,7 +595,6 @@
                 opacity: 1;
             }
         }
-
         @keyframes bounceGentle {
             0%, 100% { 
                 transform: translateY(0); 
@@ -796,7 +795,6 @@
             border-radius: 999px;
             padding: 6px 10px;
         }
-
         /* AI 載入動畫 */
         @keyframes aiSpin { to { transform: rotate(360deg); } }
         .ai-loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 18px 0; }
@@ -1186,7 +1184,6 @@
                 </div>
             </div>
         </div>
-
         <!-- AI 解讀模態彈窗 -->
         <div id="aiExplainModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
             <div class="glass-modal rounded-3xl shadow-2xl w-[min(680px,92vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
@@ -1381,9 +1378,6 @@
         function persistSettings(settings) {
             localStorage.setItem(LS_KEYS.settings, JSON.stringify(settings));
         }
-
-        
-
         // 用戶庫（統一的 poems 陣列）與標籤
         function loadUserLibrary() {
             const raw = localStorage.getItem(LS_KEYS.userLibrary);
@@ -1542,7 +1536,6 @@
                     // 解鎖失敗不拋錯，後續可重試
                 }
             }
-            
             createSounds() {
                 // 漢字點擊音效 (古箏音色)
                 this.sounds.charClick = {
@@ -1738,7 +1731,6 @@
             { line: "疑是地上霜", author: "李白", poem: "静夜思" },
             { line: "舉頭望明月", author: "李白", poem: "静夜思" },
             { line: "低頭思故鄉", author: "李白", poem: "静夜思" },
-            
             { line: "李白乘舟將欲行", author: "李白", poem: "赠汪伦" },
             { line: "忽聞岸上踏歌聲", author: "李白", poem: "赠汪伦" },
             { line: "桃花潭水深千尺", author: "李白", poem: "赠汪伦" },
@@ -1938,11 +1930,6 @@
             // 李白《獨坐敬亭山》
             { line: "相看兩不厭", author: "李白", poem: "獨坐敬亭山" },
             { line: "只有敬亭山", author: "李白", poem: "獨坐敬亭山" },
-            
-            // 李白《黃鶴樓送孟浩然之廣陵》
-            { line: "孤帆遠影碧空盡", author: "李白", poem: "黃鶴樓送孟浩然之廣陵" },
-            { line: "唯見長江天際流", author: "李白", poem: "黃鶴樓送孟浩然之廣陵" },
-            
             // 李白《望天門山》
             { line: "兩岸青山相對出", author: "李白", poem: "望天門山" },
             { line: "孤帆一片日邊來", author: "李白", poem: "望天門山" },
@@ -2138,7 +2125,6 @@
             { line: "驀然回首", author: "辛棄疾", poem: "青玉案·元夕" },
             { line: "那人卻在", author: "辛棄疾", poem: "青玉案·元夕" },
             { line: "燈火闌珊處", author: "辛棄疾", poem: "青玉案·元夕" },
-            
             // 文天祥《過零丁洋》
             { line: "人生自古誰無死", author: "文天祥", poem: "過零丁洋" },
             { line: "留取丹心照汗青", author: "文天祥", poem: "過零丁洋" },
@@ -2317,7 +2303,6 @@
                 }, 250);
             }
         });
-
         // 计算并设置错误图标位置
         const positionErrorIcon = () => {
             if (!poemDisplay.value || poemDisplay.value === '時間到') return;
@@ -2516,7 +2501,6 @@
                 generateAiExplanation(e.currentTarget);
             });
         }
-
         // 隐藏结果浮窗
         const hideResultModal = () => {
             const modalContent = gameMessage.querySelector('div');
@@ -2716,7 +2700,6 @@
                 if (timeBarFill) timeBarFill.style.width = '100%';
             }
         };
-        
         // Select a poem based on current game mode
         const selectPoem = () => {
             const tagSel = document.getElementById('userLibraryTagSelect');
@@ -2897,7 +2880,6 @@
         const verifyPoem = () => {
             return poemDisplay.value === currentPoem.line;
         };
-
         // 更新已選字狀態與提交可用性
         const updateSelectionStatus = () => {
             const selected = poemDisplay.value.length;
@@ -3082,183 +3064,34 @@
             try { restoreFromLocalStorage(); } catch (e) { console.warn('restoreFromLocalStorage failed', e); }
             startNewRound();
         };
+        function setupSettingsEventListeners() {
+            if (window.__shiciSettingsBound) return;
+            window.__shiciSettingsBound = true;
 
-        // 設置模態彈窗相關函數
-        let gameWasPaused = false;
-        let timerWasActive = false;
-        
-        function openSettingsModal() {
-            // 暫停遊戲
-            gameWasPaused = isGameActive;
-            timerWasActive = !!timerInterval;
-            
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            isGameActive = false;
-            
-            // 顯示模態彈窗
-            settingsModal.classList.remove('hidden');
-            
-            // 同步當前設置到模態彈窗
-            syncSettingsToModal();
-        }
-        
-        function closeSettingsModalFunc() {
-            settingsModal.classList.add('hidden');
-            
-            // 如果遊戲之前是活躍的，恢復遊戲狀態
-            if (gameWasPaused && timerWasActive) {
-                isGameActive = true;
-                startTimer();
-            }
-        }
-        function syncSettingsToModal() {
-            // 同步遊戲模式（僅處理單人/對戰）
-            const currentMode = battleMode.isActive ? 'battle' : 'single';
-            const modeRadio = document.querySelector(`input[name="gameMode"][value="${currentMode}"]`);
-            if (modeRadio) modeRadio.checked = true;
-
-            // 根據模式顯示/隱藏相關設置
-            updateModalSections();
-        }
-        
-        function updateModalSections() {
-            const selectedModeEl = document.querySelector('input[name="gameMode"]:checked');
-            const selectedMode = selectedModeEl ? selectedModeEl.value : 'single';
-
-            // 顯示/隱藏對戰模式設置（安全判斷節點存在）
-            if (battleModeSettings) {
-                if (selectedMode === 'battle') {
-                    battleModeSettings.classList.remove('hidden');
-                    // 生成選手名稱輸入框
-                    generatePlayerNameInputs();
-                } else {
-                    battleModeSettings.classList.add('hidden');
+            if (settingsModal) {
+                const openSettingsBtn = document.getElementById('openSettingsBtn');
+                if (openSettingsBtn) {
+                    openSettingsBtn.addEventListener('click', openSettingsModal);
                 }
-            }
-        }
-        
-        function openBattlePreviewModal(settings) {
-            if (!battlePreviewModal) return;
 
-            const playerCount = settings.battle?.playerCount || 0;
-            const roundsPerPlayer = settings.battle?.roundsPerPlayer || 0;
-            const players = settings.battle?.playerNames || [];
-            const totalRounds = playerCount * roundsPerPlayer;
-            const totalQuestions = totalRounds;
-
-            if (battlePreviewPlayerCount) battlePreviewPlayerCount.textContent = String(playerCount);
-            if (battlePreviewRounds) battlePreviewRounds.textContent = String(roundsPerPlayer);
-            if (battlePreviewTotalQuestions) battlePreviewTotalQuestions.textContent = String(totalQuestions);
-
-            const tl = typeof settings.timeLimit === 'number' ? settings.timeLimit : roundTimeLimit;
-            if (battlePreviewTimeLimit) battlePreviewTimeLimit.textContent = `${tl} 秒`;
-
-            const cc = typeof settings.charCount === 'number' ? settings.charCount : charCount;
-            if (battlePreviewCharCount) battlePreviewCharCount.textContent = `${cc} 字`;
-
-            if (battlePreviewPlayersList) {
-                battlePreviewPlayersList.innerHTML = '';
-                players.forEach((name, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'glass-card rounded-2xl p-3 border border-white/20 flex items-center gap-3 shadow-sm';
-                    card.innerHTML = `
-                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center text-primary-600 font-modern font-bold">${index + 1}</div>
-                        <div>
-                            <div class="text-base font-modern font-semibold text-surface-800">${name}</div>
-                            <div class="text-xs text-surface-500 font-modern">第 ${index + 1} 位上場</div>
-                        </div>
-                    `;
-                    battlePreviewPlayersList.appendChild(card);
-                });
-            }
-
-            const isSpeed = !!settings.battle?.speedMode;
-            if (battlePreviewSpeedRow) {
-                if (isSpeed) {
-                    battlePreviewSpeedRow.classList.remove('hidden');
-                    if (battlePreviewSpeedText) {
-                        battlePreviewSpeedText.textContent = '速度模式已開啟：越快完成答題，越可以獲得額外加分（最高可再加 50%）。';
-                    }
-                } else {
-                    battlePreviewSpeedRow.classList.add('hidden');
+                const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+                if (closeSettingsBtn) {
+                    closeSettingsBtn.addEventListener('click', closeSettingsModalFunc);
                 }
-            }
 
-            if (battlePreviewNote) {
-                const noteLines = [
-                    '將按照名單順序輪流答題，系統會自動記錄分數。',
-                    '若答錯或超時將不加分，請專心完成每題詩句組合。',
-                    isSpeed ? '速度加分會依照剩餘時間即時計算。' : '此場對戰以準確度為主，保持穩定節奏即可。'
-                ];
-                battlePreviewNote.innerHTML = noteLines.map(line => `<div class="flex items-start gap-2"><span class="text-primary-500">•</span><span>${line}</span></div>`).join('');
-            }
-
-            battlePreviewModal.classList.remove('hidden');
-        }
-
-        function closeBattlePreviewModal() {
-            if (!battlePreviewModal) return;
-            battlePreviewModal.classList.add('hidden');
-        }
-        function saveSettingsFromModal() {
-            const selectedMode = document.querySelector('input[name="gameMode"]:checked')?.value || 'single';
-            const selectedDB = 'tag';
-            
-            // 保存遊戲模式
-            if (selectedMode === 'battle') {
-                currentGameMode = 'battle';
-            } else {
-                currentGameMode = selectedDB === 'custom' ? 'custom' : 'preset';
-            }
-            
-            // 保存詩詞庫設置
-            if (selectedDB === 'default') {
-                activeDatabase = tangPoetryLines;
-            } else if (selectedDB === 'elementary') {
-                activeDatabase = elementaryPoemLines;
-            }
-            // 詩詞庫改為標籤模式，保存當前選中的標籤
-            const tagSel = document.getElementById('userLibraryTagSelect');
-            if (tagSel) saveActiveTag(tagSel.value || '');
-
-            // 保存設置到 localStorage
-            const settingsToSave = {
-                gameMode: selectedMode,
-                poemDatabase: selectedDB,
-                timeLimit: parseInt(timeLimitSlider?.value || '30'),
-                charCount: parseInt(charCountSlider?.value || '20'),
-                difficulty: difficultySelect?.value || 'medium',
-                soundOn: !!window.soundEnabled,
-                battle: {
-                    playerCount: parseInt(playerCountSelect?.value || '2'),
-                    roundsPerPlayer: Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput?.value || '5'))),
-                    speedMode: !!(speedModeCheckbox && speedModeCheckbox.checked),
-                    playerNames: Array.from({ length: parseInt(playerCountSelect?.value || '2') }, (_, i) => {
-                        const input = document.getElementById(`player${i + 1}Name`);
-                        return input ? input.value || `選手${i + 1}` : `選手${i + 1}`;
-                    })
+                const settingsOverlay = document.getElementById('settingsOverlay');
+                if (settingsOverlay) {
+                    settingsOverlay.addEventListener('click', (event) => {
+                        if (event.target === settingsOverlay) {
+                            closeSettingsModalFunc();
+                        }
+                    });
                 }
-            };
-            persistSettings(settingsToSave);
-            
-            // 對戰模式先顯示預覽模態；單人模式需安全退出對戰
-            if (selectedMode === 'battle') {
-                closeSettingsModalFunc();
-                openBattlePreviewModal(settingsToSave);
-            } else {
-                // 若正處於對戰模式，安全退出並切回單人模式
-                if (battleMode.isActive) {
-                    battleMode.isActive = false;
-                    battleMode.players = [];
-                    battleScoreboard && battleScoreboard.classList.add('hidden');
+
+                const saveSettingsBtn = document.getElementById('saveSettings');
+                if (saveSettingsBtn) {
+                    saveSettingsBtn.addEventListener('click', saveSettingsFromModal);
                 }
-                currentGameMode = 'preset';
-                closeSettingsModalFunc();
-                showNotification('已切換到單人模式');
-                // 立即開始單人新回合
-                startNewRound();
             }
         }
         function startTimer() {
@@ -3446,7 +3279,6 @@
                 scoreElement.textContent = `${battleMode.currentRound + 1} / ${battleMode.totalRounds}`;
             }
         }
-        
         function endBattleRound(isCorrect) {
             const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
             
@@ -3488,7 +3320,7 @@
             updateBattleScoreboard();
             
             // 開始下一輪 - 移除自动延迟，改为手动控制
-            // startBattleRound() 将由浮窗的"下一輪"按钮调用
+            // startBattleRound() 將由浮窗的"下一輪"按钮调用
         }
         
         function showBattleResultModal() {
@@ -3604,7 +3436,6 @@
                 });
             }
         }
-
         // ===== 初始化：從本地存儲恢復設置與自定義詩句 =====
         function restoreFromLocalStorage() {
             const sRaw = loadSettings();
@@ -3795,7 +3626,6 @@
                 if (!net.enabled) return;
                 applyRoundPayloadLocally(payload);
             }
-
             function applyRoundPayloadLocally(payload) {
                 currentPoem = payload.poem;
                 poemHint.textContent = `《${currentPoem.poem}》 - ${currentPoem.author}`;
