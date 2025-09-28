@@ -3942,6 +3942,11 @@
             pendingRoundStart: null
         };
 
+        function getBM(){
+            try { return (typeof battleMode !== 'undefined') ? battleMode : (window.battleMode || null); }
+            catch(_) { return window.battleMode || null; }
+        }
+
         // 確保匿名登入
         async function ensureAnonLogin(){
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
@@ -4128,8 +4133,11 @@
         function applyBattleConfig(conf){
             try {
                 if (!conf) return;
-                window.battleMode = window.battleMode || {};
-                const bm = window.battleMode;
+                let bm = getBM();
+                if (!bm) {
+                    window.battleMode = window.battleMode || {};
+                    bm = window.battleMode;
+                }
                 bm.isActive = true;
                 // 支援 {id, name}
                 const players = (conf.players || []).filter(Boolean);
@@ -4252,12 +4260,13 @@
                 // 更新 rooms 狀態
                 try { await sb.from('rooms').update({ status: 'playing' }).eq('id', state.room.id); } catch(_){ }
                 // 立即開始第一輪
-                const currentIdx = (window.battleMode && window.battleMode.currentPlayerIndex) || 0;
+                const bm = getBM();
+                const currentIdx = (bm && bm.currentPlayerIndex) || 0;
                 const currentUserId = (state.rosterUserIds && state.rosterUserIds[currentIdx]) || null;
                 state.turnUserId = currentUserId;
                 updateSubmitGate();
                 // 先本地啟動，後廣播（避免他端先收到 round_start 而你端未配置）
-                if ((window.battleMode && Array.isArray(window.battleMode.players) && window.battleMode.players.length > 0)
+                if ((bm && Array.isArray(bm.players) && bm.players.length > 0)
                     && typeof window.startBattleRound === 'function') window.startBattleRound();
                 window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
             } catch (e) {
@@ -4314,20 +4323,21 @@
                 const _origStart = window.startBattleRound;
                 window.startBattleRound = function(){
                     // 防護：無玩家則不啟動
-                    if (!window.battleMode || !Array.isArray(window.battleMode.players) || window.battleMode.players.length === 0) {
+                    const bm = getBM();
+                    if (!bm || !Array.isArray(bm.players) || bm.players.length === 0) {
                         console.warn('[remote] startBattleRound skipped: no players');
                         return;
                     }
                     // 容錯：若 currentPlayerIndex 超界，重設為 0
-                    if (typeof window.battleMode.currentPlayerIndex !== 'number' || window.battleMode.currentPlayerIndex < 0 || window.battleMode.currentPlayerIndex >= window.battleMode.players.length) {
-                        window.battleMode.currentPlayerIndex = 0;
+                    if (typeof bm.currentPlayerIndex !== 'number' || bm.currentPlayerIndex < 0 || bm.currentPlayerIndex >= bm.players.length) {
+                        bm.currentPlayerIndex = 0;
                     }
                     // 容錯：缺少姓名時給預設名
-                    const p = window.battleMode.players[window.battleMode.currentPlayerIndex];
+                    const p = bm.players[bm.currentPlayerIndex];
                     if (p && !p.name) p.name = '玩家';
                     const r = _origStart.apply(this, arguments);
                     if (window.RemoteBattle?.isHost()) {
-                        const idx = (window.battleMode && window.battleMode.currentPlayerIndex) || 0;
+                        const idx = (bm && bm.currentPlayerIndex) || 0;
                         const currentUserId = (state.rosterUserIds && state.rosterUserIds[idx]) || null;
                         state.turnUserId = currentUserId;
                         updateSubmitGate();
