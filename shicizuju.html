@@ -3938,7 +3938,8 @@
             roster: [],           // [{user_id, nickname, joined_at}]
             rosterUserIds: [],    // 與 battleMode.players 同順序的 user_id 列表
             turnUserId: null,
-            presenceMap: {}
+            presenceMap: {},
+            pendingRoundStart: null
         };
 
         // 確保匿名登入
@@ -4086,11 +4087,24 @@
                 switch (msg.type) {
                     case 'battle_config':
                         applyBattleConfig(msg.payload);
+                        // 若先前收到 round_start 但尚未配置，現在補觸發
+                        if (state.pendingRoundStart) {
+                            const pr = state.pendingRoundStart;
+                            state.pendingRoundStart = null;
+                            state.turnUserId = pr.currentUserId || null;
+                            updateSubmitGate();
+                            if (typeof window.startBattleRound === 'function') window.startBattleRound();
+                        }
                         break;
                     case 'round_start':
                         state.turnUserId = msg.payload?.currentUserId || null;
                         updateSubmitGate();
-                        if (typeof window.startBattleRound === 'function') window.startBattleRound();
+                        if (!window.battleMode || !Array.isArray(window.battleMode.players) || window.battleMode.players.length === 0) {
+                            // 尚未拿到配置，暫存，等 battle_config 到達後再啟動
+                            state.pendingRoundStart = { currentUserId: state.turnUserId };
+                        } else if (typeof window.startBattleRound === 'function') {
+                            window.startBattleRound();
+                        }
                         break;
                     case 'round_end':
                         if (typeof window.endBattleRound === 'function') window.endBattleRound(!!msg.payload?.isCorrect);
@@ -4232,6 +4246,7 @@
                     players: (roster || []).filter(Boolean).map(p => ({ id: p.user_id, name: (p && p.nickname) ? p.nickname : '玩家' })),
                     roundsPerPlayer: rpp
                 };
+                // 先發配置，再本地套用；網路上可能先到 round_start，故亦本地立即套用
                 window.RemoteBattle.sendGameEvent('battle_config', conf);
                 applyBattleConfig(conf);
                 // 更新 rooms 狀態
@@ -4241,9 +4256,10 @@
                 const currentUserId = (state.rosterUserIds && state.rosterUserIds[currentIdx]) || null;
                 state.turnUserId = currentUserId;
                 updateSubmitGate();
-                window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
+                // 先本地啟動，後廣播（避免他端先收到 round_start 而你端未配置）
                 if ((window.battleMode && Array.isArray(window.battleMode.players) && window.battleMode.players.length > 0)
                     && typeof window.startBattleRound === 'function') window.startBattleRound();
+                window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
             } catch (e) {
                 alert('無法開始對戰：' + (e?.message || e));
             }
