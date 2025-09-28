@@ -3900,6 +3900,13 @@
                         <div>房間代碼：<span id="rbRoomCodeDisplay" class="font-mono font-semibold"></span></div>
                         <div class="text-slate-600 mt-1">把代碼分享給朋友加入房間</div>
                     </div>
+
+                    <div class="mt-3 space-y-2">
+                        <div class="text-sm text-slate-600">每人回合數</div>
+                        <input id="rbRoundsPerPlayer" type="number" min="1" max="50" value="5" class="w-32 border rounded-lg px-3 py-2">
+                        <button id="rbStartBtn" class="w-full mt-2 py-2 rounded-lg bg-primary-500 text-white interactive">開始對戰（僅房主）</button>
+                        <div class="text-xs text-slate-500">開始後，記分牌將自動採用已加入玩家暱稱並按加入順序輪流作答。</div>
+                    </div>
                 </div>
 
                 <div class="space-y-3">
@@ -3927,7 +3934,10 @@
             user: null,
             room: null,
             channel: null,
-            dbChannel: null
+            dbChannel: null,
+            roster: [],           // [{user_id, nickname, joined_at}]
+            rosterUserIds: [],    // 與 battleMode.players 同順序的 user_id 列表
+            turnUserId: null
         };
 
         // 確保匿名登入
@@ -4011,6 +4021,7 @@
             });
 
             state.channel = channel;
+            await refreshRoster();
         }
 
         function subscribeDbChanges(room_id){
@@ -4022,8 +4033,34 @@
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${room_id}` }, (c)=>{
                     handleRoomUpdate(c.new);
                 })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'room_players', filter: `room_id=eq.${room_id}` }, async ()=>{
+                    await refreshRoster();
+                })
                 .subscribe();
             state.dbChannel = ch;
+        }
+
+        async function refreshRoster(){
+            if (!state.room) return;
+            const { data, error } = await sb
+                .from('room_players')
+                .select('user_id, nickname, joined_at')
+                .eq('room_id', state.room.id)
+                .order('joined_at', { ascending: true });
+            if (!error && Array.isArray(data)) {
+                state.roster = data;
+                // 更新在線清單的顯示（用 DB roster 補強 presence）
+                const list = document.getElementById('rbPresenceList');
+                if (list) {
+                    list.innerHTML = '';
+                    data.forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'px-3 py-2 rounded-lg border bg-white text-sm';
+                        div.textContent = p.nickname || '玩家';
+                        list.appendChild(div);
+                    });
+                }
+            }
         }
 
         async function sendGameEvent(type, payload){
@@ -4042,6 +4079,8 @@
                         applyBattleConfig(msg.payload);
                         break;
                     case 'round_start':
+                        state.turnUserId = msg.payload?.currentUserId || null;
+                        updateSubmitGate();
                         if (typeof window.startBattleRound === 'function') window.startBattleRound();
                         break;
                     case 'round_end':
@@ -4069,7 +4108,12 @@
                 window.battleMode = window.battleMode || {};
                 const bm = window.battleMode;
                 bm.isActive = true;
-                bm.players = (conf.players || []).map(name => ({ name, score: 0, displayedScore: 0, isActive: false }));
+                // 支援 {id, name}
+                const players = (conf.players || []);
+                const names = players.map(p => (typeof p === 'string' ? p : (p.name || '玩家')));
+                const ids = players.map(p => (typeof p === 'string' ? null : (p.id || null)));
+                bm.players = names.map(name => ({ name, score: 0, displayedScore: 0, isActive: false }));
+                state.rosterUserIds = ids;
                 bm.currentPlayerIndex = 0;
                 bm.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(conf.roundsPerPlayer || '5')));
                 bm.currentRound = 0;
@@ -4078,6 +4122,8 @@
                 if (typeof window.updateBattleScoreboard === 'function') window.updateBattleScoreboard();
                 const board = document.getElementById('battleScoreboard');
                 if (board) board.classList.remove('hidden');
+                state.turnUserId = state.rosterUserIds[0] || null;
+                updateSubmitGate();
             } catch (e) {
                 console.warn('[remote] applyBattleConfig error', e);
             }
@@ -4123,6 +4169,8 @@
         const codeDisplay = $('rbRoomCodeDisplay');
         const joinCodeInput = $('rbJoinCode');
         const joinBtn = $('rbJoinBtn');
+        const roundsInput = $('rbRoundsPerPlayer');
+        const startBtn = $('rbStartBtn');
 
         function openModal(){ modal?.classList.remove('hidden'); }
         function closeModal(){ modal?.classList.add('hidden'); }
@@ -4164,6 +4212,64 @@
             }
         });
 
+        // 開始對戰（僅房主）
+        startBtn?.addEventListener('click', async () => {
+            try {
+                if (!window.RemoteBattle?.isHost()) { alert('僅房主可開始'); return; }
+                await refreshRoster();
+                const roster = state.roster;
+                if (!roster || roster.length === 0) { alert('尚無玩家加入'); return; }
+                const rpp = Math.max(1, Math.min(50, parseInt((roundsInput?.value || '5'), 10)));
+                const conf = {
+                    players: roster.map(p => ({ id: p.user_id, name: p.nickname || '玩家' })),
+                    roundsPerPlayer: rpp
+                };
+                window.RemoteBattle.sendGameEvent('battle_config', conf);
+                applyBattleConfig(conf);
+                // 更新 rooms 狀態
+                try { await sb.from('rooms').update({ status: 'playing' }).eq('id', state.room.id); } catch(_){ }
+                // 立即開始第一輪
+                const currentIdx = (window.battleMode && window.battleMode.currentPlayerIndex) || 0;
+                const currentUserId = state.rosterUserIds[currentIdx] || null;
+                state.turnUserId = currentUserId;
+                updateSubmitGate();
+                window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
+                if (typeof window.startBattleRound === 'function') window.startBattleRound();
+            } catch (e) {
+                alert('無法開始對戰：' + (e?.message || e));
+            }
+        });
+
+        // 非輪到本人則禁用提交（攔截）
+        function isMyTurn(){
+            if (!window.RemoteBattle?.room) return true; // 非遠程模式，不限制
+            if (!state.turnUserId) return false;
+            return !!(state.user && state.user.id === state.turnUserId);
+        }
+        function updateSubmitGate(){
+            const btn = document.getElementById('submitPoem');
+            if (!btn) return;
+            if (isMyTurn()) {
+                btn.removeAttribute('data-remote-locked');
+                btn.style.opacity = '';
+                btn.style.pointerEvents = '';
+            } else {
+                btn.setAttribute('data-remote-locked', '1');
+                btn.style.opacity = '0.6';
+                btn.style.pointerEvents = 'auto';
+            }
+        }
+        const submitBtnEl = document.getElementById('submitPoem');
+        if (submitBtnEl) {
+            submitBtnEl.addEventListener('click', function(e){
+                if (!isMyTurn()) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    try { window.showNotification && window.showNotification('尚未輪到你作答'); } catch(_){}
+                }
+            }, true);
+        }
+
         // ===== 包裝現有遊戲函式：由房主廣播事件 =====
         try {
             if (typeof window.confirmStartBattleMode === 'function') {
@@ -4183,7 +4289,13 @@
                 const _origStart = window.startBattleRound;
                 window.startBattleRound = function(){
                     const r = _origStart.apply(this, arguments);
-                    if (window.RemoteBattle?.isHost()) window.RemoteBattle.sendGameEvent('round_start', {});
+                    if (window.RemoteBattle?.isHost()) {
+                        const idx = (window.battleMode && window.battleMode.currentPlayerIndex) || 0;
+                        const currentUserId = state.rosterUserIds[idx] || null;
+                        state.turnUserId = currentUserId;
+                        updateSubmitGate();
+                        window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
+                    }
                     return r;
                 };
             }
@@ -4191,7 +4303,13 @@
                 const _origEnd = window.endBattleRound;
                 window.endBattleRound = function(isCorrect){
                     const r = _origEnd.apply(this, arguments);
-                    if (window.RemoteBattle?.isHost()) window.RemoteBattle.sendGameEvent('round_end', { isCorrect: !!isCorrect });
+                    if (window.RemoteBattle?.isHost()) {
+                        window.RemoteBattle.sendGameEvent('round_end', { isCorrect: !!isCorrect });
+                        // 自動進下一輪
+                        setTimeout(() => {
+                            if (typeof window.startBattleRound === 'function') window.startBattleRound();
+                        }, 600);
+                    }
                     return r;
                 };
             }
