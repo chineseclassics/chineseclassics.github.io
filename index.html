@@ -10,20 +10,6 @@
     <meta name="keywords" content="中文經典,古典文學,詩詞,教育遊戲,數字學習,太虛幻境">
     <meta name="author" content="書院中文經典">
     
-    <!-- Content Security Policy for GitHub Pages -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.clarity.ms https://accounts.google.com https://apis.google.com;
-        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
-        img-src 'self' data: https: blob:;
-        font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
-        connect-src 'self' https://onregacmigwiyomhmjyt.supabase.co https://www.google-analytics.com https://www.clarity.ms https://accounts.google.com https://apis.google.com wss:;
-        frame-src 'self' https://accounts.google.com https://onregacmigwiyomhmjyt.supabase.co;
-        object-src 'none';
-        base-uri 'self';
-        form-action 'self' https://accounts.google.com;
-    ">
-    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://chineseclassics.github.io/">
@@ -101,7 +87,7 @@
         
         /* 应用视图显示时的body样式 - 完全交给iframe处理滚动 */
         body.app-view-active {
-            overflow: visible;
+            /* 完全移除overflow限制，让iframe应用自主处理滚动 */
         }
         
         /* 强制重置所有默认边距 */
@@ -374,7 +360,6 @@
         .switcher-app-name {
             display: -webkit-box;
             -webkit-line-clamp: 2;
-            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
