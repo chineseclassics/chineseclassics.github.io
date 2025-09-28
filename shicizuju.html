@@ -1002,11 +1002,11 @@
         // 首次載入：處理可能存在的 OAuth 回跳後再檢查
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function(){
-                // 優先嘗試本頁主動 exchange（避免時序問題）
-                tryExchangeIfNeeded().finally(checkAndGuardLogin);
+                // detectSessionInUrl 已開啟；這裡直接檢查狀態
+                checkAndGuardLogin();
             });
         } else {
-            tryExchangeIfNeeded().finally(checkAndGuardLogin);
+            checkAndGuardLogin();
         }
 
         // 回到頁面或切回焦點時再檢查一次（避免回跳後未更新視圖）
