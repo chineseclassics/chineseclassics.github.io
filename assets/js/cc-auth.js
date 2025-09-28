@@ -20,7 +20,7 @@
             redirectTo: defaultRedirectTo,
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true,
+            detectSessionInUrl: false,
             flowType: 'pkce'
           }
         });
@@ -188,18 +188,9 @@
     }
   }
 
-  // 解析回跳並交換 Session（當 detectSessionInUrl 為 false 時才需要）
+  // 解析回跳並交換 Session（手動交換）
   async function handleOauthRedirectIfNeeded() {
     try {
-      if (sb && sb.auth && sb.auth.getUser) {
-        try {
-          var udata = (await sb.auth.getUser()).data;
-          if (udata && udata.user) {
-            // 已有使用者，略過手動交換
-            return false;
-          }
-        } catch(_) {}
-      }
       var url = new URL(window.location.href);
       var code = url.searchParams.get('code');
       var error = url.searchParams.get('error');
@@ -292,8 +283,11 @@
       // 一旦可用，執行初始刷新並綁定狀態監聽
       if (sb && sb.auth) {
         clearInterval(timer);
-        // 交由 detectSessionInUrl 自動處理；這裡僅刷新
-        refreshAuth();
+        // 若為 OAuth 回跳，先交換 Session 再刷新
+        handleOauthRedirectIfNeeded().then(function(done){
+          console.log('[cc-auth] handleOauth done =', done);
+          refreshAuth();
+        });
         bindAuthStateListenerWhenReady();
         return;
       }
@@ -310,11 +304,11 @@
   // 初始刷新（與 DOMContentLoaded 兼容）
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function(){
-      // 交由 detectSessionInUrl 自動處理；這裡僅刷新
-      refreshAuth();
+      // 嘗試處理可能已存在的回跳參數
+      handleOauthRedirectIfNeeded().then(function(done){ console.log('[cc-auth] DOMContentLoaded handleOauth done=', done); }).finally(refreshAuth);
     });
   } else {
-    refreshAuth();
+    handleOauthRedirectIfNeeded().then(function(done){ console.log('[cc-auth] immediate handleOauth done=', done); }).finally(refreshAuth);
   }
 
   // 導出全域 API，提供給各遊戲頁使用
