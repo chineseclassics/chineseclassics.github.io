@@ -7,7 +7,56 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- 詩詞組句獨立登入系統 -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js" 
+            onerror="console.error('Supabase UMD 載入失敗，嘗試備用 CDN'); loadSupabaseBackup();"></script>
+    <script>
+        // 備用 CDN 載入邏輯
+        function loadSupabaseBackup() {
+            const backupUrls = [
+                'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js',
+                'https://cdn.skypack.dev/@supabase/supabase-js@2/dist/umd/supabase.js'
+            ];
+            
+            let currentIndex = 0;
+            
+            function tryNextUrl() {
+                if (currentIndex >= backupUrls.length) {
+                    console.error('所有 Supabase CDN 都載入失敗');
+                    alert('登入功能暫時不可用，請稍後再試或檢查網路連線');
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = backupUrls[currentIndex];
+                script.onload = () => {
+                    console.log('Supabase 備用 CDN 載入成功:', backupUrls[currentIndex]);
+                    initShiciAuth(); // 重新初始化
+                };
+                script.onerror = () => {
+                    console.warn('備用 CDN 失敗:', backupUrls[currentIndex]);
+                    currentIndex++;
+                    tryNextUrl();
+                };
+                document.head.appendChild(script);
+            }
+            
+            tryNextUrl();
+        }
+        
+        // 檢查 Supabase 是否載入成功
+        function checkSupabaseLoaded() {
+            if (window.supabase) {
+                console.log('Supabase UMD 載入成功');
+                initShiciAuth();
+            } else {
+                console.warn('Supabase UMD 載入失敗，嘗試備用方案');
+                loadSupabaseBackup();
+            }
+        }
+        
+        // 延遲檢查，給主 CDN 一些時間
+        setTimeout(checkSupabaseLoaded, 1000);
+    </script>
     <script>
         // 詩詞組句應用內登入系統
         class ShiciAuth {
@@ -223,15 +272,31 @@
 
         // 初始化登入系統
         let shiciAuth;
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
+        
+        function initShiciAuth() {
+            if (!window.supabase) {
+                console.error('Supabase 未載入，無法初始化登入系統');
+                return;
+            }
+            
+            try {
                 shiciAuth = new ShiciAuth();
                 window.shiciAuth = shiciAuth; // 全域訪問
-            });
-        } else {
-            shiciAuth = new ShiciAuth();
-            window.shiciAuth = shiciAuth;
+                console.log('ShiciAuth 初始化成功');
+            } catch (error) {
+                console.error('ShiciAuth 初始化失敗:', error);
+            }
         }
+        
+        // 如果 Supabase 已經載入，立即初始化
+        if (window.supabase) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initShiciAuth);
+            } else {
+                initShiciAuth();
+            }
+        }
+        // 否則等待備用載入邏輯調用 initShiciAuth()
     </script>
     <script>
         tailwind.config = {
