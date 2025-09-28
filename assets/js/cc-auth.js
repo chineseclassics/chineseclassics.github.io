@@ -196,7 +196,9 @@
       if (!code) return false;
       if (!sb || !sb.auth) return false;
       // 與 Supabase 交換並建立本地 session
+      console.log('[cc-auth] Detected code param. Exchanging session...');
       await sb.auth.exchangeCodeForSession({ code: code });
+      console.log('[cc-auth] exchangeCodeForSession OK');
       // 清理 URL 上的 code/state 參數
       try {
         url.searchParams.delete('code');
@@ -209,7 +211,7 @@
       } catch (_) {}
       return true;
     } catch (e) {
-      console.warn('[cc-auth] exchangeCodeForSession 失敗：', e && e.message || e);
+      console.warn('[cc-auth] exchangeCodeForSession 失敗：', (e && e.message) || e);
       return false;
     }
   }
@@ -300,7 +302,17 @@
   // 導出全域 API，提供給各遊戲頁使用
   window.ccAuth = window.ccAuth || {
     getClient: function () { return sb; },
-    getUser: async function () { return (await sb.auth.getUser()).data.user || null; },
+    getUser: async function () {
+      try {
+        if (!sb || !sb.auth || !sb.auth.getUser) return null;
+        var data = (await sb.auth.getUser()).data;
+        var user = data && data.user ? data.user : null;
+        return user;
+      } catch (e) {
+        console.warn('[cc-auth] getUser error:', (e && e.message) || e);
+        return null;
+      }
+    },
     loginGoogle: async function () {
       var redirectTo = location.href;
       var client = ensureSupabaseClient();

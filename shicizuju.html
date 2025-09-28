@@ -958,7 +958,9 @@
                 if (!code) return false;
                 var sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
                 if (!sb || !sb.auth || !sb.auth.exchangeCodeForSession) return false;
+                console.log('[page-auth] Detected code. Exchanging...');
                 await sb.auth.exchangeCodeForSession({ code: code });
+                console.log('[page-auth] exchangeCodeForSession OK');
                 try {
                     url.searchParams.delete('code');
                     url.searchParams.delete('state');
@@ -1126,11 +1128,11 @@
                 var user = null;
                 var sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
                 if (window.ccAuth && window.ccAuth.getUser) {
-                    try { user = await window.ccAuth.getUser(); } catch(_) { user = null; }
+                    try { user = await window.ccAuth.getUser(); console.log('[page-auth] getUser =', !!user); } catch(e) { console.warn('[page-auth] getUser error', e); user = null; }
                 }
                 if (!user && sb && sb.auth && sb.auth.getSession) {
                     try {
-                        var sessRes = await sb.auth.getSession();
+                        var sessRes = await sb.auth.getSession(); console.log('[page-auth] getSession =', !!(sessRes && sessRes.data && sessRes.data.session));
                         var sess = (sessRes && sessRes.data && sessRes.data.session) ? sessRes.data.session : null;
                         if (sess && sess.user) user = sess.user;
                     } catch(_) {}
