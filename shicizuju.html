@@ -3502,21 +3502,6 @@
             // 開始下一輪 - 移除自动延迟，改为手动控制
             // startBattleRound() 将由浮窗的"下一輪"按钮调用
         }
-        function endBattleMode() {
-            battleMode.isActive = false;
-            
-            // 隱藏積分板
-            battleScoreboard.classList.add('hidden');
-            
-            // 顯示對戰結果總結窗口
-            showBattleResultModal();
-
-            // 恢復單人模式左上角顯示為分數
-            if (scoreLabel && scoreElement) {
-                scoreLabel.textContent = '分數';
-                scoreElement.textContent = String(score);
-            }
-        }
         
         function showBattleResultModal() {
             // 1. 对选手按分数降序排序
