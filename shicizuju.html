@@ -932,6 +932,13 @@
         </div>
     </div>
 
+    <!-- 本頁專用：強制頂部狀態列（避免等待全域列渲染時序造成空窗） -->
+    <style>
+        /* 隱藏全域狀態列，避免與本頁重複 */
+        #cc-auth-bar { display: none !important; }
+    </style>
+    <div id="page-auth-bar" style="position: fixed; top: 8px; right: 8px; z-index: 2147483647; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);"></div>
+
     <script>
     (function(){
         function $(id){ return document.getElementById(id); }
@@ -994,6 +1001,122 @@
                 });
             }
         });
+    })();
+    </script>
+
+    <!-- 本頁專用：強制頂部狀態列邏輯（即時顯示頭像/登出或登入） -->
+    <script>
+    (function(){
+        function ensureBar(){
+            var el = document.getElementById('page-auth-bar');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'page-auth-bar';
+                el.style.position = 'fixed';
+                el.style.top = '8px';
+                el.style.right = '8px';
+                el.style.zIndex = '2147483647';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.gap = '8px';
+                el.style.padding = '6px 8px';
+                el.style.borderRadius = '12px';
+                el.style.border = '1px solid rgba(0,0,0,0.08)';
+                el.style.background = 'rgba(255,255,255,0.75)';
+                el.style.backdropFilter = 'blur(10px)';
+                el.style.webkitBackdropFilter = 'blur(10px)';
+                document.body.appendChild(el);
+            }
+            return el;
+        }
+
+        function styleBtn(btn){
+            btn.style.padding = '6px 10px';
+            btn.style.borderRadius = '10px';
+            btn.style.border = '1px solid rgba(0,0,0,0.08)';
+            btn.style.background = 'linear-gradient(135deg, #0ea5e9, #38bdf8)';
+            btn.style.color = '#fff';
+            btn.style.fontSize = '12px';
+            btn.style.cursor = 'pointer';
+        }
+        function styleGhost(btn){
+            btn.style.padding = '6px 10px';
+            btn.style.borderRadius = '10px';
+            btn.style.border = '1px solid rgba(0,0,0,0.08)';
+            btn.style.background = 'rgba(255,255,255,0.9)';
+            btn.style.color = '#0f172a';
+            btn.style.fontSize = '12px';
+            btn.style.cursor = 'pointer';
+        }
+
+        function render(user){
+            var bar = ensureBar();
+            bar.innerHTML = '';
+            var label = document.createElement('span');
+            label.style.fontSize = '12px';
+            label.style.color = '#0f172a';
+            if (user) {
+                var name = (user.user_metadata && (user.user_metadata.name || user.user_metadata.full_name)) || user.email || '已登入';
+                var avatar = (user.user_metadata && (user.user_metadata.avatar_url || user.user_metadata.picture)) || '';
+                label.textContent = name;
+                if (avatar) {
+                    var img = document.createElement('img');
+                    img.src = avatar;
+                    img.alt = 'avatar';
+                    img.style.width = '20px';
+                    img.style.height = '20px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    img.style.border = '1px solid rgba(0,0,0,0.08)';
+                    bar.appendChild(img);
+                }
+                bar.appendChild(label);
+                var btnOut = document.createElement('button');
+                btnOut.textContent = '登出';
+                styleGhost(btnOut);
+                btnOut.onclick = async function(){
+                    try {
+                        if (window.ccAuth && window.ccAuth.signOut) await window.ccAuth.signOut();
+                    } catch(_) {}
+                };
+                bar.appendChild(btnOut);
+            } else {
+                label.textContent = '未登入';
+                var btnLogin = document.createElement('button');
+                btnLogin.textContent = '用 Google 登入';
+                styleBtn(btnLogin);
+                btnLogin.onclick = async function(){
+                    try { if (window.ccAuth && window.ccAuth.loginGoogle) await window.ccAuth.loginGoogle(); }
+                    catch(e){ alert(String((e && e.message) || e)); }
+                };
+                bar.appendChild(label);
+                bar.appendChild(btnLogin);
+            }
+        }
+
+        async function refresh(){
+            try {
+                if (!window.ccAuth || !window.ccAuth.getUser) { render(null); return; }
+                var user = await window.ccAuth.getUser();
+                render(user);
+            } catch(_) { render(null); }
+        }
+
+        function bindWhenReady(){
+            var tries = 0, max = 40; // ~20s
+            var t = setInterval(function(){
+                var sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
+                if (sb && sb.auth) {
+                    clearInterval(t);
+                    try { sb.auth.onAuthStateChange(function(){ refresh(); }); } catch(_){ }
+                }
+                if (++tries >= max) clearInterval(t);
+            }, 500);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function(){ ensureBar(); refresh(); bindWhenReady(); });
+        } else { ensureBar(); refresh(); bindWhenReady(); }
     })();
     </script>
     <div class="max-w-5xl mx-auto" style="height: 100%; width: 100%; display: flex; flex-direction: column; padding: 6px; box-sizing: border-box; position: relative;">
