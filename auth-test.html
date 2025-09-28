@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google 登入測試 - 太虛幻境</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
+    <script src="assets/js/cc-auth.js?v=20250928"></script>
+    <style>
+        body { background: linear-gradient(135deg, #e0f2fe, #fde68a); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="w-full p-4 flex items-center justify-between">
+        <h1 class="text-xl font-bold text-slate-800">Google 登入測試</h1>
+        <div id="authMount" class="flex items-center"></div>
+    </header>
+
+    <main class="flex-1 p-4">
+        <div class="max-w-xl mx-auto bg-white/90 border border-slate-200 rounded-xl p-4 shadow">
+            <h2 class="font-semibold mb-2">使用者資訊（即時）</h2>
+            <pre id="userDump" class="text-xs p-2 bg-slate-100 rounded overflow-auto" style="max-height:260px"></pre>
+            <div class="mt-3 text-sm text-slate-600">若上方為 null，請點右上角「用 Google 登入」。授權後應回到本頁並顯示使用者資訊。</div>
+        </div>
+    </main>
+
+    <script>
+    (function(){
+        async function refreshDump(){
+            try {
+                var user = await (window.ccAuth && window.ccAuth.getUser ? window.ccAuth.getUser() : Promise.resolve(null));
+                document.getElementById('userDump').textContent = JSON.stringify(user, null, 2);
+            } catch (e) {
+                document.getElementById('userDump').textContent = String(e && e.message || e);
+            }
+        }
+        document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshDump(); });
+        window.addEventListener('focus', refreshDump);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', refreshDump);
+        } else {
+            refreshDump();
+        }
+    })();
+    </script>
+</body>
+</html>
+
+
