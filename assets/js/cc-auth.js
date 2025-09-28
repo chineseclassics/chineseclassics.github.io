@@ -10,9 +10,13 @@
     }
     if (!window.sb) {
       try {
+        var defaultRedirectTo = (function(){
+          try { return window.location.origin + window.location.pathname; }
+          catch(_) { return 'https://chineseclassics.github.io/shicizuju.html'; }
+        })();
         window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
-            redirectTo: 'https://chineseclassics.github.io',
+            redirectTo: defaultRedirectTo,
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: false,
