@@ -938,7 +938,13 @@
         /* 隱藏全域狀態列，避免與本頁重複 */
         #cc-auth-bar { display: none !important; }
     </style>
-    <div id="page-auth-bar" style="position: fixed; top: 8px; right: 8px; z-index: 2147483647; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);"></div>
+    <div id="page-auth-bar" style="position: fixed; top: 8px; right: 8px; z-index: 2147483647; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+        <span style="font-size:12px; color:#0f172a;">未登入</span>
+        <button style="padding:6px 10px; border-radius:10px; border:1px solid rgba(0,0,0,0.08); background:linear-gradient(135deg,#0ea5e9,#38bdf8); color:#fff; font-size:12px; cursor:pointer;"
+            onclick="try{ if(window.ccAuth&&window.ccAuth.loginGoogle){ window.ccAuth.loginGoogle(); } else { alert('登入模組尚未就緒，請稍候或重新整理頁面'); } }catch(e){ alert(String((e&&e.message)||e)); }">
+            用 Google 登入
+        </button>
+    </div>
 
     <script>
     (function(){
