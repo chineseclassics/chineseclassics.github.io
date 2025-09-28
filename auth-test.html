@@ -119,10 +119,16 @@
         async function doSignOut(){
             try {
                 log('signOut clicked');
-                var client = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
-                await client?.auth?.signOut({ scope:'local' });
+                // 統一使用全域登出，確保 Google Oauth 也一併註銷
+                if (window.ccAuth && window.ccAuth.signOut) {
+                    await window.ccAuth.signOut();
+                } else {
+                    var client = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
+                    await client?.auth?.signOut({ scope:'global' });
+                }
                 log('signOut done');
             } catch(e){ log('signOut error:', e && e.message || e); }
+            try { await window.ccAuth?.refresh?.(); } catch(_) {}
             location.reload();
         }
         async function doLogin(){

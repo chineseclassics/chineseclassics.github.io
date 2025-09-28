@@ -87,7 +87,14 @@
       btnOut.textContent = '登出';
       styleGhostButton(btnOut);
       btnOut.onclick = async function () {
-        try { await sb.auth.signOut(); } catch(e) { console.error(e); }
+        try {
+          await sb.auth.signOut({ scope: 'global' });
+        } catch(e) {
+          console.error(e);
+        } finally {
+          try { await refreshAuth(); } catch(_) {}
+          try { location.reload(); } catch(_) {}
+        }
       };
 
       el.appendChild(label);
@@ -137,11 +144,12 @@
   window.ccAuth = window.ccAuth || {
     getClient: function () { return sb; },
     getUser: async function () { return (await sb.auth.getUser()).data.user || null; },
+    refresh: function () { return refreshAuth(); },
     loginGoogle: async function () {
       var redirectTo = location.href;
       return sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo } });
     },
-    signOut: function () { return sb.auth.signOut(); }
+    signOut: function () { return sb.auth.signOut({ scope: 'global' }); }
   };
 })();
 
