@@ -10,7 +10,14 @@
     }
     if (!window.sb) {
       try {
-        window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          },
+          realtime: { params: { eventsPerSecond: 10 } }
+        });
       } catch (e) {
         console.error('[cc-auth] 建立 Supabase Client 失敗：', e);
         return null;
