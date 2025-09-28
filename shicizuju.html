@@ -6,24 +6,232 @@
     <title>南風詩詞組句</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Supabase UMD 與全域登入狀態列 -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js?v=20250927b"></script>
+    <!-- 詩詞組句獨立登入系統 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script>
-        // 調試：檢查登入按鈕是否正確創建
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                const authBar = document.getElementById('cc-auth-bar');
-                if (!authBar) {
-                    console.error('登入狀態欄未創建！');
-                    console.log('Supabase 可用:', !!window.supabase);
-                    console.log('ccAuth 可用:', !!window.ccAuth);
-                    console.log('sb 客戶端可用:', !!window.sb);
-                } else {
-                    console.log('登入狀態欄已創建:', authBar);
+        // 詩詞組句應用內登入系統
+        class ShiciAuth {
+            constructor() {
+                this.supabase = null;
+                this.currentUser = null;
+                this.authContainer = null;
+                this.init();
+            }
+
+            init() {
+                try {
+                    // 初始化 Supabase 客戶端
+                    this.supabase = window.supabase.createClient(
+                        'https://onregacmigwiyomhmjyt.supabase.co',
+                        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ucmVnYWNtaWd3aXlvbWhtanl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NzIzMDcsImV4cCI6MjA3NDU0ODMwN30.VxLyR3SMlnVYubFLdQNJqYMyJnT5foo7wUkVEmi4QcY',
+                        {
+                            auth: {
+                                persistSession: true,
+                                autoRefreshToken: true,
+                                detectSessionInUrl: true
+                            }
+                        }
+                    );
+
+                    // 監聽登入狀態變化
+                    this.supabase.auth.onAuthStateChange((event, session) => {
+                        this.currentUser = session?.user || null;
+                        this.renderAuthUI();
+                    });
+
+                    // 初始化 UI
+                    this.createAuthContainer();
+                    this.checkInitialAuth();
+                } catch (error) {
+                    console.error('初始化登入系統失敗:', error);
                 }
-            }, 1000);
-        });
+            }
+
+            createAuthContainer() {
+                this.authContainer = document.createElement('div');
+                this.authContainer.id = 'shici-auth-container';
+                this.authContainer.style.cssText = `
+                    position: fixed;
+                    top: 12px;
+                    right: 12px;
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px 12px;
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(10px);
+                    border-radius: 12px;
+                    border: 1px solid rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    font-size: 13px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                `;
+                document.body.appendChild(this.authContainer);
+            }
+
+            async checkInitialAuth() {
+                try {
+                    const { data: { user } } = await this.supabase.auth.getUser();
+                    this.currentUser = user;
+                    this.renderAuthUI();
+                } catch (error) {
+                    console.error('檢查登入狀態失敗:', error);
+                    this.renderAuthUI();
+                }
+            }
+
+            renderAuthUI() {
+                if (!this.authContainer) return;
+
+                this.authContainer.innerHTML = '';
+
+                if (this.currentUser) {
+                    // 已登入狀態
+                    const avatar = this.currentUser.user_metadata?.avatar_url || this.currentUser.user_metadata?.picture;
+                    
+                    if (avatar) {
+                        const img = document.createElement('img');
+                        img.src = avatar;
+                        img.alt = '頭像';
+                        img.style.cssText = `
+                            width: 24px;
+                            height: 24px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                            border: 1px solid rgba(0, 0, 0, 0.1);
+                        `;
+                        this.authContainer.appendChild(img);
+                    }
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = this.currentUser.user_metadata?.name || 
+                                          this.currentUser.email || 
+                                          '已登入';
+                    nameSpan.style.cssText = `
+                        color: #1f2937;
+                        font-weight: 500;
+                        max-width: 120px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    `;
+                    this.authContainer.appendChild(nameSpan);
+
+                    const logoutBtn = document.createElement('button');
+                    logoutBtn.textContent = '登出';
+                    logoutBtn.style.cssText = `
+                        padding: 4px 8px;
+                        background: rgba(239, 68, 68, 0.1);
+                        color: #dc2626;
+                        border: 1px solid rgba(239, 68, 68, 0.2);
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: all 0.2s;
+                    `;
+                    logoutBtn.onmouseover = () => {
+                        logoutBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+                    };
+                    logoutBtn.onmouseout = () => {
+                        logoutBtn.style.background = 'rgba(239, 68, 68, 0.1)';
+                    };
+                    logoutBtn.onclick = () => this.logout();
+                    this.authContainer.appendChild(logoutBtn);
+                } else {
+                    // 未登入狀態
+                    const statusSpan = document.createElement('span');
+                    statusSpan.textContent = '未登入';
+                    statusSpan.style.cssText = `
+                        color: #6b7280;
+                        font-weight: 400;
+                    `;
+                    this.authContainer.appendChild(statusSpan);
+
+                    const loginBtn = document.createElement('button');
+                    loginBtn.textContent = '用 Google 登入';
+                    loginBtn.style.cssText = `
+                        padding: 6px 12px;
+                        background: linear-gradient(135deg, #4285f4, #34a853);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        font-weight: 500;
+                        transition: all 0.2s;
+                        box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);
+                    `;
+                    loginBtn.onmouseover = () => {
+                        loginBtn.style.transform = 'translateY(-1px)';
+                        loginBtn.style.boxShadow = '0 4px 8px rgba(66, 133, 244, 0.4)';
+                    };
+                    loginBtn.onmouseout = () => {
+                        loginBtn.style.transform = 'translateY(0)';
+                        loginBtn.style.boxShadow = '0 2px 4px rgba(66, 133, 244, 0.3)';
+                    };
+                    loginBtn.onclick = () => this.loginWithGoogle();
+                    this.authContainer.appendChild(loginBtn);
+                }
+            }
+
+            async loginWithGoogle() {
+                try {
+                    const { error } = await this.supabase.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: {
+                            redirectTo: window.location.href
+                        }
+                    });
+                    
+                    if (error) {
+                        console.error('Google 登入失敗:', error);
+                        alert('登入失敗: ' + error.message);
+                    }
+                } catch (error) {
+                    console.error('Google 登入錯誤:', error);
+                    alert('登入過程中發生錯誤，請稍後再試');
+                }
+            }
+
+            async logout() {
+                try {
+                    const { error } = await this.supabase.auth.signOut();
+                    if (error) {
+                        console.error('登出失敗:', error);
+                        alert('登出失敗: ' + error.message);
+                    }
+                } catch (error) {
+                    console.error('登出錯誤:', error);
+                    alert('登出過程中發生錯誤');
+                }
+            }
+
+            // 公開 API
+            getUser() {
+                return this.currentUser;
+            }
+
+            isLoggedIn() {
+                return !!this.currentUser;
+            }
+
+            getSupabaseClient() {
+                return this.supabase;
+            }
+        }
+
+        // 初始化登入系統
+        let shiciAuth;
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                shiciAuth = new ShiciAuth();
+                window.shiciAuth = shiciAuth; // 全域訪問
+            });
+        } else {
+            shiciAuth = new ShiciAuth();
+            window.shiciAuth = shiciAuth;
+        }
     </script>
     <script>
         tailwind.config = {
@@ -3911,22 +4119,31 @@
         }
 
         // ============================
-        // 最小可用：連線對戰 + DB 寫入（profiles/matches/moves）
+        // 遠程對戰功能（使用 shiciAuth）
         // ============================
         (function(){
-            const sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
-            if (!sb) { console.warn('Supabase client 未就緒'); return; }
+            // 等待 shiciAuth 初始化完成
+            function waitForAuth(callback) {
+                if (window.shiciAuth && window.shiciAuth.getSupabaseClient()) {
+                    callback(window.shiciAuth.getSupabaseClient());
+                } else {
+                    setTimeout(() => waitForAuth(callback), 100);
+                }
+            }
 
-            const net = { enabled:false, isHost:false, channel:null, room:'', matchId:null, started:false };
+            waitForAuth((sb) => {
+                const net = { enabled:false, isHost:false, channel:null, room:'', matchId:null, started:false };
 
             function genRoomCode() {
                 return Math.random().toString(36).slice(2,7).toUpperCase();
             }
 
             async function ensureLoggedIn() {
-                const { data } = await sb.auth.getUser();
-                const user = data && data.user;
-                if (!user) { alert('請先登入再使用對戰功能'); throw new Error('not_logged_in'); }
+                const user = window.shiciAuth?.getUser();
+                if (!user) { 
+                    alert('請先登入再使用對戰功能'); 
+                    throw new Error('not_logged_in'); 
+                }
                 return user;
             }
 
@@ -3981,10 +4198,10 @@
                 const s = document.getElementById('roomStatus'); if (s) s.textContent = '已加入房間：' + code;
             }
 
-            async function joinRealtime(code, asHost) {
-                net.enabled = true; net.isHost = !!asHost; net.room = 'shicizuju-' + code;
-                const u = (await sb.auth.getUser()).data.user;
-                net.channel = sb.channel(net.room, { config: { presence: { key: u ? u.id : 'anon' } } });
+                async function joinRealtime(code, asHost) {
+                    net.enabled = true; net.isHost = !!asHost; net.room = 'shicizuju-' + code;
+                    const u = window.shiciAuth?.getUser();
+                    net.channel = sb.channel(net.room, { config: { presence: { key: u ? u.id : 'anon' } } });
 
                 net.channel.on('presence', { event: 'sync' }, () => {
                     const state = net.channel.presenceState();
@@ -4019,14 +4236,17 @@
                 net.channel.send({ type:'broadcast', event:'start_round', payload });
 
                 // 記錄到 moves（用於驗證 RLS）
-                if (net.matchId) {
-                    sb.from('moves').insert({
-                        match_id: net.matchId,
-                        user_id: (sb.auth.getUser()).data.user?.id,
-                        type: 'start_round',
-                        payload: { line: currentPoem?.line, poem: currentPoem?.poem, author: currentPoem?.author }
-                    }).then(()=>{}).catch(()=>{});
-                }
+                    if (net.matchId) {
+                        const user = window.shiciAuth?.getUser();
+                        if (user) {
+                            sb.from('moves').insert({
+                                match_id: net.matchId,
+                                user_id: user.id,
+                                type: 'start_round',
+                                payload: { line: currentPoem?.line, poem: currentPoem?.poem, author: currentPoem?.author }
+                            }).then(()=>{}).catch(()=>{});
+                        }
+                    }
             }
 
             function startRoundFromHost(payload) {
@@ -4060,24 +4280,24 @@
                     net.channel.send({ type:'broadcast', event:'result', payload:{ success, timeLeft } });
                 }
                 if (net.enabled && net.matchId) {
-                    const userIdPromise = sb.auth.getUser();
-                    userIdPromise.then(({data}) => {
-                        const uid = data && data.user && data.user.id;
-                        if (!uid) return;
+                    const user = window.shiciAuth?.getUser();
+                    if (user) {
                         sb.from('moves').insert({
                             match_id: net.matchId,
-                            user_id: uid,
+                            user_id: user.id,
                             type: 'result',
                             payload: { success, timeLeft, line: currentPoem?.line }
                         }).then(()=>{}).catch(()=>{});
-                    });
+                    }
                 }
             };
 
             // 綁定 UI
             document.getElementById('btnCreateRoom')?.addEventListener('click', createRoom);
             document.getElementById('btnJoinRoom')?.addEventListener('click', joinRoom);
-        })();
+            
+            }); // 結束 waitForAuth 回調
+        })(); // 結束對戰功能 IIFE
     </script>
 </body>
 </html>
