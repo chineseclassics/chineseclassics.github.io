@@ -1,4 +1,5 @@
 (function () {
+  console.log('[cc-auth] init start');
   // ---------- Supabase 初始化 ----------
   var SUPABASE_URL = window.SUPABASE_URL || 'https://onregacmigwiyomhmjyt.supabase.co';
   var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ucmVnYWNtaWd3aXlvbWhtanl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NzIzMDcsImV4cCI6MjA3NDU0ODMwN30.VxLyR3SMlnVYubFLdQNJqYMyJnT5foo7wUkVEmi4QcY';
@@ -32,6 +33,7 @@
   }
 
   var sb = ensureSupabaseClient();
+  console.log('[cc-auth] client ready =', !!sb);
   // 不再在此直接返回；若當前尚未就緒，後續會採用延遲重試機制確保最終初始化成功
 
   // ---------- DOM：頂部登入狀態列（全站共用） ----------
@@ -58,6 +60,7 @@
   }
 
   function renderAuthBar() {
+    try { console.log('[cc-auth] renderAuthBar user=', !!authState.user); } catch(_) {}
     var el = document.getElementById('cc-auth-bar');
     if (!el) {
       el = document.createElement('div');
@@ -135,6 +138,7 @@
       btnGoogle.textContent = '用 Google 登入';
       styleButton(btnGoogle);
       btnGoogle.onclick = async function () {
+        console.log('[cc-auth] loginGoogle clicked');
         var redirectTo = location.href.trim();
         // 確保客戶端存在；若尚未載入，嘗試即時建立
         var client = ensureSupabaseClient();
@@ -155,10 +159,12 @@
             }
           });
           if (res && res.error) {
+            console.warn('[cc-auth] signInWithOAuth error:', res.error);
             alert(res.error.message);
             return;
           }
           if (res && res.data && res.data.url) {
+            console.log('[cc-auth] redirect to provider');
             try {
               // 優先以頂層視窗跳轉，避開 iframe 限制
               if (window.top && window.top !== window) {
@@ -172,6 +178,7 @@
             }
           }
         } catch (e) {
+          console.warn('[cc-auth] loginGoogle exception:', e);
           alert(String((e && e.message) || e));
         }
       };
@@ -217,6 +224,7 @@
   }
 
   async function refreshAuth() {
+    try { console.log('[cc-auth] refreshAuth...'); } catch(_) {}
     try {
       // sb 可能尚未就緒，需容錯
       if (sb && sb.auth) {
@@ -226,6 +234,7 @@
         authState.user = null;
       }
     } catch (e) {
+      console.warn('[cc-auth] refreshAuth error:', (e && e.message) || e);
       authState.user = null;
     }
     renderAuthBar();
@@ -234,6 +243,7 @@
   // 綁定 onAuthStateChange（若尚未就緒則等到就緒後再綁定）
   function bindAuthStateListenerWhenReady() {
     if (sb && sb.auth) {
+      console.log('[cc-auth] bind onAuthStateChange');
       sb.auth.onAuthStateChange(function (_event, session) {
         // 在嵌入/跨域情況下，確保本地持久化 session
         try {
@@ -252,6 +262,7 @@
 
   // 延遲重試：等待 Supabase UMD 載入並成功建立 client
   (function setupDeferredInit() {
+    console.log('[cc-auth] setupDeferredInit');
     // 嘗試立即綁定（若此時已就緒）
     bindAuthStateListenerWhenReady();
 
@@ -273,7 +284,8 @@
       if (sb && sb.auth) {
         clearInterval(timer);
         // 若為 OAuth 回跳，先交換 Session 再刷新
-        handleOauthRedirectIfNeeded().then(function(){
+        handleOauthRedirectIfNeeded().then(function(done){
+          console.log('[cc-auth] handleOauth done =', done);
           refreshAuth();
         });
         bindAuthStateListenerWhenReady();
@@ -293,10 +305,10 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function(){
       // 嘗試處理可能已存在的回跳參數
-      handleOauthRedirectIfNeeded().finally(refreshAuth);
+      handleOauthRedirectIfNeeded().then(function(done){ console.log('[cc-auth] DOMContentLoaded handleOauth done=', done); }).finally(refreshAuth);
     });
   } else {
-    handleOauthRedirectIfNeeded().finally(refreshAuth);
+    handleOauthRedirectIfNeeded().then(function(done){ console.log('[cc-auth] immediate handleOauth done=', done); }).finally(refreshAuth);
   }
 
   // 導出全域 API，提供給各遊戲頁使用
@@ -307,6 +319,7 @@
         if (!sb || !sb.auth || !sb.auth.getUser) return null;
         var data = (await sb.auth.getUser()).data;
         var user = data && data.user ? data.user : null;
+        console.log('[cc-auth] getUser ->', !!user);
         return user;
       } catch (e) {
         console.warn('[cc-auth] getUser error:', (e && e.message) || e);
