@@ -10,7 +10,15 @@
     }
     if (!window.sb) {
       try {
-        window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            // GitHub Pages 兼容性設置
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true,
+            flowType: 'pkce'
+          }
+        });
       } catch (e) {
         console.error('[cc-auth] 建立 Supabase Client 失敗：', e);
         return null;
@@ -93,13 +101,25 @@
       btnGoogle.onclick = async function () {
         var redirectTo = location.href;
         try {
+          console.log('[cc-auth] 開始 Google OAuth 登入流程...');
           var res = await sb.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: redirectTo }
+            options: { 
+              redirectTo: redirectTo,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent'
+              }
+            }
           });
-          if (res && res.error) alert(res.error.message);
+          console.log('[cc-auth] OAuth 響應：', res);
+          if (res && res.error) {
+            console.error('[cc-auth] OAuth 錯誤：', res.error);
+            alert('登入失敗：' + res.error.message);
+          }
         } catch (e) {
-          alert(String(e && e.message || e));
+          console.error('[cc-auth] 登入異常：', e);
+          alert('登入過程中發生錯誤：' + String(e && e.message || e));
         }
       };
 
@@ -110,21 +130,55 @@
 
   async function refreshAuth() {
     try {
+      console.log('[cc-auth] 檢查認證狀態...');
       var data = (await sb.auth.getUser()).data;
       authState.user = (data && data.user) ? data.user : null;
+      console.log('[cc-auth] 當前用戶：', authState.user ? authState.user.email : '未登入');
     } catch (e) {
+      console.error('[cc-auth] 認證檢查失敗：', e);
       authState.user = null;
     }
     renderAuthBar();
   }
 
-  // 初始與狀態變更監聽
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', refreshAuth);
-  } else {
-    refreshAuth();
+  // GitHub Pages 兼容性檢查
+  function checkGitHubPagesCompatibility() {
+    if (location.hostname === 'chineseclassics.github.io') {
+      console.log('[cc-auth] 檢測到 GitHub Pages 環境，啟用兼容性模式');
+      
+      // 檢查必要的API是否可用
+      if (typeof window.supabase === 'undefined') {
+        console.error('[cc-auth] Supabase 未正確載入，請檢查網路連接');
+        return false;
+      }
+      
+      // 檢查HTTPS
+      if (location.protocol !== 'https:') {
+        console.warn('[cc-auth] 非HTTPS環境可能影響OAuth功能');
+      }
+      
+      return true;
+    }
+    return true;
   }
-  sb.auth.onAuthStateChange(function () { refreshAuth(); });
+
+  // 初始與狀態變更監聽
+  function initializeAuth() {
+    if (!checkGitHubPagesCompatibility()) {
+      console.error('[cc-auth] 環境檢查失敗，認證功能可能無法正常工作');
+      return;
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', refreshAuth);
+    } else {
+      refreshAuth();
+    }
+    sb.auth.onAuthStateChange(function () { refreshAuth(); });
+  }
+  
+  // 延遲初始化以確保所有資源載入完成
+  setTimeout(initializeAuth, 100);
 
   // 導出全域 API，提供給各遊戲頁使用
   window.ccAuth = window.ccAuth || {
