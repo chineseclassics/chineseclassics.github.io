@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2.56.0/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
     <script>
         // 指定本頁使用的 Supabase 專案參數（覆蓋預設）
         window.SUPABASE_URL = 'https://onregacmigwiyomhmjyt.supabase.co';
@@ -3933,15 +3933,9 @@
         // 確保匿名登入
         async function ensureAnonLogin(){
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
-            const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('auth timeout')), ms));
-            const getOrLogin = (async () => {
-                const sess = await sb.auth.getSession();
-                if (!sess.data.session) await sb.auth.signInAnonymously();
-                const user = (await sb.auth.getUser()).data.user;
-                return user;
-            })();
-            state.user = await Promise.race([getOrLogin, timeout(8000)]);
-            if (!state.user) throw new Error('anonymous auth failed');
+            const sess = await sb.auth.getSession();
+            if (!sess.data.session) await sb.auth.signInAnonymously();
+            state.user = (await sb.auth.getUser()).data.user;
             console.log('[remote] auth user', state.user && state.user.id);
         }
 
