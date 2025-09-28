@@ -139,7 +139,7 @@
       styleButton(btnGoogle);
       btnGoogle.onclick = async function () {
         console.log('[cc-auth] loginGoogle clicked');
-        var redirectTo = location.href.trim();
+        var redirectTo = 'https://chineseclassics.github.io/shicizuju.html';
         // 確保客戶端存在；若尚未載入，嘗試即時建立
         var client = ensureSupabaseClient();
         if (!client) {
@@ -200,12 +200,12 @@
         console.warn('[cc-auth] OAuth error:', error, errorDescription || '');
         return false;
       }
-      if (!code) return false;
+      if (!code) { console.log('[cc-auth] no code in url'); return false; }
       if (!sb || !sb.auth) return false;
       // 與 Supabase 交換並建立本地 session
       console.log('[cc-auth] Detected code param. Exchanging session...');
-      await sb.auth.exchangeCodeForSession({ code: code });
-      console.log('[cc-auth] exchangeCodeForSession OK');
+      var ex = await sb.auth.exchangeCodeForSession({ code: code });
+      console.log('[cc-auth] exchangeCodeForSession result =', ex);
       // 清理 URL 上的 code/state 參數
       try {
         url.searchParams.delete('code');
@@ -216,6 +216,7 @@
         url.searchParams.delete('prompt');
         window.history.replaceState({}, document.title, url.toString());
       } catch (_) {}
+      try { await refreshAuth(); } catch(_) {}
       return true;
     } catch (e) {
       console.warn('[cc-auth] exchangeCodeForSession 失敗：', (e && e.message) || e);
@@ -327,7 +328,7 @@
       }
     },
     loginGoogle: async function () {
-      var redirectTo = location.href;
+      var redirectTo = 'https://chineseclassics.github.io/shicizuju.html';
       var client = ensureSupabaseClient();
       if (!client) throw new Error('Supabase 尚未就緒');
       var res = await client.auth.signInWithOAuth({
