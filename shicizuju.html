@@ -8,20 +8,19 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
-    <script src="assets/js/cc-auth.js?v=20250928c"></script>
+    <script src="assets/js/cc-auth.js?v=20250927b"></script>
     <script>
-        // 調試：檢查任一狀態列是否存在（全域或本頁強插）
+        // 調試：檢查登入按鈕是否正確創建
         window.addEventListener('load', function() {
             setTimeout(function() {
-                const globalBar = document.getElementById('cc-auth-bar');
-                const pageBar = document.getElementById('page-auth-bar');
-                if (globalBar || pageBar) {
-                    console.log('登入狀態列存在：', globalBar || pageBar);
-                } else {
-                    console.log('狀態列尚未渲染（將由頁面腳本/cc-auth.js 續作）');
+                const authBar = document.getElementById('cc-auth-bar');
+                if (!authBar) {
+                    console.error('登入狀態欄未創建！');
                     console.log('Supabase 可用:', !!window.supabase);
                     console.log('ccAuth 可用:', !!window.ccAuth);
                     console.log('sb 客戶端可用:', !!window.sb);
+                } else {
+                    console.log('登入狀態欄已創建:', authBar);
                 }
             }, 1000);
         });
@@ -933,91 +932,29 @@
         </div>
     </div>
 
-    <!-- 本頁專用：強制頂部狀態列（避免等待全域列渲染時序造成空窗） -->
-    <style>
-        /* 隱藏全域狀態列，避免與本頁重複 */
-        #cc-auth-bar { display: none !important; }
-    </style>
-    <div id="page-auth-bar" style="position: fixed; top: 8px; right: 8px; z-index: 2147483647; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-        <span style="font-size:12px; color:#0f172a;">未登入</span>
-        <button style="padding:6px 10px; border-radius:10px; border:1px solid rgba(0,0,0,0.08); background:linear-gradient(135deg,#0ea5e9,#38bdf8); color:#fff; font-size:12px; cursor:pointer;"
-            onclick="try{ if(window.ccAuth&&window.ccAuth.loginGoogle){ window.ccAuth.loginGoogle(); } else { alert('登入模組尚未就緒，請稍候或重新整理頁面'); } }catch(e){ alert(String((e&&e.message)||e)); }">
-            用 Google 登入
-        </button>
-    </div>
-
     <script>
     (function(){
         function $(id){ return document.getElementById(id); }
         function showLoginModal(){ var m = $('loginModal'); if (m) m.style.display = 'flex'; }
         function hideLoginModal(){ var m = $('loginModal'); if (m) m.style.display = 'none'; }
-        async function tryExchangeIfNeeded(){
-            try {
-                var url = new URL(window.location.href);
-                var code = url.searchParams.get('code');
-                if (!code) return false;
-                var sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
-                if (!sb || !sb.auth || !sb.auth.exchangeCodeForSession) return false;
-                console.log('[page-auth] Detected code. Exchanging...');
-                var ex = await sb.auth.exchangeCodeForSession({ code: code });
-                console.log('[page-auth] exchangeCodeForSession result =', ex);
-                try {
-                    var u = (ex && ex.data && (ex.data.user || (ex.data.session && ex.data.session.user))) || null;
-                    if (u) {
-                        // 立即刷新頁面狀態列
-                        var pageBar = document.getElementById('page-auth-bar');
-                        if (pageBar) {
-                            pageBar.innerHTML = '';
-                        }
-                    }
-                } catch(_) {}
-                try {
-                    url.searchParams.delete('code');
-                    url.searchParams.delete('state');
-                    url.searchParams.delete('provider');
-                    url.searchParams.delete('scope');
-                    url.searchParams.delete('authuser');
-                    url.searchParams.delete('prompt');
-                    window.history.replaceState({}, document.title, url.toString());
-                } catch(_) {}
-                try { await refresh(); } catch(_) {}
-                return true;
-            } catch(e) { console.warn('[page-auth] exchange failed:', e && e.message || e); return false; }
-        }
 
         async function checkAndGuardLogin(){
             try {
                 if (!window.ccAuth || !window.ccAuth.getUser) { showLoginModal(); return; }
                 const user = await window.ccAuth.getUser();
-                if (user) {
-                    hideLoginModal();
-                    // 保障：若已登入但狀態列尚未渲染，延遲重試後仍無則顯示模態，供用戶重新登入同步狀態
-                    setTimeout(function(){
-                        var bar = document.getElementById('cc-auth-bar');
-                        if (!bar) {
-                            // 再等一個短延遲
-                            setTimeout(function(){
-                                var bar2 = document.getElementById('cc-auth-bar');
-                                if (!bar2) {
-                                    showLoginModal();
-                                }
-                            }, 600);
-                        }
-                    }, 400);
-                } else {
-                    showLoginModal();
-                }
+                if (user) { hideLoginModal(); }
+                else { showLoginModal(); }
             } catch(_) { showLoginModal(); }
         }
 
         // 首次載入：處理可能存在的 OAuth 回跳後再檢查
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function(){
-                // 優先嘗試本頁主動 exchange（避免時序問題）
-                tryExchangeIfNeeded().finally(checkAndGuardLogin);
+                // cc-auth 會自處理 exchangeCodeForSession；這裏只做狀態檢查
+                checkAndGuardLogin();
             });
         } else {
-            tryExchangeIfNeeded().finally(checkAndGuardLogin);
+            checkAndGuardLogin();
         }
 
         // 回到頁面或切回焦點時再檢查一次（避免回跳後未更新視圖）
@@ -1041,136 +978,6 @@
                 });
             }
         });
-    })();
-    </script>
-
-    <!-- 本頁專用：強制頂部狀態列邏輯（即時顯示頭像/登出或登入） -->
-    <script>
-    (function(){
-        function ensureBar(){
-            var el = document.getElementById('page-auth-bar');
-            if (!el) {
-                el = document.createElement('div');
-                el.id = 'page-auth-bar';
-                el.style.position = 'fixed';
-                el.style.top = '8px';
-                el.style.right = '8px';
-                el.style.zIndex = '2147483647';
-                el.style.display = 'flex';
-                el.style.alignItems = 'center';
-                el.style.gap = '8px';
-                el.style.padding = '6px 8px';
-                el.style.borderRadius = '12px';
-                el.style.border = '1px solid rgba(0,0,0,0.08)';
-                el.style.background = 'rgba(255,255,255,0.75)';
-                el.style.backdropFilter = 'blur(10px)';
-                el.style.webkitBackdropFilter = 'blur(10px)';
-                document.body.appendChild(el);
-            }
-            return el;
-        }
-
-        function styleBtn(btn){
-            btn.style.padding = '6px 10px';
-            btn.style.borderRadius = '10px';
-            btn.style.border = '1px solid rgba(0,0,0,0.08)';
-            btn.style.background = 'linear-gradient(135deg, #0ea5e9, #38bdf8)';
-            btn.style.color = '#fff';
-            btn.style.fontSize = '12px';
-            btn.style.cursor = 'pointer';
-        }
-        function styleGhost(btn){
-            btn.style.padding = '6px 10px';
-            btn.style.borderRadius = '10px';
-            btn.style.border = '1px solid rgba(0,0,0,0.08)';
-            btn.style.background = 'rgba(255,255,255,0.9)';
-            btn.style.color = '#0f172a';
-            btn.style.fontSize = '12px';
-            btn.style.cursor = 'pointer';
-        }
-
-        function render(user){
-            var bar = ensureBar();
-            bar.innerHTML = '';
-            var label = document.createElement('span');
-            label.style.fontSize = '12px';
-            label.style.color = '#0f172a';
-            if (user) {
-                var name = (user.user_metadata && (user.user_metadata.name || user.user_metadata.full_name)) || user.email || '已登入';
-                var avatar = (user.user_metadata && (user.user_metadata.avatar_url || user.user_metadata.picture)) || '';
-                label.textContent = name;
-                if (avatar) {
-                    var img = document.createElement('img');
-                    img.src = avatar;
-                    img.alt = 'avatar';
-                    img.style.width = '20px';
-                    img.style.height = '20px';
-                    img.style.borderRadius = '50%';
-                    img.style.objectFit = 'cover';
-                    img.style.border = '1px solid rgba(0,0,0,0.08)';
-                    bar.appendChild(img);
-                }
-                bar.appendChild(label);
-                var btnOut = document.createElement('button');
-                btnOut.textContent = '登出';
-                styleGhost(btnOut);
-                btnOut.onclick = async function(){
-                    try {
-                        if (window.ccAuth && window.ccAuth.signOut) await window.ccAuth.signOut();
-                    } catch(_) {}
-                };
-                bar.appendChild(btnOut);
-            } else {
-                label.textContent = '未登入';
-                var btnLogin = document.createElement('button');
-                btnLogin.textContent = '用 Google 登入';
-                styleBtn(btnLogin);
-                btnLogin.onclick = async function(){
-                    try { if (window.ccAuth && window.ccAuth.loginGoogle) await window.ccAuth.loginGoogle(); }
-                    catch(e){ alert(String((e && e.message) || e)); }
-                };
-                bar.appendChild(label);
-                bar.appendChild(btnLogin);
-            }
-        }
-
-        async function refresh(){
-            try {
-                var user = null;
-                var sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
-                if (window.ccAuth && window.ccAuth.getUser) {
-                    try { user = await window.ccAuth.getUser(); console.log('[page-auth] getUser =', !!user); } catch(e) { console.warn('[page-auth] getUser error', e); user = null; }
-                }
-                if (!user && sb && sb.auth && sb.auth.getSession) {
-                    try {
-                        var sessRes = await sb.auth.getSession(); console.log('[page-auth] getSession =', !!(sessRes && sessRes.data && sessRes.data.session));
-                        var sess = (sessRes && sessRes.data && sessRes.data.session) ? sessRes.data.session : null;
-                        if (sess && sess.user) user = sess.user;
-                    } catch(_) {}
-                }
-                render(user);
-            } catch(_) { render(null); }
-        }
-
-        function bindWhenReady(){
-            var tries = 0, max = 40; // ~20s
-            var t = setInterval(function(){
-                var sb = (window.ccAuth && window.ccAuth.getClient && window.ccAuth.getClient()) || window.sb;
-                if (sb && sb.auth) {
-                    clearInterval(t);
-                    try { sb.auth.onAuthStateChange(function(){ refresh(); }); } catch(_){ }
-                }
-                if (++tries >= max) clearInterval(t);
-            }, 500);
-            // 額外保障：路由/回跳變更時刷新
-            window.addEventListener('popstate', refresh);
-            window.addEventListener('hashchange', refresh);
-            window.addEventListener('storage', function(e){ if ((e && e.key || '').includes('sb-')) refresh(); });
-        }
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function(){ ensureBar(); refresh(); bindWhenReady(); });
-        } else { ensureBar(); refresh(); bindWhenReady(); }
     })();
     </script>
     <div class="max-w-5xl mx-auto" style="height: 100%; width: 100%; display: flex; flex-direction: column; padding: 6px; box-sizing: border-box; position: relative;">
