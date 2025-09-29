@@ -2930,6 +2930,9 @@
             }
         };
 
+        // 讓遠端事件可直接呼叫新回合（避免 const 聲明未掛到 window）
+        try { window.startNewRound = startNewRound; } catch(_) {}
+
         // Verify if the current input matches the poem
         const verifyPoem = () => {
             return poemDisplay.value === currentPoem.line;
