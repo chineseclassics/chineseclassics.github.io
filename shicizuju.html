@@ -2372,7 +2372,10 @@
             // 根據模式切換下一步按鈕文案：
             // 單人=「下一首」；對戰=「XX 開始答題」（下一位選手）
             if (closeGameMessage) {
-                if (battleMode.isActive && Array.isArray(battleMode.players) && battleMode.players.length > 0) {
+                // 遠程限時：統一顯示「下一首」；本地輪流維持原文案
+                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                    closeGameMessage.textContent = '下一首';
+                } else if (battleMode.isActive && Array.isArray(battleMode.players) && battleMode.players.length > 0) {
                     const nextIndex = (battleMode.currentPlayerIndex + 1) % battleMode.players.length;
                     const nextPlayer = battleMode.players[nextIndex];
                     const name = (nextPlayer && nextPlayer.name) ? nextPlayer.name : '選手';
@@ -3229,7 +3232,13 @@
             
             // 從本地存儲恢復 UI 與狀態
             try { restoreFromLocalStorage(); } catch (e) { console.warn('restoreFromLocalStorage failed', e); }
-            startNewRound();
+            // 若遠程對戰配置面板已開啟或正處於遠程限時模式，禁止單人模式自動開局
+            const rbm = document.getElementById('remoteBattleModal');
+            const remotePanelOpen = !!(rbm && !rbm.classList.contains('hidden'));
+            const remoteTimed = (typeof state !== 'undefined' && state.timedMode);
+            if (!remotePanelOpen && !remoteTimed) {
+                startNewRound();
+            }
         };
 
         // 設置模態彈窗相關函數
@@ -4262,7 +4271,10 @@
                     case 'timed_end':
                         state.timedMode = false;
                         try { clearInterval(state.timedTimer); } catch(_){}
+                        // 顯示遠程限時專屬排行榜
                         if (typeof showBattleResultModal === 'function') showBattleResultModal();
+                        // 清理：避免本地輪流殘留
+                        try { battleMode.isActive = false; } catch(_){}
                         break;
                     case 'score_update':
                         try {
