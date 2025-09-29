@@ -4678,6 +4678,13 @@
                 state.timedMode = true;
                 try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
                 state.timedEndsAt = endsAt;
+                // 保險：清理任何單題計時與本地回合狀態
+                try { clearInterval(timerInterval); } catch(_){ }
+                try { timerInterval = null; } catch(_){ }
+                try { isGameActive = false; } catch(_){ }
+                try { if (typeof hideResultModal === 'function') hideResultModal(); } catch(_){ }
+                try { gameMessage?.classList.add('hidden'); } catch(_){ }
+                try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
                 // 廣播包含 players，並附帶 3 秒預備
                 window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag });
                 showPrepCountdown(3000, () => {
