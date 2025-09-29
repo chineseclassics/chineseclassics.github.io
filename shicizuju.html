@@ -2293,6 +2293,10 @@
         // Close game message manually
         closeGameMessage.addEventListener('click', () => {
             hideResultModal();
+            // 限時模式下不觸發任何本地輪流或手動換題流程（已自動換題）
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                return;
+            }
             // 如果是对战模式且游戏结束，则进入下一轮
             if (battleMode.isActive && !isGameActive) {
                 // 延迟一下让用户看到关闭动画
@@ -2334,6 +2338,10 @@
 
         // 显示结果浮窗
         const showResultModal = (isSuccess, message, answer = null) => {
+            // 限時模式：不顯示本地結果浮窗
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                return;
+            }
             if (isSuccess) {
                 // 答对了：只显示成功图标，用户答案保持绿色
                 successIcon.classList.remove('hidden');
@@ -2706,7 +2714,7 @@
             charCountSlider.value = settings.charCount;
             charCountValue.textContent = settings.charCount;
             // 不修改當前回合 timeLeft；若非遊戲中，重置顯示
-            if (!isGameActive) {
+            if (!isGameActive && !(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
                 roundTimeLimit = settings.timeLimit;
                 timeLeft = roundTimeLimit;
                 if (timerElement) timerElement.textContent = timeLeft;
