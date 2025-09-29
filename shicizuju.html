@@ -938,8 +938,12 @@
         </div>
         
         <!-- 倒計時進度條 - 现代化 -->
-        <div id="timeBarContainer" class="w-full h-3 bg-surface-200 rounded-full overflow-hidden mb-3 animate-scale-in shadow-inner">
+        <div id="timeBarContainer" class="w-full h-3 bg-surface-200 rounded-full overflow-hidden mb-3 animate-scale-in shadow-inner relative">
             <div id="timeBarFill" class="h-full gradient-primary rounded-full transition-all duration-300 ease-out" style="width: 100%"></div>
+            <!-- 遠程限時：賽道視圖覆蓋在時間條上方（時間條在遠程限時下隱藏） -->
+            <div id="raceTrack" class="absolute inset-0 hidden px-1 flex items-center gap-1">
+                <!-- 動態插入選手標記 -->
+            </div>
         </div>
         
         <div class="flex items-center justify-end space-x-3 mb-2">
@@ -2200,6 +2204,43 @@
         // 提供命名空間占位，後續可逐步把相關函式掛載至此，避免混名
         window.LocalBattle = window.LocalBattle || {};
         window.RemoteTimed = window.RemoteTimed || {};
+        // 賽道渲染：根據遠程分數在頂部賽道上顯示名次與距離
+        window.RemoteTimed.renderRaceTrack = function renderRaceTrack(){
+            try {
+                const race = document.getElementById('raceTrack');
+                if (!race) return;
+                if (!window.RemoteBattle?.room || !(typeof state !== 'undefined' && state.timedMode)) {
+                    race.classList.add('hidden');
+                    return;
+                }
+                race.classList.remove('hidden');
+                const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : state;
+                const ids = (R && Array.isArray(R.rosterUserIds)) ? R.rosterUserIds : [];
+                const rows = ids.map((uid, idx) => {
+                    const name = (window.battleMode?.players && window.battleMode.players[idx] && window.battleMode.players[idx].name) || (R.stats && R.stats[uid]?.nickname) || '玩家';
+                    const st = (R.stats && R.stats[uid]) || { score:0, lastTs:0 };
+                    return { idx, name, score: st.score||0, last: st.lastTs||0 };
+                });
+                // 計算比例：以最高分為 100%，保底 1 避免除 0
+                const maxScore = Math.max(1, ...rows.map(r => r.score));
+                // 排名：分數高在前，同分按 lastTs 早在前
+                const ranked = [...rows].sort((a,b) => (b.score - a.score) || (a.last - b.last));
+                const rankByIdx = {};
+                ranked.forEach((r,i)=> rankByIdx[r.idx] = i+1);
+                // 視圖：清空重新渲染
+                race.innerHTML = '';
+                rows.forEach((r, i) => {
+                    const pct = Math.max(0, Math.min(100, Math.round((r.score / maxScore) * 100)));
+                    const pin = document.createElement('div');
+                    const colorClass = `player-theme-${(i % 6) + 1}`;
+                    pin.className = `h-5 min-w-[36px] px-2 rounded-full text-white text-xs font-bold flex items-center justify-center transition-all duration-500 ease-out shadow ${colorClass}`;
+                    pin.style.transform = `translateX(${pct}%)`;
+                    pin.style.marginLeft = '-18px';
+                    pin.innerHTML = `<span class="whitespace-nowrap">${rankByIdx[i] || '?'}｜${r.name}</span>`;
+                    race.appendChild(pin);
+                });
+            } catch(_){ }
+        };
 
         // Difficulty settings
         const difficultySettings = {
@@ -2794,7 +2835,12 @@
             if (isRemoteTimed()) {
                 // 限時模式：隱藏單題進度條，只顯示全局秒數
                 try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
-                try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
+                try {
+                    if (timeBarContainer) timeBarContainer.style.display = '';
+                    const race = document.getElementById('raceTrack');
+                    if (race) race.classList.remove('hidden');
+                    if (timeBarFill) timeBarFill.style.display = 'none';
+                } catch(_){ }
                 try {
                     const remainMs = Math.max(0, (state.timedEndsAt || Date.now()) - Date.now());
                     timerElement.textContent = String(Math.ceil(remainMs / 1000));
@@ -3830,8 +3876,6 @@ window.LocalBattle.endMode = function endBattleMode() {
                                 <div class="rank-medal w-12 text-center">${rankText}</div>
                                 <div class="rank-name flex-grow text-lg">${r.name}</div>
                                 <div class="rank-score text-xl">${r.score} <span class="text-sm">分</span></div>
-                                <div class="rank-answered text-sm text-slate-600 ml-4">題數：${r.answered}</div>
-                                <div class="rank-acc text-sm text-slate-600 ml-4">正確率：${r.acc}%</div>
                             `;
                             battleRankings.appendChild(rankItem);
                         });
@@ -4834,12 +4878,19 @@ window.LocalBattle.endMode = function endBattleMode() {
         function beginTimedTicker(){
             try { clearInterval(state.timedTimer); } catch(_){}
             updateTimedUI();
-            // 限時模式：保險隱藏單題進度條
-            try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
+            // 限時模式：顯示賽道、隱藏時間填充條
+            try {
+                if (timeBarContainer) timeBarContainer.style.display = '';
+                const race = document.getElementById('raceTrack');
+                if (race) race.classList.remove('hidden');
+                if (timeBarFill) timeBarFill.style.display = 'none';
+            } catch(_){ }
             state.timedTimer = setInterval(() => {
                 updateTimedUI();
                 // 週期性重繪記分板，確保未提交端也能即時看到他人分數變化
                 try { if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard(); } catch(_){ }
+                // 週期性刷新賽道視圖
+                try { if (typeof window.RemoteTimed?.renderRaceTrack === 'function') window.RemoteTimed.renderRaceTrack(); } catch(_){ }
                 if (!state.timedMode) { clearInterval(state.timedTimer); return; }
                 if (Date.now() >= state.timedEndsAt) {
                     clearInterval(state.timedTimer);
