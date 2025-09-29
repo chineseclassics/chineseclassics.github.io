@@ -3611,6 +3611,8 @@
         }
         
         function startBattleRound() {
+            // 限時模式下不使用本地輪流回合
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
             const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
             showNotification(`${currentPlayer.name} 的回合開始！`);
             
@@ -3619,12 +3621,17 @@
 
             // 左上角顯示對戰輪次（替代分數）
             if (scoreLabel && scoreElement) {
-                scoreLabel.textContent = '輪次';
-                scoreElement.textContent = `${battleMode.currentRound + 1} / ${battleMode.totalRounds}`;
+                // 限時模式不顯示輪次 UI
+                if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+                    scoreLabel.textContent = '輪次';
+                    scoreElement.textContent = `${battleMode.currentRound + 1} / ${battleMode.totalRounds}`;
+                }
             }
         }
         
         function endBattleRound(isCorrect) {
+            // 限時模式下不使用本地輪流回合結束
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
             const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
             
             if (isCorrect) {
@@ -3669,6 +3676,8 @@
         }
         
         function endBattleMode() {
+            // 限時模式下不走本地輪流結算
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
             battleMode.isActive = false;
             
             // 隱藏積分板
@@ -3685,8 +3694,11 @@
         }
         
         function showBattleResultModal() {
-            // 1) 遠程限時模式：以 state.stats 重建排行榜（含答題數/正確率）
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && (state.timedMode === false || state.timedEndsAt > 0)) {
+            // 1) 遠程限時模式：僅允許在 timed_end 流程中顯示（此處保持冪等）
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode === true) {
+                return; // 進行中不顯示
+            }
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedEndsAt > 0) {
                 try {
                     const rows = (state.rosterUserIds || []).map((uid, idx) => {
                         const name = (battleMode.players && battleMode.players[idx] && battleMode.players[idx].name) || (state.stats[uid]?.nickname) || '玩家';
@@ -4232,6 +4244,14 @@
             if (!msg) return;
             if (msg.from && state.user && msg.from === state.user.id) return; // 忽略自己事件
             try {
+                // 遠程限時模式：嚴格白名單僅允許 timed_start/score_update/timed_end
+                if (state && state.timedMode === true) {
+                    const allowed = { timed_start:1, score_update:1, timed_end:1 };
+                    if (!allowed[msg.type]) {
+                        // 忽略任何輪流/配置類事件，避免串台
+                        return;
+                    }
+                }
                 switch (msg.type) {
                     case 'battle_config':
                         applyBattleConfig(msg.payload);
@@ -4558,6 +4578,8 @@
                     const r = _origConfirm.apply(this, arguments);
                     // 房主廣播對戰配置
                     if (window.RemoteBattle?.isHost() && window.battleMode?.isActive) {
+                        // 限時模式下不廣播本地輪流配置
+                        if (state && state.timedMode === true) return r;
                         const players = (window.battleMode.players || []).map(p => p.name);
                         const roundsPerPlayer = window.battleMode.roundsPerPlayer || 5;
                         window.RemoteBattle.sendGameEvent('battle_config', { players, roundsPerPlayer });
@@ -4582,6 +4604,8 @@
                     const p = bm.players[bm.currentPlayerIndex];
                     if (p && !p.name) p.name = '玩家';
                     const r = _origStart.apply(this, arguments);
+                    // 限時模式下不廣播本地輪流回合開始
+                    if (state && state.timedMode === true) return r;
                     if (window.RemoteBattle?.isHost()) {
                         const idx = (bm && bm.currentPlayerIndex) || 0;
                         const currentUserId = (state.rosterUserIds && state.rosterUserIds[idx]) || null;
@@ -4596,6 +4620,8 @@
                 const _origEnd = window.endBattleRound;
                 window.endBattleRound = function(isCorrect){
                     const r = _origEnd.apply(this, arguments);
+                    // 限時模式下不廣播本地輪流回合結束
+                    if (state && state.timedMode === true) return r;
                     if (window.RemoteBattle?.isHost()) {
                         window.RemoteBattle.sendGameEvent('round_end', { isCorrect: !!isCorrect });
                         // 限時模式不輪換；輪流模式自動下一輪
