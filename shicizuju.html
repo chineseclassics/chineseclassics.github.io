@@ -2992,6 +2992,17 @@
                     s.answered += 1;
                     if (isCorrect) s.correct += 1;
                     s.lastTs = Date.now();
+                    // 本端立即映射到 players，確保兩側視圖即時一致
+                    try {
+                        if (Array.isArray(window.battleMode?.players)) {
+                            const ids = (R && R.rosterUserIds) ? R.rosterUserIds : [];
+                            window.battleMode.players.forEach((pl, idx) => {
+                                const uidAt = ids[idx];
+                                const st = uidAt && R.stats ? R.stats[uidAt] : null;
+                                if (pl && st) pl.score = st.score;
+                            });
+                        }
+                    } catch(_){ }
                     window.RemoteBattle.sendGameEvent('score_update', { userId: uid, delta, answeredInc:1, correctInc: isCorrect?1:0 });
                     try { if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard(); } catch(_){ }
                 }
@@ -4195,7 +4206,8 @@ window.LocalBattle.endMode = function endBattleMode() {
             rosterUserIds: [],    // 與 battleMode.players 同順序的 user_id 列表
             turnUserId: null,
             presenceMap: {},
-            pendingRoundStart: null
+            pendingRoundStart: null,
+            seenEids: {}          // 事件去重：eid -> 1
         };
         // 暴露唯讀引用以供外部讀取（例如計分更新時使用）
         try { window.__REMOTE_STATE__ = state; } catch(_){}
@@ -4294,7 +4306,7 @@ window.LocalBattle.endMode = function endBattleMode() {
             if (state.dbChannel) { try { state.dbChannel.unsubscribe(); } catch(_){} }
             const ch = sb.channel('db:'+room_id)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_events', filter: `room_id=eq.${room_id}` }, (c)=>{
-                    handleIncomingMove({ type: c.new.event_type, payload: c.new.payload, fromDb: true, from: c.new.user_id, ts: Date.now() });
+                    handleIncomingMove({ type: c.new.event_type, payload: c.new.payload, fromDb: true, from: c.new.user_id, ts: Date.now(), eid: c.new.eid });
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${room_id}` }, (c)=>{
                     handleRoomUpdate(c.new);
@@ -4336,19 +4348,26 @@ window.LocalBattle.endMode = function endBattleMode() {
             }
         }
 
+        function genEid(){
+            try { return `${state.user?.id||'u'}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; } catch(_) { return `${Date.now()}-${Math.random()}`; }
+        }
+
         async function sendGameEvent(type, payload){
             if (!state.room || !state.channel) return;
-            const out = { type, payload, ts: Date.now(), from: state.user?.id };
+            const out = { type, payload, ts: Date.now(), from: state.user?.id, eid: genEid() };
             state.channel.send({ type: 'broadcast', event: 'move', payload: out });
-            await sb.from('room_events').insert({ room_id: state.room.id, user_id: state.user.id, event_type: type, payload });
+            await sb.from('room_events').insert({ room_id: state.room.id, user_id: state.user.id, event_type: type, payload, eid: out.eid });
         }
 
         function handleIncomingMove(msg){
             if (!msg) return;
             if (msg.from && state.user && msg.from === state.user.id) return; // 忽略自己事件
             try {
-                // 避免「廣播 + DB」重複處理分數：DB 版本的 score_update 直接忽略
-                if (msg.fromDb === true && msg.type === 'score_update') return;
+                // 事件去重：若已有相同 eid 則忽略
+                if (msg.eid) {
+                    if (state.seenEids[msg.eid]) return;
+                    state.seenEids[msg.eid] = 1;
+                }
                 // 遠程限時模式：嚴格白名單僅允許 timed_start/score_update/timed_end
                 if (state && state.timedMode === true) {
                     const allowed = { timed_start:1, score_update:1, timed_end:1 };
