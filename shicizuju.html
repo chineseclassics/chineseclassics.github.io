@@ -3633,16 +3633,17 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             // 遠程限時模式下，按 score 降序展示（同分以 lastTs 先者在前）
             let players = [...battleMode.players];
             try {
-                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                const R = (typeof window !== 'undefined') ? (window.__REMOTE_STATE__ || null) : null;
+                if (window.RemoteBattle?.room && R && R.timedMode) {
                     players = players.map((pl, idx) => {
-                        const uid = state.rosterUserIds[idx];
-                        const st = uid ? state.stats[uid] : null;
+                        const uid = R.rosterUserIds ? R.rosterUserIds[idx] : null;
+                        const st = uid && R.stats ? R.stats[uid] : null;
                         return { ...pl, score: st ? st.score : pl.score, _last: st ? st.lastTs : 0, isActive: false };
                     }).sort((a, b) => (b.score - a.score) || (a._last - b._last));
 }
             } catch(_){ }
 
-            const isTimed = !!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode);
+            const isTimed = !!(window.RemoteBattle?.room && window.__REMOTE_STATE__ && window.__REMOTE_STATE__.timedMode);
             const leftCount = Math.ceil(players.length / 2);
 
             players.forEach((player, index) => {
