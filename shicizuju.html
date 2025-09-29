@@ -2913,6 +2913,10 @@
                 
                 // 显示失败结果浮窗，包含正确答案
                 showResultModal(false, reason === 'timeout' ? '時間到！' : '答錯了！', currentPoem.line);
+                // 限時模式下記一次作答（不加分）
+                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                    applyScoreDelta(0, false);
+                }
             }
             
             // 限時模式：結束後自動下一題；非限時仍走原邏輯
@@ -3669,7 +3673,49 @@
         }
         
         function showBattleResultModal() {
-            // 1. 对选手按分数降序排序
+            // 1) 遠程限時模式：以 state.stats 重建排行榜（含答題數/正確率）
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && (state.timedMode === false || state.timedEndsAt > 0)) {
+                try {
+                    const rows = (state.rosterUserIds || []).map((uid, idx) => {
+                        const name = (battleMode.players && battleMode.players[idx] && battleMode.players[idx].name) || (state.stats[uid]?.nickname) || '玩家';
+                        const st = state.stats[uid] || { score:0, answered:0, correct:0, lastTs:0 };
+                        const acc = st.answered > 0 ? Math.round((st.correct / st.answered) * 100) : 0;
+                        return { name, score: st.score||0, answered: st.answered||0, correct: st.correct||0, acc, _last: st.lastTs||0 };
+                    }).sort((a,b) => (b.score - a.score) || (a._last - b._last));
+
+                    // 標題
+                    winnerAnnouncement.textContent = '競賽結束';
+                    if (rows.length && rows[0].score > 0) {
+                        winnerScore.textContent = `最高分：${rows[0].name} ${rows[0].score} 分`;
+                    } else {
+                        winnerScore.textContent = '';
+                    }
+
+                    // 表格
+                    battleRankings.innerHTML = '';
+                    rows.forEach((r, i) => {
+                        const rank = i + 1;
+                        const rankItem = document.createElement('div');
+                        rankItem.className = 'rank-item';
+                        rankItem.style.animationDelay = `${i * 0.06}s`;
+                        const medals = ['🥇','🥈','🥉'];
+                        const rankText = rank <= 3 ? medals[rank-1] : `#${rank}`;
+                        rankItem.innerHTML = `
+                            <div class="rank-medal w-12 text-center">${rankText}</div>
+                            <div class="rank-name flex-grow text-lg">${r.name}</div>
+                            <div class="rank-score text-xl">${r.score} <span class="text-sm">分</span></div>
+                            <div class="rank-answered text-sm text-slate-600 ml-4">題數：${r.answered}</div>
+                            <div class="rank-acc text-sm text-slate-600 ml-4">正確率：${r.acc}%</div>
+                        `;
+                        battleRankings.appendChild(rankItem);
+                    });
+
+                    battleResultModal.classList.remove('hidden');
+                    return;
+                } catch(_) { /* fallback to舊版 */ }
+            }
+
+            // 2) 舊模式（本地輪流）：沿用原排序
             const sortedPlayers = [...battleMode.players].sort((a, b) => b.score - a.score);
             
             // 2. 找出最高分
