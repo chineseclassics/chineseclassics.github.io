@@ -3548,10 +3548,21 @@
         function updateBattleScoreboard() {
             leftPlayersContainer.innerHTML = '';
             rightPlayersContainer.innerHTML = '';
-            
-            const leftCount = Math.ceil(battleMode.players.length / 2);
-            
-            battleMode.players.forEach((player, index) => {
+            // 遠程限時模式下，按 score 降序展示（同分以 lastTs 先者在前）
+            let players = [...battleMode.players];
+            try {
+                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                    players = players.map((pl, idx) => {
+                        const uid = state.rosterUserIds[idx];
+                        const st = uid ? state.stats[uid] : null;
+                        return { ...pl, score: st ? st.score : pl.score, _last: st ? st.lastTs : 0 };
+                    }).sort((a, b) => (b.score - a.score) || (a._last - b._last));
+                }
+            } catch(_){}
+
+            const leftCount = Math.ceil(players.length / 2);
+
+            players.forEach((player, index) => {
                 const isLeftSide = index < leftCount;
                 const container = isLeftSide ? leftPlayersContainer : rightPlayersContainer;
                 
@@ -4257,6 +4268,12 @@
                 const ids = players.map(p => (typeof p === 'string' ? null : ((p && p.id) || null)));
                 bm.players = names.map((name, i) => ({ name: name || '玩家', score: 0, displayedScore: 0, isActive: i === 0 }));
                 state.rosterUserIds = ids;
+                // 初始化統計
+                (ids || []).forEach((uid, i) => {
+                    if (!uid) return;
+                    state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'', lastTs:0 };
+                    state.stats[uid].nickname = names[i] || state.stats[uid].nickname || '玩家';
+                });
                 bm.currentPlayerIndex = 0;
                 bm.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(conf.roundsPerPlayer || '5')));
                 bm.currentRound = 0;
