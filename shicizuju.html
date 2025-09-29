@@ -2189,6 +2189,18 @@
         const timeBarContainer = document.getElementById('timeBarContainer');
         const selectionStatus = document.getElementById('selectionStatus');
 
+        // ===== 模式輔助：集中判斷入口，避免條件分散重覆 =====
+        function isRemoteTimed(){
+            try { return !!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode); } catch(_) { return false; }
+        }
+        function isLocalBattle(){
+            try { return !!(window.battleMode && window.battleMode.isActive && !isRemoteTimed()); } catch(_) { return false; }
+        }
+
+        // 提供命名空間占位，後續可逐步把相關函式掛載至此，避免混名
+        window.LocalBattle = window.LocalBattle || {};
+        window.RemoteTimed = window.RemoteTimed || {};
+
         // Difficulty settings
         const difficultySettings = {
             easy: { timeLimit: 45, charCount: 15 },
@@ -2295,14 +2307,14 @@
         closeGameMessage.addEventListener('click', () => {
             hideResultModal();
             // 限時模式下不觸發任何本地輪流或手動換題流程（已自動換題）
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+            if (isRemoteTimed()) {
                 return;
             }
             // 如果是对战模式且游戏结束，则进入下一轮
             if (battleMode.isActive && !isGameActive) {
                 // 延迟一下让用户看到关闭动画
                 setTimeout(() => {
-                    startBattleRound();
+                    if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
                 }, 250);
             } else if (!isGameActive) {
                 // 单人模式，开始新一轮
@@ -2340,7 +2352,7 @@
         // 显示结果浮窗
         const showResultModal = (isSuccess, message, answer = null) => {
             // 限時模式：不顯示本地結果浮窗
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+            if (isRemoteTimed()) {
                 return;
             }
             if (isSuccess) {
@@ -2382,7 +2394,7 @@
             // 單人=「下一首」；對戰=「XX 開始答題」（下一位選手）
             if (closeGameMessage) {
                 // 遠程限時：統一顯示「下一首」；本地輪流維持原文案
-                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                if (isRemoteTimed()) {
                     closeGameMessage.textContent = '下一首';
                 } else if (battleMode.isActive && Array.isArray(battleMode.players) && battleMode.players.length > 0) {
                     const nextIndex = (battleMode.currentPlayerIndex + 1) % battleMode.players.length;
@@ -2715,7 +2727,7 @@
             charCountSlider.value = settings.charCount;
             charCountValue.textContent = settings.charCount;
             // 不修改當前回合 timeLeft；若非遊戲中，重置顯示
-            if (!isGameActive && !(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+            if (!isGameActive && !isRemoteTimed()) {
                 roundTimeLimit = settings.timeLimit;
                 timeLeft = roundTimeLimit;
                 if (timerElement) timerElement.textContent = timeLeft;
@@ -2779,7 +2791,7 @@
             populateCharactersGrid();
             
             // 在遠程限時模式中，不使用單題倒數，只顯示全局倒數
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+            if (isRemoteTimed()) {
                 // 限時模式：隱藏單題進度條，只顯示全局秒數
                 try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
                 try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
@@ -2815,7 +2827,7 @@
             
             // 單題計時：僅在非遠程限時模式下啟用
             clearInterval(timerInterval);
-            if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+            if (!isRemoteTimed()) {
                 timerInterval = setInterval(() => {
                     timeLeft--;
                     timerElement.textContent = timeLeft;
@@ -2841,7 +2853,7 @@
             // 限時模式：5秒未提交顯示「跳過」按鈕
             try {
                 const buttonContainer = clearSelectionButton.parentElement;
-                if (buttonContainer && window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                if (buttonContainer && isRemoteTimed()) {
                     let skipBtn = document.getElementById('skipPoem');
                     if (!skipBtn) {
                         skipBtn = document.createElement('button');
@@ -2856,7 +2868,7 @@
                     skipBtn.style.opacity = '0';
                     skipBtn.style.pointerEvents = 'none';
                     setTimeout(() => {
-                        if (isGameActive && window.RemoteBattle?.room && state.timedMode) {
+                        if (isGameActive && isRemoteTimed()) {
                             skipBtn.style.opacity = '1';
                             skipBtn.style.pointerEvents = 'auto';
                         }
@@ -2889,7 +2901,7 @@
                 }, 1000);
                 
                 // 更新分數
-                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                if (isRemoteTimed()) {
                     // 固定 +10 分；答對
                     applyScoreDelta(10, true);
                 } else if (!battleMode.isActive) {
@@ -2904,7 +2916,7 @@
                 }, 800);
                 
                 // 限時模式：不彈出本地結果浮窗，僅短暫樣式反饋
-                if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+                if (!isRemoteTimed()) {
                     showResultModal(true, '恭喜！答對了！');
                 }
             } else {
@@ -2928,21 +2940,21 @@
                 }
                 
                 // 限時模式：不彈出本地結果浮窗
-                if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+                if (!isRemoteTimed()) {
                     showResultModal(false, reason === 'timeout' ? '時間到！' : '答錯了！', currentPoem.line);
                 }
                 // 限時模式下記一次作答（不加分）
-                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                if (isRemoteTimed()) {
                     applyScoreDelta(0, false);
                 }
             }
             
             // 限時模式：結束後自動下一題；非限時仍走原邏輯
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+            if (isRemoteTimed()) {
                 setTimeout(() => { if (!state.timedMode) return; startNewRound(); }, 600);
                 return; // 避免落入輪流流程
             } else if (battleMode.isActive) {
-                endBattleRound(success);
+                if (typeof window.LocalBattle?.endRound === 'function') window.LocalBattle.endRound(success);
             }
         };
 
@@ -2960,7 +2972,7 @@
                 scoreElement.classList.add('animate-score');
                 setTimeout(() => scoreElement.classList.remove('animate-score'), 800);
                 // 遠程：維護統計並廣播
-                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                if (isRemoteTimed()) {
                     const uid = state.user?.id;
                     state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
                     const s = state.stats[uid];
@@ -3446,7 +3458,7 @@
         
         function startTimer() {
             // 限時模式：不啟用單題計時器
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
+            if (isRemoteTimed()) return;
             if (timeLeft > 0) {
                 timerInterval = setInterval(() => {
                     timeLeft--;
@@ -3517,7 +3529,7 @@
         
         function confirmStartBattleMode() {
             // 若遠程限時模式進行中，禁止啟動本地輪流，直接返回
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+            if (isRemoteTimed()) {
                 try { showNotification && showNotification('目前為遠程限時競賽，已禁用本地輪流模式'); } catch(_){ }
                 return;
             }
@@ -3563,7 +3575,7 @@
                 timerInterval = null;
             }
             isGameActive = false;
-            startBattleRound();
+            if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
             showNotification('對戰模式已啟動！');
         }
         
@@ -3610,7 +3622,7 @@
                 
                 const playerCard = document.createElement('div');
                 const themeClass = `player-theme-${(index % 6) + 1}`;
-                const showActive = !(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) && !!player.isActive;
+                const showActive = !isRemoteTimed() && !!player.isActive;
                 playerCard.className = `player-score-card ${themeClass} ${showActive ? 'active' : ''}`;
                 
                 playerCard.innerHTML = `
@@ -3637,9 +3649,9 @@
             });
         }
         
-        function startBattleRound() {
+        window.LocalBattle.startRound = function startBattleRound() {
             // 限時模式下不使用本地輪流回合
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
+            if (isRemoteTimed()) return;
             const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
             showNotification(`${currentPlayer.name} 的回合開始！`);
             
@@ -3649,7 +3661,7 @@
             // 左上角顯示對戰輪次（替代分數）
             if (scoreLabel && scoreElement) {
                 // 限時模式下維持分數標籤
-                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                if (isRemoteTimed()) {
                     scoreLabel.textContent = '分數';
                     scoreElement.textContent = String(score);
                 } else {
@@ -3659,9 +3671,9 @@
             }
         }
         
-        function endBattleRound(isCorrect) {
+        window.LocalBattle.endRound = function endBattleRound(isCorrect) {
             // 限時模式下不使用本地輪流回合結束
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
+            if (isRemoteTimed()) return;
             const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
             
             if (isCorrect) {
@@ -3725,7 +3737,7 @@
         
         function showBattleResultModal() {
             // 1) 遠程限時模式：僅允許在 timed_end 流程中顯示（此處保持冪等）
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode === true) {
+            if (isRemoteTimed()) {
                 return; // 進行中不顯示
             }
             if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedEndsAt > 0) {
@@ -3855,7 +3867,7 @@
             // 重新開始對戰
             updateBattleScoreboard();
             battleScoreboard.classList.remove('hidden');
-            startBattleRound();
+            if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
             
             showNotification('新的對戰開始！');
         }
@@ -4302,7 +4314,7 @@
                             state.pendingRoundStart = null;
                             state.turnUserId = pr.currentUserId || null;
                             updateSubmitGate();
-                            if (typeof window.startBattleRound === 'function') window.startBattleRound();
+                            if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
                         }
                         break;
                     case 'round_start':
@@ -4311,8 +4323,8 @@
                         if (!window.battleMode || !Array.isArray(window.battleMode.players) || window.battleMode.players.length === 0) {
                             // 尚未拿到配置，暫存，等 battle_config 到達後再啟動
                             state.pendingRoundStart = { currentUserId: state.turnUserId };
-                        } else if (typeof window.startBattleRound === 'function') {
-                            window.startBattleRound();
+                        } else if (typeof window.LocalBattle?.startRound === 'function') {
+                            window.LocalBattle.startRound();
                         }
                         break;
                     case 'round_end':
@@ -4575,7 +4587,7 @@
                 updateSubmitGate();
                 // 先本地啟動，後廣播（避免他端先收到 round_start 而你端未配置）
                 if ((bm && Array.isArray(bm.players) && bm.players.length > 0)
-                    && typeof window.startBattleRound === 'function') window.startBattleRound();
+                    && typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
                 window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
             } catch (e) {
                 alert('無法開始對戰：' + (e?.message || e));
@@ -4670,7 +4682,7 @@
                         // 限時模式不輪換；輪流模式自動下一輪
                         if (!state.timedMode) {
                             setTimeout(() => {
-                                if (typeof window.startBattleRound === 'function') window.startBattleRound();
+                                if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
                             }, 600);
                         }
                     }
