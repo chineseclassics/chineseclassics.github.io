@@ -3640,6 +3640,7 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
 }
             } catch(_){ }
 
+            const isTimed = !!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode);
             const leftCount = Math.ceil(players.length / 2);
 
             players.forEach((player, index) => {
@@ -3651,9 +3652,10 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                 const showActive = !isRemoteTimed() && !!player.isActive;
                 playerCard.className = `player-score-card ${themeClass} ${showActive ? 'active' : ''}`;
                 
+                const displayScoreValue = isTimed ? player.score : (typeof player.displayedScore === 'number' ? player.displayedScore : player.score);
                 playerCard.innerHTML = `
                     <div class="player-name text-lg md:text-xl font-bold">${player.name}</div>
-                    <div class="player-score text-2xl md:text-3xl">${typeof player.displayedScore === 'number' ? player.displayedScore : player.score}</div>
+                    <div class="player-score text-2xl md:text-3xl">${displayScoreValue}</div>
                     ${showActive ? '<div class=\"current-turn-indicator\"></div>' : ''}
                 `;
                 
@@ -3661,14 +3663,14 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
 
                 // 分數滾動動畫（若分數有變化）
                 const scoreEl = playerCard.querySelector('.player-score');
-                const from = typeof player.displayedScore === 'number' ? player.displayedScore : player.score;
+                const from = isTimed ? displayScoreValue : (typeof player.displayedScore === 'number' ? player.displayedScore : player.score);
                 const to = player.score;
                 if (from !== to) {
                     // 觸發縮放動畫（若已定義 animate-score 可一併使用）
                     scoreEl.classList.add('animate-score');
                     animateScoreValue(scoreEl, from, to, 700);
                     // 記錄新的已顯示分數
-                    player.displayedScore = to;
+                    if (!isTimed) player.displayedScore = to;
                     // 動畫結束後移除類名
                     setTimeout(() => scoreEl.classList.remove('animate-score'), 800);
                 }
@@ -4175,6 +4177,8 @@ window.LocalBattle.endMode = function endBattleMode() {
             presenceMap: {},
             pendingRoundStart: null
         };
+        // 暴露唯讀引用以供外部讀取（例如計分更新時使用）
+        try { window.__REMOTE_STATE__ = state; } catch(_){}
 
         function getBM(){
             try { return (typeof battleMode !== 'undefined') ? battleMode : (window.battleMode || null); }
