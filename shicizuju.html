@@ -2915,8 +2915,10 @@
                     scoreElement.classList.remove('animate-score');
                 }, 800);
                 
-                // 限時模式：不彈出本地結果浮窗，僅短暫樣式反饋
-                if (!isRemoteTimed()) {
+                // 限時模式：不彈出本地結果浮窗，但提供輕量提示
+                if (isRemoteTimed()) {
+                    try { if (typeof showNotification === 'function') showNotification('答對！+10 分'); } catch(_){}
+                } else {
                     showResultModal(true, '恭喜！答對了！');
                 }
             } else {
@@ -2939,8 +2941,10 @@
                     }, 500);
                 }
                 
-                // 限時模式：不彈出本地結果浮窗
-                if (!isRemoteTimed()) {
+                // 限時模式：不彈出本地結果浮窗，但提供輕量提示
+                if (isRemoteTimed()) {
+                    try { if (typeof showNotification === 'function') showNotification(reason === 'timeout' ? '時間到' : '答錯了'); } catch(_){}
+                } else {
                     showResultModal(false, reason === 'timeout' ? '時間到！' : '答錯了！', currentPoem.line);
                 }
                 // 限時模式下記一次作答（不加分）
@@ -2951,7 +2955,13 @@
             
             // 限時模式：結束後自動下一題；非限時仍走原邏輯
             if (isRemoteTimed()) {
-                setTimeout(() => { if (!state.timedMode) return; startNewRound(); }, 600);
+                // 避免直接引用局部 IIFE 內的 state 造成 ReferenceError
+                setTimeout(() => {
+                    try {
+                        if (typeof state !== 'undefined' && state && state.timedMode !== true) return;
+                    } catch(_){}
+                    startNewRound();
+                }, 600);
                 return; // 避免落入輪流流程
             } else if (battleMode.isActive) {
                 if (typeof window.LocalBattle?.endRound === 'function') window.LocalBattle.endRound(success);
