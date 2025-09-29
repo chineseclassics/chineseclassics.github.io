@@ -2983,9 +2983,11 @@
                 setTimeout(() => scoreElement.classList.remove('animate-score'), 800);
                 // 遠程：維護統計並廣播（並立刻刷新本端記分牌）
                 if (isRemoteTimed()) {
-                    const uid = state.user?.id;
-                    state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
-                    const s = state.stats[uid];
+                    const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : (typeof state !== 'undefined' ? state : null);
+                    const uid = R && R.user ? R.user.id : null;
+                    if (!uid) return;
+                    R.stats[uid] = R.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
+                    const s = R.stats[uid];
                     s.score += delta;
                     s.answered += 1;
                     if (isCorrect) s.correct += 1;
