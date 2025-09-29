@@ -4347,6 +4347,8 @@ window.LocalBattle.endMode = function endBattleMode() {
             if (!msg) return;
             if (msg.from && state.user && msg.from === state.user.id) return; // 忽略自己事件
             try {
+                // 避免「廣播 + DB」重複處理分數：DB 版本的 score_update 直接忽略
+                if (msg.fromDb === true && msg.type === 'score_update') return;
                 // 遠程限時模式：嚴格白名單僅允許 timed_start/score_update/timed_end
                 if (state && state.timedMode === true) {
                     const allowed = { timed_start:1, score_update:1, timed_end:1 };
