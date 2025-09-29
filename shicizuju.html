@@ -4611,33 +4611,42 @@
         state.timedTimer = null;
         state.stats = {}; // userId -> { score, answered, correct, nickname, lastTs }
 
-        startTimedBtn?.addEventListener('click', async () => {
+        async function handleStartTimed(){
             try {
+                console.log('[remote] startTimed clicked');
                 if (!window.RemoteBattle?.isHost()) { alert('僅房主可開始'); return; }
                 await refreshRoster();
                 const roster = state.roster || [];
                 if (roster.length === 0) { alert('尚無玩家加入'); return; }
                 const mins = Math.max(1, Math.min(10, parseInt((timedMinInput?.value || '3'), 10)));
                 const endsAt = Date.now() + mins * 60 * 1000;
-                // 建立對戰板（玩家名單），但不開啟輪流限制
                 const activeTag = (poemTagSelect?.value || loadActiveTag() || '南風詩詞庫');
                 const conf = { players: roster.map(p => ({ id: p.user_id, name: p.nickname || '玩家' })), roundsPerPlayer: 1 };
                 applyBattleConfig(conf);
                 state.timedMode = true;
                 state.timedEndsAt = endsAt;
-                // 廣播包含 players，並附帶 3 秒預備
                 window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag });
                 showPrepCountdown(3000, () => {
                     beginTimedTicker();
-                    // 關閉遠程模態
                     try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
-                    // 立即開始作答
                     if (typeof window.startNewRound === 'function') window.startNewRound();
                 });
             } catch (e) {
+                console.warn('[remote] startTimed error', e);
                 alert('無法開始限時競賽：' + (e?.message || e));
             }
-        });
+        }
+        // 綁定按鈕
+        startTimedBtn?.addEventListener('click', handleStartTimed);
+        // 事件代理保險（避免按鈕被重建導致監聽丟失）
+        document.getElementById('remoteBattleModal')?.addEventListener('click', function(ev){
+            const t = ev.target;
+            if (!t) return;
+            if (t.id === 'rbStartTimedBtn' || t.closest?.('#rbStartTimedBtn')) {
+                ev.preventDefault();
+                handleStartTimed();
+            }
+        }, true);
 
         function beginTimedTicker(){
             try { clearInterval(state.timedTimer); } catch(_){}
