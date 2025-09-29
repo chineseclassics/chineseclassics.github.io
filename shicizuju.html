@@ -3795,60 +3795,73 @@ window.LocalBattle.endMode = function endBattleMode() {
         }
         
         function showBattleResultModal() {
-            // 1) 遠程限時模式：僅允許在 timed_end 流程中顯示（此處保持冪等）
-            if (isRemoteTimed()) {
-                return; // 進行中不顯示
-            }
-            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedEndsAt > 0) {
-                try {
-                    const rows = (state.rosterUserIds || []).map((uid, idx) => {
-                        const name = (battleMode.players && battleMode.players[idx] && battleMode.players[idx].name) || (state.stats[uid]?.nickname) || '玩家';
-                        const st = state.stats[uid] || { score:0, answered:0, correct:0, lastTs:0 };
-                        const acc = st.answered > 0 ? Math.round((st.correct / st.answered) * 100) : 0;
-                        return { name, score: st.score||0, answered: st.answered||0, correct: st.correct||0, acc, _last: st.lastTs||0 };
-                    }).sort((a,b) => (b.score - a.score) || (a._last - b._last));
-
-                    // 標題
-                    winnerAnnouncement.textContent = '競賽結束';
-                    if (rows.length && rows[0].score > 0) {
-                        winnerScore.textContent = `最高分：${rows[0].name} ${rows[0].score} 分`;
-                    } else {
-                        winnerScore.textContent = '';
-                    }
-
-                    // 表格
-                    battleRankings.innerHTML = '';
-                    rows.forEach((r, i) => {
-                        const rank = i + 1;
-                        const rankItem = document.createElement('div');
-                        rankItem.className = 'rank-item';
-                        rankItem.style.animationDelay = `${i * 0.06}s`;
-                        const medals = ['🥇','🥈','🥉'];
-                        const rankText = rank <= 3 ? medals[rank-1] : `#${rank}`;
-                        rankItem.innerHTML = `
-                            <div class="rank-medal w-12 text-center">${rankText}</div>
-                            <div class="rank-name flex-grow text-lg">${r.name}</div>
-                            <div class="rank-score text-xl">${r.score} <span class="text-sm">分</span></div>
-                            <div class="rank-answered text-sm text-slate-600 ml-4">題數：${r.answered}</div>
-                            <div class="rank-acc text-sm text-slate-600 ml-4">正確率：${r.acc}%</div>
-                        `;
-                        battleRankings.appendChild(rankItem);
-                    });
-
-                    // 限時模式：僅保留「關閉」按鈕
+            // 1) 遠程限時模式結果：僅在限時結束（已不再進行中）顯示
+            if (window.RemoteBattle?.room) {
+                const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : null;
+                const timedEnded = !!(R && R.timedEndsAt > 0 && R.timedMode === false);
+                if (timedEnded) {
                     try {
-                        const newBattleBtn = document.getElementById('newBattleBtn');
-                        const exitBattleBtn = document.getElementById('exitBattleBtn');
-                        if (newBattleBtn) newBattleBtn.classList.add('hidden');
-                        if (exitBattleBtn) {
-                            exitBattleBtn.textContent = '關閉';
-                            exitBattleBtn.classList.remove('hidden');
-                        }
-                    } catch(_){ }
+                        const ids = Array.isArray(R.rosterUserIds) ? R.rosterUserIds : [];
+                        const rows = ids.map((uid, idx) => {
+                            const name = (battleMode.players && battleMode.players[idx] && battleMode.players[idx].name) || (R.stats && R.stats[uid]?.nickname) || '玩家';
+                            const st = (R.stats && R.stats[uid]) || { score:0, answered:0, correct:0, lastTs:0 };
+                            const acc = st.answered > 0 ? Math.round((st.correct / st.answered) * 100) : 0;
+                            return { name, score: st.score||0, answered: st.answered||0, correct: st.correct||0, acc, _last: st.lastTs||0 };
+                        }).sort((a,b) => (b.score - a.score) || (a._last - b._last));
 
-                    battleResultModal.classList.remove('hidden');
-                    return;
-                } catch(_) { /* fallback to舊版 */ }
+                        // 標題
+                        winnerAnnouncement.textContent = '競賽結束';
+                        if (rows.length && rows[0].score > 0) {
+                            winnerScore.textContent = `最高分：${rows[0].name} ${rows[0].score} 分`;
+                        } else {
+                            winnerScore.textContent = '';
+                        }
+
+                        // 排行內容
+                        battleRankings.innerHTML = '';
+                        rows.forEach((r, i) => {
+                            const rank = i + 1;
+                            const rankItem = document.createElement('div');
+                            rankItem.className = 'rank-item';
+                            rankItem.style.animationDelay = `${i * 0.06}s`;
+                            const medals = ['🥇','🥈','🥉'];
+                            const rankText = rank <= 3 ? medals[rank-1] : `#${rank}`;
+                            rankItem.innerHTML = `
+                                <div class="rank-medal w-12 text-center">${rankText}</div>
+                                <div class="rank-name flex-grow text-lg">${r.name}</div>
+                                <div class="rank-score text-xl">${r.score} <span class="text-sm">分</span></div>
+                                <div class="rank-answered text-sm text-slate-600 ml-4">題數：${r.answered}</div>
+                                <div class="rank-acc text-sm text-slate-600 ml-4">正確率：${r.acc}%</div>
+                            `;
+                            battleRankings.appendChild(rankItem);
+                        });
+
+                        // 按鈕：僅顯示關閉，點擊後返回單人模式並自動開局
+                        try {
+                            const newBattleBtn = document.getElementById('newBattleBtn');
+                            const exitBattleBtn = document.getElementById('exitBattleBtn');
+                            if (newBattleBtn) newBattleBtn.classList.add('hidden');
+                            if (exitBattleBtn) {
+                                exitBattleBtn.textContent = '關閉';
+                                exitBattleBtn.classList.remove('hidden');
+                                exitBattleBtn.onclick = () => {
+                                    battleResultModal.classList.add('hidden');
+                                    // 清理對戰狀態並回到單人
+                                    try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
+                                    try { window.__REMOTE_TIMED__ = false; } catch(_){}
+                                    try { R.timedMode = false; } catch(_){}
+                                    // 隱藏左/右側記分卡
+                                    try { const board = document.getElementById('battleScoreboard'); board && board.classList.add('hidden'); } catch(_){ }
+                                    // 自動開始單人一局
+                                    if (typeof window.startNewRound === 'function') window.startNewRound();
+                                };
+                            }
+                        } catch(_){}
+
+                        battleResultModal.classList.remove('hidden');
+                        return;
+                    } catch(_) { /* fallback 到舊版 */ }
+                }
             }
 
             // 2) 舊模式（本地輪流）：沿用原排序
