@@ -4305,6 +4305,8 @@
                         state.timedEndsAt = msg.payload?.endsAt || (Date.now() + (msg.payload?.mins || 3) * 60000);
                         if (Array.isArray(msg.payload?.players)) {
                             applyBattleConfig({ players: msg.payload.players, roundsPerPlayer: 1 });
+                            // 限時模式不使用本地輪流：強制關閉輪流旗標，避免 UI/流程混淆
+                            try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
                         }
                         // 同步詩詞庫到本地
                         if (msg.payload?.tag) {
