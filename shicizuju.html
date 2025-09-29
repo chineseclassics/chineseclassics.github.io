@@ -4613,6 +4613,7 @@
 
         startTimedBtn?.addEventListener('click', async () => {
             try {
+                console.log('[remote] startTimed clicked');
                 if (!window.RemoteBattle?.isHost()) { alert('僅房主可開始'); return; }
                 await refreshRoster();
                 const roster = state.roster || [];
@@ -4638,6 +4639,16 @@
                 alert('無法開始限時競賽：' + (e?.message || e));
             }
         });
+
+        // 事件代理保險（避免按鈕被重建導致監聽丟失）
+        document.getElementById('remoteBattleModal')?.addEventListener('click', function(ev){
+            const t = ev.target;
+            if (!t) return;
+            if (t.id === 'rbStartTimedBtn' || t.closest?.('#rbStartTimedBtn')) {
+                ev.preventDefault();
+                try { startTimedBtn?.click(); } catch(_) {}
+            }
+        }, true);
 
         function beginTimedTicker(){
             try { clearInterval(state.timedTimer); } catch(_){}
