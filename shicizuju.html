@@ -2771,13 +2771,13 @@
             
             // 在遠程限時模式中，不使用單題倒數，只顯示全局倒數
             if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
-                // 清理單題時間條
-                if (timeBarFill) {
-                    timeBarFill.style.width = '0%';
-                }
-                // 顯示全局剩餘秒數
-                const remainMs = Math.max(0, (state.timedEndsAt || Date.now()) - Date.now());
-                timerElement.textContent = String(Math.ceil(remainMs / 1000));
+                // 限時模式：隱藏單題進度條，只顯示全局秒數
+                try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
+                try {
+                    const remainMs = Math.max(0, (state.timedEndsAt || Date.now()) - Date.now());
+                    timerElement.textContent = String(Math.ceil(remainMs / 1000));
+                } catch(_){ }
+                // 確保不會啟動單題計時器
             } else {
                 // Reset timer based on current slider (下一輪生效的設定)
                 roundTimeLimit = parseInt(timeLimitSlider.value);
@@ -2892,8 +2892,10 @@
                     scoreElement.classList.remove('animate-score');
                 }, 800);
                 
-                // 显示成功结果浮窗
-                showResultModal(true, '恭喜！答對了！');
+                // 限時模式：不彈出本地結果浮窗，僅短暫樣式反饋
+                if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+                    showResultModal(true, '恭喜！答對了！');
+                }
             } else {
                 // 播放錯誤/時間到音效
                 soundManager.play('timeUp');
@@ -2914,8 +2916,10 @@
                     }, 500);
                 }
                 
-                // 显示失败结果浮窗，包含正确答案
-                showResultModal(false, reason === 'timeout' ? '時間到！' : '答錯了！', currentPoem.line);
+                // 限時模式：不彈出本地結果浮窗
+                if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+                    showResultModal(false, reason === 'timeout' ? '時間到！' : '答錯了！', currentPoem.line);
+                }
                 // 限時模式下記一次作答（不加分）
                 if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
                     applyScoreDelta(0, false);
@@ -2925,6 +2929,7 @@
             // 限時模式：結束後自動下一題；非限時仍走原邏輯
             if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
                 setTimeout(() => { if (!state.timedMode) return; startNewRound(); }, 600);
+                return; // 避免落入輪流流程
             } else if (battleMode.isActive) {
                 endBattleRound(success);
             }
@@ -3271,7 +3276,10 @@
             // 如果遊戲之前是活躍的，恢復遊戲狀態
             if (gameWasPaused && timerWasActive) {
                 isGameActive = true;
-                startTimer();
+                // 限時模式：不恢復單題計時器
+                if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+                    startTimer();
+                }
             }
         }
         
@@ -3426,6 +3434,8 @@
         }
         
         function startTimer() {
+            // 限時模式：不啟用單題計時器
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
             if (timeLeft > 0) {
                 timerInterval = setInterval(() => {
                     timeLeft--;
@@ -3571,10 +3581,10 @@
                     players = players.map((pl, idx) => {
                         const uid = state.rosterUserIds[idx];
                         const st = uid ? state.stats[uid] : null;
-                        return { ...pl, score: st ? st.score : pl.score, _last: st ? st.lastTs : 0 };
+                        return { ...pl, score: st ? st.score : pl.score, _last: st ? st.lastTs : 0, isActive: false };
                     }).sort((a, b) => (b.score - a.score) || (a._last - b._last));
                 }
-            } catch(_){}
+            } catch(_){ }
 
             const leftCount = Math.ceil(players.length / 2);
 
@@ -3584,12 +3594,13 @@
                 
                 const playerCard = document.createElement('div');
                 const themeClass = `player-theme-${(index % 6) + 1}`;
-                playerCard.className = `player-score-card ${themeClass} ${player.isActive ? 'active' : ''}`;
+                const showActive = !(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) && !!player.isActive;
+                playerCard.className = `player-score-card ${themeClass} ${showActive ? 'active' : ''}`;
                 
                 playerCard.innerHTML = `
                     <div class="player-name text-lg md:text-xl font-bold">${player.name}</div>
                     <div class="player-score text-2xl md:text-3xl">${typeof player.displayedScore === 'number' ? player.displayedScore : player.score}</div>
-                    ${player.isActive ? '<div class="current-turn-indicator"></div>' : ''}
+                    ${showActive ? '<div class=\"current-turn-indicator\"></div>' : ''}
                 `;
                 
                 container.appendChild(playerCard);
