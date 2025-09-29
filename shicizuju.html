@@ -2191,7 +2191,7 @@
 
         // ===== 模式輔助：集中判斷入口，避免條件分散重覆 =====
         function isRemoteTimed(){
-            try { return !!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode); } catch(_) { return false; }
+            try { return !!(window.RemoteBattle?.room && window.__REMOTE_TIMED__ === true); } catch(_) { return false; }
         }
         function isLocalBattle(){
             try { return !!(window.battleMode && window.battleMode.isActive && !isRemoteTimed()); } catch(_) { return false; }
@@ -3565,7 +3565,7 @@
             battleMode.totalRounds = battleMode.players.length * battleMode.roundsPerPlayer;
             
             // 顯示積分板
-            updateBattleScoreboard();
+            if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
             battleScoreboard.classList.remove('hidden');
             
             // 開始第一輪
@@ -3599,7 +3599,7 @@
             requestAnimationFrame(step);
         }
 
-        function updateBattleScoreboard() {
+window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             leftPlayersContainer.innerHTML = '';
             rightPlayersContainer.innerHTML = '';
             // 遠程限時模式下，按 score 降序展示（同分以 lastTs 先者在前）
@@ -3611,7 +3611,7 @@
                         const st = uid ? state.stats[uid] : null;
                         return { ...pl, score: st ? st.score : pl.score, _last: st ? st.lastTs : 0, isActive: false };
                     }).sort((a, b) => (b.score - a.score) || (a._last - b._last));
-                }
+}
             } catch(_){ }
 
             const leftCount = Math.ceil(players.length / 2);
@@ -3701,7 +3701,7 @@
                 scoreElement.textContent = `${Math.min(battleMode.currentRound + 1, battleMode.totalRounds)} / ${battleMode.totalRounds}`;
             }
             if (battleMode.currentRound >= battleMode.totalRounds) {
-                endBattleMode();
+                if (typeof window.LocalBattle?.endMode === 'function') window.LocalBattle.endMode();
                 return;
             }
             
@@ -3711,13 +3711,13 @@
             battleMode.players[battleMode.currentPlayerIndex].isActive = true;
             
             // 先切換 active，再更新積分板，讓呼吸動畫跟隨目前答題者
-            updateBattleScoreboard();
+            if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
             
             // 開始下一輪 - 移除自动延迟，改为手动控制
             // startBattleRound() 将由浮窗的"下一輪"按钮调用
         }
         
-        function endBattleMode() {
+window.LocalBattle.endMode = function endBattleMode() {
             // 限時模式下不走本地輪流結算
             if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
             battleMode.isActive = false;
@@ -3732,7 +3732,7 @@
             if (scoreLabel && scoreElement) {
                 scoreLabel.textContent = '分數';
                 scoreElement.textContent = String(score);
-            }
+}
         }
         
         function showBattleResultModal() {
@@ -4331,10 +4331,11 @@
                         if (typeof window.endBattleRound === 'function') window.endBattleRound(!!msg.payload?.isCorrect);
                         break;
                     case 'battle_end':
-                        if (typeof window.endBattleMode === 'function') window.endBattleMode();
+                        if (typeof window.LocalBattle?.endMode === 'function') window.LocalBattle.endMode();
                         break;
                     case 'timed_start':
                         // 接收限時開始：同步狀態與玩家列表，顯示3秒預備，然後開始
+                        window.__REMOTE_TIMED__ = true;
                         state.timedMode = true;
                         state.timedEndsAt = msg.payload?.endsAt || (Date.now() + (msg.payload?.mins || 3) * 60000);
                         if (Array.isArray(msg.payload?.players)) {
@@ -4381,7 +4382,7 @@
                                     const st = uidAt ? state.stats[uidAt] : null;
                                     if (pl && st) pl.score = st.score;
                                 });
-                                if (typeof window.updateBattleScoreboard === 'function') window.updateBattleScoreboard();
+                                if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
                             }
                         } catch(_){}
                         break;
@@ -4423,7 +4424,7 @@
                 bm.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(conf.roundsPerPlayer || '5')));
                 bm.currentRound = 0;
                 bm.totalRounds = bm.players.length * bm.roundsPerPlayer;
-                if (typeof window.updateBattleScoreboard === 'function') window.updateBattleScoreboard();
+                if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
                 const board = document.getElementById('battleScoreboard');
                 if (board) board.classList.remove('hidden');
                 state.turnUserId = (state.rosterUserIds && state.rosterUserIds[0]) || null;
@@ -4708,8 +4709,10 @@
                 // 建立對戰板（玩家名單），但不開啟輪流限制
                 const activeTag = (poemTagSelect?.value || loadActiveTag() || '南風詩詞庫');
                 const conf = { players: roster.map(p => ({ id: p.user_id, name: p.nickname || '玩家' })), roundsPerPlayer: 1 };
-                applyBattleConfig(conf);
+                // 標記遠程限時模式（先標記，再套用名單，避免套用過程誤觸本地邏輯）
+                window.__REMOTE_TIMED__ = true;
                 state.timedMode = true;
+                applyBattleConfig(conf);
                 try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
                 state.timedEndsAt = endsAt;
                 // 保險：清理任何單題計時與本地回合狀態
