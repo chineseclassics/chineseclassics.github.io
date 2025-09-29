@@ -4372,7 +4372,7 @@
         }
 
         // 填充房主可選的詩詞庫標籤（從主設置的 userLibraryTagSelect 複製）
-        function populatePoemTags(){
+        window.populatePoemTags = function(){
             try {
                 const dst = document.getElementById('rbPoemTag');
                 if (!dst) return;
