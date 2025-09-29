@@ -4371,6 +4371,39 @@
             });
         }
 
+        // 填充房主可選的詩詞庫標籤（從主設置的 userLibraryTagSelect 複製）
+        function populatePoemTags(){
+            try {
+                const dst = document.getElementById('rbPoemTag');
+                if (!dst) return;
+                dst.innerHTML = '';
+                const src = document.getElementById('userLibraryTagSelect');
+                let filled = false;
+                if (src && src.options && src.options.length) {
+                    Array.from(src.options).forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value;
+                        o.textContent = opt.textContent || opt.value;
+                        dst.appendChild(o);
+                    });
+                    filled = true;
+                }
+                if (!filled) {
+                    // 後備：給出一個常用預設
+                    const o = document.createElement('option');
+                    o.value = '南風詩詞庫';
+                    o.textContent = '南風詩詞庫';
+                    dst.appendChild(o);
+                }
+                // 預設選中當前啟用標籤
+                try {
+                    const active = (typeof loadActiveTag === 'function') ? (loadActiveTag() || '南風詩詞庫') : '南風詩詞庫';
+                    const has = Array.from(dst.options).some(op => op.value === active);
+                    dst.value = has ? active : (dst.options[0]?.value || '南風詩詞庫');
+                } catch(_){}
+            } catch(_){}
+        }
+
         // 封裝到全域，供後續遊戲流程調用
         window.RemoteBattle = {
             get user(){ return state.user; },
