@@ -4023,20 +4023,18 @@
                         <div class="text-slate-600 mt-1">把代碼分享給朋友加入房間</div>
                     </div>
 
-                    <div id="rbHostSettings" class="mt-4 space-y-3 hidden">
-                        <div class="text-sm font-semibold text-slate-700">對戰設定（僅房主可見）</div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <div class="text-xs text-slate-600 mb-1">限時（分鐘 1–10）</div>
-                                <input id="rbTimedMinutes" type="number" min="1" max="10" value="3" class="w-full border rounded-lg px-3 py-2">
-                            </div>
-                            <div>
-                                <div class="text-xs text-slate-600 mb-1">詩詞庫</div>
-                                <select id="rbPoemTag" class="w-full border rounded-lg px-3 py-2"></select>
-                            </div>
-                        </div>
-                        <button id="rbStartTimedBtn" class="w-full py-2 rounded-lg bg-primary-500 text-white interactive">開始限時競賽</button>
-                        <div class="text-xs text-slate-500">開始後，所有選手端將顯示統一計時與記分牌，並可同步作答。</div>
+                    <div class="mt-3 space-y-2">
+                        <div class="text-sm text-slate-600">每人回合數</div>
+                        <input id="rbRoundsPerPlayer" type="number" min="1" max="50" value="5" class="w-32 border rounded-lg px-3 py-2">
+                        <button id="rbStartBtn" class="w-full mt-2 py-2 rounded-lg bg-primary-500 text-white interactive">開始對戰（僅房主）</button>
+                        <div class="text-xs text-slate-500">開始後，記分牌將自動採用已加入玩家暱稱並按加入順序輪流作答。</div>
+                    </div>
+
+                    <div class="mt-4 space-y-2 border-t pt-3">
+                        <div class="text-sm text-slate-600">限時競賽（分鐘，1-10）</div>
+                        <input id="rbTimedMinutes" type="number" min="1" max="10" value="3" class="w-24 border rounded-lg px-3 py-2">
+                        <button id="rbStartTimedBtn" class="w-full mt-2 py-2 rounded-lg bg-rose-500 text-white interactive">開始限時競賽（僅房主）</button>
+                        <div class="text-xs text-slate-500">限時內所有選手可同時作答，分數即時同步，時間到自動結算。</div>
                     </div>
                 </div>
 
@@ -4264,13 +4262,6 @@
                         if (Array.isArray(msg.payload?.players)) {
                             applyBattleConfig({ players: msg.payload.players, roundsPerPlayer: 1 });
                         }
-                        // 同步詩詞庫到本地
-                        if (msg.payload?.tag) {
-                            try {
-                                const tagSel = document.getElementById('userLibraryTagSelect');
-                                if (tagSel) { tagSel.value = msg.payload.tag; saveActiveTag(msg.payload.tag); }
-                            } catch(_){}
-                        }
                         showPrepCountdown(Math.max(1000, msg.payload?.prepMs || 3000), () => {
                             beginTimedTicker();
                             try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
@@ -4371,39 +4362,6 @@
             });
         }
 
-        // 填充房主可選的詩詞庫標籤（從主設置的 userLibraryTagSelect 複製）
-        window.populatePoemTags = function(){
-            try {
-                const dst = document.getElementById('rbPoemTag');
-                if (!dst) return;
-                dst.innerHTML = '';
-                const src = document.getElementById('userLibraryTagSelect');
-                let filled = false;
-                if (src && src.options && src.options.length) {
-                    Array.from(src.options).forEach(opt => {
-                        const o = document.createElement('option');
-                        o.value = opt.value;
-                        o.textContent = opt.textContent || opt.value;
-                        dst.appendChild(o);
-                    });
-                    filled = true;
-                }
-                if (!filled) {
-                    // 後備：給出一個常用預設
-                    const o = document.createElement('option');
-                    o.value = '南風詩詞庫';
-                    o.textContent = '南風詩詞庫';
-                    dst.appendChild(o);
-                }
-                // 預設選中當前啟用標籤
-                try {
-                    const active = (typeof loadActiveTag === 'function') ? (loadActiveTag() || '南風詩詞庫') : '南風詩詞庫';
-                    const has = Array.from(dst.options).some(op => op.value === active);
-                    dst.value = has ? active : (dst.options[0]?.value || '南風詩詞庫');
-                } catch(_){}
-            } catch(_){}
-        }
-
         // 封裝到全域，供後續遊戲流程調用
         window.RemoteBattle = {
             get user(){ return state.user; },
@@ -4428,17 +4386,12 @@
         const codeDisplay = $('rbRoomCodeDisplay');
         const joinCodeInput = $('rbJoinCode');
         const joinBtn = $('rbJoinBtn');
-        const hostSettings = document.getElementById('rbHostSettings');
-        const timedMinInput = document.getElementById('rbTimedMinutes');
-        const startTimedBtn = document.getElementById('rbStartTimedBtn');
-        const poemTagSelect = document.getElementById('rbPoemTag');
+        const roundsInput = $('rbRoundsPerPlayer');
+        const startBtn = $('rbStartBtn');
+        const timedMinInput = $('rbTimedMinutes');
+        const startTimedBtn = $('rbStartTimedBtn');
 
-        function openModal(){
-            modal?.classList.remove('hidden');
-            // 打開遠程模態時暫停單人模式，避免背景自動運行
-            try { clearInterval(timerInterval); } catch(_){}
-            isGameActive = false;
-        }
+        function openModal(){ modal?.classList.remove('hidden'); }
         function closeModal(){ modal?.classList.add('hidden'); }
 
         btn?.addEventListener('click', openModal);
@@ -4455,10 +4408,6 @@
                 console.log('[remote] room created', room && room.code);
                 if (codeDisplay) codeDisplay.textContent = room.code;
                 createdInfo?.classList.remove('hidden');
-                if (window.RemoteBattle?.isHost()) {
-                    hostSettings?.classList.remove('hidden');
-                    populatePoemTags();
-                }
                 if (createBtn) { createBtn.textContent = '已建立'; setTimeout(()=>{ createBtn.disabled = false; createBtn.textContent = '建立房間'; }, 1200); }
             } catch (e) {
                 console.warn('[remote] create error', e);
@@ -4476,7 +4425,6 @@
                 console.log('[remote] joined room', room && room.code);
                 if (codeDisplay) codeDisplay.textContent = room.code;
                 createdInfo?.classList.remove('hidden');
-                hostSettings?.classList.add('hidden');
             } catch (e) {
                 console.warn('[remote] join error', e);
                 alert('加入失敗：' + (e?.message || e));
@@ -4611,42 +4559,32 @@
         state.timedTimer = null;
         state.stats = {}; // userId -> { score, answered, correct, nickname, lastTs }
 
-        async function handleStartTimed(){
+        startTimedBtn?.addEventListener('click', async () => {
             try {
-                console.log('[remote] startTimed clicked');
                 if (!window.RemoteBattle?.isHost()) { alert('僅房主可開始'); return; }
                 await refreshRoster();
                 const roster = state.roster || [];
                 if (roster.length === 0) { alert('尚無玩家加入'); return; }
                 const mins = Math.max(1, Math.min(10, parseInt((timedMinInput?.value || '3'), 10)));
                 const endsAt = Date.now() + mins * 60 * 1000;
-                const activeTag = (poemTagSelect?.value || loadActiveTag() || '南風詩詞庫');
+                // 建立對戰板（玩家名單），但不開啟輪流限制
                 const conf = { players: roster.map(p => ({ id: p.user_id, name: p.nickname || '玩家' })), roundsPerPlayer: 1 };
                 applyBattleConfig(conf);
                 state.timedMode = true;
                 state.timedEndsAt = endsAt;
-                window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag });
+                // 廣播包含 players，並附帶 3 秒預備
+                window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000 });
                 showPrepCountdown(3000, () => {
                     beginTimedTicker();
+                    // 關閉遠程模態
                     try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
+                    // 立即開始作答
                     if (typeof window.startNewRound === 'function') window.startNewRound();
                 });
             } catch (e) {
-                console.warn('[remote] startTimed error', e);
                 alert('無法開始限時競賽：' + (e?.message || e));
             }
-        }
-        // 綁定按鈕
-        startTimedBtn?.addEventListener('click', handleStartTimed);
-        // 事件代理保險（避免按鈕被重建導致監聽丟失）
-        document.getElementById('remoteBattleModal')?.addEventListener('click', function(ev){
-            const t = ev.target;
-            if (!t) return;
-            if (t.id === 'rbStartTimedBtn' || t.closest?.('#rbStartTimedBtn')) {
-                ev.preventDefault();
-                handleStartTimed();
-            }
-        }, true);
+        });
 
         function beginTimedTicker(){
             try { clearInterval(state.timedTimer); } catch(_){}
