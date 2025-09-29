@@ -4825,6 +4825,8 @@ window.LocalBattle.endMode = function endBattleMode() {
             try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
             state.timedTimer = setInterval(() => {
                 updateTimedUI();
+                // 週期性重繪記分板，確保未提交端也能即時看到他人分數變化
+                try { if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard(); } catch(_){ }
                 if (!state.timedMode) { clearInterval(state.timedTimer); return; }
                 if (Date.now() >= state.timedEndsAt) {
                     clearInterval(state.timedTimer);
