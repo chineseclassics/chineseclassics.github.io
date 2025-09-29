@@ -2971,7 +2971,7 @@
                 // 本地：單人側計分
                 scoreElement.classList.add('animate-score');
                 setTimeout(() => scoreElement.classList.remove('animate-score'), 800);
-                // 遠程：維護統計並廣播
+                // 遠程：維護統計並廣播（並立刻刷新本端記分牌）
                 if (isRemoteTimed()) {
                     const uid = state.user?.id;
                     state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
@@ -2981,6 +2981,7 @@
                     if (isCorrect) s.correct += 1;
                     s.lastTs = Date.now();
                     window.RemoteBattle.sendGameEvent('score_update', { userId: uid, delta, answeredInc:1, correctInc: isCorrect?1:0 });
+                    try { if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard(); } catch(_){ }
                 }
             } catch(_){}
         }
@@ -2996,13 +2997,19 @@
             }
             const submitBtn = document.getElementById('submitPoem');
             if (submitBtn) {
-                // 僅在字數完全匹配時允許提交
-                const canSubmit = selected === target && target > 0;
-                submitBtn.disabled = !canSubmit;
-                if (submitBtn.disabled) {
-                    submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-                } else {
+                if (isRemoteTimed()) {
+                    // 限時模式：始終允許提交（未滿字數視為錯誤處理）
+                    submitBtn.disabled = false;
                     submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                } else {
+                    // 本地/單人：僅在字數完全匹配時允許提交
+                    const canSubmit = selected === target && target > 0;
+                    submitBtn.disabled = !canSubmit;
+                    if (submitBtn.disabled) {
+                        submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+                    } else {
+                        submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+                    }
                 }
             }
             // 超出字數提示
@@ -3032,11 +3039,20 @@
                 // 播放按鈕點擊音效
                 soundManager.play('buttonClick');
                 
-                if (poemDisplay.value.trim().length === 0) {
-                    showNotification('請先選擇漢字再提交！');
-                    return;
+                if (isRemoteTimed()) {
+                    const target = currentPoem ? currentPoem.line.length : 0;
+                    if (poemDisplay.value.trim().length < target) {
+                        // 未滿字數：視為錯誤快速反饋
+                        endRound(false, 'wrong');
+                        return;
+                    }
+                } else {
+                    if (poemDisplay.value.trim().length === 0) {
+                        showNotification('請先選擇漢字再提交！');
+                        return;
+                    }
                 }
-                
+
                 const isCorrect = verifyPoem();
                 endRound(isCorrect, isCorrect ? 'correct' : 'wrong');
             }
