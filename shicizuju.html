@@ -2186,6 +2186,7 @@
         const notificationText = document.getElementById('notificationText');
         const closeNotification = document.getElementById('closeNotification');
         const timeBarFill = document.getElementById('timeBarFill');
+        const timeBarContainer = document.getElementById('timeBarContainer');
         const selectionStatus = document.getElementById('selectionStatus');
 
         // Difficulty settings
@@ -2781,6 +2782,7 @@
             if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
                 // 限時模式：隱藏單題進度條，只顯示全局秒數
                 try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
+                try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
                 try {
                     const remainMs = Math.max(0, (state.timedEndsAt || Date.now()) - Date.now());
                     timerElement.textContent = String(Math.ceil(remainMs / 1000));
@@ -2796,6 +2798,7 @@
                     timeBarFill.classList.remove('bg-red-500');
                     timeBarFill.classList.add('bg-primary');
                 }
+                try { if (timeBarContainer) timeBarContainer.style.display = ''; } catch(_){ }
             }
             
             // 确保按钮区域显示和状态正确
@@ -3761,6 +3764,17 @@
                         battleRankings.appendChild(rankItem);
                     });
 
+                    // 限時模式：僅保留「關閉」按鈕
+                    try {
+                        const newBattleBtn = document.getElementById('newBattleBtn');
+                        const exitBattleBtn = document.getElementById('exitBattleBtn');
+                        if (newBattleBtn) newBattleBtn.classList.add('hidden');
+                        if (exitBattleBtn) {
+                            exitBattleBtn.textContent = '關閉';
+                            exitBattleBtn.classList.remove('hidden');
+                        }
+                    } catch(_){ }
+
                     battleResultModal.classList.remove('hidden');
                     return;
                 } catch(_) { /* fallback to舊版 */ }
@@ -4720,6 +4734,8 @@
         function beginTimedTicker(){
             try { clearInterval(state.timedTimer); } catch(_){}
             updateTimedUI();
+            // 限時模式：保險隱藏單題進度條
+            try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
             state.timedTimer = setInterval(() => {
                 updateTimedUI();
                 if (!state.timedMode) { clearInterval(state.timedTimer); return; }
