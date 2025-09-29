@@ -4388,6 +4388,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                         break;
                     case 'timed_end':
                         state.timedMode = false;
+                        try { window.__REMOTE_TIMED__ = false; } catch(_){}
                         try { clearInterval(state.timedTimer); } catch(_){}
                         // 顯示遠程限時專屬排行榜
                         if (typeof showBattleResultModal === 'function') showBattleResultModal();
@@ -4787,6 +4788,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 if (Date.now() >= state.timedEndsAt) {
                     clearInterval(state.timedTimer);
                     state.timedMode = false;
+                    try { window.__REMOTE_TIMED__ = false; } catch(_){}
                     window.RemoteBattle.sendGameEvent('timed_end', {});
                     showBattleResultModal && showBattleResultModal();
                 }
