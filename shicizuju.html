@@ -3635,15 +3635,30 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             try {
                 const R = (typeof window !== 'undefined') ? (window.__REMOTE_STATE__ || null) : null;
                 if (window.RemoteBattle?.room && R && R.timedMode) {
+                    // 僅更新分數，不改變原本左右位置
                     players = players.map((pl, idx) => {
                         const uid = R.rosterUserIds ? R.rosterUserIds[idx] : null;
                         const st = uid && R.stats ? R.stats[uid] : null;
                         return { ...pl, score: st ? st.score : pl.score, _last: st ? st.lastTs : 0, isActive: false };
-                    }).sort((a, b) => (b.score - a.score) || (a._last - b._last));
-}
+                    });
+                }
             } catch(_){ }
 
             const isTimed = !!(window.RemoteBattle?.room && window.__REMOTE_STATE__ && window.__REMOTE_STATE__.timedMode);
+            // 計算名次（僅遠程限時，用徽章顯示；不調整卡片位置）
+            const rankByIdx = {};
+            if (isTimed) {
+                try {
+                    const R = window.__REMOTE_STATE__;
+                    const ranks = players.map((pl, idx) => {
+                        const uid = (R && R.rosterUserIds) ? R.rosterUserIds[idx] : null;
+                        const st = uid && R.stats ? R.stats[uid] : null;
+                        return { idx, score: st ? (st.score||0) : 0, last: st ? (st.lastTs||0) : 0 };
+                    }).sort((a,b) => (b.score - a.score) || (a.last - b.last));
+                    ranks.forEach((r, i) => { rankByIdx[r.idx] = i + 1; });
+                } catch(_){ }
+            }
+
             const leftCount = Math.ceil(players.length / 2);
 
             players.forEach((player, index) => {
@@ -3653,10 +3668,12 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                 const playerCard = document.createElement('div');
                 const themeClass = `player-theme-${(index % 6) + 1}`;
                 const showActive = !isRemoteTimed() && !!player.isActive;
-                playerCard.className = `player-score-card ${themeClass} ${showActive ? 'active' : ''}`;
+                playerCard.className = `player-score-card ${themeClass} ${showActive ? 'active' : ''} relative`;
                 
                 const displayScoreValue = isTimed ? player.score : (typeof player.displayedScore === 'number' ? player.displayedScore : player.score);
+                const rankBadge = isTimed && rankByIdx[index] ? `<div class="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center shadow">${rankByIdx[index]}</div>` : '';
                 playerCard.innerHTML = `
+                    ${rankBadge}
                     <div class="player-name text-lg md:text-xl font-bold">${player.name}</div>
                     <div class="player-score text-2xl md:text-3xl">${displayScoreValue}</div>
                     ${showActive ? '<div class=\"current-turn-indicator\"></div>' : ''}
