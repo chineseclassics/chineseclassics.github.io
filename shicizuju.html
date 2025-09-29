@@ -3505,6 +3505,11 @@
         }
         
         function confirmStartBattleMode() {
+            // 若遠程限時模式進行中，禁止啟動本地輪流，直接返回
+            if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                try { showNotification && showNotification('目前為遠程限時競賽，已禁用本地輪流模式'); } catch(_){ }
+                return;
+            }
             // 收集選手名稱
             const playerCount = parseInt(playerCountSelect.value);
             battleMode.players = [];
@@ -3632,8 +3637,11 @@
 
             // 左上角顯示對戰輪次（替代分數）
             if (scoreLabel && scoreElement) {
-                // 限時模式不顯示輪次 UI
-                if (!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode)) {
+                // 限時模式下維持分數標籤
+                if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) {
+                    scoreLabel.textContent = '分數';
+                    scoreElement.textContent = String(score);
+                } else {
                     scoreLabel.textContent = '輪次';
                     scoreElement.textContent = `${battleMode.currentRound + 1} / ${battleMode.totalRounds}`;
                 }
@@ -4666,6 +4674,7 @@
                 const conf = { players: roster.map(p => ({ id: p.user_id, name: p.nickname || '玩家' })), roundsPerPlayer: 1 };
                 applyBattleConfig(conf);
                 state.timedMode = true;
+                try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
                 state.timedEndsAt = endsAt;
                 // 廣播包含 players，並附帶 3 秒預備
                 window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag });
