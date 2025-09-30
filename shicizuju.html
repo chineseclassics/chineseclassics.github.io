@@ -4633,7 +4633,12 @@ window.LocalBattle.endMode = function endBattleMode() {
         async function joinRealtime(room, nickname){
             state.room = room;
             if (state.channel) { try { await state.channel.unsubscribe(); } catch(_){} }
-            const channel = sb.channel(`room:${room.code}`, { config: { presence: { key: state.user.id } } });
+            const channel = sb.channel(`room:${room.code}`, { 
+                config: { 
+                    presence: { key: state.user.id },
+                    broadcast: { self: false, ack: false }  // 啟用 broadcast 功能
+                } 
+            });
 
             channel.on('presence', { event: 'sync' }, () => {
                 const st = channel.presenceState();
@@ -4642,6 +4647,7 @@ window.LocalBattle.endMode = function endBattleMode() {
             });
 
             channel.on('broadcast', { event: 'move' }, (msg) => {
+                console.log('[remote] broadcast received in channel.on, payload:', msg?.payload);
                 handleIncomingMove(msg?.payload);
             });
 
@@ -4706,13 +4712,39 @@ window.LocalBattle.endMode = function endBattleMode() {
         async function sendGameEvent(type, payload){
             if (!state.room || !state.channel) return;
             const out = { type, payload, ts: Date.now(), from: state.user?.id, eid: genEid() };
-            state.channel.send({ type: 'broadcast', event: 'move', payload: out });
-            await sb.from('room_events').insert({ room_id: state.room.id, user_id: state.user.id, event_type: type, payload, eid: out.eid });
+            
+            // 通過 Realtime channel 廣播事件
+            try {
+                await state.channel.send({ type: 'broadcast', event: 'move', payload: out });
+                console.log(`[remote] broadcast sent: ${type}`);
+            } catch (e) {
+                console.error('[remote] broadcast error:', e);
+            }
+            
+            // 數據庫記錄（可選，失敗不影響遊戲）
+            try {
+                await sb.from('room_events').insert({ 
+                    room_id: state.room.id, 
+                    user_id: state.user.id, 
+                    event_type: type, 
+                    payload, 
+                    eid: out.eid 
+                });
+            } catch (e) {
+                console.warn('[remote] db insert failed (non-critical):', e.message);
+            }
         }
 
         function handleIncomingMove(msg){
-            if (!msg) return;
-            if (msg.from && state.user && msg.from === state.user.id) return; // 忽略自己事件
+            if (!msg) {
+                console.warn('[remote] handleIncomingMove: empty message');
+                return;
+            }
+            console.log('[remote] handleIncomingMove received:', msg.type, 'from:', msg.from);
+            if (msg.from && state.user && msg.from === state.user.id) {
+                console.log('[remote] ignoring own message');
+                return; // 忽略自己事件
+            }
             try {
                 // 事件去重：若已有相同 eid 則忽略
                 if (msg.eid) {
@@ -5070,7 +5102,10 @@ window.LocalBattle.endMode = function endBattleMode() {
                 console.log('[remote] host GameState.players initialized:', window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji })));
                 console.log('[remote] host GameState:', { mode: window.GameState.mode, subMode: window.GameState.subMode, isActive: window.GameState.isActive });
                 
-                window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag, emojiMap });
+                // 發送遊戲開始事件並等待完成
+                await window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag, emojiMap });
+                console.log('[remote] timed_start event sent');
+                
                 showPrepCountdown(3000, () => {
                     console.log('[remote] host entering game, GameMode.isTimedScore()=', window.GameMode.isTimedScore(), 'GameMode.isAnyBattle()=', window.GameMode.isAnyBattle());
                     beginTimedTicker();
