@@ -937,13 +937,11 @@
             </div>
         </div>
         
-        <!-- 倒計時進度條 - 现代化 -->
+        <!-- 倒計時進度條 / 賽道容器 -->
         <div id="timeBarContainer" class="w-full h-3 bg-surface-200 rounded-full overflow-hidden mb-3 animate-scale-in shadow-inner relative">
             <div id="timeBarFill" class="h-full gradient-primary rounded-full transition-all duration-300 ease-out" style="width: 100%"></div>
-            <!-- 遠程限時：賽道視圖覆蓋在時間條上方（時間條在遠程限時下隱藏） -->
-            <div id="raceTrack" class="absolute inset-0 hidden px-1 flex items-center gap-1">
-                <!-- 動態插入選手標記 -->
-            </div>
+            <!-- 遠程/本地對戰：賽道視圖（時間條上層覆蓋） -->
+            <div id="raceTrack" class="absolute inset-0 hidden px-1 flex items-center gap-1"></div>
         </div>
         
         <div class="flex items-center justify-end space-x-3 mb-2">
@@ -2204,43 +2202,101 @@
         // 提供命名空間占位，後續可逐步把相關函式掛載至此，避免混名
         window.LocalBattle = window.LocalBattle || {};
         window.RemoteTimed = window.RemoteTimed || {};
-        // 賽道渲染：根據遠程分數在頂部賽道上顯示名次與距離
-        window.RemoteTimed.renderRaceTrack = function renderRaceTrack(){
-            try {
-                const race = document.getElementById('raceTrack');
-                if (!race) return;
-                if (!window.RemoteBattle?.room || !(typeof state !== 'undefined' && state.timedMode)) {
-                    race.classList.add('hidden');
-                    return;
+        // ===== 競賽賽道：emoji 分配與渲染 =====
+        (function(){
+            const EMOJI_POOL = (
+                '🐯🦊🐼🐸🐶🐱🐰🦁🐵🦄🐨🐷🐮🐔🐤🦆🦉🦇🐙🦑🦀🦞🦐🐠🐟🐬🐳🐊🐢🦎🐍🐝🦋🐞🐜🕷️🦂🐌🐛🦔🦥🦨🦘🦝🦚🦜🦢🦩🕊️🐧🐦🐤🦆🦅🐺🦄🦒🦓🦌🐗🦏🐘🐫🐪🦙🐐🐏🐑🐎🐄' 
+            ).split('');
+            const nameMax = { cn: 3, en: 6 };
+            function isMostlyChinese(s){
+                const m = (s||'').match(/[\u4e00-\u9fa5]/g);
+                return (m ? m.length : 0) * 2 >= String(s||'').length; // 粗略判斷
+            }
+            function trimName(s){
+                s = String(s||'');
+                const max = isMostlyChinese(s) ? nameMax.cn : nameMax.en;
+                if (s.length <= max) return s;
+                return s.slice(0, max) + '…';
+            }
+            function seededPick(arr, seed){
+                let h = 2166136261>>>0; const str = String(seed||'');
+                for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = (h * 16777619)>>>0; }
+                return arr[h % arr.length];
+            }
+            function assignEmojisFor(ids, roomCode){
+                const used = new Set();
+                const map = {};
+                (ids||[]).forEach((id, idx) => {
+                    let pick = seededPick(EMOJI_POOL, roomCode+':'+id+':'+idx);
+                    let guard=0;
+                    while (used.has(pick) && guard<EMOJI_POOL.length) { pick = seededPick(EMOJI_POOL, roomCode+':'+id+':'+idx+':'+(guard)); guard++; }
+                    used.add(pick); map[id] = pick;
+                });
+                return map;
+            }
+            window.RaceTrack = {
+                buildEmojiMap(ids, roomCode){ return assignEmojisFor(ids, roomCode||'ROOM'); },
+                ensureEmojis(){
+                    try {
+                        const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : (typeof state !== 'undefined' ? state : null);
+                        if (!R) return;
+                        const inRemote = !!window.RemoteBattle?.room;
+                        const ids = Array.isArray(R.rosterUserIds) ? R.rosterUserIds : (inRemote ? [] : (Array.isArray(window.battleMode?.players) ? window.battleMode.players.map((_,i)=>'L'+i) : []));
+                        if (!R.emojiMap && ids.length>0) {
+                            const code = (state && state.room && state.room.code) || 'LOCAL';
+                            R.emojiMap = assignEmojisFor(ids, code);
+                        }
+                    } catch(_){ }
+                },
+                render(){
+                    try {
+                        const track = document.getElementById('raceTrack');
+                        if (!track) return;
+                        const inRemoteTimed = !!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode);
+                        const inLocalBattle = !!(window.battleMode?.isActive && !inRemoteTimed);
+                        if (!inRemoteTimed && !inLocalBattle) { track.classList.add('hidden'); return; }
+                        track.classList.remove('hidden');
+                        const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : (typeof state !== 'undefined' ? state : null);
+                        const inRemote = !!window.RemoteBattle?.room;
+                        const ids = (R && Array.isArray(R.rosterUserIds)) ? R.rosterUserIds : (Array.isArray(window.battleMode?.players) ? window.battleMode.players.map((_,i)=> (inRemote? null : 'L'+i)) : []);
+                        const rows = ids.map((uid, idx) => {
+                            const name = (window.battleMode?.players && window.battleMode.players[idx] && window.battleMode.players[idx].name) || (R?.stats && R.stats[uid]?.nickname) || '玩家';
+                            const st = (R?.stats && R.stats[uid]) || { score: (window.battleMode?.players && window.battleMode.players[idx]?.score) || 0, lastTs: 0 };
+                            const emoji = (R && R.emojiMap && R.emojiMap[uid]) || '🏃';
+                            return { idx, uid, name: trimName(name), score: st.score||0, last: st.lastTs||0, emoji };
+                        });
+                        const maxScore = Math.max(1, ...rows.map(r => r.score));
+                        // 排名（不改左右位置；僅供徽章使用）
+                        const ranked = [...rows].sort((a,b) => (b.score - a.score) || (a.last - b.last));
+                        const rankByUid = {}; ranked.forEach((r,i)=> rankByUid[r.uid] = i+1);
+                        // 首次渲染建樹
+                        if (!track.dataset.built) { track.innerHTML = ''; track.dataset.built = '1'; }
+                        // 為每位選手建/更新節點
+                        rows.forEach((r, i) => {
+                            let pin = track.querySelector(`[data-uid="${r.uid}"]`);
+                            if (!pin) {
+                                pin = document.createElement('div');
+                                pin.dataset.uid = r.uid;
+                                pin.className = `h-6 sm:h-7 px-2 sm:px-2.5 rounded-full text-white text-xs sm:text-sm font-bold flex items-center gap-1 shadow transition-transform duration-500 ease-out will-change-transform player-theme-${(i%6)+1}`;
+                                pin.style.position = 'absolute'; pin.style.left = '0%'; pin.style.top = '50%'; pin.style.transform = 'translate(-18px, -50%)';
+                                pin.innerHTML = `<span class="rank-badge bg-black/30 rounded-full w-5 h-5 flex items-center justify-center text-[10px] mr-1">${rankByUid[r.uid]||'?'}</span><span class="emoji text-base sm:text-lg">${r.emoji}</span><span class="name max-w-[60px] sm:max-w-[80px] truncate">${r.name}</span>`;
+                                track.appendChild(pin);
+                                // 入場動畫
+                                setTimeout(()=> pin.classList.add('entered'), 30);
+                            } else {
+                                pin.querySelector('.rank-badge').textContent = String(rankByUid[r.uid]||'?');
+                                pin.querySelector('.emoji').textContent = r.emoji;
+                                const nameEl = pin.querySelector('.name');
+                                if (nameEl) nameEl.textContent = r.name;
+                            }
+                            const pct = Math.max(3, Math.min(97, Math.round((r.score / maxScore) * 94 + 3)));
+                            const offsetY = ((r.uid||'').charCodeAt(0)%5)-2; // -2..+2 垂直錯層
+                            pin.style.transform = `translate(calc(${pct}% - 18px), calc(-50% + ${offsetY}px))`;
+                        });
+                    } catch(_){ }
                 }
-                race.classList.remove('hidden');
-                const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : state;
-                const ids = (R && Array.isArray(R.rosterUserIds)) ? R.rosterUserIds : [];
-                const rows = ids.map((uid, idx) => {
-                    const name = (window.battleMode?.players && window.battleMode.players[idx] && window.battleMode.players[idx].name) || (R.stats && R.stats[uid]?.nickname) || '玩家';
-                    const st = (R.stats && R.stats[uid]) || { score:0, lastTs:0 };
-                    return { idx, name, score: st.score||0, last: st.lastTs||0 };
-                });
-                // 計算比例：以最高分為 100%，保底 1 避免除 0
-                const maxScore = Math.max(1, ...rows.map(r => r.score));
-                // 排名：分數高在前，同分按 lastTs 早在前
-                const ranked = [...rows].sort((a,b) => (b.score - a.score) || (a.last - b.last));
-                const rankByIdx = {};
-                ranked.forEach((r,i)=> rankByIdx[r.idx] = i+1);
-                // 視圖：清空重新渲染
-                race.innerHTML = '';
-                rows.forEach((r, i) => {
-                    const pct = Math.max(0, Math.min(100, Math.round((r.score / maxScore) * 100)));
-                    const pin = document.createElement('div');
-                    const colorClass = `player-theme-${(i % 6) + 1}`;
-                    pin.className = `h-5 min-w-[36px] px-2 rounded-full text-white text-xs font-bold flex items-center justify-center transition-all duration-500 ease-out shadow ${colorClass}`;
-                    pin.style.transform = `translateX(${pct}%)`;
-                    pin.style.marginLeft = '-18px';
-                    pin.innerHTML = `<span class="whitespace-nowrap">${rankByIdx[i] || '?'}｜${r.name}</span>`;
-                    race.appendChild(pin);
-                });
-            } catch(_){ }
-        };
+            };
+        })();
 
         // Difficulty settings
         const difficultySettings = {
@@ -2835,12 +2891,7 @@
             if (isRemoteTimed()) {
                 // 限時模式：隱藏單題進度條，只顯示全局秒數
                 try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
-                try {
-                    if (timeBarContainer) timeBarContainer.style.display = '';
-                    const race = document.getElementById('raceTrack');
-                    if (race) race.classList.remove('hidden');
-                    if (timeBarFill) timeBarFill.style.display = 'none';
-                } catch(_){ }
+                try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
                 try {
                     const remainMs = Math.max(0, (state.timedEndsAt || Date.now()) - Date.now());
                     timerElement.textContent = String(Math.ceil(remainMs / 1000));
@@ -2870,6 +2921,8 @@
             
             // Start the game
             isGameActive = true;
+            try { window.RaceTrack && window.RaceTrack.ensureEmojis && window.RaceTrack.ensureEmojis(); } catch(_){ }
+            try { window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render(); } catch(_){ }
             
             // 單題計時：僅在非遠程限時模式下啟用
             clearInterval(timerInterval);
@@ -3048,6 +3101,8 @@
                                 if (pl && st) pl.score = st.score;
                             });
                         }
+                        // 觸發賽道刷新
+                        try { window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render(); } catch(_){ }
                     } catch(_){ }
                     window.RemoteBattle.sendGameEvent('score_update', { userId: uid, delta, answeredInc:1, correctInc: isCorrect?1:0 });
                     try { if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard(); } catch(_){ }
@@ -4851,8 +4906,11 @@ window.LocalBattle.endMode = function endBattleMode() {
                 try { if (typeof hideResultModal === 'function') hideResultModal(); } catch(_){ }
                 try { gameMessage?.classList.add('hidden'); } catch(_){ }
                 try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
-                // 廣播包含 players，並附帶 3 秒預備
-                window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag });
+                // 廣播包含 players + emoji 分配，並附帶 3 秒預備
+                try { window.RaceTrack?.ensureEmojis(); } catch(_){ }
+                const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : state;
+                const emojiMap = (R && R.emojiMap) ? R.emojiMap : null;
+                window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag, emojiMap });
                 showPrepCountdown(3000, () => {
                     beginTimedTicker();
                     // 關閉遠程模態
@@ -4878,19 +4936,15 @@ window.LocalBattle.endMode = function endBattleMode() {
         function beginTimedTicker(){
             try { clearInterval(state.timedTimer); } catch(_){}
             updateTimedUI();
-            // 限時模式：顯示賽道、隱藏時間填充條
-            try {
-                if (timeBarContainer) timeBarContainer.style.display = '';
-                const race = document.getElementById('raceTrack');
-                if (race) race.classList.remove('hidden');
-                if (timeBarFill) timeBarFill.style.display = 'none';
-            } catch(_){ }
+            // 限時模式：顯示賽道容器、隱藏時間填充條
+            try { if (timeBarContainer) timeBarContainer.style.display = ''; } catch(_){ }
+            try { if (timeBarFill) timeBarFill.style.display = 'none'; } catch(_){ }
             state.timedTimer = setInterval(() => {
                 updateTimedUI();
-                // 週期性重繪記分板，確保未提交端也能即時看到他人分數變化
+                // 週期性重繪記分板與賽道，確保未提交端也能即時看到他人分數變化
                 try { if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard(); } catch(_){ }
-                // 週期性刷新賽道視圖
-                try { if (typeof window.RemoteTimed?.renderRaceTrack === 'function') window.RemoteTimed.renderRaceTrack(); } catch(_){ }
+                try { window.RaceTrack && window.RaceTrack.ensureEmojis && window.RaceTrack.ensureEmojis(); } catch(_){ }
+                try { window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render(); } catch(_){ }
                 if (!state.timedMode) { clearInterval(state.timedTimer); return; }
                 if (Date.now() >= state.timedEndsAt) {
                     clearInterval(state.timedTimer);
