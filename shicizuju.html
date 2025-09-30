@@ -2951,6 +2951,7 @@
         
         // Start a new game round
         const startNewRound = () => {
+            console.log('[startNewRound] called, GameMode:', { isTimedScore: window.GameMode.isTimedScore(), isAnyBattle: window.GameMode.isAnyBattle(), isSolo: window.GameMode.isSolo() });
             // Reset UI
             selectionStack = [];
             poemDisplay.value = '';
@@ -4737,6 +4738,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                             }));
                             console.log('[remote] GameState.players initialized:', window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji })));
                         }
+                        console.log('[remote] receiver GameState:', { mode: window.GameState.mode, subMode: window.GameState.subMode, isActive: window.GameState.isActive });
                         
                         // 舊系統同步（向後兼容）
                         // 【重構】不再設置 __REMOTE_TIMED__，改用 GameState.isActive 判斷
@@ -4757,6 +4759,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                         }
                         
                         showPrepCountdown(Math.max(1000, msg.payload?.prepMs || 3000), () => {
+                            console.log('[remote] receiver entering game, GameMode.isTimedScore()=', window.GameMode.isTimedScore(), 'GameMode.isAnyBattle()=', window.GameMode.isAnyBattle());
                             beginTimedTicker();
                             try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
                             if (typeof window.startNewRound === 'function') window.startNewRound();
@@ -5133,9 +5136,20 @@ window.LocalBattle.endMode = function endBattleMode() {
                 // 【重構】標記遠程限時模式（改用 GameState）
                 // window.__REMOTE_TIMED__ = true; // 已移除
                 state.timedMode = true;
+                state.timedEndsAt = endsAt;
+                
+                // 【重構】主機端也需要初始化 GameState（與接收方保持一致）
+                window.GameState.mode = 'remote';
+                window.GameState.subMode = 'timed_score';
+                window.GameState.isActive = true;
+                window.GameState.timed.endsAt = endsAt;
+                window.GameState.timed.duration = mins;
+                window.GameState.remote.currentUserId = state.user?.id || null;
+                window.GameState.remote.isHost = true;
+                
+                // 初始化玩家數據（在生成 emojiMap 之前）
                 applyBattleConfig(conf);
                 try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
-                state.timedEndsAt = endsAt;
                 // 保險：清理任何單題計時與本地回合狀態
                 try { clearInterval(timerInterval); } catch(_){ }
                 try { timerInterval = null; } catch(_){ }
@@ -5148,8 +5162,25 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const emojiMap = window.RaceTrack.buildEmojiMap(userIds, state.room?.code || 'ROOM');
                 state.emojiMap = emojiMap; // 保存到 state
                 console.log('[remote] host generated emojiMap:', emojiMap);
+                
+                // 【重構】主機端填充 GameState.players（與接收方保持一致）
+                window.GameState.players = conf.players.map((p, idx) => ({
+                    uid: p.id || userIds[idx] || null,
+                    name: p.name || ('玩家' + (idx + 1)),
+                    emoji: emojiMap[p.id || userIds[idx]] || '🏃',
+                    score: 0,
+                    answered: 0,
+                    correct: 0,
+                    lastAnswerTs: 0,
+                    isReady: true,
+                    isActive: false
+                }));
+                console.log('[remote] host GameState.players initialized:', window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji })));
+                console.log('[remote] host GameState:', { mode: window.GameState.mode, subMode: window.GameState.subMode, isActive: window.GameState.isActive });
+                
                 window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag, emojiMap });
                 showPrepCountdown(3000, () => {
+                    console.log('[remote] host entering game, GameMode.isTimedScore()=', window.GameMode.isTimedScore(), 'GameMode.isAnyBattle()=', window.GameMode.isAnyBattle());
                     beginTimedTicker();
                     // 關閉遠程模態
                     try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
