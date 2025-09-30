@@ -3036,9 +3036,9 @@
             
             // 在遠程限時模式中，不使用單題倒數，只顯示全局倒數
             if (isRemoteTimed()) {
-                // 限時模式：隱藏單題進度條，只顯示全局秒數
-                try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
-                try { if (timeBarContainer) timeBarContainer.style.display = 'none'; } catch(_){ }
+                // 限時模式：隱藏進度條填充（但保持容器可見以顯示賽道），只顯示全局秒數
+                try { if (timeBarFill) { timeBarFill.style.width = '0%'; timeBarFill.style.display = 'none'; } } catch(_){ }
+                try { if (timeBarContainer) timeBarContainer.style.display = ''; } catch(_){ }
                 try {
                     const remainMs = Math.max(0, (state.timedEndsAt || Date.now()) - Date.now());
                     timerElement.textContent = String(Math.ceil(remainMs / 1000));
