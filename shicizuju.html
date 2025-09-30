@@ -4786,8 +4786,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                     <div class="text-sm text-slate-600">我的暱稱</div>
                     <input id="rbNickname" type="text" class="w-full border rounded-lg px-3 py-2" placeholder="輸入你的暱稱">
 
-                    <div class="text-sm text-slate-600">建立房間</div>
-                    <input id="rbRoomName" type="text" class="w-full border rounded-lg px-3 py-2" placeholder="房間名稱（可空）">
+                    <div class="text-sm text-slate-600 mt-4">建立房間</div>
                     <button id="rbCreateBtn" class="w-full py-2 rounded-lg bg-emerald-500 text-white interactive">建立房間</button>
 
                     <div id="rbCreatedInfo" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-sm">
@@ -5316,7 +5315,6 @@ window.LocalBattle.endMode = function endBattleMode() {
         const modal = $('remoteBattleModal');
         const closeBtn = $('rbClose');
         const nicknameInput = $('rbNickname');
-        const roomNameInput = $('rbRoomName');
         const createBtn = $('rbCreateBtn');
         const createdInfo = $('rbCreatedInfo');
         const codeDisplay = $('rbRoomCodeDisplay');
@@ -5390,9 +5388,8 @@ window.LocalBattle.endMode = function endBattleMode() {
                 console.log('[remote] create clicked');
                 if (!sb) { alert('Supabase 未就緒'); return; }
                 const nickname = (nicknameInput?.value || '').trim() || '玩家';
-                const name = (roomNameInput?.value || '').trim() || '';
                 if (createBtn) { createBtn.disabled = true; createBtn.textContent = '建立中…'; }
-                const room = await createRoom(name, nickname);
+                const room = await createRoom('', nickname);
                 console.log('[remote] room created', room && room.code);
                 
                 // 显示代码（不添加空格，通过CSS的letter-spacing实现视觉间距）
