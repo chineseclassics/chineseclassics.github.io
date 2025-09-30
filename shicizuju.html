@@ -3883,14 +3883,20 @@
             
             // 為本地對戰玩家分配 emoji
             const localPlayerIds = battleMode.players.map((_, i) => 'L' + i);
+            console.log('[local] localPlayerIds:', localPlayerIds);
+            console.log('[local] RaceTrack available:', !!window.RaceTrack);
+            console.log('[local] buildEmojiMap available:', typeof window.RaceTrack?.buildEmojiMap);
+            
             const emojiMap = window.RaceTrack.buildEmojiMap(localPlayerIds, 'LOCAL_BATTLE');
+            console.log('[local] battle started, emojiMap:', emojiMap);
+            
             battleMode.players.forEach((p, i) => {
                 p.uid = localPlayerIds[i];
                 p.emoji = emojiMap[localPlayerIds[i]] || '🏃';
                 p.answered = 0;
                 p.correct = 0;
+                console.log('[local] player', i, ':', p.name, 'uid:', p.uid, 'emoji:', p.emoji);
             });
-            console.log('[local] battle started, emojiMap:', emojiMap);
             
             // 同步到 GameState
             window.GameState.mode = 'local';
@@ -3907,6 +3913,12 @@
                 isReady: false,
                 isActive: p.isActive || false
             }));
+            console.log('[local] GameState after sync:', {
+                mode: window.GameState.mode,
+                subMode: window.GameState.subMode,
+                isActive: window.GameState.isActive,
+                players: window.GameState.players
+            });
             
             // 顯示積分板
             if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
@@ -3914,7 +3926,15 @@
             
             // 觸發賽道渲染
             try {
-                window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render();
+                console.log('[local] calling RaceTrack.render...');
+                if (!window.RaceTrack) {
+                    console.error('[local] RaceTrack not found!');
+                } else if (!window.RaceTrack.render) {
+                    console.error('[local] RaceTrack.render not found!');
+                } else {
+                    window.RaceTrack.render();
+                    console.log('[local] RaceTrack.render called successfully');
+                }
             } catch(e){ console.error('[local] RaceTrack.render error:', e); }
             
             // 開始第一輪
