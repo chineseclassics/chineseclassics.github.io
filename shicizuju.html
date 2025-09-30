@@ -4832,7 +4832,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                     <!-- 在線玩家 -->
                     <div class="glass-card rounded-xl p-3 border border-white/10">
                         <div class="text-xs font-modern text-surface-700 mb-2">在線玩家</div>
-                        <div id="rbPresenceList" class="grid grid-cols-2 md:grid-cols-3 gap-2 min-h-[60px]"></div>
+                        <div id="rbPresenceList" class="flex flex-wrap gap-2 min-h-[60px]"></div>
                     </div>
 
                     <!-- 遊戲設定 -->
@@ -4861,7 +4861,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                         <!-- 在線玩家 -->
                         <div class="glass-card rounded-xl p-4 border border-white/10 bg-white/30">
                             <div class="text-sm font-modern font-semibold text-surface-700 mb-3">👥 在線玩家</div>
-                            <div id="rbPresenceListWaiting" class="grid grid-cols-2 md:grid-cols-3 gap-2 min-h-[80px]"></div>
+                            <div id="rbPresenceListWaiting" class="flex flex-wrap gap-2 min-h-[80px] justify-center"></div>
                         </div>
                     </div>
                 </div>
@@ -5029,6 +5029,23 @@ window.LocalBattle.endMode = function endBattleMode() {
                 }
             });
 
+            channel.on('broadcast', { event: 'emoji_map' }, (msg) => {
+                console.log('[remote] emoji_map event received:', msg?.payload);
+                const payload = msg?.payload?.payload || msg?.payload;
+                const emojiMap = payload?.emojiMap;
+                
+                if (emojiMap) {
+                    state.emojiMap = emojiMap;
+                    console.log('[remote] emoji map updated:', emojiMap);
+                    // 直接重新渲染玩家列表，避免遞歸調用 refreshRoster
+                    const list = document.getElementById('rbPresenceList');
+                    const listWaiting = document.getElementById('rbPresenceListWaiting');
+                    if (state.roster && state.roster.length > 0) {
+                        renderPresence(state.presenceMap || {});
+                    }
+                }
+            });
+
             await channel.subscribe((status) => {
                 console.log('[remote] channel subscription status:', status);
                 if (status === 'SUBSCRIBED') {
@@ -5075,6 +5092,23 @@ window.LocalBattle.endMode = function endBattleMode() {
                 });
             }
             state.roster = Array.isArray(roster) ? roster.filter(Boolean) : [];
+            
+            // 房主為玩家生成並廣播 emoji 映射
+            if (window.RemoteBattle?.isHost() && state.roster.length > 0) {
+                const userIds = state.roster.map(p => p.user_id);
+                const newEmojiMap = window.RaceTrack.buildEmojiMap(userIds, state.room?.code || 'ROOM');
+                
+                // 只在emoji映射改變時才廣播
+                const mapChanged = !state.emojiMap || JSON.stringify(Object.keys(newEmojiMap).sort()) !== JSON.stringify(Object.keys(state.emojiMap).sort());
+                if (mapChanged) {
+                    state.emojiMap = newEmojiMap;
+                    // 廣播 emoji 映射給所有玩家
+                    sendGameEvent('emoji_map', { emojiMap: newEmojiMap }).catch(e => {
+                        console.warn('[remote] broadcast emoji_map failed:', e);
+                    });
+                }
+            }
+            
             // 更新在線清單的顯示（同時更新兩個列表區域）
             const list = document.getElementById('rbPresenceList');
             const listWaiting = document.getElementById('rbPresenceListWaiting');
@@ -5084,19 +5118,31 @@ window.LocalBattle.endMode = function endBattleMode() {
                 container.innerHTML = '';
                 const isHost = window.RemoteBattle?.isHost();
                 const currentUserId = state.user?.id;
+                const emojiMap = state.emojiMap || {};
                 
                 state.roster.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern relative group flex items-center justify-between';
+                    div.className = 'group relative inline-flex items-center';
+                    
+                    // 胶囊样式容器
+                    const capsule = document.createElement('div');
+                    capsule.className = 'px-3 py-1.5 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-sm font-modern text-surface-800 flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow';
+                    
+                    // 顯示 emoji 圖標
+                    const emoji = emojiMap[p.user_id] || '🏃';
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.textContent = emoji;
+                    emojiSpan.className = 'text-base';
+                    capsule.appendChild(emojiSpan);
                     
                     const nameSpan = document.createElement('span');
                     nameSpan.textContent = (p && p.nickname) ? p.nickname : '玩家';
-                    div.appendChild(nameSpan);
+                    capsule.appendChild(nameSpan);
                     
                     // 房主可以踢人（除了自己）
                     if (isHost && p.user_id !== currentUserId) {
                         const kickBtn = document.createElement('button');
-                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded px-1.5 py-0.5 text-xs font-bold';
+                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all ml-1 -mr-1 text-red-500 hover:text-white hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold';
                         kickBtn.textContent = '✕';
                         kickBtn.title = '踢出房間';
                         kickBtn.addEventListener('click', async (e) => {
@@ -5105,9 +5151,10 @@ window.LocalBattle.endMode = function endBattleMode() {
                                 await kickPlayer(p.user_id);
                             }
                         });
-                        div.appendChild(kickBtn);
+                        capsule.appendChild(kickBtn);
                     }
                     
+                    div.appendChild(capsule);
                     container.appendChild(div);
                 });
             };
@@ -5387,19 +5434,31 @@ window.LocalBattle.endMode = function endBattleMode() {
                 container.innerHTML = '';
                 const isHost = window.RemoteBattle?.isHost();
                 const currentUserId = state.user?.id;
+                const emojiMap = state.emojiMap || {};
                 
                 users.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern relative group flex items-center justify-between';
+                    div.className = 'group relative inline-flex items-center';
+                    
+                    // 胶囊样式容器
+                    const capsule = document.createElement('div');
+                    capsule.className = 'px-3 py-1.5 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-sm font-modern text-surface-800 flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow';
+                    
+                    // 顯示 emoji 圖標
+                    const emoji = emojiMap[p.user_id] || '🏃';
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.textContent = emoji;
+                    emojiSpan.className = 'text-base';
+                    capsule.appendChild(emojiSpan);
                     
                     const nameSpan = document.createElement('span');
                     nameSpan.textContent = p.nickname;
-                    div.appendChild(nameSpan);
+                    capsule.appendChild(nameSpan);
                     
                     // 房主可以踢人（除了自己）
                     if (isHost && p.user_id !== currentUserId) {
                         const kickBtn = document.createElement('button');
-                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded px-1.5 py-0.5 text-xs font-bold';
+                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all ml-1 -mr-1 text-red-500 hover:text-white hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold';
                         kickBtn.textContent = '✕';
                         kickBtn.title = '踢出房間';
                         kickBtn.addEventListener('click', async (e) => {
@@ -5408,9 +5467,10 @@ window.LocalBattle.endMode = function endBattleMode() {
                                 await kickPlayer(p.user_id);
                             }
                         });
-                        div.appendChild(kickBtn);
+                        capsule.appendChild(kickBtn);
                     }
                     
+                    div.appendChild(capsule);
                     container.appendChild(div);
                 });
             };
@@ -5543,6 +5603,10 @@ window.LocalBattle.endMode = function endBattleMode() {
                 // 填充詩詞庫選項
                 if (window.RemoteBattle?.isHost()) {
                     populatePoemTags();
+                    // 刷新玩家列表並生成 emoji 映射
+                    setTimeout(() => {
+                        refreshRoster().catch(e => console.warn('[remote] initial refresh roster failed:', e));
+                    }, 500);
                 }
                 
                 if (createBtn) { createBtn.textContent = '已建立'; setTimeout(()=>{ createBtn.disabled = false; createBtn.textContent = '建立房間'; }, 1200); }
