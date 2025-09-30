@@ -1373,7 +1373,8 @@
             turnBased: {
                 currentTurnIndex: 0,  // 本地輪流: 當前玩家索引
                 roundsPerPlayer: 3,   // 每人回合數
-                currentRound: 0       // 當前回合
+                currentRound: 0,      // 當前回合
+                totalRounds: 0        // 總回合數
             },
             
             // ===== 遊戲內容 =====
@@ -2261,7 +2262,7 @@
         // ===== 模式輔助：集中判斷入口，避免條件分散重覆 =====
         // 【重構】已移除 window.GameMode.isTimedScore()，改用 GameMode.isTimedScore()
         function isLocalBattle(){
-            try { return !!(window.battleMode && window.battleMode.isActive && !window.GameMode.isTimedScore()); } catch(_) { return false; }
+            try { return window.GameMode.isLocal() && window.GameState.isActive; } catch(_) { return false; }
         }
 
         // 提供命名空間占位，後續可逐步把相關函式掛載至此，避免混名
@@ -2421,15 +2422,7 @@
         let areCoreListenersBound = false; // 防止重複綁定
         let selectionStack = []; // 已選字堆疊（支持撤回）
         
-        // 對戰模式相關變量
-        let battleMode = {
-            isActive: false,
-            players: [],
-            currentPlayerIndex: 0,
-            roundsPerPlayer: 1,
-            currentRound: 0,
-            totalRounds: 0
-        };
+        // 【重構】對戰模式數據已遷移到 window.GameState，不再使用局部 battleMode 對象
         
         // Difficulty settings elements
         const difficultySelect = document.getElementById('difficultySelect');
@@ -2509,7 +2502,7 @@
                 return;
             }
             // 如果是对战模式且游戏结束，则进入下一轮
-            if (battleMode.isActive && !isGameActive) {
+            if (window.GameMode.isLocal() && window.GameState.isActive && !isGameActive) {
                 // 延迟一下让用户看到关闭动画
                 setTimeout(() => {
                     if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
@@ -2594,9 +2587,9 @@
                 // 遠程限時：統一顯示「下一首」；本地輪流維持原文案
                 if (window.GameMode.isTimedScore()) {
                     closeGameMessage.textContent = '下一首';
-                } else if (battleMode.isActive && Array.isArray(battleMode.players) && battleMode.players.length > 0) {
-                    const nextIndex = (battleMode.currentPlayerIndex + 1) % battleMode.players.length;
-                    const nextPlayer = battleMode.players[nextIndex];
+                } else if (window.GameMode.isLocal() && window.GameState.isActive && Array.isArray(window.GameState.players) && window.GameState.players.length > 0) {
+                    const nextIndex = (window.GameState.turnBased.currentTurnIndex + 1) % window.GameState.players.length;
+                    const nextPlayer = window.GameState.players[nextIndex];
                     const name = (nextPlayer && nextPlayer.name) ? nextPlayer.name : '選手';
                     closeGameMessage.textContent = `${name} 開始答題`;
                 } else {
@@ -3105,7 +3098,7 @@
                 if (window.GameMode.isTimedScore()) {
                     // 固定 +10 分；答對
                     applyScoreDelta(10, true);
-                } else if (!battleMode.isActive) {
+                } else if (!window.GameMode.isLocal() || !window.GameState.isActive) {
                     score++;
                 }
                 
@@ -3164,7 +3157,7 @@
                     startNewRound();
                 }, 600);
                 return; // 避免落入輪流流程
-            } else if (battleMode.isActive) {
+            } else if (window.GameMode.isLocal() && window.GameState.isActive) {
                 if (typeof window.LocalBattle?.endRound === 'function') window.LocalBattle.endRound(success);
             }
         };
@@ -3532,7 +3525,7 @@
         
         function syncSettingsToModal() {
             // 同步遊戲模式（僅處理單人/對戰）
-            const currentMode = battleMode.isActive ? 'battle' : 'single';
+            const currentMode = (window.GameMode.isLocal() && window.GameState.isActive) ? 'battle' : 'single';
             const modeRadio = document.querySelector(`input[name="gameMode"][value="${currentMode}"]`);
             if (modeRadio) modeRadio.checked = true;
 
@@ -3667,16 +3660,12 @@
                 openBattlePreviewModal(settingsToSave);
             } else {
                 // 若正處於對戰模式，安全退出並切回單人模式
-                if (battleMode.isActive) {
-                    battleMode.isActive = false;
-                    battleMode.players = [];
-                    battleScoreboard && battleScoreboard.classList.add('hidden');
-                    
-                    // 【重構】同時清理 GameState
+                if (window.GameMode.isLocal() && window.GameState.isActive) {
                     window.GameState.mode = 'solo';
                     window.GameState.subMode = null;
                     window.GameState.isActive = false;
                     window.GameState.players = [];
+                    battleScoreboard && battleScoreboard.classList.add('hidden');
                     
                     // 隱藏賽道
                     try {
@@ -3769,52 +3758,43 @@
                 try { showNotification && showNotification('目前為遠程限時競賽，已禁用本地輪流模式'); } catch(_){ }
                 return;
             }
-            // 收集選手名稱
+            
+            // 收集選手名稱和設置
             const playerCount = parseInt(playerCountSelect.value);
-            battleMode.players = [];
+            const roundsPerPlayer = Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput.value || '5')));
+            const playerNames = [];
             
             for (let i = 0; i < playerCount; i++) {
                 const nameInput = document.getElementById(`player${i + 1}Name`);
                 const playerName = nameInput ? nameInput.value || `選手${i + 1}` : `選手${i + 1}`;
-                battleMode.players.push({
-                    name: playerName,
-                    score: 0,
-                    displayedScore: 0,
-                    isActive: i === 0
-                });
+                playerNames.push(playerName);
             }
 
             // 寫回保存玩家設置
             const s = loadSettings();
             s.battle = s.battle || {}; 
             s.battle.playerCount = playerCount;
-            s.battle.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput.value || '5')));
+            s.battle.roundsPerPlayer = roundsPerPlayer;
             s.battle.speedMode = !!(speedModeCheckbox && speedModeCheckbox.checked);
-            s.battle.playerNames = battleMode.players.map(p => p.name);
+            s.battle.playerNames = playerNames;
             persistSettings(s);
-            
-            // 設置對戰模式參數
-            battleMode.isActive = true;
-            battleMode.currentPlayerIndex = 0;
-            battleMode.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(roundsPerPlayerInput.value || '5')));
-            battleMode.currentRound = 0;
-            battleMode.totalRounds = battleMode.players.length * battleMode.roundsPerPlayer;
             
             // 【重構】直接在 GameState 中初始化本地對戰
             window.GameState.mode = 'local';
             window.GameState.subMode = 'turn_based';
             window.GameState.isActive = true;
             window.GameState.turnBased.currentTurnIndex = 0;
-            window.GameState.turnBased.roundsPerPlayer = battleMode.roundsPerPlayer;
+            window.GameState.turnBased.roundsPerPlayer = roundsPerPlayer;
             window.GameState.turnBased.currentRound = 0;
+            window.GameState.turnBased.totalRounds = playerCount * roundsPerPlayer;
             
             // 為本地對戰玩家分配 emoji
-            const localPlayerIds = battleMode.players.map((_, i) => 'L' + i);
+            const localPlayerIds = playerNames.map((_, i) => 'L' + i);
             const emojiMap = window.RaceTrack.buildEmojiMap(localPlayerIds, 'LOCAL_BATTLE');
             
-            window.GameState.players = battleMode.players.map((p, i) => ({
+            window.GameState.players = playerNames.map((name, i) => ({
                 uid: localPlayerIds[i],
-                name: p.name || ('玩家' + (i + 1)),
+                name: name,
                 emoji: emojiMap[localPlayerIds[i]] || '🏃',
                 score: 0,
                 answered: 0,
@@ -3827,12 +3807,6 @@
             console.log('[local] battle started. GameState:', {
                 mode: window.GameState.mode,
                 players: window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji, uid: p.uid }))
-            });
-            
-            // 同步回 battleMode（保持向後兼容，後續會移除）
-            battleMode.players.forEach((p, i) => {
-                p.uid = window.GameState.players[i].uid;
-                p.emoji = window.GameState.players[i].emoji;
             });
             
             // 顯示積分板
@@ -3948,7 +3922,7 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
         window.LocalBattle.startRound = function startBattleRound() {
             // 限時模式下不使用本地輪流回合
             if (window.GameMode.isTimedScore()) return;
-            const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
+            const currentPlayer = window.GameState.players[window.GameState.turnBased.currentTurnIndex];
             showNotification(`${currentPlayer.name} 的回合開始！`);
             
             // 開始新的一輪遊戲
@@ -3962,7 +3936,7 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                     scoreElement.textContent = String(score);
                 } else {
                     scoreLabel.textContent = '輪次';
-                    scoreElement.textContent = `${battleMode.currentRound + 1} / ${battleMode.totalRounds}`;
+                    scoreElement.textContent = `${window.GameState.turnBased.currentRound + 1} / ${window.GameState.turnBased.totalRounds}`;
                 }
             }
         }
@@ -3996,14 +3970,6 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             currentPlayer.answered += 1;
             currentPlayer.lastAnswerTs = Date.now();
             
-            // 同步回 battleMode（保持向後兼容）
-            const battlePlayer = battleMode.players[battleMode.currentPlayerIndex];
-            if (battlePlayer) {
-                battlePlayer.score = currentPlayer.score;
-                battlePlayer.answered = currentPlayer.answered;
-                battlePlayer.correct = currentPlayer.correct;
-            }
-            
             // 觸發 UI 更新
             try {
                 window.LocalBattle?.updateScoreboard();
@@ -4011,22 +3977,22 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             } catch(e){ console.error('[local] UI update error:', e); }
             
             // 檢查是否完成所有回合
-            battleMode.currentRound++;
             window.GameState.turnBased.currentRound++;
             // 更新左上角輪次顯示
             if (scoreLabel && scoreElement) {
                 scoreLabel.textContent = '輪次';
-                scoreElement.textContent = `${Math.min(battleMode.currentRound + 1, battleMode.totalRounds)} / ${battleMode.totalRounds}`;
+                scoreElement.textContent = `${Math.min(window.GameState.turnBased.currentRound + 1, window.GameState.turnBased.totalRounds)} / ${window.GameState.turnBased.totalRounds}`;
             }
-            if (battleMode.currentRound >= battleMode.totalRounds) {
+            if (window.GameState.turnBased.currentRound >= window.GameState.turnBased.totalRounds) {
                 if (typeof window.LocalBattle?.endMode === 'function') window.LocalBattle.endMode();
                 return;
             }
             
             // 切換到下一個選手
-            battleMode.players[battleMode.currentPlayerIndex].isActive = false;
-            battleMode.currentPlayerIndex = (battleMode.currentPlayerIndex + 1) % battleMode.players.length;
-            battleMode.players[battleMode.currentPlayerIndex].isActive = true;
+            const prevIndex = window.GameState.turnBased.currentTurnIndex;
+            window.GameState.players[prevIndex].isActive = false;
+            window.GameState.turnBased.currentTurnIndex = (window.GameState.turnBased.currentTurnIndex + 1) % window.GameState.players.length;
+            window.GameState.players[window.GameState.turnBased.currentTurnIndex].isActive = true;
             
             // 先切換 active，再更新積分板，讓呼吸動畫跟隨目前答題者
             if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
@@ -4038,7 +4004,7 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
 window.LocalBattle.endMode = function endBattleMode() {
             // 限時模式下不走本地輪流結算
             if (window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode) return;
-            battleMode.isActive = false;
+            window.GameState.isActive = false;
             
             // 隱藏積分板
             battleScoreboard.classList.add('hidden');
@@ -4114,9 +4080,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                                 exitBattleBtn.classList.remove('hidden');
                                 exitBattleBtn.onclick = () => {
                                     battleResultModal.classList.add('hidden');
-                                    // 清理對戰狀態並回到單人
-                                    try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
-                                    // 【重構】清理 GameState（不再需要 __REMOTE_TIMED__ 或 R.timedMode）
+                                    // 【重構】清理 GameState
                                     try { 
                                         window.GameState.mode = 'solo'; 
                                         window.GameState.subMode = null; 
@@ -4144,8 +4108,8 @@ window.LocalBattle.endMode = function endBattleMode() {
                 }
             }
 
-            // 2) 舊模式（本地輪流）：沿用原排序
-            const sortedPlayers = [...battleMode.players].sort((a, b) => b.score - a.score);
+            // 2) 舊模式（本地輪流）：從 GameState 讀取
+            const sortedPlayers = [...window.GameState.players].sort((a, b) => b.score - a.score);
             
             // 2. 找出最高分
             const highScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
@@ -4202,26 +4166,14 @@ window.LocalBattle.endMode = function endBattleMode() {
         }
         
         function startNewBattle() {
-            // 重置對戰數據但保持選手設置
-            battleMode.players.forEach(player => {
-                player.score = 0;
-                player.displayedScore = 0;
-                player.isActive = false;
-            });
-            battleMode.players[0].isActive = true;
-            battleMode.currentPlayerIndex = 0;
-            battleMode.currentRound = 0;
-            battleMode.isActive = true;
-            
-            // 【重構】重置 GameState
+            // 【重構】重置 GameState（主數據源）
             window.GameState.mode = 'local';
             window.GameState.subMode = 'turn_based';
             window.GameState.isActive = true;
             window.GameState.turnBased.currentTurnIndex = 0;
-            window.GameState.turnBased.roundsPerPlayer = battleMode.roundsPerPlayer;
             window.GameState.turnBased.currentRound = 0;
             
-            // 重置玩家數據（保持 emoji 分配）
+            // 重置玩家數據（保持 emoji 和 名稱）
             window.GameState.players.forEach(player => {
                 player.score = 0;
                 player.answered = 0;
@@ -4248,16 +4200,12 @@ window.LocalBattle.endMode = function endBattleMode() {
             // 關閉總結窗口
             battleResultModal.classList.add('hidden');
             
-            // 重置對戰模式
-            battleMode.isActive = false;
-            battleMode.players = [];
-            currentGameMode = 'preset';
-            
             // 【重構】清理 GameState
             window.GameState.mode = 'solo';
             window.GameState.subMode = null;
             window.GameState.isActive = false;
             window.GameState.players = [];
+            currentGameMode = 'preset';
             
             // 隱藏賽道和積分板
             try {
@@ -4536,11 +4484,6 @@ window.LocalBattle.endMode = function endBattleMode() {
         };
         // 【重構】不再暴露 __REMOTE_STATE__，所有數據統一在 GameState 中
 
-        function getBM(){
-            try { return (typeof battleMode !== 'undefined') ? battleMode : (window.battleMode || null); }
-            catch(_) { return window.battleMode || null; }
-        }
-
         // 確保匿名登入
         async function ensureAnonLogin(){
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
@@ -4794,7 +4737,6 @@ window.LocalBattle.endMode = function endBattleMode() {
                         if (msg.payload?.emojiMap) state.emojiMap = msg.payload.emojiMap;
                         if (Array.isArray(msg.payload?.players)) {
                             applyBattleConfig({ players: msg.payload.players, roundsPerPlayer: 1 });
-                            try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
                         }
                         
                         // 同步詩詞庫
@@ -4824,8 +4766,6 @@ window.LocalBattle.endMode = function endBattleMode() {
                         try { clearInterval(state.timedTimer); } catch(_){}
                         // 顯示遠程限時專屬排行榜
                         if (typeof showBattleResultModal === 'function') showBattleResultModal();
-                        // 清理：避免本地輪流殘留
-                        try { battleMode.isActive = false; } catch(_){}
                         break;
                     case 'score_update':
                         try {
@@ -4874,31 +4814,23 @@ window.LocalBattle.endMode = function endBattleMode() {
         function applyBattleConfig(conf){
             try {
                 if (!conf) return;
-                let bm = getBM();
-                if (!bm) {
-                    window.battleMode = window.battleMode || {};
-                    bm = window.battleMode;
-                }
-                bm.isActive = true;
-                // 支援 {id, name}
+                
+                // 【重構】不再使用 battleMode，直接初始化 state.stats 用於遠程對戰
                 const players = (conf.players || []).filter(Boolean);
                 const names = players.map(p => (typeof p === 'string' ? p : ((p && p.name) || '玩家')));
                 const ids = players.map(p => (typeof p === 'string' ? null : ((p && p.id) || null)));
-                bm.players = names.map((name, i) => ({ name: name || '玩家', score: 0, displayedScore: 0, isActive: i === 0 }));
+                
                 state.rosterUserIds = ids;
-                // 初始化統計
+                state.stats = state.stats || {};
+                
+                // 初始化統計數據
                 (ids || []).forEach((uid, i) => {
                     if (!uid) return;
                     state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'', lastTs:0 };
                     state.stats[uid].nickname = names[i] || state.stats[uid].nickname || '玩家';
                 });
-                bm.currentPlayerIndex = 0;
-                bm.roundsPerPlayer = Math.max(1, Math.min(50, parseInt(conf.roundsPerPlayer || '5')));
-                bm.currentRound = 0;
-                bm.totalRounds = bm.players.length * bm.roundsPerPlayer;
-                if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
-                const board = document.getElementById('battleScoreboard');
-                if (board) board.classList.remove('hidden');
+                
+                // 遠程限時模式不使用積分板（使用賽道顯示），所以不顯示
                 // 遠程輪流模式已移除，不再需要 turnUserId 和 updateSubmitGate
             } catch (e) {
                 console.warn('[remote] applyBattleConfig error', e);
@@ -5071,7 +5003,6 @@ window.LocalBattle.endMode = function endBattleMode() {
                 
                 // 初始化玩家數據（在生成 emojiMap 之前）
                 applyBattleConfig(conf);
-                try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
                 // 保險：清理任何單題計時與本地回合狀態
                 try { clearInterval(timerInterval); } catch(_){ }
                 try { timerInterval = null; } catch(_){ }
