@@ -4925,8 +4925,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
                 const board = document.getElementById('battleScoreboard');
                 if (board) board.classList.remove('hidden');
-                state.turnUserId = (state.rosterUserIds && state.rosterUserIds[0]) || null;
-                updateSubmitGate();
+                // 遠程輪流模式已移除，不再需要 turnUserId 和 updateSubmitGate
             } catch (e) {
                 console.warn('[remote] applyBattleConfig error', e);
             }
@@ -5111,6 +5110,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const emojiMap = window.RaceTrack.buildEmojiMap(userIds, state.room?.code || 'ROOM');
                 state.emojiMap = emojiMap; // 保存到 state
                 console.log('[remote] host generated emojiMap:', emojiMap);
+                console.log('[remote] host emojiMap details:', Object.keys(emojiMap).map(k => `${k}: ${emojiMap[k]}`));
                 
                 // 【重構】主機端填充 GameState.players（與接收方保持一致）
                 window.GameState.players = conf.players.map((p, idx) => ({
