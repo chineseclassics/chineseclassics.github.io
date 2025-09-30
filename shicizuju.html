@@ -4855,6 +4855,13 @@ window.LocalBattle.endMode = function endBattleMode() {
                             const uid = p.userId;
                             if (!uid) break;
                             
+                            // 【修復】跳過自己發送的分數更新（避免重複計分）
+                            const currentUserId = window.GameState?.remote?.currentUserId;
+                            if (uid === currentUserId) {
+                                console.log('[remote] skipping own score_update to avoid double counting');
+                                break;
+                            }
+                            
                             // 【重構】直接更新 GameState
                             const player = window.GameState.players.find(pl => pl.uid === uid);
                             if (player) {
