@@ -5030,29 +5030,6 @@ window.LocalBattle.endMode = function endBattleMode() {
                 }
             });
 
-            channel.on('broadcast', { event: 'emoji_map' }, (msg) => {
-                console.log('[remote] emoji_map event received:', msg?.payload);
-                const payload = msg?.payload?.payload || msg?.payload;
-                const emojiMap = payload?.emojiMap;
-                
-                if (emojiMap) {
-                    state.emojiMap = emojiMap;
-                    console.log('[remote] emoji map updated:', emojiMap);
-                    // 如果還沒有roster數據，先刷新roster再渲染
-                    if (!state.roster || state.roster.length === 0) {
-                        console.log('[remote] no roster yet, refreshing...');
-                        refreshRoster().catch(e => console.warn('[remote] refresh roster after emoji_map failed:', e));
-                    } else {
-                        // 直接重新渲染玩家列表
-                        console.log('[remote] re-rendering player list with', state.roster.length, 'players');
-                        const list = document.getElementById('rbPresenceList');
-                        const listWaiting = document.getElementById('rbPresenceListWaiting');
-                        renderPlayerListUI(list, state.roster);
-                        renderPlayerListUI(listWaiting, state.roster);
-                    }
-                }
-            });
-
             await channel.subscribe((status) => {
                 console.log('[remote] channel subscription status:', status);
                 if (status === 'SUBSCRIBED') {
@@ -5094,7 +5071,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 return;
             }
             
-            console.log('[remote] renderPlayerListUI:', roster.length, 'players, emojiMap keys:', Object.keys(emojiMap));
+            console.log('[remote] renderPlayerListUI:', roster.length, 'players, emojiMap keys:', Object.keys(emojiMap), 'emojiMap:', emojiMap);
             
             roster.forEach(p => {
                 const div = document.createElement('div');
@@ -5106,6 +5083,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 
                 // 顯示 emoji 圖標
                 const emoji = emojiMap[p.user_id] || '🏃';
+                console.log('[remote] player:', p.user_id, 'emoji:', emoji, 'from emojiMap');
                 const emojiSpan = document.createElement('span');
                 emojiSpan.textContent = emoji;
                 emojiSpan.className = 'text-base';
@@ -5399,6 +5377,28 @@ window.LocalBattle.endMode = function endBattleMode() {
                                 window.RaceTrack?.render();
                             } catch(e){ console.error('[remote] UI update error:', e); }
                         } catch(e){ console.error('[remote] score_update error:', e); }
+                        break;
+                    case 'emoji_map':
+                        try {
+                            console.log('[remote] emoji_map received in handleIncomingMove, payload:', msg.payload);
+                            const emojiMap = msg.payload?.emojiMap;
+                            if (emojiMap) {
+                                state.emojiMap = emojiMap;
+                                console.log('[remote] emoji map updated in handleIncomingMove:', emojiMap);
+                                // 如果還沒有roster數據，先刷新roster再渲染
+                                if (!state.roster || state.roster.length === 0) {
+                                    console.log('[remote] no roster yet, refreshing...');
+                                    refreshRoster().catch(e => console.warn('[remote] refresh roster after emoji_map failed:', e));
+                                } else {
+                                    // 直接重新渲染玩家列表
+                                    console.log('[remote] re-rendering player list with', state.roster.length, 'players');
+                                    const list = document.getElementById('rbPresenceList');
+                                    const listWaiting = document.getElementById('rbPresenceListWaiting');
+                                    renderPlayerListUI(list, state.roster);
+                                    renderPlayerListUI(listWaiting, state.roster);
+                                }
+                            }
+                        } catch(e){ console.error('[remote] emoji_map error:', e); }
                         break;
                     default:
                         console.log('[remote] unhandled move', msg);
