@@ -3862,6 +3862,14 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             rightPlayersContainer.innerHTML = '';
             
             // 【重構】統一從 GameState 讀取玩家數據
+            console.log('[scoreboard] updating, GameState:', { 
+                mode: window.GameState.mode, 
+                subMode: window.GameState.subMode, 
+                isActive: window.GameState.isActive,
+                isAnyBattle: window.GameMode.isAnyBattle(),
+                playersCount: window.GameState.players?.length || 0
+            });
+            
             if (!window.GameMode.isAnyBattle()) {
                 console.log('[scoreboard] not in battle mode, skipping');
                 return;
@@ -3872,6 +3880,8 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                 console.log('[scoreboard] no players data');
                 return;
             }
+            
+            console.log('[scoreboard] rendering', players.length, 'players');
             
             const isTimed = window.GameMode.isTimedScore();
             
@@ -4726,9 +4736,15 @@ window.LocalBattle.endMode = function endBattleMode() {
                                 isReady: true,
                                 isActive: false
                             }));
-                            console.log('[remote] GameState.players initialized:', window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji })));
+                            console.log('[remote] receiver GameState.players initialized:', window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji })));
+                        } else {
+                            console.warn('[remote] receiver failed to initialize players - missing data:', { 
+                                hasPlayers: Array.isArray(msg.payload?.players), 
+                                hasEmojiMap: !!msg.payload?.emojiMap,
+                                payload: msg.payload 
+                            });
                         }
-                        console.log('[remote] receiver GameState:', { mode: window.GameState.mode, subMode: window.GameState.subMode, isActive: window.GameState.isActive });
+                        console.log('[remote] receiver GameState:', { mode: window.GameState.mode, subMode: window.GameState.subMode, isActive: window.GameState.isActive, playersCount: window.GameState.players?.length || 0 });
                         
                         // 舊系統同步（向後兼容）
                         // 【重構】不再設置 __REMOTE_TIMED__，改用 GameState.isActive 判斷
@@ -4751,18 +4767,20 @@ window.LocalBattle.endMode = function endBattleMode() {
                             console.log('[remote] receiver entering game, GameMode.isTimedScore()=', window.GameMode.isTimedScore(), 'GameMode.isAnyBattle()=', window.GameMode.isAnyBattle());
                             beginTimedTicker();
                             try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
-                            if (typeof window.startNewRound === 'function') window.startNewRound();
-                            // 顯示記分板
+                            // 顯示記分板（先於UI渲染）
                             try { 
                                 const board = document.getElementById('battleScoreboard');
                                 if (board) board.classList.remove('hidden');
                             } catch(_){}
-                            // 觸發賽道和記分板渲染
+                            // 觸發賽道和記分板渲染（在startNewRound之前）
                             try {
-                                console.log('[remote] starting game, rendering UI');
+                                console.log('[remote] receiver starting game, rendering UI');
                                 window.RaceTrack?.render();
                                 window.LocalBattle?.updateScoreboard();
-                            } catch(e){ console.error('[remote] UI initialization error:', e); }
+                                console.log('[remote] receiver UI rendered, players count:', window.GameState.players?.length || 0);
+                            } catch(e){ console.error('[remote] receiver UI initialization error:', e); }
+                            // 最後開始作答
+                            if (typeof window.startNewRound === 'function') window.startNewRound();
                         });
                         break;
                     case 'timed_end':
