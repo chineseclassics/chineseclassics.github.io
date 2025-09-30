@@ -4783,35 +4783,12 @@ window.LocalBattle.endMode = function endBattleMode() {
 
             <!-- 內容區域 -->
             <div class="overflow-y-auto custom-scrollbar flex-grow p-4">
-                <div class="grid md:grid-cols-2 gap-4">
+                <!-- 初始狀態：建立或加入房間 -->
+                <div id="rbInitialView" class="grid md:grid-cols-2 gap-4">
                     <!-- 左側：建立房間 -->
                     <div class="space-y-3">
                         <input id="rbNickname" type="text" class="glass-card rounded-lg px-3 py-2 border border-white/30 focus:ring-2 focus:ring-primary-500 text-sm font-modern w-full" placeholder="👤 輸入你的暱稱">
-                        
                         <button id="rbCreateBtn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-secondary-500 to-secondary-600 text-white font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">建立房間</button>
-
-                        <!-- 房間代碼顯示 -->
-                        <div id="rbCreatedInfo" class="hidden glass-card rounded-xl p-3 border border-white/10">
-                            <div class="text-xs font-modern text-surface-600 mb-2">房間代碼</div>
-                            <div class="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-lg p-3 border border-secondary-300 text-center">
-                                <span id="rbRoomCodeDisplay" class="font-mono font-bold text-3xl text-secondary-700" style="letter-spacing: 0.35em;"></span>
-                            </div>
-                        </div>
-
-                        <!-- 房主設定 -->
-                        <div id="rbHostSettings" class="hidden glass-card rounded-xl p-3 border border-white/10">
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <div>
-                                    <label class="text-xs font-modern text-surface-700 mb-1 block">限時（分鐘）</label>
-                                    <input id="rbTimedMinutes" type="number" min="1" max="10" value="3" class="glass-card rounded-lg px-2 py-1.5 border border-white/30 focus:ring-2 focus:ring-primary-500 text-sm font-modern w-full">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-modern text-surface-700 mb-1 block">詩詞庫</label>
-                                    <select id="rbPoemTag" class="glass-card rounded-lg px-2 py-1.5 border border-white/30 focus:ring-2 focus:ring-primary-500 text-sm font-modern w-full"></select>
-                                </div>
-                            </div>
-                            <button id="rbStartTimedBtn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 text-white font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">開始限時競賽</button>
-                        </div>
                     </div>
 
                     <!-- 右側：加入房間 -->
@@ -4827,11 +4804,52 @@ window.LocalBattle.endMode = function endBattleMode() {
                             maxlength="6"
                         >
                         <button id="rbJoinBtn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 text-white font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">加入房間</button>
+                    </div>
+                </div>
 
+                <!-- 房主管理視圖 -->
+                <div id="rbHostView" class="hidden space-y-3">
+                    <!-- 房間代碼 -->
+                    <div class="glass-card rounded-xl p-3 border border-white/10">
+                        <div class="text-xs font-modern text-surface-600 mb-2">房間代碼</div>
+                        <div class="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-lg p-3 border border-secondary-300 text-center">
+                            <span id="rbRoomCodeDisplay" class="font-mono font-bold text-3xl text-secondary-700" style="letter-spacing: 0.35em;"></span>
+                        </div>
+                    </div>
+
+                    <!-- 在線玩家 -->
+                    <div class="glass-card rounded-xl p-3 border border-white/10">
+                        <div class="text-xs font-modern text-surface-700 mb-2">在線玩家</div>
+                        <div id="rbPresenceList" class="grid grid-cols-2 md:grid-cols-3 gap-2 min-h-[60px]"></div>
+                    </div>
+
+                    <!-- 遊戲設定 -->
+                    <div id="rbHostSettings" class="glass-card rounded-xl p-3 border border-white/10">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                <label class="text-xs font-modern text-surface-700 mb-1 block">限時（分鐘）</label>
+                                <input id="rbTimedMinutes" type="number" min="1" max="10" value="3" class="glass-card rounded-lg px-2 py-1.5 border border-white/30 focus:ring-2 focus:ring-primary-500 text-sm font-modern w-full">
+                            </div>
+                            <div>
+                                <label class="text-xs font-modern text-surface-700 mb-1 block">詩詞庫</label>
+                                <select id="rbPoemTag" class="glass-card rounded-lg px-2 py-1.5 border border-white/30 focus:ring-2 focus:ring-primary-500 text-sm font-modern w-full"></select>
+                            </div>
+                        </div>
+                        <button id="rbStartTimedBtn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 text-white font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">開始限時競賽</button>
+                    </div>
+                </div>
+
+                <!-- 非房主玩家等待視圖 -->
+                <div id="rbPlayerWaitingView" class="hidden">
+                    <div class="glass-card rounded-2xl p-6 border border-white/10 text-center">
+                        <div class="text-6xl mb-4">⏳</div>
+                        <h3 class="text-xl font-modern font-bold text-surface-800 mb-2">已加入房間</h3>
+                        <p class="text-sm font-modern text-surface-600 mb-6">等待房主開始遊戲...</p>
+                        
                         <!-- 在線玩家 -->
-                        <div class="glass-card rounded-xl p-3 border border-white/10">
-                            <div class="text-xs font-modern text-surface-700 mb-2">在線玩家</div>
-                            <div id="rbPresenceList" class="grid grid-cols-2 gap-2 min-h-[60px]"></div>
+                        <div class="glass-card rounded-xl p-4 border border-white/10 bg-white/30">
+                            <div class="text-sm font-modern font-semibold text-surface-700 mb-3">👥 在線玩家</div>
+                            <div id="rbPresenceListWaiting" class="grid grid-cols-2 md:grid-cols-3 gap-2 min-h-[80px]"></div>
                         </div>
                     </div>
                 </div>
@@ -5010,17 +5028,23 @@ window.LocalBattle.endMode = function endBattleMode() {
                 });
             }
             state.roster = Array.isArray(roster) ? roster.filter(Boolean) : [];
-            // 更新在線清單的顯示
+            // 更新在線清單的顯示（同時更新兩個列表區域）
             const list = document.getElementById('rbPresenceList');
-            if (list) {
-                list.innerHTML = '';
+            const listWaiting = document.getElementById('rbPresenceListWaiting');
+            
+            const renderPlayerList = (container) => {
+                if (!container) return;
+                container.innerHTML = '';
                 state.roster.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm';
+                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern';
                     div.textContent = (p && p.nickname) ? p.nickname : '玩家';
-                    list.appendChild(div);
+                    container.appendChild(div);
                 });
-            }
+            };
+            
+            renderPlayerList(list);
+            renderPlayerList(listWaiting);
         }
 
         function genEid(){
@@ -5249,18 +5273,26 @@ window.LocalBattle.endMode = function endBattleMode() {
 
         function renderPresence(presenceState){
             const list = document.getElementById('rbPresenceList');
-            if (!list) return;
-            list.innerHTML = '';
+            const listWaiting = document.getElementById('rbPresenceListWaiting');
+            
             const users = [];
             Object.keys(presenceState || {}).forEach(uid => {
                 (presenceState[uid] || []).forEach(meta => users.push(meta.nickname || '玩家'));
             });
-            users.forEach(name => {
-                const div = document.createElement('div');
-                div.className = 'px-3 py-2 rounded-lg border bg-white text-sm';
-                div.textContent = name;
-                list.appendChild(div);
-            });
+            
+            const renderToContainer = (container) => {
+                if (!container) return;
+                container.innerHTML = '';
+                users.forEach(name => {
+                    const div = document.createElement('div');
+                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern';
+                    div.textContent = name;
+                    container.appendChild(div);
+                });
+            };
+            
+            renderToContainer(list);
+            renderToContainer(listWaiting);
         }
 
         // 填充房主可選的詩詞庫標籤（從主設置的 userLibraryTagSelect 複製）
@@ -5335,6 +5367,13 @@ window.LocalBattle.endMode = function endBattleMode() {
         function closeModal(){ 
             if (modal) {
                 modal.classList.add('hidden');
+                // 重置視圖狀態（顯示初始視圖，隱藏房主視圖和等待視圖）
+                const initialView = document.getElementById('rbInitialView');
+                const hostView = document.getElementById('rbHostView');
+                const waitingView = document.getElementById('rbPlayerWaitingView');
+                if (initialView) initialView.classList.remove('hidden');
+                if (hostView) hostView.classList.add('hidden');
+                if (waitingView) waitingView.classList.add('hidden');
             }
         }
 
@@ -5366,16 +5405,22 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const room = await createRoom('', nickname);
                 console.log('[remote] room created', room && room.code);
                 
-                // 显示代码（不添加空格，通过CSS的letter-spacing实现视觉间距）
+                // 显示房间代码
                 if (codeDisplay) {
                     codeDisplay.textContent = room.code;
                 }
                 
-                createdInfo?.classList.remove('hidden');
+                // 房主：隱藏初始視圖，顯示房主管理視圖
+                const initialView = document.getElementById('rbInitialView');
+                const hostView = document.getElementById('rbHostView');
+                if (initialView) initialView.classList.add('hidden');
+                if (hostView) hostView.classList.remove('hidden');
+                
+                // 填充詩詞庫選項
                 if (window.RemoteBattle?.isHost()) {
-                    hostSettings?.classList.remove('hidden');
                     populatePoemTags();
                 }
+                
                 if (createBtn) { createBtn.textContent = '已建立'; setTimeout(()=>{ createBtn.disabled = false; createBtn.textContent = '建立房間'; }, 1200); }
             } catch (e) {
                 console.warn('[remote] create error', e);
@@ -5391,9 +5436,13 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const code = (joinCodeInput?.value || '').trim();
                 const room = await joinRoomByCode(code, nickname);
                 console.log('[remote] joined room', room && room.code);
-                if (codeDisplay) codeDisplay.textContent = room.code;
-                createdInfo?.classList.remove('hidden');
-                hostSettings?.classList.add('hidden');
+                
+                // 非房主玩家：隱藏初始視圖，顯示等待視圖
+                const initialView = document.getElementById('rbInitialView');
+                const waitingView = document.getElementById('rbPlayerWaitingView');
+                if (initialView) initialView.classList.add('hidden');
+                if (waitingView) waitingView.classList.remove('hidden');
+                
             } catch (e) {
                 console.warn('[remote] join error', e);
                 alert('加入失敗：' + (e?.message || e));
