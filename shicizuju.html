@@ -2342,7 +2342,7 @@
                         }));
                         
                         const maxScore = Math.max(1, ...rows.map(r => r.score));
-                        console.log('[race] render scores:', rows.map(r => `${r.name}: ${r.score}`).join(', '), 'maxScore:', maxScore);
+                        // console.log('[race] render scores:', rows.map(r => `${r.name}: ${r.score}`).join(', '), 'maxScore:', maxScore); // 已關閉調試日志
                         
                         // 排名（僅供徽章使用）
                         const ranked = [...rows].sort((a,b) => (b.score - a.score) || (a.last - b.last));
@@ -2388,7 +2388,7 @@
                             const pct = Math.max(3, Math.min(97, Math.round((r.score / maxScore) * 94 + 3)));
                             const offsetY = ((r.uid||'').charCodeAt(0)%5)-2; // -2..+2 垂直錯層
                             const scale = isMe ? 1.2 : 1;
-                            console.log(`[race] ${r.name}: score=${r.score}, maxScore=${maxScore}, pct=${pct}%`);
+                            // console.log(`[race] ${r.name}: score=${r.score}, maxScore=${maxScore}, pct=${pct}%`); // 已關閉調試日志
                             
                             // 使用 left 設置水平位置，transform 只負責居中、垂直偏移和縮放
                             pin.style.left = pct + '%';
@@ -4752,9 +4752,14 @@ window.LocalBattle.endMode = function endBattleMode() {
                             beginTimedTicker();
                             try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
                             if (typeof window.startNewRound === 'function') window.startNewRound();
-                            // 觸發賽道渲染
+                            // 顯示記分板
+                            try { 
+                                const board = document.getElementById('battleScoreboard');
+                                if (board) board.classList.remove('hidden');
+                            } catch(_){}
+                            // 觸發賽道和記分板渲染
                             try {
-                                console.log('[remote] starting game, rendering racetrack');
+                                console.log('[remote] starting game, rendering UI');
                                 window.RaceTrack?.render();
                                 window.LocalBattle?.updateScoreboard();
                             } catch(e){ console.error('[remote] UI initialization error:', e); }
@@ -5029,6 +5034,13 @@ window.LocalBattle.endMode = function endBattleMode() {
                     isReady: true,
                     isActive: false
                 }));
+                
+                // 顯示記分板
+                try { 
+                    const board = document.getElementById('battleScoreboard');
+                    if (board) board.classList.remove('hidden');
+                } catch(_){}
+                
                 console.log('[remote] host GameState initialized:', {
                     mode: window.GameState.mode,
                     subMode: window.GameState.subMode, 
@@ -5044,6 +5056,12 @@ window.LocalBattle.endMode = function endBattleMode() {
                     beginTimedTicker();
                     // 關閉遠程模態
                     try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
+                    // 觸發賽道和記分板渲染
+                    try {
+                        console.log('[remote] host starting game, rendering UI');
+                        window.RaceTrack?.render();
+                        window.LocalBattle?.updateScoreboard();
+                    } catch(e){ console.error('[remote] host UI initialization error:', e); }
                     // 立即開始作答
                     if (typeof window.startNewRound === 'function') window.startNewRound();
                 });
