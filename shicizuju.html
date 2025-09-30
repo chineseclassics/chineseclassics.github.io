@@ -2382,10 +2382,7 @@
                         const track = document.getElementById('raceTrack');
                         if (!track) { console.log('[race] render: track DOM not found'); return; }
                         
-                        // 先同步舊數據到 GameState
-                        window.syncLegacyToGameState();
-                        
-                        // 使用統一判斷
+                        // 【重構】直接判斷模式，不再需要同步
                         if (!window.GameMode.isAnyBattle()) {
                             track.classList.add('hidden');
                             // 恢復倒計時進度條顯示
@@ -2402,14 +2399,14 @@
                         track.classList.remove('hidden');
                         console.log('[race] render: in battle mode. GameState.mode=', window.GameState.mode, 'subMode=', window.GameState.subMode);
                         
-                        // 直接讀取統一數據源
+                        // 【重構】直接讀取統一數據源
                         const players = window.GameState.players;
                         if (!players || players.length === 0) {
                             console.log('[race] render: no players data');
                             return;
                         }
                         
-                        console.log('[race] render: players=', players);
+                        console.log('[race] render: players=', players.map(p => ({ name: p.name, emoji: p.emoji, score: p.score })));
                         
                         const rows = players.map(p => ({
                             uid: p.uid,
@@ -3881,43 +3878,39 @@
             battleMode.currentRound = 0;
             battleMode.totalRounds = battleMode.players.length * battleMode.roundsPerPlayer;
             
-            // 為本地對戰玩家分配 emoji
-            const localPlayerIds = battleMode.players.map((_, i) => 'L' + i);
-            console.log('[local] localPlayerIds:', localPlayerIds);
-            console.log('[local] RaceTrack available:', !!window.RaceTrack);
-            console.log('[local] buildEmojiMap available:', typeof window.RaceTrack?.buildEmojiMap);
-            
-            const emojiMap = window.RaceTrack.buildEmojiMap(localPlayerIds, 'LOCAL_BATTLE');
-            console.log('[local] battle started, emojiMap:', emojiMap);
-            
-            battleMode.players.forEach((p, i) => {
-                p.uid = localPlayerIds[i];
-                p.emoji = emojiMap[localPlayerIds[i]] || '🏃';
-                p.answered = 0;
-                p.correct = 0;
-                console.log('[local] player', i, ':', p.name, 'uid:', p.uid, 'emoji:', p.emoji);
-            });
-            
-            // 同步到 GameState
+            // 【重構】直接在 GameState 中初始化本地對戰
             window.GameState.mode = 'local';
             window.GameState.subMode = 'turn_based';
             window.GameState.isActive = true;
-            window.GameState.players = battleMode.players.map(p => ({
-                uid: p.uid,
-                name: p.name,
-                emoji: p.emoji,
-                score: p.score || 0,
-                answered: p.answered || 0,
-                correct: p.correct || 0,
+            window.GameState.turnBased.currentTurnIndex = 0;
+            window.GameState.turnBased.roundsPerPlayer = battleMode.roundsPerPlayer;
+            window.GameState.turnBased.currentRound = 0;
+            
+            // 為本地對戰玩家分配 emoji
+            const localPlayerIds = battleMode.players.map((_, i) => 'L' + i);
+            const emojiMap = window.RaceTrack.buildEmojiMap(localPlayerIds, 'LOCAL_BATTLE');
+            
+            window.GameState.players = battleMode.players.map((p, i) => ({
+                uid: localPlayerIds[i],
+                name: p.name || ('玩家' + (i + 1)),
+                emoji: emojiMap[localPlayerIds[i]] || '🏃',
+                score: 0,
+                answered: 0,
+                correct: 0,
                 lastAnswerTs: 0,
                 isReady: false,
-                isActive: p.isActive || false
+                isActive: i === 0
             }));
-            console.log('[local] GameState after sync:', {
+            
+            console.log('[local] battle started. GameState:', {
                 mode: window.GameState.mode,
-                subMode: window.GameState.subMode,
-                isActive: window.GameState.isActive,
-                players: window.GameState.players
+                players: window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji, uid: p.uid }))
+            });
+            
+            // 同步回 battleMode（保持向後兼容，後續會移除）
+            battleMode.players.forEach((p, i) => {
+                p.uid = window.GameState.players[i].uid;
+                p.emoji = window.GameState.players[i].emoji;
             });
             
             // 顯示積分板
@@ -3971,33 +3964,26 @@
 window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             leftPlayersContainer.innerHTML = '';
             rightPlayersContainer.innerHTML = '';
-            // 遠程限時模式下，按 score 降序展示（同分以 lastTs 先者在前）
-            let players = [...battleMode.players];
-            try {
-                const R = (typeof window !== 'undefined') ? (window.__REMOTE_STATE__ || null) : null;
-                if (window.RemoteBattle?.room && R && R.timedMode) {
-                    // 僅更新分數，不改變原本左右位置
-                    players = players.map((pl, idx) => {
-                        const uid = R.rosterUserIds ? R.rosterUserIds[idx] : null;
-                        const st = uid && R.stats ? R.stats[uid] : null;
-                        return { ...pl, score: st ? st.score : pl.score, _last: st ? st.lastTs : 0, isActive: false };
-                    });
-                }
-            } catch(_){ }
-
-            const isTimed = !!(window.RemoteBattle?.room && window.__REMOTE_STATE__ && window.__REMOTE_STATE__.timedMode);
-            // 計算名次（僅遠程限時，用徽章顯示；不調整卡片位置）
-            const rankByIdx = {};
+            
+            // 【重構】統一從 GameState 讀取玩家數據
+            if (!window.GameMode.isAnyBattle()) {
+                console.log('[scoreboard] not in battle mode, skipping');
+                return;
+            }
+            
+            const players = window.GameState.players;
+            if (!players || players.length === 0) {
+                console.log('[scoreboard] no players data');
+                return;
+            }
+            
+            const isTimed = window.GameMode.isTimedScore();
+            
+            // 計算名次（僅限時模式顯示徽章）
+            const rankByUid = {};
             if (isTimed) {
-                try {
-                    const R = window.__REMOTE_STATE__;
-                    const ranks = players.map((pl, idx) => {
-                        const uid = (R && R.rosterUserIds) ? R.rosterUserIds[idx] : null;
-                        const st = uid && R.stats ? R.stats[uid] : null;
-                        return { idx, score: st ? (st.score||0) : 0, last: st ? (st.lastTs||0) : 0 };
-                    }).sort((a,b) => (b.score - a.score) || (a.last - b.last));
-                    ranks.forEach((r, i) => { rankByIdx[r.idx] = i + 1; });
-                } catch(_){ }
+                const ranked = [...players].sort((a,b) => (b.score - a.score) || (a.lastAnswerTs - b.lastAnswerTs));
+                ranked.forEach((p, i) => rankByUid[p.uid] = i + 1);
             }
 
             const leftCount = Math.ceil(players.length / 2);
@@ -4008,19 +3994,14 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                 
                 const playerCard = document.createElement('div');
                 const themeClass = `player-theme-${(index % 6) + 1}`;
-                const showActive = !isRemoteTimed() && !!player.isActive;
+                const showActive = window.GameMode.isLocal() && !!player.isActive;
                 playerCard.className = `player-score-card ${themeClass} ${showActive ? 'active' : ''} relative`;
                 
-                const displayScoreValue = isTimed ? player.score : (typeof player.displayedScore === 'number' ? player.displayedScore : player.score);
-                const rankBadge = isTimed && rankByIdx[index] ? `<div class="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center shadow">${rankByIdx[index]}</div>` : '';
+                const displayScoreValue = player.score || 0;
+                const rankBadge = isTimed && rankByUid[player.uid] ? `<div class="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center shadow">${rankByUid[player.uid]}</div>` : '';
                 
-                // 獲取玩家的 emoji（從 GameState）
-                let playerEmoji = '';
-                try {
-                    window.syncLegacyToGameState();
-                    const gp = window.GameState.players[index];
-                    if (gp && gp.emoji) playerEmoji = `<span class="text-2xl mr-2">${gp.emoji}</span>`;
-                } catch(_){}
+                // 顯示玩家 emoji
+                const playerEmoji = player.emoji ? `<span class="text-2xl mr-2">${player.emoji}</span>` : '';
                 
                 playerCard.innerHTML = `
                     ${rankBadge}
@@ -4031,19 +4012,14 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                 
                 container.appendChild(playerCard);
 
-                // 分數滾動動畫（若分數有變化）
+                // 分數滾動動畫
                 const scoreEl = playerCard.querySelector('.player-score');
-                const from = isTimed ? displayScoreValue : (typeof player.displayedScore === 'number' ? player.displayedScore : player.score);
-                const to = player.score;
-                if (from !== to) {
-                    // 觸發縮放動畫（若已定義 animate-score 可一併使用）
+                if (player._prevScore !== undefined && player._prevScore !== player.score) {
                     scoreEl.classList.add('animate-score');
-                    animateScoreValue(scoreEl, from, to, 700);
-                    // 記錄新的已顯示分數
-                    if (!isTimed) player.displayedScore = to;
-                    // 動畫結束後移除類名
+                    animateScoreValue(scoreEl, player._prevScore, player.score, 700);
                     setTimeout(() => scoreEl.classList.remove('animate-score'), 800);
                 }
+                player._prevScore = player.score;
             });
         }
         
@@ -4072,7 +4048,11 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
         window.LocalBattle.endRound = function endBattleRound(isCorrect) {
             // 限時模式下不使用本地輪流回合結束
             if (isRemoteTimed()) return;
-            const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
+            
+            // 【重構】直接從 GameState 讀取和更新
+            const currentIndex = window.GameState.turnBased.currentTurnIndex;
+            const currentPlayer = window.GameState.players[currentIndex];
+            if (!currentPlayer) return;
             
             if (isCorrect) {
                 // 基礎分
@@ -4087,21 +4067,30 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                     showNotification(`${currentPlayer.name} 答對了！獲得${gained}分`);
                 }
                 currentPlayer.score += gained;
-                currentPlayer.correct = (currentPlayer.correct || 0) + 1;
+                currentPlayer.correct += 1;
             } else {
                 showNotification(`${currentPlayer.name} 答錯了`);
             }
-            currentPlayer.answered = (currentPlayer.answered || 0) + 1;
+            currentPlayer.answered += 1;
             currentPlayer.lastAnswerTs = Date.now();
             
-            // 同步到 GameState 並觸發賽道更新
+            // 同步回 battleMode（保持向後兼容）
+            const battlePlayer = battleMode.players[battleMode.currentPlayerIndex];
+            if (battlePlayer) {
+                battlePlayer.score = currentPlayer.score;
+                battlePlayer.answered = currentPlayer.answered;
+                battlePlayer.correct = currentPlayer.correct;
+            }
+            
+            // 觸發 UI 更新
             try {
-                window.syncLegacyToGameState();
-                window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render();
-            } catch(_){}
+                window.LocalBattle?.updateScoreboard();
+                window.RaceTrack?.render();
+            } catch(e){ console.error('[local] UI update error:', e); }
             
             // 檢查是否完成所有回合
             battleMode.currentRound++;
+            window.GameState.turnBased.currentRound++;
             // 更新左上角輪次顯示
             if (scoreLabel && scoreElement) {
                 scoreLabel.textContent = '輪次';
@@ -4792,24 +4781,44 @@ window.LocalBattle.endMode = function endBattleMode() {
                         if (typeof window.LocalBattle?.endMode === 'function') window.LocalBattle.endMode();
                         break;
                     case 'timed_start':
-                        // 接收限時開始：同步狀態與玩家列表，顯示3秒預備，然後開始
+                        // 接收限時開始：初始化 GameState
                         console.log('[remote] timed_start received, payload=', msg.payload);
+                        
+                        // 【重構】直接初始化 GameState
+                        window.GameState.mode = 'remote';
+                        window.GameState.subMode = 'timed_score';
+                        window.GameState.isActive = true;
+                        window.GameState.timed.endsAt = msg.payload?.endsAt || (Date.now() + (msg.payload?.mins || 3) * 60000);
+                        window.GameState.timed.duration = msg.payload?.mins || 3;
+                        window.GameState.remote.currentUserId = state.user?.id || null;
+                        
+                        // 初始化玩家數據
+                        if (Array.isArray(msg.payload?.players) && msg.payload?.emojiMap) {
+                            window.GameState.players = msg.payload.players.map((p, idx) => ({
+                                uid: p.id || state.rosterUserIds?.[idx] || null,
+                                name: p.name || ('玩家' + (idx + 1)),
+                                emoji: msg.payload.emojiMap[p.id || state.rosterUserIds?.[idx]] || '🏃',
+                                score: 0,
+                                answered: 0,
+                                correct: 0,
+                                lastAnswerTs: 0,
+                                isReady: true,
+                                isActive: false
+                            }));
+                            console.log('[remote] GameState.players initialized:', window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji })));
+                        }
+                        
+                        // 舊系統同步（向後兼容）
                         window.__REMOTE_TIMED__ = true;
                         state.timedMode = true;
-                        state.timedEndsAt = msg.payload?.endsAt || (Date.now() + (msg.payload?.mins || 3) * 60000);
-                        
-                        // 同步 emojiMap
-                        if (msg.payload?.emojiMap) {
-                            state.emojiMap = msg.payload.emojiMap;
-                            console.log('[remote] emojiMap received:', state.emojiMap);
-                        }
-                        
+                        state.timedEndsAt = window.GameState.timed.endsAt;
+                        if (msg.payload?.emojiMap) state.emojiMap = msg.payload.emojiMap;
                         if (Array.isArray(msg.payload?.players)) {
                             applyBattleConfig({ players: msg.payload.players, roundsPerPlayer: 1 });
-                            // 限時模式不使用本地輪流：強制關閉輪流旗標，避免 UI/流程混淆
                             try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
                         }
-                        // 同步詩詞庫到本地
+                        
+                        // 同步詩詞庫
                         if (msg.payload?.tag) {
                             try {
                                 const tagSel = document.getElementById('userLibraryTagSelect');
@@ -4817,19 +4826,16 @@ window.LocalBattle.endMode = function endBattleMode() {
                             } catch(_){}
                         }
                         
-                        // 同步到 GameState
-                        window.syncLegacyToGameState();
-                        console.log('[remote] GameState after sync:', window.GameState);
-                        
                         showPrepCountdown(Math.max(1000, msg.payload?.prepMs || 3000), () => {
                             beginTimedTicker();
                             try { document.getElementById('remoteBattleModal')?.classList.add('hidden'); } catch(_){ }
                             if (typeof window.startNewRound === 'function') window.startNewRound();
-                            // 強制觸發賽道渲染
+                            // 觸發賽道渲染
                             try {
-                                console.log('[remote] forcing RaceTrack.render after prep');
-                                window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render();
-                            } catch(e){ console.error('[remote] RaceTrack.render error:', e); }
+                                console.log('[remote] starting game, rendering racetrack');
+                                window.RaceTrack?.render();
+                                window.LocalBattle?.updateScoreboard();
+                            } catch(e){ console.error('[remote] UI initialization error:', e); }
                         });
                         break;
                     case 'timed_end':
@@ -4846,6 +4852,17 @@ window.LocalBattle.endMode = function endBattleMode() {
                             const p = msg.payload || {};
                             const uid = p.userId;
                             if (!uid) break;
+                            
+                            // 【重構】直接更新 GameState
+                            const player = window.GameState.players.find(pl => pl.uid === uid);
+                            if (player) {
+                                player.score += Number(p.delta || 0);
+                                player.answered += Number(p.answeredInc || 0);
+                                player.correct += Number(p.correctInc || 0);
+                                player.lastAnswerTs = Date.now();
+                            }
+                            
+                            // 同步到舊系統（向後兼容）
                             state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
                             const s = state.stats[uid];
                             s.score += Number(p.delta || 0);
@@ -4853,24 +4870,12 @@ window.LocalBattle.endMode = function endBattleMode() {
                             s.correct += Number(p.correctInc || 0);
                             s.lastTs = Date.now();
                             
-                            // 同步到 GameState
-                            window.syncLegacyToGameState();
-                            
-                            // 更新記分牌：將 battleMode.players 的分數以 stats 映射
-                            if (Array.isArray(window.battleMode?.players)) {
-                                window.battleMode.players.forEach((pl, idx) => {
-                                    const uidAt = state.rosterUserIds[idx];
-                                    const st = uidAt ? state.stats[uidAt] : null;
-                                    if (pl && st) pl.score = st.score;
-                                });
-                                if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard();
-                            }
-                            
-                            // 觸發賽道更新
+                            // 觸發 UI 更新
                             try {
-                                window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render();
-                            } catch(_){}
-                        } catch(_){}
+                                window.LocalBattle?.updateScoreboard();
+                                window.RaceTrack?.render();
+                            } catch(e){ console.error('[remote] UI update error:', e); }
+                        } catch(e){ console.error('[remote] score_update error:', e); }
                         break;
                     default:
                         console.log('[remote] unhandled move', msg);
