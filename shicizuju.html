@@ -3180,38 +3180,13 @@
                 scoreElement.classList.add('animate-score');
                 setTimeout(() => scoreElement.classList.remove('animate-score'), 800);
                 
-                // 【重構】遠程限時：直接更新 GameState 並廣播
+                // 【重構】遠程限時：只廣播，不在本地預先更新（統一由接收廣播時更新）
                 if (window.GameMode.isTimedScore()) {
                     const uid = window.GameState.remote.currentUserId;
                     if (!uid) return;
                     
-                    // 直接更新 GameState.players
-                    const player = window.GameState.players.find(p => p.uid === uid);
-                    if (player) {
-                        player.score += delta;
-                        player.answered += 1;
-                        if (isCorrect) player.correct += 1;
-                        player.lastAnswerTs = Date.now();
-                    }
-                    
-                    // 廣播分數更新
+                    // 廣播分數更新（讓所有客戶端包括自己統一處理）
                     window.RemoteBattle.sendGameEvent('score_update', { userId: uid, delta, answeredInc:1, correctInc: isCorrect?1:0 });
-                    
-                    // 同步到舊系統（向後兼容）
-                    try {
-                        if (typeof state !== 'undefined' && state.stats) {
-                            state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
-                            const s = state.stats[uid];
-                            s.score += delta;
-                            s.answered += 1;
-                            if (isCorrect) s.correct += 1;
-                            s.lastTs = Date.now();
-                        }
-                    } catch(_){}
-                    
-                    // 觸發 UI 更新
-                    try { window.LocalBattle?.updateScoreboard(); } catch(_){ }
-                    try { window.RaceTrack?.render(); } catch(_){ }
                 }
             } catch(_){}
         }
@@ -4855,13 +4830,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                             const uid = p.userId;
                             if (!uid) break;
                             
-                            // 【修復】跳過自己發送的分數更新（避免重複計分）
-                            const currentUserId = window.GameState?.remote?.currentUserId;
-                            if (uid === currentUserId) {
-                                console.log('[remote] skipping own score_update to avoid double counting');
-                                break;
-                            }
-                            
+                            // 【修復】所有客戶端統一通過此處更新分數（包括發送者自己）
                             // 【重構】直接更新 GameState
                             const player = window.GameState.players.find(pl => pl.uid === uid);
                             if (player) {
