@@ -1040,6 +1040,18 @@
                                         <option value="6">6名選手</option>
                                         <option value="7">7名選手</option>
                                         <option value="8">8名選手</option>
+                                        <option value="9">9名選手</option>
+                                        <option value="10">10名選手</option>
+                                        <option value="11">11名選手</option>
+                                        <option value="12">12名選手</option>
+                                        <option value="13">13名選手</option>
+                                        <option value="14">14名選手</option>
+                                        <option value="15">15名選手</option>
+                                        <option value="16">16名選手</option>
+                                        <option value="17">17名選手</option>
+                                        <option value="18">18名選手</option>
+                                        <option value="19">19名選手</option>
+                                        <option value="20">20名選手</option>
                                     </select>
                                 </div>
                                 <div>
@@ -4952,6 +4964,16 @@ window.LocalBattle.endMode = function endBattleMode() {
             const { data: room, error } = await sb.from('rooms').select('*').eq('code', code).single();
             if (error || !room) throw new Error('找不到房間');
 
+            // 檢查房間人數限制（最多20人）
+            const { data: players, error: countError } = await sb
+                .from('room_players')
+                .select('user_id')
+                .eq('room_id', room.id);
+            
+            if (!countError && players && players.length >= 20) {
+                throw new Error('房間已滿（最多20人）');
+            }
+
             await sb.from('room_players').upsert({
                 room_id: room.id, user_id: state.user.id, nickname: nickname || '玩家', is_host: room.host_id === state.user.id
             });
@@ -4980,6 +5002,31 @@ window.LocalBattle.endMode = function endBattleMode() {
             channel.on('broadcast', { event: 'move' }, (msg) => {
                 console.log('[remote] broadcast received in channel.on, payload:', msg?.payload);
                 handleIncomingMove(msg?.payload);
+            });
+
+            channel.on('broadcast', { event: 'kick' }, (msg) => {
+                console.log('[remote] kick event received:', msg?.payload);
+                const payload = msg?.payload?.payload || msg?.payload;
+                const targetUserId = payload?.targetUserId;
+                const currentUserId = state.user?.id;
+                
+                // 如果被踢的是自己，退出房間
+                if (targetUserId === currentUserId) {
+                    alert('您已被房主移出房間');
+                    // 關閉模態窗口
+                    const modal = document.getElementById('remoteBattleModal');
+                    if (modal) modal.classList.add('hidden');
+                    // 重置視圖
+                    const initialView = document.getElementById('rbInitialView');
+                    const hostView = document.getElementById('rbHostView');
+                    const waitingView = document.getElementById('rbPlayerWaitingView');
+                    if (initialView) initialView.classList.remove('hidden');
+                    if (hostView) hostView.classList.add('hidden');
+                    if (waitingView) waitingView.classList.add('hidden');
+                    // 清理狀態
+                    state.room = null;
+                    state.channel = null;
+                }
             });
 
             await channel.subscribe((status) => {
@@ -5035,10 +5082,32 @@ window.LocalBattle.endMode = function endBattleMode() {
             const renderPlayerList = (container) => {
                 if (!container) return;
                 container.innerHTML = '';
+                const isHost = window.RemoteBattle?.isHost();
+                const currentUserId = state.user?.id;
+                
                 state.roster.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern';
-                    div.textContent = (p && p.nickname) ? p.nickname : '玩家';
+                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern relative group flex items-center justify-between';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = (p && p.nickname) ? p.nickname : '玩家';
+                    div.appendChild(nameSpan);
+                    
+                    // 房主可以踢人（除了自己）
+                    if (isHost && p.user_id !== currentUserId) {
+                        const kickBtn = document.createElement('button');
+                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded px-1.5 py-0.5 text-xs font-bold';
+                        kickBtn.textContent = '✕';
+                        kickBtn.title = '踢出房間';
+                        kickBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`確定要踢出 ${p.nickname || '玩家'} 嗎？`)) {
+                                await kickPlayer(p.user_id);
+                            }
+                        });
+                        div.appendChild(kickBtn);
+                    }
+                    
                     container.appendChild(div);
                 });
             };
@@ -5091,6 +5160,37 @@ window.LocalBattle.endMode = function endBattleMode() {
                 console.log(`[remote] db record saved for: ${type}`);
             } catch (e) {
                 console.warn(`[remote] db insert failed (non-critical) for ${type}:`, e.message);
+            }
+        }
+
+        async function kickPlayer(userId){
+            if (!window.RemoteBattle?.isHost()) {
+                console.warn('[remote] 只有房主可以踢人');
+                return;
+            }
+            if (!userId) return;
+            
+            try {
+                console.log('[remote] kicking player:', userId);
+                
+                // 發送踢人事件給該玩家
+                await sendGameEvent('kick', { targetUserId: userId });
+                
+                // 從數據庫中移除該玩家
+                if (state.room?.id) {
+                    await sb.from('room_players')
+                        .delete()
+                        .eq('room_id', state.room.id)
+                        .eq('user_id', userId);
+                }
+                
+                // 刷新玩家列表
+                await refreshRoster();
+                
+                console.log('[remote] player kicked successfully:', userId);
+            } catch (e) {
+                console.error('[remote] kick player error:', e);
+                alert('踢人失敗：' + (e?.message || e));
             }
         }
 
@@ -5277,16 +5377,40 @@ window.LocalBattle.endMode = function endBattleMode() {
             
             const users = [];
             Object.keys(presenceState || {}).forEach(uid => {
-                (presenceState[uid] || []).forEach(meta => users.push(meta.nickname || '玩家'));
+                (presenceState[uid] || []).forEach(meta => {
+                    users.push({ user_id: uid, nickname: meta.nickname || '玩家' });
+                });
             });
             
             const renderToContainer = (container) => {
                 if (!container) return;
                 container.innerHTML = '';
-                users.forEach(name => {
+                const isHost = window.RemoteBattle?.isHost();
+                const currentUserId = state.user?.id;
+                
+                users.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern';
-                    div.textContent = name;
+                    div.className = 'px-3 py-2 rounded-lg border bg-white text-sm font-modern relative group flex items-center justify-between';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = p.nickname;
+                    div.appendChild(nameSpan);
+                    
+                    // 房主可以踢人（除了自己）
+                    if (isHost && p.user_id !== currentUserId) {
+                        const kickBtn = document.createElement('button');
+                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded px-1.5 py-0.5 text-xs font-bold';
+                        kickBtn.textContent = '✕';
+                        kickBtn.title = '踢出房間';
+                        kickBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`確定要踢出 ${p.nickname} 嗎？`)) {
+                                await kickPlayer(p.user_id);
+                            }
+                        });
+                        div.appendChild(kickBtn);
+                    }
+                    
                     container.appendChild(div);
                 });
             };
