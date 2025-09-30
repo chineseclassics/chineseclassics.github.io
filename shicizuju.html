@@ -2253,7 +2253,7 @@
                     try {
                         const track = document.getElementById('raceTrack');
                         if (!track) return;
-                        const inRemoteTimed = !!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode);
+                        const inRemoteTimed = !!(window.RemoteBattle?.room && (window.__REMOTE_TIMED__ === true || (typeof window !== 'undefined' && window.__REMOTE_STATE__ && window.__REMOTE_STATE__.timedMode === true)));
                         const inLocalBattle = !!(window.battleMode?.isActive && !inRemoteTimed);
                         try { console.debug('[race] render enter', { inRemoteTimed, inLocalBattle }); } catch(_){ }
                         if (!inRemoteTimed && !inLocalBattle) { track.classList.add('hidden'); try { console.debug('[race] render: hide (not in battle)'); } catch(_){ } return; }
