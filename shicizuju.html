@@ -4790,9 +4790,18 @@ window.LocalBattle.endMode = function endBattleMode() {
                     <input id="rbRoomName" type="text" class="w-full border rounded-lg px-3 py-2" placeholder="房間名稱（可空）">
                     <button id="rbCreateBtn" class="w-full py-2 rounded-lg bg-emerald-500 text-white interactive">建立房間</button>
 
-                    <div id="rbCreatedInfo" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm">
-                        <div>房間代碼：<span id="rbRoomCodeDisplay" class="font-mono font-semibold"></span></div>
-                        <div class="text-slate-600 mt-1">把代碼分享給朋友加入房間</div>
+                    <div id="rbCreatedInfo" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-sm">
+                        <div class="text-slate-600 mb-2">房間代碼</div>
+                        <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-emerald-300">
+                            <span id="rbRoomCodeDisplay" class="font-mono font-bold text-2xl text-emerald-700" style="letter-spacing: 0.35em;"></span>
+                            <button id="rbCopyCodeBtn" class="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs hover:bg-emerald-600 transition-colors flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                                </svg>
+                                複製
+                            </button>
+                        </div>
+                        <div class="text-slate-600 mt-2 text-xs">分享這個代碼讓朋友加入房間</div>
                     </div>
 
                     <div id="rbHostSettings" class="mt-4 space-y-3 hidden">
@@ -4814,7 +4823,16 @@ window.LocalBattle.endMode = function endBattleMode() {
 
                 <div class="space-y-3">
                     <div class="text-sm text-slate-600">加入房間</div>
-                    <input id="rbJoinCode" type="text" class="w-full border rounded-lg px-3 py-2" placeholder="輸入 6 位房間代碼，例如 ABC123" maxlength="6">
+                    <input 
+                        id="rbJoinCode" 
+                        type="tel" 
+                        inputmode="numeric" 
+                        pattern="[0-9]{6}" 
+                        class="w-full border rounded-lg px-3 py-2 text-center text-lg font-mono" 
+                        style="letter-spacing: 0.35em;"
+                        placeholder="例如：123456" 
+                        maxlength="6"
+                    >
                     <button id="rbJoinBtn" class="w-full py-2 rounded-lg bg-sky-500 text-white interactive">加入房間</button>
 
                     <div class="mt-4">
@@ -4870,9 +4888,16 @@ window.LocalBattle.endMode = function endBattleMode() {
         }
 
         function genRoomCode(){
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let s=''; for(let i=0;i<6;i++){ s += chars[Math.floor(Math.random()*chars.length)]; }
-            return s;
+            // 生成6位纯数字代码（100000-999999）
+            // 避免全0、全相同等特殊情况
+            let code;
+            do {
+                code = Math.floor(100000 + Math.random() * 900000).toString();
+            } while (
+                /^(.)\1{5}$/.test(code) || // 避免全相同（如111111）
+                code === '000000'           // 避免全0
+            );
+            return code;
         }
 
         async function createRoom(name, nickname){
@@ -4903,7 +4928,11 @@ window.LocalBattle.endMode = function endBattleMode() {
 
         async function joinRoomByCode(code, nickname){
             await ensureAnonLogin();
-            code = String(code||'').trim().toUpperCase();
+            // 只保留数字，去除其他字符
+            code = String(code||'').trim().replace(/\D/g, '');
+            if (code.length !== 6) {
+                throw new Error('房間代碼必須是6位數字');
+            }
             const { data: room, error } = await sb.from('rooms').select('*').eq('code', code).single();
             if (error || !room) throw new Error('找不到房間');
 
@@ -5309,6 +5338,53 @@ window.LocalBattle.endMode = function endBattleMode() {
         btn?.addEventListener('click', openModal);
         closeBtn?.addEventListener('click', closeModal);
 
+        // 输入框实时验证（只允许数字，不添加空格）
+        if (joinCodeInput) {
+            joinCodeInput.addEventListener('input', (e) => {
+                // 只保留数字
+                let value = e.target.value.replace(/\D/g, '');
+                
+                // 限制6位
+                if (value.length > 6) {
+                    value = value.slice(0, 6);
+                }
+                
+                // 直接显示数字，不添加空格
+                e.target.value = value;
+            });
+        }
+
+        // 复制房间代码按钮
+        const copyCodeBtn = document.getElementById('rbCopyCodeBtn');
+        if (copyCodeBtn) {
+            copyCodeBtn.addEventListener('click', async () => {
+                try {
+                    const code = codeDisplay?.textContent || '';
+                    if (!code) return;
+                    
+                    // 复制到剪贴板
+                    await navigator.clipboard.writeText(code);
+                    
+                    // 显示成功提示
+                    const originalText = copyCodeBtn.innerHTML;
+                    copyCodeBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        已複製
+                    `;
+                    
+                    // 2秒后恢复
+                    setTimeout(() => {
+                        copyCodeBtn.innerHTML = originalText;
+                    }, 2000);
+                } catch (e) {
+                    console.error('复制失败:', e);
+                    alert('複製失敗，請手動複製代碼');
+                }
+            });
+        }
+
         createBtn?.addEventListener('click', async () => {
             try {
                 console.log('[remote] create clicked');
@@ -5318,7 +5394,12 @@ window.LocalBattle.endMode = function endBattleMode() {
                 if (createBtn) { createBtn.disabled = true; createBtn.textContent = '建立中…'; }
                 const room = await createRoom(name, nickname);
                 console.log('[remote] room created', room && room.code);
-                if (codeDisplay) codeDisplay.textContent = room.code;
+                
+                // 显示代码（不添加空格，通过CSS的letter-spacing实现视觉间距）
+                if (codeDisplay) {
+                    codeDisplay.textContent = room.code;
+                }
+                
                 createdInfo?.classList.remove('hidden');
                 if (window.RemoteBattle?.isHost()) {
                     hostSettings?.classList.remove('hidden');
