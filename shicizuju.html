@@ -959,6 +959,14 @@
                 </svg>
                 音效開
             </button>
+            <button id="localBattleBtn" class="glass-card hover:glass-card-strong text-white px-3 py-2 rounded-xl text-xs flex items-center modern-button font-modern bg-gradient-to-r from-secondary-500 to-secondary-600 border-none shadow-md transform transition-transform hover:scale-105">
+                <span class="mr-1.5">👥</span>
+                本地對戰
+            </button>
+            <button id="remoteBattleBtn" class="glass-card hover:glass-card-strong text-white px-3 py-2 rounded-xl text-xs flex items-center modern-button font-modern bg-gradient-to-r from-primary-500 to-accent-500 border-none shadow-md transform transition-transform hover:scale-105">
+                <span class="mr-1.5">🌐</span>
+                遠程對戰
+            </button>
             <button id="adminModeToggle" class="glass-card hover:glass-card-strong text-surface-800 px-3 py-2 rounded-xl text-xs flex items-center modern-button font-modern">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 mr-1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
@@ -1005,6 +1013,92 @@
             </div>
         </div>
 
+        <!-- 本地對戰模態窗口 -->
+        <div id="localBattleModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
+            <div class="glass-modal rounded-3xl shadow-2xl w-[min(600px,90vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
+                <!-- 彈窗標題 -->
+                <div class="flex justify-between items-center p-6 border-b border-white/20 bg-gradient-to-r from-secondary-500 to-secondary-600 rounded-t-3xl flex-shrink-0">
+                    <h2 class="text-2xl font-modern font-bold text-white">👥 本地對戰設置</h2>
+                    <button id="closeLocalBattleModal" class="text-white/80 hover:text-white text-2xl font-bold transform transition-transform hover:scale-110">&times;</button>
+                </div>
+                
+                <!-- 可滚动内容区域 -->
+                <div class="overflow-y-auto custom-scrollbar flex-grow">
+                    <!-- 設置內容 -->
+                    <div class="p-6 space-y-6">
+                        <!-- 選手設置 -->
+                        <div class="glass-card rounded-2xl p-4 border border-white/10">
+                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">👥 選手設置</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-modern text-sm text-surface-800">選手數量：</span>
+                                    <select id="localPlayerCount" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-secondary-500 text-sm font-modern">
+                                        <option value="2" selected>2名選手</option>
+                                        <option value="3">3名選手</option>
+                                        <option value="4">4名選手</option>
+                                        <option value="5">5名選手</option>
+                                        <option value="6">6名選手</option>
+                                        <option value="7">7名選手</option>
+                                        <option value="8">8名選手</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="font-modern text-sm text-surface-800 mb-2 block">選手名稱：</label>
+                                    <div id="localPlayerNamesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <!-- 選手名稱輸入框將由JavaScript動態生成 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 比賽設置 -->
+                        <div class="glass-card rounded-2xl p-4 border border-white/10">
+                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">🎮 比賽設置</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between gap-3">
+                                    <label for="localQuestionCount" class="font-modern text-sm text-surface-800">題目數：</label>
+                                    <input id="localQuestionCount" type="number" min="5" max="100" value="10" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-secondary-500 text-sm font-modern w-28" />
+                                </div>
+                                <div class="flex items-center justify-between gap-3">
+                                    <label for="localPoemSetSelect" class="font-modern text-sm text-surface-800">詩詞庫：</label>
+                                    <select id="localPoemSetSelect" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-secondary-500 text-sm font-modern flex-1">
+                                        <!-- 詩詞庫選項將由JavaScript動態生成 -->
+                                    </select>
+                                </div>
+                                <div class="flex items-center justify-between gap-3">
+                                    <label for="localSpeedMode" class="font-modern text-sm text-surface-800">速度模式（答題越快得分越高）</label>
+                                    <input id="localSpeedMode" type="checkbox" class="w-5 h-5 accent-secondary-600" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 提示信息 -->
+                        <div class="glass-card rounded-2xl p-4 border border-blue-200/60 bg-blue-50">
+                            <h3 class="text-base font-modern font-semibold text-blue-700 mb-2">💡 遊戲說明</h3>
+                            <ul class="text-sm font-modern text-blue-700 leading-relaxed space-y-1">
+                                <li>• 選手在同一台設備上輪流答題</li>
+                                <li>• 答對得分，答錯不扣分</li>
+                                <li>• 所有題目完成後統計最終排名</li>
+                                <li>• 時間限制和待選字數量可在"設置"中調整</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 彈窗底部按鈕 -->
+                <div class="flex justify-end items-center p-6 border-t border-white/20 glass-card rounded-b-3xl flex-shrink-0">
+                    <div class="flex space-x-3">
+                        <button id="cancelLocalBattle" class="glass-card text-surface-800 px-6 py-3 rounded-xl font-modern font-semibold border border-white/30 modern-button transform transition-transform hover:scale-105">
+                            取消
+                        </button>
+                        <button id="startLocalBattle" class="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white px-6 py-3 rounded-xl font-modern font-semibold shadow-md modern-button transform transition-transform hover:scale-105">
+                            開始對戰
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 設置模態彈窗 -->
         <div id="settingsModal" class="fixed inset-0 z-50 hidden backdrop-blur-sm bg-surface-900/30 flex items-center justify-center animate-slide-up">
             <div class="glass-modal rounded-3xl shadow-2xl w-[min(600px,90vw)] max-h-[85vh] border border-white/20 animate-scale-in flex flex-col overflow-hidden">
@@ -1018,71 +1112,41 @@
                 <div class="overflow-y-auto custom-scrollbar flex-grow">
                     <!-- 設置內容 -->
                     <div class="p-6 space-y-6">
-                        <!-- 1. 遊戲模式選擇 -->
+                        <!-- 1. 詩詞庫管理 -->
                         <div class="glass-card rounded-2xl p-4 border border-white/10">
-                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">🎮 遊戲模式</h3>
-                            <div class="space-y-2">
-                                <label class="flex items-center space-x-3 cursor-pointer">
-                                    <input type="radio" name="gameMode" value="single" checked class="text-primary focus:ring-primary">
-                                    <span class="font-modern">單人模式</span>
-                                </label>
-                                <label class="flex items-center space-x-3 cursor-pointer">
-                                    <input type="radio" name="gameMode" value="battle" class="text-primary focus:ring-primary">
-                                    <span class="font-modern">對戰模式</span>
-                                </label>
-                            </div>
-            
-                            <!-- 1.1 對戰模式設置（緊跟在遊戲模式後） -->
-                            <div id="battleModeSettings" class="mt-4 pt-4 border-t border-white/20 hidden">
-                                <h4 class="text-md font-modern font-semibold text-surface-700 mb-3">🏆 對戰設置</h4>
-                                <div class="space-y-4">
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-modern text-sm text-surface-800">選手數量：</span>
-                                        <select id="playerCount" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern">
-                                            <option value="2" selected>2名選手</option>
-                                            <option value="3">3名選手</option>
-                                            <option value="4">4名選手</option>
-                                            <option value="5">5名選手</option>
-                                            <option value="6">6名選手</option>
-                                        </select>
-                                    </div>
-                                    <div id="playerNamesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <!-- 選手名稱輸入框將由JavaScript動態生成 -->
-                                    </div>
-                                    <div class="flex items-center justify-between gap-3">
-                                        <label for="roundsPerPlayer" class="font-modern text-sm text-surface-800">每輪題目數：</label>
-                                        <input id="roundsPerPlayer" type="number" min="1" max="50" value="5" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern w-28" />
-                                    </div>
-                                    <div class="flex items-center justify-between gap-3">
-                                        <label for="speedMode" class="font-modern text-sm text-surface-800">速度模式（答題越快得分越高）</label>
-                                        <input id="speedMode" type="checkbox" class="w-5 h-5 accent-blue-600" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-            
-                        <!-- 2. 詩詞庫選擇 -->
-                        <div class="glass-card rounded-2xl p-4 border border-white/10">
-                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">📚 詩詞庫（標籤）</h3>
+                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">📚 詩詞庫管理</h3>
                             <div class="space-y-3">
+                                <div class="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                                    <p class="text-xs font-modern text-blue-700">
+                                        <span class="font-semibold">💡 說明：</span>此處詩詞庫選擇僅影響<span class="font-semibold">單人模式</span>。本地對戰和遠程對戰的詩詞庫可在各自的對戰設置中選擇。
+                                    </p>
+                                </div>
                                 <div class="flex items-center gap-3">
-                                    <label class="text-sm font-modern text-surface-800">選擇詩詞庫：</label>
-                                    <select id="userLibraryTagSelect" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern"></select>
+                                    <label class="text-sm font-modern text-surface-800">單人模式詩詞庫：</label>
+                                    <select id="userLibraryTagSelect" class="glass-card rounded-lg px-3 py-1 border border-white/30 focus:ring-2 focus:ring-primary text-sm font-modern flex-1"></select>
                                 </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <button id="exportExcelBtn" class="glass-card text-surface-800 px-3 py-1.5 rounded-lg modern-button text-sm border border-white/30">導出 Excel</button>
-                                    <button id="importExcelBtn" class="gradient-secondary text-white px-3 py-1.5 rounded-lg modern-button text-sm">導入 Excel</button>
-                                    <input id="importExcelInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+                                <div class="pt-3 border-t border-white/20">
+                                    <h4 class="text-sm font-modern font-semibold text-surface-700 mb-2">詩詞庫導入/導出</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button id="exportExcelBtn" class="glass-card text-surface-800 px-3 py-1.5 rounded-lg modern-button text-sm border border-white/30">導出 Excel</button>
+                                        <button id="importExcelBtn" class="gradient-secondary text-white px-3 py-1.5 rounded-lg modern-button text-sm">導入 Excel</button>
+                                        <input id="importExcelInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+                                    </div>
+                                    <p class="text-xs text-surface-600 mt-2">提示：Excel 模板欄位為 line（詩句）、author（作者）、poem（詩名）、tags（可用中文分號「；」或中文逗號「，」分隔；亦支援多列 tag1、tag2...）。</p>
                                 </div>
-                                <p class="text-xs text-surface-600">提示：Excel 模板欄位為 line（詩句）、author（作者）、poem（詩名）、tags（可用中文分號「；」或中文逗號「，」分隔；亦支援多列 tag1、tag2...）。</p>
                             </div>
                         
                             
                         </div>
             
-                        <!-- 3. 遊戲難度設置 -->
+                        <!-- 2. 全局遊戲參數 -->
                         <div class="glass-card rounded-2xl p-4 border border-white/10">
-                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">⚙️ 遊戲難度</h3>
+                            <h3 class="text-lg font-modern font-semibold text-surface-800 mb-3">⚙️ 全局遊戲參數</h3>
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 mb-4">
+                                <p class="text-xs font-modern text-amber-700">
+                                    <span class="font-semibold">⚡ 說明：</span>以下設置將影響<span class="font-semibold">所有模式</span>（單人、本地對戰、遠程對戰）。
+                                </p>
+                            </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="p-3 rounded-xl bg-gradient-to-br from-white/80 to-blue-50 border border-gray-200 backdrop-blur-sm shadow-sm hover:shadow-md hover:ring-1 hover:ring-blue-200 transition">
                                     <label class="flex items-center justify-between text-sm font-modern font-medium mb-2 text-surface-800">
@@ -3532,6 +3596,273 @@
             // 根據模式顯示/隱藏相關設置
             updateModalSections();
         }
+
+        // ===== 本地對戰模態窗口相關函數 =====
+        function openLocalBattleModal() {
+            const modal = document.getElementById('localBattleModal');
+            if (!modal) return;
+
+            // 暫停遊戲
+            if (timerInterval) clearInterval(timerInterval);
+            isGameActive = false;
+
+            // 載入保存的設置
+            loadLocalBattleSettings();
+
+            // 填充詩詞庫選項
+            populateLocalPoemSetSelect();
+
+            // 生成選手名稱輸入框
+            generateLocalPlayerNameInputs();
+
+            // 顯示模態窗口
+            modal.classList.remove('hidden');
+        }
+
+        function closeLocalBattleModalFunc() {
+            const modal = document.getElementById('localBattleModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function loadLocalBattleSettings() {
+            // 從 localStorage 載入設置
+            const saved = localStorage.getItem('shicizuju_local_battle_config');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    const localPlayerCount = document.getElementById('localPlayerCount');
+                    const localQuestionCount = document.getElementById('localQuestionCount');
+                    const localSpeedMode = document.getElementById('localSpeedMode');
+
+                    if (localPlayerCount && config.playerCount) {
+                        localPlayerCount.value = config.playerCount;
+                    }
+                    if (localQuestionCount && config.questionCount) {
+                        localQuestionCount.value = config.questionCount;
+                    }
+                    if (localSpeedMode && typeof config.speedMode === 'boolean') {
+                        localSpeedMode.checked = config.speedMode;
+                    }
+                } catch (e) {
+                    console.error('載入本地對戰設置失敗:', e);
+                }
+            }
+        }
+
+        function saveLocalBattleSettings(config) {
+            localStorage.setItem('shicizuju_local_battle_config', JSON.stringify(config));
+        }
+
+        function populateLocalPoemSetSelect() {
+            const select = document.getElementById('localPoemSetSelect');
+            if (!select) return;
+
+            // 清空現有選項
+            select.innerHTML = '';
+
+            // 使用現有的getAllTags函數獲取所有標籤
+            const tags = getAllTags();
+            const allPoems = getAllPoemsUnified();
+
+            // 添加選項
+            tags.forEach(tag => {
+                const option = document.createElement('option');
+                option.value = tag;
+                const count = allPoems.filter(p => p.tags && p.tags.includes(tag)).length;
+                option.textContent = `${tag} (${count}題)`;
+                select.appendChild(option);
+            });
+
+            // 如果有保存的設置，選擇該詩詞庫
+            const saved = localStorage.getItem('shicizuju_local_battle_config');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    if (config.poemSet) {
+                        select.value = config.poemSet;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function generateLocalPlayerNameInputs() {
+            const container = document.getElementById('localPlayerNamesContainer');
+            const localPlayerCount = document.getElementById('localPlayerCount');
+            if (!container || !localPlayerCount) return;
+
+            const count = parseInt(localPlayerCount.value) || 2;
+            container.innerHTML = '';
+
+            // 嘗試從保存的設置中獲取選手名稱
+            let savedNames = [];
+            const saved = localStorage.getItem('shicizuju_local_battle_config');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    savedNames = config.playerNames || [];
+                } catch (e) {}
+            }
+
+            for (let i = 0; i < count; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `localPlayer${i + 1}Name`;
+                input.value = savedNames[i] || `選手${i + 1}`;
+                input.placeholder = `選手${i + 1}`;
+                input.className = 'glass-card rounded-lg px-3 py-2 border border-white/30 focus:ring-2 focus:ring-secondary-500 text-sm font-modern';
+                container.appendChild(input);
+            }
+        }
+
+        function startLocalBattleGame() {
+            // 收集配置
+            const localPlayerCount = document.getElementById('localPlayerCount');
+            const localQuestionCount = document.getElementById('localQuestionCount');
+            const localSpeedMode = document.getElementById('localSpeedMode');
+            const localPoemSetSelect = document.getElementById('localPoemSetSelect');
+
+            if (!localPlayerCount || !localQuestionCount || !localPoemSetSelect) {
+                alert('配置元素未找到');
+                return;
+            }
+
+            const playerCount = parseInt(localPlayerCount.value) || 2;
+            const questionCount = parseInt(localQuestionCount.value) || 10;
+            const speedMode = localSpeedMode ? localSpeedMode.checked : false;
+            const poemSet = localPoemSetSelect.value;
+
+            // 收集選手名稱
+            const playerNames = [];
+            for (let i = 0; i < playerCount; i++) {
+                const input = document.getElementById(`localPlayer${i + 1}Name`);
+                const name = input ? input.value.trim() : '';
+                if (!name) {
+                    alert(`請輸入選手${i + 1}的名稱`);
+                    return;
+                }
+                playerNames.push(name);
+            }
+
+            // 驗證選手名稱不重複
+            const uniqueNames = new Set(playerNames);
+            if (uniqueNames.size !== playerNames.length) {
+                alert('選手名稱不能重複');
+                return;
+            }
+
+            // 驗證題目數
+            if (questionCount < 5) {
+                alert('題目數至少為5題');
+                return;
+            }
+
+            // 保存配置
+            const config = {
+                playerCount,
+                playerNames,
+                questionCount,
+                speedMode,
+                poemSet
+            };
+            saveLocalBattleSettings(config);
+
+            // 關閉模態窗口
+            closeLocalBattleModalFunc();
+
+            // 啟動本地對戰模式（使用現有的對戰模式邏輯）
+            startLocalBattle(config);
+        }
+
+        function startLocalBattle(config) {
+            // 切換到指定的詩詞庫
+            const tagSelect = document.getElementById('userLibraryTagSelect');
+            if (tagSelect && config.poemSet) {
+                tagSelect.value = config.poemSet;
+                saveActiveTag(config.poemSet);
+            }
+
+            // 從滑塊獲取全局參數
+            const timeLimitSlider = document.getElementById('timeLimit');
+            const charCountSlider = document.getElementById('charCount');
+            const currentTimeLimit = timeLimitSlider ? parseInt(timeLimitSlider.value) : 30;
+            const currentCharCount = charCountSlider ? parseInt(charCountSlider.value) : 20;
+
+            // 計算每位選手的題目數
+            const roundsPerPlayer = Math.ceil(config.questionCount / config.playerCount);
+
+            // 保存設置到 localStorage
+            const settings = {
+                mode: 'battle',
+                battle: {
+                    playerCount: config.playerCount,
+                    roundsPerPlayer: roundsPerPlayer,
+                    playerNames: config.playerNames,
+                    speedMode: config.speedMode
+                },
+                timeLimit: currentTimeLimit,
+                charCount: currentCharCount
+            };
+
+            persistSettings(settings);
+
+            // 【重構】直接在 GameState 中初始化本地對戰
+            window.GameState.mode = 'local';
+            window.GameState.subMode = 'turn_based';
+            window.GameState.isActive = true;
+            window.GameState.turnBased.currentTurnIndex = 0;
+            window.GameState.turnBased.roundsPerPlayer = roundsPerPlayer;
+            window.GameState.turnBased.currentRound = 0;
+            window.GameState.turnBased.totalRounds = config.playerCount * roundsPerPlayer;
+            
+            // 為本地對戰玩家分配 emoji
+            const localPlayerIds = config.playerNames.map((_, i) => 'L' + i);
+            const emojiMap = window.RaceTrack.buildEmojiMap(localPlayerIds, 'LOCAL_BATTLE');
+            
+            window.GameState.players = config.playerNames.map((name, i) => ({
+                uid: localPlayerIds[i],
+                name: name,
+                emoji: emojiMap[localPlayerIds[i]] || '🏃',
+                score: 0,
+                answered: 0,
+                correct: 0,
+                lastAnswerTs: 0,
+                isReady: false,
+                isActive: i === 0
+            }));
+            
+            // 顯示積分板
+            if (typeof window.LocalBattle?.updateScoreboard === 'function') {
+                window.LocalBattle.updateScoreboard();
+            }
+            const battleScoreboard = document.getElementById('battleScoreboard');
+            if (battleScoreboard) {
+                battleScoreboard.classList.remove('hidden');
+            }
+
+            // 顯示賽道
+            const raceTrack = document.getElementById('raceTrack');
+            if (raceTrack && window.RaceTrack) {
+                raceTrack.classList.remove('hidden');
+                window.RaceTrack.render();
+            }
+
+            // 更新左上角顯示為輪次
+            const scoreLabel = document.getElementById('scoreLabel');
+            const scoreElement = document.getElementById('score');
+            if (scoreLabel && scoreElement) {
+                scoreLabel.textContent = '輪次';
+                scoreElement.textContent = `1 / ${window.GameState.turnBased.totalRounds}`;
+            }
+
+            // 顯示當前選手通知
+            const currentPlayer = window.GameState.players[0];
+            showNotification(`${currentPlayer.name} 的回合開始！`);
+
+            // 開始第一輪
+            startNewRound();
+        }
         
         function updateModalSections() {
             const selectedModeEl = document.querySelector('input[name="gameMode"]:checked');
@@ -4019,13 +4350,7 @@ window.LocalBattle.endMode = function endBattleMode() {
             // 隱藏積分板
             battleScoreboard.classList.add('hidden');
             
-            // 清理 GameState 並隱藏賽道，恢復倒計時進度條
-            try { 
-                window.GameState.mode = 'solo'; 
-                window.GameState.subMode = null; 
-                window.GameState.isActive = false; 
-                window.GameState.players = [];
-            } catch(_){}
+            // 隱藏賽道，恢復倒計時進度條
             try { 
                 const track = document.getElementById('raceTrack'); 
                 if (track) { track.classList.add('hidden'); track.innerHTML = ''; track.dataset.built = ''; }
@@ -4033,14 +4358,22 @@ window.LocalBattle.endMode = function endBattleMode() {
                 if (timeBarFill) { timeBarFill.style.display = ''; timeBarFill.style.width = '100%'; }
             } catch(_){}
             
-            // 顯示對戰結果總結窗口
+            // 顯示對戰結果總結窗口（在清空玩家數據之前調用）
             showBattleResultModal();
+
+            // 清理 GameState（在顯示結果窗口之後）
+            try { 
+                window.GameState.mode = 'solo'; 
+                window.GameState.subMode = null; 
+                window.GameState.isActive = false; 
+                window.GameState.players = [];
+            } catch(_){}
 
             // 恢復單人模式左上角顯示為分數
             if (scoreLabel && scoreElement) {
                 scoreLabel.textContent = '分數';
                 scoreElement.textContent = String(score);
-}
+            }
         }
         
         function showBattleResultModal() {
@@ -4337,6 +4670,39 @@ window.LocalBattle.endMode = function endBattleMode() {
                     confirmStartBattleMode();
                 });
             }
+
+            // ===== 本地對戰模態窗口事件 =====
+            const localBattleBtn = document.getElementById('localBattleBtn');
+            const localBattleModal = document.getElementById('localBattleModal');
+            const closeLocalBattleModal = document.getElementById('closeLocalBattleModal');
+            const cancelLocalBattle = document.getElementById('cancelLocalBattle');
+            const startLocalBattle = document.getElementById('startLocalBattle');
+            const localPlayerCount = document.getElementById('localPlayerCount');
+
+            // 打開本地對戰模態窗口
+            if (localBattleBtn) {
+                localBattleBtn.addEventListener('click', () => {
+                    openLocalBattleModal();
+                });
+            }
+
+            // 關閉本地對戰模態窗口
+            if (closeLocalBattleModal) {
+                closeLocalBattleModal.addEventListener('click', closeLocalBattleModalFunc);
+            }
+            if (cancelLocalBattle) {
+                cancelLocalBattle.addEventListener('click', closeLocalBattleModalFunc);
+            }
+
+            // 選手數量變更
+            if (localPlayerCount) {
+                localPlayerCount.addEventListener('change', generateLocalPlayerNameInputs);
+            }
+
+            // 開始本地對戰
+            if (startLocalBattle) {
+                startLocalBattle.addEventListener('click', startLocalBattleGame);
+            }
         }
 
         // ===== 初始化：從本地存儲恢復設置與自定義詩句 =====
@@ -4406,13 +4772,7 @@ window.LocalBattle.endMode = function endBattleMode() {
         }
     </script>
     
-    <!-- 遠程對戰入口與模態（不影響原同機模式） -->
-    <div id="remoteBattleBtn" class="fixed bottom-6 right-6 z-50">
-        <button class="px-4 py-2 rounded-xl bg-sky-500 text-white shadow-lg interactive">
-            遠程對戰
-        </button>
-    </div>
-
+    <!-- 遠程對戰模態窗口 -->
     <div id="remoteBattleModal" class="fixed inset-0 z-[60] hidden">
         <div class="absolute inset-0 bg-black/40"></div>
         <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(92vw,720px)] max-h-[86vh] overflow-auto bg-white rounded-2xl border border-slate-200 shadow-xl p-4">
@@ -4923,7 +5283,7 @@ window.LocalBattle.endMode = function endBattleMode() {
 
         // ====== UI 綁定 ======
         function $(id){ return document.getElementById(id); }
-        const btn = $('remoteBattleBtn')?.querySelector('button');
+        const btn = $('remoteBattleBtn');
         const modal = $('remoteBattleModal');
         const closeBtn = $('rbClose');
         const nicknameInput = $('rbNickname');
