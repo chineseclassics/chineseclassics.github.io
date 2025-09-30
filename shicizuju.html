@@ -3698,6 +3698,18 @@
                     battleMode.isActive = false;
                     battleMode.players = [];
                     battleScoreboard && battleScoreboard.classList.add('hidden');
+                    
+                    // 【重構】同時清理 GameState
+                    window.GameState.mode = 'solo';
+                    window.GameState.subMode = null;
+                    window.GameState.isActive = false;
+                    window.GameState.players = [];
+                    
+                    // 隱藏賽道
+                    try {
+                        const track = document.getElementById('raceTrack');
+                        if (track) { track.classList.add('hidden'); track.innerHTML = ''; track.dataset.built = ''; }
+                    } catch(_){}
                 }
                 currentGameMode = 'preset';
                 closeSettingsModalFunc();
@@ -4228,6 +4240,26 @@ window.LocalBattle.endMode = function endBattleMode() {
             battleMode.currentRound = 0;
             battleMode.isActive = true;
             
+            // 【重構】重置 GameState
+            window.GameState.mode = 'local';
+            window.GameState.subMode = 'turn_based';
+            window.GameState.isActive = true;
+            window.GameState.turnBased.currentTurnIndex = 0;
+            window.GameState.turnBased.roundsPerPlayer = battleMode.roundsPerPlayer;
+            window.GameState.turnBased.currentRound = 0;
+            
+            // 重置玩家數據（保持 emoji 分配）
+            window.GameState.players.forEach(player => {
+                player.score = 0;
+                player.answered = 0;
+                player.correct = 0;
+                player.lastAnswerTs = 0;
+                player.isActive = false;
+            });
+            if (window.GameState.players.length > 0) {
+                window.GameState.players[0].isActive = true;
+            }
+            
             // 關閉總結窗口
             battleResultModal.classList.add('hidden');
             
@@ -4247,6 +4279,20 @@ window.LocalBattle.endMode = function endBattleMode() {
             battleMode.isActive = false;
             battleMode.players = [];
             currentGameMode = 'preset';
+            
+            // 【重構】清理 GameState
+            window.GameState.mode = 'solo';
+            window.GameState.subMode = null;
+            window.GameState.isActive = false;
+            window.GameState.players = [];
+            
+            // 隱藏賽道和積分板
+            try {
+                const track = document.getElementById('raceTrack');
+                if (track) { track.classList.add('hidden'); track.innerHTML = ''; track.dataset.built = ''; }
+                const scoreboard = document.getElementById('battleScoreboard');
+                if (scoreboard) scoreboard.classList.add('hidden');
+            } catch(_){}
             
             // 開始單人模式
             showNotification('已切換到單人模式');
@@ -4488,7 +4534,7 @@ window.LocalBattle.endMode = function endBattleMode() {
             </div>
 
             <div class="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
-                建議：房主負責開始比賽、切換回合與結算；玩家在自己裝置作答，結果會即時同步。
+                說明：房主建立房間後，設置限時競賽時長並開始比賽；所有玩家在各自裝置同步作答，分數即時更新。
             </div>
         </div>
     </div>
@@ -4511,10 +4557,8 @@ window.LocalBattle.endMode = function endBattleMode() {
             channel: null,
             dbChannel: null,
             roster: [],           // [{user_id, nickname, joined_at}]
-            rosterUserIds: [],    // 與 battleMode.players 同順序的 user_id 列表
-            turnUserId: null,
+            rosterUserIds: [],    // 與遠程限時模式同步的 user_id 列表
             presenceMap: {},
-            pendingRoundStart: null,
             seenEids: {}          // 事件去重：eid -> 1
         };
         // 【重構】不再暴露 __REMOTE_STATE__，所有數據統一在 GameState 中
@@ -4684,33 +4728,6 @@ window.LocalBattle.endMode = function endBattleMode() {
                     }
                 }
                 switch (msg.type) {
-                    case 'battle_config':
-                        applyBattleConfig(msg.payload);
-                        // 若先前收到 round_start 但尚未配置，現在補觸發
-                        if (state.pendingRoundStart) {
-                            const pr = state.pendingRoundStart;
-                            state.pendingRoundStart = null;
-                            state.turnUserId = pr.currentUserId || null;
-                            updateSubmitGate();
-                            if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
-                        }
-                        break;
-                    case 'round_start':
-                        state.turnUserId = msg.payload?.currentUserId || null;
-                        updateSubmitGate();
-                        if (!window.battleMode || !Array.isArray(window.battleMode.players) || window.battleMode.players.length === 0) {
-                            // 尚未拿到配置，暫存，等 battle_config 到達後再啟動
-                            state.pendingRoundStart = { currentUserId: state.turnUserId };
-                        } else if (typeof window.LocalBattle?.startRound === 'function') {
-                            window.LocalBattle.startRound();
-                        }
-                        break;
-                    case 'round_end':
-                        if (typeof window.endBattleRound === 'function') window.endBattleRound(!!msg.payload?.isCorrect);
-                        break;
-                    case 'battle_end':
-                        if (typeof window.LocalBattle?.endMode === 'function') window.LocalBattle.endMode();
-                        break;
                     case 'timed_start':
                         // 接收限時開始：初始化 GameState
                         console.log('[remote] timed_start received, payload=', msg.payload);
@@ -4935,7 +4952,6 @@ window.LocalBattle.endMode = function endBattleMode() {
         const timedMinInput = document.getElementById('rbTimedMinutes');
         const startTimedBtn = document.getElementById('rbStartTimedBtn');
         const poemTagSelect = document.getElementById('rbPoemTag');
-        const startBtn = document.getElementById('startBtn');
 
         function openModal(){
             modal?.classList.remove('hidden');
@@ -4987,133 +5003,9 @@ window.LocalBattle.endMode = function endBattleMode() {
             }
         });
 
-        // 開始對戰（僅房主）
-        startBtn?.addEventListener('click', async () => {
-            try {
-                if (!window.RemoteBattle?.isHost()) { alert('僅房主可開始'); return; }
-                await refreshRoster();
-                let roster = state.roster;
-                if (!roster || roster.length === 0) { alert('尚無玩家加入'); return; }
-                const rpp = Math.max(1, Math.min(50, parseInt((roundsInput?.value || '5'), 10)));
-                const conf = {
-                    players: (roster || []).filter(Boolean).map(p => ({ id: p.user_id, name: (p && p.nickname) ? p.nickname : '玩家' })),
-                    roundsPerPlayer: rpp
-                };
-                // 先發配置，再本地套用；網路上可能先到 round_start，故亦本地立即套用
-                window.RemoteBattle.sendGameEvent('battle_config', conf);
-                applyBattleConfig(conf);
-                // 更新 rooms 狀態
-                try { await sb.from('rooms').update({ status: 'playing' }).eq('id', state.room.id); } catch(_){ }
-                // 立即開始第一輪
-                const bm = getBM();
-                const currentIdx = (bm && bm.currentPlayerIndex) || 0;
-                const currentUserId = (state.rosterUserIds && state.rosterUserIds[currentIdx]) || null;
-                state.turnUserId = currentUserId;
-                updateSubmitGate();
-                // 先本地啟動，後廣播（避免他端先收到 round_start 而你端未配置）
-                if ((bm && Array.isArray(bm.players) && bm.players.length > 0)
-                    && typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
-                window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
-            } catch (e) {
-                alert('無法開始對戰：' + (e?.message || e));
-            }
-        });
-
-        // 非輪到本人則禁用提交（攔截）
-        function isMyTurn(){
-            if (!window.RemoteBattle?.room) return true; // 非遠程模式，不限制
-            if (!state.turnUserId) return false;
-            return !!(state.user && state.user.id === state.turnUserId);
-        }
-        function updateSubmitGate(){
-            const btn = document.getElementById('submitPoem');
-            if (!btn) return;
-            if (isMyTurn()) {
-                btn.removeAttribute('data-remote-locked');
-                btn.style.opacity = '';
-                btn.style.pointerEvents = '';
-            } else {
-                btn.setAttribute('data-remote-locked', '1');
-                btn.style.opacity = '0.6';
-                btn.style.pointerEvents = 'auto';
-            }
-        }
-        const submitBtnEl = document.getElementById('submitPoem');
-        if (submitBtnEl) {
-            submitBtnEl.addEventListener('click', function(e){
-                // 在限時模式下，所有人可答題；輪流模式才限制
-                if (!state.timedMode && !isMyTurn()) {
-                    e.stopImmediatePropagation();
-                    e.preventDefault();
-                    try { window.showNotification && window.showNotification('尚未輪到你作答'); } catch(_){}
-                }
-            }, true);
-        }
-
-        // ===== 包裝現有遊戲函式：由房主廣播事件 =====
+        // 遠程輪流模式已移除，僅保留遠程限時模式
+        
         try {
-            if (typeof window.confirmStartBattleMode === 'function') {
-                const _origConfirm = window.confirmStartBattleMode;
-                window.confirmStartBattleMode = function(){
-                    const r = _origConfirm.apply(this, arguments);
-                    // 房主廣播對戰配置
-                    if (window.RemoteBattle?.isHost() && window.battleMode?.isActive) {
-                        // 限時模式下不廣播本地輪流配置
-                        if (state && state.timedMode === true) return r;
-                        const players = (window.battleMode.players || []).map(p => p.name);
-                        const roundsPerPlayer = window.battleMode.roundsPerPlayer || 5;
-                        window.RemoteBattle.sendGameEvent('battle_config', { players, roundsPerPlayer });
-                    }
-                    return r;
-                };
-            }
-            if (typeof window.startBattleRound === 'function') {
-                const _origStart = window.startBattleRound;
-                window.startBattleRound = function(){
-                    // 防護：無玩家則不啟動
-                    const bm = getBM();
-                    if (!bm || !Array.isArray(bm.players) || bm.players.length === 0) {
-                        console.warn('[remote] startBattleRound skipped: no players');
-                        return;
-                    }
-                    // 容錯：若 currentPlayerIndex 超界，重設為 0
-                    if (typeof bm.currentPlayerIndex !== 'number' || bm.currentPlayerIndex < 0 || bm.currentPlayerIndex >= bm.players.length) {
-                        bm.currentPlayerIndex = 0;
-                    }
-                    // 容錯：缺少姓名時給預設名
-                    const p = bm.players[bm.currentPlayerIndex];
-                    if (p && !p.name) p.name = '玩家';
-                    const r = _origStart.apply(this, arguments);
-                    // 限時模式下不廣播本地輪流回合開始
-                    if (state && state.timedMode === true) return r;
-                    if (window.RemoteBattle?.isHost()) {
-                        const idx = (bm && bm.currentPlayerIndex) || 0;
-                        const currentUserId = (state.rosterUserIds && state.rosterUserIds[idx]) || null;
-                        state.turnUserId = currentUserId;
-                        updateSubmitGate();
-                        window.RemoteBattle.sendGameEvent('round_start', { currentUserId });
-                    }
-                    return r;
-                };
-            }
-            if (typeof window.endBattleRound === 'function') {
-                const _origEnd = window.endBattleRound;
-                window.endBattleRound = function(isCorrect){
-                    const r = _origEnd.apply(this, arguments);
-                    // 限時模式下不廣播本地輪流回合結束
-                    if (state && state.timedMode === true) return r;
-                    if (window.RemoteBattle?.isHost()) {
-                        window.RemoteBattle.sendGameEvent('round_end', { isCorrect: !!isCorrect });
-                        // 限時模式不輪換；輪流模式自動下一輪
-                        if (!state.timedMode) {
-                            setTimeout(() => {
-                                if (typeof window.LocalBattle?.startRound === 'function') window.LocalBattle.startRound();
-                            }, 600);
-                        }
-                    }
-                    return r;
-                };
-            }
 
         // ===== 限時競賽：開始、計時與結算 =====
         state.timedMode = false;
@@ -5250,15 +5142,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 }
             }, 1000);
         }
-            if (typeof window.endBattleMode === 'function') {
-                const _origEndMode = window.endBattleMode;
-                window.endBattleMode = function(){
-                    const r = _origEndMode.apply(this, arguments);
-                    if (window.RemoteBattle?.isHost()) window.RemoteBattle.sendGameEvent('battle_end', {});
-                    return r;
-                };
-            }
-        } catch (e) { console.warn('[remote] wrap error', e); }
+        } catch (e) { console.warn('[remote] error', e); }
     })();
     </script>
     
