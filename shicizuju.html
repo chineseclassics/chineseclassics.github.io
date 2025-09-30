@@ -5036,12 +5036,13 @@ window.LocalBattle.endMode = function endBattleMode() {
                 
                 if (emojiMap) {
                     state.emojiMap = emojiMap;
-                    console.log('[remote] emoji map updated:', emojiMap);
-                    // 直接重新渲染玩家列表，避免遞歸調用 refreshRoster
+                    console.log('[remote] emoji map updated, re-rendering player list');
+                    // 直接重新渲染玩家列表，不調用refreshRoster避免循環
                     const list = document.getElementById('rbPresenceList');
                     const listWaiting = document.getElementById('rbPresenceListWaiting');
                     if (state.roster && state.roster.length > 0) {
-                        renderPresence(state.presenceMap || {});
+                        renderPlayerListUI(list, state.roster);
+                        renderPlayerListUI(listWaiting, state.roster);
                     }
                 }
             });
@@ -5075,6 +5076,54 @@ window.LocalBattle.endMode = function endBattleMode() {
             state.dbChannel = ch;
         }
 
+        function renderPlayerListUI(container, roster) {
+            if (!container) return;
+            container.innerHTML = '';
+            const isHost = window.RemoteBattle?.isHost();
+            const currentUserId = state.user?.id;
+            const emojiMap = state.emojiMap || {};
+            
+            if (!roster || roster.length === 0) return;
+            
+            roster.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'group relative inline-flex items-center';
+                
+                // 胶囊样式容器
+                const capsule = document.createElement('div');
+                capsule.className = 'px-3 py-1.5 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-sm font-modern text-surface-800 flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow';
+                
+                // 顯示 emoji 圖標
+                const emoji = emojiMap[p.user_id] || '🏃';
+                const emojiSpan = document.createElement('span');
+                emojiSpan.textContent = emoji;
+                emojiSpan.className = 'text-base';
+                capsule.appendChild(emojiSpan);
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = (p && p.nickname) ? p.nickname : '玩家';
+                capsule.appendChild(nameSpan);
+                
+                // 房主可以踢人（除了自己）
+                if (isHost && p.user_id !== currentUserId) {
+                    const kickBtn = document.createElement('button');
+                    kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all ml-1 -mr-1 text-red-500 hover:text-white hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold';
+                    kickBtn.textContent = '✕';
+                    kickBtn.title = '踢出房間';
+                    kickBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`確定要踢出 ${p.nickname || '玩家'} 嗎？`)) {
+                            await kickPlayer(p.user_id);
+                        }
+                    });
+                    capsule.appendChild(kickBtn);
+                }
+                
+                div.appendChild(capsule);
+                container.appendChild(div);
+            });
+        }
+
         async function refreshRoster(){
             if (!state.room) return;
             const { data, error } = await sb
@@ -5098,10 +5147,13 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const userIds = state.roster.map(p => p.user_id);
                 const newEmojiMap = window.RaceTrack.buildEmojiMap(userIds, state.room?.code || 'ROOM');
                 
-                // 只在emoji映射改變時才廣播
-                const mapChanged = !state.emojiMap || JSON.stringify(Object.keys(newEmojiMap).sort()) !== JSON.stringify(Object.keys(state.emojiMap).sort());
-                if (mapChanged) {
+                // 比較完整的emoji映射（而不只是鍵），避免重複廣播
+                const newMapStr = JSON.stringify(newEmojiMap);
+                const oldMapStr = JSON.stringify(state.emojiMap || {});
+                
+                if (newMapStr !== oldMapStr) {
                     state.emojiMap = newEmojiMap;
+                    console.log('[remote] host broadcasting new emoji map:', newEmojiMap);
                     // 廣播 emoji 映射給所有玩家
                     sendGameEvent('emoji_map', { emojiMap: newEmojiMap }).catch(e => {
                         console.warn('[remote] broadcast emoji_map failed:', e);
@@ -5113,54 +5165,8 @@ window.LocalBattle.endMode = function endBattleMode() {
             const list = document.getElementById('rbPresenceList');
             const listWaiting = document.getElementById('rbPresenceListWaiting');
             
-            const renderPlayerList = (container) => {
-                if (!container) return;
-                container.innerHTML = '';
-                const isHost = window.RemoteBattle?.isHost();
-                const currentUserId = state.user?.id;
-                const emojiMap = state.emojiMap || {};
-                
-                state.roster.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = 'group relative inline-flex items-center';
-                    
-                    // 胶囊样式容器
-                    const capsule = document.createElement('div');
-                    capsule.className = 'px-3 py-1.5 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-sm font-modern text-surface-800 flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow';
-                    
-                    // 顯示 emoji 圖標
-                    const emoji = emojiMap[p.user_id] || '🏃';
-                    const emojiSpan = document.createElement('span');
-                    emojiSpan.textContent = emoji;
-                    emojiSpan.className = 'text-base';
-                    capsule.appendChild(emojiSpan);
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = (p && p.nickname) ? p.nickname : '玩家';
-                    capsule.appendChild(nameSpan);
-                    
-                    // 房主可以踢人（除了自己）
-                    if (isHost && p.user_id !== currentUserId) {
-                        const kickBtn = document.createElement('button');
-                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all ml-1 -mr-1 text-red-500 hover:text-white hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold';
-                        kickBtn.textContent = '✕';
-                        kickBtn.title = '踢出房間';
-                        kickBtn.addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            if (confirm(`確定要踢出 ${p.nickname || '玩家'} 嗎？`)) {
-                                await kickPlayer(p.user_id);
-                            }
-                        });
-                        capsule.appendChild(kickBtn);
-                    }
-                    
-                    div.appendChild(capsule);
-                    container.appendChild(div);
-                });
-            };
-            
-            renderPlayerList(list);
-            renderPlayerList(listWaiting);
+            renderPlayerListUI(list, state.roster);
+            renderPlayerListUI(listWaiting, state.roster);
         }
 
         function genEid(){
@@ -5630,6 +5636,11 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const waitingView = document.getElementById('rbPlayerWaitingView');
                 if (initialView) initialView.classList.add('hidden');
                 if (waitingView) waitingView.classList.remove('hidden');
+                
+                // 刷新玩家列表以獲取roster數據
+                setTimeout(() => {
+                    refreshRoster().catch(e => console.warn('[remote] initial refresh roster for player failed:', e));
+                }, 500);
                 
             } catch (e) {
                 console.warn('[remote] join error', e);
