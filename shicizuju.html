@@ -2341,6 +2341,7 @@
                         }));
                         
                         const maxScore = Math.max(1, ...rows.map(r => r.score));
+                        console.log('[race] render scores:', rows.map(r => `${r.name}: ${r.score}`).join(', '), 'maxScore:', maxScore);
                         
                         // 排名（僅供徽章使用）
                         const ranked = [...rows].sort((a,b) => (b.score - a.score) || (a.last - b.last));
@@ -2364,15 +2365,11 @@
                                 const emojiSize = isMe ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl';
                                 const pinClass = isMe ? 'shadow-lg ring-2 ring-yellow-400' : 'shadow-md';
                                 pin.className = `w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 flex items-center justify-center ${pinClass} transition-all duration-500 ease-out will-change-transform`;
-                                pin.style.position = 'absolute'; pin.style.left = '0%'; pin.style.top = '50%'; pin.style.transform = 'translate(-50%, -50%)';
+                                pin.style.position = 'absolute';
+                                pin.style.top = '50%';
                                 pin.innerHTML = `<span class="emoji ${emojiSize}">${r.emoji}</span>`;
                                 track.appendChild(pin);
                                 // console.log('[race] render: created pin for', r.name, 'emoji=', r.emoji, 'isMe=', isMe); // 已關閉調試日志
-                                // 入場動畫
-                                setTimeout(()=> {
-                                    pin.style.opacity = '1';
-                                    pin.style.transform = `translate(-50%, -50%) scale(${isMe ? 1.2 : 1})`;
-                                }, 30);
                             } else {
                                 pin.querySelector('.emoji').textContent = r.emoji;
                                 // 更新高亮狀態
@@ -2385,10 +2382,16 @@
                                     pin.className = 'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md transition-all duration-500 ease-out will-change-transform';
                                 }
                             }
+                            
+                            // 【修復】根據分數計算位置，正確設置 left 和 transform
                             const pct = Math.max(3, Math.min(97, Math.round((r.score / maxScore) * 94 + 3)));
                             const offsetY = ((r.uid||'').charCodeAt(0)%5)-2; // -2..+2 垂直錯層
                             const scale = isMe ? 1.2 : 1;
-                            pin.style.transform = `translate(calc(${pct}% - 50%), calc(-50% + ${offsetY}px)) scale(${scale})`;
+                            console.log(`[race] ${r.name}: score=${r.score}, maxScore=${maxScore}, pct=${pct}%`);
+                            
+                            // 使用 left 設置水平位置，transform 只負責居中、垂直偏移和縮放
+                            pin.style.left = pct + '%';
+                            pin.style.transform = `translate(-50%, calc(-50% + ${offsetY}px)) scale(${scale})`;
                         });
                         // console.log('[race] render: COMPLETE. rendered', rows.length, 'pins'); // 已關閉調試日志
                     } catch(e){ console.error('[race] render ERROR:', e); }
