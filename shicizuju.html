@@ -1395,67 +1395,7 @@
             isAnyBattle: () => window.GameState.isActive && (window.GameState.mode === 'remote' || window.GameState.mode === 'local')
         };
         
-        // ===== 數據同步橋接函數（過渡期使用）=====
-        window.syncLegacyToGameState = function() {
-            try {
-                // 從舊的 battleMode 同步到 GameState（如果存在）
-                if (window.battleMode && window.battleMode.isActive) {
-                    if (window.battleMode.players && window.battleMode.players.length > 0) {
-                        // 本地對戰模式
-                        window.GameState.mode = 'local';
-                        window.GameState.subMode = 'turn_based';
-                        window.GameState.isActive = true;
-                        window.GameState.players = window.battleMode.players.map((p, i) => ({
-                            uid: p.uid || ('L' + i),
-                            name: p.name || ('玩家' + (i + 1)),
-                            emoji: p.emoji || '🏃',
-                            score: p.score || 0,
-                            answered: p.answered || 0,
-                            correct: p.correct || 0,
-                            lastAnswerTs: 0,
-                            isReady: false,
-                            isActive: p.isActive || false
-                        }));
-                        window.GameState.turnBased.currentTurnIndex = window.battleMode.currentPlayer || 0;
-                    }
-                }
-                
-                // 從遠程狀態同步（如果存在）
-                const R = window.__REMOTE_STATE__;
-                if (R && R.timedMode) {
-                    window.GameState.mode = 'remote';
-                    window.GameState.subMode = 'timed_score';
-                    window.GameState.isActive = true;
-                    window.GameState.timed.endsAt = R.timedEndsAt || 0;
-                    
-                    // 同步當前用戶 ID
-                    if (R.user && R.user.id) {
-                        window.GameState.remote.currentUserId = R.user.id;
-                    }
-                    
-                    // 同步玩家數據
-                    if (R.rosterUserIds && R.stats) {
-                        window.GameState.players = R.rosterUserIds.map((uid, idx) => {
-                            const st = R.stats[uid] || { score: 0, answered: 0, correct: 0, nickname: '', lastTs: 0 };
-                            const emoji = (R.emojiMap && R.emojiMap[uid]) || '🏃';
-                            return {
-                                uid,
-                                name: st.nickname || ('玩家' + (idx + 1)),
-                                emoji,
-                                score: st.score || 0,
-                                answered: st.answered || 0,
-                                correct: st.correct || 0,
-                                lastAnswerTs: st.lastTs || 0,
-                                isReady: true,
-                                isActive: false
-                            };
-                        });
-                    }
-                }
-            } catch (e) {
-                console.warn('[GameState] syncLegacyToGameState error:', e);
-            }
-        };
+        // 【重構】已移除 syncLegacyToGameState()，所有數據直接在 GameState 中管理
         
         // 檢測iframe環境並優化布局
         function optimizeForIframe() {
@@ -2319,11 +2259,9 @@
         const selectionStatus = document.getElementById('selectionStatus');
 
         // ===== 模式輔助：集中判斷入口，避免條件分散重覆 =====
-        function isRemoteTimed(){
-            try { return !!(window.RemoteBattle?.room && window.__REMOTE_TIMED__ === true); } catch(_) { return false; }
-        }
+        // 【重構】已移除 window.GameMode.isTimedScore()，改用 GameMode.isTimedScore()
         function isLocalBattle(){
-            try { return !!(window.battleMode && window.battleMode.isActive && !isRemoteTimed()); } catch(_) { return false; }
+            try { return !!(window.battleMode && window.battleMode.isActive && !window.GameMode.isTimedScore()); } catch(_) { return false; }
         }
 
         // 提供命名空間占位，後續可逐步把相關函式掛載至此，避免混名
@@ -2364,17 +2302,8 @@
             window.RaceTrack = {
                 buildEmojiMap(ids, roomCode){ return assignEmojisFor(ids, roomCode||'ROOM'); },
                 ensureEmojis(){
-                    try {
-                        const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : (typeof state !== 'undefined' ? state : null);
-                        if (!R) return;
-                        const inRemote = !!window.RemoteBattle?.room;
-                        const ids = Array.isArray(R.rosterUserIds) ? R.rosterUserIds : (inRemote ? [] : (Array.isArray(window.battleMode?.players) ? window.battleMode.players.map((_,i)=>'L'+i) : []));
-                        if (!R.emojiMap && ids.length>0) {
-                            const code = (state && state.room && state.room.code) || 'LOCAL';
-                            R.emojiMap = assignEmojisFor(ids, code);
-                            try { console.debug('[race] ensureEmojis: assigned', R.emojiMap); } catch(_){ }
-                        }
-                    } catch(_){ }
+                    // 【重構】不再需要，emoji 在初始化時已分配到 GameState.players
+                    try { console.debug('[race] ensureEmojis: skipped (using GameState)'); } catch(_){ }
                 },
                 render(){
                     try {
@@ -2578,7 +2507,7 @@
         closeGameMessage.addEventListener('click', () => {
             hideResultModal();
             // 限時模式下不觸發任何本地輪流或手動換題流程（已自動換題）
-            if (isRemoteTimed()) {
+            if (window.GameMode.isTimedScore()) {
                 return;
             }
             // 如果是对战模式且游戏结束，则进入下一轮
@@ -2623,7 +2552,7 @@
         // 显示结果浮窗
         const showResultModal = (isSuccess, message, answer = null) => {
             // 限時模式：不顯示本地結果浮窗
-            if (isRemoteTimed()) {
+            if (window.GameMode.isTimedScore()) {
                 return;
             }
             if (isSuccess) {
@@ -2665,7 +2594,7 @@
             // 單人=「下一首」；對戰=「XX 開始答題」（下一位選手）
             if (closeGameMessage) {
                 // 遠程限時：統一顯示「下一首」；本地輪流維持原文案
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     closeGameMessage.textContent = '下一首';
                 } else if (battleMode.isActive && Array.isArray(battleMode.players) && battleMode.players.length > 0) {
                     const nextIndex = (battleMode.currentPlayerIndex + 1) % battleMode.players.length;
@@ -2998,7 +2927,7 @@
             charCountSlider.value = settings.charCount;
             charCountValue.textContent = settings.charCount;
             // 不修改當前回合 timeLeft；若非遊戲中，重置顯示
-            if (!isGameActive && !isRemoteTimed()) {
+            if (!isGameActive && !window.GameMode.isTimedScore()) {
                 roundTimeLimit = settings.timeLimit;
                 timeLeft = roundTimeLimit;
                 if (timerElement) timerElement.textContent = timeLeft;
@@ -3062,7 +2991,7 @@
             populateCharactersGrid();
             
             // 在遠程限時模式中，不使用單題倒數，只顯示全局倒數
-            if (isRemoteTimed()) {
+            if (window.GameMode.isTimedScore()) {
                 // 限時模式：隱藏進度條填充（但保持容器可見以顯示賽道），只顯示全局秒數
                 try { if (timeBarFill) { timeBarFill.style.width = '0%'; timeBarFill.style.display = 'none'; } } catch(_){ }
                 try { if (timeBarContainer) timeBarContainer.style.display = ''; } catch(_){ }
@@ -3100,7 +3029,7 @@
             
             // 單題計時：僅在非遠程限時模式下啟用
             clearInterval(timerInterval);
-            if (!isRemoteTimed()) {
+            if (!window.GameMode.isTimedScore()) {
                 timerInterval = setInterval(() => {
                     timeLeft--;
                     timerElement.textContent = timeLeft;
@@ -3126,7 +3055,7 @@
             // 限時模式：5秒未提交顯示「跳過」按鈕
             try {
                 const buttonContainer = clearSelectionButton.parentElement;
-                if (buttonContainer && isRemoteTimed()) {
+                if (buttonContainer && window.GameMode.isTimedScore()) {
                     let skipBtn = document.getElementById('skipPoem');
                     if (!skipBtn) {
                         skipBtn = document.createElement('button');
@@ -3141,7 +3070,7 @@
                     skipBtn.style.opacity = '0';
                     skipBtn.style.pointerEvents = 'none';
                     setTimeout(() => {
-                        if (isGameActive && isRemoteTimed()) {
+                        if (isGameActive && window.GameMode.isTimedScore()) {
                             skipBtn.style.opacity = '1';
                             skipBtn.style.pointerEvents = 'auto';
                         }
@@ -3174,7 +3103,7 @@
                 }, 1000);
                 
                 // 更新分數
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     // 固定 +10 分；答對
                     applyScoreDelta(10, true);
                 } else if (!battleMode.isActive) {
@@ -3189,7 +3118,7 @@
                 }, 800);
                 
                 // 限時模式：不彈出本地結果浮窗，但提供輕量提示
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     try { if (typeof showNotification === 'function') showNotification('答對！+10 分'); } catch(_){}
                 } else {
                     showResultModal(true, '恭喜！答對了！');
@@ -3215,19 +3144,19 @@
                 }
                 
                 // 限時模式：不彈出本地結果浮窗，但提供輕量提示
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     try { if (typeof showNotification === 'function') showNotification(reason === 'timeout' ? '時間到' : '答錯了'); } catch(_){}
                 } else {
                     showResultModal(false, reason === 'timeout' ? '時間到！' : '答錯了！', currentPoem.line);
                 }
                 // 限時模式下記一次作答（不加分）
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     applyScoreDelta(0, false);
                 }
             }
             
             // 限時模式：結束後自動下一題；非限時仍走原邏輯
-            if (isRemoteTimed()) {
+            if (window.GameMode.isTimedScore()) {
                 // 避免直接引用局部 IIFE 內的 state 造成 ReferenceError
                 setTimeout(() => {
                     try {
@@ -3254,32 +3183,39 @@
                 // 本地：單人側計分
                 scoreElement.classList.add('animate-score');
                 setTimeout(() => scoreElement.classList.remove('animate-score'), 800);
-                // 遠程：維護統計並廣播（並立刻刷新本端記分牌）
-                if (isRemoteTimed()) {
-                    const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : (typeof state !== 'undefined' ? state : null);
-                    const uid = R && R.user ? R.user.id : null;
+                
+                // 【重構】遠程限時：直接更新 GameState 並廣播
+                if (window.GameMode.isTimedScore()) {
+                    const uid = window.GameState.remote.currentUserId;
                     if (!uid) return;
-                    R.stats[uid] = R.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
-                    const s = R.stats[uid];
-                    s.score += delta;
-                    s.answered += 1;
-                    if (isCorrect) s.correct += 1;
-                    s.lastTs = Date.now();
-                    // 本端立即映射到 players，確保兩側視圖即時一致
-                    try {
-                        if (Array.isArray(window.battleMode?.players)) {
-                            const ids = (R && R.rosterUserIds) ? R.rosterUserIds : [];
-                            window.battleMode.players.forEach((pl, idx) => {
-                                const uidAt = ids[idx];
-                                const st = uidAt && R.stats ? R.stats[uidAt] : null;
-                                if (pl && st) pl.score = st.score;
-                            });
-                        }
-                        // 觸發賽道刷新
-                        try { window.RaceTrack && window.RaceTrack.render && window.RaceTrack.render(); } catch(_){ }
-                    } catch(_){ }
+                    
+                    // 直接更新 GameState.players
+                    const player = window.GameState.players.find(p => p.uid === uid);
+                    if (player) {
+                        player.score += delta;
+                        player.answered += 1;
+                        if (isCorrect) player.correct += 1;
+                        player.lastAnswerTs = Date.now();
+                    }
+                    
+                    // 廣播分數更新
                     window.RemoteBattle.sendGameEvent('score_update', { userId: uid, delta, answeredInc:1, correctInc: isCorrect?1:0 });
-                    try { if (typeof window.LocalBattle?.updateScoreboard === 'function') window.LocalBattle.updateScoreboard(); } catch(_){ }
+                    
+                    // 同步到舊系統（向後兼容）
+                    try {
+                        if (typeof state !== 'undefined' && state.stats) {
+                            state.stats[uid] = state.stats[uid] || { score:0, answered:0, correct:0, nickname:'' };
+                            const s = state.stats[uid];
+                            s.score += delta;
+                            s.answered += 1;
+                            if (isCorrect) s.correct += 1;
+                            s.lastTs = Date.now();
+                        }
+                    } catch(_){}
+                    
+                    // 觸發 UI 更新
+                    try { window.LocalBattle?.updateScoreboard(); } catch(_){ }
+                    try { window.RaceTrack?.render(); } catch(_){ }
                 }
             } catch(_){}
         }
@@ -3295,7 +3231,7 @@
             }
             const submitBtn = document.getElementById('submitPoem');
             if (submitBtn) {
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     // 限時模式：始終允許提交（未滿字數視為錯誤處理）
                     submitBtn.disabled = false;
                     submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
@@ -3337,7 +3273,7 @@
                 // 播放按鈕點擊音效
                 soundManager.play('buttonClick');
                 
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     const target = currentPoem ? currentPoem.line.length : 0;
                     if (poemDisplay.value.trim().length < target) {
                         // 未滿字數：視為錯誤快速反饋
@@ -3772,7 +3708,7 @@
         
         function startTimer() {
             // 限時模式：不啟用單題計時器
-            if (isRemoteTimed()) return;
+            if (window.GameMode.isTimedScore()) return;
             if (timeLeft > 0) {
                 timerInterval = setInterval(() => {
                     timeLeft--;
@@ -3843,7 +3779,7 @@
         
         function confirmStartBattleMode() {
             // 若遠程限時模式進行中，禁止啟動本地輪流，直接返回
-            if (isRemoteTimed()) {
+            if (window.GameMode.isTimedScore()) {
                 try { showNotification && showNotification('目前為遠程限時競賽，已禁用本地輪流模式'); } catch(_){ }
                 return;
             }
@@ -4025,7 +3961,7 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
         
         window.LocalBattle.startRound = function startBattleRound() {
             // 限時模式下不使用本地輪流回合
-            if (isRemoteTimed()) return;
+            if (window.GameMode.isTimedScore()) return;
             const currentPlayer = battleMode.players[battleMode.currentPlayerIndex];
             showNotification(`${currentPlayer.name} 的回合開始！`);
             
@@ -4035,7 +3971,7 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
             // 左上角顯示對戰輪次（替代分數）
             if (scoreLabel && scoreElement) {
                 // 限時模式下維持分數標籤
-                if (isRemoteTimed()) {
+                if (window.GameMode.isTimedScore()) {
                     scoreLabel.textContent = '分數';
                     scoreElement.textContent = String(score);
                 } else {
@@ -4047,7 +3983,7 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
         
         window.LocalBattle.endRound = function endBattleRound(isCorrect) {
             // 限時模式下不使用本地輪流回合結束
-            if (isRemoteTimed()) return;
+            if (window.GameMode.isTimedScore()) return;
             
             // 【重構】直接從 GameState 讀取和更新
             const currentIndex = window.GameState.turnBased.currentTurnIndex;
@@ -4146,19 +4082,16 @@ window.LocalBattle.endMode = function endBattleMode() {
         }
         
         function showBattleResultModal() {
-            // 1) 遠程限時模式結果：僅在限時結束（已不再進行中）顯示
-            if (window.RemoteBattle?.room) {
-                const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : null;
-                const timedEnded = !!(R && R.timedEndsAt > 0 && R.timedMode === false);
+            // 【重構】1) 遠程限時模式結果：直接從 GameState 讀取
+            if (window.RemoteBattle?.room && window.GameMode.isTimedScore()) {
+                const timedEnded = !window.GameState.isActive;
                 if (timedEnded) {
                     try {
-                        const ids = Array.isArray(R.rosterUserIds) ? R.rosterUserIds : [];
-                        const rows = ids.map((uid, idx) => {
-                            const name = (battleMode.players && battleMode.players[idx] && battleMode.players[idx].name) || (R.stats && R.stats[uid]?.nickname) || '玩家';
-                            const st = (R.stats && R.stats[uid]) || { score:0, answered:0, correct:0, lastTs:0 };
-                            const acc = st.answered > 0 ? Math.round((st.correct / st.answered) * 100) : 0;
-                            return { name, score: st.score||0, answered: st.answered||0, correct: st.correct||0, acc, _last: st.lastTs||0 };
-                        }).sort((a,b) => (b.score - a.score) || (a._last - b._last));
+                        const rows = window.GameState.players.map(p => ({
+                            name: p.name,
+                            score: p.score || 0,
+                            _last: p.lastAnswerTs || 0
+                        })).sort((a,b) => (b.score - a.score) || (a._last - b._last));
 
                         // 標題
                         winnerAnnouncement.textContent = '競賽結束';
@@ -4197,9 +4130,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                                     battleResultModal.classList.add('hidden');
                                     // 清理對戰狀態並回到單人
                                     try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
-                                    try { window.__REMOTE_TIMED__ = false; } catch(_){}
-                                    try { R.timedMode = false; } catch(_){}
-                                    // 清理 GameState
+                                    // 【重構】清理 GameState（不再需要 __REMOTE_TIMED__ 或 R.timedMode）
                                     try { 
                                         window.GameState.mode = 'solo'; 
                                         window.GameState.subMode = null; 
@@ -4585,8 +4516,7 @@ window.LocalBattle.endMode = function endBattleMode() {
             pendingRoundStart: null,
             seenEids: {}          // 事件去重：eid -> 1
         };
-        // 暴露唯讀引用以供外部讀取（例如計分更新時使用）
-        try { window.__REMOTE_STATE__ = state; } catch(_){}
+        // 【重構】不再暴露 __REMOTE_STATE__，所有數據統一在 GameState 中
 
         function getBM(){
             try { return (typeof battleMode !== 'undefined') ? battleMode : (window.battleMode || null); }
@@ -4809,7 +4739,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                         }
                         
                         // 舊系統同步（向後兼容）
-                        window.__REMOTE_TIMED__ = true;
+                        // 【重構】不再設置 __REMOTE_TIMED__，改用 GameState.isActive 判斷
                         state.timedMode = true;
                         state.timedEndsAt = window.GameState.timed.endsAt;
                         if (msg.payload?.emojiMap) state.emojiMap = msg.payload.emojiMap;
@@ -4840,7 +4770,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                         break;
                     case 'timed_end':
                         state.timedMode = false;
-                        try { window.__REMOTE_TIMED__ = false; } catch(_){}
+                        window.GameState.isActive = false; // 【重構】改用 GameState
                         try { clearInterval(state.timedTimer); } catch(_){}
                         // 顯示遠程限時專屬排行榜
                         if (typeof showBattleResultModal === 'function') showBattleResultModal();
@@ -5200,8 +5130,8 @@ window.LocalBattle.endMode = function endBattleMode() {
                 // 建立對戰板（玩家名單），但不開啟輪流限制
                 const activeTag = (poemTagSelect?.value || loadActiveTag() || '南風詩詞庫');
                 const conf = { players: roster.map(p => ({ id: p.user_id, name: p.nickname || '玩家' })), roundsPerPlayer: 1 };
-                // 標記遠程限時模式（先標記，再套用名單，避免套用過程誤觸本地邏輯）
-                window.__REMOTE_TIMED__ = true;
+                // 【重構】標記遠程限時模式（改用 GameState）
+                // window.__REMOTE_TIMED__ = true; // 已移除
                 state.timedMode = true;
                 applyBattleConfig(conf);
                 try { if (window.battleMode) window.battleMode.isActive = false; } catch(_){}
@@ -5257,7 +5187,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 if (Date.now() >= state.timedEndsAt) {
                     clearInterval(state.timedTimer);
                     state.timedMode = false;
-                    try { window.__REMOTE_TIMED__ = false; } catch(_){}
+                    window.GameState.isActive = false; // 【重構】改用 GameState
                     window.RemoteBattle.sendGameEvent('timed_end', {});
                     showBattleResultModal && showBattleResultModal();
                 }

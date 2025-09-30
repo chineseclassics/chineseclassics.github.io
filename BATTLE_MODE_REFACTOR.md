@@ -320,41 +320,42 @@ GameState.buzzer = {
 
 ## 8. 遷移檢查清單
 
-### 階段 1 準備工作
-- [ ] 創建 `window.GameState` 初始結構
-- [ ] 創建 `GameMode` 工具對象
-- [ ] 創建同步函數 `syncLegacyToGameState()`
-- [ ] 在現有代碼中插入同步調用點
-- [ ] 驗證雙軌運行
+### 階段 1 準備工作 ✅
+- [x] 創建 `window.GameState` 初始結構
+- [x] 創建 `GameMode` 工具對象
+- [x] ~~創建同步函數 `syncLegacyToGameState()`~~ (已於階段5移除)
+- [x] 在現有代碼中插入同步調用點
+- [x] 驗證雙軌運行
 
-### 階段 2 共享組件
-- [ ] `RaceTrack.render()` 改讀 `GameState.players`
-- [ ] `Scoreboard.update()` 改讀 `GameState.players`
-- [ ] `showBattleResultModal()` 改讀 `GameState.players`
-- [ ] 測試所有顯示組件
+### 階段 2 共享組件 ✅
+- [x] `RaceTrack.render()` 改讀 `GameState.players`
+- [x] `Scoreboard.update()` 改讀 `GameState.players`
+- [x] `showBattleResultModal()` 改讀 `GameState.players`
+- [x] 測試所有顯示組件
 
-### 階段 3 遠程限時
-- [ ] 遷移 `state.user` → `GameState.remote.currentUserId`
-- [ ] 遷移 `state.room/channel` → `GameState.remote.*`
-- [ ] 遷移 `state.timedMode/timedEndsAt` → `GameState.timed.*`
-- [ ] 遷移 `state.stats` → `GameState.players`
-- [ ] 遷移 `state.emojiMap` → `GameState.players[].emoji`
-- [ ] 測試完整遠程限時流程
+### 階段 3 遠程限時 ✅
+- [x] 遷移 `state.user` → `GameState.remote.currentUserId`
+- [x] 遷移 `state.room/channel` → `GameState.remote.*`
+- [x] 遷移 `state.timedMode/timedEndsAt` → `GameState.timed.*`
+- [x] 遷移 `state.stats` → `GameState.players`
+- [x] 遷移 `state.emojiMap` → `GameState.players[].emoji`
+- [x] 測試完整遠程限時流程
 
-### 階段 4 本地輪流
-- [ ] 遷移 `battleMode.isActive` → `GameState.isActive`
-- [ ] 遷移 `battleMode.players` → `GameState.players`
-- [ ] 遷移 `battleMode.currentPlayer` → `GameState.turnBased.currentTurnIndex`
-- [ ] 測試完整本地輪流流程
+### 階段 4 本地輪流 ✅
+- [x] 遷移 `battleMode.isActive` → `GameState.isActive`
+- [x] 遷移 `battleMode.players` → `GameState.players`
+- [x] 遷移 `battleMode.currentPlayer` → `GameState.turnBased.currentTurnIndex`
+- [x] 測試完整本地輪流流程
 
-### 階段 5 清理
-- [ ] 移除 `window.__REMOTE_STATE__`
-- [ ] 移除 `window.__REMOTE_TIMED__`
-- [ ] 移除 IIFE 內的 `state` 對象
-- [ ] 移除舊 `window.battleMode`
-- [ ] 移除舊判斷函數 (`isRemoteTimed` 等)
-- [ ] 更新所有註釋
-- [ ] 完整回歸測試
+### 階段 5 清理 ✅
+- [x] 移除 `window.__REMOTE_STATE__`（所有賦值和引用）
+- [x] 移除 `window.__REMOTE_TIMED__`（所有賦值和引用）
+- [x] 保留 IIFE 內的 `state` 對象（仍需用於 Supabase 通信）
+- [x] 保留 `window.battleMode`（向後兼容，逐步遷移）
+- [x] 移除 `isRemoteTimed()` 函數，全部替換為 `GameMode.isTimedScore()`
+- [x] 移除 `syncLegacyToGameState()` 函數
+- [x] 更新所有註釋
+- [ ] 完整回歸測試（待用戶測試）
 
 ---
 
