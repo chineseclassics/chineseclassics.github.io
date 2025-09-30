@@ -2269,9 +2269,9 @@
         window.RemoteTimed = window.RemoteTimed || {};
         // ===== 競賽賽道：emoji 分配與渲染 =====
         (function(){
-            const EMOJI_POOL = (
-                '🐯🦊🐼🐸🐶🐱🐰🦁🐵🦄🐨🐷🐮🐔🐤🦆🦉🦇🐙🦑🦀🦞🦐🐠🐟🐬🐳🐊🐢🦎🐍🐝🦋🐞🐜🕷️🦂🐌🐛🦔🦥🦨🦘🦝🦚🦜🦢🦩🕊️🐧🐦🐤🦆🦅🐺🦄🦒🦓🦌🐗🦏🐘🐫🐪🦙🐐🐏🐑🐎🐄' 
-            ).split('');
+            const EMOJI_POOL = Array.from(
+                '🐯🦊🐼🐸🐶🐱🐰🦁🐵🦄🐨🐷🐮🐔🐤🦆🦉🦇🐙🦑🦀🦞🦐🐠🐟🐬🐳🐊🐢🦎🐍🐝🦋🐞🐜🕷️🦂🐌🐛🦔🦥🦨🦘🦝🦚🦜🦢🦩🕊️🐧🐦🐤🦆🦅🐺🦄🦒🦓🦌🐗🦏🐘🐫🐪🦙🐐🐏🐑🐎🐄'
+            );
             const nameMax = { cn: 3, en: 6 };
             function isMostlyChinese(s){
                 const m = (s||'').match(/[\u4e00-\u9fa5]/g);
@@ -2307,9 +2307,9 @@
                 },
                 render(){
                     try {
-                        console.log('[race] render: START');
+                        // console.log('[race] render: START'); // 已關閉調試日志
                         const track = document.getElementById('raceTrack');
-                        if (!track) { console.log('[race] render: track DOM not found'); return; }
+                        if (!track) return;
                         
                         // 【重構】直接判斷模式，不再需要同步
                         if (!window.GameMode.isAnyBattle()) {
@@ -2321,21 +2321,16 @@
                                     timeBarFill.style.display = '';
                                 }
                             } catch(_){}
-                            console.log('[race] render: not in battle, hiding. GameState.mode=', window.GameState.mode, 'isActive=', window.GameState.isActive);
                             return;
                         }
                         
                         track.classList.remove('hidden');
-                        console.log('[race] render: in battle mode. GameState.mode=', window.GameState.mode, 'subMode=', window.GameState.subMode);
                         
                         // 【重構】直接讀取統一數據源
                         const players = window.GameState.players;
                         if (!players || players.length === 0) {
-                            console.log('[race] render: no players data');
                             return;
                         }
-                        
-                        console.log('[race] render: players=', players.map(p => ({ name: p.name, emoji: p.emoji, score: p.score })));
                         
                         const rows = players.map(p => ({
                             uid: p.uid,
@@ -2372,7 +2367,7 @@
                                 pin.style.position = 'absolute'; pin.style.left = '0%'; pin.style.top = '50%'; pin.style.transform = 'translate(-50%, -50%)';
                                 pin.innerHTML = `<span class="emoji ${emojiSize}">${r.emoji}</span>`;
                                 track.appendChild(pin);
-                                console.log('[race] render: created pin for', r.name, 'emoji=', r.emoji, 'isMe=', isMe);
+                                // console.log('[race] render: created pin for', r.name, 'emoji=', r.emoji, 'isMe=', isMe); // 已關閉調試日志
                                 // 入場動畫
                                 setTimeout(()=> {
                                     pin.style.opacity = '1';
@@ -2395,7 +2390,7 @@
                             const scale = isMe ? 1.2 : 1;
                             pin.style.transform = `translate(calc(${pct}% - 50%), calc(-50% + ${offsetY}px)) scale(${scale})`;
                         });
-                        console.log('[race] render: COMPLETE. rendered', rows.length, 'pins');
+                        // console.log('[race] render: COMPLETE. rendered', rows.length, 'pins'); // 已關閉調試日志
                     } catch(e){ console.error('[race] render ERROR:', e); }
                 }
             };
@@ -4720,7 +4715,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 return;
             }
             
-            console.log(`[remote] sendGameEvent preparing to send: ${type}, channel state:`, state.channel.state);
+                // console.log(`[remote] sendGameEvent preparing to send: ${type}, channel state:`, state.channel.state); // 已簡化
             const out = { type, payload, ts: Date.now(), from: state.user?.id, eid: genEid() };
             
             // 確保 channel 已連接
@@ -4734,7 +4729,7 @@ window.LocalBattle.endMode = function endBattleMode() {
             
             // 通過 Realtime channel 廣播事件
             try {
-                console.log(`[remote] calling channel.send for: ${type}, channel state:`, state.channel.state);
+                // console.log(`[remote] calling channel.send for: ${type}, channel state:`, state.channel.state); // 已簡化
                 const result = await state.channel.send({ type: 'broadcast', event: 'move', payload: out });
                 console.log(`[remote] broadcast sent successfully: ${type}`, result);
             } catch (e) {
@@ -5110,7 +5105,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const emojiMap = window.RaceTrack.buildEmojiMap(userIds, state.room?.code || 'ROOM');
                 state.emojiMap = emojiMap; // 保存到 state
                 console.log('[remote] host generated emojiMap:', emojiMap);
-                console.log('[remote] host emojiMap details:', Object.keys(emojiMap).map(k => `${k}: ${emojiMap[k]}`));
+                // console.log('[remote] host emojiMap details:', Object.keys(emojiMap).map(k => `${k}: ${emojiMap[k]}`)); // 已關閉調試日志
                 
                 // 【重構】主機端填充 GameState.players（與接收方保持一致）
                 window.GameState.players = conf.players.map((p, idx) => ({
@@ -5124,8 +5119,11 @@ window.LocalBattle.endMode = function endBattleMode() {
                     isReady: true,
                     isActive: false
                 }));
-                console.log('[remote] host GameState.players initialized:', window.GameState.players.map(p => ({ name: p.name, emoji: p.emoji })));
-                console.log('[remote] host GameState:', { mode: window.GameState.mode, subMode: window.GameState.subMode, isActive: window.GameState.isActive });
+                console.log('[remote] host GameState initialized:', {
+                    mode: window.GameState.mode,
+                    subMode: window.GameState.subMode, 
+                    players: window.GameState.players.length
+                });
                 
                 // 發送遊戲開始事件並等待完成
                 await window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag, emojiMap });
