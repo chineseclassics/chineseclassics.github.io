@@ -1428,6 +1428,11 @@
                     window.GameState.isActive = true;
                     window.GameState.timed.endsAt = R.timedEndsAt || 0;
                     
+                    // 同步當前用戶 ID
+                    if (R.user && R.user.id) {
+                        window.GameState.remote.currentUserId = R.user.id;
+                    }
+                    
                     // 同步玩家數據
                     if (R.rosterUserIds && R.stats) {
                         window.GameState.players = R.rosterUserIds.map((uid, idx) => {
@@ -2416,28 +2421,45 @@
                         // 首次渲染建樹
                         if (!track.dataset.built) { track.innerHTML = ''; track.dataset.built = '1'; }
                         
+                        // 獲取當前用戶 ID（用於高亮）
+                        const currentUserId = (window.GameMode.isRemote() && window.GameState.remote.currentUserId) || null;
+                        
                         // 為每位選手建/更新節點
                         rows.forEach((r, i) => {
+                            const isMe = (currentUserId && r.uid === currentUserId);
                             let pin = track.querySelector(`[data-uid="${r.uid}"]`);
                             if (!pin) {
                                 pin = document.createElement('div');
                                 pin.dataset.uid = r.uid;
-                                pin.className = `h-6 sm:h-7 px-2 sm:px-2.5 rounded-full text-white text-xs sm:text-sm font-bold flex items-center gap-1 shadow transition-transform duration-500 ease-out will-change-transform player-theme-${(i%6)+1}`;
-                                pin.style.position = 'absolute'; pin.style.left = '0%'; pin.style.top = '50%'; pin.style.transform = 'translate(-18px, -50%)';
-                                pin.innerHTML = `<span class="rank-badge bg-black/30 rounded-full w-5 h-5 flex items-center justify-center text-[10px] mr-1">${rankByUid[r.uid]||'?'}</span><span class="emoji text-base sm:text-lg">${r.emoji}</span><span class="name max-w-[60px] sm:max-w-[80px] truncate">${r.name}</span>`;
+                                // 簡化賽道：只顯示 emoji，自己的動物放大且加陰影
+                                const emojiSize = isMe ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl';
+                                const pinClass = isMe ? 'shadow-lg ring-2 ring-yellow-400' : 'shadow-md';
+                                pin.className = `w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 flex items-center justify-center ${pinClass} transition-all duration-500 ease-out will-change-transform`;
+                                pin.style.position = 'absolute'; pin.style.left = '0%'; pin.style.top = '50%'; pin.style.transform = 'translate(-50%, -50%)';
+                                pin.innerHTML = `<span class="emoji ${emojiSize}">${r.emoji}</span>`;
                                 track.appendChild(pin);
-                                console.log('[race] render: created pin for', r.name, 'emoji=', r.emoji);
+                                console.log('[race] render: created pin for', r.name, 'emoji=', r.emoji, 'isMe=', isMe);
                                 // 入場動畫
-                                setTimeout(()=> pin.classList.add('entered'), 30);
+                                setTimeout(()=> {
+                                    pin.style.opacity = '1';
+                                    pin.style.transform = `translate(-50%, -50%) scale(${isMe ? 1.2 : 1})`;
+                                }, 30);
                             } else {
-                                pin.querySelector('.rank-badge').textContent = String(rankByUid[r.uid]||'?');
                                 pin.querySelector('.emoji').textContent = r.emoji;
-                                const nameEl = pin.querySelector('.name');
-                                if (nameEl) nameEl.textContent = r.name;
+                                // 更新高亮狀態
+                                const emojiEl = pin.querySelector('.emoji');
+                                if (isMe) {
+                                    emojiEl.className = 'emoji text-3xl sm:text-4xl';
+                                    pin.className = 'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg ring-2 ring-yellow-400 transition-all duration-500 ease-out will-change-transform';
+                                } else {
+                                    emojiEl.className = 'emoji text-2xl sm:text-3xl';
+                                    pin.className = 'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md transition-all duration-500 ease-out will-change-transform';
+                                }
                             }
                             const pct = Math.max(3, Math.min(97, Math.round((r.score / maxScore) * 94 + 3)));
                             const offsetY = ((r.uid||'').charCodeAt(0)%5)-2; // -2..+2 垂直錯層
-                            pin.style.transform = `translate(calc(${pct}% - 18px), calc(-50% + ${offsetY}px))`;
+                            const scale = isMe ? 1.2 : 1;
+                            pin.style.transform = `translate(calc(${pct}% - 50%), calc(-50% + ${offsetY}px)) scale(${scale})`;
                         });
                         console.log('[race] render: COMPLETE. rendered', rows.length, 'pins');
                     } catch(e){ console.error('[race] render ERROR:', e); }
@@ -3931,9 +3953,18 @@ window.LocalBattle.updateScoreboard = function updateBattleScoreboard() {
                 
                 const displayScoreValue = isTimed ? player.score : (typeof player.displayedScore === 'number' ? player.displayedScore : player.score);
                 const rankBadge = isTimed && rankByIdx[index] ? `<div class="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center shadow">${rankByIdx[index]}</div>` : '';
+                
+                // 獲取玩家的 emoji（從 GameState）
+                let playerEmoji = '';
+                try {
+                    window.syncLegacyToGameState();
+                    const gp = window.GameState.players[index];
+                    if (gp && gp.emoji) playerEmoji = `<span class="text-2xl mr-2">${gp.emoji}</span>`;
+                } catch(_){}
+                
                 playerCard.innerHTML = `
                     ${rankBadge}
-                    <div class="player-name text-lg md:text-xl font-bold">${player.name}</div>
+                    <div class="player-name text-lg md:text-xl font-bold flex items-center">${playerEmoji}${player.name}</div>
                     <div class="player-score text-2xl md:text-3xl">${displayScoreValue}</div>
                     ${showActive ? '<div class=\"current-turn-indicator\"></div>' : ''}
                 `;
@@ -5081,9 +5112,10 @@ window.LocalBattle.endMode = function endBattleMode() {
                 try { gameMessage?.classList.add('hidden'); } catch(_){ }
                 try { if (timeBarFill) timeBarFill.style.width = '0%'; } catch(_){ }
                 // 廣播包含 players + emoji 分配，並附帶 3 秒預備
-                try { window.RaceTrack?.ensureEmojis(); } catch(_){ }
-                const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : state;
-                const emojiMap = (R && R.emojiMap) ? R.emojiMap : null;
+                const userIds = roster.map(p => p.user_id);
+                const emojiMap = window.RaceTrack.buildEmojiMap(userIds, state.room?.code || 'ROOM');
+                state.emojiMap = emojiMap; // 保存到 state
+                console.log('[remote] host generated emojiMap:', emojiMap);
                 window.RemoteBattle.sendGameEvent('timed_start', { endsAt, mins, players: conf.players, prepMs: 3000, tag: activeTag, emojiMap });
                 showPrepCountdown(3000, () => {
                     beginTimedTicker();
