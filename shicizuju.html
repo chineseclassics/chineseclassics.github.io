@@ -2245,6 +2245,7 @@
                         if (!R.emojiMap && ids.length>0) {
                             const code = (state && state.room && state.room.code) || 'LOCAL';
                             R.emojiMap = assignEmojisFor(ids, code);
+                            try { console.debug('[race] ensureEmojis: assigned', R.emojiMap); } catch(_){ }
                         }
                     } catch(_){ }
                 },
@@ -2254,17 +2255,20 @@
                         if (!track) return;
                         const inRemoteTimed = !!(window.RemoteBattle?.room && typeof state !== 'undefined' && state.timedMode);
                         const inLocalBattle = !!(window.battleMode?.isActive && !inRemoteTimed);
-                        if (!inRemoteTimed && !inLocalBattle) { track.classList.add('hidden'); return; }
+                        try { console.debug('[race] render enter', { inRemoteTimed, inLocalBattle }); } catch(_){ }
+                        if (!inRemoteTimed && !inLocalBattle) { track.classList.add('hidden'); try { console.debug('[race] render: hide (not in battle)'); } catch(_){ } return; }
                         track.classList.remove('hidden');
                         const R = (typeof window !== 'undefined' && window.__REMOTE_STATE__) ? window.__REMOTE_STATE__ : (typeof state !== 'undefined' ? state : null);
                         const inRemote = !!window.RemoteBattle?.room;
                         const ids = (R && Array.isArray(R.rosterUserIds)) ? R.rosterUserIds : (Array.isArray(window.battleMode?.players) ? window.battleMode.players.map((_,i)=> (inRemote? null : 'L'+i)) : []);
+                        try { console.debug('[race] ids', ids); } catch(_){ }
                         const rows = ids.map((uid, idx) => {
                             const name = (window.battleMode?.players && window.battleMode.players[idx] && window.battleMode.players[idx].name) || (R?.stats && R.stats[uid]?.nickname) || '玩家';
                             const st = (R?.stats && R.stats[uid]) || { score: (window.battleMode?.players && window.battleMode.players[idx]?.score) || 0, lastTs: 0 };
                             const emoji = (R && R.emojiMap && R.emojiMap[uid]) || '🏃';
                             return { idx, uid, name: trimName(name), score: st.score||0, last: st.lastTs||0, emoji };
                         });
+                        try { console.debug('[race] rows sample', rows && rows.slice ? rows.slice(0,4) : rows); } catch(_){ }
                         const maxScore = Math.max(1, ...rows.map(r => r.score));
                         // 排名（不改左右位置；僅供徽章使用）
                         const ranked = [...rows].sort((a,b) => (b.score - a.score) || (a.last - b.last));
@@ -2293,6 +2297,7 @@
                             const offsetY = ((r.uid||'').charCodeAt(0)%5)-2; // -2..+2 垂直錯層
                             pin.style.transform = `translate(calc(${pct}% - 18px), calc(-50% + ${offsetY}px))`;
                         });
+                        try { console.debug('[race] render done'); } catch(_){ }
                     } catch(_){ }
                 }
             };
