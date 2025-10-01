@@ -5058,6 +5058,42 @@ window.LocalBattle.endMode = function endBattleMode() {
             state.dbChannel = ch;
         }
 
+        // 統一的玩家列表渲染函數（胶囊样式）
+        function renderPlayerListToContainer(container, players) {
+            if (!container) return;
+            container.innerHTML = '';
+            const isHost = window.RemoteBattle?.isHost();
+            const currentUserId = state.user?.id;
+            
+            players.forEach(p => {
+                const div = document.createElement('div');
+                // 胶囊样式：圆润边角、渐变背景、紧凑布局
+                div.className = 'px-4 py-2 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-sm font-modern relative group flex items-center gap-2 shadow-sm hover:shadow-md transition-all';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'text-primary-700 font-semibold';
+                nameSpan.textContent = (p && p.nickname) ? p.nickname : '玩家';
+                div.appendChild(nameSpan);
+                
+                // 房主可以踢人（除了自己）
+                if (isHost && p.user_id !== currentUserId) {
+                    const kickBtn = document.createElement('button');
+                    kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all ml-auto -mr-1 text-red-500 hover:text-white hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold';
+                    kickBtn.textContent = '✕';
+                    kickBtn.title = '踢出房間';
+                    kickBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`確定要踢出 ${p.nickname || '玩家'} 嗎？`)) {
+                            await kickPlayer(p.user_id);
+                        }
+                    });
+                    div.appendChild(kickBtn);
+                }
+                
+                container.appendChild(div);
+            });
+        }
+
         async function refreshRoster(){
             if (!state.room) return;
             const { data, error } = await sb
@@ -5075,47 +5111,12 @@ window.LocalBattle.endMode = function endBattleMode() {
                 });
             }
             state.roster = Array.isArray(roster) ? roster.filter(Boolean) : [];
+            
             // 更新在線清單的顯示（同時更新兩個列表區域）
             const list = document.getElementById('rbPresenceList');
             const listWaiting = document.getElementById('rbPresenceListWaiting');
-            
-            const renderPlayerList = (container) => {
-                if (!container) return;
-                container.innerHTML = '';
-                const isHost = window.RemoteBattle?.isHost();
-                const currentUserId = state.user?.id;
-                
-                state.roster.forEach(p => {
-                    const div = document.createElement('div');
-                    // 胶囊样式：圆润边角、渐变背景、紧凑布局
-                    div.className = 'px-4 py-2 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-sm font-modern relative group flex items-center gap-2 shadow-sm hover:shadow-md transition-all';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'text-primary-700 font-semibold';
-                    nameSpan.textContent = (p && p.nickname) ? p.nickname : '玩家';
-                    div.appendChild(nameSpan);
-                    
-                    // 房主可以踢人（除了自己）
-                    if (isHost && p.user_id !== currentUserId) {
-                        const kickBtn = document.createElement('button');
-                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all ml-auto -mr-1 text-red-500 hover:text-white hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold';
-                        kickBtn.textContent = '✕';
-                        kickBtn.title = '踢出房間';
-                        kickBtn.addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            if (confirm(`確定要踢出 ${p.nickname || '玩家'} 嗎？`)) {
-                                await kickPlayer(p.user_id);
-                            }
-                        });
-                        div.appendChild(kickBtn);
-                    }
-                    
-                    container.appendChild(div);
-                });
-            };
-            
-            renderPlayerList(list);
-            renderPlayerList(listWaiting);
+            renderPlayerListToContainer(list, state.roster);
+            renderPlayerListToContainer(listWaiting, state.roster);
         }
 
         function genEid(){
@@ -5384,43 +5385,9 @@ window.LocalBattle.endMode = function endBattleMode() {
                 });
             });
             
-            const renderToContainer = (container) => {
-                if (!container) return;
-                container.innerHTML = '';
-                const isHost = window.RemoteBattle?.isHost();
-                const currentUserId = state.user?.id;
-                
-                users.forEach(p => {
-                    const div = document.createElement('div');
-                    // 胶囊样式：圆润边角、渐变背景、紧凑布局
-                    div.className = 'px-4 py-2 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-sm font-modern relative group flex items-center gap-2 shadow-sm hover:shadow-md transition-all';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'text-primary-700 font-semibold';
-                    nameSpan.textContent = p.nickname;
-                    div.appendChild(nameSpan);
-                    
-                    // 房主可以踢人（除了自己）
-                    if (isHost && p.user_id !== currentUserId) {
-                        const kickBtn = document.createElement('button');
-                        kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all ml-auto -mr-1 text-red-500 hover:text-white hover:bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold';
-                        kickBtn.textContent = '✕';
-                        kickBtn.title = '踢出房間';
-                        kickBtn.addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            if (confirm(`確定要踢出 ${p.nickname} 嗎？`)) {
-                                await kickPlayer(p.user_id);
-                            }
-                        });
-                        div.appendChild(kickBtn);
-                    }
-                    
-                    container.appendChild(div);
-                });
-            };
-            
-            renderToContainer(list);
-            renderToContainer(listWaiting);
+            // 使用統一的渲染函數
+            renderPlayerListToContainer(list, users);
+            renderPlayerListToContainer(listWaiting, users);
         }
 
         // 填充房主可選的詩詞庫標籤（從主設置的 userLibraryTagSelect 複製）
