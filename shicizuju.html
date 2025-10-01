@@ -5067,8 +5067,8 @@ window.LocalBattle.endMode = function endBattleMode() {
             
             players.forEach(p => {
                 const div = document.createElement('div');
-                // 真正扁平的胶囊样式：固定高度、最小垂直padding、水平排列
-                div.className = 'inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-xs font-modern font-semibold text-primary-700 relative group shadow-sm hover:shadow-md hover:scale-105 transition-all whitespace-nowrap';
+                // 扁平胶囊样式（增大1.5倍）：固定高度、水平排列
+                div.className = 'inline-flex items-center gap-2 h-10 px-5 rounded-full bg-gradient-to-r from-primary-100 to-accent-100 border border-primary-200 text-base font-modern font-semibold text-primary-700 relative group shadow-sm hover:shadow-md hover:scale-105 transition-all whitespace-nowrap';
                 
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = (p && p.nickname) ? p.nickname : '玩家';
@@ -5077,7 +5077,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 // 房主可以踢人（除了自己）
                 if (isHost && p.user_id !== currentUserId) {
                     const kickBtn = document.createElement('button');
-                    kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all text-red-400 hover:text-white hover:bg-red-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold leading-none flex-shrink-0 ml-0.5';
+                    kickBtn.className = 'opacity-0 group-hover:opacity-100 transition-all text-red-400 hover:text-white hover:bg-red-500 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold leading-none flex-shrink-0 ml-1';
                     kickBtn.textContent = '✕';
                     kickBtn.title = '踢出房間';
                     kickBtn.addEventListener('click', async (e) => {
