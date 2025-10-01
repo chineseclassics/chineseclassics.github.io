@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗境魔方 - Poetry Cube 3D</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- GSAP 动画库 -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    
+    <!-- Excel 导入导出 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'KaiTi', '楷体', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* 顶部栏 */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .top-bar h1 {
+            font-size: 28px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .top-bar-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .icon-btn {
+            background: white;
+            border: 2px solid #ddd;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .icon-btn:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+        }
+        
+        /* 主游戏区域 */
+        .game-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        /* 魔方容器 */
+        #cube-container {
+            width: 100%;
+            max-width: 600px;
+            height: 600px;
+            margin: 0 auto 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        /* 提示信息 */
+        .hint-area {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .poem-hint {
+            background: rgba(255, 255, 255, 0.95);
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* 答题区 */
+        .answer-area {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .answer-boxes {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .answer-box {
+            width: 70px;
+            height: 70px;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            background: white;
+            transition: all 0.3s;
+        }
+        
+        .answer-box.filled {
+            border-color: #667eea;
+            background: #f0f4ff;
+            color: #333;
+        }
+        
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'KaiTi', '楷体', serif;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* 进度条 */
+        .progress-area {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            font-size: 24px;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .setting-item {
+            margin-bottom: 20px;
+        }
+        
+        .setting-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .setting-item select,
+        .setting-item input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        /* 完成动画 */
+        .completion-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .completion-overlay.active {
+            display: flex;
+        }
+        
+        .completion-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            animation: popIn 0.5s ease-out;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .completion-card h2 {
+            font-size: 36px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .completion-card .poem-full {
+            font-size: 24px;
+            line-height: 1.8;
+            margin: 20px 0;
+            color: #333;
+        }
+        
+        .completion-card .stars {
+            font-size: 40px;
+            margin: 20px 0;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            #cube-container {
+                height: 400px;
+            }
+            
+            .answer-box {
+                width: 50px;
+                height: 50px;
+                font-size: 28px;
+            }
+            
+            .poem-hint {
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+        }
+        
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <h1>🏮 诗境魔方</h1>
+        <div class="top-bar-buttons">
+            <button class="icon-btn" id="soundBtn" title="音效">🔊</button>
+            <button class="icon-btn" id="settingsBtn" title="设置">⚙️</button>
+        </div>
+    </div>
+    
+    <!-- 主游戏区域 -->
+    <div class="game-container">
+        <!-- 提示信息 -->
+        <div class="hint-area">
+            <div class="poem-hint" id="poemHint">
+                <span id="poemName">静夜思</span> · 
+                <span id="poemAuthor">李白</span> · 
+                <span id="charCount">5字</span>
+            </div>
+        </div>
+        
+        <!-- 3D 魔方容器 -->
+        <div id="cube-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>正在加载魔方...</p>
+            </div>
+        </div>
+        
+        <!-- 答题区 -->
+        <div class="answer-area">
+            <div class="answer-boxes" id="answerBoxes">
+                <!-- 动态生成答题框 -->
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-secondary" id="clearBtn">清空</button>
+                <button class="btn btn-primary" id="submitBtn">提交答案</button>
+                <button class="btn btn-secondary" id="skipBtn">跳过</button>
+            </div>
+        </div>
+        
+        <!-- 进度信息 -->
+        <div class="progress-area">
+            <p>已完成: <span id="completedCount">0</span> / <span id="totalCount">100</span> 首 ⭐⭐⭐</p>
+        </div>
+    </div>
+    
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 游戏设置</h2>
+                <button class="close-btn" id="closeSettings">&times;</button>
+            </div>
+            
+            <div class="setting-item">
+                <label>📚 诗词库</label>
+                <select id="poemLibrarySelect">
+                    <option value="all">全部诗词</option>
+                    <option value="唐诗">唐诗</option>
+                    <option value="宋词">宋词</option>
+                    <option value="小学生诗词">小学生诗词</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>💡 智能提示</label>
+                <select id="hintLevel">
+                    <option value="none">无提示（⭐⭐⭐）</option>
+                    <option value="highlight">高亮提示（⭐⭐）</option>
+                    <option value="auto">自动旋转（⭐）</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>🔊 音效音量</label>
+                <input type="range" id="volumeSlider" min="0" max="100" value="70">
+            </div>
+            
+            <div class="setting-item">
+                <h4>📊 数据管理</h4>
+                <button class="btn btn-secondary" id="exportExcel" style="width: 100%; margin-bottom: 10px;">📥 导出诗词库（Excel）</button>
+                <button class="btn btn-secondary" id="importExcel" style="width: 100%; margin-bottom: 10px;">📤 导入诗词库（Excel）</button>
+                <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;">
+                <button class="btn btn-secondary" id="downloadTemplate" style="width: 100%;">📄 下载模板</button>
+            </div>
+            
+            <div class="setting-item">
+                <h4>📈 游戏统计</h4>
+                <p>总完成数: <span id="totalCompleted">0</span></p>
+                <p>总用时: <span id="totalTime">0</span> 分钟</p>
+                <button class="btn btn-secondary" id="resetProgress" style="width: 100%; margin-top: 10px;">🔄 重置进度</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 完成动画覆盖层 -->
+    <div class="completion-overlay" id="completionOverlay">
+        <div class="completion-card">
+            <h2>🎉 恭喜完成！</h2>
+            <div class="poem-full" id="poemFull"></div>
+            <div class="stars" id="starsDisplay">⭐⭐⭐</div>
+            <p>用时: <span id="timeSpent">0</span> 秒</p>
+            <button class="btn btn-primary" id="nextRoundBtn" style="margin-top: 20px;">下一首</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 数据库设计 ====================
+        
+        const STORAGE_KEYS = {
+            userLibrary: 'cube3d_user_library',
+            gameProgress: 'cube3d_game_progress',
+            settings: 'cube3d_settings'
+        };
+        
+        // 内置诗词库
+        const BUILTIN_POEMS = [
+            // 李白
+            { line: "床前明月光", author: "李白", poem: "静夜思", tags: ["唐诗", "五言绝句", "李白"] },
+            { line: "疑是地上霜", author: "李白", poem: "静夜思", tags: ["唐诗", "五言绝句", "李白"] },
+            { line: "举头望明月", author: "李白", poem: "静夜思", tags: ["唐诗", "五言绝句", "李白"] },
+            { line: "低头思故乡", author: "李白", poem: "静夜思", tags: ["唐诗", "五言绝句", "李白"] },
+            
+            // 王之涣
+            { line: "白日依山尽", author: "王之涣", poem: "登鹳雀楼", tags: ["唐诗", "五言绝句", "王之涣"] },
+            { line: "黄河入海流", author: "王之涣", poem: "登鹳雀楼", tags: ["唐诗", "五言绝句", "王之涣"] },
+            { line: "欲窮千里目", author: "王之涣", poem: "登鹳雀楼", tags: ["唐诗", "五言绝句", "王之涣"] },
+            { line: "更上一層樓", author: "王之涣", poem: "登鹳雀楼", tags: ["唐诗", "五言绝句", "王之涣"] },
+            
+            // 孟浩然
+            { line: "春眠不觉晓", author: "孟浩然", poem: "春晓", tags: ["唐诗", "小学生诗词"] },
+            { line: "处处闻啼鸟", author: "孟浩然", poem: "春晓", tags: ["唐诗", "小学生诗词"] },
+            { line: "夜来风雨声", author: "孟浩然", poem: "春晓", tags: ["唐诗", "小学生诗词"] },
+            { line: "花落知多少", author: "孟浩然", poem: "春晓", tags: ["唐诗", "小学生诗词"] },
+            
+            // 骆宾王
+            { line: "鹅鹅鹅", author: "骆宾王", poem: "咏鹅", tags: ["唐诗", "小学生诗词"] },
+            { line: "曲项向天歌", author: "骆宾王", poem: "咏鹅", tags: ["唐诗", "小学生诗词"] },
+            { line: "白毛浮绿水", author: "骆宾王", poem: "咏鹅", tags: ["唐诗", "小学生诗词"] },
+            { line: "红掌拨清波", author: "骆宾王", poem: "咏鹅", tags: ["唐诗", "小学生诗词"] },
+            
+            // 李绅
+            { line: "锄禾日当午", author: "李绅", poem: "悯农", tags: ["唐诗", "小学生诗词"] },
+            { line: "汗滴禾下土", author: "李绅", poem: "悯农", tags: ["唐诗", "小学生诗词"] },
+            { line: "谁知盘中餐", author: "李绅", poem: "悯农", tags: ["唐诗", "小学生诗词"] },
+            { line: "粒粒皆辛苦", author: "李绅", poem: "悯农", tags: ["唐诗", "小学生诗词"] }
+        ];
+        
+        // 主题配置
+        const CUBE_THEMES = {
+            '唐诗': {
+                primaryColor: '#F5E6D3',
+                accentColor: '#8B4513',
+                fontFamily: 'KaiTi, 楷体',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            },
+            '宋词': {
+                primaryColor: '#E8F4F8',
+                accentColor: '#2C5F2D',
+                fontFamily: 'STSong, 宋体',
+                background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
+            },
+            '小学生诗词': {
+                primaryColor: '#FFE5E5',
+                accentColor: '#FF69B4',
+                fontFamily: 'KaiTi, 楷体',
+                background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+            },
+            'default': {
+                primaryColor: '#FFFFFF',
+                accentColor: '#333333',
+                fontFamily: 'KaiTi, 楷体',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            }
+        };
+        
+        // ==================== 数据管理 ====================
+        
+        function loadUserLibrary() {
+            const raw = localStorage.getItem(STORAGE_KEYS.userLibrary);
+            try {
+                const data = raw ? JSON.parse(raw) : { poems: [] };
+                return Array.isArray(data.poems) ? data : { poems: [] };
+            } catch (e) {
+                return { poems: [] };
+            }
+        }
+        
+        function saveUserLibrary(data) {
+            localStorage.setItem(STORAGE_KEYS.userLibrary, JSON.stringify(data));
+        }
+        
+        function loadGameProgress() {
+            const raw = localStorage.getItem(STORAGE_KEYS.gameProgress);
+            try {
+                return raw ? JSON.parse(raw) : { playedPoems: [], totalCompleted: 0, totalTime: 0 };
+            } catch (e) {
+                return { playedPoems: [], totalCompleted: 0, totalTime: 0 };
+            }
+        }
+        
+        function saveGameProgress(data) {
+            localStorage.setItem(STORAGE_KEYS.gameProgress, JSON.stringify(data));
+        }
+        
+        function getAllPoems() {
+            const builtinPoems = BUILTIN_POEMS.map(p => ({
+                ...p,
+                tags: p.tags || ['内置诗词库']
+            }));
+            const userPoems = loadUserLibrary().poems || [];
+            return [...builtinPoems, ...userPoems];
+        }
+        
+        function getPoemsByTag(tag) {
+            const allPoems = getAllPoems();
+            if (tag === 'all') return allPoems;
+            return allPoems.filter(p => p.tags && p.tags.includes(tag));
+        }
+        
+        function selectNextPoem(tag) {
+            const pool = getPoemsByTag(tag);
+            const progress = loadGameProgress();
+            
+            let unplayed = pool.filter(p => !progress.playedPoems.includes(p.line));
+            
+            if (unplayed.length === 0) {
+                progress.playedPoems = [];
+                saveGameProgress(progress);
+                unplayed = pool;
+            }
+            
+            return unplayed[Math.floor(Math.random() * unplayed.length)];
+        }
+        
+        // Excel 导入导出
+        function exportAsExcel() {
+            const poems = getAllPoems();
+            const rows = poems.map(p => ({
+                line: p.line,
+                author: p.author,
+                poem: p.poem,
+                tags: (p.tags || []).join('；')
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'poems');
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'poetry-cube-export.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+        
+        function importFromExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const ws = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                    
+                    const poems = rows.map(r => ({
+                        line: r.line || '',
+                        author: r.author || '',
+                        poem: r.poem || '',
+                        tags: (r.tags || '').split(/[；;，,、]+/).filter(Boolean)
+                    }));
+                    
+                    saveUserLibrary({ poems });
+                    alert(`已导入 ${poems.length} 首诗词`);
+                } catch (e) {
+                    alert('导入失败：' + e.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function downloadTemplate() {
+            const template = [
+                { line: "床前明月光", author: "李白", poem: "静夜思", tags: "唐诗；五言绝句" },
+                { line: "示例句子2", author: "作者名", poem: "诗名", tags: "标签1；标签2" }
+            ];
+            
+            const ws = XLSX.utils.json_to_sheet(template);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '诗词模板');
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cube3d-诗词模板.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+        
+        // ==================== 3D 魔方类 ====================
+        
+        class Cube3D {
+            constructor(container) {
+                this.container = container;
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.cubeGroup = new THREE.Group();
+                this.pieces = [];
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+                
+                this.init();
+            }
+            
+            init() {
+                // 清空容器
+                this.container.innerHTML = '';
+                
+                // 设置渲染器
+                const width = this.container.offsetWidth;
+                const height = this.container.offsetHeight;
+                this.renderer.setSize(width, height);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.container.appendChild(this.renderer.domElement);
+                
+                // 设置相机
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+                this.camera.position.set(5, 5, 5);
+                this.camera.lookAt(0, 0, 0);
+                
+                // 添加光源
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+                directionalLight.position.set(10, 10, 5);
+                this.scene.add(directionalLight);
+                
+                // 创建魔方
+                this.createCube();
+                
+                // 添加控制器
+                this.setupControls();
+                
+                // 添加点击事件
+                this.renderer.domElement.addEventListener('click', (e) => this.onMouseClick(e));
+                
+                // 开始渲染
+                this.animate();
+            }
+            
+            createCube() {
+                const size = 0.9;
+                const gap = 0.05;
+                const colors = [0xFF6B6B, 0x4ECDC4, 0xFFE66D, 0xF0F0F0, 0x95E1D3, 0xF38181];
+                
+                // 创建 3x3x3 魔方
+                for (let x = -1; x <= 1; x++) {
+                    for (let y = -1; y <= 1; y++) {
+                        for (let z = -1; z <= 1; z++) {
+                            const geometry = new THREE.BoxGeometry(size, size, size);
+                            const materials = [];
+                            
+                            for (let i = 0; i < 6; i++) {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = 256;
+                                canvas.height = 256;
+                                const ctx = canvas.getContext('2d');
+                                
+                                ctx.fillStyle = '#' + colors[i].toString(16).padStart(6, '0');
+                                ctx.fillRect(0, 0, 256, 256);
+                                
+                                ctx.strokeStyle = '#333';
+                                ctx.lineWidth = 4;
+                                ctx.strokeRect(0, 0, 256, 256);
+                                
+                                const texture = new THREE.CanvasTexture(canvas);
+                                materials.push(new THREE.MeshPhongMaterial({ map: texture }));
+                            }
+                            
+                            const piece = new THREE.Mesh(geometry, materials);
+                            piece.position.set(x * (size + gap), y * (size + gap), z * (size + gap));
+                            piece.userData = { x, y, z, chars: {} };
+                            
+                            this.pieces.push(piece);
+                            this.cubeGroup.add(piece);
+                        }
+                    }
+                }
+                
+                this.scene.add(this.cubeGroup);
+            }
+            
+            drawTextOnFace(pieceIndex, faceIndex, text, theme) {
+                const piece = this.pieces[pieceIndex];
+                const material = piece.material[faceIndex];
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.fillStyle = theme.primaryColor;
+                ctx.fillRect(0, 0, 256, 256);
+                
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(0, 0, 256, 256);
+                
+                ctx.font = `bold 120px ${theme.fontFamily}`;
+                ctx.fillStyle = theme.accentColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, 128, 128);
+                
+                material.map = new THREE.CanvasTexture(canvas);
+                material.needsUpdate = true;
+                
+                // 记录字符
+                piece.userData.chars[faceIndex] = text;
+            }
+            
+            setupControls() {
+                this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+                this.controls.enableDamping = true;
+                this.controls.dampingFactor = 0.05;
+                this.controls.enableZoom = true;
+                this.controls.minDistance = 3;
+                this.controls.maxDistance = 10;
+            }
+            
+            onMouseClick(event) {
+                const rect = this.renderer.domElement.getBoundingClientRect();
+                this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.pieces);
+                
+                if (intersects.length > 0) {
+                    const piece = intersects[0].object;
+                    const faceIndex = Math.floor(intersects[0].faceIndex / 2);
+                    const char = piece.userData.chars[faceIndex];
+                    
+                    if (char && window.game) {
+                        window.game.onCharClick(char);
+                    }
+                }
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.controls.update();
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+        
+        // ==================== 游戏逻辑 ====================
+        
+        class PoetryGame {
+            constructor() {
+                this.currentPoem = null;
+                this.selectedChars = [];
+                this.startTime = null;
+                this.mistakes = 0;
+                this.currentTag = 'all';
+                this.soundEnabled = true;
+                
+                this.initUI();
+                this.startNewRound();
+            }
+            
+            initUI() {
+                // 设置按钮
+                document.getElementById('settingsBtn').addEventListener('click', () => {
+                    document.getElementById('settingsModal').classList.add('active');
+                });
+                
+                document.getElementById('closeSettings').addEventListener('click', () => {
+                    document.getElementById('settingsModal').classList.remove('active');
+                });
+                
+                // 控制按钮
+                document.getElementById('clearBtn').addEventListener('click', () => this.clearAnswer());
+                document.getElementById('submitBtn').addEventListener('click', () => this.checkAnswer());
+                document.getElementById('skipBtn').addEventListener('click', () => this.startNewRound());
+                document.getElementById('nextRoundBtn').addEventListener('click', () => {
+                    document.getElementById('completionOverlay').classList.remove('active');
+                    this.startNewRound();
+                });
+                
+                // Excel 导入导出
+                document.getElementById('exportExcel').addEventListener('click', () => exportAsExcel());
+                document.getElementById('importExcel').addEventListener('click', () => {
+                    document.getElementById('excelFile').click();
+                });
+                document.getElementById('excelFile').addEventListener('change', (e) => {
+                    if (e.target.files[0]) {
+                        importFromExcelFile(e.target.files[0]);
+                    }
+                });
+                document.getElementById('downloadTemplate').addEventListener('click', () => downloadTemplate());
+                
+                // 诗词库选择
+                document.getElementById('poemLibrarySelect').addEventListener('change', (e) => {
+                    this.currentTag = e.target.value;
+                    this.startNewRound();
+                });
+                
+                // 音效按钮
+                document.getElementById('soundBtn').addEventListener('click', () => {
+                    this.soundEnabled = !this.soundEnabled;
+                    document.getElementById('soundBtn').textContent = this.soundEnabled ? '🔊' : '🔇';
+                });
+                
+                // 重置进度
+                document.getElementById('resetProgress').addEventListener('click', () => {
+                    if (confirm('确定要重置所有进度吗？')) {
+                        saveGameProgress({ playedPoems: [], totalCompleted: 0, totalTime: 0 });
+                        this.updateProgressDisplay();
+                        alert('进度已重置');
+                    }
+                });
+                
+                this.updateProgressDisplay();
+            }
+            
+            startNewRound() {
+                // 选择诗句
+                this.currentPoem = selectNextPoem(this.currentTag);
+                if (!this.currentPoem) {
+                    alert('该诗词库暂无诗句');
+                    return;
+                }
+                
+                // 重置状态
+                this.selectedChars = [];
+                this.startTime = Date.now();
+                this.mistakes = 0;
+                
+                // 更新提示
+                document.getElementById('poemName').textContent = this.currentPoem.poem;
+                document.getElementById('poemAuthor').textContent = this.currentPoem.author;
+                document.getElementById('charCount').textContent = this.currentPoem.line.length + '字';
+                
+                // 创建答题框
+                this.createAnswerBoxes();
+                
+                // 初始化魔方
+                if (!this.cube) {
+                    this.cube = new Cube3D(document.getElementById('cube-container'));
+                }
+                
+                // 分配字符到魔方
+                this.assignCharacters();
+            }
+            
+            createAnswerBoxes() {
+                const container = document.getElementById('answerBoxes');
+                container.innerHTML = '';
+                
+                for (let i = 0; i < this.currentPoem.line.length; i++) {
+                    const box = document.createElement('div');
+                    box.className = 'answer-box';
+                    box.id = `answer-${i}`;
+                    container.appendChild(box);
+                }
+            }
+            
+            assignCharacters() {
+                const poemChars = this.currentPoem.line.split('');
+                const distractorChars = this.generateDistractors(poemChars, 54 - poemChars.length);
+                const allChars = [...poemChars, ...distractorChars];
+                
+                // 打乱
+                for (let i = allChars.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allChars[i], allChars[j]] = [allChars[j], allChars[i]];
+                }
+                
+                // 获取主题
+                const theme = this.getTheme();
+                
+                // 分配到魔方
+                let charIndex = 0;
+                this.cube.pieces.forEach((piece, pieceIndex) => {
+                    const visibleFaces = this.getVisibleFaces(piece.userData);
+                    
+                    visibleFaces.forEach(faceIndex => {
+                        if (charIndex < allChars.length) {
+                            this.cube.drawTextOnFace(pieceIndex, faceIndex, allChars[charIndex], theme);
+                            charIndex++;
+                        }
+                    });
+                });
+            }
+            
+            getVisibleFaces(position) {
+                const { x, y, z } = position;
+                const faces = [];
+                
+                if (x === 1) faces.push(0);
+                if (x === -1) faces.push(1);
+                if (y === 1) faces.push(2);
+                if (y === -1) faces.push(3);
+                if (z === 1) faces.push(4);
+                if (z === -1) faces.push(5);
+                
+                return faces;
+            }
+            
+            generateDistractors(poemChars, count) {
+                const allPoems = getAllPoems();
+                const allChars = allPoems
+                    .map(p => p.line.split(''))
+                    .flat()
+                    .filter(c => !poemChars.includes(c));
+                
+                const unique = [...new Set(allChars)];
+                
+                for (let i = unique.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [unique[i], unique[j]] = [unique[j], unique[i]];
+                }
+                
+                return unique.slice(0, count);
+            }
+            
+            getTheme() {
+                const tags = this.currentPoem.tags || [];
+                for (const tag of tags) {
+                    if (CUBE_THEMES[tag]) {
+                        return CUBE_THEMES[tag];
+                    }
+                }
+                return CUBE_THEMES['default'];
+            }
+            
+            onCharClick(char) {
+                if (this.selectedChars.length >= this.currentPoem.line.length) {
+                    return;
+                }
+                
+                this.playSound('click');
+                
+                this.selectedChars.push(char);
+                this.updateAnswerDisplay();
+                
+                if (this.selectedChars.length === this.currentPoem.line.length) {
+                    setTimeout(() => this.checkAnswer(), 500);
+                }
+            }
+            
+            updateAnswerDisplay() {
+                this.selectedChars.forEach((char, index) => {
+                    const box = document.getElementById(`answer-${index}`);
+                    if (box) {
+                        box.textContent = char;
+                        box.classList.add('filled');
+                    }
+                });
+            }
+            
+            clearAnswer() {
+                this.selectedChars = [];
+                for (let i = 0; i < this.currentPoem.line.length; i++) {
+                    const box = document.getElementById(`answer-${i}`);
+                    if (box) {
+                        box.textContent = '';
+                        box.classList.remove('filled');
+                    }
+                }
+            }
+            
+            checkAnswer() {
+                const answer = this.selectedChars.join('');
+                const correct = answer === this.currentPoem.line;
+                
+                if (correct) {
+                    this.onCorrect();
+                } else {
+                    this.onWrong();
+                }
+            }
+            
+            onCorrect() {
+                this.playSound('success');
+                
+                const timeSpent = Math.floor((Date.now() - this.startTime) / 1000);
+                const stars = this.calculateStars(timeSpent, this.mistakes);
+                
+                // 保存进度
+                const progress = loadGameProgress();
+                progress.playedPoems.push(this.currentPoem.line);
+                progress.totalCompleted++;
+                progress.totalTime += timeSpent;
+                saveGameProgress(progress);
+                
+                this.updateProgressDisplay();
+                
+                // 显示完成界面
+                this.showCompletion(timeSpent, stars);
+            }
+            
+            onWrong() {
+                this.playSound('wrong');
+                this.mistakes++;
+                
+                // 抖动动画
+                const answerArea = document.querySelector('.answer-area');
+                answerArea.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    answerArea.style.animation = '';
+                }, 500);
+                
+                alert('答案不正确，请重试！');
+                this.clearAnswer();
+            }
+            
+            calculateStars(timeSpent, mistakes) {
+                if (mistakes === 0 && timeSpent < 30) return 3;
+                if (mistakes <= 2 && timeSpent < 60) return 2;
+                return 1;
+            }
+            
+            showCompletion(timeSpent, stars) {
+                document.getElementById('poemFull').textContent = this.currentPoem.line;
+                document.getElementById('timeSpent').textContent = timeSpent;
+                document.getElementById('starsDisplay').textContent = '⭐'.repeat(stars);
+                document.getElementById('completionOverlay').classList.add('active');
+            }
+            
+            updateProgressDisplay() {
+                const progress = loadGameProgress();
+                document.getElementById('completedCount').textContent = progress.totalCompleted;
+                document.getElementById('totalCompleted').textContent = progress.totalCompleted;
+                document.getElementById('totalTime').textContent = Math.floor(progress.totalTime / 60);
+            }
+            
+            playSound(type) {
+                if (!this.soundEnabled) return;
+                
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                if (type === 'click') {
+                    oscillator.frequency.value = 600;
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                } else if (type === 'success') {
+                    const notes = [523.25, 587.33, 659.25, 783.99];
+                    notes.forEach((freq, i) => {
+                        setTimeout(() => {
+                            const osc = audioContext.createOscillator();
+                            const gain = audioContext.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioContext.destination);
+                            osc.frequency.value = freq;
+                            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                            osc.start(audioContext.currentTime);
+                            osc.stop(audioContext.currentTime + 0.2);
+                        }, i * 150);
+                    });
+                } else if (type === 'wrong') {
+                    oscillator.frequency.value = 200;
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                }
+            }
+        }
+        
+        // ==================== 启动游戏 ====================
+        
+        window.addEventListener('load', () => {
+            window.game = new PoetryGame();
+        });
+        
+        // 添加抖动动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+                20%, 40%, 60%, 80% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
+
