@@ -5510,19 +5510,27 @@
                     // 創建語音實例
                     const utterance = new SpeechSynthesisUtterance(character);
                     
-                    // 設置語言為中文
-                    utterance.lang = 'zh-TW';
+                    // 設置語言為普通話
+                    utterance.lang = 'zh-CN';
                     
-                    // 嘗試找到中文語音
+                    // 嘗試找到普通話語音（排除粤語）
                     const voices = speechSynthesis.getVoices();
-                    const chineseVoice = voices.find(voice => 
-                        voice.lang.includes('zh') || 
-                        voice.lang.includes('cmn') || 
-                        voice.lang.includes('yue')
+                    // 優先順序：zh-CN > cmn-CN > cmn-Hans-CN > zh-Hans-CN > 其他中文（但排除粤語）
+                    const mandarinVoice = voices.find(voice => 
+                        voice.lang === 'zh-CN' || voice.lang === 'cmn-CN'
+                    ) || voices.find(voice => 
+                        (voice.lang.includes('zh-CN') || voice.lang.includes('cmn-CN') || 
+                         voice.lang.includes('cmn-Hans') || voice.lang.includes('zh-Hans')) &&
+                        !voice.lang.includes('yue') && !voice.lang.includes('HK')
+                    ) || voices.find(voice =>
+                        voice.lang.startsWith('zh') && 
+                        !voice.lang.includes('yue') && 
+                        !voice.lang.includes('HK') && 
+                        !voice.lang.includes('TW')
                     );
                     
-                    if (chineseVoice) {
-                        utterance.voice = chineseVoice;
+                    if (mandarinVoice) {
+                        utterance.voice = mandarinVoice;
                     }
                     
                     // 朗讀速度調慢一點
@@ -7804,7 +7812,27 @@
                     speechSynthesis.cancel();
                     
                     const utterance = new SpeechSynthesisUtterance(word);
-                    utterance.lang = 'zh-TW';
+                    utterance.lang = 'zh-CN';  // 設置為普通話
+                    
+                    // 嘗試找到普通話語音（排除粤語）
+                    const voices = speechSynthesis.getVoices();
+                    const mandarinVoice = voices.find(voice => 
+                        voice.lang === 'zh-CN' || voice.lang === 'cmn-CN'
+                    ) || voices.find(voice => 
+                        (voice.lang.includes('zh-CN') || voice.lang.includes('cmn-CN') || 
+                         voice.lang.includes('cmn-Hans') || voice.lang.includes('zh-Hans')) &&
+                        !voice.lang.includes('yue') && !voice.lang.includes('HK')
+                    ) || voices.find(voice =>
+                        voice.lang.startsWith('zh') && 
+                        !voice.lang.includes('yue') && 
+                        !voice.lang.includes('HK') && 
+                        !voice.lang.includes('TW')
+                    );
+                    
+                    if (mandarinVoice) {
+                        utterance.voice = mandarinVoice;
+                    }
+                    
                     utterance.rate = 0.8;
                     utterance.pitch = 1;
                     
