@@ -5507,30 +5507,70 @@
                 if (!character) return;
                 
                 if ('speechSynthesis' in window) {
+                    // 停止任何正在播放的語音
+                    speechSynthesis.cancel();
+                    
                     // 創建語音實例
                     const utterance = new SpeechSynthesisUtterance(character);
                     
                     // 設置語言為普通話
                     utterance.lang = 'zh-CN';
                     
-                    // 嘗試找到普通話語音（排除粤語）
+                    // 獲取所有可用語音
                     const voices = speechSynthesis.getVoices();
-                    // 優先順序：zh-CN > cmn-CN > cmn-Hans-CN > zh-Hans-CN > 其他中文（但排除粤語）
-                    const mandarinVoice = voices.find(voice => 
+                    
+                    // 調試：打印所有中文語音（開發時使用）
+                    // console.log('可用中文語音：', voices.filter(v => v.lang.includes('zh') || v.lang.includes('cmn')));
+                    
+                    // 優先級策略選擇普通話語音
+                    let mandarinVoice = null;
+                    
+                    // 第一優先：精確匹配 zh-CN 或 cmn-CN
+                    mandarinVoice = voices.find(voice => 
                         voice.lang === 'zh-CN' || voice.lang === 'cmn-CN'
-                    ) || voices.find(voice => 
-                        (voice.lang.includes('zh-CN') || voice.lang.includes('cmn-CN') || 
-                         voice.lang.includes('cmn-Hans') || voice.lang.includes('zh-Hans')) &&
-                        !voice.lang.includes('yue') && !voice.lang.includes('HK')
-                    ) || voices.find(voice =>
-                        voice.lang.startsWith('zh') && 
-                        !voice.lang.includes('yue') && 
-                        !voice.lang.includes('HK') && 
-                        !voice.lang.includes('TW')
                     );
+                    
+                    // 第二優先：包含 CN 的中文語音（排除香港粤語）
+                    if (!mandarinVoice) {
+                        mandarinVoice = voices.find(voice => 
+                            (voice.lang.includes('zh-CN') || 
+                             voice.lang.includes('cmn-CN') || 
+                             voice.lang.includes('cmn-Hans-CN') ||
+                             voice.lang.includes('zh-Hans-CN')) &&
+                            !voice.name.toLowerCase().includes('cantonese') &&
+                            !voice.name.toLowerCase().includes('yue') &&
+                            !voice.lang.includes('HK')
+                        );
+                    }
+                    
+                    // 第三優先：任何简体中文或普通话语音（通过名称识别）
+                    if (!mandarinVoice) {
+                        mandarinVoice = voices.find(voice =>
+                            (voice.name.toLowerCase().includes('mandarin') ||
+                             voice.name.toLowerCase().includes('putonghua') ||
+                             voice.name.includes('普通话') ||
+                             voice.name.includes('国语')) &&
+                            !voice.name.toLowerCase().includes('cantonese')
+                        );
+                    }
+                    
+                    // 第四优先：排除明确标记为粤语、香港、台湾的中文语音
+                    if (!mandarinVoice) {
+                        mandarinVoice = voices.find(voice =>
+                            voice.lang.startsWith('zh') && 
+                            !voice.lang.includes('yue') && 
+                            !voice.lang.includes('HK') && 
+                            !voice.lang.includes('TW') &&
+                            !voice.name.toLowerCase().includes('cantonese') &&
+                            !voice.name.toLowerCase().includes('hong kong')
+                        );
+                    }
                     
                     if (mandarinVoice) {
                         utterance.voice = mandarinVoice;
+                        console.log('使用語音：', mandarinVoice.name, '語言代碼：', mandarinVoice.lang);
+                    } else {
+                        console.warn('未找到普通話語音，將使用默認中文語音');
                     }
                     
                     // 朗讀速度調慢一點
@@ -7814,23 +7854,58 @@
                     const utterance = new SpeechSynthesisUtterance(word);
                     utterance.lang = 'zh-CN';  // 設置為普通話
                     
-                    // 嘗試找到普通話語音（排除粤語）
+                    // 獲取所有可用語音
                     const voices = speechSynthesis.getVoices();
-                    const mandarinVoice = voices.find(voice => 
+                    
+                    // 優先級策略選擇普通話語音
+                    let mandarinVoice = null;
+                    
+                    // 第一優先：精確匹配 zh-CN 或 cmn-CN
+                    mandarinVoice = voices.find(voice => 
                         voice.lang === 'zh-CN' || voice.lang === 'cmn-CN'
-                    ) || voices.find(voice => 
-                        (voice.lang.includes('zh-CN') || voice.lang.includes('cmn-CN') || 
-                         voice.lang.includes('cmn-Hans') || voice.lang.includes('zh-Hans')) &&
-                        !voice.lang.includes('yue') && !voice.lang.includes('HK')
-                    ) || voices.find(voice =>
-                        voice.lang.startsWith('zh') && 
-                        !voice.lang.includes('yue') && 
-                        !voice.lang.includes('HK') && 
-                        !voice.lang.includes('TW')
                     );
+                    
+                    // 第二優先：包含 CN 的中文語音（排除香港粤語）
+                    if (!mandarinVoice) {
+                        mandarinVoice = voices.find(voice => 
+                            (voice.lang.includes('zh-CN') || 
+                             voice.lang.includes('cmn-CN') || 
+                             voice.lang.includes('cmn-Hans-CN') ||
+                             voice.lang.includes('zh-Hans-CN')) &&
+                            !voice.name.toLowerCase().includes('cantonese') &&
+                            !voice.name.toLowerCase().includes('yue') &&
+                            !voice.lang.includes('HK')
+                        );
+                    }
+                    
+                    // 第三優先：任何简体中文或普通话语音（通过名称识别）
+                    if (!mandarinVoice) {
+                        mandarinVoice = voices.find(voice =>
+                            (voice.name.toLowerCase().includes('mandarin') ||
+                             voice.name.toLowerCase().includes('putonghua') ||
+                             voice.name.includes('普通话') ||
+                             voice.name.includes('国语')) &&
+                            !voice.name.toLowerCase().includes('cantonese')
+                        );
+                    }
+                    
+                    // 第四优先：排除明确标记为粤语、香港、台湾的中文语音
+                    if (!mandarinVoice) {
+                        mandarinVoice = voices.find(voice =>
+                            voice.lang.startsWith('zh') && 
+                            !voice.lang.includes('yue') && 
+                            !voice.lang.includes('HK') && 
+                            !voice.lang.includes('TW') &&
+                            !voice.name.toLowerCase().includes('cantonese') &&
+                            !voice.name.toLowerCase().includes('hong kong')
+                        );
+                    }
                     
                     if (mandarinVoice) {
                         utterance.voice = mandarinVoice;
+                        console.log('使用語音：', mandarinVoice.name, '語言代碼：', mandarinVoice.lang);
+                    } else {
+                        console.warn('未找到普通話語音，將使用默認中文語音');
                     }
                     
                     utterance.rate = 0.8;
