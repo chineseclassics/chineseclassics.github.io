@@ -5519,12 +5519,6 @@
                     // 獲取所有可用語音
                     const voices = speechSynthesis.getVoices();
                     
-                    // 調試：打印所有中文語音（開發時使用）
-                    console.log('所有可用中文語音：');
-                    voices.filter(v => v.lang.includes('zh') || v.lang.includes('cmn')).forEach(v => 
-                        console.log('  - ' + v.name + ' (' + v.lang + ')')
-                    );
-                    
                     // 已知的粤語語音黑名單（即使標記為 zh-CN 但實際是粤語）
                     const cantoneseBlacklist = ['eddy', 'sinji'];
                     
@@ -5601,9 +5595,6 @@
                     
                     if (mandarinVoice) {
                         utterance.voice = mandarinVoice;
-                        console.log('✅ 使用語音：', mandarinVoice.name, '語言代碼：', mandarinVoice.lang);
-                    } else {
-                        console.warn('⚠️ 未找到普通話語音，將使用默認語音（可能需要在系統設置中安裝普通話語音包）');
                     }
                     
                     // 朗讀速度調慢一點
@@ -7966,9 +7957,6 @@
                     
                     if (mandarinVoice) {
                         utterance.voice = mandarinVoice;
-                        console.log('✅ 使用語音：', mandarinVoice.name, '語言代碼：', mandarinVoice.lang);
-                    } else {
-                        console.warn('⚠️ 未找到普通話語音，將使用默認語音（可能需要在系統設置中安裝普通話語音包）');
                     }
                     
                     utterance.rate = 0.8;
