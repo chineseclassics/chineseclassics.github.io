@@ -369,6 +369,9 @@
                 <span id="poemAuthor">李白</span> · 
                 <span id="charCount">5字</span>
             </div>
+            <div style="margin-top: 10px; color: white; font-size: 14px; text-align: center;">
+                💡 左键点击汉字选择 | 右键或 Shift+左键点击魔方可旋转该层
+            </div>
         </div>
         
         <!-- 3D 魔方容器 -->
@@ -709,6 +712,10 @@
                 
                 // 添加点击事件
                 this.renderer.domElement.addEventListener('click', (e) => this.onMouseClick(e));
+                this.renderer.domElement.addEventListener('contextmenu', (e) => {
+                    e.preventDefault(); // 禁用右键菜单
+                    this.onMouseClick(e);
+                });
                 
                 // 开始渲染
                 this.animate();
@@ -792,9 +799,99 @@
                 this.controls.enableZoom = true;
                 this.controls.minDistance = 3;
                 this.controls.maxDistance = 10;
+                
+                // 禁用右键旋转，用于分层转动
+                this.controls.mouseButtons = {
+                    LEFT: THREE.MOUSE.ROTATE,
+                    MIDDLE: THREE.MOUSE.DOLLY,
+                    RIGHT: -1 // 禁用右键
+                };
+            }
+            
+            // 旋转某一层
+            rotateLayer(axis, layer, direction) {
+                const pieces = this.getPiecesInLayer(axis, layer);
+                if (pieces.length === 0) return;
+                
+                const angle = direction * Math.PI / 2;
+                
+                // 创建临时组来旋转
+                const tempGroup = new THREE.Group();
+                this.scene.add(tempGroup);
+                
+                // 保存原始世界变换
+                const originalTransforms = [];
+                pieces.forEach(piece => {
+                    const worldMatrix = new THREE.Matrix4();
+                    piece.updateMatrixWorld();
+                    worldMatrix.copy(piece.matrixWorld);
+                    originalTransforms.push({
+                        piece: piece,
+                        worldMatrix: worldMatrix,
+                        localPosition: piece.position.clone(),
+                        localRotation: piece.rotation.clone()
+                    });
+                });
+                
+                // 将要旋转的方块添加到临时组（保持世界位置）
+                pieces.forEach(piece => {
+                    const worldPos = new THREE.Vector3();
+                    const worldQuat = new THREE.Quaternion();
+                    piece.getWorldPosition(worldPos);
+                    piece.getWorldQuaternion(worldQuat);
+                    
+                    this.cubeGroup.remove(piece);
+                    piece.position.copy(worldPos);
+                    piece.quaternion.copy(worldQuat);
+                    tempGroup.add(piece);
+                });
+                
+                // 使用 GSAP 动画旋转
+                gsap.to(tempGroup.rotation, {
+                    [axis]: angle,
+                    duration: 0.3,
+                    ease: 'power2.out',
+                    onComplete: () => {
+                        // 更新方块位置数据
+                        pieces.forEach(piece => {
+                            // 获取世界坐标
+                            piece.updateMatrixWorld();
+                            const worldPos = new THREE.Vector3();
+                            const worldQuat = new THREE.Quaternion();
+                            piece.getWorldPosition(worldPos);
+                            piece.getWorldQuaternion(worldQuat);
+                            
+                            // 从临时组移回魔方组
+                            tempGroup.remove(piece);
+                            this.cubeGroup.add(piece);
+                            
+                            // 设置位置和旋转
+                            piece.position.copy(worldPos);
+                            piece.quaternion.copy(worldQuat);
+                            
+                            // 更新 userData
+                            const size = 0.9 + 0.05;
+                            piece.userData.x = Math.round(piece.position.x / size);
+                            piece.userData.y = Math.round(piece.position.y / size);
+                            piece.userData.z = Math.round(piece.position.z / size);
+                        });
+                        
+                        // 移除临时组
+                        this.scene.remove(tempGroup);
+                    }
+                });
+            }
+            
+            getPiecesInLayer(axis, layer) {
+                return this.pieces.filter(piece => {
+                    return Math.round(piece.userData[axis]) === layer;
+                });
             }
             
             onMouseClick(event) {
+                // 右键或 Shift+左键 = 旋转层
+                const isRotateMode = event.button === 2 || event.shiftKey;
+                
                 const rect = this.renderer.domElement.getBoundingClientRect();
                 this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
                 this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -805,11 +902,56 @@
                 if (intersects.length > 0) {
                     const piece = intersects[0].object;
                     const faceIndex = Math.floor(intersects[0].faceIndex / 2);
-                    const char = piece.userData.chars[faceIndex];
                     
-                    if (char && window.game) {
-                        window.game.onCharClick(char);
+                    if (isRotateMode) {
+                        // 旋转模式：旋转点击的那一层
+                        this.rotatePieceLayer(piece, faceIndex);
+                    } else {
+                        // 选字模式
+                        const char = piece.userData.chars[faceIndex];
+                        if (char && window.game) {
+                            window.game.onCharClick(char);
+                        }
                     }
+                }
+            }
+            
+            rotatePieceLayer(piece, faceIndex) {
+                // 根据点击的面确定旋转轴和层
+                let axis, layer;
+                
+                switch(faceIndex) {
+                    case 0: // 右面 (X+)
+                        axis = 'x';
+                        layer = piece.userData.x;
+                        break;
+                    case 1: // 左面 (X-)
+                        axis = 'x';
+                        layer = piece.userData.x;
+                        break;
+                    case 2: // 上面 (Y+)
+                        axis = 'y';
+                        layer = piece.userData.y;
+                        break;
+                    case 3: // 下面 (Y-)
+                        axis = 'y';
+                        layer = piece.userData.y;
+                        break;
+                    case 4: // 前面 (Z+)
+                        axis = 'z';
+                        layer = piece.userData.z;
+                        break;
+                    case 5: // 后面 (Z-)
+                        axis = 'z';
+                        layer = piece.userData.z;
+                        break;
+                }
+                
+                // 顺时针旋转
+                this.rotateLayer(axis, layer, 1);
+                
+                if (window.game) {
+                    window.game.playSound('rotate');
                 }
             }
             
@@ -1118,6 +1260,14 @@
                     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
                     oscillator.start(audioContext.currentTime);
                     oscillator.stop(audioContext.currentTime + 0.1);
+                } else if (type === 'rotate') {
+                    // 魔方旋转音效 - 竹简翻动声
+                    oscillator.frequency.value = 400;
+                    oscillator.type = 'triangle';
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.15);
                 } else if (type === 'success') {
                     const notes = [523.25, 587.33, 659.25, 783.99];
                     notes.forEach((freq, i) => {

@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>胡媚兒魔瓶 - 唐代傳奇互動演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @font-face {
+            font-family: 'GuJi';
+            src: url('files/fonts/华康古籍木兰GBK.TTF');
+        }
+
+        body {
+            font-family: 'GuJi', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5e6d3 0%, #e8d5c4 100%);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            cursor: default;
+        }
+
+        #canvas-container canvas {
+            display: block;
+        }
+
+        /* 标题 */
+        .title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 36px;
+            color: #8b4513;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* 故事原文面板 */
+        .story-panel {
+            position: absolute;
+            left: 20px;
+            top: 80px;
+            width: 320px;
+            max-height: 70vh;
+            background: rgba(255, 248, 240, 0.95);
+            border: 2px solid #8b4513;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .story-panel h3 {
+            font-size: 24px;
+            color: #8b4513;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid #d4a574;
+            padding-bottom: 10px;
+        }
+
+        .story-panel p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 12px;
+            text-indent: 2em;
+        }
+
+        .story-panel .highlight {
+            background: linear-gradient(120deg, #ffd54f 0%, #ffb74d 100%);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .story-panel .highlight.active {
+            background: linear-gradient(120deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            position: absolute;
+            right: 20px;
+            top: 80px;
+            width: 280px;
+            background: rgba(255, 248, 240, 0.95);
+            border: 2px solid #8b4513;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .control-panel h3 {
+            font-size: 20px;
+            color: #8b4513;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid #d4a574;
+            padding-bottom: 10px;
+        }
+
+        .control-panel .instruction {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 5px;
+        }
+
+        .control-panel button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 16px;
+            font-family: 'GuJi', sans-serif;
+            background: linear-gradient(135deg, #d4a574 0%, #b8945f 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .control-panel button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .control-panel button:active {
+            transform: translateY(0);
+        }
+
+        /* 浮动文字提示 */
+        .floating-text {
+            position: absolute;
+            font-size: 18px;
+            color: #8b4513;
+            pointer-events: none;
+            z-index: 50;
+            white-space: nowrap;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+            animation: floatUp 2s ease-out forwards;
+            font-weight: bold;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 0;
+                transform: translateY(0);
+            }
+            20% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        /* 加载提示 */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #8b4513;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(139, 69, 19, 0.2);
+            border-top-color: #8b4513;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 物体标签 */
+        .object-label {
+            position: absolute;
+            background: rgba(139, 69, 19, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* 状态信息 */
+        .status-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(139, 69, 19, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-info.show {
+            opacity: 1;
+        }
+
+        /* 滚动条美化 */
+        .story-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .story-panel::-webkit-scrollbar-track {
+            background: rgba(212, 165, 116, 0.2);
+            border-radius: 4px;
+        }
+
+        .story-panel::-webkit-scrollbar-thumb {
+            background: #d4a574;
+            border-radius: 4px;
+        }
+
+        .story-panel::-webkit-scrollbar-thumb:hover {
+            background: #b8945f;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="title">胡媚兒魔瓶</div>
+    
+    <div class="loading" id="loading">
+        <div>載入中...</div>
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="story-panel">
+        <h3>胡媚兒傳奇</h3>
+        <p>唐貞元中，楊州坊巿間忽有一妓術丐乞者，不知所從來。自稱姓胡，名媚兒，所為頗甚怪異。</p>
+        <p>一旦懷中出一琉璃瓶子，可受半升，<span class="highlight" data-key="transparent">表裏烘明，如不隔物</span>。遂置於席上，初謂觀者曰：「有人施與滿此瓶子，則足矣。」<span class="highlight" data-key="bottlemouth">瓶口剛如葦管大</span>。</p>
+        <p>有人與之百錢，<span class="highlight" data-key="coin">投之，琤然有聲，則見瓶間大如粟粒</span>。衆皆異之。復有人與之千錢，投之如前。又有與萬錢者，亦如之。</p>
+        <p>俄有好事人，與之十萬二十萬，皆如之。或有<span class="highlight" data-key="horse">以馬驢入之瓶中，見人馬皆如蠅大，動行如故</span>。</p>
+        <p>須臾，有度支兩稅綱，自揚子院部輕貨數十車至。駐觀之，以其一時入，或終不能致將他物往，且謂官物不足疑者。乃謂媚兒曰：「爾能令諸車皆入此中乎？」媚兒曰：「許之則可。」綱曰：「且試之。」</p>
+        <p>媚兒乃微側瓶口，大喝，<span class="highlight" data-key="cart">諸車輅輅相繼，悉入瓶，瓶中歷歷如行蟻然</span>。有頃，漸不見，媚兒即跳身入瓶中。</p>
+        <p><span class="highlight" data-key="break">綱乃大驚，遽取撲破，求之一無所有</span>，從此失媚兒所在。</p>
+        <p>後月餘日，有人於清河北逢媚兒，部領車乘，趨東平而去。是時李師道為東平帥也。</p>
+    </div>
+
+    <div class="control-panel">
+        <h3>操作說明</h3>
+        <div class="instruction">
+            🖱️ 拖動物體到瓶口附近，觀察它們神奇地縮小並進入瓶中
+        </div>
+        <div class="instruction">
+            🔍 滾動鼠標滾輪可以放大縮小視角
+        </div>
+        <div class="instruction">
+            🔄 右鍵拖動可以旋轉視角
+        </div>
+        <div class="instruction" id="debug-info" style="background: rgba(255,200,200,0.3); font-size: 12px;">
+            調試：等待操作...
+        </div>
+        <button id="btn-reset">重新開始</button>
+        <button id="btn-empty">倒出物品</button>
+        <button id="btn-break">打破瓶子</button>
+        <button id="btn-view-inside">觀察瓶內</button>
+    </div>
+
+    <div class="status-info" id="status-info"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+
+    <script>
+        // ========== 全局变量 ==========
+        let scene, camera, renderer, controls;
+        let bottle, bottleNeck;
+        let draggableObjects = [];
+        let objectsInBottle = [];
+        let raycaster, mouse;
+        let selectedObject = null;
+        let dragPlane;
+        let isBroken = false;
+
+        // 场景常量
+        const BOTTLE_HEIGHT = 4;
+        const BOTTLE_RADIUS = 1;
+        const BOTTLE_NECK_HEIGHT = 1.5;
+        const BOTTLE_NECK_RADIUS = 0.15;
+        const BOTTLE_MOUTH_Y = BOTTLE_HEIGHT / 2 + BOTTLE_NECK_HEIGHT;
+        
+        // 音效常量
+        const SOUND_ENABLED = true;
+
+        // ========== 初始化 ==========
+        function init() {
+            console.log('開始初始化...');
+            console.log('THREE.js 版本:', THREE.REVISION);
+            
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5e6d3);
+            scene.fog = new THREE.Fog(0xf5e6d3, 20, 50);
+            console.log('場景已創建');
+
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(8, 6, 8);
+            camera.lookAt(0, 2, 0);
+            console.log('相機已設置，位置:', camera.position);
+
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            console.log('渲染器已創建');
+
+            // 控制器
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 3;
+            controls.maxDistance = 20;
+            controls.maxPolarAngle = Math.PI / 1.8;
+            console.log('控制器已設置');
+
+            // 光源
+            setupLights();
+            console.log('光源已添加');
+
+            // 创建琉璃瓶
+            createBottle();
+            console.log('瓶子創建完成');
+
+            // 创建地面
+            createGround();
+            console.log('地面創建完成');
+
+            // 添加坐标轴辅助器（红色X轴，绿色Y轴，蓝色Z轴）
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+            console.log('坐標軸已添加');
+
+            // 添加测试立方体（确保场景渲染正常）
+            const testGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            const testMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const testCube = new THREE.Mesh(testGeometry, testMaterial);
+            testCube.position.set(2, 0.25, 0);
+            scene.add(testCube);
+            console.log('測試立方體已添加（紅色）');
+
+            // 创建可拖动物体
+            createDraggableObjects();
+            console.log('可拖動物體數量:', draggableObjects.length);
+
+            // 射线检测
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+            // 事件监听
+            setupEventListeners();
+            console.log('事件監聽已設置');
+
+            // 隐藏加载提示
+            document.getElementById('loading').style.display = 'none';
+
+            // 开始动画
+            animate();
+            console.log('動畫開始');
+
+            // 显示欢迎信息
+            showStatus('歡迎！拖動物體到瓶口，觀察神奇的縮小效果');
+            
+            console.log('場景物體數量:', scene.children.length);
+            console.log('初始化完成！');
+        }
+
+        // ========== 光源设置 ==========
+        function setupLights() {
+            // 环境光
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            // 主光源
+            const mainLight = new THREE.DirectionalLight(0xfff5e1, 0.8);
+            mainLight.position.set(5, 10, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.camera.left = -10;
+            mainLight.shadow.camera.right = 10;
+            mainLight.shadow.camera.top = 10;
+            mainLight.shadow.camera.bottom = -10;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+
+            // 补光
+            const fillLight = new THREE.DirectionalLight(0xffd4a3, 0.3);
+            fillLight.position.set(-5, 5, -5);
+            scene.add(fillLight);
+
+            // 点光源增强瓶子透明感
+            const bottleLight = new THREE.PointLight(0xffffff, 0.5);
+            bottleLight.position.set(0, BOTTLE_MOUTH_Y, 0);
+            scene.add(bottleLight);
+        }
+
+        // ========== 创建琉璃瓶 ==========
+        function createBottle() {
+            const bottleGroup = new THREE.Group();
+
+            // 更明显的瓶子材质（透明玻璃效果）
+            const bottleMaterial = new THREE.MeshStandardMaterial({
+                color: 0x88ccff,
+                transparent: true,
+                opacity: 0.3,
+                roughness: 0.1,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+
+            // 瓶身（使用球体和圆柱组合）
+            const bodyGeometry = new THREE.SphereGeometry(BOTTLE_RADIUS, 32, 32, 0, Math.PI * 2, 0, Math.PI / 1.3);
+            bottle = new THREE.Mesh(bodyGeometry, bottleMaterial);
+            bottle.position.y = BOTTLE_HEIGHT / 2;
+            bottle.castShadow = true;
+            bottle.receiveShadow = true;
+            bottleGroup.add(bottle);
+
+            // 瓶颈
+            const neckGeometry = new THREE.CylinderGeometry(
+                BOTTLE_NECK_RADIUS,
+                BOTTLE_RADIUS * 0.4,
+                BOTTLE_NECK_HEIGHT,
+                32
+            );
+            bottleNeck = new THREE.Mesh(neckGeometry, bottleMaterial);
+            bottleNeck.position.y = BOTTLE_HEIGHT / 2 + BOTTLE_NECK_HEIGHT / 2;
+            bottleNeck.castShadow = true;
+            bottleGroup.add(bottleNeck);
+
+            // 瓶口边缘（更明显）
+            const mouthGeometry = new THREE.TorusGeometry(BOTTLE_NECK_RADIUS, 0.03, 16, 32);
+            const edgeMaterial = new THREE.MeshStandardMaterial({
+                color: 0x6699cc,
+                transparent: true,
+                opacity: 0.6,
+                roughness: 0.3,
+                metalness: 0.3
+            });
+            const mouthEdge = new THREE.Mesh(mouthGeometry, edgeMaterial);
+            mouthEdge.position.y = BOTTLE_MOUTH_Y;
+            mouthEdge.rotation.x = Math.PI / 2;
+            bottleGroup.add(mouthEdge);
+
+            // 添加轮廓线帮助可见性
+            const outlineMaterial = new THREE.MeshBasicMaterial({
+                color: 0x4488aa,
+                transparent: true,
+                opacity: 0.4,
+                side: THREE.BackSide
+            });
+
+            const bodyOutline = new THREE.Mesh(bodyGeometry, outlineMaterial);
+            bodyOutline.position.y = BOTTLE_HEIGHT / 2;
+            bodyOutline.scale.multiplyScalar(1.02);
+            bottleGroup.add(bodyOutline);
+
+            const neckOutline = new THREE.Mesh(neckGeometry, outlineMaterial);
+            neckOutline.position.y = BOTTLE_HEIGHT / 2 + BOTTLE_NECK_HEIGHT / 2;
+            neckOutline.scale.multiplyScalar(1.03);
+            bottleGroup.add(neckOutline);
+
+            // 添加内部光晕效果
+            const glowGeometry = new THREE.SphereGeometry(BOTTLE_RADIUS * 0.8, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xccffff,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.BackSide
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.y = BOTTLE_HEIGHT / 2;
+            bottleGroup.add(glow);
+
+            console.log('瓶子已创建', bottleGroup);
+            scene.add(bottleGroup);
+            bottleGroup.userData.isBottle = true;
+            
+            return bottleGroup;
+        }
+
+        // ========== 创建地面 ==========
+        function createGround() {
+            const groundGeometry = new THREE.PlaneGeometry(30, 30);
+            const groundMaterial = new THREE.MeshStandardMaterial({
+                color: 0xe8d5c4,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = 0;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // 添加网格辅助线
+            const gridHelper = new THREE.GridHelper(30, 30, 0xd4a574, 0xd4a574);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+        }
+
+        // ========== 创建可拖动物体 ==========
+        function createDraggableObjects() {
+            // 1. 铜钱
+            for (let i = 0; i < 3; i++) {
+                const coin = createCoin();
+                coin.position.set(-4 + i * 2, 0.1, 4);
+                coin.userData.type = 'coin';
+                coin.userData.name = '銅錢';
+                coin.userData.highlightKey = 'coin';
+                coin.userData.text = '投之，琤然有聲，則見瓶間大如粟粒';
+                draggableObjects.push(coin);
+                scene.add(coin);
+            }
+
+            // 2. 马
+            const horse = createHorse();
+            horse.position.set(4, 0.5, 3);
+            horse.userData.type = 'horse';
+            horse.userData.name = '馬';
+            horse.userData.highlightKey = 'horse';
+            horse.userData.text = '見人馬皆如蠅大，動行如故';
+            draggableObjects.push(horse);
+            scene.add(horse);
+
+            // 3. 牛车
+            const cart = createCart();
+            cart.position.set(-4, 0.5, -2);
+            cart.userData.type = 'cart';
+            cart.userData.name = '牛車';
+            cart.userData.highlightKey = 'cart';
+            cart.userData.text = '諸車輅輅相繼，悉入瓶，瓶中歷歷如行蟻然';
+            draggableObjects.push(cart);
+            scene.add(cart);
+
+            // 4. 另一辆车
+            const cart2 = createCart();
+            cart2.position.set(-2, 0.5, -2);
+            cart2.userData.type = 'cart';
+            cart2.userData.name = '牛車';
+            cart2.userData.highlightKey = 'cart';
+            cart2.userData.text = '諸車輅輅相繼，悉入瓶';
+            draggableObjects.push(cart2);
+            scene.add(cart2);
+        }
+
+        // ========== 创建铜钱 ==========
+        function createCoin() {
+            const group = new THREE.Group();
+            
+            // 外圆
+            const outerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 32);
+            const coinMaterial = new THREE.MeshStandardMaterial({
+                color: 0xcd7f32,
+                metalness: 0.8,
+                roughness: 0.3
+            });
+            const outer = new THREE.Mesh(outerGeometry, coinMaterial);
+            outer.rotation.x = Math.PI / 2;
+            outer.castShadow = true;
+            group.add(outer);
+
+            // 内方孔
+            const holeGeometry = new THREE.BoxGeometry(0.08, 0.08, 0.06);
+            const holeMaterial = new THREE.MeshStandardMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.9
+            });
+            const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+            group.add(hole);
+
+            group.userData.originalScale = 1;
+            group.userData.inBottle = false;
+            
+            return group;
+        }
+
+        // ========== 创建马 ==========
+        function createHorse() {
+            const group = new THREE.Group();
+            const horseMaterial = new THREE.MeshStandardMaterial({
+                color: 0x8b4513,
+                roughness: 0.7
+            });
+
+            // 身体
+            const bodyGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.4);
+            const body = new THREE.Mesh(bodyGeometry, horseMaterial);
+            body.position.y = 0.5;
+            body.castShadow = true;
+            group.add(body);
+
+            // 头
+            const headGeometry = new THREE.BoxGeometry(0.3, 0.4, 0.3);
+            const head = new THREE.Mesh(headGeometry, horseMaterial);
+            head.position.set(0.5, 0.7, 0);
+            head.castShadow = true;
+            group.add(head);
+
+            // 腿
+            const legGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8);
+            const positions = [
+                [0.3, 0.25, 0.15],
+                [0.3, 0.25, -0.15],
+                [-0.3, 0.25, 0.15],
+                [-0.3, 0.25, -0.15]
+            ];
+            positions.forEach(pos => {
+                const leg = new THREE.Mesh(legGeometry, horseMaterial);
+                leg.position.set(...pos);
+                leg.castShadow = true;
+                group.add(leg);
+            });
+
+            group.userData.originalScale = 1;
+            group.userData.inBottle = false;
+            group.userData.animate = true;
+
+            return group;
+        }
+
+        // ========== 创建牛车 ==========
+        function createCart() {
+            const group = new THREE.Group();
+            const cartMaterial = new THREE.MeshStandardMaterial({
+                color: 0x654321,
+                roughness: 0.8
+            });
+
+            // 车厢
+            const bodyGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.6);
+            const body = new THREE.Mesh(bodyGeometry, cartMaterial);
+            body.position.y = 0.5;
+            body.castShadow = true;
+            group.add(body);
+
+            // 车轮
+            const wheelGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
+            const wheelMaterial = new THREE.MeshStandardMaterial({
+                color: 0x3d2817,
+                roughness: 0.9
+            });
+            
+            const wheel1 = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel1.rotation.z = Math.PI / 2;
+            wheel1.position.set(0.3, 0.2, 0.35);
+            wheel1.castShadow = true;
+            group.add(wheel1);
+
+            const wheel2 = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel2.rotation.z = Math.PI / 2;
+            wheel2.position.set(0.3, 0.2, -0.35);
+            wheel2.castShadow = true;
+            group.add(wheel2);
+
+            const wheel3 = wheel1.clone();
+            wheel3.position.set(-0.3, 0.2, 0.35);
+            group.add(wheel3);
+
+            const wheel4 = wheel2.clone();
+            wheel4.position.set(-0.3, 0.2, -0.35);
+            group.add(wheel4);
+
+            group.userData.originalScale = 1;
+            group.userData.inBottle = false;
+            group.userData.wheels = [wheel1, wheel2, wheel3, wheel4];
+
+            return group;
+        }
+
+        // ========== 事件监听 ==========
+        function setupEventListeners() {
+            // 鼠标事件
+            renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+            renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+            renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+
+            // 窗口调整
+            window.addEventListener('resize', onWindowResize, false);
+
+            // 按钮事件
+            document.getElementById('btn-reset').addEventListener('click', resetScene);
+            document.getElementById('btn-empty').addEventListener('click', emptyBottle);
+            document.getElementById('btn-break').addEventListener('click', breakBottle);
+            document.getElementById('btn-view-inside').addEventListener('click', viewInside);
+        }
+
+        // ========== 鼠标按下 ==========
+        function onMouseDown(event) {
+            if (isBroken) return;
+
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            
+            // 收集所有可拖动物体的子网格
+            let allMeshes = [];
+            draggableObjects.forEach(obj => {
+                obj.traverse(child => {
+                    if (child.isMesh) {
+                        allMeshes.push(child);
+                    }
+                });
+            });
+            
+            const intersects = raycaster.intersectObjects(allMeshes, false);
+            console.log('點擊檢測:', intersects.length, '個交點');
+            
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.textContent = `檢測到 ${intersects.length} 個交點，可拖動物體: ${draggableObjects.length}`;
+
+            if (intersects.length > 0) {
+                controls.enabled = false;
+                
+                // 找到顶层物体
+                let object = intersects[0].object;
+                while (object.parent && !draggableObjects.includes(object)) {
+                    object = object.parent;
+                }
+                
+                console.log('選中物體:', object.userData.name);
+                debugInfo.textContent = `選中: ${object.userData.name}`;
+                
+                if (draggableObjects.includes(object) && !object.userData.inBottle) {
+                    selectedObject = object;
+                    
+                    // 高亮提示
+                    highlightText(object.userData.highlightKey);
+                    
+                    // 改变颜色表示选中
+                    selectedObject.traverse(child => {
+                        if (child.isMesh) {
+                            child.userData.originalColor = child.material.color.clone();
+                            child.material.color.lerp(new THREE.Color(0xffff00), 0.3);
+                        }
+                    });
+                    
+                    showStatus(`選中了 ${object.userData.name}，拖動到瓶口附近！`);
+                }
+            } else {
+                console.log('未檢測到任何物體');
+                debugInfo.textContent = `未檢測到物體，可拖動: ${draggableObjects.length}個`;
+            }
+        }
+
+        // ========== 鼠标移动 ==========
+        function onMouseMove(event) {
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // 如果正在拖动物体
+            if (selectedObject && !isBroken) {
+                raycaster.setFromCamera(mouse, camera);
+                
+                // 在y=物体当前高度的平面上移动
+                const currentY = selectedObject.position.y;
+                dragPlane.constant = -currentY;
+                
+                const intersectPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectPoint)) {
+                    selectedObject.position.x = intersectPoint.x;
+                    selectedObject.position.z = intersectPoint.z;
+                    
+                    // 检查与瓶口的距离，动态缩放
+                    checkBottleProximity(selectedObject);
+                }
+            } else if (!isBroken) {
+                // 鼠标悬停效果
+                raycaster.setFromCamera(mouse, camera);
+                
+                let allMeshes = [];
+                draggableObjects.forEach(obj => {
+                    if (!obj.userData.inBottle) {
+                        obj.traverse(child => {
+                            if (child.isMesh) {
+                                allMeshes.push(child);
+                            }
+                        });
+                    }
+                });
+                
+                const intersects = raycaster.intersectObjects(allMeshes, false);
+                
+                // 重置所有物体的鼠标样式
+                renderer.domElement.style.cursor = 'default';
+                
+                if (intersects.length > 0) {
+                    // 改变鼠标样式
+                    renderer.domElement.style.cursor = 'pointer';
+                }
+            }
+        }
+
+        // ========== 鼠标释放 ==========
+        function onMouseUp(event) {
+            if (selectedObject) {
+                // 恢复颜色
+                selectedObject.traverse(child => {
+                    if (child.isMesh && child.userData.originalColor) {
+                        child.material.color.copy(child.userData.originalColor);
+                    }
+                });
+                
+                selectedObject = null;
+            }
+            controls.enabled = true;
+        }
+
+        // ========== 检查物体与瓶口的距离 ==========
+        function checkBottleProximity(object) {
+            const bottleMouthPos = new THREE.Vector3(0, BOTTLE_MOUTH_Y, 0);
+            const distance = object.position.distanceTo(bottleMouthPos);
+            
+            const SHRINK_START_DISTANCE = 3;
+            const ENTER_DISTANCE = 0.5;
+            
+            if (distance < SHRINK_START_DISTANCE && !object.userData.inBottle) {
+                // 计算缩放比例（距离越近，缩放越小）
+                const scale = Math.max(0.01, (distance / SHRINK_START_DISTANCE) * object.userData.originalScale);
+                object.scale.set(scale, scale, scale);
+                
+                // 如果非常接近瓶口，进入瓶中
+                if (distance < ENTER_DISTANCE) {
+                    enterBottle(object);
+                }
+            } else if (distance >= SHRINK_START_DISTANCE && object.scale.x !== object.userData.originalScale) {
+                // 远离时恢复大小
+                gsap.to(object.scale, {
+                    x: object.userData.originalScale,
+                    y: object.userData.originalScale,
+                    z: object.userData.originalScale,
+                    duration: 0.3
+                });
+            }
+        }
+
+        // ========== 物体进入瓶子 ==========
+        function enterBottle(object) {
+            if (object.userData.inBottle) return;
+            
+            object.userData.inBottle = true;
+            objectsInBottle.push(object);
+            
+            // 播放音效
+            playSound('琤然');
+            
+            // 显示文字
+            showFloatingText(object.userData.text, object.position);
+            showStatus(`${object.userData.name} 進入瓶中！${object.userData.text}`);
+            
+            // 动画：螺旋进入瓶内
+            const targetY = BOTTLE_HEIGHT / 2 - BOTTLE_RADIUS * 0.5 + Math.random() * 0.5;
+            const targetScale = 0.05 + Math.random() * 0.03;
+            
+            gsap.to(object.position, {
+                x: (Math.random() - 0.5) * BOTTLE_RADIUS * 0.6,
+                y: targetY,
+                z: (Math.random() - 0.5) * BOTTLE_RADIUS * 0.6,
+                duration: 1,
+                ease: 'power2.inOut'
+            });
+            
+            gsap.to(object.scale, {
+                x: targetScale,
+                y: targetScale,
+                z: targetScale,
+                duration: 1,
+                ease: 'power2.inOut'
+            });
+            
+            gsap.to(object.rotation, {
+                y: object.rotation.y + Math.PI * 2,
+                duration: 1,
+                ease: 'power2.inOut'
+            });
+            
+            // 高亮对应文字
+            highlightText(object.userData.highlightKey, true);
+            
+            // 从可拖动列表中移除
+            const index = draggableObjects.indexOf(object);
+            if (index > -1) {
+                draggableObjects.splice(index, 1);
+            }
+        }
+
+        // ========== 高亮文本 ==========
+        function highlightText(key, permanent = false) {
+            const elements = document.querySelectorAll(`[data-key="${key}"]`);
+            elements.forEach(el => {
+                el.classList.add('active');
+                if (!permanent) {
+                    setTimeout(() => el.classList.remove('active'), 2000);
+                }
+            });
+        }
+
+        // ========== 显示浮动文字 ==========
+        function showFloatingText(text, position) {
+            const vector = position.clone().project(camera);
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+            
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.textContent = text;
+            floatingText.style.left = x + 'px';
+            floatingText.style.top = y + 'px';
+            document.body.appendChild(floatingText);
+            
+            setTimeout(() => floatingText.remove(), 2000);
+        }
+
+        // ========== 显示状态信息 ==========
+        function showStatus(text, duration = 3000) {
+            const statusInfo = document.getElementById('status-info');
+            statusInfo.textContent = text;
+            statusInfo.classList.add('show');
+            
+            setTimeout(() => {
+                statusInfo.classList.remove('show');
+            }, duration);
+        }
+
+        // ========== 播放音效 ==========
+        function playSound(type) {
+            if (!SOUND_ENABLED) return;
+            
+            // 简单的音效提示（可以替换为实际音频）
+            console.log(`🔊 播放音效: ${type}`);
+        }
+
+        // ========== 重置场景 ==========
+        function resetScene() {
+            // 恢复瓶子
+            if (isBroken) {
+                location.reload();
+                return;
+            }
+            
+            // 将瓶内物体恢复
+            objectsInBottle.forEach(obj => {
+                obj.userData.inBottle = false;
+                
+                // 随机放置在瓶子周围
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 3 + Math.random() * 2;
+                
+                gsap.to(obj.position, {
+                    x: Math.cos(angle) * radius,
+                    y: 0.5,
+                    z: Math.sin(angle) * radius,
+                    duration: 1,
+                    ease: 'back.out'
+                });
+                
+                gsap.to(obj.scale, {
+                    x: obj.userData.originalScale,
+                    y: obj.userData.originalScale,
+                    z: obj.userData.originalScale,
+                    duration: 1,
+                    ease: 'back.out'
+                });
+                
+                draggableObjects.push(obj);
+            });
+            
+            objectsInBottle = [];
+            
+            // 清除高亮
+            document.querySelectorAll('.highlight.active').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            showStatus('場景已重置');
+        }
+
+        // ========== 倒出物品 ==========
+        function emptyBottle() {
+            if (objectsInBottle.length === 0) {
+                showStatus('瓶中沒有物品');
+                return;
+            }
+            
+            showStatus('倒出瓶中物品...');
+            
+            objectsInBottle.forEach((obj, index) => {
+                obj.userData.inBottle = false;
+                
+                // 从瓶口飞出
+                const angle = (index / objectsInBottle.length) * Math.PI * 2;
+                const radius = 2;
+                
+                gsap.to(obj.position, {
+                    x: Math.cos(angle) * radius,
+                    y: 0.5,
+                    z: Math.sin(angle) * radius,
+                    duration: 1,
+                    delay: index * 0.1,
+                    ease: 'back.out'
+                });
+                
+                gsap.to(obj.scale, {
+                    x: obj.userData.originalScale,
+                    y: obj.userData.originalScale,
+                    z: obj.userData.originalScale,
+                    duration: 1,
+                    delay: index * 0.1,
+                    ease: 'back.out'
+                });
+                
+                draggableObjects.push(obj);
+            });
+            
+            objectsInBottle = [];
+        }
+
+        // ========== 打破瓶子 ==========
+        function breakBottle() {
+            if (isBroken) return;
+            
+            isBroken = true;
+            highlightText('break', true);
+            showStatus('遽取撲破，求之一無所有！', 5000);
+            
+            // 瓶子破碎动画
+            bottle.traverse(child => {
+                if (child.isMesh) {
+                    gsap.to(child.material, {
+                        opacity: 0,
+                        duration: 1
+                    });
+                }
+            });
+            
+            bottleNeck.traverse(child => {
+                if (child.isMesh) {
+                    gsap.to(child.material, {
+                        opacity: 0,
+                        duration: 1
+                    });
+                }
+            });
+            
+            // 物体消失
+            objectsInBottle.forEach(obj => {
+                gsap.to(obj.scale, {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    duration: 0.8,
+                    ease: 'power2.in'
+                });
+            });
+            
+            setTimeout(() => {
+                showStatus('從此失媚兒所在...（點擊重新開始恢復場景）', 5000);
+            }, 1500);
+        }
+
+        // ========== 观察瓶内 ==========
+        function viewInside() {
+            if (objectsInBottle.length === 0) {
+                showStatus('瓶中沒有物品可觀察');
+                return;
+            }
+            
+            // 相机移動到瓶内视角
+            gsap.to(camera.position, {
+                x: 0,
+                y: BOTTLE_HEIGHT / 2,
+                z: 0.3,
+                duration: 2,
+                ease: 'power2.inOut',
+                onUpdate: () => {
+                    camera.lookAt(0, BOTTLE_HEIGHT / 2 - 0.5, 0);
+                },
+                onComplete: () => {
+                    showStatus('觀察瓶內微縮世界，滾動縮放、右鍵旋轉視角');
+                    setTimeout(() => {
+                        // 恢复视角
+                        gsap.to(camera.position, {
+                            x: 8,
+                            y: 6,
+                            z: 8,
+                            duration: 2,
+                            ease: 'power2.inOut'
+                        });
+                    }, 5000);
+                }
+            });
+        }
+
+        // ========== 动画循环 ==========
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 更新控制器
+            controls.update();
+            
+            // 瓶内物体的微动画
+            objectsInBottle.forEach(obj => {
+                if (obj.userData.animate) {
+                    obj.rotation.y += 0.005;
+                }
+                
+                // 轻微漂浮
+                obj.position.y += Math.sin(Date.now() * 0.001 + obj.id) * 0.0002;
+                
+                // 车轮旋转
+                if (obj.userData.wheels) {
+                    obj.userData.wheels.forEach(wheel => {
+                        wheel.rotation.z += 0.01;
+                    });
+                }
+            });
+            
+            // 渲染
+            renderer.render(scene, camera);
+        }
+
+        // ========== 窗口调整 ==========
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // ========== 启动 ==========
+        init();
+    </script>
+</body>
+</html>
+

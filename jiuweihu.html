@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>山海經九尾狐</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #90EE90 100%);
+            font-family: 'STKaiti', 'KaiTi', serif;
+        }
+        
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #d2691e;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        
+        .description {
+            color: #666;
+            margin-top: 20px;
+            line-height: 1.6;
+            font-size: 1.1em;
+        }
+        
+        .tail {
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        .tail:hover {
+            opacity: 0.8;
+        }
+        
+        .skull {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦊 山海經·九尾狐 🦊</h1>
+        
+        <svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+            <!-- 背景天空 -->
+            <defs>
+                <!-- 九条尾巴的动画定义 -->
+                <animateTransform 
+                    id="tail1Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; -8 400 350; 0 400 350"
+                    dur="2s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail2Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; -10 400 350; 0 400 350"
+                    dur="2.2s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail3Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; -12 400 350; 0 400 350"
+                    dur="2.4s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail4Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; 8 400 350; 0 400 350"
+                    dur="2.1s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail5Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; 10 400 350; 0 400 350"
+                    dur="2.3s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail6Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; 12 400 350; 0 400 350"
+                    dur="2.5s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail7Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; -6 400 350; 0 400 350"
+                    dur="2.6s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail8Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; 6 400 350; 0 400 350"
+                    dur="2.7s"
+                    repeatCount="indefinite"
+                />
+                <animateTransform 
+                    id="tail9Anim"
+                    attributeName="transform"
+                    type="rotate"
+                    values="0 400 350; -5 400 350; 0 400 350"
+                    dur="2.8s"
+                    repeatCount="indefinite"
+                />
+            </defs>
+            
+            <!-- 遠山 -->
+            <path d="M 0 400 Q 100 300, 200 350 T 400 320 T 600 340 T 800 350 L 800 600 L 0 600 Z" 
+                  fill="#6B8E23" opacity="0.3"/>
+            
+            <!-- 中山 -->
+            <path d="M 0 450 Q 150 350, 300 400 Q 450 350, 600 420 L 800 450 L 800 600 L 0 600 Z" 
+                  fill="#228B22" opacity="0.5"/>
+            
+            <!-- 近山（山脚） -->
+            <ellipse cx="400" cy="520" rx="350" ry="100" fill="#2E7D32"/>
+            <ellipse cx="400" cy="510" rx="330" ry="90" fill="#388E3C"/>
+            <ellipse cx="400" cy="500" rx="300" ry="80" fill="#4CAF50"/>
+            
+            <!-- 草地细节 -->
+            <g opacity="0.6">
+                <line x1="200" y1="480" x2="210" y2="460" stroke="#2E7D32" stroke-width="2"/>
+                <line x1="250" y1="490" x2="260" y2="470" stroke="#2E7D32" stroke-width="2"/>
+                <line x1="550" y1="485" x2="560" y2="465" stroke="#2E7D32" stroke-width="2"/>
+                <line x1="600" y1="495" x2="610" y2="475" stroke="#2E7D32" stroke-width="2"/>
+            </g>
+            
+            <!-- 九尾狐 - 身体部分在后面 -->
+            <g id="fox">
+                <!-- 第9条尾巴（最左） -->
+                <path class="tail" data-tail="9" d="M 400 350 Q 280 300, 250 250 Q 240 240, 245 230 Q 255 220, 265 235 Q 290 280, 400 340" 
+                      fill="#FF8C00" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; -15 400 350; 0 400 350"
+                        dur="2.8s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第8条尾巴 -->
+                <path class="tail" data-tail="8" d="M 400 350 Q 300 310, 280 260 Q 275 250, 280 240 Q 290 235, 295 245 Q 310 290, 400 345" 
+                      fill="#FF9500" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; -12 400 350; 0 400 350"
+                        dur="2.7s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第7条尾巴 -->
+                <path class="tail" data-tail="7" d="M 400 350 Q 320 320, 310 270 Q 308 260, 313 250 Q 323 245, 328 255 Q 335 300, 400 345" 
+                      fill="#FFA500" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; -9 400 350; 0 400 350"
+                        dur="2.6s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第6条尾巴 -->
+                <path class="tail" data-tail="6" d="M 400 350 Q 350 330, 340 280 Q 338 270, 343 260 Q 353 255, 358 265 Q 360 310, 400 345" 
+                      fill="#FFB300" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; -6 400 350; 0 400 350"
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第5条尾巴（中间） -->
+                <path class="tail" data-tail="5" d="M 400 350 Q 380 340, 375 290 Q 374 280, 379 270 Q 389 265, 394 275 Q 390 320, 400 345" 
+                      fill="#FFC107" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; -3 400 350; 0 400 350"
+                        dur="2.3s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第4条尾巴 -->
+                <path class="tail" data-tail="4" d="M 400 350 Q 430 340, 435 290 Q 436 280, 431 270 Q 421 265, 416 275 Q 420 320, 400 345" 
+                      fill="#FFB300" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; 6 400 350; 0 400 350"
+                        dur="2.1s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第3条尾巴 -->
+                <path class="tail" data-tail="3" d="M 400 350 Q 470 330, 480 280 Q 482 270, 477 260 Q 467 255, 462 265 Q 460 310, 400 345" 
+                      fill="#FFA500" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; 9 400 350; 0 400 350"
+                        dur="2.4s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第2条尾巴 -->
+                <path class="tail" data-tail="2" d="M 400 350 Q 510 310, 530 260 Q 535 250, 530 240 Q 520 235, 515 245 Q 500 290, 400 345" 
+                      fill="#FF9500" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; 12 400 350; 0 400 350"
+                        dur="2.2s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 第1条尾巴（最右） -->
+                <path class="tail" data-tail="1" d="M 400 350 Q 540 300, 570 250 Q 575 240, 570 230 Q 560 220, 555 235 Q 530 280, 400 340" 
+                      fill="#FF8C00" stroke="#FF6600" stroke-width="2">
+                    <animateTransform 
+                        attributeName="transform"
+                        type="rotate"
+                        values="0 400 350; 15 400 350; 0 400 350"
+                        dur="2s"
+                        repeatCount="indefinite"
+                    />
+                </path>
+                
+                <!-- 后腿 -->
+                <ellipse cx="380" cy="400" rx="25" ry="45" fill="#FF8C00" stroke="#FF6600" stroke-width="2"/>
+                <ellipse cx="420" cy="400" rx="25" ry="45" fill="#FF8C00" stroke="#FF6600" stroke-width="2"/>
+                
+                <!-- 身体 -->
+                <ellipse cx="400" cy="350" rx="60" ry="70" fill="#FF8C00" stroke="#FF6600" stroke-width="3"/>
+                
+                <!-- 胸部白色毛发 -->
+                <ellipse cx="400" cy="360" rx="35" ry="40" fill="#FFE4B5" opacity="0.8"/>
+                
+                <!-- 前腿 -->
+                <ellipse cx="370" cy="390" rx="20" ry="50" fill="#FF8C00" stroke="#FF6600" stroke-width="2"/>
+                <ellipse cx="430" cy="390" rx="20" ry="50" fill="#FF8C00" stroke="#FF6600" stroke-width="2"/>
+                
+                <!-- 爪子 -->
+                <ellipse cx="370" cy="430" rx="18" ry="12" fill="#D2691E"/>
+                <ellipse cx="430" cy="430" rx="18" ry="12" fill="#D2691E"/>
+                <ellipse cx="380" cy="435" rx="18" ry="12" fill="#D2691E"/>
+                <ellipse cx="420" cy="435" rx="18" ry="12" fill="#D2691E"/>
+                
+                <!-- 头部 -->
+                <ellipse cx="400" cy="290" rx="50" ry="45" fill="#FF8C00" stroke="#FF6600" stroke-width="3"/>
+                
+                <!-- 耳朵 -->
+                <path d="M 360 270 L 345 240 L 365 265 Z" fill="#FF8C00" stroke="#FF6600" stroke-width="2"/>
+                <path d="M 440 270 L 455 240 L 435 265 Z" fill="#FF8C00" stroke="#FF6600" stroke-width="2"/>
+                <path d="M 360 268 L 352 250 L 365 265 Z" fill="#FFE4B5"/>
+                <path d="M 440 268 L 448 250 L 435 265 Z" fill="#FFE4B5"/>
+                
+                <!-- 脸部白色毛发 -->
+                <ellipse cx="400" cy="300" rx="30" ry="25" fill="#FFE4B5" opacity="0.9"/>
+                
+                <!-- 眼睛 -->
+                <ellipse cx="380" cy="285" rx="8" ry="12" fill="white"/>
+                <ellipse cx="420" cy="285" rx="8" ry="12" fill="white"/>
+                <ellipse cx="382" cy="288" rx="5" ry="8" fill="black">
+                    <animate attributeName="ry" values="8;0;8" dur="3s" repeatCount="indefinite"/>
+                </ellipse>
+                <ellipse cx="418" cy="288" rx="5" ry="8" fill="black">
+                    <animate attributeName="ry" values="8;0;8" dur="3s" repeatCount="indefinite"/>
+                </ellipse>
+                
+                <!-- 高光 -->
+                <ellipse cx="380" cy="283" rx="2" ry="3" fill="white" opacity="0.8"/>
+                <ellipse cx="420" cy="283" rx="2" ry="3" fill="white" opacity="0.8"/>
+                
+                <!-- 鼻子 -->
+                <ellipse cx="400" cy="300" rx="6" ry="8" fill="#8B4513"/>
+                
+                <!-- 嘴巴 -->
+                <path d="M 400 305 Q 390 310, 385 308" stroke="#8B4513" stroke-width="2" fill="none"/>
+                <path d="M 400 305 Q 410 310, 415 308" stroke="#8B4513" stroke-width="2" fill="none"/>
+                
+                <!-- 胡须 -->
+                <line x1="340" y1="295" x2="310" y2="290" stroke="#8B4513" stroke-width="1.5"/>
+                <line x1="340" y1="300" x2="310" y2="300" stroke="#8B4513" stroke-width="1.5"/>
+                <line x1="340" y1="305" x2="310" y2="310" stroke="#8B4513" stroke-width="1.5"/>
+                <line x1="460" y1="295" x2="490" y2="290" stroke="#8B4513" stroke-width="1.5"/>
+                <line x1="460" y1="300" x2="490" y2="300" stroke="#8B4513" stroke-width="1.5"/>
+                <line x1="460" y1="305" x2="490" y2="310" stroke="#8B4513" stroke-width="1.5"/>
+            </g>
+            
+            <!-- 云朵装饰 -->
+            <g opacity="0.4">
+                <ellipse cx="100" cy="80" rx="40" ry="25" fill="white"/>
+                <ellipse cx="130" cy="80" rx="35" ry="20" fill="white"/>
+                <ellipse cx="115" cy="70" rx="30" ry="18" fill="white"/>
+                
+                <ellipse cx="650" cy="100" rx="50" ry="30" fill="white"/>
+                <ellipse cx="690" cy="100" rx="40" ry="25" fill="white"/>
+                <ellipse cx="670" cy="85" rx="35" ry="20" fill="white"/>
+            </g>
+            
+            <!-- 山海经文字 -->
+            <text x="400" y="550" font-family="STKaiti, KaiTi, serif" font-size="24" fill="#2E7D32" text-anchor="middle" font-weight="bold">
+                青丘之山有獸焉，其狀如狐而九尾
+            </text>
+            
+            <!-- 骷髅容器 -->
+            <g id="skullContainer"></g>
+        </svg>
+        
+        <div class="description">
+            <p><strong>《山海經·南山經》記載：</strong></p>
+            <p>「青丘之山，有獸焉，其狀如狐而九尾，其音如嬰兒，能食人，食者不蠱。」</p>
+            <p>九尾狐是祥瑞之獸，象徵著天下太平、子孫繁盛。</p>
+            <p style="color: #d2691e; font-weight: bold; margin-top: 15px;">💀 點擊九尾狐的尾巴，看看會發生什麼... 💀</p>
+        </div>
+    </div>
+    
+    <script>
+        // 创建骷髅SVG的函数
+        function createSkull(x, y, tailNumber) {
+            const skullContainer = document.getElementById('skullContainer');
+            
+            // 创建骷髅组
+            const skullGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            skullGroup.setAttribute('class', 'skull');
+            skullGroup.setAttribute('transform', `translate(${x}, ${y})`);
+            
+            // 骷髅头骨
+            const skull = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            skull.setAttribute('cx', '0');
+            skull.setAttribute('cy', '0');
+            skull.setAttribute('rx', '30');
+            skull.setAttribute('ry', '35');
+            skull.setAttribute('fill', '#F5F5DC');
+            skull.setAttribute('stroke', '#696969');
+            skull.setAttribute('stroke-width', '2');
+            
+            // 左眼眶
+            const leftEye = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            leftEye.setAttribute('cx', '-12');
+            leftEye.setAttribute('cy', '-5');
+            leftEye.setAttribute('rx', '8');
+            leftEye.setAttribute('ry', '12');
+            leftEye.setAttribute('fill', '#000000');
+            
+            // 右眼眶
+            const rightEye = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            rightEye.setAttribute('cx', '12');
+            rightEye.setAttribute('cy', '-5');
+            rightEye.setAttribute('rx', '8');
+            rightEye.setAttribute('ry', '12');
+            rightEye.setAttribute('fill', '#000000');
+            
+            // 鼻孔
+            const nose = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            nose.setAttribute('d', 'M -3 8 L 0 15 L 3 8 Z');
+            nose.setAttribute('fill', '#000000');
+            
+            // 嘴巴（牙齿）
+            const mouth = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            mouth.setAttribute('d', 'M -15 20 Q 0 28 15 20');
+            mouth.setAttribute('stroke', '#000000');
+            mouth.setAttribute('stroke-width', '2');
+            mouth.setAttribute('fill', 'none');
+            
+            // 牙齿
+            const tooth1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            tooth1.setAttribute('x1', '-10');
+            tooth1.setAttribute('y1', '20');
+            tooth1.setAttribute('x2', '-10');
+            tooth1.setAttribute('y2', '26');
+            tooth1.setAttribute('stroke', '#000000');
+            tooth1.setAttribute('stroke-width', '2');
+            
+            const tooth2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            tooth2.setAttribute('x1', '-3');
+            tooth2.setAttribute('y1', '22');
+            tooth2.setAttribute('x2', '-3');
+            tooth2.setAttribute('y2', '28');
+            tooth2.setAttribute('stroke', '#000000');
+            tooth2.setAttribute('stroke-width', '2');
+            
+            const tooth3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            tooth3.setAttribute('x1', '3');
+            tooth3.setAttribute('y1', '22');
+            tooth3.setAttribute('x2', '3');
+            tooth3.setAttribute('y2', '28');
+            tooth3.setAttribute('stroke', '#000000');
+            tooth3.setAttribute('stroke-width', '2');
+            
+            const tooth4 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            tooth4.setAttribute('x1', '10');
+            tooth4.setAttribute('y1', '20');
+            tooth4.setAttribute('x2', '10');
+            tooth4.setAttribute('y2', '26');
+            tooth4.setAttribute('stroke', '#000000');
+            tooth4.setAttribute('stroke-width', '2');
+            
+            // 尾巴编号文字
+            const tailText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            tailText.setAttribute('x', '0');
+            tailText.setAttribute('y', '50');
+            tailText.setAttribute('text-anchor', 'middle');
+            tailText.setAttribute('font-size', '14');
+            tailText.setAttribute('font-weight', 'bold');
+            tailText.setAttribute('fill', '#d2691e');
+            tailText.textContent = `尾巴 ${tailNumber}`;
+            
+            // 组装骷髅
+            skullGroup.appendChild(skull);
+            skullGroup.appendChild(leftEye);
+            skullGroup.appendChild(rightEye);
+            skullGroup.appendChild(nose);
+            skullGroup.appendChild(mouth);
+            skullGroup.appendChild(tooth1);
+            skullGroup.appendChild(tooth2);
+            skullGroup.appendChild(tooth3);
+            skullGroup.appendChild(tooth4);
+            skullGroup.appendChild(tailText);
+            
+            // 添加到容器
+            skullContainer.appendChild(skullGroup);
+            
+            // 动画：弹出、旋转、淡出
+            const animation = skullGroup.animate([
+                { 
+                    opacity: 0, 
+                    transform: `translate(${x}px, ${y}px) scale(0) rotate(0deg)` 
+                },
+                { 
+                    opacity: 1, 
+                    transform: `translate(${x}px, ${y - 80}px) scale(1.2) rotate(${Math.random() * 360}deg)`,
+                    offset: 0.4
+                },
+                { 
+                    opacity: 1, 
+                    transform: `translate(${x}px, ${y - 100}px) scale(1) rotate(${Math.random() * 720}deg)`,
+                    offset: 0.7
+                },
+                { 
+                    opacity: 0, 
+                    transform: `translate(${x}px, ${y - 150}px) scale(0.5) rotate(${Math.random() * 1080}deg)` 
+                }
+            ], {
+                duration: 2000,
+                easing: 'ease-out'
+            });
+            
+            // 动画结束后移除元素
+            animation.onfinish = () => {
+                skullGroup.remove();
+            };
+        }
+        
+        // 为所有尾巴添加点击事件
+        document.addEventListener('DOMContentLoaded', () => {
+            const tails = document.querySelectorAll('.tail');
+            
+            tails.forEach(tail => {
+                tail.addEventListener('click', (e) => {
+                    // 获取点击位置
+                    const svg = document.querySelector('svg');
+                    const pt = svg.createSVGPoint();
+                    pt.x = e.clientX;
+                    pt.y = e.clientY;
+                    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+                    
+                    // 获取尾巴编号
+                    const tailNumber = tail.getAttribute('data-tail');
+                    
+                    // 创建骷髅
+                    createSkull(svgP.x, svgP.y, tailNumber);
+                    
+                    // 添加音效（如果需要）
+                    // const audio = new Audio('sound.mp3');
+                    // audio.play();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
