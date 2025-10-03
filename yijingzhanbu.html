@@ -232,7 +232,7 @@
 
         .yao {
             width: 100%;
-            max-width: 250px;
+            max-width: 280px;
             height: 20px;
             background: #654321;
             border-radius: 5px;
@@ -315,6 +315,34 @@
             margin: 20px 0;
         }
 
+        .hexagram-comparison {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .hexagram-single {
+            flex: 1;
+            min-width: 200px;
+            max-width: 350px;
+        }
+
+        .hexagram-label {
+            font-size: 1.2em;
+            color: #8B6F47;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .hexagram-arrow {
+            font-size: 2em;
+            color: #D4A574;
+            align-self: center;
+        }
+
         .hexagram-name {
             font-size: 2em;
             color: #654321;
@@ -326,6 +354,38 @@
             color: #8B6F47;
             font-size: 1.1em;
             margin: 10px 0;
+        }
+
+        .original-text {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .original-text h3 {
+            color: #654321;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #D4A574;
+            padding-bottom: 10px;
+        }
+
+        .original-text .text-content {
+            color: #654321;
+            line-height: 2;
+            font-size: 1.05em;
+            margin: 10px 0;
+        }
+
+        .original-text .changing-yao-text {
+            background: rgba(218, 165, 32, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 8px 0;
+            border-left: 3px solid #DAA520;
         }
 
         .interpretation {
@@ -365,7 +425,18 @@
 
         .interpretation p {
             margin: 15px 0;
-            text-indent: 2em;
+        }
+
+        .interpretation .section-title {
+            color: #654321;
+            font-size: 1.25em;
+            font-weight: bold;
+            margin: 25px 0 15px 0;
+            padding-left: 15px;
+            border-left: 5px solid #D4A574;
+            background: linear-gradient(90deg, rgba(212, 165, 116, 0.15) 0%, transparent 100%);
+            padding: 12px 15px;
+            border-radius: 5px;
         }
 
         .question-display {
@@ -407,36 +478,16 @@
             margin: 12px auto;
             gap: 15px;
             width: 100%;
-            animation: fadeInUp 0.6s ease-out backwards;
-        }
-
-        .loading-yao-line:nth-child(1) { animation-delay: 0.1s; }
-        .loading-yao-line:nth-child(2) { animation-delay: 0.2s; }
-        .loading-yao-line:nth-child(3) { animation-delay: 0.3s; }
-        .loading-yao-line:nth-child(4) { animation-delay: 0.4s; }
-        .loading-yao-line:nth-child(5) { animation-delay: 0.5s; }
-        .loading-yao-line:nth-child(6) { animation-delay: 0.6s; }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .loading-yao {
             width: 100%;
-            max-width: 250px;
+            max-width: 280px;
             height: 20px;
             background: linear-gradient(90deg, #654321 0%, #8B6F47 50%, #654321 100%);
             background-size: 200% 100%;
             border-radius: 5px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            animation: shimmer 2s ease-in-out infinite;
         }
 
         .loading-yao.broken {
@@ -461,28 +512,32 @@
         .loading-yao.changing {
             background: linear-gradient(90deg, #DAA520 0%, #FFD700 25%, #B8860B 50%, #FFD700 75%, #DAA520 100%);
             background-size: 200% 100%;
-            animation: shimmer 1.5s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
         }
 
         .loading-yao.changing.broken::before,
         .loading-yao.changing.broken::after {
             background: linear-gradient(90deg, #DAA520 0%, #FFD700 25%, #B8860B 50%, #FFD700 75%, #DAA520 100%);
             background-size: 200% 100%;
-            animation: shimmer 1.5s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
         }
 
-        @keyframes shimmer {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        /* 累積顯現動畫 - 從初爻到上爻 */
+        .loading-yao-line {
+            opacity: 0;
+            animation: yaoAccumulate 3s ease-in-out infinite;
         }
 
-        @keyframes glowPulse {
-            0%, 100% { 
-                box-shadow: 0 2px 8px rgba(218, 165, 32, 0.3), 0 0 15px rgba(218, 165, 32, 0.2);
-            }
-            50% { 
-                box-shadow: 0 2px 8px rgba(218, 165, 32, 0.6), 0 0 25px rgba(218, 165, 32, 0.4);
-            }
+        .loading-yao-line:nth-child(1) { animation-delay: 0s; }
+        .loading-yao-line:nth-child(2) { animation-delay: 0.4s; }
+        .loading-yao-line:nth-child(3) { animation-delay: 0.8s; }
+        .loading-yao-line:nth-child(4) { animation-delay: 1.2s; }
+        .loading-yao-line:nth-child(5) { animation-delay: 1.6s; }
+        .loading-yao-line:nth-child(6) { animation-delay: 2s; }
+
+        @keyframes yaoAccumulate {
+            0% { opacity: 0; transform: translateY(10px) scale(0.8); }
+            15% { opacity: 1; transform: translateY(0) scale(1); }
+            85% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-10px) scale(0.8); }
         }
 
         .loading-text {
@@ -640,23 +695,37 @@
             </div>
             
             <div id="result" style="display: none;">
-                <div id="downloadable-content">
-                    <div class="question-display">
-                        <h4>📿 占卜問題</h4>
-                        <p id="questionDisplay"></p>
-                    </div>
-
-                    <div class="hexagram-display">
-                        <div id="finalHexagram"></div>
-                        <div class="hexagram-name" id="hexagramName"></div>
-                        <div class="hexagram-info" id="hexagramInfo"></div>
-                    </div>
-
-                    <div class="interpretation" id="interpretation"></div>
+                <div class="question-display">
+                    <h4>📿 占卜問題</h4>
+                    <p id="questionDisplay"></p>
                 </div>
 
-                <div class="button-container" style="margin-top: 30px;">
-                    <button class="button" onclick="downloadAsImage()">📥 下載解讀報告</button>
+                <div class="hexagram-display">
+                    <div id="finalHexagram"></div>
+                    <div class="hexagram-name" id="hexagramName"></div>
+                    <div class="hexagram-info" id="hexagramInfo"></div>
+                </div>
+
+                <div class="original-text" id="originalText"></div>
+
+                <div class="button-container" style="margin-top: 20px;" id="interpretButton">
+                    <button class="button" onclick="startInterpretation()">🔮 卦象解讀</button>
+                </div>
+
+                <div id="interpretationSection" style="display: none;">
+                    <div class="loading" id="aiLoading">
+                        <div class="loading-hexagram" id="aiLoadingHexagram"></div>
+                        <p class="loading-text">正在解讀卦象，請稍候...</p>
+                        <p class="loading-subtext">誠心感應天地，智慧即將顯現</p>
+                    </div>
+                    
+                    <div id="aiResult" style="display: none;">
+                        <div class="interpretation" id="interpretation"></div>
+                    </div>
+                </div>
+
+                <div class="button-container" style="margin-top: 30px;" id="actionButtons">
+                    <button class="button" onclick="downloadAsImage()" id="downloadBtn" style="display: none;">📥 下載解讀報告</button>
                     <button class="button" onclick="restart()">🔄 重新占卜</button>
                 </div>
             </div>
@@ -1094,9 +1163,6 @@
         async function calculateResult() {
             showStep(3);
             
-            // 顯示等待動畫的卦象
-            showLoadingHexagram();
-            
             // 構建本卦
             const originalHexagram = gameState.yaos.map(y => 
                 (y === 7 || y === 9) ? '1' : '0'
@@ -1113,19 +1179,42 @@
             const changedGua = HEXAGRAMS[changedHexagram];
             
             // 根據變爻數量確定解卦方法
-            const interpretation = determineInterpretation(
+            gameState.interpretation = determineInterpretation(
                 originalGua, 
                 changedGua, 
                 gameState.changingYaos,
                 gameState.yaos
             );
             
+            // 顯示卦象和原文
+            displayHexagramAndOriginalText(gameState.interpretation);
+        }
+
+        function displayHexagramAndOriginalText(interpretation) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+            
+            displayHexagramInfo(interpretation);
+            displayOriginalText(interpretation);
+        }
+
+        async function startInterpretation() {
+            // 隱藏解讀按鈕
+            document.getElementById('interpretButton').style.display = 'none';
+            
+            // 顯示解讀區域和等待動畫
+            document.getElementById('interpretationSection').style.display = 'block';
+            showLoadingHexagram();
+            
             // 調用AI生成解讀
-            await generateAIInterpretation(interpretation);
+            await generateAIInterpretation(gameState.interpretation);
+            
+            // 顯示下載按鈕
+            document.getElementById('downloadBtn').style.display = 'inline-block';
         }
 
         function showLoadingHexagram() {
-            const loadingDisplay = document.getElementById('loadingHexagram');
+            const loadingDisplay = document.getElementById('aiLoadingHexagram');
             let html = '';
             
             // 從下往上顯示（第一爻在最下方）
@@ -1239,12 +1328,19 @@
 
 請根據以上卦象，結合求卦者的問題，給出一個深入、具體、有說服力的解讀。你的解讀應該包括：
 
-1. **卦象總述**：簡要說明這個卦象的整體含義和象徵
-2. **針對問題的分析**：將卦象與求卦者的具體問題結合，給出明確的指引
-3. **行動建議**：提供具體可行的建議，幫助求卦者做出決策
-4. **注意事項**：提醒求卦者需要注意的風險或機會
+**卦象總述**
+簡要說明這個卦象的整體含義和象徵
 
-請用溫和、智慧、充滿洞察力的語氣，幫助求卦者理解卦象的深意。字數控制在500-800字之間。`;
+**針對問題的分析**
+將卦象與求卦者的具體問題結合，給出明確的指引
+
+**行動建議**
+提供具體可行的建議，幫助求卦者做出決策
+
+**注意事項**
+提醒求卦者需要注意的風險或機會
+
+請用溫和、智慧、充滿洞察力的語氣，幫助求卦者理解卦象的深意。內容在500-700字之間即可，不需要統計字數。`;
 
             try {
                 const response = await callDeepSeek([
@@ -1277,21 +1373,69 @@
             // 顯示問題
             document.getElementById('questionDisplay').textContent = gameState.question;
             
-            // 顯示卦象圖
-            let hexagramHtml = '<div>';
-            for (let i = gameState.yaos.length - 1; i >= 0; i--) {
-                const yao = gameState.yaos[i];
-                const isYang = (yao === 7 || yao === 9);
-                const isChanging = (yao === 6 || yao === 9);
+            let hexagramHtml = '';
+            
+            if (numChanging > 0) {
+                // 有變爻：左右並排顯示本卦和變卦
+                hexagramHtml = '<div class="hexagram-comparison">';
                 
-                hexagramHtml += `<div class="yao-line">
-                    <span class="yao-number">${getYaoName(i)}</span>
-                    <div class="yao-container">
-                        <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
-                    </div>
-                </div>`;
+                // 本卦（左側）
+                hexagramHtml += '<div class="hexagram-single">';
+                hexagramHtml += '<div class="hexagram-label">本卦</div>';
+                for (let i = gameState.yaos.length - 1; i >= 0; i--) {
+                    const yao = gameState.yaos[i];
+                    const isYang = (yao === 7 || yao === 9);
+                    const isChanging = (yao === 6 || yao === 9);
+                    
+                    hexagramHtml += `<div class="yao-line">
+                        <span class="yao-number">${getYaoName(i)}</span>
+                        <div class="yao-container">
+                            <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                        </div>
+                    </div>`;
+                }
+                hexagramHtml += '</div>';
+                
+                // 箭頭
+                hexagramHtml += '<div class="hexagram-arrow">→</div>';
+                
+                // 變卦（右側）
+                hexagramHtml += '<div class="hexagram-single">';
+                hexagramHtml += '<div class="hexagram-label">變卦</div>';
+                for (let i = gameState.yaos.length - 1; i >= 0; i--) {
+                    const yao = gameState.yaos[i];
+                    const wasChanging = (yao === 6 || yao === 9);
+                    let newIsYang;
+                    if (yao === 6) newIsYang = true;  // 老陰變陽
+                    else if (yao === 9) newIsYang = false; // 老陽變陰
+                    else newIsYang = (yao === 7 || yao === 9);
+                    
+                    hexagramHtml += `<div class="yao-line">
+                        <span class="yao-number">${getYaoName(i)}</span>
+                        <div class="yao-container">
+                            <div class="yao ${!newIsYang ? 'broken' : ''} ${wasChanging ? 'changing' : ''}"></div>
+                        </div>
+                    </div>`;
+                }
+                hexagramHtml += '</div>';
+                
+                hexagramHtml += '</div>';
+            } else {
+                // 無變爻：單獨顯示
+                hexagramHtml = '<div>';
+                for (let i = gameState.yaos.length - 1; i >= 0; i--) {
+                    const yao = gameState.yaos[i];
+                    const isYang = (yao === 7 || yao === 9);
+                    
+                    hexagramHtml += `<div class="yao-line">
+                        <span class="yao-number">${getYaoName(i)}</span>
+                        <div class="yao-container">
+                            <div class="yao ${!isYang ? 'broken' : ''}"></div>
+                        </div>
+                    </div>`;
+                }
+                hexagramHtml += '</div>';
             }
-            hexagramHtml += '</div>';
             
             document.getElementById('finalHexagram').innerHTML = hexagramHtml;
             document.getElementById('hexagramName').textContent = 
@@ -1300,22 +1444,61 @@
                 `本卦：第${originalGua.number}卦 ${originalGua.name}${numChanging > 0 ? `　｜　變卦：第${changedGua.number}卦 ${changedGua.name}` : ''}`;
         }
 
+        function displayOriginalText(interpretation) {
+            const { originalGua, changedGua, method, textToUse, originalTexts, changedTexts, numChanging, changingYaos } = interpretation;
+            
+            let html = '<h3>📜 周易原文</h3>';
+            html += `<div class="text-content"><strong>卦辭：</strong>${originalTexts.gua}</div>`;
+            
+            if (numChanging > 0 && changingYaos.length > 0) {
+                html += '<div class="text-content" style="margin-top: 15px;"><strong>變爻：</strong></div>';
+                changingYaos.forEach(pos => {
+                    html += `<div class="changing-yao-text">${originalTexts.yao[pos] || '爻辭暫缺'}</div>`;
+                });
+            }
+            
+            if (numChanging === 6 && originalTexts.yong) {
+                html += `<div class="text-content" style="margin-top: 15px;"><strong>用辭：</strong>${originalTexts.yong}</div>`;
+            }
+            
+            if (numChanging >= 3) {
+                html += `<div class="text-content" style="margin-top: 15px;"><strong>變卦卦辭：</strong>${changedTexts.gua}</div>`;
+            }
+            
+            html += `<div class="text-content" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #D4A574;"><strong>斷卦方法：</strong>${method}</div>`;
+            html += `<div class="text-content"><strong>依據經文：</strong>${textToUse}</div>`;
+            
+            document.getElementById('originalText').innerHTML = html;
+        }
+
         function displayInterpretation(text) {
-            document.getElementById('loading').style.display = 'none';
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
+            document.getElementById('aiLoading').style.display = 'none';
+            document.getElementById('aiResult').style.display = 'block';
             
             const interpretationDiv = document.getElementById('interpretation');
             
-            // 如果是AI生成的結構化文本，直接顯示
-            if (text.includes('<div')) {
-                interpretationDiv.innerHTML = text;
+            // 處理文本，將 **標題** 轉換為樣式化的標題
+            let processedText = text
+                .replace(/\*\*([^*]+)\*\*/g, '<div class="section-title">$1</div>')
+                .replace(/字數[統统]計.*$/gm, ''); // 移除字數統計
+            
+            // 如果已經包含HTML標籤，直接使用
+            if (processedText.includes('<div')) {
+                interpretationDiv.innerHTML = '<h3>🔮 卦象解讀</h3>' + processedText;
             } else {
-                // 否則進行簡單的段落分割
-                const paragraphs = text.split('\n\n').filter(p => p.trim());
+                // 否則進行段落分割
+                const paragraphs = processedText.split('\n\n').filter(p => p.trim());
                 let html = '<h3>🔮 卦象解讀</h3>';
                 paragraphs.forEach(p => {
-                    html += `<div class="interpretation-section">${p.trim()}</div>`;
+                    const trimmed = p.trim();
+                    if (trimmed) {
+                        // 如果段落已經是標題，直接使用
+                        if (trimmed.startsWith('<div class="section-title">')) {
+                            html += trimmed;
+                        } else {
+                            html += `<p>${trimmed}</p>`;
+                        }
+                    }
                 });
                 interpretationDiv.innerHTML = html;
             }
@@ -1340,7 +1523,6 @@
         }
 
         async function downloadAsImage() {
-            const content = document.getElementById('downloadable-content');
             const button = event.target;
             
             // 禁用按鈕並顯示處理中
@@ -1348,25 +1530,56 @@
             button.textContent = '⏳ 生成中...';
             
             try {
+                // 創建一個包含所有內容的容器
+                const downloadContainer = document.createElement('div');
+                downloadContainer.style.padding = '40px';
+                downloadContainer.style.backgroundColor = '#FFF8F0';
+                downloadContainer.style.maxWidth = '900px';
+                downloadContainer.style.margin = '0 auto';
+                
+                // 複製問題
+                const questionClone = document.querySelector('.question-display').cloneNode(true);
+                downloadContainer.appendChild(questionClone);
+                
+                // 複製卦象
+                const hexagramClone = document.querySelector('.hexagram-display').cloneNode(true);
+                downloadContainer.appendChild(hexagramClone);
+                
+                // 複製原文
+                const originalTextClone = document.getElementById('originalText').cloneNode(true);
+                downloadContainer.appendChild(originalTextClone);
+                
+                // 複製解讀（如果存在）
+                const interpretationElem = document.getElementById('interpretation');
+                if (interpretationElem && interpretationElem.innerHTML.trim()) {
+                    const interpretationClone = document.createElement('div');
+                    interpretationClone.className = 'interpretation';
+                    interpretationClone.innerHTML = interpretationElem.innerHTML;
+                    downloadContainer.appendChild(interpretationClone);
+                }
+                
+                // 暫時添加到body
+                downloadContainer.style.position = 'absolute';
+                downloadContainer.style.left = '-9999px';
+                document.body.appendChild(downloadContainer);
+                
                 // 暫時隱藏變爻動畫以便截圖
-                const changingYaos = content.querySelectorAll('.yao.changing');
+                const changingYaos = downloadContainer.querySelectorAll('.yao.changing');
                 changingYaos.forEach(yao => {
                     yao.style.animation = 'none';
                 });
                 
                 // 使用 html2canvas 生成圖片
-                const canvas = await html2canvas(content, {
+                const canvas = await html2canvas(downloadContainer, {
                     backgroundColor: '#FFF8F0',
-                    scale: 2, // 提高清晰度
+                    scale: 2,
                     logging: false,
                     useCORS: true,
                     allowTaint: true
                 });
                 
-                // 恢復動畫
-                changingYaos.forEach(yao => {
-                    yao.style.animation = '';
-                });
+                // 移除臨時容器
+                document.body.removeChild(downloadContainer);
                 
                 // 轉換為圖片並下載
                 canvas.toBlob(blob => {
