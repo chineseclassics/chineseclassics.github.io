@@ -516,28 +516,69 @@
             margin-bottom: 8px;
         }
 
+        .date-comparison {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+
         .date-row {
             display: flex;
-            align-items: baseline;
-            gap: 8px;
-            margin-bottom: 4px;
+            align-items: center;
+            gap: 3px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .date-row:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateX(3px);
         }
 
         .date-label {
             font-size: 0.85em;
             color: #8B6F47;
             font-weight: 600;
-            min-width: 35px;
+            min-width: 40px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.2), rgba(139, 111, 71, 0.15));
+            text-align: center;
+        }
+
+        .date-separator {
+            font-size: 0.9em;
+            color: #D4A574;
+            margin: 0 5px;
+        }
+
+        .date-part {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 1px;
         }
 
         .date-value {
             font-size: 1em;
             color: #654321;
+            font-weight: 600;
+        }
+
+        .date-unit {
+            font-size: 0.85em;
+            color: #8B6F47;
             font-weight: 500;
         }
 
-        .date-value.lunar {
+        .date-row.lunar .date-value {
             color: #A67B5B;
+        }
+
+        .date-row.lunar .date-unit {
+            color: #B8936D;
         }
 
         .bazi-display {
@@ -848,12 +889,26 @@
                 font-size: 1.3em;
             }
 
+            .date-comparison {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
             .date-row {
                 flex-wrap: wrap;
+                gap: 2px;
+            }
+
+            .date-part {
+                gap: 0px;
             }
 
             .date-value {
                 font-size: 0.9em;
+            }
+
+            .date-unit {
+                font-size: 0.75em;
             }
 
             .pillars-container {
@@ -881,18 +936,39 @@
             <div class="datetime-section">
                 <div class="time-display">
                     <div class="solar-time" id="solarTime">--:--:--</div>
-                    <div class="date-row">
-                        <span class="date-label">公曆</span>
-                        <span class="date-value" id="solarYear">----年</span>
-                        <span class="date-value" id="solarMonth">--月</span>
-                        <span class="date-value" id="solarDay">--日</span>
-                        <span class="date-value" id="solarWeek">星期-</span>
-                    </div>
-                    <div class="date-row">
-                        <span class="date-label">農曆</span>
-                        <span class="date-value lunar" id="lunarYear">----年</span>
-                        <span class="date-value lunar" id="lunarMonth">--月</span>
-                        <span class="date-value lunar" id="lunarDay">--日</span>
+                    <div class="date-comparison">
+                        <div class="date-row">
+                            <span class="date-label">公曆</span>
+                            <div class="date-part">
+                                <span class="date-value" id="solarYear">----</span>
+                                <span class="date-unit">年</span>
+                            </div>
+                            <div class="date-part">
+                                <span class="date-value" id="solarMonth">--</span>
+                                <span class="date-unit">月</span>
+                            </div>
+                            <div class="date-part">
+                                <span class="date-value" id="solarDay">--</span>
+                                <span class="date-unit">日</span>
+                            </div>
+                            <span class="date-separator">·</span>
+                            <span class="date-value" id="solarWeek">星期-</span>
+                        </div>
+                        <div class="date-row lunar">
+                            <span class="date-label">農曆</span>
+                            <div class="date-part">
+                                <span class="date-value" id="lunarYear">----</span>
+                                <span class="date-unit">年</span>
+                            </div>
+                            <div class="date-part">
+                                <span class="date-value" id="lunarMonth">--</span>
+                                <span class="date-unit">月</span>
+                            </div>
+                            <div class="date-part">
+                                <span class="date-value" id="lunarDay">--</span>
+                                <span class="date-unit">日</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1048,16 +1124,16 @@
             // 更新公曆日期
             const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
             const weekday = weekdays[now.getDay()];
-            document.getElementById('solarYear').textContent = `${now.getFullYear()}年`;
-            document.getElementById('solarMonth').textContent = `${now.getMonth() + 1}月`;
-            document.getElementById('solarDay').textContent = `${now.getDate()}日`;
+            document.getElementById('solarYear').textContent = now.getFullYear();
+            document.getElementById('solarMonth').textContent = now.getMonth() + 1;
+            document.getElementById('solarDay').textContent = now.getDate();
             document.getElementById('solarWeek').textContent = `星期${weekday}`;
             
             // 更新農曆日期（使用干支年）
             const lunarYearGanZhi = lunar.getYearInGanZhi(); // 干支年，如：乙巳
             const lunarMonth = lunar.getMonthInChinese();
             const lunarDay = lunar.getDayInChinese();
-            document.getElementById('lunarYear').textContent = `${lunarYearGanZhi}年`;
+            document.getElementById('lunarYear').textContent = lunarYearGanZhi;
             document.getElementById('lunarMonth').textContent = lunarMonth;
             document.getElementById('lunarDay').textContent = lunarDay;
             
