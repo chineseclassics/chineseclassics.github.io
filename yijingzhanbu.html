@@ -442,6 +442,19 @@
             border-radius: 5px;
         }
 
+        .interpretation strong {
+            color: #8B5A2B;
+            font-weight: 700;
+            font-size: inherit;
+            background: linear-gradient(135deg, rgba(218, 165, 32, 0.12) 0%, rgba(212, 165, 116, 0.08) 100%);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border-left: 3px solid rgba(212, 165, 116, 0.4);
+            padding-left: 8px;
+            display: inline-block;
+            margin: 2px 0;
+        }
+
         .question-display {
             background: linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(139, 111, 71, 0.1) 100%);
             padding: 20px;
@@ -2430,13 +2443,29 @@
             
             const interpretationDiv = document.getElementById('interpretation');
             
-            // 處理文本，將 **標題** 轉換為樣式化的標題
-            let processedText = text
-                .replace(/\*\*([^*]+)\*\*/g, '<div class="section-title">$1</div>')
-                .replace(/字數[統统]計.*$/gm, ''); // 移除字數統計
+            // 定義允許的標題列表
+            const allowedTitles = [
+                '卦象總述',
+                '針對問題的分析',
+                '行動建議',
+                '注意事項',
+                '結語'
+            ];
+            
+            // 處理文本
+            let processedText = text.replace(/字數[統统]計.*$/gm, ''); // 移除字數統計
+            
+            // 只將特定標題轉換為樣式化的標題，其他 ** 保持為加粗
+            allowedTitles.forEach(title => {
+                const regex = new RegExp(`\\*\\*${title}\\*\\*`, 'g');
+                processedText = processedText.replace(regex, `<div class="section-title">${title}</div>`);
+            });
+            
+            // 將剩餘的 **文本** 轉換為 <strong>
+            processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             
             // 如果已經包含HTML標籤，直接使用
-            if (processedText.includes('<div')) {
+            if (processedText.includes('<div') || processedText.includes('<strong>')) {
                 interpretationDiv.innerHTML = '<h3>🔮 卦象解讀</h3>' + processedText;
             } else {
                 // 否則進行段落分割
