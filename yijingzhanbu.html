@@ -517,20 +517,26 @@
         }
 
         .date-comparison {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 12px;
-            align-items: center;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .date-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 50px 1fr;
             align-items: center;
-            gap: 3px;
+            gap: 8px;
             padding: 6px 10px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.5);
             transition: all 0.3s ease;
+        }
+
+        .date-content {
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
 
         .date-row:hover {
@@ -889,12 +895,12 @@
                 font-size: 1.3em;
             }
 
-            .date-comparison {
-                grid-template-columns: 1fr;
-                gap: 8px;
+            .date-row {
+                grid-template-columns: 45px 1fr;
+                gap: 5px;
             }
 
-            .date-row {
+            .date-content {
                 flex-wrap: wrap;
                 gap: 2px;
             }
@@ -939,34 +945,38 @@
                     <div class="date-comparison">
                         <div class="date-row">
                             <span class="date-label">公曆</span>
-                            <div class="date-part">
-                                <span class="date-value" id="solarYear">----</span>
-                                <span class="date-unit">年</span>
+                            <div class="date-content">
+                                <div class="date-part">
+                                    <span class="date-value" id="solarYear">----</span>
+                                    <span class="date-unit">年</span>
+                                </div>
+                                <div class="date-part">
+                                    <span class="date-value" id="solarMonth">--</span>
+                                    <span class="date-unit">月</span>
+                                </div>
+                                <div class="date-part">
+                                    <span class="date-value" id="solarDay">--</span>
+                                    <span class="date-unit">日</span>
+                                </div>
+                                <span class="date-separator">·</span>
+                                <span class="date-value" id="solarWeek">星期-</span>
                             </div>
-                            <div class="date-part">
-                                <span class="date-value" id="solarMonth">--</span>
-                                <span class="date-unit">月</span>
-                            </div>
-                            <div class="date-part">
-                                <span class="date-value" id="solarDay">--</span>
-                                <span class="date-unit">日</span>
-                            </div>
-                            <span class="date-separator">·</span>
-                            <span class="date-value" id="solarWeek">星期-</span>
                         </div>
                         <div class="date-row lunar">
                             <span class="date-label">農曆</span>
-                            <div class="date-part">
-                                <span class="date-value" id="lunarYear">----</span>
-                                <span class="date-unit">年</span>
-                            </div>
-                            <div class="date-part">
-                                <span class="date-value" id="lunarMonth">--</span>
-                                <span class="date-unit">月</span>
-                            </div>
-                            <div class="date-part">
-                                <span class="date-value" id="lunarDay">--</span>
-                                <span class="date-unit">日</span>
+                            <div class="date-content">
+                                <div class="date-part">
+                                    <span class="date-value" id="lunarYear">----</span>
+                                    <span class="date-unit">年</span>
+                                </div>
+                                <div class="date-part">
+                                    <span class="date-value" id="lunarMonth">--</span>
+                                    <span class="date-unit">月</span>
+                                </div>
+                                <div class="date-part">
+                                    <span class="date-value" id="lunarDay">--</span>
+                                    <span class="date-unit">日</span>
+                                </div>
                             </div>
                         </div>
                     </div>
