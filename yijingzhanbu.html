@@ -504,7 +504,7 @@
 
         .time-display {
             flex: 1;
-            min-width: 250px;
+            min-width: 280px;
         }
 
         .solar-time {
@@ -513,27 +513,31 @@
             font-weight: bold;
             letter-spacing: 2px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
-        .solar-date {
-            font-size: 1em;
-            color: #8B6F47;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .lunar-date {
-            font-size: 0.95em;
-            color: #A67B5B;
-            font-weight: 500;
+        .date-row {
             display: flex;
-            align-items: center;
-            gap: 6px;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
         }
 
-        .lunar-icon {
-            font-size: 1.1em;
+        .date-label {
+            font-size: 0.85em;
+            color: #8B6F47;
+            font-weight: 600;
+            min-width: 35px;
+        }
+
+        .date-value {
+            font-size: 1em;
+            color: #654321;
+            font-weight: 500;
+        }
+
+        .date-value.lunar {
+            color: #A67B5B;
         }
 
         .bazi-display {
@@ -844,6 +848,14 @@
                 font-size: 1.3em;
             }
 
+            .date-row {
+                flex-wrap: wrap;
+            }
+
+            .date-value {
+                font-size: 0.9em;
+            }
+
             .pillars-container {
                 gap: 8px;
             }
@@ -869,10 +881,18 @@
             <div class="datetime-section">
                 <div class="time-display">
                     <div class="solar-time" id="solarTime">--:--:--</div>
-                    <div class="solar-date" id="solarDate">----年--月--日 星期-</div>
-                    <div class="lunar-date">
-                        <span class="lunar-icon">🌙</span>
-                        <span id="lunarDate">農曆 ----年 --月 --日</span>
+                    <div class="date-row">
+                        <span class="date-label">公曆</span>
+                        <span class="date-value" id="solarYear">----年</span>
+                        <span class="date-value" id="solarMonth">--月</span>
+                        <span class="date-value" id="solarDay">--日</span>
+                        <span class="date-value" id="solarWeek">星期-</span>
+                    </div>
+                    <div class="date-row">
+                        <span class="date-label">農曆</span>
+                        <span class="date-value lunar" id="lunarYear">----年</span>
+                        <span class="date-value lunar" id="lunarMonth">--月</span>
+                        <span class="date-value lunar" id="lunarDay">--日</span>
                     </div>
                 </div>
 
@@ -1028,15 +1048,18 @@
             // 更新公曆日期
             const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
             const weekday = weekdays[now.getDay()];
-            document.getElementById('solarDate').textContent = 
-                `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekday}`;
+            document.getElementById('solarYear').textContent = `${now.getFullYear()}年`;
+            document.getElementById('solarMonth').textContent = `${now.getMonth() + 1}月`;
+            document.getElementById('solarDay').textContent = `${now.getDate()}日`;
+            document.getElementById('solarWeek').textContent = `星期${weekday}`;
             
-            // 更新農曆日期
-            const lunarYear = lunar.getYearInChinese();
+            // 更新農曆日期（使用干支年）
+            const lunarYearGanZhi = lunar.getYearInGanZhi(); // 干支年，如：乙巳
             const lunarMonth = lunar.getMonthInChinese();
             const lunarDay = lunar.getDayInChinese();
-            document.getElementById('lunarDate').textContent = 
-                `農曆 ${lunarYear}年 ${lunarMonth}${lunarDay}`;
+            document.getElementById('lunarYear').textContent = `${lunarYearGanZhi}年`;
+            document.getElementById('lunarMonth').textContent = lunarMonth;
+            document.getElementById('lunarDay').textContent = lunarDay;
             
             // 更新八字四柱
             updatePillar('year', baZi.getYear(), baZi.getYearGan(), baZi.getYearZhi());
