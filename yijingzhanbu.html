@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>易經占卜 - 智慧決策助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background: linear-gradient(135deg, #8B7355 0%, #D4A574 25%, #C19A6B 50%, #A67B5B 75%, #8B6F47 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(218, 165, 32, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 115, 85, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 248, 240, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #654321;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #8B6F47;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .step {
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .question-input {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.1em;
+            border: 3px solid #D4A574;
+            border-radius: 15px;
+            background: white;
+            color: #654321;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .question-input:focus {
+            outline: none;
+            border-color: #8B6F47;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+
+        .button {
+            background: linear-gradient(135deg, #A67B5B 0%, #8B6F47 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-family: inherit;
+            font-weight: bold;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #8B6F47 0%, #A67B5B 100%);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .coin-throwing {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .coin-instruction {
+            font-size: 1.2em;
+            color: #654321;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .coin-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .coin {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: #654321;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 4px solid #8B6F47;
+        }
+
+        .coin:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .coin.flipping {
+            animation: coinFlip 0.6s ease-in-out;
+        }
+
+        @keyframes coinFlip {
+            0%, 100% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg); }
+        }
+
+        .coin.heads {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        .coin.tails {
+            background: linear-gradient(135deg, #CD853F 0%, #8B4513 100%);
+        }
+
+        .yao-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            gap: 10px;
+        }
+
+        .yao {
+            width: 200px;
+            height: 20px;
+            background: #654321;
+            border-radius: 5px;
+            position: relative;
+            animation: yaoAppear 0.5s ease-out;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes yaoAppear {
+            from {
+                opacity: 0;
+                transform: scaleX(0);
+            }
+            to {
+                opacity: 1;
+                transform: scaleX(1);
+            }
+        }
+
+        .yao.broken {
+            width: 90px;
+        }
+
+        .yao.broken::after {
+            content: '';
+            position: absolute;
+            left: 110px;
+            width: 90px;
+            height: 20px;
+            background: #654321;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .yao.changing {
+            background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .yao.changing.broken::after {
+            background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .yao-number {
+            width: 40px;
+            color: #654321;
+            font-weight: bold;
+        }
+
+        .hexagram-display {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(139, 111, 71, 0.1) 100%);
+            border-radius: 20px;
+            margin: 20px 0;
+        }
+
+        .hexagram-name {
+            font-size: 2em;
+            color: #654321;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .hexagram-info {
+            color: #8B6F47;
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+
+        .interpretation {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            line-height: 1.8;
+            color: #654321;
+        }
+
+        .interpretation h3 {
+            color: #654321;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #D4A574;
+            padding-bottom: 10px;
+        }
+
+        .interpretation-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(212, 165, 116, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #D4A574;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(212, 165, 116, 0.3);
+            border-top-color: #8B6F47;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .progress-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(212, 165, 116, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8B6F47;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: linear-gradient(135deg, #A67B5B 0%, #8B6F47 100%);
+            color: white;
+            transform: scale(1.2);
+        }
+
+        .progress-dot.completed {
+            background: #8B6F47;
+            color: white;
+        }
+
+        .throw-count {
+            text-align: center;
+            font-size: 1.5em;
+            color: #654321;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .coin-result {
+            text-align: center;
+            font-size: 1.2em;
+            color: #8B6F47;
+            margin: 15px 0;
+            min-height: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .coin {
+                width: 60px;
+                height: 60px;
+                font-size: 1.2em;
+            }
+
+            .yao {
+                width: 150px;
+            }
+
+            .yao.broken {
+                width: 70px;
+            }
+
+            .yao.broken::after {
+                left: 80px;
+                width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📿 易經占卜</h1>
+        <p class="subtitle">以古老智慧，照亮決策之路</p>
+
+        <!-- 步驟1: 輸入問題 -->
+        <div class="step active" id="step1">
+            <h2 style="color: #654321; margin-bottom: 20px;">請輸入你想占卜的事項</h2>
+            <textarea 
+                class="question-input" 
+                id="question" 
+                rows="4" 
+                placeholder="例如：我應該接受新工作的邀請嗎？&#10;請以誠心誠意的態度提出你的問題..."
+            ></textarea>
+            <div class="button-container">
+                <button class="button" onclick="startDivination()">開始占卜</button>
+            </div>
+        </div>
+
+        <!-- 步驟2: 擲硬幣 -->
+        <div class="step" id="step2">
+            <div class="coin-throwing">
+                <div class="throw-count" id="throwCount">第 1 爻 / 共 6 爻</div>
+                <p class="coin-instruction">請點擊下方三枚硬幣進行占卜</p>
+                <p style="color: #8B6F47; margin-bottom: 20px;">（模擬同時擲出三枚硬幣）</p>
+                
+                <div class="coin-container" id="coinContainer">
+                    <div class="coin" onclick="throwCoins()">
+                        <span>硬幣</span>
+                    </div>
+                    <div class="coin" onclick="throwCoins()">
+                        <span>硬幣</span>
+                    </div>
+                    <div class="coin" onclick="throwCoins()">
+                        <span>硬幣</span>
+                    </div>
+                </div>
+
+                <div class="coin-result" id="coinResult"></div>
+
+                <div class="hexagram-display">
+                    <div id="yaoDisplay"></div>
+                </div>
+
+                <div class="progress-indicator">
+                    <div class="progress-dot active" id="dot1">1</div>
+                    <div class="progress-dot" id="dot2">2</div>
+                    <div class="progress-dot" id="dot3">3</div>
+                    <div class="progress-dot" id="dot4">4</div>
+                    <div class="progress-dot" id="dot5">5</div>
+                    <div class="progress-dot" id="dot6">6</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步驟3: 顯示結果 -->
+        <div class="step" id="step3">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="color: #8B6F47; font-size: 1.1em;">正在解讀卦象，請稍候...</p>
+            </div>
+            
+            <div id="result" style="display: none;">
+                <div class="hexagram-display">
+                    <div id="finalHexagram"></div>
+                    <div class="hexagram-name" id="hexagramName"></div>
+                    <div class="hexagram-info" id="hexagramInfo"></div>
+                </div>
+
+                <div class="interpretation" id="interpretation"></div>
+
+                <div class="button-container" style="margin-top: 30px;">
+                    <button class="button" onclick="restart()">重新占卜</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 六十四卦數據
+        const HEXAGRAMS = {
+            '111111': { number: 1, name: '乾', description: '乾為天', upper: '乾', lower: '乾' },
+            '000000': { number: 2, name: '坤', description: '坤為地', upper: '坤', lower: '坤' },
+            '010001': { number: 3, name: '屯', description: '水雷屯', upper: '坎', lower: '震' },
+            '100010': { number: 4, name: '蒙', description: '山水蒙', upper: '艮', lower: '坎' },
+            '010111': { number: 5, name: '需', description: '水天需', upper: '坎', lower: '乾' },
+            '111010': { number: 6, name: '訟', description: '天水訟', upper: '乾', lower: '坎' },
+            '000010': { number: 7, name: '師', description: '地水師', upper: '坤', lower: '坎' },
+            '010000': { number: 8, name: '比', description: '水地比', upper: '坎', lower: '坤' },
+            '110111': { number: 9, name: '小畜', description: '風天小畜', upper: '巽', lower: '乾' },
+            '111011': { number: 10, name: '履', description: '天澤履', upper: '乾', lower: '兌' },
+            '000111': { number: 11, name: '泰', description: '地天泰', upper: '坤', lower: '乾' },
+            '111000': { number: 12, name: '否', description: '天地否', upper: '乾', lower: '坤' },
+            '111101': { number: 13, name: '同人', description: '天火同人', upper: '乾', lower: '離' },
+            '101111': { number: 14, name: '大有', description: '火天大有', upper: '離', lower: '乾' },
+            '000100': { number: 15, name: '謙', description: '地山謙', upper: '坤', lower: '艮' },
+            '001000': { number: 16, name: '豫', description: '雷地豫', upper: '震', lower: '坤' },
+            '011001': { number: 17, name: '隨', description: '澤雷隨', upper: '兌', lower: '震' },
+            '100110': { number: 18, name: '蠱', description: '山風蠱', upper: '艮', lower: '巽' },
+            '000011': { number: 19, name: '臨', description: '地澤臨', upper: '坤', lower: '兌' },
+            '110000': { number: 20, name: '觀', description: '風地觀', upper: '巽', lower: '坤' },
+            '101001': { number: 21, name: '噬嗑', description: '火雷噬嗑', upper: '離', lower: '震' },
+            '100101': { number: 22, name: '賁', description: '山火賁', upper: '艮', lower: '離' },
+            '100000': { number: 23, name: '剝', description: '山地剝', upper: '艮', lower: '坤' },
+            '000001': { number: 24, name: '復', description: '地雷復', upper: '坤', lower: '震' },
+            '111001': { number: 25, name: '無妄', description: '天雷無妄', upper: '乾', lower: '震' },
+            '100111': { number: 26, name: '大畜', description: '山天大畜', upper: '艮', lower: '乾' },
+            '100001': { number: 27, name: '頤', description: '山雷頤', upper: '艮', lower: '震' },
+            '011110': { number: 28, name: '大過', description: '澤風大過', upper: '兌', lower: '巽' },
+            '010010': { number: 29, name: '坎', description: '坎為水', upper: '坎', lower: '坎' },
+            '101101': { number: 30, name: '離', description: '離為火', upper: '離', lower: '離' },
+            '011100': { number: 31, name: '咸', description: '澤山咸', upper: '兌', lower: '艮' },
+            '001110': { number: 32, name: '恆', description: '雷風恆', upper: '震', lower: '巽' },
+            '111100': { number: 33, name: '遯', description: '天山遯', upper: '乾', lower: '艮' },
+            '001111': { number: 34, name: '大壯', description: '雷天大壯', upper: '震', lower: '乾' },
+            '101000': { number: 35, name: '晉', description: '火地晉', upper: '離', lower: '坤' },
+            '000101': { number: 36, name: '明夷', description: '地火明夷', upper: '坤', lower: '離' },
+            '110101': { number: 37, name: '家人', description: '風火家人', upper: '巽', lower: '離' },
+            '101011': { number: 38, name: '睽', description: '火澤睽', upper: '離', lower: '兌' },
+            '010100': { number: 39, name: '蹇', description: '水山蹇', upper: '坎', lower: '艮' },
+            '001010': { number: 40, name: '解', description: '雷水解', upper: '震', lower: '坎' },
+            '100011': { number: 41, name: '損', description: '山澤損', upper: '艮', lower: '兌' },
+            '110001': { number: 42, name: '益', description: '風雷益', upper: '巽', lower: '震' },
+            '011111': { number: 43, name: '夬', description: '澤天夬', upper: '兌', lower: '乾' },
+            '111110': { number: 44, name: '姤', description: '天風姤', upper: '乾', lower: '巽' },
+            '011000': { number: 45, name: '萃', description: '澤地萃', upper: '兌', lower: '坤' },
+            '000110': { number: 46, name: '升', description: '地風升', upper: '坤', lower: '巽' },
+            '011010': { number: 47, name: '困', description: '澤水困', upper: '兌', lower: '坎' },
+            '010110': { number: 48, name: '井', description: '水風井', upper: '坎', lower: '巽' },
+            '011101': { number: 49, name: '革', description: '澤火革', upper: '兌', lower: '離' },
+            '101110': { number: 50, name: '鼎', description: '火風鼎', upper: '離', lower: '巽' },
+            '001001': { number: 51, name: '震', description: '震為雷', upper: '震', lower: '震' },
+            '100100': { number: 52, name: '艮', description: '艮為山', upper: '艮', lower: '艮' },
+            '110100': { number: 53, name: '漸', description: '風山漸', upper: '巽', lower: '艮' },
+            '001011': { number: 54, name: '歸妹', description: '雷澤歸妹', upper: '震', lower: '兌' },
+            '001101': { number: 55, name: '豐', description: '雷火豐', upper: '震', lower: '離' },
+            '101100': { number: 56, name: '旅', description: '火山旅', upper: '離', lower: '艮' },
+            '110110': { number: 57, name: '巽', description: '巽為風', upper: '巽', lower: '巽' },
+            '011011': { number: 58, name: '兌', description: '兌為澤', upper: '兌', lower: '兌' },
+            '110010': { number: 59, name: '渙', description: '風水渙', upper: '巽', lower: '坎' },
+            '010011': { number: 60, name: '節', description: '水澤節', upper: '坎', lower: '兌' },
+            '110011': { number: 61, name: '中孚', description: '風澤中孚', upper: '巽', lower: '兌' },
+            '001100': { number: 62, name: '小過', description: '雷山小過', upper: '震', lower: '艮' },
+            '010101': { number: 63, name: '既濟', description: '水火既濟', upper: '坎', lower: '離' },
+            '101010': { number: 64, name: '未濟', description: '火水未濟', upper: '離', lower: '坎' }
+        };
+
+        // 卦辭數據（簡化版）
+        const HEXAGRAM_TEXTS = {
+            1: { 
+                gua: '乾：元亨利貞。', 
+                yong: '用九：見群龍無首，吉。',
+                yao: [
+                    '初九：潛龍勿用。',
+                    '九二：見龍在田，利見大人。',
+                    '九三：君子終日乾乾，夕惕若厲，無咎。',
+                    '九四：或躍在淵，無咎。',
+                    '九五：飛龍在天，利見大人。',
+                    '上九：亢龍有悔。'
+                ]
+            },
+            2: { 
+                gua: '坤：元亨，利牝馬之貞。君子有攸往，先迷後得主，利西南得朋，東北喪朋。安貞，吉。', 
+                yong: '用六：利永貞。',
+                yao: [
+                    '初六：履霜，堅冰至。',
+                    '六二：直方大，不習无不利。',
+                    '六三：含章可貞。或從王事，无成有終。',
+                    '六四：括囊；无咎，无譽。',
+                    '六五：黃裳，元吉。',
+                    '上六：龍戰於野，其血玄黃。'
+                ]
+            },
+            3: {
+                gua: '屯：元亨利貞，勿用，有攸往，利建侯。',
+                yao: [
+                    '初九：磐桓；利居貞，利建侯。',
+                    '六二：屯如邅如，乘馬班如。匪寇婚媾，女子貞不字，十年乃字。',
+                    '六三：即鹿无虞，惟入於林中，君子幾不如舍，往吝。',
+                    '六四：乘馬班如，求婚媾，往吉，无不利。',
+                    '九五：屯其膏，小貞吉，大貞凶。',
+                    '上六：乘馬班如，泣血漣如。'
+                ]
+            },
+            4: {
+                gua: '蒙：亨。匪我求童蒙，童蒙求我。初筮告，再三瀆，瀆則不告。利貞。',
+                yao: [
+                    '初六：發蒙，利用刑人，用說桎梏，以往吝。',
+                    '九二：包蒙吉；納婦吉；子克家。',
+                    '六三：勿用娶女；見金夫，不有躬，无攸利。',
+                    '六四：困蒙，吝。',
+                    '六五：童蒙，吉。',
+                    '上九：擊蒙；不利為寇，利禦寇。'
+                ]
+            },
+            5: {
+                gua: '需：有孚，光亨，貞吉。利涉大川。',
+                yao: [
+                    '初九：需于郊。利用恆，无咎。',
+                    '九二：需于沙。小有言，終吉。',
+                    '九三：需于泥，致寇至。',
+                    '六四：需于血，出自穴。',
+                    '九五：需于酒食，貞吉。',
+                    '上六：入于穴，有不速之客三人來，敬之終吉。'
+                ]
+            },
+            6: {
+                gua: '訟：有孚，窒。惕中吉。終凶。利見大人，不利涉大川。',
+                yao: [
+                    '初六：不永所事，小有言，終吉。',
+                    '九二：不克訟，歸而逋，其邑人三百戶，无眚。',
+                    '六三：食舊德，貞厲，終吉，或從王事，无成。',
+                    '九四：不克訟，復即命，渝安貞，吉。',
+                    '九五：訟元吉。',
+                    '上九：或錫之鞶帶，終朝三褫之。'
+                ]
+            },
+            7: {
+                gua: '師：貞，丈人，吉无咎。',
+                yao: [
+                    '初六：師出以律，否臧凶。',
+                    '九二：在師中，吉无咎，王三錫命。',
+                    '六三：師或輿尸，凶。',
+                    '六四：師左次，无咎。',
+                    '六五：田有禽，利執言，无咎。長子帥師，弟子輿尸，貞凶。',
+                    '上六：大君有命，開國承家，小人勿用。'
+                ]
+            },
+            8: {
+                gua: '比：吉。原筮元永貞，无咎。不寧方來，後夫凶。',
+                yao: [
+                    '初六：有孚比之，无咎。有孚盈缶，終來有它吉。',
+                    '六二：比之自內，貞吉。',
+                    '六三：比之匪人。',
+                    '六四：外比之，貞吉。',
+                    '九五：顯比，王用三驅，失前禽。邑人不誡，吉。',
+                    '上六：比之无首，凶。'
+                ]
+            },
+            11: {
+                gua: '泰：小往大來，吉亨。',
+                yao: [
+                    '初九：拔茅茹，以其彙，征吉。',
+                    '九二：包荒，用馮河，不遐遺，朋亡，得尚于中行。',
+                    '九三：无平不陂，无往不復，艱貞无咎。勿恤其孚，于食有福。',
+                    '六四：翩翩不富，以其鄰，不戒以孚。',
+                    '六五：帝乙歸妹，以祉元吉。',
+                    '上六：城復于隍，勿用師。自邑告命，貞吝。'
+                ]
+            },
+            12: {
+                gua: '否：否之匪人，不利君子貞，大往小來。',
+                yao: [
+                    '初六：拔茅茹，以其彙，貞吉亨。',
+                    '六二：包承。小人吉，大人否亨。',
+                    '六三：包羞。',
+                    '九四：有命无咎，疇離祉。',
+                    '九五：休否，大人吉。其亡其亡，繫于苞桑。',
+                    '上九：傾否，先否後喜。'
+                ]
+            },
+            13: {
+                gua: '同人：同人于野，亨。利涉大川，利君子貞。',
+                yao: [
+                    '初九：同人于門，无咎。',
+                    '六二：同人于宗，吝。',
+                    '九三：伏戎于莽，升其高陵，三歲不興。',
+                    '九四：乘其墉，弗克攻，吉。',
+                    '九五：同人，先號咷而後笑。大師克相遇。',
+                    '上九：同人于郊，无悔。'
+                ]
+            },
+            14: {
+                gua: '大有：元亨。',
+                yao: [
+                    '初九：无交害，匪咎，艱則无咎。',
+                    '九二：大車以載，有攸往，无咎。',
+                    '九三：公用亨于天子，小人弗克。',
+                    '九四：匪其彭，无咎。',
+                    '六五：厥孚交如，威如；吉。',
+                    '上九：自天祐之，吉无不利。'
+                ]
+            },
+            15: {
+                gua: '謙：亨，君子有終。',
+                yao: [
+                    '初六：謙謙君子，用涉大川，吉。',
+                    '六二：鳴謙，貞吉。',
+                    '九三：勞謙君子，有終吉。',
+                    '六四：无不利，撝謙。',
+                    '六五：不富以其鄰，利用侵伐，无不利。',
+                    '上六：鳴謙，利用行師，征邑國。'
+                ]
+            },
+            16: {
+                gua: '豫：利建侯行師。',
+                yao: [
+                    '初六：鳴豫，凶。',
+                    '六二：介于石，不終日，貞吉。',
+                    '六三：盱豫，悔。遲有悔。',
+                    '九四：由豫，大有得。勿疑。朋盍簪。',
+                    '六五：貞疾，恆不死。',
+                    '上六：冥豫，成有渝，无咎。'
+                ]
+            },
+            24: {
+                gua: '復：亨。出入无疾，朋來无咎。反復其道，七日來復，利有攸往。',
+                yao: [
+                    '初九：不遠復，无祗悔，元吉。',
+                    '六二：休復，吉。',
+                    '六三：頻復，厲无咎。',
+                    '六四：中行獨復。',
+                    '六五：敦復，无悔。',
+                    '上六：迷復，凶，有災眚。用行師，終有大敗，以其國君凶，至于十年不克征。'
+                ]
+            },
+            29: {
+                gua: '坎：習坎，有孚，維心亨，行有尚。',
+                yao: [
+                    '初六：習坎，入于坎窞，凶。',
+                    '九二：坎有險，求小得。',
+                    '六三：來之坎坎，險且枕，入于坎窞，勿用。',
+                    '六四：樽酒簋貳，用缶，納約自牖，終无咎。',
+                    '九五：坎不盈，祗既平，无咎。',
+                    '上六：係用徽纆，寘于叢棘，三歲不得，凶。'
+                ]
+            },
+            30: {
+                gua: '離：利貞，亨。畜牝牛，吉。',
+                yao: [
+                    '初九：履錯然，敬之无咎。',
+                    '六二：黃離，元吉。',
+                    '九三：日昃之離，不鼓缶而歌，則大耋之嗟，凶。',
+                    '九四：突如其來如，焚如，死如，棄如。',
+                    '六五：出涕沱若，戚嗟若，吉。',
+                    '上九：王用出征，有嘉折首，獲匪其醜，无咎。'
+                ]
+            },
+            63: {
+                gua: '既濟：亨，小利貞，初吉終亂。',
+                yao: [
+                    '初九：曳其輪，濡其尾，无咎。',
+                    '六二：婦喪其茀，勿逐，七日得。',
+                    '九三：高宗伐鬼方，三年克之，小人勿用。',
+                    '六四：繻有衣袽，終日戒。',
+                    '九五：東鄰殺牛，不如西鄰之禴祭，實受其福。',
+                    '上六：濡其首，厲。'
+                ]
+            },
+            64: {
+                gua: '未濟：亨，小狐汔濟，濡其尾，无攸利。',
+                yao: [
+                    '初六：濡其尾，吝。',
+                    '九二：曳其輪，貞吉。',
+                    '六三：未濟，征凶，利涉大川。',
+                    '九四：貞吉，悔亡，震用伐鬼方，三年有賞于大國。',
+                    '六五：貞吉，无悔，君子之光，有孚，吉。',
+                    '上九：有孚于飲酒，无咎，濡其首，有孚失是。'
+                ]
+            }
+        };
+
+        // 遊戲狀態
+        let gameState = {
+            question: '',
+            currentThrow: 0,
+            yaos: [], // 存儲6個爻，每個爻是6,7,8,9中的一個
+            changingYaos: [] // 變爻位置
+        };
+
+        function startDivination() {
+            const question = document.getElementById('question').value.trim();
+            if (!question) {
+                alert('請輸入你想占卜的事項');
+                return;
+            }
+            
+            gameState.question = question;
+            gameState.currentThrow = 0;
+            gameState.yaos = [];
+            gameState.changingYaos = [];
+            
+            showStep(2);
+            updateThrowDisplay();
+        }
+
+        function throwCoins() {
+            if (gameState.currentThrow >= 6) return;
+
+            const coins = document.querySelectorAll('.coin');
+            coins.forEach(coin => coin.classList.add('flipping'));
+
+            setTimeout(() => {
+                // 模擬擲三個硬幣
+                const results = [
+                    Math.random() > 0.5 ? 3 : 2, // 正面3分，反面2分
+                    Math.random() > 0.5 ? 3 : 2,
+                    Math.random() > 0.5 ? 3 : 2
+                ];
+                
+                const sum = results.reduce((a, b) => a + b, 0);
+                
+                // 顯示硬幣結果
+                coins.forEach((coin, idx) => {
+                    coin.classList.remove('flipping');
+                    if (results[idx] === 3) {
+                        coin.classList.add('heads');
+                        coin.innerHTML = '<span>正</span>';
+                    } else {
+                        coin.classList.add('tails');
+                        coin.innerHTML = '<span>反</span>';
+                    }
+                });
+
+                // 根據總分確定爻的類型
+                // 6 = 老陰（變爻，陰變陽）
+                // 7 = 少陽（不變）
+                // 8 = 少陰（不變）
+                // 9 = 老陽（變爻，陽變陰）
+                gameState.yaos.push(sum);
+                
+                if (sum === 6 || sum === 9) {
+                    gameState.changingYaos.push(gameState.currentThrow);
+                }
+
+                // 顯示結果文字
+                const resultText = {
+                    6: '老陰（— —）變爻',
+                    7: '少陽（———）',
+                    8: '少陰（— —）',
+                    9: '老陽（———）變爻'
+                };
+                document.getElementById('coinResult').textContent = resultText[sum];
+
+                gameState.currentThrow++;
+                updateThrowDisplay();
+                updateYaoDisplay();
+
+                if (gameState.currentThrow >= 6) {
+                    setTimeout(() => {
+                        calculateResult();
+                    }, 1500);
+                } else {
+                    // 重置硬幣準備下一次
+                    setTimeout(() => {
+                        coins.forEach(coin => {
+                            coin.classList.remove('heads', 'tails');
+                            coin.innerHTML = '<span>硬幣</span>';
+                        });
+                        document.getElementById('coinResult').textContent = '';
+                    }, 1500);
+                }
+            }, 600);
+        }
+
+        function updateThrowDisplay() {
+            document.getElementById('throwCount').textContent = 
+                `第 ${gameState.currentThrow + 1} 爻 / 共 6 爻`;
+            
+            // 更新進度點
+            for (let i = 1; i <= 6; i++) {
+                const dot = document.getElementById(`dot${i}`);
+                dot.classList.remove('active', 'completed');
+                if (i - 1 < gameState.currentThrow) {
+                    dot.classList.add('completed');
+                } else if (i - 1 === gameState.currentThrow) {
+                    dot.classList.add('active');
+                }
+            }
+        }
+
+        function updateYaoDisplay() {
+            const display = document.getElementById('yaoDisplay');
+            let html = '';
+            
+            // 從下往上顯示（第一爻在最下方）
+            for (let i = gameState.yaos.length - 1; i >= 0; i--) {
+                const yao = gameState.yaos[i];
+                const isYang = (yao === 7 || yao === 9);
+                const isChanging = (yao === 6 || yao === 9);
+                
+                html += `<div class="yao-line">
+                    <span class="yao-number">${i === 0 ? '初' : i === 5 ? '上' : numberToChinese(i + 1)}</span>
+                    <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                </div>`;
+            }
+            
+            display.innerHTML = html;
+        }
+
+        function numberToChinese(num) {
+            const chars = ['', '一', '二', '三', '四', '五', '六'];
+            return chars[num];
+        }
+
+        async function calculateResult() {
+            showStep(3);
+            
+            // 構建本卦
+            const originalHexagram = gameState.yaos.map(y => 
+                (y === 7 || y === 9) ? '1' : '0'
+            ).join('');
+            
+            // 構建變卦
+            const changedHexagram = gameState.yaos.map(y => {
+                if (y === 6) return '1'; // 老陰變陽
+                if (y === 9) return '0'; // 老陽變陰
+                return (y === 7) ? '1' : '0';
+            }).join('');
+            
+            const originalGua = HEXAGRAMS[originalHexagram];
+            const changedGua = HEXAGRAMS[changedHexagram];
+            
+            // 根據變爻數量確定解卦方法
+            const interpretation = determineInterpretation(
+                originalGua, 
+                changedGua, 
+                gameState.changingYaos,
+                gameState.yaos
+            );
+            
+            // 調用AI生成解讀
+            await generateAIInterpretation(interpretation);
+        }
+
+        function determineInterpretation(originalGua, changedGua, changingYaos, yaos) {
+            const numChanging = changingYaos.length;
+            let method = '';
+            let textToUse = '';
+            let yaoPositions = [];
+
+            const originalTexts = HEXAGRAM_TEXTS[originalGua.number] || { gua: '卦辭暫缺', yao: [] };
+            const changedTexts = HEXAGRAM_TEXTS[changedGua.number] || { gua: '卦辭暫缺', yao: [] };
+
+            if (numChanging === 0) {
+                method = '六爻皆不變，以本卦卦辭斷之';
+                textToUse = originalTexts.gua;
+            } else if (numChanging === 1) {
+                const pos = changingYaos[0];
+                method = `一爻變，以本卦第${pos + 1}爻爻辭斷之`;
+                textToUse = originalTexts.yao[pos] || '爻辭暫缺';
+                yaoPositions = [pos];
+            } else if (numChanging === 2) {
+                // 取陰爻，如都是陽爻或陰爻則取上爻
+                const yao1 = yaos[changingYaos[0]];
+                const yao2 = yaos[changingYaos[1]];
+                const isYin1 = (yao1 === 6);
+                const isYin2 = (yao2 === 6);
+                
+                let mainPos;
+                if (isYin1 && !isYin2) {
+                    mainPos = changingYaos[0];
+                } else if (!isYin1 && isYin2) {
+                    mainPos = changingYaos[1];
+                } else {
+                    mainPos = Math.max(...changingYaos);
+                }
+                
+                method = `二爻變，以本卦第${mainPos + 1}爻爻辭為主斷`;
+                textToUse = originalTexts.yao[mainPos] || '爻辭暫缺';
+                yaoPositions = changingYaos;
+            } else if (numChanging === 3) {
+                method = '三爻變，以變卦卦辭斷之；本卦卦辭可作參考';
+                textToUse = changedTexts.gua;
+            } else if (numChanging === 4) {
+                const unchangedYaos = [0, 1, 2, 3, 4, 5].filter(i => !changingYaos.includes(i));
+                const mainPos = Math.min(...unchangedYaos);
+                method = `四爻變，以變卦不變的第${mainPos + 1}爻爻辭斷之`;
+                textToUse = changedTexts.yao[mainPos] || '爻辭暫缺';
+                yaoPositions = unchangedYaos;
+            } else if (numChanging === 5) {
+                const unchangedYao = [0, 1, 2, 3, 4, 5].find(i => !changingYaos.includes(i));
+                method = `五爻變，以變卦不變的第${unchangedYao + 1}爻爻辭斷之`;
+                textToUse = changedTexts.yao[unchangedYao] || '爻辭暫缺';
+                yaoPositions = [unchangedYao];
+            } else if (numChanging === 6) {
+                if (originalGua.number === 1) {
+                    method = '六爻皆變，乾卦用九';
+                    textToUse = originalTexts.yong || '用九：見群龍無首，吉。';
+                } else if (originalGua.number === 2) {
+                    method = '六爻皆變，坤卦用六';
+                    textToUse = originalTexts.yong || '用六：利永貞。';
+                } else {
+                    method = '六爻皆變，以變卦卦辭斷之';
+                    textToUse = changedTexts.gua;
+                }
+            }
+
+            return {
+                originalGua,
+                changedGua,
+                method,
+                textToUse,
+                originalTexts,
+                changedTexts,
+                numChanging,
+                changingYaos,
+                yaoPositions
+            };
+        }
+
+        async function generateAIInterpretation(interpretation) {
+            const { originalGua, changedGua, method, textToUse, numChanging } = interpretation;
+
+            // 顯示基本信息
+            displayHexagramInfo(interpretation);
+
+            // 構建AI提示
+            const prompt = `你是一位精通易經的占卜師。現有一位求卦者問：「${gameState.question}」
+
+占卜結果：
+- 本卦：${originalGua.description}（第${originalGua.number}卦）
+- 變卦：${changedGua.description}（第${changedGua.number}卦）
+- 變爻數量：${numChanging}
+- 斷卦方法：${method}
+- 依據經文：${textToUse}
+
+請根據以上卦象，結合求卦者的問題，給出一個深入、具體、有說服力的解讀。你的解讀應該包括：
+
+1. **卦象總述**：簡要說明這個卦象的整體含義和象徵
+2. **針對問題的分析**：將卦象與求卦者的具體問題結合，給出明確的指引
+3. **行動建議**：提供具體可行的建議，幫助求卦者做出決策
+4. **注意事項**：提醒求卦者需要注意的風險或機會
+
+請用溫和、智慧、充滿洞察力的語氣，幫助求卦者理解卦象的深意。字數控制在500-800字之間。`;
+
+            try {
+                const response = await callDeepSeek([
+                    { role: 'user', content: prompt }
+                ]);
+
+                displayInterpretation(response);
+            } catch (error) {
+                console.error('AI解讀失敗：', error);
+                displayInterpretation(`
+                    <div class="interpretation-section">
+                        <h3>📖 經文依據</h3>
+                        <p>${textToUse}</p>
+                    </div>
+                    <div class="interpretation-section">
+                        <h3>🔍 斷卦方法</h3>
+                        <p>${method}</p>
+                    </div>
+                    <div class="interpretation-section">
+                        <h3>💡 簡要解讀</h3>
+                        <p>本次占卜得到${originalGua.description}，${numChanging > 0 ? `有${numChanging}個變爻，變為${changedGua.description}。` : '六爻安定。'}請結合卦辭爻辭，靜心思考其中深意。</p>
+                    </div>
+                `);
+            }
+        }
+
+        function displayHexagramInfo(interpretation) {
+            const { originalGua, changedGua, numChanging } = interpretation;
+            
+            // 顯示卦象圖
+            let hexagramHtml = '<div>';
+            for (let i = gameState.yaos.length - 1; i >= 0; i--) {
+                const yao = gameState.yaos[i];
+                const isYang = (yao === 7 || yao === 9);
+                const isChanging = (yao === 6 || yao === 9);
+                
+                hexagramHtml += `<div class="yao-line">
+                    <span class="yao-number">${i === 0 ? '初' : i === 5 ? '上' : numberToChinese(i + 1)}</span>
+                    <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                </div>`;
+            }
+            hexagramHtml += '</div>';
+            
+            document.getElementById('finalHexagram').innerHTML = hexagramHtml;
+            document.getElementById('hexagramName').textContent = 
+                `${originalGua.description}${numChanging > 0 ? ' 之 ' + changedGua.description : ''}`;
+            document.getElementById('hexagramInfo').textContent = 
+                `本卦：第${originalGua.number}卦 ${originalGua.name}${numChanging > 0 ? `　｜　變卦：第${changedGua.number}卦 ${changedGua.name}` : ''}`;
+        }
+
+        function displayInterpretation(text) {
+            document.getElementById('loading').style.display = 'none';
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            
+            const interpretationDiv = document.getElementById('interpretation');
+            
+            // 如果是AI生成的結構化文本，直接顯示
+            if (text.includes('<div')) {
+                interpretationDiv.innerHTML = text;
+            } else {
+                // 否則進行簡單的段落分割
+                const paragraphs = text.split('\n\n').filter(p => p.trim());
+                let html = '<h3>🔮 卦象解讀</h3>';
+                paragraphs.forEach(p => {
+                    html += `<div class="interpretation-section">${p.trim()}</div>`;
+                });
+                interpretationDiv.innerHTML = html;
+            }
+        }
+
+        function showStep(stepNumber) {
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+        }
+
+        function restart() {
+            gameState = {
+                question: '',
+                currentThrow: 0,
+                yaos: [],
+                changingYaos: []
+            };
+            document.getElementById('question').value = '';
+            showStep(1);
+        }
+
+        // DeepSeek API 調用
+        async function callDeepSeek(messages) {
+            const DEEPSEEK_PROXY_URL = window.DEEPSEEK_PROXY_URL || 
+                                      localStorage.getItem('DEEPSEEK_PROXY_URL') || 
+                                      'https://deepseek-proxy-chi.vercel.app/api/deepseek';
+            
+            const response = await fetch(DEEPSEEK_PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages,
+                    temperature: 0.8,
+                    max_tokens: 1500
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || '';
+        }
+    </script>
+</body>
+</html>
+

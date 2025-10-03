@@ -60,6 +60,7 @@
             overflow-y: auto;
             box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
             z-index: 10;
+            pointer-events: auto;
         }
 
         .story-panel h3 {
@@ -105,6 +106,7 @@
             padding: 20px;
             box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
             z-index: 10;
+            pointer-events: auto;
         }
 
         .control-panel h3 {
@@ -279,17 +281,17 @@
 
     <div class="control-panel">
         <h3>操作說明</h3>
-        <div class="instruction">
-            🖱️ 拖動物體到瓶口附近，觀察它們神奇地縮小並進入瓶中
+        <div class="instruction" style="background: rgba(255,230,100,0.5); font-weight: bold; font-size: 15px;">
+            👆 <strong>左鍵</strong>點擊並拖動物體到瓶口
         </div>
-        <div class="instruction">
-            🔍 滾動鼠標滾輪可以放大縮小視角
+        <div class="instruction" style="font-size: 14px;">
+            🔄 <strong>右鍵按住並拖動</strong>旋轉視角
         </div>
-        <div class="instruction">
-            🔄 右鍵拖動可以旋轉視角
+        <div class="instruction" style="font-size: 14px;">
+            🔍 <strong>滾輪</strong>縮放視角
         </div>
-        <div class="instruction" id="debug-info" style="background: rgba(255,200,200,0.3); font-size: 12px;">
-            調試：等待操作...
+        <div class="instruction" id="debug-info" style="background: rgba(150,220,255,0.3); font-size: 12px; padding: 6px;">
+            等待操作...
         </div>
         <button id="btn-reset">重新開始</button>
         <button id="btn-empty">倒出物品</button>
@@ -354,14 +356,16 @@
             document.getElementById('canvas-container').appendChild(renderer.domElement);
             console.log('渲染器已創建');
 
-            // 控制器
+            // 控制器 - 暂时禁用，稍后手动启用
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.minDistance = 3;
             controls.maxDistance = 20;
             controls.maxPolarAngle = Math.PI / 1.8;
-            console.log('控制器已設置');
+            controls.enabled = false;  // 初始禁用，由我们的代码控制
+            
+            console.log('控制器已創建（初始禁用）');
 
             // 光源
             setupLights();
@@ -412,7 +416,16 @@
             showStatus('歡迎！拖動物體到瓶口，觀察神奇的縮小效果');
             
             console.log('場景物體數量:', scene.children.length);
-            console.log('初始化完成！');
+            console.log('🎉 初始化完成！');
+            console.log('🖱️ 事件監聽器已綁定到:', renderer.domElement);
+            console.log('📦 draggableObjects 包含:', draggableObjects.map(obj => obj.userData.name));
+            
+            // 测试：显示所有可拖动物体的边界框
+            draggableObjects.forEach(obj => {
+                const box = new THREE.BoxHelper(obj, 0xff0000);
+                scene.add(box);
+            });
+            console.log('🔲 紅色邊界框已添加，幫助識別可拖動物體');
         }
 
         // ========== 光源设置 ==========
@@ -552,16 +565,19 @@
 
         // ========== 创建可拖动物体 ==========
         function createDraggableObjects() {
+            console.log('📦 開始創建可拖動物體...');
+            
             // 1. 铜钱
             for (let i = 0; i < 3; i++) {
                 const coin = createCoin();
                 coin.position.set(-4 + i * 2, 0.1, 4);
                 coin.userData.type = 'coin';
-                coin.userData.name = '銅錢';
+                coin.userData.name = `銅錢${i + 1}`;
                 coin.userData.highlightKey = 'coin';
                 coin.userData.text = '投之，琤然有聲，則見瓶間大如粟粒';
                 draggableObjects.push(coin);
                 scene.add(coin);
+                console.log(`  ✅ 創建銅錢${i + 1}，位置:`, coin.position);
             }
 
             // 2. 马
@@ -573,26 +589,31 @@
             horse.userData.text = '見人馬皆如蠅大，動行如故';
             draggableObjects.push(horse);
             scene.add(horse);
+            console.log('  ✅ 創建馬，位置:', horse.position);
 
             // 3. 牛车
             const cart = createCart();
             cart.position.set(-4, 0.5, -2);
             cart.userData.type = 'cart';
-            cart.userData.name = '牛車';
+            cart.userData.name = '牛車1';
             cart.userData.highlightKey = 'cart';
             cart.userData.text = '諸車輅輅相繼，悉入瓶，瓶中歷歷如行蟻然';
             draggableObjects.push(cart);
             scene.add(cart);
+            console.log('  ✅ 創建牛車1，位置:', cart.position);
 
             // 4. 另一辆车
             const cart2 = createCart();
             cart2.position.set(-2, 0.5, -2);
             cart2.userData.type = 'cart';
-            cart2.userData.name = '牛車';
+            cart2.userData.name = '牛車2';
             cart2.userData.highlightKey = 'cart';
             cart2.userData.text = '諸車輅輅相繼，悉入瓶';
             draggableObjects.push(cart2);
             scene.add(cart2);
+            console.log('  ✅ 創建牛車2，位置:', cart2.position);
+            
+            console.log(`📦 創建完成！共 ${draggableObjects.length} 個可拖動物體`);
         }
 
         // ========== 创建铜钱 ==========
@@ -726,6 +747,9 @@
             renderer.domElement.addEventListener('mousedown', onMouseDown, false);
             renderer.domElement.addEventListener('mousemove', onMouseMove, false);
             renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+            renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault(), false);  // 禁用右键菜单
+            
+            console.log('✅ 事件監聽器已綁定');
 
             // 窗口调整
             window.addEventListener('resize', onWindowResize, false);
@@ -739,61 +763,88 @@
 
         // ========== 鼠标按下 ==========
         function onMouseDown(event) {
-            if (isBroken) return;
-
-            event.preventDefault();
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
+            console.log('🖱️ 鼠標按下！按鍵:', event.button, '(0=左，1=中，2=右)');
             
-            // 收集所有可拖动物体的子网格
-            let allMeshes = [];
-            draggableObjects.forEach(obj => {
-                obj.traverse(child => {
-                    if (child.isMesh) {
-                        allMeshes.push(child);
-                    }
-                });
-            });
+            // 右键：启用相机控制
+            if (event.button === 2) {
+                console.log('🔄 右鍵按下，啟用相機旋轉');
+                controls.enabled = true;
+                return;
+            }
             
-            const intersects = raycaster.intersectObjects(allMeshes, false);
-            console.log('點擊檢測:', intersects.length, '個交點');
-            
-            const debugInfo = document.getElementById('debug-info');
-            debugInfo.textContent = `檢測到 ${intersects.length} 個交點，可拖動物體: ${draggableObjects.length}`;
-
-            if (intersects.length > 0) {
+            // 左键：拖动物体
+            if (event.button === 0) {
+                console.log('👆 左鍵按下，準備拖動物體');
+                
+                if (isBroken) {
+                    console.log('⚠️ 瓶子已破碎，無法操作');
+                    return;
+                }
+                
+                // 禁用相机控制
                 controls.enabled = false;
                 
-                // 找到顶层物体
-                let object = intersects[0].object;
-                while (object.parent && !draggableObjects.includes(object)) {
-                    object = object.parent;
-                }
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                console.log('🖱️ 鼠標位置:', mouse.x.toFixed(2), mouse.y.toFixed(2));
+
+                raycaster.setFromCamera(mouse, camera);
                 
-                console.log('選中物體:', object.userData.name);
-                debugInfo.textContent = `選中: ${object.userData.name}`;
-                
-                if (draggableObjects.includes(object) && !object.userData.inBottle) {
-                    selectedObject = object;
-                    
-                    // 高亮提示
-                    highlightText(object.userData.highlightKey);
-                    
-                    // 改变颜色表示选中
-                    selectedObject.traverse(child => {
+                // 收集所有可拖动物体的子网格
+                let allMeshes = [];
+                draggableObjects.forEach(obj => {
+                    obj.traverse(child => {
                         if (child.isMesh) {
-                            child.userData.originalColor = child.material.color.clone();
-                            child.material.color.lerp(new THREE.Color(0xffff00), 0.3);
+                            allMeshes.push(child);
                         }
                     });
-                    
-                    showStatus(`選中了 ${object.userData.name}，拖動到瓶口附近！`);
+                });
+                
+                console.log('📦 可拖動物體數量:', draggableObjects.length);
+                console.log('🔷 總網格數量:', allMeshes.length);
+                
+                const intersects = raycaster.intersectObjects(allMeshes, false);
+                console.log('✨ 點擊檢測:', intersects.length, '個交點');
+                
+                if (intersects.length > 0) {
+                    console.log('📍 交點位置:', intersects[0].point);
+                    console.log('🎯 交點物體:', intersects[0].object);
                 }
-            } else {
-                console.log('未檢測到任何物體');
-                debugInfo.textContent = `未檢測到物體，可拖動: ${draggableObjects.length}個`;
+                
+                const debugInfo = document.getElementById('debug-info');
+                debugInfo.textContent = `檢測到 ${intersects.length} 個交點，網格: ${allMeshes.length}，物體: ${draggableObjects.length}`;
+
+                if (intersects.length > 0) {
+                    // 找到顶层物体
+                    let object = intersects[0].object;
+                    while (object.parent && !draggableObjects.includes(object)) {
+                        object = object.parent;
+                    }
+                    
+                    console.log('選中物體:', object.userData.name);
+                    debugInfo.textContent = `✅ 選中: ${object.userData.name}`;
+                    
+                    if (draggableObjects.includes(object) && !object.userData.inBottle) {
+                        selectedObject = object;
+                        
+                        // 高亮提示
+                        highlightText(object.userData.highlightKey);
+                        
+                        // 改变颜色表示选中
+                        selectedObject.traverse(child => {
+                            if (child.isMesh) {
+                                child.userData.originalColor = child.material.color.clone();
+                                child.material.color.lerp(new THREE.Color(0xffff00), 0.3);
+                            }
+                        });
+                        
+                        showStatus(`✅ 選中了 ${object.userData.name}，拖動鼠標移動它！`);
+                        console.log('✅ 物體已選中，可以拖動');
+                    }
+                } else {
+                    console.log('未檢測到任何物體');
+                    debugInfo.textContent = `未檢測到物體，可拖動: ${draggableObjects.length}個`;
+                }
             }
         }
 
@@ -805,6 +856,8 @@
 
             // 如果正在拖动物体
             if (selectedObject && !isBroken) {
+                console.log('🚀 拖動中...', selectedObject.userData.name);
+                
                 raycaster.setFromCamera(mouse, camera);
                 
                 // 在y=物体当前高度的平面上移动
@@ -813,11 +866,19 @@
                 
                 const intersectPoint = new THREE.Vector3();
                 if (raycaster.ray.intersectPlane(dragPlane, intersectPoint)) {
+                    console.log('📍 新位置:', intersectPoint.x.toFixed(2), intersectPoint.z.toFixed(2));
+                    
                     selectedObject.position.x = intersectPoint.x;
                     selectedObject.position.z = intersectPoint.z;
                     
                     // 检查与瓶口的距离，动态缩放
                     checkBottleProximity(selectedObject);
+                    
+                    // 更新调试信息
+                    const debugInfo = document.getElementById('debug-info');
+                    debugInfo.textContent = `拖動中：位置(${intersectPoint.x.toFixed(1)}, ${intersectPoint.z.toFixed(1)})`;
+                } else {
+                    console.log('⚠️ 無法計算交點');
                 }
             } else if (!isBroken) {
                 // 鼠标悬停效果
@@ -848,7 +909,19 @@
 
         // ========== 鼠标释放 ==========
         function onMouseUp(event) {
-            if (selectedObject) {
+            console.log('🖱️ 鼠標釋放！按鍵:', event.button);
+            
+            // 右键释放：禁用相机控制
+            if (event.button === 2) {
+                console.log('🔄 右鍵釋放，禁用相機旋轉');
+                controls.enabled = false;
+                return;
+            }
+            
+            // 左键释放：释放选中的物体
+            if (event.button === 0 && selectedObject) {
+                console.log('👆 左鍵釋放物體:', selectedObject.userData.name);
+                
                 // 恢复颜色
                 selectedObject.traverse(child => {
                     if (child.isMesh && child.userData.originalColor) {
@@ -857,8 +930,9 @@
                 });
                 
                 selectedObject = null;
+                const debugInfo = document.getElementById('debug-info');
+                debugInfo.textContent = '物體已釋放';
             }
-            controls.enabled = true;
         }
 
         // ========== 检查物体与瓶口的距离 ==========
