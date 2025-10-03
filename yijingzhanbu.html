@@ -44,7 +44,7 @@
             backdrop-filter: blur(10px);
             border-radius: 30px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
+            padding: 30px;
             position: relative;
             z-index: 1;
             animation: fadeIn 0.8s ease-out;
@@ -64,16 +64,16 @@
         h1 {
             text-align: center;
             color: #654321;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2.2em;
+            margin-bottom: 8px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .subtitle {
             text-align: center;
             color: #8B6F47;
-            font-size: 1.1em;
-            margin-bottom: 30px;
+            font-size: 1em;
+            margin-bottom: 20px;
             opacity: 0.9;
         }
 
@@ -468,10 +468,10 @@
         .datetime-bazi-container {
             background: linear-gradient(135deg, rgba(218, 165, 32, 0.12) 0%, rgba(139, 111, 71, 0.08) 100%);
             border: 2px solid rgba(212, 165, 116, 0.3);
-            border-radius: 20px;
-            padding: 30px 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
             position: relative;
             overflow: hidden;
         }
@@ -483,7 +483,7 @@
             right: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(218, 165, 32, 0.06) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(218, 165, 32, 0.05) 0%, transparent 70%);
             animation: rotateBackground 20s linear infinite;
         }
 
@@ -495,80 +495,83 @@
         .datetime-section {
             position: relative;
             z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
         .time-display {
-            text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid rgba(212, 165, 116, 0.2);
+            flex: 1;
+            min-width: 250px;
         }
 
         .solar-time {
-            font-size: 2em;
+            font-size: 1.5em;
             color: #654321;
             font-weight: bold;
-            letter-spacing: 3px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 8px;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            margin-bottom: 5px;
         }
 
         .solar-date {
-            font-size: 1.15em;
+            font-size: 1em;
             color: #8B6F47;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             font-weight: 500;
         }
 
         .lunar-date {
-            font-size: 1.1em;
+            font-size: 0.95em;
             color: #A67B5B;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lunar-icon {
+            font-size: 1.1em;
+        }
+
+        .bazi-display {
+            flex: 2;
+            min-width: 350px;
+        }
+
+        .bazi-title {
+            text-align: center;
+            color: #654321;
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
 
-        .lunar-icon {
-            font-size: 1.2em;
-        }
-
-        .bazi-display {
-            margin-top: 25px;
-        }
-
-        .bazi-title {
-            text-align: center;
-            color: #654321;
-            font-size: 1.3em;
-            font-weight: bold;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
         .bazi-title-icon {
-            font-size: 1.4em;
+            font-size: 1.2em;
             animation: pulse 2s ease-in-out infinite;
         }
 
         .pillars-container {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            gap: 10px;
+            flex-wrap: nowrap;
         }
 
         .pillar {
             background: white;
-            border-radius: 15px;
-            padding: 18px 12px;
-            min-width: 85px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 10px 8px;
+            flex: 1;
+            max-width: 80px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -580,7 +583,7 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
+            height: 3px;
             background: linear-gradient(90deg, #DAA520, #B8860B, #DAA520);
             background-size: 200% 100%;
             animation: shimmerTop 3s ease-in-out infinite;
@@ -592,38 +595,38 @@
         }
 
         .pillar:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .pillar-label {
-            font-size: 0.9em;
+            font-size: 0.75em;
             color: #8B6F47;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             font-weight: 600;
             text-align: center;
         }
 
         .pillar-chars {
-            font-size: 1.8em;
+            font-size: 1.4em;
             color: #654321;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 8px;
-            letter-spacing: 2px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
         }
 
         .pillar-elements {
             display: flex;
             justify-content: center;
-            gap: 6px;
+            gap: 3px;
             flex-wrap: wrap;
         }
 
         .element-tag {
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 0.8em;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.7em;
             font-weight: 600;
             border: 1px solid;
         }
@@ -652,44 +655,6 @@
             background: linear-gradient(135deg, rgba(184, 134, 11, 0.2), rgba(205, 133, 63, 0.15));
             color: #8B6914;
             border-color: #B8860B;
-        }
-
-        .wuxing-summary {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
-        }
-
-        .wuxing-title {
-            text-align: center;
-            font-size: 1em;
-            color: #8B6F47;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-
-        .wuxing-stats {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .wuxing-stat {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .wuxing-stat:hover {
-            transform: scale(1.1);
         }
 
         .loading {
@@ -840,11 +805,11 @@
 
         @media (max-width: 768px) {
             .container {
-                padding: 25px;
+                padding: 20px;
             }
 
             h1 {
-                font-size: 1.8em;
+                font-size: 1.6em;
             }
 
             .coin {
@@ -865,13 +830,39 @@
                 left: 80px;
                 width: 70px;
             }
+
+            .datetime-section {
+                flex-direction: column;
+            }
+
+            .time-display,
+            .bazi-display {
+                min-width: 100%;
+            }
+
+            .solar-time {
+                font-size: 1.3em;
+            }
+
+            .pillars-container {
+                gap: 8px;
+            }
+
+            .pillar {
+                max-width: 70px;
+                padding: 8px 6px;
+            }
+
+            .pillar-chars {
+                font-size: 1.2em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📿 易經占卜</h1>
-        <p class="subtitle">以古老智慧，照亮決策之路</p>
+        <p class="subtitle">空空道人的占卜室</p>
 
         <!-- 時間八字顯示 -->
         <div class="datetime-bazi-container">
@@ -881,7 +872,7 @@
                     <div class="solar-date" id="solarDate">----年--月--日 星期-</div>
                     <div class="lunar-date">
                         <span class="lunar-icon">🌙</span>
-                        <span id="lunarDate">農曆 ----年 --月 --</span>
+                        <span id="lunarDate">農曆 ----年 --月 --日</span>
                     </div>
                 </div>
 
@@ -911,10 +902,6 @@
                             <div class="pillar-chars" id="hourPillar">--</div>
                             <div class="pillar-elements" id="hourElements"></div>
                         </div>
-                    </div>
-                    <div class="wuxing-summary">
-                        <div class="wuxing-title">八字五行分布</div>
-                        <div class="wuxing-stats" id="wuxingStats"></div>
                     </div>
                 </div>
             </div>
@@ -1049,16 +1036,13 @@
             const lunarMonth = lunar.getMonthInChinese();
             const lunarDay = lunar.getDayInChinese();
             document.getElementById('lunarDate').textContent = 
-                `農曆 ${lunarYear} ${lunarMonth}${lunarDay}`;
+                `農曆 ${lunarYear}年 ${lunarMonth}${lunarDay}`;
             
             // 更新八字四柱
             updatePillar('year', baZi.getYear(), baZi.getYearGan(), baZi.getYearZhi());
             updatePillar('month', baZi.getMonth(), baZi.getMonthGan(), baZi.getMonthZhi());
             updatePillar('day', baZi.getDay(), baZi.getDayGan(), baZi.getDayZhi());
             updatePillar('hour', baZi.getTime(), baZi.getTimeGan(), baZi.getTimeZhi());
-            
-            // 更新五行統計
-            updateWuxingStats(baZi);
         }
         
         function updatePillar(type, pillar, gan, zhi) {
@@ -1093,36 +1077,6 @@
                 '申': '金', '酉': '金', '戌': '土', '亥': '水'
             };
             return zhiMap[zhi] || '';
-        }
-        
-        function updateWuxingStats(baZi) {
-            const wuxingCount = {
-                '金': 0, '木': 0, '水': 0, '火': 0, '土': 0
-            };
-            
-            // 統計八字中的五行
-            [
-                [baZi.getYearGan(), baZi.getYearZhi()],
-                [baZi.getMonthGan(), baZi.getMonthZhi()],
-                [baZi.getDayGan(), baZi.getDayZhi()],
-                [baZi.getTimeGan(), baZi.getTimeZhi()]
-            ].forEach(([gan, zhi]) => {
-                const ganWuXing = getGanWuXing(gan);
-                const zhiWuXing = getZhiWuXing(zhi);
-                if (ganWuXing) wuxingCount[ganWuXing]++;
-                if (zhiWuXing) wuxingCount[zhiWuXing]++;
-            });
-            
-            // 顯示五行統計
-            let html = '';
-            Object.entries(wuxingCount).forEach(([element, count]) => {
-                if (count > 0) {
-                    html += `<span class="wuxing-stat element-${element}">
-                        ${element} × ${count}
-                    </span>`;
-                }
-            });
-            document.getElementById('wuxingStats').innerHTML = html;
         }
         
         // 頁面加載時啟動時間更新
