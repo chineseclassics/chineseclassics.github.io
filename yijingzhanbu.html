@@ -216,12 +216,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 15px 0;
-            gap: 10px;
+            margin: 12px auto;
+            gap: 15px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .yao-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 24px;
         }
 
         .yao {
-            width: 200px;
+            width: 100%;
+            max-width: 250px;
             height: 20px;
             background: #654321;
             border-radius: 5px;
@@ -242,38 +253,58 @@
         }
 
         .yao.broken {
-            width: 90px;
+            display: flex;
+            gap: 20px;
+            background: transparent;
+            box-shadow: none;
         }
 
+        .yao.broken::before,
         .yao.broken::after {
             content: '';
-            position: absolute;
-            left: 110px;
-            width: 90px;
+            flex: 1;
             height: 20px;
             background: #654321;
             border-radius: 5px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        .yao.changing {
+        .yao.changing::before,
+        .yao.changing::after {
             background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
-            animation: pulse 1s ease-in-out infinite;
         }
 
-        .yao.changing.broken::after {
+        .yao.changing {
             background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+        }
+
+        .yao.changing:not(.broken) {
+            animation: pulse 1.5s ease-in-out infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.7;
+                transform: scale(0.98);
+            }
+        }
+
+        .yao.changing.broken::before,
+        .yao.changing.broken::after {
+            animation: pulse 1.5s ease-in-out infinite;
         }
 
         .yao-number {
-            width: 40px;
+            width: 50px;
+            text-align: center;
             color: #654321;
             font-weight: bold;
+            font-size: 0.95em;
+            flex-shrink: 0;
         }
 
         .hexagram-display {
@@ -299,47 +330,173 @@
 
         .interpretation {
             background: white;
-            padding: 30px;
+            padding: 35px;
             border-radius: 20px;
             margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            line-height: 1.8;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            line-height: 2;
             color: #654321;
         }
 
         .interpretation h3 {
             color: #654321;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-            border-bottom: 2px solid #D4A574;
-            padding-bottom: 10px;
+            margin-bottom: 20px;
+            margin-top: 25px;
+            font-size: 1.4em;
+            border-bottom: 3px solid #D4A574;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .interpretation h3:first-child {
+            margin-top: 0;
         }
 
         .interpretation-section {
             margin: 20px 0;
-            padding: 15px;
-            background: rgba(212, 165, 116, 0.05);
-            border-radius: 10px;
-            border-left: 4px solid #D4A574;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.08) 0%, rgba(139, 111, 71, 0.05) 100%);
+            border-radius: 12px;
+            border-left: 5px solid #D4A574;
+            font-size: 1.05em;
+        }
+
+        .interpretation p {
+            margin: 15px 0;
+            text-indent: 2em;
+        }
+
+        .question-display {
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(139, 111, 71, 0.1) 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(212, 165, 116, 0.3);
+        }
+
+        .question-display h4 {
+            color: #8B6F47;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .question-display p {
+            color: #654321;
+            font-size: 1.15em;
+            font-weight: 500;
+            margin: 0;
+            text-indent: 0;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 40px 20px;
         }
 
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(212, 165, 116, 0.3);
-            border-top-color: #8B6F47;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        .loading-hexagram {
+            margin: 30px auto;
+            max-width: 350px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .loading-yao-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 12px auto;
+            gap: 15px;
+            width: 100%;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .loading-yao-line:nth-child(1) { animation-delay: 0.1s; }
+        .loading-yao-line:nth-child(2) { animation-delay: 0.2s; }
+        .loading-yao-line:nth-child(3) { animation-delay: 0.3s; }
+        .loading-yao-line:nth-child(4) { animation-delay: 0.4s; }
+        .loading-yao-line:nth-child(5) { animation-delay: 0.5s; }
+        .loading-yao-line:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-yao {
+            width: 100%;
+            max-width: 250px;
+            height: 20px;
+            background: linear-gradient(90deg, #654321 0%, #8B6F47 50%, #654321 100%);
+            background-size: 200% 100%;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+
+        .loading-yao.broken {
+            display: flex;
+            gap: 20px;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .loading-yao.broken::before,
+        .loading-yao.broken::after {
+            content: '';
+            flex: 1;
+            height: 20px;
+            background: linear-gradient(90deg, #654321 0%, #8B6F47 50%, #654321 100%);
+            background-size: 200% 100%;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+
+        .loading-yao.changing {
+            background: linear-gradient(90deg, #DAA520 0%, #FFD700 25%, #B8860B 50%, #FFD700 75%, #DAA520 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
+        }
+
+        .loading-yao.changing.broken::before,
+        .loading-yao.changing.broken::after {
+            background: linear-gradient(90deg, #DAA520 0%, #FFD700 25%, #B8860B 50%, #FFD700 75%, #DAA520 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { 
+                box-shadow: 0 2px 8px rgba(218, 165, 32, 0.3), 0 0 15px rgba(218, 165, 32, 0.2);
+            }
+            50% { 
+                box-shadow: 0 2px 8px rgba(218, 165, 32, 0.6), 0 0 25px rgba(218, 165, 32, 0.4);
+            }
+        }
+
+        .loading-text {
+            margin-top: 30px;
+            color: #8B6F47;
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+
+        .loading-subtext {
+            margin-top: 10px;
+            color: #A67B5B;
+            font-size: 0.95em;
+            opacity: 0.8;
         }
 
         .progress-indicator {
@@ -477,25 +634,37 @@
         <!-- 步驟3: 顯示結果 -->
         <div class="step" id="step3">
             <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p style="color: #8B6F47; font-size: 1.1em;">正在解讀卦象，請稍候...</p>
+                <div class="loading-hexagram" id="loadingHexagram"></div>
+                <p class="loading-text">正在解讀卦象，請稍候...</p>
+                <p class="loading-subtext">誠心感應天地，智慧即將顯現</p>
             </div>
             
             <div id="result" style="display: none;">
-                <div class="hexagram-display">
-                    <div id="finalHexagram"></div>
-                    <div class="hexagram-name" id="hexagramName"></div>
-                    <div class="hexagram-info" id="hexagramInfo"></div>
+                <div id="downloadable-content">
+                    <div class="question-display">
+                        <h4>📿 占卜問題</h4>
+                        <p id="questionDisplay"></p>
+                    </div>
+
+                    <div class="hexagram-display">
+                        <div id="finalHexagram"></div>
+                        <div class="hexagram-name" id="hexagramName"></div>
+                        <div class="hexagram-info" id="hexagramInfo"></div>
+                    </div>
+
+                    <div class="interpretation" id="interpretation"></div>
                 </div>
 
-                <div class="interpretation" id="interpretation"></div>
-
                 <div class="button-container" style="margin-top: 30px;">
-                    <button class="button" onclick="restart()">重新占卜</button>
+                    <button class="button" onclick="downloadAsImage()">📥 下載解讀報告</button>
+                    <button class="button" onclick="restart()">🔄 重新占卜</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- html2canvas 用於下載圖片 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <script>
         // 六十四卦數據
@@ -901,12 +1070,20 @@
                 const isChanging = (yao === 6 || yao === 9);
                 
                 html += `<div class="yao-line">
-                    <span class="yao-number">${i === 0 ? '初' : i === 5 ? '上' : numberToChinese(i + 1)}</span>
-                    <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                    <span class="yao-number">${getYaoName(i)}</span>
+                    <div class="yao-container">
+                        <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                    </div>
                 </div>`;
             }
             
             display.innerHTML = html;
+        }
+
+        function getYaoName(index) {
+            if (index === 0) return '初';
+            if (index === 5) return '上';
+            return numberToChinese(index + 1);
         }
 
         function numberToChinese(num) {
@@ -916,6 +1093,9 @@
 
         async function calculateResult() {
             showStep(3);
+            
+            // 顯示等待動畫的卦象
+            showLoadingHexagram();
             
             // 構建本卦
             const originalHexagram = gameState.yaos.map(y => 
@@ -942,6 +1122,27 @@
             
             // 調用AI生成解讀
             await generateAIInterpretation(interpretation);
+        }
+
+        function showLoadingHexagram() {
+            const loadingDisplay = document.getElementById('loadingHexagram');
+            let html = '';
+            
+            // 從下往上顯示（第一爻在最下方）
+            for (let i = gameState.yaos.length - 1; i >= 0; i--) {
+                const yao = gameState.yaos[i];
+                const isYang = (yao === 7 || yao === 9);
+                const isChanging = (yao === 6 || yao === 9);
+                
+                html += `<div class="loading-yao-line">
+                    <span class="yao-number">${getYaoName(i)}</span>
+                    <div class="yao-container">
+                        <div class="loading-yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                    </div>
+                </div>`;
+            }
+            
+            loadingDisplay.innerHTML = html;
         }
 
         function determineInterpretation(originalGua, changedGua, changingYaos, yaos) {
@@ -1073,6 +1274,9 @@
         function displayHexagramInfo(interpretation) {
             const { originalGua, changedGua, numChanging } = interpretation;
             
+            // 顯示問題
+            document.getElementById('questionDisplay').textContent = gameState.question;
+            
             // 顯示卦象圖
             let hexagramHtml = '<div>';
             for (let i = gameState.yaos.length - 1; i >= 0; i--) {
@@ -1081,8 +1285,10 @@
                 const isChanging = (yao === 6 || yao === 9);
                 
                 hexagramHtml += `<div class="yao-line">
-                    <span class="yao-number">${i === 0 ? '初' : i === 5 ? '上' : numberToChinese(i + 1)}</span>
-                    <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                    <span class="yao-number">${getYaoName(i)}</span>
+                    <div class="yao-container">
+                        <div class="yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
+                    </div>
                 </div>`;
             }
             hexagramHtml += '</div>';
@@ -1131,6 +1337,58 @@
             };
             document.getElementById('question').value = '';
             showStep(1);
+        }
+
+        async function downloadAsImage() {
+            const content = document.getElementById('downloadable-content');
+            const button = event.target;
+            
+            // 禁用按鈕並顯示處理中
+            button.disabled = true;
+            button.textContent = '⏳ 生成中...';
+            
+            try {
+                // 暫時隱藏變爻動畫以便截圖
+                const changingYaos = content.querySelectorAll('.yao.changing');
+                changingYaos.forEach(yao => {
+                    yao.style.animation = 'none';
+                });
+                
+                // 使用 html2canvas 生成圖片
+                const canvas = await html2canvas(content, {
+                    backgroundColor: '#FFF8F0',
+                    scale: 2, // 提高清晰度
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                // 恢復動畫
+                changingYaos.forEach(yao => {
+                    yao.style.animation = '';
+                });
+                
+                // 轉換為圖片並下載
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const date = new Date().toISOString().slice(0, 10);
+                    link.download = `易經占卜解讀_${date}.png`;
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    
+                    // 恢復按鈕
+                    button.disabled = false;
+                    button.textContent = '📥 下載解讀報告';
+                });
+                
+            } catch (error) {
+                console.error('生成圖片失敗：', error);
+                alert('下載失敗，請稍後再試');
+                button.disabled = false;
+                button.textContent = '📥 下載解讀報告';
+            }
         }
 
         // DeepSeek API 調用
