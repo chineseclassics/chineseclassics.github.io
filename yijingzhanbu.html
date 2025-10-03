@@ -464,14 +464,14 @@
             text-indent: 0;
         }
 
-        /* 时间八字显示 */
+        /* 時間八字顯示 */
         .datetime-bazi-container {
-            background: linear-gradient(135deg, rgba(218, 165, 32, 0.15) 0%, rgba(139, 111, 71, 0.1) 100%);
-            border: 2px solid rgba(212, 165, 116, 0.4);
+            background: linear-gradient(135deg, rgba(218, 165, 32, 0.12) 0%, rgba(139, 111, 71, 0.08) 100%);
+            border: 2px solid rgba(212, 165, 116, 0.3);
             border-radius: 20px;
-            padding: 25px;
+            padding: 30px 25px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
             position: relative;
             overflow: hidden;
         }
@@ -483,13 +483,13 @@
             right: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(218, 165, 32, 0.05) 0%, transparent 70%);
-            animation: shimmerBackground 8s ease-in-out infinite;
+            background: radial-gradient(circle, rgba(218, 165, 32, 0.06) 0%, transparent 70%);
+            animation: rotateBackground 20s linear infinite;
         }
 
-        @keyframes shimmerBackground {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(180deg); }
+        @keyframes rotateBackground {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .datetime-section {
@@ -499,63 +499,76 @@
 
         .time-display {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(212, 165, 116, 0.2);
         }
 
         .solar-time {
-            font-size: 1.8em;
+            font-size: 2em;
             color: #654321;
             font-weight: bold;
-            letter-spacing: 2px;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 8px;
         }
 
         .solar-date {
-            font-size: 1.1em;
+            font-size: 1.15em;
             color: #8B6F47;
-            margin-top: 5px;
-        }
-
-        .lunar-time {
-            font-size: 1.2em;
-            color: #A67B5B;
-            margin-top: 8px;
+            margin-bottom: 10px;
             font-weight: 500;
         }
 
-        .bazi-display {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid rgba(212, 165, 116, 0.3);
-        }
-
-        .bazi-title {
-            text-align: center;
-            color: #654321;
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 15px;
+        .lunar-date {
+            font-size: 1.1em;
+            color: #A67B5B;
+            font-weight: 500;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
 
+        .lunar-icon {
+            font-size: 1.2em;
+        }
+
+        .bazi-display {
+            margin-top: 25px;
+        }
+
+        .bazi-title {
+            text-align: center;
+            color: #654321;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .bazi-title-icon {
+            font-size: 1.4em;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
         .pillars-container {
             display: flex;
-            justify-content: space-around;
-            gap: 10px;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
 
         .pillar {
-            flex: 1;
-            min-width: 70px;
             background: white;
-            border-radius: 12px;
-            padding: 15px 10px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            padding: 18px 12px;
+            min-width: 85px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -567,77 +580,116 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #DAA520, #B8860B);
+            height: 4px;
+            background: linear-gradient(90deg, #DAA520, #B8860B, #DAA520);
+            background-size: 200% 100%;
+            animation: shimmerTop 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmerTop {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         .pillar:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
 
         .pillar-label {
-            font-size: 0.85em;
+            font-size: 0.9em;
             color: #8B6F47;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .pillar-chars {
-            font-size: 1.5em;
-            color: #654321;
-            font-weight: bold;
-            letter-spacing: 3px;
-            margin-bottom: 5px;
-        }
-
-        .pillar-element {
-            font-size: 0.75em;
-            color: #A67B5B;
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        .element-tag {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .element-金 { background: rgba(255, 215, 0, 0.2); color: #DAA520; }
-        .element-木 { background: rgba(34, 139, 34, 0.2); color: #228B22; }
-        .element-水 { background: rgba(0, 119, 190, 0.2); color: #0077BE; }
-        .element-火 { background: rgba(220, 20, 60, 0.2); color: #DC143C; }
-        .element-土 { background: rgba(184, 134, 11, 0.2); color: #B8860B; }
-
-        .wuxing-summary {
-            margin-top: 15px;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 10px;
+            margin-bottom: 10px;
+            font-weight: 600;
             text-align: center;
         }
 
-        .wuxing-title {
-            font-size: 0.9em;
-            color: #8B6F47;
+        .pillar-chars {
+            font-size: 1.8em;
+            color: #654321;
+            font-weight: bold;
+            text-align: center;
             margin-bottom: 8px;
-            font-weight: 500;
+            letter-spacing: 2px;
         }
 
-        .wuxing-tags {
+        .pillar-elements {
             display: flex;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
         }
 
-        .wuxing-tag {
-            padding: 4px 10px;
+        .element-tag {
+            padding: 3px 8px;
             border-radius: 6px;
-            font-size: 0.85em;
+            font-size: 0.8em;
+            font-weight: 600;
+            border: 1px solid;
+        }
+
+        .element-金 { 
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(218, 165, 32, 0.15));
+            color: #B8860B;
+            border-color: #DAA520;
+        }
+        .element-木 { 
+            background: linear-gradient(135deg, rgba(34, 139, 34, 0.2), rgba(0, 128, 0, 0.15));
+            color: #228B22;
+            border-color: #32CD32;
+        }
+        .element-水 { 
+            background: linear-gradient(135deg, rgba(0, 119, 190, 0.2), rgba(30, 144, 255, 0.15));
+            color: #0077BE;
+            border-color: #1E90FF;
+        }
+        .element-火 { 
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(255, 69, 0, 0.15));
+            color: #DC143C;
+            border-color: #FF4500;
+        }
+        .element-土 { 
+            background: linear-gradient(135deg, rgba(184, 134, 11, 0.2), rgba(205, 133, 63, 0.15));
+            color: #8B6914;
+            border-color: #B8860B;
+        }
+
+        .wuxing-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .wuxing-title {
+            text-align: center;
+            font-size: 1em;
+            color: #8B6F47;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .wuxing-stats {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .wuxing-stat {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .wuxing-stat:hover {
+            transform: scale(1.1);
         }
 
         .loading {
@@ -821,45 +873,48 @@
         <h1>📿 易經占卜</h1>
         <p class="subtitle">以古老智慧，照亮決策之路</p>
 
-        <!-- 时间八字显示 -->
+        <!-- 時間八字顯示 -->
         <div class="datetime-bazi-container">
             <div class="datetime-section">
                 <div class="time-display">
                     <div class="solar-time" id="solarTime">--:--:--</div>
                     <div class="solar-date" id="solarDate">----年--月--日 星期-</div>
-                    <div class="lunar-time" id="lunarDate">農曆 ---- --月--</div>
+                    <div class="lunar-date">
+                        <span class="lunar-icon">🌙</span>
+                        <span id="lunarDate">農曆 ----年 --月 --</span>
+                    </div>
                 </div>
 
                 <div class="bazi-display">
                     <div class="bazi-title">
-                        <span>🔮</span>
-                        <span>當前八字</span>
+                        <span class="bazi-title-icon">☯️</span>
+                        <span>當前時辰八字</span>
                     </div>
                     <div class="pillars-container">
                         <div class="pillar">
                             <div class="pillar-label">年柱</div>
                             <div class="pillar-chars" id="yearPillar">--</div>
-                            <div class="pillar-element" id="yearElement"></div>
+                            <div class="pillar-elements" id="yearElements"></div>
                         </div>
                         <div class="pillar">
                             <div class="pillar-label">月柱</div>
                             <div class="pillar-chars" id="monthPillar">--</div>
-                            <div class="pillar-element" id="monthElement"></div>
+                            <div class="pillar-elements" id="monthElements"></div>
                         </div>
                         <div class="pillar">
                             <div class="pillar-label">日柱</div>
                             <div class="pillar-chars" id="dayPillar">--</div>
-                            <div class="pillar-element" id="dayElement"></div>
+                            <div class="pillar-elements" id="dayElements"></div>
                         </div>
                         <div class="pillar">
                             <div class="pillar-label">時柱</div>
                             <div class="pillar-chars" id="hourPillar">--</div>
-                            <div class="pillar-element" id="hourElement"></div>
+                            <div class="pillar-elements" id="hourElements"></div>
                         </div>
                     </div>
                     <div class="wuxing-summary">
-                        <div class="wuxing-title">八字五行</div>
-                        <div class="wuxing-tags" id="wuxingTags"></div>
+                        <div class="wuxing-title">八字五行分布</div>
+                        <div class="wuxing-stats" id="wuxingStats"></div>
                     </div>
                 </div>
             </div>
@@ -963,256 +1018,117 @@
 
     <!-- html2canvas 用於下載圖片 -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    
+    <!-- lunar-javascript 農曆和八字庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
 
     <script>
-        // 天干地支五行对照
-        const STEM_ELEMENTS = {
-            '甲': '木', '乙': '木',
-            '丙': '火', '丁': '火',
-            '戊': '土', '己': '土',
-            '庚': '金', '辛': '金',
-            '壬': '水', '癸': '水'
-        };
-
-        const BRANCH_ELEMENTS = {
-            '子': '水', '丑': '土', '寅': '木', '卯': '木',
-            '辰': '土', '巳': '火', '午': '火', '未': '土',
-            '申': '金', '酉': '金', '戌': '土', '亥': '水'
-        };
-
-        const EARTHLY_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-        const HEAVENLY_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-
-        // 时间和八字管理
-        let baziCache = null;
-        let lastUpdateDate = null;
-
-        // 获取今天的缓存键
-        function getTodayCacheKey() {
-            const today = new Date();
-            return `bazi_${today.getFullYear()}_${today.getMonth() + 1}_${today.getDate()}`;
-        }
-
-        // 从localStorage获取缓存
-        function getCachedBazi() {
-            const cacheKey = getTodayCacheKey();
-            const cached = localStorage.getItem(cacheKey);
-            if (cached) {
-                try {
-                    return JSON.parse(cached);
-                } catch (e) {
-                    return null;
-                }
-            }
-            return null;
-        }
-
-        // 保存到localStorage
-        function saveBaziCache(data) {
-            const cacheKey = getTodayCacheKey();
-            localStorage.setItem(cacheKey, JSON.stringify(data));
-            
-            // 清理旧缓存（保留最近3天）
-            const keys = Object.keys(localStorage);
-            keys.forEach(key => {
-                if (key.startsWith('bazi_') && key !== cacheKey) {
-                    localStorage.removeItem(key);
-                }
-            });
-        }
-
-        // 使用DeepSeek获取农历和八字
-        async function fetchBaziFromAI(year, month, day) {
-            const prompt = `请为以下公历日期提供准确的农历信息和八字（年月日柱）：
-
-公历日期：${year}年${month}月${day}日
-
-请严格按照以下JSON格式返回，不要有任何额外的文字说明：
-{
-  "lunar": {
-    "year": "农历年份（如：甲辰年）",
-    "month": "农历月份（如：九月 或 闰九月）",
-    "day": "农历日期（如：初一、十五、廿三等）"
-  },
-  "bazi": {
-    "year": "年柱（如：甲辰）",
-    "month": "月柱（如：甲戌）",
-    "day": "日柱（如：辛巳）"
-  }
-}
-
-注意：
-1. 必须返回标准的JSON格式
-2. 农历月份如果是闰月要标注"闰"
-3. 八字必须准确，使用正确的天干地支
-4. 不要包含任何注释或说明文字`;
-
-            try {
-                const response = await callDeepSeek([
-                    { role: 'user', content: prompt }
-                ]);
-
-                // 尝试提取JSON
-                let jsonMatch = response.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    const data = JSON.parse(jsonMatch[0]);
-                    return data;
-                }
-                throw new Error('无法解析AI返回的数据');
-            } catch (error) {
-                console.error('获取八字失败：', error);
-                return null;
-            }
-        }
-
-        // 计算时柱（本地计算）
-        function calculateHourPillar(hour, dayStem) {
-            // 时辰对照
-            let branchIndex;
-            if (hour >= 23 || hour < 1) branchIndex = 0;  // 子时
-            else if (hour < 3) branchIndex = 1;  // 丑时
-            else if (hour < 5) branchIndex = 2;  // 寅时
-            else if (hour < 7) branchIndex = 3;  // 卯时
-            else if (hour < 9) branchIndex = 4;  // 辰时
-            else if (hour < 11) branchIndex = 5; // 巳时
-            else if (hour < 13) branchIndex = 6; // 午时
-            else if (hour < 15) branchIndex = 7; // 未时
-            else if (hour < 17) branchIndex = 8; // 申时
-            else if (hour < 19) branchIndex = 9; // 酉时
-            else if (hour < 21) branchIndex = 10; // 戌时
-            else branchIndex = 11; // 亥时
-
-            // 五鼠遁日诀
-            const dayStemIndex = HEAVENLY_STEMS.indexOf(dayStem);
-            const stemIndex = ((dayStemIndex % 5) * 2 + branchIndex) % 10;
-
-            return HEAVENLY_STEMS[stemIndex] + EARTHLY_BRANCHES[branchIndex];
-        }
-
-        // 更新显示
-        async function updateDateTimeDisplay() {
+        // 時間和八字管理
+        function updateDateTimeBazi() {
             const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth() + 1;
-            const day = now.getDate();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
-
-            // 更新公历时间
-            const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
-            document.getElementById('solarTime').textContent = timeStr;
-
+            
+            // 使用 lunar-javascript 獲取農曆和八字
+            const solar = Solar.fromDate(now);
+            const lunar = solar.getLunar();
+            const baZi = lunar.getEightChar();
+            
+            // 更新公曆時間
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('solarTime').textContent = `${hours}:${minutes}:${seconds}`;
+            
+            // 更新公曆日期
             const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
             const weekday = weekdays[now.getDay()];
-            const dateStr = `${year}年${month}月${day}日 星期${weekday}`;
-            document.getElementById('solarDate').textContent = dateStr;
-
-            // 检查是否需要更新八字
-            const currentDate = `${year}-${month}-${day}`;
-            if (currentDate !== lastUpdateDate) {
-                lastUpdateDate = currentDate;
-                await updateBaziDisplay(year, month, day, hour);
-            } else {
-                // 只更新时柱
-                if (baziCache) {
-                    const dayStem = baziCache.bazi.day[0];
-                    const hourPillar = calculateHourPillar(hour, dayStem);
-                    document.getElementById('hourPillar').textContent = hourPillar;
-                    updatePillarElement('hour', hourPillar);
-                    updateWuxingSummary();
-                }
-            }
-        }
-
-        // 更新八字显示
-        async function updateBaziDisplay(year, month, day, hour) {
-            // 先检查缓存
-            let cached = getCachedBazi();
+            document.getElementById('solarDate').textContent = 
+                `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekday}`;
             
-            if (!cached) {
-                // 调用AI获取
-                cached = await fetchBaziFromAI(year, month, day);
-                if (cached) {
-                    saveBaziCache(cached);
-                } else {
-                    // AI失败，使用备用显示
-                    document.getElementById('lunarDate').textContent = '農曆信息加載中...';
-                    return;
-                }
-            }
-
-            baziCache = cached;
-
-            // 显示农历
-            const lunarStr = `農曆 ${cached.lunar.year} ${cached.lunar.month}${cached.lunar.day}`;
-            document.getElementById('lunarDate').textContent = lunarStr;
-
-            // 显示八字
-            document.getElementById('yearPillar').textContent = cached.bazi.year;
-            document.getElementById('monthPillar').textContent = cached.bazi.month;
-            document.getElementById('dayPillar').textContent = cached.bazi.day;
-
-            // 计算时柱
-            const dayStem = cached.bazi.day[0];
-            const hourPillar = calculateHourPillar(hour, dayStem);
-            document.getElementById('hourPillar').textContent = hourPillar;
-
-            // 更新五行
-            updatePillarElement('year', cached.bazi.year);
-            updatePillarElement('month', cached.bazi.month);
-            updatePillarElement('day', cached.bazi.day);
-            updatePillarElement('hour', hourPillar);
-
-            updateWuxingSummary();
+            // 更新農曆日期
+            const lunarYear = lunar.getYearInChinese();
+            const lunarMonth = lunar.getMonthInChinese();
+            const lunarDay = lunar.getDayInChinese();
+            document.getElementById('lunarDate').textContent = 
+                `農曆 ${lunarYear} ${lunarMonth}${lunarDay}`;
+            
+            // 更新八字四柱
+            updatePillar('year', baZi.getYear(), baZi.getYearGan(), baZi.getYearZhi());
+            updatePillar('month', baZi.getMonth(), baZi.getMonthGan(), baZi.getMonthZhi());
+            updatePillar('day', baZi.getDay(), baZi.getDayGan(), baZi.getDayZhi());
+            updatePillar('hour', baZi.getTime(), baZi.getTimeGan(), baZi.getTimeZhi());
+            
+            // 更新五行統計
+            updateWuxingStats(baZi);
         }
-
-        // 更新单个柱的五行显示
-        function updatePillarElement(pillarType, pillar) {
-            const stem = pillar[0];
-            const branch = pillar[1];
-            const stemElement = STEM_ELEMENTS[stem];
-            const branchElement = BRANCH_ELEMENTS[branch];
-
-            const elementHtml = `
-                <span class="element-tag element-${stemElement}">${stemElement}</span>
-                <span class="element-tag element-${branchElement}">${branchElement}</span>
+        
+        function updatePillar(type, pillar, gan, zhi) {
+            document.getElementById(`${type}Pillar`).textContent = pillar;
+            
+            // 獲取天干地支五行
+            const ganWuXing = getGanWuXing(gan);
+            const zhiWuXing = getZhiWuXing(zhi);
+            
+            const elementsHtml = `
+                <span class="element-tag element-${ganWuXing}" title="${gan}(${ganWuXing})">${ganWuXing}</span>
+                <span class="element-tag element-${zhiWuXing}" title="${zhi}(${zhiWuXing})">${zhiWuXing}</span>
             `;
-            document.getElementById(`${pillarType}Element`).innerHTML = elementHtml;
+            document.getElementById(`${type}Elements`).innerHTML = elementsHtml;
         }
-
-        // 更新五行汇总
-        function updateWuxingSummary() {
-            const elements = {
+        
+        function getGanWuXing(gan) {
+            const ganMap = {
+                '甲': '木', '乙': '木',
+                '丙': '火', '丁': '火',
+                '戊': '土', '己': '土',
+                '庚': '金', '辛': '金',
+                '壬': '水', '癸': '水'
+            };
+            return ganMap[gan] || '';
+        }
+        
+        function getZhiWuXing(zhi) {
+            const zhiMap = {
+                '子': '水', '丑': '土', '寅': '木', '卯': '木',
+                '辰': '土', '巳': '火', '午': '火', '未': '土',
+                '申': '金', '酉': '金', '戌': '土', '亥': '水'
+            };
+            return zhiMap[zhi] || '';
+        }
+        
+        function updateWuxingStats(baZi) {
+            const wuxingCount = {
                 '金': 0, '木': 0, '水': 0, '火': 0, '土': 0
             };
-
-            // 统计所有五行
-            ['year', 'month', 'day', 'hour'].forEach(type => {
-                const pillarText = document.getElementById(`${type}Pillar`).textContent;
-                if (pillarText && pillarText.length === 2) {
-                    const stem = pillarText[0];
-                    const branch = pillarText[1];
-                    if (STEM_ELEMENTS[stem]) elements[STEM_ELEMENTS[stem]]++;
-                    if (BRANCH_ELEMENTS[branch]) elements[BRANCH_ELEMENTS[branch]]++;
-                }
+            
+            // 統計八字中的五行
+            [
+                [baZi.getYearGan(), baZi.getYearZhi()],
+                [baZi.getMonthGan(), baZi.getMonthZhi()],
+                [baZi.getDayGan(), baZi.getDayZhi()],
+                [baZi.getTimeGan(), baZi.getTimeZhi()]
+            ].forEach(([gan, zhi]) => {
+                const ganWuXing = getGanWuXing(gan);
+                const zhiWuXing = getZhiWuXing(zhi);
+                if (ganWuXing) wuxingCount[ganWuXing]++;
+                if (zhiWuXing) wuxingCount[zhiWuXing]++;
             });
-
-            // 显示五行统计
+            
+            // 顯示五行統計
             let html = '';
-            Object.keys(elements).forEach(element => {
-                const count = elements[element];
+            Object.entries(wuxingCount).forEach(([element, count]) => {
                 if (count > 0) {
-                    html += `<span class="wuxing-tag element-${element}">${element} × ${count}</span>`;
+                    html += `<span class="wuxing-stat element-${element}">
+                        ${element} × ${count}
+                    </span>`;
                 }
             });
-            document.getElementById('wuxingTags').innerHTML = html;
+            document.getElementById('wuxingStats').innerHTML = html;
         }
-
-        // 页面加载时启动
+        
+        // 頁面加載時啟動時間更新
         document.addEventListener('DOMContentLoaded', function() {
-            updateDateTimeDisplay();
-            setInterval(updateDateTimeDisplay, 1000); // 每秒更新
+            updateDateTimeBazi();
+            setInterval(updateDateTimeBazi, 1000); // 每秒更新
         });
 
         // 六十四卦數據
