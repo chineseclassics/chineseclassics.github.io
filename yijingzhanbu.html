@@ -446,13 +446,7 @@
             color: #8B5A2B;
             font-weight: 700;
             font-size: inherit;
-            background: linear-gradient(135deg, rgba(218, 165, 32, 0.12) 0%, rgba(212, 165, 116, 0.08) 100%);
-            padding: 8px 12px;
-            border-radius: 4px;
-            border-left: 3px solid rgba(212, 165, 116, 0.4);
-            padding-left: 12px;
-            display: block;
-            margin: 12px 0 8px 0;
+            padding: 0 4px;
         }
 
         .question-display {
@@ -2292,21 +2286,28 @@
 - 斷卦方法：${method}
 - 依據經文：${textToUse}
 
-請根據以上卦象，結合求卦者的問題，給出一個深入、具體、有說服力的解讀。你的解讀應該包括：
+請根據以上卦象，結合求卦者的問題，給出深入、具體、有說服力的解讀。
 
-**卦象總述**
-簡要說明這個卦象的整體含義和象徵
+**重要：請嚴格按照以下JSON格式返回，不要添加任何其他文字或markdown格式：**
 
-**針對問題的分析**
-將卦象與求卦者的具體問題結合，給出明確的指引
+{
+  "卦象總述": "2-3句話簡要說明這個卦象的整體含義和象徵",
+  "針對問題的分析": "3-4句話將卦象與求卦者的具體問題結合，給出明確的指引和分析",
+  "行動建議": [
+    "第一點建議（包含重點和具體說明，約40-60字）",
+    "第二點建議（包含重點和具體說明，約40-60字）",
+    "第三點建議（包含重點和具體說明，約40-60字）"
+  ],
+  "注意事項": "2-3句話提醒求卦者需要注意的風險或機會",
+  "結語": "1-2句話簡短總結，給予鼓勵"
+}
 
-**行動建議**
-提供具體可行的建議，幫助求卦者做出決策
-
-**注意事項**
-提醒求卦者需要注意的風險或機會
-
-請用溫和、智慧、充滿洞察力的語氣，幫助求卦者理解卦象的深意。內容在500-700字之間即可，不需要統計字數。`;
+要求：
+1. 必須返回有效的JSON格式
+2. 行動建議數組包含3-4個具體建議
+3. 用溫和、智慧、充滿洞察力的語氣
+4. 總字數控制在500-700字
+5. 不要在JSON外添加任何其他文字`;
 
             try {
                 const response = await callDeepSeek([
@@ -2443,46 +2444,97 @@
             
             const interpretationDiv = document.getElementById('interpretation');
             
-            // 定義允許的標題列表
-            const allowedTitles = [
-                '卦象總述',
-                '針對問題的分析',
-                '行動建議',
-                '注意事項',
-                '結語'
-            ];
+            // 嘗試解析JSON
+            let jsonData = null;
+            try {
+                // 清理可能的markdown代碼塊標記
+                let cleanedText = text.trim();
+                if (cleanedText.startsWith('```json')) {
+                    cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+                } else if (cleanedText.startsWith('```')) {
+                    cleanedText = cleanedText.replace(/^```\s*/, '').replace(/```\s*$/, '');
+                }
+                
+                jsonData = JSON.parse(cleanedText);
+                console.log('✅ 成功解析JSON:', jsonData);
+            } catch (e) {
+                console.warn('⚠️ JSON解析失敗，使用降級方案:', e);
+                jsonData = null;
+            }
             
-            // 處理文本
-            let processedText = text.replace(/字數[統统]計.*$/gm, ''); // 移除字數統計
-            
-            // 只將特定標題轉換為樣式化的標題，其他 ** 保持為加粗
-            allowedTitles.forEach(title => {
-                const regex = new RegExp(`\\*\\*${title}\\*\\*`, 'g');
-                processedText = processedText.replace(regex, `<div class="section-title">${title}</div>`);
-            });
-            
-            // 將剩餘的 **文本** 轉換為 <strong>
-            processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            
-            // 如果已經包含HTML標籤，直接使用
-            if (processedText.includes('<div') || processedText.includes('<strong>')) {
-                interpretationDiv.innerHTML = '<h3>🔮 卦象解讀</h3>' + processedText;
-            } else {
-                // 否則進行段落分割
-                const paragraphs = processedText.split('\n\n').filter(p => p.trim());
+            // 如果成功解析JSON，使用結構化渲染
+            if (jsonData && typeof jsonData === 'object') {
                 let html = '<h3>🔮 卦象解讀</h3>';
-                paragraphs.forEach(p => {
-                    const trimmed = p.trim();
-                    if (trimmed) {
-                        // 如果段落已經是標題，直接使用
-                        if (trimmed.startsWith('<div class="section-title">')) {
-                            html += trimmed;
+                
+                // 渲染各個部分
+                const sections = [
+                    { key: '卦象總述', icon: '📜' },
+                    { key: '針對問題的分析', icon: '🔍' },
+                    { key: '行動建議', icon: '💡' },
+                    { key: '注意事項', icon: '⚠️' },
+                    { key: '結語', icon: '🌟' }
+                ];
+                
+                sections.forEach(section => {
+                    if (jsonData[section.key]) {
+                        html += `<div class="section-title">${section.icon} ${section.key}</div>`;
+                        
+                        // 如果是行動建議（數組格式）
+                        if (section.key === '行動建議' && Array.isArray(jsonData[section.key])) {
+                            jsonData[section.key].forEach((item, index) => {
+                                // 檢查是否已經包含數字
+                                const content = item.trim();
+                                const hasNumber = /^\d+[\.\、]/.test(content);
+                                html += `<p>${hasNumber ? content : `${index + 1}. ${content}`}</p>`;
+                            });
                         } else {
-                            html += `<p>${trimmed}</p>`;
+                            // 其他部分直接顯示
+                            const content = Array.isArray(jsonData[section.key]) 
+                                ? jsonData[section.key].join('<br>') 
+                                : jsonData[section.key];
+                            html += `<p>${content}</p>`;
                         }
                     }
                 });
+                
                 interpretationDiv.innerHTML = html;
+            } else {
+                // 降級方案：使用原來的markdown處理
+                console.log('📝 使用降級方案處理文本');
+                const allowedTitles = [
+                    '卦象總述',
+                    '針對問題的分析',
+                    '行動建議',
+                    '注意事項',
+                    '結語'
+                ];
+                
+                let processedText = text.replace(/字數[統统]計.*$/gm, '');
+                
+                allowedTitles.forEach(title => {
+                    const regex = new RegExp(`\\*\\*${title}\\*\\*`, 'g');
+                    processedText = processedText.replace(regex, `<div class="section-title">${title}</div>`);
+                });
+                
+                processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                
+                if (processedText.includes('<div') || processedText.includes('<strong>')) {
+                    interpretationDiv.innerHTML = '<h3>🔮 卦象解讀</h3>' + processedText;
+                } else {
+                    const paragraphs = processedText.split('\n\n').filter(p => p.trim());
+                    let html = '<h3>🔮 卦象解讀</h3>';
+                    paragraphs.forEach(p => {
+                        const trimmed = p.trim();
+                        if (trimmed) {
+                            if (trimmed.startsWith('<div class="section-title">')) {
+                                html += trimmed;
+                            } else {
+                                html += `<p>${trimmed}</p>`;
+                            }
+                        }
+                    });
+                    interpretationDiv.innerHTML = html;
+                }
             }
         }
 
