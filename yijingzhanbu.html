@@ -829,6 +829,176 @@
             opacity: 0.8;
         }
 
+        /* 八卦太極旋轉動畫 */
+        .bagua-loading {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;
+        }
+
+        .taiji-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: taijiRotate 4s linear infinite;
+        }
+
+        .taiji {
+            font-size: 100px;
+            filter: drop-shadow(0 0 20px rgba(218, 165, 32, 0.5));
+        }
+
+        @keyframes taijiRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .bagua-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            animation: baguaRotate 12s linear infinite;
+        }
+
+        @keyframes baguaRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .bagua-item {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 90px;
+            height: 90px;
+            transform-origin: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .bagua-item:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        /* 八卦方位定位 */
+        .bagua-item[data-angle="0"] { 
+            transform: translate(-50%, -50%) translateY(-180px) rotate(-0deg);
+        }
+        .bagua-item[data-angle="45"] { 
+            transform: translate(-50%, -50%) rotate(45deg) translateY(-180px) rotate(-45deg);
+        }
+        .bagua-item[data-angle="90"] { 
+            transform: translate(-50%, -50%) rotate(90deg) translateY(-180px) rotate(-90deg);
+        }
+        .bagua-item[data-angle="135"] { 
+            transform: translate(-50%, -50%) rotate(135deg) translateY(-180px) rotate(-135deg);
+        }
+        .bagua-item[data-angle="180"] { 
+            transform: translate(-50%, -50%) rotate(180deg) translateY(-180px) rotate(-180deg);
+        }
+        .bagua-item[data-angle="225"] { 
+            transform: translate(-50%, -50%) rotate(225deg) translateY(-180px) rotate(-225deg);
+        }
+        .bagua-item[data-angle="270"] { 
+            transform: translate(-50%, -50%) rotate(270deg) translateY(-180px) rotate(-270deg);
+        }
+        .bagua-item[data-angle="315"] { 
+            transform: translate(-50%, -50%) rotate(315deg) translateY(-180px) rotate(-315deg);
+        }
+
+        .bagua-symbol {
+            font-size: 32px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .bagua-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #654321;
+        }
+
+        .bagua-element {
+            font-size: 13px;
+            color: #8B6F47;
+            font-weight: 500;
+        }
+
+        /* 八卦元素顏色 - 符號 */
+        .bagua-item[data-angle="0"] .bagua-symbol { color: #DAA520; } /* 乾-天-金色 */
+        .bagua-item[data-angle="45"] .bagua-symbol { color: #87CEEB; } /* 兌-澤-淺藍 */
+        .bagua-item[data-angle="90"] .bagua-symbol { color: #FF4500; } /* 離-火-紅色 */
+        .bagua-item[data-angle="135"] .bagua-symbol { color: #9370DB; } /* 震-雷-紫色 */
+        .bagua-item[data-angle="180"] .bagua-symbol { color: #3CB371; } /* 巽-風-青綠 */
+        .bagua-item[data-angle="225"] .bagua-symbol { color: #1E90FF; } /* 坎-水-深藍 */
+        .bagua-item[data-angle="270"] .bagua-symbol { color: #8B7355; } /* 艮-山-棕色 */
+        .bagua-item[data-angle="315"] .bagua-symbol { color: #654321; } /* 坤-地-深褐 */
+
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            .bagua-loading {
+                width: 300px;
+                height: 300px;
+            }
+
+            .taiji-container {
+                width: 80px;
+                height: 80px;
+            }
+
+            .taiji {
+                font-size: 70px;
+            }
+
+            .bagua-item {
+                width: 70px;
+                height: 70px;
+                padding: 6px;
+                gap: 2px;
+            }
+
+            .bagua-item[data-angle="0"],
+            .bagua-item[data-angle="45"],
+            .bagua-item[data-angle="90"],
+            .bagua-item[data-angle="135"],
+            .bagua-item[data-angle="180"],
+            .bagua-item[data-angle="225"],
+            .bagua-item[data-angle="270"],
+            .bagua-item[data-angle="315"] { 
+                transform: translate(-50%, -50%) translateY(-135px);
+            }
+
+            .bagua-symbol {
+                font-size: 24px;
+            }
+
+            .bagua-name {
+                font-size: 13px;
+            }
+
+            .bagua-element {
+                font-size: 11px;
+            }
+        }
+
         .progress-indicator {
             display: flex;
             justify-content: center;
@@ -1114,6 +1284,53 @@
                 <div id="interpretationSection" style="display: none;">
                     <div class="loading" id="aiLoading">
                         <div class="loading-hexagram" id="aiLoadingHexagram"></div>
+                        <div class="bagua-loading" id="baguaLoading" style="display: none;">
+                            <div class="taiji-container">
+                                <div class="taiji">☯</div>
+                            </div>
+                            <div class="bagua-circle">
+                                <div class="bagua-item" data-angle="0">
+                                    <div class="bagua-symbol">☰</div>
+                                    <div class="bagua-name">乾</div>
+                                    <div class="bagua-element">天</div>
+                                </div>
+                                <div class="bagua-item" data-angle="45">
+                                    <div class="bagua-symbol">☱</div>
+                                    <div class="bagua-name">兌</div>
+                                    <div class="bagua-element">澤</div>
+                                </div>
+                                <div class="bagua-item" data-angle="90">
+                                    <div class="bagua-symbol">☲</div>
+                                    <div class="bagua-name">離</div>
+                                    <div class="bagua-element">火</div>
+                                </div>
+                                <div class="bagua-item" data-angle="135">
+                                    <div class="bagua-symbol">☳</div>
+                                    <div class="bagua-name">震</div>
+                                    <div class="bagua-element">雷</div>
+                                </div>
+                                <div class="bagua-item" data-angle="180">
+                                    <div class="bagua-symbol">☴</div>
+                                    <div class="bagua-name">巽</div>
+                                    <div class="bagua-element">風</div>
+                                </div>
+                                <div class="bagua-item" data-angle="225">
+                                    <div class="bagua-symbol">☵</div>
+                                    <div class="bagua-name">坎</div>
+                                    <div class="bagua-element">水</div>
+                                </div>
+                                <div class="bagua-item" data-angle="270">
+                                    <div class="bagua-symbol">☶</div>
+                                    <div class="bagua-name">艮</div>
+                                    <div class="bagua-element">山</div>
+                                </div>
+                                <div class="bagua-item" data-angle="315">
+                                    <div class="bagua-symbol">☷</div>
+                                    <div class="bagua-name">坤</div>
+                                    <div class="bagua-element">地</div>
+                                </div>
+                            </div>
+                        </div>
                         <p class="loading-text">正在解讀卦象，請稍候...</p>
                         <p class="loading-subtext">誠心感應天地，智慧即將顯現</p>
                     </div>
@@ -2204,9 +2421,14 @@
         }
 
         function showLoadingHexagram() {
-            const loadingDisplay = document.getElementById('aiLoadingHexagram');
-            let html = '';
+            const loadingHexagram = document.getElementById('aiLoadingHexagram');
+            const baguaLoading = document.getElementById('baguaLoading');
             
+            // 先顯示六爻動畫
+            loadingHexagram.style.display = 'block';
+            baguaLoading.style.display = 'none';
+            
+            let html = '';
             // 從下往上顯示（第一爻在最下方）
             for (let i = gameState.yaos.length - 1; i >= 0; i--) {
                 const yao = gameState.yaos[i];
@@ -2221,7 +2443,17 @@
                 </div>`;
             }
             
-            loadingDisplay.innerHTML = html;
+            loadingHexagram.innerHTML = html;
+            
+            // 9秒後（六爻動畫播放2次）切換到八卦旋轉動畫
+            setTimeout(() => {
+                // 檢查是否還在加載中（AI尚未返回）
+                const aiLoading = document.getElementById('aiLoading');
+                if (aiLoading && aiLoading.style.display !== 'none') {
+                    loadingHexagram.style.display = 'none';
+                    baguaLoading.style.display = 'block';
+                }
+            }, 9000); // 4.5秒 × 2次 = 9秒
         }
 
         function determineInterpretation(originalGua, changedGua, changingYaos, yaos) {
