@@ -155,14 +155,21 @@
 
         .coin-throwing {
             text-align: center;
-            padding: 30px;
+            padding: 20px 30px;
+        }
+
+        .throw-count {
+            font-size: 1.3em;
+            color: #654321;
+            font-weight: bold;
+            margin-bottom: 8px;
         }
 
         .coin-instruction {
-            font-size: 1.2em;
+            font-size: 1.1em;
             color: #654321;
-            margin-bottom: 20px;
-            font-weight: bold;
+            margin-bottom: 5px;
+            font-weight: 500;
         }
 
         .coin-container {
@@ -1039,7 +1046,7 @@
             <div class="coin-throwing">
                 <div class="throw-count" id="throwCount">第 1 爻 / 共 6 爻</div>
                 <p class="coin-instruction">請點擊下方三枚硬幣進行占卜</p>
-                <p style="color: #8B6F47; margin-bottom: 20px;">（模擬同時擲出三枚硬幣）</p>
+                <p style="color: #8B6F47; margin: 0 0 15px 0; font-size: 0.9em;">（模擬同時擲出三枚硬幣）</p>
                 
                 <div class="coin-container" id="coinContainer">
                     <div class="coin" onclick="throwCoins()">
@@ -2183,7 +2190,11 @@
                 const isYang = (yao === 7 || yao === 9);
                 const isChanging = (yao === 6 || yao === 9);
                 
-                html += `<div class="loading-yao-line">
+                // 計算動畫延遲：初爻（i=0）先顯示，第六爻（i=5）最後顯示
+                // i值越小，延遲越短
+                const animationDelay = `${i * 0.5}s`;
+                
+                html += `<div class="loading-yao-line" style="animation-delay: ${animationDelay}">
                     <span class="yao-number">${getYaoName(i)}</span>
                     <div class="yao-container">
                         <div class="loading-yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
@@ -2570,6 +2581,18 @@
                 downloadContainer.style.backgroundColor = '#FFF8F0';
                 downloadContainer.style.maxWidth = '900px';
                 downloadContainer.style.margin = '0 auto';
+                downloadContainer.style.fontFamily = "'Noto Serif TC', serif";
+                
+                // 複製標題
+                const titleDiv = document.createElement('div');
+                titleDiv.style.textAlign = 'center';
+                titleDiv.style.marginBottom = '20px';
+                titleDiv.innerHTML = '<h1 style="color: #654321; font-size: 2.5em; margin: 0 0 10px 0;">📿 易經占卜</h1><p style="color: #8B6F47; font-size: 1.1em; margin: 0;">空空道人的占卜室</p>';
+                downloadContainer.appendChild(titleDiv);
+                
+                // 複製時辰八字顯示
+                const datetimeBaziClone = document.querySelector('.datetime-bazi-container').cloneNode(true);
+                downloadContainer.appendChild(datetimeBaziClone);
                 
                 // 複製問題
                 const questionClone = document.querySelector('.question-display').cloneNode(true);
@@ -2583,25 +2606,37 @@
                 const originalTextClone = document.getElementById('originalText').cloneNode(true);
                 downloadContainer.appendChild(originalTextClone);
                 
-                // 複製解讀（如果存在）
+                // 複製AI解讀（如果存在）
                 const interpretationElem = document.getElementById('interpretation');
                 if (interpretationElem && interpretationElem.innerHTML.trim()) {
                     const interpretationClone = document.createElement('div');
                     interpretationClone.className = 'interpretation';
+                    interpretationClone.style.background = 'white';
+                    interpretationClone.style.padding = '35px';
+                    interpretationClone.style.borderRadius = '20px';
+                    interpretationClone.style.marginTop = '20px';
+                    interpretationClone.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                    interpretationClone.style.lineHeight = '2';
+                    interpretationClone.style.color = '#654321';
                     interpretationClone.innerHTML = interpretationElem.innerHTML;
                     downloadContainer.appendChild(interpretationClone);
                 }
                 
-                // 暫時添加到body
+                // 暫時添加到body（屏幕外）
                 downloadContainer.style.position = 'absolute';
                 downloadContainer.style.left = '-9999px';
+                downloadContainer.style.top = '0';
                 document.body.appendChild(downloadContainer);
                 
-                // 暫時隱藏變爻動畫以便截圖
-                const changingYaos = downloadContainer.querySelectorAll('.yao.changing');
-                changingYaos.forEach(yao => {
-                    yao.style.animation = 'none';
+                // 暫時停止所有動畫以便截圖
+                const animatedElements = downloadContainer.querySelectorAll('.yao.changing, .pillar');
+                animatedElements.forEach(elem => {
+                    elem.style.animation = 'none';
+                    elem.style.transition = 'none';
                 });
+                
+                // 等待一小段時間確保樣式應用
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // 使用 html2canvas 生成圖片
                 const canvas = await html2canvas(downloadContainer, {
@@ -2609,7 +2644,9 @@
                     scale: 2,
                     logging: false,
                     useCORS: true,
-                    allowTaint: true
+                    allowTaint: true,
+                    width: downloadContainer.offsetWidth,
+                    height: downloadContainer.offsetHeight
                 });
                 
                 // 移除臨時容器
