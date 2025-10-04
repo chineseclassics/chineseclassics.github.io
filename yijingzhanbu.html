@@ -220,17 +220,23 @@
         }
 
         .yao-line {
-            display: flex;
+            display: grid;
+            grid-template-columns: 40px 1fr 40px;
             align-items: center;
-            justify-content: center;
             margin: 12px auto;
-            gap: 15px;
             width: 100%;
-            max-width: 350px;
+            max-width: 400px;
+        }
+
+        .yao-number {
+            text-align: right;
+            padding-right: 15px;
+            font-size: 1em;
+            color: #8B6F47;
+            font-weight: 600;
         }
 
         .yao-container {
-            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -306,15 +312,6 @@
         .yao.changing.broken::before,
         .yao.changing.broken::after {
             animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .yao-number {
-            width: 50px;
-            text-align: center;
-            color: #654321;
-            font-weight: bold;
-            font-size: 0.95em;
-            flex-shrink: 0;
         }
 
         .hexagram-display {
@@ -733,12 +730,12 @@
         }
 
         .loading-yao-line {
-            display: flex;
+            display: grid;
+            grid-template-columns: 40px 1fr 40px;
             align-items: center;
-            justify-content: center;
             margin: 12px auto;
-            gap: 15px;
             width: 100%;
+            max-width: 400px;
         }
 
         .loading-yao {
@@ -1078,17 +1075,27 @@
                 font-size: 1.2em;
             }
 
+            .yao-line {
+                grid-template-columns: 30px 1fr 30px;
+                max-width: 100%;
+            }
+
+            .yao-number {
+                padding-right: 10px;
+                font-size: 0.9em;
+            }
+
             .yao {
-                width: 150px;
+                max-width: 200px;
             }
 
-            .yao.broken {
-                width: 70px;
+            .loading-yao-line {
+                grid-template-columns: 30px 1fr 30px;
+                max-width: 100%;
             }
 
-            .yao.broken::after {
-                left: 80px;
-                width: 70px;
+            .loading-yao {
+                max-width: 200px;
             }
 
             .datetime-section {
