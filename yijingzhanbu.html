@@ -790,20 +790,28 @@
         /* 累積顯現動畫 - 從初爻到上爻 */
         .loading-yao-line {
             opacity: 0;
-            animation: yaoAccumulate 3s ease-in-out infinite;
+            animation: yaoAccumulate 4.5s ease-in-out infinite;
         }
 
-        .loading-yao-line:nth-child(1) { animation-delay: 0s; }
-        .loading-yao-line:nth-child(2) { animation-delay: 0.4s; }
-        .loading-yao-line:nth-child(3) { animation-delay: 0.8s; }
-        .loading-yao-line:nth-child(4) { animation-delay: 1.2s; }
-        .loading-yao-line:nth-child(5) { animation-delay: 1.6s; }
-        .loading-yao-line:nth-child(6) { animation-delay: 2s; }
+        /* 從底部到頂部依次顯示，總動畫週期4.5秒 */
+        /* 第六爻（最上面，HTML中第1個） */
+        .loading-yao-line:nth-child(1) { animation-delay: 2.5s; }
+        /* 第五爻 */
+        .loading-yao-line:nth-child(2) { animation-delay: 2.0s; }
+        /* 第四爻 */
+        .loading-yao-line:nth-child(3) { animation-delay: 1.5s; }
+        /* 第三爻 */
+        .loading-yao-line:nth-child(4) { animation-delay: 1.0s; }
+        /* 第二爻 */
+        .loading-yao-line:nth-child(5) { animation-delay: 0.5s; }
+        /* 初爻（最下面，HTML中第6個） */
+        .loading-yao-line:nth-child(6) { animation-delay: 0s; }
 
         @keyframes yaoAccumulate {
             0% { opacity: 0; transform: translateY(10px) scale(0.8); }
-            15% { opacity: 1; transform: translateY(0) scale(1); }
-            85% { opacity: 1; transform: translateY(0) scale(1); }
+            11% { opacity: 1; transform: translateY(0) scale(1); }
+            66% { opacity: 1; transform: translateY(0) scale(1); }
+            77% { opacity: 0; transform: translateY(-10px) scale(0.8); }
             100% { opacity: 0; transform: translateY(-10px) scale(0.8); }
         }
 
@@ -2114,6 +2122,13 @@
             }
             
             display.innerHTML = html;
+            
+            // 滾動到爻顯示區域，讓用戶看到新生成的爻
+            setTimeout(() => {
+                if (display && gameState.yaos.length > 0) {
+                    display.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
         }
 
         function getYaoName(index) {
@@ -2173,6 +2188,14 @@
             document.getElementById('interpretationSection').style.display = 'block';
             showLoadingHexagram();
             
+            // 滾動到AI解讀區域
+            setTimeout(() => {
+                const aiSection = document.getElementById('interpretationSection');
+                if (aiSection) {
+                    aiSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 200);
+            
             // 調用AI生成解讀
             await generateAIInterpretation(gameState.interpretation);
             
@@ -2190,11 +2213,7 @@
                 const isYang = (yao === 7 || yao === 9);
                 const isChanging = (yao === 6 || yao === 9);
                 
-                // 計算動畫延遲：初爻（i=0）先顯示，第六爻（i=5）最後顯示
-                // i值越小，延遲越短
-                const animationDelay = `${i * 0.5}s`;
-                
-                html += `<div class="loading-yao-line" style="animation-delay: ${animationDelay}">
+                html += `<div class="loading-yao-line">
                     <span class="yao-number">${getYaoName(i)}</span>
                     <div class="yao-container">
                         <div class="loading-yao ${!isYang ? 'broken' : ''} ${isChanging ? 'changing' : ''}"></div>
@@ -2547,13 +2566,42 @@
                     interpretationDiv.innerHTML = html;
                 }
             }
+            
+            // AI解讀顯示後，平滑滾動到解讀區域
+            setTimeout(() => {
+                const interpretationElem = document.getElementById('interpretation');
+                if (interpretationElem) {
+                    interpretationElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300); // 延遲確保內容渲染完成
         }
 
         function showStep(stepNumber) {
             document.querySelectorAll('.step').forEach(step => {
                 step.classList.remove('active');
             });
-            document.getElementById(`step${stepNumber}`).classList.add('active');
+            const currentStep = document.getElementById(`step${stepNumber}`);
+            currentStep.classList.add('active');
+            
+            // 平滑滾動到當前步驟
+            setTimeout(() => {
+                if (stepNumber === 1) {
+                    // Step 1: 滾動到頂部
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (stepNumber === 2) {
+                    // Step 2: 滾動到投擲硬幣區域
+                    const coinContainer = document.getElementById('coinContainer');
+                    if (coinContainer) {
+                        coinContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else if (stepNumber === 3) {
+                    // Step 3: 滾動到結果顯示
+                    const result = document.getElementById('result');
+                    if (result) {
+                        result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            }, 100); // 短暫延遲確保DOM更新
         }
 
         function restart() {
@@ -2628,8 +2676,67 @@
                 downloadContainer.style.top = '0';
                 document.body.appendChild(downloadContainer);
                 
-                // 暫時停止所有動畫以便截圖
-                const animatedElements = downloadContainer.querySelectorAll('.yao.changing, .pillar');
+                // 修復卦象爻的顯示樣式
+                const allYaos = downloadContainer.querySelectorAll('.yao');
+                allYaos.forEach(yao => {
+                    // 停止動畫
+                    yao.style.animation = 'none';
+                    yao.style.transition = 'none';
+                    
+                    // 確保爻的基本樣式
+                    if (!yao.classList.contains('broken')) {
+                        // 陽爻
+                        yao.style.width = '100%';
+                        yao.style.maxWidth = '280px';
+                        yao.style.height = '20px';
+                        yao.style.background = '#654321';
+                        yao.style.borderRadius = '5px';
+                        yao.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+                    } else {
+                        // 陰爻 - 確保兩段都顯示
+                        yao.style.display = 'flex';
+                        yao.style.gap = '20px';
+                        yao.style.background = 'transparent';
+                        yao.style.width = '100%';
+                        yao.style.maxWidth = '280px';
+                        yao.style.boxShadow = 'none';
+                        
+                        // 確保偽元素樣式通過設置內聯樣式
+                        const beforeAfter = document.createElement('style');
+                        beforeAfter.textContent = `
+                            .yao.broken::before,
+                            .yao.broken::after {
+                                content: '';
+                                flex: 1;
+                                height: 20px;
+                                background: #654321 !important;
+                                border-radius: 5px;
+                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                            }
+                        `;
+                        downloadContainer.appendChild(beforeAfter);
+                    }
+                    
+                    // 變爻使用正常顏色
+                    if (yao.classList.contains('changing')) {
+                        if (!yao.classList.contains('broken')) {
+                            yao.style.background = '#B8860B';
+                        }
+                    }
+                });
+                
+                // 確保爻容器樣式正確
+                const yaoContainers = downloadContainer.querySelectorAll('.yao-container');
+                yaoContainers.forEach(container => {
+                    container.style.flex = '1';
+                    container.style.display = 'flex';
+                    container.style.justifyContent = 'center';
+                    container.style.alignItems = 'center';
+                    container.style.minHeight = '24px';
+                });
+                
+                // 停止其他動畫
+                const animatedElements = downloadContainer.querySelectorAll('.pillar');
                 animatedElements.forEach(elem => {
                     elem.style.animation = 'none';
                     elem.style.transition = 'none';
