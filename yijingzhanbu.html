@@ -885,61 +885,64 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            gap: 2px;
+            padding: 0;
             transition: all 0.3s ease;
         }
 
-        .bagua-item:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        .bagua-item:hover .bagua-symbol {
+            transform: scale(1.2);
         }
 
-        /* 八卦方位定位 */
+        /* 八卦方位定位 - 文字朝向中心 */
         .bagua-item[data-angle="0"] { 
-            transform: translate(-50%, -50%) translateY(-180px) rotate(-0deg);
+            transform: translate(-50%, -50%) translateY(-180px) rotate(180deg);
         }
         .bagua-item[data-angle="45"] { 
-            transform: translate(-50%, -50%) rotate(45deg) translateY(-180px) rotate(-45deg);
+            transform: translate(-50%, -50%) rotate(45deg) translateY(-180px) rotate(180deg);
         }
         .bagua-item[data-angle="90"] { 
-            transform: translate(-50%, -50%) rotate(90deg) translateY(-180px) rotate(-90deg);
+            transform: translate(-50%, -50%) rotate(90deg) translateY(-180px) rotate(180deg);
         }
         .bagua-item[data-angle="135"] { 
-            transform: translate(-50%, -50%) rotate(135deg) translateY(-180px) rotate(-135deg);
+            transform: translate(-50%, -50%) rotate(135deg) translateY(-180px) rotate(180deg);
         }
         .bagua-item[data-angle="180"] { 
-            transform: translate(-50%, -50%) rotate(180deg) translateY(-180px) rotate(-180deg);
+            transform: translate(-50%, -50%) rotate(180deg) translateY(-180px) rotate(180deg);
         }
         .bagua-item[data-angle="225"] { 
-            transform: translate(-50%, -50%) rotate(225deg) translateY(-180px) rotate(-225deg);
+            transform: translate(-50%, -50%) rotate(225deg) translateY(-180px) rotate(180deg);
         }
         .bagua-item[data-angle="270"] { 
-            transform: translate(-50%, -50%) rotate(270deg) translateY(-180px) rotate(-270deg);
+            transform: translate(-50%, -50%) rotate(270deg) translateY(-180px) rotate(180deg);
         }
         .bagua-item[data-angle="315"] { 
-            transform: translate(-50%, -50%) rotate(315deg) translateY(-180px) rotate(-315deg);
+            transform: translate(-50%, -50%) rotate(315deg) translateY(-180px) rotate(180deg);
         }
 
         .bagua-symbol {
-            font-size: 32px;
+            font-size: 40px;
             font-weight: bold;
             line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
         }
 
         .bagua-name {
             font-size: 16px;
             font-weight: bold;
             color: #654321;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8),
+                         0 0 10px rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
         }
 
         .bagua-element {
             font-size: 13px;
             color: #8B6F47;
-            font-weight: 500;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8),
+                         0 0 10px rgba(255, 255, 255, 0.5);
         }
 
         /* 八卦元素顏色 - 符號 */
@@ -971,23 +974,37 @@
             .bagua-item {
                 width: 70px;
                 height: 70px;
-                padding: 6px;
-                gap: 2px;
+                gap: 1px;
             }
 
-            .bagua-item[data-angle="0"],
-            .bagua-item[data-angle="45"],
-            .bagua-item[data-angle="90"],
-            .bagua-item[data-angle="135"],
-            .bagua-item[data-angle="180"],
-            .bagua-item[data-angle="225"],
-            .bagua-item[data-angle="270"],
+            /* 移動端也朝向中心 */
+            .bagua-item[data-angle="0"] { 
+                transform: translate(-50%, -50%) translateY(-135px) rotate(180deg);
+            }
+            .bagua-item[data-angle="45"] { 
+                transform: translate(-50%, -50%) rotate(45deg) translateY(-135px) rotate(180deg);
+            }
+            .bagua-item[data-angle="90"] { 
+                transform: translate(-50%, -50%) rotate(90deg) translateY(-135px) rotate(180deg);
+            }
+            .bagua-item[data-angle="135"] { 
+                transform: translate(-50%, -50%) rotate(135deg) translateY(-135px) rotate(180deg);
+            }
+            .bagua-item[data-angle="180"] { 
+                transform: translate(-50%, -50%) rotate(180deg) translateY(-135px) rotate(180deg);
+            }
+            .bagua-item[data-angle="225"] { 
+                transform: translate(-50%, -50%) rotate(225deg) translateY(-135px) rotate(180deg);
+            }
+            .bagua-item[data-angle="270"] { 
+                transform: translate(-50%, -50%) rotate(270deg) translateY(-135px) rotate(180deg);
+            }
             .bagua-item[data-angle="315"] { 
-                transform: translate(-50%, -50%) translateY(-135px);
+                transform: translate(-50%, -50%) rotate(315deg) translateY(-135px) rotate(180deg);
             }
 
             .bagua-symbol {
-                font-size: 24px;
+                font-size: 28px;
             }
 
             .bagua-name {
