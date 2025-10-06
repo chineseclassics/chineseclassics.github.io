@@ -184,28 +184,57 @@
             width: 100px;
             height: 100px;
             cursor: pointer;
-            transition: all 0.3s ease;
             position: relative;
             transform-style: preserve-3d;
+            transition: transform 0.3s ease;
         }
 
         .coin:hover {
             transform: scale(1.05);
         }
 
+        .coin-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+        }
+
+        .coin-face svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .coin-front {
+            transform: rotateY(0deg);
+        }
+
+        .coin-back {
+            transform: rotateY(180deg);
+        }
+
+        /* 翻转到反面 */
+        .coin.show-back {
+            transform: rotateY(180deg);
+        }
+
+        /* 翻转动画 */
         .coin.flipping {
             animation: coinFlip 0.6s ease-in-out;
         }
 
         @keyframes coinFlip {
-            0%, 100% { transform: rotateY(0deg); }
-            50% { transform: rotateY(180deg); }
-        }
-
-        .coin svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            0% { 
+                transform: rotateY(0deg); 
+            }
+            50% { 
+                transform: rotateY(180deg); 
+            }
+            100% { 
+                transform: rotateY(360deg); 
+            }
         }
 
         .yao-line {
@@ -1139,15 +1168,19 @@
     <!-- SVG 定义 -->
     <svg width="0" height="0" style="position: absolute;">
         <defs>
+            <!-- 简化的平面铜色 -->
             <radialGradient id="copperGradient" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" style="stop-color:#DBA76F;stop-opacity:1" />
-                <stop offset="50%" style="stop-color:#C19A6B;stop-opacity:1" />
-                <stop offset="85%" style="stop-color:#8B6F47;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#654321;stop-opacity:1" />
+                <stop offset="0%" style="stop-color:#C19A6B;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#A67B5B;stop-opacity:1" />
             </radialGradient>
             <filter id="coinShadow">
                 <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.5"/>
             </filter>
+            <!-- 方孔遮罩 -->
+            <mask id="coinHole">
+                <rect width="200" height="200" fill="white"/>
+                <rect x="75" y="75" width="50" height="50" fill="black"/>
+            </mask>
         </defs>
     </svg>
 </head>
@@ -1255,46 +1288,94 @@
                 
                 <div class="coin-container" id="coinContainer">
                     <div class="coin" onclick="throwCoins()">
-                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" filter="url(#coinShadow)"/>
-                            <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="1" opacity="0.3"/>
-                            <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2"/>
-                            <rect x="77" y="77" width="46" height="46" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
-                            <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
-                            <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
-                            <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
-                            <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
-                            <circle cx="40" cy="40" r="8" fill="#5D8A66" opacity="0.3"/>
-                            <circle cx="160" cy="160" r="6" fill="#5D8A66" opacity="0.2"/>
-                        </svg>
+                        <!-- 正面：太虛通寶 -->
+                        <div class="coin-face coin-front">
+                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" mask="url(#coinHole)" filter="url(#coinShadow)"/>
+                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="2.5" opacity="0.5"/>
+                                <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2.5"/>
+                                <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
+                                <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
+                                <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
+                                <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
+                                <circle cx="40" cy="40" r="8" fill="#5D8A66" opacity="0.3"/>
+                                <circle cx="160" cy="160" r="6" fill="#5D8A66" opacity="0.2"/>
+                            </svg>
+                        </div>
+                        <!-- 反面：易經符號 -->
+                        <div class="coin-face coin-back">
+                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" mask="url(#coinHole)" filter="url(#coinShadow)"/>
+                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="2.5" opacity="0.5"/>
+                                <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2.5"/>
+                                <text x="100" y="50" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚎</text>
+                                <text x="100" y="170" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚌</text>
+                                <text x="45" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚍</text>
+                                <text x="155" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚏</text>
+                                <circle cx="45" cy="150" r="7" fill="#5D8A66" opacity="0.3"/>
+                                <circle cx="155" cy="45" r="6" fill="#5D8A66" opacity="0.25"/>
+                            </svg>
+                        </div>
                     </div>
                     <div class="coin" onclick="throwCoins()">
-                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" filter="url(#coinShadow)"/>
-                            <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="1" opacity="0.3"/>
-                            <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2"/>
-                            <rect x="77" y="77" width="46" height="46" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
-                            <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
-                            <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
-                            <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
-                            <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
-                            <circle cx="50" cy="160" r="7" fill="#5D8A66" opacity="0.3"/>
-                            <circle cx="165" cy="45" r="5" fill="#5D8A66" opacity="0.2"/>
-                        </svg>
+                        <!-- 正面：太虛通寶 -->
+                        <div class="coin-face coin-front">
+                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" mask="url(#coinHole)" filter="url(#coinShadow)"/>
+                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="2.5" opacity="0.5"/>
+                                <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2.5"/>
+                                <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
+                                <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
+                                <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
+                                <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
+                                <circle cx="50" cy="160" r="7" fill="#5D8A66" opacity="0.3"/>
+                                <circle cx="165" cy="45" r="5" fill="#5D8A66" opacity="0.2"/>
+                            </svg>
+                        </div>
+                        <!-- 反面：易經符號 -->
+                        <div class="coin-face coin-back">
+                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" mask="url(#coinHole)" filter="url(#coinShadow)"/>
+                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="2.5" opacity="0.5"/>
+                                <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2.5"/>
+                                <text x="100" y="50" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚎</text>
+                                <text x="100" y="170" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚌</text>
+                                <text x="45" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚍</text>
+                                <text x="155" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚏</text>
+                                <circle cx="35" cy="165" r="8" fill="#5D8A66" opacity="0.25"/>
+                                <circle cx="148" cy="38" r="6" fill="#5D8A66" opacity="0.3"/>
+                            </svg>
+                        </div>
                     </div>
                     <div class="coin" onclick="throwCoins()">
-                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" filter="url(#coinShadow)"/>
-                            <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="1" opacity="0.3"/>
-                            <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2"/>
-                            <rect x="77" y="77" width="46" height="46" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
-                            <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
-                            <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
-                            <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
-                            <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
-                            <circle cx="145" cy="155" r="9" fill="#5D8A66" opacity="0.3"/>
-                            <circle cx="60" cy="55" r="6" fill="#5D8A66" opacity="0.25"/>
-                        </svg>
+                        <!-- 正面：太虛通寶 -->
+                        <div class="coin-face coin-front">
+                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" mask="url(#coinHole)" filter="url(#coinShadow)"/>
+                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="2.5" opacity="0.5"/>
+                                <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2.5"/>
+                                <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
+                                <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
+                                <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
+                                <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
+                                <circle cx="145" cy="155" r="9" fill="#5D8A66" opacity="0.3"/>
+                                <circle cx="60" cy="55" r="6" fill="#5D8A66" opacity="0.25"/>
+                            </svg>
+                        </div>
+                        <!-- 反面：易經符號 -->
+                        <div class="coin-face coin-back">
+                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" mask="url(#coinHole)" filter="url(#coinShadow)"/>
+                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="2.5" opacity="0.5"/>
+                                <rect x="75" y="75" width="50" height="50" fill="none" stroke="#654321" stroke-width="2.5"/>
+                                <text x="100" y="50" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚎</text>
+                                <text x="100" y="170" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚌</text>
+                                <text x="45" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚍</text>
+                                <text x="155" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚏</text>
+                                <circle cx="55" cy="42" r="7" fill="#5D8A66" opacity="0.3"/>
+                                <circle cx="162" cy="158" r="8" fill="#5D8A66" opacity="0.2"/>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
@@ -2299,7 +2380,12 @@
             if (gameState.currentThrow >= 6) return;
 
             const coins = document.querySelectorAll('.coin');
-            coins.forEach(coin => coin.classList.add('flipping'));
+            // 添加翻转动画（添加随机延迟让效果更自然）
+            coins.forEach((coin, idx) => {
+                setTimeout(() => {
+                    coin.classList.add('flipping');
+                }, idx * 50); // 每个硬币延迟50ms
+            });
 
             setTimeout(() => {
                 // 模擬擲三個硬幣
@@ -2311,41 +2397,15 @@
                 
                 const sum = results.reduce((a, b) => a + b, 0);
                 
-                // 顯示硬幣結果
+                // 根据结果设置硬币显示的面（使用翻转动画）
                 coins.forEach((coin, idx) => {
                     coin.classList.remove('flipping');
                     if (results[idx] === 3) {
                         // 正面：太虛通寶
-                        coin.innerHTML = `
-                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" filter="url(#coinShadow)"/>
-                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="1" opacity="0.3"/>
-                                <rect x="75" y="75" width="50" height="50" fill="#2c3e50" stroke="#654321" stroke-width="2"/>
-                                <rect x="77" y="77" width="46" height="46" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
-                                <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
-                                <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
-                                <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
-                                <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
-                                <circle cx="${30 + Math.random() * 20}" cy="${30 + Math.random() * 20}" r="8" fill="#5D8A66" opacity="0.3"/>
-                                <circle cx="${150 + Math.random() * 20}" cy="${150 + Math.random() * 20}" r="6" fill="#5D8A66" opacity="0.2"/>
-                            </svg>
-                        `;
+                        coin.classList.remove('show-back');
                     } else {
                         // 反面：易經符號
-                        coin.innerHTML = `
-                            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" filter="url(#coinShadow)"/>
-                                <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="1" opacity="0.3"/>
-                                <rect x="75" y="75" width="50" height="50" fill="#2c3e50" stroke="#654321" stroke-width="2"/>
-                                <rect x="77" y="77" width="46" height="46" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
-                                <text x="100" y="50" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚎</text>
-                                <text x="100" y="170" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚌</text>
-                                <text x="45" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚍</text>
-                                <text x="155" y="115" font-size="44" font-weight="900" fill="#654321" text-anchor="middle">⚏</text>
-                                <circle cx="${40 + Math.random() * 20}" cy="${140 + Math.random() * 20}" r="7" fill="#5D8A66" opacity="0.3"/>
-                                <circle cx="${155 + Math.random() * 20}" cy="${35 + Math.random() * 20}" r="6" fill="#5D8A66" opacity="0.25"/>
-                            </svg>
-                        `;
+                        coin.classList.add('show-back');
                     }
                 });
 
@@ -2378,25 +2438,16 @@
                         calculateResult();
                     }, 1500);
                 } else {
-                    // 重置硬幣準備下一次
+                    // 重置硬幣準備下一次（使用翻转动画）
                     setTimeout(() => {
-                        coins.forEach((coin, coinIdx) => {
-                            const rustX = [40, 50, 145][coinIdx] || 40;
-                            const rustY = [40, 160, 155][coinIdx] || 40;
-                            coin.innerHTML = `
-                                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" filter="url(#coinShadow)"/>
-                                    <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="1" opacity="0.3"/>
-                                    <rect x="75" y="75" width="50" height="50" fill="#2c3e50" stroke="#654321" stroke-width="2"/>
-                                    <rect x="77" y="77" width="46" height="46" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
-                                    <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
-                                    <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
-                                    <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
-                                    <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
-                                    <circle cx="${rustX}" cy="${rustY}" r="${coinIdx === 0 ? 8 : 7}" fill="#5D8A66" opacity="0.3"/>
-                                    <circle cx="${200 - rustX}" cy="${200 - rustY}" r="6" fill="#5D8A66" opacity="0.2"/>
-                                </svg>
-                            `;
+                        coins.forEach((coin) => {
+                            // 如果硬币在反面，添加翻转动画翻回正面
+                            if (coin.classList.contains('show-back')) {
+                                coin.classList.add('flipping');
+                                setTimeout(() => {
+                                    coin.classList.remove('show-back', 'flipping');
+                                }, 600);
+                            }
                         });
                         document.getElementById('coinResult').textContent = '';
                     }, 1500);
@@ -2956,26 +3007,10 @@
             // 清空硬幣結果文字
             document.getElementById('coinResult').textContent = '';
             
-            // 重置硬幣狀態
+            // 重置硬幣狀態（移除所有状态class）
             const coins = document.querySelectorAll('.coin');
-            coins.forEach((coin, coinIdx) => {
-                coin.classList.remove('flipping');
-                const rustX = [40, 50, 145][coinIdx] || 40;
-                const rustY = [40, 160, 155][coinIdx] || 40;
-                coin.innerHTML = `
-                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="100" cy="100" r="95" fill="url(#copperGradient)" filter="url(#coinShadow)"/>
-                        <circle cx="100" cy="100" r="85" fill="none" stroke="#654321" stroke-width="1" opacity="0.3"/>
-                        <rect x="75" y="75" width="50" height="50" fill="#2c3e50" stroke="#654321" stroke-width="2"/>
-                        <rect x="77" y="77" width="46" height="46" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
-                        <text x="100" y="48" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">太</text>
-                        <text x="100" y="168" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">虛</text>
-                        <text x="45" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">寶</text>
-                        <text x="155" y="112" font-size="40" font-weight="900" fill="#654321" text-anchor="middle" font-family="serif">通</text>
-                        <circle cx="${rustX}" cy="${rustY}" r="${coinIdx === 0 ? 8 : 7}" fill="#5D8A66" opacity="0.3"/>
-                        <circle cx="${200 - rustX}" cy="${200 - rustY}" r="6" fill="#5D8A66" opacity="0.2"/>
-                    </svg>
-                `;
+            coins.forEach((coin) => {
+                coin.classList.remove('flipping', 'show-back');
             });
             
             // 重置進度點
