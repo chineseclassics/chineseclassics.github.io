@@ -388,9 +388,18 @@
         }
 
         .hexagram-arrow {
-            font-size: 2em;
-            color: #D4A574;
             align-self: center;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hexagram-arrow svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
 
         .hexagram-name {
@@ -2845,8 +2854,23 @@
                 }
                 hexagramHtml += '</div>';
                 
-                // 箭頭
-                hexagramHtml += '<div class="hexagram-arrow">→</div>';
+                // 箭頭（SVG）
+                hexagramHtml += `<div class="hexagram-arrow">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#C19A6B;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#D4A574;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <!-- 箭头主体 -->
+                        <path d="M 10 45 L 60 45 L 60 30 L 90 50 L 60 70 L 60 55 L 10 55 Z" 
+                              fill="url(#arrowGradient)" 
+                              stroke="#8B6F47" 
+                              stroke-width="1.5"
+                              opacity="0.9"/>
+                    </svg>
+                </div>`;
                 
                 // 變卦（右側）
                 hexagramHtml += '<div class="hexagram-single">';
