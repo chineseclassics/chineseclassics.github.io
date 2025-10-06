@@ -2861,13 +2861,67 @@
         }
 
         function restart() {
+            // 1. 完整重置 gameState
             gameState = {
                 question: '',
                 currentThrow: 0,
                 yaos: [],
-                changingYaos: []
+                changingYaos: [],
+                interpretation: null
             };
+            
+            // 2. 清空輸入框
             document.getElementById('question').value = '';
+            
+            // 3. 清理 Step 2 (抛硬幣階段) 的UI元素
+            // 清空爻顯示
+            document.getElementById('yaoDisplay').innerHTML = '';
+            
+            // 清空硬幣結果文字
+            document.getElementById('coinResult').textContent = '';
+            
+            // 重置硬幣狀態
+            const coins = document.querySelectorAll('.coin');
+            coins.forEach(coin => {
+                coin.classList.remove('heads', 'tails', 'flipping');
+                coin.innerHTML = '<span>硬幣</span>';
+            });
+            
+            // 重置進度點
+            for (let i = 1; i <= 6; i++) {
+                const dot = document.getElementById(`dot${i}`);
+                if (dot) {
+                    dot.classList.remove('active', 'completed');
+                    if (i === 1) {
+                        dot.classList.add('active');
+                    }
+                }
+            }
+            
+            // 4. 清理 Step 3 (結果顯示階段) 的所有內容
+            // 隱藏結果區域
+            document.getElementById('result').style.display = 'none';
+            
+            // 清空各個顯示區域的內容
+            document.getElementById('questionDisplay').textContent = '';
+            document.getElementById('finalHexagram').innerHTML = '';
+            document.getElementById('hexagramName').textContent = '';
+            document.getElementById('hexagramInfo').textContent = '';
+            document.getElementById('originalText').innerHTML = '';
+            document.getElementById('interpretation').innerHTML = '';
+            
+            // 重置解讀區域的顯示狀態
+            document.getElementById('interpretButton').style.display = 'block';
+            document.getElementById('interpretationSection').style.display = 'none';
+            document.getElementById('aiLoading').style.display = 'block';
+            document.getElementById('aiResult').style.display = 'none';
+            document.getElementById('aiLoadingHexagram').style.display = 'block';
+            document.getElementById('baguaLoading').style.display = 'none';
+            
+            // 隱藏下載按鈕
+            document.getElementById('downloadBtn').style.display = 'none';
+            
+            // 5. 切換到 Step 1
             showStep(1);
         }
 
