@@ -177,7 +177,7 @@
             justify-content: center;
             gap: 20px;
             margin: 30px 0;
-            flex-wrap: wrap;
+            flex-wrap: nowrap; /* 强制单行显示 */
         }
 
         /* 硬币容器禁用状态（在动画和显示结果期间） */
@@ -1121,9 +1121,25 @@
                 font-size: 1.6em;
             }
 
+            .coin-container {
+                gap: 12px; /* 减小移动设备上的间距 */
+            }
+
             .coin {
                 width: 80px;
                 height: 80px;
+            }
+        }
+
+        /* 针对更小的屏幕（如iPhone SE） */
+        @media (max-width: 375px) {
+            .coin-container {
+                gap: 8px; /* 进一步减小间距 */
+            }
+
+            .coin {
+                width: 70px; /* 进一步减小硬币尺寸 */
+                height: 70px;
             }
 
             .yao-line {
@@ -3105,6 +3121,10 @@
             coins.forEach((coin) => {
                 coin.classList.remove('flipping', 'flipping-back', 'show-back');
             });
+            
+            // 解除硬幣容器的禁用狀態
+            const coinContainer = document.getElementById('coinContainer');
+            coinContainer.classList.remove('disabled');
             
             // 重置進度點
             for (let i = 1; i <= 6; i++) {
