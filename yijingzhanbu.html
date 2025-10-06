@@ -2379,6 +2379,13 @@
         function throwCoins() {
             if (gameState.currentThrow >= 6) return;
 
+            // 移动设备震动反馈
+            if (navigator.vibrate) {
+                // 震动模式：[震动时长, 停顿, 震动时长, 停顿, 震动时长]
+                // 模拟三个硬币依次落地的感觉
+                navigator.vibrate([30, 50, 30, 50, 40]);
+            }
+
             const coins = document.querySelectorAll('.coin');
             // 添加翻转动画（添加随机延迟让效果更自然）
             coins.forEach((coin, idx) => {
@@ -2397,6 +2404,11 @@
                 
                 const sum = results.reduce((a, b) => a + b, 0);
                 
+                // 硬币落地震动反馈
+                if (navigator.vibrate) {
+                    navigator.vibrate(50); // 短促的震动表示硬币落地
+                }
+
                 // 根据结果设置硬币显示的面（使用翻转动画）
                 coins.forEach((coin, idx) => {
                     coin.classList.remove('flipping');
@@ -2434,6 +2446,13 @@
                 updateYaoDisplay();
 
                 if (gameState.currentThrow >= 6) {
+                    // 完成占卜的特殊震动反馈
+                    setTimeout(() => {
+                        if (navigator.vibrate) {
+                            navigator.vibrate([100, 50, 100]); // 两次较长震动，表示完成
+                        }
+                    }, 800);
+                    
                     setTimeout(() => {
                         calculateResult();
                     }, 1500);
