@@ -1,0 +1,1089 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "total_words": 120,
+    "description": "故事接龙应用示例词汇库 - MVP 测试版",
+    "levels": {
+      "L1": "7-8岁 (小学2-3年级) - 基础词汇",
+      "L2": "9-10岁 (小学4-5年级) - 进阶词汇", 
+      "L3": "11-12岁 (小学6年级-初一) - 扩展词汇",
+      "L4": "13-14岁 (初二-初三) - 复杂词汇",
+      "L5": "15-16岁 (高一-高二) - 高级词汇",
+      "L6": "17-18岁 (高三) - 文学词汇"
+    }
+  },
+  "vocabulary": [
+    {
+      "word": "跑步",
+      "pinyin": "pǎo bù",
+      "difficulty_level": 1,
+      "category": "动词",
+      "themes": ["运动", "日常"],
+      "hsk_level": 1,
+      "frequency": 95
+    },
+    {
+      "word": "高兴",
+      "pinyin": "gāo xìng",
+      "difficulty_level": 1,
+      "category": "形容词",
+      "themes": ["情感", "日常"],
+      "hsk_level": 1,
+      "frequency": 98
+    },
+    {
+      "word": "太阳",
+      "pinyin": "tài yáng",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["自然", "天气"],
+      "hsk_level": 1,
+      "frequency": 90
+    },
+    {
+      "word": "小鸟",
+      "pinyin": "xiǎo niǎo",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["动物", "自然"],
+      "hsk_level": 1,
+      "frequency": 85
+    },
+    {
+      "word": "笑",
+      "pinyin": "xiào",
+      "difficulty_level": 1,
+      "category": "动词",
+      "themes": ["情感", "日常"],
+      "hsk_level": 1,
+      "frequency": 92
+    },
+    {
+      "word": "朋友",
+      "pinyin": "péng you",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["人物", "日常"],
+      "hsk_level": 1,
+      "frequency": 99
+    },
+    {
+      "word": "大树",
+      "pinyin": "dà shù",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["植物", "自然"],
+      "hsk_level": 1,
+      "frequency": 88
+    },
+    {
+      "word": "玩",
+      "pinyin": "wán",
+      "difficulty_level": 1,
+      "category": "动词",
+      "themes": ["娱乐", "日常"],
+      "hsk_level": 1,
+      "frequency": 96
+    },
+    {
+      "word": "漂亮",
+      "pinyin": "piào liang",
+      "difficulty_level": 1,
+      "category": "形容词",
+      "themes": ["描写", "日常"],
+      "hsk_level": 1,
+      "frequency": 94
+    },
+    {
+      "word": "花",
+      "pinyin": "huā",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["植物", "自然"],
+      "hsk_level": 1,
+      "frequency": 91
+    },
+    {
+      "word": "小狗",
+      "pinyin": "xiǎo gǒu",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["动物", "日常"],
+      "hsk_level": 1,
+      "frequency": 87
+    },
+    {
+      "word": "吃",
+      "pinyin": "chī",
+      "difficulty_level": 1,
+      "category": "动词",
+      "themes": ["饮食", "日常"],
+      "hsk_level": 1,
+      "frequency": 100
+    },
+    {
+      "word": "快乐",
+      "pinyin": "kuài lè",
+      "difficulty_level": 1,
+      "category": "形容词",
+      "themes": ["情感", "日常"],
+      "hsk_level": 1,
+      "frequency": 93
+    },
+    {
+      "word": "学校",
+      "pinyin": "xué xiào",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["校园", "日常"],
+      "hsk_level": 1,
+      "frequency": 97
+    },
+    {
+      "word": "跳",
+      "pinyin": "tiào",
+      "difficulty_level": 1,
+      "category": "动词",
+      "themes": ["运动", "日常"],
+      "hsk_level": 1,
+      "frequency": 89
+    },
+    {
+      "word": "蓝色",
+      "pinyin": "lán sè",
+      "difficulty_level": 1,
+      "category": "形容词",
+      "themes": ["颜色", "描写"],
+      "hsk_level": 1,
+      "frequency": 86
+    },
+    {
+      "word": "飞",
+      "pinyin": "fēi",
+      "difficulty_level": 1,
+      "category": "动词",
+      "themes": ["动作", "自然"],
+      "hsk_level": 1,
+      "frequency": 88
+    },
+    {
+      "word": "温暖",
+      "pinyin": "wēn nuǎn",
+      "difficulty_level": 1,
+      "category": "形容词",
+      "themes": ["感觉", "天气"],
+      "hsk_level": 2,
+      "frequency": 84
+    },
+    {
+      "word": "唱歌",
+      "pinyin": "chàng gē",
+      "difficulty_level": 1,
+      "category": "动词",
+      "themes": ["娱乐", "音乐"],
+      "hsk_level": 1,
+      "frequency": 90
+    },
+    {
+      "word": "草地",
+      "pinyin": "cǎo dì",
+      "difficulty_level": 1,
+      "category": "名词",
+      "themes": ["自然", "植物"],
+      "hsk_level": 2,
+      "frequency": 82
+    },
+    {
+      "word": "探险",
+      "pinyin": "tàn xiǎn",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["冒险", "活动"],
+      "hsk_level": 3,
+      "frequency": 75
+    },
+    {
+      "word": "勇敢",
+      "pinyin": "yǒng gǎn",
+      "difficulty_level": 2,
+      "category": "形容词",
+      "themes": ["性格", "情感"],
+      "hsk_level": 3,
+      "frequency": 80
+    },
+    {
+      "word": "森林",
+      "pinyin": "sēn lín",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["自然", "冒险"],
+      "hsk_level": 2,
+      "frequency": 78
+    },
+    {
+      "word": "神秘",
+      "pinyin": "shén mì",
+      "difficulty_level": 2,
+      "category": "形容词",
+      "themes": ["描写", "氛围"],
+      "hsk_level": 3,
+      "frequency": 76
+    },
+    {
+      "word": "发现",
+      "pinyin": "fā xiàn",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["探索", "冒险"],
+      "hsk_level": 2,
+      "frequency": 85
+    },
+    {
+      "word": "宝藏",
+      "pinyin": "bǎo zàng",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["冒险", "奇幻"],
+      "hsk_level": 3,
+      "frequency": 72
+    },
+    {
+      "word": "瀑布",
+      "pinyin": "pù bù",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["自然", "景观"],
+      "hsk_level": 3,
+      "frequency": 70
+    },
+    {
+      "word": "惊讶",
+      "pinyin": "jīng yà",
+      "difficulty_level": 2,
+      "category": "形容词",
+      "themes": ["情感", "反应"],
+      "hsk_level": 3,
+      "frequency": 77
+    },
+    {
+      "word": "蝴蝶",
+      "pinyin": "hú dié",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["动物", "自然"],
+      "hsk_level": 2,
+      "frequency": 74
+    },
+    {
+      "word": "闪烁",
+      "pinyin": "shǎn shuò",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["动作", "描写"],
+      "hsk_level": 4,
+      "frequency": 68
+    },
+    {
+      "word": "迷路",
+      "pinyin": "mí lù",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["冒险", "困境"],
+      "hsk_level": 3,
+      "frequency": 73
+    },
+    {
+      "word": "山洞",
+      "pinyin": "shān dòng",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["地点", "冒险"],
+      "hsk_level": 3,
+      "frequency": 71
+    },
+    {
+      "word": "勇气",
+      "pinyin": "yǒng qì",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["情感", "品质"],
+      "hsk_level": 3,
+      "frequency": 79
+    },
+    {
+      "word": "奔跑",
+      "pinyin": "bēn pǎo",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["动作", "运动"],
+      "hsk_level": 3,
+      "frequency": 75
+    },
+    {
+      "word": "清澈",
+      "pinyin": "qīng chè",
+      "difficulty_level": 2,
+      "category": "形容词",
+      "themes": ["描写", "自然"],
+      "hsk_level": 4,
+      "frequency": 69
+    },
+    {
+      "word": "溪流",
+      "pinyin": "xī liú",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["自然", "水"],
+      "hsk_level": 3,
+      "frequency": 67
+    },
+    {
+      "word": "欢呼",
+      "pinyin": "huān hū",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["情感", "反应"],
+      "hsk_level": 3,
+      "frequency": 74
+    },
+    {
+      "word": "追逐",
+      "pinyin": "zhuī zhú",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["动作", "互动"],
+      "hsk_level": 3,
+      "frequency": 72
+    },
+    {
+      "word": "彩虹",
+      "pinyin": "cǎi hóng",
+      "difficulty_level": 2,
+      "category": "名词",
+      "themes": ["自然", "天气"],
+      "hsk_level": 2,
+      "frequency": 76
+    },
+    {
+      "word": "闪耀",
+      "pinyin": "shǎn yào",
+      "difficulty_level": 2,
+      "category": "动词",
+      "themes": ["描写", "光"],
+      "hsk_level": 4,
+      "frequency": 70
+    },
+    {
+      "word": "困惑",
+      "pinyin": "kùn huò",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["情感", "心理"],
+      "hsk_level": 4,
+      "frequency": 65
+    },
+    {
+      "word": "奇遇",
+      "pinyin": "qí yù",
+      "difficulty_level": 3,
+      "category": "名词",
+      "themes": ["冒险", "经历"],
+      "hsk_level": 4,
+      "frequency": 63
+    },
+    {
+      "word": "幽静",
+      "pinyin": "yōu jìng",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["氛围", "描写"],
+      "hsk_level": 4,
+      "frequency": 62
+    },
+    {
+      "word": "蜿蜒",
+      "pinyin": "wān yán",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["描写", "形状"],
+      "hsk_level": 5,
+      "frequency": 58
+    },
+    {
+      "word": "凝视",
+      "pinyin": "níng shì",
+      "difficulty_level": 3,
+      "category": "动词",
+      "themes": ["动作", "观察"],
+      "hsk_level": 4,
+      "frequency": 64
+    },
+    {
+      "word": "壮丽",
+      "pinyin": "zhuàng lì",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["描写", "景观"],
+      "hsk_level": 4,
+      "frequency": 61
+    },
+    {
+      "word": "摇曳",
+      "pinyin": "yáo yè",
+      "difficulty_level": 3,
+      "category": "动词",
+      "themes": ["动作", "描写"],
+      "hsk_level": 5,
+      "frequency": 56
+    },
+    {
+      "word": "迷雾",
+      "pinyin": "mí wù",
+      "difficulty_level": 3,
+      "category": "名词",
+      "themes": ["天气", "氛围"],
+      "hsk_level": 4,
+      "frequency": 59
+    },
+    {
+      "word": "诡异",
+      "pinyin": "guǐ yì",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["氛围", "描写"],
+      "hsk_level": 5,
+      "frequency": 57
+    },
+    {
+      "word": "踌躇",
+      "pinyin": "chóu chú",
+      "difficulty_level": 3,
+      "category": "动词",
+      "themes": ["心理", "动作"],
+      "hsk_level": 5,
+      "frequency": 55
+    },
+    {
+      "word": "遗迹",
+      "pinyin": "yí jì",
+      "difficulty_level": 3,
+      "category": "名词",
+      "themes": ["历史", "地点"],
+      "hsk_level": 4,
+      "frequency": 60
+    },
+    {
+      "word": "沉思",
+      "pinyin": "chén sī",
+      "difficulty_level": 3,
+      "category": "动词",
+      "themes": ["思考", "心理"],
+      "hsk_level": 4,
+      "frequency": 63
+    },
+    {
+      "word": "悸动",
+      "pinyin": "jì dòng",
+      "difficulty_level": 3,
+      "category": "动词",
+      "themes": ["情感", "心理"],
+      "hsk_level": 5,
+      "frequency": 54
+    },
+    {
+      "word": "苍穹",
+      "pinyin": "cāng qióng",
+      "difficulty_level": 3,
+      "category": "名词",
+      "themes": ["自然", "天空"],
+      "hsk_level": 5,
+      "frequency": 52
+    },
+    {
+      "word": "拂晓",
+      "pinyin": "fú xiǎo",
+      "difficulty_level": 3,
+      "category": "名词",
+      "themes": ["时间", "自然"],
+      "hsk_level": 5,
+      "frequency": 53
+    },
+    {
+      "word": "宁静",
+      "pinyin": "níng jìng",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["氛围", "情感"],
+      "hsk_level": 4,
+      "frequency": 66
+    },
+    {
+      "word": "澄澈",
+      "pinyin": "chéng chè",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["描写", "清晰"],
+      "hsk_level": 5,
+      "frequency": 51
+    },
+    {
+      "word": "蹒跚",
+      "pinyin": "pán shān",
+      "difficulty_level": 3,
+      "category": "形容词",
+      "themes": ["动作", "描写"],
+      "hsk_level": 5,
+      "frequency": 50
+    },
+    {
+      "word": "霎时",
+      "pinyin": "shà shí",
+      "difficulty_level": 3,
+      "category": "副词",
+      "themes": ["时间", "速度"],
+      "hsk_level": 5,
+      "frequency": 58
+    },
+    {
+      "word": "萦绕",
+      "pinyin": "yíng rào",
+      "difficulty_level": 3,
+      "category": "动词",
+      "themes": ["动作", "持续"],
+      "hsk_level": 5,
+      "frequency": 55
+    },
+    {
+      "word": "惆怅",
+      "pinyin": "chóu chàng",
+      "difficulty_level": 4,
+      "category": "形容词",
+      "themes": ["情感", "心理"],
+      "hsk_level": 5,
+      "frequency": 48
+    },
+    {
+      "word": "悸动",
+      "pinyin": "jì dòng",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["情感", "心理"],
+      "hsk_level": 5,
+      "frequency": 47
+    },
+    {
+      "word": "迷惘",
+      "pinyin": "mí wǎng",
+      "difficulty_level": 4,
+      "category": "形容词",
+      "themes": ["心理", "困惑"],
+      "hsk_level": 5,
+      "frequency": 46
+    },
+    {
+      "word": "蜕变",
+      "pinyin": "tuì biàn",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["变化", "成长"],
+      "hsk_level": 5,
+      "frequency": 49
+    },
+    {
+      "word": "沧桑",
+      "pinyin": "cāng sāng",
+      "difficulty_level": 4,
+      "category": "形容词",
+      "themes": ["时间", "经历"],
+      "hsk_level": 5,
+      "frequency": 50
+    },
+    {
+      "word": "斑驳",
+      "pinyin": "bān bó",
+      "difficulty_level": 4,
+      "category": "形容词",
+      "themes": ["描写", "外观"],
+      "hsk_level": 6,
+      "frequency": 44
+    },
+    {
+      "word": "湮没",
+      "pinyin": "yān mò",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["消失", "时间"],
+      "hsk_level": 6,
+      "frequency": 42
+    },
+    {
+      "word": "遐想",
+      "pinyin": "xiá xiǎng",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["思考", "想象"],
+      "hsk_level": 5,
+      "frequency": 45
+    },
+    {
+      "word": "窥探",
+      "pinyin": "kuī tàn",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["观察", "秘密"],
+      "hsk_level": 5,
+      "frequency": 47
+    },
+    {
+      "word": "惊鸿",
+      "pinyin": "jīng hóng",
+      "difficulty_level": 4,
+      "category": "名词",
+      "themes": ["短暂", "美丽"],
+      "hsk_level": 6,
+      "frequency": 40
+    },
+    {
+      "word": "缥缈",
+      "pinyin": "piāo miǎo",
+      "difficulty_level": 4,
+      "category": "形容词",
+      "themes": ["虚幻", "描写"],
+      "hsk_level": 6,
+      "frequency": 43
+    },
+    {
+      "word": "遏制",
+      "pinyin": "è zhì",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["控制", "行动"],
+      "hsk_level": 5,
+      "frequency": 48
+    },
+    {
+      "word": "翱翔",
+      "pinyin": "áo xiáng",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["飞行", "自由"],
+      "hsk_level": 5,
+      "frequency": 46
+    },
+    {
+      "word": "璀璨",
+      "pinyin": "cuǐ càn",
+      "difficulty_level": 4,
+      "category": "形容词",
+      "themes": ["光亮", "美丽"],
+      "hsk_level": 6,
+      "frequency": 41
+    },
+    {
+      "word": "凋零",
+      "pinyin": "diāo líng",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["衰败", "植物"],
+      "hsk_level": 5,
+      "frequency": 44
+    },
+    {
+      "word": "眷恋",
+      "pinyin": "juàn liàn",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["情感", "依恋"],
+      "hsk_level": 5,
+      "frequency": 45
+    },
+    {
+      "word": "苍劲",
+      "pinyin": "cāng jìng",
+      "difficulty_level": 4,
+      "category": "形容词",
+      "themes": ["力量", "描写"],
+      "hsk_level": 6,
+      "frequency": 39
+    },
+    {
+      "word": "邂逅",
+      "pinyin": "xiè hòu",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["相遇", "偶然"],
+      "hsk_level": 6,
+      "frequency": 42
+    },
+    {
+      "word": "栖息",
+      "pinyin": "qī xī",
+      "difficulty_level": 4,
+      "category": "动词",
+      "themes": ["居住", "动物"],
+      "hsk_level": 5,
+      "frequency": 46
+    },
+    {
+      "word": "悱恻",
+      "pinyin": "fěi cè",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["情感", "悲伤"],
+      "hsk_level": 6,
+      "frequency": 35
+    },
+    {
+      "word": "蹉跎",
+      "pinyin": "cuō tuó",
+      "difficulty_level": 5,
+      "category": "动词",
+      "themes": ["时间", "浪费"],
+      "hsk_level": 6,
+      "frequency": 36
+    },
+    {
+      "word": "婆娑",
+      "pinyin": "pó suō",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["摇动", "描写"],
+      "hsk_level": 6,
+      "frequency": 34
+    },
+    {
+      "word": "斟酌",
+      "pinyin": "zhēn zhuó",
+      "difficulty_level": 5,
+      "category": "动词",
+      "themes": ["思考", "考虑"],
+      "hsk_level": 6,
+      "frequency": 38
+    },
+    {
+      "word": "缱绻",
+      "pinyin": "qiǎn quǎn",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["情感", "缠绵"],
+      "hsk_level": 6,
+      "frequency": 32
+    },
+    {
+      "word": "阑珊",
+      "pinyin": "lán shān",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["衰落", "暗淡"],
+      "hsk_level": 6,
+      "frequency": 33
+    },
+    {
+      "word": "踟蹰",
+      "pinyin": "chí chú",
+      "difficulty_level": 5,
+      "category": "动词",
+      "themes": ["犹豫", "徘徊"],
+      "hsk_level": 6,
+      "frequency": 31
+    },
+    {
+      "word": "怅惘",
+      "pinyin": "chàng wǎng",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["情感", "失落"],
+      "hsk_level": 6,
+      "frequency": 37
+    },
+    {
+      "word": "惊蛰",
+      "pinyin": "jīng zhé",
+      "difficulty_level": 5,
+      "category": "名词",
+      "themes": ["节气", "自然"],
+      "hsk_level": 6,
+      "frequency": 30
+    },
+    {
+      "word": "嶙峋",
+      "pinyin": "lín xún",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["地貌", "描写"],
+      "hsk_level": 6,
+      "frequency": 29
+    },
+    {
+      "word": "葱茏",
+      "pinyin": "cōng lóng",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["植物", "茂盛"],
+      "hsk_level": 6,
+      "frequency": 35
+    },
+    {
+      "word": "氤氲",
+      "pinyin": "yīn yūn",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["气氛", "朦胧"],
+      "hsk_level": 6,
+      "frequency": 28
+    },
+    {
+      "word": "潋滟",
+      "pinyin": "liàn yàn",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["水波", "描写"],
+      "hsk_level": 6,
+      "frequency": 27
+    },
+    {
+      "word": "踌躇满志",
+      "pinyin": "chóu chú mǎn zhì",
+      "difficulty_level": 5,
+      "category": "成语",
+      "themes": ["情感", "自信"],
+      "hsk_level": 6,
+      "frequency": 36
+    },
+    {
+      "word": "渊薮",
+      "pinyin": "yuān sǒu",
+      "difficulty_level": 5,
+      "category": "名词",
+      "themes": ["聚集地", "深处"],
+      "hsk_level": 6,
+      "frequency": 26
+    },
+    {
+      "word": "涟漪",
+      "pinyin": "lián yī",
+      "difficulty_level": 5,
+      "category": "名词",
+      "themes": ["水纹", "影响"],
+      "hsk_level": 6,
+      "frequency": 38
+    },
+    {
+      "word": "斑斓",
+      "pinyin": "bān lán",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["色彩", "多样"],
+      "hsk_level": 6,
+      "frequency": 34
+    },
+    {
+      "word": "蜿蜒曲折",
+      "pinyin": "wān yán qū zhé",
+      "difficulty_level": 5,
+      "category": "成语",
+      "themes": ["路径", "复杂"],
+      "hsk_level": 6,
+      "frequency": 33
+    },
+    {
+      "word": "悠然",
+      "pinyin": "yōu rán",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["悠闲", "自在"],
+      "hsk_level": 5,
+      "frequency": 40
+    },
+    {
+      "word": "澹然",
+      "pinyin": "dàn rán",
+      "difficulty_level": 5,
+      "category": "形容词",
+      "themes": ["淡泊", "平静"],
+      "hsk_level": 6,
+      "frequency": 25
+    },
+    {
+      "word": "晦涩",
+      "pinyin": "huì sè",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["难懂", "模糊"],
+      "hsk_level": 6,
+      "frequency": 24
+    },
+    {
+      "word": "隽永",
+      "pinyin": "juàn yǒng",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["深刻", "持久"],
+      "hsk_level": 6,
+      "frequency": 23
+    },
+    {
+      "word": "蕴藉",
+      "pinyin": "yùn jiè",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["含蓄", "优雅"],
+      "hsk_level": 6,
+      "frequency": 22
+    },
+    {
+      "word": "沉湎",
+      "pinyin": "chén miǎn",
+      "difficulty_level": 6,
+      "category": "动词",
+      "themes": ["沉迷", "深陷"],
+      "hsk_level": 6,
+      "frequency": 26
+    },
+    {
+      "word": "踌躇满志",
+      "pinyin": "chóu chú mǎn zhì",
+      "difficulty_level": 6,
+      "category": "成语",
+      "themes": ["自信", "得意"],
+      "hsk_level": 6,
+      "frequency": 25
+    },
+    {
+      "word": "恣意",
+      "pinyin": "zì yì",
+      "difficulty_level": 6,
+      "category": "副词",
+      "themes": ["放纵", "自由"],
+      "hsk_level": 6,
+      "frequency": 27
+    },
+    {
+      "word": "寥廓",
+      "pinyin": "liáo kuò",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["广阔", "空旷"],
+      "hsk_level": 6,
+      "frequency": 21
+    },
+    {
+      "word": "浩渺",
+      "pinyin": "hào miǎo",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["广大", "无边"],
+      "hsk_level": 6,
+      "frequency": 24
+    },
+    {
+      "word": "婉约",
+      "pinyin": "wǎn yuē",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["温柔", "含蓄"],
+      "hsk_level": 6,
+      "frequency": 28
+    },
+    {
+      "word": "孑然",
+      "pinyin": "jié rán",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["孤独", "单独"],
+      "hsk_level": 6,
+      "frequency": 20
+    },
+    {
+      "word": "缱绻缠绵",
+      "pinyin": "qiǎn quǎn chán mián",
+      "difficulty_level": 6,
+      "category": "成语",
+      "themes": ["情感", "深厚"],
+      "hsk_level": 6,
+      "frequency": 19
+    },
+    {
+      "word": "锦瑟",
+      "pinyin": "jǐn sè",
+      "difficulty_level": 6,
+      "category": "名词",
+      "themes": ["乐器", "美好"],
+      "hsk_level": 6,
+      "frequency": 18
+    },
+    {
+      "word": "惘然",
+      "pinyin": "wǎng rán",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["失落", "迷茫"],
+      "hsk_level": 6,
+      "frequency": 23
+    },
+    {
+      "word": "娉婷",
+      "pinyin": "pīng tíng",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["姿态", "优美"],
+      "hsk_level": 6,
+      "frequency": 17
+    },
+    {
+      "word": "翩跹",
+      "pinyin": "piān xiān",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["舞动", "轻盈"],
+      "hsk_level": 6,
+      "frequency": 22
+    },
+    {
+      "word": "旖旎",
+      "pinyin": "yǐ nǐ",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["柔美", "风光"],
+      "hsk_level": 6,
+      "frequency": 25
+    },
+    {
+      "word": "悱恻缠绵",
+      "pinyin": "fěi cè chán mián",
+      "difficulty_level": 6,
+      "category": "成语",
+      "themes": ["情感", "深沉"],
+      "hsk_level": 6,
+      "frequency": 16
+    },
+    {
+      "word": "婆娑起舞",
+      "pinyin": "pó suō qǐ wǔ",
+      "difficulty_level": 6,
+      "category": "成语",
+      "themes": ["舞蹈", "优美"],
+      "hsk_level": 6,
+      "frequency": 20
+    },
+    {
+      "word": "绮丽",
+      "pinyin": "qǐ lì",
+      "difficulty_level": 6,
+      "category": "形容词",
+      "themes": ["美丽", "华丽"],
+      "hsk_level": 6,
+      "frequency": 24
+    },
+    {
+      "word": "澄澈明净",
+      "pinyin": "chéng chè míng jìng",
+      "difficulty_level": 6,
+      "category": "成语",
+      "themes": ["清澈", "纯净"],
+      "hsk_level": 6,
+      "frequency": 21
+    }
+  ]
+}
+
