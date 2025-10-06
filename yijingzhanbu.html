@@ -2377,6 +2377,9 @@
             }
         };
 
+        // 音效
+        const coinSound = new Audio('https://chineseclassics.github.io/files/audio/zhanbu/spinning-coin-on-table-352448.mp3');
+
         // 遊戲狀態
         let gameState = {
             question: '',
@@ -2407,6 +2410,10 @@
             // 禁用硬币容器，防止在动画和显示结果期间点击
             const coinContainer = document.getElementById('coinContainer');
             coinContainer.classList.add('disabled');
+
+            // 播放拋硬幣音效
+            coinSound.currentTime = 0; // 重置音頻到開頭，確保可以連續播放
+            coinSound.play().catch(err => console.log('音效播放失敗:', err));
 
             // 移动设备震动反馈
             if (navigator.vibrate) {
