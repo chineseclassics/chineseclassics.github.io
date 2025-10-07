@@ -28,7 +28,8 @@ serve(async (req) => {
       conversationHistory,    // 对话历史
       userLevel,              // 用户级别 (1-6)
       storyTheme,             // 故事主题
-      currentRound            // 当前轮次
+      currentRound,           // 当前轮次
+      usedWords = []          // 已使用的词汇列表（默认为空数组）
     } = await req.json()
 
     // 驗證必需參數
@@ -59,11 +60,12 @@ serve(async (req) => {
 
     // 2. 推薦下一組詞彙（5個）
     console.log('📚 推薦詞彙...')
+    console.log('📋 已使用詞彙:', usedWords)
     const recommendedWords = await recommendVocabulary({
       userLevel,
       storyTheme,
       conversationHistory: [...conversationHistory, userSentence, aiSentence],
-      usedWords: [], // TODO: 從數據庫獲取已使用的詞彙
+      usedWords: usedWords,  // 使用前端傳遞的已使用詞彙列表
       supabase
     })
 
@@ -87,7 +89,7 @@ serve(async (req) => {
           aiSentence,              // AI 生成的句子
           recommendedWords,        // 推荐的 5 个词汇
           currentRound: currentRound + 1,
-          isComplete: currentRound >= 17  // 18 轮完成
+          isComplete: currentRound >= 9  // 10 轮完成
         }
       }),
       {
@@ -183,11 +185,11 @@ function buildSystemPrompt(storyTheme: string, currentRound: number): string {
 
   const themeGuide = themeGuides[storyTheme] || '自由發揮'
   
-  // 判斷故事階段
+  // 判斷故事階段（基於10轮）
   let stageGuide = ''
-  if (currentRound < 6) {
+  if (currentRound < 4) {
     stageGuide = '故事開始階段：介紹場景、角色、初步展開情節'
-  } else if (currentRound < 12) {
+  } else if (currentRound < 7) {
     stageGuide = '故事發展階段：推進情節，出現轉折或衝突'
   } else {
     stageGuide = '故事收尾階段：解決衝突，走向結局'
@@ -224,7 +226,7 @@ function buildSystemPrompt(storyTheme: string, currentRound: number): string {
 當前故事設定：
 - ${themeGuide}
 - ${stageGuide}
-- 當前輪次：${currentRound + 1}/18
+- 當前輪次：${currentRound + 1}/10
 
 反套路機制：
 ❌ 避免：「他們高高興興地回家了」

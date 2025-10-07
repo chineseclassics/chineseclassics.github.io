@@ -855,7 +855,7 @@
         <div id="game-screen" class="screen">
             <div class="game-header">
                 <div class="progress-info">
-                    第 <span id="turn-count">1</span>/18 輪
+                    第 <span id="turn-count">1</span>/<span id="max-turns">10</span> 輪
                 </div>
                 <div class="level-info">
                     <span id="current-level">L2</span> · <span id="current-theme">自然探索</span>
@@ -1020,7 +1020,7 @@
             level: 'L2',
             theme: 'nature',
             turn: 1,
-            maxTurns: 18,
+            maxTurns: 10,
             storyHistory: [],
             sessionId: null,
             userId: null,  // 将在匿名登录后设置
@@ -1093,6 +1093,7 @@
             document.getElementById('current-level').textContent = level;
             document.getElementById('current-theme').textContent = getThemeName(theme);
             document.getElementById('turn-count').textContent = '1';
+            document.getElementById('max-turns').textContent = gameState.maxTurns;
             
             // 清空故事顯示區域
             document.getElementById('story-display').innerHTML = '';
@@ -1172,7 +1173,8 @@
                     conversationHistory: conversationHistory,
                     userLevel: userLevel,
                     storyTheme: storyTheme,
-                    currentRound: gameState.turn - 1  // 輪次從 0 開始
+                    currentRound: gameState.turn - 1,  // 輪次從 0 開始
+                    usedWords: gameState.usedWords.map(w => w.word)  // 傳遞已使用的詞彙列表
                 };
                 
                 console.log('📤 發送請求:', requestBody);
@@ -1276,12 +1278,21 @@
             
             storyDisplay.scrollTop = storyDisplay.scrollHeight;
             
-            // 顯示詞彙選項
+            // 顯示詞彙選項（過濾掉已使用的詞彙）
             const wordsContainer = document.getElementById('word-choices');
             wordsContainer.innerHTML = '';
             
             if (data.recommendedWords && data.recommendedWords.length > 0) {
-                data.recommendedWords.forEach(wordObj => {
+                // 獲取已使用詞彙的列表
+                const usedWordsList = gameState.usedWords.map(w => w.word);
+                
+                // 過濾掉已使用的詞彙
+                const availableWords = data.recommendedWords.filter(wordObj => 
+                    !usedWordsList.includes(wordObj.word)
+                );
+                
+                // 顯示可用的詞彙
+                availableWords.forEach(wordObj => {
                     const wordBtn = document.createElement('button');
                     wordBtn.className = 'word-btn';
                     wordBtn.innerHTML = `
@@ -1291,6 +1302,11 @@
                     wordBtn.onclick = () => selectWord(wordObj);
                     wordsContainer.appendChild(wordBtn);
                 });
+                
+                // 如果所有詞彙都已使用，顯示提示
+                if (availableWords.length === 0) {
+                    wordsContainer.innerHTML = '<div style="color: var(--text-light); padding: 20px; text-align: center;">所有推薦詞彙都已使用，請等待AI提供新詞彙...</div>';
+                }
             }
             
             // 重置輸入
