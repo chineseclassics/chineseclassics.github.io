@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>词汇数据导入工具</title>
+  <title>詞彙數據導入工具</title>
   <style>
     * {
       margin: 0;
@@ -264,36 +264,36 @@
 </head>
 <body>
   <div class="container">
-    <h1>📚 词汇数据导入工具</h1>
-    <p class="subtitle">批量导入示例词汇到 Supabase 数据库</p>
+    <h1>📚 詞彙數據導入工具</h1>
+    <p class="subtitle">批量導入示例詞彙到 Supabase 數據庫（繁體中文）</p>
     
     <div class="alert alert-info">
-      <strong>📝 说明：</strong> 本工具将从 <code>data/sample-vocabulary.json</code> 读取 120 个示例词汇，并导入到 Supabase 数据库。导入前会自动检查是否已存在相同词汇，避免重复。
+      <strong>📝 說明：</strong> 本工具將從 <code>data/sample-vocabulary.json</code> 讀取 120 個示例詞彙，並導入到 Supabase 數據庫。<strong>建議先清空數據庫再導入，以確保數據為繁體中文。</strong>
     </div>
     
     <!-- 数据预览 -->
     <div class="section">
       <div class="section-title">
         <span>📊</span>
-        <span>数据预览</span>
-        <span class="status-badge status-ready" id="data-status">等待加载</span>
+        <span>數據預覽</span>
+        <span class="status-badge status-ready" id="data-status">等待載入</span>
       </div>
       
       <div class="stats">
         <div class="stat-box">
-          <div class="stat-label">总词汇数</div>
+          <div class="stat-label">總詞彙數</div>
           <div class="stat-value" id="total-words">0</div>
         </div>
         <div class="stat-box">
-          <div class="stat-label">难度级别</div>
+          <div class="stat-label">難度級別</div>
           <div class="stat-value" id="level-count">0</div>
         </div>
         <div class="stat-box">
-          <div class="stat-label">词汇类别</div>
+          <div class="stat-label">詞彙類別</div>
           <div class="stat-value" id="category-count">0</div>
         </div>
         <div class="stat-box">
-          <div class="stat-label">主题标签</div>
+          <div class="stat-label">主題標籤</div>
           <div class="stat-value" id="theme-count">0</div>
         </div>
       </div>
@@ -302,7 +302,7 @@
       
       <button class="btn" id="load-btn" onclick="loadVocabularyData()">
         <span>📥</span>
-        <span>加载词汇数据</span>
+        <span>載入詞彙數據</span>
       </button>
     </div>
     
@@ -310,17 +310,25 @@
     <div class="section">
       <div class="section-title">
         <span>🚀</span>
-        <span>导入操作</span>
+        <span>導入操作</span>
       </div>
       
-      <button class="btn btn-secondary" id="import-btn" onclick="importVocabulary()" disabled>
-        <span>⬆️</span>
-        <span>开始导入到 Supabase</span>
-      </button>
+      <div class="alert alert-warning" style="margin-bottom: 15px;">
+        <strong>⚠️ 建議操作順序：</strong>
+        <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+          <li>先點擊「清空數據庫」刪除所有簡體詞彙</li>
+          <li>再點擊「開始導入」導入繁體中文詞彙</li>
+        </ol>
+      </div>
       
       <button class="btn btn-danger" id="clear-btn" onclick="clearVocabulary()" disabled>
         <span>🗑️</span>
-        <span>清空数据库（慎用）</span>
+        <span>步驟1：清空數據庫（刪除簡體詞彙）</span>
+      </button>
+      
+      <button class="btn btn-secondary" id="import-btn" onclick="importVocabulary()" disabled>
+        <span>⬆️</span>
+        <span>步驟2：開始導入繁體詞彙到 Supabase</span>
       </button>
       
       <div class="progress-container" id="progress-container">
@@ -336,12 +344,12 @@
     <div class="section">
       <div class="section-title">
         <span>✅</span>
-        <span>数据验证</span>
+        <span>數據驗證</span>
       </div>
       
       <button class="btn" id="verify-btn" onclick="verifyDatabase()">
         <span>🔍</span>
-        <span>检查数据库中的词汇</span>
+        <span>檢查數據庫中的詞彙</span>
       </button>
       
       <div id="verify-result" style="margin-top: 15px;"></div>
@@ -362,9 +370,9 @@
       const statusEl = document.getElementById('data-status');
       
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> 加载中...';
+      btn.innerHTML = '<span class="spinner"></span> 載入中...';
       statusEl.className = 'status-badge status-importing';
-      statusEl.textContent = '加载中';
+      statusEl.textContent = '載入中';
       
       try {
         const response = await fetch('../data/sample-vocabulary.json');
@@ -394,7 +402,7 @@
           Object.entries(levelDist)
             .sort((a, b) => a[0] - b[0])
             .map(([level, count]) => 
-              `<div class="level-badge">L${level}: ${count} 个词</div>`
+              `<div class="level-badge">L${level}: ${count} 個詞</div>`
             ).join('') + 
           '</div>';
         
@@ -402,35 +410,35 @@
         
         // 成功
         statusEl.className = 'status-badge status-complete';
-        statusEl.textContent = '已加载';
+        statusEl.textContent = '已載入';
         
-        btn.innerHTML = '<span>✅</span> 数据已加载';
+        btn.innerHTML = '<span>✅</span> 數據已載入';
         
-        // 启用导入按钮
+        // 啟用導入按鈕
         document.getElementById('import-btn').disabled = false;
         document.getElementById('clear-btn').disabled = false;
         
-        addLog('success', `成功加载 ${vocabularyData.length} 个词汇`);
+        addLog('success', `成功載入 ${vocabularyData.length} 個詞彙（繁體中文）`);
         
       } catch (error) {
         statusEl.className = 'status-badge status-error';
-        statusEl.textContent = '加载失败';
+        statusEl.textContent = '載入失敗';
         
         btn.disabled = false;
-        btn.innerHTML = '<span>📥</span> 重新加载';
+        btn.innerHTML = '<span>📥</span> 重新載入';
         
-        addLog('error', `加载失败: ${error.message}`);
+        addLog('error', `載入失敗: ${error.message}`);
       }
     };
     
-    // 导入词汇
+    // 導入詞彙
     window.importVocabulary = async function() {
       if (!vocabularyData) {
-        alert('请先加载词汇数据！');
+        alert('請先載入詞彙數據！');
         return;
       }
       
-      if (!confirm(`确定要导入 ${vocabularyData.length} 个词汇到数据库吗？\n\n重复的词汇将被跳过。`)) {
+      if (!confirm(`確定要導入 ${vocabularyData.length} 個繁體詞彙到數據庫嗎？\n\n重複的詞彙將被跳過。`)) {
         return;
       }
       
@@ -466,7 +474,7 @@
           
           if (existing) {
             skipped++;
-            addLog('info', `跳过已存在: ${vocab.word}`);
+            addLog('info', `跳過已存在: ${vocab.word}`);
             continue;
           }
           
@@ -499,27 +507,27 @@
       
       // 完成
       btn.disabled = false;
-      btn.innerHTML = '<span>✅</span> 导入完成';
+      btn.innerHTML = '<span>✅</span> 導入完成';
       
-      addLog('success', `\n📊 导入完成！\n  - 成功导入: ${imported} 个\n  - 跳过重复: ${skipped} 个\n  - 失败: ${errors} 个`);
+      addLog('success', `\n📊 導入完成！\n  - 成功導入: ${imported} 個\n  - 跳過重複: ${skipped} 個\n  - 失敗: ${errors} 個`);
       
       // 自动验证
       setTimeout(() => verifyDatabase(), 1000);
     };
     
-    // 清空词汇数据
+    // 清空詞彙數據
     window.clearVocabulary = async function() {
-      if (!confirm('⚠️ 警告：此操作将删除数据库中所有词汇数据！\n\n确定要继续吗？')) {
+      if (!confirm('⚠️ 警告：此操作將刪除數據庫中所有詞彙數據（包括簡體詞彙）！\n\n確定要繼續嗎？')) {
         return;
       }
       
-      if (!confirm('⚠️ 再次确认：真的要删除所有词汇吗？此操作不可恢复！')) {
+      if (!confirm('⚠️ 再次確認：真的要刪除所有詞彙嗎？此操作不可恢復！')) {
         return;
       }
       
       const btn = document.getElementById('clear-btn');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> 删除中...';
+      btn.innerHTML = '<span class="spinner"></span> 刪除中...';
       
       try {
         const supabase = getSupabase();
@@ -532,26 +540,26 @@
         
         if (error) throw error;
         
-        addLog('success', '✓ 已清空数据库');
+        addLog('success', '✓ 已清空數據庫（所有簡體詞彙已刪除）');
         btn.innerHTML = '<span>✅</span> 清空完成';
         
-        // 重新验证
+        // 重新驗證
         setTimeout(() => verifyDatabase(), 500);
         
       } catch (error) {
-        addLog('error', `清空失败: ${error.message}`);
+        addLog('error', `清空失敗: ${error.message}`);
         btn.disabled = false;
-        btn.innerHTML = '<span>🗑️</span> 清空数据库（慎用）';
+        btn.innerHTML = '<span>🗑️</span> 步驟1：清空數據庫（刪除簡體詞彙）';
       }
     };
     
-    // 验证数据库
+    // 驗證數據庫
     window.verifyDatabase = async function() {
       const btn = document.getElementById('verify-btn');
       const resultEl = document.getElementById('verify-result');
       
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> 检查中...';
+      btn.innerHTML = '<span class="spinner"></span> 檢查中...';
       
       try {
         const supabase = getSupabase();
@@ -575,9 +583,9 @@
         
         let html = `
           <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px;">
-            <h3 style="margin-bottom: 15px; color: #333;">📊 数据库统计</h3>
+            <h3 style="margin-bottom: 15px; color: #333;">📊 數據庫統計</h3>
             <p style="font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 20px;">
-              总计: ${count} 个词汇
+              總計: ${count} 個詞彙
             </p>
         `;
         
@@ -595,7 +603,7 @@
           html += '<div class="level-badges">';
           for (let i = 1; i <= 6; i++) {
             const count = levelCount[i] || 0;
-            html += `<div class="level-badge">L${i}: ${count} 个</div>`;
+            html += `<div class="level-badge">L${i}: ${count} 個</div>`;
           }
           html += '</div>';
         }
@@ -605,16 +613,16 @@
         resultEl.innerHTML = html;
         
         btn.disabled = false;
-        btn.innerHTML = '<span>🔍</span> 重新检查';
+        btn.innerHTML = '<span>🔍</span> 重新檢查';
         
       } catch (error) {
-        resultEl.innerHTML = `<div class="alert alert-warning">验证失败: ${error.message}</div>`;
+        resultEl.innerHTML = `<div class="alert alert-warning">驗證失敗: ${error.message}</div>`;
         btn.disabled = false;
-        btn.innerHTML = '<span>🔍</span> 重新检查';
+        btn.innerHTML = '<span>🔍</span> 重新檢查';
       }
     };
     
-    // 添加日志
+    // 添加日誌
     function addLog(type, message) {
       const logContainer = document.getElementById('log-container');
       const entry = document.createElement('div');
@@ -624,7 +632,7 @@
       logContainer.scrollTop = logContainer.scrollHeight;
     }
     
-    // 页面加载时自动验证数据库
+    // 頁面載入時自動驗證數據庫
     verifyDatabase();
   </script>
 </body>

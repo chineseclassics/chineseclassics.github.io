@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📚 故事词汇接龙 - 与AI共创精彩故事</title>
+    <title>📚 故事詞彙接龍 - 與AI共創精彩故事</title>
     <style>
         /* ===== 基础样式 ===== */
         * {
@@ -295,21 +295,57 @@
         }
 
         .message-content {
-            line-height: 1.8;
-            font-size: 1.1em;
+            line-height: 2;
+            font-size: 1.3em;
             color: var(--text-dark);
         }
 
         .clickable-word {
             color: var(--primary-purple);
-            text-decoration: underline;
             cursor: pointer;
             font-weight: bold;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(155, 89, 182, 0.1);
+            border-bottom: 2px solid var(--primary-purple);
         }
 
         .clickable-word:hover {
+            color: white;
+            background: var(--primary-purple);
+            transform: translateY(-2px);
+        }
+        
+        .highlighted-word {
             color: var(--primary-pink);
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(255, 105, 180, 0.15);
+            border-bottom: 3px solid var(--primary-pink);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .highlighted-word:hover {
+            color: white;
+            background: var(--primary-pink);
+            transform: translateY(-2px);
+        }
+        
+        /* 打字机效果 */
+        @keyframes typing {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .typing-char {
+            animation: typing 0.1s ease-in;
         }
 
         .word-choices-section {
@@ -589,8 +625,11 @@
             background: var(--light-blue);
             padding: 20px;
             border-radius: 10px;
-            line-height: 1.8;
+            line-height: 2;
             font-size: 1.1em;
+            white-space: pre-line;
+            max-height: 300px;
+            overflow-y: auto;
         }
 
         .add-to-wordbook-btn {
@@ -744,48 +783,48 @@
         <!-- ===== 启动界面 ===== -->
         <div id="start-screen" class="screen active">
             <div class="header">
-                <h1>📚 故事词汇接龙</h1>
-                <p>与AI共创精彩故事，轻松积累词汇</p>
+                <h1>📚 故事詞彙接龍</h1>
+                <p>與AI共創精彩故事，輕鬆積累詞彙</p>
             </div>
             <div class="content">
                 <div class="level-selector">
-                    <h2>🎯 选择你的级别：</h2>
+                    <h2>🎯 選擇你的級別：</h2>
                     <div class="level-options">
                         <label class="level-card">
                             <input type="radio" name="level" value="L1">
-                            <div class="level-name">L1 启蒙</div>
-                            <div class="level-desc">2-3年级 | 简单词汇</div>
+                            <div class="level-name">L1 啟蒙</div>
+                            <div class="level-desc">2-3年級 | 簡單詞彙</div>
                         </label>
                         <label class="level-card selected">
                             <input type="radio" name="level" value="L2" checked>
-                            <div class="level-name">L2 初级</div>
-                            <div class="level-desc">3-4年级 | 容易词汇</div>
+                            <div class="level-name">L2 初級</div>
+                            <div class="level-desc">3-4年級 | 容易詞彙</div>
                         </label>
                         <label class="level-card">
                             <input type="radio" name="level" value="L3">
-                            <div class="level-name">L3 进阶</div>
-                            <div class="level-desc">4-5年级 | 中等词汇</div>
+                            <div class="level-name">L3 進階</div>
+                            <div class="level-desc">4-5年級 | 中等詞彙</div>
                         </label>
                         <label class="level-card">
                             <input type="radio" name="level" value="L4">
-                            <div class="level-name">L4 高级</div>
-                            <div class="level-desc">5-6年级 | 较难词汇</div>
+                            <div class="level-name">L4 高級</div>
+                            <div class="level-desc">5-6年級 | 較難詞彙</div>
                         </label>
                         <label class="level-card">
                             <input type="radio" name="level" value="L5">
                             <div class="level-name">L5 精通</div>
-                            <div class="level-desc">初中 | 高级词汇</div>
+                            <div class="level-desc">初中 | 高級詞彙</div>
                         </label>
                         <label class="level-card">
                             <input type="radio" name="level" value="L6">
-                            <div class="level-name">L6 大师</div>
-                            <div class="level-desc">高中 | 文学词汇</div>
+                            <div class="level-name">L6 大師</div>
+                            <div class="level-desc">高中 | 文學詞彙</div>
                         </label>
                     </div>
                 </div>
 
                 <div class="theme-selector">
-                    <h2>🎭 选择故事主题：</h2>
+                    <h2>🎭 選擇故事主題：</h2>
                     <div class="theme-buttons">
                         <button class="theme-btn selected" data-theme="nature">
                             <span class="emoji">🌳</span>
@@ -793,21 +832,21 @@
                         </button>
                         <button class="theme-btn" data-theme="campus">
                             <span class="emoji">🏫</span>
-                            校园生活
+                            校園生活
                         </button>
                         <button class="theme-btn" data-theme="fantasy">
                             <span class="emoji">✨</span>
-                            奇幻冒险
+                            奇幻冒險
                         </button>
                         <button class="theme-btn" data-theme="scifi">
                             <span class="emoji">🚀</span>
-                            科幻未来
+                            科幻未來
                         </button>
                     </div>
                 </div>
 
                 <div class="start-button-container">
-                    <button class="btn-primary" onclick="startGame()">开始创作故事 →</button>
+                    <button class="btn-primary" onclick="startGame()">開始創作故事 →</button>
                 </div>
             </div>
         </div>
@@ -816,7 +855,7 @@
         <div id="game-screen" class="screen">
             <div class="game-header">
                 <div class="progress-info">
-                    第 <span id="turn-count">1</span>/18 轮
+                    第 <span id="turn-count">1</span>/18 輪
                 </div>
                 <div class="level-info">
                     <span id="current-level">L2</span> · <span id="current-theme">自然探索</span>
@@ -827,13 +866,13 @@
                 <div class="story-display" id="story-display">
                     <div class="message ai">
                         <div class="message-label ai">🤖 AI 故事家</div>
-                        <div class="message-content">正在构思故事开头...</div>
+                        <div class="message-content">正在構思故事開頭...</div>
                     </div>
                 </div>
 
                 <!-- 词汇选择区域 -->
                 <div class="word-choices-section">
-                    <h3>💡 请选择一个词来造句：</h3>
+                    <h3>💡 請選擇一個詞來造句：</h3>
                     <div class="word-choices" id="word-choices">
                         <!-- 词汇按钮将通过 JavaScript 动态生成 -->
                     </div>
@@ -841,20 +880,20 @@
 
                 <!-- 用户输入区域 -->
                 <div class="user-input-section">
-                    <h3>✍️ 创作你的句子：</h3>
+                    <h3>✍️ 創作你的句子：</h3>
                     <div class="selected-word-display" id="selected-word-display">
-                        请先选择一个词汇...
+                        請先選擇一個詞彙...
                     </div>
                     <div class="input-group">
-                        <input type="text" id="user-input" placeholder="用选中的词写一个句子，继续故事..." disabled>
-                        <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">发送 →</button>
+                        <input type="text" id="user-input" placeholder="用選中的詞寫一個句子，繼續故事..." disabled>
+                        <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">發送 →</button>
                     </div>
                 </div>
 
                 <!-- 加载动画 -->
                 <div class="loading" id="loading">
                     <div class="loading-spinner"></div>
-                    <div class="loading-text">AI 正在创作中...</div>
+                    <div class="loading-text">AI 正在創作中...</div>
                 </div>
             </div>
         </div>
@@ -862,8 +901,8 @@
         <!-- ===== 完成界面 ===== -->
         <div id="finish-screen" class="screen">
             <div class="header">
-                <h1>🎉 故事创作完成！</h1>
-                <p>你和AI一起创作了一个精彩的故事</p>
+                <h1>🎉 故事創作完成！</h1>
+                <p>你和AI一起創作了一個精彩的故事</p>
             </div>
             <div class="content finish-content">
                 <div class="celebration">🎊</div>
@@ -872,15 +911,15 @@
                 <div class="story-stats">
                     <div class="stat-card">
                         <div class="stat-number" id="total-turns">18</div>
-                        <div class="stat-label">创作轮次</div>
+                        <div class="stat-label">創作輪次</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="vocab-used">9</div>
-                        <div class="stat-label">使用词汇</div>
+                        <div class="stat-label">使用詞彙</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="story-length">0</div>
-                        <div class="stat-label">故事字数</div>
+                        <div class="stat-label">故事字數</div>
                     </div>
                 </div>
 
@@ -904,23 +943,23 @@
         <div class="modal-content">
             <button class="modal-close" onclick="closeWordModal()">×</button>
             <div class="word-detail-header">
-                <h2 id="modal-word">词汇</h2>
+                <h2 id="modal-word">詞彙</h2>
                 <div class="pinyin" id="modal-pinyin">pinyin</div>
             </div>
             <div class="word-detail-section">
-                <h3>📖 释义</h3>
-                <div class="content" id="modal-definition">加载中...</div>
+                <h3>📖 釋義</h3>
+                <div class="content" id="modal-definition">載入中...</div>
             </div>
             <div class="word-detail-section">
                 <h3>📝 例句</h3>
-                <div class="content" id="modal-example">加载中...</div>
+                <div class="content" id="modal-example">載入中...</div>
             </div>
-            <button class="btn-primary add-to-wordbook-btn" onclick="addToWordbook()">⭐ 收藏到生词本</button>
+            <button class="btn-primary add-to-wordbook-btn" onclick="addToWordbook()">⭐ 收藏到生詞本</button>
         </div>
     </div>
 
     <!-- ===== 生词本按钮 ===== -->
-    <button class="wordbook-button" onclick="openWordbook()" title="我的生词本">
+    <button class="wordbook-button" onclick="openWordbook()" title="我的生詞本">
         📚
         <span class="wordbook-count" id="wordbook-count">0</span>
     </button>
@@ -941,18 +980,18 @@
         async function initializeApp() {
             try {
                 supabase = await initSupabase();
-                console.log('✅ Supabase 客户端初始化成功');
+                console.log('✅ Supabase 客戶端初始化成功');
                 
-                // 匿名登录
+                // 匿名登錄
                 const user = await signInAnonymously();
                 gameState.userId = user.id;
-                console.log('✅ 用户登录成功:', gameState.userId);
+                console.log('✅ 用戶登錄成功:', gameState.userId);
                 
-                console.log('✅ 应用初始化完成');
-                // 应用已准备就绪，等待用户开始游戏
+                console.log('✅ 應用初始化完成');
+                // 應用已準備就緒，等待用戶開始遊戲
             } catch (error) {
-                console.error('❌ 应用初始化失败:', error);
-                showToast('初始化失败，请刷新页面重试');
+                console.error('❌ 應用初始化失敗:', error);
+                showToast('初始化失敗，請刷新頁面重試');
             }
         }
 
@@ -967,14 +1006,15 @@
             userId: null,  // 将在匿名登录后设置
             selectedWord: null,
             currentWords: [],
-            usedWords: []
+            usedWords: [],
+            allRecommendedWords: []  // 保存每輪的推薦詞彙列表
         };
 
-        // 生词本
+        // 生詞本
         let wordbook = JSON.parse(localStorage.getItem('story_wordbook') || '[]');
         updateWordbookCount();
 
-        // ===== 页面切换函数 =====
+        // ===== 頁面切換函數 =====
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => {
                 s.classList.remove('active');
@@ -982,7 +1022,7 @@
             document.getElementById(screenId).classList.add('active');
         }
 
-        // ===== 显示提示消息 =====
+        // ===== 顯示提示消息 =====
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -992,8 +1032,8 @@
             }, 3000);
         }
 
-        // ===== 启动界面交互 =====
-        // 级别选择
+        // ===== 啟動界面交互 =====
+        // 級別選擇
         document.querySelectorAll('.level-card').forEach(card => {
             card.addEventListener('click', function() {
                 document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
@@ -1002,7 +1042,7 @@
             });
         });
 
-        // 主题选择
+        // 主題選擇
         document.querySelectorAll('.theme-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
@@ -1010,11 +1050,11 @@
             });
         });
 
-        // ===== 开始游戏 =====
+        // ===== 開始遊戲 =====
         window.startGame = async function() {
-            // 确保用户已登录
+            // 確保用戶已登錄
             if (!gameState.userId) {
-                showToast('正在初始化，请稍候...');
+                showToast('正在初始化，請稍候...');
                 return;
             }
             
@@ -1026,17 +1066,21 @@
             gameState.turn = 1;
             gameState.storyHistory = [];
             gameState.usedWords = [];
+            gameState.allRecommendedWords = [];
             gameState.sessionId = null;
             
-            // 更新游戏界面信息
+            // 更新遊戲界面信息
             document.getElementById('current-level').textContent = level;
             document.getElementById('current-theme').textContent = getThemeName(theme);
             document.getElementById('turn-count').textContent = '1';
             
+            // 清空故事顯示區域
+            document.getElementById('story-display').innerHTML = '';
+            
             showScreen('game-screen');
             
             try {
-                // 创建数据库会话记录
+                // 創建數據庫會話記錄
                 showLoading(true);
                 const themeMapping = {
                     'nature': 'natural_exploration',
@@ -1047,30 +1091,30 @@
                 
                 const session = await createStorySession(gameState.userId, {
                     theme: themeMapping[theme] || theme,
-                    choice: '开始故事',
+                    choice: '開始故事',
                     variant: 1,
                     maxRounds: gameState.maxTurns
                 });
                 
                 gameState.sessionId = session.id;
-                console.log('✅ 会话创建成功:', gameState.sessionId);
+                console.log('✅ 會話創建成功:', gameState.sessionId);
                 
-                // 开始获取 AI 响应
+                // 開始獲取 AI 響應
                 await getAIResponse();
             } catch (error) {
-                console.error('❌ 创建会话失败:', error);
-                showToast('启动游戏失败，请重试');
+                console.error('❌ 創建會話失敗:', error);
+                showToast('啟動遊戲失敗，請重試');
                 showLoading(false);
             }
         };
 
-        // ===== 获取主题中文名 =====
+        // ===== 獲取主題中文名 =====
         function getThemeName(theme) {
             const names = {
                 nature: '自然探索',
-                campus: '校园生活',
-                fantasy: '奇幻冒险',
-                scifi: '科幻未来'
+                campus: '校園生活',
+                fantasy: '奇幻冒險',
+                scifi: '科幻未來'
             };
             return names[theme] || theme;
         }
@@ -1080,15 +1124,15 @@
             showLoading(true);
             
             try {
-                // 确保会话 ID 存在
+                // 確保會話 ID 存在
                 if (!gameState.sessionId) {
-                    throw new Error('会话未初始化');
+                    throw new Error('會話未初始化');
                 }
                 
-                // 转换级别格式 (L2 -> 2)
+                // 轉換級別格式 (L2 -> 2)
                 const userLevel = parseFloat(gameState.level.replace('L', ''));
                 
-                // 转换主题格式以匹配 Edge Function 期望的值
+                // 轉換主題格式以匹配 Edge Function 期望的值
                 const themeMapping = {
                     'nature': 'natural_exploration',
                     'campus': 'school_life',
@@ -1097,21 +1141,21 @@
                 };
                 const storyTheme = themeMapping[gameState.theme] || gameState.theme;
                 
-                // 构建对话历史（只包含文本）
+                // 構建對話歷史（只包含文本）
                 const conversationHistory = gameState.storyHistory.map(entry => entry.sentence);
                 
-                // 发送请求到 Edge Function，使用正确的参数名
+                // 發送請求到 Edge Function，使用正確的參數名
                 const requestBody = {
-                    userSentence: userSentence || '开始故事',  // 第一次调用时使用默认值
+                    userSentence: userSentence || '開始故事',  // 第一次調用時使用默認值
                     selectedWord: selectedWord,
                     sessionId: gameState.sessionId,
                     conversationHistory: conversationHistory,
                     userLevel: userLevel,
                     storyTheme: storyTheme,
-                    currentRound: gameState.turn - 1  // 轮次从 0 开始
+                    currentRound: gameState.turn - 1  // 輪次從 0 開始
                 };
                 
-                console.log('📤 发送请求:', requestBody);
+                console.log('📤 發送請求:', requestBody);
                 
                 const response = await fetch(
                     `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
@@ -1127,55 +1171,92 @@
                 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('API 错误响应:', errorText);
-                    throw new Error(`API 请求失败: ${response.status} - ${errorText}`);
+                    console.error('API 錯誤響應:', errorText);
+                    throw new Error(`API 請求失敗: ${response.status} - ${errorText}`);
                 }
                 
                 const result = await response.json();
-                console.log('📥 AI 响应:', result);
+                console.log('📥 AI 響應:', result);
                 
-                // 检查是否成功
+                // 檢查是否成功
                 if (!result.success) {
-                    throw new Error(result.error || 'AI 调用失败');
+                    throw new Error(result.error || 'AI 調用失敗');
                 }
                 
                 const data = result.data;
                 
-                // 添加到历史
+                // 添加到歷史
                 gameState.storyHistory.push({
                     role: 'ai',
                     sentence: data.aiSentence
                 });
                 
-                // 保存推荐词汇
+                // 保存推薦詞彙
                 gameState.currentWords = data.recommendedWords || [];
                 
-                // 显示 AI 响应
+                // 顯示 AI 響應
                 displayAIResponse(data);
                 
             } catch (error) {
-                console.error('AI 调用失败:', error);
-                showToast('❌ AI 调用失败：' + error.message);
+                console.error('AI 調用失敗:', error);
+                showToast('❌ AI 調用失敗：' + error.message);
                 showLoading(false);
             }
         }
 
-        // ===== 显示 AI 响应 =====
-        function displayAIResponse(data) {
+        // ===== 打字機效果顯示文本 =====
+        async function typewriterEffect(element, text, delay = 20) {
+            element.innerHTML = '';
+            const storyDisplay = document.getElementById('story-display');
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text.charAt(i);
+                const span = document.createElement('span');
+                span.className = 'typing-char';
+                span.textContent = char;
+                element.appendChild(span);
+                
+                // 每顯示幾個字符就滾動一次
+                if (i % 5 === 0) {
+                    storyDisplay.scrollTop = storyDisplay.scrollHeight;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            
+            // 最後確保滾動到底部
+            storyDisplay.scrollTop = storyDisplay.scrollHeight;
+        }
+
+        // ===== 顯示 AI 響應 =====
+        async function displayAIResponse(data) {
             showLoading(false);
             
-            // 添加 AI 消息到故事显示区域
+            // 添加 AI 消息到故事顯示區域
             const storyDisplay = document.getElementById('story-display');
             const aiMessage = document.createElement('div');
             aiMessage.className = 'message ai';
             aiMessage.innerHTML = `
                 <div class="message-label ai">🤖 AI 故事家</div>
-                <div class="message-content">${makeWordsClickable(data.aiSentence)}</div>
+                <div class="message-content"></div>
             `;
             storyDisplay.appendChild(aiMessage);
+            
+            const messageContent = aiMessage.querySelector('.message-content');
+            
+            // 先用打字機效果顯示純文本
+            await typewriterEffect(messageContent, data.aiSentence, 30);
+            
+            // 保存推薦詞彙到遊戲狀態
+            gameState.currentWords = data.recommendedWords || [];
+            gameState.allRecommendedWords.push(data.recommendedWords || []);
+            
+            // 然後替換為可點擊的詞語版本
+            messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, data.recommendedWords);
+            
             storyDisplay.scrollTop = storyDisplay.scrollHeight;
             
-            // 显示词汇选项
+            // 顯示詞彙選項
             const wordsContainer = document.getElementById('word-choices');
             wordsContainer.innerHTML = '';
             
@@ -1192,39 +1273,100 @@
                 });
             }
             
-            // 重置输入
+            // 重置輸入
             gameState.selectedWord = null;
-            document.getElementById('selected-word-display').textContent = '请先选择一个词汇...';
+            document.getElementById('selected-word-display').textContent = '請先選擇一個詞彙...';
             document.getElementById('user-input').value = '';
             document.getElementById('user-input').disabled = true;
             document.getElementById('submit-btn').disabled = true;
         }
 
-        // ===== 使词语可点击 =====
-        function makeWordsClickable(text) {
-            // 简单实现：将2-4字的词语变为可点击
-            // 实际应用中可以使用更智能的分词
-            return text.replace(/([一-龥]{2,4})/g, (match) => {
-                return `<span class="clickable-word" onclick="showWordDetail('${match}')">${match}</span>`;
+        // ===== AI句子中標記詞庫中的詞語（可點擊查詢） =====
+        function makeAIWordsClickable(text, recommendedWords) {
+            if (!text) return '';
+            
+            // 從推薦詞庫中提取所有詞語
+            const vocabularyWords = recommendedWords ? recommendedWords.map(w => w.word) : [];
+            
+            // 按長度降序排序，優先匹配長詞
+            vocabularyWords.sort((a, b) => b.length - a.length);
+            
+            let result = text;
+            const replacements = [];
+            
+            // 找出所有詞庫中的詞語位置
+            vocabularyWords.forEach(word => {
+                let index = 0;
+                while ((index = result.indexOf(word, index)) !== -1) {
+                    // 檢查是否與已有替換重疊
+                    const overlaps = replacements.some(r => 
+                        (index >= r.start && index < r.end) || 
+                        (index + word.length > r.start && index + word.length <= r.end)
+                    );
+                    
+                    if (!overlaps) {
+                        replacements.push({
+                            start: index,
+                            end: index + word.length,
+                            word: word
+                        });
+                    }
+                    index += word.length;
+                }
             });
+            
+            // 按位置排序
+            replacements.sort((a, b) => a.start - b.start);
+            
+            // 構建結果字符串
+            let finalResult = '';
+            let lastIndex = 0;
+            
+            replacements.forEach(replacement => {
+                finalResult += text.substring(lastIndex, replacement.start);
+                finalResult += `<span class="clickable-word" onclick="showWordDetailFromVocab('${replacement.word}')">${replacement.word}</span>`;
+                lastIndex = replacement.end;
+            });
+            
+            finalResult += text.substring(lastIndex);
+            
+            return finalResult;
+        }
+        
+        // ===== 用戶句子中標記選中的詞語（可點擊查詢） =====
+        function makeUserSentenceClickable(text, selectedWord) {
+            if (!text || !selectedWord) return text;
+            
+            // 找到用戶選擇的詞語並高亮
+            const word = selectedWord.word;
+            let result = text;
+            const index = result.indexOf(word);
+            
+            if (index !== -1) {
+                result = result.substring(0, index) + 
+                         `<span class="highlighted-word" onclick="showWordDetailFromVocab('${word}')">${word}</span>` + 
+                         result.substring(index + word.length);
+            }
+            
+            return result;
         }
 
-        // ===== 选择词汇 =====
+        // ===== 選擇詞彙 =====
         window.selectWord = function(wordObj) {
             gameState.selectedWord = wordObj;
             
-            // 更新按钮状态
+            // 更新按鈕狀態
             document.querySelectorAll('.word-btn').forEach(btn => {
                 btn.classList.remove('selected');
             });
             event.target.closest('.word-btn').classList.add('selected');
             
-            // 更新显示
+            // 更新顯示
             document.getElementById('selected-word-display').innerHTML = `
-                已选词汇：<strong>${wordObj.word}</strong> (${wordObj.pinyin || ''})
+                已選詞彙：<strong>${wordObj.word}</strong> (${wordObj.pinyin || ''})
             `;
             
-            // 启用输入
+            // 啟用輸入
             document.getElementById('user-input').disabled = false;
             document.getElementById('user-input').focus();
             document.getElementById('submit-btn').disabled = false;
@@ -1236,69 +1378,70 @@
             const sentence = input.value.trim();
             
             if (!sentence) {
-                showToast('请输入句子！');
+                showToast('請輸入句子！');
                 return;
             }
             
             if (!gameState.selectedWord) {
-                showToast('请先选择一个词汇！');
+                showToast('請先選擇一個詞彙！');
                 return;
             }
             
-            // 检查是否使用了选中的词
+            // 檢查是否使用了選中的詞
             if (!sentence.includes(gameState.selectedWord.word)) {
-                showToast(`请在句子中使用词汇：${gameState.selectedWord.word}`);
+                showToast(`請在句子中使用詞彙：${gameState.selectedWord.word}`);
                 return;
             }
             
-            // 添加到历史
+            // 記錄使用的詞彙
+            const usedWord = gameState.selectedWord;
+            gameState.usedWords.push(usedWord);
+            
+            // 添加到歷史
             gameState.storyHistory.push({
                 role: 'user',
                 sentence: sentence,
-                word_used: gameState.selectedWord.word
+                word_used: usedWord.word
             });
             
-            // 记录使用的词汇
-            gameState.usedWords.push(gameState.selectedWord);
-            
-            // 显示用户消息
+            // 顯示用戶消息，高亮用戶選擇的詞語
             const storyDisplay = document.getElementById('story-display');
             const userMessage = document.createElement('div');
             userMessage.className = 'message user';
             userMessage.innerHTML = `
                 <div class="message-label user">👤 你</div>
-                <div class="message-content">${makeWordsClickable(sentence)}</div>
+                <div class="message-content">${makeUserSentenceClickable(sentence, usedWord)}</div>
             `;
             storyDisplay.appendChild(userMessage);
             storyDisplay.scrollTop = storyDisplay.scrollHeight;
             
-            // 禁用输入
+            // 禁用輸入
             document.getElementById('user-input').disabled = true;
             document.getElementById('submit-btn').disabled = true;
             
-            // 增加轮次
+            // 增加輪次
             gameState.turn++;
             document.getElementById('turn-count').textContent = gameState.turn;
             
-            // 检查是否完成
+            // 檢查是否完成
             if (gameState.turn > gameState.maxTurns) {
                 setTimeout(() => {
                     finishStory();
                 }, 1000);
             } else {
-                // 继续获取 AI 响应，传递用户句子和选中的词汇
+                // 繼續獲取 AI 響應，傳遞用戶句子和選中的詞彙
                 await getAIResponse(sentence, gameState.selectedWord.word);
             }
         };
 
-        // 输入框回车提交
+        // 輸入框回車提交
         document.getElementById('user-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !this.disabled) {
                 window.submitSentence();
             }
         });
 
-        // ===== 显示/隐藏加载动画 =====
+        // ===== 顯示/隱藏載入動畫 =====
         function showLoading(show) {
             const loading = document.getElementById('loading');
             if (show) {
@@ -1312,35 +1455,45 @@
         function finishStory() {
             showScreen('finish-screen');
             
-            // 计算统计数据
+            // 計算統計數據
             const totalTurns = gameState.storyHistory.filter(h => h.role === 'user').length;
             const vocabUsed = gameState.usedWords.length;
             const fullStory = gameState.storyHistory.map(h => h.sentence).join('');
             const storyLength = fullStory.length;
             
-            // 更新显示
+            // 更新顯示
             document.getElementById('total-turns').textContent = totalTurns;
             document.getElementById('vocab-used').textContent = vocabUsed;
             document.getElementById('story-length').textContent = storyLength;
             
-            // 显示完整故事
+            // 顯示完整故事
             const fullStoryText = document.getElementById('full-story-text');
             fullStoryText.innerHTML = '';
             
-            gameState.storyHistory.forEach(item => {
+            gameState.storyHistory.forEach((item, index) => {
                 const p = document.createElement('p');
                 p.style.marginBottom = '15px';
-                p.style.lineHeight = '1.8';
+                p.style.lineHeight = '2';
+                p.style.fontSize = '1.2em';
+                
                 if (item.role === 'ai') {
-                    p.innerHTML = `🤖 ${makeWordsClickable(item.sentence)}`;
+                    // AI句子：標記當時推薦的詞彙（使用allRecommendedWords）
+                    const aiIndex = Math.floor(index / 2);
+                    const recommendedWords = aiIndex < gameState.allRecommendedWords.length ? 
+                        gameState.allRecommendedWords[aiIndex] : [];
+                    p.innerHTML = `🤖 ${makeAIWordsClickable(item.sentence, recommendedWords)}`;
                 } else {
-                    p.innerHTML = `👤 ${makeWordsClickable(item.sentence)}`;
+                    // 用戶句子：高亮用戶使用的詞彙
+                    const userIndex = Math.floor((index - 1) / 2);
+                    const usedWord = userIndex < gameState.usedWords.length ? 
+                        gameState.usedWords[userIndex] : null;
+                    p.innerHTML = `👤 ${makeUserSentenceClickable(item.sentence, usedWord)}`;
                 }
                 fullStoryText.appendChild(p);
             });
         }
 
-        // ===== 重新开始 =====
+        // ===== 重新開始 =====
         window.restartGame = function() {
             showScreen('start-screen');
         };
@@ -1351,77 +1504,117 @@
             
             if (navigator.share) {
                 navigator.share({
-                    title: '我和AI创作的故事',
+                    title: '我和AI創作的故事',
                     text: fullStory
-                }).catch(err => console.log('分享失败:', err));
+                }).catch(err => console.log('分享失敗:', err));
             } else {
-                // 复制到剪贴板
+                // 複製到剪貼板
                 navigator.clipboard.writeText(fullStory).then(() => {
-                    showToast('✅ 故事已复制到剪贴板！');
+                    showToast('✅ 故事已複製到剪貼板！');
                 }).catch(() => {
-                    showToast('❌ 复制失败，请手动复制');
+                    showToast('❌ 複製失敗，請手動複製');
                 });
             }
         };
 
-        // ===== 显示词汇详情 =====
-        window.showWordDetail = async function(word) {
+        // ===== 從詞庫中查詢詞彙詳情（優先使用詞庫數據，然後調用萌典） =====
+        window.showWordDetailFromVocab = async function(word) {
             const modal = document.getElementById('word-modal');
             modal.classList.add('active');
             
             document.getElementById('modal-word').textContent = word;
-            document.getElementById('modal-pinyin').textContent = '加载中...';
-            document.getElementById('modal-definition').textContent = '加载中...';
-            document.getElementById('modal-example').textContent = '加载中...';
+            document.getElementById('modal-pinyin').innerHTML = '<span style="color: var(--text-light);">🔄 查詢中...</span>';
+            document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">正在獲取釋義...</span>';
+            document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">正在獲取例句...</span>';
             
             try {
-                // 调用萌典 API
-                const response = await fetch(`https://www.moedict.tw/a/${word}.json`);
-                if (!response.ok) throw new Error('查询失败');
+                // 首先檢查是否在當前推薦詞彙中
+                const vocabWord = gameState.currentWords.find(w => w.word === word);
+                
+                if (vocabWord && vocabWord.pinyin) {
+                    document.getElementById('modal-pinyin').textContent = vocabWord.pinyin;
+                }
+                
+                // 調用萌典 API 獲取詳細信息
+                // 根據詞語長度選擇不同的API
+                let apiUrl;
+                if (word.length === 1) {
+                    // 單字使用 uni API
+                    apiUrl = `https://www.moedict.tw/uni/${encodeURIComponent(word)}`;
+                } else {
+                    // 詞語使用 a API
+                    apiUrl = `https://www.moedict.tw/a/${encodeURIComponent(word)}.json`;
+                }
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('查詢失敗');
                 
                 const data = await response.json();
+                console.log('萌典API返回:', data);
                 
-                // 显示拼音
-                if (data.heteronyms && data.heteronyms[0]) {
-                    document.getElementById('modal-pinyin').textContent = data.heteronyms[0].pinyin || '无拼音';
-                    
-                    // 显示释义
-                    if (data.heteronyms[0].definitions && data.heteronyms[0].definitions[0]) {
-                        const def = data.heteronyms[0].definitions[0];
-                        document.getElementById('modal-definition').textContent = def.def || '暂无释义';
-                        
-                        // 显示例句
-                        if (def.example && def.example.length > 0) {
-                            document.getElementById('modal-example').textContent = def.example.join('；');
-                        } else {
-                            document.getElementById('modal-example').textContent = '暂无例句';
-                        }
-                    }
+                // 顯示拼音（如果詞庫中沒有）
+                if (data.heteronyms && data.heteronyms[0] && !vocabWord) {
+                    document.getElementById('modal-pinyin').textContent = data.heteronyms[0].pinyin || '無拼音';
                 }
+                
+                // 顯示釋義
+                if (data.heteronyms && data.heteronyms[0] && data.heteronyms[0].definitions) {
+                    const definitions = data.heteronyms[0].definitions;
+                    let definitionText = '';
+                    
+                    definitions.forEach((def, index) => {
+                        if (def.def) {
+                            if (definitions.length > 1) {
+                                definitionText += `${index + 1}. ${def.def}\n\n`;
+                            } else {
+                                definitionText += def.def;
+                            }
+                        }
+                    });
+                    
+                    document.getElementById('modal-definition').textContent = definitionText || '暫無釋義';
+                    
+                    // 顯示例句（取前3個）
+                    let exampleText = '';
+                    let exampleCount = 0;
+                    definitions.forEach(def => {
+                        if (def.example && def.example.length > 0 && exampleCount < 3) {
+                            def.example.forEach(ex => {
+                                if (exampleCount < 3) {
+                                    exampleText += `• ${ex}\n\n`;
+                                    exampleCount++;
+                                }
+                            });
+                        }
+                    });
+                    
+                    document.getElementById('modal-example').textContent = exampleText || '暫無例句';
+                }
+                
             } catch (error) {
-                console.error('查询词汇失败:', error);
-                document.getElementById('modal-pinyin').textContent = '查询失败';
-                document.getElementById('modal-definition').textContent = '无法获取释义，请稍后重试';
-                document.getElementById('modal-example').textContent = '无法获取例句';
+                console.error('查詢詞彙失敗:', error);
+                document.getElementById('modal-pinyin').innerHTML = '<span style="color: #E74C3C;">❌ 查詢失敗</span>';
+                document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">抱歉，暫時無法獲取該詞的詳細釋義。<br>請稍後重試或嘗試其他詞語。</span>';
+                document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">無法獲取例句</span>';
             }
             
-            // 保存当前查看的词汇
+            // 保存當前查看的詞彙
             modal.dataset.currentWord = word;
         };
 
-        // ===== 关闭词汇详情 =====
+        // ===== 關閉詞彙詳情 =====
         window.closeWordModal = function() {
             document.getElementById('word-modal').classList.remove('active');
         };
 
-        // 点击背景关闭弹窗
+        // 點擊背景關閉彈窗
         document.getElementById('word-modal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeWordModal();
             }
         });
 
-        // ===== 添加到生词本 =====
+        // ===== 添加到生詞本 =====
         window.addToWordbook = function() {
             const modal = document.getElementById('word-modal');
             const word = modal.dataset.currentWord;
@@ -1430,13 +1623,13 @@
             
             if (!word) return;
             
-            // 检查是否已存在
+            // 檢查是否已存在
             if (wordbook.some(w => w.word === word)) {
-                showToast('该词已在生词本中！');
+                showToast('該詞已在生詞本中！');
                 return;
             }
             
-            // 添加到生词本
+            // 添加到生詞本
             wordbook.push({
                 word: word,
                 pinyin: pinyin,
@@ -1448,22 +1641,22 @@
             localStorage.setItem('story_wordbook', JSON.stringify(wordbook));
             updateWordbookCount();
             
-            showToast(`✅ "${word}" 已添加到生词本！`);
+            showToast(`✅ "${word}" 已添加到生詞本！`);
         };
 
-        // ===== 更新生词本计数 =====
+        // ===== 更新生詞本計數 =====
         function updateWordbookCount() {
             document.getElementById('wordbook-count').textContent = wordbook.length;
         }
 
-        // ===== 打开生词本 =====
+        // ===== 打開生詞本 =====
         window.openWordbook = function() {
             if (wordbook.length === 0) {
-                showToast('生词本还是空的，快去收藏一些词汇吧！');
+                showToast('生詞本還是空的，快去收藏一些詞彙吧！');
                 return;
             }
             
-            let wordbookHTML = '<h2 style="margin-bottom: 20px;">📚 我的生词本</h2>';
+            let wordbookHTML = '<h2 style="margin-bottom: 20px;">📚 我的生詞本</h2>';
             wordbook.forEach((item, index) => {
                 wordbookHTML += `
                     <div style="background: var(--light-blue); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
@@ -1479,15 +1672,15 @@
             modalContent.innerHTML = `
                 <button class="modal-close" onclick="closeWordModal()">×</button>
                 ${wordbookHTML}
-                <button class="btn-secondary" onclick="closeWordModal()" style="width: 100%; margin-top: 20px;">关闭</button>
+                <button class="btn-secondary" onclick="closeWordModal()" style="width: 100%; margin-top: 20px;">關閉</button>
             `;
             modal.classList.add('active');
         };
 
-        // ===== 启动应用 =====
-        console.log('🎮 故事词汇接龙游戏已加载！');
+        // ===== 啟動應用 =====
+        console.log('🎮 故事詞彙接龍遊戲已載入！');
         
-        // 页面加载完成后初始化
+        // 頁面載入完成後初始化
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeApp);
         } else {
