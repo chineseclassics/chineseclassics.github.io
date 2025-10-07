@@ -931,11 +931,30 @@
     <!-- ===== JavaScript ===== -->
     <script type="module">
         // 导入配置和客户端
-        import { SupabaseClient } from './js/supabase-client.js';
+        import { initSupabase, getSupabase, signInAnonymously, getRecommendedVocabulary, recordVocabularyUsage, addToWordbook, getUserWordbook, callStoryAgent, createStorySession, updateStorySession, completeStorySession } from './js/supabase-client.js';
         import { SUPABASE_CONFIG } from './js/config.js';
 
         // 初始化 Supabase 客户端
-        const supabase = new SupabaseClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        let supabase = null;
+        
+        // 异步初始化
+        async function initializeApp() {
+            try {
+                supabase = await initSupabase();
+                console.log('✅ Supabase 客户端初始化成功');
+                
+                // 匿名登录
+                const user = await signInAnonymously();
+                gameState.userId = user.id;
+                console.log('✅ 用户登录成功:', gameState.userId);
+                
+                console.log('✅ 应用初始化完成');
+                // 应用已准备就绪，等待用户开始游戏
+            } catch (error) {
+                console.error('❌ 应用初始化失败:', error);
+                showToast('初始化失败，请刷新页面重试');
+            }
+        }
 
         // 游戏状态
         let gameState = {
@@ -945,7 +964,7 @@
             maxTurns: 18,
             storyHistory: [],
             sessionId: null,
-            userId: 'guest_' + Date.now(),
+            userId: null,  // 将在匿名登录后设置
             selectedWord: null,
             currentWords: [],
             usedWords: []
@@ -993,6 +1012,12 @@
 
         // ===== 开始游戏 =====
         window.startGame = async function() {
+            // 确保用户已登录
+            if (!gameState.userId) {
+                showToast('正在初始化，请稍候...');
+                return;
+            }
+            
             const level = document.querySelector('input[name="level"]:checked').value;
             const theme = document.querySelector('.theme-btn.selected').dataset.theme;
             
@@ -1001,6 +1026,7 @@
             gameState.turn = 1;
             gameState.storyHistory = [];
             gameState.usedWords = [];
+            gameState.sessionId = null;
             
             // 更新游戏界面信息
             document.getElementById('current-level').textContent = level;
@@ -1008,7 +1034,34 @@
             document.getElementById('turn-count').textContent = '1';
             
             showScreen('game-screen');
-            await getAIResponse();
+            
+            try {
+                // 创建数据库会话记录
+                showLoading(true);
+                const themeMapping = {
+                    'nature': 'natural_exploration',
+                    'campus': 'school_life',
+                    'fantasy': 'fantasy_adventure',
+                    'scifi': 'sci_fi'
+                };
+                
+                const session = await createStorySession(gameState.userId, {
+                    theme: themeMapping[theme] || theme,
+                    choice: '开始故事',
+                    variant: 1,
+                    maxRounds: gameState.maxTurns
+                });
+                
+                gameState.sessionId = session.id;
+                console.log('✅ 会话创建成功:', gameState.sessionId);
+                
+                // 开始获取 AI 响应
+                await getAIResponse();
+            } catch (error) {
+                console.error('❌ 创建会话失败:', error);
+                showToast('启动游戏失败，请重试');
+                showLoading(false);
+            }
         };
 
         // ===== 获取主题中文名 =====
@@ -1023,10 +1076,43 @@
         }
 
         // ===== 调用 AI Agent =====
-        async function getAIResponse() {
+        async function getAIResponse(userSentence = '', selectedWord = '') {
             showLoading(true);
             
             try {
+                // 确保会话 ID 存在
+                if (!gameState.sessionId) {
+                    throw new Error('会话未初始化');
+                }
+                
+                // 转换级别格式 (L2 -> 2)
+                const userLevel = parseFloat(gameState.level.replace('L', ''));
+                
+                // 转换主题格式以匹配 Edge Function 期望的值
+                const themeMapping = {
+                    'nature': 'natural_exploration',
+                    'campus': 'school_life',
+                    'fantasy': 'fantasy_adventure',
+                    'scifi': 'sci_fi'
+                };
+                const storyTheme = themeMapping[gameState.theme] || gameState.theme;
+                
+                // 构建对话历史（只包含文本）
+                const conversationHistory = gameState.storyHistory.map(entry => entry.sentence);
+                
+                // 发送请求到 Edge Function，使用正确的参数名
+                const requestBody = {
+                    userSentence: userSentence || '开始故事',  // 第一次调用时使用默认值
+                    selectedWord: selectedWord,
+                    sessionId: gameState.sessionId,
+                    conversationHistory: conversationHistory,
+                    userLevel: userLevel,
+                    storyTheme: storyTheme,
+                    currentRound: gameState.turn - 1  // 轮次从 0 开始
+                };
+                
+                console.log('📤 发送请求:', requestBody);
+                
                 const response = await fetch(
                     `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
                     {
@@ -1035,44 +1121,41 @@
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
                         },
-                        body: JSON.stringify({
-                            user_id: gameState.userId,
-                            level: gameState.level,
-                            theme: gameState.theme,
-                            turn: gameState.turn,
-                            story_history: gameState.storyHistory,
-                            session_id: gameState.sessionId
-                        })
+                        body: JSON.stringify(requestBody)
                     }
                 );
                 
                 if (!response.ok) {
-                    throw new Error(`API 请求失败: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('API 错误响应:', errorText);
+                    throw new Error(`API 请求失败: ${response.status} - ${errorText}`);
                 }
                 
-                const data = await response.json();
-                console.log('AI 响应:', data);
+                const result = await response.json();
+                console.log('📥 AI 响应:', result);
                 
-                // 保存 session ID
-                if (data.session_id) {
-                    gameState.sessionId = data.session_id;
+                // 检查是否成功
+                if (!result.success) {
+                    throw new Error(result.error || 'AI 调用失败');
                 }
+                
+                const data = result.data;
                 
                 // 添加到历史
                 gameState.storyHistory.push({
                     role: 'ai',
-                    sentence: data.ai_sentence
+                    sentence: data.aiSentence
                 });
                 
                 // 保存推荐词汇
-                gameState.currentWords = data.recommended_words || [];
+                gameState.currentWords = data.recommendedWords || [];
                 
                 // 显示 AI 响应
                 displayAIResponse(data);
                 
             } catch (error) {
                 console.error('AI 调用失败:', error);
-                showToast('❌ AI 调用失败，请刷新页面重试');
+                showToast('❌ AI 调用失败：' + error.message);
                 showLoading(false);
             }
         }
@@ -1087,7 +1170,7 @@
             aiMessage.className = 'message ai';
             aiMessage.innerHTML = `
                 <div class="message-label ai">🤖 AI 故事家</div>
-                <div class="message-content">${makeWordsClickable(data.ai_sentence)}</div>
+                <div class="message-content">${makeWordsClickable(data.aiSentence)}</div>
             `;
             storyDisplay.appendChild(aiMessage);
             storyDisplay.scrollTop = storyDisplay.scrollHeight;
@@ -1096,8 +1179,8 @@
             const wordsContainer = document.getElementById('word-choices');
             wordsContainer.innerHTML = '';
             
-            if (data.recommended_words && data.recommended_words.length > 0) {
-                data.recommended_words.forEach(wordObj => {
+            if (data.recommendedWords && data.recommendedWords.length > 0) {
+                data.recommendedWords.forEach(wordObj => {
                     const wordBtn = document.createElement('button');
                     wordBtn.className = 'word-btn';
                     wordBtn.innerHTML = `
@@ -1203,8 +1286,8 @@
                     finishStory();
                 }, 1000);
             } else {
-                // 继续获取 AI 响应
-                await getAIResponse();
+                // 继续获取 AI 响应，传递用户句子和选中的词汇
+                await getAIResponse(sentence, gameState.selectedWord.word);
             }
         };
 
@@ -1401,7 +1484,15 @@
             modal.classList.add('active');
         };
 
+        // ===== 启动应用 =====
         console.log('🎮 故事词汇接龙游戏已加载！');
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
     </script>
 </body>
 </html>
