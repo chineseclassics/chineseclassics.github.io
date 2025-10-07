@@ -595,18 +595,18 @@ button:active {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-.score-title {
-    font-size: 0.9em;
-    color: var(--text-light);
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
 .score-header {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
+}
+
+.score-title {
+    font-size: 0.9em;
+    color: var(--text-light);
+    font-weight: 500;
+    margin-right: 5px;
 }
 
 .score-number {

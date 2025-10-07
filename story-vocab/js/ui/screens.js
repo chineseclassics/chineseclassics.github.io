@@ -288,8 +288,8 @@ export function displayFeedback(feedback, originalSentence, selectedWord) {
     feedbackSection.innerHTML = `
         <div class="feedback-message">
             <div class="feedback-score">
-                <div class="score-title">句子評分</div>
                 <div class="score-header">
+                    <div class="score-title">句子評分</div>
                     <div class="score-number">${feedback.score}</div>
                     <div class="score-label">/10</div>
                 </div>
