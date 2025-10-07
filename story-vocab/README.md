@@ -1,109 +1,63 @@
-# 智慧故事坊 - 故事接龙词汇学习应用
+# 📚 故事词汇接龙 - 智慧故事坊
 
-## ⚡ 超快速开始（推荐）
+与AI共创精彩故事，轻松积累词汇的创意学习应用
 
-如果您的 Supabase 已经配置好（URL 和 Key 已填入 `js/config.js`），可以直接：
+---
 
-1. **启动本地服务器**
-   ```bash
-   cd story-vocab
-   python3 -m http.server 8000
-   ```
+## 🎮 快速开始
 
-2. **访问管理后台**
-   
-   打开浏览器访问：http://localhost:8000/admin/
+### 1️⃣ 启动本地服务器
 
-3. **导入示例词汇**
-   
-   点击「词汇导入」→「加载词汇数据」→「开始导入」
-   
-   这将导入 120 个精选词汇（L1-L6，适合 7-18 岁学生）
+```bash
+cd story-vocab
+python3 -m http.server 8000
+```
 
-4. **浏览词汇**
-   
-   使用「词汇浏览器」查看、筛选和搜索已导入的词汇
+### 2️⃣ 开始游戏
 
-## 🚀 完整设置指南
+打开浏览器访问：**http://localhost:8000/story-game.html**
 
-### 第一步：创建 Supabase 项目
+开始与AI创作故事！
 
-1. 访问 [https://supabase.com](https://supabase.com)
-2. 注册并创建新项目
-3. 记录以下信息：
-   - Project URL: `https://xxxxx.supabase.co`
-   - Project Anon Key: `eyJhbGci...`
+### 3️⃣ 管理后台（可选）
 
-### 第二步：运行数据库迁移
+访问管理后台：**http://localhost:8000/admin/**
 
-1. 安装 Supabase CLI（如果还没安装）:
-   ```bash
-   npm install -g supabase
-   ```
+- 📥 导入更多词汇
+- 📖 浏览词汇库
+- 🤖 测试AI Agent
+- 📊 查看统计数据
 
-2. 登录 Supabase:
-   ```bash
-   supabase login
-   ```
+---
 
-3. 关联项目:
-   ```bash
-   cd story-vocab
-   supabase link --project-ref your-project-ref
-   ```
+## ✨ MVP 已完成功能
 
-4. 运行迁移:
-   ```bash
-   supabase db push
-   ```
-   
-   或者直接在 Supabase Dashboard 的 SQL Editor 中执行 `supabase/migrations/001_initial_schema.sql`
+### 🎯 核心游戏功能
+- ✅ **6个难度级别** (L1-L6，覆盖7-18岁学生)
+- ✅ **4种故事主题** (自然探索、校园生活、奇幻冒险、科幻未来)
+- ✅ **智能词汇推荐** (基于级别和主题的个性化推荐)
+- ✅ **18轮故事接龙** (AI与用户交替创作)
+- ✅ **实时词汇查询** (集成萌典API)
+- ✅ **生词本功能** (收藏喜欢的词汇)
+- ✅ **完整故事展示** (创作统计和分享功能)
 
-### 第三步：配置前端
+### 🤖 AI Agent
+- ✅ **DeepSeek API 集成** (部署在 Supabase Edge Function)
+- ✅ **上下文感知** (根据故事历史智能续写)
+- ✅ **阶段控制** (开始/发展/收尾不同策略)
+- ✅ **词汇多样性** (避免重复，类别平衡)
 
-1. 编辑 `js/config.js`，填入 Supabase 配置:
-   ```javascript
-   export const SUPABASE_CONFIG = {
-     url: 'https://xxxxx.supabase.co', // 替换为您的 URL
-     anonKey: 'eyJhbGci...' // 替换为您的 anon key
-   };
-   ```
+### 🛠️ 管理工具
+- ✅ **词汇导入工具** (批量导入JSON格式词汇)
+- ✅ **词汇浏览器** (筛选、搜索、分页)
+- ✅ **AI测试工具** (调试和优化AI响应)
+- ✅ **统计面板** (实时数据统计)
 
-2. 配置 DeepSeek API（在 Supabase Dashboard → Edge Functions → Settings → Secrets）:
-   ```
-   DEEPSEEK_API_KEY=sk-xxxxx
-   ```
-
-### 第四步：准备词汇数据
-
-1. 准备词汇 CSV 文件（格式参考 `data/vocabulary-template.csv`）
-2. 导入到 Supabase（使用 SQL 或 CSV 导入工具）
-
-### 第五步：部署 Edge Function
-
-1. 创建 Edge Function:
-   ```bash
-   supabase functions deploy story-agent
-   ```
-
-2. 测试 Function:
-   ```bash
-   supabase functions invoke story-agent --body '{"test": true}'
-   ```
-
-### 第六步：本地测试
-
-1. 用浏览器打开 `index.html`
-2. 或使用本地服务器:
-   ```bash
-   # Python
-   python -m http.server 8000
-   
-   # Node.js
-   npx serve
-   ```
-
-3. 访问 `http://localhost:8000`
+### 💾 数据系统
+- ✅ **Supabase 数据库** (用户、词汇、故事会话)
+- ✅ **RLS 安全策略** (数据访问控制)
+- ✅ **120个示例词汇** (L1-L6精选词汇)
+- ✅ **本地存储** (生词本持久化)
 
 ---
 
@@ -111,182 +65,275 @@
 
 ```
 story-vocab/
-├── index.html                 # 首页
-├── story.html                 # 故事创作页面（待创建）
-├── config.html                # 设置页面（待创建）
-├── result.html                # 结果页面（待创建）
+├── story-game.html           # 🎮 主游戏页面（单页应用）
 │
-├── css/
-│   └── main.css              # 全局样式（待创建）
+├── admin/                    # 🛠️ 管理后台
+│   ├── index.html           # 后台首页
+│   ├── import-vocabulary.html    # 词汇导入工具
+│   ├── browse-vocabulary.html    # 词汇浏览器
+│   └── test-ai-agent.html   # AI Agent 测试
 │
-├── js/
-│   ├── config.js             # ✅ 配置文件
-│   ├── supabase-client.js    # ✅ Supabase 客户端
-│   ├── auth.js               # 认证模块（待创建）
+├── js/                       # 📦 JavaScript 模块
+│   ├── config.js            # 配置文件（Supabase URL/Key）
+│   └── supabase-client.js   # Supabase 客户端封装
+│
+├── supabase/                 # 🗄️ 后端服务
+│   ├── migrations/          # 数据库迁移脚本
+│   │   ├── 001_initial_schema.sql
+│   │   ├── 002_enable_rls_policies.sql
+│   │   ├── 003_allow_vocab_insert.sql
+│   │   ├── 004_add_missing_columns.sql
+│   │   └── 005_fix_rls_properly.sql
 │   │
-│   └── modules/
-│       ├── story-engine.js   # 故事引擎（待创建）
-│       ├── vocabulary.js     # 词汇推荐（待创建）
-│       ├── creativity.js     # 创意度评分（待创建）
-│       └── moedict.js        # 萌典 API（待创建）
+│   └── functions/           # Edge Functions
+│       └── story-agent/     # AI 故事生成服务
+│           ├── index.ts     # 主逻辑
+│           └── deno.json    # Deno 配置
 │
-├── supabase/
-│   ├── migrations/
-│   │   └── 001_initial_schema.sql  # ✅ 数据库架构
-│   │
-│   └── functions/
-│       └── story-agent/
-│           └── index.ts      # AI Agent（待创建）
-│
-└── data/
-    └── vocabulary-template.csv  # 词汇模板（待创建）
+└── data/                     # 📊 数据文件
+    └── sample-vocabulary.json   # 示例词汇（120个）
 ```
 
 ---
 
-## 🎯 MVP 开发任务清单
+## 🚀 部署指南
 
-### Week 1: 基础设施 (Day 1-7)
+### 前提条件
 
-- [x] 数据库架构设计
-- [x] Supabase 配置
-- [x] 前端配置文件
-- [x] Supabase 客户端封装
-- [ ] Supabase 项目创建
-- [ ] 数据库迁移执行
-- [ ] 词汇数据准备（1500个）
-- [ ] 词汇数据导入
+1. ✅ Supabase 账户和项目
+2. ✅ DeepSeek API Key
+3. ✅ Supabase CLI（用于部署 Edge Function）
 
-### Week 2: 核心功能 (Day 8-14)
+### 步骤 1: 配置 Supabase
 
-- [ ] Edge Function: story-agent
-- [ ] DeepSeek API 集成
-- [ ] 故事引擎模块
-- [ ] 词汇推荐算法
-- [ ] 萌典 API 集成
-- [ ] 创意度评分算法
-- [ ] 前端页面（HTML/CSS）
-- [ ] 页面交互逻辑
+1. **创建 Supabase 项目**
+   - 访问 [https://supabase.com](https://supabase.com)
+   - 创建新项目并记录 Project URL 和 Anon Key
 
-### Week 3: 测试优化 (Day 15-21)
+2. **运行数据库迁移**
+   - 在 Supabase Dashboard → SQL Editor 中依次执行：
+     - `supabase/migrations/001_initial_schema.sql`
+     - `supabase/migrations/005_fix_rls_properly.sql`
 
-- [ ] 完整流程测试
-- [ ] AI 回应质量调优
-- [ ] UI/UX 优化
-- [ ] Bug 修复
-- [ ] 性能优化
-- [ ] 部署到生产环境
-- [ ] 内测准备
+3. **配置 API 密钥**
+   - 在 Supabase Dashboard → Edge Functions → Settings → Secrets 中添加：
+     ```
+     DEEPSEEK_API_KEY=sk-your-deepseek-key
+     ```
+
+### 步骤 2: 配置前端
+
+编辑 `js/config.js`：
+
+```javascript
+export const SUPABASE_CONFIG = {
+  url: 'https://your-project.supabase.co',
+  anonKey: 'your-anon-key'
+};
+```
+
+### 步骤 3: 部署 Edge Function
+
+```bash
+# 安装 Supabase CLI (macOS)
+brew install supabase/tap/supabase
+
+# 或使用 npx (无需安装)
+npx supabase functions deploy story-agent
+
+# 部署函数
+cd story-vocab
+npx supabase functions deploy story-agent
+```
+
+详细步骤参见：[EDGE_FUNCTION_DEPLOY.md](./EDGE_FUNCTION_DEPLOY.md)
+
+### 步骤 4: 导入词汇数据
+
+1. 启动本地服务器
+2. 访问 http://localhost:8000/admin/
+3. 点击「词汇导入」→「加载词汇数据」→「开始导入」
+4. 等待 120 个示例词汇导入完成
+
+### 步骤 5: 测试游戏
+
+访问 http://localhost:8000/story-game.html，开始创作故事！
+
+---
+
+## 🎨 游戏玩法
+
+### 1. 选择级别和主题
+- 根据年龄选择合适的难度级别（L1-L6）
+- 选择感兴趣的故事主题
+
+### 2. 开始创作
+- AI 会给出故事开头
+- 从推荐的 6 个词汇中选择一个
+- 用选中的词造句，继续故事
+
+### 3. 学习词汇
+- 点击任何词语查看详细释义（萌典API）
+- 收藏喜欢的词汇到生词本
+- 查看拼音、定义和例句
+
+### 4. 完成故事
+- 经过 18 轮接龙，完成完整故事
+- 查看创作统计（使用词汇数、故事字数）
+- 分享或再玩一次
 
 ---
 
 ## 🛠️ 开发指南
 
-### 代码规范
+### 本地开发
 
-- 使用 ES6 模块（`import/export`）
-- 函数命名：驼峰式（camelCase）
-- 变量命名：有意义的英文
-- 注释：关键逻辑必须注释
-- 错误处理：使用 try-catch
+```bash
+# 启动服务器
+python3 -m http.server 8000
 
-### Git 提交规范
+# 访问游戏
+open http://localhost:8000/story-game.html
 
-```
-feat: 添加新功能
-fix: 修复 Bug
-docs: 文档更新
-style: 代码格式调整
-refactor: 代码重构
-test: 测试相关
-chore: 构建/工具相关
+# 访问管理后台
+open http://localhost:8000/admin/
 ```
 
-### 分支策略
+### 测试 AI Agent
 
-- `main`: 生产环境
-- `develop`: 开发环境
-- `feature/*`: 功能分支
-- `hotfix/*`: 紧急修复
+1. 访问 http://localhost:8000/admin/test-ai-agent.html
+2. 选择级别、主题、轮次
+3. 查看 AI 响应和推荐词汇
+
+### 添加新词汇
+
+1. 准备 JSON 格式数据（参考 `data/sample-vocabulary.json`）
+2. 使用「词汇导入工具」批量导入
+3. 或在 Supabase Dashboard 中手动添加
 
 ---
 
 ## 📊 数据库表说明
 
-### users - 用户表
-- 存储用户基本信息
-- 当前等级、完成故事数
+### `vocabulary` - 词汇表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | uuid | 主键 |
+| word | text | 词语 |
+| pinyin | text | 拼音 |
+| level | text | 难度级别 (L1-L6) |
+| category | text | 词汇类别 |
+| themes | text[] | 适用主题 |
+| frequency | int | 使用频率 |
+| hsk_level | int | HSK等级 |
 
-### vocabulary - 词汇表
-- 核心词汇库
-- 包含拼音、难度、分类、主题等
+### `story_sessions` - 故事会话
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | uuid | 主键 |
+| user_id | text | 用户ID |
+| level | text | 难度级别 |
+| theme | text | 故事主题 |
+| story_history | jsonb | 对话历史 |
+| creativity_score | float | 创意分数 |
+| completed | boolean | 是否完成 |
 
-### story_sessions - 故事会话
-- 每个故事的完整数据
-- 对话历史、创意度评分
+### `user_vocabulary` - 用户词汇记录
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| user_id | text | 用户ID |
+| vocabulary_id | uuid | 词汇ID |
+| mastery_level | int | 掌握程度 |
+| times_used | int | 使用次数 |
 
-### user_vocabulary - 用户词汇记录
-- 用户学习过的词汇
-- 掌握程度、使用次数
-
-### user_wordbook - 生词本
-- 用户收藏的词汇
-- 例句、来源故事
-
----
-
-## 🔐 安全说明
-
-### Row Level Security (RLS)
-
-数据库已启用 RLS，确保：
-- 用户只能看到自己的数据
-- 词汇表对所有人可读
-- API Key 存储在 Supabase Secrets
-
-### API Key 管理
-
-- 前端使用 `anon key`（公开安全）
-- DeepSeek API Key 存储在 Edge Function 环境变量
-- 不要将 API Key 提交到 Git
+### `user_wordbook` - 生词本
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | uuid | 主键 |
+| user_id | text | 用户ID |
+| vocabulary_id | uuid | 词汇ID |
+| notes | text | 用户笔记 |
 
 ---
 
 ## 🐛 故障排查
 
-### 数据库连接失败
-1. 检查 `config.js` 中的 URL 和 Key
-2. 确认 Supabase 项目状态正常
-3. 查看浏览器控制台错误
+### ❌ "Failed to fetch" 错误
+**原因**: Supabase 连接问题或 RLS 策略未配置
 
-### Edge Function 调用失败
-1. 检查函数是否已部署
-2. 确认环境变量已设置
-3. 查看 Function 日志: `supabase functions logs story-agent`
+**解决方案**:
+1. 检查 `js/config.js` 中的 URL 和 Key 是否正确
+2. 确认已执行 `005_fix_rls_properly.sql` 迁移
+3. 查看浏览器控制台的详细错误信息
 
-### 词汇推荐为空
-1. 确认词汇数据已导入
-2. 检查难度等级是否匹配
-3. 查看数据库查询日志
+### ❌ AI 不响应
+**原因**: Edge Function 未部署或 API Key 未配置
+
+**解决方案**:
+1. 确认 Edge Function 已部署: `npx supabase functions list`
+2. 检查 DEEPSEEK_API_KEY 环境变量
+3. 查看函数日志: `npx supabase functions logs story-agent`
+
+### ❌ 词汇推荐为空
+**原因**: 词汇数据未导入或级别不匹配
+
+**解决方案**:
+1. 访问管理后台确认词汇数量 > 0
+2. 使用「词汇浏览器」查看各级别词汇分布
+3. 使用「词汇导入工具」导入示例数据
+
+### ❌ CORS 错误
+**原因**: 直接打开 HTML 文件（file:// 协议）
+
+**解决方案**:
+必须使用本地服务器:
+```bash
+python3 -m http.server 8000
+```
+然后访问 http://localhost:8000
 
 ---
 
-## 📞 联系方式
+## 📈 未来计划
 
-如有问题，请查看：
-- 📖 [完整设计文档](../STORY_VOCABULARY_APP_DESIGN.md)
-- 📝 [MVP 计划](../STORY_VOCABULARY_MVP_PLAN.md)
-- 🐛 [GitHub Issues](https://github.com/...)
+### 短期（1-2周）
+- [ ] 用户登录/注册功能
+- [ ] 创意度评分算法
+- [ ] 故事分享功能（社交媒体）
+- [ ] 更多词汇数据（扩展到 1500+ 词）
+
+### 中期（1-2月）
+- [ ] 多人协作故事接龙
+- [ ] 学习报告和统计
+- [ ] 徽章和成就系统
+- [ ] 语音朗读功能
+
+### 长期（3-6月）
+- [ ] 故事社区（浏览他人作品）
+- [ ] AI 故事插图生成
+- [ ] 移动端 App
+- [ ] 教师管理后台（班级管理）
 
 ---
 
-## 📄 License
+## 📚 相关文档
 
-待定
+- 📐 [完整设计文档](../STORY_VOCABULARY_APP_DESIGN.md)
+- 📝 [MVP 开发计划](../STORY_VOCABULARY_MVP_PLAN.md)
+- 🚀 [Edge Function 部署指南](./EDGE_FUNCTION_DEPLOY.md)
 
 ---
 
-**最后更新**: 2025-10-06  
-**版本**: 1.0.0-mvp  
-**状态**: 开发中
+## 🙏 致谢
 
+- **萌典 API**: 提供权威的中文词典数据
+- **DeepSeek**: 提供强大的中文AI模型
+- **Supabase**: 提供完整的后端服务
+
+---
+
+**最后更新**: 2025-10-07  
+**版本**: 1.0.0-MVP  
+**状态**: ✅ MVP 核心功能已完成
+
+🎮 **立即开始游戏**: http://localhost:8000/story-game.html

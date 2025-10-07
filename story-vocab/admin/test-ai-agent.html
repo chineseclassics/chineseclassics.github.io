@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agent 测试工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .alert {
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      border-left: 4px solid;
+    }
+    
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-color: #0c5460;
+    }
+    
+    .alert-warning {
+      background: #fff3cd;
+      color: #856404;
+      border-color: #856404;
+    }
+    
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border-color: #155724;
+    }
+    
+    .alert strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      padding: 25px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    
+    .story-display {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .story-message {
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    
+    .story-message.user {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+    }
+    
+    .story-message.ai {
+      background: #f3e5f5;
+      border-left: 4px solid #9c27b0;
+    }
+    
+    .message-label {
+      font-size: 12px;
+      font-weight: bold;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    
+    .message-text {
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .word-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: #667eea;
+      color: white;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    
+    .recommended-words {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    
+    .word-button {
+      padding: 10px 20px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    
+    .word-button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+    }
+    
+    .word-button.selected {
+      background: #28a745;
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+      margin-top: 10px;
+    }
+    
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+    }
+    
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s;
+    }
+    
+    .input-group {
+      margin-bottom: 15px;
+    }
+    
+    .input-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+      display: block;
+    }
+    
+    select {
+      width: 100%;
+      padding: 10px 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 AI Agent 测试工具</h1>
+    <p class="subtitle">测试 DeepSeek 故事生成功能</p>
+    
+    <div class="alert alert-info" id="status-alert">
+      <strong>📡 连接状态</strong>
+      <p>检查 Edge Function 是否部署...</p>
+    </div>
+    
+    <!-- 配置区域 -->
+    <div class="section">
+      <div class="section-title">⚙️ 测试配置</div>
+      
+      <div class="input-group">
+        <label class="input-label">用户级别</label>
+        <select id="user-level">
+          <option value="1">L1 (7-8岁) - 基础词汇</option>
+          <option value="2" selected>L2 (9-10岁) - 进阶词汇</option>
+          <option value="3">L3 (11-12岁) - 扩展词汇</option>
+          <option value="4">L4 (13-14岁) - 复杂词汇</option>
+          <option value="5">L5 (15-16岁) - 高级词汇</option>
+          <option value="6">L6 (17-18岁) - 文学词汇</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
+        <label class="input-label">故事主题</label>
+        <select id="story-theme">
+          <option value="natural_exploration" selected>自然探索</option>
+          <option value="school_life">校园生活</option>
+          <option value="fantasy_adventure">奇幻冒险</option>
+          <option value="sci_fi">科幻未来</option>
+        </select>
+      </div>
+      
+      <button class="btn" onclick="startNewStory()">🎬 开始新故事</button>
+    </div>
+    
+    <!-- 进度显示 -->
+    <div class="section" id="progress-section" style="display: none;">
+      <div class="section-title">📊 故事进度</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+      <p style="text-align: center; color: #666; font-size: 14px;">
+        第 <span id="current-round">0</span> / 18 轮
+      </p>
+    </div>
+    
+    <!-- 故事显示 -->
+    <div class="section" id="story-section" style="display: none;">
+      <div class="section-title">📖 故事内容</div>
+      <div class="story-display" id="story-display"></div>
+    </div>
+    
+    <!-- 输入区域 -->
+    <div class="section" id="input-section" style="display: none;">
+      <div class="section-title">✍️ 您的回合</div>
+      
+      <div style="margin-bottom: 15px;">
+        <div class="input-label">推荐词汇（点击选择）</div>
+        <div class="recommended-words" id="recommended-words"></div>
+      </div>
+      
+      <div class="input-group">
+        <label class="input-label">输入您的句子</label>
+        <textarea id="user-input" placeholder="写下您的故事..."></textarea>
+      </div>
+      
+      <button class="btn" id="submit-btn" onclick="submitSentence()">
+        📤 提交继续
+      </button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initSupabase, getSupabase } from '../js/supabase-client.js';
+    import { SUPABASE_CONFIG } from '../js/config.js';
+    
+    await initSupabase();
+    
+    let currentSession = null;
+    let selectedWord = null;
+    let conversationHistory = [];
+    let recommendedWords = [];
+    let currentRound = 0;
+    
+    // 检查 Edge Function 状态
+    async function checkEdgeFunctionStatus() {
+      const statusAlert = document.getElementById('status-alert');
+      
+      try {
+        const response = await fetch(
+          `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+            },
+            body: JSON.stringify({ test: true })
+          }
+        );
+        
+        if (response.status === 400 || response.status === 200) {
+          // Edge Function 存在（即使返回错误也说明部署了）
+          statusAlert.innerHTML = `
+            <strong>✅ Edge Function 已部署</strong>
+            <p>可以开始测试故事生成功能</p>
+          `;
+          statusAlert.className = 'alert alert-success';
+        } else {
+          throw new Error('Edge Function 未找到');
+        }
+      } catch (error) {
+        statusAlert.innerHTML = `
+          <strong>⚠️ Edge Function 未部署</strong>
+          <p>请先部署 Edge Function。错误: ${error.message}</p>
+          <p style="margin-top: 10px; font-size: 13px;">
+            部署命令：<code>supabase functions deploy story-agent</code>
+          </p>
+        `;
+        statusAlert.className = 'alert alert-warning';
+      }
+    }
+    
+    // 开始新故事
+    window.startNewStory = async function() {
+      const userLevel = parseInt(document.getElementById('user-level').value);
+      const storyTheme = document.getElementById('story-theme').value;
+      
+      const supabase = getSupabase();
+      
+      // 创建新的故事会话
+      const { data, error } = await supabase
+        .from('story_sessions')
+        .insert({
+          story_theme: storyTheme,
+          initial_choice: '开始新故事',
+          current_round: 0,
+          conversation_history: []
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        alert('创建故事会话失败: ' + error.message);
+        return;
+      }
+      
+      currentSession = data;
+      conversationHistory = [];
+      currentRound = 0;
+      
+      // 显示界面
+      document.getElementById('progress-section').style.display = 'block';
+      document.getElementById('story-section').style.display = 'block';
+      document.getElementById('input-section').style.display = 'block';
+      
+      // 获取初始推荐词汇
+      await getInitialWords(userLevel, storyTheme);
+      
+      updateProgress();
+    };
+    
+    // 获取初始推荐词汇
+    async function getInitialWords(userLevel, storyTheme) {
+      const supabase = getSupabase();
+      
+      const minLevel = Math.max(1, userLevel - 1);
+      const maxLevel = Math.min(6, userLevel + 1);
+      
+      const { data, error } = await supabase
+        .from('vocabulary')
+        .select('*')
+        .gte('difficulty_level', minLevel)
+        .lte('difficulty_level', maxLevel)
+        .limit(5);
+      
+      if (error) {
+        console.error('获取词汇失败:', error);
+        return;
+      }
+      
+      recommendedWords = data || [];
+      displayRecommendedWords();
+    }
+    
+    // 显示推荐词汇
+    function displayRecommendedWords() {
+      const container = document.getElementById('recommended-words');
+      container.innerHTML = recommendedWords.map(word => `
+        <button class="word-button" onclick="selectWord('${word.word}', '${word.id}')">
+          ${word.word}
+          <span style="font-size: 11px; opacity: 0.8;">(${word.pinyin})</span>
+        </button>
+      `).join('');
+    }
+    
+    // 选择词汇
+    window.selectWord = function(word, id) {
+      selectedWord = word;
+      
+      // 更新按钮样式
+      document.querySelectorAll('.word-button').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      event.target.classList.add('selected');
+      
+      // 自动插入到输入框
+      const textarea = document.getElementById('user-input');
+      textarea.value += word;
+      textarea.focus();
+    };
+    
+    // 提交句子
+    window.submitSentence = async function() {
+      const userInput = document.getElementById('user-input').value.trim();
+      
+      if (!userInput) {
+        alert('请输入您的句子');
+        return;
+      }
+      
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> AI 思考中...';
+      
+      try {
+        // 调用 Edge Function
+        const response = await fetch(
+          `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+            },
+            body: JSON.stringify({
+              userSentence: userInput,
+              selectedWord: selectedWord,
+              sessionId: currentSession.id,
+              conversationHistory: conversationHistory,
+              userLevel: parseInt(document.getElementById('user-level').value),
+              storyTheme: document.getElementById('story-theme').value,
+              currentRound: currentRound
+            })
+          }
+        );
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        
+        // 更新显示
+        conversationHistory.push(userInput);
+        conversationHistory.push(result.data.aiSentence);
+        
+        addMessageToStory('user', userInput, selectedWord);
+        addMessageToStory('ai', result.data.aiSentence);
+        
+        // 更新推荐词汇
+        recommendedWords = result.data.recommendedWords;
+        displayRecommendedWords();
+        
+        // 更新进度
+        currentRound = result.data.currentRound;
+        updateProgress();
+        
+        // 清空输入
+        document.getElementById('user-input').value = '';
+        selectedWord = null;
+        
+        // 检查是否完成
+        if (result.data.isComplete) {
+          alert('🎉 故事完成！共 18 轮');
+          document.getElementById('input-section').style.display = 'none';
+        }
+        
+      } catch (error) {
+        alert('发生错误: ' + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '📤 提交继续';
+      }
+    };
+    
+    // 添加消息到故事显示
+    function addMessageToStory(type, text, word = null) {
+      const container = document.getElementById('story-display');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `story-message ${type}`;
+      
+      const label = type === 'user' ? '👤 您' : '🤖 AI';
+      const wordBadge = word ? `<span class="word-badge">${word}</span>` : '';
+      
+      messageDiv.innerHTML = `
+        <div class="message-label">${label} ${wordBadge}</div>
+        <div class="message-text">${text}</div>
+      `;
+      
+      container.appendChild(messageDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    // 更新进度
+    function updateProgress() {
+      const progress = (currentRound / 18) * 100;
+      document.getElementById('progress-fill').style.width = progress + '%';
+      document.getElementById('current-round').textContent = currentRound;
+    }
+    
+    // 页面加载时检查状态
+    checkEdgeFunctionStatus();
+  </script>
+</body>
+</html>
+
