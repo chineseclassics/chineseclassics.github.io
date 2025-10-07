@@ -947,6 +947,10 @@
                 <div class="pinyin" id="modal-pinyin">pinyin</div>
             </div>
             <div class="word-detail-section">
+                <h3>🌍 英文翻譯</h3>
+                <div class="content" id="modal-translation">載入中...</div>
+            </div>
+            <div class="word-detail-section">
                 <h3>📖 釋義</h3>
                 <div class="content" id="modal-definition">載入中...</div>
             </div>
@@ -968,6 +972,22 @@
     <div id="toast" class="toast"></div>
 
     <!-- ===== JavaScript ===== -->
+    <script>
+        // 防止第三方腳本錯誤影響應用
+        window.addEventListener('error', function(e) {
+            // 如果錯誤來自第三方腳本，靜默處理
+            if (e.filename && (e.filename.includes('extension') || e.filename.includes('content-script'))) {
+                e.preventDefault();
+                return true;
+            }
+        }, true);
+        
+        // 捕獲 Promise 錯誤
+        window.addEventListener('unhandledrejection', function(e) {
+            // 記錄但不中斷應用
+            console.warn('Promise rejection:', e.reason);
+        });
+    </script>
     <script type="module">
         // 导入配置和客户端
         import { initSupabase, getSupabase, signInAnonymously, getRecommendedVocabulary, recordVocabularyUsage, addToWordbook, getUserWordbook, callStoryAgent, createStorySession, updateStorySession, completeStorySession } from './js/supabase-client.js';
@@ -1524,10 +1544,18 @@
             
             document.getElementById('modal-word').textContent = word;
             document.getElementById('modal-pinyin').innerHTML = '<span style="color: var(--text-light);">🔄 查詢中...</span>';
+            document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">正在獲取英文翻譯...</span>';
             document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">正在獲取釋義...</span>';
             document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">正在獲取例句...</span>';
             
             try {
+                // 清理萌典特殊標記符號的函數
+                function cleanMoedictText(text) {
+                    if (!text) return '';
+                    // 移除萌典的特殊標記：`` ` `` 重音標記、`~` 連接符、`￹` `￻` 分隔符等
+                    return text.replace(/[`~￹￻]/g, '').trim();
+                }
+                
                 // 首先檢查是否在當前推薦詞彙中
                 const vocabWord = gameState.currentWords.find(w => w.word === word);
                 
@@ -1535,44 +1563,73 @@
                     document.getElementById('modal-pinyin').textContent = vocabWord.pinyin;
                 }
                 
-                // 調用萌典 API 獲取詳細信息
-                // 根據詞語長度選擇不同的API
-                let apiUrl;
+                // 同時調用兩個API：國語辭典和兩岸詞典
+                const promises = [];
+                
+                // 1. 調用國語辭典 API 獲取詳細信息（釋義、例句）
+                let mainApiUrl;
                 if (word.length === 1) {
                     // 單字使用 uni API
-                    apiUrl = `https://www.moedict.tw/uni/${encodeURIComponent(word)}`;
+                    mainApiUrl = `https://www.moedict.tw/uni/${encodeURIComponent(word)}`;
                 } else {
                     // 詞語使用 a API
-                    apiUrl = `https://www.moedict.tw/a/${encodeURIComponent(word)}.json`;
+                    mainApiUrl = `https://www.moedict.tw/a/${encodeURIComponent(word)}.json`;
+                }
+                promises.push(fetch(mainApiUrl).then(r => r.ok ? r.json() : null).catch(() => null));
+                
+                // 2. 調用兩岸詞典 API 獲取英文翻譯
+                const crossStraitApiUrl = `https://www.moedict.tw/c/${encodeURIComponent(word)}.json`;
+                promises.push(fetch(crossStraitApiUrl).then(r => r.ok ? r.json() : null).catch(() => null));
+                
+                const [mainData, crossStraitData] = await Promise.all(promises);
+                
+                console.log('萌典國語辭典API返回:', mainData);
+                console.log('萌典兩岸詞典API返回:', crossStraitData);
+                
+                // 處理拼音（優先使用 bopomofo2 或 pinyin 字段，這些包含漢語拼音）
+                if (mainData && mainData.heteronyms && mainData.heteronyms[0] && !vocabWord) {
+                    // 優先使用 bopomofo2（漢語拼音格式）或 pinyin 字段
+                    const pinyin = mainData.heteronyms[0].bopomofo2 || 
+                                   mainData.heteronyms[0].pinyin || 
+                                   mainData.heteronyms[0].bopomofo || '';
+                    document.getElementById('modal-pinyin').textContent = pinyin || '無拼音';
                 }
                 
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('查詢失敗');
-                
-                const data = await response.json();
-                console.log('萌典API返回:', data);
-                
-                // 顯示拼音（如果詞庫中沒有）
-                if (data.heteronyms && data.heteronyms[0] && !vocabWord) {
-                    document.getElementById('modal-pinyin').textContent = data.heteronyms[0].pinyin || '無拼音';
+                // 顯示英文翻譯
+                if (crossStraitData && crossStraitData.translation && crossStraitData.translation.English) {
+                    const englishTranslations = crossStraitData.translation.English;
+                    if (Array.isArray(englishTranslations) && englishTranslations.length > 0) {
+                        // 取前5個翻譯
+                        const translationText = englishTranslations.slice(0, 5).join('; ');
+                        document.getElementById('modal-translation').textContent = translationText;
+                    } else {
+                        document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">暫無英文翻譯</span>';
+                    }
+                } else {
+                    document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">暫無英文翻譯</span>';
                 }
                 
                 // 顯示釋義
-                if (data.heteronyms && data.heteronyms[0] && data.heteronyms[0].definitions) {
-                    const definitions = data.heteronyms[0].definitions;
+                if (mainData && mainData.heteronyms && mainData.heteronyms[0] && mainData.heteronyms[0].definitions) {
+                    const definitions = mainData.heteronyms[0].definitions;
                     let definitionText = '';
                     
                     definitions.forEach((def, index) => {
                         if (def.def) {
+                            const cleanDef = cleanMoedictText(def.def);
                             if (definitions.length > 1) {
-                                definitionText += `${index + 1}. ${def.def}\n\n`;
+                                definitionText += `${index + 1}. ${cleanDef}\n\n`;
                             } else {
-                                definitionText += def.def;
+                                definitionText += cleanDef;
                             }
                         }
                     });
                     
-                    document.getElementById('modal-definition').textContent = definitionText || '暫無釋義';
+                    if (definitionText) {
+                        document.getElementById('modal-definition').textContent = definitionText;
+                    } else {
+                        document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
+                    }
                     
                     // 顯示例句（取前3個）
                     let exampleText = '';
@@ -1581,19 +1638,31 @@
                         if (def.example && def.example.length > 0 && exampleCount < 3) {
                             def.example.forEach(ex => {
                                 if (exampleCount < 3) {
-                                    exampleText += `• ${ex}\n\n`;
-                                    exampleCount++;
+                                    const cleanExample = cleanMoedictText(ex);
+                                    if (cleanExample) {
+                                        exampleText += `• ${cleanExample}\n\n`;
+                                        exampleCount++;
+                                    }
                                 }
                             });
                         }
                     });
                     
-                    document.getElementById('modal-example').textContent = exampleText || '暫無例句';
+                    if (exampleText) {
+                        document.getElementById('modal-example').textContent = exampleText;
+                    } else {
+                        document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
+                    }
+                } else {
+                    // 如果沒有definitions數據
+                    document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
+                    document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
                 }
                 
             } catch (error) {
                 console.error('查詢詞彙失敗:', error);
                 document.getElementById('modal-pinyin').innerHTML = '<span style="color: #E74C3C;">❌ 查詢失敗</span>';
+                document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">無法獲取翻譯</span>';
                 document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">抱歉，暫時無法獲取該詞的詳細釋義。<br>請稍後重試或嘗試其他詞語。</span>';
                 document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">無法獲取例句</span>';
             }
@@ -1619,6 +1688,7 @@
             const modal = document.getElementById('word-modal');
             const word = modal.dataset.currentWord;
             const pinyin = document.getElementById('modal-pinyin').textContent;
+            const translation = document.getElementById('modal-translation').textContent;
             const definition = document.getElementById('modal-definition').textContent;
             
             if (!word) return;
@@ -1633,6 +1703,7 @@
             wordbook.push({
                 word: word,
                 pinyin: pinyin,
+                translation: translation,
                 definition: definition,
                 addedAt: new Date().toISOString()
             });
@@ -1662,6 +1733,7 @@
                     <div style="background: var(--light-blue); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                         <div style="font-size: 1.5em; font-weight: bold; color: var(--primary-purple);">${item.word}</div>
                         <div style="color: var(--text-light); margin: 5px 0;">${item.pinyin}</div>
+                        ${item.translation ? `<div style="color: var(--primary-blue); margin: 5px 0; font-style: italic;">🌍 ${item.translation}</div>` : ''}
                         <div style="color: var(--text-dark); line-height: 1.6;">${item.definition}</div>
                     </div>
                 `;
