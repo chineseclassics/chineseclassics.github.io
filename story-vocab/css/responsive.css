@@ -124,5 +124,69 @@
     .vocab-mode-options {
         grid-template-columns: 1fr;
     }
+    
+    /* 移动端消息布局优化 */
+    .message-label {
+        width: 70px;
+        font-size: 0.8em;
+    }
+    
+    .message-label .emoji {
+        font-size: 1.5em;
+    }
+    
+    .message-label .name {
+        font-size: 0.75em;
+    }
+    
+    .message-content {
+        font-size: 1.2em;
+        line-height: 2;
+        padding-left: 10px;
+    }
+    
+    .message {
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    /* 反饋區域響應式 */
+    .feedback-message {
+        padding: 15px;
+        font-size: 0.95em;
+    }
+    
+    .feedback-score {
+        padding: 12px;
+    }
+    
+    .score-number {
+        font-size: 1.8em;
+    }
+    
+    .score-label {
+        font-size: 0.85em;
+    }
+    
+    .score-comment {
+        font-size: 0.95em;
+    }
+    
+    .optimized-sentence-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px;
+    }
+    
+    .optimized-sentence-text {
+        font-size: 1em;
+    }
+    
+    .use-optimized-btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 1em;
+    }
 }
 

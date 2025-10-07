@@ -7,10 +7,10 @@
  * 打字机效果显示文本
  * @param {HTMLElement} element - 要显示文本的 DOM 元素
  * @param {string} text - 要显示的文本内容
- * @param {number} delay - 每个字符的延迟时间（毫秒），默认 20ms
+ * @param {number} delay - 每个字符的延迟时间（毫秒），默认 50ms
  * @returns {Promise<void>}
  */
-export async function typewriterEffect(element, text, delay = 20) {
+export async function typewriterEffect(element, text, delay = 50) {
     if (!element || !text) {
         console.warn('Typewriter effect: invalid element or text');
         return;

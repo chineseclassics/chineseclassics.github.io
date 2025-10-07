@@ -104,12 +104,6 @@
     padding: 25px;
 }
 
-.user-input-section h3 {
-    color: var(--text-dark);
-    margin-bottom: 15px;
-    font-size: 1.3em;
-}
-
 .selected-word-display {
     background: white;
     border-left: 4px solid var(--primary-yellow);

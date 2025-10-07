@@ -327,34 +327,49 @@ button:active {
     color: var(--text-light);
 }
 
-/* 消息框 */
+/* 内联加载动画（显示在消息内） */
+.inline-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.inline-loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top-color: var(--primary-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+}
+
+.inline-loading-text {
+    font-size: 1em;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+/* 故事消息框 - 横向布局 */
 .message {
-    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    margin-bottom: 12px;
     animation: slideIn 0.5s ease-out;
 }
 
-.message.ai {
-    background: white;
-    border-left: 4px solid var(--primary-blue);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.message.user {
-    background: linear-gradient(135deg, var(--light-pink), var(--light-yellow));
-    border-left: 4px solid var(--primary-pink);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
 .message-label {
+    flex-shrink: 0;
+    width: 100px;
     font-weight: bold;
-    margin-bottom: 8px;
+    font-size: 0.9em;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 5px;
+    padding-top: 3px;
 }
 
 .message-label.ai {
@@ -365,10 +380,33 @@ button:active {
     color: var(--primary-pink);
 }
 
+.message-label .emoji {
+    font-size: 2em;
+    line-height: 1;
+}
+
+.message-label .name {
+    font-size: 0.85em;
+    text-align: center;
+    line-height: 1.2;
+}
+
 .message-content {
-    line-height: 2;
-    font-size: 1.3em;
+    flex: 1;
+    line-height: 2.2;
+    font-size: 1.35em;
     color: var(--text-dark);
+    padding: 8px 0;
+    border-left: 3px solid transparent;
+    padding-left: 15px;
+}
+
+.message.ai .message-content {
+    border-left-color: rgba(59, 130, 246, 0.3);
+}
+
+.message.user .message-content {
+    border-left-color: rgba(236, 72, 153, 0.3);
 }
 
 /* 可点击词语 */
@@ -520,5 +558,120 @@ button:active {
 .feature-item {
     color: var(--primary-blue);
     font-size: 0.9em;
+}
+
+/* ===== 反馈区域样式（轻量化版本）===== */
+
+/* 反饋區域容器 */
+.feedback-section {
+    margin: 20px 0;
+    animation: fadeIn 0.3s ease;
+}
+
+/* 反饋消息卡片 - 符合软件整体风格 */
+.feedback-message {
+    background: linear-gradient(135deg, var(--light-blue), var(--light-pink));
+    border: 3px solid var(--primary-blue);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    font-size: 1em;
+    color: var(--text-dark);
+    box-shadow: var(--shadow);
+}
+
+.feedback-header {
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #6c757d;
+}
+
+.feedback-score {
+    background: white;
+    border: 2px solid var(--light-blue);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.score-title {
+    font-size: 0.9em;
+    color: var(--text-light);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.score-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.score-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--primary-blue);
+}
+
+.score-label {
+    font-size: 0.9em;
+    color: var(--text-light);
+}
+
+.score-comment {
+    font-size: 1em;
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+/* 优化版句子区域 - 带按钮 */
+.optimized-sentence-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--light-yellow), #fff8dc);
+    border: 3px solid var(--primary-yellow);
+    border-radius: 15px;
+    padding: 15px;
+    margin-top: 15px;
+    box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
+}
+
+.optimized-sentence-text {
+    flex: 1;
+    font-size: 1.05em;
+    line-height: 1.6;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.optimized-sentence-text::before {
+    content: '💡 ';
+    font-size: 1.2em;
+}
+
+.use-optimized-btn {
+    flex-shrink: 0;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--primary-green), #27ae60);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.95em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.use-optimized-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+}
+
+.use-optimized-btn:active {
+    transform: translateY(0);
 }
 

@@ -5,7 +5,6 @@
 
 import { gameState, addStoryEntry, addUsedWord, incrementTurn } from './game-state.js';
 import { createSession } from './session-manager.js';
-import { showLoading } from '../utils/dom.js';
 import { showToast } from '../utils/toast.js';
 import { saveCompletedStory, updateSidebarStats } from '../utils/storage.js';
 import { SUPABASE_CONFIG } from '../config.js';
@@ -58,9 +57,7 @@ export async function startGame(level, theme, onSuccess) {
     gameState.sessionId = null;
     
     try {
-        // 创建数据库会话记录
-        showLoading(true);
-        
+        // 创建数据库会话记录（不显示底部动画，内联动画已在游戏界面显示）
         const session = await createSession(gameState.userId, {
             theme: themeMapping[theme] || theme,
             choice: '開始故事',
@@ -71,14 +68,13 @@ export async function startGame(level, theme, onSuccess) {
         gameState.sessionId = session.id;
         console.log('✅ 會話創建成功:', gameState.sessionId);
         
-        // 调用成功回调
+        // 调用成功回调（获取 AI 响应）
         if (onSuccess) {
             await onSuccess();
         }
     } catch (error) {
         console.error('❌ 創建會話失敗:', error);
         showToast('啟動遊戲失敗，請重試');
-        showLoading(false);
     }
 }
 
@@ -89,7 +85,7 @@ export async function startGame(level, theme, onSuccess) {
  * @returns {Promise<Object>} AI 响应数据
  */
 export async function getAIResponse(userSentence = '', selectedWord = '') {
-    showLoading(true);
+    // 不再显示底部的加载动画，改为在消息内显示内联加载动画
     
     try {
         // 确保会话 ID 存在
@@ -160,7 +156,6 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
     } catch (error) {
         console.error('AI 調用失敗:', error);
         showToast('❌ AI 調用失敗：' + error.message);
-        showLoading(false);
         throw error;
     }
 }

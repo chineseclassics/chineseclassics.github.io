@@ -5,6 +5,7 @@
 
 // 导入 Supabase 相关
 import { initSupabase, signInAnonymously } from './supabase-client.js';
+import { SUPABASE_CONFIG } from './config.js';
 
 // 导入核心模块
 import { gameState } from './core/game-state.js';
@@ -18,7 +19,7 @@ import { addToWordbook, openWordbook } from './features/wordbook.js';
 // 导入 UI 模块
 import { showScreen, toggleMobileSidebar, closeMobileSidebar, navigateTo, handleLogout, initSidebarSwipe } from './ui/navigation.js';
 import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, initModalClickOutside } from './ui/modals.js';
-import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initSettingsScreen } from './ui/screens.js';
+import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initSettingsScreen, showFeedbackLoading, displayFeedback, hideFeedbackSection } from './ui/screens.js';
 
 // 导入工具
 import { showToast } from './utils/toast.js';
@@ -74,7 +75,7 @@ function mountGlobalFunctions() {
     window.shareStory = shareStory;
     window.updateSidebarStats = updateSidebarStats;
     
-    // 提交句子（需要特殊处理）
+    // 提交句子（完全重构）
     window.submitSentence = async function() {
         const input = document.getElementById('user-input');
         const sentence = input.value.trim();
@@ -85,33 +86,182 @@ function mountGlobalFunctions() {
         
         const usedWord = gameState.selectedWord;
         
-        // 显示用户消息
-        displayUserMessage(sentence, usedWord);
+        // 检查是否是再次提交（已显示过反馈）
+        if (window._feedbackShown) {
+            // 直接提交，不再显示反馈
+            await confirmAndSubmit(sentence, usedWord);
+            return;
+        }
+        
+        // 首次提交：显示反馈加载（不显示用户句子到故事区）
+        showFeedbackLoading();
         
         // 禁用输入
         input.disabled = true;
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) submitBtn.disabled = true;
         
-        // 提交句子并获取结果
-        const result = await submitSentence(sentence, usedWord);
-        
-        // 更新轮次显示
-        updateTurnDisplay(gameState.turn);
-        
-        if (result.gameOver) {
-            // 游戏结束，显示完成界面
-            setTimeout(() => {
-                const stats = finishStory();
-                showScreen('finish-screen');
-                initFinishScreen(stats);
-            }, 1000);
-        } else if (result.aiData) {
-            // 游戏继续，显示 AI 响应
-            console.log('📝 显示第二次 AI 响应...');
-            await displayAIResponse(result.aiData);
+        try {
+            // 只获取反馈
+            const feedback = await getFeedbackOnly(sentence, usedWord);
+            
+            // 显示反馈
+            displayFeedback(feedback, sentence, usedWord);
+            
+            // 标记已显示反馈
+            window._feedbackShown = true;
+            
+            // 启用输入框和提交按钮，让用户可以修改
+            input.disabled = false;
+            if (submitBtn) submitBtn.disabled = false;
+            
+        } catch (error) {
+            console.error('获取反馈失败:', error);
+            showToast('❌ 獲取反饋失敗，請重試');
+            hideFeedbackSection();
+            input.disabled = false;
+            if (submitBtn) submitBtn.disabled = false;
         }
     };
+    
+    // 反饋按鈕處理函數
+    window.useOptimizedSentence = useOptimizedSentence;
+}
+
+/**
+ * 只获取反馈（不生成故事）
+ */
+async function getFeedbackOnly(sentence, word) {
+    // 转换级别格式
+    const userLevel = parseFloat(gameState.level.replace('L', ''));
+    
+    // 转换主题格式
+    const themeMapping = {
+        'nature': 'natural_exploration',
+        'campus': 'school_life',
+        'fantasy': 'fantasy_adventure',
+        'scifi': 'sci_fi'
+    };
+    const storyTheme = themeMapping[gameState.theme] || gameState.theme;
+    
+    // 构建对话历史
+    const conversationHistory = gameState.storyHistory.map(entry => entry.sentence);
+    
+    const response = await fetch(
+        `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+            },
+            body: JSON.stringify({
+                userSentence: sentence,
+                selectedWord: word.word,
+                sessionId: gameState.sessionId,
+                conversationHistory: conversationHistory,
+                userLevel: userLevel,
+                storyTheme: storyTheme,
+                currentRound: gameState.turn - 1,
+                usedWords: gameState.usedWords.map(w => w.word),
+                requestFeedbackOnly: true  // 关键：只请求反馈
+            })
+        }
+    );
+    
+    if (!response.ok) {
+        throw new Error('API 請求失敗');
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error(result.error || 'AI 調用失敗');
+    }
+    
+    return result.data.feedback;
+}
+
+/**
+ * 确认提交并生成故事
+ */
+async function confirmAndSubmit(sentence, word) {
+    // 显示用户消息到故事区
+    displayUserMessage(sentence, word);
+    
+    // 显示AI加载动画
+    const storyDisplay = document.getElementById('story-display');
+    if (storyDisplay) {
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'message ai';
+        loadingMessage.innerHTML = `
+            <div class="message-label ai">
+                <span class="emoji">🤖</span>
+                <span class="name">AI故事家</span>
+            </div>
+            <div class="message-content">
+                <div class="inline-loading">
+                    <div class="inline-loading-spinner"></div>
+                    <span class="inline-loading-text">正在創作中...</span>
+                </div>
+            </div>
+        `;
+        storyDisplay.appendChild(loadingMessage);
+        storyDisplay.scrollTop = storyDisplay.scrollHeight;
+    }
+    
+    // 隐藏反馈区
+    hideFeedbackSection();
+    
+    // 禁用输入
+    const input = document.getElementById('user-input');
+    const submitBtn = document.getElementById('submit-btn');
+    if (input) input.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
+    
+    // 调用正常的提交流程（生成故事）
+    const result = await submitSentence(sentence, word);
+    
+    // 更新轮次显示
+    updateTurnDisplay(gameState.turn);
+    
+    // 清除反馈标记
+    delete window._feedbackShown;
+    delete window._currentFeedback;
+    
+    // 检查游戏是否结束
+    if (result.gameOver) {
+        setTimeout(() => {
+            const stats = finishStory();
+            showScreen('finish-screen');
+            initFinishScreen(stats);
+        }, 1000);
+    } else if (result.aiData) {
+        console.log('📝 显示 AI 响应...');
+        await displayAIResponse(result.aiData);
+    }
+}
+
+/**
+ * 1. 使用優化版句子
+ */
+function useOptimizedSentence() {
+    if (!window._currentFeedback) return;
+    
+    const { feedback } = window._currentFeedback;
+    const input = document.getElementById('user-input');
+    
+    // 填入优化版（反馈保持可见）
+    if (input) {
+        input.value = feedback.optimizedSentence;
+        input.disabled = false;
+        input.focus();
+    }
+    
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) submitBtn.disabled = false;
+    
+    showToast('✨ 已填入優化版，可繼續修改');
 }
 
 /**

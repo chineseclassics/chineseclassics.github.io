@@ -5,7 +5,6 @@
 
 import { gameState } from '../core/game-state.js';
 import { getThemeName } from '../core/story-engine.js';
-import { showLoading } from '../utils/dom.js';
 import { typewriterEffect } from '../utils/typewriter.js';
 import { makeAIWordsClickable, makeUserSentenceClickable, selectWord } from '../features/word-manager.js';
 import { loadSettings } from './modals.js';
@@ -50,10 +49,23 @@ export function initGameScreen(level, theme) {
     if (turnCount) turnCount.textContent = '1';
     if (maxTurns) maxTurns.textContent = gameState.maxTurns;
     
-    // 清空故事显示区域
+    // 清空故事显示区域并显示内联加载动画
     const storyDisplay = document.getElementById('story-display');
     if (storyDisplay) {
-        storyDisplay.innerHTML = '';
+        storyDisplay.innerHTML = `
+            <div class="message ai">
+                <div class="message-label ai">
+                    <span class="emoji">🤖</span>
+                    <span class="name">AI故事家</span>
+                </div>
+                <div class="message-content">
+                    <div class="inline-loading">
+                        <div class="inline-loading-spinner"></div>
+                        <span class="inline-loading-text">正在準備故事...</span>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -63,25 +75,33 @@ export function initGameScreen(level, theme) {
  */
 export async function displayAIResponse(data) {
     console.log('🎨 displayAIResponse 被调用，数据:', data);
-    showLoading(false);
     
-    // 添加 AI 消息到故事显示区域
     const storyDisplay = document.getElementById('story-display');
     if (!storyDisplay) return;
     
-    // 创建 AI 消息容器
-    const aiMessage = document.createElement('div');
-    aiMessage.className = 'message ai';
-    aiMessage.innerHTML = `
-        <div class="message-label ai">🤖 AI 故事家</div>
-        <div class="message-content">
-            <div class="inline-loading">
-                <div class="inline-loading-spinner"></div>
-                <span class="inline-loading-text">正在創作中...</span>
+    // 查找最后一个 AI 消息（应该是刚添加的加载动画）
+    const aiMessages = storyDisplay.querySelectorAll('.message.ai');
+    let aiMessage = aiMessages.length > 0 ? aiMessages[aiMessages.length - 1] : null;
+    
+    if (!aiMessage) {
+        // 如果没有（不应该发生），创建新的 AI 消息容器
+        aiMessage = document.createElement('div');
+        aiMessage.className = 'message ai';
+        aiMessage.innerHTML = `
+            <div class="message-label ai">
+                <span class="emoji">🤖</span>
+                <span class="name">AI故事家</span>
             </div>
-        </div>
-    `;
-    storyDisplay.appendChild(aiMessage);
+            <div class="message-content">
+                <div class="inline-loading">
+                    <div class="inline-loading-spinner"></div>
+                    <span class="inline-loading-text">正在創作中...</span>
+                </div>
+            </div>
+        `;
+        storyDisplay.appendChild(aiMessage);
+    }
+    
     storyDisplay.scrollTop = storyDisplay.scrollHeight;
     
     const messageContent = aiMessage.querySelector('.message-content');
@@ -159,7 +179,10 @@ export function displayUserMessage(sentence, usedWord) {
     const userMessage = document.createElement('div');
     userMessage.className = 'message user';
     userMessage.innerHTML = `
-        <div class="message-label user">👤 你</div>
+        <div class="message-label user">
+            <span class="emoji">👤</span>
+            <span class="name">你</span>
+        </div>
         <div class="message-content">${makeUserSentenceClickable(sentence, usedWord)}</div>
     `;
     storyDisplay.appendChild(userMessage);
@@ -224,5 +247,74 @@ export function initFinishScreen(stats) {
  */
 export function initSettingsScreen() {
     loadSettings();
+}
+
+/**
+ * 顯示反饋加載動畫
+ */
+export function showFeedbackLoading() {
+    const feedbackSection = document.getElementById('feedback-section');
+    const wordChoicesSection = document.getElementById('word-choices-section');
+    
+    if (!feedbackSection) return;
+    
+    // 隱藏詞彙選擇區域
+    if (wordChoicesSection) {
+        wordChoicesSection.style.display = 'none';
+    }
+    
+    // 顯示反饋區域並顯示加載動畫
+    feedbackSection.style.display = 'block';
+    feedbackSection.innerHTML = `
+        <div class="feedback-message">
+            <div class="inline-loading">
+                <div class="inline-loading-spinner"></div>
+                <span class="inline-loading-text">AI老師正在評價中...</span>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 顯示反饋內容（轻量化版本）
+ * @param {Object} feedback - 反饋數據
+ * @param {string} originalSentence - 用戶原句
+ * @param {Object} selectedWord - 選中的詞彙
+ */
+export function displayFeedback(feedback, originalSentence, selectedWord) {
+    const feedbackSection = document.getElementById('feedback-section');
+    if (!feedbackSection) return;
+    
+    feedbackSection.innerHTML = `
+        <div class="feedback-message">
+            <div class="feedback-score">
+                <div class="score-title">句子評分</div>
+                <div class="score-header">
+                    <div class="score-number">${feedback.score}</div>
+                    <div class="score-label">/10</div>
+                </div>
+                <div class="score-comment">${feedback.comment}</div>
+            </div>
+            
+            <div class="optimized-sentence-container">
+                <div class="optimized-sentence-text">${feedback.optimizedSentence}</div>
+                <button class="use-optimized-btn" onclick="useOptimizedSentence()">使用</button>
+            </div>
+        </div>
+    `;
+    
+    // 保存到全局，供按鈕調用
+    window._currentFeedback = { feedback, originalSentence, selectedWord };
+}
+
+/**
+ * 隱藏反饋區域，顯示詞彙選擇區域
+ */
+export function hideFeedbackSection() {
+    const feedbackSection = document.getElementById('feedback-section');
+    const wordChoicesSection = document.getElementById('word-choices-section');
+    
+    if (feedbackSection) feedbackSection.style.display = 'none';
+    if (wordChoicesSection) wordChoicesSection.style.display = 'block';
 }
 

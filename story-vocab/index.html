@@ -234,22 +234,26 @@
                 </div>
 
                 <!-- 词汇选择区域 -->
-                <div class="word-choices-section">
+                <div class="word-choices-section" id="word-choices-section">
                     <h3>💡 請選擇一個詞來造句：</h3>
                     <div class="word-choices" id="word-choices">
                         <!-- 词汇按钮将通过 JavaScript 动态生成 -->
                     </div>
                 </div>
 
+                <!-- 反馈区域（初始隐藏）-->
+                <div class="feedback-section" id="feedback-section" style="display: none;">
+                    <!-- 反馈内容将通过 JavaScript 动态生成 -->
+                </div>
+
                 <!-- 用户输入区域 -->
                 <div class="user-input-section">
-                    <h3>✍️ 創作你的句子：</h3>
                     <div class="selected-word-display" id="selected-word-display">
                         請先選擇一個詞彙...
                     </div>
                     <div class="input-group">
                         <input type="text" id="user-input" placeholder="用選中的詞寫一個句子，繼續故事..." disabled>
-                        <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">發送 →</button>
+                        <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">提交 →</button>
                     </div>
                 </div>
 
