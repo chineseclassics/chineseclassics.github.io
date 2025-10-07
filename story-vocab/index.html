@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 故事詞彙接龍 - 與AI共創精彩故事</title>
+    
+    <!-- CSS 样式文件 -->
+    <link rel="stylesheet" href="./css/variables.css">
+    <link rel="stylesheet" href="./css/base.css">
+    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/components.css">
+    <link rel="stylesheet" href="./css/screens.css">
+    <link rel="stylesheet" href="./css/responsive.css">
+</head>
+<body>
+    <!-- ===== 移動端頂部導航欄 ===== -->
+    <div class="mobile-header">
+        <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="打開菜單">
+            ☰
+        </button>
+        <div class="mobile-header-title">故事詞彙接龍</div>
+        <div class="mobile-user-avatar" onclick="navigateTo('settings')">
+            👤
+        </div>
+    </div>
+
+    <!-- ===== 移動端遮罩層 ===== -->
+    <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileSidebar()"></div>
+
+    <!-- ===== 側邊欄 ===== -->
+    <div class="sidebar" id="sidebar">
+        <!-- 用戶信息區域 -->
+        <div class="sidebar-header">
+            <button class="sidebar-close-btn" onclick="closeMobileSidebar()" aria-label="關閉菜單">×</button>
+            
+            <!-- 軟件標題 -->
+            <div class="app-title-section">
+                <h1 class="app-title">📚 故事詞彙接龍</h1>
+                <p class="app-subtitle">與AI共創精彩故事，輕鬆積累詞彙</p>
+            </div>
+            
+            <div class="user-profile">
+                <div class="user-avatar" id="user-avatar" onclick="navigateTo('settings')" title="點擊查看個人資料">👤</div>
+                <div class="user-info">
+                    <div class="user-name" id="user-display-name">訪客</div>
+                    <div class="user-level" id="user-level-display">等級 L2 · 初級</div>
+                </div>
+            </div>
+            
+            <!-- 用戶統計 -->
+            <div class="user-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-stories">0</span>
+                    <span class="stat-label">故事</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-words">0</span>
+                    <span class="stat-label">詞彙</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-points">0</span>
+                    <span class="stat-label">積分</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 菜單區域 -->
+        <div class="sidebar-menu">
+            <!-- 創作區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">創作</div>
+                <div class="menu-item active" data-destination="new-story" onclick="navigateTo('new-story')">
+                    <span class="icon">✨</span>
+                    <span class="text">開始新故事</span>
+                </div>
+                <div class="menu-item" data-destination="my-stories" onclick="navigateTo('my-stories')">
+                    <span class="icon">📖</span>
+                    <span class="text">我的故事集</span>
+                    <span class="badge" id="stories-count">0</span>
+                </div>
+            </div>
+
+            <!-- 學習區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">學習</div>
+                <div class="menu-item" data-destination="wordbook" onclick="navigateTo('wordbook')">
+                    <span class="icon">📚</span>
+                    <span class="text">我的生詞本</span>
+                    <span class="badge" id="wordbook-count-sidebar">0</span>
+                </div>
+                <div class="menu-item" data-destination="learning-report" onclick="navigateTo('learning-report')">
+                    <span class="icon">📊</span>
+                    <span class="text">學習報告</span>
+                </div>
+            </div>
+
+            <!-- 遊戲化區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">成就</div>
+                <div class="menu-item" data-destination="achievements" onclick="navigateTo('achievements')">
+                    <span class="icon">🏆</span>
+                    <span class="text">成就與徽章</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+                <div class="menu-item" data-destination="leaderboard" onclick="navigateTo('leaderboard')">
+                    <span class="icon">🎖️</span>
+                    <span class="text">排行榜</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+            </div>
+
+            <!-- 多人模式區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">多人模式</div>
+                <div class="menu-item" data-destination="create-room" onclick="navigateTo('create-room')">
+                    <span class="icon">🎭</span>
+                    <span class="text">創建房間</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+                <div class="menu-item" data-destination="join-room" onclick="navigateTo('join-room')">
+                    <span class="icon">🚪</span>
+                    <span class="text">加入房間</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+                <div class="menu-item" data-destination="friends" onclick="navigateTo('friends')">
+                    <span class="icon">👥</span>
+                    <span class="text">好友列表</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部區域 -->
+        <div class="sidebar-footer">
+            <div class="menu-item" data-destination="settings" onclick="navigateTo('settings')">
+                <span class="icon">⚙️</span>
+                <span class="text">設置</span>
+            </div>
+            <div class="menu-item" onclick="handleLogout()">
+                <span class="icon">🚪</span>
+                <span class="text">退出登錄</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 主內容區域 ===== -->
+    <div class="main-content">
+    <div class="container">
+        <!-- ===== 启动界面 ===== -->
+        <div id="start-screen" class="screen active">
+            <div class="content">
+                <div class="level-selector">
+                    <h2>🎯 選擇你的級別：</h2>
+                    <div class="level-options">
+                        <label class="level-card">
+                            <input type="radio" name="level" value="L1">
+                            <div class="level-name">L1 啟蒙</div>
+                            <div class="level-desc">2-3年級 | 簡單詞彙</div>
+                        </label>
+                        <label class="level-card selected">
+                            <input type="radio" name="level" value="L2" checked>
+                            <div class="level-name">L2 初級</div>
+                            <div class="level-desc">3-4年級 | 容易詞彙</div>
+                        </label>
+                        <label class="level-card">
+                            <input type="radio" name="level" value="L3">
+                            <div class="level-name">L3 進階</div>
+                            <div class="level-desc">4-5年級 | 中等詞彙</div>
+                        </label>
+                        <label class="level-card">
+                            <input type="radio" name="level" value="L4">
+                            <div class="level-name">L4 高級</div>
+                            <div class="level-desc">5-6年級 | 較難詞彙</div>
+                        </label>
+                        <label class="level-card">
+                            <input type="radio" name="level" value="L5">
+                            <div class="level-name">L5 精通</div>
+                            <div class="level-desc">初中 | 高級詞彙</div>
+                        </label>
+                        <label class="level-card">
+                            <input type="radio" name="level" value="L6">
+                            <div class="level-name">L6 大師</div>
+                            <div class="level-desc">高中 | 文學詞彙</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="theme-selector">
+                    <h2>🎭 選擇故事主題：</h2>
+                    <div class="theme-buttons">
+                        <button class="theme-btn selected" data-theme="nature">
+                            <span class="emoji">🌳</span>
+                            自然探索
+                        </button>
+                        <button class="theme-btn" data-theme="campus">
+                            <span class="emoji">🏫</span>
+                            校園生活
+                        </button>
+                        <button class="theme-btn" data-theme="fantasy">
+                            <span class="emoji">✨</span>
+                            奇幻冒險
+                        </button>
+                        <button class="theme-btn" data-theme="scifi">
+                            <span class="emoji">🚀</span>
+                            科幻未來
+                        </button>
+                    </div>
+                </div>
+
+                <div class="start-button-container">
+                    <button class="btn-primary" id="start-game-btn">開始創作故事 →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 游戏界面 ===== -->
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div class="progress-info">
+                    第 <span id="turn-count">1</span>/<span id="max-turns">10</span> 輪
+                </div>
+                <div class="level-info">
+                    <span id="current-level">L2</span> · <span id="current-theme">自然探索</span>
+                </div>
+            </div>
+            <div class="content">
+                <!-- 故事显示区域 -->
+                <div class="story-display" id="story-display">
+                    <div class="message ai">
+                        <div class="message-label ai">🤖 AI 故事家</div>
+                        <div class="message-content">正在構思故事開頭...</div>
+                    </div>
+                </div>
+
+                <!-- 词汇选择区域 -->
+                <div class="word-choices-section">
+                    <h3>💡 請選擇一個詞來造句：</h3>
+                    <div class="word-choices" id="word-choices">
+                        <!-- 词汇按钮将通过 JavaScript 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 用户输入区域 -->
+                <div class="user-input-section">
+                    <h3>✍️ 創作你的句子：</h3>
+                    <div class="selected-word-display" id="selected-word-display">
+                        請先選擇一個詞彙...
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="user-input" placeholder="用選中的詞寫一個句子，繼續故事..." disabled>
+                        <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">發送 →</button>
+                    </div>
+                </div>
+
+                <!-- 加载动画 -->
+                <div class="loading" id="loading">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">AI 正在創作中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 完成界面 ===== -->
+        <div id="finish-screen" class="screen">
+            <div class="header">
+                <h1>🎉 故事創作完成！</h1>
+                <p>你和AI一起創作了一個精彩的故事</p>
+            </div>
+            <div class="content finish-content">
+                <div class="celebration">🎊</div>
+                <h2>太棒了！</h2>
+
+                <div class="story-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-turns">18</div>
+                        <div class="stat-label">創作輪次</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="vocab-used">9</div>
+                        <div class="stat-label">使用詞彙</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="story-length">0</div>
+                        <div class="stat-label">故事字數</div>
+                    </div>
+                </div>
+
+                <div class="full-story-container">
+                    <h3>📖 完整故事</h3>
+                    <div class="full-story-text" id="full-story-text">
+                        <!-- 完整故事文本将通过 JavaScript 生成 -->
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-primary" onclick="restartGame()">🔄 再玩一次</button>
+                    <button class="btn-secondary" onclick="shareStory()">📤 分享故事</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 設置界面 ===== -->
+        <div id="settings-screen" class="screen">
+            <div class="content" style="max-width: 800px; margin: 0 auto; padding: 40px;">
+                
+                <!-- 詞彙來源設置 -->
+                <div class="settings-section">
+                    <h2 class="section-title">📚 學習內容設置</h2>
+                    <p class="section-desc">選擇詞彙的來源方式</p>
+                    
+                    <div class="current-mode-card">
+                        <div class="mode-header">
+                            <span class="mode-icon">🤖</span>
+                            <div class="mode-info">
+                                <div class="mode-name">AI 幫我選詞</div>
+                                <div class="mode-status">當前使用 ✓</div>
+                            </div>
+                        </div>
+                        <div class="mode-description">
+                            AI 會根據你的水平自動選擇合適的詞彙，難度剛剛好。
+                        </div>
+                        <div class="mode-stats">
+                            <span>📊 你目前的水平：適合 3-4 年級的詞彙</span>
+                        </div>
+                        <button class="btn-secondary" onclick="showVocabModeSelector()" style="width: 100%; margin-top: 15px;">
+                            更改學習方式
+                        </button>
+                    </div>
+                    
+                    <div class="info-box">
+                        <span class="info-icon">💡</span>
+                        <div class="info-text">
+                            <strong>推薦使用 AI 智能模式</strong><br>
+                            AI 會在前幾輪了解你的水平，然後自動推薦最合適的詞彙。大多數同學使用默認設置就很好！
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 學習目標設置 -->
+                <div class="settings-section">
+                    <h2 class="section-title">🎯 學習目標</h2>
+                    <p class="section-desc">設定你的學習目標（可選）</p>
+                    
+                    <div class="setting-item">
+                        <label class="setting-label">每日詞彙目標</label>
+                        <select class="setting-select" id="daily-vocab-goal">
+                            <option value="0">不設置目標</option>
+                            <option value="5">5 個新詞</option>
+                            <option value="10" selected>10 個新詞</option>
+                            <option value="15">15 個新詞</option>
+                            <option value="20">20 個新詞</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="setting-label">每日故事目標</label>
+                        <select class="setting-select" id="daily-story-goal">
+                            <option value="0">不設置目標</option>
+                            <option value="1" selected>1 個故事</option>
+                            <option value="2">2 個故事</option>
+                            <option value="3">3 個故事</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 遊戲設置 -->
+                <div class="settings-section">
+                    <h2 class="section-title">🎮 遊戲設置</h2>
+                    
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <input type="checkbox" class="setting-checkbox" id="sound-effects" checked>
+                            音效
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <input type="checkbox" class="setting-checkbox" id="typing-effect" checked>
+                            打字機效果
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="setting-label">故事長度</label>
+                        <select class="setting-select" id="story-length">
+                            <option value="8">短故事（8 輪）</option>
+                            <option value="10" selected>標準（10 輪）</option>
+                            <option value="15">長故事（15 輪）</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <!-- 關於 -->
+                <div class="settings-section">
+                    <h2 class="section-title">ℹ️ 關於</h2>
+                    <div class="about-info">
+                        <p><strong>故事詞彙接龍</strong> v1.0</p>
+                        <p>與 AI 共創精彩故事，輕鬆積累詞彙</p>
+                        <p style="margin-top: 10px; font-size: 0.9em; color: var(--text-light);">
+                            © 2024 Chinese Classics · 使用繁體中文
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 底部按鈕 -->
+                <div class="settings-footer">
+                    <button class="btn-primary" onclick="saveSettings()" style="width: 100%;">
+                        💾 保存設置
+                    </button>
+                    <button class="btn-secondary" onclick="navigateTo('new-story')" style="width: 100%; margin-top: 10px;">
+                        返回遊戲
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 詞彙模式選擇彈窗 ===== -->
+        <div id="vocab-mode-modal" class="modal">
+            <div class="modal-content" style="max-width: 700px;">
+                <button class="modal-close" onclick="closeVocabModeModal()">×</button>
+                
+                <h2 style="text-align: center; color: var(--primary-purple); margin-bottom: 10px;">
+                    📚 選擇學習方式
+                </h2>
+                <p style="text-align: center; color: var(--text-light); margin-bottom: 30px;">
+                    選擇最適合你的詞彙來源
+                </p>
+                
+                <div class="vocab-mode-options">
+                    <!-- AI 智能模式 -->
+                    <div class="vocab-mode-card" data-mode="ai" onclick="selectVocabMode('ai')">
+                        <div class="mode-card-header">
+                            <span class="mode-card-icon">🤖</span>
+                            <div class="mode-card-title">
+                                <div class="mode-card-name">AI 幫我選</div>
+                                <div class="mode-card-badge">推薦</div>
+                            </div>
+                        </div>
+                        <div class="mode-card-description">
+                            讓 AI 根據你的水平自動選擇合適的詞彙，難度剛剛好。
+                        </div>
+                        <div class="mode-card-features">
+                            <div class="feature-item">✓ 最省心，效果最好</div>
+                            <div class="feature-item">✓ 會根據你的進步調整難度</div>
+                            <div class="feature-item">✓ 適合大多數同學</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 系統詞表模式 -->
+                    <div class="vocab-mode-card" data-mode="system" onclick="selectVocabMode('system')">
+                        <div class="mode-card-header">
+                            <span class="mode-card-icon">📚</span>
+                            <div class="mode-card-title">
+                                <div class="mode-card-name">跟著課本學</div>
+                                <div class="mode-card-badge coming-soon">開發中</div>
+                            </div>
+                        </div>
+                        <div class="mode-card-description">
+                            選擇你的年級或教材，學習課本上的詞彙。
+                        </div>
+                        <div class="mode-card-features">
+                            <div class="feature-item">✓ 與學校教學同步</div>
+                            <div class="feature-item">✓ 有明確的學習路徑</div>
+                            <div class="feature-item">✓ 適合準備考試</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 自定義模式 -->
+                    <div class="vocab-mode-card" data-mode="custom" onclick="selectVocabMode('custom')">
+                        <div class="mode-card-header">
+                            <span class="mode-card-icon">✏️</span>
+                            <div class="mode-card-title">
+                                <div class="mode-card-name">老師的詞表</div>
+                                <div class="mode-card-badge coming-soon">開發中</div>
+                            </div>
+                        </div>
+                        <div class="mode-card-description">
+                            使用老師或家長上傳的特定詞彙表。
+                        </div>
+                        <div class="mode-card-features">
+                            <div class="feature-item">✓ 針對性學習</div>
+                            <div class="feature-item">✓ 適合重點複習</div>
+                            <div class="feature-item">✓ 家長/老師可管理</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 混合模式 -->
+                    <div class="vocab-mode-card" data-mode="mixed" onclick="selectVocabMode('mixed')">
+                        <div class="mode-card-header">
+                            <span class="mode-card-icon">🎯</span>
+                            <div class="mode-card-title">
+                                <div class="mode-card-name">自己搭配</div>
+                                <div class="mode-card-badge coming-soon">開發中</div>
+                            </div>
+                        </div>
+                        <div class="mode-card-description">
+                            混合使用多種詞彙來源，適合高級用戶。
+                        </div>
+                        <div class="mode-card-features">
+                            <div class="feature-item">✓ 最靈活</div>
+                            <div class="feature-item">✓ 可以調整比重</div>
+                            <div class="feature-item">✓ 適合有經驗的同學</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box" style="margin-top: 20px;">
+                    <span class="info-icon">💡</span>
+                    <div class="info-text">
+                        <strong>不確定選哪個？</strong><br>
+                        建議先使用「AI 幫我選」，它會自動幫你選擇最合適的詞彙。你隨時可以回來更改設置！
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 词汇详情弹窗 ===== -->
+    <div id="word-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeWordModal()">×</button>
+            <div class="word-detail-header">
+                <h2 id="modal-word">詞彙</h2>
+                <div class="pinyin" id="modal-pinyin">pinyin</div>
+            </div>
+            <div class="word-detail-section">
+                <h3>🌍 英文翻譯</h3>
+                <div class="content" id="modal-translation">載入中...</div>
+            </div>
+            <div class="word-detail-section">
+                <h3>📖 釋義</h3>
+                <div class="content" id="modal-definition">載入中...</div>
+            </div>
+            <div class="word-detail-section">
+                <h3>📝 例句</h3>
+                <div class="content" id="modal-example">載入中...</div>
+            </div>
+            <button class="btn-primary add-to-wordbook-btn" onclick="addToWordbook()">⭐ 收藏到生詞本</button>
+        </div>
+    </div>
+
+    <!-- ===== 提示消息 ===== -->
+    <div id="toast" class="toast"></div>
+    </div>
+    <!-- ===== 主內容區域結束 ===== -->
+
+    <!-- JavaScript 模块 -->
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>

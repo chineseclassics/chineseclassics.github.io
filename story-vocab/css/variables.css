@@ -1,0 +1,16 @@
+/* ===== CSS 变量定义 ===== */
+:root {
+    --primary-pink: #FF69B4;
+    --primary-blue: #4A90E2;
+    --primary-yellow: #FFD700;
+    --primary-purple: #9B59B6;
+    --primary-green: #2ECC71;
+    --light-pink: #FFE4F0;
+    --light-blue: #E3F2FD;
+    --light-yellow: #FFF9E6;
+    --text-dark: #333;
+    --text-light: #666;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --border-radius: 20px;
+}
+

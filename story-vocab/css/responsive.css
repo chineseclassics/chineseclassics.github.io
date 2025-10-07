@@ -1,0 +1,128 @@
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+    body {
+        display: block;
+        overflow: auto;
+    }
+
+    .mobile-header {
+        display: flex;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        transition: left 0.3s ease;
+        z-index: 1060;
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
+    }
+
+    .sidebar-close-btn {
+        display: flex;
+    }
+
+    .main-content {
+        margin-left: 0;
+        margin-top: 60px;
+        height: calc(100vh - 60px);
+        background: white;
+        overflow: hidden;
+    }
+
+    .container {
+        height: 100%;
+        min-height: calc(100vh - 60px);
+    }
+
+    #start-screen.active {
+        height: 100%;
+    }
+
+    #start-screen .content {
+        padding: 20px;
+        min-height: calc(100vh - 60px);
+    }
+
+    #settings-screen .content {
+        padding: 20px;
+    }
+
+    .mobile-overlay {
+        display: none;
+    }
+
+    .mobile-overlay.active {
+        display: block;
+    }
+
+    .level-options {
+        grid-template-columns: 1fr;
+    }
+
+    .word-choices {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-group button {
+        width: 100%;
+    }
+
+    .story-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons button {
+        width: 100%;
+    }
+
+    .user-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .sidebar-header {
+        padding: 20px;
+    }
+
+    .app-title-section {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+    }
+
+    .app-title {
+        font-size: 1.4em;
+    }
+
+    .app-subtitle {
+        font-size: 0.85em;
+    }
+
+    .sidebar-menu {
+        padding: 10px 0;
+    }
+
+    .toast {
+        top: 70px;
+        max-width: 90%;
+        padding: 12px 20px;
+        font-size: 0.95em;
+    }
+
+    .vocab-mode-options {
+        grid-template-columns: 1fr;
+    }
+}
+

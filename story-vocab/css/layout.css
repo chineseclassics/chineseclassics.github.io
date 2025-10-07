@@ -1,0 +1,440 @@
+/* ===== 布局结构 ===== */
+.main-content {
+    flex: 1;
+    height: 100vh;
+    overflow: hidden;
+    background: white;
+    margin-left: 280px;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+    background: white;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== 页面切换 ===== */
+.screen {
+    display: none;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* 启动界面特殊布局 */
+#start-screen.active {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 游戏界面：固定布局，不滚动 */
+#game-screen.active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 完成界面需要滚动 */
+#finish-screen.active {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.header {
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.header h1 {
+    font-size: 2.2em;
+    margin-bottom: 8px;
+}
+
+.header p {
+    font-size: 1em;
+    opacity: 0.9;
+}
+
+.content {
+    padding: 30px 40px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* 启动界面内容特殊样式 */
+#start-screen .content {
+    overflow-y: auto;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* ===== 側邊欄樣式 ===== */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    overflow-x: hidden;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+/* 美化滾動條 */
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* 側邊欄頂部用戶信息 */
+.sidebar-header {
+    padding: 25px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+/* 軟件標題區域 */
+.app-title-section {
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.app-title {
+    font-size: 1.6em;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.app-subtitle {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* 移動端側邊欄關閉按鈕 */
+.sidebar-close-btn {
+    display: none;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5em;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.sidebar-close-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-yellow));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-name {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.user-level {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+/* 用戶狀態卡片 */
+.user-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 10px 5px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.stat-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.stat-label {
+    font-size: 0.75em;
+    opacity: 0.9;
+}
+
+/* 側邊欄菜單 */
+.sidebar-menu {
+    padding: 20px 0;
+    flex: 1;
+}
+
+.menu-section {
+    margin-bottom: 25px;
+}
+
+.menu-section-title {
+    padding: 0 20px 10px;
+    font-size: 0.85em;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+}
+
+.menu-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-left-color: var(--primary-yellow);
+    transform: translateX(5px);
+}
+
+.menu-item:active {
+    transform: translateX(3px);
+}
+
+.menu-item.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-left-color: var(--primary-yellow);
+}
+
+.menu-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.menu-item.disabled:hover {
+    transform: none;
+}
+
+.menu-item .icon {
+    font-size: 1.5em;
+    width: 30px;
+    text-align: center;
+}
+
+.menu-item .text {
+    flex: 1;
+    font-size: 1.05em;
+}
+
+.menu-item .badge {
+    background: var(--primary-pink);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.menu-item .coming-soon {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 0.7em;
+    opacity: 0.8;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* 側邊欄底部 */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin-top: auto;
+}
+
+.sidebar-footer .menu-item {
+    padding: 12px 0;
+}
+
+/* ===== 移動端頂部導航欄 ===== */
+.mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    z-index: 1100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    padding: 0 15px;
+}
+
+.mobile-menu-btn {
+    width: 45px;
+    height: 45px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    font-size: 1.5em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+}
+
+.mobile-header-title {
+    flex: 1;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.mobile-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-yellow));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile-user-avatar:active {
+    transform: scale(0.95);
+}
+
+/* 移動端遮罩層 */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-overlay.active {
+    opacity: 1;
+}
+
