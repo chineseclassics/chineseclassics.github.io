@@ -1602,12 +1602,24 @@
                 console.log('萌典國語辭典API返回:', mainData);
                 console.log('萌典兩岸詞典API返回:', crossStraitData);
                 
-                // 處理拼音（優先使用 bopomofo2 或 pinyin 字段，這些包含漢語拼音）
-                if (mainData && mainData.heteronyms && mainData.heteronyms[0] && !vocabWord) {
-                    // 優先使用 bopomofo2（漢語拼音格式）或 pinyin 字段
-                    const pinyin = mainData.heteronyms[0].bopomofo2 || 
-                                   mainData.heteronyms[0].pinyin || 
-                                   mainData.heteronyms[0].bopomofo || '';
+                // 處理拼音（單字和詞語的數據結構不同）
+                if (mainData && !vocabWord) {
+                    let pinyin = '';
+                    
+                    if (word.length === 1) {
+                        // 單字：使用 heteronyms[0].pinyin
+                        if (mainData.heteronyms && mainData.heteronyms[0]) {
+                            pinyin = mainData.heteronyms[0].bopomofo2 || 
+                                    mainData.heteronyms[0].pinyin || 
+                                    mainData.heteronyms[0].bopomofo || '';
+                        }
+                    } else {
+                        // 詞語：使用 h[0].p
+                        if (mainData.h && mainData.h[0]) {
+                            pinyin = mainData.h[0].p || '';
+                        }
+                    }
+                    
                     document.getElementById('modal-pinyin').textContent = pinyin || '無拼音';
                 }
                 
@@ -1625,52 +1637,76 @@
                     document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">暫無英文翻譯</span>';
                 }
                 
-                // 顯示釋義
-                if (mainData && mainData.heteronyms && mainData.heteronyms[0] && mainData.heteronyms[0].definitions) {
-                    const definitions = mainData.heteronyms[0].definitions;
-                    let definitionText = '';
+                // 顯示釋義和例句（單字和詞語的數據結構不同）
+                if (mainData) {
+                    let definitions = [];
                     
-                    definitions.forEach((def, index) => {
-                        if (def.def) {
-                            const cleanDef = cleanMoedictText(def.def);
-                            if (definitions.length > 1) {
-                                definitionText += `${index + 1}. ${cleanDef}\n\n`;
-                            } else {
-                                definitionText += cleanDef;
-                            }
+                    if (word.length === 1) {
+                        // 單字：使用 heteronyms[0].definitions
+                        if (mainData.heteronyms && mainData.heteronyms[0] && mainData.heteronyms[0].definitions) {
+                            definitions = mainData.heteronyms[0].definitions;
                         }
-                    });
-                    
-                    if (definitionText) {
-                        document.getElementById('modal-definition').textContent = definitionText;
                     } else {
-                        document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
+                        // 詞語：使用 h[0].d
+                        if (mainData.h && mainData.h[0] && mainData.h[0].d) {
+                            definitions = mainData.h[0].d;
+                        }
                     }
                     
-                    // 顯示例句（取前3個）
-                    let exampleText = '';
-                    let exampleCount = 0;
-                    definitions.forEach(def => {
-                        if (def.example && def.example.length > 0 && exampleCount < 3) {
-                            def.example.forEach(ex => {
-                                if (exampleCount < 3) {
-                                    const cleanExample = cleanMoedictText(ex);
-                                    if (cleanExample) {
-                                        exampleText += `• ${cleanExample}\n\n`;
-                                        exampleCount++;
-                                    }
+                    // 處理釋義
+                    if (definitions.length > 0) {
+                        let definitionText = '';
+                        
+                        definitions.forEach((def, index) => {
+                            // 單字用 def.def，詞語用 def.d
+                            const defText = def.def || def.d || '';
+                            if (defText) {
+                                const cleanDef = cleanMoedictText(defText);
+                                if (definitions.length > 1) {
+                                    definitionText += `${index + 1}. ${cleanDef}\n\n`;
+                                } else {
+                                    definitionText += cleanDef;
                                 }
-                            });
+                            }
+                        });
+                        
+                        if (definitionText) {
+                            document.getElementById('modal-definition').textContent = definitionText;
+                        } else {
+                            document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
                         }
-                    });
-                    
-                    if (exampleText) {
-                        document.getElementById('modal-example').textContent = exampleText;
+                        
+                        // 顯示例句（取前3個）
+                        let exampleText = '';
+                        let exampleCount = 0;
+                        definitions.forEach(def => {
+                            // 單字用 def.example，詞語用 def.e
+                            const examples = def.example || def.e || [];
+                            if (examples.length > 0 && exampleCount < 3) {
+                                examples.forEach(ex => {
+                                    if (exampleCount < 3) {
+                                        const cleanExample = cleanMoedictText(ex);
+                                        if (cleanExample) {
+                                            exampleText += `• ${cleanExample}\n\n`;
+                                            exampleCount++;
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                        
+                        if (exampleText) {
+                            document.getElementById('modal-example').textContent = exampleText;
+                        } else {
+                            document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
+                        }
                     } else {
+                        // 如果沒有definitions數據
+                        document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
                         document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
                     }
                 } else {
-                    // 如果沒有definitions數據
+                    // 如果沒有mainData
                     document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
                     document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
                 }
