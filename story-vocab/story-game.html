@@ -707,7 +707,285 @@
             font-weight: bold;
         }
 
-        /* ===== 响应式设计 ===== */
+        /* ===== 側邊欄樣式 ===== */
+        .sidebar {
+            position: fixed;
+            left: -320px;
+            top: 0;
+            width: 320px;
+            height: 100vh;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            transition: left 0.3s ease;
+            z-index: 2000;
+            overflow-y: auto;
+            overflow-x: hidden;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 美化滾動條 */
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* 側邊欄頂部用戶信息 */
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-pink), var(--primary-yellow));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-level {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* 用戶狀態卡片 */
+        .user-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 5px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .stat-label {
+            font-size: 0.75em;
+            opacity: 0.9;
+        }
+
+        /* 側邊欄菜單 */
+        .sidebar-menu {
+            padding: 20px 0;
+            flex: 1;
+        }
+
+        .menu-section {
+            margin-bottom: 25px;
+        }
+
+        .menu-section-title {
+            padding: 0 20px 10px;
+            font-size: 0.85em;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: var(--primary-yellow);
+            transform: translateX(5px);
+        }
+
+        .menu-item:active {
+            transform: translateX(3px);
+        }
+
+        .menu-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left-color: var(--primary-yellow);
+        }
+
+        .menu-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .menu-item.disabled:hover {
+            transform: none;
+        }
+
+        .menu-item .icon {
+            font-size: 1.5em;
+            width: 30px;
+            text-align: center;
+        }
+
+        .menu-item .text {
+            flex: 1;
+            font-size: 1.05em;
+        }
+
+        .menu-item .badge {
+            background: var(--primary-pink);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .menu-item .coming-soon {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.7em;
+            opacity: 0.8;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* 側邊欄開關按鈕 */
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
+            color: white;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .sidebar-toggle.active {
+            left: 340px;
+        }
+
+        /* 側邊欄底部 */
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: auto;
+        }
+
+        .sidebar-footer .menu-item {
+            padding: 12px 0;
+        }
+
+        /* 响应式设计 */
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8em;
@@ -744,6 +1022,15 @@
             .action-buttons button {
                 width: 100%;
             }
+
+            .sidebar {
+                width: 280px;
+                left: -280px;
+            }
+
+            .sidebar-toggle.active {
+                left: 300px;
+            }
         }
 
         /* ===== 提示消息 ===== */
@@ -779,6 +1066,124 @@
     </style>
 </head>
 <body>
+    <!-- ===== 側邊欄開關按鈕 ===== -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebar-toggle">☰</button>
+
+    <!-- ===== 側邊欄遮罩層 ===== -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- ===== 側邊欄 ===== -->
+    <div class="sidebar" id="sidebar">
+        <!-- 用戶信息區域 -->
+        <div class="sidebar-header">
+            <div class="user-profile">
+                <div class="user-avatar" id="user-avatar" onclick="navigateTo('settings')" title="點擊查看個人資料">👤</div>
+                <div class="user-info">
+                    <div class="user-name" id="user-display-name">訪客</div>
+                    <div class="user-level" id="user-level-display">等級 L2 · 初級</div>
+                </div>
+            </div>
+            
+            <!-- 用戶統計 -->
+            <div class="user-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-stories">0</span>
+                    <span class="stat-label">故事</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-words">0</span>
+                    <span class="stat-label">詞彙</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-points">0</span>
+                    <span class="stat-label">積分</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 菜單區域 -->
+        <div class="sidebar-menu">
+            <!-- 創作區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">創作</div>
+                <div class="menu-item" onclick="navigateTo('new-story')">
+                    <span class="icon">✨</span>
+                    <span class="text">開始新故事</span>
+                </div>
+                <div class="menu-item" onclick="navigateTo('my-stories')">
+                    <span class="icon">📖</span>
+                    <span class="text">我的故事集</span>
+                    <span class="badge" id="stories-count">0</span>
+                </div>
+            </div>
+
+            <!-- 學習區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">學習</div>
+                <div class="menu-item active" onclick="navigateTo('wordbook')">
+                    <span class="icon">📚</span>
+                    <span class="text">我的生詞本</span>
+                    <span class="badge" id="wordbook-count-sidebar">0</span>
+                </div>
+                <div class="menu-item" onclick="navigateTo('custom-vocab')">
+                    <span class="icon">📝</span>
+                    <span class="text">自定義詞庫</span>
+                </div>
+                <div class="menu-item" onclick="navigateTo('learning-report')">
+                    <span class="icon">📊</span>
+                    <span class="text">學習報告</span>
+                </div>
+            </div>
+
+            <!-- 遊戲化區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">成就</div>
+                <div class="menu-item" onclick="navigateTo('achievements')">
+                    <span class="icon">🏆</span>
+                    <span class="text">成就與徽章</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+                <div class="menu-item" onclick="navigateTo('leaderboard')">
+                    <span class="icon">🎖️</span>
+                    <span class="text">排行榜</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+            </div>
+
+            <!-- 多人模式區 -->
+            <div class="menu-section">
+                <div class="menu-section-title">多人模式</div>
+                <div class="menu-item" onclick="navigateTo('create-room')">
+                    <span class="icon">🎭</span>
+                    <span class="text">創建房間</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+                <div class="menu-item" onclick="navigateTo('join-room')">
+                    <span class="icon">🚪</span>
+                    <span class="text">加入房間</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+                <div class="menu-item" onclick="navigateTo('friends')">
+                    <span class="icon">👥</span>
+                    <span class="text">好友列表</span>
+                    <span class="coming-soon">即將推出</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部區域 -->
+        <div class="sidebar-footer">
+            <div class="menu-item" onclick="navigateTo('settings')">
+                <span class="icon">⚙️</span>
+                <span class="text">設置</span>
+            </div>
+            <div class="menu-item" onclick="handleLogout()">
+                <span class="icon">🚪</span>
+                <span class="text">退出登錄</span>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- ===== 启动界面 ===== -->
         <div id="start-screen" class="screen active">
@@ -987,6 +1392,149 @@
             // 記錄但不中斷應用
             console.warn('Promise rejection:', e.reason);
         });
+
+        // ===== 側邊欄控制功能 =====
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const toggle = document.getElementById('sidebar-toggle');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            toggle.classList.toggle('active');
+        };
+
+        // ===== 導航功能 =====
+        window.navigateTo = function(destination) {
+            console.log('導航到:', destination);
+            
+            // 移除所有菜單項的 active 狀態
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 添加當前項的 active 狀態
+            event.currentTarget.classList.add('active');
+            
+            // 根據目標執行不同操作
+            switch(destination) {
+                case 'new-story':
+                    // 如果在開始頁面，關閉側邊欄
+                    if (document.getElementById('start-screen').classList.contains('active')) {
+                        toggleSidebar();
+                    } else {
+                        // 否則返回開始頁面
+                        showScreen('start-screen');
+                        toggleSidebar();
+                    }
+                    break;
+                
+                case 'my-stories':
+                    showToast('我的故事集功能即將推出！');
+                    break;
+                
+                case 'wordbook':
+                    openWordbook();
+                    toggleSidebar();
+                    break;
+                
+                case 'custom-vocab':
+                    showToast('自定義詞庫功能即將推出！您將可以上傳 Excel 文件來自定義詞彙。');
+                    break;
+                
+                case 'learning-report':
+                    showToast('學習報告功能即將推出！');
+                    break;
+                
+                case 'achievements':
+                    showToast('成就與徽章功能正在開發中，敬請期待！');
+                    break;
+                
+                case 'leaderboard':
+                    showToast('排行榜功能正在開發中，敬請期待！');
+                    break;
+                
+                case 'create-room':
+                    showToast('多人創建房間功能正在開發中，敬請期待！');
+                    break;
+                
+                case 'join-room':
+                    showToast('多人加入房間功能正在開發中，敬請期待！');
+                    break;
+                
+                case 'friends':
+                    showToast('好友列表功能正在開發中，敬請期待！');
+                    break;
+                
+                case 'settings':
+                    showToast('設置功能即將推出！');
+                    break;
+                
+                default:
+                    console.log('未知的導航目標:', destination);
+            }
+        };
+
+        // ===== 登出功能 =====
+        window.handleLogout = function() {
+            if (confirm('確定要退出登錄嗎？')) {
+                // 清除本地數據
+                localStorage.removeItem('story_wordbook');
+                // 重置用戶顯示
+                document.getElementById('user-display-name').textContent = '訪客';
+                document.getElementById('user-level-display').textContent = '等級 L2 · 初級';
+                document.getElementById('stat-stories').textContent = '0';
+                document.getElementById('stat-words').textContent = '0';
+                document.getElementById('stat-points').textContent = '0';
+                // 關閉側邊欄
+                toggleSidebar();
+                // 返回開始頁面
+                showScreen('start-screen');
+                showToast('已退出登錄');
+            }
+        };
+
+        // ===== 更新側邊欄統計信息 =====
+        window.updateSidebarStats = function() {
+            // 更新生詞本數量
+            const wordbookCount = wordbook ? wordbook.length : 0;
+            document.getElementById('wordbook-count-sidebar').textContent = wordbookCount;
+            document.getElementById('stat-words').textContent = wordbookCount;
+            
+            // 更新故事數量（從localStorage獲取）
+            const completedStories = JSON.parse(localStorage.getItem('completed_stories') || '[]');
+            document.getElementById('stat-stories').textContent = completedStories.length;
+            document.getElementById('stories-count').textContent = completedStories.length;
+            
+            // 更新積分（未來實現）
+            const userPoints = localStorage.getItem('user_points') || 0;
+            document.getElementById('stat-points').textContent = userPoints;
+        };
+
+        // ===== 鍵盤快捷鍵支持 =====
+        document.addEventListener('keydown', function(e) {
+            // Esc 鍵關閉側邊欄
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar.classList.contains('active')) {
+                    toggleSidebar();
+                }
+            }
+        });
+
+        // ===== 頁面加載完成時初始化 =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // 檢查是否有保存的用戶信息
+            const savedUsername = localStorage.getItem('user_display_name');
+            if (savedUsername) {
+                document.getElementById('user-display-name').textContent = savedUsername;
+            }
+            
+            const savedLevel = localStorage.getItem('user_level');
+            if (savedLevel) {
+                document.getElementById('user-level-display').textContent = savedLevel;
+            }
+        });
     </script>
     <script type="module">
         // 导入配置和客户端
@@ -1033,6 +1581,7 @@
         // 生詞本
         let wordbook = JSON.parse(localStorage.getItem('story_wordbook') || '[]');
         updateWordbookCount();
+        updateSidebarStats();
 
         // ===== 頁面切換函數 =====
         function showScreen(screenId) {
@@ -1491,11 +2040,27 @@
         function finishStory() {
             showScreen('finish-screen');
             
+            // 保存完成的故事到localStorage
+            const completedStories = JSON.parse(localStorage.getItem('completed_stories') || '[]');
+            const storyData = {
+                id: gameState.sessionId || Date.now(),
+                level: gameState.level,
+                theme: gameState.theme,
+                history: gameState.storyHistory,
+                usedWords: gameState.usedWords,
+                completedAt: new Date().toISOString()
+            };
+            completedStories.push(storyData);
+            localStorage.setItem('completed_stories', JSON.stringify(completedStories));
+            
             // 計算統計數據
             const totalTurns = gameState.storyHistory.filter(h => h.role === 'user').length;
             const vocabUsed = gameState.usedWords.length;
             const fullStory = gameState.storyHistory.map(h => h.sentence).join('');
             const storyLength = fullStory.length;
+            
+            // 更新側邊欄統計
+            updateSidebarStats();
             
             // 更新顯示
             document.getElementById('total-turns').textContent = totalTurns;
@@ -1763,6 +2328,7 @@
             // 保存到 localStorage
             localStorage.setItem('story_wordbook', JSON.stringify(wordbook));
             updateWordbookCount();
+            updateSidebarStats();
             
             showToast(`✅ "${word}" 已添加到生詞本！`);
         };
