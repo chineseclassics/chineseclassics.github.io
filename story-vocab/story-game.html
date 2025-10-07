@@ -40,20 +40,19 @@
         .main-content {
             flex: 1;
             height: 100vh;
-            overflow-y: auto;
-            background: #f5f7fa;
+            overflow: hidden;
+            background: white;
             margin-left: 280px;
         }
 
         .container {
             width: 100%;
-            max-width: 1200px;
+            height: 100%;
             background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
             overflow: hidden;
             position: relative;
-            margin: 20px auto;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ===== 页面切换 ===== */
@@ -63,7 +62,24 @@
         }
 
         .screen.active {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* 启动界面特殊布局 */
+        #start-screen.active {
+            display: flex;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* 游戏界面和完成界面需要滚动 */
+        #game-screen.active,
+        #finish-screen.active {
             display: block;
+            height: 100%;
+            overflow-y: auto;
         }
 
         @keyframes fadeIn {
@@ -81,22 +97,43 @@
         .header {
             background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
             color: white;
-            padding: 30px;
+            padding: 40px 30px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2.2em;
+            margin-bottom: 8px;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 1em;
             opacity: 0.9;
         }
 
         .content {
-            padding: 40px;
+            padding: 30px 40px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 启动界面内容特殊样式 */
+        #start-screen .content {
+            overflow-y: auto;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 30px 40px;
+        }
+
+        /* 启动界面级别和主题选择区域 */
+        .level-selector,
+        .theme-selector {
+            margin: 15px 0;
         }
 
         button {
@@ -131,28 +168,28 @@
 
         /* ===== 启动界面 ===== */
         .level-selector {
-            margin: 30px 0;
+            margin: 20px 0;
         }
 
         .level-selector h2,
         .theme-selector h2 {
             color: var(--text-dark);
-            margin-bottom: 20px;
-            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-size: 1.3em;
         }
 
         .level-options {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .level-card {
             background: var(--light-blue);
             border: 3px solid transparent;
             border-radius: 15px;
-            padding: 20px;
+            padding: 18px 15px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -188,19 +225,19 @@
         .theme-buttons {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .theme-btn {
             background: white;
             border: 3px solid var(--light-pink);
             border-radius: 15px;
-            padding: 25px 20px;
+            padding: 20px 15px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1.1em;
+            font-size: 1.05em;
         }
 
         .theme-btn:hover {
@@ -214,14 +251,14 @@
         }
 
         .theme-btn .emoji {
-            font-size: 2.5em;
+            font-size: 2em;
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .start-button-container {
             text-align: center;
-            margin-top: 40px;
+            margin-top: 25px;
         }
 
         /* ===== 游戏界面 ===== */
@@ -678,44 +715,6 @@
             color: var(--text-light);
         }
 
-        /* ===== 生词本按钮 ===== */
-        .wordbook-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-yellow), var(--primary-pink));
-            color: white;
-            font-size: 1.5em;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            z-index: 999;
-        }
-
-        .wordbook-button:hover {
-            transform: scale(1.1);
-        }
-
-        .wordbook-count {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--primary-pink);
-            color: white;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            font-size: 0.7em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
         /* ===== 側邊欄樣式 ===== */
         .sidebar {
             position: fixed;
@@ -1081,8 +1080,25 @@
             .main-content {
                 margin-left: 0;
                 margin-top: 60px;
-                height: auto;
-                min-height: calc(100vh - 60px);
+                height: calc(100vh - 60px);
+                background: white;
+                overflow: hidden;
+            }
+
+            .container {
+                height: 100%;
+            }
+
+            #start-screen.active {
+                height: 100%;
+            }
+
+            #start-screen .header h1 {
+                font-size: 1.8em;
+            }
+
+            #start-screen .content {
+                padding: 20px;
             }
 
             .mobile-overlay {
@@ -1091,14 +1107,6 @@
 
             .mobile-overlay.active {
                 display: block;
-            }
-
-            .header h1 {
-                font-size: 1.8em;
-            }
-
-            .content {
-                padding: 20px;
             }
 
             .level-options {
@@ -1141,13 +1149,8 @@
                 padding: 10px 0;
             }
 
-            .wordbook-button {
-                bottom: 80px;
-            }
-
             .container {
-                margin: 10px;
-                border-radius: 15px;
+                min-height: calc(100vh - 60px);
             }
         }
 
@@ -1247,11 +1250,11 @@
             <!-- 創作區 -->
             <div class="menu-section">
                 <div class="menu-section-title">創作</div>
-                <div class="menu-item" onclick="navigateTo('new-story')">
+                <div class="menu-item active" data-destination="new-story" onclick="navigateTo('new-story')">
                     <span class="icon">✨</span>
                     <span class="text">開始新故事</span>
                 </div>
-                <div class="menu-item" onclick="navigateTo('my-stories')">
+                <div class="menu-item" data-destination="my-stories" onclick="navigateTo('my-stories')">
                     <span class="icon">📖</span>
                     <span class="text">我的故事集</span>
                     <span class="badge" id="stories-count">0</span>
@@ -1261,16 +1264,16 @@
             <!-- 學習區 -->
             <div class="menu-section">
                 <div class="menu-section-title">學習</div>
-                <div class="menu-item active" onclick="navigateTo('wordbook')">
+                <div class="menu-item" data-destination="wordbook" onclick="navigateTo('wordbook')">
                     <span class="icon">📚</span>
                     <span class="text">我的生詞本</span>
                     <span class="badge" id="wordbook-count-sidebar">0</span>
                 </div>
-                <div class="menu-item" onclick="navigateTo('custom-vocab')">
+                <div class="menu-item" data-destination="custom-vocab" onclick="navigateTo('custom-vocab')">
                     <span class="icon">📝</span>
                     <span class="text">自定義詞庫</span>
                 </div>
-                <div class="menu-item" onclick="navigateTo('learning-report')">
+                <div class="menu-item" data-destination="learning-report" onclick="navigateTo('learning-report')">
                     <span class="icon">📊</span>
                     <span class="text">學習報告</span>
                 </div>
@@ -1279,12 +1282,12 @@
             <!-- 遊戲化區 -->
             <div class="menu-section">
                 <div class="menu-section-title">成就</div>
-                <div class="menu-item" onclick="navigateTo('achievements')">
+                <div class="menu-item" data-destination="achievements" onclick="navigateTo('achievements')">
                     <span class="icon">🏆</span>
                     <span class="text">成就與徽章</span>
                     <span class="coming-soon">即將推出</span>
                 </div>
-                <div class="menu-item" onclick="navigateTo('leaderboard')">
+                <div class="menu-item" data-destination="leaderboard" onclick="navigateTo('leaderboard')">
                     <span class="icon">🎖️</span>
                     <span class="text">排行榜</span>
                     <span class="coming-soon">即將推出</span>
@@ -1294,17 +1297,17 @@
             <!-- 多人模式區 -->
             <div class="menu-section">
                 <div class="menu-section-title">多人模式</div>
-                <div class="menu-item" onclick="navigateTo('create-room')">
+                <div class="menu-item" data-destination="create-room" onclick="navigateTo('create-room')">
                     <span class="icon">🎭</span>
                     <span class="text">創建房間</span>
                     <span class="coming-soon">即將推出</span>
                 </div>
-                <div class="menu-item" onclick="navigateTo('join-room')">
+                <div class="menu-item" data-destination="join-room" onclick="navigateTo('join-room')">
                     <span class="icon">🚪</span>
                     <span class="text">加入房間</span>
                     <span class="coming-soon">即將推出</span>
                 </div>
-                <div class="menu-item" onclick="navigateTo('friends')">
+                <div class="menu-item" data-destination="friends" onclick="navigateTo('friends')">
                     <span class="icon">👥</span>
                     <span class="text">好友列表</span>
                     <span class="coming-soon">即將推出</span>
@@ -1314,7 +1317,7 @@
 
         <!-- 底部區域 -->
         <div class="sidebar-footer">
-            <div class="menu-item" onclick="navigateTo('settings')">
+            <div class="menu-item" data-destination="settings" onclick="navigateTo('settings')">
                 <span class="icon">⚙️</span>
                 <span class="text">設置</span>
             </div>
@@ -1394,7 +1397,7 @@
                 </div>
 
                 <div class="start-button-container">
-                    <button class="btn-primary" onclick="startGame()">開始創作故事 →</button>
+                    <button class="btn-primary" id="start-game-btn">開始創作故事 →</button>
                 </div>
             </div>
         </div>
@@ -1510,12 +1513,6 @@
         </div>
     </div>
 
-    <!-- ===== 生词本按钮 ===== -->
-    <button class="wordbook-button" onclick="openWordbook()" title="我的生詞本">
-        📚
-        <span class="wordbook-count" id="wordbook-count">0</span>
-    </button>
-
     <!-- ===== 提示消息 ===== -->
     <div id="toast" class="toast"></div>
     </div>
@@ -1615,9 +1612,10 @@
                 item.classList.remove('active');
             });
             
-            // 添加當前項的 active 狀態
-            if (event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
+            // 添加當前項的 active 狀態（通過 data-destination 屬性查找）
+            const targetMenuItem = document.querySelector(`.menu-item[data-destination="${destination}"]`);
+            if (targetMenuItem) {
+                targetMenuItem.classList.add('active');
             }
             
             // 根據目標執行不同操作
@@ -1691,8 +1689,9 @@
 
         // ===== 更新側邊欄統計信息 =====
         window.updateSidebarStats = function() {
-            // 更新生詞本數量
-            const wordbookCount = wordbook ? wordbook.length : 0;
+            // 更新生詞本數量（從localStorage獲取）
+            const wordbook = JSON.parse(localStorage.getItem('story_wordbook') || '[]');
+            const wordbookCount = wordbook.length;
             document.getElementById('wordbook-count-sidebar').textContent = wordbookCount;
             document.getElementById('stat-words').textContent = wordbookCount;
             
@@ -1775,12 +1774,12 @@
         updateSidebarStats();
 
         // ===== 頁面切換函數 =====
-        function showScreen(screenId) {
+        window.showScreen = function(screenId) {
             document.querySelectorAll('.screen').forEach(s => {
                 s.classList.remove('active');
             });
             document.getElementById(screenId).classList.add('active');
-        }
+        };
 
         // ===== 顯示提示消息 =====
         function showToast(message) {
@@ -1811,7 +1810,7 @@
         });
 
         // ===== 開始遊戲 =====
-        window.startGame = async function() {
+        async function startGame() {
             // 確保用戶已登錄
             if (!gameState.userId) {
                 showToast('正在初始化，請稍候...');
@@ -2524,9 +2523,10 @@
             showToast(`✅ "${word}" 已添加到生詞本！`);
         };
 
-        // ===== 更新生詞本計數 =====
+        // ===== 更新生詞本計數（已整合到updateSidebarStats） =====
         function updateWordbookCount() {
-            document.getElementById('wordbook-count').textContent = wordbook.length;
+            // 功能已移到 updateSidebarStats 函數中
+            // 保留空函數以避免破壞現有調用
         }
 
         // ===== 打開生詞本 =====
@@ -2557,6 +2557,9 @@
             `;
             modal.classList.add('active');
         };
+
+        // ===== 綁定開始遊戲按鈕事件 =====
+        document.getElementById('start-game-btn').addEventListener('click', startGame);
 
         // ===== 啟動應用 =====
         console.log('🎮 故事詞彙接龍遊戲已載入！');
