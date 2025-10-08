@@ -320,9 +320,9 @@ export async function isUserCalibrated(userId) {
       .from('user_profiles')
       .select('calibrated')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()  // ✅ 使用 maybeSingle() 代替 single()，记录不存在时返回 null 而不是错误
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 = 未找到記錄
+    if (error) {
       throw error
     }
     

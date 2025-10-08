@@ -23,7 +23,7 @@ export async function updateUserProfileAfterRound(userId, roundData) {
         .from('user_profiles')
         .select('total_rounds')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle()
       
       await supabase
         .from('user_profiles')
@@ -39,7 +39,7 @@ export async function updateUserProfileAfterRound(userId, roundData) {
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     
     // 每5輪重新評估水平
     if (profile && profile.total_rounds % 5 === 0) {
@@ -89,7 +89,7 @@ export async function reassessUserLevel(userId) {
       .from('user_profiles')
       .select('current_level')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     
     let newLevel = profile?.current_level || 2
     
@@ -138,7 +138,7 @@ export async function summarizeGameSession(userId, sessionId) {
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     
     if (profileError) throw profileError
     
@@ -207,9 +207,12 @@ export async function buildCumulativeUserProfile(userId) {
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     
     if (profileError) throw profileError
+    if (!profile) {
+      throw new Error('用戶畫像不存在，無法構建累積畫像')
+    }
     
     // 2. 所有遊戲會話彙總
     const { data: allSessions } = await supabase

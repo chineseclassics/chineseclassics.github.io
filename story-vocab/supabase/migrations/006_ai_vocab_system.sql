@@ -136,21 +136,24 @@ CREATE INDEX IF NOT EXISTS idx_user_wordbook_recommended ON user_wordbook(user_i
 CREATE INDEX IF NOT EXISTS idx_user_wordbook_word ON user_wordbook(word);
 CREATE INDEX IF NOT EXISTS idx_recommendation_history_session ON recommendation_history(session_id);
 
--- ========== RLS 策略 ==========
+-- ========== RLS 策略（生產環境安全版） ==========
 -- 啟用 RLS
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_rounds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_session_summary ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recommendation_history ENABLE ROW LEVEL SECURITY;
 
--- user_profiles: 用戶只能訪問自己的畫像
+-- ✅ user_profiles: 用戶只能訪問自己的畫像
 CREATE POLICY "Users can view own profile" ON user_profiles
   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can manage own profile" ON user_profiles
-  FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own profile" ON user_profiles
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- game_rounds: 用戶只能訪問自己的回合記錄
+CREATE POLICY "Users can update own profile" ON user_profiles
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- ✅ game_rounds: 用戶只能訪問自己的回合記錄
 CREATE POLICY "Users can view own game rounds" ON game_rounds
   FOR SELECT USING (auth.uid() = user_id);
 
@@ -158,16 +161,16 @@ CREATE POLICY "Users can insert own game rounds" ON game_rounds
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update own game rounds" ON game_rounds
-  FOR UPDATE USING (auth.uid() = user_id);
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
--- game_session_summary: 用戶只能訪問自己的會話彙總
+-- ✅ game_session_summary: 用戶只能訪問自己的會話彙總
 CREATE POLICY "Users can view own session summary" ON game_session_summary
   FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert own session summary" ON game_session_summary
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- recommendation_history: 通過 session_id 關聯，用戶只能訪問自己的推薦歷史
+-- ✅ recommendation_history: 通過 session_id 關聯，用戶只能訪問自己的推薦歷史
 CREATE POLICY "Users can view own recommendation history" ON recommendation_history
   FOR SELECT USING (
     EXISTS (
@@ -185,6 +188,13 @@ CREATE POLICY "Users can insert own recommendation history" ON recommendation_hi
         AND story_sessions.user_id = auth.uid()
     )
   );
+
+-- ========== 安全檢查清單 ==========
+-- ✅ 所有表都啟用了 RLS
+-- ✅ 所有策略都基於 auth.uid() = user_id
+-- ✅ 沒有使用 USING (true) 的不安全策略
+-- ✅ recommendation_history 通過 session 關聯驗證
+-- ⚠️ 匿名用戶的 auth.uid() 是有效的 UUID，策略會正確工作
 
 -- ========== 註釋 ==========
 COMMENT ON TABLE user_profiles IS 'AI智能推薦系統 - 用戶畫像表（極簡版）';
