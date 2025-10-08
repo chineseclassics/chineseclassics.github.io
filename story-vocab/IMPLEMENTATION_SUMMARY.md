@@ -321,11 +321,24 @@ CORS 頭配置，供所有 Edge Functions 使用。
 
 ## 🚀 部署檢查清單
 
-- [ ] 數據庫遷移已執行
-- [ ] Edge Functions 已部署
-- [ ] 環境變量已設置（DEEPSEEK_API_KEY）
-- [ ] 校準詞庫文件可訪問
-- [ ] 測試頁面功能正常
+### 後端部署（✅ 已完成）
+
+- [x] 數據庫遷移已執行（9個表）
+- [x] Edge Functions 已部署（vocab-recommender）
+- [x] 環境變量已設置（DEEPSEEK_API_KEY）
+- [x] 校準詞庫文件可訪問
+
+### 前端部署（✅ 已完成）
+
+- [x] 啟動界面移除等級選擇
+- [x] 添加 AI 模式歡迎提示
+- [x] 修復 handleStartGame 邏輯
+- [x] 集成 vocab-recommender 調用
+- [x] 集成數據記錄功能
+- [x] 添加校準完成提示
+
+### 待測試
+
 - [ ] 瀏覽器控制台無報錯
 - [ ] 第一次遊戲校準流程正常
 - [ ] AI 推薦功能正常
