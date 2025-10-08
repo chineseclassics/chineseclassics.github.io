@@ -963,7 +963,7 @@
             
             <!-- 应用网格区域（可滚动，带底部padding） -->
             <div class="flex-1 overflow-y-auto">
-                <div id="switcherAppGrid" class="p-4 pb-6 grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-x-1 gap-y-2">
+                <div id="switcherAppGrid" class="p-3 pb-6 grid grid-cols-6 sm:grid-cols-7 md:grid-cols-8 lg:grid-cols-10 gap-0.5">
                     <!-- 应用图标将通过JavaScript动态生成，按境地分组 -->
                 </div>
             </div>
@@ -1613,21 +1613,22 @@
         window.handleTouchStart = handleTouchStart;
         window.handleTouchEnd = handleTouchEnd;
 
-        // 渲染切换器应用图标（紧凑版）
+        // 渲染切换器应用图标（超紧凑版）
         function renderSwitcherAppIcon(app) {
             const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
             const iconHtml = isFaIcon
-                ? `<i class="${app.icon} text-white text-base"></i>`
-                : `<span class="text-base text-white">${app.icon}</span>`;
+                ? `<i class="${app.icon} text-white text-sm"></i>`
+                : `<span class="text-sm text-white">${app.icon}</span>`;
 
             return `
-                <div class="switcher-app-icon text-center flex flex-col items-center w-full" 
+                <div class="switcher-app-icon text-center flex flex-col items-center justify-start w-full h-full min-h-0" 
                      data-app-id="${app.id}" 
                      onclick="openApp('${app.id}')">
-                    <div class="icon-container bg-gradient-to-br ${app.gradient} rounded-lg p-2 w-11 h-11 flex-shrink-0 flex items-center justify-center shadow-md mb-1.5 aspect-square">
+                    <div class="icon-container bg-gradient-to-br ${app.gradient} rounded-md p-1.5 w-10 h-10 flex-shrink-0 flex items-center justify-center shadow-sm mb-1" 
+                         style="min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px;">
                         ${iconHtml}
                     </div>
-                    <p class="switcher-app-name text-center text-[10px] leading-tight line-clamp-2 w-full px-0.5">${app.name}</p>
+                    <p class="switcher-app-name text-center text-[9px] leading-tight line-clamp-2 w-full px-0.5 flex-shrink-0">${app.name}</p>
                 </div>
             `;
         }
