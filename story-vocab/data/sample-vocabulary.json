@@ -1,8 +1,11 @@
 {
   "metadata": {
     "version": "1.0",
+    "name": "測試詞表",
+    "type": "system_preset",
+    "code": "test_vocab_v1",
     "total_words": 120,
-    "description": "故事接龍應用示例詞彙庫 - MVP 測試版",
+    "description": "系統預設詞表 - 用於非AI模式的分級學習",
     "levels": {
       "L1": "7-8歲 (小學2-3年級) - 基礎詞彙",
       "L2": "9-10歲 (小學4-5年級) - 進階詞彙", 

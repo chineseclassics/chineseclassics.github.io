@@ -231,8 +231,8 @@ async function confirmAndSubmit(sentence, word) {
     
     // 检查游戏是否结束
     if (result.gameOver) {
-        setTimeout(() => {
-            const stats = finishStory();
+        setTimeout(async () => {
+            const stats = await finishStory();
             showScreen('finish-screen');
             initFinishScreen(stats);
         }, 1000);

@@ -1,0 +1,197 @@
+/**
+ * 詞彙推薦集成模塊
+ * 負責調用 vocab-recommender Edge Function 和校準遊戲邏輯
+ */
+
+import { gameState } from './game-state.js'
+import { getSupabase } from '../supabase-client.js'
+import { SUPABASE_CONFIG } from '../config.js'
+import { isUserCalibrated, getCalibrationWords, finalCalibrationAssessment } from '../features/calibration-game.js'
+import { summarizeGameSession, buildCumulativeUserProfile } from '../features/profile-updater.js'
+
+/**
+ * 獲取本輪推薦詞彙
+ * @param {number} roundNumber - 輪次
+ * @returns {Promise<Array>} 推薦的5個詞
+ */
+export async function getRecommendedWords(roundNumber) {
+  const supabase = getSupabase()
+  
+  try {
+    // 檢查用戶是否已完成校準
+    const calibrated = await isUserCalibrated(gameState.userId)
+    
+    if (!calibrated) {
+      // 第一次遊戲：使用校準詞庫
+      console.log(`[校準模式] 獲取第 ${roundNumber} 輪詞彙`)
+      const words = await getCalibrationWords(gameState.userId, roundNumber)
+      return words.map(w => ({
+        word: w.word,
+        difficulty_level: w.difficulty,
+        category: w.category,
+        source: 'calibration'
+      }))
+    } else {
+      // 已校準：調用 vocab-recommender AI
+      console.log(`[AI 模式] 獲取第 ${roundNumber} 輪詞彙`)
+      return await getAIRecommendedWords(roundNumber)
+    }
+  } catch (error) {
+    console.error('❌ 獲取推薦詞彙失敗:', error)
+    // 降級：返回默認詞彙
+    return getDefaultWords()
+  }
+}
+
+/**
+ * 調用 vocab-recommender AI 獲取推薦詞彙
+ */
+async function getAIRecommendedWords(roundNumber) {
+  try {
+    // 構建故事上下文（最近3句）
+    const recentStory = gameState.storyHistory
+      .slice(-3)
+      .map(entry => entry.sentence)
+      .join(' ')
+    
+    // 調用 Edge Function
+    const response = await fetch(
+      `${SUPABASE_CONFIG.url}/functions/v1/vocab-recommender`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        },
+        body: JSON.stringify({
+          userId: gameState.userId,
+          sessionId: gameState.sessionId,
+          roundNumber: roundNumber,
+          storyContext: recentStory
+        })
+      }
+    )
+    
+    if (!response.ok) {
+      throw new Error(`API 錯誤: ${response.status}`)
+    }
+    
+    const result = await response.json()
+    
+    if (!result.success) {
+      throw new Error(result.error || 'AI 推薦失敗')
+    }
+    
+    console.log('✅ AI 推薦成功:', result.words)
+    
+    // 轉換格式
+    return result.words.map(w => ({
+      word: w.word,
+      difficulty_level: w.difficulty,
+      category: w.category,
+      source: 'ai'
+    }))
+  } catch (error) {
+    console.error('❌ AI 推薦失敗:', error)
+    // 降級：使用校準詞庫
+    const words = await getCalibrationWords(gameState.userId, roundNumber)
+    return words.map(w => ({
+      word: w.word,
+      difficulty_level: w.difficulty,
+      category: w.category,
+      source: 'fallback'
+    }))
+  }
+}
+
+/**
+ * 記錄本輪數據
+ */
+export async function recordRoundData(roundData) {
+  const supabase = getSupabase()
+  
+  try {
+    const { error } = await supabase
+      .from('game_rounds')
+      .insert({
+        user_id: gameState.userId,
+        session_id: gameState.sessionId,
+        round_number: roundData.roundNumber,
+        recommended_words: roundData.recommendedWords,
+        selected_word: roundData.selectedWord,
+        selected_difficulty: roundData.selectedDifficulty,
+        user_sentence: roundData.userSentence,
+        response_time: roundData.responseTime || 0,
+        ai_score: roundData.aiScore || null,
+        ai_feedback: roundData.aiFeedback || null
+      })
+    
+    if (error) throw error
+    
+    console.log(`✅ 第 ${roundData.roundNumber} 輪數據已記錄`)
+  } catch (error) {
+    console.error('❌ 記錄回合數據失敗:', error)
+  }
+}
+
+/**
+ * 完成遊戲後的處理
+ */
+export async function handleGameCompletion() {
+  const supabase = getSupabase()
+  
+  try {
+    // 檢查是否是第一次遊戲（校準）
+    const calibrated = await isUserCalibrated(gameState.userId)
+    
+    if (!calibrated) {
+      // 第一次遊戲：執行最終校準評估
+      console.log('[校準完成] 開始最終評估')
+      const assessment = await finalCalibrationAssessment(
+        gameState.userId,
+        gameState.sessionId
+      )
+      
+      console.log('✅ 校準評估完成:', assessment)
+      
+      return {
+        isFirstGame: true,
+        assessment: assessment,
+        message: '恭喜完成你的第一個故事！🎉'
+      }
+    } else {
+      // 正常遊戲：生成會話彙總
+      console.log('[正常遊戲] 生成會話彙總')
+      const summary = await summarizeGameSession(
+        gameState.userId,
+        gameState.sessionId
+      )
+      
+      return {
+        isFirstGame: false,
+        summary: summary,
+        message: '故事創作完成！'
+      }
+    }
+  } catch (error) {
+    console.error('❌ 遊戲完成處理失敗:', error)
+    return {
+      isFirstGame: false,
+      message: '遊戲完成'
+    }
+  }
+}
+
+/**
+ * 默認備用詞彙
+ */
+function getDefaultWords() {
+  return [
+    { word: '高興', difficulty_level: 1, category: '形容詞', source: 'default' },
+    { word: '探險', difficulty_level: 2, category: '動詞', source: 'default' },
+    { word: '寧靜', difficulty_level: 3, category: '形容詞', source: 'default' },
+    { word: '翱翔', difficulty_level: 4, category: '動詞', source: 'default' },
+    { word: '悠然', difficulty_level: 5, category: '形容詞', source: 'default' }
+  ]
+}
+

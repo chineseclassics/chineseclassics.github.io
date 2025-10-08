@@ -8,6 +8,7 @@ import { createSession } from './session-manager.js';
 import { showToast } from '../utils/toast.js';
 import { saveCompletedStory, updateSidebarStats } from '../utils/storage.js';
 import { SUPABASE_CONFIG } from '../config.js';
+import { getRecommendedWords, recordRoundData, handleGameCompletion } from './vocab-integration.js';
 
 /**
  * 获取主题的中文名称
@@ -147,11 +148,18 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         // 添加到历史
         addStoryEntry('ai', data.aiSentence);
         
-        // 保存推荐词汇
-        gameState.currentWords = data.recommendedWords || [];
-        gameState.allRecommendedWords.push(data.recommendedWords || []);
+        // 獲取本輪推薦詞彙（使用新的 vocab-recommender）
+        const recommendedWords = await getRecommendedWords(gameState.turn);
         
-        return data;
+        // 保存推荐词汇
+        gameState.currentWords = recommendedWords || [];
+        gameState.allRecommendedWords.push(recommendedWords || []);
+        
+        // 返回數據，包含新的推薦詞彙
+        return {
+            ...data,
+            recommendedWords: recommendedWords
+        };
         
     } catch (error) {
         console.error('AI 調用失敗:', error);
@@ -200,14 +208,25 @@ export async function submitSentence(sentence, selectedWord) {
     // 继续获取 AI 响应
     const aiData = await getAIResponse(sentence, selectedWord.word);
     
+    // 記錄本輪數據到數據庫
+    await recordRoundData({
+        roundNumber: gameState.turn - 1,
+        recommendedWords: gameState.currentWords,
+        selectedWord: selectedWord.word,
+        selectedDifficulty: selectedWord.difficulty_level || 2,
+        userSentence: sentence,
+        aiScore: aiData.score || null,
+        aiFeedback: aiData.feedback || null
+    });
+    
     return { gameOver: false, aiData }; // 游戏继续，返回 AI 数据
 }
 
 /**
  * 完成故事
- * @returns {Object} 统计数据
+ * @returns {Promise<Object>} 统计数据
  */
-export function finishStory() {
+export async function finishStory() {
     // 保存完成的故事到 localStorage
     const storyData = {
         id: gameState.sessionId || Date.now(),
@@ -228,10 +247,14 @@ export function finishStory() {
     // 更新侧边栏统计
     updateSidebarStats();
     
+    // 處理遊戲完成（校準評估或會話彙總）
+    const completionData = await handleGameCompletion();
+    
     return {
         totalTurns,
         vocabUsed,
-        storyLength
+        storyLength,
+        ...completionData
     };
 }
 

@@ -213,6 +213,25 @@ export function initFinishScreen(stats) {
     if (vocabUsed) vocabUsed.textContent = stats.vocabUsed;
     if (storyLength) storyLength.textContent = stats.storyLength;
     
+    // 如果是第一次遊戲（校準完成），顯示特殊消息
+    if (stats.isFirstGame && stats.assessment) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'calibration-complete-message';
+        messageDiv.style.cssText = 'margin: 20px 0; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px; text-align: center;';
+        messageDiv.innerHTML = `
+            <h3 style="margin: 0 0 10px 0;">🎉 ${stats.message}</h3>
+            <p style="margin: 0; opacity: 0.9;">下次我將為你推薦更合適的詞彙！</p>
+        `;
+        
+        const finishScreen = document.getElementById('finish-screen');
+        if (finishScreen) {
+            const contentDiv = finishScreen.querySelector('.content');
+            if (contentDiv && contentDiv.firstChild) {
+                contentDiv.insertBefore(messageDiv, contentDiv.firstChild);
+            }
+        }
+    }
+    
     // 显示完整故事
     const fullStoryText = document.getElementById('full-story-text');
     if (!fullStoryText) return;

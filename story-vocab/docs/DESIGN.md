@@ -2150,7 +2150,671 @@ ${recentHistory}
 
 ---
 
-## 🎨 前端界面设计
+## 🤖 AI 智能体架構設計與實施細節
+
+> **更新日期**：2025-10-08  
+> **討論主題**：Edge Functions 架構、用戶水平評估策略、詞彙推薦系統設計
+
+### 智能體架構總覽
+
+根據項目需求和 MVP 實施考量，後端 Edge Functions 採用**模塊化智能體架構**，但分階段實施：
+
+#### MVP 階段：核心智能體（必須實現）
+
+```
+/supabase/functions/
+├── story-agent/              # 故事生成主引擎（核心）
+│   ├── index.ts             # 主入口
+│   ├── story-generator.ts   # 故事生成邏輯
+│   ├── context-manager.ts   # 上下文管理
+│   └── anti-pattern.ts      # 防套路化機制
+│
+├── vocab-recommender/        # 詞彙推薦智能體（核心）
+│   ├── index.ts             # 主入口
+│   ├── quick-assessment.ts  # 快速評估（前3-5輪）
+│   ├── dynamic-assessment.ts # 動態評估（5輪後）
+│   ├── recommendation.ts    # 推薦算法
+│   └── diversity-engine.ts  # 多樣性保證
+│
+└── shared/                   # 共享代碼模塊
+    ├── deepseek-client.ts   # DeepSeek API 封裝
+    ├── database.ts          # 數據庫操作
+    ├── types.ts             # TypeScript 類型定義
+    ├── prompts/             # AI 提示詞庫
+    └── utils/               # 工具函數
+```
+
+#### 第二階段：增強智能體（可選）
+
+```
+/supabase/functions/
+├── feedback-generator/       # 反饋生成智能體
+│   ├── sentence-validator.ts
+│   ├── encouragement.ts
+│   └── hint-generator.ts
+│
+├── creativity-scorer/        # 創意度評分智能體
+│   ├── scoring-algorithm.ts
+│   ├── innovation-detector.ts
+│   └── comparison.ts
+│
+└── user-profiler/            # 用戶畫像智能體（獨立服務）
+    ├── level-assessment.ts
+    ├── style-analyzer.ts
+    └── learning-path.ts
+```
+
+#### 第三階段：多人模式智能體
+
+```
+/supabase/functions/
+└── story-multiplayer-agent/  # 多人協作智能體
+    ├── coordination.ts
+    ├── turn-manager.ts
+    └── collaboration-scorer.ts
+```
+
+---
+
+### vocab-recommender 與 user-profiler 的關係
+
+**核心結論**：MVP 階段 `vocab-recommender` **不需要**獨立的 `user-profiler`
+
+#### 原因分析
+
+1. **內置輕量級評估足夠**
+   - vocab-recommender 內置快速評估邏輯
+   - 通過前 8-10 輪互動即可獲得 75-80% 準確度
+   - 避免額外的網絡調用和延遲
+
+2. **評估與推薦一體化**
+   ```typescript
+   // vocab-recommender 同時負責評估和推薦
+   async function recommendVocab(params) {
+     // 1. 評估用戶水平
+     const assessment = await assessUserLevel(params.userId);
+     
+     // 2. 基於評估推薦詞彙
+     const words = await recommend(assessment, params);
+     
+     // 3. 保存評估結果（用於下次）
+     await saveAssessment(params.userId, assessment);
+     
+     return words;
+   }
+   ```
+
+3. **數據量限制（MVP）**
+   - 用戶數少，數據簡單
+   - 規則式評估即可有效
+   - 暫不需要複雜的機器學習模型
+
+#### 第二階段再考慮分離
+
+當出現以下情況時，再添加獨立的 `user-profiler`：
+- 用戶量 > 1000人，需要更複雜的分析
+- 需要跨會話的長期學習路徑規劃
+- 需要機器學習模型優化推薦
+- 需要 A/B 測試不同的評估策略
+
+**協作方式**（第二階段）：
+```typescript
+// 松耦合：user-profiler 異步更新畫像
+async function completeStory(sessionId) {
+  // 保存故事數據...
+  
+  // 異步觸發畫像更新（不等待結果）
+  fetch('/user-profiler', {
+    method: 'POST',
+    body: { action: 'update', userId, sessionId }
+  }).catch(err => log(err)); // 不阻塞主流程
+}
+
+// vocab-recommender 讀取緩存的畫像
+async function recommendVocab(params) {
+  const profile = await getCachedProfile(params.userId);
+  
+  if (profile) {
+    return recommendWithProfile(params, profile);
+  } else {
+    return recommendByRules(params); // 降級方案
+  }
+}
+```
+
+---
+
+### 用戶水平評估策略
+
+#### 核心問題：3-5輪能準確評估嗎？
+
+**答案**：❌ **不能完全準確，但可以獲得初步判斷**
+
+參考教育評估原則：
+- 標準化詞彙測試通常需要 20-40 題
+- HSK 等級考試需要 40-60 分鐘
+- 3-5 輪互動只有 3-5 個句子的數據量
+
+#### 修正後的評估目標
+
+##### ❌ 不現實的期望
+- "準確評估用戶的真實水平"
+- "確定用戶屬於 L2 還是 L3"
+- "精確到小數點後一位（如 2.3 級）"
+
+##### ✅ 現實的目標（分階段）
+
+**階段1：探索期（1-3輪）**
+```typescript
+{
+  goal: '排除明顯不匹配，獲得初步信號',
+  confidence: 'very_low',
+  accuracy: '±1.0級',
+  strategy: 'wide_range_testing', // 給跨度大的詞彙
+  observation: ['選擇偏好', '反應速度', '基本能力']
+}
+```
+
+**階段2：校準期（4-8輪）**
+```typescript
+{
+  goal: '逐步縮小水平範圍，初步確定難度區間',
+  confidence: 'low_to_medium',
+  accuracy: '±0.5級',
+  strategy: 'adaptive_narrowing', // 根據表現動態調整
+  observation: ['一致性', '使用準確性', '句子質量']
+}
+```
+
+**階段3：穩定期（9輪+）**
+```typescript
+{
+  goal: '精確評估，個性化推薦',
+  confidence: 'medium_to_high',
+  accuracy: '±0.3級',
+  strategy: 'personalized',
+  observation: ['驗證判斷', '細化畫像', '學習模式']
+}
+```
+
+#### 不同輪次的評估準確度
+
+| 輪次 | 數據點 | 置信度 | 誤差範圍 | 可用性 | 適用場景 |
+|------|--------|--------|---------|--------|---------|
+| 1-3輪 | 20-30 | ≈50% | ±1.0級 | ⚠️ 很低 | 僅排除明顯不匹配 |
+| 4-7輪 | 40-70 | 60-70% | ±0.8級 | ⚠️ 較低 | 縮小範圍 |
+| **8-10輪** | **80-100** | **75-80%** | **±0.5級** | **✅ 可用** | **MVP 推薦目標** |
+| 11-14輪 | 110-140 | 80-85% | ±0.4級 | ✅ 良好 | 精細化推薦 |
+| **15-20輪** | **150-200** | **85-88%** | **±0.3級** | **✅✅ 很好** | **理想目標** |
+| 21-30輪 | 210-300 | 88-92% | ±0.25級 | ✅✅ 優秀 | 高度個性化 |
+| 30+輪 | 300+ | 90-93% | ±0.2級 | ✅✅✅ 極佳 | AI導師級 |
+
+#### MVP 階段推薦：10輪評估
+
+```typescript
+const MVP_ASSESSMENT_PLAN = {
+  target: '10輪（一個完整故事）',
+  
+  // 前3輪：探索期
+  rounds_1_3: {
+    purpose: '快速排除不匹配',
+    wordRange: '跨度大（L1-L4）',
+    words: [
+      { level: userSelectedLevel - 1 },  // 簡單
+      { level: userSelectedLevel },      // 標準
+      { level: userSelectedLevel + 1 },  // 挑戰
+      { level: userSelectedLevel }       // 標準
+    ],
+    observation: '用戶選擇偏好、反應速度'
+  },
+  
+  // 第4-7輪：校準期
+  rounds_4_7: {
+    purpose: '縮小範圍，定位水平',
+    wordRange: '中等跨度（如L2-L3）',
+    strategy: '根據前3輪表現動態調整',
+    observation: '一致性、使用準確性'
+  },
+  
+  // 第8-10輪：確認期
+  rounds_8_10: {
+    purpose: '確認評估，開始正常遊戲',
+    wordRange: '精確範圍（如L2.3±0.3）',
+    output: {
+      confidence: '75-80%',
+      accuracy: '±0.5級',
+      canStartPersonalization: true
+    }
+  }
+};
+```
+
+---
+
+### 是否需要前置詞彙量測試？
+
+#### 討論背景
+
+參考 [AREALME 中文詞彙量測試](https://www.arealme.com/chinese-vocabulary-size-test/zh/)，這是專業的評估工具，包含：
+- 10-20 題選擇題
+- 測試詞義、讀音、成語等多個維度
+- 有學術依據（江蘇大學何南林教授等）
+- 可以給出具體詞彙量（如"3500詞"）
+
+#### 結論：❌ **不建議加入前置測試**
+
+##### 核心理由：違背產品理念
+
+設計文檔明確指出：
+> "學生不是因為想學詞彙而來，而是因為想創作有趣的故事而來。"
+
+**用戶流失風險**：
+```
+方案 A（有前置測試）：
+註冊 → 看到測試題 → "又要考試？算了吧" → 離開 ❌
+
+方案 B（直接開始）：
+註冊 → 直接開始創作故事 → "這挺好玩" → 留下 ✅
+```
+
+##### 其他缺點
+
+1. **兒童用戶不適合**
+   - 7-12歲兒童對"考試"抗拒心理強
+   - 看到密密麻麻的題目會焦慮
+   - 可能答題不認真，評估反而不準
+
+2. **增加摩擦**
+   - 從進入到開始創作的時間延長 5-10 分鐘
+   - 現代用戶的耐心很有限
+   - 可能在測試環節就放棄
+
+3. **評估場景不真實**
+   - 考試場景 vs 真實使用場景
+   - 只測"認識"，不測"會用"
+   - 可能因緊張而失常
+
+#### 推薦方案：遊戲化隱式評估
+
+**核心思路**：把測試融入第一個故事
+
+```typescript
+// 第一個故事的特殊設計
+const FIRST_STORY_ASSESSMENT = {
+  purpose: '在創作中悄悄評估用戶水平',
+  
+  // 第1輪：給寬範圍的詞彙選擇
+  round_1: {
+    prompt: 'AI: 在一個陽光明媚的早晨，小明背著書包走進學校...',
+    words: [
+      { word: '開心', level: 1 },   // 很簡單
+      { word: '高興', level: 2 },   // 簡單
+      { word: '欣喜', level: 3 },   // 中等
+      { word: '喜悅', level: 4 }    // 較難
+    ],
+    tip: '💡 選你覺得合適的就好，沒有對錯！'
+  },
+  
+  // 根據用戶選擇動態調整後續推薦
+  observation: {
+    if_select_easy: '可能 L1-L2 水平 → 下輪給 L1-L2 範圍',
+    if_select_hard: '可能 L3-L4 水平 → 下輪給 L3-L4 範圍',
+    if_select_but_poor_sentence: '選錯了 → 真實水平較低'
+  }
+};
+```
+
+**用戶體驗**：
+```
+🎭 歡迎來到故事詞彙接龍！
+
+我是你的 AI 創作伙伴。我們要一起創作一個精彩的故事！
+
+在創作的過程中，我會慢慢了解你的水平，
+為你推薦最合適的詞彙。
+
+準備好了嗎？讓我們開始吧！✨
+
+---
+
+第1輪：
+[顯示故事開頭和詞彙選擇...]
+
+第3輪：
+🔍 正在了解你的水平... 第3/5輪
+
+第6輪：
+✅ 已了解你的水平！現在開始為你個性化推薦
+```
+
+##### 優點
+
+1. **零摩擦**：直接進入遊戲，無需等待
+2. **更真實**：在真實使用場景中評估
+3. **兒童友好**：沒有心理壓力
+4. **持續優化**：不是一次性評估，隨著遊戲進行不斷校準
+
+#### 折中方案（可選）
+
+如果確實需要，可以提供**可選的快速測試**：
+
+```
+┌─────────────────────────────────┐
+│  歡迎來到故事詞彙接龍！          │
+│                                 │
+│  我們有兩種開始方式：            │
+│                                 │
+│  🎯 快速評估（1分鐘）            │
+│     回答5個簡單問題              │
+│     [開始測試]                   │
+│                                 │
+│  ✨ 直接開始創作 [推薦]          │
+│     在故事中了解你的水平          │
+│     [開始創作] ←                │
+│                                 │
+│  💡 兩種方式效果差不多，          │
+│     我們推薦直接開始創作！        │
+└─────────────────────────────────┘
+```
+
+---
+
+### 實施建議總結
+
+#### MVP 階段（當前）
+
+**智能體架構**：
+- ✅ 實現 `story-agent`（故事生成）
+- ✅ 實現 `vocab-recommender`（內置輕量級評估）
+- ✅ 實現 `shared/` 共享模塊
+- ❌ 暫不實現 `user-profiler`（評估內置於推薦器）
+- ❌ 暫不實現 `feedback-generator`（前端簡單驗證）
+- ❌ 暫不實現 `creativity-scorer`（使用簡化算法）
+
+**評估策略**：
+- 目標：10 輪達到 75-80% 準確度
+- 方式：遊戲化隱式評估（不用前置測試）
+- 透明化：顯示"正在了解你的水平...（第3/5輪）"
+
+**數據庫設計**：
+```sql
+-- users 表需要存儲評估數據
+ALTER TABLE users ADD COLUMN profile_data JSONB DEFAULT '{
+  "estimatedLevel": 2.0,
+  "confidence": "low",
+  "learningStyle": "balanced",
+  "assessmentHistory": []
+}';
+
+-- 用戶選擇的初始等級只是參考
+ALTER TABLE users ADD COLUMN initial_level TEXT DEFAULT 'L2';
+```
+
+#### 第二階段（3個月後）
+
+- ✅ 添加獨立的 `user-profiler`（異步更新畫像）
+- ✅ 完善 `feedback-generator`（AI 生成智能反饋）
+- ✅ 完善 `creativity-scorer`（深度分析創意度）
+- ✅ 評估目標提升到 15-20 輪達到 85-88% 準確度
+
+#### 第三階段（6個月後）
+
+- ✅ 添加 `story-multiplayer-agent`（多人模式）
+- ✅ 機器學習模型優化推薦
+- ✅ A/B 測試不同策略
+
+---
+
+### 關鍵設計原則
+
+1. **漸進式評估**：不追求一次性完美，而是持續優化
+2. **用戶體驗優先**：評估過程對用戶透明但不干擾
+3. **降級方案**：即使評估不准，也能提供基本服務
+4. **數據驅動迭代**：根據真實數據不斷優化算法
+
+---
+
+## 🚀 AI 智能推薦系統 - 最終實施方案
+
+> **更新日期**：2025-10-08  
+> **狀態**：已確定並開始實施
+> **核心設計**：第一次遊戲=隱藏基準測試 + AI持續學習
+
+### 核心設計理念
+
+經過深入討論，我們確定了以下核心設計原則：
+
+1. **第一次遊戲 = 隱藏基準測試**：用戶第一次玩的10輪是精心設計的校準測試，但用戶完全無感知
+2. **AI智能推薦從第二次開始**：基於準確的基線評估，AI推薦越來越精準
+3. **極簡數據收集**：只記錄實際產生的數據（選擇、得分、時間），不臆想"掌握狀態"
+4. **持續學習**：用戶玩得越多，系統越了解用戶，推薦越準確
+
+### 核心洞察：從"等級評估"到"個體追蹤"
+
+#### ❌ 之前的過度複雜思路
+
+```
+評估用戶等級（L2.3）→ 推薦該等級+0.5的詞
+問題：
+- 用戶可能L3水平，但L2的詞也不一定都會
+- 詞彙掌握是"點狀分布"，不是"連續等級"
+- 反復用同一個詞在這個軟件中根本不會發生
+```
+
+#### ✅ 最終方案：基於遊戲回合記錄
+
+**只收集遊戲中實際產生的數據**：
+- 用戶選了什麼難度的詞（選擇偏好）
+- 用戶得了多少分（表現質量）
+- 用戶收藏了什麼詞（自我認知）
+
+**推斷方式**：
+- 用戶傾向選L3的詞 + 平均得8分 → L3偏簡單，推薦L3.5-L4
+- 用戶選L3的詞 + 平均得5分 → L3偏難，推薦L2-L2.5
+- 用戶收藏了L4的詞 → 說明他覺得L4有挑戰性
+
+### 校準測試設計（第一次遊戲的10輪）
+
+#### 校準詞庫：50個精選詞
+
+從120詞測試詞表中精選50個代表性詞彙：
+- L1-L6 各8-9個詞
+- 優先選擇頻率高、主題多樣、類型豐富的詞
+- 確保能客觀反映該等級的難度特徵
+
+#### 測試流程
+
+**前5輪：探索期（大跨度測試）**
+
+每輪5個詞，覆蓋L1-L5：
+- 第1輪：情感詞 [高興(L1), 勇敢(L2), 寧靜(L3), 滄桑(L4), 悠然(L5)]
+- 第2輪：動詞類 [吃(L1), 探險(L2), 凝視(L3), 翱翔(L4), 斟酌(L5)]
+- 第3輪：情感/描寫 [快樂(L1), 驚訝(L2), 幽靜(L3), 眷戀(L4), 悵惘(L5)]
+- 第4輪：名詞/形容詞 [朋友(L1), 森林(L2), 遺跡(L3), 璀璨(L4), 漣漪(L5)]
+- 第5輪：綜合 [玩(L1), 奔跑(L2), 沉思(L3), 蛻變(L4), 蔥蘢(L5)]
+
+**中期評估（第5輪後）**：
+```javascript
+// 初步評估用戶水平
+平均選擇難度 + 平均得分 → 估計等級
+例如：平均選L3 + 平均8分 → 估計L3-L4水平
+```
+
+**後5輪：精準期（縮小範圍）**
+
+根據前5輪評估結果，動態選擇詞彙：
+- 如果評估為L3，後5輪主要從L2、L3、L4中選詞
+- 每輪5個詞的難度分布：[L2, L3, L3, L3, L4] 類似的梯度
+
+**最終評估（10輪後）**：
+```javascript
+綜合判斷：
+- 平均選擇難度
+- 平均得分
+- 眾數（最常選擇的等級）
+→ 最終評估：L1-L6 整數等級
+```
+
+### L1-L6 等級定義（確保AI理解）
+
+在給AI的Prompt中明確定義：
+
+```
+L1 - 基礎級（7-8歲）：高興、朋友、吃、跑步
+L2 - 進階級（9-10歲）：探險、勇敢、發現、森林
+L3 - 擴展級（11-12歲）：寧靜、凝視、沉思、壯麗
+L4 - 複雜級（13-14歲）：滄桑、蛻變、遐想、翱翔
+L5 - 高級（15-16歲）：悠然、斟酌、漣漪、斑斕
+L6 - 文學級（17-18歲）：婉約、恣意、旖旎、綺麗
+```
+
+### 數據庫設計（極簡版）
+
+#### 核心表結構
+
+```sql
+-- 用戶畫像表（極簡）
+user_profiles:
+  - baseline_level INT           -- 第一次校準的基線
+  - current_level INT            -- 當前水平
+  - calibrated BOOLEAN           -- 是否已完成校準
+  - total_games INT              -- 總遊戲次數
+  - total_rounds INT             -- 總輪次
+
+-- 遊戲回合記錄（核心數據源）
+game_rounds:
+  - recommended_words JSONB      -- 推薦的5個詞
+  - selected_word TEXT           -- 用戶選擇
+  - selected_difficulty INT      -- 所選詞難度
+  - user_sentence TEXT           -- 用戶句子
+  - response_time INT            -- 響應時間
+  - ai_score INT                 -- AI 綜合評分 (1-10)
+  - ai_feedback TEXT             -- AI 反饋
+
+-- 遊戲會話彙總
+game_session_summary:
+  - session_number INT           -- 第幾次遊戲
+  - session_type TEXT            -- 'calibration' | 'normal'
+  - avg_score DECIMAL            -- 平均分
+  - avg_selected_difficulty      -- 平均難度
+```
+
+### 持續學習機制
+
+#### 每5輪重新評估
+
+```javascript
+// 基於最近20輪數據重新評估
+recent20Rounds = getRecent20Rounds(userId)
+avgDifficulty = calculateAverage(recent20Rounds, 'selected_difficulty')
+avgScore = calculateAverage(recent20Rounds, 'ai_score')
+
+if (avgScore >= 8) {
+  newLevel = Math.ceil(avgDifficulty)  // 提升
+} else if (avgScore < 6) {
+  newLevel = Math.floor(avgDifficulty) - 1  // 降低
+} else {
+  newLevel = Math.round(avgDifficulty)  // 穩定
+}
+```
+
+#### 用戶畫像隨時間演進
+
+```
+第1次遊戲：
+  baseline_level: 3
+  confidence: medium (10輪標準化測試)
+
+第5次遊戲：
+  current_level: 3.5 (已提升)
+  total_rounds: 50
+  recent_avg_score: 8.2 (表現優秀)
+  
+第20次遊戲：
+  current_level: 4.2 (持續進步)
+  total_rounds: 200
+  level_growth: +1.2 (相比基線)
+```
+
+### AI Prompt 設計
+
+#### System Prompt（固定）
+
+```
+你是詞彙推薦智能體。
+
+L1-L6定義：
+[詳細的等級定義和示例...]
+
+推薦原則：
+1. 至少3個新詞
+2. 難度遞進
+3. 類型多樣
+4. 情境相關
+5. 每4-5輪推薦1個用戶收藏的詞
+
+輸出格式：JSON
+```
+
+#### User Prompt（動態）
+
+```
+用戶檔案：
+- 基線水平：L3（第1次遊戲評估）
+- 當前水平：L3.5（第5次遊戲）
+- 成長軌跡：提升了0.5級 📈
+- 總共50輪創作
+- 最近20輪平均分：8.2/10
+- 詞語本：[寧靜、遐想、斟酌...]
+
+故事情境：[...]
+
+請推薦5個詞，難度L2.5-L4.5...
+```
+
+### 詞語本集成
+
+**策略**：每4-5輪推薦1個用戶收藏的詞
+
+```javascript
+if (roundNumber % 4 === 0 && wordbookWords.length > 0) {
+  // 從詞語本選1個最早收藏的詞
+  const wordbookWord = wordbookWords[0]
+  
+  // AI推薦其餘4個詞
+  const aiWords = recommendByAI(userProfile, storyContext, 4)
+  
+  return [wordbookWord, ...aiWords]
+}
+```
+
+**避免重復**：
+- 記錄最近5輪推薦的詞
+- 已推薦過的詞不再推薦
+- 用戶如果在故事中用了收藏詞，更新 `last_recommended_at`
+
+### 實施狀態
+
+✅ 已完成：
+- 校準詞庫準備（50個詞）
+- 數據庫遷移文件
+- calibration-game.js（前端）
+- profile-updater.js（前端）
+- vocab-recommender Edge Function（後端）
+- AI Prompt 設計
+
+🔄 進行中：
+- 前端集成（遊戲流程）
+- 測試驗證
+
+📋 待辦：
+- 部署 Edge Function
+- 端到端測試
+- 性能優化
+
+---
+
+## 🎨 前端界面設計
 
 ### 页面结构
 

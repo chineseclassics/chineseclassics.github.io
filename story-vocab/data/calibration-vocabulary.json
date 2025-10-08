@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "name": "校準詞庫",
+    "version": "1.0",
+    "purpose": "用於第一次遊戲的基準測試",
+    "total_words": 50,
+    "rounds_supported": 10,
+    "description": "從120詞測試詞表中精選的50個代表性詞彙"
+  },
+  "level_definitions": {
+    "L1": "7-8歲，小學2-3年級 - 日常高頻詞",
+    "L2": "9-10歲，小學4-5年級 - 擴展詞彙",
+    "L3": "11-12歲，小學6年級-初一 - 文學詞彙",
+    "L4": "13-14歲，初二-初三 - 抽象詞彙",
+    "L5": "15-16歲，高一-高二 - 文言詞彙",
+    "L6": "17-18歲，高三及以上 - 古雅詞彙"
+  },
+  "calibration_words": {
+    "L1": [
+      {"word": "高興", "difficulty": 1, "frequency": 98, "category": "形容詞"},
+      {"word": "朋友", "difficulty": 1, "frequency": 99, "category": "名詞"},
+      {"word": "吃", "difficulty": 1, "frequency": 100, "category": "動詞"},
+      {"word": "跑步", "difficulty": 1, "frequency": 95, "category": "動詞"},
+      {"word": "漂亮", "difficulty": 1, "frequency": 94, "category": "形容詞"},
+      {"word": "學校", "difficulty": 1, "frequency": 97, "category": "名詞"},
+      {"word": "快樂", "difficulty": 1, "frequency": 93, "category": "形容詞"},
+      {"word": "玩", "difficulty": 1, "frequency": 96, "category": "動詞"}
+    ],
+    "L2": [
+      {"word": "探險", "difficulty": 2, "frequency": 75, "category": "動詞"},
+      {"word": "勇敢", "difficulty": 2, "frequency": 80, "category": "形容詞"},
+      {"word": "發現", "difficulty": 2, "frequency": 85, "category": "動詞"},
+      {"word": "森林", "difficulty": 2, "frequency": 78, "category": "名詞"},
+      {"word": "神秘", "difficulty": 2, "frequency": 76, "category": "形容詞"},
+      {"word": "驚訝", "difficulty": 2, "frequency": 77, "category": "形容詞"},
+      {"word": "勇氣", "difficulty": 2, "frequency": 79, "category": "名詞"},
+      {"word": "奔跑", "difficulty": 2, "frequency": 75, "category": "動詞"},
+      {"word": "彩虹", "difficulty": 2, "frequency": 76, "category": "名詞"}
+    ],
+    "L3": [
+      {"word": "寧靜", "difficulty": 3, "frequency": 66, "category": "形容詞"},
+      {"word": "凝視", "difficulty": 3, "frequency": 64, "category": "動詞"},
+      {"word": "沉思", "difficulty": 3, "frequency": 63, "category": "動詞"},
+      {"word": "壯麗", "difficulty": 3, "frequency": 61, "category": "形容詞"},
+      {"word": "遺跡", "difficulty": 3, "frequency": 60, "category": "名詞"},
+      {"word": "幽靜", "difficulty": 3, "frequency": 62, "category": "形容詞"},
+      {"word": "霎時", "difficulty": 3, "frequency": 58, "category": "副詞"},
+      {"word": "縈繞", "difficulty": 3, "frequency": 55, "category": "動詞"},
+      {"word": "迷霧", "difficulty": 3, "frequency": 59, "category": "名詞"}
+    ],
+    "L4": [
+      {"word": "滄桑", "difficulty": 4, "frequency": 50, "category": "形容詞"},
+      {"word": "蛻變", "difficulty": 4, "frequency": 49, "category": "動詞"},
+      {"word": "遐想", "difficulty": 4, "frequency": 45, "category": "動詞"},
+      {"word": "翱翔", "difficulty": 4, "frequency": 46, "category": "動詞"},
+      {"word": "眷戀", "difficulty": 4, "frequency": 45, "category": "動詞"},
+      {"word": "棲息", "difficulty": 4, "frequency": 46, "category": "動詞"},
+      {"word": "璀璨", "difficulty": 4, "frequency": 41, "category": "形容詞"},
+      {"word": "窺探", "difficulty": 4, "frequency": 47, "category": "動詞"}
+    ],
+    "L5": [
+      {"word": "悠然", "difficulty": 5, "frequency": 40, "category": "形容詞"},
+      {"word": "斟酌", "difficulty": 5, "frequency": 38, "category": "動詞"},
+      {"word": "漣漪", "difficulty": 5, "frequency": 38, "category": "名詞"},
+      {"word": "斑斕", "difficulty": 5, "frequency": 34, "category": "形容詞"},
+      {"word": "蔥蘢", "difficulty": 5, "frequency": 35, "category": "形容詞"},
+      {"word": "悵惘", "difficulty": 5, "frequency": 37, "category": "形容詞"},
+      {"word": "躊躇滿志", "difficulty": 5, "frequency": 36, "category": "成語"},
+      {"word": "蜿蜒曲折", "difficulty": 5, "frequency": 33, "category": "成語"}
+    ],
+    "L6": [
+      {"word": "婉約", "difficulty": 6, "frequency": 28, "category": "形容詞"},
+      {"word": "恣意", "difficulty": 6, "frequency": 27, "category": "副詞"},
+      {"word": "旖旎", "difficulty": 6, "frequency": 25, "category": "形容詞"},
+      {"word": "綺麗", "difficulty": 6, "frequency": 24, "category": "形容詞"},
+      {"word": "惘然", "difficulty": 6, "frequency": 23, "category": "形容詞"},
+      {"word": "翩躚", "difficulty": 6, "frequency": 22, "category": "形容詞"},
+      {"word": "雋永", "difficulty": 6, "frequency": 23, "category": "形容詞"},
+      {"word": "婆娑起舞", "difficulty": 6, "frequency": 20, "category": "成語"}
+    ]
+  },
+  "test_strategy": {
+    "rounds_1_5": "探索期 - 大跨度測試 (L1-L5)",
+    "rounds_6_10": "精準期 - 根據前5輪表現動態調整範圍"
+  }
+}
+
