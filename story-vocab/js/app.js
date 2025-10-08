@@ -268,15 +268,16 @@ function useOptimizedSentence() {
  * 开始游戏（从启动界面）
  */
 async function handleStartGame() {
-    const levelInput = document.querySelector('input[name="level"]:checked');
     const themeBtn = document.querySelector('.theme-btn.selected');
     
-    if (!levelInput || !themeBtn) {
-        showToast('請選擇級別和主題');
+    if (!themeBtn) {
+        showToast('請選擇故事主題');
         return;
     }
     
-    const level = levelInput.value;
+    // AI 智能模式：不需要选择等级，使用默认值 'L2'
+    // 实际推荐由 vocab-recommender 根据用户水平动态决定
+    const level = 'L2';  // 仅用于兼容性，不影响词汇推荐
     const theme = themeBtn.dataset.theme;
     
     // 初始化游戏界面
