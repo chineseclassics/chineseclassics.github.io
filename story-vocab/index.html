@@ -150,7 +150,15 @@
         <!-- ===== 启动界面 ===== -->
         <div id="start-screen" class="screen active">
             <div class="content">
-                <div class="level-selector">
+                <!-- AI 智能推薦模式歡迎信息（默認顯示） -->
+                <div class="ai-mode-welcome" id="ai-mode-welcome">
+                    <h1 class="welcome-title">🎭 故事詞彙接龍</h1>
+                    <p class="welcome-subtitle">讓我們一起創作精彩的故事！</p>
+                    <p class="welcome-hint">💡 AI 會根據你的表現，推薦最合適的詞彙</p>
+                </div>
+                
+                <!-- 系統預設詞表模式的級別選擇（默認隱藏） -->
+                <div class="level-selector" id="level-selector" style="display: none;">
                     <h2>🎯 選擇你的級別：</h2>
                     <div class="level-options">
                         <label class="level-card">
