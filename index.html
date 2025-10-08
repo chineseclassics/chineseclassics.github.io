@@ -847,27 +847,25 @@
     <!-- 主内容区域 -->
     <main class="relative z-20" id="mainContent">
         <!-- 首页视图 -->
-        <div id="homeView" class="h-screen flex flex-col">
-            <!-- 固定標題區域 -->
-            <div class="flex-shrink-0 py-8 px-4 relative overflow-hidden tx-hero">
+        <div id="homeView" class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+            <!-- 缩小但保留装饰的标题区 -->
+            <div class="flex-shrink-0 py-5 px-4 relative overflow-hidden tx-hero">
                 <div class="tx-layer tx-bg"></div>
                 <div class="tx-layer tx-clouds-back">
                     <div class="tx-cloud tx-cloud--lg tx-drift-1" style="left: 6%; top: 34%;"></div>
                     <div class="tx-cloud tx-cloud--md tx-drift-2 tx-cloud--tint" style="right: 8%; top: 46%;"></div>
                 </div>
                 <div class="tx-content">
-                    <div class="absolute top-0 left-0 w-16 h-16 md:w-24 md:h-24 border-l-2 border-t-2 border-primary opacity-30 dark:opacity-40"></div>
-                    <div class="absolute bottom-0 right-0 w-16 h-16 md:w-24 md:h-24 border-r-2 border-b-2 border-primary opacity-30 dark:opacity-40"></div>
                     <div class="container mx-auto relative">
-                        <h1 class="text-3xl md:text-5xl font-bold text-center">
+                        <h1 class="text-2xl md:text-3xl font-bold text-center">
                             <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-primary to-indigo-700 dark:from-indigo-400 dark:via-primary dark:to-indigo-400">太虛幻境</span>
                         </h1>
-                        <h2 class="text-xl md:text-2xl font-medium text-gray-700 dark:text-gray-300 text-center mt-2">書院中文經典數字體驗學習</h2>
-                        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4"></div>
-                        <div class="flex justify-center mt-6">
+                        <h2 class="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 text-center mt-1">書院中文經典數字體驗學習</h2>
+                        <div class="w-16 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-2"></div>
+                        <div class="flex justify-center mt-3">
                             <img src="https://chineseclassics.github.io/images/cclogo.png" 
                                  alt="書院中文經典" 
-                                 class="h-16 w-16 md:h-20 md:w-20 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                                 class="h-12 w-12 object-contain cursor-pointer hover:opacity-80 transition-opacity"
                                  onclick="showHome()">
                         </div>
                     </div>
@@ -878,94 +876,10 @@
                 </div>
             </div>
 
-            <!-- 可滾動的應用區域 -->
+            <!-- 可滾動的四境區域 -->
             <div class="flex-1 overflow-y-auto">
-                <div class="container mx-auto px-4 pb-12">
-                <!-- 新增：推薦遊戲專區 -->
-                <section class="mb-12">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center">
-                            <i class="fas fa-star text-amber-500 mr-3"></i>
-                            推薦體驗
-                        </h2>
-                        <span class="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full font-medium">
-                            新上線
-                        </span>
-                    </div>
-                    
-                    <div class="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-6 border border-amber-200/50 dark:border-amber-700/30 relative overflow-hidden">
-                        <!-- 背景裝飾 -->
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-200/20 to-yellow-200/20 rounded-full -translate-y-16 translate-x-16"></div>
-                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-orange-200/20 to-amber-200/20 rounded-full translate-y-12 -translate-x-12"></div>
-                        
-                        <div class="relative z-10">
-                            <div class="flex flex-col lg:flex-row items-center lg:items-start gap-6">
-                                <!-- 遊戲圖標 -->
-                                <div class="flex-shrink-0">
-                                    <div class="relative group">
-                                        <div class="bg-gradient-to-br from-amber-400 to-yellow-300 rounded-2xl p-6 w-24 h-24 flex items-center justify-center shadow-lg transform group-hover:scale-105 transition-all duration-300">
-                                            <i class="fas fa-leaf text-white text-3xl"></i>
-                                        </div>
-                                        <!-- 閃光效果 -->
-                                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                    </div>
-                                </div>
-                                
-                                <!-- 遊戲信息 -->
-                                <div class="flex-1 text-center lg:text-left">
-                                    <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">萬物逍遙</h3>
-                                    <p class="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                                        深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界
-                                    </p>
-                                    
-                                    <!-- 特色標籤 -->
-                                    <div class="flex flex-wrap gap-2 mb-4 justify-center lg:justify-start">
-                                        <span class="px-3 py-1 bg-amber-100 dark:bg-amber-800/30 text-amber-700 dark:text-amber-300 text-sm rounded-full font-medium">
-                                            <i class="fas fa-brain mr-1"></i>哲學思考
-                                        </span>
-                                        <span class="px-3 py-1 bg-green-100 dark:bg-green-800/30 text-green-700 dark:text-green-300 text-sm rounded-full font-medium">
-                                            <i class="fas fa-book-open mr-1"></i>莊子經典
-                                        </span>
-                                        <span class="px-3 py-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 text-sm rounded-full font-medium">
-                                            <i class="fas fa-magic mr-1"></i>互動體驗
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- 行動按鈕 -->
-                                    <button onclick="openApp('wanwuxiaoyao')" 
-                                            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-medium rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
-                                        <i class="fas fa-play mr-2"></i>
-                                        開始體驗
-                                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="mb-12">
-                    <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-300">互動小程序</h2>
-                    
-                    <div id="appGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-                        <!-- 应用图标将通过JavaScript动态生成 -->
-                    </div>
-                </section>
-
-                <section>
-                    <h2 class="text-2xl font-bold mb-4 text-gray-700 dark:text-gray-300">關於本站</h2>
-                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-                        <p class="mb-3">本網站所有程序由書院中文經典老師開發，歡迎訪問<a href="https://sites.google.com/lms.isf.edu.hk/isf-shuyuan-website/classics/chinese-classics" class="text-primary hover:underline" target="_blank">書院中文經典網站</a>，以及<a href="https://sites.google.com/isf.edu.hk/chineseclassics" class="text-primary hover:underline" target="_blank">中文經典專題學習網站</a>。</p>
-                        <div class="mt-4 pt-3 border-t border-gray-300 dark:border-gray-600">
-                            <p class="text-sm text-gray-600 dark:text-gray-400">
-                                <i class="fas fa-copyright mr-1"></i>
-                                版權所有 © 2024 書院中文經典 | 
-                                <a href="https://github.com/chineseclassics/chineseclassics.github.io/blob/main/LICENSE" class="text-primary hover:underline" target="_blank">MIT License</a> | 
-                                教育用途免費，商業用途請聯繫授權
-                            </p>
-                        </div>
-                    </div>
-                </section>
+                <div class="container mx-auto px-4 py-8" id="realmsContainer">
+                    <!-- JavaScript 动态渲染四境 -->
             </div>
         </div>
 
@@ -1016,46 +930,97 @@
     </div>
 
     <!-- 应用切换器弹窗 -->
-    <div id="appSwitcherModal" class="fixed inset-0 z-[950] flex items-center justify-center p-4 pt-20 opacity-0 pointer-events-none transition-all duration-300 ease-out">
+    <div id="appSwitcherModal" class="fixed inset-0 z-[950] flex items-center justify-center p-4 pt-16 pb-16 opacity-0 pointer-events-none transition-all duration-300 ease-out">
         <div class="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300"></div>
-        <div id="switcherContainer" class="relative bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[70vh] shadow-2xl transform scale-95 transition-all duration-300 ease-out overflow-hidden">
+        <div id="switcherContainer" class="relative bg-white dark:bg-gray-800 rounded-2xl max-w-5xl w-full max-h-full shadow-2xl transform scale-95 transition-all duration-300 ease-out flex flex-col">
             <!-- 浮动的关闭按钮 -->
             <button id="closeSwitcherBtn" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black bg-opacity-30 hover:bg-opacity-50 text-white hover:text-gray-200 transition-all duration-200 flex items-center justify-center backdrop-blur-sm">
                 <i class="fas fa-times text-sm"></i>
             </button>
             
             <!-- 标题区域 -->
-            <div class="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center justify-center gap-3">
-                    <img src="https://chineseclassics.github.io/images/cclogo.png" 
-                         alt="書院中文經典" 
-                         class="h-9 w-9 object-contain">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">太虛幻境：書院中文經典數字體驗學習</h2>
+            <div class="px-5 pt-4 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div class="flex items-center justify-between gap-3">
+                    <!-- 左侧返回主页按钮 -->
+                    <button onclick="showHome()" 
+                            class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium">
+                        <i class="fas fa-home text-base"></i>
+                        <span>返回主頁</span>
+                    </button>
+                    
+                    <!-- 中间标题 -->
+                    <div class="flex items-center gap-2.5 flex-1 justify-center">
+                        <img src="https://chineseclassics.github.io/images/cclogo.png" 
+                             alt="書院中文經典" 
+                             class="h-8 w-8 object-contain">
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">太虛幻境：書院中文經典數字體驗學習</h2>
+                    </div>
+                    
+                    <!-- 右侧占位（保持居中平衡） -->
+                    <div class="w-24"></div>
                 </div>
             </div>
             
-            <!-- 应用网格区域 -->
-            <div class="switcher-content h-full">
-                <div id="switcherAppGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4 h-full">
-                    <!-- 应用图标将通过JavaScript动态生成 -->
+            <!-- 应用网格区域（可滚动，带底部padding） -->
+            <div class="flex-1 overflow-y-auto">
+                <div id="switcherAppGrid" class="p-4 pb-6 grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-x-1 gap-y-2">
+                    <!-- 应用图标将通过JavaScript动态生成，按境地分组 -->
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 应用数据
-        const apps = [
+        // 境地配置
+        const realms = [
             {
-                id: 'changganxinglv',
-                name: '長干行旅',
-                icon: 'fas fa-ship',
-                gradient: 'from-indigo-500 to-violet-500',
-                url: 'https://chineseclassics.github.io/changganxinglv.html',
-                description: '體驗李白《長干行》中商人與少婦的愛情故事，在角色扮演中感受古典詩歌的浪漫與深情'
+                id: 'hanmo',
+                name: '翰墨齋',
+                subtitle: '現代中文體驗',
+                description: '翰墨飄香的書齋，掌管現代文字之地',
+                icon: '📝',
+                accentColor: 'border-l-blue-500',
+                titleColor: 'text-blue-600 dark:text-blue-400',
+                descColor: 'text-blue-600/70 dark:text-blue-400/70'
             },
             {
+                id: 'qiangu',
+                name: '千古堂',
+                subtitle: '古代經典體驗',
+                description: '匯聚千古經典的寶堂，藏有歷代典籍',
+                icon: '🏛️',
+                accentColor: 'border-l-amber-500',
+                titleColor: 'text-amber-700 dark:text-amber-400',
+                descColor: 'text-amber-600/70 dark:text-amber-400/70'
+            },
+            {
+                id: 'jinxiu',
+                name: '錦繡坊',
+                subtitle: '中華文化體驗',
+                description: '錦繡河山風華的工坊，薈萃文化精粹',
+                icon: '🎨',
+                accentColor: 'border-l-rose-500',
+                titleColor: 'text-rose-700 dark:text-rose-400',
+                descColor: 'text-rose-600/70 dark:text-rose-400/70'
+            },
+            {
+                id: 'yunwai',
+                name: '雲外樓',
+                subtitle: '實驗與跨界體驗',
+                description: '雲外有樓，超越想象的創意空間',
+                icon: '☁️',
+                accentColor: 'border-l-cyan-500',
+                titleColor: 'text-cyan-700 dark:text-cyan-400',
+                descColor: 'text-cyan-600/70 dark:text-cyan-400/70'
+            }
+        ];
+
+        // 应用数据
+        const apps = [
+            // 翰墨齋 - 現代中文體驗
+            {
                 id: 'diandianmobao',
+                category: 'hanmo',
                 name: '漢字樹：漢字學習',
                 icon: 'fas fa-paint-brush',
                 gradient: 'from-red-500 to-orange-500',
@@ -1063,38 +1028,57 @@
                 description: '通過筆順練習、記憶挑戰和部首組字等多元化遊戲，系統性學習漢字書寫與結構'
             },
             {
-                id: 'changhenge',
-                name: '《長恨歌》記憶卡牌',
-                icon: 'fas fa-memory',
-                gradient: 'from-yellow-500 to-amber-500',
-                url: 'https://chineseclassics.github.io/changhengejiyi.html',
-                description: '翻開卡牌配對白居易《長恨歌》的詩句與釋義，在記憶遊戲中探索唐明皇與楊貴妃的愛情悲歌'
+                id: 'cilong',
+                category: 'hanmo',
+                name: '貪吃龍',
+                icon: '🐉',
+                gradient: 'from-lime-400 to-green-500',
+                url: 'https://chineseclassics.github.io/cilong.html',
+                description: '在經典的貪吃蛇玩法中，操控呆萌龍寶收集漢字，組成詞語，挑戰你的詞彙量和反應速度。'
+            },
+            {
+                id: 'story-vocab',
+                category: 'hanmo',
+                name: '故事詞彙接龍',
+                icon: 'fas fa-book-reader',
+                gradient: 'from-purple-500 to-pink-400',
+                url: 'https://chineseclassics.github.io/story-vocab/story-game.html',
+                description: '與AI共創精彩故事，輕鬆積累詞彙！選擇詞語造句，AI接力續寫，在互動故事中學習繁體中文詞彙，適合2-6年級學生',
+                isNew: true
             },
             {
                 id: 'leiyu',
+                category: 'hanmo',
                 name: '《雷雨》閃電',
                 icon: 'fas fa-cloud-rain',
                 gradient: 'from-blue-500 to-cyan-500',
                 url: 'https://chineseclassics.github.io/leiyushandian.html',
                 description: '扮演曹禺《雷雨》中的經典角色躲避命運閃電，在街機遊戲中體驗家庭悲劇的文學深度'
             },
+            
+            // 千古堂 - 古代經典體驗
             {
-                id: 'shicizuju',
-                name: '詩詞組句遊戲',
-                icon: 'fas fa-puzzle-piece',
-                gradient: 'from-green-500 to-emerald-500',
-                url: 'https://chineseclassics.github.io/shicizuju.html'
+                id: 'wanwuxiaoyao',
+                category: 'qiangu',
+                name: '萬物逍遙',
+                icon: 'fas fa-leaf',
+                gradient: 'from-amber-400 to-yellow-300',
+                url: 'https://chineseclassics.github.io/wanwuxiaoyao.html',
+                description: '深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界',
+                isFeatured: true
             },
             {
-                id: 'cikeyishou',
-                name: '刺客之道 1.0',
-                icon: 'fas fa-user-ninja',
-                gradient: 'from-pink-400 to-rose-300',
-                url: 'https://chineseclassics.github.io/cikezhidao.html',
-                description: '扮演《史記·刺客列傳》中的五位古代刺客，在生死抉擇中體驗千秋義勇與歷史風雲'
+                id: 'changganxinglv',
+                category: 'qiangu',
+                name: '長干行旅',
+                icon: 'fas fa-ship',
+                gradient: 'from-indigo-500 to-violet-500',
+                url: 'https://chineseclassics.github.io/changganxinglv.html',
+                description: '體驗李白《長干行》中商人與少婦的愛情故事，在角色扮演中感受古典詩歌的浪漫與深情'
             },
             {
                 id: 'shiguangpintu',
+                category: 'qiangu',
                 name: '《長干行》時光拼圖',
                 icon: 'fas fa-hourglass-half',
                 gradient: 'from-gray-600 to-gray-800',
@@ -1102,7 +1086,17 @@
                 description: '拖動李白《長干行》的詩句卡片，按時間順序重新排列，體驗詩中女子從童年到成年的情感時光'
             },
             {
+                id: 'changhenge',
+                category: 'qiangu',
+                name: '《長恨歌》記憶卡牌',
+                icon: 'fas fa-memory',
+                gradient: 'from-yellow-500 to-amber-500',
+                url: 'https://chineseclassics.github.io/changhengejiyi.html',
+                description: '翻開卡牌配對白居易《長恨歌》的詩句與釋義，在記憶遊戲中探索唐明皇與楊貴妃的愛情悲歌'
+            },
+            {
                 id: 'nanfengtianci',
+                category: 'qiangu',
                 name: '南風填詞',
                 icon: 'fas fa-pencil-alt',
                 gradient: 'from-teal-500 to-green-400',
@@ -1111,6 +1105,7 @@
             },
             {
                 id: 'nanfengzuoshi',
+                category: 'qiangu',
                 name: '南風作詩',
                 icon: 'fas fa-feather-alt',
                 gradient: 'from-indigo-400 to-blue-500',
@@ -1118,15 +1113,63 @@
                 description: '基於欽定詞譜的古典填詞工具，用傳統格律創作你的詞章，還能生成精美的古風壁紙'
             },
             {
-                id: 'yinzhangsheji',
-                name: '印章設計',
-                icon: 'fas fa-stamp',
-                gradient: 'from-red-600 to-rose-500',
-                url: 'https://chineseclassics.github.io/sealdesgin.html',
-                description: '專業的中式印章設計工具，支援陰刻陽刻、多種古典字體選擇，可自由調整文字位置大小，並提供繪圖功能個性化創作'
+                id: 'shicizuju',
+                category: 'qiangu',
+                name: '詩詞組句遊戲',
+                icon: 'fas fa-puzzle-piece',
+                gradient: 'from-green-500 to-emerald-500',
+                url: 'https://chineseclassics.github.io/shicizuju.html'
             },
             {
+                id: 'yimoji',
+                category: 'qiangu',
+                name: '意moji：詩詞意象配對',
+                icon: 'fas fa-icons',
+                gradient: 'from-violet-500 to-purple-400',
+                url: 'https://chineseclassics.github.io/yimoji.html',
+                description: '尋找三個與詩詞意象最相關的emoji進行配對'
+            },
+            {
+                id: 'cikeyishou',
+                category: 'qiangu',
+                name: '刺客之道 1.0',
+                icon: 'fas fa-user-ninja',
+                gradient: 'from-pink-400 to-rose-300',
+                url: 'https://chineseclassics.github.io/cikezhidao.html',
+                description: '扮演《史記·刺客列傳》中的五位古代刺客，在生死抉擇中體驗千秋義勇與歷史風雲'
+            },
+            {
+                id: 'yuexiaduzuo',
+                category: 'qiangu',
+                name: '月下獨酌',
+                icon: 'fas fa-moon',
+                gradient: 'from-slate-600 to-indigo-400',
+                url: 'https://chineseclassics.github.io/yuexiaduzhuo.html',
+                description: '加入「月下雅集」群聊，與李白、杜甫、嫦娥等古代詩人在微信群中暢談詩酒風流'
+            },
+            {
+                id: 'honglourenwu',
+                category: 'qiangu',
+                name: '《紅樓夢》人物圖譜',
+                icon: 'fa-solid fa-sitemap',
+                gradient: 'from-purple-500 to-pink-500',
+                url: 'https://chineseclassics.github.io/honglourenwu.html',
+                description: '基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。'
+            },
+            {
+                id: 'shuyuanclassicchat',
+                category: 'qiangu',
+                name: '太虛幻聊',
+                icon: 'fas fa-comments',
+                gradient: 'from-emerald-600 to-teal-500',
+                url: 'https://chineseclassics.github.io/shuyuan-classic-chat.html',
+                description: '與經典人物的奇妙對話！與詩人們吟詩作對，和史家探討古今，與哲人思辨人生，還能和神話人物暢聊奇事。在微信風格的聊天界面中，親近中華經典，激發學習興趣'
+            },
+
+            // 錦繡坊 - 中華文化體驗
+            {
                 id: 'mishijiangchun',
+                category: 'jinxiu',
                 name: '迷失江南春',
                 icon: 'fas fa-tree',
                 gradient: 'from-emerald-500 to-lime-400',
@@ -1135,6 +1178,7 @@
             },
             {
                 id: 'jiangluohua',
+                category: 'jinxiu',
                 name: '江南落花',
                 icon: 'fas fa-spa',
                 gradient: 'from-pink-400 to-rose-300',
@@ -1142,26 +1186,28 @@
                 description: '駕駛小船躲避紛飛花朵，收集特殊道具並挑戰知識問答，在街機遊戲中探索江南文化之美'
             },
             {
-                id: 'wanwuxiaoyao',
-                name: '萬物逍遙',
-                icon: 'fas fa-leaf',
-                gradient: 'from-amber-400 to-yellow-300',
-                url: 'https://chineseclassics.github.io/wanwuxiaoyao.html',
-                description: '深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界',
-                featured: true,
-                isNew: true
+                id: 'yinzhangsheji',
+                category: 'jinxiu',
+                name: '印章設計',
+                icon: 'fas fa-stamp',
+                gradient: 'from-red-600 to-rose-500',
+                url: 'https://chineseclassics.github.io/sealdesgin.html',
+                description: '專業的中式印章設計工具，支援陰刻陽刻、多種古典字體選擇，可自由調整文字位置大小，並提供繪圖功能個性化創作'
             },
+
+            // 雲外樓 - 實驗與跨界體驗
             {
-                id: 'wanwuxiaoyaoenglish',
-                name: 'All Things Wander Free',
-                icon: 'fas fa-globe',
-                gradient: 'from-blue-400 to-indigo-300',
-                url: 'https://chineseclassics.github.io/wanwuxiaoyaoenglish.html',
-                description: 'English version of the Zhuangzi philosophy experience - explore the transformation of things from Zhuang Zhou\'s butterfly dream to the rebirth of chaos in seven philosophical chapters',
-                isNew: true
+                id: 'shenmisuzihe',
+                category: 'yunwai',
+                name: '神秘數字盒',
+                icon: 'fas fa-box-open',
+                gradient: 'from-yellow-400 to-orange-400',
+                url: 'https://chineseclassics.github.io/caishuzi.html',
+                description: '從 1 到 100 的神秘盒子猜數字，依提示與範圍指示推理，累積分數並解鎖徽章'
             },
             {
                 id: 'shuangshe',
+                category: 'yunwai',
                 name: '雙蛇大戰',
                 icon: '🐍',
                 gradient: 'from-emerald-600 to-teal-500',
@@ -1169,66 +1215,14 @@
                 description: '史上最刺激的雙人蛇類對戰遊戲！兩條蛇在同一戰場展開生死較量，使用特殊道具和策略技巧擊敗對手，支援WASD+方向鍵雙人即時對戰'
             },
             {
-                id: 'cilong',
-                name: '貪吃龍',
-                icon: '🐉',
-                gradient: 'from-lime-400 to-green-500',
-                url: 'https://chineseclassics.github.io/cilong.html',
-                description: '在經典的貪吃蛇玩法中，操控呆萌龍寶收集漢字，組成詞語，挑戰你的詞彙量和反應速度。'
-            },
-            {
-                id: 'yimoji',
-                name: '意moji：詩詞意象配對',
-                icon: 'fas fa-icons',
-                gradient: 'from-violet-500 to-purple-400',
-                url: 'https://chineseclassics.github.io/yimoji.html',
-                description: '尋找三個與詩詞意象最相關的emoji進行配對'
-            },
-
-            {
-                id: 'shenmisuzihe',
-                name: '神秘數字盒',
-                icon: 'fas fa-box-open',
-                gradient: 'from-yellow-400 to-orange-400',
-                url: 'https://chineseclassics.github.io/caishuzi.html',
-                description: '從 1 到 100 的神秘盒子猜數字，依提示與範圍指示推理，累積分數並解鎖徽章'
-            },
-
-            {
-                id: 'yuexiaduzuo',
-                name: '月下獨酌',
-                icon: 'fas fa-moon',
-                gradient: 'from-slate-600 to-indigo-400',
-                url: 'https://chineseclassics.github.io/yuexiaduzhuo.html',
-                description: '加入「月下雅集」群聊，與李白、杜甫、嫦娥等古代詩人在微信群中暢談詩酒風流'
-            },
-
-            {
-                id: 'shuyuanclassicchat',
-                name: '太虛幻聊',
-                icon: 'fas fa-comments',
-                gradient: 'from-emerald-600 to-teal-500',
-                url: 'https://chineseclassics.github.io/shuyuan-classic-chat.html',
-                description: '與經典人物的奇妙對話！與詩人們吟詩作對，和史家探討古今，與哲人思辨人生，還能和神話人物暢聊奇事。在微信風格的聊天界面中，親近中華經典，激發學習興趣'
-            },
-            {
-                id: 'honglourenwu',
-                name: '《紅樓夢》人物圖譜',
-                icon: 'fa-solid fa-sitemap',
-                gradient: 'from-purple-500 to-pink-500',
-                url: 'https://chineseclassics.github.io/honglourenwu.html',
-                description: '基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。'
-            },
-            {
-                id: 'story-vocab',
-                name: '故事詞彙接龍',
-                icon: 'fas fa-book-reader',
-                gradient: 'from-purple-500 to-pink-400',
-                url: 'https://chineseclassics.github.io/story-vocab/story-game.html',
-                description: '與AI共創精彩故事，輕鬆積累詞彙！選擇詞語造句，AI接力續寫，在互動故事中學習繁體中文詞彙，適合2-6年級學生',
-                isNew: true
-            },
-
+                id: 'wanwuxiaoyaoenglish',
+                category: 'yunwai',
+                name: 'All Things Wander Free',
+                icon: 'fas fa-globe',
+                gradient: 'from-blue-400 to-indigo-300',
+                url: 'https://chineseclassics.github.io/wanwuxiaoyaoenglish.html',
+                description: 'English version of the Zhuangzi philosophy experience - explore the transformation of things from Zhuang Zhou\'s butterfly dream to the rebirth of chaos in seven philosophical chapters'
+            }
         ];
 
         // 状态管理和事件清理
@@ -1483,23 +1477,27 @@
             }
         }
 
-        // 渲染應用圖標 - 優化版
-        function renderAppIcon(app, isCompact = false) {
-            const size = isCompact ? 'w-12 h-12' : 'aspect-square';
-            const iconSize = isCompact ? 'text-xl' : 'text-4xl';
-            const textSize = isCompact ? 'text-xs' : 'font-medium';
+        // 渲染應用圖標 - 四境版本
+        function renderAppIcon(app) {
+            const iconSize = 'w-16 h-16';
+            const textSize = 'text-xs';
+            const iconFontSize = 'text-2xl';
 
             const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
             const iconHtml = isFaIcon
-                ? `<i class="${app.icon} text-white ${iconSize}" aria-hidden="true"></i>`
-                : `<span class="${iconSize} text-white">${app.icon}</span>`;
+                ? `<i class="${app.icon} text-white ${iconFontSize}" aria-hidden="true"></i>`
+                : `<span class="${iconFontSize} text-white">${app.icon}</span>`;
             
-            // 為推薦遊戲添加特殊樣式（萬物逍遙取消外圈，與其他按鈕一致）
-            const featuredClass = (app.featured && app.id !== 'wanwuxiaoyao') ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-gray-900' : '';
-            const newBadge = app.isNew ? '<span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">新</span>' : '';
+            // 角标（新/推荐）
+            let badge = '';
+            if (app.isNew) {
+                badge = '<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">新</span>';
+            } else if (app.isFeatured) {
+                badge = '<span class="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">荐</span>';
+            }
             
             return `
-                <button class="app-icon block w-full text-left no-underline text-gray-800 dark:text-gray-200 relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl ${featuredClass}" 
+                <button class="app-icon group relative w-full" 
                         data-app-id="${app.id}" 
                         onclick="openApp('${app.id}')"
                         onmouseenter="handleMouseEnter(event, '${app.id}')"
@@ -1508,11 +1506,11 @@
                         ontouchend="handleTouchEnd(event, '${app.id}')"
                         ontouchmove="handleTouchMove()"
                         aria-label="打開 ${app.name} 應用">
-                    <div class="bg-gradient-to-br ${app.gradient} rounded-2xl p-4 ${size} flex items-center justify-center shadow-lg relative">
+                    <div class="bg-gradient-to-br ${app.gradient} rounded-xl ${iconSize} mx-auto flex items-center justify-center shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200 relative">
                         ${iconHtml}
-                        ${newBadge}
+                        ${badge}
                     </div>
-                    <p class="text-center mt-2 ${textSize}">${app.name}</p>
+                    <p class="${textSize} text-center text-gray-700 dark:text-gray-300 mt-2 line-clamp-2 leading-tight px-1">${app.name}</p>
                 </button>
             `;
         }
@@ -1615,42 +1613,137 @@
         window.handleTouchStart = handleTouchStart;
         window.handleTouchEnd = handleTouchEnd;
 
-        // 渲染切换器应用图标（优化版）
+        // 渲染切换器应用图标（紧凑版）
         function renderSwitcherAppIcon(app) {
             const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
             const iconHtml = isFaIcon
-                ? `<i class="${app.icon} text-white text-lg"></i>`
-                : `<span class="text-lg text-white">${app.icon}</span>`;
+                ? `<i class="${app.icon} text-white text-base"></i>`
+                : `<span class="text-base text-white">${app.icon}</span>`;
 
             return `
-                <div class="switcher-app-icon text-center" 
+                <div class="switcher-app-icon text-center flex flex-col items-center w-full" 
                      data-app-id="${app.id}" 
                      onclick="openApp('${app.id}')">
-                    <div class="icon-container bg-gradient-to-br ${app.gradient} rounded-xl p-3 w-14 h-14 flex items-center justify-center shadow-lg mx-auto mb-2">
+                    <div class="icon-container bg-gradient-to-br ${app.gradient} rounded-lg p-2 w-11 h-11 flex-shrink-0 flex items-center justify-center shadow-md mb-1.5 aspect-square">
                         ${iconHtml}
                     </div>
-                    <p class="switcher-app-name text-center">${app.name}</p>
+                    <p class="switcher-app-name text-center text-[10px] leading-tight line-clamp-2 w-full px-0.5">${app.name}</p>
                 </div>
             `;
         }
 
-        // 渲染返回主页按钮
-        function renderHomeButton() {
+        // 注：返回主页按钮现在在标题栏中，不再需要单独渲染
+
+        // 渲染境地区块
+        function renderRealmSection(realm) {
+            const realmApps = apps.filter(app => app.category === realm.id);
+            const appCount = realmApps.length;
+            
+            // 内联样式设置左侧边框颜色（Tailwind动态类可能不生效）
+            let borderColorStyle = '';
+            switch(realm.id) {
+                case 'hanmo':
+                    borderColorStyle = 'border-left: 4px solid rgb(59, 130, 246)'; // blue-500
+                    break;
+                case 'qiangu':
+                    borderColorStyle = 'border-left: 4px solid rgb(245, 158, 11)'; // amber-500
+                    break;
+                case 'jinxiu':
+                    borderColorStyle = 'border-left: 4px solid rgb(244, 63, 94)'; // rose-500
+                    break;
+                case 'yunwai':
+                    borderColorStyle = 'border-left: 4px solid rgb(6, 182, 212)'; // cyan-500
+                    break;
+            }
+            
             return `
-                <div class="switcher-app-icon text-center" 
-                     onclick="showHome()">
-                    <div class="icon-container bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl p-3 w-14 h-14 flex items-center justify-center shadow-lg mx-auto mb-2">
-                        <i class="fas fa-home text-white text-lg"></i>
+                <section class="mb-12">
+                    <!-- 左侧色条 + 白色卡片 -->
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow" 
+                         style="${borderColorStyle}">
+                        
+                        <!-- 标题行 -->
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">${realm.icon}</span>
+                            <h2 class="text-xl font-bold ${realm.titleColor}">${realm.name}</h2>
+                            <span class="text-sm text-gray-400">·</span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">${realm.subtitle}</span>
+                            <span class="ml-auto px-2.5 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-xs text-gray-600 dark:text-gray-300">
+                                ${appCount} 個體驗
+                            </span>
+                        </div>
+                        
+                        <!-- 引言（小字，淡色） -->
+                        <p class="text-xs ${realm.descColor} mb-5 italic pl-9">
+                            ${realm.description}
+                        </p>
+                        
+                        <!-- 应用网格 -->
+                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 pl-1">
+                            ${realmApps.map(app => renderAppIcon(app)).join('')}
+                        </div>
                     </div>
-                    <p class="switcher-app-name text-center">返回主頁</p>
-                </div>
+                </section>
             `;
         }
 
-        // 渲染应用网格
+        // 渲染所有境地
+        function renderAllRealms() {
+            const container = document.getElementById('realmsContainer');
+            if (!container) return;
+            
+            // 渲染四境
+            const realmsHTML = realms.map(realm => renderRealmSection(realm)).join('');
+            
+            // 关于本站
+            const aboutHTML = `
+                <section class="mt-4">
+                    <h2 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-300">關於本站</h2>
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 rounded-lg shadow-sm">
+                        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                            本網站所有程序由書院中文經典老師開發，歡迎訪問
+                            <a href="https://sites.google.com/lms.isf.edu.hk/isf-shuyuan-website/classics/chinese-classics" class="text-primary hover:underline" target="_blank">書院中文經典網站</a>，
+                            以及<a href="https://sites.google.com/isf.edu.hk/chineseclassics" class="text-primary hover:underline" target="_blank">中文經典專題學習網站</a>。
+                        </p>
+                        <div class="mt-4 pt-3 border-t border-gray-300 dark:border-gray-600">
+                            <p class="text-xs text-gray-500 dark:text-gray-500">
+                                <i class="fas fa-copyright mr-1"></i>
+                                版權所有 © 2024 書院中文經典 | 
+                                <a href="https://github.com/chineseclassics/chineseclassics.github.io/blob/main/LICENSE" class="text-primary hover:underline" target="_blank">MIT License</a> | 
+                                教育用途免費，商業用途請聯繫授權
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            `;
+            
+            container.innerHTML = realmsHTML + aboutHTML;
+        }
+
+        // 渲染应用网格（用于应用切换器）
         function renderApps() {
-            appGrid.innerHTML = apps.map(app => renderAppIcon(app)).join('');
-            switcherAppGrid.innerHTML = renderHomeButton() + apps.map(app => renderSwitcherAppIcon(app)).join('');
+            let html = '';
+            
+            // 按境地分组显示
+            realms.forEach((realm, index) => {
+                const realmApps = apps.filter(app => app.category === realm.id);
+                if (realmApps.length > 0) {
+                    // 添加境地分隔符（紧凑版，第一个境地不需要上边距）
+                    html += `
+                        <div class="col-span-full ${index > 0 ? 'mt-3' : ''} mb-1 px-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs">${realm.icon}</span>
+                                <span class="text-[10px] font-semibold ${realm.titleColor}">${realm.name}</span>
+                                <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                            </div>
+                        </div>
+                    `;
+                    // 添加该境地的应用
+                    html += realmApps.map(app => renderSwitcherAppIcon(app)).join('');
+                }
+            });
+            
+            switcherAppGrid.innerHTML = html;
         }
 
         // 打开应用
@@ -1802,6 +1895,11 @@
             
             // 使用统一的状态管理
             setAppViewState(false);
+            
+            // 如果应用切换器打开，则关闭它
+            if (appSwitcherModal.classList.contains('switcher-modal-show')) {
+                hideAppSwitcher();
+            }
         }
 
         // 显示应用切换器（带动画）- 优化版
@@ -1973,7 +2071,8 @@
         }, { passive: true });
         
         // 初始化
-        renderApps();
+        renderAllRealms();  // 渲染四境主页
+        renderApps();       // 渲染应用切换器
         
         // 等待DOM完全加载后初始化
         document.addEventListener('DOMContentLoaded', () => {
