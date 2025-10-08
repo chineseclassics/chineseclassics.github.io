@@ -169,11 +169,11 @@ async function generateFeedback({
 【故事上下文】
 ${conversationHistory.slice(-4).join('\n')}
 
-請用繁體中文評價，嚴格按照以下格式輸出：
+請用繁體中文評價，嚴格按照以下格式輸出（每個字段必須在同一行內）：
 
 總分：X/10
 評語：[60-80字的真誠評語，溫暖但客觀]
-優化版句子：[優化後的完整句子，保留原意但更精彩]
+優化版句子：[優化後的完整句子，保留原意但更精彩，必須在同一行內完整輸出]
 
 【評語撰寫原則】：
 1. **真誠第一**：詞語學習是核心，必須指出用詞錯誤
@@ -230,7 +230,7 @@ ${conversationHistory.slice(-4).join('\n')}
         { role: 'user', content: feedbackPrompt }
       ],
       temperature: 0.3,  // 較低溫度，確保格式準確
-      max_tokens: 250
+      max_tokens: 350   // 增加 token 限制，確保優化版句子能完整輸出
     })
   })
 
@@ -260,6 +260,8 @@ function parseFeedbackText(text: string): any {
     optimizedSentence: ''
   }
   
+  let currentField = ''  // 追踪当前正在读取的字段
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     
@@ -267,16 +269,41 @@ function parseFeedbackText(text: string): any {
     if (line.includes('總分')) {
       const match = line.match(/(\d+)/)
       if (match) feedback.score = parseInt(match[1])
+      currentField = ''
     }
     // 評語
     else if (line.includes('評語')) {
-      feedback.comment = line.split('：')[1]?.trim() || line.split(':')[1]?.trim() || ''
+      const content = line.split('：')[1]?.trim() || line.split(':')[1]?.trim() || ''
+      feedback.comment = content
+      currentField = content ? '' : 'comment'  // 如果内容为空，说明在下一行
     }
     // 優化版句子
     else if (line.includes('優化版句子')) {
-      feedback.optimizedSentence = line.split('：')[1]?.trim() || line.split(':')[1]?.trim() || ''
+      const content = line.split('：')[1]?.trim() || line.split(':')[1]?.trim() || ''
+      feedback.optimizedSentence = content
+      currentField = content ? '' : 'optimizedSentence'  // 如果内容为空，说明在下一行
+    }
+    // 继续读取上一个字段的内容（处理多行情况）
+    else if (currentField && line) {
+      if (currentField === 'comment') {
+        feedback.comment = (feedback.comment ? feedback.comment + ' ' : '') + line
+      } else if (currentField === 'optimizedSentence') {
+        feedback.optimizedSentence = (feedback.optimizedSentence ? feedback.optimizedSentence + ' ' : '') + line
+      }
+      // 读取完一行后，假设字段结束（除非下一行也是普通文本）
+      // 注意：这里不清空 currentField，让它继续读取，直到遇到新的字段标题
     }
   }
+  
+  // 清理和验证
+  feedback.comment = feedback.comment.trim()
+  feedback.optimizedSentence = feedback.optimizedSentence.trim()
+  
+  console.log('📝 解析反饋結果:', {
+    score: feedback.score,
+    commentLength: feedback.comment.length,
+    optimizedSentenceLength: feedback.optimizedSentence.length
+  })
   
   return feedback
 }

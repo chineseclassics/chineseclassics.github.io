@@ -4,6 +4,7 @@
 // =====================================================
 
 import { getSupabase } from '../supabase-client.js'
+import { gameState } from '../core/game-state.js'
 
 const CALIBRATION_ROUNDS = 10
 
@@ -178,6 +179,28 @@ async function assessAfterRound5(userId) {
  */
 async function selectPrecisionWords(roundNumber, estimatedLevel) {
   const pool = await loadCalibrationVocabulary()
+  const supabase = getSupabase()
+  
+  // ✅ 跨輪次去重：獲取本次會話已推薦過的所有詞
+  const usedWordsInSession = new Set()
+  try {
+    const { data: history } = await supabase
+      .from('recommendation_history')
+      .select('recommended_words')
+      .eq('session_id', gameState.sessionId)
+    
+    if (history && history.length > 0) {
+      history.forEach(h => {
+        if (h.recommended_words) {
+          h.recommended_words.forEach(w => usedWordsInSession.add(w))
+        }
+      })
+    }
+    
+    console.log(`[校準] 第 ${roundNumber} 輪，本次會話已用 ${usedWordsInSession.size} 個詞`)
+  } catch (error) {
+    console.error('⚠️ 獲取推薦歷史失敗:', error)
+  }
   
   // 確定測試範圍
   const minLevel = Math.max(1, estimatedLevel - 1)
@@ -194,14 +217,58 @@ async function selectPrecisionWords(roundNumber, estimatedLevel) {
   
   const targetLevels = distributions[roundNumber]
   const words = []
+  const usedWords = new Set() // 防止重複
   
   // 從每個難度池中選擇詞語
   for (const level of targetLevels) {
     const candidates = pool[`L${level}`] || []
-    if (candidates.length > 0) {
-      const randomIndex = Math.floor(Math.random() * candidates.length)
-      words.push(candidates[randomIndex])
+    
+    // ✅ 過濾掉已使用的詞（本輪內 + 跨輪次）
+    const availableCandidates = candidates.filter(w => 
+      !usedWords.has(w.word) && !usedWordsInSession.has(w.word)
+    )
+    
+    if (availableCandidates.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableCandidates.length)
+      const selectedWord = availableCandidates[randomIndex]
+      words.push(selectedWord)
+      usedWords.add(selectedWord.word)
+    } else {
+      // 如果過濾後沒有可用詞，嘗試從相鄰難度補充
+      console.warn(`⚠️ L${level} 池中詞語不足（已用/本輪重複），嘗試從相鄰難度補充`)
+      const adjacentLevel = level > 3 ? level - 1 : level + 1
+      const adjacentCandidates = (pool[`L${adjacentLevel}`] || []).filter(w => 
+        !usedWords.has(w.word) && !usedWordsInSession.has(w.word)
+      )
+      
+      if (adjacentCandidates.length > 0) {
+        const randomIndex = Math.floor(Math.random() * adjacentCandidates.length)
+        const selectedWord = adjacentCandidates[randomIndex]
+        words.push(selectedWord)
+        usedWords.add(selectedWord.word)
+      } else {
+        // 最後手段：嘗試所有等級
+        console.warn(`⚠️ L${level} 和 L${adjacentLevel} 都不足，從所有等級補充`)
+        const allLevels = Object.keys(pool)
+        for (const lvl of allLevels) {
+          const fallbackCandidates = (pool[lvl] || []).filter(w => 
+            !usedWords.has(w.word) && !usedWordsInSession.has(w.word)
+          )
+          if (fallbackCandidates.length > 0) {
+            const randomIndex = Math.floor(Math.random() * fallbackCandidates.length)
+            const selectedWord = fallbackCandidates[randomIndex]
+            words.push(selectedWord)
+            usedWords.add(selectedWord.word)
+            break
+          }
+        }
+      }
     }
+  }
+  
+  // 確保至少有5個詞
+  if (words.length < 5) {
+    console.error(`❌ 第 ${roundNumber} 輪只選出了 ${words.length} 個詞，需要補充`)
   }
   
   // 打亂順序
