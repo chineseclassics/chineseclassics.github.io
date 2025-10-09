@@ -1535,7 +1535,7 @@
             }
             
             return `
-                <button class="app-icon group relative w-full" 
+                <button class="app-icon group relative w-full flex flex-col items-center" 
                         data-app-id="${app.id}" 
                         onclick="openApp('${app.id}')"
                         onmouseenter="handleMouseEnter(event, '${app.id}')"
@@ -1544,11 +1544,11 @@
                         ontouchend="handleTouchEnd(event, '${app.id}')"
                         ontouchmove="handleTouchMove()"
                         aria-label="打開 ${app.name} 應用">
-                    <div class="bg-gradient-to-br ${app.gradient} rounded-xl ${iconSize} mx-auto flex items-center justify-center shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200 relative">
+                    <div class="bg-gradient-to-br ${app.gradient} rounded-xl ${iconSize} flex-shrink-0 flex items-center justify-center shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200 relative">
                         ${iconHtml}
                         ${badge}
                     </div>
-                    <p class="${textSize} text-center text-gray-700 dark:text-gray-300 mt-2 line-clamp-2 leading-tight px-1">${app.name}</p>
+                    <p class="${textSize} text-center text-gray-700 dark:text-gray-300 mt-2 line-clamp-2 leading-tight px-1 h-9 flex items-center justify-center">${app.name}</p>
                 </button>
             `;
         }
