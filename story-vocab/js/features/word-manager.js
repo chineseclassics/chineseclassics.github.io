@@ -4,6 +4,8 @@
  */
 
 import { gameState } from '../core/game-state.js';
+import { getWordBriefInfo } from './dictionary.js';
+import { getBriefInfo } from '../utils/word-cache.js';
 
 /**
  * AI句子中标记词库中的词语（可点击查询）
@@ -86,10 +88,38 @@ export function makeUserSentenceClickable(text, selectedWord) {
 }
 
 /**
+ * 格式化简要信息为 HTML（不显示拼音，拼音已在卡片上）
+ * @param {string} word - 词语
+ * @param {Object} briefInfo - 简要信息
+ * @param {string} fallbackPinyin - 备用拼音（不使用）
+ * @returns {string} HTML 字符串
+ */
+function formatBriefInfoHTML(word, briefInfo, fallbackPinyin = '') {
+    const parts = [];
+    
+    // 只显示词语，不显示拼音
+    parts.push(`<span class="word-main"><strong>${word}</strong></span>`);
+    
+    // 英文翻译
+    if (briefInfo.english) {
+        parts.push(`<span class="word-separator">|</span>`);
+        parts.push(`<span class="word-english">${briefInfo.english}</span>`);
+    }
+    
+    // 中文释义
+    if (briefInfo.definition) {
+        parts.push(`<span class="word-separator">|</span>`);
+        parts.push(`<span class="word-definition">${briefInfo.definition}</span>`);
+    }
+    
+    return parts.join(' ');
+}
+
+/**
  * 选择词汇
  * @param {Object} wordObj - 词汇对象
  */
-export function selectWord(wordObj) {
+export async function selectWord(wordObj) {
     gameState.selectedWord = wordObj;
     
     // 更新按钮状态
@@ -103,13 +133,9 @@ export function selectWord(wordObj) {
         clickedBtn.classList.add('selected');
     }
     
-    // 更新显示
+    // 获取显示元素
     const display = document.getElementById('selected-word-display');
-    if (display) {
-        display.innerHTML = `
-            已選詞彙：<strong>${wordObj.word}</strong> (${wordObj.pinyin || ''})
-        `;
-    }
+    if (!display) return;
     
     // 启用输入
     const input = document.getElementById('user-input');
@@ -120,6 +146,44 @@ export function selectWord(wordObj) {
     }
     if (submitBtn) {
         submitBtn.disabled = false;
+    }
+    
+    // 💾 先检查缓存
+    const cachedBrief = getBriefInfo(wordObj.word);
+    
+    if (cachedBrief && (cachedBrief.english || cachedBrief.definition)) {
+        // ✨ 缓存命中！立即显示，无加载延迟
+        console.log(`✨ 缓存命中！即时显示: ${wordObj.word}`);
+        display.innerHTML = formatBriefInfoHTML(wordObj.word, cachedBrief, wordObj.pinyin);
+        return;
+    }
+    
+    // 缓存未命中，显示加载状态并异步获取
+    console.log(`⏳ 缓存未命中，查询中: ${wordObj.word}`);
+    display.innerHTML = `
+        <span class="word-main"><strong>${wordObj.word}</strong></span>
+        <span class="loading-text">🔄 正在查詢釋義...</span>
+    `;
+    
+    // 异步获取词汇简要信息
+    try {
+        const briefInfo = await getWordBriefInfo(wordObj.word);
+        
+        // 如果成功获取到释义信息，显示完整内容
+        if (briefInfo.english || briefInfo.definition) {
+            display.innerHTML = formatBriefInfoHTML(wordObj.word, briefInfo, wordObj.pinyin);
+        } else {
+            // 降级显示：只显示词语（拼音已在卡片上）
+            display.innerHTML = `
+                已選詞彙：<span class="word-main"><strong>${wordObj.word}</strong></span>
+            `;
+        }
+    } catch (error) {
+        console.error('獲取詞彙釋義失敗:', error);
+        // 错误降级：显示简单格式（拼音已在卡片上）
+        display.innerHTML = `
+            已選詞彙：<span class="word-main"><strong>${wordObj.word}</strong></span>
+        `;
     }
 }
 

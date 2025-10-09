@@ -167,9 +167,32 @@
         gap: 10px;
     }
 
-    .input-group input {
+    .input-with-toggle input {
         font-size: 16px; /* 防止 iOS Safari 自動縮放 */
-        padding: 15px;
+        padding: 15px 145px 15px 15px;
+    }
+
+    .input-toggle-container {
+        right: 8px;
+        padding: 3px 8px 3px 10px;
+    }
+
+    .toggle-label {
+        font-size: 0.8em;
+    }
+
+    .inline-toggle-switch {
+        width: 40px;
+        height: 20px;
+    }
+
+    .inline-toggle-slider:before {
+        height: 14px;
+        width: 14px;
+    }
+
+    .inline-toggle-switch input:checked + .inline-toggle-slider:before {
+        transform: translateX(20px);
     }
 
     .input-group button {
@@ -181,6 +204,15 @@
     .selected-word-display {
         font-size: 1em;
         padding: 12px;
+        /* 移动版：允许自动换行 */
+        white-space: normal;
+        overflow-x: visible;
+        line-height: 1.6;
+    }
+    
+    /* 移动版分隔符换行优化 */
+    .selected-word-display .word-separator {
+        margin: 0 6px;
     }
 
     /* 完成界面優化 */

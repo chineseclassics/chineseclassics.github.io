@@ -270,7 +270,16 @@
                         請先選擇一個詞彙...
                     </div>
                     <div class="input-group">
-                        <input type="text" id="user-input" placeholder="請從上方選擇一個詞語來造句，續寫故事……" disabled>
+                        <div class="input-with-toggle">
+                            <input type="text" id="user-input" placeholder="請從上方選擇一個詞語來造句，續寫故事……" disabled>
+                            <div class="input-toggle-container">
+                                <span class="toggle-label">AI反饋</span>
+                                <label class="inline-toggle-switch">
+                                    <input type="checkbox" id="feedback-toggle" checked onchange="handleFeedbackToggle()">
+                                    <span class="inline-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
                         <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">提交</button>
                     </div>
                 </div>

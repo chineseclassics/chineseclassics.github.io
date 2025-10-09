@@ -315,9 +315,8 @@ export async function finalCalibrationAssessment(userId, sessionId) {
       throw new Error('未找到校準遊戲數據')
     }
     
-    // 計算統計數據
+    // 計算統計數據（只基於選擇難度）
     const avgSelectedLevel = calculateAverage(allRounds, 'selected_difficulty')
-    const avgScore = calculateAverage(allRounds, 'ai_score')
     
     // 計算眾數（最常選擇的等級）
     const levelCounts = {}
@@ -332,20 +331,15 @@ export async function finalCalibrationAssessment(userId, sessionId) {
       )
     )
     
-    // 綜合判斷
+    // 綜合判斷（純基於選擇難度）
     let finalLevel = Math.round(avgSelectedLevel)
     
-    // 如果眾數和平均值接近，取眾數
+    // 如果眾數和平均值接近，取眾數（更穩定）
     if (Math.abs(mostFrequentLevel - avgSelectedLevel) <= 1) {
       finalLevel = mostFrequentLevel
     }
     
-    // 根據表現微調
-    if (avgScore < 6) {
-      finalLevel = Math.max(1, finalLevel - 1)
-    }
-    
-    console.log(`[校準完成] 平均難度=${avgSelectedLevel.toFixed(1)}, 平均分=${avgScore.toFixed(1)}, 眾數=L${mostFrequentLevel}, 最終評估=L${finalLevel}`)
+    console.log(`[校準完成] 平均難度=${avgSelectedLevel.toFixed(1)}, 眾數=L${mostFrequentLevel}, 最終評估=L${finalLevel}`)
     
     // 保存評估結果
     const { error: updateError } = await supabase

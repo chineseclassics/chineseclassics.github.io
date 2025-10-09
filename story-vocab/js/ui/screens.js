@@ -8,6 +8,8 @@ import { getThemeName } from '../core/story-engine.js';
 import { typewriterEffect } from '../utils/typewriter.js';
 import { makeAIWordsClickable, makeUserSentenceClickable, selectWord } from '../features/word-manager.js';
 import { loadSettings } from './modals.js';
+import { preloadWords, getBriefInfo } from '../utils/word-cache.js';
+import { getWordBriefInfo } from '../features/dictionary.js';
 
 /**
  * 初始化启动界面
@@ -130,8 +132,6 @@ export async function displayAIResponse(data) {
     const wordsContainer = document.getElementById('word-choices');
     if (!wordsContainer) return;
     
-    wordsContainer.innerHTML = '';
-    
     if (data.recommendedWords && data.recommendedWords.length > 0) {
         // 获取已使用词汇的列表
         const usedWordsList = gameState.usedWords.map(w => w.word);
@@ -141,21 +141,12 @@ export async function displayAIResponse(data) {
             !usedWordsList.includes(wordObj.word)
         );
         
-        // 显示可用的词汇
-        availableWords.forEach(wordObj => {
-            const wordBtn = document.createElement('button');
-            wordBtn.className = 'word-btn';
-            wordBtn.innerHTML = `
-                <div>${wordObj.word}</div>
-                <div class="word-meta">${wordObj.pinyin || ''}</div>
-            `;
-            wordBtn.onclick = () => selectWord(wordObj);
-            wordsContainer.appendChild(wordBtn);
-        });
-        
         // 如果所有词汇都已使用，显示提示
         if (availableWords.length === 0) {
             wordsContainer.innerHTML = '<div style="color: var(--text-light); padding: 20px; text-align: center;">所有推薦詞彙都已使用，請等待AI提供新詞彙...</div>';
+        } else {
+            // 🎴 使用翻转动画更新词汇卡片（动画完成后自动启用）
+            await updateWordCardsWithFlipAnimation(availableWords);
         }
     }
     
@@ -171,6 +162,88 @@ export async function displayAIResponse(data) {
         userInput.disabled = true;
     }
     if (submitBtn) submitBtn.disabled = true;
+}
+
+/**
+ * 使用翻转动画更新词汇卡片
+ * @param {Array} newWords - 新的词汇列表
+ */
+async function updateWordCardsWithFlipAnimation(newWords) {
+    const wordsContainer = document.getElementById('word-choices');
+    if (!wordsContainer) return;
+    
+    const existingCards = wordsContainer.querySelectorAll('.word-btn');
+    
+    if (existingCards.length === 0) {
+        // 第一次显示，等待预加载完成再显示（确保有拼音）
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // 创建卡片（无翻转动画）
+        newWords.forEach(wordObj => {
+            const wordBtn = document.createElement('button');
+            wordBtn.className = 'word-btn';
+            // 尝试从缓存获取拼音
+            const cached = getBriefInfo(wordObj.word);
+            const pinyin = cached?.pinyin || wordObj.pinyin || '';
+            wordBtn.innerHTML = `
+                <div class="word-meta">${pinyin}</div>
+                <div class="word-main-text">${wordObj.word}</div>
+            `;
+            wordBtn.onclick = () => selectWord(wordObj);
+            wordsContainer.appendChild(wordBtn);
+        });
+    } else {
+        // 有旧卡片，执行翻转动画
+        // 1. 翻转隐藏旧卡片（已经是disabled状态）
+        existingCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('flipping-out');
+            }, index * 80);
+        });
+        
+        // 2. 等待翻转完成（这期间预加载也在进行）
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 3. 再稍等一下，确保预加载的拼音数据已经缓存
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // 4. 清空并创建新卡片（初始为禁用状态）
+        wordsContainer.innerHTML = '';
+        newWords.forEach(wordObj => {
+            const wordBtn = document.createElement('button');
+            wordBtn.className = 'word-btn flipping-in';
+            wordBtn.disabled = true; // 🔒 初始禁用
+            wordBtn.classList.add('disabled');
+            // 尝试从缓存获取拼音
+            const cached = getBriefInfo(wordObj.word);
+            const pinyin = cached?.pinyin || wordObj.pinyin || '';
+            wordBtn.innerHTML = `
+                <div class="word-meta">${pinyin}</div>
+                <div class="word-main-text">${wordObj.word}</div>
+            `;
+            wordBtn.onclick = () => selectWord(wordObj);
+            wordsContainer.appendChild(wordBtn);
+        });
+        
+        // 5. 触发翻入动画
+        setTimeout(() => {
+            wordsContainer.querySelectorAll('.word-btn').forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.remove('flipping-in');
+                    card.classList.add('flipped-in');
+                }, index * 80);
+            });
+        }, 50);
+        
+        // 6. 动画完成后清理动画类并启用按钮
+        await new Promise(resolve => setTimeout(resolve, 600));
+        wordsContainer.querySelectorAll('.word-btn').forEach(card => {
+            card.classList.remove('flipped-in');
+            // 🔓 动画完成后启用按钮
+            card.disabled = false;
+            card.classList.remove('disabled');
+        });
+    }
 }
 
 /**

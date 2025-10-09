@@ -115,6 +115,46 @@
     margin-bottom: 15px;
     font-size: 1.1em;
     color: var(--text-dark);
+    /* 电脑版：单行显示，支持横向滚动 */
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* 已选词汇显示区域的内容样式 */
+.selected-word-display .word-main {
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 1.25em;
+}
+
+.selected-word-display .word-meta {
+    color: var(--text-light);
+    font-size: 0.95em;
+    margin-left: 4px;
+}
+
+.selected-word-display .word-separator {
+    color: var(--text-light);
+    margin: 0 8px;
+    font-weight: 300;
+}
+
+.selected-word-display .word-english {
+    color: var(--primary-blue);
+    font-style: italic;
+    font-size: 0.95em;
+}
+
+.selected-word-display .word-definition {
+    color: var(--text-dark);
+    font-size: 1em;
+}
+
+.selected-word-display .loading-text {
+    color: var(--text-light);
+    font-size: 0.9em;
+    margin-left: 10px;
 }
 
 /* 完成界面 */

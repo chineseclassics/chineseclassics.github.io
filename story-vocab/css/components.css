@@ -105,7 +105,7 @@ button:active {
     padding: 20px 15px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     font-size: 1.2em;
     font-weight: bold;
     color: var(--text-dark);
@@ -126,13 +126,61 @@ button:active {
 }
 
 .word-meta {
-    font-size: 0.7em;
+    font-size: 0.85em;
     color: var(--text-light);
-    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.word-main-text {
+    font-size: 1.35em;
+    font-weight: bold;
 }
 
 .word-btn.selected .word-meta {
     color: rgba(255, 255, 255, 0.9);
+}
+
+/* 词汇按钮禁用状态 */
+.word-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* 词汇卡片翻转动画 */
+.word-btn.flipping-out {
+    animation: flipOut 0.4s ease forwards;
+}
+
+.word-btn.flipping-in {
+    opacity: 0;
+    transform: rotateY(-90deg);
+}
+
+.word-btn.flipped-in {
+    animation: flipIn 0.4s ease forwards;
+}
+
+@keyframes flipOut {
+    0% {
+        transform: rotateY(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: rotateY(90deg);
+        opacity: 0;
+    }
+}
+
+@keyframes flipIn {
+    0% {
+        transform: rotateY(-90deg);
+        opacity: 0;
+    }
+    100% {
+        transform: rotateY(0deg);
+        opacity: 1;
+    }
 }
 
 /* 输入框 */
@@ -142,9 +190,15 @@ button:active {
     align-items: center;
 }
 
-.input-group input {
+/* 输入框与toggle容器 */
+.input-with-toggle {
+    position: relative;
     flex: 1;
-    padding: 15px 20px;
+}
+
+.input-with-toggle input {
+    width: 100%;
+    padding: 15px 160px 15px 20px;
     border: 3px solid var(--light-blue);
     border-radius: 50px;
     font-size: 1.1em;
@@ -152,8 +206,89 @@ button:active {
     transition: border-color 0.3s ease;
 }
 
-.input-group input:focus {
+.input-with-toggle input:focus {
     border-color: var(--primary-blue);
+}
+
+/* Toggle容器（悬浮在输入框右侧） */
+.input-toggle-container {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 4px 10px 4px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.toggle-label {
+    font-size: 0.85em;
+    color: var(--text-dark);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Toggle开关样式（iOS风格） */
+.inline-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+    cursor: pointer;
+}
+
+.inline-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.inline-toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 22px;
+    transition: all 0.3s ease;
+}
+
+.inline-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.inline-toggle-switch input:checked + .inline-toggle-slider {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.inline-toggle-switch input:checked + .inline-toggle-slider:before {
+    transform: translateX(22px);
+}
+
+.inline-toggle-switch:hover .inline-toggle-slider {
+    opacity: 0.9;
+}
+
+/* 输入框聚焦时toggle容器优化 */
+.input-with-toggle input:focus ~ .input-toggle-container {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .input-group button {

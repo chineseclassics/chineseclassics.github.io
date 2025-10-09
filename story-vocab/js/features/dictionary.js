@@ -4,6 +4,7 @@
  */
 
 import { gameState } from '../core/game-state.js';
+import { getBriefInfo, cacheBriefInfo, getFullInfo, cacheFullInfo } from '../utils/word-cache.js';
 
 /**
  * 清理萌典特殊标记符号
@@ -91,6 +92,19 @@ export async function showWordDetailFromVocab(word) {
     
     // 设置初始状态
     document.getElementById('modal-word').textContent = word;
+    
+    // 检查缓存中是否有完整信息
+    const cachedFull = getFullInfo(word);
+    const cachedBrief = getBriefInfo(word);
+    
+    if (cachedFull && cachedFull.mainData && cachedFull.crossStraitData) {
+        // 💾 使用缓存的完整数据，立即显示，无加载延迟
+        console.log(`💾 从缓存读取完整信息: ${word}`);
+        displayCachedWordDetail(word, cachedFull.mainData, cachedFull.crossStraitData, cachedBrief);
+        return;
+    }
+    
+    // 显示加载状态
     document.getElementById('modal-pinyin').innerHTML = '<span style="color: var(--text-light);">🔄 查詢中...</span>';
     document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">正在獲取英文翻譯...</span>';
     document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">正在獲取釋義...</span>';
@@ -126,6 +140,9 @@ export async function showWordDetailFromVocab(word) {
         
         console.log('萌典國語辭典API返回:', mainData);
         console.log('萌典兩岸詞典API返回:', crossStraitData);
+        
+        // 缓存完整数据
+        cacheFullInfo(word, { mainData, crossStraitData });
         
         // 处理拼音（单字和词语的数据结构不同）
         if (mainData) {
@@ -285,6 +302,263 @@ export async function showWordDetailFromVocab(word) {
     
     // 保存当前查看的词汇
     modal.dataset.currentWord = word;
+}
+
+/**
+ * 获取词汇的简要信息（用于已选词汇显示区域）
+ * @param {string} word - 要查询的词汇
+ * @param {boolean} useCache - 是否使用缓存（默认 true）
+ * @returns {Promise<Object>} { english, definition, pinyin }
+ */
+export async function getWordBriefInfo(word, useCache = true) {
+    // 先检查缓存
+    if (useCache) {
+        const cached = getBriefInfo(word);
+        if (cached) {
+            console.log(`💾 从缓存读取简要信息: ${word}`);
+            return cached;
+        }
+    }
+    
+    try {
+        // 创建超时 Promise（3秒）
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('API timeout')), 3000);
+        });
+        
+        // 同时调用两个 API
+        const promises = [];
+        
+        // 1. 调用国语辞典 API 获取释义和拼音
+        let mainApiUrl;
+        if (word.length === 1) {
+            mainApiUrl = `https://www.moedict.tw/uni/${encodeURIComponent(word)}`;
+        } else {
+            mainApiUrl = `https://www.moedict.tw/a/${encodeURIComponent(word)}.json`;
+        }
+        promises.push(
+            fetch(mainApiUrl).then(r => r.ok ? r.json() : null).catch(() => null)
+        );
+        
+        // 2. 调用两岸词典 API 获取英文翻译
+        const crossStraitApiUrl = `https://www.moedict.tw/c/${encodeURIComponent(word)}.json`;
+        promises.push(
+            fetch(crossStraitApiUrl).then(r => r.ok ? r.json() : null).catch(() => null)
+        );
+        
+        // 使用 Promise.race 实现超时控制
+        const [mainData, crossStraitData] = await Promise.race([
+            Promise.all(promises),
+            timeoutPromise
+        ]);
+        
+        const result = {
+            english: '',
+            definition: '',
+            pinyin: ''
+        };
+        
+        // 处理拼音和释义
+        if (mainData) {
+            const isWord = word.length > 1;
+            
+            // 提取拼音
+            if (isWord) {
+                // 词语：使用 h[0].p
+                if (mainData.h && mainData.h[0]) {
+                    result.pinyin = mainData.h[0].p || '';
+                }
+            } else {
+                // 单字：使用 heteronyms[0].pinyin
+                if (mainData.heteronyms && mainData.heteronyms[0]) {
+                    result.pinyin = mainData.heteronyms[0].bopomofo2 || 
+                                   mainData.heteronyms[0].pinyin || 
+                                   mainData.heteronyms[0].bopomofo || '';
+                }
+            }
+            
+            // 提取第一个释义
+            let definitions = [];
+            if (isWord) {
+                // 词语：使用 h[0].d
+                if (mainData.h && mainData.h[0] && mainData.h[0].d) {
+                    definitions = mainData.h[0].d;
+                }
+            } else {
+                // 单字：使用 heteronyms[0].definitions
+                if (mainData.heteronyms && mainData.heteronyms[0] && mainData.heteronyms[0].definitions) {
+                    definitions = mainData.heteronyms[0].definitions;
+                }
+            }
+            
+            if (definitions && definitions.length > 0) {
+                const firstDef = definitions[0];
+                const defText = isWord ? (firstDef.f || '') : (firstDef.def || '');
+                result.definition = cleanMoedictText(defText);
+            }
+        }
+        
+        // 处理英文翻译（取前2个）
+        if (crossStraitData && crossStraitData.translation && crossStraitData.translation.English) {
+            const englishTranslations = crossStraitData.translation.English;
+            if (Array.isArray(englishTranslations) && englishTranslations.length > 0) {
+                result.english = englishTranslations.slice(0, 2).join('; ');
+            }
+        }
+        
+        // 存入缓存（同时也缓存完整数据供模态窗口使用）
+        if (useCache) {
+            cacheBriefInfo(word, result);
+            cacheFullInfo(word, { mainData, crossStraitData });
+        }
+        
+        return result;
+        
+    } catch (error) {
+        console.log('萌典 API 查詢失敗（簡要版）:', error.message);
+        return { english: '', definition: '', pinyin: '' };
+    }
+}
+
+/**
+ * 显示缓存的词汇详情（即时显示，无加载延迟）
+ * @param {string} word - 词语
+ * @param {Object} mainData - 国语辞典数据
+ * @param {Object} crossStraitData - 两岸词典数据
+ * @param {Object} cachedBrief - 缓存的简要信息（可选）
+ */
+function displayCachedWordDetail(word, mainData, crossStraitData, cachedBrief = null) {
+    // 首先检查是否在当前推荐词汇中
+    const vocabWord = gameState.currentWords.find(w => w.word === word);
+    
+    // 处理拼音
+    let pinyin = '';
+    if (cachedBrief && cachedBrief.pinyin) {
+        pinyin = cachedBrief.pinyin;
+    } else if (vocabWord && vocabWord.pinyin) {
+        pinyin = vocabWord.pinyin;
+    } else if (mainData) {
+        if (word.length === 1) {
+            if (mainData.heteronyms && mainData.heteronyms[0]) {
+                pinyin = mainData.heteronyms[0].bopomofo2 || 
+                        mainData.heteronyms[0].pinyin || 
+                        mainData.heteronyms[0].bopomofo || '';
+            }
+        } else {
+            if (mainData.h && mainData.h[0]) {
+                pinyin = mainData.h[0].p || '';
+            }
+        }
+    }
+    document.getElementById('modal-pinyin').textContent = pinyin || '無拼音';
+    
+    // 显示英文翻译
+    if (crossStraitData && crossStraitData.translation && crossStraitData.translation.English) {
+        const englishTranslations = crossStraitData.translation.English;
+        if (Array.isArray(englishTranslations) && englishTranslations.length > 0) {
+            const translationText = englishTranslations.slice(0, 5).join('; ');
+            document.getElementById('modal-translation').textContent = translationText;
+        } else {
+            document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">暫無英文翻譯</span>';
+        }
+    } else {
+        document.getElementById('modal-translation').innerHTML = '<span style="color: var(--text-light);">暫無英文翻譯</span>';
+    }
+    
+    // 显示释义和例句
+    if (mainData) {
+        let definitions = [];
+        let isWordQuery = false;
+        
+        if (word.length === 1) {
+            if (mainData.heteronyms && mainData.heteronyms[0] && mainData.heteronyms[0].definitions) {
+                definitions = mainData.heteronyms[0].definitions;
+            }
+        } else {
+            isWordQuery = true;
+            if (mainData.h && mainData.h[0] && mainData.h[0].d) {
+                definitions = mainData.h[0].d;
+            }
+        }
+        
+        // 处理释义
+        if (definitions && definitions.length > 0) {
+            let definitionHTML = '';
+            
+            definitions.forEach((def, index) => {
+                const defText = isWordQuery ? (def.f || '') : (def.def || '');
+                const partOfSpeech = def.type || '';
+                
+                if (defText) {
+                    const cleanDef = cleanMoedictText(defText);
+                    definitionHTML += '<div class="definition-item">';
+                    
+                    if (partOfSpeech) {
+                        const cleanPos = cleanMoedictText(partOfSpeech);
+                        definitionHTML += `<span class="part-of-speech">${cleanPos}</span>`;
+                    }
+                    
+                    definitionHTML += `<span class="definition-text-content">${cleanDef}</span>`;
+                    definitionHTML += '</div>';
+                }
+            });
+            
+            if (definitionHTML) {
+                document.getElementById('modal-definition').innerHTML = definitionHTML;
+            } else {
+                document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
+            }
+            
+            // 处理同义词和反义词
+            displaySynonymsAndAntonyms(definitions, isWordQuery);
+            
+            // 显示例句
+            let exampleHTML = '';
+            let exampleCount = 0;
+            definitions.forEach(def => {
+                let examples = isWordQuery ? (def.e || []) : (def.example || []);
+                
+                if (typeof examples === 'string') {
+                    examples = [examples];
+                }
+                
+                if (!Array.isArray(examples)) {
+                    examples = [];
+                }
+                
+                if (examples.length > 0 && exampleCount < 3) {
+                    examples.forEach(ex => {
+                        if (exampleCount < 3 && ex) {
+                            let cleanExample = cleanMoedictText(String(ex));
+                            cleanExample = cleanExample.replace(/<[^>]*>/g, '').trim();
+                            if (cleanExample && cleanExample.length > 0) {
+                                exampleHTML += `<div class="example-item">• ${cleanExample}</div>`;
+                                exampleCount++;
+                            }
+                        }
+                    });
+                }
+            });
+            
+            if (exampleHTML) {
+                document.getElementById('modal-example').innerHTML = exampleHTML;
+            } else {
+                document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
+            }
+        } else {
+            document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
+            document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
+            document.getElementById('synonyms-section').style.display = 'none';
+            document.getElementById('antonyms-section').style.display = 'none';
+        }
+    } else {
+        document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">暫無釋義</span>';
+        document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">暫無例句</span>';
+        const synonymsSection = document.getElementById('synonyms-section');
+        const antonymsSection = document.getElementById('antonyms-section');
+        if (synonymsSection) synonymsSection.style.display = 'none';
+        if (antonymsSection) antonymsSection.style.display = 'none';
+    }
 }
 
 /**

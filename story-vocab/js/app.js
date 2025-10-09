@@ -13,7 +13,7 @@ import { startGame, getAIResponse, submitSentence, finishStory, shareStory } fro
 
 // 导入功能模块
 import { selectWord } from './features/word-manager.js';
-import { showWordDetailFromVocab, closeWordModal } from './features/dictionary.js';
+import { showWordDetailFromVocab, closeWordModal, getWordBriefInfo } from './features/dictionary.js';
 import { addToWordbook, openWordbook } from './features/wordbook.js';
 
 // 导入 UI 模块
@@ -25,9 +25,29 @@ import { loadMyStoriesScreen } from './ui/story-card.js';
 // 导入工具
 import { showToast } from './utils/toast.js';
 import { updateSidebarStats } from './utils/storage.js';
+import { preloadWords } from './utils/word-cache.js';
 
 // 导入故事存储模块
 import { updateStory, getStory } from './core/story-storage.js';
+
+/**
+ * 获取AI反馈设置
+ */
+function isAIFeedbackEnabled() {
+    const saved = localStorage.getItem('ai-feedback-enabled');
+    return saved !== 'false';  // 默认true（开启）
+}
+
+/**
+ * 初始化toggle状态
+ */
+function initFeedbackToggle() {
+    const toggle = document.getElementById('feedback-toggle');
+    if (toggle) {
+        const enabled = isAIFeedbackEnabled();
+        toggle.checked = enabled;
+    }
+}
 
 /**
  * 初始化应用
@@ -42,6 +62,9 @@ async function initializeApp() {
         const user = await signInAnonymously();
         gameState.userId = user.id;
         console.log('✅ 用戶登錄成功:', gameState.userId);
+        
+        // 初始化AI反馈toggle状态
+        initFeedbackToggle();
         
         console.log('✅ 應用初始化完成');
     } catch (error) {
@@ -102,39 +125,63 @@ function mountGlobalFunctions() {
             return;
         }
         
-        // 首次提交：显示反馈加载（不显示用户句子到故事区）
-        showFeedbackLoading();
+        // 🆕 检查AI反馈开关状态
+        const feedbackEnabled = isAIFeedbackEnabled();
         
-        // 禁用输入
-        input.disabled = true;
-        const submitBtn = document.getElementById('submit-btn');
-        if (submitBtn) submitBtn.disabled = true;
-        
-        try {
-            // 只获取反馈
-            const feedback = await getFeedbackOnly(sentence, usedWord);
+        if (feedbackEnabled) {
+            // 学习模式：显示反馈
+            showFeedbackLoading();
             
-            // 显示反馈
-            displayFeedback(feedback, sentence, usedWord);
+            // 禁用输入
+            input.disabled = true;
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) submitBtn.disabled = true;
             
-            // 标记已显示反馈
-            window._feedbackShown = true;
-            
-            // 启用输入框和提交按钮，让用户可以修改
-            input.disabled = false;
-            if (submitBtn) submitBtn.disabled = false;
-            
-        } catch (error) {
-            console.error('获取反馈失败:', error);
-            showToast('❌ 獲取反饋失敗，請重試');
-            hideFeedbackSection();
-            input.disabled = false;
-            if (submitBtn) submitBtn.disabled = false;
+            try {
+                // 只获取反馈
+                const feedback = await getFeedbackOnly(sentence, usedWord);
+                
+                // 显示反馈
+                displayFeedback(feedback, sentence, usedWord);
+                
+                // 标记已显示反馈
+                window._feedbackShown = true;
+                
+                // 启用输入框和提交按钮，让用户可以修改
+                input.disabled = false;
+                if (submitBtn) submitBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('获取反馈失败:', error);
+                showToast('❌ 獲取反饋失敗，請重試');
+                hideFeedbackSection();
+                input.disabled = false;
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        } else {
+            // 快速模式：直接提交，不显示反馈
+            await confirmAndSubmit(sentence, usedWord);
         }
     };
     
     // 反饋按鈕處理函數
     window.useOptimizedSentence = useOptimizedSentence;
+    
+    // AI反饋Toggle切換處理
+    window.handleFeedbackToggle = function() {
+        const toggle = document.getElementById('feedback-toggle');
+        const isEnabled = toggle.checked;
+        
+        // 保存设置到localStorage
+        localStorage.setItem('ai-feedback-enabled', isEnabled ? 'true' : 'false');
+        
+        // Toast提示
+        if (isEnabled) {
+            showToast('📚 已開啟AI反饋 - 提交後將顯示評分和建議');
+        } else {
+            showToast('💨 已關閉AI反饋 - 快速創作模式');
+        }
+    };
 }
 
 /**
@@ -195,6 +242,12 @@ async function getFeedbackOnly(sentence, word) {
  * 确认提交并生成故事
  */
 async function confirmAndSubmit(sentence, word) {
+    // 🔒 立即禁用词汇按钮（用户一点击提交就禁用）
+    document.querySelectorAll('.word-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('disabled');
+    });
+    
     // 显示用户消息到故事区
     displayUserMessage(sentence, word);
     
@@ -247,6 +300,21 @@ async function confirmAndSubmit(sentence, word) {
         }, 1000);
     } else if (result.aiData) {
         console.log('📝 显示 AI 响应...');
+        
+        // 🚀 立即预加载词汇信息（在打字机效果前）
+        if (result.aiData.recommendedWords && result.aiData.recommendedWords.length > 0) {
+            const wordsToPreload = result.aiData.recommendedWords
+                .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
+                .map(w => w.word);
+            
+            if (wordsToPreload.length > 0) {
+                console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
+                preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
+                    console.log('⚠️ 预加载失败（不影响使用）:', err);
+                });
+            }
+        }
+        
         await displayAIResponse(result.aiData);
     }
 }
@@ -299,6 +367,21 @@ async function handleStartGame() {
         console.log('🎮 开始调用 getAIResponse...');
         const data = await getAIResponse();
         console.log('✅ getAIResponse 完成，准备显示...');
+        
+        // 🚀 立即预加载词汇信息（在打字机效果前）
+        if (data.recommendedWords && data.recommendedWords.length > 0) {
+            const wordsToPreload = data.recommendedWords
+                .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
+                .map(w => w.word);
+            
+            if (wordsToPreload.length > 0) {
+                console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
+                preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
+                    console.log('⚠️ 预加载失败（不影响使用）:', err);
+                });
+            }
+        }
+        
         await displayAIResponse(data);
         console.log('✅ displayAIResponse 完成');
     });

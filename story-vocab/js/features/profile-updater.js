@@ -67,10 +67,10 @@ export async function reassessUserLevel(userId) {
   const supabase = getSupabase()
   
   try {
-    // 獲取最近20輪數據
+    // 獲取最近20輪數據（只需要選擇難度）
     const { data: recent20, error } = await supabase
       .from('game_rounds')
-      .select('selected_difficulty, ai_score')
+      .select('selected_difficulty')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -80,32 +80,29 @@ export async function reassessUserLevel(userId) {
       return 2 // 默認L2
     }
     
-    // 計算平均難度和得分
+    // 計算平均選擇難度
     const avgDifficulty = calculateAverage(recent20, 'selected_difficulty')
-    const avgScore = calculateAverage(recent20, 'ai_score')
     
-    // 獲取當前水平
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('current_level')
-      .eq('user_id', userId)
-      .maybeSingle()
+    // 分析趨勢（最近10輪 vs 之前10輪）
+    const recent10 = recent20.slice(0, 10)
+    const older10 = recent20.slice(10, 20)
     
-    let newLevel = profile?.current_level || 2
+    const recent10Avg = calculateAverage(recent10, 'selected_difficulty')
+    const older10Avg = older10.length > 0 ? calculateAverage(older10, 'selected_difficulty') : avgDifficulty
     
-    // 簡單規則
-    if (avgScore >= 8) {
-      // 表現優秀，提升難度
+    // 基準水平
+    let newLevel = Math.round(avgDifficulty)
+    
+    // 根據趨勢微調
+    if (recent10Avg > older10Avg + 0.5) {
+      // 最近在挑戰更難的詞 → 提升
       newLevel = Math.min(6, Math.ceil(avgDifficulty))
-    } else if (avgScore < 6) {
-      // 表現不佳，降低難度
-      newLevel = Math.max(1, Math.floor(avgDifficulty) - 1)
-    } else {
-      // 表現穩定，維持在選擇難度附近
-      newLevel = Math.round(avgDifficulty)
+    } else if (recent10Avg < older10Avg - 0.5) {
+      // 最近在選擇更簡單的詞 → 降低
+      newLevel = Math.max(1, Math.floor(avgDifficulty))
     }
     
-    console.log(`[重新評估] 最近20輪: 平均難度=${avgDifficulty.toFixed(1)}, 平均分=${avgScore.toFixed(1)}, 新等級=L${newLevel}`)
+    console.log(`[重新評估] 最近20輪平均難度=${avgDifficulty.toFixed(1)}, 最近10輪=${recent10Avg.toFixed(1)}, 新等級=L${newLevel}`)
     
     return newLevel
   } catch (error) {
