@@ -1,8 +1,17 @@
 /* ===== 响应式设计 ===== */
+/* 
+ * 移動端優化說明：
+ * 1. 允許主遊戲界面滾動查看所有內容
+ * 2. 優化觸摸目標大小（最小 44x44px）
+ * 3. 防止 iOS Safari 自動縮放（input font-size >= 16px）
+ * 4. 優化間距和字體大小以提升可讀性
+ * 5. 桌面版布局保持不變（overflow: hidden 只在桌面版生效）
+ */
 @media (max-width: 768px) {
     body {
         display: block;
         overflow: auto;
+        -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
     }
 
     .mobile-header {
@@ -32,12 +41,14 @@
         margin-top: 60px;
         height: calc(100vh - 60px);
         background: white;
-        overflow: hidden;
+        overflow: auto; /* 允許移動端滾動 */
+        -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
     }
 
     .container {
         height: 100%;
         min-height: calc(100vh - 60px);
+        overflow: visible; /* 允許內容溢出以便滾動 */
     }
 
     #start-screen.active {
@@ -47,6 +58,87 @@
     #start-screen .content {
         padding: 20px;
         min-height: calc(100vh - 60px);
+    }
+
+    #start-screen .welcome-title {
+        font-size: 2em;
+    }
+
+    #start-screen .welcome-subtitle {
+        font-size: 1.1em;
+    }
+
+    #start-screen .welcome-hint {
+        font-size: 0.95em;
+        padding: 12px 20px;
+    }
+
+    #start-screen .theme-selector h2,
+    #start-screen .level-selector h2 {
+        font-size: 1.2em;
+    }
+
+    /* 遊戲界面移動端優化 - 允許滾動 */
+    #game-screen.active {
+        display: flex;
+        flex-direction: column;
+        height: auto; /* 改為自動高度 */
+        min-height: calc(100vh - 60px);
+        overflow: visible; /* 允許內容可見 */
+    }
+
+    #game-screen .content {
+        overflow: visible !important; /* 覆蓋桌面版的 hidden */
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    #game-screen .story-display {
+        flex: 0 1 auto; /* 允許根據內容調整大小 */
+        max-height: none; /* 移除最大高度限制 */
+        min-height: 150px;
+        margin-bottom: 0;
+        padding: 15px; /* 移動端減少內邊距，進度圓圈懸浮不佔空間 */
+        -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+    }
+
+    /* 進度圓圈移動端優化 */
+    .progress-circle {
+        width: 60px;
+        height: 60px;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .progress-circle svg {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .progress-text {
+        font-size: 0.85em;
+    }
+    
+    .current-turn {
+        font-size: 1.3em;
+    }
+    
+    .turn-separator,
+    .max-turn {
+        font-size: 0.8em;
+    }
+
+    #game-screen .word-choices-section {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+
+    #game-screen .user-input-section {
+        flex-shrink: 0;
+        padding: 20px;
     }
 
     #settings-screen .content {
@@ -67,26 +159,93 @@
 
     .word-choices {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
 
     .input-group {
         flex-direction: column;
+        gap: 10px;
+    }
+
+    .input-group input {
+        font-size: 16px; /* 防止 iOS Safari 自動縮放 */
+        padding: 15px;
     }
 
     .input-group button {
         width: 100%;
+        padding: 15px;
+        font-size: 1.1em;
+    }
+
+    .selected-word-display {
+        font-size: 1em;
+        padding: 12px;
+    }
+
+    /* 完成界面優化 */
+    #finish-screen .header {
+        padding: 30px 20px;
+    }
+
+    #finish-screen .header h1 {
+        font-size: 1.8em;
+    }
+
+    #finish-screen .header p {
+        font-size: 0.95em;
+    }
+
+    #finish-screen .content {
+        padding: 20px;
+    }
+
+    .celebration {
+        font-size: 4em;
+        margin-bottom: 15px;
+    }
+
+    .finish-content h2 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
     }
 
     .story-stats {
         grid-template-columns: 1fr;
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .full-story-container {
+        padding: 20px;
+        max-height: 300px;
+        margin: 20px 0;
+    }
+
+    .full-story-container h3 {
+        font-size: 1.3em;
+        margin-bottom: 15px;
+    }
+
+    .full-story-text {
+        font-size: 1.1em;
+        line-height: 1.8;
     }
 
     .action-buttons {
         flex-direction: column;
+        gap: 12px;
+        margin-top: 20px;
     }
 
     .action-buttons button {
         width: 100%;
+        padding: 15px;
+        font-size: 1.1em;
     }
 
     .user-stats {
@@ -140,17 +299,22 @@
     }
     
     .message-content {
-        font-size: 1.2em;
-        line-height: 2;
+        font-size: 1.1em;
+        line-height: 1.8;
         padding-left: 10px;
     }
     
     .message {
         gap: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        padding: 12px;
     }
     
     /* 反饋區域響應式 */
+    .feedback-section {
+        margin-bottom: 20px;
+    }
+
     .feedback-message {
         padding: 15px;
         font-size: 0.95em;
@@ -187,6 +351,140 @@
         width: 100%;
         padding: 12px;
         font-size: 1em;
+    }
+
+    /* 移動端詞彙按鈕優化 */
+    .word-btn {
+        padding: 15px 10px;
+        font-size: 1.1em;
+        min-height: 50px;
+    }
+
+    /* 移動端主題按鈕優化 */
+    .theme-btn {
+        padding: 15px;
+        font-size: 1em;
+    }
+
+    .theme-btn .emoji {
+        font-size: 1.8em;
+        margin-bottom: 5px;
+    }
+
+    /* 移動端級別卡片優化 */
+    .level-card {
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .level-name {
+        font-size: 1.2em;
+    }
+
+    .level-desc {
+        font-size: 0.9em;
+    }
+
+    /* 移動端加載動畫 */
+    .loading {
+        padding: 30px 20px;
+    }
+
+    .loading-text {
+        font-size: 1em;
+    }
+
+    /* 移動端模態框優化 */
+    .modal-content {
+        margin: 20px;
+        max-height: calc(100vh - 80px);
+        border-radius: 15px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        padding: 14px 20px;
+    }
+
+    .modal-close {
+        top: 15px;
+        right: 15px;
+        width: 35px !important;
+        height: 35px !important;
+        min-width: 35px;
+        min-height: 35px;
+        font-size: 1.3em;
+    }
+
+    .word-detail-header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+
+    .word-detail-header h2 {
+        font-size: 2em;
+    }
+
+    .word-detail-header .pinyin {
+        font-size: 1.2em;
+    }
+
+    .word-detail-section {
+        margin-bottom: 14px;
+    }
+
+    .word-detail-section h3 {
+        font-size: 1em;
+        margin-bottom: 8px;
+    }
+
+    .word-detail-section .content {
+        font-size: 1em;
+        padding: 12px 14px;
+    }
+
+    #modal-definition {
+        max-height: 140px;
+    }
+
+    #modal-example {
+        max-height: 120px;
+    }
+
+    /* 詞性標籤移動端 */
+    .part-of-speech {
+        font-size: 0.75em;
+        padding: 3px 10px;
+        margin-right: 8px;
+        margin-bottom: 6px;
+    }
+    
+    .definition-text-content {
+        font-size: 0.95em;
+    }
+
+    .definition-item {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+    }
+
+    /* 相關詞標籤移動端 */
+    .related-words {
+        gap: 6px;
+    }
+    
+    .related-word-tag {
+        padding: 5px 11px;
+        font-size: 0.9em;
+    }
+
+    /* 例句移動端 */
+    .example-item {
+        font-size: 0.95em;
+        padding: 6px 0;
     }
 }
 

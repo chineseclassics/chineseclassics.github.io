@@ -224,17 +224,28 @@
 
         <!-- ===== 游戏界面 ===== -->
         <div id="game-screen" class="screen">
-            <div class="game-header">
-                <div class="progress-info">
-                    第 <span id="turn-count">1</span>/<span id="max-turns">10</span> 輪
-                </div>
-                <div class="level-info">
-                    <span id="current-level">L2</span> · <span id="current-theme">自然探索</span>
-                </div>
-            </div>
             <div class="content">
                 <!-- 故事显示区域 -->
                 <div class="story-display" id="story-display">
+                    <!-- 進度圓圈 -->
+                    <div class="progress-circle" id="progress-circle">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <defs>
+                                <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="progress-bg" cx="40" cy="40" r="35" />
+                            <circle class="progress-bar" cx="40" cy="40" r="35" id="progress-bar" />
+                        </svg>
+                        <div class="progress-text">
+                            <span class="current-turn" id="current-turn">1</span>
+                            <span class="turn-separator">/</span>
+                            <span class="max-turn" id="max-turn">10</span>
+                        </div>
+                    </div>
+                    
                     <div class="message ai">
                         <div class="message-label ai">🤖 AI 故事家</div>
                         <div class="message-content">正在構思故事開頭...</div>
@@ -243,7 +254,6 @@
 
                 <!-- 词汇选择区域 -->
                 <div class="word-choices-section" id="word-choices-section">
-                    <h3>💡 請選擇一個詞來造句：</h3>
                     <div class="word-choices" id="word-choices">
                         <!-- 词汇按钮将通过 JavaScript 动态生成 -->
                     </div>
@@ -260,8 +270,8 @@
                         請先選擇一個詞彙...
                     </div>
                     <div class="input-group">
-                        <input type="text" id="user-input" placeholder="用選中的詞寫一個句子，繼續故事..." disabled>
-                        <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">提交 →</button>
+                        <input type="text" id="user-input" placeholder="請從上方選擇一個詞語來造句，續寫故事……" disabled>
+                        <button class="btn-secondary" onclick="submitSentence()" disabled id="submit-btn">提交</button>
                     </div>
                 </div>
 
@@ -534,23 +544,37 @@
     <div id="word-modal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeWordModal()">×</button>
-            <div class="word-detail-header">
-                <h2 id="modal-word">詞彙</h2>
-                <div class="pinyin" id="modal-pinyin">pinyin</div>
+            <div class="modal-body">
+                <div class="word-detail-header">
+                    <h2 id="modal-word">詞彙</h2>
+                    <div class="pinyin" id="modal-pinyin">pinyin</div>
+                </div>
+                <!-- 同義詞 -->
+                <div class="word-detail-section" id="synonyms-section" style="display: none;">
+                    <h3>🔄 同義詞</h3>
+                    <div class="related-words" id="modal-synonyms"></div>
+                </div>
+                <!-- 反義詞 -->
+                <div class="word-detail-section" id="antonyms-section" style="display: none;">
+                    <h3>⚖️ 反義詞</h3>
+                    <div class="related-words" id="modal-antonyms"></div>
+                </div>
+                <div class="word-detail-section">
+                    <h3>🌍 英文翻譯</h3>
+                    <div class="content" id="modal-translation">載入中...</div>
+                </div>
+                <div class="word-detail-section">
+                    <h3>📖 釋義</h3>
+                    <div class="content definitions-list" id="modal-definition">載入中...</div>
+                </div>
+                <div class="word-detail-section">
+                    <h3>📝 例句</h3>
+                    <div class="content" id="modal-example">載入中...</div>
+                </div>
             </div>
-            <div class="word-detail-section">
-                <h3>🌍 英文翻譯</h3>
-                <div class="content" id="modal-translation">載入中...</div>
+            <div class="modal-footer">
+                <button class="btn-primary add-to-wordbook-btn" onclick="addToWordbook()">⭐ 收藏到生詞本</button>
             </div>
-            <div class="word-detail-section">
-                <h3>📖 釋義</h3>
-                <div class="content" id="modal-definition">載入中...</div>
-            </div>
-            <div class="word-detail-section">
-                <h3>📝 例句</h3>
-                <div class="content" id="modal-example">載入中...</div>
-            </div>
-            <button class="btn-primary add-to-wordbook-btn" onclick="addToWordbook()">⭐ 收藏到生詞本</button>
         </div>
     </div>
 

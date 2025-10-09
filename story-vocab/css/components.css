@@ -203,33 +203,58 @@ button:active {
     display: flex;
 }
 
+.modal {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
 .modal-content {
     background: white;
     border-radius: 20px;
-    padding: 40px;
-    max-width: 600px;
+    max-width: 650px;
     width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
+    max-height: 90vh;
     position: relative;
     animation: slideUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px 35px 20px;
+}
+
+.modal-footer {
+    flex-shrink: 0;
+    padding: 16px 35px;
+    border-top: 2px solid var(--light-blue);
+    background: white;
 }
 
 .modal-close {
     position: absolute;
     top: 20px;
     right: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 50% !important;
     background: var(--light-pink);
     border: none;
     font-size: 1.5em;
+    line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    padding: 0;
+    z-index: 10;
 }
 
 .modal-close:hover {
@@ -241,44 +266,159 @@ button:active {
 /* 词汇详情 */
 .word-detail-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--light-blue);
 }
 
 .word-detail-header h2 {
-    font-size: 3em;
+    font-size: 2.5em;
     color: var(--primary-purple);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .word-detail-header .pinyin {
-    font-size: 1.5em;
+    font-size: 1.3em;
     color: var(--text-light);
 }
 
 .word-detail-section {
-    margin-bottom: 25px;
+    margin-bottom: 16px;
+}
+
+.word-detail-section:last-child {
+    margin-bottom: 0;
 }
 
 .word-detail-section h3 {
     color: var(--primary-blue);
-    margin-bottom: 15px;
-    font-size: 1.3em;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .word-detail-section .content {
     background: var(--light-blue);
-    padding: 20px;
+    padding: 14px 16px;
     border-radius: 10px;
-    line-height: 2;
-    font-size: 1.1em;
+    line-height: 1.75;
+    font-size: 1.05em;
     white-space: pre-line;
     max-height: 300px;
     overflow-y: auto;
 }
 
+/* 釋義區域特別限高 */
+#modal-definition {
+    max-height: 160px;
+}
+
+/* 例句區域限高 */
+#modal-example {
+    max-height: 140px;
+}
+
+/* 釋義列表樣式 */
+.definitions-list {
+    white-space: normal;
+}
+
+.definition-item {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(74, 144, 226, 0.2);
+    line-height: 1.8;
+}
+
+.definition-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.part-of-speech {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-right: 10px;
+    margin-bottom: 8px;
+    vertical-align: middle;
+}
+
+.definition-text-content {
+    display: inline;
+    font-size: 1.1em;
+    line-height: 1.8;
+    color: var(--text-dark);
+}
+
+/* 例句列表樣式 */
+.example-item {
+    padding: 10px 0;
+    line-height: 1.8;
+    font-size: 1.05em;
+    color: var(--text-dark);
+}
+
+.example-item:first-child {
+    padding-top: 0;
+}
+
+/* 同義詞/反義詞標籤樣式 */
+.related-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+    pointer-events: none;
+}
+
+.related-word-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 13px;
+    background: white;
+    border: 2px solid var(--primary-blue);
+    border-radius: 20px;
+    color: var(--primary-blue);
+    font-size: 0.95em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+    pointer-events: auto;
+}
+
+.related-word-tag:hover {
+    background: var(--primary-blue);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.related-word-tag.antonym {
+    border-color: var(--primary-pink);
+    color: var(--primary-pink);
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.15);
+}
+
+.related-word-tag.antonym:hover {
+    background: var(--primary-pink);
+    color: white;
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
 .add-to-wordbook-btn {
     width: 100%;
-    margin-top: 20px;
+    margin: 0;
 }
 
 /* Toast 提示消息 */
@@ -558,6 +698,77 @@ button:active {
 .feature-item {
     color: var(--primary-blue);
     font-size: 0.9em;
+}
+
+/* ===== 進度圓圈組件 ===== */
+.progress-circle {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 80px;
+    height: 80px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.progress-circle svg {
+    transform: rotate(-90deg);
+}
+
+.progress-bg {
+    fill: none;
+    stroke: rgba(102, 126, 234, 0.2);
+    stroke-width: 6;
+}
+
+.progress-bar {
+    fill: none;
+    stroke: url(#progress-gradient);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 220;
+    stroke-dashoffset: 220;
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-weight: bold;
+    color: var(--primary-purple);
+    font-size: 1em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.current-turn {
+    font-size: 1.2em;
+}
+
+.turn-separator {
+    font-size: 1em;
+    opacity: 0.7;
+    margin: 0 1px;
+}
+
+.max-turn {
+    font-size: 1em;
+    opacity: 0.8;
+}
+
+/* 進度更新動畫 */
+@keyframes progressPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.progress-circle.updating .progress-text {
+    animation: progressPulse 0.5s ease;
 }
 
 /* ===== 反馈区域样式（轻量化版本）===== */

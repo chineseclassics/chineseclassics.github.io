@@ -67,28 +67,6 @@
 }
 
 /* 游戏界面 */
-.game-header {
-    flex-shrink: 0;
-    background: linear-gradient(135deg, var(--primary-blue), var(--primary-green));
-    color: white;
-    padding: 20px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.progress-info {
-    font-size: 1.2em;
-    font-weight: bold;
-}
-
-.level-info {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 0.9em;
-}
-
 /* 游戏内容区域：使用 flex 布局 */
 #game-screen .content {
     flex: 1;
@@ -96,6 +74,7 @@
     flex-direction: column;
     overflow: hidden !important;
     padding: 30px 40px;
+    padding-top: 20px;
     justify-content: flex-start;
 }
 
@@ -106,25 +85,19 @@
     background: var(--light-blue);
     border-radius: 15px;
     padding: 20px;
-    min-height: 200px;
+    min-height: 250px;
+    position: relative;
 }
 
 .word-choices-section {
     flex-shrink: 0;
-    margin-bottom: 30px;
-}
-
-.word-choices-section h3 {
-    color: var(--text-dark);
-    margin-bottom: 15px;
-    font-size: 1.3em;
+    margin-bottom: 20px;
 }
 
 .word-choices {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 15px;
-    margin-bottom: 20px;
 }
 
 .user-input-section {

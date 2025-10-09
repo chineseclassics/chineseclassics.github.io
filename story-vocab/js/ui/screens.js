@@ -38,34 +38,40 @@ export function initStartScreen() {
  * @param {string} theme - 主题
  */
 export function initGameScreen(level, theme) {
-    // 更新游戏界面信息
-    const currentLevel = document.getElementById('current-level');
-    const currentTheme = document.getElementById('current-theme');
-    const turnCount = document.getElementById('turn-count');
-    const maxTurns = document.getElementById('max-turns');
+    // 更新進度顯示
+    const currentTurn = document.getElementById('current-turn');
+    const maxTurn = document.getElementById('max-turn');
+    const progressBar = document.getElementById('progress-bar');
     
-    if (currentLevel) currentLevel.textContent = level;
-    if (currentTheme) currentTheme.textContent = getThemeName(theme);
-    if (turnCount) turnCount.textContent = '1';
-    if (maxTurns) maxTurns.textContent = gameState.maxTurns;
+    if (currentTurn) currentTurn.textContent = '1';
+    if (maxTurn) maxTurn.textContent = gameState.maxTurns;
+    if (progressBar) {
+        progressBar.style.strokeDashoffset = '220';
+    }
     
-    // 清空故事显示区域并显示内联加载动画
+    // 清空故事显示区域并显示内联加载动画（保留進度圓圈）
     const storyDisplay = document.getElementById('story-display');
     if (storyDisplay) {
-        storyDisplay.innerHTML = `
-            <div class="message ai">
-                <div class="message-label ai">
-                    <span class="emoji">🤖</span>
-                    <span class="name">AI故事家</span>
-                </div>
-                <div class="message-content">
-                    <div class="inline-loading">
-                        <div class="inline-loading-spinner"></div>
-                        <span class="inline-loading-text">正在準備故事...</span>
-                    </div>
+        // 移除所有消息，但保留進度圓圈
+        const messages = storyDisplay.querySelectorAll('.message');
+        messages.forEach(msg => msg.remove());
+        
+        // 添加初始加載消息
+        const initialMessage = document.createElement('div');
+        initialMessage.className = 'message ai';
+        initialMessage.innerHTML = `
+            <div class="message-label ai">
+                <span class="emoji">🤖</span>
+                <span class="name">AI故事家</span>
+            </div>
+            <div class="message-content">
+                <div class="inline-loading">
+                    <div class="inline-loading-spinner"></div>
+                    <span class="inline-loading-text">正在準備故事...</span>
                 </div>
             </div>
         `;
+        storyDisplay.appendChild(initialMessage);
     }
 }
 
@@ -194,9 +200,30 @@ export function displayUserMessage(sentence, usedWord) {
  * @param {number} turn - 当前轮次
  */
 export function updateTurnDisplay(turn) {
-    const turnCount = document.getElementById('turn-count');
-    if (turnCount) {
-        turnCount.textContent = turn;
+    const currentTurn = document.getElementById('current-turn');
+    const progressBar = document.getElementById('progress-bar');
+    const progressCircle = document.getElementById('progress-circle');
+    const maxTurn = document.getElementById('max-turn');
+    
+    if (currentTurn) {
+        currentTurn.textContent = turn;
+    }
+    
+    // 更新 SVG 圓形進度條
+    if (progressBar && maxTurn) {
+        const maxTurns = parseInt(maxTurn.textContent) || 10;
+        const progress = turn / maxTurns;
+        const circumference = 220; // 2 * PI * r (r=35)
+        const offset = circumference - (progress * circumference);
+        progressBar.style.strokeDashoffset = offset;
+        
+        // 添加脈衝動畫
+        if (progressCircle) {
+            progressCircle.classList.add('updating');
+            setTimeout(() => {
+                progressCircle.classList.remove('updating');
+            }, 500);
+        }
     }
 }
 
