@@ -316,6 +316,69 @@
             display: none; /* Safari and Chrome */
         }
         
+        /* 移动端应用切换器优化 */
+        @media (max-width: 768px) {
+            #appSwitcherModal {
+                padding: 8px !important;
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+            
+            #switcherContainer {
+                max-height: calc(100vh - 16px) !important;
+                max-height: calc(100dvh - 16px) !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            /* 标题区域紧凑化 */
+            #switcherContainer > div:first-of-type {
+                padding: 8px 12px !important;
+                flex-shrink: 0;
+            }
+            
+            /* 确保应用网格区域可以滚动 */
+            #switcherContainer > div:last-of-type {
+                flex: 1;
+                overflow-y: auto !important;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+                min-height: 0; /* 重要：允许flex子元素收缩 */
+            }
+            
+            /* 应用网格紧凑化 */
+            #switcherAppGrid {
+                padding: 8px !important;
+                gap: 8px !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+            }
+            
+            /* 移动端返回主页按钮紧凑化 */
+            #switcherContainer button[onclick="showHome()"] {
+                padding: 6px 10px !important;
+                font-size: 12px !important;
+            }
+            
+            /* 移动端标题文字缩小 */
+            #switcherContainer h2 {
+                font-size: 14px !important;
+            }
+            
+            /* 移动端logo缩小 */
+            #switcherContainer img {
+                height: 24px !important;
+                width: 24px !important;
+            }
+            
+            /* 移动端关闭按钮调整 */
+            #closeSwitcherBtn {
+                width: 28px !important;
+                height: 28px !important;
+                top: 6px !important;
+                right: 6px !important;
+            }
+        }
+        
         /* 应用切换器图标优化 */
         .switcher-app-icon {
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -465,20 +528,6 @@
         }
 
         /* 响应式网格调整 */
-        @media (max-width: 640px) {
-            #switcherAppGrid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1rem;
-                padding: 1.5rem 1.5rem 1.5rem 1.5rem !important;
-            }
-        }
-        
-        @media (min-width: 641px) and (max-width: 768px) {
-            #switcherAppGrid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        
         @media (min-width: 769px) and (max-width: 1024px) {
             #switcherAppGrid {
                 grid-template-columns: repeat(5, 1fr);
@@ -488,6 +537,122 @@
         @media (min-width: 1025px) {
             #switcherAppGrid {
                 grid-template-columns: repeat(6, 1fr);
+            }
+        }
+        
+        /* 移动端应用图标和分隔符优化 */
+        @media (max-width: 768px) {
+            /* 境地分隔符紧凑化 */
+            #switcherAppGrid .col-span-full {
+                margin-top: 6px !important;
+                margin-bottom: 4px !important;
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+            }
+            
+            #switcherAppGrid .col-span-full:first-child {
+                margin-top: 0 !important;
+            }
+            
+            /* 应用图标容器紧凑化 */
+            .switcher-app-icon .icon-container {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                min-height: 36px !important;
+                max-width: 36px !important;
+                max-height: 36px !important;
+                padding: 6px !important;
+                margin-bottom: 4px !important;
+            }
+            
+            /* 应用名称文字优化 */
+            .switcher-app-name {
+                font-size: 10px !important;
+                line-height: 1.1 !important;
+                height: auto !important;
+                max-height: 2.2em !important;
+            }
+            
+            /* 境地分隔符文字和图标 */
+            #switcherAppGrid .col-span-full span {
+                font-size: 9px !important;
+            }
+            
+            #switcherAppGrid .col-span-full .text-xs {
+                font-size: 11px !important;
+            }
+        }
+        
+        /* 超小屏幕（小于480px）进一步优化 */
+        @media (max-width: 480px) {
+            #appSwitcherModal {
+                padding: 4px !important;
+            }
+            
+            #switcherContainer {
+                max-height: calc(100vh - 8px) !important;
+                max-height: calc(100dvh - 8px) !important;
+            }
+            
+            /* 标题区域超紧凑 */
+            #switcherContainer > div:first-of-type {
+                padding: 6px 8px !important;
+            }
+            
+            /* 应用网格超紧凑 */
+            #switcherAppGrid {
+                padding: 6px !important;
+                gap: 6px !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+            
+            /* 返回主页按钮 - 只显示图标 */
+            #switcherContainer button[onclick="showHome()"] span {
+                display: none;
+            }
+            
+            #switcherContainer button[onclick="showHome()"] {
+                padding: 6px 8px !important;
+                min-width: auto !important;
+            }
+            
+            /* 标题文字进一步缩小 */
+            #switcherContainer h2 {
+                font-size: 12px !important;
+            }
+            
+            /* logo进一步缩小 */
+            #switcherContainer img {
+                height: 20px !important;
+                width: 20px !important;
+            }
+            
+            /* 应用图标进一步紧凑 */
+            .switcher-app-icon .icon-container {
+                width: 32px !important;
+                height: 32px !important;
+                min-width: 32px !important;
+                min-height: 32px !important;
+                max-width: 32px !important;
+                max-height: 32px !important;
+                padding: 4px !important;
+            }
+            
+            /* 应用名称文字进一步缩小 */
+            .switcher-app-name {
+                font-size: 9px !important;
+            }
+            
+            /* 境地分隔符进一步紧凑 */
+            #switcherAppGrid .col-span-full {
+                margin-top: 4px !important;
+                margin-bottom: 2px !important;
+            }
+            
+            /* 右侧占位缩小以保持平衡 */
+            #switcherContainer .w-24 {
+                width: 40px !important;
             }
         }
         
@@ -1942,7 +2107,13 @@
             appSwitcherModal.classList.add('switcher-modal-show');
             // 使用requestAnimationFrame优化性能
             requestAnimationFrame(() => {
+                // 在移动端也禁用body滚动，因为模态窗口内部自己有滚动
                 document.body.style.overflow = 'hidden';
+                // 移动端额外设置
+                if (isMobile()) {
+                    document.body.style.position = 'fixed';
+                    document.body.style.width = '100%';
+                }
             });
         }
 
@@ -1957,6 +2128,11 @@
             // 使用requestAnimationFrame优化性能
             requestAnimationFrame(() => {
                 document.body.style.overflow = '';
+                // 移动端清除额外设置
+                if (isMobile()) {
+                    document.body.style.position = '';
+                    document.body.style.width = '';
+                }
             });
         }
         
