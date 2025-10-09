@@ -703,7 +703,7 @@ button:active {
 /* ===== 進度圓圈組件 ===== */
 .progress-circle {
     position: absolute;
-    top: 15px;
+    bottom: 15px;
     right: 15px;
     width: 80px;
     height: 80px;
