@@ -293,6 +293,13 @@
                 <div class="celebration">🎊</div>
                 <h2>太棒了！</h2>
 
+                <!-- 故事標題編輯 -->
+                <div class="story-title-edit">
+                    <input type="text" id="story-title-input" placeholder="給故事起個名字..." maxlength="30">
+                    <button class="btn-title-confirm" onclick="confirmStoryTitle()">✓</button>
+                </div>
+                <p class="edit-hint">💡 你可以修改故事的標題</p>
+
                 <div class="story-stats">
                     <div class="stat-card">
                         <div class="stat-number" id="total-turns">18</div>
@@ -318,6 +325,125 @@
                 <div class="action-buttons">
                     <button class="btn-primary" onclick="restartGame()">🔄 再玩一次</button>
                     <button class="btn-secondary" onclick="shareStory()">📤 分享故事</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 我的故事集界面 ===== -->
+        <div id="my-stories-screen" class="screen">
+            <div class="content">
+                <div class="stories-header">
+                    <h1>📖 我的故事集</h1>
+                    <p class="stories-subtitle">記錄你與AI共創的精彩故事</p>
+                </div>
+
+                <!-- 統計概覽 -->
+                <div class="stories-stats-overview">
+                    <div class="stat-card-mini">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-info">
+                            <div class="stat-number-mini" id="total-stories-count">0</div>
+                            <div class="stat-label-mini">總故事數</div>
+                        </div>
+                    </div>
+                    <div class="stat-card-mini">
+                        <div class="stat-icon">✓</div>
+                        <div class="stat-info">
+                            <div class="stat-number-mini" id="completed-stories-count">0</div>
+                            <div class="stat-label-mini">已完成</div>
+                        </div>
+                    </div>
+                    <div class="stat-card-mini">
+                        <div class="stat-icon">✏️</div>
+                        <div class="stat-info">
+                            <div class="stat-number-mini" id="in-progress-stories-count">0</div>
+                            <div class="stat-label-mini">創作中</div>
+                        </div>
+                    </div>
+                    <div class="stat-card-mini">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-info">
+                            <div class="stat-number-mini" id="total-words-count">0</div>
+                            <div class="stat-label-mini">總詞彙數</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 故事列表 -->
+                <div class="stories-list">
+                    <!-- 已完成的故事 -->
+                    <div class="stories-section" id="completed-stories-section">
+                        <div class="section-header">
+                            <h2>✓ 已完成</h2>
+                            <span class="section-count" id="completed-count-label">0 個故事</span>
+                        </div>
+                        <div id="completed-stories-list" class="story-cards-container">
+                            <!-- 故事卡片將通過 JavaScript 動態生成 -->
+                        </div>
+                        <div class="empty-state" id="completed-empty" style="display: none;">
+                            <div class="empty-icon">📭</div>
+                            <p>還沒有完成的故事</p>
+                            <p class="empty-hint">去創作一個新故事吧！</p>
+                        </div>
+                    </div>
+
+                    <!-- 創作中的故事 -->
+                    <div class="stories-section" id="in-progress-stories-section">
+                        <div class="section-header">
+                            <h2>✏️ 創作中</h2>
+                            <span class="section-count" id="in-progress-count-label">0 個故事</span>
+                        </div>
+                        <div id="in-progress-stories-list" class="story-cards-container">
+                            <!-- 故事卡片將通過 JavaScript 動態生成 -->
+                        </div>
+                        <div class="empty-state" id="in-progress-empty" style="display: none;">
+                            <div class="empty-icon">✍️</div>
+                            <p>沒有未完成的故事</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部按鈕 -->
+                <div class="stories-footer">
+                    <button class="btn-primary" onclick="navigateTo('new-story')" style="width: 100%;">
+                        ✨ 開始新故事
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 故事詳情模態框 ===== -->
+        <div id="story-detail-modal" class="modal">
+            <div class="modal-content" style="max-width: 800px;">
+                <button class="modal-close" onclick="closeStoryDetailModal()">×</button>
+                <div class="modal-body">
+                    <div class="story-detail-header-full">
+                        <h2 id="detail-story-title">故事標題</h2>
+                        <div class="story-meta">
+                            <span class="story-theme-badge" id="detail-story-theme"></span>
+                            <span class="story-level-badge" id="detail-story-level"></span>
+                        </div>
+                        <div class="story-timestamps">
+                            <span id="detail-story-time"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="story-detail-content">
+                        <h3>📖 完整故事</h3>
+                        <div class="story-full-text" id="detail-story-text">
+                            <!-- 故事內容 -->
+                        </div>
+                    </div>
+                    
+                    <div class="story-detail-words">
+                        <h3>📝 使用的詞彙 (<span id="detail-words-count">0</span>)</h3>
+                        <div class="words-tags" id="detail-words-list">
+                            <!-- 詞彙標籤 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeStoryDetailModal()">關閉</button>
                 </div>
             </div>
         </div>
@@ -407,8 +533,8 @@
                     <div class="setting-item">
                         <label class="setting-label">故事長度</label>
                         <select class="setting-select" id="story-length">
-                            <option value="8">短故事（8 輪）</option>
-                            <option value="10" selected>標準（10 輪）</option>
+                            <option value="8" selected>標準（8 輪）</option>
+                            <option value="10">中等（10 輪）</option>
                             <option value="15">長故事（15 輪）</option>
                         </select>
                     </div>

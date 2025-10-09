@@ -486,5 +486,200 @@
         font-size: 0.95em;
         padding: 6px 0;
     }
+    
+    /* 故事标题编辑移动端 */
+    .story-title-edit {
+        flex-direction: column;
+        gap: 12px;
+        max-width: 100%;
+    }
+    
+    .story-title-edit input {
+        font-size: 1.1em;
+        padding: 10px 15px;
+    }
+    
+    .btn-title-confirm {
+        width: 100% !important;
+        height: 45px !important;
+        border-radius: 10px !important;
+        font-size: 1.2em;
+    }
+    
+    .edit-hint {
+        font-size: 0.85em;
+        margin-bottom: 15px;
+    }
+    
+    /* 我的故事集移动端 */
+    #my-stories-screen .content {
+        padding: 20px;
+    }
+    
+    .stories-header h1 {
+        font-size: 2em;
+    }
+    
+    .stories-subtitle {
+        font-size: 1em;
+    }
+    
+    /* 统计卡片移动端 */
+    .stories-stats-overview {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card-mini {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px;
+        gap: 10px;
+    }
+    
+    .stat-icon {
+        font-size: 2em;
+    }
+    
+    .stat-number-mini {
+        font-size: 1.8em;
+    }
+    
+    .stat-label-mini {
+        font-size: 0.8em;
+    }
+    
+    /* 故事列表移动端 */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .section-header h2 {
+        font-size: 1.3em;
+    }
+    
+    .section-count {
+        font-size: 0.9em;
+    }
+    
+    .story-cards-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    /* 故事卡片移动端 */
+    .story-card {
+        padding: 15px;
+    }
+    
+    .story-card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .story-card-title {
+        font-size: 1.2em;
+    }
+    
+    .btn-rename-inline {
+        font-size: 0.85em;
+    }
+    
+    .story-status-badge {
+        align-self: flex-start;
+    }
+    
+    .story-card-meta {
+        gap: 8px;
+    }
+    
+    .meta-item {
+        font-size: 0.8em;
+        padding: 3px 8px;
+    }
+    
+    .story-card-preview {
+        font-size: 0.9em;
+        -webkit-line-clamp: 2;
+    }
+    
+    .story-card-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .story-time {
+        text-align: center;
+    }
+    
+    .story-actions {
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .btn-action {
+        flex: 1;
+        min-width: 80px;
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+    
+    /* 空状态移动端 */
+    .empty-state {
+        padding: 40px 15px;
+    }
+    
+    .empty-icon {
+        font-size: 3em;
+    }
+    
+    .empty-state p {
+        font-size: 1.1em;
+    }
+    
+    /* 故事详情模态框移动端 */
+    .story-detail-header-full h2 {
+        font-size: 1.5em;
+    }
+    
+    .story-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .story-theme-badge,
+    .story-level-badge {
+        font-size: 0.85em;
+        padding: 5px 12px;
+    }
+    
+    .story-timestamps {
+        font-size: 0.85em;
+    }
+    
+    .story-detail-content h3,
+    .story-detail-words h3 {
+        font-size: 1.1em;
+    }
+    
+    .story-full-text {
+        font-size: 1em;
+        padding: 15px;
+        max-height: 300px;
+    }
+    
+    .words-tags {
+        gap: 6px;
+    }
+    
+    .word-tag {
+        font-size: 0.9em;
+        padding: 6px 12px;
+    }
 }
 

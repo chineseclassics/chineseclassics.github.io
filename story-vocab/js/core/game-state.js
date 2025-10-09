@@ -8,14 +8,15 @@ export const gameState = {
     level: 'L2',              // 当前级别
     theme: 'nature',          // 当前主题
     turn: 1,                  // 当前轮次
-    maxTurns: 10,             // 最大轮次
+    maxTurns: 8,              // 最大轮次
     storyHistory: [],         // 故事历史记录
     sessionId: null,          // 会话 ID
     userId: null,             // 用户 ID
     selectedWord: null,       // 当前选中的词汇
     currentWords: [],         // 当前可选词汇列表
     usedWords: [],            // 已使用的词汇列表
-    allRecommendedWords: []   // 所有轮次的推荐词汇
+    allRecommendedWords: [],  // 所有轮次的推荐词汇
+    currentStoryId: null      // 当前故事在 localStorage 中的 ID
 };
 
 /**
@@ -29,6 +30,7 @@ export function resetGameState() {
     gameState.sessionId = null;
     gameState.selectedWord = null;
     gameState.currentWords = [];
+    gameState.currentStoryId = null;
 }
 
 /**

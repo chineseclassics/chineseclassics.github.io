@@ -20,10 +20,14 @@ import { addToWordbook, openWordbook } from './features/wordbook.js';
 import { showScreen, toggleMobileSidebar, closeMobileSidebar, navigateTo, handleLogout, initSidebarSwipe } from './ui/navigation.js';
 import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, initModalClickOutside } from './ui/modals.js';
 import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initSettingsScreen, showFeedbackLoading, displayFeedback, hideFeedbackSection } from './ui/screens.js';
+import { loadMyStoriesScreen } from './ui/story-card.js';
 
 // 导入工具
 import { showToast } from './utils/toast.js';
 import { updateSidebarStats } from './utils/storage.js';
+
+// 导入故事存储模块
+import { updateStory, getStory } from './core/story-storage.js';
 
 /**
  * 初始化应用
@@ -74,6 +78,11 @@ function mountGlobalFunctions() {
     window.restartGame = () => showScreen('start-screen');
     window.shareStory = shareStory;
     window.updateSidebarStats = updateSidebarStats;
+    
+    // 故事管理
+    window.confirmStoryTitle = confirmStoryTitle;
+    window.continueStory = continueStoryFromId;
+    window.loadMyStoriesScreen = loadMyStoriesScreen;
     
     // 提交句子（完全重构）
     window.submitSentence = async function() {
@@ -320,6 +329,124 @@ function bindEventListeners() {
     
     // 初始化弹窗背景点击关闭
     initModalClickOutside();
+}
+
+/**
+ * 确认并保存故事标题
+ */
+function confirmStoryTitle() {
+    const titleInput = document.getElementById('story-title-input');
+    if (!titleInput) return;
+    
+    const newTitle = titleInput.value.trim();
+    if (!newTitle) {
+        showToast('請輸入故事標題');
+        return;
+    }
+    
+    // 更新故事标题
+    if (gameState.currentStoryId) {
+        updateStory(gameState.currentStoryId, { title: newTitle });
+        showToast('✓ 故事標題已保存');
+        
+        // 可选：添加视觉反馈
+        titleInput.classList.add('saved');
+        setTimeout(() => titleInput.classList.remove('saved'), 1000);
+    }
+}
+
+/**
+ * 继续创作未完成的故事
+ * @param {string} storyId - 故事ID
+ */
+async function continueStoryFromId(storyId) {
+    const story = getStory(storyId);
+    if (!story) {
+        showToast('❌ 找不到故事');
+        return;
+    }
+    
+    if (story.status === 'completed') {
+        showToast('這個故事已經完成了');
+        return;
+    }
+    
+    try {
+        // 恢复游戏状态
+        gameState.level = story.level;
+        gameState.theme = story.theme;
+        gameState.turn = story.currentTurn + 1;
+        gameState.maxTurns = story.maxTurns;
+        gameState.storyHistory = story.storyHistory || [];
+        gameState.usedWords = story.usedWords || [];
+        gameState.currentWords = story.currentWords || [];
+        gameState.allRecommendedWords = story.allRecommendedWords || [];
+        gameState.sessionId = story.sessionId;
+        gameState.currentStoryId = storyId;
+        
+        // 切换到游戏界面
+        showScreen('game-screen');
+        closeMobileSidebar();
+        
+        // 初始化游戏界面
+        initGameScreen(story.level, story.theme);
+        
+        // 恢复故事显示区的内容
+        const storyDisplay = document.getElementById('story-display');
+        if (storyDisplay) {
+            // 清空并重新显示所有历史消息
+            const messages = storyDisplay.querySelectorAll('.message');
+            messages.forEach(msg => msg.remove());
+            
+            for (const entry of gameState.storyHistory) {
+                if (entry.role === 'ai') {
+                    await displayAIResponse({ 
+                        aiSentence: entry.sentence,
+                        recommendedWords: []
+                    });
+                } else {
+                    displayUserMessage(entry.sentence);
+                }
+            }
+        }
+        
+        // 更新轮次显示
+        updateTurnDisplay();
+        
+        // 如果有当前词汇，显示它们
+        if (gameState.currentWords && gameState.currentWords.length > 0) {
+            const wordChoicesSection = document.getElementById('word-choices-section');
+            const wordChoices = document.getElementById('word-choices');
+            
+            if (wordChoicesSection && wordChoices) {
+                wordChoicesSection.style.display = 'block';
+                wordChoices.innerHTML = gameState.currentWords.map(word => `
+                    <button class="word-btn" onclick="selectWord('${word.word}')">
+                        <div class="word-text">${word.word}</div>
+                        <div class="word-meta">難度 ${word.difficulty_level || 'N/A'}</div>
+                    </button>
+                `).join('');
+            }
+        } else {
+            // 如果没有词汇，需要获取新的推荐
+            showToast('正在獲取詞彙推薦...');
+            try {
+                const aiData = await getAIResponse(
+                    gameState.storyHistory[gameState.storyHistory.length - 1]?.sentence || '',
+                    ''
+                );
+                await displayAIResponse(aiData);
+            } catch (error) {
+                console.error('獲取詞彙失敗:', error);
+                showToast('❌ 獲取詞彙失敗，請重試');
+            }
+        }
+        
+        showToast('✍️ 繼續創作故事！');
+    } catch (error) {
+        console.error('恢復故事失敗:', error);
+        showToast('❌ 恢復故事失敗，請重試');
+    }
 }
 
 /**

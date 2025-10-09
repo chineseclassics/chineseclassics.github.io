@@ -886,3 +886,178 @@ button:active {
     transform: translateY(0);
 }
 
+/* ===== 故事卡片组件 ===== */
+.story-card {
+    background: white;
+    border: 3px solid var(--light-blue);
+    border-radius: 15px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.story-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-blue);
+}
+
+.story-card.completed {
+    border-color: var(--primary-green);
+}
+
+.story-card.in-progress {
+    border-color: var(--primary-yellow);
+}
+
+.story-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 15px;
+    gap: 10px;
+}
+
+.story-title-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.story-card-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--text-dark);
+    margin: 0;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.story-card-title:hover {
+    color: var(--primary-purple);
+}
+
+.btn-rename-inline {
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    font-size: 0.9em;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.btn-rename-inline:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.story-status-badge {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.story-status-badge.completed {
+    background: linear-gradient(135deg, var(--light-green), #d4edda);
+    color: var(--primary-green);
+}
+
+.story-status-badge.in-progress {
+    background: linear-gradient(135deg, var(--light-yellow), #fff3cd);
+    color: #856404;
+}
+
+.story-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.meta-item {
+    font-size: 0.85em;
+    color: var(--text-light);
+    padding: 4px 10px;
+    background: var(--light-blue);
+    border-radius: 12px;
+}
+
+.story-card-preview {
+    flex: 1;
+    line-height: 1.8;
+    color: var(--text-dark);
+    margin-bottom: 15px;
+    font-size: 0.95em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.story-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 2px solid var(--light-blue);
+    gap: 10px;
+}
+
+.story-time {
+    font-size: 0.85em;
+    color: var(--text-light);
+}
+
+.story-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-action {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.btn-view {
+    border: 2px solid var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.btn-view:hover {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.btn-continue {
+    border: 2px solid var(--primary-green);
+    color: var(--primary-green);
+}
+
+.btn-continue:hover {
+    background: var(--primary-green);
+    color: white;
+}
+
+.btn-delete {
+    border: 2px solid var(--primary-pink);
+    color: var(--primary-pink);
+}
+
+.btn-delete:hover {
+    background: var(--primary-pink);
+    color: white;
+}
+

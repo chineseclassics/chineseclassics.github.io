@@ -240,6 +240,12 @@ export function initFinishScreen(stats) {
     if (vocabUsed) vocabUsed.textContent = stats.vocabUsed;
     if (storyLength) storyLength.textContent = stats.storyLength;
     
+    // 设置默认标题
+    const titleInput = document.getElementById('story-title-input');
+    if (titleInput && stats.defaultTitle) {
+        titleInput.value = stats.defaultTitle;
+    }
+    
     // 如果是第一次遊戲（校準完成），顯示特殊消息
     if (stats.isFirstGame && stats.assessment) {
         const messageDiv = document.createElement('div');

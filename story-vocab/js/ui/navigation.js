@@ -130,7 +130,11 @@ export function navigateTo(destination) {
             break;
         
         case 'my-stories':
-            showToast('我的故事集功能即將推出！');
+            showScreen('my-stories-screen');
+            // 加载故事列表
+            if (typeof window.loadMyStoriesScreen === 'function') {
+                window.loadMyStoriesScreen();
+            }
             break;
         
         case 'wordbook':

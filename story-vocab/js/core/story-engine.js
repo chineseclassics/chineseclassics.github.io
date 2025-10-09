@@ -9,6 +9,7 @@ import { showToast } from '../utils/toast.js';
 import { saveCompletedStory, updateSidebarStats } from '../utils/storage.js';
 import { SUPABASE_CONFIG } from '../config.js';
 import { getRecommendedWords, recordRoundData, handleGameCompletion } from './vocab-integration.js';
+import { saveStory, generateDefaultTitle } from './story-storage.js';
 
 /**
  * 获取主题的中文名称
@@ -219,6 +220,9 @@ export async function submitSentence(sentence, selectedWord) {
         aiFeedback: aiData.feedback || null
     });
     
+    // 自动保存进度到localStorage
+    autoSaveProgress();
+    
     return { gameOver: false, aiData }; // 游戏继续，返回 AI 数据
 }
 
@@ -227,8 +231,29 @@ export async function submitSentence(sentence, selectedWord) {
  * @returns {Promise<Object>} 统计数据
  */
 export async function finishStory() {
-    // 保存完成的故事到 localStorage
+    // 生成默认标题
+    const defaultTitle = generateDefaultTitle();
+    
+    // 保存完成的故事到新的 localStorage 结构
     const storyData = {
+        title: defaultTitle,
+        status: 'completed',
+        level: gameState.level,
+        theme: gameState.theme,
+        maxTurns: gameState.maxTurns,
+        currentTurn: gameState.turn - 1,
+        storyHistory: gameState.storyHistory,
+        usedWords: gameState.usedWords,
+        sessionId: gameState.sessionId
+    };
+    
+    const savedStory = saveStory(storyData);
+    
+    // 将故事ID保存到gameState，以便在完成页面使用
+    gameState.currentStoryId = savedStory.id;
+    
+    // 保存完成的故事到旧的 localStorage（保持兼容性）
+    const oldStoryData = {
         id: gameState.sessionId || Date.now(),
         level: gameState.level,
         theme: gameState.theme,
@@ -236,7 +261,7 @@ export async function finishStory() {
         usedWords: gameState.usedWords,
         completedAt: new Date().toISOString()
     };
-    saveCompletedStory(storyData);
+    saveCompletedStory(oldStoryData);
     
     // 计算统计数据
     const totalTurns = gameState.storyHistory.filter(h => h.role === 'user').length;
@@ -254,6 +279,8 @@ export async function finishStory() {
         totalTurns,
         vocabUsed,
         storyLength,
+        defaultTitle,
+        storyId: savedStory.id,
         ...completionData
     };
 }
@@ -283,6 +310,44 @@ export function shareStory() {
         }).catch(() => {
             showToast('❌ 複製失敗，請手動複製');
         });
+    }
+}
+
+/**
+ * 自动保存进度
+ * 在创作过程中自动保存未完成的故事
+ */
+export function autoSaveProgress() {
+    if (!gameState.currentStoryId) {
+        // 第一次保存，创建新故事
+        const defaultTitle = generateDefaultTitle();
+        const storyData = {
+            title: defaultTitle,
+            status: 'in_progress',
+            level: gameState.level,
+            theme: gameState.theme,
+            maxTurns: gameState.maxTurns,
+            currentTurn: gameState.turn - 1,
+            storyHistory: gameState.storyHistory,
+            usedWords: gameState.usedWords,
+            currentWords: gameState.currentWords,
+            allRecommendedWords: gameState.allRecommendedWords,
+            sessionId: gameState.sessionId
+        };
+        const savedStory = saveStory(storyData);
+        gameState.currentStoryId = savedStory.id;
+        console.log('✅ 首次自動保存進度:', savedStory.id);
+    } else {
+        // 更新现有故事
+        const updates = {
+            currentTurn: gameState.turn - 1,
+            storyHistory: gameState.storyHistory,
+            usedWords: gameState.usedWords,
+            currentWords: gameState.currentWords,
+            allRecommendedWords: gameState.allRecommendedWords
+        };
+        saveStory({ id: gameState.currentStoryId, ...updates });
+        console.log('✅ 更新進度:', gameState.currentStoryId);
     }
 }
 
