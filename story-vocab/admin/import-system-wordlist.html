@@ -198,9 +198,13 @@
     <p class="subtitle">导入 HSK、教材等标准词表到系统</p>
 
     <div class="alert alert-info">
-      <strong>📝 说明：</strong>
-      本工具用于导入系统预设词表（如 HSK、人教版教材等）。
-      您需要准备 CSV 或 JSON 格式的词表文件，包含词语和层级标签。
+      <strong>📝 操作说明：</strong>
+      本工具用于导入系统预设词表（如 HSK、人教版教材等）。<br><br>
+      <strong>重要步骤：</strong><br>
+      1️⃣ 先填写词表基本信息（名称、代码等）<br>
+      2️⃣ 再上传 CSV 文件（文件会自动解析）<br>
+      3️⃣ 确认预览无误后，点击"开始导入"按钮<br><br>
+      ⚠️ <strong>注意：</strong>只有成功上传并解析文件后，"开始导入"按钮才会变为可点击状态。如果按钮一直无法点击，请按 F12 打开浏览器控制台查看错误信息。
     </div>
 
     <!-- CSV格式说明 -->
@@ -261,8 +265,7 @@
       
       <div class="form-group">
         <label class="form-label">选择 CSV 或 JSON 文件</label>
-        <input type="file" id="file-input" accept=".csv,.json" class="form-input" 
-               onchange="handleFileSelect(event)">
+        <input type="file" id="file-input" accept=".csv,.json" class="form-input">
         <div class="form-hint">
           CSV 格式：词语,第二层级,第三层级<br>
           JSON 格式：[{word, level_2_tag, level_3_tag}, ...]
@@ -276,7 +279,7 @@
     </div>
 
     <!-- 导入按钮 -->
-    <button class="btn btn-primary" id="import-btn" onclick="importWordlist()" disabled>
+    <button class="btn btn-primary" id="import-btn" disabled>
       🚀 开始导入
     </button>
 
@@ -293,40 +296,97 @@
   </div>
 
   <script type="module">
-    import { getSupabase } from '../js/supabase-client.js'
+    import { initSupabase, getSupabase } from '../js/supabase-client.js'
 
-    const supabase = getSupabase()
+    let supabase = null
     let fileData = null
+    
+    // 页面加载时初始化
+    console.log('=== 系统词表导入工具 ===')
+    
+    // 初始化 Supabase
+    async function initialize() {
+      try {
+        console.log('正在初始化 Supabase...')
+        supabase = await initSupabase()
+        console.log('✅ Supabase 客户端初始化成功')
+        
+        // 测试连接
+        const { data, error } = await supabase.from('wordlists').select('count').limit(1)
+        if (error) throw error
+        console.log('✅ Supabase 连接正常')
+      } catch (error) {
+        console.error('❌ 初始化失败:', error)
+        alert('⚠️ 数据库连接失败！\n\n请确保：\n1. 数据库迁移已完成\n2. 网络连接正常\n3. Supabase 配置正确\n\n错误: ' + error.message)
+      }
+    }
+    
+    // 立即执行初始化
+    initialize()
+    
+    // 绑定事件监听器
+    document.addEventListener('DOMContentLoaded', () => {
+      const fileInput = document.getElementById('file-input')
+      if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect)
+        console.log('✅ 文件选择器事件已绑定')
+      }
+      
+      const importBtn = document.getElementById('import-btn')
+      if (importBtn) {
+        importBtn.addEventListener('click', importWordlist)
+        console.log('✅ 导入按钮事件已绑定')
+      }
+    })
 
     /**
      * 处理文件选择
      */
-    window.handleFileSelect = async function(event) {
+    async function handleFileSelect(event) {
       const file = event.target.files[0]
-      if (!file) return
+      if (!file) {
+        console.log('没有选择文件')
+        return
+      }
+
+      console.log('选择的文件:', file.name, '大小:', file.size, 'bytes')
 
       const btn = document.getElementById('import-btn')
       btn.disabled = true
       btn.textContent = '解析中...'
 
       try {
+        console.log('开始读取文件...')
         const text = await file.text()
+        console.log('文件读取成功，内容长度:', text.length)
         
         if (file.name.endsWith('.csv')) {
+          console.log('开始解析 CSV...')
           fileData = parseCSV(text)
+          console.log('CSV 解析成功，词汇数量:', fileData.length)
         } else if (file.name.endsWith('.json')) {
+          console.log('开始解析 JSON...')
           fileData = JSON.parse(text)
+          console.log('JSON 解析成功，词汇数量:', fileData.length)
         } else {
-          throw new Error('不支持的文件格式')
+          throw new Error('不支持的文件格式，请使用 .csv 或 .json 文件')
+        }
+
+        if (!fileData || fileData.length === 0) {
+          throw new Error('文件中没有找到任何词汇数据')
         }
 
         // 显示预览
+        console.log('显示文件预览...')
         showPreview(fileData)
+        
         btn.disabled = false
         btn.textContent = '🚀 开始导入'
+        console.log('✅ 文件加载成功，按钮已启用')
 
       } catch (error) {
-        alert('文件解析失败: ' + error.message)
+        console.error('文件解析失败:', error)
+        alert('文件解析失败: ' + error.message + '\n\n请检查浏览器控制台查看详细信息。')
         btn.disabled = true
         btn.textContent = '❌ 解析失败'
       }
@@ -336,29 +396,61 @@
      * 解析 CSV
      */
     function parseCSV(text) {
+      console.log('开始解析 CSV 文本...')
+      
       const lines = text.trim().split('\n')
+      console.log('总行数:', lines.length)
+      
+      if (lines.length < 2) {
+        throw new Error('CSV 文件内容太少，至少需要表头和一行数据')
+      }
+      
       const headers = lines[0].split(',').map(h => h.trim())
+      console.log('表头:', headers)
       
       // 检查必需的列
       if (!headers.includes('词语')) {
-        throw new Error('CSV 文件缺少"词语"列')
+        throw new Error('CSV 文件缺少"词语"列。当前表头: ' + headers.join(', '))
       }
 
       const wordIndex = headers.indexOf('词语')
       const level2Index = headers.indexOf('第二层级')
       const level3Index = headers.indexOf('第三层级')
+      
+      console.log('列索引 - 词语:', wordIndex, '第二层级:', level2Index, '第三层级:', level3Index)
 
       const data = []
+      let skipped = 0
       
       for (let i = 1; i < lines.length; i++) {
-        const cells = lines[i].split(',').map(c => c.trim())
-        if (cells[wordIndex]) {
+        const line = lines[i].trim()
+        if (!line) {
+          skipped++
+          continue
+        }
+        
+        const cells = line.split(',').map(c => c.trim())
+        
+        if (cells[wordIndex] && cells[wordIndex].length > 0) {
           data.push({
             word: cells[wordIndex],
-            level_2_tag: level2Index >= 0 ? cells[level2Index] : null,
-            level_3_tag: level3Index >= 0 ? cells[level3Index] : null
+            level_2_tag: (level2Index >= 0 && cells[level2Index]) ? cells[level2Index] : null,
+            level_3_tag: (level3Index >= 0 && cells[level3Index]) ? cells[level3Index] : null
           })
+        } else {
+          skipped++
         }
+        
+        // 每解析1000行输出一次进度
+        if (i % 1000 === 0) {
+          console.log('已解析', i, '行，提取', data.length, '个词汇')
+        }
+      }
+      
+      console.log('解析完成 - 总行数:', lines.length, '有效词汇:', data.length, '跳过:', skipped)
+
+      if (data.length === 0) {
+        throw new Error('没有找到有效的词汇数据')
       }
 
       return data
@@ -414,7 +506,7 @@
     /**
      * 导入词表
      */
-    window.importWordlist = async function() {
+    async function importWordlist() {
       if (!fileData || fileData.length === 0) {
         alert('请先选择文件')
         return

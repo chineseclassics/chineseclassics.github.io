@@ -437,6 +437,11 @@
     }
 
     /* 移動端級別卡片優化 */
+    .difficulty-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
     .level-card {
         padding: 15px;
         margin-bottom: 10px;
@@ -477,8 +482,8 @@
     .modal-close {
         top: 15px;
         right: 15px;
-        width: 35px !important;
-        height: 35px !important;
+        width: 35px;
+        height: 35px;
         min-width: 35px;
         min-height: 35px;
         font-size: 1.3em;
@@ -559,9 +564,9 @@
     }
     
     .btn-title-confirm {
-        width: 100% !important;
-        height: 45px !important;
-        border-radius: 10px !important;
+        width: 100%;
+        height: 45px;
+        border-radius: 10px;
         font-size: 1.2em;
     }
     

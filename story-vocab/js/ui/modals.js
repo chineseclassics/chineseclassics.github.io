@@ -127,6 +127,7 @@ export async function saveSettings() {
         if (storyLength) saveSetting('story_length', storyLength);
         
         // 保存词表选择
+        let wordlistChanged = false;
         const wordlistSelector = document.getElementById('wordlist-selector-setting');
         if (wordlistSelector) {
             const value = wordlistSelector.value;
@@ -152,10 +153,18 @@ export async function saveSettings() {
                 
                 if (error) throw error;
                 console.log('✅ 詞表偏好已保存:', value);
+                wordlistChanged = true;
             }
         }
         
         showToast('✅ 設置已保存！');
+        
+        // 如果词表设置有变化，重新初始化开始界面
+        if (wordlistChanged) {
+            const { initStartScreen } = await import('./screens.js');
+            await initStartScreen();
+            console.log('🔄 已重新加載開始界面');
+        }
     } catch (error) {
         console.error('保存設置失敗:', error);
         showToast('❌ 保存設置失敗，請重試');

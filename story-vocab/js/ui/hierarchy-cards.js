@@ -40,13 +40,18 @@ export function renderLevel2Cards(wordlist, tags) {
   }
 
   // 渲染卡片（复用 L1-L6 的样式，使用 .level-card 类）
-  level2Container.innerHTML = level2Tags.map(tag => `
-    <label class="level-card" data-tag="${tag.tag_code}">
-      <input type="radio" name="level-2" value="${tag.tag_code}">
-      <div class="level-name">${tag.tag_display_name}</div>
-      <div class="level-desc">${wordlist.hierarchy_config?.level_2_label || '第二層級'}</div>
-    </label>
-  `).join('');
+  level2Container.innerHTML = level2Tags.map(tag => {
+    // 获取描述文本：优先使用标签的描述，其次是词表层级标签，最后是默认值
+    const descText = tag.description || wordlist.hierarchy_config?.level_2_label || '點擊選擇';
+    
+    return `
+      <label class="level-card" data-tag="${tag.tag_code}">
+        <input type="radio" name="level-2" value="${tag.tag_code}">
+        <div class="level-name">${tag.tag_display_name}</div>
+        <div class="level-desc">${descText}</div>
+      </label>
+    `;
+  }).join('');
 
   // 绑定点击事件
   level2Container.querySelectorAll('.level-card').forEach(card => {
@@ -92,13 +97,18 @@ export function renderLevel3Cards(level3Tags) {
   level3Container.style.display = 'grid';
 
   // 渲染卡片
-  level3Container.innerHTML = level3Tags.map(tag => `
-    <label class="level-card" data-tag="${tag.tag_code}">
-      <input type="radio" name="level-3" value="${tag.tag_code}">
-      <div class="level-name">${tag.tag_display_name}</div>
-      <div class="level-desc">${currentWordlist?.hierarchy_config?.level_3_label || '第三層級'}</div>
-    </label>
-  `).join('');
+  level3Container.innerHTML = level3Tags.map(tag => {
+    // 获取描述文本：优先使用标签的描述，其次是词表层级标签，最后是默认值
+    const descText = tag.description || currentWordlist?.hierarchy_config?.level_3_label || '點擊選擇';
+    
+    return `
+      <label class="level-card" data-tag="${tag.tag_code}">
+        <input type="radio" name="level-3" value="${tag.tag_code}">
+        <div class="level-name">${tag.tag_display_name}</div>
+        <div class="level-desc">${descText}</div>
+      </label>
+    `;
+  }).join('');
 
   // 绑定点击事件
   level3Container.querySelectorAll('.level-card').forEach(card => {

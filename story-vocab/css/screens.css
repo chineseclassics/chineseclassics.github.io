@@ -61,6 +61,24 @@
     margin-bottom: 20px;
 }
 
+/* 词表层级卡片网格布局 */
+.difficulty-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+#wordlist-hierarchy-section {
+    margin-bottom: 30px;
+}
+
+#wordlist-hierarchy-section h2 {
+    color: var(--text-dark);
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
 .start-button-container {
     text-align: center;
     margin-top: 25px;
@@ -361,14 +379,14 @@
 }
 
 .btn-title-confirm {
-    width: 50px !important;
-    height: 50px !important;
+    width: 50px;
+    height: 50px;
     min-width: 50px;
-    padding: 0 !important;
+    padding: 0;
     background: var(--primary-green);
     color: white;
     border: none;
-    border-radius: 50% !important;
+    border-radius: 50%;
     font-size: 1.5em;
     cursor: pointer;
     transition: all 0.3s ease;

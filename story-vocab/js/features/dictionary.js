@@ -26,24 +26,49 @@ function displaySynonymsAndAntonyms(definitions, isWordQuery) {
     let synonyms = [];
     let antonyms = [];
     
+    /**
+     * 提取所有連續的漢字序列作為詞語
+     * 簡單原則：連在一起的字就是一個詞，被任何符號分開的就不是一個詞
+     */
+    function splitAndCleanWords(text) {
+        if (!text) return [];
+        
+        // 先清理萌典特殊標記
+        text = cleanMoedictText(text);
+        
+        // 提取所有連續的漢字序列（包括繁體字、簡體字）
+        // \u4e00-\u9fff 是CJK統一漢字的Unicode範圍
+        const chineseWordPattern = /[\u4e00-\u9fff]+/g;
+        const words = text.match(chineseWordPattern) || [];
+        
+        // 過濾掉空字符串
+        return words.filter(w => w && w.length > 0);
+    }
+    
     // 收集所有釋義中的同義詞和反義詞
     definitions.forEach(def => {
         // 同義詞：def.s（單字和詞語都用相同欄位）
         if (def.s) {
             const synList = Array.isArray(def.s) ? def.s : [def.s];
-            synonyms.push(...synList);
+            synList.forEach(item => {
+                const words = splitAndCleanWords(item);
+                synonyms.push(...words);
+            });
         }
         
         // 反義詞：def.a（單字和詞語都用相同欄位）
         if (def.a) {
             const antList = Array.isArray(def.a) ? def.a : [def.a];
-            antonyms.push(...antList);
+            antList.forEach(item => {
+                const words = splitAndCleanWords(item);
+                antonyms.push(...words);
+            });
         }
     });
     
-    // 清理並去重
-    synonyms = [...new Set(synonyms.map(w => cleanMoedictText(w)).filter(w => w))];
-    antonyms = [...new Set(antonyms.map(w => cleanMoedictText(w)).filter(w => w))];
+    // 去重（已經清理過了）
+    synonyms = [...new Set(synonyms)];
+    antonyms = [...new Set(antonyms)];
     
     console.log('同義詞:', synonyms, '反義詞:', antonyms);
     
