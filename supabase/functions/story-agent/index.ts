@@ -98,7 +98,20 @@ serve(async (req) => {
       supabase
     })
 
-    // 3. 更新數據庫
+    // 3. 生成評分和反饋（如果不是初始請求）
+    let feedback = null
+    if (!isInitialRequest && selectedWord) {
+      console.log('👨‍🏫 生成評分和反饋...')
+      feedback = await generateFeedback({
+        userSentence,
+        selectedWord,
+        conversationHistory,
+        storyTheme,
+        apiKey: deepseekApiKey
+      })
+    }
+
+    // 4. 更新數據庫
     console.log('💾 更新故事會話...')
     await updateStorySession({
       sessionId,
@@ -110,7 +123,7 @@ serve(async (req) => {
       supabase
     })
 
-    // 4. 返回结果
+    // 5. 返回结果（包含評分和反饋）
     return new Response(
       JSON.stringify({
         success: true,
@@ -118,7 +131,9 @@ serve(async (req) => {
           aiSentence,              // AI 生成的句子
           recommendedWords,        // 推荐的 5 个词汇
           currentRound: currentRound + 1,
-          isComplete: currentRound >= 9  // 10 轮完成
+          isComplete: currentRound >= 9,  // 10 轮完成
+          score: feedback?.score || null,          // ✅ 添加評分
+          feedback: feedback?.comment || null      // ✅ 添加反饋文字
         }
       }),
       {

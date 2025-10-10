@@ -412,7 +412,6 @@
               <div class="vocab-meta">
                 <span class="badge badge-level">L${vocab.difficulty_level}</span>
                 <span class="badge badge-category">${vocab.category}</span>
-                ${vocab.hsk_level ? `<span class="badge badge-hsk">HSK${vocab.hsk_level}</span>` : ''}
               </div>
               ${vocab.theme && vocab.theme.length > 0 ? `
                 <div class="vocab-themes">
@@ -526,7 +525,7 @@
     window.showVocabDetail = function(id) {
       const vocab = allVocabulary.find(v => v.id === id);
       if (vocab) {
-        alert(`词汇详情\n\n${vocab.word} (${vocab.pinyin})\n\n级别: L${vocab.difficulty_level}\n类别: ${vocab.category}\nHSK: ${vocab.hsk_level || '无'}\n主题: ${vocab.theme?.join(', ') || '无'}`);
+        alert(`词汇详情\n\n${vocab.word} (${vocab.pinyin})\n\n级别: L${vocab.difficulty_level}\n类别: ${vocab.category}\n主题: ${vocab.theme?.join(', ') || '无'}`);
       }
     };
   </script>

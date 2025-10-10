@@ -241,10 +241,38 @@
   </div>
 
   <script type="module">
-    import { getSupabase } from '../js/supabase-client.js'
+    import { initSupabase, getSupabase } from '../js/supabase-client.js'
 
-    const supabase = getSupabase()
+    let supabase = null
     let calibrationData = null
+
+    // 初始化Supabase
+    async function init() {
+      try {
+        await initSupabase()
+        supabase = getSupabase()
+        console.log('✅ Supabase初始化成功')
+        
+        // 检查数据库连接
+        const { count, error } = await supabase
+          .from('vocabulary')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_calibration', true)
+
+        if (error) {
+          addLog('⚠️ 数据库连接失败: ' + error.message, 'error')
+        } else {
+          addLog('✅ 数据库连接成功', 'success')
+          document.getElementById('db-count').textContent = count || 0
+        }
+      } catch (error) {
+        console.error('初始化失败:', error)
+        addLog('❌ 初始化失败: ' + error.message, 'error')
+      }
+    }
+
+    // 页面加载时初始化
+    init()
 
     /**
      * 加载校准词库JSON
@@ -451,26 +479,6 @@
       logDiv.appendChild(entry)
       logDiv.scrollTop = logDiv.scrollHeight
     }
-
-    // 页面加载时检查数据库连接
-    window.addEventListener('load', async () => {
-      try {
-        const { data, error } = await supabase
-          .from('vocabulary')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_calibration', true)
-
-        if (error) {
-          addLog('⚠️ 数据库连接失败: ' + error.message, 'error')
-          addLog('请检查 Supabase 配置', 'error')
-        } else {
-          addLog('✅ 数据库连接成功', 'success')
-          document.getElementById('db-count').textContent = data || 0
-        }
-      } catch (error) {
-        addLog('❌ 初始化失败: ' + error.message, 'error')
-      }
-    })
   </script>
 </body>
 </html>
