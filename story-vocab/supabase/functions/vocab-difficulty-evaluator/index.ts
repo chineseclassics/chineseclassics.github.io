@@ -65,21 +65,42 @@ serve(async (req) => {
         
         // 如果是批量或重新校准模式，更新数据库
         if (mode === 'batch' || mode === 'recalibrate_all') {
-          const { error: updateError } = await supabase
+          // 先检查词汇是否存在
+          const { data: existingVocab } = await supabase
             .from('vocabulary')
-            .update({
+            .select('id')
+            .eq('word', word.word)
+            .maybeSingle()
+
+          if (existingVocab) {
+            // 词汇存在，更新（包括category，如果AI提供了更准确的分类）
+            const updateData: any = {
               difficulty_level: evaluation.difficulty,
               difficulty_confidence: evaluation.confidence,
               difficulty_reasoning: evaluation.reasoning,
               difficulty_evaluated_at: new Date().toISOString()
-            })
-            .eq('word', word.word)
+            }
+            
+            // 如果AI评估提供了category且不是"未知"，也更新category
+            if (evaluation.category && evaluation.category !== '未知') {
+              updateData.category = evaluation.category
+            }
 
-          if (updateError) {
-            console.error(`更新失败: ${word.word}`, updateError)
-            errorCount++
+            const { error: updateError } = await supabase
+              .from('vocabulary')
+              .update(updateData)
+              .eq('id', existingVocab.id)
+
+            if (updateError) {
+              console.error(`更新失败: ${word.word}`, updateError)
+              errorCount++
+            } else {
+              successCount++
+            }
           } else {
-            successCount++
+            // 词汇不存在，跳过更新（只返回评估结果）
+            console.warn(`词汇不存在，跳过更新: ${word.word}`)
+            successCount++  // 评估成功，只是没有更新数据库
           }
         } else {
           successCount++
@@ -92,7 +113,7 @@ serve(async (req) => {
         errorCount++
         results.push({
           word: word.word,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         })
       }
     }
@@ -118,7 +139,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message 
+        error: error instanceof Error ? error.message : String(error)
       }),
       { 
         status: 500,
@@ -271,14 +292,22 @@ ${word.frequency ? `頻率：${word.frequency}` : ''}
   }
 
   const data = await response.json()
-  const result = JSON.parse(data.choices[0].message.content)
+  
+  // 安全解析JSON响应
+  let result
+  try {
+    result = JSON.parse(data.choices[0].message.content)
+  } catch (parseError) {
+    console.error('JSON解析失败:', data.choices[0].message.content)
+    throw new Error('AI返回的JSON格式无效')
+  }
   
   return {
     word: word.word,
-    difficulty: result.difficulty,
-    confidence: result.confidence,
-    reasoning: result.reasoning,
-    category: result.category
+    difficulty: result.difficulty || 3,  // 默认L3
+    confidence: result.confidence || 'low',  // 默认低置信度
+    reasoning: result.reasoning || 'AI评估结果',
+    category: result.category || word.category || '未知'  // 优先使用AI评估，其次使用原有类型
   }
 }
 
