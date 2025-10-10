@@ -12,9 +12,10 @@ import { summarizeGameSession, buildCumulativeUserProfile } from '../features/pr
 /**
  * 獲取本輪推薦詞彙
  * @param {number} roundNumber - 輪次
+ * @param {Object} wordlistOptions - 词表选项（可选）
  * @returns {Promise<Array>} 推薦的5個詞
  */
-export async function getRecommendedWords(roundNumber) {
+export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
   const supabase = getSupabase()
   
   try {
@@ -22,7 +23,7 @@ export async function getRecommendedWords(roundNumber) {
     const calibrated = await isUserCalibrated(gameState.userId)
     
     if (!calibrated) {
-      // 第一次遊戲：使用校準詞庫
+      // 第一次遊戲：使用校準詞庫（忽略词表选项）
       console.log(`[校準模式] 獲取第 ${roundNumber} 輪詞彙`)
       const words = await getCalibrationWords(gameState.userId, roundNumber)
       return words.map(w => ({
@@ -32,9 +33,9 @@ export async function getRecommendedWords(roundNumber) {
         source: 'calibration'
       }))
     } else {
-      // 已校準：調用 vocab-recommender AI
-      console.log(`[AI 模式] 獲取第 ${roundNumber} 輪詞彙`)
-      return await getAIRecommendedWords(roundNumber)
+      // 已校準：根据词表选项决定推荐方式
+      console.log(`[詞彙推薦] 模式: ${wordlistOptions?.mode || 'ai'}, 輪次: ${roundNumber}`)
+      return await getAIRecommendedWords(roundNumber, wordlistOptions)
     }
   } catch (error) {
     console.error('❌ 獲取推薦詞彙失敗:', error)
@@ -45,14 +46,32 @@ export async function getRecommendedWords(roundNumber) {
 
 /**
  * 調用 vocab-recommender AI 獲取推薦詞彙
+ * @param {number} roundNumber - 轮次
+ * @param {Object} wordlistOptions - 词表选项
  */
-async function getAIRecommendedWords(roundNumber) {
+async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
   try {
     // 構建故事上下文（最近3句）
     const recentStory = gameState.storyHistory
       .slice(-3)
       .map(entry => entry.sentence)
       .join(' ')
+    
+    // 构建请求参数
+    const requestBody = {
+      userId: gameState.userId,
+      sessionId: gameState.sessionId,
+      roundNumber: roundNumber,
+      storyContext: recentStory
+    }
+
+    // 如果有词表选项，添加到请求中
+    if (wordlistOptions) {
+      requestBody.wordlistMode = wordlistOptions.mode || 'ai'
+      requestBody.wordlistId = wordlistOptions.wordlistId || null
+      requestBody.level2Tag = wordlistOptions.level2Tag || null
+      requestBody.level3Tag = wordlistOptions.level3Tag || null
+    }
     
     // 調用 Edge Function
     const response = await fetch(
@@ -63,12 +82,7 @@ async function getAIRecommendedWords(roundNumber) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
         },
-        body: JSON.stringify({
-          userId: gameState.userId,
-          sessionId: gameState.sessionId,
-          roundNumber: roundNumber,
-          storyContext: recentStory
-        })
+        body: JSON.stringify(requestBody)
       }
     )
     
@@ -79,20 +93,20 @@ async function getAIRecommendedWords(roundNumber) {
     const result = await response.json()
     
     if (!result.success) {
-      throw new Error(result.error || 'AI 推薦失敗')
+      throw new Error(result.error || '推薦失敗')
     }
     
-    console.log('✅ AI 推薦成功:', result.words)
+    console.log(`✅ 推薦成功 (${result.source}):`, result.words)
     
     // 轉換格式
     return result.words.map(w => ({
       word: w.word,
       difficulty_level: w.difficulty,
       category: w.category,
-      source: 'ai'
+      source: result.source
     }))
   } catch (error) {
-    console.error('❌ AI 推薦失敗:', error)
+    console.error('❌ 推薦失敗:', error)
     // 降級：使用校準詞庫
     const words = await getCalibrationWords(gameState.userId, roundNumber)
     return words.map(w => ({

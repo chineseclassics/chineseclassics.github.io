@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設置 - 故事詞彙接龍</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 自定义样式 -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  
+  <style>
+    .settings-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .setting-section {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .setting-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mode-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .mode-card {
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .mode-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .mode-card.active {
+      border-color: #667eea;
+      background: #f0f2ff;
+    }
+
+    .mode-card .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .mode-card .title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .mode-card .desc {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .wordlist-item {
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin: 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .wordlist-info {
+      flex: 1;
+    }
+
+    .wordlist-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .wordlist-meta {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .wordlist-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .btn-icon:hover {
+      background: #f5f5f5;
+    }
+
+    .select-input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      margin: 10px 0;
+    }
+
+    .select-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-500 to-indigo-600 min-h-screen">
+  <div class="settings-container">
+    <!-- 返回按钮 -->
+    <div style="margin-bottom: 20px;">
+      <button onclick="location.href='index.html'" 
+              class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition">
+        ← 返回主页
+      </button>
+    </div>
+
+    <h1 class="text-4xl font-bold text-white mb-6">⚙️ 設置</h1>
+
+    <!-- 词表模式设置 -->
+    <div class="setting-section">
+      <div class="setting-title">
+        📚 詞表模式
+      </div>
+      <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+        选择默认使用的词表模式。您也可以在每次开始创作时临时切换。
+      </p>
+
+      <div class="mode-cards">
+        <div class="mode-card" id="mode-ai" onclick="setDefaultMode('ai')">
+          <div class="icon">🤖</div>
+          <div class="title">AI智能推荐</div>
+          <div class="desc">不限词表，智能推荐</div>
+        </div>
+        <div class="mode-card" id="mode-wordlist" onclick="setDefaultMode('wordlist')">
+          <div class="icon">📖</div>
+          <div class="title">指定词表</div>
+          <div class="desc">从特定词表学习</div>
+        </div>
+      </div>
+
+      <!-- 指定词表时的配置 -->
+      <div id="wordlist-config" style="display: none;">
+        <div style="margin-top: 20px;">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            选择默认词表
+          </label>
+          <select id="default-wordlist" class="select-input" onchange="onDefaultWordlistChange()">
+            <option value="">-- 请选择 --</option>
+          </select>
+        </div>
+
+        <div id="default-hierarchy"></div>
+      </div>
+
+      <button class="btn-primary mt-4" onclick="savePreferences()">
+        💾 保存设置
+      </button>
+    </div>
+
+    <!-- 我的自定义词表 -->
+    <div class="setting-section">
+      <div class="setting-title">
+        ✏️ 我的自定义词表
+      </div>
+      <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+        管理您上传的词表
+      </p>
+
+      <div id="my-wordlists">
+        <p style="text-align: center; color: #999; padding: 20px;">
+          加载中...
+        </p>
+      </div>
+
+      <button class="btn-secondary mt-4" onclick="location.href='admin/upload-custom-wordlist.html'">
+        ➕ 上传新词表
+      </button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getSupabase } from './js/supabase-client.js'
+
+    const supabase = getSupabase()
+    let currentUser = null
+    let preferences = null
+    let availableWordlists = []
+    let myWordlists = []
+
+    /**
+     * 初始化
+     */
+    async function initialize() {
+      try {
+        // 获取当前用户
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          alert('请先登录')
+          location.href = 'index.html'
+          return
+        }
+        currentUser = user
+
+        // 加载用户偏好
+        await loadPreferences()
+        
+        // 加载可用词表
+        await loadAvailableWordlists()
+        
+        // 加载我的词表
+        await loadMyWordlists()
+
+      } catch (error) {
+        console.error('初始化失败:', error)
+        alert('初始化失败: ' + error.message)
+      }
+    }
+
+    /**
+     * 加载用户偏好
+     */
+    async function loadPreferences() {
+      const { data } = await supabase
+        .from('user_wordlist_preferences')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .maybeSingle()
+
+      preferences = data || {
+        default_mode: 'ai',
+        default_wordlist_id: null,
+        default_level_2_tag: null,
+        default_level_3_tag: null
+      }
+
+      // 更新UI
+      updateModeUI(preferences.default_mode)
+    }
+
+    /**
+     * 加载可用词表
+     */
+    async function loadAvailableWordlists() {
+      const { data } = await supabase
+        .from('wordlists')
+        .select('*')
+        .or(`type.eq.system,owner_id.eq.${currentUser.id},is_public.eq.true`)
+        .order('type', { ascending: false })
+        .order('name')
+
+      availableWordlists = data || []
+
+      // 填充下拉框
+      const select = document.getElementById('default-wordlist')
+      select.innerHTML = `
+        <option value="">-- 请选择 --</option>
+        ${availableWordlists.map(wl => `
+          <option value="${wl.id}" ${preferences.default_wordlist_id === wl.id ? 'selected' : ''}>
+            ${wl.type === 'system' ? '📚' : '✏️'} ${wl.name} (${wl.total_words || 0}词)
+          </option>
+        `).join('')}
+      `
+
+      if (preferences.default_wordlist_id) {
+        onDefaultWordlistChange()
+      }
+    }
+
+    /**
+     * 加载我的词表
+     */
+    async function loadMyWordlists() {
+      const { data } = await supabase
+        .from('wordlists')
+        .select('*')
+        .eq('owner_id', currentUser.id)
+        .order('created_at', { ascending: false })
+
+      myWordlists = data || []
+
+      const container = document.getElementById('my-wordlists')
+      
+      if (myWordlists.length === 0) {
+        container.innerHTML = `
+          <p style="text-align: center; color: #999; padding: 20px;">
+            您还没有上传任何词表
+          </p>
+        `
+        return
+      }
+
+      container.innerHTML = myWordlists.map(wl => `
+        <div class="wordlist-item">
+          <div class="wordlist-info">
+            <div class="wordlist-name">
+              ${wl.name}
+              ${wl.is_public ? '<span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">公开</span>' : ''}
+            </div>
+            <div class="wordlist-meta">
+              ${wl.total_words || 0} 个词 • 
+              创建于 ${new Date(wl.created_at).toLocaleDateString()}
+              ${wl.description ? ` • ${wl.description}` : ''}
+            </div>
+          </div>
+          <div class="wordlist-actions">
+            <button class="btn-icon" onclick="viewWordlist('${wl.id}')" title="查看">
+              👁️
+            </button>
+            <button class="btn-icon" onclick="exportWordlist('${wl.id}')" title="导出">
+              📤
+            </button>
+            <button class="btn-icon" onclick="deleteWordlist('${wl.id}')" title="删除">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `).join('')
+    }
+
+    /**
+     * 设置默认模式
+     */
+    window.setDefaultMode = function(mode) {
+      preferences.default_mode = mode
+      updateModeUI(mode)
+    }
+
+    /**
+     * 更新模式UI
+     */
+    function updateModeUI(mode) {
+      document.querySelectorAll('.mode-card').forEach(card => {
+        card.classList.remove('active')
+      })
+      document.getElementById(`mode-${mode}`).classList.add('active')
+
+      const wordlistConfig = document.getElementById('wordlist-config')
+      wordlistConfig.style.display = mode === 'wordlist' ? 'block' : 'none'
+    }
+
+    /**
+     * 默认词表选择变化
+     */
+    window.onDefaultWordlistChange = async function() {
+      const select = document.getElementById('default-wordlist')
+      const wordlistId = select.value
+
+      preferences.default_wordlist_id = wordlistId || null
+
+      if (!wordlistId) {
+        document.getElementById('default-hierarchy').innerHTML = ''
+        return
+      }
+
+      // 获取词表的标签
+      const { data: tags } = await supabase
+        .from('wordlist_tags')
+        .select('*')
+        .eq('wordlist_id', wordlistId)
+        .order('tag_level')
+        .order('sort_order')
+
+      const wordlist = availableWordlists.find(w => w.id === wordlistId)
+      const config = wordlist?.hierarchy_config || {}
+
+      const level2Tags = tags?.filter(t => t.tag_level === 2) || []
+      const level3Tags = tags?.filter(t => t.tag_level === 3) || []
+
+      let html = ''
+
+      if (config.level_2_label && level2Tags.length > 0) {
+        html += `
+          <div style="margin-top: 15px;">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              默认${config.level_2_label}
+            </label>
+            <select id="default-level-2" class="select-input" onchange="preferences.default_level_2_tag = this.value">
+              <option value="">-- 全部${config.level_2_label} --</option>
+              ${level2Tags.map(tag => `
+                <option value="${tag.tag_code}" ${preferences.default_level_2_tag === tag.tag_code ? 'selected' : ''}>
+                  ${tag.tag_display_name}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+        `
+      }
+
+      if (config.level_3_label && level3Tags.length > 0) {
+        html += `
+          <div style="margin-top: 15px;">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              默认${config.level_3_label}
+            </label>
+            <select id="default-level-3" class="select-input" onchange="preferences.default_level_3_tag = this.value">
+              <option value="">-- 全部${config.level_3_label} --</option>
+              ${level3Tags.map(tag => `
+                <option value="${tag.tag_code}" ${preferences.default_level_3_tag === tag.tag_code ? 'selected' : ''}>
+                  ${tag.tag_display_name}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+        `
+      }
+
+      document.getElementById('default-hierarchy').innerHTML = html
+    }
+
+    /**
+     * 保存偏好设置
+     */
+    window.savePreferences = async function() {
+      try {
+        const { error } = await supabase
+          .from('user_wordlist_preferences')
+          .upsert({
+            user_id: currentUser.id,
+            default_mode: preferences.default_mode,
+            default_wordlist_id: preferences.default_wordlist_id,
+            default_level_2_tag: preferences.default_level_2_tag,
+            default_level_3_tag: preferences.default_level_3_tag,
+            updated_at: new Date().toISOString()
+          })
+
+        if (error) throw error
+
+        alert('✅ 设置已保存！')
+        console.log('✅ 用户偏好已保存:', preferences)
+
+      } catch (error) {
+        alert('保存失败: ' + error.message)
+        console.error('保存失败:', error)
+      }
+    }
+
+    /**
+     * 查看词表
+     */
+    window.viewWordlist = async function(wordlistId) {
+      // 跳转到浏览词表页面
+      location.href = `admin/browse-vocabulary.html?wordlist=${wordlistId}`
+    }
+
+    /**
+     * 导出词表
+     */
+    window.exportWordlist = async function(wordlistId) {
+      try {
+        // 获取词表信息
+        const { data: wordlist } = await supabase
+          .from('wordlists')
+          .select('*')
+          .eq('id', wordlistId)
+          .single()
+
+        // 获取词汇
+        const { data: mappings } = await supabase
+          .from('vocabulary_wordlist_mapping')
+          .select('vocabulary_id, level_2_tag, level_3_tag')
+          .eq('wordlist_id', wordlistId)
+
+        const vocabIds = mappings.map(m => m.vocabulary_id)
+        
+        const { data: words } = await supabase
+          .from('vocabulary')
+          .select('*')
+          .in('id', vocabIds)
+
+        // 合并数据
+        const exportData = words.map(w => {
+          const mapping = mappings.find(m => m.vocabulary_id === w.id)
+          return {
+            word: w.word,
+            level_2_tag: mapping?.level_2_tag || '',
+            level_3_tag: mapping?.level_3_tag || ''
+          }
+        })
+
+        // 转换为CSV
+        const csv = [
+          '词语,第二层级,第三层级',
+          ...exportData.map(d => `${d.word},${d.level_2_tag},${d.level_3_tag}`)
+        ].join('\n')
+
+        // 下载
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${wordlist.name}-${Date.now()}.csv`
+        a.click()
+
+        console.log(`✅ 已导出词表: ${wordlist.name}`)
+
+      } catch (error) {
+        alert('导出失败: ' + error.message)
+      }
+    }
+
+    /**
+     * 删除词表
+     */
+    window.deleteWordlist = async function(wordlistId) {
+      const wordlist = myWordlists.find(w => w.id === wordlistId)
+      if (!wordlist) return
+
+      const confirmed = confirm(
+        `确定要删除词表"${wordlist.name}"吗？\n\n` +
+        `这将同时删除该词表的所有标签和关联关系。\n` +
+        `词汇本身会保留在系统中。\n\n` +
+        `此操作不可恢复！`
+      )
+
+      if (!confirmed) return
+
+      try {
+        const { error } = await supabase
+          .from('wordlists')
+          .delete()
+          .eq('id', wordlistId)
+
+        if (error) throw error
+
+        alert(`✅ 已删除词表"${wordlist.name}"`)
+        loadMyWordlists()
+
+      } catch (error) {
+        alert('删除失败: ' + error.message)
+      }
+    }
+
+    // 页面加载时初始化
+    window.addEventListener('load', () => {
+      initialize()
+    })
+  </script>
+</body>
+</html>
+

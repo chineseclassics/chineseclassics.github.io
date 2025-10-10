@@ -40,28 +40,43 @@ python3 -m http.server 8000
 ### 🎯 核心遊戲功能
 - ✅ **6個難度級別** (L1-L6，覆蓋7-18歲學生)
 - ✅ **4種故事主題** (自然探索、校園生活、奇幻冒險、科幻未來)
+- ✅ **三種詞表模式** (AI智能推薦、系統預設詞表、自定義詞表)
 - ✅ **智能詞彙推薦** (基於級別和主題的個性化推薦)
 - ✅ **18輪故事接龍** (AI與用戶交替創作)
 - ✅ **實時詞彙查詢** (集成萌典API)
 - ✅ **生詞本功能** (收藏喜歡的詞彙)
 - ✅ **完整故事展示** (創作統計和分享功能)
 
+### 📚 詞表系統（新增）
+- ✅ **模式一：系統預設詞表** - 支持HSK、教材等標準詞表
+- ✅ **模式二：自定義詞表** - 老師/家長可上傳自己的詞表
+- ✅ **模式三：AI智能推薦** - 不限詞表，AI自動推薦
+- ✅ **靈活層級系統** - 支持第二/三層級標籤（等級、單元等）
+- ✅ **AI自動評級** - 基於150個黃金標準詞，AI自動評估詞彙難度
+- ✅ **校準詞管理** - 可視化管理和調整校準詞庫
+- ✅ **詞表導入工具** - 支持CSV格式批量導入
+
 ### 🤖 AI Agent
 - ✅ **DeepSeek API 集成** (部署在 Supabase Edge Function)
 - ✅ **上下文感知** (根據故事歷史智能續寫)
 - ✅ **階段控制** (開始/發展/收尾不同策略)
 - ✅ **詞彙多樣性** (避免重複，類別平衡)
+- ✅ **詞彙難度評估** (AI自動評估系統，基於黃金標準)
 
 ### 🛠️ 管理工具
 - ✅ **詞彙導入工具** (批量導入JSON格式詞彙)
 - ✅ **詞彙瀏覽器** (篩選、搜索、分頁)
 - ✅ **AI測試工具** (調試和優化AI響應)
 - ✅ **統計面板** (實時數據統計)
+- ✅ **校準詞管理器** - 管理150個黃金標準詞
+- ✅ **系統詞表導入** - 導入HSK等標準詞表
+- ✅ **自定義詞表上傳** - 用戶上傳自己的詞表
 
 ### 💾 數據系統
-- ✅ **Supabase 數據庫** (用戶、詞彙、故事會話)
+- ✅ **Supabase 數據庫** (用戶、詞彙、故事會話、詞表系統)
 - ✅ **RLS 安全策略** (數據訪問控制)
-- ✅ **120個示例詞彙** (L1-L6精選詞彙)
+- ✅ **150個校準詞彙** (L1-L6黃金標準詞彙)
+- ✅ **多層級標籤系統** (支持詞表的靈活組織)
 - ✅ **本地存儲** (生詞本持久化)
 
 ---
@@ -70,28 +85,61 @@ python3 -m http.server 8000
 
 ```
 story-vocab/
-├── story-game.html           # 🎮 主遊戲頁面（單頁應用）
+├── index.html               # 🎮 主遊戲頁面（單頁應用）
+├── settings.html            # ⚙️ 設置頁面（詞表管理）
 │
-├── admin/                    # 🛠️ 管理後台
+├── admin/                   # 🛠️ 管理後台
 │   ├── index.html           # 後台首頁
-│   ├── import-vocabulary.html    # 詞彙導入工具
-│   ├── browse-vocabulary.html    # 詞彙瀏覽器
-│   └── test-ai-agent.html   # AI Agent 測試
+│   ├── import-calibration-words.html      # 導入校準詞庫
+│   ├── calibration-manager.html           # 校準詞管理器
+│   ├── import-system-wordlist.html        # 系統詞表導入
+│   ├── upload-custom-wordlist.html        # 自定義詞表上傳
+│   ├── browse-vocabulary.html             # 詞彙瀏覽器
+│   ├── test-ai-agent.html                 # AI Agent 測試
+│   └── templates/                         # 📄 模板文件
+│       ├── 词表导入模板.csv
+│       └── README.md
 │
-├── js/                       # 📦 JavaScript 模塊
+├── js/                      # 📦 JavaScript 模塊
 │   ├── config.js            # 配置文件（Supabase URL/Key）
-│   └── supabase-client.js   # Supabase 客戶端封裝
+│   ├── supabase-client.js   # Supabase 客戶端封裝
+│   ├── app.js               # 應用入口
+│   ├── core/                # 核心邏輯
+│   │   ├── game-state.js    # 遊戲狀態管理
+│   │   ├── story-engine.js  # 故事引擎
+│   │   ├── session-manager.js  # 會話管理
+│   │   ├── story-storage.js    # 故事存儲
+│   │   └── vocab-integration.js # 詞彙推薦集成
+│   ├── features/            # 功能模塊
+│   │   ├── calibration-game.js  # 校準遊戲
+│   │   ├── word-manager.js      # 詞彙管理
+│   │   ├── wordbook.js          # 生詞本
+│   │   ├── dictionary.js        # 萌典API集成
+│   │   └── profile-updater.js   # 用戶畫像更新
+│   └── ui/                  # UI組件
+│       ├── screens.js       # 界面顯示
+│       ├── navigation.js    # 導航控制
+│       ├── modals.js        # 彈窗管理
+│       ├── story-card.js    # 故事卡片
+│       └── wordlist-selector.js  # 詞表選擇器（新增）
 │
-├── supabase/                 # 🗄️ 後端服務
+├── supabase/                # 🗄️ 後端服務
 │   ├── migrations/          # 數據庫遷移腳本
+│   │   ├── 001_initial_schema.sql
+│   │   ├── 006_ai_vocab_system.sql
+│   │   └── 007_wordlist_system.sql        # 詞表系統（新增）
 │   └── functions/           # Edge Functions
-│       └── story-agent/     # AI 故事生成服務
+│       ├── story-agent/                   # AI 故事生成服務
+│       ├── vocab-recommender/             # 詞彙推薦服務
+│       └── vocab-difficulty-evaluator/    # 難度評估服務（新增）
 │
-├── data/                     # 📊 數據文件
-│   └── sample-vocabulary.json   # 示例詞彙（120個）
+├── data/                    # 📊 數據文件
+│   └── calibration-vocabulary.json  # 校準詞庫（150個黃金標準詞）
 │
-└── docs/                     # 📚 設計文檔
-    └── DESIGN.md            # 完整設計文檔（產品規劃、架構設計）
+└── docs/                    # 📚 設計文檔
+    ├── DESIGN.md            # 完整設計文檔（產品規劃、架構設計）
+    ├── WORDLIST_SYSTEM_IMPLEMENTATION.md  # 詞表系統實施文檔（新增）
+    └── ...
 ```
 
 ---
@@ -207,12 +255,18 @@ open http://localhost:8000/admin/
 
 ### 核心數據表
 
-- **`vocabulary`** - 詞彙表（詞語、拼音、級別、主題等）
+- **`vocabulary`** - 詞彙表（詞語、難度等級、類型等，全局唯一）
+- **`wordlists`** - 詞表定義（系統詞表和自定義詞表）
+- **`wordlist_tags`** - 詞表標籤（第二/三層級標籤）
+- **`vocabulary_wordlist_mapping`** - 詞彙-詞表關聯（多對多）
+- **`user_wordlist_preferences`** - 用戶詞表偏好設置
 - **`story_sessions`** - 故事會話（對話歷史、進度、分數）
 - **`user_vocabulary`** - 用戶學習記錄（掌握度、使用次數）
 - **`user_wordbook`** - 生詞本（用戶收藏的詞彙）
 
-詳細的數據庫設計請參見 [docs/DESIGN.md](./docs/DESIGN.md)
+詳細的數據庫設計請參見：
+- [docs/DESIGN.md](./docs/DESIGN.md) - 完整設計文檔
+- [docs/WORDLIST_SYSTEM_IMPLEMENTATION.md](./docs/WORDLIST_SYSTEM_IMPLEMENTATION.md) - 詞表系統實施文檔
 
 ---
 

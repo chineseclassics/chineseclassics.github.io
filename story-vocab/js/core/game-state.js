@@ -16,7 +16,13 @@ export const gameState = {
     currentWords: [],         // 当前可选词汇列表
     usedWords: [],            // 已使用的词汇列表
     allRecommendedWords: [],  // 所有轮次的推荐词汇
-    currentStoryId: null      // 当前故事在 localStorage 中的 ID
+    currentStoryId: null,     // 当前故事在 localStorage 中的 ID
+    
+    // 词表模式相关（新增）
+    wordlistMode: 'ai',       // 'ai' | 'wordlist'
+    wordlistId: null,         // 指定词表ID
+    level2Tag: null,          // 第二层级标签
+    level3Tag: null           // 第三层级标签
 };
 
 /**
@@ -31,6 +37,7 @@ export function resetGameState() {
     gameState.selectedWord = null;
     gameState.currentWords = [];
     gameState.currentStoryId = null;
+    // 词表状态在新游戏开始时会重新设置，这里不重置
 }
 
 /**

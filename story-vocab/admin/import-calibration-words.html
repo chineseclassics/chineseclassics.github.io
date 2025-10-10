@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>导入校准词库</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .alert-info {
+      background: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      color: #1565c0;
+    }
+    
+    .alert-warning {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      color: #e65100;
+    }
+    
+    .alert-success {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      color: #2e7d32;
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    
+    .stat-box {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #667eea;
+    }
+    
+    .btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+      margin-top: 10px;
+    }
+    
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+    }
+    
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+    }
+    
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+    
+    .progress-section {
+      margin: 20px 0;
+      display: none;
+    }
+    
+    .progress-section.active {
+      display: block;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 30px;
+      background: #e0e0e0;
+      border-radius: 15px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .log {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 20px;
+    }
+    
+    .log-entry {
+      padding: 5px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .log-entry.success {
+      color: #2e7d32;
+    }
+    
+    .log-entry.error {
+      color: #c62828;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📚 导入校准词库</h1>
+    <p class="subtitle">将150个黄金标准词汇导入Supabase数据库</p>
+
+    <div class="alert alert-info">
+      <strong>📝 说明：</strong> 
+      本工具将从 <code>calibration-vocabulary.json</code> 读取150个精选校准词汇，
+      并导入到 Supabase 数据库的 <code>vocabulary</code> 表中，标记为黄金标准词汇。
+      这些词汇将作为 AI 自动评级系统的参考基准。
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>⚠️ 重要：</strong>
+      导入前请确保已运行数据库迁移脚本 <code>007_wordlist_system.sql</code>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">JSON文件词汇</div>
+        <div class="stat-value" id="json-count">-</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">数据库现有</div>
+        <div class="stat-value" id="db-count">-</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">待导入</div>
+        <div class="stat-value" id="pending-count">-</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">已导入</div>
+        <div class="stat-value" id="imported-count">0</div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div>
+      <button class="btn" id="load-btn" onclick="loadCalibrationData()">
+        📥 1. 加载校准词库JSON
+      </button>
+      
+      <button class="btn" id="import-btn" onclick="importToDatabase()" disabled>
+        🚀 2. 导入到数据库
+      </button>
+      
+      <button class="btn btn-secondary" onclick="window.location.href='calibration-manager.html'">
+        🔧 打开校准词管理器
+      </button>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="progress-section" id="progress-section">
+      <h3>导入进度</h3>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%">0%</div>
+      </div>
+      <p id="progress-text">等待开始...</p>
+    </div>
+
+    <!-- 日志 -->
+    <div class="log" id="log"></div>
+  </div>
+
+  <script type="module">
+    import { getSupabase } from '../js/supabase-client.js'
+
+    const supabase = getSupabase()
+    let calibrationData = null
+
+    /**
+     * 加载校准词库JSON
+     */
+    window.loadCalibrationData = async function() {
+      const btn = document.getElementById('load-btn')
+      btn.disabled = true
+      btn.textContent = '加载中...'
+
+      try {
+        const response = await fetch('../data/calibration-vocabulary.json')
+        const data = await response.json()
+        
+        calibrationData = data.calibration_words
+        
+        // 统计词汇数量
+        let totalWords = 0
+        for (const level in calibrationData) {
+          totalWords += calibrationData[level].length
+        }
+        
+        document.getElementById('json-count').textContent = totalWords
+        
+        // 查询数据库现有校准词数量
+        const { count } = await supabase
+          .from('vocabulary')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_calibration', true)
+        
+        document.getElementById('db-count').textContent = count || 0
+        document.getElementById('pending-count').textContent = totalWords - (count || 0)
+        
+        // 启用导入按钮
+        document.getElementById('import-btn').disabled = false
+        
+        addLog('✅ 成功加载校准词库JSON', 'success')
+        addLog(`📊 共 ${totalWords} 个词汇，数据库已有 ${count || 0} 个`, 'success')
+        
+        btn.textContent = '✅ 已加载'
+        btn.disabled = false
+        
+      } catch (error) {
+        console.error('加载失败:', error)
+        addLog('❌ 加载失败: ' + error.message, 'error')
+        btn.textContent = '❌ 加载失败，点击重试'
+        btn.disabled = false
+      }
+    }
+
+    /**
+     * 导入到数据库
+     */
+    window.importToDatabase = async function() {
+      if (!calibrationData) {
+        alert('请先加载校准词库JSON')
+        return
+      }
+
+      const confirmed = confirm(
+        '确定要导入校准词库吗？\n\n' +
+        '这将：\n' +
+        '1. 创建或更新词汇记录\n' +
+        '2. 标记为校准词（is_calibration=true）\n' +
+        '3. 设置校准顺序\n\n' +
+        '已存在的词汇不会重复创建。'
+      )
+
+      if (!confirmed) return
+
+      const btn = document.getElementById('import-btn')
+      btn.disabled = true
+      btn.textContent = '导入中...'
+
+      const progressSection = document.getElementById('progress-section')
+      progressSection.classList.add('active')
+
+      let totalWords = 0
+      let importedCount = 0
+      let updatedCount = 0
+      let errorCount = 0
+      let order = 1
+
+      // 统计总数
+      for (const level in calibrationData) {
+        totalWords += calibrationData[level].length
+      }
+
+      addLog(`开始导入 ${totalWords} 个校准词...`, 'success')
+
+      // 按等级导入
+      for (const level in calibrationData) {
+        const levelNum = parseInt(level.substring(1)) // L1 -> 1
+        const words = calibrationData[level]
+        
+        addLog(`\n📖 导入 L${levelNum} 词汇 (${words.length}个)...`)
+
+        for (const wordData of words) {
+          try {
+            // 查找是否已存在
+            const { data: existing } = await supabase
+              .from('vocabulary')
+              .select('id')
+              .eq('word', wordData.word)
+              .maybeSingle()
+
+            if (existing) {
+              // 更新现有记录
+              const { error } = await supabase
+                .from('vocabulary')
+                .update({
+                  difficulty_level: wordData.difficulty,
+                  category: wordData.category,
+                  frequency: wordData.frequency,
+                  is_calibration: true,
+                  calibration_order: order,
+                  difficulty_confidence: 'high',
+                  difficulty_reasoning: '开发者精心标注的黄金标准',
+                  difficulty_evaluated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id)
+
+              if (error) throw error
+              updatedCount++
+              addLog(`  ✏️ 更新: ${wordData.word} (L${levelNum})`)
+            } else {
+              // 创建新记录
+              const { error } = await supabase
+                .from('vocabulary')
+                .insert({
+                  word: wordData.word,
+                  difficulty_level: wordData.difficulty,
+                  category: wordData.category,
+                  frequency: wordData.frequency,
+                  is_calibration: true,
+                  calibration_order: order,
+                  difficulty_confidence: 'high',
+                  difficulty_reasoning: '开发者精心标注的黄金标准',
+                  difficulty_evaluated_at: new Date().toISOString()
+                })
+
+              if (error) throw error
+              importedCount++
+              addLog(`  ✅ 新增: ${wordData.word} (L${levelNum})`, 'success')
+            }
+
+            order++
+            
+            // 更新进度
+            const progress = ((importedCount + updatedCount + errorCount) / totalWords) * 100
+            updateProgress(progress)
+
+          } catch (error) {
+            console.error(`导入失败: ${wordData.word}`, error)
+            addLog(`  ❌ 失败: ${wordData.word} - ${error.message}`, 'error')
+            errorCount++
+          }
+        }
+      }
+
+      // 完成
+      updateProgress(100)
+      
+      addLog('\n============================', 'success')
+      addLog(`✅ 导入完成！`, 'success')
+      addLog(`📊 统计：`, 'success')
+      addLog(`  - 新增: ${importedCount} 个`, 'success')
+      addLog(`  - 更新: ${updatedCount} 个`, 'success')
+      addLog(`  - 失败: ${errorCount} 个`, errorCount > 0 ? 'error' : 'success')
+      addLog(`  - 总计: ${importedCount + updatedCount} / ${totalWords}`, 'success')
+      addLog('============================', 'success')
+
+      document.getElementById('imported-count').textContent = importedCount + updatedCount
+
+      btn.textContent = '✅ 导入完成'
+      btn.disabled = false
+
+      if (errorCount === 0) {
+        setTimeout(() => {
+          alert('✅ 校准词库导入成功！\n\n下一步：打开"校准词管理器"进行人工校准。')
+        }, 500)
+      }
+    }
+
+    /**
+     * 更新进度条
+     */
+    function updateProgress(percent) {
+      const fill = document.getElementById('progress-fill')
+      const text = document.getElementById('progress-text')
+      
+      fill.style.width = percent + '%'
+      fill.textContent = Math.round(percent) + '%'
+      text.textContent = `已处理 ${Math.round(percent)}%`
+    }
+
+    /**
+     * 添加日志
+     */
+    function addLog(message, type = '') {
+      const logDiv = document.getElementById('log')
+      const entry = document.createElement('div')
+      entry.className = 'log-entry ' + type
+      entry.textContent = message
+      logDiv.appendChild(entry)
+      logDiv.scrollTop = logDiv.scrollHeight
+    }
+
+    // 页面加载时检查数据库连接
+    window.addEventListener('load', async () => {
+      try {
+        const { data, error } = await supabase
+          .from('vocabulary')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_calibration', true)
+
+        if (error) {
+          addLog('⚠️ 数据库连接失败: ' + error.message, 'error')
+          addLog('请检查 Supabase 配置', 'error')
+        } else {
+          addLog('✅ 数据库连接成功', 'success')
+          document.getElementById('db-count').textContent = data || 0
+        }
+      } catch (error) {
+        addLog('❌ 初始化失败: ' + error.message, 'error')
+      }
+    })
+  </script>
+</body>
+</html>
+

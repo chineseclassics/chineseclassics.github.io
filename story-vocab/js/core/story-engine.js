@@ -149,8 +149,14 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         // 添加到历史
         addStoryEntry('ai', data.aiSentence);
         
-        // 獲取本輪推薦詞彙（使用新的 vocab-recommender）
-        const recommendedWords = await getRecommendedWords(gameState.turn);
+        // 獲取本輪推薦詞彙（使用新的 vocab-recommender，传递词表选项）
+        const wordlistOptions = {
+          mode: gameState.wordlistMode,
+          wordlistId: gameState.wordlistId,
+          level2Tag: gameState.level2Tag,
+          level3Tag: gameState.level3Tag
+        };
+        const recommendedWords = await getRecommendedWords(gameState.turn, wordlistOptions);
         
         // 保存推荐词汇
         gameState.currentWords = recommendedWords || [];
