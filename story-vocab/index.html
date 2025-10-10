@@ -150,54 +150,26 @@
         <!-- ===== 启动界面 ===== -->
         <div id="start-screen" class="screen active">
             <div class="content">
-                <!-- AI 智能推薦模式歡迎信息（默認顯示） -->
-                <div class="ai-mode-welcome" id="ai-mode-welcome">
-                    <p class="welcome-subtitle">讓我們一起創作精彩的故事！</p>
-                    <p class="welcome-hint">💡 AI 會根據你的表現，推薦最合適的詞彙</p>
-                </div>
-                
-                <!-- 词表选择器（新增） -->
-                <div id="wordlist-selector-container" style="margin-bottom: 30px;">
-                    <!-- 由 wordlist-selector.js 动态渲染 -->
-                </div>
-
-                <!-- 系統預設詞表模式的級別選擇（默認隱藏） -->
-                <div class="level-selector" id="level-selector" style="display: none;">
-                    <h2>🎯 選擇你的級別：</h2>
-                    <div class="level-options">
-                        <label class="level-card">
-                            <input type="radio" name="level" value="L1">
-                            <div class="level-name">L1 啟蒙</div>
-                            <div class="level-desc">2-3年級 | 簡單詞彙</div>
-                        </label>
-                        <label class="level-card selected">
-                            <input type="radio" name="level" value="L2" checked>
-                            <div class="level-name">L2 初級</div>
-                            <div class="level-desc">3-4年級 | 容易詞彙</div>
-                        </label>
-                        <label class="level-card">
-                            <input type="radio" name="level" value="L3">
-                            <div class="level-name">L3 進階</div>
-                            <div class="level-desc">4-5年級 | 中等詞彙</div>
-                        </label>
-                        <label class="level-card">
-                            <input type="radio" name="level" value="L4">
-                            <div class="level-name">L4 高級</div>
-                            <div class="level-desc">5-6年級 | 較難詞彙</div>
-                        </label>
-                        <label class="level-card">
-                            <input type="radio" name="level" value="L5">
-                            <div class="level-name">L5 精通</div>
-                            <div class="level-desc">初中 | 高級詞彙</div>
-                        </label>
-                        <label class="level-card">
-                            <input type="radio" name="level" value="L6">
-                            <div class="level-name">L6 大師</div>
-                            <div class="level-desc">高中 | 文學詞彙</div>
-                        </label>
+                <!-- AI 模式区域 -->
+                <div id="ai-mode-section" style="display: none;">
+                    <div class="ai-mode-welcome">
+                        <p class="welcome-subtitle">讓我們一起創作精彩的故事！</p>
+                        <p class="welcome-hint">💡 AI 會根據你的表現，推薦最合適的詞彙</p>
                     </div>
                 </div>
 
+                <!-- 词表层级选择区域 -->
+                <div id="wordlist-hierarchy-section" style="display: none;">
+                    <h2 id="hierarchy-title">選擇範圍：</h2>
+                    
+                    <!-- 第二层级卡片 -->
+                    <div id="level-2-cards" class="difficulty-grid"></div>
+                    
+                    <!-- 第三层级卡片（点击第二层级后展开） -->
+                    <div id="level-3-cards" class="difficulty-grid" style="display: none; margin-top: 20px;"></div>
+                </div>
+
+                <!-- 主题选择 -->
                 <div class="theme-selector">
                     <h2>🎭 選擇故事主題：</h2>
                     <div class="theme-buttons">
@@ -222,6 +194,14 @@
 
                 <div class="start-button-container">
                     <button class="btn-primary" id="start-game-btn">開始創作故事</button>
+                </div>
+
+                <!-- 底部提示 -->
+                <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+                    <p>
+                        當前詞表：<span id="current-wordlist-name" style="color: #667eea; font-weight: 500;">加載中...</span>
+                        <a href="settings.html" style="color: #667eea; margin-left: 10px; text-decoration: underline;">更換</a>
+                    </p>
                 </div>
             </div>
         </div>

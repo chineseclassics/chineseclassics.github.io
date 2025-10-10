@@ -10,21 +10,93 @@ import { makeAIWordsClickable, makeUserSentenceClickable, selectWord } from '../
 import { loadSettings } from './modals.js';
 import { preloadWords, getBriefInfo } from '../utils/word-cache.js';
 import { getWordBriefInfo } from '../features/dictionary.js';
+import { renderLevel2Cards, clearHierarchyCards } from './hierarchy-cards.js';
+import { getSupabase } from '../supabase-client.js';
 
 /**
  * 初始化启动界面
  */
-export function initStartScreen() {
-    // 级别选择交互
-    document.querySelectorAll('.level-card').forEach(card => {
-        card.addEventListener('click', function() {
-            document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
-            this.classList.add('selected');
-            const radio = this.querySelector('input[type="radio"]');
-            if (radio) radio.checked = true;
-        });
-    });
-    
+export async function initStartScreen() {
+    const supabase = getSupabase();
+
+    try {
+        // 获取当前用户
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.warn('⚠️ 用户未登录，使用默认AI模式');
+            showAIMode();
+            return;
+        }
+
+        // 加载用户词表偏好
+        const { data: prefs } = await supabase
+            .from('user_wordlist_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        console.log('📊 用户词表偏好:', prefs);
+
+        // 如果没有偏好或选择了AI模式
+        if (!prefs || !prefs.default_wordlist_id || prefs.default_mode === 'ai') {
+            showAIMode();
+            updateWordlistNameDisplay('AI智能推薦');
+            // 设置gameState
+            gameState.wordlistMode = 'ai';
+            gameState.wordlistId = null;
+            gameState.level2Tag = null;
+            gameState.level3Tag = null;
+            return;
+        }
+
+        // 用户选择了特定词表，加载词表信息
+        const { data: wordlist } = await supabase
+            .from('wordlists')
+            .select('*')
+            .eq('id', prefs.default_wordlist_id)
+            .maybeSingle();
+
+        if (!wordlist) {
+            console.warn('⚠️ 词表不存在，使用AI模式');
+            showAIMode();
+            updateWordlistNameDisplay('AI智能推薦（詞表不存在）');
+            return;
+        }
+
+        // 加载词表的标签
+        const { data: tags } = await supabase
+            .from('wordlist_tags')
+            .select('*')
+            .eq('wordlist_id', wordlist.id)
+            .order('tag_level')
+            .order('sort_order');
+
+        console.log('📋 词表标签:', tags);
+
+        // 设置gameState
+        gameState.wordlistMode = 'wordlist';
+        gameState.wordlistId = wordlist.id;
+
+        const level2Tags = tags?.filter(t => t.tag_level === 2) || [];
+        const level3Tags = tags?.filter(t => t.tag_level === 3) || [];
+
+        // 如果有层级标签，显示层级卡片
+        if (level2Tags.length > 0) {
+            showWordlistHierarchy();
+            renderLevel2Cards(wordlist, tags);
+            updateWordlistNameDisplay(wordlist.name);
+        } else {
+            // 没有层级，直接可以开始游戏（使用整个词表）
+            showAIMode();
+            updateWordlistNameDisplay(wordlist.name + '（無層級劃分）');
+        }
+
+    } catch (error) {
+        console.error('❌ 初始化启动界面失败:', error);
+        showAIMode();
+        updateWordlistNameDisplay('AI智能推薦（加載失敗）');
+    }
+
     // 主题选择交互
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -32,6 +104,41 @@ export function initStartScreen() {
             this.classList.add('selected');
         });
     });
+}
+
+/**
+ * 显示AI模式
+ */
+function showAIMode() {
+    const aiSection = document.getElementById('ai-mode-section');
+    const hierarchySection = document.getElementById('wordlist-hierarchy-section');
+
+    if (aiSection) aiSection.style.display = 'block';
+    if (hierarchySection) hierarchySection.style.display = 'none';
+
+    clearHierarchyCards();
+}
+
+/**
+ * 显示词表层级选择
+ */
+function showWordlistHierarchy() {
+    const aiSection = document.getElementById('ai-mode-section');
+    const hierarchySection = document.getElementById('wordlist-hierarchy-section');
+
+    if (aiSection) aiSection.style.display = 'none';
+    if (hierarchySection) hierarchySection.style.display = 'block';
+}
+
+/**
+ * 更新底部词表名称显示
+ * @param {string} name - 词表名称
+ */
+function updateWordlistNameDisplay(name) {
+    const nameElement = document.getElementById('current-wordlist-name');
+    if (nameElement) {
+        nameElement.textContent = name;
+    }
 }
 
 /**

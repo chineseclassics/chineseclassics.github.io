@@ -21,7 +21,6 @@ import { showScreen, toggleMobileSidebar, closeMobileSidebar, navigateTo, handle
 import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, initModalClickOutside } from './ui/modals.js';
 import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initSettingsScreen, showFeedbackLoading, displayFeedback, hideFeedbackSection } from './ui/screens.js';
 import { loadMyStoriesScreen } from './ui/story-card.js';
-import { wordlistSelector } from './ui/wordlist-selector.js';
 
 // 导入工具
 import { showToast } from './utils/toast.js';
@@ -353,35 +352,26 @@ async function handleStartGame() {
         return;
     }
     
-    // 获取词表选择（如果有wordlistSelector）
-    if (window.wordlistSelector) {
-        // 验证词表选择
-        if (!window.wordlistSelector.validate()) {
-            return;
+    // 词表选择已经在 initStartScreen() 中设置到 gameState
+    // 如果是词表模式且有层级，验证是否选择了层级
+    if (gameState.wordlistMode === 'wordlist' && gameState.wordlistId) {
+        const level2Container = document.getElementById('level-2-cards');
+        if (level2Container && level2Container.children.length > 0) {
+            // 有第二层级卡片，检查是否选中
+            if (!gameState.level2Tag) {
+                showToast('請選擇層級');
+                return;
+            }
         }
-        
-        // 获取词表选择并保存到gameState
-        const selection = window.wordlistSelector.getSelection();
-        gameState.wordlistMode = selection.mode;
-        gameState.wordlistId = selection.wordlistId;
-        gameState.level2Tag = selection.level2Tag;
-        gameState.level3Tag = selection.level3Tag;
-        
-        console.log('📚 词表选择:', selection);
-        
-        // 保存为默认设置（如果用户勾选）
-        await window.wordlistSelector.saveAsDefault(gameState.userId);
-    } else {
-        // 没有词表选择器，使用AI模式
-        gameState.wordlistMode = 'ai';
-        gameState.wordlistId = null;
-        gameState.level2Tag = null;
-        gameState.level3Tag = null;
     }
     
-    // AI 智能模式：不需要选择等级，使用默认值 'L2'
-    // 实际推荐由 vocab-recommender 根据用户水平动态决定
-    const level = 'L2';  // 仅用于兼容性，不影响词汇推荐
+    console.log('📚 开始游戏 - 词表模式:', gameState.wordlistMode);
+    console.log('📚 词表ID:', gameState.wordlistId);
+    console.log('📚 层级2:', gameState.level2Tag);
+    console.log('📚 层级3:', gameState.level3Tag);
+    
+    // 设置级别和主题
+    const level = 'L2';  // 仅用于兼容性，实际词汇推荐由 vocab-recommender 根据用户水平和词表设置决定
     const theme = themeBtn.dataset.theme;
     
     // 初始化游戏界面
@@ -604,14 +594,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // 初始化应用（登录等）
     await initializeApp();
-    
-    // 初始化词表选择器
-    if (gameState.userId) {
-        await wordlistSelector.initialize(gameState.userId);
-        wordlistSelector.render('wordlist-selector-container');
-        console.log('✅ 词表选择器已初始化');
-    }
-    
     // 检查是否有保存的用户信息
     const savedUsername = localStorage.getItem('user_display_name');
     if (savedUsername) {
@@ -637,8 +619,5 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // 更新侧边栏统计
     updateSidebarStats();
-    
-    // 异步初始化 Supabase
-    initializeApp();
 });
 

@@ -12,6 +12,12 @@ let supabaseClient = null;
  * 初始化 Supabase 客户端
  */
 export async function initSupabase() {
+  // 如果已经初始化，直接返回
+  if (supabaseClient) {
+    console.log('ℹ️ Supabase 客户端已存在，跳过重复初始化');
+    return supabaseClient;
+  }
+  
   // 验证配置
   if (!validateConfig()) {
     throw new Error('Supabase 配置不完整');
