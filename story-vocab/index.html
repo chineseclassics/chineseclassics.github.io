@@ -150,17 +150,17 @@
         <!-- ===== 启动界面 ===== -->
         <div id="start-screen" class="screen active">
             <div class="content">
-                <!-- AI 模式区域 -->
-                <div id="ai-mode-section" style="display: none;">
+                <!-- AI 模式欢迎信息 -->
+                <div id="ai-mode-section">
                     <div class="ai-mode-welcome">
                         <p class="welcome-subtitle">讓我們一起創作精彩的故事！</p>
                         <p class="welcome-hint">💡 AI 會根據你的表現，推薦最合適的詞彙</p>
                     </div>
                 </div>
 
-                <!-- 词表层级选择区域 -->
+                <!-- 词表层级选择区域（在主题选择上方） -->
                 <div id="wordlist-hierarchy-section" style="display: none;">
-                    <h2 id="hierarchy-title">選擇範圍：</h2>
+                    <h2 id="hierarchy-title">📚 選擇範圍：</h2>
                     
                     <!-- 第二层级卡片 -->
                     <div id="level-2-cards" class="difficulty-grid"></div>
@@ -169,7 +169,7 @@
                     <div id="level-3-cards" class="difficulty-grid" style="display: none; margin-top: 20px;"></div>
                 </div>
 
-                <!-- 主题选择 -->
+                <!-- 主题选择（始终显示） -->
                 <div class="theme-selector">
                     <h2>🎭 選擇故事主題：</h2>
                     <div class="theme-buttons">
@@ -196,11 +196,11 @@
                     <button class="btn-primary" id="start-game-btn">開始創作故事</button>
                 </div>
 
-                <!-- 底部提示 -->
+                <!-- 底部提示（显示当前词表模式，可点击更换） -->
                 <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
                     <p>
-                        當前詞表：<span id="current-wordlist-name" style="color: #667eea; font-weight: 500;">加載中...</span>
-                        <a href="settings.html" style="color: #667eea; margin-left: 10px; text-decoration: underline;">更換</a>
+                        當前：<span id="current-wordlist-name" style="color: #667eea; font-weight: 500;">AI智能推薦</span>
+                        <a href="#" onclick="navigateTo('settings'); return false;" style="color: #667eea; margin-left: 10px; text-decoration: underline;">更換</a>
                     </p>
                 </div>
             </div>
@@ -443,37 +443,28 @@
 
         <!-- ===== 設置界面 ===== -->
         <div id="settings-screen" class="screen">
-            <div class="content" style="max-width: 800px; margin: 0 auto; padding: 40px;">
+            <div class="content">
                 
                 <!-- 詞彙來源設置 -->
                 <div class="settings-section">
                     <h2 class="section-title">📚 學習內容設置</h2>
                     <p class="section-desc">選擇詞彙的來源方式</p>
                     
-                    <div class="current-mode-card">
-                        <div class="mode-header">
-                            <span class="mode-icon">🤖</span>
-                            <div class="mode-info">
-                                <div class="mode-name">AI 幫我選詞</div>
-                                <div class="mode-status">當前使用 ✓</div>
-                            </div>
-                        </div>
-                        <div class="mode-description">
-                            AI 會根據你的水平自動選擇合適的詞彙，難度剛剛好。
-                        </div>
-                        <div class="mode-stats">
-                            <span>📊 你目前的水平：適合 3-4 年級的詞彙</span>
-                        </div>
-                        <button class="btn-secondary" onclick="showVocabModeSelector()" style="width: 100%; margin-top: 15px;">
-                            更改學習方式
-                        </button>
+                    <div class="setting-item">
+                        <label class="setting-label">選擇詞表</label>
+                        <select class="setting-select" id="wordlist-selector-setting" onchange="onWordlistSelectSetting()">
+                            <option value="ai">🤖 AI智能推荐（默认）</option>
+                            <optgroup label="系統詞表" id="system-wordlists-group-setting"></optgroup>
+                            <optgroup label="我的詞表" id="custom-wordlists-group-setting"></optgroup>
+                            <option value="__add_custom__">➕ 添加自定義詞表</option>
+                        </select>
                     </div>
                     
                     <div class="info-box">
                         <span class="info-icon">💡</span>
                         <div class="info-text">
                             <strong>推薦使用 AI 智能模式</strong><br>
-                            AI 會在前幾輪了解你的水平，然後自動推薦最合適的詞彙。大多數同學使用默認設置就很好！
+                            AI 會在前幾輪了解你的水平，然後自動推薦最合適的詞彙。如果您有特定的學習計劃，可以選擇或上傳自定義詞表。
                         </div>
                     </div>
                 </div>
@@ -701,6 +692,67 @@
     <div id="toast" class="toast"></div>
     </div>
     <!-- ===== 主內容區域結束 ===== -->
+
+    <!-- 上传自定义词表模态窗口 -->
+    <div class="modal" id="upload-wordlist-modal">
+        <div class="modal-content upload-wordlist-content">
+            <button class="modal-close" onclick="closeUploadWordlistModal()">×</button>
+            
+            <div class="modal-body">
+                <h2 class="modal-title">
+                    ➕ 上傳自定義詞表
+                </h2>
+
+                <div class="upload-form">
+                    <div class="form-group">
+                        <label class="form-label">詞表名稱 *</label>
+                        <input type="text" 
+                               id="upload-wordlist-name" 
+                               class="form-input"
+                               placeholder="例如：四年級復習詞彙">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">詞表描述（可選）</label>
+                        <textarea id="upload-wordlist-desc" 
+                                  rows="2" 
+                                  class="form-textarea"
+                                  placeholder="簡短描述這個詞表的用途..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">下載CSV模板</label>
+                        <button class="btn-download-template" onclick="downloadWordlistTemplate()">
+                            📥 下載模板
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">上傳CSV文件 *</label>
+                        <div id="upload-zone" class="upload-zone">
+                            <p class="upload-icon">📁</p>
+                            <p class="upload-text-main">拖拽文件到這裡或點擊選擇</p>
+                            <p class="upload-text-hint">支持 .csv 格式</p>
+                            <input type="file" id="csv-file-upload" accept=".csv" style="display: none;">
+                        </div>
+                        <p id="upload-file-name" class="upload-file-name"></p>
+                    </div>
+
+                    <div id="upload-progress-section" class="upload-progress-section">
+                        <div class="progress-bar-container">
+                            <div id="upload-progress-fill" class="progress-bar-fill">0%</div>
+                        </div>
+                        <p id="upload-progress-text" class="progress-text">準備中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary modal-btn" onclick="closeUploadWordlistModal()">取消</button>
+                <button class="btn-primary modal-btn" onclick="uploadWordlistFromModal()" id="upload-wordlist-btn">確認上傳</button>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript 模块 -->
     <script type="module" src="./js/app.js"></script>

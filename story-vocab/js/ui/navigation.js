@@ -5,6 +5,7 @@
 
 import { showToast } from '../utils/toast.js';
 import { openWordbook } from '../features/wordbook.js';
+import { initSettingsScreen } from './screens.js';
 
 /**
  * 页面切换
@@ -167,7 +168,8 @@ export function navigateTo(destination) {
         
         case 'settings':
             showScreen('settings-screen');
-            // 加载设置（在 screens.js 中实现）
+            // 初始化设置界面（异步调用）
+            initSettingsScreen();
             break;
         
         default:

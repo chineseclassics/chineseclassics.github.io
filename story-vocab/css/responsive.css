@@ -96,8 +96,8 @@
     }
 
     #game-screen .content {
-        overflow-y: visible !important; /* 允許縱向溢出以便滾動 */
-        overflow-x: hidden !important; /* 禁止橫向溢出 */
+        overflow-y: visible; /* 允許縱向溢出以便滾動 */
+        overflow-x: visible; /* 移除过度限制，允许hover效果正常显示 */
         padding: 20px;
         flex: 1;
         display: flex;
@@ -113,7 +113,7 @@
         margin-bottom: 0;
         padding: 15px; /* 移動端減少內邊距，進度圓圈懸浮不佔空間 */
         -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
-        overflow-x: hidden; /* 禁止橫向滾動 */
+        overflow-x: visible; /* 允许可点击词语的hover效果 */
         max-width: 100%; /* 限制最大寬度 */
         word-wrap: break-word; /* 長詞換行 */
     }
@@ -147,15 +147,16 @@
     #game-screen .word-choices-section {
         flex-shrink: 0;
         margin-bottom: 0;
-        max-width: 100%; /* 限制最大寬度 */
-        overflow-x: hidden; /* 禁止橫向溢出 */
+        max-width: 100%;
+        padding-top: 8px;
+        overflow: visible; /* 允许词卡hover时向上移动不被裁剪 */
     }
 
     #game-screen .user-input-section {
         flex-shrink: 0;
         padding: 20px;
         max-width: 100%; /* 限制最大寬度 */
-        overflow-x: hidden; /* 禁止橫向溢出 */
+        overflow: visible; /* 允许内容自然显示 */
     }
 
     #settings-screen .content {

@@ -584,16 +584,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 绑定事件监听器
     bindEventListeners();
     
-    // 初始化启动界面
-    initStartScreen();
-    
     // 初始化词汇模式（默认为 AI 智能模式）
     if (!localStorage.getItem('vocab_mode')) {
         localStorage.setItem('vocab_mode', 'ai');
     }
     
-    // 初始化应用（登录等）
+    // 初始化应用（登录等）- 必须先完成 Supabase 初始化
     await initializeApp();
+    
+    // 初始化启动界面（在 Supabase 初始化之后）
+    await initStartScreen();
     // 检查是否有保存的用户信息
     const savedUsername = localStorage.getItem('user_display_name');
     if (savedUsername) {

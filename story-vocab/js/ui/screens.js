@@ -17,15 +17,28 @@ import { getSupabase } from '../supabase-client.js';
  * 初始化启动界面
  */
 export async function initStartScreen() {
+    // 主题选择交互（先绑定，确保始终可用）
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+
     const supabase = getSupabase();
+
+    // 默认状态：AI模式
+    gameState.wordlistMode = 'ai';
+    gameState.wordlistId = null;
+    gameState.level2Tag = null;
+    gameState.level3Tag = null;
 
     try {
         // 获取当前用户
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            console.warn('⚠️ 用户未登录，使用默认AI模式');
-            showAIMode();
-            return;
+            console.log('ℹ️ 用户未登录，使用默认AI模式');
+            return; // AI模式已经是默认显示的
         }
 
         // 加载用户词表偏好
@@ -39,14 +52,8 @@ export async function initStartScreen() {
 
         // 如果没有偏好或选择了AI模式
         if (!prefs || !prefs.default_wordlist_id || prefs.default_mode === 'ai') {
-            showAIMode();
-            updateWordlistNameDisplay('AI智能推薦');
-            // 设置gameState
-            gameState.wordlistMode = 'ai';
-            gameState.wordlistId = null;
-            gameState.level2Tag = null;
-            gameState.level3Tag = null;
-            return;
+            console.log('✅ 使用AI智能推荐模式');
+            return; // AI模式已经是默认显示的
         }
 
         // 用户选择了特定词表，加载词表信息
@@ -58,8 +65,7 @@ export async function initStartScreen() {
 
         if (!wordlist) {
             console.warn('⚠️ 词表不存在，使用AI模式');
-            showAIMode();
-            updateWordlistNameDisplay('AI智能推薦（詞表不存在）');
+            updateWordlistNameDisplay('AI智能推薦');
             return;
         }
 
@@ -71,6 +77,7 @@ export async function initStartScreen() {
             .order('tag_level')
             .order('sort_order');
 
+        console.log('📋 词表:', wordlist.name);
         console.log('📋 词表标签:', tags);
 
         // 设置gameState
@@ -78,32 +85,23 @@ export async function initStartScreen() {
         gameState.wordlistId = wordlist.id;
 
         const level2Tags = tags?.filter(t => t.tag_level === 2) || [];
-        const level3Tags = tags?.filter(t => t.tag_level === 3) || [];
 
         // 如果有层级标签，显示层级卡片
         if (level2Tags.length > 0) {
+            console.log('📚 显示词表层级卡片');
             showWordlistHierarchy();
             renderLevel2Cards(wordlist, tags);
             updateWordlistNameDisplay(wordlist.name);
         } else {
-            // 没有层级，直接可以开始游戏（使用整个词表）
-            showAIMode();
-            updateWordlistNameDisplay(wordlist.name + '（無層級劃分）');
+            // 没有层级，使用整个词表但保持AI模式的UI显示
+            console.log('📚 词表无层级，保持AI模式UI');
+            updateWordlistNameDisplay(wordlist.name);
         }
 
     } catch (error) {
         console.error('❌ 初始化启动界面失败:', error);
-        showAIMode();
-        updateWordlistNameDisplay('AI智能推薦（加載失敗）');
+        updateWordlistNameDisplay('AI智能推薦');
     }
-
-    // 主题选择交互
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
-            this.classList.add('selected');
-        });
-    });
 }
 
 /**
@@ -477,8 +475,11 @@ export function initFinishScreen(stats) {
 /**
  * 初始化设置界面
  */
-export function initSettingsScreen() {
+export async function initSettingsScreen() {
     loadSettings();
+    
+    // 加载词表选择器
+    await loadWordlistSelectorSetting();
 }
 
 /**
@@ -549,4 +550,379 @@ export function hideFeedbackSection() {
     if (feedbackSection) feedbackSection.style.display = 'none';
     if (wordChoicesSection) wordChoicesSection.style.display = 'block';
 }
+
+// ==================== 词表选择和上传功能 ====================
+
+let uploadedFile = null;
+let selectedWordlistIdInSetting = null;
+
+/**
+ * 加载设置界面的词表选择器
+ */
+async function loadWordlistSelectorSetting() {
+    const supabase = getSupabase();
+    
+    try {
+        // 获取当前用户
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // 加载用户偏好
+        const { data: prefs } = await supabase
+            .from('user_wordlist_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        // 加载所有可用词表
+        const { data: wordlists } = await supabase
+            .from('wordlists')
+            .select('*')
+            .or(`type.eq.system,owner_id.eq.${user.id}`)
+            .order('type', { ascending: false })
+            .order('name');
+
+        const systemWordlists = wordlists?.filter(w => w.type === 'system') || [];
+        const customWordlists = wordlists?.filter(w => w.owner_id === user.id) || [];
+
+        // 填充系统词表
+        const systemGroup = document.getElementById('system-wordlists-group-setting');
+        if (systemGroup) {
+            systemGroup.innerHTML = systemWordlists.map(wl => `
+                <option value="${wl.id}">${wl.name} (${wl.total_words || 0}詞)</option>
+            `).join('') || '<option disabled>暫無系統詞表</option>';
+        }
+
+        // 填充自定义词表
+        const customGroup = document.getElementById('custom-wordlists-group-setting');
+        if (customGroup) {
+            customGroup.innerHTML = customWordlists.map(wl => `
+                <option value="${wl.id}">${wl.name} (${wl.total_words || 0}詞)</option>
+            `).join('') || '<option disabled>暫無自定義詞表</option>';
+        }
+
+        // 设置当前选中
+        const selector = document.getElementById('wordlist-selector-setting');
+        if (selector) {
+            if (prefs?.default_wordlist_id) {
+                selector.value = prefs.default_wordlist_id;
+                selectedWordlistIdInSetting = prefs.default_wordlist_id;
+            } else {
+                selector.value = 'ai';
+                selectedWordlistIdInSetting = null;
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ 加载词表选择器失败:', error);
+    }
+    
+    // 初始化文件上传交互（在函数最后调用，确保DOM已就绪）
+    setTimeout(() => initFileUploadInteraction(), 100);
+}
+
+/**
+ * 词表选择变化处理
+ */
+window.onWordlistSelectSetting = function() {
+    const selector = document.getElementById('wordlist-selector-setting');
+    const value = selector.value;
+
+    if (value === '__add_custom__') {
+        // 打开上传模态窗口
+        const modal = document.getElementById('upload-wordlist-modal');
+        if (modal) modal.classList.add('active');
+        // 重置选择器到之前的值
+        selector.value = selectedWordlistIdInSetting || 'ai';
+    } else if (value === 'ai') {
+        selectedWordlistIdInSetting = null;
+    } else {
+        selectedWordlistIdInSetting = value;
+    }
+};
+
+/**
+ * 初始化文件上传交互（只初始化一次）
+ */
+let fileUploadInitialized = false;
+
+function initFileUploadInteraction() {
+    if (fileUploadInitialized) return;
+    
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('csv-file-upload');
+
+    if (!uploadZone || !fileInput) return;
+
+    // 点击上传区域
+    uploadZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // 文件选择
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            uploadedFile = file;
+            const fileNameEl = document.getElementById('upload-file-name');
+            if (fileNameEl) fileNameEl.textContent = `已選擇: ${file.name}`;
+        }
+    });
+
+    // 拖拽
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.style.background = '#d4d8ff';
+        uploadZone.style.borderColor = '#4a5bc5';
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.style.background = '#f8f9ff';
+        uploadZone.style.borderColor = '#667eea';
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.style.background = '#f8f9ff';
+        uploadZone.style.borderColor = '#667eea';
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.csv')) {
+            uploadedFile = file;
+            const fileNameEl = document.getElementById('upload-file-name');
+            if (fileNameEl) fileNameEl.textContent = `已選擇: ${file.name}`;
+        } else {
+            alert('請上傳 CSV 格式文件');
+        }
+    });
+    
+    fileUploadInitialized = true;
+}
+
+/**
+ * 关闭上传模态窗口
+ */
+window.closeUploadWordlistModal = function() {
+    const modal = document.getElementById('upload-wordlist-modal');
+    if (modal) modal.classList.remove('active');
+    
+    // 重置表单
+    const nameInput = document.getElementById('upload-wordlist-name');
+    const descInput = document.getElementById('upload-wordlist-desc');
+    const fileInput = document.getElementById('csv-file-upload');
+    const fileName = document.getElementById('upload-file-name');
+    const progressSection = document.getElementById('upload-progress-section');
+    
+    if (nameInput) nameInput.value = '';
+    if (descInput) descInput.value = '';
+    if (fileInput) fileInput.value = '';
+    if (fileName) fileName.textContent = '';
+    if (progressSection) progressSection.style.display = 'none';
+    
+    uploadedFile = null;
+};
+
+/**
+ * 下载CSV模板
+ */
+window.downloadWordlistTemplate = function() {
+    const template = '詞語,第二層級,第三層級\n生字,第一單元,課文一\n詞彙,第一單元,課文一\n句子,第二單元,課文二';
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '詞表導入模板.csv';
+    a.click();
+};
+
+/**
+ * 上传词表
+ */
+window.uploadWordlistFromModal = async function() {
+    const supabase = getSupabase();
+    const name = document.getElementById('upload-wordlist-name').value.trim();
+    const desc = document.getElementById('upload-wordlist-desc').value.trim();
+
+    if (!name) {
+        alert('請輸入詞表名稱');
+        return;
+    }
+
+    if (!uploadedFile) {
+        alert('請選擇CSV文件');
+        return;
+    }
+
+    // 显示进度
+    const progressSection = document.getElementById('upload-progress-section');
+    const progressFill = document.getElementById('upload-progress-fill');
+    const progressText = document.getElementById('upload-progress-text');
+    const uploadBtn = document.getElementById('upload-wordlist-btn');
+
+    progressSection.style.display = 'block';
+    uploadBtn.disabled = true;
+
+    try {
+        // 获取当前用户
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('用户未登录');
+
+        // 读取CSV
+        progressText.textContent = '讀取文件中...';
+        progressFill.style.width = '10%';
+        progressFill.textContent = '10%';
+
+        const text = await uploadedFile.text();
+        const rows = text.split('\n').map(row => row.trim()).filter(row => row);
+        
+        if (rows.length < 2) {
+            throw new Error('CSV文件內容為空或格式錯誤');
+        }
+
+        // 解析CSV
+        const data = rows.slice(1).map(row => {
+            const cols = row.split(',');
+            return {
+                word: cols[0]?.trim(),
+                level2: cols[1]?.trim() || '',
+                level3: cols[2]?.trim() || ''
+            };
+        }).filter(d => d.word);
+
+        console.log(`📊 解析了 ${data.length} 個詞語`);
+
+        // 创建词表
+        progressText.textContent = '創建詞表中...';
+        progressFill.style.width = '30%';
+        progressFill.textContent = '30%';
+
+        const { data: wordlist, error: wlError } = await supabase
+            .from('wordlists')
+            .insert({
+                name,
+                description: desc || null,
+                type: 'custom',
+                owner_id: user.id,
+                total_words: data.length,
+                hierarchy_config: {
+                    level_2_label: '第二層級',
+                    level_3_label: '第三層級'
+                }
+            })
+            .select()
+            .single();
+
+        if (wlError) throw wlError;
+
+        console.log('✅ 詞表已創建:', wordlist.id);
+
+        // 提取唯一的标签
+        const level2Tags = [...new Set(data.map(d => d.level2).filter(t => t))];
+        const level3Tags = [...new Set(data.map(d => d.level3).filter(t => t))];
+
+        // 插入标签
+        progressText.textContent = '創建標籤中...';
+        progressFill.style.width = '40%';
+        progressFill.textContent = '40%';
+
+        const tagsToInsert = [
+            ...level2Tags.map((tag, idx) => ({
+                wordlist_id: wordlist.id,
+                tag_level: 2,
+                tag_code: tag,
+                tag_display_name: tag,
+                sort_order: idx
+            })),
+            ...level3Tags.map((tag, idx) => ({
+                wordlist_id: wordlist.id,
+                tag_level: 3,
+                tag_code: tag,
+                tag_display_name: tag,
+                sort_order: idx
+            }))
+        ];
+
+        if (tagsToInsert.length > 0) {
+            const { error: tagError } = await supabase
+                .from('wordlist_tags')
+                .insert(tagsToInsert);
+
+            if (tagError) throw tagError;
+            console.log(`✅ 已創建 ${tagsToInsert.length} 個標籤`);
+        }
+
+        // 插入词汇并关联
+        progressText.textContent = `導入詞彙中... (0/${data.length})`;
+        progressFill.style.width = '50%';
+        progressFill.textContent = '50%';
+
+        let imported = 0;
+        const batchSize = 50;
+
+        for (let i = 0; i < data.length; i += batchSize) {
+            const batch = data.slice(i, i + batchSize);
+            
+            for (const item of batch) {
+                // 检查词汇是否存在
+                let { data: existingWord } = await supabase
+                    .from('vocabulary')
+                    .select('id')
+                    .eq('word', item.word)
+                    .maybeSingle();
+
+                let vocabId;
+                if (existingWord) {
+                    vocabId = existingWord.id;
+                } else {
+                    // 创建新词汇
+                    const { data: newWord, error: vocabError } = await supabase
+                        .from('vocabulary')
+                        .insert({
+                            word: item.word,
+                            difficulty_level: 3
+                        })
+                        .select('id')
+                        .single();
+
+                    if (vocabError) throw vocabError;
+                    vocabId = newWord.id;
+                }
+
+                // 关联到词表
+                const { error: mappingError } = await supabase
+                    .from('vocabulary_wordlist_mapping')
+                    .insert({
+                        wordlist_id: wordlist.id,
+                        vocabulary_id: vocabId,
+                        level_2_tag: item.level2 || null,
+                        level_3_tag: item.level3 || null
+                    });
+
+                if (mappingError) throw mappingError;
+                imported++;
+            }
+
+            const progress = 50 + Math.floor((imported / data.length) * 40);
+            progressFill.style.width = `${progress}%`;
+            progressFill.textContent = `${progress}%`;
+            progressText.textContent = `導入詞彙中... (${imported}/${data.length})`;
+        }
+
+        // 完成
+        progressFill.style.width = '100%';
+        progressFill.textContent = '100%';
+        progressText.textContent = `✅ 成功導入 ${imported} 個詞語！`;
+
+        setTimeout(() => {
+            closeUploadWordlistModal();
+            alert(`✅ 詞表"${name}"已成功上傳！`);
+            loadWordlistSelectorSetting();
+        }, 1500);
+
+    } catch (error) {
+        console.error('❌ 上傳失敗:', error);
+        alert('上傳失敗: ' + error.message);
+        progressSection.style.display = 'none';
+        uploadBtn.disabled = false;
+    }
+};
 

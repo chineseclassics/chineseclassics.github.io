@@ -110,7 +110,7 @@ export function updateVocabModeDisplay(mode) {
 /**
  * 保存设置
  */
-export function saveSettings() {
+export async function saveSettings() {
     try {
         // 保存学习目标
         const dailyVocabGoal = document.getElementById('daily-vocab-goal')?.value;
@@ -125,6 +125,35 @@ export function saveSettings() {
         if (soundEffects !== undefined) saveSetting('sound_effects', soundEffects);
         if (typingEffect !== undefined) saveSetting('typing_effect', typingEffect);
         if (storyLength) saveSetting('story_length', storyLength);
+        
+        // 保存词表选择
+        const wordlistSelector = document.getElementById('wordlist-selector-setting');
+        if (wordlistSelector) {
+            const value = wordlistSelector.value;
+            
+            // 导入 Supabase 客户端
+            const { getSupabase } = await import('../supabase-client.js');
+            const supabase = getSupabase();
+            
+            // 获取当前用户
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // 保存到 Supabase
+                const { error } = await supabase
+                    .from('user_wordlist_preferences')
+                    .upsert({
+                        user_id: user.id,
+                        default_mode: value === 'ai' ? 'ai' : 'wordlist',
+                        default_wordlist_id: value === 'ai' ? null : value,
+                        default_level_2_tag: null,
+                        default_level_3_tag: null,
+                        updated_at: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                console.log('✅ 詞表偏好已保存:', value);
+            }
+        }
         
         showToast('✅ 設置已保存！');
     } catch (error) {
@@ -186,6 +215,17 @@ export function initModalClickOutside() {
         vocabModeModal.addEventListener('click', function(e) {
             if (e.target === this) {
                 closeVocabModeModal();
+            }
+        });
+    }
+    
+    // 上传词表弹窗
+    const uploadWordlistModal = document.getElementById('upload-wordlist-modal');
+    if (uploadWordlistModal) {
+        uploadWordlistModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                const closeUploadWordlistModal = window.closeUploadWordlistModal;
+                if (closeUploadWordlistModal) closeUploadWordlistModal();
             }
         });
     }

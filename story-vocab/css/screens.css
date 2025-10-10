@@ -72,8 +72,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden !important;
-    overflow-x: hidden !important; /* 明確禁止橫向滾動 */
+    overflow-y: auto;
+    overflow-x: visible; /* 允许内容自然显示，避免裁剪hover效果 */
     padding: 30px 40px;
     padding-top: 20px;
     justify-content: flex-start;
@@ -83,7 +83,7 @@
 .story-display {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden; /* 禁止橫向滾動 */
+    overflow-x: visible; /* 允许可点击词语的hover效果不被裁剪 */
     margin-bottom: 30px;
     background: var(--light-blue);
     border-radius: 15px;
@@ -97,8 +97,9 @@
 .word-choices-section {
     flex-shrink: 0;
     margin-bottom: 20px;
-    max-width: 100%; /* 限制最大寬度 */
-    overflow-x: hidden; /* 禁止橫向溢出 */
+    max-width: 100%;
+    padding-top: 8px; /* 为词卡向上移动预留空间 */
+    overflow: visible; /* 允许词卡hover时向上移动不被裁剪 */
 }
 
 .word-choices {
@@ -113,7 +114,7 @@
     border-radius: 15px;
     padding: 25px;
     max-width: 100%; /* 限制最大寬度 */
-    overflow-x: hidden; /* 禁止橫向溢出 */
+    overflow: visible; /* 允许内容自然显示 */
 }
 
 .selected-word-display {
@@ -221,12 +222,24 @@
 }
 
 /* 设置页面 */
+#settings-screen .content {
+    justify-content: flex-start; /* 从顶部开始，不要居中 */
+    align-items: stretch; /* 子元素拉伸填充宽度 */
+    padding: 40px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 .settings-section {
     background: white;
     border-radius: 15px;
     padding: 25px;
     margin-bottom: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .section-title {
