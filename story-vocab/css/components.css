@@ -447,19 +447,12 @@ button:active {
     line-height: 1.75;
     font-size: 1.05em;
     white-space: pre-line;
-    max-height: 300px;
-    overflow-y: auto;
+    max-height: none; /* 移除高度限制，让模态窗口整体滚动 */
+    overflow: visible; /* 移除独立滚动条 */
 }
 
-/* 釋義區域特別限高 */
-#modal-definition {
-    max-height: 160px;
-}
-
-/* 例句區域限高 */
-#modal-example {
-    max-height: 140px;
-}
+/* 釋義區域特別限高 - 已移除，让内容自然显示 */
+/* 例句區域限高 - 已移除，让内容自然显示 */
 
 /* 釋義列表樣式 */
 .definitions-list {
@@ -1350,7 +1343,7 @@ button:active {
     font-weight: bold;
 }
 
-.progress-text {
+.upload-progress-text {
     text-align: center;
     color: var(--text-light);
     font-size: 0.9em;

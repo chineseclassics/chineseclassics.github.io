@@ -511,13 +511,7 @@
         padding: 12px 14px;
     }
 
-    #modal-definition {
-        max-height: 140px;
-    }
-
-    #modal-example {
-        max-height: 120px;
-    }
+    /* 移除高度限制，让内容自然显示，模态窗口整体滚动 */
 
     /* 詞性標籤移動端 */
     .part-of-speech {
