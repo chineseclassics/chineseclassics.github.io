@@ -5,6 +5,11 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-x: hidden; /* 防止橫向滾動 */
+    max-width: 100vw; /* 限制最大寬度 */
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     background: #f5f7fa;
@@ -13,6 +18,9 @@ body {
     display: flex;
     height: 100vh;
     overflow: hidden;
+    /* 防止移动端横向滚动 */
+    overflow-x: hidden;
+    max-width: 100vw;
 }
 
 /* 防止侧边栏打开时内容滚动 */

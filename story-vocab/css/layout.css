@@ -5,6 +5,7 @@
     overflow: hidden;
     background: white;
     margin-left: 280px;
+    max-width: 100vw; /* 防止橫向溢出 */
 }
 
 .container {
@@ -12,9 +13,11 @@
     height: 100%;
     background: white;
     overflow: hidden;
+    overflow-x: hidden; /* 明確禁止橫向滾動 */
     position: relative;
     display: flex;
     flex-direction: column;
+    max-width: 100%; /* 防止橫向溢出 */
 }
 
 /* ===== 页面切换 ===== */
@@ -27,6 +30,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow-x: hidden; /* 防止橫向滾動 */
+    max-width: 100%; /* 限制最大寬度 */
 }
 
 /* 启动界面特殊布局 */
@@ -73,14 +78,17 @@
     padding: 30px 40px;
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden; /* 防止橫向滾動 */
     display: flex;
     flex-direction: column;
     justify-content: center;
+    max-width: 100%; /* 限制最大寬度 */
 }
 
 /* 启动界面内容特殊样式 */
 #start-screen .content {
     overflow-y: auto;
+    overflow-x: hidden; /* 防止橫向滾動 */
     max-width: 1000px;
     margin: 0 auto;
     width: 100%;

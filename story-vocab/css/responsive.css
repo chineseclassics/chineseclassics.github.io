@@ -10,8 +10,10 @@
 @media (max-width: 768px) {
     body {
         display: block;
-        overflow: auto;
+        overflow-y: auto; /* 只允許縱向滾動 */
+        overflow-x: hidden; /* 禁止橫向滾動 */
         -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+        max-width: 100vw; /* 限制最大寬度為視口寬度 */
     }
 
     .mobile-header {
@@ -41,14 +43,18 @@
         margin-top: 60px;
         height: calc(100vh - 60px);
         background: white;
-        overflow: auto; /* 允許移動端滾動 */
+        overflow-y: auto; /* 只允許縱向滾動 */
+        overflow-x: hidden; /* 禁止橫向滾動 */
         -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+        max-width: 100vw; /* 限制最大寬度為視口寬度 */
     }
 
     .container {
         height: 100%;
         min-height: calc(100vh - 60px);
-        overflow: visible; /* 允許內容溢出以便滾動 */
+        overflow-y: visible; /* 允許內容溢出以便滾動 */
+        overflow-x: hidden; /* 禁止橫向溢出 */
+        max-width: 100%; /* 限制最大寬度 */
     }
 
     #start-screen.active {
@@ -58,6 +64,8 @@
     #start-screen .content {
         padding: 20px;
         min-height: calc(100vh - 60px);
+        overflow-x: hidden; /* 禁止橫向溢出 */
+        max-width: 100%; /* 限制最大寬度 */
     }
 
     #start-screen .welcome-title {
@@ -88,12 +96,14 @@
     }
 
     #game-screen .content {
-        overflow: visible !important; /* 覆蓋桌面版的 hidden */
+        overflow-y: visible !important; /* 允許縱向溢出以便滾動 */
+        overflow-x: hidden !important; /* 禁止橫向溢出 */
         padding: 20px;
         flex: 1;
         display: flex;
         flex-direction: column;
         gap: 20px;
+        max-width: 100%; /* 限制最大寬度 */
     }
 
     #game-screen .story-display {
@@ -103,6 +113,9 @@
         margin-bottom: 0;
         padding: 15px; /* 移動端減少內邊距，進度圓圈懸浮不佔空間 */
         -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+        overflow-x: hidden; /* 禁止橫向滾動 */
+        max-width: 100%; /* 限制最大寬度 */
+        word-wrap: break-word; /* 長詞換行 */
     }
 
     /* 進度圓圈移動端優化 */
@@ -134,15 +147,21 @@
     #game-screen .word-choices-section {
         flex-shrink: 0;
         margin-bottom: 0;
+        max-width: 100%; /* 限制最大寬度 */
+        overflow-x: hidden; /* 禁止橫向溢出 */
     }
 
     #game-screen .user-input-section {
         flex-shrink: 0;
         padding: 20px;
+        max-width: 100%; /* 限制最大寬度 */
+        overflow-x: hidden; /* 禁止橫向溢出 */
     }
 
     #settings-screen .content {
         padding: 20px;
+        overflow-x: hidden; /* 禁止橫向溢出 */
+        max-width: 100%; /* 限制最大寬度 */
     }
 
     .mobile-overlay {
@@ -170,6 +189,8 @@
     .input-with-toggle input {
         font-size: 16px; /* 防止 iOS Safari 自動縮放 */
         padding: 15px 145px 15px 15px;
+        max-width: 100%; /* 限制最大寬度 */
+        box-sizing: border-box; /* 包含 padding 在內計算寬度 */
     }
 
     .input-toggle-container {
@@ -206,8 +227,10 @@
         padding: 12px;
         /* 移动版：允许自动换行 */
         white-space: normal;
-        overflow-x: visible;
+        overflow-x: hidden; /* 禁止橫向滾動 */
         line-height: 1.6;
+        max-width: 100%; /* 限制最大寬度 */
+        word-wrap: break-word; /* 長詞換行 */
     }
     
     /* 移动版分隔符换行优化 */
@@ -218,6 +241,8 @@
     /* 完成界面優化 */
     #finish-screen .header {
         padding: 30px 20px;
+        overflow-x: hidden; /* 禁止橫向溢出 */
+        max-width: 100%; /* 限制最大寬度 */
     }
 
     #finish-screen .header h1 {
@@ -230,6 +255,8 @@
 
     #finish-screen .content {
         padding: 20px;
+        overflow-x: hidden; /* 禁止橫向溢出 */
+        max-width: 100%; /* 限制最大寬度 */
     }
 
     .celebration {
@@ -334,12 +361,17 @@
         font-size: 1.1em;
         line-height: 1.8;
         padding-left: 10px;
+        max-width: 100%; /* 限制最大寬度 */
+        word-wrap: break-word; /* 長詞換行 */
+        overflow-wrap: break-word; /* 確保長詞換行 */
     }
     
     .message {
         gap: 10px;
         margin-bottom: 15px;
         padding: 12px;
+        max-width: 100%; /* 限制最大寬度 */
+        overflow-x: hidden; /* 禁止橫向溢出 */
     }
     
     /* 反饋區域響應式 */
@@ -546,6 +578,8 @@
     /* 我的故事集移动端 */
     #my-stories-screen .content {
         padding: 20px;
+        overflow-x: hidden; /* 禁止橫向溢出 */
+        max-width: 100%; /* 限制最大寬度 */
     }
     
     .stories-header h1 {

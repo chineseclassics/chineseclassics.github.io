@@ -73,25 +73,32 @@
     display: flex;
     flex-direction: column;
     overflow: hidden !important;
+    overflow-x: hidden !important; /* 明確禁止橫向滾動 */
     padding: 30px 40px;
     padding-top: 20px;
     justify-content: flex-start;
+    max-width: 100%; /* 限制最大寬度 */
 }
 
 .story-display {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden; /* 禁止橫向滾動 */
     margin-bottom: 30px;
     background: var(--light-blue);
     border-radius: 15px;
     padding: 20px;
     min-height: 250px;
     position: relative;
+    max-width: 100%; /* 限制最大寬度 */
+    word-wrap: break-word; /* 長詞換行 */
 }
 
 .word-choices-section {
     flex-shrink: 0;
     margin-bottom: 20px;
+    max-width: 100%; /* 限制最大寬度 */
+    overflow-x: hidden; /* 禁止橫向溢出 */
 }
 
 .word-choices {
@@ -105,6 +112,8 @@
     background: var(--light-yellow);
     border-radius: 15px;
     padding: 25px;
+    max-width: 100%; /* 限制最大寬度 */
+    overflow-x: hidden; /* 禁止橫向溢出 */
 }
 
 .selected-word-display {

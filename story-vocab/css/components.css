@@ -194,6 +194,8 @@ button:active {
 .input-with-toggle {
     position: relative;
     flex: 1;
+    max-width: 100%; /* 限制最大寬度 */
+    overflow: hidden; /* 防止溢出 */
 }
 
 .input-with-toggle input {
@@ -204,6 +206,8 @@ button:active {
     font-size: 1.1em;
     outline: none;
     transition: border-color 0.3s ease;
+    box-sizing: border-box; /* 包含 padding 在內計算寬度 */
+    max-width: 100%; /* 限制最大寬度 */
 }
 
 .input-with-toggle input:focus {
@@ -632,6 +636,8 @@ button:active {
     gap: 15px;
     margin-bottom: 12px;
     animation: slideIn 0.5s ease-out;
+    overflow-x: hidden; /* 防止橫向溢出 */
+    max-width: 100%; /* 限制最大寬度 */
 }
 
 .message-label {
@@ -674,6 +680,10 @@ button:active {
     padding: 8px 0;
     border-left: 3px solid transparent;
     padding-left: 15px;
+    overflow-x: hidden; /* 防止橫向溢出 */
+    word-wrap: break-word; /* 長詞換行 */
+    overflow-wrap: break-word; /* 確保長詞換行 */
+    max-width: 100%; /* 限制最大寬度 */
 }
 
 .message.ai .message-content {
