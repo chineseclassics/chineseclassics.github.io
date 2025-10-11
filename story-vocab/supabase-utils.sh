@@ -193,21 +193,21 @@ cmd_migration() {
 # 列出所有 Edge Functions
 cmd_functions() {
     print_header "Edge Functions 列表"
-    supabase functions list --linked
+    supabase functions list --project-ref bjykaipbeokbbykvseyr
     print_success "函數列表獲取完成"
 }
 
 # 部署 vocab-recommender
 cmd_deploy_vocab() {
     print_header "部署 vocab-recommender 函數"
-    supabase functions deploy vocab-recommender --linked
+    supabase functions deploy vocab-recommender --project-ref bjykaipbeokbbykvseyr
     print_success "vocab-recommender 部署完成"
 }
 
 # 部署 story-agent
 cmd_deploy_agent() {
     print_header "部署 story-agent 函數"
-    supabase functions deploy story-agent --linked
+    supabase functions deploy story-agent --project-ref bjykaipbeokbbykvseyr
     print_success "story-agent 部署完成"
 }
 
@@ -216,17 +216,17 @@ cmd_deploy_all() {
     print_header "部署所有 Edge Functions"
     
     echo "部署 vocab-recommender..."
-    supabase functions deploy vocab-recommender --linked
+    supabase functions deploy vocab-recommender --project-ref bjykaipbeokbbykvseyr
     print_success "vocab-recommender 部署完成"
     
     echo ""
     echo "部署 vocab-difficulty-evaluator..."
-    supabase functions deploy vocab-difficulty-evaluator --linked
+    supabase functions deploy vocab-difficulty-evaluator --project-ref bjykaipbeokbbykvseyr
     print_success "vocab-difficulty-evaluator 部署完成"
     
     echo ""
     echo "部署 story-agent..."
-    supabase functions deploy story-agent --linked
+    supabase functions deploy story-agent --project-ref bjykaipbeokbbykvseyr
     print_success "story-agent 部署完成"
     
     echo ""
@@ -236,13 +236,13 @@ cmd_deploy_all() {
 # 查看 vocab-recommender 日誌
 cmd_logs_vocab() {
     print_header "vocab-recommender 函數日誌"
-    supabase functions logs vocab-recommender --linked
+    supabase functions logs vocab-recommender --project-ref bjykaipbeokbbykvseyr
 }
 
 # 查看 story-agent 日誌
 cmd_logs_agent() {
     print_header "story-agent 函數日誌"
-    supabase functions logs story-agent --linked
+    supabase functions logs story-agent --project-ref bjykaipbeokbbykvseyr
 }
 
 # 查看項目狀態

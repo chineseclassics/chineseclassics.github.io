@@ -2,6 +2,9 @@
 
 與AI共創精彩故事，輕鬆積累詞彙的創意學習應用
 
+> **📂 文檔組織規範**: 本項目採用規範化的文件結構，所有詳細文檔都在 [docs/](./docs/) 文件夾內。  
+> 查看完整規範: [FILE_ORGANIZATION_RULES.md](./docs/FILE_ORGANIZATION_RULES.md)
+
 ---
 
 ## 🎮 快速開始
@@ -191,7 +194,7 @@ cd story-vocab
 npx supabase functions deploy story-agent
 ```
 
-詳細步驟參見：[EDGE_FUNCTION_DEPLOY.md](./EDGE_FUNCTION_DEPLOY.md)
+詳細步驟參見：[EDGE_FUNCTION_DEPLOY.md](./docs/EDGE_FUNCTION_DEPLOY.md)
 
 #### 步驟 4: 導入詞彙數據
 
@@ -333,7 +336,8 @@ python3 -m http.server 8000
 ## 📚 相關文檔
 
 - 📐 [完整設計文檔](./docs/DESIGN.md) - 產品規劃、架構設計、技術方案
-- 🚀 [Edge Function 部署指南](./EDGE_FUNCTION_DEPLOY.md) - 詳細部署步驟
+- 🚀 [Edge Function 部署指南](./docs/EDGE_FUNCTION_DEPLOY.md) - 詳細部署步驟
+- 🗄️ [Supabase CLI 使用指南](./docs/SUPABASE_CLI_GUIDE.md) - 數據庫管理工具
 - 📖 [萌典 API](https://github.com/g0v/moedict-webkit) - 詞典數據來源
 
 ---
