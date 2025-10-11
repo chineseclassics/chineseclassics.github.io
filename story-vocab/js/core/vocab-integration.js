@@ -19,11 +19,18 @@ export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
   const supabase = getSupabase()
   
   try {
-    // 檢查用戶是否已完成校準
+    // 1. 優先檢查詞表模式（詞表模式無需校準，直接使用詞表）
+    if (wordlistOptions?.mode === 'wordlist' && wordlistOptions?.wordlistId) {
+      console.log(`[詞表模式] 直接從詞表推薦，跳過校準檢查`)
+      console.log(`  詞表ID: ${wordlistOptions.wordlistId}, L2: ${wordlistOptions.level2Tag}, L3: ${wordlistOptions.level3Tag}`)
+      return await getAIRecommendedWords(roundNumber, wordlistOptions)
+    }
+    
+    // 2. AI智能模式：檢查用戶是否已完成校準
     const calibrated = await isUserCalibrated(gameState.userId)
     
     if (!calibrated) {
-      // 第一次遊戲：使用校準詞庫（忽略词表选项）
+      // AI模式且未校準：使用校準詞庫
       console.log(`[校準模式] 獲取第 ${roundNumber} 輪詞彙`)
       const words = await getCalibrationWords(gameState.userId, roundNumber)
       return words.map(w => ({
@@ -33,8 +40,8 @@ export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
         source: 'calibration'
       }))
     } else {
-      // 已校準：根据词表选项决定推荐方式
-      console.log(`[詞彙推薦] 模式: ${wordlistOptions?.mode || 'ai'}, 輪次: ${roundNumber}`)
+      // AI模式且已校準：AI智能推薦
+      console.log(`[AI智能模式] 模式: ${wordlistOptions?.mode || 'ai'}, 輪次: ${roundNumber}`)
       return await getAIRecommendedWords(roundNumber, wordlistOptions)
     }
   } catch (error) {

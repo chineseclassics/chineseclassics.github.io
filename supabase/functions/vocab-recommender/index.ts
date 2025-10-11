@@ -38,31 +38,34 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    // 檢查用戶是否已完成校準
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
-
     let words: any[]
     let source: string
 
-    if (!profile || !profile.calibrated) {
-      // 第一次遊戲：使用校準詞庫（无论选择什么模式）
-      console.log(`[校準模式] 用戶 ${userId} 第一次遊戲，輪次 ${roundNumber}`)
-      words = await getCalibrationWords(supabase, userId, roundNumber)
-      source = 'calibration'
-    } else if (wordlistMode === 'wordlist' && wordlistId) {
-      // 指定词表模式：从特定词表推荐
+    // 1. 優先檢查詞表模式（詞表模式無需校準檢查）
+    if (wordlistMode === 'wordlist' && wordlistId) {
+      // 詞表模式：直接從詞表推薦，無需校準
       console.log(`[詞表模式] 詞表ID: ${wordlistId}, L2: ${level2Tag}, L3: ${level3Tag}`)
       words = await recommendFromWordlist(supabase, wordlistId, level2Tag, level3Tag, userId, sessionId, roundNumber)
       source = 'wordlist'
     } else {
-      // AI智能推荐模式（默认）
-      console.log(`[AI 模式] 用戶 ${userId} 第 ${profile.total_games + 1} 次遊戲，輪次 ${roundNumber}`)
-      words = await recommendByAI(supabase, userId, sessionId, roundNumber, storyContext)
-      source = 'ai'
+      // 2. AI模式：檢查用戶校準狀態
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (!profile || !profile.calibrated) {
+        // AI模式且未校準：使用校準詞庫
+        console.log(`[校準模式] 用戶 ${userId} 第一次遊戲，輪次 ${roundNumber}`)
+        words = await getCalibrationWords(supabase, userId, roundNumber)
+        source = 'calibration'
+      } else {
+        // AI模式且已校準：AI智能推薦
+        console.log(`[AI 模式] 用戶 ${userId} 第 ${profile.total_games + 1} 次遊戲，輪次 ${roundNumber}`)
+        words = await recommendByAI(supabase, userId, sessionId, roundNumber, storyContext)
+        source = 'ai'
+      }
     }
 
     // 記錄推薦歷史
