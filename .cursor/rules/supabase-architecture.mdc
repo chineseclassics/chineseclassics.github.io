@@ -44,3 +44,160 @@ supabase functions deploy
 - 未來其他應用也在各自目錄內管理
 
 根目錄 `/supabase/` 是平台級預留位置，用於未來可能的跨應用共享服務。
+
+## 數據庫遷移規範
+
+### 核心原則：手動遷移
+
+**為什麼手動遷移？**
+- Supabase CLI 的 `supabase db push` 會嘗試重新應用所有遷移
+- 我們的數據庫已在生產環境，有些遷移已手動執行
+- CLI 無法追蹤手動執行的遷移狀態
+- 手動遷移更安全、更可控，適合非專業開發者
+
+### ✅ 標準遷移流程
+
+1. **創建遷移文件**（在子項目的 `supabase/migrations/` 目錄）
+2. **本地保存**（作為版本歷史記錄）
+3. **手動執行**（在 Supabase Dashboard SQL Editor）
+4. **不使用 CLI push**（避免狀態不同步問題）
+
+### 遷移文件規範
+
+#### 📁 文件夾結構
+```
+story-vocab/
+└── supabase/
+    ├── config.toml
+    ├── functions/
+    └── migrations/          ✅ 唯一的遷移文件夾
+        ├── 001_initial_schema.sql
+        ├── 002_enable_rls_policies.sql
+        └── 009_fix_rls_for_multi_identity.sql
+```
+
+#### ❌ 禁止的文件夾
+- `manual-migrations/` - 多餘，所有遷移都應在 `migrations/`
+- `db/` - 不符合 Supabase 標準
+- `sql/` - 不符合 Supabase 標準
+
+**原因**：
+- Supabase CLI 只識別 `migrations/` 文件夾
+- 統一結構，避免混淆
+- 便於版本管理和追蹤
+
+#### 📝 文件命名規範
+
+**格式**：`{序號}_{描述性名稱}.sql`
+
+**好的命名**：
+```
+001_initial_schema.sql           ✅ 清晰的初始化
+002_enable_rls_policies.sql      ✅ 描述具體操作
+009_fix_rls_for_multi_identity.sql ✅ 說明修復的問題
+20251011_multi_identity_system.sql ✅ 日期前綴（重大更新）
+```
+
+**不好的命名**：
+```
+migration.sql                    ❌ 沒有序號和描述
+fix.sql                         ❌ 描述不清楚
+update_db.sql                   ❌ 太籠統
+manual_fix.sql                  ❌ 不應有 "manual" 前綴
+```
+
+**命名規則**：
+1. **序號**：三位數字（001, 002, ...）或日期（20251011）
+2. **下劃線分隔**：使用 `_` 而非 `-` 或空格
+3. **小寫英文**：避免中文和大寫
+4. **動詞開頭**：describe what it does（create, add, fix, remove, enable）
+5. **具體描述**：讓人看名字就知道遷移做什麼
+
+### 🔄 手動遷移步驟
+
+#### 步驟 1：創建遷移文件
+```bash
+# 在子項目的 migrations/ 目錄創建
+# 例如：story-vocab/supabase/migrations/010_add_user_preferences.sql
+```
+
+#### 步驟 2：編寫 SQL
+```sql
+-- =====================================================
+-- 簡要說明遷移目的
+-- 創建日期：YYYY-MM-DD
+-- =====================================================
+
+BEGIN;
+
+-- SQL 語句...
+
+COMMIT;
+
+-- =====================================================
+-- 遷移完成說明
+-- =====================================================
+```
+
+#### 步驟 3：在 Supabase Dashboard 執行
+1. 打開 https://supabase.com/dashboard/project/{project-ref}
+2. 進入 SQL Editor
+3. 複製 SQL 內容
+4. 點擊 "Run" 執行
+5. 確認無錯誤
+
+#### 步驟 4：提交到 Git
+```bash
+git add story-vocab/supabase/migrations/010_add_user_preferences.sql
+git commit -m "feat(db): 添加用戶偏好設置表"
+```
+
+### ⚠️ 重要注意事項
+
+1. **冪等性**：遷移應該可以重複執行而不出錯
+   ```sql
+   -- ✅ 好的寫法
+   ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
+   DROP POLICY IF EXISTS "old_policy" ON users;
+   
+   -- ❌ 壞的寫法
+   ALTER TABLE users ADD COLUMN email TEXT;  -- 重複執行會報錯
+   ```
+
+2. **使用事務**：用 `BEGIN` 和 `COMMIT` 包裹
+   - 失敗時自動回滾
+   - 確保數據一致性
+
+3. **添加註釋**：說明遷移目的、日期、注意事項
+
+4. **測試順序**：
+   - 先在本地測試（如有 local Supabase）
+   - 再在 Dashboard 執行
+   - 最後提交到 Git
+
+### 📋 遷移檢查清單
+
+創建新遷移時，確保：
+- [ ] 文件在 `supabase/migrations/` 目錄
+- [ ] 文件名符合命名規範（序號_描述.sql）
+- [ ] 使用 `BEGIN` / `COMMIT` 事務
+- [ ] SQL 具有冪等性（IF EXISTS / IF NOT EXISTS）
+- [ ] 添加了註釋說明
+- [ ] 在 Dashboard 手動執行成功
+- [ ] 提交到 Git 作為版本記錄
+
+### 🚫 避免使用 CLI Push
+
+**不要使用**：
+```bash
+supabase db push              # ❌ 會嘗試重新應用所有遷移
+supabase migration up         # ❌ 同樣的問題
+```
+
+**原因**：
+- 我們沒有使用 CLI 初始化數據庫
+- 已有遷移是手動執行的
+- CLI 不知道哪些遷移已經應用
+- 會導致錯誤和狀態不一致
+
+**例外**：如果未來從零開始新項目，可以考慮完全使用 CLI 工作流
