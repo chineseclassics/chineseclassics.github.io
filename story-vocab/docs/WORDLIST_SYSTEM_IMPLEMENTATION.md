@@ -303,10 +303,8 @@
 ### 运行迁移
 
 ```bash
-cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io
-
-# 复制函数到根目录
-cp -r story-vocab/supabase/functions supabase/
+# 进入 story-vocab 目录
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
 
 # 连接项目
 supabase link --project-ref bjykaipbeokbbykvseyr
@@ -314,10 +312,15 @@ supabase link --project-ref bjykaipbeokbbykvseyr
 # 运行迁移
 supabase db push
 
-# 部署Edge Functions
+# 部署 Edge Functions（在同一目录）
 supabase functions deploy vocab-difficulty-evaluator
 supabase functions deploy vocab-recommender
 ```
+
+**架构说明**：
+- story-vocab 拥有独立的 `supabase/config.toml`
+- 在子项目目录内直接部署，无需复制到根目录
+- 符合太虚幻境两层架构原则
 
 ---
 

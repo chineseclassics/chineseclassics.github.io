@@ -52,37 +52,59 @@ supabase --version
 
 ---
 
-## 🚀 第二步：部署 Edge Function
+## 🚀 部署步驟
 
-### 方法 1：使用 Supabase CLI（推荐）
+### 前置：架構確認
 
-1. **登录 Supabase**
+Story-Vocab 在子項目目錄內獨立部署，符合太虛幻境兩層架構原則：
+- ✅ 配置文件：`story-vocab/supabase/config.toml`
+- ✅ 部署位置：在 story-vocab 目錄內操作
+- ❌ 不需要複製到太虛幻境根目錄
+
+---
+
+### 方法 1：使用 Supabase CLI（推薦）
+
+1. **進入 story-vocab 目錄**
+   ```bash
+   cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
+   ```
+
+2. **登錄 Supabase**
    ```bash
    supabase login
    ```
    
-   会打开浏览器进行授权，完成后回到终端
+   會打開瀏覽器進行授權，完成後回到終端
 
-2. **关联项目**
+3. **關聯項目**
    ```bash
-   cd story-vocab
    supabase link --project-ref bjykaipbeokbbykvseyr
    ```
-   
-   选择您的项目（如果有多个）
 
-3. **部署 Edge Function**
+4. **部署 Edge Function**
    ```bash
    supabase functions deploy story-agent
    ```
    
-   应该看到：
+   應該看到：
    ```
    Deploying function story-agent...
    Deployed function story-agent to https://bjykaipbeokbbykvseyr.supabase.co/functions/v1/story-agent
    ```
 
-4. **验证部署**
+5. **部署其他函數**
+   ```bash
+   supabase functions deploy vocab-recommender
+   supabase functions deploy vocab-difficulty-evaluator
+   ```
+
+**工作原理**：
+- Supabase CLI 自動從當前目錄的 `supabase/functions/` 讀取代碼
+- 無需手動複製文件到其他位置
+- 每個函數獨立部署和版本管理
+
+6. **验证部署**
    ```bash
    curl -i --location --request POST \
      'https://bjykaipbeokbbykvseyr.supabase.co/functions/v1/story-agent' \

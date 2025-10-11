@@ -2,12 +2,18 @@
 
 ## 部署前檢查清單
 
-### 1. 數據庫遷移
+### 1. 架構確認
 
-在部署前，需要先執行數據庫遷移：
+Story-Vocab 使用獨立的 Supabase 配置：
+- 配置文件：`story-vocab/supabase/config.toml`
+- Supabase 項目：bjykaipbeokbbykvseyr
+- 部署方式：在 story-vocab 目錄內直接部署
+
+### 2. 數據庫遷移
 
 ```bash
-cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io
+# 進入 story-vocab 目錄
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
 
 # 連接到 Supabase 項目
 supabase link --project-ref bjykaipbeokbbykvseyr
@@ -27,31 +33,26 @@ supabase db push
 
 **注意**：遷移是增量式的，不會覆蓋或刪除現有數據！
 
-### 2. 部署 Edge Functions
+### 3. 部署 Edge Functions
 
-#### 步驟 1：複製函數文件到根目錄
-
-```bash
-cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io
-
-# 複製 vocab-recommender 函數
-cp -r story-vocab/supabase/functions/vocab-recommender supabase/functions/
-
-# 複製 _shared 文件夾
-cp -r story-vocab/supabase/functions/_shared supabase/functions/
-```
-
-#### 步驟 2：部署函數
+**確保在 story-vocab 目錄內**：
 
 ```bash
-# 部署 vocab-recommender
+# 部署所有函數
 supabase functions deploy vocab-recommender
+supabase functions deploy vocab-difficulty-evaluator
+supabase functions deploy story-agent
 
 # 驗證部署
 supabase functions list
 ```
 
-#### 步驟 3：設置環境變量
+**重要**：
+- ✅ Supabase CLI 自動從 `story-vocab/supabase/functions/` 讀取代碼
+- ❌ 無需將函數複製到太虛幻境根目錄
+- ✅ 每個子項目獨立管理自己的 Edge Functions
+
+### 4. 設置環境變量
 
 確保以下環境變量已設置：
 

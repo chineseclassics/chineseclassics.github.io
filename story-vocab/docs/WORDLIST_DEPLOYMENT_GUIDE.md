@@ -5,6 +5,16 @@
 
 ---
 
+## 📐 架構說明
+
+Story-Vocab 採用**完全獨立的 Supabase 架構**：
+- ✅ 所有 Supabase 資源都在 `story-vocab/supabase/` 內
+- ✅ 擁有獨立的 `config.toml` 配置文件
+- ✅ 在 story-vocab 目錄內直接部署，無需複製到根目錄
+- ✅ 符合太虛幻境兩層架構原則
+
+---
+
 ## 🚀 快速部署步骤
 
 ### 前提条件
@@ -17,25 +27,23 @@
 
 ## 第一步：运行数据库迁移
 
-### 1.1 切换到项目根目录
+### 1.1 進入 story-vocab 目錄
 
 ```bash
-cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
 ```
 
-### 1.2 复制functions到根目录
+### 1.2 確認 Supabase 配置
 
-```bash
-cp -r story-vocab/supabase/functions supabase/
-```
+story-vocab 擁有獨立的 Supabase 配置（`supabase/config.toml`），與太虛幻境根目錄完全獨立。
 
-### 1.3 连接Supabase项目
+### 1.3 連接 Supabase 項目
 
 ```bash
 supabase link --project-ref bjykaipbeokbbykvseyr
 ```
 
-### 1.4 运行迁移
+### 1.4 運行遷移
 
 ```bash
 supabase db push
@@ -53,19 +61,29 @@ supabase db push
 
 ## 第二步：部署Edge Functions
 
-### 2.1 部署词汇难度评估函数
+### 2.1 確認當前目錄
+
+確保在 story-vocab 目錄內：
+```bash
+pwd
+# 應該輸出：/Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
+```
+
+### 2.2 部署詞彙難度評估函數
 
 ```bash
 supabase functions deploy vocab-difficulty-evaluator
 ```
 
-### 2.2 重新部署词汇推荐函数（已修改）
+### 2.3 部署詞彙推薦函數
 
 ```bash
 supabase functions deploy vocab-recommender
 ```
 
-### 2.3 验证部署
+**注意**：Supabase CLI 會自動從當前目錄的 `supabase/functions/` 讀取函數代碼，無需複製到其他位置。
+
+### 2.4 验证部署
 
 访问 Supabase Dashboard → Edge Functions，确认两个函数都显示为"Active"。
 

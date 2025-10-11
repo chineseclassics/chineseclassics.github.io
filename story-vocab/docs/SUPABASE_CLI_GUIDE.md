@@ -4,9 +4,39 @@
 
 您現在可以在 Cursor 中直接查詢 Supabase 數據庫的所有信息！
 
+---
+
+## 📐 重要：在正確的目錄操作
+
+Story-Vocab 使用獨立的 Supabase 架構，**所有命令都必須在 story-vocab 目錄內執行**：
+
+```bash
+# ✅ 正確：進入 story-vocab 目錄
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
+
+# ✅ 然後執行命令
+./supabase-utils.sh tables
+
+# ❌ 錯誤：在太虛幻境根目錄執行
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io
+./story-vocab/supabase-utils.sh tables  # 路徑錯誤
+```
+
+### 為什麼必須在 story-vocab 目錄？
+
+1. Supabase CLI 從當前目錄的 `supabase/` 讀取配置
+2. story-vocab 有自己的 `supabase/config.toml`
+3. 工具腳本使用相對路徑引用 `./supabase/`
+4. 符合太虛幻境子項目完全自包含原則
+
+---
+
 ### 🎯 最常用的 3 個命令
 
 ```bash
+# 0. 首先確保在正確目錄
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
+
 # 1. 查看所有數據庫表格（最常用！）
 ./supabase-utils.sh tables
 

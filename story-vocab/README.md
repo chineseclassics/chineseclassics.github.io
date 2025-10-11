@@ -149,6 +149,13 @@ story-vocab/
 
 ## 🚀 部署指南
 
+### 架構說明
+
+Story-Vocab 採用**完全獨立的 Supabase 架構**：
+- ✅ 所有 Supabase 資源都在 `story-vocab/supabase/` 內
+- ✅ 在 story-vocab 目錄內直接部署，無需複製到其他位置
+- ✅ 符合太虛幻境兩層架構原則
+
 ### 前提條件
 
 1. ✅ Supabase 賬戶和項目
@@ -189,10 +196,19 @@ export const SUPABASE_CONFIG = {
 # 安裝 Supabase CLI (macOS)
 brew install supabase/tap/supabase
 
-# 部署函數
-cd story-vocab
-npx supabase functions deploy story-agent
+# 進入 story-vocab 目錄
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
+
+# 連接項目
+supabase link --project-ref bjykaipbeokbbykvseyr
+
+# 部署所有函數
+supabase functions deploy story-agent
+supabase functions deploy vocab-recommender
+supabase functions deploy vocab-difficulty-evaluator
 ```
+
+**重要**：在 story-vocab 目錄內直接部署，Supabase CLI 會自動從 `supabase/functions/` 讀取代碼。
 
 詳細步驟參見：[EDGE_FUNCTION_DEPLOY.md](./docs/EDGE_FUNCTION_DEPLOY.md)
 
