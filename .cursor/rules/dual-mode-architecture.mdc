@@ -1,0 +1,137 @@
+---
+description: 太虛幻境雙模式架構規範 - 應用獨立性與平台協作
+alwaysApply: false
+---
+
+# 太虛幻境雙模式架構規範
+
+## 核心理念
+
+太虛幻境的應用採用「獨立後端 + 統一用戶中心」架構，每個應用支持兩種運行模式：
+
+### 模式 A：獨立運行模式
+- 應用完全自包含，可單獨分發
+- 使用自己的 Supabase project
+- 擁有完整的用戶認證系統
+- 所有數據存儲在應用自己的數據庫
+
+### 模式 B：平台集成模式
+- 應用在太虛幻境 iframe 內運行
+- 通過 postMessage 接收平台用戶信息
+- 數據存儲在應用自己的數據庫
+- 可選擇性同步聚合數據到平台用戶中心
+
+## 關鍵設計原則
+
+### 1. Supabase 完全獨立
+
+```
+太虛幻境平台 Supabase A
+  - platform_users（跨應用用戶數據）
+  - learning_metrics（聚合學習指標）
+  
+詞遊記應用 Supabase B  
+  - users（應用用戶副本）
+  - story_sessions（詳細故事數據）
+  - user_vocabulary（詳細學習記錄）
+
+兩者不共享數據庫，通過 postMessage 通信
+```
+
+### 2. 統一標識符策略
+
+使用 Google ID 作為用戶唯一標識符：
+
+```javascript
+// 保證跨模式數據一致
+users.id = google_user.id  // Google 提供的唯一 ID
+```
+
+**效果**：同一個 Google 賬號，不管從哪種模式登入，都是同一個用戶。
+
+### 3. 數據所有權分層
+
+**應用擁有**：
+- 完整的業務數據（故事、遊戲記錄、詳細學習過程）
+- 用戶在該應用的完整活動記錄
+
+**平台擁有**（可選）：
+- 跨應用的聚合指標（總學習時長、總詞彙量）
+- 統一生詞本（跨應用的詞彙掌握情況）
+- 學習趨勢分析
+
+## 實施模式
+
+### 運行模式檢測
+
+```javascript
+function detectRunMode() {
+  const isInIframe = window.self !== window.top;
+  const isInPlatformDomain = window.location.hostname === 'chineseclassics.github.io';
+  const hasPlatformFlag = window.TAIXU_PLATFORM_MODE === true;
+  
+  if ((isInIframe && isInPlatformDomain) || hasPlatformFlag) {
+    return 'platform';
+  }
+  return 'standalone';
+}
+```
+
+### 平台與應用通信協議
+
+```javascript
+// 平台 → 應用（傳遞用戶信息）
+iframe.contentWindow.postMessage({
+  type: 'TAIXU_AUTH',
+  user: {
+    google_id: '...',
+    email: '...',
+    display_name: '...'
+  }
+}, '*');
+
+// 應用 → 平台（請求登入）
+window.parent.postMessage({
+  type: 'TAIXU_REQUEST_LOGIN',
+  app: 'story-vocab'
+}, '*');
+
+// 應用 → 平台（同步學習數據）
+window.parent.postMessage({
+  type: 'TAIXU_SYNC_LEARNING_DATA',
+  app: 'story-vocab',
+  data: { /* 聚合指標 */ }
+}, '*');
+```
+
+### 用戶體驗流程
+
+**平台模式**：
+1. 用戶在太虛幻境主站登入（一次）
+2. 打開應用時，自動接收用戶信息
+3. 應用同步到自己的 users 表
+4. 用戶直接開始使用
+
+**獨立模式**：
+1. 用戶直接打開應用
+2. 應用顯示登入按鈕
+3. 用戶完成 Google OAuth 登入
+4. 應用管理自己的 session
+
+## 應用開發檢查清單
+
+為應用添加雙模式支持時：
+
+- [ ] 創建 `auth/` 目錄結構
+- [ ] 實現運行模式檢測器
+- [ ] 實現認證服務抽象層
+- [ ] 實現獨立模式認證（完整 OAuth 流程）
+- [ ] 實現平台模式認證（接收 postMessage）
+- [ ] 使用 Google ID 作為 users 表主鍵
+- [ ] UI 根據模式自動適配（顯示/隱藏登入按鈕）
+- [ ] 測試兩種模式的切換和數據一致性
+
+## 參考
+
+- [太虛幻境架構文檔](mdc:TAIXU_ARCHITECTURE.md)
+- [Story-Vocab 認證實現](mdc:.cursor/rules/story-vocab-auth.mdc)

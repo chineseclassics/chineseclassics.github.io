@@ -17,6 +17,7 @@
 | 規則文件 | 描述 | 觸發條件 | 狀態 |
 |---------|------|---------|------|
 | `supabase-architecture.mdc` | Supabase 架構管理 | `**/supabase/**`, `**/*deploy*.md` | 🔄 Auto |
+| `dual-mode-architecture.mdc` | 雙模式架構規範 | 應用開發時手動引用 | 🔄 Auto |
 
 ### Manual Rules（手動引用）
 
@@ -97,7 +98,8 @@ alwaysApply: true    # 或 false
 
 | 規則文件 | 描述 | 類型 |
 |---------|------|------|
-| `supabase-deployment.mdc` | Story-Vocab Supabase 部署 | Auto |
+| `auth.mdc` | 雙模式認證架構規範 | Auto |
+| `supabase-deployment.mdc` | Supabase 部署規範 | Auto |
 
 詳見：[story-vocab/.cursor/rules/README.md](../../story-vocab/.cursor/rules/README.md)
 
@@ -110,12 +112,12 @@ alwaysApply: true    # 或 false
 ### 平台級規則（本目錄）
 - **總規則數**：7
 - **Always 規則**：3
-- **Auto Attached 規則**：1
+- **Auto Attached 規則**：2
 - **Manual 規則**：3
 - **Meta 規則**：2
 
 ### 子項目規則
-- **Story-Vocab**：1 個規則
+- **Story-Vocab**：2 個規則（`auth.mdc`, `supabase-deployment.mdc`）
 
 ## 🎓 最佳實踐
 
@@ -131,8 +133,11 @@ alwaysApply: true    # 或 false
 
 - **2025-10-11**：創建 MDC 格式的專案規則系統
   - 從 `.cursorrules` 遷移到 `.cursor/rules/`
-  - 創建 6 個規則文件（含 meta-rule）
+  - 創建 7 個平台級規則文件
   - 添加 `AGENTS.md` 作為簡化替代方案
+  - 創建 `story-vocab/.cursor/rules/` 子項目規則目錄
+  - 添加 `dual-mode-architecture.mdc` - 雙模式架構通用規範
+  - 將 story-vocab 專屬規則移至子項目目錄（2 個規則）
 
 ---
 

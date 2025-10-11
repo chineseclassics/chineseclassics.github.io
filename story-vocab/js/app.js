@@ -4,8 +4,12 @@
  */
 
 // 导入 Supabase 相关
-import { initSupabase, signInAnonymously } from './supabase-client.js';
+import { initSupabase } from './supabase-client.js';
 import { SUPABASE_CONFIG } from './config.js';
+
+// 导入认证模块
+import { createAuthService } from './auth/auth-service.js';
+import { getRunMode } from './auth/run-mode-detector.js';
 
 // 导入核心模块
 import { gameState } from './core/game-state.js';
@@ -29,6 +33,9 @@ import { preloadWords } from './utils/word-cache.js';
 
 // 导入故事存储模块
 import { updateStory, getStory } from './core/story-storage.js';
+
+// 全局认证服务实例
+let authService = null;
 
 /**
  * 获取AI反馈设置
@@ -54,22 +61,216 @@ function initFeedbackToggle() {
  */
 async function initializeApp() {
     try {
-        // 初始化 Supabase
+        console.log(`🎮 詞遊記啟動（${getRunMode()}模式）`);
+        
+        // 1. 初始化 Supabase
         const supabase = await initSupabase();
         console.log('✅ Supabase 客戶端初始化成功');
         
-        // 匿名登录
-        const user = await signInAnonymously();
-        gameState.userId = user.id;
-        console.log('✅ 用戶登錄成功:', gameState.userId);
+        // 2. 初始化認證系統（雙模式支持）
+        authService = await createAuthService();
+        // 暴露調試對象到全域（僅供開發測試使用）
+        window.authService = authService;
+        window.supabase = supabase;
+        const user = await authService.getCurrentUser();
         
-        // 初始化AI反馈toggle状态
+        if (user) {
+            console.log('✅ 用戶已登入:', user.display_name, `(${user.user_type})`);
+            gameState.userId = user.id;
+            gameState.user = user;
+            updateUIForLoggedInUser(user);
+        } else {
+            console.log('ℹ️ 用戶未登入');
+            updateUIForGuestUser();
+        }
+        
+        // 3. 設置認證監聽器
+        authService.onAuthStateChange((event, user) => {
+            if (event === 'SIGNED_IN' && user) {
+                gameState.userId = user.id;
+                gameState.user = user;
+                updateUIForLoggedInUser(user);
+                showToast(`✅ 歡迎，${user.display_name}！`);
+            } else if (event === 'SIGNED_OUT') {
+                gameState.userId = null;
+                gameState.user = null;
+                updateUIForGuestUser();
+                showToast('✅ 已登出');
+            }
+        });
+        
+        // 4. 初始化AI反馈toggle状态
         initFeedbackToggle();
         
         console.log('✅ 應用初始化完成');
     } catch (error) {
         console.error('❌ 應用初始化失敗:', error);
         showToast('初始化失敗，請刷新頁面重試');
+    }
+}
+
+/**
+ * Google 登入
+ */
+async function loginWithGoogle() {
+    if (!authService) {
+        showToast('❌ 認證服務未初始化');
+        return;
+    }
+    
+    try {
+        showToast('正在跳轉到 Google 登入...');
+        
+        const result = await authService.loginWithGoogle();
+        
+        if (result.error) {
+            console.error('❌ 登入失敗:', result.error);
+            showToast('❌ 登入失敗，請重試');
+        }
+        // OAuth 會跳轉，成功不會執行到這裡
+    } catch (error) {
+        console.error('❌ 登入異常:', error);
+        showToast('❌ 登入異常，請重試');
+    }
+}
+
+/**
+ * 訪客試用（匿名登入）
+ */
+async function continueAsGuest() {
+    if (!authService) {
+        showToast('❌ 認證服務未初始化');
+        return;
+    }
+    
+    try {
+        showToast('正在創建訪客賬號...');
+        
+        const user = await authService.loginAnonymously();
+        
+        if (user) {
+            gameState.userId = user.id;
+            gameState.user = user;
+            updateUIForLoggedInUser(user);
+            showToast(`✅ 歡迎，${user.display_name}！`);
+        } else {
+            showToast('❌ 訪客登入失敗');
+        }
+    } catch (error) {
+        console.error('❌ 訪客登入異常:', error);
+        showToast('❌ 訪客登入失敗，請重試');
+    }
+}
+
+/**
+ * 登出
+ */
+async function logout() {
+    if (!authService) {
+        showToast('❌ 認證服務未初始化');
+        return;
+    }
+    
+    try {
+        await authService.logout();
+        
+        // 清除 gameState
+        gameState.userId = null;
+        gameState.user = null;
+        
+        // 更新 UI
+        updateUIForGuestUser();
+        
+        showToast('✅ 已登出');
+        
+        // 刷新頁面
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    } catch (error) {
+        console.error('❌ 登出失敗:', error);
+        showToast('❌ 登出失敗，請重試');
+    }
+}
+
+/**
+ * 更新 UI（已登入用戶）
+ */
+function updateUIForLoggedInUser(user) {
+    const displayName = user.display_name || '用戶';
+    const userType = user.user_type || 'registered';
+    
+    // 更新側邊欄用戶名
+    const userDisplayNameEl = document.getElementById('user-display-name');
+    if (userDisplayNameEl) {
+        userDisplayNameEl.textContent = displayName;
+    }
+    
+    // 更新頭像（桌面版和移動版）
+    const avatarHTML = user.avatar_url
+        ? `<img src="${user.avatar_url}" alt="${displayName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+        : '👤';
+    
+    const userAvatarEl = document.getElementById('user-avatar');
+    if (userAvatarEl) {
+        if (user.avatar_url) {
+            userAvatarEl.innerHTML = `<img src="${user.avatar_url}" 
+                                            alt="${displayName}" 
+                                            style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">`;
+        } else {
+            userAvatarEl.innerHTML = avatarHTML;
+            if (userType === 'anonymous') {
+                userAvatarEl.title = '訪客模式';
+            }
+        }
+    }
+    
+    // 更新移動端頭像
+    const mobileAvatarEl = document.querySelector('.mobile-user-avatar');
+    if (mobileAvatarEl) {
+        mobileAvatarEl.innerHTML = avatarHTML;
+    }
+    
+    // 隱藏登入提示
+    const guestPrompt = document.getElementById('guest-login-prompt');
+    if (guestPrompt) {
+        guestPrompt.style.display = 'none';
+    }
+    
+    // 顯示用戶類型標識（如果是匿名用戶）
+    const userLevelDisplay = document.getElementById('user-level-display');
+    if (userLevelDisplay && userType === 'anonymous') {
+        const currentText = userLevelDisplay.textContent;
+        if (!currentText.includes('試用')) {
+            userLevelDisplay.textContent = currentText + ' · ⚡試用';
+        }
+    }
+}
+
+/**
+ * 更新 UI（訪客模式）
+ */
+function updateUIForGuestUser() {
+    const userDisplayNameEl = document.getElementById('user-display-name');
+    if (userDisplayNameEl) {
+        userDisplayNameEl.textContent = '訪客';
+    }
+    
+    const userAvatarEl = document.getElementById('user-avatar');
+    if (userAvatarEl) {
+        userAvatarEl.innerHTML = '👤';
+    }
+    
+    // 顯示登入提示
+    const guestPrompt = document.getElementById('guest-login-prompt');
+    if (guestPrompt) {
+        guestPrompt.style.display = 'block';
+    }
+    
+    // 重置用戶等級顯示
+    const userLevelDisplay = document.getElementById('user-level-display');
+    if (userLevelDisplay) {
+        userLevelDisplay.textContent = '等級 L2 · 初級';
     }
 }
 
@@ -82,7 +283,7 @@ function mountGlobalFunctions() {
     window.toggleMobileSidebar = toggleMobileSidebar;
     window.closeMobileSidebar = closeMobileSidebar;
     window.navigateTo = navigateTo;
-    window.handleLogout = handleLogout;
+    window.handleLogout = logout;  // 使用新的 logout 函數
     
     // 词汇相关
     window.selectWord = selectWord;
@@ -90,6 +291,11 @@ function mountGlobalFunctions() {
     window.closeWordModal = closeWordModal;
     window.addToWordbook = addToWordbook;
     window.openWordbook = openWordbook;
+    
+    // 认证相关
+    window.loginWithGoogle = loginWithGoogle;
+    window.continueAsGuest = continueAsGuest;
+    window.logout = logout;
     
     // 弹窗管理
     window.showVocabModeSelector = showVocabModeSelector;

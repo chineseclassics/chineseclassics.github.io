@@ -17,6 +17,31 @@
 
 ---
 
+## 🔐 認證系統
+
+### [AUTH_FINAL_DESIGN.md](./AUTH_FINAL_DESIGN.md) ⭐
+**最終設計方案** - UUID + 多重身份系統（Google + 匿名）
+
+### [AUTH_ARCHITECTURE.md](./AUTH_ARCHITECTURE.md)
+**認證架構設計** - 雙模式認證系統詳細技術文檔
+
+### [MULTI_IDENTITY_SYSTEM.md](./MULTI_IDENTITY_SYSTEM.md)
+**多重身份系統設計** - 數據庫設計和實施細節
+
+### [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
+**實施計劃** - 分階段實施步驟和測試清單
+
+### [AUTH_DECISIONS_SUMMARY.md](./AUTH_DECISIONS_SUMMARY.md)
+**架構決策總結** - 討論過程和關鍵決策理由
+
+### [GOOGLE_ID_AS_PRIMARY_KEY.md](./GOOGLE_ID_AS_PRIMARY_KEY.md)
+~~Google ID 主鍵方案~~（已棄用，參考用）
+
+### [GOOGLE_AUTH_INTEGRATION.md](./GOOGLE_AUTH_INTEGRATION.md)
+~~Google 認證集成指南~~（舊方案，參考用）
+
+---
+
 ## 🚀 部署與運維
 
 ### [DEPLOYMENT.md](./DEPLOYMENT.md)
@@ -24,9 +49,6 @@
 
 ### [EDGE_FUNCTION_DEPLOY.md](./EDGE_FUNCTION_DEPLOY.md)
 Edge Functions 部署步驟
-
-### [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
-部署前檢查清單
 
 ### [DEPLOYMENT_COMPLETE.md](./DEPLOYMENT_COMPLETE.md)
 部署完成報告
@@ -96,8 +118,11 @@ Edge Functions 部署步驟
 **開始使用項目**
 → 查看 [主 README](../README.md)
 
+**實施 Google 登入**
+→ 查看 [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) 和 [AUTH_ARCHITECTURE.md](./AUTH_ARCHITECTURE.md)
+
 **部署到生產環境**
-→ 查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 和 [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
+→ 查看 [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 **部署 Edge Functions**
 → 查看 [EDGE_FUNCTION_DEPLOY.md](./EDGE_FUNCTION_DEPLOY.md)

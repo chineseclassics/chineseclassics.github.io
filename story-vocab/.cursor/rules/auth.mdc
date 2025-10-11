@@ -1,0 +1,208 @@
+---
+description: Story-Vocab 認證架構規範 - 雙模式 Google 登入系統
+globs:
+  - js/auth/**
+  - js/app.js
+  - js/supabase-client.js
+  - docs/AUTH*.md
+  - docs/GOOGLE*.md
+alwaysApply: false
+---
+
+# Story-Vocab 認證架構規範
+
+## 核心設計原則
+
+### 1. 雙模式架構
+- **獨立模式**：詞遊記單獨運行，使用自己的 Supabase Google 認證
+- **平台模式**：在太虛幻境 iframe 內，接收平台傳來的用戶信息
+- 同一套代碼自動檢測並適配不同模式
+
+### 2. UUID 主鍵 + 多重身份系統
+```sql
+-- 用戶主表（UUID 主鍵）
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE,                -- Google 用戶有，匿名用戶為 NULL
+  display_name TEXT NOT NULL,
+  avatar_url TEXT,
+  user_type TEXT DEFAULT 'registered', -- 'registered' | 'anonymous'
+  current_level DECIMAL(2,1) DEFAULT 2.0,
+  total_stories_completed INT DEFAULT 0,
+  last_login_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 身份關聯表（支持多種登入方式）
+CREATE TABLE user_identities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,           -- 'google' | 'anonymous' | 'apple'
+  provider_id TEXT NOT NULL,        -- 該提供商的用戶 ID
+  provider_data JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(provider, provider_id)
+);
+```
+
+**關鍵**：
+- Google 用戶通過 **email** 在兩種模式下統一
+- 匿名用戶不需要跨模式同步
+- 支持未來擴展其他登入方式
+
+### 3. Supabase 完全獨立
+- 詞遊記使用自己的 Supabase project (bjykaipbeokbbykvseyr)
+- 太虛幻境平台有自己的 Supabase project
+- 兩者通過 postMessage 通信，不是數據庫連接
+
+## 文件結構
+
+```
+story-vocab/js/auth/
+├── run-mode-detector.js      # 檢測當前運行模式
+├── auth-service.js            # 認證服務抽象層 + 工廠函數
+├── standalone-auth.js         # 獨立模式實現（完整）
+└── platform-auth.js           # 平台模式實現（接收平台用戶信息）
+```
+
+## 運行模式檢測
+
+```javascript
+// 自動檢測規則
+if (window.self !== window.top && 
+    window.location.hostname === 'chineseclassics.github.io') {
+  return 'platform';  // 在太虛幻境 iframe 內
+} else {
+  return 'standalone'; // 獨立運行
+}
+```
+
+## 支持的登入方式
+
+### 1. Google 登入（主要用戶 - 學校學生）
+
+**獨立模式**：
+```javascript
+// Google OAuth 登入
+const { data } = await supabase.auth.signInWithOAuth({
+  provider: 'google'
+});
+
+// 用 email 查找或創建用戶
+const email = authUser.email;
+let user = await supabase.from('users').select('*').eq('email', email).single();
+
+if (!user) {
+  // 創建新用戶
+  user = await supabase.from('users').insert({
+    email: email,
+    display_name: authUser.user_metadata.name,
+    user_type: 'registered'
+  }).select().single();
+  
+  // 綁定 Google 身份
+  await supabase.from('user_identities').insert({
+    user_id: user.id,
+    provider: 'google',
+    provider_id: authUser.user_metadata.sub
+  });
+}
+```
+
+**平台模式**：
+```javascript
+// 接收平台用戶信息
+window.addEventListener('message', (event) => {
+  if (event.data.type === 'TAIXU_AUTH') {
+    const platformUser = event.data.user;
+    
+    // 用 email 查找（與獨立模式統一）
+    let user = await supabase.from('users')
+      .select('*')
+      .eq('email', platformUser.email)
+      .single();
+    
+    if (!user) {
+      user = await supabase.from('users').insert({
+        email: platformUser.email,
+        display_name: platformUser.display_name,
+        user_type: 'registered'
+      }).select().single();
+    }
+  }
+});
+```
+
+### 2. 匿名登入（訪客試用）
+
+```javascript
+// Supabase 匿名登入
+const { data } = await supabase.auth.signInAnonymously();
+
+// 創建匿名用戶
+const user = await supabase.from('users').insert({
+  email: null,
+  display_name: `訪客${Math.floor(Math.random() * 10000)}`,
+  user_type: 'anonymous'
+}).select().single();
+
+// 綁定匿名身份
+await supabase.from('user_identities').insert({
+  user_id: user.id,
+  provider: 'anonymous',
+  provider_id: data.user.id
+});
+```
+
+**特點**：
+- 數據保存在雲端（Supabase）
+- 不需要跨模式同步
+- 換設備會丟失（可接受）
+
+## UI 適配規則
+
+### 平台模式
+- 隱藏登入按鈕（用戶已在平台登入）
+- 等待接收平台用戶信息
+- 不顯示 Google OAuth 流程
+
+### 獨立模式
+- 顯示 "使用 Google 登入" 按鈕
+- 處理完整的 OAuth 流程
+- 管理自己的 session
+
+## 數據一致性保證
+
+**關鍵承諾**：同一個 Google 賬號（email），不管從哪種模式登入，都對應同一個用戶。
+
+實現方式：
+1. Google 用戶：使用 **email** 作為統一標識符
+2. 查找邏輯：先用 email 查找，再決定創建或複用
+3. 匿名用戶：不需要跨模式統一（只在當前設備使用）
+4. 使用 user_identities 表管理多重登入方式
+
+## 實施優先級
+
+1. **第一階段**（現在）：實現獨立模式
+   - 配置 Google OAuth
+   - 實現 StandaloneAuth
+   - 修改 users 表結構（使用 Google ID 主鍵）
+
+2. **第二階段**（未來）：實現平台模式
+   - 太虛幻境平台完成統一登入
+   - 實現 PlatformAuth
+   - 實現 postMessage 通信
+
+## 參考文檔
+
+- [完整認證架構設計](../docs/AUTH_ARCHITECTURE.md)
+- [Google ID 主鍵設計](../docs/GOOGLE_ID_AS_PRIMARY_KEY.md)
+- [實施計劃](../docs/IMPLEMENTATION_PLAN.md)
+- [架構決策總結](../docs/AUTH_DECISIONS_SUMMARY.md)
+
+## 與平台級規則的關係
+
+本規則是 `dual-mode-architecture.mdc`（平台級）的具體實現：
+- 平台級規則定義了通用的雙模式架構原則
+- 本規則提供了詞遊記的具體實現細節
+- 兩者互補，不衝突

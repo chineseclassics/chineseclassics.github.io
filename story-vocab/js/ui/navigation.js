@@ -180,26 +180,29 @@ export function navigateTo(destination) {
 /**
  * 登出功能
  */
-export function handleLogout() {
-    if (confirm('確定要退出登錄嗎？')) {
-        // 清除本地数据
+export async function handleLogout() {
+    if (!confirm('確定要退出登錄嗎？')) return;
+    try {
+        // 優先調用應用的真正登出邏輯
+        if (typeof window.logout === 'function') {
+            await window.logout();
+            return; // 應用內部會負責刷新與提示
+        }
+        // 後備方案：直接調用 Supabase signOut 並刷新
+        if (window.supabase && window.supabase.auth) {
+            await window.supabase.auth.signOut();
+        }
+    } catch (e) {
+        console.warn('登出時發生錯誤（已採用後備刷新）:', e);
+    } finally {
+        // 清除本地緩存並刷新頁面
         localStorage.removeItem('story_wordbook');
-        // 重置用户显示
-        const userDisplayName = document.getElementById('user-display-name');
-        const userLevelDisplay = document.getElementById('user-level-display');
-        const statStories = document.getElementById('stat-stories');
-        const statWords = document.getElementById('stat-words');
-        const statPoints = document.getElementById('stat-points');
-        
-        if (userDisplayName) userDisplayName.textContent = '訪客';
-        if (userLevelDisplay) userLevelDisplay.textContent = '等級 L2 · 初級';
-        if (statStories) statStories.textContent = '0';
-        if (statWords) statWords.textContent = '0';
-        if (statPoints) statPoints.textContent = '0';
-        
-        // 返回开始页面
-        showScreen('start-screen');
-        showToast('已退出登錄');
+        localStorage.removeItem('user_display_name');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('user_avatar_url');
+        localStorage.removeItem('user_type');
+        showToast('✅ 已登出');
+        setTimeout(() => location.reload(), 300);
     }
 }
 

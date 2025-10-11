@@ -55,36 +55,19 @@ export function getSupabase() {
 // =====================================================
 
 /**
- * 匿名登录（MVP 简化版）
+ * 匿名登录（已棄用）
+ * @deprecated 請使用新的認證系統：auth/standalone-auth.js 中的 loginAnonymously()
+ * 
+ * 新的使用方式：
+ * import { createAuthService } from './auth/auth-service.js';
+ * const authService = await createAuthService();
+ * const user = await authService.loginAnonymously();
  */
 export async function signInAnonymously() {
-  const supabase = getSupabase();
+  console.warn('⚠️ signInAnonymously() 已棄用');
+  console.warn('⚠️ 請使用新的認證系統：auth/standalone-auth.js');
   
-  try {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    
-    if (error) throw error;
-    
-    // 创建或更新用户记录
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .upsert({
-        id: data.user.id,
-        username: `user_${data.user.id.substring(0, 8)}`,
-        display_name: `用户${Math.floor(Math.random() * 10000)}`,
-        current_level: 2.0
-      })
-      .select()
-      .single();
-    
-    if (userError) throw userError;
-    
-    console.log('✅ 匿名登录成功:', userData);
-    return userData;
-  } catch (error) {
-    console.error('❌ 匿名登录失败:', error);
-    throw error;
-  }
+  throw new Error('signInAnonymously() 已棄用，請使用新的認證系統');
 }
 
 /**

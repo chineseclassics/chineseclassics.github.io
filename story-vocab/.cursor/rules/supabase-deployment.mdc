@@ -2,14 +2,15 @@
 description: Story-Vocab Supabase 部署規範 - 子項目獨立部署
 globs:
   - supabase/**
-  - docs/**
-  - "**/supabase*.sh"
+  - docs/*[Dd]eploy*.md
+  - docs/SUPABASE*.md
+  - "*.sh"
 alwaysApply: false
 ---
 
 # Story-Vocab Supabase 部署規範
 
-> 本規則僅適用於 story-vocab 項目，定義其 Supabase 部署的最佳實踐
+> 本規則定義詞遊記 Supabase 部署的最佳實踐
 
 ## 🎯 核心原則
 
@@ -97,8 +98,10 @@ supabase link --project-ref bjykaipbeokbbykvseyr
 
 ### 核心表
 - `vocabulary` - 詞彙表
-- `stories` - 故事表
-- `user_wordbook` - 用戶詞本
+- `users` - 用戶表（使用 Google ID 作為主鍵）
+- `story_sessions` - 故事會話
+- `user_vocabulary` - 用戶詞彙學習記錄
+- `user_wordbook` - 用戶生詞本
 - `wordlists` - 詞表系統
 - `wordlist_tags` - 詞表標籤
 
@@ -110,7 +113,7 @@ supabase link --project-ref bjykaipbeokbbykvseyr
 ## 🔧 開發工具
 
 ### Supabase 管理腳本
-位於 `story-vocab/` 根目錄：
+位於 story-vocab 根目錄：
 - `supabase-utils.sh` - 主要管理工具
 - `query-table-structure.sh` - 表結構查詢
 - `start-server.sh` - 啟動本地服務器
@@ -136,7 +139,7 @@ cd story-vocab
 
 ### 關鍵配置
 ```toml
-project_id = "story-vocab"  # 專屬 ID，不是 "chineseclassics.github.io"
+project_id = "story-vocab"  # 專屬 ID
 ```
 
 ## 🐛 常見錯誤排查
@@ -169,7 +172,7 @@ supabase link --project-ref bjykaipbeokbbykvseyr
 - [Story-Vocab 部署指南](../docs/DEPLOYMENT.md)
 - [Supabase CLI 使用指南](../docs/SUPABASE_CLI_GUIDE.md)
 - [詞表系統部署](../docs/WORDLIST_DEPLOYMENT_GUIDE.md)
-- [太虛幻境 Supabase 架構](@supabase-architecture) - 平台級規則
+- [根目錄 Supabase 架構規則](@supabase-architecture) - 平台級規則
 
 ## 🔗 與平台級規則的關係
 

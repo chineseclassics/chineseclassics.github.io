@@ -1,97 +1,87 @@
 # Story-Vocab 專案規則
 
-> 本目錄包含 Story-Vocab 項目專屬的 Cursor Rules
+> 本目錄包含詞遊記專屬的 Cursor Rules
+
+---
 
 ## 📋 規則列表
 
-| 規則文件 | 描述 | 類型 | 觸發條件 |
-|---------|------|------|---------|
-| `supabase-deployment.mdc` | Supabase 部署規範 | Auto | `supabase/**` |
+### Auto Attached Rules（自動附加）
 
-## 🏗️ 規則繼承
+| 規則文件 | 描述 | 觸發條件 |
+|---------|------|---------|
+| `auth.mdc` | 雙模式認證架構規範 | `js/auth/**`, `js/app.js`, `docs/AUTH*.md` |
+| `supabase-deployment.mdc` | Supabase 部署規範 | `supabase/**`, `docs/*Deploy*.md` |
 
-### 從平台級繼承的規則
+---
 
-當在 story-vocab 工作時，以下平台級規則**自動啟用**：
+## 🏗️ 規則繼承關係
 
-1. ✅ **語言規範** - 始終使用繁體中文
-2. ✅ **文件組織規範** - 兩層架構原則
-3. ✅ **代碼規範** - 通用編碼標準
+當處理 story-vocab 的文件時，會啟用以下規則：
 
-### Story-Vocab 專屬規則
+### 平台級規則（來自根目錄）
+1. ✅ `language.mdc` - 語言規範（Always）
+2. ✅ `file-organization.mdc` - 文件組織（Always）
+3. ✅ `coding-standards.mdc` - 代碼規範（Always）
+4. ✅ `dual-mode-architecture.mdc` - 雙模式架構原則（通用）
+5. ✅ `supabase-architecture.mdc` - Supabase 通用原則（Auto）
 
-本目錄的規則是對平台級規則的**補充**，提供：
-- Story-Vocab 具體的技術棧實現
-- Supabase 部署的詳細步驟
-- 項目特定的最佳實踐
+### 子項目規則（本目錄）
+6. ✅ `auth.mdc` - 詞遊記認證架構（Auto）
+7. ✅ `supabase-deployment.mdc` - 詞遊記 Supabase 部署（Auto）
 
-## 🎯 規則作用範圍
+---
 
-本目錄的規則**僅在**以下情況啟用：
-- 處理 `story-vocab/` 目錄下的文件
-- 通過 globs 模式匹配到相關文件路徑
-- 手動使用 `@ruleName` 引用
+## 🎯 規則組織原則
 
-**不會影響**其他子項目（如 wanwuxiaoyao、cilong 等）
+### 什麼應該放在這裡？
 
-## 📐 設計原則
+**✅ 應該包含**：
+- 詞遊記專屬的設計原則
+- 認證系統實現細節
+- Supabase 具體部署步驟
+- AI Agent 提示詞規範
+- 詞彙推薦算法細節
 
-### 1. 補充而非替代
-- 不重複平台級規則內容
-- 專注於 story-vocab 特定的實現細節
-- 與平台級規則保持一致性
+**❌ 不應該包含**：
+- 通用的語言規範（已在平台級）
+- 通用的文件組織（已在平台級）
+- 太虛幻境整體架構（應在根目錄）
 
-### 2. 具體且可執行
-- 提供完整的命令範例
-- 包含常見錯誤排查
-- 引用具體的文檔路徑
+### globs 路徑注意事項
 
-### 3. 限定作用範圍
-- 使用 globs 限定在 story-vocab 路徑
-- `alwaysApply: false` 避免全局啟用
-- 明確說明觸發條件
+在子項目規則中，globs 應相對於 **story-vocab/** 根目錄：
 
-## 🛠️ 添加新規則
-
-當需要為 story-vocab 添加新規則時：
-
-### 1. 確定是否真的需要
-問自己：
-- 這是 story-vocab **專屬**的規則嗎？
-- 還是應該放在平台級規則中？
-- 是否已經在其他規則中涵蓋？
-
-### 2. 創建規則文件
-```bash
-cd story-vocab/.cursor/rules
-# 創建新的 .mdc 文件
-```
-
-### 3. 設置正確的 globs
-確保路徑限定在 story-vocab：
 ```yaml
-globs: ["story-vocab/**/*.ts", "story-vocab/docs/**"]
+# ✅ 正確（相對於 story-vocab/）
+globs:
+  - js/auth/**
+  - supabase/**
+  - docs/AUTH*.md
+
+# ❌ 錯誤（包含子項目前綴會導致不匹配）
+globs:
+  - story-vocab/js/auth/**
 ```
 
-### 4. 參考現有規則
-參考 `@how-to-create-rules` 和 `@nested-rules-architecture`
+---
 
-## 📊 統計
+## 📚 相關文檔
 
-- **總規則數**：1
-- **Auto Attached 規則**：1
-- **Manual 規則**：0
-- **Always 規則**：0（應該在平台級）
+- [巢狀規則架構指南](@nested-rules-architecture) - 平台級規範
+- [如何創建規則](@how-to-create-rules) - Meta Rule
+- [Story-Vocab 文檔中心](../docs/README.md)
 
-## 🔗 相關資源
+---
 
-- **平台級規則**：[../../.cursor/rules/](../../.cursor/rules/)
-- **巢狀規則架構**：`@nested-rules-architecture`
-- **創建規則指南**：`@how-to-create-rules`
-- **Story-Vocab 文檔**：[../docs/README.md](../docs/README.md)
+## 🔄 更新記錄
+
+- **2025-10-11**：創建子項目規則目錄
+  - 添加 `auth.mdc` - 認證架構規範
+  - 添加 `supabase-deployment.mdc` - 部署規範
+  - 從根目錄移動專屬規則到子項目
 
 ---
 
 **維護**：Story-Vocab 開發團隊  
 **最後更新**：2025-10-11
-
