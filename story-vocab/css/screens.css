@@ -620,3 +620,208 @@
     font-style: italic;
 }
 
+/* ===== 登入界面 ===== */
+.login-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    overflow-y: auto;
+}
+
+.login-screen.active {
+    display: flex;
+}
+
+.login-container {
+    background: white;
+    border-radius: 30px;
+    padding: 50px 40px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    animation: slideUp 0.5s ease;
+}
+
+/* Logo 區域 */
+.login-logo {
+    margin-bottom: 20px;
+}
+
+.logo-icon {
+    font-size: 4em;
+    line-height: 1;
+}
+
+/* 標題區域 */
+.login-header {
+    margin-bottom: 30px;
+}
+
+.login-title {
+    font-size: 2.5em;
+    color: var(--primary-purple);
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.login-subtitle {
+    font-size: 1.2em;
+    color: var(--text-light);
+}
+
+/* 介紹信息 */
+.login-info {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px 0;
+    padding: 20px;
+    background: var(--light-blue);
+    border-radius: 15px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-icon {
+    font-size: 2em;
+}
+
+.info-text {
+    font-size: 0.85em;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+/* 登入按鈕 */
+.login-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 30px 0;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 0;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+/* Google 按鈕（主推薦）*/
+.login-btn-google {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.login-btn-google:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+}
+
+/* 訪客按鈕（低調）*/
+.login-btn-guest {
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.login-btn-guest:hover {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
+.btn-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 18px 25px;
+}
+
+.btn-icon {
+    font-size: 2em;
+    flex-shrink: 0;
+}
+
+.btn-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    flex: 1;
+}
+
+.login-btn-google .btn-main,
+.login-btn-google .btn-hint {
+    color: white;
+}
+
+.login-btn-guest .btn-main {
+    color: var(--text-dark);
+}
+
+.login-btn-guest .btn-hint {
+    color: var(--text-light);
+}
+
+.btn-main {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.btn-hint {
+    font-size: 0.85em;
+    opacity: 0.9;
+}
+
+/* 頁腳 */
+.login-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid var(--light-blue);
+    color: var(--text-light);
+    font-size: 0.9em;
+}
+
+/* 動畫 */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 響應式 */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 40px 25px;
+    }
+    
+    .login-title {
+        font-size: 2em;
+    }
+    
+    .login-info {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+

@@ -82,7 +82,32 @@ export class StandaloneAuth extends AuthService {
     console.log('👤 匿名登入（訪客試用）...');
     
     try {
-      // Supabase 匿名登入
+      // ✅ 先檢查是否已有匿名 session
+      const { data: { session } } = await this.supabase.auth.getSession();
+      
+      if (session && session.user) {
+        console.log('🔍 檢查現有 session...');
+        
+        // 查找對應的用戶記錄
+        const { data: existingUser } = await this.supabase
+          .from('user_identities')
+          .select('*, users(*)')
+          .eq('provider', 'anonymous')
+          .eq('provider_id', session.user.id)
+          .maybeSingle();
+        
+        if (existingUser && existingUser.users && existingUser.users.user_type === 'anonymous') {
+          console.log('✅ 複用現有匿名 session:', existingUser.users.display_name);
+          this.currentUser = {
+            ...existingUser.users,
+            run_mode: 'standalone'
+          };
+          return this.currentUser;
+        }
+      }
+      
+      // 沒有現有 session，創建新的匿名用戶
+      console.log('🆕 創建新的匿名 session...');
       const { data, error } = await this.supabase.auth.signInAnonymously();
       
       if (error) throw error;

@@ -14,6 +14,68 @@
     <link rel="stylesheet" href="./css/responsive.css">
 </head>
 <body>
+    <!-- ===== 登入界面 ===== -->
+    <div id="login-screen" class="login-screen active">
+        <div class="login-container">
+            <!-- Logo 區域 -->
+            <div class="login-logo">
+                <div class="logo-icon">📖✨</div>
+            </div>
+            
+            <!-- 標題區域 -->
+            <div class="login-header">
+                <h1 class="login-title">詞遊記</h1>
+                <p class="login-subtitle">與AI共創故事，樂學詞語</p>
+            </div>
+            
+            <!-- 介紹信息 -->
+            <div class="login-info">
+                <div class="info-item">
+                    <span class="info-icon">🎯</span>
+                    <span class="info-text">AI智能推薦詞彙</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-icon">📚</span>
+                    <span class="info-text">接龍創作學習法</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-icon">☁️</span>
+                    <span class="info-text">雲端保存學習進度</span>
+                </div>
+            </div>
+            
+            <!-- 登入按鈕 -->
+            <div class="login-buttons">
+                <!-- Google 登入（主推薦）-->
+                <button class="login-btn login-btn-google" onclick="loginWithGoogle()">
+                    <div class="btn-content">
+                        <span class="btn-icon">🔐</span>
+                        <div class="btn-text">
+                            <span class="btn-main">使用 Google 登入</span>
+                            <span class="btn-hint">推薦 · 數據雲端保存，支持跨設備</span>
+                        </div>
+                    </div>
+                </button>
+                
+                <!-- 訪客試用 -->
+                <button class="login-btn login-btn-guest" onclick="continueAsGuest()">
+                    <div class="btn-content">
+                        <span class="btn-icon">👤</span>
+                        <div class="btn-text">
+                            <span class="btn-main">訪客試用</span>
+                            <span class="btn-hint">立即體驗 · 功能有限</span>
+                        </div>
+                    </div>
+                </button>
+            </div>
+            
+            <!-- 版本信息 -->
+            <div class="login-footer">
+                <p>張老師「太虛幻境」 AI 實驗室 · v1.0</p>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== 移動端頂部導航欄 ===== -->
     <div class="mobile-header">
         <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="打開菜單">
@@ -173,7 +235,7 @@
     <div class="main-content">
     <div class="container">
         <!-- ===== 启动界面 ===== -->
-        <div id="start-screen" class="screen active">
+        <div id="start-screen" class="screen">
             <div class="content">
                 <!-- AI 模式欢迎信息 -->
                 <div id="ai-mode-section">

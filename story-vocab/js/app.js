@@ -74,32 +74,36 @@ async function initializeApp() {
         window.supabase = supabase;
         const user = await authService.getCurrentUser();
         
-        if (user) {
-            console.log('✅ 用戶已登入:', user.display_name, `(${user.user_type})`);
+        // 3. 判斷是否顯示登入界面
+        if (user && user.user_type === 'registered') {
+            // Google 用戶：直接進入主界面
+            console.log('✅ Google 用戶已登入:', user.display_name);
             gameState.userId = user.id;
             gameState.user = user;
             updateUIForLoggedInUser(user);
+            showMainInterface();
         } else {
-            console.log('ℹ️ 用戶未登入');
-            updateUIForGuestUser();
+            // 匿名用戶或未登入：顯示登入界面
+            console.log('ℹ️ 顯示登入界面');
+            showLoginScreen();
         }
         
-        // 3. 設置認證監聽器
+        // 4. 設置認證監聽器
         authService.onAuthStateChange((event, user) => {
             if (event === 'SIGNED_IN' && user) {
                 gameState.userId = user.id;
                 gameState.user = user;
                 updateUIForLoggedInUser(user);
+                showMainInterface();
                 showToast(`✅ 歡迎，${user.display_name}！`);
             } else if (event === 'SIGNED_OUT') {
                 gameState.userId = null;
                 gameState.user = null;
-                updateUIForGuestUser();
-                showToast('✅ 已登出');
+                showLoginScreen();
             }
         });
         
-        // 4. 初始化AI反馈toggle状态
+        // 5. 初始化AI反馈toggle状态
         initFeedbackToggle();
         
         console.log('✅ 應用初始化完成');
@@ -107,6 +111,41 @@ async function initializeApp() {
         console.error('❌ 應用初始化失敗:', error);
         showToast('初始化失敗，請刷新頁面重試');
     }
+}
+
+/**
+ * 顯示登入界面
+ */
+function showLoginScreen() {
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+        loginScreen.classList.add('active');
+    }
+    
+    // 隱藏側邊欄和主內容
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+    if (sidebar) sidebar.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'none';
+}
+
+/**
+ * 顯示主界面
+ */
+function showMainInterface() {
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+        loginScreen.classList.remove('active');
+    }
+    
+    // 顯示側邊欄和主內容
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+    if (sidebar) sidebar.style.display = '';
+    if (mainContent) mainContent.style.display = '';
+    
+    // 顯示開始界面
+    showScreen('start-screen');
 }
 
 /**
@@ -178,15 +217,10 @@ async function logout() {
         gameState.userId = null;
         gameState.user = null;
         
-        // 更新 UI
-        updateUIForGuestUser();
+        // 顯示登入界面
+        showLoginScreen();
         
         showToast('✅ 已登出');
-        
-        // 刷新頁面
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
     } catch (error) {
         console.error('❌ 登出失敗:', error);
         showToast('❌ 登出失敗，請重試');
@@ -296,6 +330,8 @@ function mountGlobalFunctions() {
     window.loginWithGoogle = loginWithGoogle;
     window.continueAsGuest = continueAsGuest;
     window.logout = logout;
+    window.showLoginScreen = showLoginScreen;
+    window.showMainInterface = showMainInterface;
     
     // 弹窗管理
     window.showVocabModeSelector = showVocabModeSelector;
