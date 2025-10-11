@@ -455,6 +455,23 @@
         font-size: 0.9em;
     }
 
+    /* 移動端詞表層級選擇區域標題行優化 */
+    #wordlist-hierarchy-section > div:first-child {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    
+    #hierarchy-title {
+        font-size: 1.2em !important;
+    }
+    
+    #current-wordlist-indicator {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 10px 12px !important;
+    }
+
     /* 移動端加載動畫 */
     .loading {
         padding: 30px 20px;

@@ -133,7 +133,7 @@ function showWordlistHierarchy() {
  * @param {string} name - 词表名称
  */
 function updateWordlistNameDisplay(name) {
-    const nameElement = document.getElementById('current-wordlist-name');
+    const nameElement = document.getElementById('current-wordlist-name-inline');
     if (nameElement) {
         nameElement.textContent = name;
     }

@@ -160,7 +160,15 @@
 
                 <!-- 词表层级选择区域（在主题选择上方） -->
                 <div id="wordlist-hierarchy-section" style="display: none;">
-                    <h2 id="hierarchy-title">📚 選擇範圍：</h2>
+                    <!-- 标题栏：左侧标题 + 右侧词表信息 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 id="hierarchy-title" style="margin: 0;">選擇詞語範圍：</h2>
+                        <div id="current-wordlist-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border-radius: 20px; border: 1px solid #667eea30;">
+                            <span style="font-size: 13px; color: #666;">當前詞表：</span>
+                            <span id="current-wordlist-name-inline" style="font-size: 13px; color: #667eea; font-weight: 600;">AI智能推薦</span>
+                            <a href="#" onclick="navigateTo('settings'); return false;" style="font-size: 12px; color: #667eea; text-decoration: none; padding: 4px 10px; background: white; border-radius: 12px; border: 1px solid #667eea; transition: all 0.2s;" onmouseover="this.style.background='#667eea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#667eea';">更換</a>
+                        </div>
+                    </div>
                     
                     <!-- 第二层级卡片 -->
                     <div id="level-2-cards" class="difficulty-grid"></div>
@@ -171,7 +179,7 @@
 
                 <!-- 主题选择（始终显示） -->
                 <div class="theme-selector">
-                    <h2>🎭 選擇故事主題：</h2>
+                    <h2>選擇故事主題：</h2>
                     <div class="theme-buttons">
                         <button class="theme-btn selected" data-theme="nature">
                             <span class="emoji">🌳</span>
@@ -194,14 +202,6 @@
 
                 <div class="start-button-container">
                     <button class="btn-primary" id="start-game-btn">開始創作故事</button>
-                </div>
-
-                <!-- 底部提示（显示当前词表模式，可点击更换） -->
-                <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
-                    <p>
-                        當前：<span id="current-wordlist-name" style="color: #667eea; font-weight: 500;">AI智能推薦</span>
-                        <a href="#" onclick="navigateTo('settings'); return false;" style="color: #667eea; margin-left: 10px; text-decoration: underline;">更換</a>
-                    </p>
                 </div>
             </div>
         </div>

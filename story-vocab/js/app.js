@@ -359,7 +359,7 @@ async function handleStartGame() {
         if (level2Container && level2Container.children.length > 0) {
             // 有第二层级卡片，检查是否选中
             if (!gameState.level2Tag) {
-                showToast('請選擇層級');
+                showToast('請選擇詞語範圍');
                 return;
             }
         }
