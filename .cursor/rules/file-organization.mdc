@@ -1,0 +1,50 @@
+---
+description: 太虛幻境文件組織規範 - 兩層架構原則
+globs:
+alwaysApply: true
+---
+
+# 文件組織規範
+
+## 核心原則
+1. **兩層結構**：太虛幻境根目錄（平台級）+ 子項目目錄（應用級）
+2. **完全自包含**：每個子項目是獨立單元，所有資源都在內部
+3. **文檔集中**：所有詳細文檔必須在子項目的 `docs/` 文件夾內
+4. **根目錄簡潔**：子項目根目錄只放 README.md、index.html 和工具腳本
+
+## 太虛幻境根目錄（只放平台級內容）
+```
+/chineseclassics.github.io/
+├── index.html                    # 平台入口
+├── TAIXU_ARCHITECTURE.md         # 平台架構文檔
+├── README.md                     # 平台說明
+├── supabase/                     # 平台級 Supabase 預留
+├── package.json                  # 平台級配置
+└── story-vocab/                  # 子項目（完全自包含）
+```
+
+**禁止在根目錄放置**：
+- ❌ 子項目專屬的文檔
+- ❌ 子項目專屬的工具腳本
+- ❌ 子項目專屬的資源文件
+
+## 子項目標準結構（story-vocab 為典範）
+```
+story-vocab/
+├── README.md                     # 項目說明
+├── index.html                    # 應用入口
+├── *.sh                         # 工具腳本
+├── js/                          # 代碼
+├── css/                         # 樣式
+├── assets/                      # 資源
+├── supabase/                    # 獨立 Supabase
+└── docs/                        # 所有詳細文檔
+    ├── README.md
+    ├── DESIGN.md
+    └── DEPLOYMENT*.md
+```
+
+## 黃金規則
+- 📄 除了 README.md，所有 .md 文檔都放在 `docs/` 內
+- 🔧 工具腳本放在項目根目錄（方便執行）
+- 🚫 絕不在太虛幻境根目錄放子項目的文件

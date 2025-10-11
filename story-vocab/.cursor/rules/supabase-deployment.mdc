@@ -1,0 +1,183 @@
+---
+description: Story-Vocab Supabase 部署規範 - 子項目獨立部署
+globs:
+  - supabase/**
+  - docs/**
+  - "**/supabase*.sh"
+alwaysApply: false
+---
+
+# Story-Vocab Supabase 部署規範
+
+> 本規則僅適用於 story-vocab 項目，定義其 Supabase 部署的最佳實踐
+
+## 🎯 核心原則
+
+Story-Vocab 採用**完全獨立的 Supabase 架構**：
+- ✅ 在 story-vocab 目錄內直接部署
+- ✅ 擁有獨立的 `config.toml`（project_id: "story-vocab"）
+- ❌ **絕不**複製資源到太虛幻境根目錄
+
+## 📋 正確部署流程
+
+### 步驟 1：進入項目目錄
+```bash
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io/story-vocab
+```
+
+**重要**：所有 Supabase CLI 命令都必須在此目錄執行
+
+### 步驟 2：連接項目
+```bash
+supabase link --project-ref bjykaipbeokbbykvseyr
+```
+
+### 步驟 3：運行數據庫遷移
+```bash
+supabase db push
+```
+
+### 步驟 4：部署 Edge Functions
+```bash
+# 部署所有函數
+supabase functions deploy vocab-recommender
+supabase functions deploy vocab-difficulty-evaluator
+supabase functions deploy story-agent
+
+# 驗證部署
+supabase functions list
+```
+
+## ✅ 正確做法
+
+### 部署 Edge Functions
+```bash
+cd story-vocab
+supabase functions deploy vocab-recommender
+```
+
+### 運行 Supabase 工具
+```bash
+cd story-vocab
+./supabase-utils.sh tables
+./query-table-structure.sh vocabulary
+```
+
+### 查看函數日誌
+```bash
+cd story-vocab
+supabase functions logs vocab-recommender --tail
+```
+
+## ❌ 錯誤做法
+
+### 不要複製到根目錄
+```bash
+# ❌ 絕不這樣做！
+cp -r story-vocab/supabase/functions /supabase/
+cd /
+supabase functions deploy
+```
+
+### 不要在根目錄執行命令
+```bash
+# ❌ 路徑錯誤
+cd /Users/ylzhang/Documents/GitHub/chineseclassics.github.io
+./story-vocab/supabase-utils.sh tables
+```
+
+### 不要使用根目錄的配置
+```bash
+# ❌ 錯誤的配置
+cd /
+supabase link --project-ref bjykaipbeokbbykvseyr
+```
+
+## 🗄️ 數據庫架構
+
+### 核心表
+- `vocabulary` - 詞彙表
+- `stories` - 故事表
+- `user_wordbook` - 用戶詞本
+- `wordlists` - 詞表系統
+- `wordlist_tags` - 詞表標籤
+
+### Edge Functions
+- `vocab-recommender` - AI 詞彙推薦
+- `vocab-difficulty-evaluator` - 詞彙難度評估
+- `story-agent` - 故事生成 Agent
+
+## 🔧 開發工具
+
+### Supabase 管理腳本
+位於 `story-vocab/` 根目錄：
+- `supabase-utils.sh` - 主要管理工具
+- `query-table-structure.sh` - 表結構查詢
+- `start-server.sh` - 啟動本地服務器
+
+### 使用方式
+```bash
+cd story-vocab
+
+# 查看所有表
+./supabase-utils.sh tables
+
+# 查看表結構
+./query-table-structure.sh vocabulary
+
+# 健康檢查
+./supabase-utils.sh health
+```
+
+## 📐 配置文件
+
+### config.toml 位置
+`story-vocab/supabase/config.toml`
+
+### 關鍵配置
+```toml
+project_id = "story-vocab"  # 專屬 ID，不是 "chineseclassics.github.io"
+```
+
+## 🐛 常見錯誤排查
+
+### 錯誤：找不到 supabase 目錄
+```bash
+# 原因：不在正確的目錄
+# 解決：確保在 story-vocab 目錄
+pwd  # 應該輸出 .../story-vocab
+```
+
+### 錯誤：functions 部署失敗
+```bash
+# 原因：可能在錯誤的目錄
+# 解決：檢查當前目錄，應該在 story-vocab
+cd story-vocab
+supabase functions deploy [function-name]
+```
+
+### 錯誤：連接到錯誤的項目
+```bash
+# 原因：使用了根目錄的配置
+# 解決：在 story-vocab 目錄重新連接
+cd story-vocab
+supabase link --project-ref bjykaipbeokbbykvseyr
+```
+
+## 📚 相關文檔
+
+- [Story-Vocab 部署指南](../docs/DEPLOYMENT.md)
+- [Supabase CLI 使用指南](../docs/SUPABASE_CLI_GUIDE.md)
+- [詞表系統部署](../docs/WORDLIST_DEPLOYMENT_GUIDE.md)
+- [太虛幻境 Supabase 架構](@supabase-architecture) - 平台級規則
+
+## 🔗 與平台級規則的關係
+
+本規則是平台級 `supabase-architecture.mdc` 的**具體實現**：
+- 平台級規則定義了「子項目獨立部署」的原則
+- 本規則提供了 story-vocab 的具體操作步驟
+- 兩者互補，不衝突
+
+---
+
+**自動啟用條件**：當處理 story-vocab 的 Supabase 相關文件時自動啟用此規則。

@@ -1,3 +1,9 @@
+---
+description: 太虛幻境代碼規範
+globs:
+alwaysApply: true
+---
+
 # 代碼規範
 
 ## 通用規則
@@ -12,4 +18,3 @@
 - ❌ 不要隨意修改 Git 配置
 - ❌ 不要運行破壞性的 Git 命令（force push、hard reset）
 - ❌ 不要未經確認就提交代碼
-

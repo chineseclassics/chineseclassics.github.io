@@ -1,26 +1,141 @@
 # 太虛幻境專案規則
 
-本目錄包含太虛幻境項目的所有開發規則。
+> 本目錄包含太虛幻境項目的所有 Cursor Rules（MDC 格式）
 
-## 規則列表
+## 📋 規則列表
 
-1. **[01-language.md](./01-language.md)** - 語言規範
-2. **[02-file-organization.md](./02-file-organization.md)** - 文件組織規範
-3. **[03-supabase-architecture.md](./03-supabase-architecture.md)** - Supabase 架構管理
-4. **[04-coding-standards.md](./04-coding-standards.md)** - 代碼規範
-5. **[05-git-workflow.md](./05-git-workflow.md)** - Git 工作流程
+### Always Rules（一律套用）
 
-## 關於專案規則
+| 規則文件 | 描述 | 狀態 |
+|---------|------|------|
+| `language.mdc` | 語言規範 - 始終使用繁體中文 | ✅ Always |
+| `file-organization.mdc` | 文件組織規範 - 兩層架構原則 | ✅ Always |
+| `coding-standards.mdc` | 代碼規範 | ✅ Always |
 
-這些規則位於 `.cursor/rules/` 目錄，每個規則都是獨立文件並受版本控制。它們可透過路徑模式限定範圍、手動執行，或依相關性自動納入。
+### Auto Attached Rules（自動附加）
 
-## 相關文檔
+| 規則文件 | 描述 | 觸發條件 | 狀態 |
+|---------|------|---------|------|
+| `supabase-architecture.mdc` | Supabase 架構管理 | `**/supabase/**`, `**/*deploy*.md` | 🔄 Auto |
 
-- [太虛幻境架構文檔](../../TAIXU_ARCHITECTURE.md)
-- [Story-Vocab 文檔](../../story-vocab/docs/README.md)
+### Manual Rules（手動引用）
+
+| 規則文件 | 描述 | 引用方式 | 狀態 |
+|---------|------|---------|------|
+| `git-workflow.mdc` | Git 工作流程規範 | `@git-workflow` | 📖 Manual |
+| `how-to-create-rules.mdc` | 如何創建規則 (Meta Rule) | `@how-to-create-rules` | 📖 Manual |
+| `nested-rules-architecture.mdc` | 巢狀規則架構指南 | `@nested-rules-architecture` | 📖 Manual |
+
+## 🎯 規則類型說明
+
+### Always（一律套用）
+這些規則**始終包含**在 AI 的上下文中，無需明確引用。適用於：
+- 核心架構原則
+- 必須遵守的規範
+- 語言和編碼標準
+
+### Auto Attached（自動附加）
+當處理**特定路徑或文件類型**時自動啟用。適用於：
+- 特定技術棧的最佳實踐
+- 子系統專屬規則
+- 文件類型特定規範
+
+### Manual（手動引用）
+僅在使用 `@ruleName` 明確提及時才會包含。適用於：
+- 特殊工作流程
+- 範本和腳手架
+- Meta 規則（關於規則的規則）
+
+## 🛠️ 如何使用規則
+
+### 查看所有規則
+在 Cursor 中：
+```
+Settings → Rules → Project Rules
+```
+
+### 手動引用規則
+在對話中使用：
+```
+@git-workflow 請幫我創建一個 feature 分支
+@how-to-create-rules 我想創建一個新的規則
+```
+
+### 創建新規則
+1. 使用指令：`New Cursor Rule`
+2. 手動創建：在本目錄創建新的 `.mdc` 文件
+3. 生成指令：`/Generate Cursor Rules`
+4. 參考：`@how-to-create-rules`
+
+## 📐 規則結構
+
+所有規則使用 **MDC 格式**（.mdc 文件）：
+
+```mdc
+---
+description: 規則描述
+globs: ["路徑模式"]  # 可選
+alwaysApply: true    # 或 false
+---
+
+# 規則內容（Markdown 格式）
+```
+
+## 🔗 相關資源
+
+- **官方文檔**：[Cursor Rules](https://cursor.com/zh-Hant/docs/context/rules)
+- **架構文檔**：[TAIXU_ARCHITECTURE.md](../../TAIXU_ARCHITECTURE.md)
+- **簡化指令**：[AGENTS.md](../../AGENTS.md)
+- **舊版規則**：[.cursorrules](../../.cursorrules)（已淘汰）
+
+## 🌲 巢狀規則（子項目專屬）
+
+根據 Cursor 的巢狀規則功能，子項目可以有各自的 `.cursor/rules/` 目錄：
+
+### Story-Vocab 規則
+位置：`story-vocab/.cursor/rules/`
+
+| 規則文件 | 描述 | 類型 |
+|---------|------|------|
+| `supabase-deployment.mdc` | Story-Vocab Supabase 部署 | Auto |
+
+詳見：[story-vocab/.cursor/rules/README.md](../../story-vocab/.cursor/rules/README.md)
+
+### 未來子項目
+- `wanwuxiaoyao/.cursor/rules/` - 莊子遊戲專屬規則（待創建）
+- `cilong/.cursor/rules/` - 字龍專屬規則（待創建）
+
+## 📊 規則統計
+
+### 平台級規則（本目錄）
+- **總規則數**：7
+- **Always 規則**：3
+- **Auto Attached 規則**：1
+- **Manual 規則**：3
+- **Meta 規則**：2
+
+### 子項目規則
+- **Story-Vocab**：1 個規則
+
+## 🎓 最佳實踐
+
+根據 Cursor 文檔和太虛幻境項目經驗：
+
+1. **聚焦且可執行** - 每個規則專注單一主題
+2. **控制篇幅** - 規則控制在 500 行以內
+3. **提供範例** - 包含 ✅ 正確和 ❌ 錯誤範例
+4. **使用繁體中文** - 所有內容使用繁體中文
+5. **描述性命名** - 文件名清晰描述規則內容
+
+## 🔄 更新記錄
+
+- **2025-10-11**：創建 MDC 格式的專案規則系統
+  - 從 `.cursorrules` 遷移到 `.cursor/rules/`
+  - 創建 6 個規則文件（含 meta-rule）
+  - 添加 `AGENTS.md` 作為簡化替代方案
 
 ---
 
-**最後更新**: 2025-10-11  
-**維護**: 太虛幻境開發團隊
+**維護**：太虛幻境開發團隊  
+**最後更新**：2025-10-11
 
