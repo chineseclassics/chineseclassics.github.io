@@ -41,8 +41,8 @@ export function renderLevel2Cards(wordlist, tags) {
 
   // 渲染卡片（复用 L1-L6 的样式，使用 .level-card 类）
   level2Container.innerHTML = level2Tags.map(tag => {
-    // 获取描述文本：优先使用标签的描述，其次是词表层级标签，最后是默认值
-    const descText = tag.description || wordlist.hierarchy_config?.level_2_label || '點擊選擇';
+    // 获取描述文本：只使用标签自己的描述，如果没有则不显示
+    const descText = tag.description || '';
     
     return `
       <label class="level-card" data-tag="${tag.tag_code}">
@@ -98,8 +98,8 @@ export function renderLevel3Cards(level3Tags) {
 
   // 渲染卡片
   level3Container.innerHTML = level3Tags.map(tag => {
-    // 获取描述文本：优先使用标签的描述，其次是词表层级标签，最后是默认值
-    const descText = tag.description || currentWordlist?.hierarchy_config?.level_3_label || '點擊選擇';
+    // 获取描述文本：只使用标签自己的描述，如果没有则不显示
+    const descText = tag.description || '';
     
     return `
       <label class="level-card" data-tag="${tag.tag_code}">
