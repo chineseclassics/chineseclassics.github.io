@@ -635,6 +635,48 @@
             </div>
         </div>
 
+        <!-- ===== 生詞本界面 ===== -->
+        <div id="wordbook-screen" class="screen">
+            <div class="content">
+                <div class="wordbook-header">
+                    <h1>📚 我的生詞本</h1>
+                    <p class="wordbook-subtitle">收藏的詞彙都在這裡</p>
+                </div>
+
+                <!-- 統計概覽 -->
+                <div class="wordbook-stats-overview">
+                    <div class="stat-card-mini">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-number-mini" id="wordbook-total-count">0</div>
+                            <div class="stat-label-mini">收藏詞彙</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 生詞本列表 -->
+                <div class="wordbook-list-container">
+                    <div id="wordbook-words-list">
+                        <!-- 詞彙卡片將通過 JavaScript 動態生成 -->
+                    </div>
+                    
+                    <!-- 空狀態 -->
+                    <div class="empty-state" id="wordbook-empty" style="display: none;">
+                        <div class="empty-icon">📭</div>
+                        <p>生詞本還是空的</p>
+                        <p class="empty-hint">在遊戲中點擊詞彙，選擇「收藏到生詞本」即可添加</p>
+                    </div>
+                </div>
+
+                <!-- 底部按鈕 -->
+                <div class="wordbook-footer">
+                    <button class="btn-primary" onclick="navigateTo('new-story')" style="width: 100%;">
+                        ✨ 開始新故事
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== 詞彙模式選擇彈窗 ===== -->
         <div id="vocab-mode-modal" class="modal">
             <div class="modal-content" style="max-width: 700px;">

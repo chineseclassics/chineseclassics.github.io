@@ -825,3 +825,152 @@
     }
 }
 
+/* ===== 生詞本界面 ===== */
+.wordbook-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.wordbook-header h1 {
+    color: var(--primary-purple);
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+.wordbook-subtitle {
+    color: var(--text-light);
+    font-size: 1.1em;
+}
+
+/* 统计概览 */
+.wordbook-stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 40px;
+}
+
+/* 生词本列表容器 */
+.wordbook-list-container {
+    margin-bottom: 30px;
+}
+
+#wordbook-words-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* 生词本卡片 */
+.wordbook-card {
+    background: white;
+    border: 3px solid var(--light-blue);
+    border-radius: 15px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.wordbook-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    border-color: var(--primary-purple);
+}
+
+.wordbook-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.wordbook-card-word {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--primary-purple);
+}
+
+.wordbook-card-remove {
+    background: rgba(231, 76, 60, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2em;
+    color: #E74C3C;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wordbook-card-remove:hover {
+    background: #E74C3C;
+    color: white;
+    transform: scale(1.1);
+}
+
+.wordbook-card-pinyin {
+    color: var(--text-light);
+    font-size: 1em;
+    margin-bottom: 10px;
+}
+
+.wordbook-card-translation {
+    color: var(--primary-blue);
+    font-style: italic;
+    font-size: 0.95em;
+    margin-bottom: 10px;
+}
+
+.wordbook-card-definition {
+    color: var(--text-dark);
+    line-height: 1.6;
+    font-size: 1em;
+    margin-bottom: 15px;
+}
+
+.wordbook-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid var(--light-blue);
+}
+
+.wordbook-card-date {
+    font-size: 0.85em;
+    color: var(--text-light);
+}
+
+.wordbook-card-hint {
+    font-size: 0.85em;
+    color: var(--primary-purple);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.wordbook-card:hover .wordbook-card-hint {
+    opacity: 1;
+}
+
+.wordbook-footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 2px solid var(--light-blue);
+}
+
+/* 響應式：生詞本 */
+@media (max-width: 768px) {
+    #wordbook-words-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .wordbook-header h1 {
+        font-size: 2em;
+    }
+}
+

@@ -18,7 +18,7 @@ import { startGame, getAIResponse, submitSentence, finishStory, shareStory } fro
 // 导入功能模块
 import { selectWord } from './features/word-manager.js';
 import { showWordDetailFromVocab, closeWordModal, getWordBriefInfo } from './features/dictionary.js';
-import { addToWordbook, openWordbook } from './features/wordbook.js';
+import { addToWordbook, openWordbook, removeFromWordbook, loadWordbookScreen } from './features/wordbook.js';
 
 // 导入 UI 模块
 import { showScreen, toggleMobileSidebar, closeMobileSidebar, navigateTo, handleLogout, initSidebarSwipe } from './ui/navigation.js';
@@ -325,6 +325,8 @@ function mountGlobalFunctions() {
     window.closeWordModal = closeWordModal;
     window.addToWordbook = addToWordbook;
     window.openWordbook = openWordbook;
+    window.removeFromWordbook = removeFromWordbook;
+    window.loadWordbookScreen = loadWordbookScreen;
     
     // 认证相关
     window.loginWithGoogle = loginWithGoogle;

@@ -118,6 +118,9 @@ export async function showWordDetailFromVocab(word) {
     // 设置初始状态
     document.getElementById('modal-word').textContent = word;
     
+    // 🔥 重要：立即保存当前查看的词汇（用于收藏功能）
+    modal.dataset.currentWord = word;
+    
     // 检查缓存中是否有完整信息
     const cachedFull = getFullInfo(word);
     const cachedBrief = getBriefInfo(word);
@@ -324,9 +327,6 @@ export async function showWordDetailFromVocab(word) {
         document.getElementById('modal-definition').innerHTML = '<span style="color: var(--text-light);">抱歉，暫時無法獲取該詞的詳細釋義。<br>請稍後重試或嘗試其他詞語。</span>';
         document.getElementById('modal-example').innerHTML = '<span style="color: var(--text-light);">無法獲取例句</span>';
     }
-    
-    // 保存当前查看的词汇
-    modal.dataset.currentWord = word;
 }
 
 /**

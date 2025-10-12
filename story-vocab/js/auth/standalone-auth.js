@@ -168,7 +168,9 @@ export class StandaloneAuth extends AuthService {
       // 判斷用戶類型
       const isAnonymous = authUser.is_anonymous || false;
       const provider = isAnonymous ? 'anonymous' : 'google';
-      const providerId = isAnonymous ? authUser.id : (authUser.user_metadata?.sub || authUser.id);
+      // 統一使用 authUser.id（即 auth.uid()）作為 provider_id
+      // 這樣與 RLS 策略中的 auth.uid() 保持一致
+      const providerId = authUser.id;
       
       // 提取用戶信息
       const email = authUser.email || null;
