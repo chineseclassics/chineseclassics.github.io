@@ -77,78 +77,27 @@ let CALIBRATION_POOL = null
 /**
  * 加載校準詞庫（優先從 Supabase，降級到本地 JSON，最後降級到硬編碼）
  */
+/**
+ * 加載校準詞庫（直接使用本地 JSON）
+ * 
+ * 📝 架構重構說明（2025-10-13）：
+ * - 不再從 vocabulary 表加載（該表已刪除）
+ * - 直接使用本地 JSON 檔案（data/calibration-vocabulary.json）
+ * - 便於管理員更新校準詞庫（編輯 JSON 即可）
+ */
 async function loadCalibrationVocabulary() {
   if (CALIBRATION_POOL) {
     return CALIBRATION_POOL
   }
   
-  const supabase = getSupabase()
-  
   try {
-    // 策略 1：從 Supabase 加載黃金校準詞庫
-    const { data: calibrationWords, error } = await supabase
-      .from('vocabulary')
-      .select('word, difficulty_level, category, frequency, calibration_order')
-      .eq('is_calibration', true)
-      .order('calibration_order')
-    
-    if (error) throw error
-    
-    if (!calibrationWords || calibrationWords.length === 0) {
-      console.warn('⚠️ Supabase 中沒有校準詞，使用本地備份')
-      return await loadLocalCalibrationVocabulary()
-    }
-    
-    // 按難度級別分組
-    CALIBRATION_POOL = {
-      L1: calibrationWords.filter(w => w.difficulty_level === 1).map(w => ({
-        word: w.word,
-        difficulty: w.difficulty_level,
-        category: w.category,
-        frequency: w.frequency
-      })),
-      L2: calibrationWords.filter(w => w.difficulty_level === 2).map(w => ({
-        word: w.word,
-        difficulty: w.difficulty_level,
-        category: w.category,
-        frequency: w.frequency
-      })),
-      L3: calibrationWords.filter(w => w.difficulty_level === 3).map(w => ({
-        word: w.word,
-        difficulty: w.difficulty_level,
-        category: w.category,
-        frequency: w.frequency
-      })),
-      L4: calibrationWords.filter(w => w.difficulty_level === 4).map(w => ({
-        word: w.word,
-        difficulty: w.difficulty_level,
-        category: w.category,
-        frequency: w.frequency
-      })),
-      L5: calibrationWords.filter(w => w.difficulty_level === 5).map(w => ({
-        word: w.word,
-        difficulty: w.difficulty_level,
-        category: w.category,
-        frequency: w.frequency
-      })),
-      L6: calibrationWords.filter(w => w.difficulty_level === 6).map(w => ({
-        word: w.word,
-        difficulty: w.difficulty_level,
-        category: w.category,
-        frequency: w.frequency
-      }))
-    }
-    
-    const totalWords = calibrationWords.length
-    console.log(`✅ 從 Supabase 加載校準詞庫: ${totalWords} 個詞`)
-    console.log(`   L1: ${CALIBRATION_POOL.L1.length}, L2: ${CALIBRATION_POOL.L2.length}, L3: ${CALIBRATION_POOL.L3.length}`)
-    console.log(`   L4: ${CALIBRATION_POOL.L4.length}, L5: ${CALIBRATION_POOL.L5.length}, L6: ${CALIBRATION_POOL.L6.length}`)
-    
-    return CALIBRATION_POOL
-  } catch (error) {
-    console.error('❌ 從 Supabase 加載校準詞庫失敗:', error)
-    // 策略 2：降級到本地 JSON
+    // 直接從本地 JSON 加載校準詞庫
     return await loadLocalCalibrationVocabulary()
+  } catch (error) {
+    console.error('❌ 加載本地校準詞庫失敗:', error)
+    // 最終降級：硬編碼詞庫
+    console.warn('⚠️ 使用硬編碼備用詞庫')
+    return createFallbackCalibrationPool()
   }
 }
 

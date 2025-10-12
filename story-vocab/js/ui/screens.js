@@ -958,43 +958,17 @@ window.uploadWordlistFromModal = async function() {
             const batch = data.slice(i, i + batchSize);
             
             for (const item of batch) {
-                // 检查词汇是否存在
-                let { data: existingWord } = await supabase
-                    .from('vocabulary')
-                    .select('id')
-                    .eq('word', item.word)
-                    .maybeSingle();
-
-                let vocabId;
-                if (existingWord) {
-                    vocabId = existingWord.id;
-                } else {
-                    // 创建新词汇
-                    const { data: newWord, error: vocabError } = await supabase
-                        .from('vocabulary')
-                        .insert({
-                            word: item.word,
-                            difficulty_level: 3,
-                            category: 'flexible'  // 自定义词表词汇默认为灵活类别
-                        })
-                        .select('id')
-                        .single();
-
-                    if (vocabError) throw vocabError;
-                    vocabId = newWord.id;
-                }
-
-                // 关联到词表
-                const { error: mappingError } = await supabase
-                    .from('vocabulary_wordlist_mapping')
+                // 直接插入到統一詞彙表
+                const { error: insertError } = await supabase
+                    .from('wordlist_vocabulary')
                     .insert({
                         wordlist_id: wordlist.id,
-                        vocabulary_id: vocabId,
+                        word: item.word,
                         level_2_tag: item.level2 || null,
                         level_3_tag: item.level3 || null
                     });
 
-                if (mappingError) throw mappingError;
+                if (insertError) throw insertError;
                 imported++;
             }
 

@@ -126,32 +126,8 @@ export async function addToWordbook() {
                 
                 console.log(`✅ [隊列 ${currentPosition}] 生詞本已快速同步到雲端`);
                 
-                // 🔧 後台異步：查詢 vocabulary 表並更新關聯（不阻塞隊列）
-                setTimeout(async () => {
-                    try {
-                        const { data: vocabData } = await supabase
-                            .from('vocabulary')
-                            .select('id, difficulty_level, category')
-                            .eq('word', word)
-                            .maybeSingle();
-                        
-                        if (vocabData && insertResult && insertResult[0]) {
-                            // 更新關聯
-                            await supabase
-                                .from('user_wordbook')
-                                .update({
-                                    vocabulary_id: vocabData.id,
-                                    word_difficulty: vocabData.difficulty_level,
-                                    source: 'vocabulary'
-                                })
-                                .eq('id', insertResult[0].id);
-                            
-                            console.log(`✅ 後台更新關聯完成: "${word}"`);
-                        }
-                    } catch (bgError) {
-                        console.log('⚠️ 後台查詢失敗（不影響使用）');
-                    }
-                }, 500); // 稍微延遲，讓隊列優先完成
+                // 📝 註：vocabulary 表已刪除（架構重構 2025-10-13）
+                // vocabulary_id 欄位保留但不再使用，將來可能用於其他用途
                 
                 // 完成後減少計數
                 queuedCount--;

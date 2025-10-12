@@ -267,67 +267,11 @@ export async function completeStorySession(sessionId, creativityScore, creativit
 // 词汇相关 API
 // =====================================================
 
-/**
- * 获取推荐词汇
- */
-export async function getRecommendedVocabulary(userId, level, theme, count = 4) {
-  const supabase = getSupabase();
-  
-  // 获取用户已学词汇
-  const { data: learnedVocab } = await supabase
-    .from('user_vocabulary')
-    .select('vocabulary_id')
-    .eq('user_id', userId)
-    .gte('last_reviewed_at', new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()); // 最近2天
-  
-  const learnedIds = learnedVocab?.map(v => v.vocabulary_id) || [];
-  
-  // 查询候选词汇
-  let query = supabase
-    .from('vocabulary')
-    .select('*')
-    .eq('difficulty_level', level);
-  
-  // 如果有主题，添加主题过滤
-  if (theme) {
-    query = query.contains('theme', [theme]);
-  }
-  
-  // 排除最近学过的词
-  if (learnedIds.length > 0) {
-    query = query.not('id', 'in', `(${learnedIds.join(',')})`);
-  }
-  
-  // 随机获取
-  const { data, error } = await query.limit(count * 3); // 多获取一些以便筛选
-  
-  if (error) throw error;
-  
-  // 按类型分类并选择
-  const byCategory = {
-    action: data.filter(v => v.category === 'action'),
-    emotion: data.filter(v => v.category === 'emotion'),
-    description: data.filter(v => v.category === 'description'),
-    flexible: data.filter(v => v.category === 'flexible')
-  };
-  
-  const selected = [];
-  for (const [category, words] of Object.entries(byCategory)) {
-    if (words.length > 0) {
-      const randomWord = words[Math.floor(Math.random() * words.length)];
-      selected.push(randomWord);
-    }
-  }
-  
-  // 如果不足4个，从所有剩余词中补充
-  while (selected.length < count && data.length > selected.length) {
-    const remaining = data.filter(v => !selected.includes(v));
-    if (remaining.length === 0) break;
-    selected.push(remaining[Math.floor(Math.random() * remaining.length)]);
-  }
-  
-  return selected.slice(0, count);
-}
+// =====================================================
+// 📝 註：getRecommendedVocabulary 函數已刪除
+// 原因：vocabulary 表已刪除（架構重構 2025-10-13）
+// 詞彙推薦現在統一通過 vocab-recommender Edge Function
+// =====================================================
 
 /**
  * 记录词汇使用
@@ -479,7 +423,6 @@ export default {
   completeStorySession,
   
   // 词汇
-  getRecommendedVocabulary,
   recordVocabularyUsage,
   addToWordbook,
   getUserWordbook,

@@ -64,17 +64,63 @@ users.id = google_user.id  // Google 提供的唯一 ID
 
 ### 運行模式檢測
 
+**關鍵原則**：默認為獨立模式，只有平台明確設置標誌位時才啟用平台模式。
+
 ```javascript
 function detectRunMode() {
-  const isInIframe = window.self !== window.top;
-  const isInPlatformDomain = window.location.hostname === 'chineseclassics.github.io';
+  // 強制模式（開發測試用）
+  const forceMode = localStorage.getItem('FORCE_RUN_MODE');
+  if (forceMode === 'standalone' || forceMode === 'platform') {
+    return forceMode;
+  }
+  
+  // 檢查平台標識（這是唯一標準）
   const hasPlatformFlag = window.TAIXU_PLATFORM_MODE === true;
   
-  if ((isInIframe && isInPlatformDomain) || hasPlatformFlag) {
+  if (hasPlatformFlag) {
     return 'platform';
   }
+  
+  // 默認：獨立模式（即使在 iframe 中）
   return 'standalone';
 }
+```
+
+**設計理由**：
+- 即使應用在太虛幻境的 iframe 中運行，只要主站沒有設置 `window.TAIXU_PLATFORM_MODE = true`，就使用獨立模式
+- 這確保了向後兼容：在主站實現統一登入之前，應用始終可以正常使用自己的登入系統
+- 未來當主站實現統一登入後，只需在加載 iframe 前設置標誌位即可啟用平台模式
+
+### 平台模式啟用方法
+
+未來當太虛幻境實現統一登入後，在主站的 `index.html` 中設置：
+
+```html
+<!-- 在加載應用 iframe 之前設置平台標誌 -->
+<script>
+  window.TAIXU_PLATFORM_MODE = true;
+</script>
+
+<!-- 然後加載應用 -->
+<iframe id="story-vocab-frame" src="story-vocab/index.html"></iframe>
+
+<script>
+  // 等待應用加載完成後傳遞用戶信息
+  window.addEventListener('message', (event) => {
+    if (event.data.type === 'TAIXU_APP_READY') {
+      // 傳遞當前登入用戶信息
+      const iframe = document.getElementById('story-vocab-frame');
+      iframe.contentWindow.postMessage({
+        type: 'TAIXU_AUTH',
+        user: {
+          google_id: currentUser.google_id,
+          email: currentUser.email,
+          display_name: currentUser.display_name
+        }
+      }, '*');
+    }
+  });
+</script>
 ```
 
 ### 平台與應用通信協議
