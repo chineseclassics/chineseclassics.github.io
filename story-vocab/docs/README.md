@@ -2,6 +2,10 @@
 
 > 本文件夾包含 Story-Vocab 項目的完整文檔和規劃資料
 
+## ⚠️ 文檔原則
+
+**少而精**：只記錄重要的架構決策、複雜功能和會話總結。小型修復寫在代碼註釋或會話總結中。
+
 ---
 
 ## 📖 核心文檔
@@ -108,6 +112,27 @@ Edge Functions 部署步驟
 
 ### [SETTINGS_REFACTOR_SUMMARY.md](./SETTINGS_REFACTOR_SUMMARY.md)
 設置重構總結
+
+---
+
+## 🐛 問題修復記錄
+
+### [SESSION_FIX_SUMMARY_2025-10-12.md](./SESSION_FIX_SUMMARY_2025-10-12.md)
+**生詞本優化總結** - 修復 4 個相關問題：
+1. 詞語卡顯示問題（DOM 重試機制）
+2. 查詢超時問題（異步優先策略）
+3. 頻繁插入超時（請求隊列化）
+4. 生詞本顯示為空（等待同步完成）
+
+其他修復記錄：
+- [CALIBRATION_VOCAB_FIX.md](./CALIBRATION_VOCAB_FIX.md) - 校準詞彙修復
+- [DATA_CLOUD_SYNC_FIX.md](./DATA_CLOUD_SYNC_FIX.md) - 雲端同步修復
+- [FEEDBACK_FLOW_AND_FIX.md](./FEEDBACK_FLOW_AND_FIX.md) - 反饋流程修復
+- [MULTI_IDENTITY_FIX_SUMMARY.md](./MULTI_IDENTITY_FIX_SUMMARY.md) - 多重身份系統修復
+- [SKIP_FEEDBACK_OPTIMIZATION.md](./SKIP_FEEDBACK_OPTIMIZATION.md) - 跳過反饋優化
+- [STORY_AGENT_OPTIMIZATION.md](./STORY_AGENT_OPTIMIZATION.md) - Story Agent 優化
+- [THREE_STEP_EVALUATION.md](./THREE_STEP_EVALUATION.md) - 三步評估
+- [WORDBOOK_SMART_LOOKUP.md](./WORDBOOK_SMART_LOOKUP.md) - 智能查詢
 
 ---
 

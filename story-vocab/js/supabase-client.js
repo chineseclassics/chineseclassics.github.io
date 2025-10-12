@@ -27,9 +27,22 @@ export async function initSupabase() {
     // 动态加载 Supabase 客户端库
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
     
+    // 配置選項：明確指定存儲方式和認證流程
+    const options = {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        storage: window.localStorage,  // 明確使用 localStorage
+        storageKey: 'sb-auth-token',   // 自定義 key
+        flowType: 'pkce'                // PKCE 流程更安全
+      }
+    };
+    
     supabaseClient = createClient(
       SUPABASE_CONFIG.url,
-      SUPABASE_CONFIG.anonKey
+      SUPABASE_CONFIG.anonKey,
+      options
     );
     
     console.log('✅ Supabase 客户端初始化成功');
@@ -71,9 +84,18 @@ export async function signInAnonymously() {
 }
 
 /**
- * 获取当前用户
+ * 获取当前用户（已棄用）
+ * @deprecated 請使用認證服務：authService.getCurrentUser()
+ * 
+ * 新的使用方式：
+ * import { createAuthService } from './auth/auth-service.js';
+ * const authService = await createAuthService();
+ * const user = await authService.getCurrentUser();
  */
 export async function getCurrentUser() {
+  console.warn('⚠️ getCurrentUser() 已棄用');
+  console.warn('⚠️ 請使用認證服務：authService.getCurrentUser()');
+  
   const supabase = getSupabase();
   
   try {
@@ -82,16 +104,20 @@ export async function getCurrentUser() {
     if (error) throw error;
     if (!user) return null;
     
-    // 获取用户详细信息
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    // 🔧 修復：通過 user_identities 查找正確的 users.id
+    const { data: identity, error: identityError } = await supabase
+      .from('user_identities')
+      .select('*, users(*)')
+      .eq('provider_id', user.id)
+      .maybeSingle();
     
-    if (userError) throw userError;
+    if (identityError) throw identityError;
     
-    return userData;
+    if (identity && identity.users) {
+      return identity.users;
+    }
+    
+    return null;
   } catch (error) {
     console.error('❌ 获取当前用户失败:', error);
     return null;

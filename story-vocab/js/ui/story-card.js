@@ -121,9 +121,58 @@ export function renderStoryList(stories, containerId) {
 /**
  * 加载并显示所有故事
  */
-export function loadMyStoriesScreen() {
-    const stories = getStories();
-    const stats = getStoriesStats();
+export async function loadMyStoriesScreen() {
+    // 🔥 從 Supabase 加載雲端故事數據
+    let stories = [];
+    
+    if (window.gameState && window.gameState.userId) {
+        try {
+            const supabase = window.supabase; // 使用全局 supabase 客戶端
+            if (!supabase) throw new Error('Supabase 未初始化');
+            
+            const { data, error } = await supabase
+                .from('story_sessions')
+                .select('*')
+                .eq('user_id', window.gameState.userId)
+                .order('updated_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            // 轉換為本地格式
+            stories = (data || []).map(session => ({
+                id: session.id,
+                title: `故事 - ${session.story_theme}`, // 可以後續改進
+                status: session.status,
+                level: session.user_level || 'L2',
+                theme: session.story_theme,
+                maxTurns: session.max_rounds || 8,
+                currentTurn: session.current_round || 0,
+                storyHistory: session.conversation_history || [],
+                usedWords: [], // 從 conversation_history 提取
+                sessionId: session.id,
+                createdAt: session.created_at,
+                updatedAt: session.updated_at,
+                completedAt: session.completed_at
+            }));
+            
+            console.log(`✅ 從雲端加載 ${stories.length} 個故事`);
+        } catch (error) {
+            console.error('⚠️ 從雲端加載故事失敗，使用本地數據:', error);
+            // 降級到本地數據
+            stories = getStories();
+        }
+    } else {
+        // 未登入，使用本地數據
+        stories = getStories();
+    }
+    
+    // 計算統計數據
+    const stats = {
+        total: stories.length,
+        completed: stories.filter(s => s.status === 'completed').length,
+        inProgress: stories.filter(s => s.status === 'in_progress').length,
+        totalWords: stories.reduce((sum, s) => sum + (s.usedWords?.length || 0), 0)
+    };
     
     // 更新统计数据
     document.getElementById('total-stories-count').textContent = stats.total;
@@ -158,6 +207,12 @@ export function loadMyStoriesScreen() {
         inProgressEmpty.style.display = inProgressStories.length === 0 ? 'block' : 'none';
         inProgressList.style.display = inProgressStories.length === 0 ? 'none' : 'grid';
     }
+    
+    // 🔥 更新侧边栏的故事数量统计
+    const storiesCountBadge = document.getElementById('stories-count');
+    const statStories = document.getElementById('stat-stories');
+    if (storiesCountBadge) storiesCountBadge.textContent = stats.completed;
+    if (statStories) statStories.textContent = stats.completed;
 }
 
 /**

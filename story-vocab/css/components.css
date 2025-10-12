@@ -837,15 +837,18 @@ button:active {
 
 /* ===== 進度圓圈組件 ===== */
 .progress-circle {
+    /* 桌面版：absolute 定位，通過 transform 固定在可視區域右下角 */
     position: absolute;
-    bottom: 15px;
     right: 15px;
+    bottom: 15px;
     width: 80px;
     height: 80px;
     z-index: 10;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 50%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    /* 確保即使內容滾動也能保持在可視區域（通過 JS 動態調整或保持在底部） */
+    pointer-events: auto;
 }
 
 .progress-circle svg {

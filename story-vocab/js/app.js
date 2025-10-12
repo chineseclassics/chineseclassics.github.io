@@ -57,11 +57,54 @@ function initFeedbackToggle() {
 }
 
 /**
+ * 快速檢查本地存儲的用戶狀態
+ * 用於在異步初始化完成前快速恢復 UI
+ */
+function quickCheckUserState() {
+    const userType = localStorage.getItem('user_type');
+    const displayName = localStorage.getItem('user_display_name');
+    
+    // 如果有 registered 用戶信息，說明可能已登入
+    if (userType === 'registered' && displayName) {
+        return {
+            loggedIn: true,
+            user: {
+                display_name: displayName,
+                email: localStorage.getItem('user_email'),
+                avatar_url: localStorage.getItem('user_avatar_url'),
+                user_type: userType
+            }
+        };
+    }
+    return { loggedIn: false };
+}
+
+/**
+ * 隱藏加載屏幕
+ */
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.classList.remove('active');
+    }
+}
+
+/**
  * 初始化应用
  */
 async function initializeApp() {
     try {
         console.log(`🎮 詞遊記啟動（${getRunMode()}模式）`);
+        
+        // 0. 快速檢查：如果本地有用戶信息，先隱藏加載屏幕並顯示主界面
+        //    避免已登入用戶看到閃屏
+        const quickCheck = quickCheckUserState();
+        if (quickCheck.loggedIn) {
+            console.log('🚀 檢測到本地用戶信息，快速恢復界面...');
+            updateUIForLoggedInUser(quickCheck.user);
+            hideLoadingScreen();
+            showMainInterface();
+        }
         
         // 1. 初始化 Supabase
         const supabase = await initSupabase();
@@ -74,9 +117,11 @@ async function initializeApp() {
         window.supabase = supabase;
         const user = await authService.getCurrentUser();
         
-        // 3. 判斷是否顯示登入界面
+        // 3. 確認真實用戶狀態並更新 UI
+        hideLoadingScreen(); // 確保隱藏加載屏幕
+        
         if (user && user.user_type === 'registered') {
-            // Google 用戶：直接進入主界面
+            // Google 用戶：進入主界面
             console.log('✅ Google 用戶已登入:', user.display_name);
             gameState.userId = user.id;
             gameState.user = user;
@@ -109,6 +154,8 @@ async function initializeApp() {
         console.log('✅ 應用初始化完成');
     } catch (error) {
         console.error('❌ 應用初始化失敗:', error);
+        hideLoadingScreen(); // 確保隱藏加載屏幕
+        showLoginScreen(); // 顯示登入界面
         showToast('初始化失敗，請刷新頁面重試');
     }
 }
@@ -364,7 +411,13 @@ function mountGlobalFunctions() {
         
         // 检查是否是再次提交（已显示过反馈）
         if (window._feedbackShown) {
-            // 直接提交，不再显示反馈
+            // 直接提交，不再生成反饋（已經看過了）
+            // ✅ 先驗證句子是否使用了選中的詞
+            if (!sentence.includes(usedWord.word)) {
+                showToast(`請在句子中使用詞彙：${usedWord.word}`);
+                return;  // 阻止提交
+            }
+            // 🚀 第二次提交也跳過反饋生成（因為已經顯示過了）
             await confirmAndSubmit(sentence, usedWord);
             return;
         }
@@ -404,6 +457,11 @@ function mountGlobalFunctions() {
             }
         } else {
             // 快速模式：直接提交，不显示反馈
+            // ✅ 先驗證句子是否使用了選中的詞
+            if (!sentence.includes(usedWord.word)) {
+                showToast(`請在句子中使用詞彙：${usedWord.word}`);
+                return;  // 阻止提交
+            }
             await confirmAndSubmit(sentence, usedWord);
         }
     };
@@ -430,10 +488,11 @@ function mountGlobalFunctions() {
 
 /**
  * 只获取反馈（不生成故事）
+ * 調用專門的 sentence-feedback Edge Function
  */
 async function getFeedbackOnly(sentence, word) {
-    // 转换级别格式
-    const userLevel = parseFloat(gameState.level.replace('L', ''));
+    // 构建对话历史（故事上下文）
+    const conversationHistory = gameState.storyHistory.map(entry => entry.sentence);
     
     // 转换主题格式
     const themeMapping = {
@@ -444,11 +503,9 @@ async function getFeedbackOnly(sentence, word) {
     };
     const storyTheme = themeMapping[gameState.theme] || gameState.theme;
     
-    // 构建对话历史
-    const conversationHistory = gameState.storyHistory.map(entry => entry.sentence);
-    
+    // 調用新的 sentence-feedback Edge Function
     const response = await fetch(
-        `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
+        `${SUPABASE_CONFIG.url}/functions/v1/sentence-feedback`,
         {
             method: 'POST',
             headers: {
@@ -458,13 +515,8 @@ async function getFeedbackOnly(sentence, word) {
             body: JSON.stringify({
                 userSentence: sentence,
                 selectedWord: word.word,
-                sessionId: gameState.sessionId,
                 conversationHistory: conversationHistory,
-                userLevel: userLevel,
-                storyTheme: storyTheme,
-                currentRound: gameState.turn - 1,
-                usedWords: gameState.usedWords.map(w => w.word),
-                requestFeedbackOnly: true  // 关键：只请求反馈
+                storyTheme: storyTheme
             })
         }
     );
@@ -479,17 +531,18 @@ async function getFeedbackOnly(sentence, word) {
         throw new Error(result.error || 'AI 調用失敗');
     }
     
-    return result.data.feedback;
+    // 直接返回反饋數據 { score, comment, optimizedSentence }
+    return result.data;
 }
 
 /**
  * 确认提交并生成故事
  */
 async function confirmAndSubmit(sentence, word) {
-    // 🔒 立即禁用词汇按钮（用户一点击提交就禁用）
+    // 🔒 禁用词汇按钮（但不觸發視覺變化，等待新詞卡顯示時自然翻轉）
     document.querySelectorAll('.word-btn').forEach(btn => {
         btn.disabled = true;
-        btn.classList.add('disabled');
+        // 不添加 'disabled' class，避免觸發提前的視覺變化
     });
     
     // 显示用户消息到故事区
@@ -526,7 +579,35 @@ async function confirmAndSubmit(sentence, word) {
     if (submitBtn) submitBtn.disabled = true;
     
     // 调用正常的提交流程（生成故事）
-    const result = await submitSentence(sentence, word);
+    // 🚀 傳遞 skipFeedback=true 來跳過後端反饋生成（節省 1-1.5 秒）
+    const result = await submitSentence(sentence, word, true);
+    
+    // ✅ 檢查是否驗證失敗（沒有 aiData 但也沒結束遊戲）
+    if (!result.gameOver && !result.aiData) {
+        // 驗證失敗，恢復 UI 狀態
+        console.log('❌ 驗證失敗，恢復 UI');
+        
+        // 移除加載動畫
+        const storyDisplay = document.getElementById('story-display');
+        if (storyDisplay) {
+            const loadingMessages = storyDisplay.querySelectorAll('.message.ai .inline-loading');
+            loadingMessages.forEach(msg => msg.closest('.message')?.remove());
+        }
+        
+        // 啟用輸入
+        const input = document.getElementById('user-input');
+        const submitBtn = document.getElementById('submit-btn');
+        if (input) input.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+        
+        // 啟用詞卡
+        document.querySelectorAll('.word-btn').forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+        });
+        
+        return;
+    }
     
     // 更新轮次显示
     updateTurnDisplay(gameState.turn);

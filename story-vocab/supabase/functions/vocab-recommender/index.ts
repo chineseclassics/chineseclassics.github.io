@@ -298,13 +298,27 @@ async function recommendByAI(
   storyContext: string
 ) {
   try {
-    // 1. 構建用戶累積畫像
+    // 1. 獲取本次會話已推薦的詞（去重）
+    const { data: recentRec } = await supabase
+      .from('recommendation_history')
+      .select('recommended_words')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: false })
+
+    const recentWords = new Set(
+      (recentRec || []).flatMap(r => r.recommended_words || [])
+    )
+    
+    console.log(`[AI 推薦去重] 本次會話已推薦 ${recentWords.size} 個詞`)
+
+    // 2. 構建用戶累積畫像
     const userProfile = await buildCumulativeUserProfile(supabase, userId)
 
-    // 2. 構建動態 Prompt
-    const prompt = buildAIPrompt(userProfile, storyContext, roundNumber)
+    // 3. 構建動態 Prompt（包含已用詞列表）
+    const usedWordsList = Array.from(recentWords).join('、')
+    const prompt = buildAIPrompt(userProfile, storyContext, roundNumber, usedWordsList)
 
-    // 3. 調用 DeepSeek API
+    // 4. 調用 DeepSeek API
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -335,9 +349,26 @@ async function recommendByAI(
     const data = await response.json()
     const aiWords = JSON.parse(data.choices[0].message.content)
 
-    console.log(`[AI 推薦] 成功為用戶 ${userId} 推薦 ${aiWords.words?.length || 0} 個詞`)
+    // 5. 過濾掉已推薦的詞（雙重保險）
+    let filteredWords = (aiWords.words || []).filter((w: any) => !recentWords.has(w.word))
+    
+    // 6. 如果過濾後不足 5 個，從校準詞庫補充
+    if (filteredWords.length < 5) {
+      console.warn(`⚠️ AI 推薦過濾後只有 ${filteredWords.length} 個詞，從校準詞庫補充`)
+      const calibrationWords = await getCalibrationWords(supabase, userId, roundNumber)
+      
+      // 補充到 5 個
+      const needed = 5 - filteredWords.length
+      const supplements = calibrationWords
+        .filter((w: any) => !recentWords.has(w.word) && !filteredWords.some((fw: any) => fw.word === w.word))
+        .slice(0, needed)
+      
+      filteredWords = [...filteredWords, ...supplements]
+    }
 
-    return aiWords.words || []
+    console.log(`[AI 推薦] 成功為用戶 ${userId} 推薦 ${filteredWords.length} 個詞（去重後）`)
+
+    return filteredWords
   } catch (error) {
     console.error('❌ AI 推薦失敗:', error)
     // 降級到校準詞庫

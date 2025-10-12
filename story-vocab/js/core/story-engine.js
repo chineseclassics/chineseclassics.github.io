@@ -84,9 +84,10 @@ export async function startGame(level, theme, onSuccess) {
  * 调用 AI Agent 获取响应
  * @param {string} userSentence - 用户句子
  * @param {string} selectedWord - 选中的词汇
+ * @param {boolean} skipFeedback - 是否跳過反饋生成（默認 false）
  * @returns {Promise<Object>} AI 响应数据
  */
-export async function getAIResponse(userSentence = '', selectedWord = '') {
+export async function getAIResponse(userSentence = '', selectedWord = '', skipFeedback = false) {
     // 不再显示底部的加载动画，改为在消息内显示内联加载动画
     
     try {
@@ -113,7 +114,8 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
             userLevel: userLevel,
             storyTheme: storyTheme,
             currentRound: gameState.turn - 1,
-            usedWords: gameState.usedWords.map(w => w.word)
+            usedWords: gameState.usedWords.map(w => w.word),
+            skipFeedback: skipFeedback  // 🚀 新增：是否跳過反饋生成
         };
         
         console.log('📤 發送請求:', requestBody);
@@ -149,24 +151,37 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         // 添加到历史
         addStoryEntry('ai', data.aiSentence);
         
-        // 獲取本輪推薦詞彙（使用新的 vocab-recommender，传递词表选项）
+        // 立即返回 AI 句子，詞彙推薦在背景進行
+        const aiResult = {
+            ...data,
+            recommendedWords: [] // 先返回空陣列
+        };
+        
+        // 🚀 在背景獲取推薦詞彙（非阻塞）
         const wordlistOptions = {
           mode: gameState.wordlistMode,
           wordlistId: gameState.wordlistId,
           level2Tag: gameState.level2Tag,
           level3Tag: gameState.level3Tag
         };
-        const recommendedWords = await getRecommendedWords(gameState.turn, wordlistOptions);
         
-        // 保存推荐词汇
-        gameState.currentWords = recommendedWords || [];
-        gameState.allRecommendedWords.push(recommendedWords || []);
+        getRecommendedWords(gameState.turn, wordlistOptions).then(recommendedWords => {
+            // 詞彙返回後更新 gameState
+            gameState.currentWords = recommendedWords || [];
+            gameState.allRecommendedWords.push(recommendedWords || []);
+            
+            // 將詞彙保存為待顯示狀態，不立即顯示
+            // 等待打字機結束後再由 displayAIResponse 處理
+            gameState.pendingWords = recommendedWords;
+            
+            console.log('📦 詞彙已加載，等待打字機結束後顯示');
+        }).catch(err => {
+            console.error('❌ 獲取推薦詞彙失敗:', err);
+            gameState.pendingWords = null;
+        });
         
-        // 返回數據，包含新的推薦詞彙
-        return {
-            ...data,
-            recommendedWords: recommendedWords
-        };
+        // 立即返回（不等待詞彙）
+        return aiResult;
         
     } catch (error) {
         console.error('AI 調用失敗:', error);
@@ -181,7 +196,7 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
  * @param {Object} selectedWord - 选中的词汇对象
  * @returns {Promise<Object>} { gameOver: boolean, aiData?: Object }
  */
-export async function submitSentence(sentence, selectedWord) {
+export async function submitSentence(sentence, selectedWord, skipFeedback = false) {
     if (!sentence) {
         showToast('請輸入句子！');
         return { gameOver: false };
@@ -212,11 +227,11 @@ export async function submitSentence(sentence, selectedWord) {
         return { gameOver: true }; // 游戏结束
     }
     
-    // 继续获取 AI 响应
-    const aiData = await getAIResponse(sentence, selectedWord.word);
+    // 继续获取 AI 响应（傳遞 skipFeedback 參數）
+    const aiData = await getAIResponse(sentence, selectedWord.word, skipFeedback);
     
-    // 記錄本輪數據到數據庫
-    await recordRoundData({
+    // 記錄本輪數據到數據庫（非阻塞，不影響遊戲流程）
+    recordRoundData({
         roundNumber: gameState.turn - 1,
         recommendedWords: gameState.currentWords,
         selectedWord: selectedWord.word,
@@ -224,6 +239,8 @@ export async function submitSentence(sentence, selectedWord) {
         userSentence: sentence,
         aiScore: aiData.score || null,
         aiFeedback: aiData.feedback || null
+    }).catch(err => {
+        console.error('⚠️ 數據記錄失敗（不影響遊戲）:', err);
     });
     
     // 自动保存进度到localStorage

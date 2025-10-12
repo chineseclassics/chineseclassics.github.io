@@ -75,43 +75,182 @@ const EXPLORATION_ROUNDS = [
 let CALIBRATION_POOL = null
 
 /**
- * 加載校準詞庫
+ * 加載校準詞庫（優先從 Supabase，降級到本地 JSON，最後降級到硬編碼）
  */
 async function loadCalibrationVocabulary() {
   if (CALIBRATION_POOL) {
     return CALIBRATION_POOL
   }
   
+  const supabase = getSupabase()
+  
   try {
-    const response = await fetch('/story-vocab/data/calibration-vocabulary.json')
-    const data = await response.json()
-    CALIBRATION_POOL = data.calibration_words
+    // 策略 1：從 Supabase 加載黃金校準詞庫
+    const { data: calibrationWords, error } = await supabase
+      .from('vocabulary')
+      .select('word, difficulty_level, category, frequency, calibration_order')
+      .eq('is_calibration', true)
+      .order('calibration_order')
+    
+    if (error) throw error
+    
+    if (!calibrationWords || calibrationWords.length === 0) {
+      console.warn('⚠️ Supabase 中沒有校準詞，使用本地備份')
+      return await loadLocalCalibrationVocabulary()
+    }
+    
+    // 按難度級別分組
+    CALIBRATION_POOL = {
+      L1: calibrationWords.filter(w => w.difficulty_level === 1).map(w => ({
+        word: w.word,
+        difficulty: w.difficulty_level,
+        category: w.category,
+        frequency: w.frequency
+      })),
+      L2: calibrationWords.filter(w => w.difficulty_level === 2).map(w => ({
+        word: w.word,
+        difficulty: w.difficulty_level,
+        category: w.category,
+        frequency: w.frequency
+      })),
+      L3: calibrationWords.filter(w => w.difficulty_level === 3).map(w => ({
+        word: w.word,
+        difficulty: w.difficulty_level,
+        category: w.category,
+        frequency: w.frequency
+      })),
+      L4: calibrationWords.filter(w => w.difficulty_level === 4).map(w => ({
+        word: w.word,
+        difficulty: w.difficulty_level,
+        category: w.category,
+        frequency: w.frequency
+      })),
+      L5: calibrationWords.filter(w => w.difficulty_level === 5).map(w => ({
+        word: w.word,
+        difficulty: w.difficulty_level,
+        category: w.category,
+        frequency: w.frequency
+      })),
+      L6: calibrationWords.filter(w => w.difficulty_level === 6).map(w => ({
+        word: w.word,
+        difficulty: w.difficulty_level,
+        category: w.category,
+        frequency: w.frequency
+      }))
+    }
+    
+    const totalWords = calibrationWords.length
+    console.log(`✅ 從 Supabase 加載校準詞庫: ${totalWords} 個詞`)
+    console.log(`   L1: ${CALIBRATION_POOL.L1.length}, L2: ${CALIBRATION_POOL.L2.length}, L3: ${CALIBRATION_POOL.L3.length}`)
+    console.log(`   L4: ${CALIBRATION_POOL.L4.length}, L5: ${CALIBRATION_POOL.L5.length}, L6: ${CALIBRATION_POOL.L6.length}`)
+    
     return CALIBRATION_POOL
   } catch (error) {
-    console.error('❌ 加載校準詞庫失敗:', error)
-    // 使用備用詞庫
+    console.error('❌ 從 Supabase 加載校準詞庫失敗:', error)
+    // 策略 2：降級到本地 JSON
+    return await loadLocalCalibrationVocabulary()
+  }
+}
+
+/**
+ * 從本地 JSON 加載校準詞庫（備份方案）
+ */
+async function loadLocalCalibrationVocabulary() {
+  try {
+    // 修復路徑：使用相對路徑
+    const response = await fetch('./data/calibration-vocabulary.json')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    
+    const data = await response.json()
+    CALIBRATION_POOL = data.calibration_words
+    
+    const totalWords = Object.values(CALIBRATION_POOL).reduce((sum, arr) => sum + arr.length, 0)
+    console.log(`✅ 從本地 JSON 加載校準詞庫（備份）: ${totalWords} 個詞`)
+    
+    return CALIBRATION_POOL
+  } catch (error) {
+    console.error('❌ 加載本地校準詞庫失敗:', error)
+    // 策略 3：最終降級到硬編碼
+    console.warn('⚠️ 使用硬編碼備用詞庫')
     return createFallbackCalibrationPool()
   }
 }
 
 /**
- * 創建備用校準詞庫
+ * 創建備用校準詞庫（從前 5 輪提取所有詞 + 額外補充）
  */
 function createFallbackCalibrationPool() {
-  return {
-    L1: EXPLORATION_ROUNDS[0].words.filter(w => w.difficulty === 1),
-    L2: EXPLORATION_ROUNDS[0].words.filter(w => w.difficulty === 2),
-    L3: EXPLORATION_ROUNDS[0].words.filter(w => w.difficulty === 3),
-    L4: EXPLORATION_ROUNDS[0].words.filter(w => w.difficulty === 4),
-    L5: EXPLORATION_ROUNDS[0].words.filter(w => w.difficulty === 5),
+  // 從前 5 輪提取所有詞
+  const allWords = EXPLORATION_ROUNDS.flatMap(round => round.words)
+  
+  // 按難度級別分組
+  const pool = {
+    L1: allWords.filter(w => w.difficulty === 1),
+    L2: allWords.filter(w => w.difficulty === 2),
+    L3: allWords.filter(w => w.difficulty === 3),
+    L4: allWords.filter(w => w.difficulty === 4),
+    L5: allWords.filter(w => w.difficulty === 5),
     L6: [
       { word: "婉約", difficulty: 6, category: "形容詞" },
       { word: "恣意", difficulty: 6, category: "副詞" },
       { word: "旖旎", difficulty: 6, category: "形容詞" },
       { word: "綺麗", difficulty: 6, category: "形容詞" },
-      { word: "惘然", difficulty: 6, category: "形容詞" }
+      { word: "惘然", difficulty: 6, category: "形容詞" },
+      { word: "翩躚", difficulty: 6, category: "形容詞" },
+      { word: "氤氳", difficulty: 6, category: "形容詞" },
+      { word: "縹緲", difficulty: 6, category: "形容詞" },
+      { word: "曼妙", difficulty: 6, category: "形容詞" },
+      { word: "裊裊", difficulty: 6, category: "形容詞" }
     ]
   }
+  
+  // 補充額外詞語（確保每級至少有 10 個詞）
+  const supplements = {
+    L1: [
+      { word: "跑步", difficulty: 1, category: "動詞" },
+      { word: "漂亮", difficulty: 1, category: "形容詞" },
+      { word: "笑", difficulty: 1, category: "動詞" },
+      { word: "花", difficulty: 1, category: "名詞" },
+      { word: "太陽", difficulty: 1, category: "名詞" }
+    ],
+    L2: [
+      { word: "發現", difficulty: 2, category: "動詞" },
+      { word: "神秘", difficulty: 2, category: "形容詞" },
+      { word: "彩虹", difficulty: 2, category: "名詞" },
+      { word: "星星", difficulty: 2, category: "名詞" },
+      { word: "月亮", difficulty: 2, category: "名詞" }
+    ],
+    L3: [
+      { word: "壯麗", difficulty: 3, category: "形容詞" },
+      { word: "迷霧", difficulty: 3, category: "名詞" },
+      { word: "瞬間", difficulty: 3, category: "名詞" },
+      { word: "輕盈", difficulty: 3, category: "形容詞" },
+      { word: "縈繞", difficulty: 3, category: "動詞" }
+    ],
+    L4: [
+      { word: "窺探", difficulty: 4, category: "動詞" },
+      { word: "棲息", difficulty: 4, category: "動詞" },
+      { word: "遐想", difficulty: 4, category: "動詞" },
+      { word: "嚮往", difficulty: 4, category: "動詞" },
+      { word: "追憶", difficulty: 4, category: "動詞" }
+    ],
+    L5: [
+      { word: "漣漪", difficulty: 5, category: "名詞" },
+      { word: "蔥蘢", difficulty: 5, category: "形容詞" },
+      { word: "斑斕", difficulty: 5, category: "形容詞" },
+      { word: "蒼勁", difficulty: 5, category: "形容詞" },
+      { word: "磅礴", difficulty: 5, category: "形容詞" }
+    ]
+  }
+  
+  // 合併補充詞
+  Object.keys(supplements).forEach(level => {
+    pool[level] = [...pool[level], ...supplements[level]]
+  })
+  
+  console.log(`⚠️ 使用備用詞庫（硬編碼）: L1=${pool.L1.length}, L2=${pool.L2.length}, L3=${pool.L3.length}, L4=${pool.L4.length}, L5=${pool.L5.length}, L6=${pool.L6.length}`)
+  
+  return pool
 }
 
 /**

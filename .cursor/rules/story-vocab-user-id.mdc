@@ -1,0 +1,206 @@
+---
+description: Story-Vocab 用戶 ID 使用規範 - 多重身份系統最佳實踐
+globs: story-vocab/**/*.js,story-vocab/**/*.ts,story-vocab/supabase/migrations/*.sql
+---
+
+# Story-Vocab 用戶 ID 使用規範
+
+> **關鍵原則**：詞遊記使用 UUID 主鍵 + 多重身份系統，`auth.uid()` ≠ `users.id`
+
+## 🏗️ 架構概述
+
+```
+┌─────────────────────┐
+│  Supabase Auth      │
+│  auth.uid()         │  ← Google ID / 匿名 ID
+└──────────┬──────────┘
+           │
+           ↓ (映射)
+┌─────────────────────┐
+│  user_identities    │
+│  provider_id        │  = auth.uid()
+│  user_id            │  → 指向 users.id
+└──────────┬──────────┘
+           │
+           ↓
+┌─────────────────────┐
+│  users              │
+│  id (UUID)          │  ← 這才是真正的用戶 ID
+└─────────────────────┘
+```
+
+## ❌ 錯誤做法（絕對禁止）
+
+### 前端錯誤示例
+
+```javascript
+// ❌ 錯誤：直接使用 auth.uid()
+const { data: { user } } = await supabase.auth.getUser();
+await supabase.from('game_rounds').insert({
+  user_id: user.id  // 這是 provider_id，不是 users.id！
+});
+
+// ❌ 錯誤：查詢時使用 auth.uid()
+const { data } = await supabase
+  .from('user_wordbook')
+  .select('*')
+  .eq('user_id', user.id);  // 會查不到數據！
+```
+
+### 數據庫錯誤示例
+
+```sql
+-- ❌ 錯誤：RLS 策略直接比較 auth.uid()
+CREATE POLICY "users_select_own" ON game_rounds
+  FOR SELECT
+  USING (user_id = auth.uid());  -- 不會工作！
+```
+
+## ✅ 正確做法
+
+### 前端：使用 gameState.userId
+
+```javascript
+// ✅ 正確：使用 gameState 中的 userId
+import { gameState } from '../core/game-state.js';
+
+// 插入數據
+await supabase.from('game_rounds').insert({
+  user_id: gameState.userId  // 這是正確的 users.id
+});
+
+// 查詢數據
+const { data } = await supabase
+  .from('user_wordbook')
+  .select('*')
+  .eq('user_id', gameState.userId);
+
+// 創建新記錄
+const { data: newRecord } = await supabase
+  .from('wordlists')
+  .insert({
+    owner_id: gameState.userId,
+    name: '我的詞表'
+  });
+```
+
+### 數據庫：使用 get_user_id_from_auth()
+
+```sql
+-- ✅ 正確：使用映射函數
+CREATE POLICY "users_select_own" ON game_rounds
+  FOR SELECT
+  USING (user_id = get_user_id_from_auth());
+
+CREATE POLICY "users_insert_own" ON game_rounds
+  FOR INSERT
+  WITH CHECK (user_id = get_user_id_from_auth());
+```
+
+### 認證服務：正確獲取用戶
+
+```javascript
+// ✅ 正確：使用認證服務
+import { createAuthService } from './auth/auth-service.js';
+
+const authService = await createAuthService();
+const user = await authService.getCurrentUser();
+// user.id 就是正確的 users.id
+
+gameState.userId = user.id;
+gameState.user = user;
+```
+
+## 📋 開發檢查清單
+
+### 寫前端代碼時
+
+- [ ] 需要用戶 ID？使用 `gameState.userId`
+- [ ] 不要調用 `supabase.auth.getUser()` 獲取 user.id
+- [ ] 不要使用 `supabase-client.js` 的 `getCurrentUser()`（已棄用）
+- [ ] 使用認證服務：`authService.getCurrentUser()`
+
+### 寫數據庫遷移時
+
+- [ ] 表中有 `user_id` 欄位？啟用 RLS
+- [ ] RLS 策略使用 `get_user_id_from_auth()`
+- [ ] 不要使用 `auth.uid() = user_id`
+- [ ] 測試策略：匿名用戶和 Google 用戶都要測試
+
+### Code Review 時
+
+- [ ] 搜尋 `auth.getUser()` - 應該很少見
+- [ ] 搜尋 `user.id` - 確保來自 `gameState.userId`
+- [ ] 搜尋 `auth.uid()` - 只應出現在 `get_user_id_from_auth()` 函數內
+- [ ] 檢查所有 RLS 策略是否使用映射函數
+
+## 🔧 映射函數（數據庫）
+
+```sql
+-- 這個函數已經存在於數據庫中
+CREATE OR REPLACE FUNCTION get_user_id_from_auth()
+RETURNS UUID AS $$
+BEGIN
+  RETURN (
+    SELECT user_id 
+    FROM user_identities 
+    WHERE provider_id = auth.uid()::text
+    LIMIT 1
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+**用途**：在 RLS 策略中將 `auth.uid()` 映射到 `users.id`
+
+## 🐛 故障排除
+
+### 403 Forbidden 錯誤
+
+**原因**：RLS 策略使用了錯誤的 user_id 比較
+
+**解決**：
+1. 檢查 RLS 策略是否使用 `get_user_id_from_auth()`
+2. 查看策略：`SELECT * FROM pg_policies WHERE tablename = 'your_table';`
+3. 重新創建策略使用正確的映射函數
+
+### 查詢返回空結果
+
+**原因**：前端使用了 `auth.uid()` 而不是 `gameState.userId`
+
+**解決**：
+1. 檢查查詢是否使用 `gameState.userId`
+2. 確認 `gameState.userId` 已正確設置
+3. 測試：`console.log('userId:', gameState.userId)`
+
+### 插入失敗
+
+**原因**：插入時使用了錯誤的 user_id
+
+**解決**：
+1. 確保插入數據使用 `gameState.userId`
+2. 檢查 RLS INSERT 策略是否正確
+3. 驗證用戶已登入：`if (!gameState.userId) return;`
+
+## 📚 相關文件
+
+- [認證架構](.cursor/rules/story-vocab-auth.mdc)
+- [多重身份系統遷移](mdc:story-vocab/supabase/migrations/20251011_multi_identity_system.sql)
+- [RLS 修復遷移](mdc:story-vocab/supabase/migrations/009_fix_rls_for_multi_identity.sql)
+- [AI 系統 RLS 修復](mdc:story-vocab/supabase/migrations/010_fix_ai_system_rls.sql)
+- [認證服務實現](mdc:story-vocab/js/auth/standalone-auth.js)
+- [遊戲狀態管理](mdc:story-vocab/js/core/game-state.js)
+
+## 🎯 核心記憶
+
+1. **auth.uid() 是 provider_id，不是 users.id**
+2. **前端使用 gameState.userId**
+3. **數據庫使用 get_user_id_from_auth()**
+4. **新表必須配置 RLS 策略**
+5. **測試兩種登入方式：Google 和匿名**
+
+---
+
+**最後更新**：2025-10-12  
+**維護者**：書院中文經典  
+**自動啟用**：當編輯 story-vocab 的 JS/TS/SQL 文件時

@@ -79,7 +79,8 @@ export const VOCAB_RECOMMENDER_SYSTEM_PROMPT = `
 export function buildAIPrompt(
   userProfile: any,
   storyContext: string,
-  roundNumber: number
+  roundNumber: number,
+  usedWordsList: string = ''
 ): string {
   const shouldIncludeWordbookWord = roundNumber % 4 === 0 && userProfile.wordbook_words.length > 0
 
@@ -115,6 +116,14 @@ ${shouldIncludeWordbookWord
 
 ${storyContext || '故事剛開始，用戶正在構思情節...'}
 
+${usedWordsList ? `
+## ⚠️ 本次遊戲已推薦過的詞（必須避開）
+
+${usedWordsList}
+
+**重要**：推薦的5個詞都不能包含在上述列表中，必須完全不重複。
+` : ''}
+
 ## 推薦要求
 
 - 推薦數量：5個詞
@@ -127,6 +136,7 @@ ${storyContext || '故事剛開始，用戶正在構思情節...'}
 2. 難度呈梯度分布（例如：L2, L3, L3, L4, L5）
 3. 類型多樣（動作、情感、描寫等）
 4. 至少${roundNumber <= 3 ? '3' : '4'}個是新詞
+5. **所有推薦的詞都不能與本次遊戲已推薦過的詞重複**
 
 請嚴格按照JSON格式返回。
 `.trim()

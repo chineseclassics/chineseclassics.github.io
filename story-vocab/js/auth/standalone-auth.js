@@ -19,22 +19,88 @@ export class StandaloneAuth extends AuthService {
     
     this.supabase = getSupabase();
     
-    // 檢查現有 session
-    const { data: { session }, error } = await this.supabase.auth.getSession();
-    
-    if (error) {
-      console.error('❌ 獲取 session 失敗:', error);
+    try {
+      // 檢查現有 session（帶超時保護，防止卡住）
+      const sessionPromise = this.supabase.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('getSession 超時')), 10000) // 放寬到 10 秒
+      );
+      
+      const { data: { session }, error } = await Promise.race([
+        sessionPromise,
+        timeoutPromise
+      ]);
+      
+      if (error) {
+        console.error('❌ 獲取 session 失敗:', error);
+        await this.clearCorruptedSession();
+        return null;
+      }
+      
+      if (session) {
+        console.log('✅ 發現已有 session');
+        await this.syncUserToDatabase(session.user);
+        return this.currentUser;
+      }
+      
+      console.log('ℹ️ 用戶未登入');
+      return null;
+      
+    } catch (error) {
+      console.error('❌ 初始化認證系統時發生錯誤:', error);
+      // 超時或其他錯誤，清理可能損壞的數據
+      await this.clearCorruptedSession();
       return null;
     }
-    
-    if (session) {
-      console.log('✅ 發現已有 session');
-      await this.syncUserToDatabase(session.user);
-      return this.currentUser;
+  }
+  
+  /**
+   * 清理損壞的 session 數據
+   * 只在遇到超時或錯誤時調用
+   */
+  async clearCorruptedSession() {
+    try {
+      console.log('🧹 清理本地認證數據...');
+      
+      // 清理 Supabase 相關的存儲項目
+      const supabasePrefixes = ['sb-', 'supabase', 'auth'];
+      let cleanedCount = 0;
+      
+      // 清理 localStorage
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && supabasePrefixes.some(prefix => key.toLowerCase().includes(prefix))) {
+          localStorage.removeItem(key);
+          cleanedCount++;
+        }
+      }
+      
+      // 清理 sessionStorage
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const key = sessionStorage.key(i);
+        if (key && supabasePrefixes.some(prefix => key.toLowerCase().includes(prefix))) {
+          sessionStorage.removeItem(key);
+          cleanedCount++;
+        }
+      }
+      
+      console.log(`✅ 已清理 ${cleanedCount} 個存儲項目`);
+      
+      // 嘗試通知 Supabase 客戶端（帶超時保護）
+      try {
+        const signOutPromise = this.supabase.auth.signOut();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('signOut 超時')), 3000)
+        );
+        await Promise.race([signOutPromise, timeoutPromise]);
+      } catch (signOutError) {
+        // 忽略 signOut 錯誤，因為可能 session 已經損壞
+      }
+      
+      console.log('💡 請刷新頁面後重試登入');
+    } catch (error) {
+      console.error('❌ 清理 session 時發生錯誤:', error);
     }
-    
-    console.log('ℹ️ 用戶未登入');
-    return null;
   }
   
   async getCurrentUser() {
@@ -64,7 +130,9 @@ export class StandaloneAuth extends AuthService {
         scopes: 'openid profile email',
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent'
+          // 移除 prompt: 'consent'，讓 Google 自動決定
+          // 如果用戶已登入 Google，會直接靜默授權
+          // 如果需要選擇賬號，會顯示賬號選擇器
         }
       }
     });
@@ -125,16 +193,30 @@ export class StandaloneAuth extends AuthService {
   }
   
   async logout() {
-    console.log('🚪 登出（獨立模式）...');
+    console.log('🚪 登出...');
     
-    await this.supabase.auth.signOut();
+    try {
+      // 調用 Supabase 登出（帶超時保護，防止卡住）
+      const signOutPromise = this.supabase.auth.signOut();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('登出超時')), 5000)
+      );
+      
+      await Promise.race([signOutPromise, timeoutPromise]);
+    } catch (error) {
+      console.warn('⚠️ 登出時發生錯誤（已忽略）:', error.message);
+    }
+    
+    // 清除內存中的用戶數據
     this.currentUser = null;
     
-    // 清除 localStorage
+    // 清除本地存儲的用戶數據
     localStorage.removeItem('user_display_name');
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_avatar_url');
     localStorage.removeItem('user_type');
+    
+    console.log('✅ 已登出');
   }
   
   onAuthStateChange(callback) {

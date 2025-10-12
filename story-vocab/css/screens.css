@@ -1,5 +1,47 @@
 /* ===== 各界面专属样式 ===== */
 
+/* ===== 加載屏幕 ===== */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.loading-screen.active {
+    display: flex;
+}
+
+.loading-container {
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: white;
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
 /* 启动界面 - AI 模式欢迎信息 */
 .ai-mode-welcome {
     text-align: center;
@@ -410,6 +452,8 @@
     padding: 30px 40px;
     max-width: 1200px;
     margin: 0 auto;
+    overflow-y: visible; /* 允许内容自然流动 */
+    justify-content: flex-start; /* 从顶部开始显示 */
 }
 
 .stories-header {
@@ -826,6 +870,14 @@
 }
 
 /* ===== 生詞本界面 ===== */
+/* 生詞本頁面內容容器 */
+#wordbook-screen .content {
+    justify-content: flex-start; /* 從頂部開始，不要居中 */
+    padding: 30px 40px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 .wordbook-header {
     text-align: center;
     margin-bottom: 30px;

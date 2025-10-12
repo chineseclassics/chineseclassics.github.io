@@ -11,6 +11,7 @@
 | `language.mdc` | 語言規範 - 始終使用繁體中文 | ✅ Always |
 | `file-organization.mdc` | 文件組織規範 - 兩層架構原則 | ✅ Always |
 | `coding-standards.mdc` | 代碼規範 | ✅ Always |
+| `documentation-standards.mdc` | 文檔創建規範 - 少而精，避免過度記錄 | ✅ Always |
 
 ### Auto Attached Rules（自動附加）
 
@@ -110,8 +111,8 @@ alwaysApply: true    # 或 false
 ## 📊 規則統計
 
 ### 平台級規則（本目錄）
-- **總規則數**：7
-- **Always 規則**：3
+- **總規則數**：8
+- **Always 規則**：4
 - **Auto Attached 規則**：2
 - **Manual 規則**：3
 - **Meta 規則**：2
@@ -131,6 +132,11 @@ alwaysApply: true    # 或 false
 
 ## 🔄 更新記錄
 
+- **2025-10-12**：添加文檔創建規範
+  - 新增 `documentation-standards.mdc` - 文檔創建規範（Always）
+  - 規範何時創建文檔、何時不創建
+  - 強調"少而精"原則，避免過度記錄
+
 - **2025-10-11**：創建 MDC 格式的專案規則系統
   - 從 `.cursorrules` 遷移到 `.cursor/rules/`
   - 創建 7 個平台級規則文件
@@ -142,5 +148,5 @@ alwaysApply: true    # 或 false
 ---
 
 **維護**：太虛幻境開發團隊  
-**最後更新**：2025-10-11
+**最後更新**：2025-10-12
 

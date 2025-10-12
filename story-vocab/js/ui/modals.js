@@ -132,18 +132,19 @@ export async function saveSettings() {
         if (wordlistSelector) {
             const value = wordlistSelector.value;
             
-            // 导入 Supabase 客户端
+            // 导入 Supabase 客户端和 gameState
             const { getSupabase } = await import('../supabase-client.js');
+            const { gameState } = await import('../core/game-state.js');
             const supabase = getSupabase();
             
-            // 获取当前用户
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
+            // 使用 gameState 中的用戶 ID（已經是正確的 users.id）
+            const userId = gameState.userId;
+            if (userId) {
                 // 保存到 Supabase
                 const { error } = await supabase
                     .from('user_wordlist_preferences')
                     .upsert({
-                        user_id: user.id,
+                        user_id: userId,
                         default_mode: value === 'ai' ? 'ai' : 'wordlist',
                         default_wordlist_id: value === 'ai' ? null : value,
                         default_level_2_tag: null,

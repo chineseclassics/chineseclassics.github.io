@@ -14,8 +14,16 @@
     <link rel="stylesheet" href="./css/responsive.css">
 </head>
 <body>
+    <!-- ===== 加載屏幕 ===== -->
+    <div id="loading-screen" class="loading-screen active">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">正在載入...</p>
+        </div>
+    </div>
+
     <!-- ===== 登入界面 ===== -->
-    <div id="login-screen" class="login-screen active">
+    <div id="login-screen" class="login-screen">
         <div class="login-container">
             <!-- Logo 區域 -->
             <div class="login-logo">
@@ -638,11 +646,6 @@
         <!-- ===== 生詞本界面 ===== -->
         <div id="wordbook-screen" class="screen">
             <div class="content">
-                <div class="wordbook-header">
-                    <h1>📚 我的生詞本</h1>
-                    <p class="wordbook-subtitle">收藏的詞彙都在這裡</p>
-                </div>
-
                 <!-- 統計概覽 -->
                 <div class="wordbook-stats-overview">
                     <div class="stat-card-mini">

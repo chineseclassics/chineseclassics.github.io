@@ -34,9 +34,9 @@ export async function initStartScreen() {
     gameState.level3Tag = null;
 
     try {
-        // 获取当前用户
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        // 使用 gameState 中的用戶 ID（已經是正確的 users.id）
+        const userId = gameState.userId;
+        if (!userId) {
             console.log('ℹ️ 用户未登录，使用默认AI模式');
             return; // AI模式已经是默认显示的
         }
@@ -45,7 +45,7 @@ export async function initStartScreen() {
         const { data: prefs } = await supabase
             .from('user_wordlist_preferences')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .maybeSingle();
 
         console.log('📊 用户词表偏好:', prefs);
@@ -225,24 +225,53 @@ export async function displayAIResponse(data) {
     // 清空加载动画，开始打字机效果
     messageContent.innerHTML = '';
     
-    // 用打字机效果显示纯文本（速度减慢到 60ms）
-    await typewriterEffect(messageContent, data.aiSentence, 60);
+    // 用打字机效果显示纯文本（速度调整为 90ms，提供更好的閱讀體驗）
+    await typewriterEffect(messageContent, data.aiSentence, 90);
     
-    // 然后替换为可点击的词语版本
+    // 然后替换为可点击的词语版本（此時詞彙可能還沒到，先用空陣列）
     messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, data.recommendedWords);
     
     storyDisplay.scrollTop = storyDisplay.scrollHeight;
     
-    // 显示词汇选项（过滤掉已使用的词汇）
-    const wordsContainer = document.getElementById('word-choices');
-    if (!wordsContainer) return;
+    // 🎯 打字機結束後，等待 1 秒讓用戶閱讀完整句子，然後顯示詞卡
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (data.recommendedWords && data.recommendedWords.length > 0) {
-        // 获取已使用词汇的列表
+    // 檢查是否有待顯示的詞彙（背景加載完成）
+    // 🔧 修復：增加重試機制，確保即使用戶打開/關閉模態窗口也能顯示詞卡
+    let wordsContainer = document.getElementById('word-choices');
+    let retryCount = 0;
+    while (!wordsContainer && retryCount < 5) {
+        console.log(`⚠️ word-choices 容器不存在，重試 ${retryCount + 1}/5...`);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        wordsContainer = document.getElementById('word-choices');
+        retryCount++;
+    }
+    
+    if (!wordsContainer) {
+        console.error('❌ word-choices 容器始終不存在，無法顯示詞卡');
+        return;
+    }
+    
+    let wordsToDisplay = data.recommendedWords;
+    
+    // 如果傳入的詞彙是空的，檢查 gameState.pendingWords
+    if (!wordsToDisplay || wordsToDisplay.length === 0) {
+        if (gameState.pendingWords && gameState.pendingWords.length > 0) {
+            console.log('📦 使用背景加載的詞彙');
+            wordsToDisplay = gameState.pendingWords;
+            gameState.pendingWords = null; // 清除標記
+        }
+    }
+    
+    if (wordsToDisplay && wordsToDisplay.length > 0) {
+        // 更新可點擊的詞語版本（現在有詞彙了）
+        messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, wordsToDisplay);
+        
+        // 有詞彙數據，顯示詞卡
         const usedWordsList = gameState.usedWords.map(w => w.word);
         
         // 过滤掉已使用的词汇
-        const availableWords = data.recommendedWords.filter(wordObj => 
+        const availableWords = wordsToDisplay.filter(wordObj => 
             !usedWordsList.includes(wordObj.word)
         );
         
@@ -253,6 +282,55 @@ export async function displayAIResponse(data) {
             // 🎴 使用翻转动画更新词汇卡片（动画完成后自动启用）
             await updateWordCardsWithFlipAnimation(availableWords);
         }
+    } else {
+        // 詞彙還在加載中，繼續等待
+        console.log('⏳ 詞彙還在加載中，設置回調等待...');
+        // 設置一個檢查，每 500ms 檢查一次是否有新詞彙
+        const checkPendingWords = setInterval(async () => {
+            if (gameState.pendingWords && gameState.pendingWords.length > 0) {
+                clearInterval(checkPendingWords);
+                const pendingWords = gameState.pendingWords;
+                gameState.pendingWords = null;
+                
+                // 更新可點擊的詞語版本（如果 messageContent 還存在）
+                if (messageContent && messageContent.parentElement) {
+                    messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, pendingWords);
+                }
+                
+                // 🔧 修復：確保容器存在後再顯示詞卡
+                let container = document.getElementById('word-choices');
+                let retry = 0;
+                while (!container && retry < 3) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    container = document.getElementById('word-choices');
+                    retry++;
+                }
+                
+                if (!container) {
+                    console.error('❌ 詞彙加載完成但 word-choices 容器不存在');
+                    return;
+                }
+                
+                // 顯示詞卡
+                const usedWordsList = gameState.usedWords.map(w => w.word);
+                const availableWords = pendingWords.filter(wordObj => 
+                    !usedWordsList.includes(wordObj.word)
+                );
+                
+                if (availableWords.length > 0) {
+                    console.log('✅ 延遲加載的詞彙現在顯示');
+                    updateWordCardsWithFlipAnimation(availableWords);
+                } else {
+                    console.log('⚠️ 所有詞彙都已使用');
+                }
+            }
+        }, 500);
+        
+        // 最多等待 10 秒
+        setTimeout(() => {
+            clearInterval(checkPendingWords);
+            console.log('⏱️ 詞彙加載超時（10秒）');
+        }, 10000);
     }
     
     // 重置输入
@@ -274,8 +352,20 @@ export async function displayAIResponse(data) {
  * @param {Array} newWords - 新的词汇列表
  */
 async function updateWordCardsWithFlipAnimation(newWords) {
-    const wordsContainer = document.getElementById('word-choices');
-    if (!wordsContainer) return;
+    // 🔧 修復：增加重試機制，確保容器存在
+    let wordsContainer = document.getElementById('word-choices');
+    let retryCount = 0;
+    while (!wordsContainer && retryCount < 3) {
+        console.log(`⚠️ updateWordCards: word-choices 容器不存在，重試 ${retryCount + 1}/3...`);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        wordsContainer = document.getElementById('word-choices');
+        retryCount++;
+    }
+    
+    if (!wordsContainer) {
+        console.error('❌ updateWordCards: word-choices 容器始終不存在');
+        return;
+    }
     
     const existingCards = wordsContainer.querySelectorAll('.word-btn');
     
@@ -563,27 +653,27 @@ async function loadWordlistSelectorSetting() {
     const supabase = getSupabase();
     
     try {
-        // 获取当前用户
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        // 使用 gameState 中的用戶 ID（已經是正確的 users.id）
+        const userId = gameState.userId;
+        if (!userId) return;
 
         // 加载用户偏好
         const { data: prefs } = await supabase
             .from('user_wordlist_preferences')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .maybeSingle();
 
         // 加载所有可用词表
         const { data: wordlists } = await supabase
             .from('wordlists')
             .select('*')
-            .or(`type.eq.system,owner_id.eq.${user.id}`)
+            .or(`type.eq.system,owner_id.eq.${userId}`)
             .order('type', { ascending: false })
             .order('name');
 
         const systemWordlists = wordlists?.filter(w => w.type === 'system') || [];
-        const customWordlists = wordlists?.filter(w => w.owner_id === user.id) || [];
+        const customWordlists = wordlists?.filter(w => w.owner_id === userId) || [];
 
         // 填充系统词表
         const systemGroup = document.getElementById('system-wordlists-group-setting');
@@ -762,9 +852,9 @@ window.uploadWordlistFromModal = async function() {
     uploadBtn.disabled = true;
 
     try {
-        // 获取当前用户
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('用户未登录');
+        // 使用 gameState 中的用戶 ID（已經是正確的 users.id）
+        const userId = gameState.userId;
+        if (!userId) throw new Error('用户未登录');
 
         // 读取CSV
         progressText.textContent = '讀取文件中...';
@@ -795,13 +885,19 @@ window.uploadWordlistFromModal = async function() {
         progressFill.style.width = '30%';
         progressFill.textContent = '30%';
 
+        // 生成唯一的词表代码
+        const timestamp = Date.now();
+        const randomStr = Math.random().toString(36).substring(2, 8);
+        const code = `custom_${userId.substring(0, 8)}_${timestamp}_${randomStr}`;
+        
         const { data: wordlist, error: wlError } = await supabase
             .from('wordlists')
             .insert({
                 name,
+                code,  // 添加唯一代码
                 description: desc || null,
                 type: 'custom',
-                owner_id: user.id,
+                owner_id: userId,
                 total_words: data.length,
                 hierarchy_config: {
                     level_2_label: '第二層級',
@@ -878,7 +974,8 @@ window.uploadWordlistFromModal = async function() {
                         .from('vocabulary')
                         .insert({
                             word: item.word,
-                            difficulty_level: 3
+                            difficulty_level: 3,
+                            category: 'flexible'  // 自定义词表词汇默认为灵活类别
                         })
                         .select('id')
                         .single();
