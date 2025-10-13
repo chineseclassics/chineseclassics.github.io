@@ -121,86 +121,8 @@ export class StandaloneAuth extends AuthService {
   async loginWithGoogle() {
     console.log('🔐 使用 Google 登入（獨立模式）...');
     
-    // 🎯 檢測是否在 iframe 中
-    const isInIframe = window.self !== window.top;
-    
-    if (isInIframe) {
-      console.warn('⚠️ 檢測到在 iframe 中，使用彈出窗口進行 OAuth');
-      
-      // 構建登入 URL（添加標識，告訴新窗口這是從 iframe 彈出的）
-      const loginUrl = `${window.location.origin}${window.location.pathname}?autoLogin=google&popup=true`;
-      
-      // 🔑 關鍵：必須在同步代碼中立即打開彈窗
-      // 計算居中位置
-      const width = 550;
-      const height = 650;
-      const left = Math.round((screen.width - width) / 2);
-      const top = Math.round((screen.height - height) / 2);
-      
-      // 打開彈出窗口（小窗口，不是全屏標籤頁）
-      // 注意：Safari 可能會忽略尺寸參數
-      const features = [
-        `width=${width}`,
-        `height=${height}`,
-        `left=${left}`,
-        `top=${top}`,
-        'location=no',      // 不顯示地址欄
-        'toolbar=no',       // 不顯示工具欄
-        'menubar=no',       // 不顯示菜單欄
-        'status=no',        // 不顯示狀態欄
-        'scrollbars=yes',   // 允許滾動
-        'resizable=yes'     // 允許調整大小
-      ].join(',');
-      
-      const popup = window.open(
-        loginUrl,
-        'GoogleLogin',  // 窗口名稱
-        features
-      );
-      
-      // 檢測彈窗是否被阻止
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-        console.error('❌ 彈出窗口被瀏覽器阻止');
-        return { 
-          error: new Error('彈出窗口被阻止'),
-          popupBlocked: true,
-          loginUrl: loginUrl
-        };
-      }
-      
-      console.log('✅ 彈出窗口已打開，等待用戶完成登入...');
-      
-      // 監控彈窗關閉（表示登入完成或取消）
-      return new Promise((resolve) => {
-        const checkPopupClosed = setInterval(() => {
-          try {
-            if (popup.closed) {
-              clearInterval(checkPopupClosed);
-              console.log('🔔 彈出窗口已關閉，檢查登入狀態...');
-              
-              // 彈窗關閉後，檢查是否登入成功
-              // 返回特殊標識，讓調用方知道需要檢查登入狀態
-              resolve({ 
-                popupClosed: true,
-                needsCheck: true
-              });
-            }
-          } catch (e) {
-            // 跨域限制，無法檢測，繼續監控
-          }
-        }, 500);
-        
-        // 30秒超時
-        setTimeout(() => {
-          clearInterval(checkPopupClosed);
-          if (!popup.closed) {
-            console.warn('⏰ 登入超時（30秒）');
-          }
-        }, 30000);
-      });
-    }
-    
     // 🔧 構建正確的重定向 URL
+    // 確保即使在 iframe 中也能正確重定向
     let redirectTo = window.location.origin + window.location.pathname;
     
     // 如果 pathname 是 /story-vocab/index.html，規範化為 /story-vocab/
@@ -211,9 +133,6 @@ export class StandaloneAuth extends AuthService {
     if (!redirectTo.endsWith('/')) {
       redirectTo += '/';
     }
-    
-    // 移除 autoLogin 參數（如果有）
-    redirectTo = redirectTo.split('?')[0];
     
     console.log('🔗 重定向 URL:', redirectTo);
     

@@ -5,43 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>詞遊記 - 與AI共創故事，樂學詞語</title>
     
-    <!-- 安全策略：允許 Google OAuth 和 Supabase -->
-    <meta http-equiv="Content-Security-Policy" content="
-        frame-ancestors 'self' https://chineseclassics.github.io;
-        frame-src 'self' https://accounts.google.com https://*.supabase.co;
-    ">
-    
-    <!-- Safari 隱私保護：防止父窗口的追蹤腳本干擾 OAuth -->
-    <script>
-        // 阻止來自父窗口的跨域追蹤
-        (function() {
-            // 禁用 Microsoft Clarity 在 Safari 中的干擾
-            if (window.clarity) {
-                try {
-                    delete window.clarity;
-                } catch(e) {}
-            }
-            
-            // 阻止父窗口的錯誤事件冒泡
-            window.addEventListener('error', function(e) {
-                if (e.message && (e.message.includes('clarity') || 
-                    e.message.includes('accounts.google.com') ||
-                    e.message.includes('Blocked a frame'))) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    return false;
-                }
-            }, true);
-            
-            // 阻止跨域訪問警告
-            window.addEventListener('securitypolicyviolation', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                return false;
-            }, true);
-        })();
-    </script>
-    
     <!-- CSS 样式文件 -->
     <link rel="stylesheet" href="./css/variables.css">
     <link rel="stylesheet" href="./css/base.css">
