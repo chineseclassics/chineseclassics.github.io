@@ -1261,7 +1261,8 @@
                 gradient: 'from-purple-500 to-pink-400',
                 url: 'story-vocab/index.html',  // 使用相对路径，自动匹配当前域名
                 description: '與AI共創精彩故事，輕鬆積累詞彙！選擇詞語造句，AI接力續寫，在互動故事中學習繁體中文詞彙，適合2-6年級學生',
-                isNew: true
+                isNew: true,
+                openInNewTab: true  // 需要在新標籤頁打開（避免 iframe 中 Google OAuth 403 錯誤）
             },
             {
                 id: 'leiyu',
@@ -1964,6 +1965,13 @@
         function openApp(appId) {
             const app = apps.find(a => a.id === appId);
             if (!app) return;
+
+            // 如果應用需要在新標籤頁打開（例如需要 Google OAuth）
+            if (app.openInNewTab) {
+                window.open(app.url, '_blank', 'noopener,noreferrer');
+                hideAppSwitcher();
+                return;
+            }
 
             // 清理之前的资源
             cleanupAppResources();
