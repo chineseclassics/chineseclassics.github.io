@@ -134,14 +134,28 @@ export class StandaloneAuth extends AuthService {
       // 計算居中位置
       const width = 550;
       const height = 650;
-      const left = (screen.width - width) / 2;
-      const top = (screen.height - height) / 2;
+      const left = Math.round((screen.width - width) / 2);
+      const top = Math.round((screen.height - height) / 2);
       
       // 打開彈出窗口（小窗口，不是全屏標籤頁）
+      // 注意：Safari 可能會忽略尺寸參數
+      const features = [
+        `width=${width}`,
+        `height=${height}`,
+        `left=${left}`,
+        `top=${top}`,
+        'location=no',      // 不顯示地址欄
+        'toolbar=no',       // 不顯示工具欄
+        'menubar=no',       // 不顯示菜單欄
+        'status=no',        // 不顯示狀態欄
+        'scrollbars=yes',   // 允許滾動
+        'resizable=yes'     // 允許調整大小
+      ].join(',');
+      
       const popup = window.open(
         loginUrl,
         'GoogleLogin',  // 窗口名稱
-        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+        features
       );
       
       // 檢測彈窗是否被阻止

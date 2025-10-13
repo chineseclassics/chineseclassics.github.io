@@ -366,14 +366,27 @@ async function retryGoogleLogin(loginUrl) {
     // 計算居中位置
     const width = 550;
     const height = 650;
-    const left = (screen.width - width) / 2;
-    const top = (screen.height - height) / 2;
+    const left = Math.round((screen.width - width) / 2);
+    const top = Math.round((screen.height - height) / 2);
     
     // 再次嘗試打開彈窗
+    const features = [
+        `width=${width}`,
+        `height=${height}`,
+        `left=${left}`,
+        `top=${top}`,
+        'location=no',
+        'toolbar=no',
+        'menubar=no',
+        'status=no',
+        'scrollbars=yes',
+        'resizable=yes'
+    ].join(',');
+    
     const popup = window.open(
         loginUrl,
         'GoogleLogin',
-        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+        features
     );
     
     if (!popup || popup.closed || typeof popup.closed === 'undefined') {
