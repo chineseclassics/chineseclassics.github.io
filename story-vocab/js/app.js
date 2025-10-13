@@ -96,10 +96,14 @@ async function initializeApp() {
     try {
         console.log(`🎮 詞遊記啟動（${getRunMode()}模式）`);
         
+        // 🎯 檢查 URL 參數：autoLogin（用於從 iframe 跳轉到新標籤頁後自動登入）
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoLogin = urlParams.get('autoLogin');
+        
         // 0. 快速檢查：如果本地有用戶信息，先隱藏加載屏幕並顯示主界面
         //    避免已登入用戶看到閃屏
         const quickCheck = quickCheckUserState();
-        if (quickCheck.loggedIn) {
+        if (quickCheck.loggedIn && !autoLogin) {
             console.log('🚀 檢測到本地用戶信息，快速恢復界面...');
             updateUIForLoggedInUser(quickCheck.user);
             hideLoadingScreen();
@@ -116,6 +120,18 @@ async function initializeApp() {
         window.authService = authService;
         window.supabase = supabase;
         const user = await authService.getCurrentUser();
+        
+        // 🎯 如果有 autoLogin 參數，且用戶未登入，自動觸發登入
+        if (autoLogin === 'google' && !user) {
+            console.log('🔐 自動觸發 Google 登入（從 iframe 跳轉）...');
+            hideLoadingScreen();
+            showLoginScreen();
+            // 稍微延遲，讓用戶看到登入界面
+            setTimeout(async () => {
+                await loginWithGoogle();
+            }, 500);
+            return; // 提前返回，等待登入完成
+        }
         
         // 3. 確認真實用戶狀態並更新 UI
         hideLoadingScreen(); // 確保隱藏加載屏幕
@@ -211,6 +227,33 @@ async function loginWithGoogle() {
         
         if (result.error) {
             console.error('❌ 登入失敗:', result.error);
+            
+            // 🎯 特殊處理：在 iframe 中需要新標籤頁登入
+            if (result.needsNewTab) {
+                console.log('📤 需要在新標籤頁中進行登入');
+                
+                // 顯示友好的提示信息
+                showToast('📤 請在新打開的標籤頁中完成登入', 5000);
+                
+                // 如果新標籤頁被阻止，顯示手動打開按鈕
+                if (result.error.message.includes('允許彈出式視窗')) {
+                    setTimeout(() => {
+                        const shouldOpenManually = confirm(
+                            '瀏覽器阻止了彈出式視窗。\n\n' +
+                            '為了使用 Google 登入，需要在新標籤頁中打開應用。\n\n' +
+                            '點擊「確定」在新標籤頁中打開，或點擊「取消」使用訪客模式。'
+                        );
+                        
+                        if (shouldOpenManually) {
+                            window.open(result.newTabUrl, '_blank');
+                        }
+                    }, 1000);
+                }
+                
+                return;
+            }
+            
+            // 一般錯誤
             showToast('❌ 登入失敗，請重試');
         }
         // OAuth 會跳轉，成功不會執行到這裡

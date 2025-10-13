@@ -121,8 +121,37 @@ export class StandaloneAuth extends AuthService {
   async loginWithGoogle() {
     console.log('🔐 使用 Google 登入（獨立模式）...');
     
+    // 🎯 檢測是否在 iframe 中
+    const isInIframe = window.self !== window.top;
+    
+    if (isInIframe) {
+      console.warn('⚠️ 檢測到在 iframe 中，Google OAuth 不支持在 iframe 中進行');
+      console.log('📤 將在新標籤頁中打開登入頁面...');
+      
+      // 構建新標籤頁的 URL（添加自動登入標識）
+      const newTabUrl = `${window.location.origin}${window.location.pathname}?autoLogin=google`;
+      
+      // 在新標籤頁打開
+      const newWindow = window.open(newTabUrl, '_blank');
+      
+      if (!newWindow) {
+        // 瀏覽器阻止了彈窗
+        return { 
+          error: new Error('請允許彈出式視窗，或手動在新標籤頁中打開應用進行登入'),
+          needsNewTab: true,
+          newTabUrl: newTabUrl
+        };
+      }
+      
+      // 提示用戶
+      return { 
+        error: new Error('請在新打開的標籤頁中完成登入'),
+        needsNewTab: true,
+        newTabUrl: newTabUrl
+      };
+    }
+    
     // 🔧 構建正確的重定向 URL
-    // 確保即使在 iframe 中也能正確重定向
     let redirectTo = window.location.origin + window.location.pathname;
     
     // 如果 pathname 是 /story-vocab/index.html，規範化為 /story-vocab/
@@ -133,6 +162,9 @@ export class StandaloneAuth extends AuthService {
     if (!redirectTo.endsWith('/')) {
       redirectTo += '/';
     }
+    
+    // 移除 autoLogin 參數（如果有）
+    redirectTo = redirectTo.split('?')[0];
     
     console.log('🔗 重定向 URL:', redirectTo);
     
