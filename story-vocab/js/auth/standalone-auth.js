@@ -121,7 +121,20 @@ export class StandaloneAuth extends AuthService {
   async loginWithGoogle() {
     console.log('🔐 使用 Google 登入（獨立模式）...');
     
-    const redirectTo = window.location.origin + window.location.pathname;
+    // 🔧 構建正確的重定向 URL
+    // 確保即使在 iframe 中也能正確重定向
+    let redirectTo = window.location.origin + window.location.pathname;
+    
+    // 如果 pathname 是 /story-vocab/index.html，規範化為 /story-vocab/
+    if (redirectTo.endsWith('/index.html')) {
+      redirectTo = redirectTo.replace('/index.html', '/');
+    }
+    // 確保以斜杠結尾
+    if (!redirectTo.endsWith('/')) {
+      redirectTo += '/';
+    }
+    
+    console.log('🔗 重定向 URL:', redirectTo);
     
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -139,6 +152,8 @@ export class StandaloneAuth extends AuthService {
     
     if (error) {
       console.error('❌ Google 登入失敗:', error);
+      console.error('   請檢查 Supabase Dashboard 的 Site URL 配置');
+      console.error('   應該設置為: https://chineseclassics.github.io/story-vocab/');
       return { error };
     }
     

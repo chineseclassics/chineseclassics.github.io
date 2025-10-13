@@ -34,10 +34,24 @@
     <!-- Microsoft Clarity -->
     <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            // 添加错误处理，避免跨域问题影响性能
+            try {
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            } catch(e) {
+                console.warn('Clarity 初始化失败（可能是跨域问题）:', e.message);
+            }
         })(window, document, "clarity", "script", "s084at54sp");
+        
+        // 全局捕获 Clarity 的跨域错误，避免影响用户体验
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('clarity.js')) {
+                e.stopPropagation();
+                e.preventDefault();
+                return true; // 阻止错误冒泡
+            }
+        }, true);
     </script>
     
     <!-- Google tag (gtag.js) -->
