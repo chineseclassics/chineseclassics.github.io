@@ -125,30 +125,65 @@ export class StandaloneAuth extends AuthService {
     const isInIframe = window.self !== window.top;
     
     if (isInIframe) {
-      console.warn('⚠️ 檢測到在 iframe 中，Google OAuth 不支持在 iframe 中進行');
-      console.log('📤 將在新標籤頁中打開登入頁面...');
+      console.warn('⚠️ 檢測到在 iframe 中，使用彈出窗口進行 OAuth');
       
-      // 構建新標籤頁的 URL（添加自動登入標識）
-      const newTabUrl = `${window.location.origin}${window.location.pathname}?autoLogin=google`;
+      // 構建登入 URL（添加標識，告訴新窗口這是從 iframe 彈出的）
+      const loginUrl = `${window.location.origin}${window.location.pathname}?autoLogin=google&popup=true`;
       
-      // 在新標籤頁打開
-      const newWindow = window.open(newTabUrl, '_blank');
+      // 🔑 關鍵：必須在同步代碼中立即打開彈窗
+      // 計算居中位置
+      const width = 550;
+      const height = 650;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
       
-      if (!newWindow) {
-        // 瀏覽器阻止了彈窗
+      // 打開彈出窗口（小窗口，不是全屏標籤頁）
+      const popup = window.open(
+        loginUrl,
+        'GoogleLogin',  // 窗口名稱
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+      );
+      
+      // 檢測彈窗是否被阻止
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        console.error('❌ 彈出窗口被瀏覽器阻止');
         return { 
-          error: new Error('請允許彈出式視窗，或手動在新標籤頁中打開應用進行登入'),
-          needsNewTab: true,
-          newTabUrl: newTabUrl
+          error: new Error('彈出窗口被阻止'),
+          popupBlocked: true,
+          loginUrl: loginUrl
         };
       }
       
-      // 提示用戶
-      return { 
-        error: new Error('請在新打開的標籤頁中完成登入'),
-        needsNewTab: true,
-        newTabUrl: newTabUrl
-      };
+      console.log('✅ 彈出窗口已打開，等待用戶完成登入...');
+      
+      // 監控彈窗關閉（表示登入完成或取消）
+      return new Promise((resolve) => {
+        const checkPopupClosed = setInterval(() => {
+          try {
+            if (popup.closed) {
+              clearInterval(checkPopupClosed);
+              console.log('🔔 彈出窗口已關閉，檢查登入狀態...');
+              
+              // 彈窗關閉後，檢查是否登入成功
+              // 返回特殊標識，讓調用方知道需要檢查登入狀態
+              resolve({ 
+                popupClosed: true,
+                needsCheck: true
+              });
+            }
+          } catch (e) {
+            // 跨域限制，無法檢測，繼續監控
+          }
+        }, 500);
+        
+        // 30秒超時
+        setTimeout(() => {
+          clearInterval(checkPopupClosed);
+          if (!popup.closed) {
+            console.warn('⏰ 登入超時（30秒）');
+          }
+        }, 30000);
+      });
     }
     
     // 🔧 構建正確的重定向 URL

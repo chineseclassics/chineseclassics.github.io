@@ -4907,9 +4907,19 @@ window.LocalBattle.endMode = function endBattleMode() {
         };
         // 【重構】不再暴露 __REMOTE_STATE__，所有數據統一在 GameState 中
 
-        // 清除 Supabase 本地存儲
-        function clearSupabaseStorage(){
+        // 清除 Supabase 本地存儲並重置客戶端
+        async function clearSupabaseStorage(){
             console.log('[remote] 清除 Supabase 本地存儲...');
+            
+            // 先登出（清除客戶端內部狀態）
+            try {
+                await sb.auth.signOut({ scope: 'local' });
+                console.log('[remote] ✅ 已登出（本地）');
+            } catch (e) {
+                console.warn('[remote] 登出失敗（忽略）:', e);
+            }
+            
+            // 清除 localStorage
             const keys = Object.keys(localStorage);
             let cleared = 0;
             keys.forEach(key => {
@@ -4919,6 +4929,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 }
             });
             console.log('[remote] ✅ 已清除', cleared, '個本地存儲項');
+            
             return cleared;
         }
 
@@ -4968,16 +4979,17 @@ window.LocalBattle.endMode = function endBattleMode() {
                     } catch (err) {
                         console.warn('[remote] ⚠️ Google 用戶獲取失敗:', err.message);
                         // Google 會話可能已過期，清除並繼續
-                        clearSupabaseStorage();
+                        await clearSupabaseStorage();
                     }
                 } else {
                     // 沒有 Google 會話，直接清除匿名會話（避免 getUser 卡住）
                     console.log('[remote] 2. 清除匿名會話...');
-                    clearSupabaseStorage();
+                    await clearSupabaseStorage();
                 }
                 
-                // 登出（不等待，確保清理乾淨）
-                sb.auth.signOut().catch(() => {});
+                // 等待客戶端狀態完全重置（關鍵！）
+                console.log('[remote] 2.5. 等待客戶端重置...');
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // 執行匿名登入
                 console.log('[remote] 3. 執行匿名登入...');

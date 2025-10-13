@@ -96,9 +96,10 @@ async function initializeApp() {
     try {
         console.log(`🎮 詞遊記啟動（${getRunMode()}模式）`);
         
-        // 🎯 檢查 URL 參數：autoLogin（用於從 iframe 跳轉到新標籤頁後自動登入）
+        // 🎯 檢查 URL 參數：autoLogin 和 popup
         const urlParams = new URLSearchParams(window.location.search);
         const autoLogin = urlParams.get('autoLogin');
+        const isPopup = urlParams.get('popup') === 'true';
         
         // 0. 快速檢查：如果本地有用戶信息，先隱藏加載屏幕並顯示主界面
         //    避免已登入用戶看到閃屏
@@ -108,6 +109,16 @@ async function initializeApp() {
             updateUIForLoggedInUser(quickCheck.user);
             hideLoadingScreen();
             showMainInterface();
+            
+            // 🎯 如果是彈出窗口且已登入，自動關閉
+            if (isPopup) {
+                console.log('✅ 彈出窗口檢測到已登入，3秒後自動關閉...');
+                showToast('✅ 登入成功！窗口即將關閉...', 3000);
+                setTimeout(() => {
+                    window.close();
+                }, 3000);
+                return;
+            }
         }
         
         // 1. 初始化 Supabase
@@ -123,7 +134,7 @@ async function initializeApp() {
         
         // 🎯 如果有 autoLogin 參數，且用戶未登入，自動觸發登入
         if (autoLogin === 'google' && !user) {
-            console.log('🔐 自動觸發 Google 登入（從 iframe 跳轉）...');
+            console.log('🔐 自動觸發 Google 登入（從彈出窗口）...');
             hideLoadingScreen();
             showLoginScreen();
             // 稍微延遲，讓用戶看到登入界面
@@ -131,6 +142,19 @@ async function initializeApp() {
                 await loginWithGoogle();
             }, 500);
             return; // 提前返回，等待登入完成
+        }
+        
+        // 🎯 如果是彈出窗口且已登入，自動關閉
+        if (isPopup && user && user.user_type === 'registered') {
+            console.log('✅ 彈出窗口檢測到已登入，3秒後自動關閉...');
+            hideLoadingScreen();
+            updateUIForLoggedInUser(user);
+            showMainInterface();
+            showToast('✅ 登入成功！窗口即將關閉...', 3000);
+            setTimeout(() => {
+                window.close();
+            }, 3000);
+            return;
         }
         
         // 3. 確認真實用戶狀態並更新 UI
@@ -221,46 +245,178 @@ async function loginWithGoogle() {
     }
     
     try {
-        showToast('正在跳轉到 Google 登入...');
-        
         const result = await authService.loginWithGoogle();
         
+        // 🎯 處理彈窗被阻止的情況
+        if (result.popupBlocked) {
+            console.error('❌ 彈出窗口被瀏覽器阻止');
+            
+            // 顯示友好的 UI，讓用戶手動允許彈窗
+            showPopupBlockedUI(result.loginUrl);
+            return;
+        }
+        
+        // 🎯 處理彈窗關閉後的檢查
+        if (result.popupClosed && result.needsCheck) {
+            console.log('🔍 彈出窗口已關閉，檢查登入狀態...');
+            showToast('正在檢查登入狀態...');
+            
+            // 重新獲取用戶信息
+            const user = await authService.getCurrentUser();
+            
+            if (user && user.user_type === 'registered') {
+                // 登入成功！
+                console.log('✅ 登入成功:', user.display_name);
+                gameState.userId = user.id;
+                gameState.user = user;
+                updateUIForLoggedInUser(user);
+                showMainInterface();
+                showToast(`✅ 歡迎，${user.display_name}！`);
+            } else {
+                // 用戶可能取消了登入
+                console.log('ℹ️ 未檢測到登入，用戶可能取消了登入');
+                showToast('未完成登入，您可以繼續使用訪客模式');
+            }
+            return;
+        }
+        
+        // 🎯 處理一般錯誤
         if (result.error) {
             console.error('❌ 登入失敗:', result.error);
-            
-            // 🎯 特殊處理：在 iframe 中需要新標籤頁登入
-            if (result.needsNewTab) {
-                console.log('📤 需要在新標籤頁中進行登入');
-                
-                // 顯示友好的提示信息
-                showToast('📤 請在新打開的標籤頁中完成登入', 5000);
-                
-                // 如果新標籤頁被阻止，顯示手動打開按鈕
-                if (result.error.message.includes('允許彈出式視窗')) {
-                    setTimeout(() => {
-                        const shouldOpenManually = confirm(
-                            '瀏覽器阻止了彈出式視窗。\n\n' +
-                            '為了使用 Google 登入，需要在新標籤頁中打開應用。\n\n' +
-                            '點擊「確定」在新標籤頁中打開，或點擊「取消」使用訪客模式。'
-                        );
-                        
-                        if (shouldOpenManually) {
-                            window.open(result.newTabUrl, '_blank');
-                        }
-                    }, 1000);
-                }
-                
-                return;
-            }
-            
-            // 一般錯誤
             showToast('❌ 登入失敗，請重試');
+            return;
         }
-        // OAuth 會跳轉，成功不會執行到這裡
+        
+        // OAuth 會跳轉，成功不會執行到這裡（只有非 iframe 場景）
     } catch (error) {
         console.error('❌ 登入異常:', error);
         showToast('❌ 登入異常，請重試');
     }
+}
+
+/**
+ * 顯示彈窗被阻止的 UI
+ */
+function showPopupBlockedUI(loginUrl) {
+    const message = `
+        <div style="text-align: left; padding: 20px; max-width: 400px;">
+            <h3 style="margin-top: 0; color: #ff6b6b;">🚫 彈出窗口被阻止</h3>
+            <p>您的瀏覽器阻止了登入窗口。</p>
+            <p><strong>請按以下步驟操作：</strong></p>
+            <ol style="text-align: left; padding-left: 20px;">
+                <li>點擊瀏覽器地址欄右側的<strong>「🚫」圖標</strong></li>
+                <li>選擇<strong>「允許彈出式視窗」</strong></li>
+                <li>點擊下方按鈕重試登入</li>
+            </ol>
+            <button onclick="retryGoogleLogin('${loginUrl}')" 
+                    style="width: 100%; padding: 12px; background: #4285f4; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px;">
+                🔄 重試 Google 登入
+            </button>
+            <button onclick="closePopupBlockedUI()" 
+                    style="width: 100%; padding: 12px; background: #f0f0f0; color: #333; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px;">
+                取消
+            </button>
+        </div>
+    `;
+    
+    // 創建模態框
+    const modal = document.createElement('div');
+    modal.id = 'popup-blocked-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    `;
+    content.innerHTML = message;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+}
+
+/**
+ * 關閉彈窗被阻止的 UI
+ */
+function closePopupBlockedUI() {
+    const modal = document.getElementById('popup-blocked-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
+ * 重試 Google 登入
+ */
+async function retryGoogleLogin(loginUrl) {
+    closePopupBlockedUI();
+    
+    // 計算居中位置
+    const width = 550;
+    const height = 650;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    
+    // 再次嘗試打開彈窗
+    const popup = window.open(
+        loginUrl,
+        'GoogleLogin',
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+    );
+    
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        showToast('❌ 彈出窗口仍被阻止，請檢查瀏覽器設置');
+        setTimeout(() => {
+            showPopupBlockedUI(loginUrl);
+        }, 2000);
+        return;
+    }
+    
+    showToast('✅ 彈出窗口已打開，請完成登入');
+    
+    // 監控彈窗關閉
+    const checkPopupClosed = setInterval(async () => {
+        try {
+            if (popup.closed) {
+                clearInterval(checkPopupClosed);
+                console.log('🔔 彈出窗口已關閉，檢查登入狀態...');
+                showToast('正在檢查登入狀態...');
+                
+                // 重新獲取用戶信息
+                const user = await authService.getCurrentUser();
+                
+                if (user && user.user_type === 'registered') {
+                    console.log('✅ 登入成功:', user.display_name);
+                    gameState.userId = user.id;
+                    gameState.user = user;
+                    updateUIForLoggedInUser(user);
+                    showMainInterface();
+                    showToast(`✅ 歡迎，${user.display_name}！`);
+                } else {
+                    showToast('未完成登入，您可以繼續使用訪客模式');
+                }
+            }
+        } catch (e) {
+            // 跨域限制，繼續監控
+        }
+    }, 500);
+    
+    // 30秒超時
+    setTimeout(() => {
+        clearInterval(checkPopupClosed);
+    }, 30000);
 }
 
 /**
@@ -424,6 +580,8 @@ function mountGlobalFunctions() {
     window.logout = logout;
     window.showLoginScreen = showLoginScreen;
     window.showMainInterface = showMainInterface;
+    window.retryGoogleLogin = retryGoogleLogin;
+    window.closePopupBlockedUI = closePopupBlockedUI;
     
     // 弹窗管理
     window.showVocabModeSelector = showVocabModeSelector;
