@@ -4909,15 +4909,34 @@ window.LocalBattle.endMode = function endBattleMode() {
 
         // 確保匿名登入
         async function ensureAnonLogin(){
+            console.log('[remote] ensureAnonLogin 開始');
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
             const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('auth timeout')), ms));
             const getOrLogin = (async () => {
+                console.log('[remote] 1. 檢查現有會話...');
                 const sess = await sb.auth.getSession();
-                if (!sess.data.session) await sb.auth.signInAnonymously();
-                const user = (await sb.auth.getUser()).data.user;
-                return user;
+                console.log('[remote] 2. 現有會話:', sess.data.session ? '存在' : '不存在');
+                
+                if (!sess.data.session) {
+                    console.log('[remote] 3. 執行匿名登入...');
+                    try {
+                        const result = await sb.auth.signInAnonymously();
+                        console.log('[remote] 4. 匿名登入結果:', result.error ? '失敗' : '成功', result.error);
+                        if (result.error) throw result.error;
+                    } catch (err) {
+                        console.error('[remote] 匿名登入錯誤:', err);
+                        throw err;
+                    }
+                }
+                
+                console.log('[remote] 5. 獲取用戶信息...');
+                const userResult = await sb.auth.getUser();
+                console.log('[remote] 6. 用戶信息:', userResult.data.user ? '成功' : '失敗');
+                return userResult.data.user;
             })();
-            state.user = await Promise.race([getOrLogin, timeout(8000)]);
+            
+            console.log('[remote] 等待認證完成（最多15秒）...');
+            state.user = await Promise.race([getOrLogin, timeout(15000)]);  // 延長到15秒
             if (!state.user) throw new Error('anonymous auth failed');
             console.log('[remote] auth user', state.user && state.user.id);
         }
@@ -5502,7 +5521,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 console.log('[remote] create clicked');
                 if (!sb) { alert('Supabase 未就緒'); return; }
                 const nickname = (nicknameInput?.value || '').trim() || '玩家';
-                if (createBtn) { createBtn.disabled = true; createBtn.textContent = '建立中…'; }
+                if (createBtn) { createBtn.disabled = true; createBtn.textContent = '認證中…'; }
                 const room = await createRoom('', nickname);
                 console.log('[remote] room created', room && room.code);
                 
@@ -5526,7 +5545,13 @@ window.LocalBattle.endMode = function endBattleMode() {
             } catch (e) {
                 console.warn('[remote] create error', e);
                 if (createBtn) { createBtn.disabled = false; createBtn.textContent = '建立房間'; }
-                alert('建立失敗：' + (e?.message || e));
+                
+                // 提供更詳細的錯誤信息
+                let errorMsg = '建立失敗：' + (e?.message || e);
+                if (String(e?.message).includes('auth timeout')) {
+                    errorMsg = '認證超時！\n\n可能原因：\n1. Supabase 項目未啟用匿名認證\n2. 網絡連接問題\n\n請查看控制台日誌了解詳情';
+                }
+                alert(errorMsg);
             }
         });
 
