@@ -27,7 +27,7 @@
     <!-- Preload critical resources -->
     <link rel="preload" href="assets/tailwind.css" as="style">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
-    <link rel="preload" href="https://chineseclassics.github.io/images/cclogo.png" as="image">
+    <link rel="preload" href="images/cclogo.png" as="image">
     
     <!-- 移除 Vercel Insights（GitHub Pages 上會導致 405） -->
     
@@ -1014,7 +1014,7 @@
     <!-- 悬浮Logo图标 -->
     <div id="floatingLogo" class="fixed z-50 hidden cursor-pointer select-none" style="right: 16px; top: 50%; margin-top: -24px;">
         <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300">
-            <img src="https://chineseclassics.github.io/images/cclogo.png" 
+            <img src="images/cclogo.png" 
                  alt="書院中文經典" 
                  class="h-8 w-8 object-contain cursor-pointer"
                  onclick="showFloatingAppSwitcher()">
@@ -1064,7 +1064,7 @@
                         <h2 class="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 text-center mt-1">書院中文經典數字體驗學習</h2>
                         <div class="w-16 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-2"></div>
                         <div class="flex justify-center mt-3">
-                            <img src="https://chineseclassics.github.io/images/cclogo.png" 
+                            <img src="images/cclogo.png" 
                                  alt="書院中文經典" 
                                  class="h-12 w-12 object-contain cursor-pointer hover:opacity-80 transition-opacity"
                                  onclick="showHome()">
@@ -1175,7 +1175,7 @@
                     
                     <!-- 中间标题 -->
                     <div class="flex items-center gap-2.5 flex-1 justify-center">
-                    <img src="https://chineseclassics.github.io/images/cclogo.png" 
+                    <img src="images/cclogo.png" 
                          alt="書院中文經典" 
                              class="h-8 w-8 object-contain">
                         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">太虛幻境：書院中文經典數字體驗學習</h2>
@@ -1241,7 +1241,7 @@
                 name: '漢字樹：漢字學習',
                 icon: 'fas fa-paint-brush',
                 gradient: 'from-red-500 to-orange-500',
-                url: 'https://chineseclassics.github.io/diandianmobao.html',
+                url: 'diandianmobao.html',
                 description: '通過筆順練習、記憶挑戰和部首組字等多元化遊戲，系統性學習漢字書寫與結構'
             },
             {
@@ -1250,7 +1250,7 @@
                 name: '貪吃龍',
                 icon: '🐉',
                 gradient: 'from-lime-400 to-green-500',
-                url: 'https://chineseclassics.github.io/cilong.html',
+                url: 'cilong.html',
                 description: '在經典的貪吃蛇玩法中，操控呆萌龍寶收集漢字，組成詞語，挑戰你的詞彙量和反應速度。'
             },
             {
@@ -1259,7 +1259,7 @@
                 name: '故事詞彙接龍',
                 icon: 'fas fa-book-reader',
                 gradient: 'from-purple-500 to-pink-400',
-                url: 'https://chineseclassics.github.io/story-vocab/index.html',
+                url: 'story-vocab/index.html',  // 使用相对路径，自动匹配当前域名
                 description: '與AI共創精彩故事，輕鬆積累詞彙！選擇詞語造句，AI接力續寫，在互動故事中學習繁體中文詞彙，適合2-6年級學生',
                 isNew: true
             },
@@ -1269,7 +1269,7 @@
                 name: '《雷雨》閃電',
                 icon: 'fas fa-cloud-rain',
                 gradient: 'from-blue-500 to-cyan-500',
-                url: 'https://chineseclassics.github.io/leiyushandian.html',
+                url: 'leiyushandian.html',
                 description: '扮演曹禺《雷雨》中的經典角色躲避命運閃電，在街機遊戲中體驗家庭悲劇的文學深度'
             },
             
@@ -1280,7 +1280,7 @@
                 name: '萬物逍遙',
                 icon: 'fas fa-leaf',
                 gradient: 'from-amber-400 to-yellow-300',
-                url: 'https://chineseclassics.github.io/wanwuxiaoyao.html',
+                url: 'wanwuxiaoyao.html',
                 description: '深度體驗莊子哲學的物化之道，從莊周夢蝶到渾沌復生，在七個哲學章節中領悟逍遙境界',
                 isFeatured: true
             },
@@ -1290,7 +1290,7 @@
                 name: '長干行旅',
                 icon: 'fas fa-ship',
                 gradient: 'from-indigo-500 to-violet-500',
-                url: 'https://chineseclassics.github.io/changganxinglv.html',
+                url: 'changganxinglv.html',
                 description: '體驗李白《長干行》中商人與少婦的愛情故事，在角色扮演中感受古典詩歌的浪漫與深情'
             },
             {
@@ -1299,7 +1299,7 @@
                 name: '《長干行》時光拼圖',
                 icon: 'fas fa-hourglass-half',
                 gradient: 'from-gray-600 to-gray-800',
-                url: 'https://chineseclassics.github.io/changganxingshiguang.html',
+                url: 'changganxingshiguang.html',
                 description: '拖動李白《長干行》的詩句卡片，按時間順序重新排列，體驗詩中女子從童年到成年的情感時光'
             },
             {
@@ -1308,7 +1308,7 @@
                 name: '《長恨歌》記憶卡牌',
                 icon: 'fas fa-memory',
                 gradient: 'from-yellow-500 to-amber-500',
-                url: 'https://chineseclassics.github.io/changhengejiyi.html',
+                url: 'changhengejiyi.html',
                 description: '翻開卡牌配對白居易《長恨歌》的詩句與釋義，在記憶遊戲中探索唐明皇與楊貴妃的愛情悲歌'
             },
             {
@@ -1317,7 +1317,7 @@
                 name: '南風填詞',
                 icon: 'fas fa-pencil-alt',
                 gradient: 'from-teal-500 to-green-400',
-                url: 'https://chineseclassics.github.io/nanfengtianci.html',
+                url: 'nanfengtianci.html',
                 description: '體驗古典填詞藝術，在平仄韻律中創作屬於你的詞章，還有背誦挑戰等你來闖關'
             },
             {
@@ -1326,7 +1326,7 @@
                 name: '南風作詩',
                 icon: 'fas fa-feather-alt',
                 gradient: 'from-indigo-400 to-blue-500',
-                url: 'https://chineseclassics.github.io/nanfengzuoshi.html',
+                url: 'nanfengzuoshi.html',
                 description: '基於欽定詞譜的古典填詞工具，用傳統格律創作你的詞章，還能生成精美的古風壁紙'
             },
             {
@@ -1335,7 +1335,7 @@
                 name: '詩詞組句遊戲',
                 icon: 'fas fa-puzzle-piece',
                 gradient: 'from-green-500 to-emerald-500',
-                url: 'https://chineseclassics.github.io/shicizuju.html'
+                url: 'shicizuju.html'
             },
             {
                 id: 'yimoji',
@@ -1343,7 +1343,7 @@
                 name: '意moji：詩詞意象配對',
                 icon: 'fas fa-icons',
                 gradient: 'from-violet-500 to-purple-400',
-                url: 'https://chineseclassics.github.io/yimoji.html',
+                url: 'yimoji.html',
                 description: '尋找三個與詩詞意象最相關的emoji進行配對'
             },
             {
@@ -1352,7 +1352,7 @@
                 name: '刺客之道 1.0',
                 icon: 'fas fa-user-ninja',
                 gradient: 'from-pink-400 to-rose-300',
-                url: 'https://chineseclassics.github.io/cikezhidao.html',
+                url: 'cikezhidao.html',
                 description: '扮演《史記·刺客列傳》中的五位古代刺客，在生死抉擇中體驗千秋義勇與歷史風雲'
             },
             {
@@ -1361,7 +1361,7 @@
                 name: '月下獨酌',
                 icon: 'fas fa-moon',
                 gradient: 'from-slate-600 to-indigo-400',
-                url: 'https://chineseclassics.github.io/yuexiaduzhuo.html',
+                url: 'yuexiaduzhuo.html',
                 description: '加入「月下雅集」群聊，與李白、杜甫、嫦娥等古代詩人在微信群中暢談詩酒風流'
             },
             {
@@ -1370,7 +1370,7 @@
                 name: '《紅樓夢》人物圖譜',
                 icon: 'fa-solid fa-sitemap',
                 gradient: 'from-purple-500 to-pink-500',
-                url: 'https://chineseclassics.github.io/honglourenwu.html',
+                url: 'honglourenwu.html',
                 description: '基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。'
             },
             {
@@ -1379,7 +1379,7 @@
                 name: '太虛幻聊',
                 icon: 'fas fa-comments',
                 gradient: 'from-emerald-600 to-teal-500',
-                url: 'https://chineseclassics.github.io/shuyuan-classic-chat.html',
+                url: 'shuyuan-classic-chat.html',
                 description: '與經典人物的奇妙對話！與詩人們吟詩作對，和史家探討古今，與哲人思辨人生，還能和神話人物暢聊奇事。在微信風格的聊天界面中，親近中華經典，激發學習興趣'
             },
 
@@ -1390,7 +1390,7 @@
                 name: '迷失江南春',
                 icon: 'fas fa-tree',
                 gradient: 'from-emerald-500 to-lime-400',
-                url: 'https://chineseclassics.github.io/mishijiangnanchun.html',
+                url: 'mishijiangnanchun.html',
                 description: '穿越蘇杭文化之旅，與古代人物對話收集線索，找出隱藏在不同場景中的時空迷失者'
             },
             {
@@ -1399,7 +1399,7 @@
                 name: '江南落花',
                 icon: 'fas fa-spa',
                 gradient: 'from-pink-400 to-rose-300',
-                url: 'https://chineseclassics.github.io/jiangnanluohua.html',
+                url: 'jiangnanluohua.html',
                 description: '駕駛小船躲避紛飛花朵，收集特殊道具並挑戰知識問答，在街機遊戲中探索江南文化之美'
             },
             {
@@ -1408,7 +1408,7 @@
                 name: '印章設計',
                 icon: 'fas fa-stamp',
                 gradient: 'from-red-600 to-rose-500',
-                url: 'https://chineseclassics.github.io/sealdesgin.html',
+                url: 'sealdesgin.html',
                 description: '專業的中式印章設計工具，支援陰刻陽刻、多種古典字體選擇，可自由調整文字位置大小，並提供繪圖功能個性化創作'
             },
 
@@ -1419,7 +1419,7 @@
                 name: '神秘數字盒',
                 icon: 'fas fa-box-open',
                 gradient: 'from-yellow-400 to-orange-400',
-                url: 'https://chineseclassics.github.io/caishuzi.html',
+                url: 'caishuzi.html',
                 description: '從 1 到 100 的神秘盒子猜數字，依提示與範圍指示推理，累積分數並解鎖徽章'
             },
             {
@@ -1428,7 +1428,7 @@
                 name: '雙蛇大戰',
                 icon: '🐍',
                 gradient: 'from-emerald-600 to-teal-500',
-                url: 'https://chineseclassics.github.io/2snakes.html',
+                url: '2snakes.html',
                 description: '史上最刺激的雙人蛇類對戰遊戲！兩條蛇在同一戰場展開生死較量，使用特殊道具和策略技巧擊敗對手，支援WASD+方向鍵雙人即時對戰'
             },
             {
@@ -1437,7 +1437,7 @@
                 name: 'All Things Wander Free',
                 icon: 'fas fa-globe',
                 gradient: 'from-blue-400 to-indigo-300',
-                url: 'https://chineseclassics.github.io/wanwuxiaoyaoenglish.html',
+                url: 'wanwuxiaoyaoenglish.html',
                 description: 'English version of the Zhuangzi philosophy experience - explore the transformation of things from Zhuang Zhou\'s butterfly dream to the rebirth of chaos in seven philosophical chapters'
             }
         ];
