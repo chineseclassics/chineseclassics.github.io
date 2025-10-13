@@ -12,6 +12,14 @@
         // 指定本頁使用的 Supabase 專案參數（覆蓋預設）
         window.SUPABASE_URL = 'https://onregacmigwiyomhmjyt.supabase.co';
         window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ucmVnYWNtaWd3aXlvbWhtanl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NzIzMDcsImV4cCI6MjA3NDU0ODMwN30.VxLyR3SMlnVYubFLdQNJqYMyJnT5foo7wUkVEmi4QcY';
+        
+        // 初始化 Supabase 客户端
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            window.sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            console.log('✅ Supabase 客户端初始化成功（诗词组句）');
+        } else {
+            console.error('❌ Supabase UMD 库未加载');
+        }
     </script>
     <script>
         tailwind.config = {
