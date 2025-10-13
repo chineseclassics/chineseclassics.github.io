@@ -4907,70 +4907,63 @@ window.LocalBattle.endMode = function endBattleMode() {
         };
         // 【重構】不再暴露 __REMOTE_STATE__，所有數據統一在 GameState 中
 
+        // 清除 Supabase 本地存儲
+        function clearSupabaseStorage(){
+            console.log('[remote] 清除 Supabase 本地存儲...');
+            const keys = Object.keys(localStorage);
+            let cleared = 0;
+            keys.forEach(key => {
+                if (key.includes('supabase') || key.includes('sb-')) {
+                    localStorage.removeItem(key);
+                    cleared++;
+                }
+            });
+            console.log('[remote] ✅ 已清除', cleared, '個本地存儲項');
+            return cleared;
+        }
+
         // 確保匿名登入
         async function ensureAnonLogin(){
             console.log('[remote] ensureAnonLogin 開始');
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
             
-            // 為 getSession 設置單獨的超時（3秒）
-            const sessionTimeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('getSession timeout')), ms));
-            const authTimeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('auth timeout')), ms));
+            const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('auth timeout')), ms));
             
             const getOrLogin = (async () => {
-                console.log('[remote] 1. 檢查現有會話...');
+                // 策略：每次都清除舊會話，重新匿名登入
+                // 原因：getSession() 檢查舊的匿名會話時可能卡住
+                console.log('[remote] 1. 清除舊會話...');
+                clearSupabaseStorage();
                 
-                let sess;
-                try {
-                    // 為 getSession 設置 3 秒超時
-                    sess = await Promise.race([
-                        sb.auth.getSession(),
-                        sessionTimeout(3000)
-                    ]);
-                    console.log('[remote] 2. 現有會話:', sess.data?.session ? '存在' : '不存在');
-                } catch (err) {
-                    // 如果 getSession 超時或出錯，強制清除並重新登入
-                    console.warn('[remote] 檢查會話失敗，清除舊會話:', err.message);
-                    try {
-                        // 強制清除本地存儲的認證數據
-                        await sb.auth.signOut();
-                        // 清除所有相關的 localStorage 項目
-                        const keysToRemove = [];
-                        for (let i = 0; i < localStorage.length; i++) {
-                            const key = localStorage.key(i);
-                            if (key && key.includes('supabase')) {
-                                keysToRemove.push(key);
-                            }
-                        }
-                        keysToRemove.forEach(key => localStorage.removeItem(key));
-                        console.log('[remote] 已清除', keysToRemove.length, '個 Supabase 本地存儲項');
-                    } catch (cleanupErr) {
-                        console.warn('[remote] 清理失敗:', cleanupErr);
-                    }
-                    sess = { data: { session: null } };
+                // 同步登出（不等待網絡響應）
+                sb.auth.signOut().catch(() => {});
+                
+                console.log('[remote] 2. 執行匿名登入...');
+                const loginResult = await sb.auth.signInAnonymously();
+                
+                if (loginResult.error) {
+                    console.error('[remote] ❌ 匿名登入失敗:', loginResult.error);
+                    throw loginResult.error;
                 }
+                console.log('[remote] 3. ✅ 匿名登入成功');
                 
-                if (!sess.data?.session) {
-                    console.log('[remote] 3. 執行匿名登入...');
-                    try {
-                        const result = await sb.auth.signInAnonymously();
-                        console.log('[remote] 4. 匿名登入結果:', result.error ? '失敗' : '成功', result.error);
-                        if (result.error) throw result.error;
-                    } catch (err) {
-                        console.error('[remote] 匿名登入錯誤:', err);
-                        throw err;
-                    }
-                }
-                
-                console.log('[remote] 5. 獲取用戶信息...');
+                console.log('[remote] 4. 獲取用戶信息...');
                 const userResult = await sb.auth.getUser();
-                console.log('[remote] 6. 用戶信息:', userResult.data.user ? '成功' : '失敗');
+                if (!userResult.data.user) {
+                    console.error('[remote] ❌ 無法獲取用戶信息');
+                    throw new Error('無法獲取用戶信息');
+                }
+                console.log('[remote] 5. ✅ 用戶信息獲取成功');
                 return userResult.data.user;
             })();
             
-            console.log('[remote] 等待認證完成（最多15秒）...');
-            state.user = await Promise.race([getOrLogin, authTimeout(15000)]);
-            if (!state.user) throw new Error('anonymous auth failed');
-            console.log('[remote] ✅ 認證成功! 用戶ID:', state.user.id);
+            console.log('[remote] 等待認證完成（最多10秒）...');
+            state.user = await Promise.race([getOrLogin, timeout(10000)]);
+            
+            if (!state.user) {
+                throw new Error('anonymous auth failed');
+            }
+            console.log('[remote] ✅ 認證完成! 用戶ID:', state.user.id);
         }
 
         function genRoomCode(){
@@ -5581,14 +5574,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 // 提供更詳細的錯誤信息
                 let errorMsg = '建立失敗：' + (e?.message || e);
                 if (String(e?.message).includes('timeout')) {
-                    errorMsg = '認證超時！\n\n' +
-                        '可能原因：\n' +
-                        '1. 瀏覽器緩存了損壞的會話數據\n' +
-                        '2. 網絡連接問題\n\n' +
-                        '解決方法：\n' +
-                        '• 使用隱身模式打開\n' +
-                        '• 或清除瀏覽器緩存和 Cookie\n' +
-                        '• 或在開發者工具的 Application → Local Storage 中刪除 supabase 相關項目';
+                    errorMsg = '認證超時！\n\n可能原因：\n1. 網絡連接問題\n2. Supabase 服務響應緩慢\n\n請檢查網絡連接後重試';
                 }
                 alert(errorMsg);
             }
@@ -5612,14 +5598,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 console.warn('[remote] join error', e);
                 let errorMsg = '加入失敗：' + (e?.message || e);
                 if (String(e?.message).includes('timeout')) {
-                    errorMsg = '認證超時！\n\n' +
-                        '可能原因：\n' +
-                        '1. 瀏覽器緩存了損壞的會話數據\n' +
-                        '2. 網絡連接問題\n\n' +
-                        '解決方法：\n' +
-                        '• 使用隱身模式打開\n' +
-                        '• 或清除瀏覽器緩存和 Cookie\n' +
-                        '• 或在開發者工具的 Application → Local Storage 中刪除 supabase 相關項目';
+                    errorMsg = '認證超時！\n\n可能原因：\n1. 網絡連接問題\n2. Supabase 服務響應緩慢\n\n請檢查網絡連接後重試';
                 }
                 alert(errorMsg);
             }
