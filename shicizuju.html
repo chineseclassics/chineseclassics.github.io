@@ -4922,22 +4922,39 @@ window.LocalBattle.endMode = function endBattleMode() {
             return cleared;
         }
 
-        // 確保匿名登入
+        // 確保用戶已認證（支持 Google 登入和匿名登入）
         async function ensureAnonLogin(){
-            console.log('[remote] ensureAnonLogin 開始');
+            console.log('[remote] 認證檢查開始');
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
             
             const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('auth timeout')), ms));
             
             const getOrLogin = (async () => {
-                // 策略：每次都清除舊會話，重新匿名登入
-                // 原因：getSession() 檢查舊的匿名會話時可能卡住
-                console.log('[remote] 1. 清除舊會話...');
-                clearSupabaseStorage();
+                // 步驟1：嘗試直接獲取當前用戶（不檢查 session）
+                console.log('[remote] 1. 嘗試獲取當前用戶...');
+                try {
+                    const quickTimeout = new Promise((_, rej) => 
+                        setTimeout(() => rej(new Error('getUser timeout')), 3000)
+                    );
+                    const userPromise = sb.auth.getUser();
+                    const userResult = await Promise.race([userPromise, quickTimeout]);
+                    
+                    if (userResult.data.user) {
+                        const user = userResult.data.user;
+                        const isGoogleUser = user.app_metadata?.provider === 'google';
+                        console.log('[remote] ✅ 找到現有用戶:', isGoogleUser ? 'Google' : '匿名');
+                        return user;
+                    }
+                } catch (err) {
+                    console.warn('[remote] ⚠️ 無法獲取當前用戶:', err.message);
+                    // 清除可能損壞的匿名會話數據
+                    console.log('[remote] 清除損壞的會話數據...');
+                    clearSupabaseStorage();
+                    // 登出（不等待）
+                    sb.auth.signOut().catch(() => {});
+                }
                 
-                // 同步登出（不等待網絡響應）
-                sb.auth.signOut().catch(() => {});
-                
+                // 步驟2：執行匿名登入
                 console.log('[remote] 2. 執行匿名登入...');
                 const loginResult = await sb.auth.signInAnonymously();
                 
@@ -4945,25 +4962,38 @@ window.LocalBattle.endMode = function endBattleMode() {
                     console.error('[remote] ❌ 匿名登入失敗:', loginResult.error);
                     throw loginResult.error;
                 }
-                console.log('[remote] 3. ✅ 匿名登入成功');
                 
-                console.log('[remote] 4. 獲取用戶信息...');
-                const userResult = await sb.auth.getUser();
-                if (!userResult.data.user) {
+                // 登入成功後，直接從登入結果獲取用戶
+                if (loginResult.data?.user) {
+                    console.log('[remote] ✅ 匿名登入成功，用戶ID:', loginResult.data.user.id);
+                    return loginResult.data.user;
+                }
+                
+                // 如果登入結果沒有用戶，再次嘗試獲取
+                console.log('[remote] 3. 再次獲取用戶信息...');
+                const quickTimeout2 = new Promise((_, rej) => 
+                    setTimeout(() => rej(new Error('getUser timeout after login')), 3000)
+                );
+                const userPromise2 = sb.auth.getUser();
+                const userResult2 = await Promise.race([userPromise2, quickTimeout2]);
+                
+                if (!userResult2.data.user) {
                     console.error('[remote] ❌ 無法獲取用戶信息');
                     throw new Error('無法獲取用戶信息');
                 }
-                console.log('[remote] 5. ✅ 用戶信息獲取成功');
-                return userResult.data.user;
+                console.log('[remote] ✅ 用戶信息獲取成功');
+                return userResult2.data.user;
             })();
             
-            console.log('[remote] 等待認證完成（最多10秒）...');
-            state.user = await Promise.race([getOrLogin, timeout(10000)]);
+            console.log('[remote] 等待認證完成（最多12秒）...');
+            state.user = await Promise.race([getOrLogin, timeout(12000)]);
             
             if (!state.user) {
-                throw new Error('anonymous auth failed');
+                throw new Error('auth failed');
             }
-            console.log('[remote] ✅ 認證完成! 用戶ID:', state.user.id);
+            
+            const userType = state.user.app_metadata?.provider === 'google' ? 'Google' : '匿名';
+            console.log('[remote] ✅ 認證完成!', userType, '用戶，ID:', state.user.id);
         }
 
         function genRoomCode(){
