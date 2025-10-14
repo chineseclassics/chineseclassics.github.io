@@ -84,6 +84,8 @@ async function initializeApp() {
         // 3. 根據真實用戶狀態更新 UI（不依賴 localStorage，避免閃動）
         hideLoadingScreen(); // 確保隱藏加載屏幕
         
+        let initialLoginHandled = false; // 標記初始登入狀態是否已處理
+        
         if (user && user.user_type === 'registered') {
             // Google 用戶：進入主界面
             console.log('✅ Google 用戶已登入:', user.display_name);
@@ -91,15 +93,23 @@ async function initializeApp() {
             gameState.user = user;
             updateUIForLoggedInUser(user);
             showMainInterface();
+            initialLoginHandled = true; // 標記已處理
         } else {
             // 匿名用戶或未登入：顯示登入界面
             console.log('ℹ️ 顯示登入界面');
             showLoginScreen();
         }
         
-        // 4. 設置認證監聽器
+        // 4. 設置認證監聽器（避免重複處理初始登入）
         authService.onAuthStateChange((event, user) => {
             if (event === 'SIGNED_IN' && user) {
+                // 如果初始化時已經處理過登入狀態，跳過第一次 SIGNED_IN 事件
+                if (initialLoginHandled) {
+                    console.log('🔄 跳過重複的 SIGNED_IN 事件（初始化已處理）');
+                    initialLoginHandled = false; // 重置標記，後續登入需要處理
+                    return;
+                }
+                
                 gameState.userId = user.id;
                 gameState.user = user;
                 updateUIForLoggedInUser(user);
