@@ -80,13 +80,10 @@ function quickCheckUserState() {
 }
 
 /**
- * 隱藏加載屏幕
+ * 隱藏加載屏幕（已移除加載屏幕元素，保留函數以避免錯誤）
  */
 function hideLoadingScreen() {
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) {
-        loadingScreen.classList.remove('active');
-    }
+    // 加載屏幕已從 HTML 中移除，此函數保留以避免調用錯誤
 }
 
 /**

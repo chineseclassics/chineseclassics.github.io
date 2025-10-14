@@ -36,15 +36,34 @@
 - 導致頁面加載時會先顯示加載屏幕，然後才隱藏
 
 **解決方案**：
-- ✅ 移除 `loading-screen` 的 `active` 類
-- ✅ 讓加載屏幕默認隱藏（CSS 中 `display: none`）
-- ✅ 只在真正需要加載時才通過 JavaScript 顯示
+- ✅ 完全移除加載屏幕 HTML 元素
+- ✅ 移除相關 CSS 樣式
+- ✅ 保留 `hideLoadingScreen()` 函數（避免調用錯誤）
 
 **修改文件**：
 ```diff
-# story-vocab/index.html (第 24 行)
-- <div id="loading-screen" class="loading-screen active">
-+ <div id="loading-screen" class="loading-screen">
+# story-vocab/index.html
+- <!-- ===== 加載屏幕 ===== -->
+- <div id="loading-screen" class="loading-screen">
+-     <div class="loading-container">
+-         <div class="loading-spinner"></div>
+-         <p class="loading-text">正在載入...</p>
+-     </div>
+- </div>
+
+# story-vocab/css/screens.css
+- /* 移除所有 .loading-screen 相關樣式（約 40 行） */
+
+# story-vocab/js/app.js
+- function hideLoadingScreen() {
+-     const loadingScreen = document.getElementById('loading-screen');
+-     if (loadingScreen) {
+-         loadingScreen.classList.remove('active');
+-     }
+- }
++ function hideLoadingScreen() {
++     // 加載屏幕已移除，保留函數以避免調用錯誤
++ }
 ```
 
 ---
@@ -104,7 +123,9 @@ function hideLoadingScreen() {
 ### 修改的文件
 - ✅ `index.html` - 應用名稱更新
 - ✅ `assets/js/taixu-app-switcher.js` - 應用名稱更新
-- ✅ `story-vocab/index.html` - 移除加載屏幕的 active 類
+- ✅ `story-vocab/index.html` - 完全移除加載屏幕元素
+- ✅ `story-vocab/css/screens.css` - 移除加載屏幕樣式
+- ✅ `story-vocab/js/app.js` - 保留空函數避免錯誤
 
 ### 不影響的功能
 - ✅ 登入流程正常
