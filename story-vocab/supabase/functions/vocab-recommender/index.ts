@@ -167,46 +167,88 @@ async function recommendFromWordlist(
     
     console.log(`✅ 從詞表獲取 ${words.length} 個候選詞彙`)
     
-    // 3. 獲取本會話用戶已選擇的詞彙（而不是推荐过的词）
+    // 3. 根據詞表類型決定去重策略
+    // - 自定義詞表：只排除已選擇的詞（詞數可能不足）
+    // - 系統詞表/AI模式：排除已推薦的詞（保證新鮮感）
+    
+    // 先獲取詞表類型
+    const { data: wordlistData } = await supabase
+      .from('wordlists')
+      .select('type, name')
+      .eq('id', wordlistId)
+      .single()
+    
+    const isCustomWordlist = wordlistData?.type === 'custom'
+    
+    // 根據類型選擇不同的去重字段
+    const selectField = isCustomWordlist ? 'selected_word' : 'recommended_words'
+    
     const { data: rounds, error: roundsError } = await supabase
       .from('game_rounds')
-      .select('selected_word')
+      .select(selectField)
       .eq('session_id', sessionId)
     
     if (roundsError) {
       console.error('❌ 查詢 game_rounds 失敗:', roundsError)
-      // 如果查詢失敗，繼續但不過濾（可能會有重複詞）
     }
     
-    // 只排除用户已经选择过的词语
-    const usedWords = new Set(
-      rounds?.map(r => r.selected_word).filter(Boolean) || []
-    )
+    let usedWords: Set<string>
     
-    console.log(`📊 本會話用戶已選擇詞彙數: ${usedWords.size} 個`, Array.from(usedWords))
+    if (isCustomWordlist) {
+      // 自定義詞表：只排除已選擇的詞
+      usedWords = new Set(
+        rounds?.map(r => r.selected_word).filter(Boolean) || []
+      )
+      console.log(`📊 [自定義詞表] 用戶已選擇詞彙數: ${usedWords.size} 個`, Array.from(usedWords))
+    } else {
+      // 系統詞表/AI模式：排除所有已推薦的詞
+      usedWords = new Set(
+        rounds?.flatMap(r => r.recommended_words?.map((w: any) => w.word) || []) || []
+      )
+      console.log(`📊 [系統詞表] 已推薦詞彙數: ${usedWords.size} 個`, Array.from(usedWords))
+    }
     
     // 4. 過濾已使用的詞彙
     const availableWords = words.filter(w => !usedWords.has(w.word))
     
     if (availableWords.length < 5) {
       const needed = 5 - availableWords.length
-      console.warn(`⚠️  可用詞彙不足5個（剩餘 ${availableWords.length} 個），需要補充 ${needed} 個`)
       
-      // 從已選擇的詞中隨機補充
-      const alreadyUsed = words.filter(w => usedWords.has(w.word))
-      const shuffled = alreadyUsed.sort(() => Math.random() - 0.5)
-      const supplements = shuffled.slice(0, needed)
-      
-      console.log(`✅ 補充已選詞: ${supplements.map(w => w.word).join('、')}`)
-      
-      const finalWords = [...availableWords, ...supplements]
-      
-      return finalWords.map(w => ({
-        word: w.word,
-        difficulty: 3,
-        category: 'flexible',
-        isRepeated: usedWords.has(w.word) // 標記是否為重複詞
-      }))
+      if (isCustomWordlist) {
+        // 自定義詞表：允許補充已選擇的詞
+        console.warn(`⚠️  [自定義詞表] 可用詞彙不足5個（剩餘 ${availableWords.length} 個），需要補充 ${needed} 個`)
+        
+        const alreadySelected = words.filter(w => usedWords.has(w.word))
+        const shuffled = alreadySelected.sort(() => Math.random() - 0.5)
+        const supplements = shuffled.slice(0, needed)
+        
+        console.log(`✅ 補充已選詞: ${supplements.map(w => w.word).join('、')}`)
+        
+        const finalWords = [...availableWords, ...supplements]
+        
+        return finalWords.map(w => ({
+          word: w.word,
+          difficulty: 3,
+          category: 'flexible',
+          isRepeated: usedWords.has(w.word)
+        }))
+      } else {
+        // 系統詞表：理論上不應該發生詞數不足
+        console.error(`❌ [系統詞表] 嚴重錯誤：詞彙不足！詞表: ${wordlistData?.name}, 可用: ${availableWords.length}`)
+        
+        // 降級處理：返回所有可用詞
+        if (availableWords.length === 0) {
+          console.error('❌ 完全沒有可用詞彙，返回空數組')
+          return []
+        }
+        
+        return availableWords.map(w => ({
+          word: w.word,
+          difficulty: 3,
+          category: 'flexible',
+          isRepeated: false
+        }))
+      }
     }
     
     // 5. 隨機選擇5個
