@@ -83,63 +83,34 @@
         });
     </script>
     <style>
-        /* 确保html和body不影响iframe显示 */
+        /* 基础样式重置 */
+        * {
+            box-sizing: border-box;
+        }
+        
         html, body {
             margin: 0 !important;
             padding: 0 !important;
             overflow-x: hidden;
-            height: 100%;
-            width: 100%;
-            position: relative;
         }
         
-        /* 确保首页可以正常滚动 */
         body {
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
         
-        /* 应用视图显示时的body样式 - 完全交给iframe处理滚动 */
-        body.app-view-active {
-            /* 完全移除overflow限制，让iframe应用自主处理滚动 */
-        }
-        
-        /* 强制重置所有默认边距 */
-        * {
-            box-sizing: border-box;
-        }
-        
-        html {
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100% !important;
-            width: 100% !important;
-        }
-        
-        body {
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100% !important;
-            width: 100% !important;
-            line-height: 1;
-        }
-        
-        /* 移动端优化 - 修改為僅在首頁時防止滾動 */
+        /* 移动端优化 */
         @media (max-width: 768px) {
-            /* 只有在非應用視圖時才限制滾動 */
-            body:not(.app-view-active) {
-                /* 移动端防止缩放和滚动 */
+            body {
                 overflow: hidden;
                 position: fixed;
                 width: 100vw;
                 height: 100vh;
-                /* 移动端视口高度 */
                 height: 100dvh;
             }
             
             html {
                 width: 100vw;
-                /* 使用100dvh作为主要高度，100vh作为后备 */
                 height: 100vh;
                 height: 100dvh;
             }
@@ -148,19 +119,6 @@
             * {
                 touch-action: manipulation;
             }
-        }
-        
-        /* 应用视图显示时的样式 */
-        #appView:not(.hidden) {
-            z-index: 90 !important; /* 低于floatingLogo但高于其他内容 */
-        }
-        
-        /* 当应用视图显示时，隐藏主要内容 - 修正选择器 */
-        body.app-view-active main,
-        body.app-view-active nav {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
         }
         
         .app-icon {
@@ -189,37 +147,6 @@
         .app-icon:hover .shadow-lg {
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
-        
-        .app-container {
-            height: 100% !important;
-            width: 100% !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            z-index: 100; /* 提高层级，但低于floatingLogo */
-            margin: 0 !important;
-            padding: 0 !important;
-            /* 完全移除overflow限制，让iframe应用自主处理滚动 */
-            box-sizing: border-box;
-            /* 确保没有额外的空间 */
-            transform: translateZ(0);
-            will-change: transform;
-        }
-        
-        @media (max-width: 768px) {
-            .app-container {
-                height: 100vh;
-                width: 100vw;
-                margin: 0;
-                padding: 0;
-                /* 完全移除overflow限制，让iframe应用处理移动端滚动 */
-            }
-        }
-        
-
-        
         /* 应用详情提示框 */
         .app-tooltip {
             position: absolute;
@@ -754,217 +681,8 @@
             display: none !important;
         }
         
-        /* 悬浮logo样式优化 */
-        #floatingLogo {
-            transition: all 0.3s ease;
-            pointer-events: auto;
-        }
-        
-        /* 确保悬浮logo不影响iframe内容 */
-        #floatingLogo {
-            z-index: 1000;
-            position: fixed !important;
-            pointer-events: auto;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: auto !important;
-            height: auto !important;
-        }
-        
-        /* 确保悬浮logo不会占用文档流空间 */
-        #floatingLogo {
-            position: fixed !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        
-        /* 悬浮logo容器样式 */
-        #floatingLogo > div {
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
-        }
-        
-        /* 悬浮logo默认状态 - 更加低调 */
-        #floatingLogo > div {
-            opacity: 0.6;
-            transform: scale(0.9);
-        }
-        
-        /* 悬浮logo悬停状态 */
-        #floatingLogo:hover > div {
-            opacity: 1;
-            transform: scale(1);
-        }
-        
-        /* 悬浮logo激活状态 */
-        #floatingLogo:active > div {
-            transform: scale(0.95);
-        }
-        
-        /* 移动端禁用悬停效果 */
-        @media (max-width: 768px) {
-            #floatingLogo:hover > div {
-                opacity: 0.6;
-                transform: scale(0.9);
-            }
-            
-            #floatingLogo:active > div {
-                transform: scale(0.9);
-            }
-        }
-        
-        /* 确保logo在右侧垂直居中 */
-        #floatingLogo {
-            right: 16px !important;
-            top: 50% !important;
-            margin-top: -24px !important; /* 假设logo高度为48px，向上偏移一半 */
-        }
-        
-        /* 内部div的transform应该相对于父元素 */
-        #floatingLogo > div {
-            transform-origin: center;
-        }
-        
-        /* 应用视图全屏样式 - 统一z-index层级 */
-        #appView {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 90; /* 统一层级：低于floatingLogo(1000)，高于其他内容 */
-            margin: 0 !important;
-            padding: 0 !important;
-            /* 完全交给iframe处理滚动 */
-            box-sizing: border-box;
-        }
-        
-        /* 确保应用视图完全覆盖，不受任何元素影响 */
-        #appView:not(.hidden) {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 90 !important; /* 统一层级 */
-        }
-        
-        /* iframe全屏样式 - 方案一：完全交给iframe处理滚动 */
-        #appFrame {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            /* 完全移除overflow限制，让iframe内应用自主处理滚动 */
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1;
-            /* 确保iframe完全贴合 */
-            transform: translateZ(0);
-            will-change: transform;
-            /* 确保iframe内容正确缩放 */
-            box-sizing: border-box;
-            /* 移動端滾動完全交给iframe应用处理 */
-        }
-        
-        /* 确保iframe内容正确显示 */
-        #appFrame:not([src="about:blank"]) {
-            width: 100% !important;
-            height: 100% !important;
-        }
-        
-        /* 确保应用视图显示时，iframe完全填满屏幕 - 方案一优化 */
-        #appView:not(.hidden) #appFrame {
-            width: 100vw !important;
-            /* 使用100dvh作为主要高度，100vh作为后备 */
-            height: 100vh !important;
-            height: 100dvh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            z-index: 1 !important;
-            /* 滚动完全交给iframe内应用处理 */
-        }
-        
-        /* 确保应用视图不受任何父元素影响 - 方案一：清理冗余设置 */
-        #appView {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            z-index: 90 !important; /* 统一z-index层级 */
-            margin: 0 !important;
-            padding: 0 !important;
-            /* 滚动责任完全交给iframe应用 */
-        }
-        
-        /* 移动端特定优化 */
-        @media (max-width: 768px) {
-            /* 移动端悬浮logo优化 */
-            #floatingLogo > div {
-                padding: 6px !important;
-            }
-            
-            #floatingLogo img {
-                width: 24px !important;
-                height: 24px !important;
-            }
-            
-            /* 移动端点击优化 */
-            #floatingLogo {
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: transparent;
-            }
-            
-            #floatingLogo img {
-                pointer-events: auto;
-                touch-action: manipulation;
-            }
-            
-            /* 移动端iframe优化 - 只在应用视图显示时应用 */
-            #appView:not(.hidden) #appFrame {
-                width: 100% !important;
-                height: 100% !important;
-            }
-            
-    
-            /* 移动端应用容器优化 - 只在应用视图显示时应用 */
-            #appView:not(.hidden) .app-container {
-                height: 100% !important;
-                width: 100% !important;
-            }
-            
-            /* 确保首页可以正常滚动 */
-            #homeView:not(.hidden) {
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            
-                    /* 移动端首页滚动优化 - 僅適用於首頁 */
-        body:not(.app-view-active) #homeView {
-            overflow: hidden !important;
-            -webkit-overflow-scrolling: touch;
-        }
-        
         /* 首頁固定標題區域樣式 */
         #homeView {
-            /* 使用100dvh作为主要高度，100vh作为后备 */
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
@@ -975,44 +693,9 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
-        }
-        
-        /* 超小屏幕优化 */
-        @media (max-width: 480px) {
-            #floatingLogo {
-                right: 8px !important;
-                top: 50% !important;
-                margin-top: -20px !important; /* 移动端logo更小，调整偏移 */
-            }
-            
-            #floatingLogo > div {
-                padding: 4px !important;
-            }
-            
-            #floatingLogo img {
-                width: 20px !important;
-                height: 20px !important;
-            }
-            
-            /* 移动端点击优化 */
-            #floatingLogo {
-                touch-action: manipulation;
-                -webkit-tap-highlight-color: transparent;
-            }
-            
-            #floatingLogo img {
-                pointer-events: auto;
-                touch-action: manipulation;
-            }
-        }
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen" style="margin: 0; padding: 0; overflow-x: hidden;">
-
-
-
-    <!-- 悬浮Logo由组件自动创建 -->
-
     <!-- 主内容区域 -->
     <main class="relative z-20" id="mainContent">
         <!-- 首页视图 -->
@@ -1393,181 +1076,8 @@
             }
         ];
 
-        // 状态管理和事件清理
-        let currentApp = null;
-        let currentView = 'home';
-        let appLoadTimeoutId = null;
-        let resizeListener = null;
-        let orientationListener = null;
-        
-        // 统一的iframe尺寸设置函数 - 方案一简化版
-        function setIframeSize(width = window.innerWidth, height = window.innerHeight) {
-            const frameElement = appFrame;
-            const containerElement = appContainer;
-            
-            // 只设置基本的尺寸，滚动完全交给iframe处理
-            Object.assign(frameElement.style, {
-                width: width + 'px',
-                height: height + 'px',
-                margin: '0',
-                padding: '0',
-                border: 'none',
-                position: 'absolute',
-                top: '0',
-                left: '0',
-                right: '0',
-                bottom: '0'
-            });
-            
-            // 容器也简化设置
-            Object.assign(containerElement.style, {
-                width: width + 'px',
-                height: height + 'px',
-                margin: '0',
-                padding: '0'
-            });
-        }
-        
-        // 清理事件监听器和定时器
-        function cleanupAppResources() {
-            if (appLoadTimeoutId) {
-                clearTimeout(appLoadTimeoutId);
-                appLoadTimeoutId = null;
-            }
-            
-            // 清理iframe事件
-            if (appFrame) {
-                appFrame.onload = null;
-                appFrame.onerror = null;
-            }
-        }
-        
-        // 浏览器兼容性检查和优化 - 方案一简化版
-        function setupBrowserCompatibility() {
-            // 检查100dvh支持
-            const testElement = document.createElement('div');
-            testElement.style.height = '100dvh';
-            document.body.appendChild(testElement);
-            const supports100dvh = testElement.offsetHeight > 0;
-            document.body.removeChild(testElement);
-            
-            if (!supports100dvh) {
-                // 如果不支持100dvh，添加polyfill
-                const style = document.createElement('style');
-                style.textContent = `
-                    @supports not (height: 100dvh) {
-                        #homeView { height: 100vh !important; }
-                        #appView:not(.hidden) #appFrame { height: 100vh !important; }
-                        html { height: 100vh !important; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            // 简化版：移除滚动相关的兼容性处理，交给iframe应用自己处理
-        }
-        
-        // 键盘导航支持增强
-        function setupKeyboardNavigation() {
-            // ESC键处理优化
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    if (appSwitcherModal.classList.contains('switcher-modal-show')) {
-                        hideAppSwitcher();
-                        e.preventDefault();
-                        return;
-                    }
-                    
-                    if (currentView === 'app') {
-                        showHome();
-                        e.preventDefault();
-                        return;
-                    }
-                }
-                
-                // Tab键导航支持
-                if (e.key === 'Tab' && currentView === 'app') {
-                    // 在应用视图中，确保焦点能够正确导航到浮动logo
-                    const floatingLogo = document.getElementById('floatingLogo');
-                    if (!floatingLogo.classList.contains('hidden')) {
-                        if (!e.shiftKey && document.activeElement === appFrame) {
-                            e.preventDefault();
-                            floatingLogo.focus();
-                        }
-                    }
-                }
-            });
-            
-            // 为浮动logo添加键盘支持
-            const floatingLogo = document.getElementById('floatingLogo');
-            floatingLogo.setAttribute('tabindex', '0');
-            floatingLogo.setAttribute('role', 'button');
-            floatingLogo.setAttribute('aria-label', '打開應用切換器');
-            
-            floatingLogo.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    showFloatingAppSwitcher();
-                }
-            });
-        }
-        
-        // 增强的状态管理函数 - 方案一简化版  
-        function setAppViewState(isActive) {
-            if (isActive) {
-                // 激活应用视图
-                document.body.classList.add('app-view-active');
-                document.getElementById('floatingLogo').classList.remove('hidden');
-                
-                // 设置aria-hidden属性
-                const homeView = document.getElementById('homeView');
-                homeView.setAttribute('aria-hidden', 'true');
-                
-                // 更新iframe的title和aria-label
-                if (currentApp) {
-                    appFrame.title = currentApp.name;
-                    appFrame.setAttribute('aria-label', `${currentApp.name} - ${currentApp.description || '應用程序'}`);
-                }
-                
-                // 最小化外层样式设置，滚动交给iframe处理
-                Object.assign(document.body.style, {
-                    margin: '0',
-                    padding: '0'
-                });
-                
-                Object.assign(document.documentElement.style, {
-                    margin: '0',
-                    padding: '0'
-                });
-            } else {
-                // 恢复首页状态
-                document.body.classList.remove('app-view-active');
-                document.getElementById('floatingLogo').classList.add('hidden');
-                
-                // 恢复aria-hidden属性
-                const homeView = document.getElementById('homeView');
-                homeView.removeAttribute('aria-hidden');
-                
-                // 清理iframe属性
-                appFrame.title = '應用視圖';
-                appFrame.setAttribute('aria-label', '當前運行的應用程序');
-                
-                // 清理动态样式
-                document.body.style.margin = '';
-                document.body.style.padding = '';
-                document.documentElement.style.margin = '';
-                document.documentElement.style.padding = '';
-            }
-        }
-
         // DOM 元素
         const homeView = document.getElementById('homeView');
-        const appView = document.getElementById('appView');
-        const appFrame = document.getElementById('appFrame');
-        const loadingState = document.getElementById('loadingState');
-        const errorState = document.getElementById('errorState');
-        const currentAppName = document.getElementById('currentAppName');
-        const appGrid = document.getElementById('appGrid');
         const switcherAppGrid = document.getElementById('switcherAppGrid');
         const appSwitcherModal = document.getElementById('appSwitcherModal');
 
@@ -1920,78 +1430,6 @@
             window.location.href = app.url;
         }
 
-        // 增强的错误处理函数
-        function showError(errorType = 'generic', errorDetails = null) {
-            loadingState.classList.add('hidden');
-            errorState.classList.remove('hidden');
-            
-            // 根据错误类型提供更具体的信息
-            const errorMessages = {
-                timeout: '應用載入超時，請檢查網絡連接',
-                network: '網絡連接錯誤，請稍後再試',
-                cors: '跨域訪問被阻止，請在新標籤頁中打開',
-                generic: '無法載入應用，該應用可能不支援嵌入模式'
-            };
-            
-            const errorMessage = errorMessages[errorType] || errorMessages.generic;
-            const errorElement = errorState.querySelector('.error-container p');
-            if (errorElement) {
-                errorElement.textContent = errorMessage;
-            }
-            
-            // 在新標籤頁打開
-            document.getElementById('openInNewTabBtn').onclick = () => {
-                if (currentApp && currentApp.url) {
-                    window.open(currentApp.url, '_blank', 'noopener,noreferrer');
-                }
-            };
-            
-            // 重新嘗試載入
-            document.getElementById('retryLoadBtn').onclick = () => {
-                if (!currentApp) return;
-                
-                errorState.classList.add('hidden');
-                loadingState.classList.remove('hidden');
-                
-                // 清理之前的资源
-                cleanupAppResources();
-                
-                // 重新載入iframe
-                setTimeout(() => {
-                    const retryUrl = currentApp.url + 
-                        (currentApp.url.includes('?') ? '&' : '?') + 
-                        'retry=' + Date.now();
-                    
-                    appFrame.src = retryUrl;
-                    
-                    // 设置新的超时处理
-                    appLoadTimeoutId = setTimeout(() => {
-                        showError('timeout');
-                    }, 15000); // 重试时给更长时间
-                    
-                    // 重新设置事件处理
-                    appFrame.onload = () => {
-                        if (appLoadTimeoutId) {
-                            clearTimeout(appLoadTimeoutId);
-                            appLoadTimeoutId = null;
-                        }
-                        setTimeout(() => {
-                            loadingState.classList.add('hidden');
-                            setIframeSize();
-                        }, 500);
-                    };
-                    
-                    appFrame.onerror = () => {
-                        if (appLoadTimeoutId) {
-                            clearTimeout(appLoadTimeoutId);
-                            appLoadTimeoutId = null;
-                        }
-                        showError('network');
-                    };
-                }, 500);
-            };
-        }
-
         // 回到首页（直接跳转）
         function showHome() {
             window.location.href = '/index.html';
@@ -2058,15 +1496,9 @@
         document.addEventListener('keydown', (e) => {
             // ESC鍵處理
             if (e.key === 'Escape') {
-                // 優先處理應用切換器
+                // 處理應用切換器
                 if (appSwitcherModal.classList.contains('switcher-modal-show')) {
                     hideAppSwitcher();
-                    return;
-                }
-                
-                // 如果在應用視圖中，返回首頁
-                if (currentView === 'app') {
-                    showHome();
                     return;
                 }
             }
@@ -2104,88 +1536,9 @@
 
 
 
-        // 防抖函数
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-        
-        // 优化的resize处理函数 - 方案一简化版
-        const handleResize = debounce(() => {
-            if (!appView.classList.contains('hidden')) {
-                // 只需要基本的尺寸设置，滚动交给iframe处理
-                setIframeSize();
-            }
-        }, 150);
-        
-        // 优化的方向变化处理函数 - 方案一简化版
-        const handleOrientationChange = debounce(() => {
-            if (!appView.classList.contains('hidden')) {
-                setTimeout(() => {
-                    setIframeSize();
-                    // 简单的重排优化
-                    requestAnimationFrame(() => {
-                        appFrame.style.visibility = 'hidden';
-                        appFrame.offsetHeight; // 触发重排
-                        appFrame.style.visibility = 'visible';
-                    });
-                }, 300);
-            }
-        }, 200);
-        
-        // 设置事件监听器
-        function setupEventListeners() {
-            // 清理之前的监听器
-            if (resizeListener) {
-                window.removeEventListener('resize', resizeListener);
-            }
-            if (orientationListener) {
-                window.removeEventListener('orientationchange', orientationListener);
-            }
-            
-            // 设置新的监听器
-            resizeListener = handleResize;
-            orientationListener = handleOrientationChange;
-            
-            window.addEventListener('resize', resizeListener, { passive: true });
-            window.addEventListener('orientationchange', orientationListener, { passive: true });
-        }
-        
-        // 清理所有事件监听器
-        function cleanupEventListeners() {
-            if (resizeListener) {
-                window.removeEventListener('resize', resizeListener);
-                resizeListener = null;
-            }
-            if (orientationListener) {
-                window.removeEventListener('orientationchange', orientationListener);
-                orientationListener = null;
-            }
-        }
-        
-        // 页面卸载时清理资源
-        window.addEventListener('beforeunload', () => {
-            cleanupAppResources();
-            cleanupEventListeners();
-        }, { passive: true });
-        
         // 初始化
         renderAllRealms();  // 渲染四境主页
         renderApps();       // 渲染应用切换器
-        
-        // 等待DOM完全加载后初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            setupBrowserCompatibility();
-            setupKeyboardNavigation();
-        });
         
         // 觀察所有應用圖標
         setTimeout(() => {
