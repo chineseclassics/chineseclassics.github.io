@@ -543,12 +543,70 @@
         `;
     }
     
+    // Tailwind 颜色映射表
+    const tailwindColors = {
+        'red-500': '#ef4444',
+        'red-600': '#dc2626',
+        'orange-500': '#f97316',
+        'orange-400': '#fb923c',
+        'yellow-300': '#fde047',
+        'yellow-400': '#facc15',
+        'yellow-500': '#eab308',
+        'lime-400': '#a3e635',
+        'green-400': '#4ade80',
+        'green-500': '#22c55e',
+        'emerald-500': '#10b981',
+        'emerald-600': '#059669',
+        'teal-500': '#14b8a6',
+        'cyan-500': '#06b6d4',
+        'blue-400': '#60a5fa',
+        'blue-500': '#3b82f6',
+        'indigo-300': '#a5b4fc',
+        'indigo-400': '#818cf8',
+        'indigo-500': '#6366f1',
+        'violet-500': '#8b5cf6',
+        'purple-400': '#c084fc',
+        'purple-500': '#a855f7',
+        'pink-400': '#f472b6',
+        'pink-500': '#ec4899',
+        'rose-300': '#fda4af',
+        'rose-500': '#f43f5e',
+        'amber-400': '#fbbf24',
+        'amber-500': '#f59e0b',
+        'amber-700': '#b45309',
+        'slate-600': '#475569',
+        'gray-600': '#4b5563',
+        'gray-800': '#1f2937'
+    };
+    
+    // 将 Tailwind gradient 类转换为 CSS gradient
+    function convertGradient(gradientClass) {
+        // 解析 "from-red-500 to-orange-500" 格式
+        const parts = gradientClass.split(' ');
+        let fromColor = '#667eea'; // 默认颜色
+        let toColor = '#764ba2';
+        
+        parts.forEach(part => {
+            if (part.startsWith('from-')) {
+                const colorKey = part.replace('from-', '');
+                fromColor = tailwindColors[colorKey] || fromColor;
+            } else if (part.startsWith('to-')) {
+                const colorKey = part.replace('to-', '');
+                toColor = tailwindColors[colorKey] || toColor;
+            }
+        });
+        
+        return `linear-gradient(to bottom right, ${fromColor}, ${toColor})`;
+    }
+    
     // 渲染切换器应用图标
     function renderSwitcherAppIcon(app) {
         const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
         const iconHtml = isFaIcon
             ? `<i class="${app.icon}" style="color: white; font-size: 14px;"></i>`
             : `<span style="font-size: 14px; color: white;">${app.icon}</span>`;
+        
+        const gradientStyle = convertGradient(app.gradient);
 
         return `
             <div class="taixu-switcher-app-icon" 
@@ -556,7 +614,7 @@
                  onclick="window.taixuNavigateToApp('${app.id}')"
                  style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; height: 100%; min-height: 0;">
                 <div class="icon-container" 
-                     style="background: linear-gradient(to bottom right, var(--tw-gradient-stops)); --tw-gradient-from: ${app.gradient.split(' ')[0].replace('from-', '')}; --tw-gradient-to: ${app.gradient.split(' ')[2].replace('to-', '')}; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); border-radius: 6px; padding: 6px; width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); margin-bottom: 4px;">
+                     style="background: ${gradientStyle}; border-radius: 6px; padding: 6px; width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); margin-bottom: 4px;">
                     ${iconHtml}
                 </div>
                 <p class="taixu-switcher-app-name" 
@@ -568,15 +626,30 @@
     // 渲染应用网格
     function renderAppGrid() {
         const grid = document.getElementById('taixuSwitcherAppGrid');
-        if (!grid) return;
+        if (!grid) {
+            console.warn('❌ 找不到应用网格容器 #taixuSwitcherAppGrid');
+            return;
+        }
         
-        grid.innerHTML = apps.map(app => renderSwitcherAppIcon(app)).join('');
+        const html = apps.map(app => renderSwitcherAppIcon(app)).join('');
+        grid.innerHTML = html;
+        console.log(`✅ 已渲染 ${apps.length} 个应用图标`);
     }
     
     // 显示切换器
     function showAppSwitcher() {
         const modal = document.getElementById('taixuAppSwitcherModal');
-        if (!modal) return;
+        if (!modal) {
+            console.warn('❌ 找不到切換器模態框');
+            return;
+        }
+        
+        // 确保应用网格已渲染
+        const grid = document.getElementById('taixuSwitcherAppGrid');
+        if (grid && (!grid.innerHTML || grid.innerHTML.trim() === '<!-- 应用图标将通过 JavaScript 动态生成 -->')) {
+            console.log('🔄 應用網格為空，重新渲染...');
+            renderAppGrid();
+        }
         
         modal.classList.add('taixu-switcher-show');
         
@@ -657,28 +730,36 @@
     
     // 初始化切换器
     function initAppSwitcher() {
+        console.log('🔄 開始初始化太虛幻境應用切換器...');
+        
         // 插入样式
         if (!document.getElementById('taixu-switcher-styles')) {
             document.head.insertAdjacentHTML('beforeend', createSwitcherStyles());
+            console.log('✅ 樣式已插入');
         }
         
         // 插入浮动 Logo
         if (!document.getElementById('taixuFloatingLogo')) {
             document.body.insertAdjacentHTML('beforeend', createFloatingLogoHTML());
+            console.log('✅ 浮動 Logo 已插入');
         }
         
         // 插入切换器模态框
         if (!document.getElementById('taixuAppSwitcherModal')) {
             document.body.insertAdjacentHTML('beforeend', createSwitcherModalHTML());
+            console.log('✅ 切換器模態框已插入');
         }
         
-        // 绑定事件
-        bindEvents();
-        
-        // 渲染应用网格
-        renderAppGrid();
-        
-        console.log('✅ 太虛幻境應用切換器已初始化');
+        // 使用 requestAnimationFrame 确保 DOM 已渲染
+        requestAnimationFrame(() => {
+            // 绑定事件
+            bindEvents();
+            
+            // 渲染应用网格
+            renderAppGrid();
+            
+            console.log('✅ 太虛幻境應用切換器初始化完成');
+        });
     }
     
     // 导出全局函数
