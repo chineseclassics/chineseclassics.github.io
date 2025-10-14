@@ -4913,127 +4913,42 @@ window.LocalBattle.endMode = function endBattleMode() {
         };
         // 【重構】不再暴露 __REMOTE_STATE__，所有數據統一在 GameState 中
 
-        // 清除 Supabase 本地存儲並重置客戶端
-        async function clearSupabaseStorage(){
-            console.log('[remote] 清除 Supabase 本地存儲...');
-            
-            // 先登出（清除客戶端內部狀態）
-            try {
-                await sb.auth.signOut({ scope: 'local' });
-                console.log('[remote] ✅ 已登出（本地）');
-            } catch (e) {
-                console.warn('[remote] 登出失敗（忽略）:', e);
-            }
-            
-            // 清除 localStorage
-            const keys = Object.keys(localStorage);
-            let cleared = 0;
-            keys.forEach(key => {
-                if (key.includes('supabase') || key.includes('sb-')) {
-                    localStorage.removeItem(key);
-                    cleared++;
-                }
-            });
-            console.log('[remote] ✅ 已清除', cleared, '個本地存儲項');
-            
-            return cleared;
-        }
-
-        // 檢查是否有 Google 登入會話（通過 localStorage 快速判斷）
-        function hasGoogleSession(){
-            try {
-                const keys = Object.keys(localStorage);
-                for (const key of keys) {
-                    if (key.includes('supabase.auth.token')) {
-                        const data = localStorage.getItem(key);
-                        if (data && data.includes('"provider":"google"')) {
-                            return true;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn('[remote] 檢查 Google 會話失敗:', e);
-            }
-            return false;
-        }
-
         // 確保用戶已認證（支持 Google 登入和匿名登入）
         async function ensureAnonLogin(){
             console.log('[remote] 認證檢查開始');
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
             
-            const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('auth timeout')), ms));
-            
-            const getOrLogin = (async () => {
-                // 策略：先檢查本地是否有 Google 會話標記
-                const hasGoogle = hasGoogleSession();
-                console.log('[remote] 1. 檢查會話類型:', hasGoogle ? 'Google' : '匿名或無');
+            try {
+                // 1. 檢查當前會話
+                const { data: { user } } = await sb.auth.getUser();
                 
-                if (hasGoogle) {
-                    // 有 Google 會話，嘗試獲取用戶
-                    console.log('[remote] 2. 嘗試獲取 Google 用戶...');
-                    try {
-                        const quickTimeout = new Promise((_, rej) => 
-                            setTimeout(() => rej(new Error('getUser timeout')), 3000)
-                        );
-                        const userResult = await Promise.race([sb.auth.getUser(), quickTimeout]);
-                        
-                        if (userResult.data.user) {
-                            console.log('[remote] ✅ 找到 Google 用戶');
-                            return userResult.data.user;
-                        }
-                    } catch (err) {
-                        console.warn('[remote] ⚠️ Google 用戶獲取失敗:', err.message);
-                        // Google 會話可能已過期，清除並繼續
-                        await clearSupabaseStorage();
-                    }
+                if (user) {
+                    // 已有有效會話（可能是 Google 或匿名）
+                    state.user = user;
+                    const userType = user.app_metadata?.provider === 'google' ? 'Google' : '匿名';
+                    console.log('[remote] ✅ 找到現有會話:', userType, '用戶，ID:', user.id);
+                    return;
+                }
+                
+                // 2. 沒有會話，執行匿名登入
+                console.log('[remote] 沒有現有會話，執行匿名登入...');
+                const { data, error } = await sb.auth.signInAnonymously();
+                
+                if (error) {
+                    console.error('[remote] ❌ 匿名登入失敗:', error);
+                    throw error;
+                }
+                
+                if (data?.user) {
+                    state.user = data.user;
+                    console.log('[remote] ✅ 匿名登入成功，用戶ID:', data.user.id);
                 } else {
-                    // 沒有 Google 會話，直接清除匿名會話（避免 getUser 卡住）
-                    console.log('[remote] 2. 清除匿名會話...');
-                    await clearSupabaseStorage();
+                    throw new Error('匿名登入成功但無用戶數據');
                 }
-                
-                // 等待客戶端狀態完全重置（關鍵！）
-                console.log('[remote] 2.5. 等待客戶端重置...');
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                // 執行匿名登入
-                console.log('[remote] 3. 執行匿名登入...');
-                const loginResult = await sb.auth.signInAnonymously();
-                
-                if (loginResult.error) {
-                    console.error('[remote] ❌ 匿名登入失敗:', loginResult.error);
-                    throw loginResult.error;
-                }
-                
-                // 直接從登入結果獲取用戶（避免再次調用 getUser）
-                if (loginResult.data?.user) {
-                    console.log('[remote] ✅ 匿名登入成功，用戶ID:', loginResult.data.user.id);
-                    return loginResult.data.user;
-                }
-                
-                // 降級方案：如果登入結果沒有用戶，快速嘗試獲取
-                console.log('[remote] 4. 降級：嘗試獲取用戶...');
-                const quickTimeout = new Promise((_, rej) => 
-                    setTimeout(() => rej(new Error('getUser timeout')), 2000)
-                );
-                const userResult = await Promise.race([sb.auth.getUser(), quickTimeout]);
-                
-                if (!userResult.data.user) {
-                    throw new Error('無法獲取用戶信息');
-                }
-                return userResult.data.user;
-            })();
-            
-            console.log('[remote] 等待認證完成（最多10秒）...');
-            state.user = await Promise.race([getOrLogin, timeout(10000)]);
-            
-            if (!state.user) {
-                throw new Error('auth failed');
+            } catch (err) {
+                console.error('[remote] 認證失敗:', err);
+                throw err;
             }
-            
-            const userType = state.user.app_metadata?.provider === 'google' ? 'Google' : '匿名';
-            console.log('[remote] ✅ 認證完成!', userType, '用戶，ID:', state.user.id);
         }
 
         function genRoomCode(){
@@ -5058,53 +4973,33 @@ window.LocalBattle.endMode = function endBattleMode() {
                 const code = genRoomCode();
                 console.log('[remote] createRoom: 嘗試插入 rooms 表，代碼:', code);
                 
-                try {
-                    const insertPromise = sb
-                        .from('rooms')
-                        .insert({ code, host_id: state.user.id, name })
-                        .select()
-                        .single();
-                    
-                    // 添加 5 秒超時
-                    const timeout = new Promise((_, rej) => 
-                        setTimeout(() => rej(new Error('插入 rooms 表超時')), 5000)
-                    );
-                    
-                    const { data, error } = await Promise.race([insertPromise, timeout]);
-                    
-                    if (!error && data) { 
-                        room = data; 
-                        console.log('[remote] createRoom: ✅ rooms 表插入成功');
-                        break; 
-                    }
-                    lastErr = error;
-                    console.warn('[remote] createRoom: rooms 插入錯誤:', error);
-                    if (!(error && String(error.code) === '23505')) break; // 唯一鍵衝突才重試
-                } catch (err) {
-                    console.error('[remote] createRoom: rooms 插入超時或異常:', err);
-                    throw err;
+                const { data, error } = await sb
+                    .from('rooms')
+                    .insert({ code, host_id: state.user.id, name })
+                    .select()
+                    .single();
+                
+                if (!error && data) { 
+                    room = data; 
+                    console.log('[remote] createRoom: ✅ rooms 表插入成功');
+                    break; 
                 }
+                lastErr = error;
+                console.warn('[remote] createRoom: rooms 插入錯誤:', error);
+                if (!(error && String(error.code) === '23505')) break; // 唯一鍵衝突才重試
             }
             if (!room) throw lastErr || new Error('建立房間失敗');
 
             console.log('[remote] createRoom: 插入 room_players 表...');
-            try {
-                const insertPromise2 = sb
-                    .from('room_players')
-                    .insert({ room_id: room.id, user_id: state.user.id, nickname: nickname || '玩家', is_host: true });
-                
-                // 添加 5 秒超時
-                const timeout2 = new Promise((_, rej) => 
-                    setTimeout(() => rej(new Error('插入 room_players 表超時')), 5000)
-                );
-                
-                const { error: er2 } = await Promise.race([insertPromise2, timeout2]);
-                if (er2) throw er2;
-                console.log('[remote] createRoom: ✅ room_players 表插入成功');
-            } catch (err) {
-                console.error('[remote] createRoom: room_players 插入失敗:', err);
-                throw err;
+            const { error: er2 } = await sb
+                .from('room_players')
+                .insert({ room_id: room.id, user_id: state.user.id, nickname: nickname || '玩家', is_host: true });
+            
+            if (er2) {
+                console.error('[remote] createRoom: room_players 插入失敗:', er2);
+                throw er2;
             }
+            console.log('[remote] createRoom: ✅ room_players 表插入成功');
 
             console.log('[remote] createRoom: 加入 Realtime...');
             await joinRealtime(room, nickname || '玩家');
@@ -5678,13 +5573,7 @@ window.LocalBattle.endMode = function endBattleMode() {
             } catch (e) {
                 console.warn('[remote] create error', e);
                 if (createBtn) { createBtn.disabled = false; createBtn.textContent = '建立房間'; }
-                
-                // 提供更詳細的錯誤信息
-                let errorMsg = '建立失敗：' + (e?.message || e);
-                if (String(e?.message).includes('timeout')) {
-                    errorMsg = '認證超時！\n\n可能原因：\n1. 網絡連接問題\n2. Supabase 服務響應緩慢\n\n請檢查網絡連接後重試';
-                }
-                alert(errorMsg);
+                alert('建立失敗：' + (e?.message || e));
             }
         });
 
@@ -5704,11 +5593,7 @@ window.LocalBattle.endMode = function endBattleMode() {
                 
             } catch (e) {
                 console.warn('[remote] join error', e);
-                let errorMsg = '加入失敗：' + (e?.message || e);
-                if (String(e?.message).includes('timeout')) {
-                    errorMsg = '認證超時！\n\n可能原因：\n1. 網絡連接問題\n2. Supabase 服務響應緩慢\n\n請檢查網絡連接後重試';
-                }
-                alert(errorMsg);
+                alert('加入失敗：' + (e?.message || e));
             }
         });
 
