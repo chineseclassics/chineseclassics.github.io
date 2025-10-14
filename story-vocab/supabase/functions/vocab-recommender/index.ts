@@ -32,10 +32,23 @@ serve(async (req) => {
       throw new Error('缺少必要參數: userId, sessionId, roundNumber')
     }
 
-    // 初始化 Supabase 客戶端
+    // 從請求頭獲取用戶的 auth token
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('缺少 Authorization header')
+    }
+
+    // 初始化 Supabase 客戶端（使用用戶的 auth token，保持 RLS 策略生效）
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
     )
 
     let words: any[]

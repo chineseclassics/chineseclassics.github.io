@@ -80,14 +80,22 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
       requestBody.level3Tag = wordlistOptions.level3Tag || null
     }
     
-    // 調用 Edge Function
+    // 獲取用戶的 session token
+    const supabase = getSupabase()
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session) {
+      throw new Error('用戶未登入')
+    }
+    
+    // 調用 Edge Function（使用用戶的 auth token）
     const response = await fetch(
       `${SUPABASE_CONFIG.url}/functions/v1/vocab-recommender`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(requestBody)
       }
