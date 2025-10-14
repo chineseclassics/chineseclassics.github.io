@@ -138,8 +138,17 @@ async function initializeApp() {
  * 顯示登入界面
  */
 function showLoginScreen() {
+    // 如果是 OAuth 回調過程，不要顯示登入界面（避免閃動）
+    const isOAuthCallback = sessionStorage.getItem('oauth_callback') === 'true';
+    if (isOAuthCallback) {
+        console.log('⏳ OAuth 回調中，等待登入完成...');
+        sessionStorage.removeItem('oauth_callback'); // 清除標記
+        return;
+    }
+    
     const loginScreen = document.getElementById('login-screen');
     if (loginScreen) {
+        loginScreen.style.display = 'flex';
         loginScreen.classList.add('active');
     }
     

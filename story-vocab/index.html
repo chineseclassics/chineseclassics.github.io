@@ -18,10 +18,23 @@
     
     <!-- 太虛幻境應用切換器組件 -->
     <script src="/assets/js/taixu-app-switcher.js"></script>
+    
+    <!-- 檢測 OAuth 回調，避免閃動登入界面 -->
+    <script>
+        // 如果 URL 中有 OAuth 參數（access_token 或 code），不要顯示登入界面
+        const isOAuthCallback = window.location.hash.includes('access_token') || 
+                               window.location.search.includes('code=');
+        if (isOAuthCallback) {
+            // 標記這是 OAuth 回調，後續初始化時直接顯示主界面
+            sessionStorage.setItem('oauth_callback', 'true');
+        }
+    </script>
 </head>
 <body>
     <!-- ===== 登入界面 ===== -->
-    <div id="login-screen" class="login-screen active">
+    <div id="login-screen" class="login-screen" 
+         style="display: none;" 
+         data-oauth-callback="false">
         <div class="login-container">
             <!-- Logo 區域 -->
             <div class="login-logo">
