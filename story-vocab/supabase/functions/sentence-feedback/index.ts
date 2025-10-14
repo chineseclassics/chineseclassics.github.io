@@ -220,7 +220,7 @@ C. **需改進（3-4分）**
         { role: 'user', content: feedbackPrompt }
       ],
       temperature: 0.3,  // 較低溫度，確保格式準確
-      max_tokens: 450   // 確保評語和優化版句子能完整輸出
+      max_tokens: 600   // 增加到600，確保評語和優化版句子完整輸出
     })
   })
 
@@ -230,13 +230,12 @@ C. **需改進（3-4分）**
   }
 
   const data = await response.json()
-  const feedbackText = data.choices[0].message.content.trim()
+  let feedbackText = data.choices[0].message.content.trim()
   
   // 檢查是否被截斷
   const finishReason = data.choices[0].finish_reason
   const usage = data.usage
   
-  console.log('✅ 反饋生成完成')
   console.log('📊 Token 使用:', {
     prompt_tokens: usage?.prompt_tokens,
     completion_tokens: usage?.completion_tokens,
@@ -245,11 +244,48 @@ C. **需改進（3-4分）**
   })
   
   if (finishReason === 'length') {
-    console.warn('⚠️ 反饋被截斷（達到 max_tokens 限制），內容可能不完整')
+    console.warn('⚠️ 反饋被截斷（達到 max_tokens 限制），重試中...')
+    
+    // 重試一次，增加 max_tokens
+    const retryResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: '你必須只使用繁體中文（Traditional Chinese）回答。嚴格遵守字數限制。鼓勵創意表達。' },
+          { role: 'user', content: feedbackPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 800  // 重試時更大的限制
+      })
+    })
+    
+    if (retryResponse.ok) {
+      const retryData = await retryResponse.json()
+      feedbackText = retryData.choices[0].message.content.trim()
+      console.log('✅ 重試成功')
+    }
   }
   
+  console.log('✅ 反饋生成完成')
+  
   // 解析反饋文本
-  return parseFeedbackText(feedbackText)
+  const feedback = parseFeedbackText(feedbackText)
+  
+  // 確保優化版句子以標點符號結尾
+  if (feedback.optimizedSentence) {
+    const punctuation = /[。！？；」』、，]$/
+    if (!punctuation.test(feedback.optimizedSentence)) {
+      console.warn('⚠️ 優化版句子缺少結尾標點，可能不完整')
+      feedback.optimizedSentence += '。'
+    }
+  }
+  
+  return feedback
 }
 
 // =====================================================

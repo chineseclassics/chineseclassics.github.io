@@ -194,8 +194,18 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
                 }
             }
         }).catch(err => {
-            console.error('❌ 獲取推薦詞彙失敗:', err);
-            gameState.pendingWords = null;
+            console.error('❌ 獲取推薦詞彙失敗（背景任務）:', err);
+            console.error('❌ 錯誤堆棧:', err.stack);
+            console.error('❌ 遊戲狀態:', {
+                turn: gameState.turn,
+                wordlistMode: gameState.wordlistMode,
+                wordlistId: gameState.wordlistId,
+                level2Tag: gameState.level2Tag,
+                level3Tag: gameState.level3Tag
+            });
+            // 設置空數組而不是 null，避免前端判斷錯誤
+            gameState.pendingWords = [];
+            gameState.currentWords = [];
         });
         
         // 立即返回（不等待詞彙）

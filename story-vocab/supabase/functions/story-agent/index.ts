@@ -147,7 +147,7 @@ async function generateAiResponse({
       model: 'deepseek-chat',
       messages: messages,
       temperature: 0.7,        // 降低以提高承接连贯性
-      max_tokens: 150,         // 单句故事（20-50字）
+      max_tokens: 300,         // 增加到300，確保句子完整（中文約100-150字）
       top_p: 0.9
     })
   })
@@ -158,7 +158,52 @@ async function generateAiResponse({
   }
 
   const data = await response.json()
-  const aiSentence = data.choices[0].message.content.trim()
+  let aiSentence = data.choices[0].message.content.trim()
+  
+  // 檢查是否被截斷
+  const finishReason = data.choices[0].finish_reason
+  const usage = data.usage
+  
+  console.log('📊 Token 使用:', {
+    prompt_tokens: usage?.prompt_tokens,
+    completion_tokens: usage?.completion_tokens,
+    total_tokens: usage?.total_tokens,
+    finish_reason: finishReason
+  })
+  
+  if (finishReason === 'length') {
+    console.warn('⚠️ 句子被截斷（達到 max_tokens 限制），重試中...')
+    
+    // 重試一次，增加 max_tokens
+    const retryResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 500,  // 重試時更大的限制
+        top_p: 0.9
+      })
+    })
+    
+    if (retryResponse.ok) {
+      const retryData = await retryResponse.json()
+      aiSentence = retryData.choices[0].message.content.trim()
+      console.log('✅ 重試成功')
+    }
+  }
+  
+  // 確保句子以標點符號結尾
+  const punctuation = /[。！？；」』、，]$/
+  if (!punctuation.test(aiSentence)) {
+    console.warn('⚠️ 句子缺少結尾標點，可能不完整:', aiSentence)
+    // 添加句號
+    aiSentence += '。'
+  }
   
   console.log('✅ AI 生成:', aiSentence)
   return aiSentence

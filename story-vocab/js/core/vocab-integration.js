@@ -19,11 +19,15 @@ export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
   const supabase = getSupabase()
   
   try {
+    console.log(`🎯 getRecommendedWords 被調用，輪次: ${roundNumber}，模式: ${wordlistOptions?.mode}`)
+    
     // 1. 優先檢查詞表模式（詞表模式無需校準，直接使用詞表）
     if (wordlistOptions?.mode === 'wordlist' && wordlistOptions?.wordlistId) {
       console.log(`[詞表模式] 直接從詞表推薦，跳過校準檢查`)
       console.log(`  詞表ID: ${wordlistOptions.wordlistId}, L2: ${wordlistOptions.level2Tag}, L3: ${wordlistOptions.level3Tag}`)
-      return await getAIRecommendedWords(roundNumber, wordlistOptions)
+      const result = await getAIRecommendedWords(roundNumber, wordlistOptions)
+      console.log(`✅ getRecommendedWords 返回 ${result.length} 個詞`)
+      return result
     }
     
     // 2. AI智能模式：檢查用戶是否已完成校準
@@ -46,8 +50,12 @@ export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
     }
   } catch (error) {
     console.error('❌ 獲取推薦詞彙失敗:', error)
+    console.error('❌ 錯誤堆棧:', error.stack)
+    console.error('❌ 輪次:', roundNumber, '模式:', wordlistOptions?.mode)
     // 降級：返回默認詞彙
-    return getDefaultWords()
+    const defaults = getDefaultWords()
+    console.log(`⚠️  使用默認詞彙降級，返回 ${defaults.length} 個詞`)
+    return defaults
   }
 }
 
