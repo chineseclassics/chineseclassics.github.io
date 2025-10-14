@@ -168,14 +168,21 @@ async function recommendFromWordlist(
     console.log(`✅ 從詞表獲取 ${words.length} 個候選詞彙`)
     
     // 3. 獲取本會話已使用的詞彙
-    const { data: rounds } = await supabase
+    const { data: rounds, error: roundsError } = await supabase
       .from('game_rounds')
       .select('recommended_words')
       .eq('session_id', sessionId)
     
+    if (roundsError) {
+      console.error('❌ 查詢 game_rounds 失敗:', roundsError)
+      // 如果查詢失敗，繼續但不過濾（可能會有重複詞）
+    }
+    
     const usedWords = new Set(
       rounds?.flatMap(r => r.recommended_words || []) || []
     )
+    
+    console.log(`📊 本會話已推薦詞彙數: ${usedWords.size} 個`, Array.from(usedWords))
     
     // 4. 過濾已使用的詞彙
     const availableWords = words.filter(w => !usedWords.has(w.word))
