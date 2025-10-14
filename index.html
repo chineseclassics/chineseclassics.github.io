@@ -1489,7 +1489,7 @@
                 if (e.key === 'Tab' && currentView === 'app') {
                     // 在应用视图中，确保焦点能够正确导航到浮动logo
                     const floatingLogo = document.getElementById('floatingLogo');
-                    if (floatingLogo && !floatingLogo.classList.contains('hidden')) {
+                    if (!floatingLogo.classList.contains('hidden')) {
                         if (!e.shiftKey && document.activeElement === appFrame) {
                             e.preventDefault();
                             floatingLogo.focus();
@@ -1498,20 +1498,18 @@
                 }
             });
             
-            // 为浮动logo添加键盘支持（仅在元素存在时）
+            // 为浮动logo添加键盘支持
             const floatingLogo = document.getElementById('floatingLogo');
-            if (floatingLogo) {
-                floatingLogo.setAttribute('tabindex', '0');
-                floatingLogo.setAttribute('role', 'button');
-                floatingLogo.setAttribute('aria-label', '打開應用切換器');
-                
-                floatingLogo.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        showFloatingAppSwitcher();
-                    }
-                });
-            }
+            floatingLogo.setAttribute('tabindex', '0');
+            floatingLogo.setAttribute('role', 'button');
+            floatingLogo.setAttribute('aria-label', '打開應用切換器');
+            
+            floatingLogo.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    showFloatingAppSwitcher();
+                }
+            });
         }
         
         // 增强的状态管理函数 - 方案一简化版  
