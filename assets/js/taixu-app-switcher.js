@@ -600,7 +600,7 @@
                  role="button" 
                  aria-label="打開應用切換器">
                 <div style="background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(8px); border-radius: 9999px; padding: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);">
-                    <img src="/images/cclogo.png" 
+                    <img src="/assets/images/optimized/cclogo-32.png" 
                          alt="書院中文經典" 
                          style="height: 32px; width: 32px; object-fit: contain; cursor: pointer;">
                 </div>
@@ -632,7 +632,7 @@
                             
                             <!-- 中间标题 -->
                             <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center;">
-                                <img src="/images/cclogo.png" 
+                                <img src="/assets/images/optimized/cclogo-32.png" 
                                      alt="太虛幻境" 
                                      style="height: 28px; width: 28px; object-fit: contain;">
                                 <h2 style="font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; letter-spacing: 2px;">太虛幻境</h2>

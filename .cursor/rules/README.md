@@ -12,6 +12,7 @@
 | `file-organization.mdc` | 文件組織規範 - 兩層架構原則 | ✅ Always |
 | `coding-standards.mdc` | 代碼規範 | ✅ Always |
 | `documentation-standards.mdc` | 文檔創建規範 - 少而精，避免過度記錄 | ✅ Always |
+| `app-development.mdc` | 應用開發規範 - 應用切換器、URL 路徑規範 | ✅ Always |
 
 ### Auto Attached Rules（自動附加）
 
@@ -111,8 +112,8 @@ alwaysApply: true    # 或 false
 ## 📊 規則統計
 
 ### 平台級規則（本目錄）
-- **總規則數**：8
-- **Always 規則**：4
+- **總規則數**：9
+- **Always 規則**：5
 - **Auto Attached 規則**：2
 - **Manual 規則**：3
 - **Meta 規則**：2
@@ -132,6 +133,13 @@ alwaysApply: true    # 或 false
 
 ## 🔄 更新記錄
 
+- **2025-10-14**：添加應用開發規範
+  - 新增 `app-development.mdc` - 應用開發規範（Always）
+  - 記錄從 iframe 到直接跳轉的架構變更
+  - 規範應用切換器組件必須引入
+  - 確立 URL 必須使用絕對路徑的規範
+  - 提供完整的開發檢查清單
+
 - **2025-10-12**：添加文檔創建規範
   - 新增 `documentation-standards.mdc` - 文檔創建規範（Always）
   - 規範何時創建文檔、何時不創建
@@ -148,5 +156,5 @@ alwaysApply: true    # 或 false
 ---
 
 **維護**：太虛幻境開發團隊  
-**最後更新**：2025-10-12
+**最後更新**：2025-10-14
 
