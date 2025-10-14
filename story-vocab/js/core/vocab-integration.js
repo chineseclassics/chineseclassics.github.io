@@ -89,6 +89,9 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
     }
     
     // 調用 Edge Function（使用用戶的 auth token）
+    console.log(`🌐 開始調用 vocab-recommender，輪次: ${roundNumber}`)
+    console.log(`📋 請求參數:`, requestBody)
+    
     const response = await fetch(
       `${SUPABASE_CONFIG.url}/functions/v1/vocab-recommender`,
       {
@@ -101,11 +104,16 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
       }
     )
     
+    console.log(`📡 收到響應，狀態: ${response.status}`)
+    
     if (!response.ok) {
-      throw new Error(`API 錯誤: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`❌ API 錯誤響應:`, errorText)
+      throw new Error(`API 錯誤: ${response.status} - ${errorText}`)
     }
     
     const result = await response.json()
+    console.log(`📦 解析結果:`, result)
     
     if (!result.success) {
       throw new Error(result.error || '推薦失敗')
