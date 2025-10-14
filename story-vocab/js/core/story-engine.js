@@ -165,7 +165,7 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
           level3Tag: gameState.level3Tag
         };
         
-        getRecommendedWords(gameState.turn, wordlistOptions).then(recommendedWords => {
+        getRecommendedWords(gameState.turn, wordlistOptions).then(async recommendedWords => {
             // 詞彙返回後更新 gameState
             gameState.currentWords = recommendedWords || [];
             gameState.allRecommendedWords.push(recommendedWords || []);
@@ -175,6 +175,24 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
             gameState.pendingWords = recommendedWords;
             
             console.log('📦 詞彙已加載，等待打字機結束後顯示');
+            
+            // 🚀 立即預加載拼音（在背景進行，不阻塞）
+            if (recommendedWords && recommendedWords.length > 0) {
+                const wordsToPreload = recommendedWords
+                    .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
+                    .map(w => w.word);
+                
+                if (wordsToPreload.length > 0) {
+                    // 動態導入需要的模塊
+                    const { preloadWords } = await import('../utils/word-cache.js');
+                    const { getWordBriefInfo } = await import('../features/dictionary.js');
+                    
+                    console.log(`🚀 後台預加載 ${wordsToPreload.length} 個詞彙拼音...`);
+                    preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
+                        console.log('⚠️ 預加載拼音失敗（不影響使用）:', err);
+                    });
+                }
+            }
         }).catch(err => {
             console.error('❌ 獲取推薦詞彙失敗:', err);
             gameState.pendingWords = null;

@@ -8,8 +8,7 @@ import { getThemeName } from '../core/story-engine.js';
 import { typewriterEffect } from '../utils/typewriter.js';
 import { makeAIWordsClickable, makeUserSentenceClickable, selectWord } from '../features/word-manager.js';
 import { loadSettings } from './modals.js';
-import { preloadWords, getBriefInfo } from '../utils/word-cache.js';
-import { getWordBriefInfo } from '../features/dictionary.js';
+import { getBriefInfo } from '../utils/word-cache.js';
 import { renderLevel2Cards, clearHierarchyCards } from './hierarchy-cards.js';
 import { getSupabase } from '../supabase-client.js';
 

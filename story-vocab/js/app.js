@@ -29,7 +29,6 @@ import { loadMyStoriesScreen } from './ui/story-card.js';
 // 导入工具
 import { showToast } from './utils/toast.js';
 import { updateSidebarStats } from './utils/storage.js';
-import { preloadWords } from './utils/word-cache.js';
 
 // 导入故事存储模块
 import { updateStory, getStory } from './core/story-storage.js';
@@ -594,19 +593,7 @@ async function confirmAndSubmit(sentence, word) {
     } else if (result.aiData) {
         console.log('📝 显示 AI 响应...');
         
-        // 🚀 立即预加载词汇信息（在打字机效果前）
-        if (result.aiData.recommendedWords && result.aiData.recommendedWords.length > 0) {
-            const wordsToPreload = result.aiData.recommendedWords
-                .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
-                .map(w => w.word);
-            
-            if (wordsToPreload.length > 0) {
-                console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
-                preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
-                    console.log('⚠️ 预加载失败（不影响使用）:', err);
-                });
-            }
-        }
+        // 注意：詞彙推薦在 story-engine.js 中後台加載，並在加載完成後自動預加載拼音
         
         await displayAIResponse(result.aiData);
     }
@@ -678,19 +665,7 @@ async function handleStartGame() {
         const data = await getAIResponse();
         console.log('✅ getAIResponse 完成，准备显示...');
         
-        // 🚀 立即预加载词汇信息（在打字机效果前）
-        if (data.recommendedWords && data.recommendedWords.length > 0) {
-            const wordsToPreload = data.recommendedWords
-                .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
-                .map(w => w.word);
-            
-            if (wordsToPreload.length > 0) {
-                console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
-                preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
-                    console.log('⚠️ 预加载失败（不影响使用）:', err);
-                });
-            }
-        }
+        // 注意：詞彙推薦在 story-engine.js 中後台加載，並在加載完成後自動預加載拼音
         
         await displayAIResponse(data);
         console.log('✅ displayAIResponse 完成');
