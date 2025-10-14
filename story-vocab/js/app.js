@@ -133,11 +133,13 @@ function showLoginScreen() {
         loginScreen.classList.add('active');
     }
     
-    // 隱藏側邊欄和主內容
+    // 隱藏側邊欄、主內容和移動端導航欄
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.querySelector('.main-content');
+    const mobileHeader = document.querySelector('.mobile-header');
     if (sidebar) sidebar.style.display = 'none';
     if (mainContent) mainContent.style.display = 'none';
+    if (mobileHeader) mobileHeader.style.display = 'none';
 }
 
 /**
@@ -149,11 +151,13 @@ function showMainInterface() {
         loginScreen.classList.remove('active');
     }
     
-    // 顯示側邊欄和主內容
+    // 顯示側邊欄、主內容和移動端導航欄
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.querySelector('.main-content');
+    const mobileHeader = document.querySelector('.mobile-header');
     if (sidebar) sidebar.style.display = '';
     if (mainContent) mainContent.style.display = '';
+    if (mobileHeader) mobileHeader.style.display = '';
     
     // 顯示開始界面
     showScreen('start-screen');

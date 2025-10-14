@@ -21,7 +21,7 @@
 </head>
 <body>
     <!-- ===== 登入界面 ===== -->
-    <div id="login-screen" class="login-screen">
+    <div id="login-screen" class="login-screen active">
         <div class="login-container">
             <!-- Logo 區域 -->
             <div class="login-logo">
@@ -83,7 +83,7 @@
     </div>
 
     <!-- ===== 移動端頂部導航欄 ===== -->
-    <div class="mobile-header">
+    <div class="mobile-header" style="display: none;">
         <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="打開菜單">
             ☰
         </button>
@@ -97,7 +97,7 @@
     <div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileSidebar()"></div>
 
     <!-- ===== 側邊欄 ===== -->
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar" id="sidebar" style="display: none;">
         <!-- 用戶信息區域 -->
         <div class="sidebar-header">
             <button class="sidebar-close-btn" onclick="closeMobileSidebar()" aria-label="關閉菜單">×</button>
@@ -238,7 +238,7 @@
     </div>
 
     <!-- ===== 主內容區域 ===== -->
-    <div class="main-content">
+    <div class="main-content" style="display: none;">
     <div class="container">
         <!-- ===== 启动界面 ===== -->
         <div id="start-screen" class="screen">
