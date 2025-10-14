@@ -949,8 +949,24 @@ window.closeUploadWordlistModal = function() {
  * 下载CSV模板
  */
 window.downloadWordlistTemplate = function() {
-    const template = '詞語,第二層級,第三層級\n生字,第一單元,課文一\n詞彙,第一單元,課文一\n句子,第二單元,課文二';
-    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    // 優化的 CSV 模板：更清晰的標題和實用示例
+    const template = `詞語（必填）,分類標籤（可留空）,細分類（可留空）
+高興,, 
+朋友,, 
+勇敢,進階詞彙,情感類
+探險,進階詞彙,動作類
+寧靜,高級詞彙,形容詞類
+太陽,一年級,第一單元
+月亮,一年級,第一單元
+星星,一年級,第二單元
+堅持,, 
+努力,, 
+自信,, 
+智慧,高級詞彙,抽象概念`;
+
+    // 添加 UTF-8 BOM 解決 Excel 亂碼問題
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + template], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
