@@ -741,6 +741,14 @@ function bindEventListeners() {
     
     // 初始化弹窗背景点击关闭
     initModalClickOutside();
+    
+    // 點擊外部關閉詞表下拉菜單
+    document.addEventListener('click', function(e) {
+        const selector = document.getElementById('custom-wordlist-selector');
+        if (selector && !selector.contains(e.target)) {
+            selector.classList.remove('active');
+        }
+    });
 }
 
 /**

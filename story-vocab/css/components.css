@@ -324,6 +324,163 @@ button:active {
     cursor: pointer;
 }
 
+/* 自定義詞表選擇器 */
+.custom-wordlist-selector {
+    position: relative;
+    width: 100%;
+}
+
+.wordlist-selector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.wordlist-selector-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.wordlist-selected {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-weight: 500;
+}
+
+.wordlist-icon {
+    font-size: 1.3em;
+}
+
+.wordlist-name {
+    font-size: 1.05em;
+}
+
+.dropdown-arrow {
+    color: white;
+    font-size: 0.8em;
+    transition: transform 0.3s ease;
+}
+
+.custom-wordlist-selector.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.wordlist-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.custom-wordlist-selector.active .wordlist-dropdown {
+    max-height: 500px;
+    opacity: 1;
+    overflow-y: auto;
+}
+
+.wordlist-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.wordlist-option:hover {
+    background: linear-gradient(to right, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+}
+
+.wordlist-option.active {
+    background: linear-gradient(to right, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
+}
+
+.wordlist-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.wordlist-name-text {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.wordlist-desc {
+    font-size: 0.85em;
+    color: var(--text-light);
+}
+
+.wordlist-count {
+    font-size: 0.85em;
+    color: var(--primary-purple);
+    font-weight: 500;
+}
+
+.wordlist-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(102, 126, 234, 0.2), transparent);
+    margin: 8px 0;
+}
+
+.wordlist-group-label {
+    padding: 12px 20px 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wordlist-add-custom {
+    background: linear-gradient(to right, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    border-radius: 0 0 12px 12px;
+}
+
+.wordlist-add-custom:hover {
+    background: linear-gradient(to right, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
+}
+
+.wordlist-delete-btn {
+    padding: 6px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wordlist-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.05);
+}
+
+.wordlist-delete-btn:active {
+    transform: scale(0.95);
+}
+
 /* 弹窗 */
 .modal {
     display: none;

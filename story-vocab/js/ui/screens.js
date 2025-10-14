@@ -11,6 +11,7 @@ import { loadSettings } from './modals.js';
 import { getBriefInfo } from '../utils/word-cache.js';
 import { renderLevel2Cards, clearHierarchyCards } from './hierarchy-cards.js';
 import { getSupabase } from '../supabase-client.js';
+import { showToast } from '../utils/toast.js';
 
 /**
  * 初始化启动界面
@@ -674,33 +675,75 @@ async function loadWordlistSelectorSetting() {
         const systemWordlists = wordlists?.filter(w => w.type === 'system') || [];
         const customWordlists = wordlists?.filter(w => w.owner_id === userId) || [];
 
-        // 填充系统词表
-        const systemGroup = document.getElementById('system-wordlists-group-setting');
-        if (systemGroup) {
-            systemGroup.innerHTML = systemWordlists.map(wl => `
-                <option value="${wl.id}">${wl.name} (${wl.total_words || 0}詞)</option>
-            `).join('') || '<option disabled>暫無系統詞表</option>';
-        }
-
-        // 填充自定义词表
-        const customGroup = document.getElementById('custom-wordlists-group-setting');
-        if (customGroup) {
-            customGroup.innerHTML = customWordlists.map(wl => `
-                <option value="${wl.id}">${wl.name} (${wl.total_words || 0}詞)</option>
-            `).join('') || '<option disabled>暫無自定義詞表</option>';
-        }
-
-        // 设置当前选中
-        const selector = document.getElementById('wordlist-selector-setting');
-        if (selector) {
-            if (prefs?.default_wordlist_id) {
-                selector.value = prefs.default_wordlist_id;
-                selectedWordlistIdInSetting = prefs.default_wordlist_id;
+        // 填充系统词表到自定义下拉菜单
+        const systemDropdown = document.getElementById('system-wordlists-dropdown');
+        if (systemDropdown) {
+            if (systemWordlists.length > 0) {
+                systemDropdown.innerHTML = systemWordlists.map(wl => `
+                    <div class="wordlist-option" data-value="${wl.id}" onclick="selectWordlist('${wl.id}', '📖 ${wl.name}', '${wl.total_words || 0}')">
+                        <span class="wordlist-icon">📖</span>
+                        <div class="wordlist-info">
+                            <div class="wordlist-name-text">${wl.name}</div>
+                            <div class="wordlist-count">${wl.total_words || 0} 個詞彙</div>
+                        </div>
+                    </div>
+                `).join('');
             } else {
-                selector.value = 'ai';
-                selectedWordlistIdInSetting = null;
+                systemDropdown.innerHTML = '<div class="wordlist-option" style="opacity: 0.5; cursor: default;">暫無系統詞表</div>';
             }
         }
+
+        // 填充自定义词表到自定义下拉菜单（带删除按钮）
+        const customDropdown = document.getElementById('custom-wordlists-dropdown');
+        if (customDropdown) {
+            if (customWordlists.length > 0) {
+                customDropdown.innerHTML = customWordlists.map(wl => `
+                    <div class="wordlist-option" data-value="${wl.id}">
+                        <span class="wordlist-icon" onclick="selectWordlist('${wl.id}', '✨ ${wl.name}', '${wl.total_words || 0}')">✨</span>
+                        <div class="wordlist-info" onclick="selectWordlist('${wl.id}', '✨ ${wl.name}', '${wl.total_words || 0}')">
+                            <div class="wordlist-name-text">${wl.name}</div>
+                            <div class="wordlist-count">${wl.total_words || 0} 個詞彙</div>
+                        </div>
+                        <button class="wordlist-delete-btn" onclick="event.stopPropagation(); deleteCustomWordlist('${wl.id}', '${wl.name}')">
+                            🗑️ 刪除
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                customDropdown.innerHTML = '<div class="wordlist-option" style="opacity: 0.5; cursor: default;">暫無自定義詞表</div>';
+            }
+        }
+
+        // 设置当前选中并更新显示
+        let selectedId = prefs?.default_wordlist_id || 'ai';
+        selectedWordlistIdInSetting = selectedId === 'ai' ? null : selectedId;
+        
+        // 更新选择器头部显示
+        const headerIcon = document.querySelector('.wordlist-selector-header .wordlist-icon');
+        const selectedNameElement = document.getElementById('selected-wordlist-name');
+        
+        if (headerIcon && selectedNameElement) {
+            if (selectedId === 'ai') {
+                headerIcon.textContent = '🤖';
+                selectedNameElement.textContent = 'AI智能推薦（默認）';
+            } else {
+                const selectedWordlist = wordlists.find(w => w.id === selectedId);
+                if (selectedWordlist) {
+                    const icon = selectedWordlist.type === 'system' ? '📖' : '✨';
+                    headerIcon.textContent = icon;
+                    selectedNameElement.textContent = selectedWordlist.name;
+                }
+            }
+        }
+
+        // 标记当前选中项
+        document.querySelectorAll('.wordlist-option').forEach(opt => {
+            if (opt.dataset.value === selectedId) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
 
     } catch (error) {
         console.error('❌ 加载词表选择器失败:', error);
@@ -711,22 +754,113 @@ async function loadWordlistSelectorSetting() {
 }
 
 /**
- * 词表选择变化处理
+ * 切換詞表下拉菜單
  */
-window.onWordlistSelectSetting = function() {
-    const selector = document.getElementById('wordlist-selector-setting');
-    const value = selector.value;
+window.toggleWordlistDropdown = function() {
+    const selector = document.getElementById('custom-wordlist-selector');
+    const dropdown = document.getElementById('wordlist-dropdown');
+    
+    if (selector && dropdown) {
+        selector.classList.toggle('active');
+    }
+};
 
-    if (value === '__add_custom__') {
-        // 打开上传模态窗口
-        const modal = document.getElementById('upload-wordlist-modal');
-        if (modal) modal.classList.add('active');
-        // 重置选择器到之前的值
-        selector.value = selectedWordlistIdInSetting || 'ai';
-    } else if (value === 'ai') {
-        selectedWordlistIdInSetting = null;
-    } else {
-        selectedWordlistIdInSetting = value;
+/**
+ * 選擇詞表
+ */
+window.selectWordlist = function(value, displayName, wordCount) {
+    selectedWordlistIdInSetting = value === 'ai' ? null : value;
+    
+    // 更新顯示（保留 icon）
+    const selectedNameElement = document.getElementById('selected-wordlist-name');
+    if (selectedNameElement) {
+        // 提取圖標和名稱
+        const iconMatch = displayName.match(/^(🤖|📖|✨)\s*/);
+        const icon = iconMatch ? iconMatch[1] : '📚';
+        const name = displayName.replace(/^(🤖|📖|✨)\s*/, '');
+        
+        if (wordCount !== null && wordCount !== undefined) {
+            selectedNameElement.textContent = `${name} (${wordCount}詞)`;
+        } else {
+            selectedNameElement.textContent = name;
+        }
+        
+        // 更新頭部圖標
+        const headerIcon = selectedNameElement.previousElementSibling;
+        if (headerIcon && headerIcon.classList.contains('wordlist-icon')) {
+            headerIcon.textContent = icon;
+        }
+    }
+    
+    // 更新選中狀態
+    document.querySelectorAll('.wordlist-option').forEach(opt => {
+        if (opt.dataset.value === value) {
+            opt.classList.add('active');
+        } else {
+            opt.classList.remove('active');
+        }
+    });
+    
+    // 關閉下拉菜單
+    const selector = document.getElementById('custom-wordlist-selector');
+    if (selector) {
+        selector.classList.remove('active');
+    }
+};
+
+/**
+ * 刪除自定義詞表
+ */
+window.deleteCustomWordlist = async function(wordlistId, wordlistName) {
+    // 確認刪除
+    const confirmed = confirm(`確定要刪除詞表「${wordlistName}」嗎？\n\n此操作無法撤銷。`);
+    if (!confirmed) return;
+    
+    try {
+        const { error } = await supabase
+            .from('wordlists')
+            .delete()
+            .eq('id', wordlistId);
+        
+        if (error) throw error;
+        
+        console.log('✅ 詞表已刪除:', wordlistName);
+        
+        // 如果刪除的是當前選中的詞表，切換回 AI 模式
+        if (selectedWordlistIdInSetting === wordlistId) {
+            selectedWordlistIdInSetting = null;
+            const selectedNameElement = document.getElementById('selected-wordlist-name');
+            if (selectedNameElement) {
+                selectedNameElement.innerHTML = '<span class="wordlist-icon">🤖</span><span>AI智能推薦（默認）</span>';
+            }
+        }
+        
+        // 重新加載詞表列表
+        await showSettingsScreen();
+        
+        // 顯示成功提示
+        showToast('詞表已刪除', 'success');
+        
+    } catch (error) {
+        console.error('❌ 刪除詞表失敗:', error);
+        showToast('刪除失敗，請稍後再試', 'error');
+    }
+};
+
+/**
+ * 打開上傳詞表模態框
+ */
+window.openUploadWordlistModal = function() {
+    // 關閉下拉菜單
+    const selector = document.getElementById('custom-wordlist-selector');
+    if (selector) {
+        selector.classList.remove('active');
+    }
+    
+    // 打開上傳模態框
+    const modal = document.getElementById('upload-wordlist-modal');
+    if (modal) {
+        modal.classList.add('active');
     }
 };
 

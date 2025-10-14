@@ -553,16 +553,53 @@
                 
                 <!-- 詞彙來源設置 -->
                 <div class="settings-section">
-                    <h2 class="section-title">選擇詞表</h2>
+                    <h2 class="section-title">📚 選擇詞表</h2>
                     <p class="section-desc">選擇詞彙的來源方式</p>
                     
                     <div class="setting-item">
-                        <select class="setting-select" id="wordlist-selector-setting" onchange="onWordlistSelectSetting()">
-                            <option value="ai">🤖 AI智能推荐（默认）</option>
-                            <optgroup label="系統詞表" id="system-wordlists-group-setting"></optgroup>
-                            <optgroup label="我的詞表" id="custom-wordlists-group-setting"></optgroup>
-                            <option value="__add_custom__">➕ 添加自定義詞表</option>
-                        </select>
+                        <!-- 自定義詞表選擇器 -->
+                        <div class="custom-wordlist-selector" id="custom-wordlist-selector">
+                            <div class="wordlist-selector-header" onclick="toggleWordlistDropdown()">
+                                <div class="wordlist-selected">
+                                    <span class="wordlist-icon">🤖</span>
+                                    <span class="wordlist-name" id="selected-wordlist-name">AI智能推薦（默認）</span>
+                                </div>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            
+                            <div class="wordlist-dropdown" id="wordlist-dropdown">
+                                <!-- AI 模式 -->
+                                <div class="wordlist-option" data-value="ai" onclick="selectWordlist('ai', '🤖 AI智能推薦', null)">
+                                    <span class="wordlist-icon">🤖</span>
+                                    <div class="wordlist-info">
+                                        <div class="wordlist-name-text">AI智能推薦</div>
+                                        <div class="wordlist-desc">自動匹配你的水平</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="wordlist-divider"></div>
+                                
+                                <!-- 系統詞表分組 -->
+                                <div class="wordlist-group-label">📖 系統詞表</div>
+                                <div id="system-wordlists-dropdown"></div>
+                                
+                                <div class="wordlist-divider"></div>
+                                
+                                <!-- 自定義詞表分組 -->
+                                <div class="wordlist-group-label">✨ 我的詞表</div>
+                                <div id="custom-wordlists-dropdown"></div>
+                                
+                                <div class="wordlist-divider"></div>
+                                
+                                <!-- 添加自定義詞表 -->
+                                <div class="wordlist-option wordlist-add-custom" onclick="openUploadWordlistModal()">
+                                    <span class="wordlist-icon">➕</span>
+                                    <div class="wordlist-info">
+                                        <div class="wordlist-name-text">添加自定義詞表</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="info-box">

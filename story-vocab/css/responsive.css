@@ -775,5 +775,45 @@
         font-size: 0.9em;
         padding: 6px 12px;
     }
+    
+    /* 詞表選擇器移動端優化 */
+    .wordlist-selector-header {
+        padding: 14px 16px;
+    }
+    
+    .wordlist-icon {
+        font-size: 1.2em;
+    }
+    
+    .wordlist-name {
+        font-size: 1em;
+    }
+    
+    .wordlist-dropdown {
+        max-height: 400px;
+    }
+    
+    .wordlist-option {
+        padding: 12px 16px;
+    }
+    
+    .wordlist-name-text {
+        font-size: 0.95em;
+    }
+    
+    .wordlist-desc,
+    .wordlist-count {
+        font-size: 0.8em;
+    }
+    
+    .wordlist-delete-btn {
+        padding: 5px 10px;
+        font-size: 0.8em;
+    }
+    
+    .wordlist-group-label {
+        padding: 10px 16px 6px;
+        font-size: 0.8em;
+    }
 }
 
