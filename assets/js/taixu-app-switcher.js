@@ -358,10 +358,10 @@
                 #taixuSwitcherContainer {
                     position: relative;
                     background: white;
-                    border-radius: 16px;
-                    max-width: 1280px;
+                    border-radius: 20px;
+                    max-width: 900px;
                     width: 100%;
-                    max-height: 100%;
+                    max-height: 85vh;
                     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
                     transform: scale(0.95);
                     transition: all 0.3s ease-out;
@@ -373,10 +373,43 @@
                     transform: scale(1);
                 }
                 
+                /* 返回按钮悬停效果 */
+                #taixuSwitcherContainer button[onclick*="index.html"]:hover {
+                    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+                }
+                
+                #taixuSwitcherContainer button[onclick*="index.html"]:active {
+                    transform: translateY(0);
+                }
+                
+                /* 关闭按钮悬停效果 */
+                #taixuCloseSwitcherBtn:hover {
+                    background: linear-gradient(135deg, rgba(118, 75, 162, 1) 0%, rgba(102, 126, 234, 1) 100%);
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                }
+                
+                #taixuCloseSwitcherBtn:active {
+                    transform: scale(0.95);
+                }
+                
                 /* 暗黑模式 */
                 @media (prefers-color-scheme: dark) {
                     #taixuSwitcherContainer {
                         background: #1f2937;
+                    }
+                    
+                    #taixuSwitcherContainer > div:first-of-type {
+                        border-bottom-color: #374151;
+                    }
+                    
+                    #taixuSwitcherContainer h2 {
+                        background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
                     }
                 }
                 
@@ -395,14 +428,86 @@
                 /* 移动端优化 */
                 @media (max-width: 768px) {
                     #taixuAppSwitcherModal {
-                        padding: 8px !important;
-                        padding-top: 8px !important;
-                        padding-bottom: 8px !important;
+                        padding: 4px !important;
                     }
                     
                     #taixuSwitcherContainer {
-                        max-height: calc(100vh - 16px) !important;
-                        max-height: calc(100dvh - 16px) !important;
+                        max-height: calc(100vh - 8px) !important;
+                        max-height: calc(100dvh - 8px) !important;
+                        border-radius: 12px;
+                    }
+                    
+                    /* 移动端标题区域更紧凑 */
+                    #taixuSwitcherContainer > div:first-of-type {
+                        padding: 8px 10px !important;
+                    }
+                    
+                    /* 移动端返回按钮紧凑化 */
+                    #taixuSwitcherContainer button[onclick*="index.html"] {
+                        padding: 6px 10px !important;
+                        font-size: 13px !important;
+                        gap: 4px !important;
+                    }
+                    
+                    #taixuSwitcherContainer button[onclick*="index.html"] i {
+                        font-size: 13px !important;
+                    }
+                    
+                    #taixuSwitcherContainer button[onclick*="index.html"] span {
+                        display: none; /* 移动端隐藏"返回主頁"文字 */
+                    }
+                    
+                    /* 移动端标题文字缩小 */
+                    #taixuSwitcherContainer h2 {
+                        font-size: 16px !important;
+                        letter-spacing: 1px !important;
+                    }
+                    
+                    /* 移动端 logo 缩小 */
+                    #taixuSwitcherContainer img[alt="太虛幻境"] {
+                        height: 24px !important;
+                        width: 24px !important;
+                    }
+                    
+                    /* 移动端关闭按钮调整 */
+                    #taixuCloseSwitcherBtn {
+                        width: 28px !important;
+                        height: 28px !important;
+                        top: 6px !important;
+                        right: 6px !important;
+                    }
+                    
+                    /* 移动端应用网格紧凑化 */
+                    #taixuSwitcherAppGrid {
+                        padding: 8px !important;
+                        gap: 6px !important;
+                        grid-template-columns: repeat(4, 1fr) !important;
+                    }
+                    
+                    /* 移动端应用图标优化 */
+                    .taixu-switcher-app-icon {
+                        padding: 6px 2px !important;
+                    }
+                    
+                    .taixu-switcher-app-icon .icon-container {
+                        width: 42px !important;
+                        height: 42px !important;
+                        min-width: 42px !important;
+                        min-height: 42px !important;
+                        max-width: 42px !important;
+                        max-height: 42px !important;
+                        padding: 8px !important;
+                        margin-bottom: 4px !important;
+                    }
+                    
+                    .taixu-switcher-app-icon i,
+                    .taixu-switcher-app-icon > div > span {
+                        font-size: 16px !important;
+                    }
+                    
+                    .taixu-switcher-app-name {
+                        font-size: 9px !important;
+                        line-height: 1.2 !important;
                     }
                 }
                 
@@ -414,11 +519,18 @@
                 }
                 
                 .taixu-switcher-app-icon:hover {
-                    transform: translateY(-2px) scale(1.05);
+                    transform: translateY(-3px);
+                    background: rgba(102, 126, 234, 0.05);
                 }
                 
                 .taixu-switcher-app-icon:active {
-                    transform: translateY(0) scale(0.98);
+                    transform: translateY(0);
+                }
+                
+                @media (prefers-color-scheme: dark) {
+                    .taixu-switcher-app-icon:hover {
+                        background: rgba(102, 126, 234, 0.15);
+                    }
                 }
                 
                 .taixu-switcher-app-icon .icon-container {
@@ -504,37 +616,37 @@
                 <div id="taixuSwitcherContainer">
                     <!-- 关闭按钮 -->
                     <button id="taixuCloseSwitcherBtn" 
-                            style="position: absolute; top: 12px; right: 12px; z-index: 10; width: 32px; height: 32px; border-radius: 9999px; background: rgba(0, 0, 0, 0.3); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(4px);">
-                        <i class="fas fa-times" style="font-size: 14px;"></i>
+                            style="position: absolute; top: 10px; right: 10px; z-index: 10; width: 36px; height: 36px; border-radius: 9999px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(8px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
+                        <i class="fas fa-times" style="font-size: 16px;"></i>
                     </button>
                     
                     <!-- 标题区域 -->
-                    <div style="padding: 16px 20px 12px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;">
+                    <div style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                             <!-- 返回主页按钮 -->
                             <button onclick="window.location.href='/index.html'" 
-                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f3f4f6; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #374151; transition: all 0.2s;">
-                                <i class="fas fa-home" style="font-size: 16px;"></i>
+                                    style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 10px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; color: white; transition: all 0.2s; box-shadow: 0 2px 8px rgba(240, 147, 251, 0.3);">
+                                <i class="fas fa-home" style="font-size: 14px;"></i>
                                 <span>返回主頁</span>
                             </button>
                             
                             <!-- 中间标题 -->
                             <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center;">
                                 <img src="/images/cclogo.png" 
-                                     alt="書院中文經典" 
-                                     style="height: 32px; width: 32px; object-fit: contain;">
-                                <h2 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 0;">太虛幻境：書院中文經典數字體驗學習</h2>
+                                     alt="太虛幻境" 
+                                     style="height: 28px; width: 28px; object-fit: contain;">
+                                <h2 style="font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; letter-spacing: 2px;">太虛幻境</h2>
                             </div>
                             
                             <!-- 右侧占位 -->
-                            <div style="width: 96px;"></div>
+                            <div style="width: 90px;"></div>
                         </div>
                     </div>
                     
                     <!-- 应用网格区域 -->
-                    <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+                    <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0;">
                         <div id="taixuSwitcherAppGrid" 
-                             style="padding: 12px 12px 24px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px;">
+                             style="padding: 16px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px;">
                             <!-- 应用图标将通过 JavaScript 动态生成 -->
                         </div>
                     </div>
@@ -614,8 +726,8 @@
         
         const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
         const iconHtml = isFaIcon
-            ? `<i class="${app.icon}" style="color: white; font-size: 14px;"></i>`
-            : `<span style="font-size: 14px; color: white;">${app.icon || '📱'}</span>`;
+            ? `<i class="${app.icon}" style="color: white; font-size: 20px;"></i>`
+            : `<span style="font-size: 20px; color: white;">${app.icon || '📱'}</span>`;
         
         const gradientStyle = convertGradient(app.gradient);
 
@@ -623,13 +735,13 @@
             <div class="taixu-switcher-app-icon" 
                  data-app-id="${app.id}" 
                  onclick="window.taixuNavigateToApp('${app.id}')"
-                 style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; height: 100%; min-height: 0;">
+                 style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; min-height: 0; padding: 8px 4px; border-radius: 12px; transition: all 0.2s;">
                 <div class="icon-container" 
-                     style="background: ${gradientStyle}; border-radius: 6px; padding: 6px; width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); margin-bottom: 4px;">
+                     style="background: ${gradientStyle}; border-radius: 10px; padding: 10px; width: 52px; height: 52px; min-width: 52px; min-height: 52px; max-width: 52px; max-height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); margin-bottom: 6px;">
                     ${iconHtml}
                 </div>
                 <p class="taixu-switcher-app-name" 
-                   style="text-align: center; font-size: 9px; line-height: 1.2; width: 100%; padding: 0 2px; flex-shrink: 0;">${app.name}</p>
+                   style="text-align: center; font-size: 11px; line-height: 1.3; width: 100%; padding: 0 4px; flex-shrink: 0; font-weight: 500;">${app.name}</p>
             </div>
         `;
     }
