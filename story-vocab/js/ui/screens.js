@@ -817,6 +817,7 @@ window.deleteCustomWordlist = async function(wordlistId, wordlistName) {
     if (!confirmed) return;
     
     try {
+        const supabase = getSupabase();
         const { error } = await supabase
             .from('wordlists')
             .delete()
@@ -829,14 +830,14 @@ window.deleteCustomWordlist = async function(wordlistId, wordlistName) {
         // 如果刪除的是當前選中的詞表，切換回 AI 模式
         if (selectedWordlistIdInSetting === wordlistId) {
             selectedWordlistIdInSetting = null;
+            const headerIcon = document.querySelector('.wordlist-selector-header .wordlist-icon');
             const selectedNameElement = document.getElementById('selected-wordlist-name');
-            if (selectedNameElement) {
-                selectedNameElement.innerHTML = '<span class="wordlist-icon">🤖</span><span>AI智能推薦（默認）</span>';
-            }
+            if (headerIcon) headerIcon.textContent = '🤖';
+            if (selectedNameElement) selectedNameElement.textContent = 'AI智能推薦（默認）';
         }
         
         // 重新加載詞表列表
-        await showSettingsScreen();
+        await loadWordlistSelectorSetting();
         
         // 顯示成功提示
         showToast('詞表已刪除', 'success');
