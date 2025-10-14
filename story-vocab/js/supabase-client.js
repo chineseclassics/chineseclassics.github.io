@@ -9,84 +9,6 @@ import { SUPABASE_CONFIG, validateConfig } from './config.js';
 let supabaseClient = null;
 
 /**
- * 檢測並清理損壞的 session 數據
- * 在 createClient() 之前調用，確保乾淨的初始化環境
- * @returns {boolean} 是否進行了清理
- */
-function detectAndCleanCorruptedSession() {
-  try {
-    const keys = Object.keys(localStorage);
-    let hasSupabaseData = false;
-    let hasValidGoogle = false;
-    let corruptedKeys = [];
-    
-    console.log('🔍 檢查 localStorage 中的 session 數據...');
-    
-    for (const key of keys) {
-      // 檢查所有可能的 Supabase storage keys
-      if (key.includes('supabase.auth.token') || 
-          key.includes('sb-') && key.includes('auth-token')) {
-        hasSupabaseData = true;
-        
-        try {
-          const data = localStorage.getItem(key);
-          if (data) {
-            const parsed = JSON.parse(data);
-            
-            // 檢查是否是有效的 Google session
-            // 需要同時滿足：1) 是 Google 提供商 2) 未過期
-            if (parsed.provider === 'google' && 
-                parsed.expires_at && 
-                new Date(parsed.expires_at * 1000) > new Date()) {
-              hasValidGoogle = true;
-              console.log('✅ 發現有效的 Google session');
-            } else if (parsed.provider === 'google') {
-              console.log('⚠️ 發現過期的 Google session');
-              corruptedKeys.push(key);
-            } else {
-              console.log('⚠️ 發現非 Google session:', parsed.provider || '未知');
-              corruptedKeys.push(key);
-            }
-          } else {
-            corruptedKeys.push(key);
-          }
-        } catch (e) {
-          // JSON 解析失敗 = 損壞數據
-          console.warn('⚠️ 無法解析 session 數據:', key);
-          corruptedKeys.push(key);
-        }
-      }
-    }
-    
-    // 策略：有 Supabase 數據但不是有效 Google = 清理
-    if (hasSupabaseData && !hasValidGoogle) {
-      console.log('🧹 檢測到可疑/損壞的 session 數據，預先清理...');
-      let cleanedCount = 0;
-      
-      keys.forEach(key => {
-        if (key.includes('supabase') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-          cleanedCount++;
-        }
-      });
-      
-      console.log(`✅ 已清理 ${cleanedCount} 個存儲項目`);
-      return true;
-    } else if (hasValidGoogle) {
-      console.log('✅ 有效的 Google session，保留');
-      return false;
-    } else {
-      console.log('ℹ️ 沒有 Supabase session 數據');
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ 檢測 session 時發生錯誤:', error);
-    // 出錯時保守處理，不清理數據
-    return false;
-  }
-}
-
-/**
  * 初始化 Supabase 客户端
  */
 export async function initSupabase() {
@@ -101,27 +23,17 @@ export async function initSupabase() {
     throw new Error('Supabase 配置不完整');
   }
   
-  // 【關鍵】在 createClient 之前檢測並清理損壞的 session
-  const wasCleaned = detectAndCleanCorruptedSession();
-  if (wasCleaned) {
-    console.log('💡 已清理損壞數據，將使用乾淨的 localStorage 初始化');
-    // 等待一小段時間確保清理完成
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
-  
   try {
     // 动态加载 Supabase 客户端库
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
     
-    // 配置選項：優化以避免初始化時的超時問題
+    // 配置選項
     const options = {
       auth: {
-        autoRefreshToken: false,        // 【關鍵】不在初始化時自動刷新，避免驗證舊 token
+        autoRefreshToken: true,          // 自動刷新 token
         persistSession: true,            // 保留 session 持久化
         detectSessionInUrl: true,        // 檢測 OAuth 回調 URL
         storage: window.localStorage     // 使用 localStorage
-        // 【關鍵】不設置自定義 storageKey，使用 Supabase 默認 key
-        // 這樣可以避免 key 不匹配的問題
       }
     };
     
