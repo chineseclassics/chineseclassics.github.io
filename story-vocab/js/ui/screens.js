@@ -1034,30 +1034,39 @@ window.uploadWordlistFromModal = async function() {
         progressText.textContent = '創建詞表中...';
         progressFill.style.width = '30%';
         progressFill.textContent = '30%';
+        
+        console.log('🔍 開始創建詞表，用戶ID:', userId);
 
         // 生成唯一的词表代码
         const timestamp = Date.now();
         const randomStr = Math.random().toString(36).substring(2, 8);
         const code = `custom_${userId.substring(0, 8)}_${timestamp}_${randomStr}`;
         
+        const wordlistData = {
+            name,
+            code,  // 添加唯一代码
+            description: desc || null,
+            type: 'custom',
+            owner_id: userId,
+            total_words: data.length,
+            hierarchy_config: {
+                level_2_label: '第二層級',
+                level_3_label: '第三層級'
+            }
+        };
+        
+        console.log('🔍 準備插入詞表數據:', wordlistData);
+        
         const { data: wordlist, error: wlError } = await supabase
             .from('wordlists')
-            .insert({
-                name,
-                code,  // 添加唯一代码
-                description: desc || null,
-                type: 'custom',
-                owner_id: userId,
-                total_words: data.length,
-                hierarchy_config: {
-                    level_2_label: '第二層級',
-                    level_3_label: '第三層級'
-                }
-            })
+            .insert(wordlistData)
             .select()
             .single();
 
-        if (wlError) throw wlError;
+        if (wlError) {
+            console.error('❌ 創建詞表失敗:', wlError);
+            throw wlError;
+        }
 
         console.log('✅ 詞表已創建:', wordlist.id);
 
@@ -1103,22 +1112,31 @@ window.uploadWordlistFromModal = async function() {
 
         let imported = 0;
         const batchSize = 50;
+        
+        console.log('🔍 開始導入詞彙，詞表ID:', wordlist.id);
 
         for (let i = 0; i < data.length; i += batchSize) {
             const batch = data.slice(i, i + batchSize);
             
             for (const item of batch) {
                 // 直接插入到統一詞彙表
+                const vocabData = {
+                    wordlist_id: wordlist.id,
+                    word: item.word,
+                    level_2_tag: item.level2 || null,
+                    level_3_tag: item.level3 || null
+                };
+                
+                console.log('🔍 準備插入詞彙:', vocabData);
+                
                 const { error: insertError } = await supabase
                     .from('wordlist_vocabulary')
-                    .insert({
-                        wordlist_id: wordlist.id,
-                        word: item.word,
-                        level_2_tag: item.level2 || null,
-                        level_3_tag: item.level3 || null
-                    });
+                    .insert(vocabData);
 
-                if (insertError) throw insertError;
+                if (insertError) {
+                    console.error('❌ 插入詞彙失敗:', insertError, '數據:', vocabData);
+                    throw insertError;
+                }
                 imported++;
             }
 
@@ -1126,6 +1144,8 @@ window.uploadWordlistFromModal = async function() {
             progressFill.style.width = `${progress}%`;
             progressFill.textContent = `${progress}%`;
             progressText.textContent = `導入詞彙中... (${imported}/${data.length})`;
+            
+            console.log(`📊 已導入 ${imported}/${data.length} 個詞彙`);
         }
 
         // 完成
