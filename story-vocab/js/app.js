@@ -57,29 +57,6 @@ function initFeedbackToggle() {
 }
 
 /**
- * 快速檢查本地存儲的用戶狀態
- * 用於在異步初始化完成前快速恢復 UI
- */
-function quickCheckUserState() {
-    const userType = localStorage.getItem('user_type');
-    const displayName = localStorage.getItem('user_display_name');
-    
-    // 如果有 registered 用戶信息，說明可能已登入
-    if (userType === 'registered' && displayName) {
-        return {
-            loggedIn: true,
-            user: {
-                display_name: displayName,
-                email: localStorage.getItem('user_email'),
-                avatar_url: localStorage.getItem('user_avatar_url'),
-                user_type: userType
-            }
-        };
-    }
-    return { loggedIn: false };
-}
-
-/**
  * 隱藏加載屏幕（已移除加載屏幕元素，保留函數以避免錯誤）
  */
 function hideLoadingScreen() {
@@ -93,16 +70,6 @@ async function initializeApp() {
     try {
         console.log(`🎮 詞遊記啟動（${getRunMode()}模式）`);
         
-        // 0. 快速檢查：如果本地有用戶信息，先隱藏加載屏幕並顯示主界面
-        //    避免已登入用戶看到閃屏
-        const quickCheck = quickCheckUserState();
-        if (quickCheck.loggedIn) {
-            console.log('🚀 檢測到本地用戶信息，快速恢復界面...');
-            updateUIForLoggedInUser(quickCheck.user);
-            hideLoadingScreen();
-            showMainInterface();
-        }
-        
         // 1. 初始化 Supabase
         const supabase = await initSupabase();
         console.log('✅ Supabase 客戶端初始化成功');
@@ -114,7 +81,7 @@ async function initializeApp() {
         window.supabase = supabase;
         const user = await authService.getCurrentUser();
         
-        // 3. 確認真實用戶狀態並更新 UI
+        // 3. 根據真實用戶狀態更新 UI（不依賴 localStorage，避免閃動）
         hideLoadingScreen(); // 確保隱藏加載屏幕
         
         if (user && user.user_type === 'registered') {
