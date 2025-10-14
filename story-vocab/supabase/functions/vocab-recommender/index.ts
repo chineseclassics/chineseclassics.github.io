@@ -167,10 +167,10 @@ async function recommendFromWordlist(
     
     console.log(`✅ 從詞表獲取 ${words.length} 個候選詞彙`)
     
-    // 3. 獲取本會話已使用的詞彙
+    // 3. 獲取本會話用戶已選擇的詞彙（而不是推荐过的词）
     const { data: rounds, error: roundsError } = await supabase
       .from('game_rounds')
-      .select('recommended_words')
+      .select('selected_word')
       .eq('session_id', sessionId)
     
     if (roundsError) {
@@ -178,25 +178,34 @@ async function recommendFromWordlist(
       // 如果查詢失敗，繼續但不過濾（可能會有重複詞）
     }
     
+    // 只排除用户已经选择过的词语
     const usedWords = new Set(
-      rounds?.flatMap(r => r.recommended_words || []) || []
+      rounds?.map(r => r.selected_word).filter(Boolean) || []
     )
     
-    console.log(`📊 本會話已推薦詞彙數: ${usedWords.size} 個`, Array.from(usedWords))
+    console.log(`📊 本會話用戶已選擇詞彙數: ${usedWords.size} 個`, Array.from(usedWords))
     
     // 4. 過濾已使用的詞彙
     const availableWords = words.filter(w => !usedWords.has(w.word))
     
     if (availableWords.length < 5) {
-      console.warn(`⚠️  可用詞彙不足5個（剩餘 ${availableWords.length} 個）`)
-      // 如果不足，重新使用部分已用詞彙
-      const reusable = words.slice(0, 5 - availableWords.length)
-      const finalWords = [...availableWords, ...reusable]
+      const needed = 5 - availableWords.length
+      console.warn(`⚠️  可用詞彙不足5個（剩餘 ${availableWords.length} 個），需要補充 ${needed} 個`)
+      
+      // 從已選擇的詞中隨機補充
+      const alreadyUsed = words.filter(w => usedWords.has(w.word))
+      const shuffled = alreadyUsed.sort(() => Math.random() - 0.5)
+      const supplements = shuffled.slice(0, needed)
+      
+      console.log(`✅ 補充已選詞: ${supplements.map(w => w.word).join('、')}`)
+      
+      const finalWords = [...availableWords, ...supplements]
       
       return finalWords.map(w => ({
         word: w.word,
         difficulty: 3,
-        category: 'flexible'
+        category: 'flexible',
+        isRepeated: usedWords.has(w.word) // 標記是否為重複詞
       }))
     }
     

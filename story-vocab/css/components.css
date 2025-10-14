@@ -184,6 +184,27 @@ button:active {
     }
 }
 
+/* 第一輪詞彙卡片入場動畫 */
+.word-btn.first-appear {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+    animation: firstAppear 0.5s ease forwards;
+}
+
+@keyframes firstAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+    60% {
+        transform: translateY(-5px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 /* 输入框 */
 .input-group {
     display: flex;

@@ -373,10 +373,10 @@ async function updateWordCardsWithFlipAnimation(newWords) {
         // 第一次显示，等待预加载完成再显示（确保有拼音）
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // 创建卡片（无翻转动画）
-        newWords.forEach(wordObj => {
+        // 创建卡片（使用入場動畫）
+        newWords.forEach((wordObj, index) => {
             const wordBtn = document.createElement('button');
-            wordBtn.className = 'word-btn';
+            wordBtn.className = 'word-btn first-appear';
             // 尝试从缓存获取拼音
             const cached = getBriefInfo(wordObj.word);
             const pinyin = cached?.pinyin || wordObj.pinyin || '';
@@ -385,7 +385,16 @@ async function updateWordCardsWithFlipAnimation(newWords) {
                 <div class="word-main-text">${wordObj.word}</div>
             `;
             wordBtn.onclick = () => selectWord(wordObj);
+            // 設置延遲動畫，讓卡片依次飛入
+            wordBtn.style.animationDelay = `${index * 0.08}s`;
             wordsContainer.appendChild(wordBtn);
+        });
+        
+        // 動畫完成後移除 class（避免影響後續樣式）
+        await new Promise(resolve => setTimeout(resolve, 500 + (newWords.length * 80)));
+        wordsContainer.querySelectorAll('.word-btn').forEach(btn => {
+            btn.classList.remove('first-appear');
+            btn.style.animationDelay = '';
         });
     } else {
         // 有旧卡片，执行翻转动画
@@ -979,7 +988,7 @@ window.closeUploadWordlistModal = function() {
  * 下载CSV模板
  */
 window.downloadWordlistTemplate = function() {
-    // 優化的 CSV 模板：更清晰的標題和實用示例
+    // 優化的 CSV 模板：至少 10 個詞語（已包含 12 個示例）
     const template = `詞語（必填）,分類標籤（可留空）,細分類（可留空）
 高興,, 
 朋友,, 
@@ -1059,6 +1068,15 @@ window.uploadWordlistFromModal = async function() {
         }).filter(d => d.word);
 
         console.log(`📊 解析了 ${data.length} 個詞語`);
+
+        // 验证词数：至少需要 10 个词
+        if (data.length < 10) {
+            throw new Error(
+                `詞數不足：至少需要 10 個詞語才能創建詞表。\n\n` +
+                `當前只有 ${data.length} 個詞語，請添加更多詞語後重新上傳。\n\n` +
+                `💡 提示：10 個詞語可以保證 8 輪遊戲的良好體驗，前期不會重複詞語。`
+            );
+        }
 
         // 创建词表
         progressText.textContent = '創建詞表中...';
