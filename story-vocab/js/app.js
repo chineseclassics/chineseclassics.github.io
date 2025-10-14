@@ -4,7 +4,7 @@
  */
 
 // 导入 Supabase 相关
-import { initSupabase } from './supabase-client.js';
+import { initSupabase, getSupabase } from './supabase-client.js';
 import { SUPABASE_CONFIG } from './config.js';
 
 // 导入认证模块
@@ -654,6 +654,42 @@ function useOptimizedSentence() {
 }
 
 /**
+ * 确保 Supabase session 已就绪（只在必要时等待）
+ * 解决首次登入后立即开始游戏时的竞态条件
+ */
+async function ensureSessionReady() {
+    const supabase = getSupabase();
+    
+    // 快速检查：如果已经有 session，立即返回
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+        return true;
+    }
+    
+    // 如果没有 session，等待最多 2 秒
+    console.log('⏳ 等待 session 就绪...');
+    return new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 10; // 10 次 x 200ms = 2 秒
+        
+        const checkInterval = setInterval(async () => {
+            attempts++;
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session?.user) {
+                clearInterval(checkInterval);
+                console.log('✅ Session 已就绪');
+                resolve(true);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.warn('⚠️ Session 等待超时（但继续尝试）');
+                resolve(false);
+            }
+        }, 200);
+    });
+}
+
+/**
  * 开始游戏（从启动界面）
  */
 async function handleStartGame() {
@@ -682,6 +718,9 @@ async function handleStartGame() {
     console.log('📚 层级2:', gameState.level2Tag);
     console.log('📚 层级3:', gameState.level3Tag);
     
+    // 🔒 确保 session 已就绪（防止竞态条件）
+    await ensureSessionReady();
+    
     // 设置级别和主题
     const level = 'L2';  // 仅用于兼容性，实际词汇推荐由 vocab-recommender 根据用户水平和词表设置决定
     const theme = themeBtn.dataset.theme;
@@ -691,29 +730,58 @@ async function handleStartGame() {
     showScreen('game-screen');
     
     // 开始游戏
-    await startGame(level, theme, async () => {
-        // 成功创建会话后的回调
-        console.log('🎮 开始调用 getAIResponse...');
-        const data = await getAIResponse();
-        console.log('✅ getAIResponse 完成，准备显示...');
-        
-        // 🚀 立即预加载词汇信息（在打字机效果前）
-        if (data.recommendedWords && data.recommendedWords.length > 0) {
-            const wordsToPreload = data.recommendedWords
-                .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
-                .map(w => w.word);
-            
-            if (wordsToPreload.length > 0) {
-                console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
-                preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
-                    console.log('⚠️ 预加载失败（不影响使用）:', err);
-                });
+    try {
+        await startGame(level, theme, async () => {
+            // 成功创建会话后的回调
+            try {
+                console.log('🎮 开始调用 getAIResponse...');
+                const data = await getAIResponse();
+                console.log('✅ getAIResponse 完成，准备显示...');
+                
+                // 🚀 立即预加载词汇信息（在打字机效果前）
+                if (data.recommendedWords && data.recommendedWords.length > 0) {
+                    const wordsToPreload = data.recommendedWords
+                        .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
+                        .map(w => w.word);
+                    
+                    if (wordsToPreload.length > 0) {
+                        console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
+                        preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
+                            console.log('⚠️ 预加载失败（不影响使用）:', err);
+                        });
+                    }
+                }
+                
+                await displayAIResponse(data);
+                console.log('✅ displayAIResponse 完成');
+            } catch (error) {
+                console.error('❌ AI 創作失敗:', error);
+                
+                // 移除加载动画
+                const storyDisplay = document.getElementById('story-display');
+                if (storyDisplay) {
+                    const loadingMessages = storyDisplay.querySelectorAll('.message.ai .inline-loading');
+                    loadingMessages.forEach(msg => msg.closest('.message')?.remove());
+                }
+                
+                // 显示错误提示
+                showToast('❌ AI 創作失敗，請重試');
+                
+                // 返回开始界面让用户重试
+                setTimeout(() => {
+                    showScreen('start-screen');
+                }, 1500);
             }
-        }
+        });
+    } catch (error) {
+        console.error('❌ 啟動遊戲失敗:', error);
+        showToast('❌ 啟動失敗，請重試');
         
-        await displayAIResponse(data);
-        console.log('✅ displayAIResponse 完成');
-    });
+        // 返回开始界面
+        setTimeout(() => {
+            showScreen('start-screen');
+        }, 1500);
+    }
 }
 
 /**
