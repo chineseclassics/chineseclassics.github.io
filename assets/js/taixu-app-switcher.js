@@ -581,16 +581,21 @@
     
     // 将 Tailwind gradient 类转换为 CSS gradient
     function convertGradient(gradientClass) {
+        // 如果没有 gradient，返回默认值
+        if (!gradientClass || typeof gradientClass !== 'string') {
+            return 'linear-gradient(to bottom right, #667eea, #764ba2)';
+        }
+        
         // 解析 "from-red-500 to-orange-500" 格式
-        const parts = gradientClass.split(' ');
+        const parts = gradientClass.split(' ').filter(p => p); // 过滤空字符串
         let fromColor = '#667eea'; // 默认颜色
         let toColor = '#764ba2';
         
         parts.forEach(part => {
-            if (part.startsWith('from-')) {
+            if (part && part.startsWith('from-')) {
                 const colorKey = part.replace('from-', '');
                 fromColor = tailwindColors[colorKey] || fromColor;
-            } else if (part.startsWith('to-')) {
+            } else if (part && part.startsWith('to-')) {
                 const colorKey = part.replace('to-', '');
                 toColor = tailwindColors[colorKey] || toColor;
             }
@@ -601,10 +606,16 @@
     
     // 渲染切换器应用图标
     function renderSwitcherAppIcon(app) {
+        // 安全检查
+        if (!app || !app.id || !app.name) {
+            console.warn('⚠️ 無效的應用數據:', app);
+            return '';
+        }
+        
         const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
         const iconHtml = isFaIcon
             ? `<i class="${app.icon}" style="color: white; font-size: 14px;"></i>`
-            : `<span style="font-size: 14px; color: white;">${app.icon}</span>`;
+            : `<span style="font-size: 14px; color: white;">${app.icon || '📱'}</span>`;
         
         const gradientStyle = convertGradient(app.gradient);
 
@@ -630,6 +641,13 @@
             console.warn('❌ 找不到应用网格容器 #taixuSwitcherAppGrid');
             return;
         }
+        
+        // 检查并记录缺少 gradient 的应用
+        apps.forEach((app, index) => {
+            if (!app.gradient) {
+                console.warn(`⚠️ 應用 ${app.name} (${app.id}) 缺少 gradient 属性`);
+            }
+        });
         
         const html = apps.map(app => renderSwitcherAppIcon(app)).join('');
         grid.innerHTML = html;
