@@ -20,27 +20,49 @@ export class StandaloneAuth extends AuthService {
     this.supabase = getSupabase();
     
     try {
-      // 檢查現有 session（帶超時保護，防止卡住）
-      const sessionPromise = this.supabase.auth.getSession();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('getSession 超時')), 10000) // 放寬到 10 秒
-      );
+      // 【新策略】快速判斷 session 類型（通過 localStorage）
+      const sessionType = this.detectSessionType();
+      console.log('🔍 檢測到 session 類型:', sessionType);
       
-      const { data: { session }, error } = await Promise.race([
-        sessionPromise,
-        timeoutPromise
-      ]);
-      
-      if (error) {
-        console.error('❌ 獲取 session 失敗:', error);
+      if (sessionType === 'google') {
+        // 只對 Google session 嘗試恢復（短超時）
+        console.log('🔐 嘗試恢復 Google 用戶...');
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('getUser 超時')), 3000)
+        );
+        
+        try {
+          const { data: { user }, error } = await Promise.race([
+            this.supabase.auth.getUser(),
+            timeoutPromise
+          ]);
+          
+          if (error) {
+            console.warn('⚠️ Google session 驗證失敗:', error.message);
+            await this.clearCorruptedSession();
+            return null;
+          }
+          
+          if (user) {
+            console.log('✅ Google 用戶恢復成功');
+            await this.syncUserToDatabase(user);
+            return this.currentUser;
+          }
+        } catch (err) {
+          console.warn('⚠️ Google session 已過期或超時，清除:', err.message);
+          await this.clearCorruptedSession();
+          return null;
+        }
+      } else if (sessionType === 'none') {
+        // 沒有 session，直接返回
+        console.log('ℹ️ 用戶未登入');
+        return null;
+      } else if (sessionType === 'corrupted') {
+        // 損壞的 session（理論上已在 supabase-client.js 預清理層處理）
+        // 這裡作為雙重保險再次清理
+        console.log('⚠️ 檢測到損壞的 session，清理中...');
         await this.clearCorruptedSession();
         return null;
-      }
-      
-      if (session) {
-        console.log('✅ 發現已有 session');
-        await this.syncUserToDatabase(session.user);
-        return this.currentUser;
       }
       
       console.log('ℹ️ 用戶未登入');
@@ -48,56 +70,94 @@ export class StandaloneAuth extends AuthService {
       
     } catch (error) {
       console.error('❌ 初始化認證系統時發生錯誤:', error);
-      // 超時或其他錯誤，清理可能損壞的數據
+      // 任何未預期的錯誤，清理並返回
       await this.clearCorruptedSession();
       return null;
     }
   }
   
   /**
+   * 快速檢測 session 類型（通過 localStorage）
+   * 借鑒詩詞組句的成功經驗
+   * @returns {string} 'google' | 'anonymous' | 'corrupted' | 'none'
+   */
+  detectSessionType() {
+    try {
+      const keys = Object.keys(localStorage);
+      
+      for (const key of keys) {
+        // 檢查所有可能的 Supabase auth token keys
+        if (key.includes('supabase.auth.token') || 
+            (key.includes('sb-') && key.includes('auth-token'))) {
+          try {
+            const data = localStorage.getItem(key);
+            if (!data) continue;
+            
+            // 嘗試解析（如果失敗說明損壞）
+            const parsed = JSON.parse(data);
+            
+            // 檢查 provider
+            if (parsed.provider === 'google') {
+              return 'google';
+            } else if (parsed.provider === 'anonymous' || !parsed.provider) {
+              // 匿名或未知 provider
+              return 'corrupted';
+            } else {
+              return 'corrupted';
+            }
+          } catch (e) {
+            // JSON 解析失敗 = 損壞
+            return 'corrupted';
+          }
+        }
+      }
+      
+      return 'none';
+    } catch (error) {
+      console.error('❌ 檢測 session 類型時發生錯誤:', error);
+      return 'none';
+    }
+  }
+  
+  /**
    * 清理損壞的 session 數據
    * 只在遇到超時或錯誤時調用
+   * 借鑒詩詞組句的成功經驗：不調用 signOut，直接清理
    */
   async clearCorruptedSession() {
     try {
       console.log('🧹 清理本地認證數據...');
       
-      // 清理 Supabase 相關的存儲項目
-      const supabasePrefixes = ['sb-', 'supabase', 'auth'];
       let cleanedCount = 0;
       
       // 清理 localStorage
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (key && supabasePrefixes.some(prefix => key.toLowerCase().includes(prefix))) {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('supabase') || key.includes('sb-')) {
           localStorage.removeItem(key);
           cleanedCount++;
         }
-      }
+      });
       
-      // 清理 sessionStorage
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const key = sessionStorage.key(i);
-        if (key && supabasePrefixes.some(prefix => key.toLowerCase().includes(prefix))) {
+      // 清理 sessionStorage（如果有的話）
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (key.includes('supabase') || key.includes('sb-')) {
           sessionStorage.removeItem(key);
           cleanedCount++;
         }
-      }
+      });
       
       console.log(`✅ 已清理 ${cleanedCount} 個存儲項目`);
       
-      // 嘗試通知 Supabase 客戶端（帶超時保護）
-      try {
-        const signOutPromise = this.supabase.auth.signOut();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('signOut 超時')), 3000)
-        );
-        await Promise.race([signOutPromise, timeoutPromise]);
-      } catch (signOutError) {
-        // 忽略 signOut 錯誤，因為可能 session 已經損壞
-      }
+      // 【關鍵】不調用 signOut（避免再次卡住）
+      // 直接清理 localStorage 就足夠了
       
-      console.log('💡 請刷新頁面後重試登入');
+      // 【關鍵】等待客戶端重置（借鑒詩詞組句的經驗）
+      console.log('⏳ 等待客戶端狀態重置...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('✅ 清理完成');
     } catch (error) {
       console.error('❌ 清理 session 時發生錯誤:', error);
     }
@@ -210,18 +270,6 @@ export class StandaloneAuth extends AuthService {
   async logout() {
     console.log('🚪 登出...');
     
-    try {
-      // 調用 Supabase 登出（帶超時保護，防止卡住）
-      const signOutPromise = this.supabase.auth.signOut();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('登出超時')), 5000)
-      );
-      
-      await Promise.race([signOutPromise, timeoutPromise]);
-    } catch (error) {
-      console.warn('⚠️ 登出時發生錯誤（已忽略）:', error.message);
-    }
-    
     // 清除內存中的用戶數據
     this.currentUser = null;
     
@@ -230,6 +278,30 @@ export class StandaloneAuth extends AuthService {
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_avatar_url');
     localStorage.removeItem('user_type');
+    
+    // 清除 Supabase session 數據
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.includes('supabase') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // 嘗試調用 Supabase 登出（短超時，失敗不影響）
+    try {
+      const signOutPromise = this.supabase.auth.signOut({ scope: 'local' });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('登出超時')), 2000)
+      );
+      
+      await Promise.race([signOutPromise, timeoutPromise]);
+    } catch (error) {
+      // 忽略錯誤，localStorage 已經清理完畢
+      console.warn('⚠️ 登出 API 調用失敗（已忽略）:', error.message);
+    }
+    
+    // 等待客戶端狀態重置
+    await new Promise(resolve => setTimeout(resolve, 50));
     
     console.log('✅ 已登出');
   }

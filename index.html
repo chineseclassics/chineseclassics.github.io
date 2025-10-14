@@ -69,6 +69,8 @@
     <!-- Supabase UMD 與全域登入狀態列 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.47.4/dist/umd/supabase.js"></script>
     <script src="assets/js/cc-auth.js"></script>
+    <!-- 太虛幻境應用切換器組件 -->
+    <script src="assets/js/taixu-app-switcher.js"></script>
     <script>
         // 檢測暗黑模式
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -1011,15 +1013,7 @@
 
 
 
-    <!-- 悬浮Logo图标 -->
-    <div id="floatingLogo" class="fixed z-50 hidden cursor-pointer select-none" style="right: 16px; top: 50%; margin-top: -24px;">
-        <div class="bg-black/20 dark:bg-white/20 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/30 dark:border-gray-600/30 hover:bg-black/30 dark:hover:bg-white/30 transition-all duration-300">
-            <img src="images/cclogo.png" 
-                 alt="書院中文經典" 
-                 class="h-8 w-8 object-contain cursor-pointer"
-                 onclick="showFloatingAppSwitcher()">
-        </div>
-    </div>
+    <!-- 悬浮Logo由组件自动创建 -->
 
     <!-- 主内容区域 -->
     <main class="relative z-20" id="mainContent">
@@ -1111,48 +1105,7 @@
 
     </main>
 
-    <!-- 应用视图 - 移出main标签以确保完全全屏 -->
-    <div id="appView" class="hidden">
-        <div id="appContainer" class="app-container">
-            <iframe id="appFrame" class="w-full h-full border-0" src="about:blank" 
-                    allow="fullscreen; camera; microphone; geolocation" 
-                    referrerpolicy="no-referrer-when-downgrade"
-                    loading="eager"
-                    title="應用視圖"
-                    role="application"
-                    aria-label="當前運行的應用程序"></iframe>
-            
-            <!-- 優化的加载状态 -->
-            <div id="loadingState" class="absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
-                <div class="enhanced-loading text-center">
-                    <div class="loading-spinner mb-4"></div>
-                    <div class="loading-text">正在加載應用...</div>
-                    <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                        首次載入可能需要幾秒鐘時間
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 優化的错误状态 -->
-            <div id="errorState" class="hidden absolute inset-0 bg-white dark:bg-gray-900 flex items-center justify-center">
-                <div class="error-container max-w-md mx-auto">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">無法載入應用</h3>
-                    <p class="text-gray-600 dark:text-gray-400 mb-6">該應用可能不支援嵌入模式或網路連線有問題</p>
-                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                        <button id="openInNewTabBtn" 
-                                class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-                            在新標籤頁打開
-                        </button>
-                        <button id="retryLoadBtn" 
-                                class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                            重新嘗試
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- 应用视图已移除 - 现在使用直接页面跳转 -->
 
     <!-- 应用切换器弹窗 -->
     <div id="appSwitcherModal" class="fixed inset-0 z-[950] flex items-center justify-center p-4 pt-16 pb-16 opacity-0 pointer-events-none transition-all duration-300 ease-out">
@@ -1961,75 +1914,13 @@
             switcherAppGrid.innerHTML = html;
         }
 
-        // 打开应用
+        // 打开应用（直接跳转）
         function openApp(appId) {
             const app = apps.find(a => a.id === appId);
             if (!app) return;
 
-            // 如果應用需要在新標籤頁打開（例如需要 Google OAuth）
-            if (app.openInNewTab) {
-                window.open(app.url, '_blank', 'noopener,noreferrer');
-                hideAppSwitcher();
-                return;
-            }
-
-            // 清理之前的资源
-            cleanupAppResources();
-
-            currentApp = app;
-            currentView = 'app';
-
-            // 切换视图
-            homeView.classList.add('hidden');
-            appView.classList.remove('hidden');
-            
-            // 使用统一的状态管理
-            setAppViewState(true);
-
-            // 显示加载状态
-            loadingState.classList.remove('hidden');
-            errorState.classList.add('hidden');
-
-            // 使用统一的尺寸设置函数
-            setIframeSize();
-            
-            // 加载iframe
-            appFrame.src = app.url;
-
-            // 设置iframe错误处理
-            appLoadTimeoutId = setTimeout(() => {
-                showError('timeout');
-            }, 10000); // 10秒超时
-
-            appFrame.onload = () => {
-                clearTimeout(appLoadTimeoutId);
-                appLoadTimeoutId = null;
-                
-                setTimeout(() => {
-                    loadingState.classList.add('hidden');
-                    
-                    // 确保iframe尺寸正确
-                    setIframeSize();
-                    
-                    // 简化的重排处理 - 方案一版本
-                    requestAnimationFrame(() => {
-                        appFrame.style.visibility = 'hidden';
-                        appFrame.offsetHeight; // 触发重排
-                        appFrame.style.visibility = 'visible';
-                    });
-                }, 500);
-            };
-
-            appFrame.onerror = () => {
-                if (appLoadTimeoutId) {
-                    clearTimeout(appLoadTimeoutId);
-                    appLoadTimeoutId = null;
-                }
-                showError('network');
-            };
-
-            // 关闭应用切换器
-            hideAppSwitcher();
+            // 直接跳转到应用页面
+            window.location.href = app.url;
         }
 
         // 增强的错误处理函数
@@ -2104,24 +1995,9 @@
             };
         }
 
-        // 回到首页
+        // 回到首页（直接跳转）
         function showHome() {
-            // 清理应用资源
-            cleanupAppResources();
-            
-            currentView = 'home';
-            homeView.classList.remove('hidden');
-            appView.classList.add('hidden');
-            appFrame.src = 'about:blank';
-            currentApp = null;
-            
-            // 使用统一的状态管理
-            setAppViewState(false);
-            
-            // 如果应用切换器打开，则关闭它
-            if (appSwitcherModal.classList.contains('switcher-modal-show')) {
-                hideAppSwitcher();
-            }
+            window.location.href = '/index.html';
         }
 
         // 显示应用切换器（带动画）- 优化版
