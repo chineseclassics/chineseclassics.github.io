@@ -768,7 +768,7 @@ window.toggleWordlistDropdown = function() {
 /**
  * 選擇詞表
  */
-window.selectWordlist = function(value, displayName, wordCount) {
+window.selectWordlist = async function(value, displayName, wordCount) {
     selectedWordlistIdInSetting = value === 'ai' ? null : value;
     
     // 更新顯示（保留 icon）
@@ -805,6 +805,36 @@ window.selectWordlist = function(value, displayName, wordCount) {
     const selector = document.getElementById('custom-wordlist-selector');
     if (selector) {
         selector.classList.remove('active');
+    }
+    
+    // 🆕 自動保存到數據庫
+    try {
+        const supabase = getSupabase();
+        const userId = gameState.userId;
+        
+        if (userId) {
+            const { error } = await supabase
+                .from('user_wordlist_preferences')
+                .upsert({
+                    user_id: userId,
+                    default_mode: value === 'ai' ? 'ai' : 'wordlist',
+                    default_wordlist_id: value === 'ai' ? null : value,
+                    default_level_2_tag: null,
+                    default_level_3_tag: null,
+                    updated_at: new Date().toISOString()
+                });
+            
+            if (error) throw error;
+            
+            console.log('✅ 詞表偏好已自動保存:', value);
+            
+            // 重新加載開始界面
+            await initStartScreen();
+            showToast('✅ 詞表已切換');
+        }
+    } catch (error) {
+        console.error('保存詞表設置失敗:', error);
+        showToast('❌ 保存失敗，請重試');
     }
 };
 

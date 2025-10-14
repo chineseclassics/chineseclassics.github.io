@@ -126,46 +126,10 @@ export async function saveSettings() {
         if (typingEffect !== undefined) saveSetting('typing_effect', typingEffect);
         if (storyLength) saveSetting('story_length', storyLength);
         
-        // 保存词表选择
-        let wordlistChanged = false;
-        const wordlistSelector = document.getElementById('wordlist-selector-setting');
-        if (wordlistSelector) {
-            const value = wordlistSelector.value;
-            
-            // 导入 Supabase 客户端和 gameState
-            const { getSupabase } = await import('../supabase-client.js');
-            const { gameState } = await import('../core/game-state.js');
-            const supabase = getSupabase();
-            
-            // 使用 gameState 中的用戶 ID（已經是正確的 users.id）
-            const userId = gameState.userId;
-            if (userId) {
-                // 保存到 Supabase
-                const { error } = await supabase
-                    .from('user_wordlist_preferences')
-                    .upsert({
-                        user_id: userId,
-                        default_mode: value === 'ai' ? 'ai' : 'wordlist',
-                        default_wordlist_id: value === 'ai' ? null : value,
-                        default_level_2_tag: null,
-                        default_level_3_tag: null,
-                        updated_at: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                console.log('✅ 詞表偏好已保存:', value);
-                wordlistChanged = true;
-            }
-        }
+        // ℹ️ 词表选择已改为自动保存（在 selectWordlist() 函数中）
+        // 不再需要在这里保存词表设置
         
         showToast('✅ 設置已保存！');
-        
-        // 如果词表设置有变化，重新初始化开始界面
-        if (wordlistChanged) {
-            const { initStartScreen } = await import('./screens.js');
-            await initStartScreen();
-            console.log('🔄 已重新加載開始界面');
-        }
     } catch (error) {
         console.error('保存設置失敗:', error);
         showToast('❌ 保存設置失敗，請重試');
