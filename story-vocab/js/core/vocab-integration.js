@@ -16,8 +16,6 @@ import { summarizeGameSession, buildCumulativeUserProfile } from '../features/pr
  * @returns {Promise<Array>} 推薦的5個詞
  */
 export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
-  const supabase = getSupabase()
-  
   try {
     console.log(`🎯 getRecommendedWords 被調用，輪次: ${roundNumber}，模式: ${wordlistOptions?.mode}`)
     
@@ -30,8 +28,9 @@ export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
       return result
     }
     
-    // 2. AI智能模式：檢查用戶是否已完成校準
-    const calibrated = await isUserCalibrated(gameState.userId)
+    // 2. AI智能模式：✅ 從緩存讀取校準狀態（不查數據庫）
+    const calibrated = gameState.user?.calibrated || false
+    console.log(`📊 校準狀態（從緩存）: ${calibrated ? '已校準' : '未校準'}`)
     
     if (!calibrated) {
       // AI模式且未校準：使用校準詞庫

@@ -313,6 +313,8 @@ export class StandaloneAuth extends AuthService {
       if (!existingUser.display_name && displayName) {
         updates.display_name = displayName;
       }
+      
+      let userToEnrich = existingUser;
       if (Object.keys(updates).length > 0) {
         const { data: updated } = await this.supabase
           .from('users')
@@ -320,13 +322,13 @@ export class StandaloneAuth extends AuthService {
           .eq('id', existingUser.id)
           .select()
           .single();
-        return {
-          ...(updated || existingUser),
-          run_mode: 'standalone'
-        };
+        userToEnrich = updated || existingUser;
       }
+      
+      // 🚀 加載完整的用戶資料
+      const enrichedUser = await this.loadUserCompleteProfile(userToEnrich);
       return {
-        ...existingUser,
+        ...enrichedUser,
         run_mode: 'standalone'
       };
     }
@@ -413,10 +415,106 @@ export class StandaloneAuth extends AuthService {
       console.log('✅ 身份綁定成功');
     }
     
+    // 🚀 加載完整的用戶資料（一次性加載，全程緩存）
+    const enrichedUser = await this.loadUserCompleteProfile(user);
+    
     return {
-      ...user,
+      ...enrichedUser,
       run_mode: 'standalone'
     };
+  }
+  
+  /**
+   * 加載用戶的完整檔案資料（登入時一次性加載）
+   * @param {Object} user - 基本用戶對象
+   * @returns {Promise<Object>} - 包含完整信息的用戶對象
+   */
+  async loadUserCompleteProfile(user) {
+    try {
+      console.log('📊 加載用戶完整檔案...');
+      
+      // 1. 加載用戶檔案（校準信息）
+      const { data: profile } = await this.supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      console.log('📋 用戶檔案:', profile ? '已找到' : '未找到（新用戶）');
+      
+      // 2. 加載詞表偏好
+      const { data: prefs } = await this.supabase
+        .from('user_wordlist_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      console.log('📋 詞表偏好:', prefs ? `${prefs.default_mode} 模式` : 'AI 模式（默認）');
+      
+      // 3. 如果有詞表偏好且選擇了特定詞表，加載詞表信息
+      let wordlistInfo = null;
+      if (prefs && prefs.default_wordlist_id && prefs.default_mode === 'wordlist') {
+        const { data: wordlist } = await this.supabase
+          .from('wordlists')
+          .select('*')
+          .eq('id', prefs.default_wordlist_id)
+          .maybeSingle();
+        
+        if (wordlist) {
+          // 加載詞表標籤
+          const { data: tags } = await this.supabase
+            .from('wordlist_tags')
+            .select('*')
+            .eq('wordlist_id', wordlist.id)
+            .order('tag_level')
+            .order('sort_order');
+          
+          wordlistInfo = {
+            id: wordlist.id,
+            name: wordlist.name,
+            tags: tags || []
+          };
+          
+          console.log('📚 詞表信息已加載:', wordlist.name);
+        }
+      }
+      
+      // 4. 組合完整的用戶對象
+      return {
+        ...user,
+        // 用戶檔案信息
+        calibrated: profile?.calibrated || false,
+        baseline_level: profile?.baseline_level || null,
+        current_level: profile?.current_level || 2.0,
+        total_games: profile?.total_games || 0,
+        // 詞表偏好
+        wordlist_preference: {
+          default_mode: prefs?.default_mode || 'ai',
+          default_wordlist_id: prefs?.default_wordlist_id || null,
+          default_level_2_tag: prefs?.default_level_2_tag || null,
+          default_level_3_tag: prefs?.default_level_3_tag || null,
+          wordlist_info: wordlistInfo
+        }
+      };
+      
+    } catch (error) {
+      console.error('⚠️ 加載用戶完整檔案失敗（使用默認值）:', error);
+      // 降級：返回帶默認值的用戶對象
+      return {
+        ...user,
+        calibrated: false,
+        baseline_level: null,
+        current_level: 2.0,
+        total_games: 0,
+        wordlist_preference: {
+          default_mode: 'ai',
+          default_wordlist_id: null,
+          default_level_2_tag: null,
+          default_level_3_tag: null,
+          wordlist_info: null
+        }
+      };
+    }
   }
   
   /**

@@ -41,88 +41,56 @@ export async function initStartScreen() {
             return; // AI模式已经是默认显示的
         }
 
-        console.log('📊 開始查詢用戶詞表偏好，userId:', userId);
-
-        // 加载用户词表偏好
-        const { data: prefs, error: prefsError } = await supabase
-            .from('user_wordlist_preferences')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
-
-        if (prefsError) {
-            console.error('❌ 查詢詞表偏好失敗:', prefsError);
+        // ✅ 從緩存讀取詞表偏好（不查數據庫）
+        const prefs = gameState.user?.wordlist_preference;
+        
+        if (!prefs) {
+            console.log('⚠️ 用戶資料未加載完成，使用默認AI模式');
             updateWordlistNameDisplay('AI智能推薦');
             return;
         }
 
-        console.log('📊 用户词表偏好:', prefs);
+        console.log('📊 詞表偏好（從緩存）:', prefs.default_mode);
 
         // 如果没有偏好或选择了AI模式
-        if (!prefs || !prefs.default_wordlist_id || prefs.default_mode === 'ai') {
+        if (!prefs.default_wordlist_id || prefs.default_mode === 'ai') {
             console.log('✅ 使用AI智能推荐模式');
-            updateWordlistNameDisplay('AI智能推薦');
-            return; // AI模式已经是默认显示的
-        }
-
-        // 用户选择了特定词表，加载词表信息
-        console.log('📚 加載詞表信息，wordlistId:', prefs.default_wordlist_id);
-        const { data: wordlist, error: wordlistError } = await supabase
-            .from('wordlists')
-            .select('*')
-            .eq('id', prefs.default_wordlist_id)
-            .maybeSingle();
-
-        if (wordlistError) {
-            console.error('❌ 查詢詞表失敗:', wordlistError);
+            gameState.wordlistMode = 'ai';
+            gameState.wordlistId = null;
             updateWordlistNameDisplay('AI智能推薦');
             return;
         }
 
-        if (!wordlist) {
-            console.warn('⚠️ 词表不存在，使用AI模式');
+        // 用户选择了特定词表，使用緩存的詞表信息
+        const wordlistInfo = prefs.wordlist_info;
+        
+        if (!wordlistInfo) {
+            console.warn('⚠️ 詞表信息未緩存，使用AI模式');
+            gameState.wordlistMode = 'ai';
+            gameState.wordlistId = null;
             updateWordlistNameDisplay('AI智能推薦');
             return;
         }
 
-        // 加载词表的标签
-        console.log('🏷️ 加載詞表標籤...');
-        const { data: tags, error: tagsError } = await supabase
-            .from('wordlist_tags')
-            .select('*')
-            .eq('wordlist_id', wordlist.id)
-            .order('tag_level')
-            .order('sort_order');
-
-        if (tagsError) {
-            console.error('❌ 查詢標籤失敗:', tagsError);
-            // 即使標籤失敗，也可以使用整個詞表
-            gameState.wordlistMode = 'wordlist';
-            gameState.wordlistId = wordlist.id;
-            updateWordlistNameDisplay(wordlist.name);
-            return;
-        }
-
-        console.log('📋 词表:', wordlist.name);
-        console.log('📋 词表标签:', tags);
+        console.log('📚 詞表信息（從緩存）:', wordlistInfo.name);
 
         // 设置gameState
         gameState.wordlistMode = 'wordlist';
-        gameState.wordlistId = wordlist.id;
+        gameState.wordlistId = wordlistInfo.id;
         console.log('✅ gameState 已更新: wordlist 模式');
 
-        const level2Tags = tags?.filter(t => t.tag_level === 2) || [];
+        const level2Tags = wordlistInfo.tags?.filter(t => t.tag_level === 2) || [];
 
         // 如果有层级标签，显示层级卡片
         if (level2Tags.length > 0) {
             console.log('📚 显示词表层级卡片');
             showWordlistHierarchy();
-            renderLevel2Cards(wordlist, tags);
-            updateWordlistNameDisplay(wordlist.name);
+            renderLevel2Cards(wordlistInfo, wordlistInfo.tags);
+            updateWordlistNameDisplay(wordlistInfo.name);
         } else {
             // 没有层级，使用整个词表但保持AI模式的UI显示
             console.log('📚 词表无层级，保持AI模式UI');
-            updateWordlistNameDisplay(wordlist.name);
+            updateWordlistNameDisplay(wordlistInfo.name);
         }
 
         console.log('✅ 啟動界面初始化完成');
