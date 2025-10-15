@@ -4,7 +4,7 @@
  */
 
 import { getSupabase } from '../supabase-client.js';
-import { showToast } from '../ui/toast.js';
+import { showToast } from './toast.js';
 
 /**
  * 年級到難度的映射配置
