@@ -4924,26 +4924,91 @@ window.LocalBattle.endMode = function endBattleMode() {
         };
         // 【重構】不再暴露 __REMOTE_STATE__，所有數據統一在 GameState 中
 
+        // 在 GitHub Pages 上偶發 localStorage 中殘留的壞 session 導致 auth 掛起
+        // 這裡在認證流程開始前做一次清理與健檢，屬於一次性根治措施
+        function sanitizeSupabaseSessionStorage() {
+            try {
+                const ls = window.localStorage;
+                if (!ls) return;
+                const keys = [];
+                for (let i = 0; i < ls.length; i++) {
+                    const k = ls.key(i);
+                    if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) keys.push(k);
+                }
+                let removed = 0;
+                keys.forEach(k => {
+                    const raw = ls.getItem(k);
+                    if (!raw) return;
+                    try {
+                        const obj = JSON.parse(raw);
+                        // 基本形狀檢查：當前 Supabase v2 期望有 currentSession / expires_at 等字段
+                        const ok = !!(obj && (obj.currentSession || obj.user || obj.access_token || obj.session));
+                        if (!ok) { ls.removeItem(k); removed++; console.warn('[remote][auth] 移除無效 session 條目:', k); }
+                    } catch (e) {
+                        // JSON 解析失敗，視為損壞
+                        ls.removeItem(k);
+                        removed++;
+                        console.warn('[remote][auth] 移除損壞 session（JSON 解析失敗）:', k);
+                    }
+                });
+                if (removed > 0) {
+                    console.warn('[remote][auth] session 清理完成，移除數量:', removed);
+                }
+            } catch (e) {
+                console.warn('[remote][auth] session 清理時發生例外，忽略：', e);
+            }
+        }
+
+        function withTimeout(promise, ms, label) {
+            let timer;
+            const timeout = new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error((label||'operation') + ' 超時')), ms);
+            });
+            return Promise.race([
+                promise.finally(() => clearTimeout(timer)),
+                timeout
+            ]);
+        }
+
         // 確保用戶已認證（支持 Google 登入和匿名登入）
         async function ensureAnonLogin(){
             console.log('[remote] 認證檢查開始');
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
             
             try {
-                // 1. 檢查當前會話
-                const { data: { user } } = await sb.auth.getUser();
-                
-                if (user) {
-                    // 已有有效會話（可能是 Google 或匿名）
-                    state.user = user;
-                    const userType = user.app_metadata?.provider === 'google' ? 'Google' : '匿名';
-                    console.log('[remote] ✅ 找到現有會話:', userType, '用戶，ID:', user.id);
+                // 0. 啟動前清理可能的壞 session
+                sanitizeSupabaseSessionStorage();
+
+                // 1. 檢查當前會話（帶超時保護）
+                const sessionResp = await withTimeout(sb.auth.getSession(), 4000, 'getSession');
+                const sessionUser = sessionResp?.data?.session?.user || null;
+                if (sessionUser) {
+                    state.user = sessionUser;
+                    const userType = sessionUser.app_metadata?.provider === 'google' ? 'Google' : '匿名';
+                    console.log('[remote] ✅ 找到現有會話:', userType, '用戶，ID:', sessionUser.id);
                     return;
                 }
+
+                // 2. 無 session，再次嘗試 getUser（兼容某些版本行為），帶超時
+                try {
+                    const userResp = await withTimeout(sb.auth.getUser(), 3000, 'getUser');
+                    const user = userResp?.data?.user || null;
+                    if (user) {
+                        state.user = user;
+                        const userType = user.app_metadata?.provider === 'google' ? 'Google' : '匿名';
+                        console.log('[remote] ✅ 找到現有會話(user):', userType, '用戶，ID:', user.id);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('[remote] getUser 失敗或超時，將執行匿名登入:', e?.message || e);
+                    // 遇到異常時主動簽出並清理
+                    try { await sb.auth.signOut(); } catch(_){}
+                    sanitizeSupabaseSessionStorage();
+                }
                 
-                // 2. 沒有會話，執行匿名登入
+                // 3. 沒有會話，執行匿名登入
                 console.log('[remote] 沒有現有會話，執行匿名登入...');
-                const { data, error } = await sb.auth.signInAnonymously();
+                const { data, error } = await withTimeout(sb.auth.signInAnonymously(), 6000, 'signInAnonymously');
                 
                 if (error) {
                     console.error('[remote] ❌ 匿名登入失敗:', error);
