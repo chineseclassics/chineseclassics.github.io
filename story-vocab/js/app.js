@@ -306,13 +306,14 @@ function updateUIForLoggedInUser(user) {
     }
     
     // 顯示用戶類型標識（如果是匿名用戶）
-    const userLevelDisplay = document.getElementById('user-level-display');
-    if (userLevelDisplay && userType === 'anonymous') {
-        const currentText = userLevelDisplay.textContent;
-        if (!currentText.includes('試用')) {
-            userLevelDisplay.textContent = currentText + ' · ⚡試用';
-        }
-    }
+    // 已移除等級顯示功能
+    // const userLevelDisplay = document.getElementById('user-level-display');
+    // if (userLevelDisplay && userType === 'anonymous') {
+    //     const currentText = userLevelDisplay.textContent;
+    //     if (!currentText.includes('試用')) {
+    //         userLevelDisplay.textContent = currentText + ' · ⚡試用';
+    //     }
+    // }
     
     // 🎓 初始化年級徽章
     import('./ui/screens.js').then(({ initGradeBadge }) => {
@@ -342,11 +343,11 @@ function updateUIForGuestUser() {
         guestPrompt.style.display = 'block';
     }
     
-    // 重置用戶等級顯示
-    const userLevelDisplay = document.getElementById('user-level-display');
-    if (userLevelDisplay) {
-        userLevelDisplay.textContent = '等級 L2 · 初級';
-    }
+    // 重置用戶等級顯示（已移除）
+    // const userLevelDisplay = document.getElementById('user-level-display');
+    // if (userLevelDisplay) {
+    //     userLevelDisplay.textContent = '等級 L2 · 初級';
+    // }
 }
 
 /**
@@ -1039,11 +1040,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (userDisplayName) userDisplayName.textContent = savedUsername;
     }
     
-    const savedLevel = localStorage.getItem('user_level');
-    if (savedLevel) {
-        const userLevelDisplay = document.getElementById('user-level-display');
-        if (userLevelDisplay) userLevelDisplay.textContent = savedLevel;
-    }
+    // 已移除等級顯示功能
+    // const savedLevel = localStorage.getItem('user_level');
+    // if (savedLevel) {
+    //     const userLevelDisplay = document.getElementById('user-level-display');
+    //     if (userLevelDisplay) userLevelDisplay.textContent = savedLevel;
+    // }
     
     // 同步移动端头像显示
     const userAvatar = document.getElementById('user-avatar');
