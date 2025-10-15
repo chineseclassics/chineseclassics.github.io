@@ -17,6 +17,8 @@ import { showToast } from '../utils/toast.js';
  * 初始化启动界面
  */
 export async function initStartScreen() {
+    console.log('🎬 開始初始化啟動界面...');
+    
     // 主题选择交互（先绑定，确保始终可用）
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -27,41 +29,59 @@ export async function initStartScreen() {
 
     const supabase = getSupabase();
 
-    // 默认状态：AI模式
+    // 🔒 確保默認狀態始終正確（防止未定義狀態）
     gameState.wordlistMode = 'ai';
     gameState.wordlistId = null;
     gameState.level2Tag = null;
     gameState.level3Tag = null;
+    console.log('✅ 默認狀態已設置: AI 模式');
 
     try {
         // 使用 gameState 中的用戶 ID（已經是正確的 users.id）
         const userId = gameState.userId;
         if (!userId) {
             console.log('ℹ️ 用户未登录，使用默认AI模式');
+            updateWordlistNameDisplay('AI智能推薦');
             return; // AI模式已经是默认显示的
         }
 
+        console.log('📊 開始查詢用戶詞表偏好，userId:', userId);
+
         // 加载用户词表偏好
-        const { data: prefs } = await supabase
+        const { data: prefs, error: prefsError } = await supabase
             .from('user_wordlist_preferences')
             .select('*')
             .eq('user_id', userId)
             .maybeSingle();
+
+        if (prefsError) {
+            console.error('❌ 查詢詞表偏好失敗:', prefsError);
+            updateWordlistNameDisplay('AI智能推薦');
+            return;
+        }
 
         console.log('📊 用户词表偏好:', prefs);
 
         // 如果没有偏好或选择了AI模式
         if (!prefs || !prefs.default_wordlist_id || prefs.default_mode === 'ai') {
             console.log('✅ 使用AI智能推荐模式');
+            updateWordlistNameDisplay('AI智能推薦');
             return; // AI模式已经是默认显示的
         }
 
         // 用户选择了特定词表，加载词表信息
-        const { data: wordlist } = await supabase
+        console.log('📚 加載詞表信息，wordlistId:', prefs.default_wordlist_id);
+        const { data: wordlist, error: wordlistError } = await supabase
             .from('wordlists')
             .select('*')
             .eq('id', prefs.default_wordlist_id)
             .maybeSingle();
+
+        if (wordlistError) {
+            console.error('❌ 查詢詞表失敗:', wordlistError);
+            updateWordlistNameDisplay('AI智能推薦');
+            return;
+        }
 
         if (!wordlist) {
             console.warn('⚠️ 词表不存在，使用AI模式');
@@ -70,12 +90,22 @@ export async function initStartScreen() {
         }
 
         // 加载词表的标签
-        const { data: tags } = await supabase
+        console.log('🏷️ 加載詞表標籤...');
+        const { data: tags, error: tagsError } = await supabase
             .from('wordlist_tags')
             .select('*')
             .eq('wordlist_id', wordlist.id)
             .order('tag_level')
             .order('sort_order');
+
+        if (tagsError) {
+            console.error('❌ 查詢標籤失敗:', tagsError);
+            // 即使標籤失敗，也可以使用整個詞表
+            gameState.wordlistMode = 'wordlist';
+            gameState.wordlistId = wordlist.id;
+            updateWordlistNameDisplay(wordlist.name);
+            return;
+        }
 
         console.log('📋 词表:', wordlist.name);
         console.log('📋 词表标签:', tags);
@@ -83,6 +113,7 @@ export async function initStartScreen() {
         // 设置gameState
         gameState.wordlistMode = 'wordlist';
         gameState.wordlistId = wordlist.id;
+        console.log('✅ gameState 已更新: wordlist 模式');
 
         const level2Tags = tags?.filter(t => t.tag_level === 2) || [];
 
@@ -98,8 +129,17 @@ export async function initStartScreen() {
             updateWordlistNameDisplay(wordlist.name);
         }
 
+        console.log('✅ 啟動界面初始化完成');
+
     } catch (error) {
-        console.error('❌ 初始化启动界面失败:', error);
+        console.error('❌ 初始化启动界面失败（未預期錯誤）:', error);
+        console.error('   錯誤詳情:', error.message);
+        console.error('   錯誤堆棧:', error.stack);
+        // 🔒 確保回退到安全的默認狀態
+        gameState.wordlistMode = 'ai';
+        gameState.wordlistId = null;
+        gameState.level2Tag = null;
+        gameState.level3Tag = null;
         updateWordlistNameDisplay('AI智能推薦');
     }
 }

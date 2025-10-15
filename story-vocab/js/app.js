@@ -693,11 +693,31 @@ async function ensureSessionReady() {
  * 开始游戏（从启动界面）
  */
 async function handleStartGame() {
+    console.log('🎮 handleStartGame 被調用');
+    
     const themeBtn = document.querySelector('.theme-btn.selected');
     
     if (!themeBtn) {
         showToast('請選擇故事主題');
         return;
+    }
+    
+    // 🔍 驗證 gameState 狀態
+    console.log('🔍 當前 gameState 狀態:', {
+        wordlistMode: gameState.wordlistMode,
+        wordlistId: gameState.wordlistId,
+        level2Tag: gameState.level2Tag,
+        level3Tag: gameState.level3Tag,
+        userId: gameState.userId
+    });
+    
+    // 🔒 確保詞表模式值有效
+    if (!gameState.wordlistMode || (gameState.wordlistMode !== 'ai' && gameState.wordlistMode !== 'wordlist')) {
+        console.warn('⚠️ 詞表模式值無效，重置為 AI 模式');
+        gameState.wordlistMode = 'ai';
+        gameState.wordlistId = null;
+        gameState.level2Tag = null;
+        gameState.level3Tag = null;
     }
     
     // 词表选择已经在 initStartScreen() 中设置到 gameState
@@ -707,6 +727,7 @@ async function handleStartGame() {
         if (level2Container && level2Container.children.length > 0) {
             // 有第二层级卡片，检查是否选中
             if (!gameState.level2Tag) {
+                console.warn('⚠️ 詞表有層級但未選擇');
                 showToast('請選擇詞語範圍');
                 return;
             }
@@ -981,7 +1002,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     await initializeApp();
     
     // 初始化启动界面（在 Supabase 初始化之后）
-    await initStartScreen();
+    console.log('⏳ 開始初始化啟動界面...');
+    try {
+        await initStartScreen();
+        console.log('✅ 啟動界面初始化完成');
+    } catch (error) {
+        console.error('❌ 啟動界面初始化失敗:', error);
+        // 即使失敗也繼續，因為已經設置了默認狀態
+    }
+    
     // 检查是否有保存的用户信息
     const savedUsername = localStorage.getItem('user_display_name');
     if (savedUsername) {
