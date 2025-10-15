@@ -23,7 +23,8 @@
                         persistSession: true,      // 持久化 session
                         autoRefreshToken: true,    // 自動刷新 token
                         detectSessionInUrl: true,  // 檢測 URL 中的 session
-                        storage: window.localStorage  // 明確指定使用 localStorage
+                        storage: window.localStorage, // 明確指定使用 localStorage
+                        storageKey: 'sb-shicizuju'   // 與其他應用隔離，避免 key 衝突
                     }
                 }
             );
@@ -4976,51 +4977,51 @@ window.LocalBattle.endMode = function endBattleMode() {
             if (!sb || !sb.auth) throw new Error('Supabase client 未就緒');
             
             try {
-                // 0. 啟動前清理可能的壞 session
+                // 0) 啟動前清理可能的壞 session
                 sanitizeSupabaseSessionStorage();
 
-                // 1. 檢查當前會話（帶超時保護）
-                const sessionResp = await withTimeout(sb.auth.getSession(), 4000, 'getSession');
-                const sessionUser = sessionResp?.data?.session?.user || null;
-                if (sessionUser) {
-                    state.user = sessionUser;
-                    const userType = sessionUser.app_metadata?.provider === 'google' ? 'Google' : '匿名';
-                    console.log('[remote] ✅ 找到現有會話:', userType, '用戶，ID:', sessionUser.id);
+                // 1) 優先用 getUser（更輕量），加入超時
+                try {
+                    const userResp = await withTimeout(sb.auth.getUser(), 4000, 'getUser');
+                    const u = userResp?.data?.user || null;
+                    if (u) {
+                        state.user = u;
+                        const userType = u.app_metadata?.provider === 'google' ? 'Google' : '匿名';
+                        console.log('[remote] ✅ 找到現有會話:', userType, '用戶，ID:', u.id);
+                        return;
+                    }
+                } catch (e1) {
+                    console.warn('[remote] getUser 超時/失敗:', e1?.message || e1);
+                }
+
+                // 2) 不依賴 getSession（避免個別環境掛起），直接嘗試匿名登入
+                console.log('[remote] 沒有現有會話，執行匿名登入...');
+                let signin = await withTimeout(sb.auth.signInAnonymously(), 8000, 'signInAnonymously');
+                if (!(signin && signin.data && signin.data.user)) {
+                    // 第一次匿名登入不成功則嘗試強制簽出+清理後重試一次
+                    try { await sb.auth.signOut(); } catch(_){}
+                    sanitizeSupabaseSessionStorage();
+                    console.warn('[remote] 匿名登入返回空，用於重試...');
+                    signin = await withTimeout(sb.auth.signInAnonymously(), 8000, 'signInAnonymously#retry');
+                }
+                const user = signin?.data?.user;
+                if (user) {
+                    state.user = user;
+                    console.log('[remote] ✅ 匿名登入成功，用戶ID:', user.id);
                     return;
                 }
 
-                // 2. 無 session，再次嘗試 getUser（兼容某些版本行為），帶超時
-                try {
-                    const userResp = await withTimeout(sb.auth.getUser(), 3000, 'getUser');
-                    const user = userResp?.data?.user || null;
-                    if (user) {
-                        state.user = user;
-                        const userType = user.app_metadata?.provider === 'google' ? 'Google' : '匿名';
-                        console.log('[remote] ✅ 找到現有會話(user):', userType, '用戶，ID:', user.id);
-                        return;
-                    }
-                } catch (e) {
-                    console.warn('[remote] getUser 失敗或超時，將執行匿名登入:', e?.message || e);
-                    // 遇到異常時主動簽出並清理
-                    try { await sb.auth.signOut(); } catch(_){}
-                    sanitizeSupabaseSessionStorage();
+                // 3) 仍然沒有 user，最後嘗試讀取一次 session（放寬時間）
+                const sess = await withTimeout(sb.auth.getSession(), 8000, 'getSession#fallback');
+                const sessUser = sess?.data?.session?.user || null;
+                if (sessUser) {
+                    state.user = sessUser;
+                    const userType = sessUser.app_metadata?.provider === 'google' ? 'Google' : '匿名';
+                    console.log('[remote] ✅ 透過 fallback 找到會話:', userType, '用戶，ID:', sessUser.id);
+                    return;
                 }
-                
-                // 3. 沒有會話，執行匿名登入
-                console.log('[remote] 沒有現有會話，執行匿名登入...');
-                const { data, error } = await withTimeout(sb.auth.signInAnonymously(), 6000, 'signInAnonymously');
-                
-                if (error) {
-                    console.error('[remote] ❌ 匿名登入失敗:', error);
-                    throw error;
-                }
-                
-                if (data?.user) {
-                    state.user = data.user;
-                    console.log('[remote] ✅ 匿名登入成功，用戶ID:', data.user.id);
-                } else {
-                    throw new Error('匿名登入成功但無用戶數據');
-                }
+
+                throw new Error('無法獲取用戶（匿名登入與會話均失敗）');
             } catch (err) {
                 console.error('[remote] 認證失敗:', err);
                 throw err;
