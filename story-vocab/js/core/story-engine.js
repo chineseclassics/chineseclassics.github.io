@@ -115,7 +115,8 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
             storyTheme: storyTheme,
             currentRound: gameState.turn - 1,
             usedWords: gameState.usedWords.map(w => w.word),
-            skipFeedback: skipFeedback  // 🚀 新增：是否跳過反饋生成
+            skipFeedback: skipFeedback,  // 🚀 新增：是否跳過反饋生成
+            userGrade: gameState.user?.grade || 6  // 🎓 新增：用戶年級
         };
         
         console.log('📤 發送請求:', requestBody);

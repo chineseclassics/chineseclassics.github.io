@@ -1532,3 +1532,413 @@ button:active {
     padding: 12px 30px;
 }
 
+/* ===== 年級徽章樣式 ===== */
+.user-metadata {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.user-grade-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 0.85em;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.user-grade-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.user-grade-badge::before {
+    content: "📚 ";
+    margin-right: 2px;
+}
+
+/* ===== 年級選擇器模態框 ===== */
+.grade-selector-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.grade-selector-modal.show {
+    opacity: 1;
+}
+
+.grade-selector-modal.closing {
+    opacity: 0;
+}
+
+.grade-selector-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.grade-selector-overlay.required {
+    cursor: not-allowed;
+}
+
+.grade-selector-container {
+    position: relative;
+    z-index: 1;
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.grade-selector-modal.show .grade-selector-container {
+    transform: translateY(0);
+}
+
+.grade-selector-header {
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+}
+
+.grade-selector-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.8em;
+}
+
+.grade-selector-hint {
+    margin: 0;
+    font-size: 0.95em;
+    opacity: 0.95;
+}
+
+.grade-selector-body {
+    padding: 30px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.grade-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 15px;
+}
+
+.grade-option-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: none;
+}
+
+.grade-option-btn:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.grade-option-btn.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.grade-label {
+    display: block;
+    font-size: 1.1em;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.grade-age {
+    display: block;
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.grade-selector-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.grade-selector-footer .btn-primary,
+.grade-selector-footer .btn-secondary {
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-size: 1em;
+    box-shadow: none;
+}
+
+.grade-selector-footer .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.grade-selector-footer .btn-primary:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .grade-selector-container {
+        width: 95%;
+        max-width: none;
+    }
+    
+    .grade-options-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+    
+    .grade-option-btn {
+        padding: 15px 10px;
+    }
+    
+    .grade-label {
+        font-size: 1em;
+    }
+    
+    .grade-age {
+        font-size: 0.8em;
+    }
+    
+    .grade-selector-header {
+        padding: 20px;
+    }
+    
+    .grade-selector-header h2 {
+        font-size: 1.5em;
+    }
+    
+    .grade-selector-body {
+        padding: 20px;
+    }
+}
+
+/* ===== 故事階段提醒樣式 ===== */
+.stage-hint-container {
+    margin: 15px 0;
+    padding: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.4s ease;
+}
+
+.stage-hint-container.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.stage-hint-text {
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.95em;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stage-hint-container.hint-info .stage-hint-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stage-hint-container.hint-warning .stage-hint-text {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    animation: pulse-warning 2s ease-in-out infinite;
+}
+
+.stage-hint-container.hint-final .stage-hint-text {
+    background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+    color: white;
+    animation: pulse-final 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(245, 158, 11, 0.6);
+    }
+}
+
+@keyframes pulse-final {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(236, 72, 153, 0.6);
+    }
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .stage-hint-text {
+        font-size: 0.85em;
+        padding: 10px 15px;
+    }
+}
+
+/* ===== 故事整體點評樣式 ===== */
+.story-summary-container {
+    margin-top: 30px;
+    padding: 25px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #fff5f8 100%);
+    border-radius: 20px;
+    border: 2px solid #e0e7ff;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+}
+
+.story-summary-container.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.story-summary-loading {
+    text-align: center;
+    padding: 20px;
+}
+
+.story-summary-error {
+    text-align: center;
+    padding: 15px;
+    color: #f59e0b;
+}
+
+.story-summary-header {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.story-summary-header h3 {
+    margin: 0;
+    font-size: 1.5em;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.story-summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.summary-section {
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.summary-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 1.2em;
+    color: #667eea;
+}
+
+.summary-section p {
+    margin: 0;
+    line-height: 1.8;
+    color: #444;
+    font-size: 1.05em;
+}
+
+.summary-evaluation {
+    border-left: 4px solid #667eea;
+}
+
+.summary-highlights {
+    border-left: 4px solid #f59e0b;
+}
+
+.summary-highlights .highlights-list {
+    margin: 0;
+    padding-left: 20px;
+    list-style: none;
+}
+
+.summary-highlights .highlights-list li {
+    margin-bottom: 10px;
+    padding-left: 25px;
+    position: relative;
+    line-height: 1.8;
+    color: #444;
+}
+
+.summary-highlights .highlights-list li::before {
+    content: "✨";
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.summary-suggestions {
+    border-left: 4px solid #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #f0fdfa 100%);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .story-summary-container {
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .summary-section {
+        padding: 15px;
+    }
+    
+    .summary-section h4 {
+        font-size: 1.1em;
+    }
+    
+    .summary-section p {
+        font-size: 1em;
+    }
+}
+

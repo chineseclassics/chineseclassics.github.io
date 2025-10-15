@@ -82,9 +82,14 @@ export function buildAIPrompt(
   userProfile: any,
   storyContext: string,
   roundNumber: number,
-  usedWordsList: string = ''
+  usedWordsList: string = '',
+  userGrade: number = 0  // 🎓 新增參數，默認0表示不使用
 ): string {
   const shouldIncludeWordbookWord = roundNumber % 4 === 0 && userProfile.wordbook_words.length > 0
+  
+  // 🎓 年級信息（僅作輔助參考）
+  const gradeInfo = userGrade > 0 ? `
+**年級**：${userGrade}年級（約${userGrade + 5}歲）- 僅作輔助參考` : '';
 
   return `
 ## 用戶成長檔案
@@ -92,6 +97,7 @@ export function buildAIPrompt(
 **基線水平**（第1次遊戲評估）：L${userProfile.baseline_level}
 **當前水平**（第${userProfile.total_games}次遊戲）：L${userProfile.current_level}
 ${userProfile.level_growth > 0 ? `**成長軌跡**：提升了${userProfile.level_growth}級 📈` : ''}
+${gradeInfo}
 
 **遊戲經驗**：
 - 玩過 ${userProfile.total_games} 次遊戲
@@ -128,6 +134,11 @@ ${usedWordsList}
 
 ## 推薦要求
 
+⚠️ **重要原則**：以用戶實際表現為主，年級僅作輔助參考
+- **當前水平 L${userProfile.current_level}** 是基於用戶實際選詞和得分動態計算的，這是最重要的依據
+- 最近選詞平均難度 L${userProfile.recent_avg_difficulty.toFixed(1)} 反映了用戶的真實偏好
+${userGrade > 0 ? `- 年級（${userGrade}年級）僅作為背景信息，不要死死綁定` : ''}
+
 - 推薦數量：5個詞
 - 新詞比例：${roundNumber <= 3 ? '3新+2易' : '4新+1易'}
 - 難度中心：L${userProfile.current_level}
@@ -139,6 +150,7 @@ ${usedWordsList}
 3. 類型多樣（動作、情感、描寫等）
 4. 至少${roundNumber <= 3 ? '3' : '4'}個是新詞
 5. **所有推薦的詞都不能與本次遊戲已推薦過的詞重複**
+6. **優先參考用戶的 current_level 和最近選詞難度，而不是年級**
 
 請嚴格按照JSON格式返回。
 `.trim()

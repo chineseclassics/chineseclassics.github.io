@@ -12,12 +12,16 @@ import { getBriefInfo } from '../utils/word-cache.js';
 import { renderLevel2Cards, clearHierarchyCards } from './hierarchy-cards.js';
 import { getSupabase } from '../supabase-client.js';
 import { showToast } from '../utils/toast.js';
+import { SUPABASE_CONFIG } from '../config.js';
 
 /**
  * 初始化启动界面
  */
 export async function initStartScreen() {
     console.log('🎬 開始初始化啟動界面...');
+    
+    // 🎓 根據用戶年級動態加載主題
+    await loadThemesByGrade();
     
     // 主题选择交互（先绑定，确保始终可用）
     document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -542,6 +546,70 @@ export function updateTurnDisplay(turn) {
             }, 500);
         }
     }
+    
+    // 🎬 顯示階段提醒（第 6/7/8 輪）
+    showStageHint(turn, gameState.maxTurns);
+}
+
+/**
+ * 顯示故事階段提醒
+ * @param {number} turn - 當前輪次
+ * @param {number} maxTurns - 最大輪次
+ */
+function showStageHint(turn, maxTurns) {
+    // 獲取或創建提示容器
+    let hintContainer = document.getElementById('stage-hint-container');
+    if (!hintContainer) {
+        hintContainer = document.createElement('div');
+        hintContainer.id = 'stage-hint-container';
+        hintContainer.className = 'stage-hint-container';
+        
+        // 插入到故事顯示區域上方
+        const storyDisplay = document.getElementById('story-display');
+        if (storyDisplay) {
+            storyDisplay.parentElement.insertBefore(hintContainer, storyDisplay);
+        }
+    }
+    
+    // 清除之前的提醒
+    hintContainer.innerHTML = '';
+    hintContainer.className = 'stage-hint-container';
+    
+    // 根據輪次顯示不同的提醒
+    let hintText = '';
+    let hintClass = '';
+    
+    if (turn === 6) {
+        // 第 6 輪：故事過半提醒
+        hintText = '📖 故事過半 (6/8)';
+        hintClass = 'hint-info';
+    } else if (turn === 7) {
+        // 第 7 輪：倒數第二輪，重要提醒
+        hintText = '⚠️ 倒數第二輪 (7/8) - 故事快收尾了';
+        hintClass = 'hint-warning';
+    } else if (turn === 8) {
+        // 第 8 輪：最後一輪
+        hintText = '🎬 最後一輪，寫下你的結局';
+        hintClass = 'hint-final';
+    }
+    
+    // 如果有提醒，顯示它
+    if (hintText) {
+        hintContainer.className = `stage-hint-container ${hintClass} show`;
+        hintContainer.innerHTML = `
+            <div class="stage-hint-text">${hintText}</div>
+        `;
+        
+        // 3 秒後淡出（除非是第 8 輪，保持顯示）
+        if (turn !== 8) {
+            setTimeout(() => {
+                hintContainer.classList.remove('show');
+                setTimeout(() => {
+                    hintContainer.innerHTML = '';
+                }, 500);
+            }, 3000);
+        }
+    }
 }
 
 /**
@@ -609,6 +677,133 @@ export function initFinishScreen(stats) {
         }
         fullStoryText.appendChild(p);
     });
+    
+    // 🌟 加載並顯示故事整體點評
+    loadStorySummary();
+}
+
+/**
+ * 加載並顯示故事整體點評
+ */
+async function loadStorySummary() {
+    try {
+        // 創建點評容器（如果不存在）
+        let summaryContainer = document.getElementById('story-summary-container');
+        if (!summaryContainer) {
+            summaryContainer = document.createElement('div');
+            summaryContainer.id = 'story-summary-container';
+            summaryContainer.className = 'story-summary-container';
+            
+            // 插入到完整故事後
+            const fullStoryText = document.getElementById('full-story-text');
+            if (fullStoryText && fullStoryText.parentElement) {
+                fullStoryText.parentElement.appendChild(summaryContainer);
+            }
+        }
+        
+        // 顯示加載狀態
+        summaryContainer.innerHTML = `
+            <div class="story-summary-loading">
+                <div class="inline-loading">
+                    <div class="inline-loading-spinner"></div>
+                    <span class="inline-loading-text">AI老師正在撰寫整體點評...</span>
+                </div>
+            </div>
+        `;
+        
+        // 調用 story-summary Edge Function
+        const response = await fetch(
+            `${SUPABASE_CONFIG.url}/functions/v1/story-summary`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+                },
+                body: JSON.stringify({
+                    storyHistory: gameState.storyHistory,
+                    usedWords: gameState.usedWords.map(w => w.word),
+                    storyTheme: gameState.theme,
+                    userGrade: gameState.user?.grade || 6,
+                    userLevel: gameState.user?.current_level || 2.0
+                })
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error('獲取點評失敗');
+        }
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || '生成點評失敗');
+        }
+        
+        // 顯示點評內容
+        displayStorySummary(result.data);
+        
+    } catch (error) {
+        console.error('❌ 加載故事點評失敗:', error);
+        
+        // 顯示錯誤提示（不影響其他功能）
+        const summaryContainer = document.getElementById('story-summary-container');
+        if (summaryContainer) {
+            summaryContainer.innerHTML = `
+                <div class="story-summary-error">
+                    <p>⚠️ 點評生成失敗，但不影響故事保存</p>
+                </div>
+            `;
+        }
+    }
+}
+
+/**
+ * 顯示故事整體點評
+ */
+function displayStorySummary(summary) {
+    const summaryContainer = document.getElementById('story-summary-container');
+    if (!summaryContainer) return;
+    
+    summaryContainer.innerHTML = `
+        <div class="story-summary-header">
+            <h3>🌟 故事整體點評</h3>
+        </div>
+        
+        <div class="story-summary-content">
+            ${summary.evaluation ? `
+                <div class="summary-section summary-evaluation">
+                    <h4>📖 故事評價</h4>
+                    <p>${summary.evaluation}</p>
+                </div>
+            ` : ''}
+            
+            ${summary.highlights && summary.highlights.length > 0 ? `
+                <div class="summary-section summary-highlights">
+                    <h4>✨ 創作亮點</h4>
+                    <ul class="highlights-list">
+                        ${summary.highlights.map(h => `<li>${h}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+            
+            ${summary.suggestions ? `
+                <div class="summary-section summary-suggestions">
+                    <h4>💡 成長建議</h4>
+                    <p>${summary.suggestions}</p>
+                </div>
+            ` : ''}
+            
+            ${!summary.evaluation && !summary.highlights && !summary.suggestions && summary.fullText ? `
+                <div class="summary-section summary-fulltext">
+                    ${summary.fullText.split('\n').map(line => `<p>${line}</p>`).join('')}
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    // 添加淡入動畫
+    setTimeout(() => summaryContainer.classList.add('show'), 100);
 }
 
 /**
@@ -1254,4 +1449,251 @@ window.uploadWordlistFromModal = async function() {
         uploadBtn.disabled = false;
     }
 };
+
+// =====================================================
+// 年級選擇器（Grade Selector）
+// =====================================================
+
+/**
+ * 顯示年級選擇器
+ * @param {Object} options - 配置選項
+ * @param {Function} options.onSelect - 選擇後的回調函數
+ * @param {boolean} options.required - 是否必選（首次登入為 true）
+ * @param {number} options.currentGrade - 當前年級（用於編輯時）
+ */
+export async function showGradeSelector(options = {}) {
+    const {
+        onSelect = null,
+        required = false,
+        currentGrade = null
+    } = options;
+    
+    // 動態導入年級配置
+    const { GRADE_OPTIONS } = await import('../utils/grade-manager.js');
+    
+    // 創建模態框
+    const modal = document.createElement('div');
+    modal.className = 'grade-selector-modal';
+    modal.innerHTML = `
+        <div class="grade-selector-overlay ${required ? 'required' : ''}"></div>
+        <div class="grade-selector-container">
+            <div class="grade-selector-header">
+                <h2>📚 選擇你的年級</h2>
+                <p class="grade-selector-hint">
+                    ${required 
+                        ? '請選擇正確的年級以獲得最佳學習體驗' 
+                        : '你可以隨時在設定中調整年級'}
+                </p>
+            </div>
+            <div class="grade-selector-body">
+                <div class="grade-options-grid">
+                    ${GRADE_OPTIONS.map(opt => `
+                        <button class="grade-option-btn ${currentGrade === opt.value ? 'selected' : ''}" 
+                                data-grade="${opt.value}">
+                            <span class="grade-label">${opt.label}</span>
+                            <span class="grade-age">${opt.ageLabel}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="grade-selector-footer">
+                ${!required ? `<button class="btn-secondary grade-cancel-btn">取消</button>` : ''}
+                <button class="btn-primary grade-confirm-btn" disabled>確認</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 選中狀態管理
+    let selectedGrade = currentGrade;
+    
+    // 年級選項點擊
+    const optionBtns = modal.querySelectorAll('.grade-option-btn');
+    optionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            optionBtns.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedGrade = parseInt(btn.dataset.grade);
+            
+            // 啟用確認按鈕
+            modal.querySelector('.grade-confirm-btn').disabled = false;
+        });
+    });
+    
+    // 確認按鈕
+    const confirmBtn = modal.querySelector('.grade-confirm-btn');
+    confirmBtn.addEventListener('click', async () => {
+        if (!selectedGrade) {
+            showToast('請選擇年級');
+            return;
+        }
+        
+        // 關閉模態框
+        modal.classList.add('closing');
+        setTimeout(() => modal.remove(), 300);
+        
+        // 更新用戶年級
+        if (gameState.userId) {
+            const { updateUserGrade } = await import('../utils/grade-manager.js');
+            const success = await updateUserGrade(gameState.userId, selectedGrade);
+            
+            if (success) {
+                // 更新 gameState
+                gameState.user.grade = selectedGrade;
+                
+                // 更新 localStorage
+                localStorage.setItem('user_grade', selectedGrade);
+                
+                // 更新 UI 顯示
+                updateGradeBadge(selectedGrade);
+                
+                showToast(`✅ 年級已設定為 ${selectedGrade} 年級`);
+                
+                // 調用回調
+                if (onSelect) {
+                    onSelect(selectedGrade);
+                }
+            } else {
+                showToast('設定年級失敗，請重試');
+            }
+        }
+    });
+    
+    // 取消按鈕（非必選時）
+    if (!required) {
+        const cancelBtn = modal.querySelector('.grade-cancel-btn');
+        cancelBtn.addEventListener('click', () => {
+            modal.classList.add('closing');
+            setTimeout(() => modal.remove(), 300);
+        });
+        
+        // 點擊遮罩關閉
+        const overlay = modal.querySelector('.grade-selector-overlay');
+        overlay.addEventListener('click', () => {
+            modal.classList.add('closing');
+            setTimeout(() => modal.remove(), 300);
+        });
+    }
+    
+    // 顯示動畫
+    setTimeout(() => modal.classList.add('show'), 10);
+}
+
+/**
+ * 更新頂部狀態欄的年級徽章
+ * @param {number} grade - 年級
+ */
+export function updateGradeBadge(grade) {
+    const badge = document.getElementById('user-grade-badge');
+    if (!badge) {
+        console.warn('⚠️ 找不到年級徽章元素');
+        return;
+    }
+    
+    // 顯示徽章
+    badge.style.display = 'inline-flex';
+    
+    // 動態導入年級管理工具
+    import('../utils/grade-manager.js').then(({ getGradeLabel }) => {
+        badge.textContent = getGradeLabel(grade);
+        badge.dataset.grade = grade;
+    });
+}
+
+/**
+ * 初始化年級徽章（在登入後調用）
+ */
+export async function initGradeBadge() {
+    const user = gameState.user;
+    if (!user || !user.grade) {
+        console.log('ℹ️ 用戶未設定年級');
+        
+        // 首次登入，顯示年級選擇器
+        if (user && !user.grade) {
+            showGradeSelector({
+                required: true,
+                onSelect: (grade) => {
+                    console.log(`✅ 用戶選擇年級: ${grade}`);
+                    // 重新加載主題
+                    loadThemesByGrade();
+                }
+            });
+        }
+        return;
+    }
+    
+    // 更新徽章顯示
+    updateGradeBadge(user.grade);
+    
+    // 綁定點擊事件（點擊徽章可以修改年級）
+    const badge = document.getElementById('user-grade-badge');
+    if (badge) {
+        badge.addEventListener('click', () => {
+            showGradeSelector({
+                required: false,
+                currentGrade: user.grade,
+                onSelect: (grade) => {
+                    console.log(`✅ 年級已更新: ${grade}`);
+                    // 重新加載主題
+                    loadThemesByGrade();
+                }
+            });
+        });
+        
+        // 添加提示（滑鼠懸停）
+        badge.title = '點擊修改年級';
+        badge.style.cursor = 'pointer';
+    }
+}
+
+/**
+ * 根據用戶年級加載對應的主題選項
+ */
+export async function loadThemesByGrade() {
+    try {
+        const user = gameState.user;
+        const grade = user?.grade || 6; // 默認6年級
+        
+        // 動態導入配置
+        const { getThemesForGrade } = await import('../config.js');
+        const themeConfig = getThemesForGrade(grade);
+        
+        // 獲取主題按鈕容器
+        const themeContainer = document.querySelector('.theme-buttons');
+        if (!themeContainer) {
+            console.warn('⚠️ 找不到主題按鈕容器');
+            return;
+        }
+        
+        // 清空現有主題
+        themeContainer.innerHTML = '';
+        
+        // 生成主題按鈕
+        themeConfig.themes.forEach((theme, index) => {
+            const button = document.createElement('button');
+            button.className = `theme-btn ${index === 0 ? 'selected' : ''}`;
+            button.dataset.theme = theme.id;
+            button.innerHTML = `
+                <span class="emoji">${theme.icon}</span>
+                <span class="theme-name">${theme.name}</span>
+            `;
+            button.title = theme.description;
+            
+            // 綁定點擊事件
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+            
+            themeContainer.appendChild(button);
+        });
+        
+        console.log(`✅ 已加載 ${themeConfig.name}（${themeConfig.ageRange}）的主題`);
+        
+    } catch (error) {
+        console.error('❌ 加載主題失敗:', error);
+        // 如果失敗，保留現有的主題按鈕
+    }
+}
 

@@ -190,6 +190,291 @@ export function validateConfig() {
   return true;
 }
 
+// =====================================================
+// 年級分級主題配置
+// =====================================================
+
+/**
+ * 5個階段的主題配置
+ * 每個階段對應不同年級，有專屬的故事主題
+ */
+export const GRADE_THEMES = {
+  // 低年級（1-3年級，6-8歲）
+  elementary_lower: {
+    name: '低年級',
+    grades: [1, 2, 3],
+    ageRange: '6-8歲',
+    themes: [
+      {
+        id: 'cute_animals',
+        name: '可愛動物',
+        icon: '🐱',
+        description: '與可愛的小動物一起玩耍',
+        gradient: 'from-pink-400 to-rose-500',
+        keywords: ['動物', '玩耍', '可愛', '朋友']
+      },
+      {
+        id: 'school_life',
+        name: '校園生活',
+        icon: '🏫',
+        description: '學校裡發生的有趣故事',
+        gradient: 'from-blue-400 to-cyan-500',
+        keywords: ['學校', '同學', '老師', '學習']
+      },
+      {
+        id: 'family_daily',
+        name: '家庭日常',
+        icon: '🏠',
+        description: '溫馨的家庭時光',
+        gradient: 'from-amber-400 to-orange-500',
+        keywords: ['家人', '溫暖', '日常', '快樂']
+      },
+      {
+        id: 'toy_world',
+        name: '玩具世界',
+        icon: '🧸',
+        description: '玩具們的奇妙冒險',
+        gradient: 'from-purple-400 to-pink-500',
+        keywords: ['玩具', '想象', '冒險', '神奇']
+      },
+      {
+        id: 'no_theme',
+        name: '無主題模式',
+        icon: '✨',
+        description: '自由創作，讓想象飛翔',
+        gradient: 'from-slate-400 to-slate-600',
+        keywords: []
+      }
+    ]
+  },
+  
+  // 中年級（4-6年級，9-11歲）
+  elementary_upper: {
+    name: '中年級',
+    grades: [4, 5, 6],
+    ageRange: '9-11歲',
+    themes: [
+      {
+        id: 'natural_exploration',
+        name: '自然探索',
+        icon: '🌲',
+        description: '探索大自然的奧秘',
+        gradient: 'from-green-400 to-emerald-600',
+        keywords: ['森林', '探險', '發現', '大自然']
+      },
+      {
+        id: 'school_adventure',
+        name: '校園冒險',
+        icon: '📚',
+        description: '學校裡的奇妙發現',
+        gradient: 'from-indigo-400 to-purple-600',
+        keywords: ['學校', '冒險', '謎團', '友誼']
+      },
+      {
+        id: 'science_discovery',
+        name: '科學發現',
+        icon: '🔬',
+        description: '科學實驗的奇妙世界',
+        gradient: 'from-cyan-400 to-blue-600',
+        keywords: ['科學', '實驗', '發現', '探索']
+      },
+      {
+        id: 'friendship',
+        name: '友誼故事',
+        icon: '🤝',
+        description: '關於友情的溫暖故事',
+        gradient: 'from-rose-400 to-pink-600',
+        keywords: ['朋友', '友誼', '幫助', '成長']
+      },
+      {
+        id: 'no_theme',
+        name: '無主題模式',
+        icon: '✨',
+        description: '自由創作，讓想象飛翔',
+        gradient: 'from-slate-400 to-slate-600',
+        keywords: []
+      }
+    ]
+  },
+  
+  // 初中（7-9年級，12-14歲）
+  middle_school: {
+    name: '初中',
+    grades: [7, 8, 9],
+    ageRange: '12-14歲',
+    themes: [
+      {
+        id: 'fantasy_adventure',
+        name: '奇幻冒險',
+        icon: '🗺️',
+        description: '充滿魔法與奇蹟的世界',
+        gradient: 'from-purple-500 to-indigo-700',
+        keywords: ['奇幻', '魔法', '冒險', '勇氣']
+      },
+      {
+        id: 'growth_story',
+        name: '成長故事',
+        icon: '🌱',
+        description: '探索內心的成長之旅',
+        gradient: 'from-green-500 to-teal-700',
+        keywords: ['成長', '思考', '夢想', '選擇']
+      },
+      {
+        id: 'future_tech',
+        name: '未來科技',
+        icon: '🚀',
+        description: '科技改變世界的故事',
+        gradient: 'from-blue-500 to-cyan-700',
+        keywords: ['科技', '未來', '創新', '探索']
+      },
+      {
+        id: 'mystery',
+        name: '推理懸疑',
+        icon: '🔍',
+        description: '解開謎團的推理之旅',
+        gradient: 'from-slate-500 to-gray-700',
+        keywords: ['謎團', '推理', '線索', '真相']
+      },
+      {
+        id: 'no_theme',
+        name: '無主題模式',
+        icon: '✨',
+        description: '自由創作，讓想象飛翔',
+        gradient: 'from-slate-400 to-slate-600',
+        keywords: []
+      }
+    ]
+  },
+  
+  // 高中（10-12年級，15-17歲）
+  high_school: {
+    name: '高中',
+    grades: [10, 11, 12],
+    ageRange: '15-17歲',
+    themes: [
+      {
+        id: 'youth_literature',
+        name: '青春文學',
+        icon: '📖',
+        description: '細膩描繪青春的心路歷程',
+        gradient: 'from-rose-500 to-pink-700',
+        keywords: ['青春', '情感', '思考', '選擇']
+      },
+      {
+        id: 'social_observation',
+        name: '社會觀察',
+        icon: '🏙️',
+        description: '觀察社會與人性',
+        gradient: 'from-gray-500 to-slate-700',
+        keywords: ['社會', '人性', '觀察', '思考']
+      },
+      {
+        id: 'philosophical',
+        name: '哲學思考',
+        icon: '💭',
+        description: '探討人生與存在的意義',
+        gradient: 'from-indigo-500 to-purple-700',
+        keywords: ['哲學', '存在', '意義', '思考']
+      },
+      {
+        id: 'historical',
+        name: '歷史穿越',
+        icon: '⏳',
+        description: '穿越時空的歷史故事',
+        gradient: 'from-amber-500 to-orange-700',
+        keywords: ['歷史', '穿越', '文化', '傳承']
+      },
+      {
+        id: 'no_theme',
+        name: '無主題模式',
+        icon: '✨',
+        description: '自由創作，讓想象飛翔',
+        gradient: 'from-slate-400 to-slate-600',
+        keywords: []
+      }
+    ]
+  },
+  
+  // 成人（12+年級，18歲+）
+  adult: {
+    name: '成人',
+    grades: [13],
+    ageRange: '18歲+',
+    themes: [
+      {
+        id: 'human_nature',
+        name: '人性探索',
+        icon: '🎭',
+        description: '深入探討人性的複雜面向',
+        gradient: 'from-purple-600 to-indigo-800',
+        keywords: ['人性', '複雜', '深度', '矛盾']
+      },
+      {
+        id: 'urban_reality',
+        name: '都市現實',
+        icon: '🌆',
+        description: '當代都市生活的真實寫照',
+        gradient: 'from-slate-600 to-gray-800',
+        keywords: ['都市', '現實', '生活', '百態']
+      },
+      {
+        id: 'poetic',
+        name: '詩意表達',
+        icon: '🌙',
+        description: '用詩意的語言描繪世界',
+        gradient: 'from-blue-600 to-indigo-800',
+        keywords: ['詩意', '意境', '情感', '美學']
+      },
+      {
+        id: 'experimental',
+        name: '實驗創作',
+        icon: '🎨',
+        description: '打破常規的實驗性創作',
+        gradient: 'from-pink-600 to-rose-800',
+        keywords: ['實驗', '創新', '前衛', '自由']
+      },
+      {
+        id: 'no_theme',
+        name: '無主題模式',
+        icon: '✨',
+        description: '自由創作，讓想象飛翔',
+        gradient: 'from-slate-400 to-slate-600',
+        keywords: []
+      }
+    ]
+  }
+};
+
+/**
+ * 根據年級獲取對應的主題配置
+ * @param {number} grade - 年級（1-13）
+ * @returns {Object} - 主題配置對象
+ */
+export function getThemesForGrade(grade) {
+  if (!grade || grade < 1 || grade > 13) {
+    return GRADE_THEMES.elementary_upper; // 默認中年級
+  }
+  
+  if (grade <= 3) return GRADE_THEMES.elementary_lower;
+  if (grade <= 6) return GRADE_THEMES.elementary_upper;
+  if (grade <= 9) return GRADE_THEMES.middle_school;
+  if (grade <= 12) return GRADE_THEMES.high_school;
+  return GRADE_THEMES.adult;
+}
+
+/**
+ * 獲取主題的顯示名稱
+ * @param {string} themeId - 主題 ID
+ * @returns {string} - 主題名稱
+ */
+export function getThemeName(themeId) {
+  for (const stage of Object.values(GRADE_THEMES)) {
+    const theme = stage.themes.find(t => t.id === themeId);
+    if (theme) return theme.name;
+  }
+  return '未知主題';
+}
+
 // 导出默认配置对象
 export default {
   SUPABASE_CONFIG,
@@ -197,6 +482,9 @@ export default {
   APP_CONFIG,
   MOEDICT_API,
   DEV_CONFIG,
-  validateConfig
+  GRADE_THEMES,
+  validateConfig,
+  getThemesForGrade,
+  getThemeName
 };
 

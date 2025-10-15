@@ -5,6 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { buildSystemPrompt } from './prompts.ts'
 
 // CORS 头
 const corsHeaders = {
@@ -27,7 +28,8 @@ serve(async (req) => {
       sessionId,              // 故事会话 ID
       conversationHistory,    // 对话历史
       storyTheme,             // 故事主题
-      currentRound            // 当前轮次
+      currentRound,           // 当前轮次
+      userGrade               // 🎓 用戶年級（新增）
       // 注意：反饋功能已移至專門的 sentence-feedback Edge Function
     } = await req.json()
 
@@ -57,6 +59,7 @@ serve(async (req) => {
       conversationHistory,
       storyTheme,
       currentRound,
+      userGrade: userGrade || 6,  // 🎓 傳入年級，默認6年級
       apiKey: deepseekApiKey
     })
 
@@ -114,17 +117,19 @@ async function generateAiResponse({
   conversationHistory,
   storyTheme,
   currentRound,
+  userGrade,  // 🎓 新增參數
   apiKey
 }: {
   userSentence: string
   conversationHistory: string[]
   storyTheme: string
   currentRound: number
+  userGrade: number  // 🎓 新增類型定義
   apiKey: string
 }): Promise<string> {
   
-  // 构建系统提示词
-  const systemPrompt = buildSystemPrompt(storyTheme, currentRound)
+  // 构建系统提示词（傳入年級）
+  const systemPrompt = buildSystemPrompt(storyTheme, currentRound, userGrade)
   
   // 构建对话历史（保留完整歷史以保證故事連貫性）
   const messages = [
@@ -207,55 +212,6 @@ async function generateAiResponse({
   
   console.log('✅ AI 生成:', aiSentence)
   return aiSentence
-}
-
-// =====================================================
-// 构建系统提示词
-// =====================================================
-function buildSystemPrompt(storyTheme: string, currentRound: number): string {
-  const themeGuides: Record<string, string> = {
-    'natural_exploration': '自然探索：森林、山川、動物',
-    'school_life': '校園生活：學校、同學、老師',
-    'fantasy_adventure': '奇幻冒險：魔法、神秘世界',
-    'sci_fi': '科幻未來：科技、太空'
-  }
-
-  const themeGuide = themeGuides[storyTheme] || '自由發揮'
-  
-  // 判斷故事階段
-  let stageGuide = ''
-  if (currentRound < 4) {
-    stageGuide = '開場（介紹場景角色）'
-  } else if (currentRound < 7) {
-    stageGuide = '發展（推進情節、轉折）'
-  } else {
-    stageGuide = '收尾（解決衝突、結局）'
-  }
-
-  return `你是兒童文學作家，與學生共創故事。使用繁體中文（這裡學開樹發現），禁用簡體字（这里学开树发现）。
-
-【接龍規則】必須緊密承接學生的句子
-- 從結尾或關鍵詞繼續
-- 回應動作、情感或場景
-- 不要跳躍或忽略輸入
-
-示例：
-學生：「小明發現一隻小兔子。」
-✅ 好：「小兔子眼睛像紅寶石，好奇盯著小明。」
-❌ 差：「天空突然下雨。」（忽略兔子）
-
-【創作要點】
-1. 緊密承接學生句子
-2. 添加有趣細節或轉折
-3. 1-2句（20-50字）
-4. 為下輪留空間
-
-【當前設定】
-主題：${themeGuide} | 階段：${stageGuide} | 輪次：${currentRound + 1}/10
-
-【避免】套路結局（「高興回家了」）、跳躍過大、忽略學生輸入
-
-直接輸出繁體中文故事句，無需解釋。`
 }
 
 // =====================================================

@@ -246,6 +246,9 @@ export class StandaloneAuth extends AuthService {
       
       console.log(`✅ 用戶同步成功:`, this.currentUser.display_name);
       
+      // 🎓 檢查並自動升級年級
+      await this.checkGradeUpgrade();
+      
       // 保存到 localStorage（快速顯示）
       localStorage.setItem('user_display_name', this.currentUser.display_name);
       if (this.currentUser.email) {
@@ -255,6 +258,9 @@ export class StandaloneAuth extends AuthService {
         localStorage.setItem('user_avatar_url', this.currentUser.avatar_url);
       }
       localStorage.setItem('user_type', this.currentUser.user_type);
+      if (this.currentUser.grade) {
+        localStorage.setItem('user_grade', this.currentUser.grade);
+      }
       
     } catch (error) {
       console.error('❌ 同步用戶失敗:', error);
@@ -411,6 +417,37 @@ export class StandaloneAuth extends AuthService {
       ...user,
       run_mode: 'standalone'
     };
+  }
+  
+  /**
+   * 檢查並自動升級年級
+   * 在用戶登入時調用
+   */
+  async checkGradeUpgrade() {
+    try {
+      if (!this.currentUser || !this.currentUser.id) {
+        return;
+      }
+      
+      // 動態導入年級管理工具（避免循環依賴）
+      const { checkAndUpgradeGrade, showGradeUpgradeNotification } = await import('../utils/grade-manager.js');
+      
+      const result = await checkAndUpgradeGrade(this.currentUser);
+      
+      if (result.upgraded) {
+        // 更新內存中的用戶對象
+        this.currentUser.grade = result.newGrade;
+        
+        // 顯示升級通知
+        showGradeUpgradeNotification(result.oldGrade, result.newGrade);
+        
+        console.log(`✅ 年級自動升級成功: ${result.oldGrade} → ${result.newGrade}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ 檢查年級升級失敗:', error);
+      // 不影響登入流程，繼續
+    }
   }
 }
 

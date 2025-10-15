@@ -25,7 +25,8 @@ serve(async (req) => {
       wordlistMode = 'ai',        // 'ai' | 'wordlist'
       wordlistId = null,           // 指定词表ID
       level2Tag = null,            // 第二层级标签
-      level3Tag = null             // 第三层级标签
+      level3Tag = null,            // 第三层级标签
+      userGrade = 0                // 🎓 用戶年級（僅AI模式使用）
     } = await req.json()
 
     if (!userId || !sessionId || !roundNumber) {
@@ -74,9 +75,9 @@ serve(async (req) => {
         words = await getCalibrationWords(supabase, userId, roundNumber)
         source = 'calibration'
       } else {
-        // AI模式且已校準：AI智能推薦
+        // AI模式且已校準：AI智能推薦（🎓 傳入年級作為輔助參考）
         console.log(`[AI 模式] 用戶 ${userId} 第 ${profile.total_games + 1} 次遊戲，輪次 ${roundNumber}`)
-        words = await recommendByAI(supabase, userId, sessionId, roundNumber, storyContext)
+        words = await recommendByAI(supabase, userId, sessionId, roundNumber, storyContext, userGrade)
         source = 'ai'
       }
     }
@@ -279,7 +280,8 @@ async function recommendByAI(
   userId: string,
   sessionId: string,
   roundNumber: number,
-  storyContext: string
+  storyContext: string,
+  userGrade: number = 0  // 🎓 新增參數：用戶年級（僅作輔助參考）
 ) {
   try {
     // 1. 獲取本次會話已推薦的詞（去重）
@@ -298,9 +300,10 @@ async function recommendByAI(
     // 2. 構建用戶累積畫像
     const userProfile = await buildCumulativeUserProfile(supabase, userId)
 
-    // 3. 構建動態 Prompt（包含已用詞列表）
+    // 3. 構建動態 Prompt（包含已用詞列表和年級信息）
+    // 🎓 年級僅作輔助參考，主要依賴 userProfile.current_level
     const usedWordsList = Array.from(recentWords).join('、')
-    const prompt = buildAIPrompt(userProfile, storyContext, roundNumber, usedWordsList)
+    const prompt = buildAIPrompt(userProfile, storyContext, roundNumber, usedWordsList, userGrade)
 
     // 4. 調用 DeepSeek API
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {

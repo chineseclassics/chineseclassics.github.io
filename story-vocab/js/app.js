@@ -313,6 +313,13 @@ function updateUIForLoggedInUser(user) {
             userLevelDisplay.textContent = currentText + ' · ⚡試用';
         }
     }
+    
+    // 🎓 初始化年級徽章
+    import('./ui/screens.js').then(({ initGradeBadge }) => {
+        initGradeBadge().catch(err => {
+            console.error('❌ 初始化年級徽章失敗:', err);
+        });
+    });
 }
 
 /**
@@ -503,7 +510,9 @@ async function getFeedbackOnly(sentence, word) {
                 userSentence: sentence,
                 selectedWord: word.word,
                 conversationHistory: conversationHistory,
-                storyTheme: storyTheme
+                storyTheme: storyTheme,
+                userGrade: gameState.user?.grade || 6,      // 🎓 傳入年級
+                currentRound: gameState.turn - 1            // 🎬 傳入當前輪次
             })
         }
     );

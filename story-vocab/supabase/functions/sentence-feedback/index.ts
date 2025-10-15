@@ -20,7 +20,9 @@ serve(async (req) => {
       selectedWord,           // 用戶選擇的詞彙
       conversationHistory,    // 對話歷史（故事上下文）
       storyTheme,             // 故事主題
-      userLevel               // [可選] 用戶級別，預留未來使用
+      userLevel,              // [可選] 用戶級別，預留未來使用
+      userGrade,              // 🎓 用戶年級
+      currentRound            // 🎬 當前輪次（用於階段感知）
     } = await req.json()
 
     // 驗證必需參數
@@ -43,6 +45,8 @@ serve(async (req) => {
       selectedWord,
       conversationHistory: conversationHistory || [],
       storyTheme: storyTheme || 'general',
+      userGrade: userGrade || 6,      // 🎓 傳入年級，默認6年級
+      currentRound: currentRound || 1, // 🎬 傳入輪次，默認第1輪
       apiKey: deepseekApiKey
     })
 
@@ -80,17 +84,28 @@ async function evaluateSentence({
   selectedWord,
   conversationHistory,
   storyTheme,
+  userGrade,      // 🎓 新增參數
+  currentRound,   // 🎬 新增參數
   apiKey
 }: {
   userSentence: string
   selectedWord: string
   conversationHistory: string[]
   storyTheme: string
+  userGrade: number      // 🎓 新增類型
+  currentRound: number   // 🎬 新增類型
   apiKey: string
 }): Promise<any> {
   
+  // 🎓 根據年級調整語氣和稱呼
+  const teacherRole = getTeacherRole(userGrade)
+  const studentAddress = getStudentAddress(userGrade)
+  
+  // 🎬 獲取故事階段信息
+  const stageHint = getStageHintForFeedback(currentRound)
+  
   // 構建反饋提示詞（三步驟評價法：語法→接龍→創意）
-  const feedbackPrompt = `你是一位理解兒童文學的溫暖老師，正在幫助10-12歲的小朋友學習詞語和創作故事。
+  const feedbackPrompt = `你是${teacherRole}，正在幫助${studentAddress}學習詞語和創作故事。
 
 【學生造句】
 選用詞語：「${selectedWord}」
@@ -98,6 +113,7 @@ async function evaluateSentence({
 
 【故事上下文】
 ${conversationHistory.slice(-4).join('\n')}
+${stageHint}
 
 請用繁體中文評價，**嚴格遵守以下格式和字數限制**：
 
@@ -392,5 +408,70 @@ function parseFeedbackText(text: string): any {
   })
   
   return feedback
+}
+
+// =====================================================
+// 年級相關輔助函數
+// =====================================================
+
+/**
+ * 根據年級獲取教師角色定位
+ */
+function getTeacherRole(grade: number): string {
+  if (grade <= 3) return '一位親切溫暖的故事老師';
+  if (grade <= 6) return '一位理解兒童文學的溫暖老師';
+  if (grade <= 9) return '一位專業的語文老師';
+  if (grade <= 12) return '一位文學導師';
+  return '一位專業的文學批評者';
+}
+
+/**
+ * 根據年級獲取學生稱呼
+ */
+function getStudentAddress(grade: number): string {
+  if (grade <= 3) return '6-8歲的小朋友';
+  if (grade <= 6) return '9-11歲的小朋友';
+  if (grade <= 9) return '12-14歲的青少年';
+  if (grade <= 12) return '15-17歲的高中生';
+  return '成年創作者';
+}
+
+/**
+ * 根據輪次獲取故事階段提示（用於反饋）
+ */
+function getStageHintForFeedback(currentRound: number): string {
+  if (currentRound === 8) {
+    return `
+【特別提示】這是故事的結局句！
+- 評價時要從「結局角度」思考
+- 是否完整收尾？是否有情感餘韻？
+- 是否呼應前文？是否讓人滿意？`;
+  }
+  
+  if (currentRound >= 7) {
+    return `
+【故事階段】故事接近尾聲
+- 評價時注意情節是否開始收束
+- 鼓勵為結局做準備的描寫`;
+  }
+  
+  if (currentRound >= 5) {
+    return `
+【故事階段】故事進入轉折期
+- 評價時留意是否有轉折或高潮
+- 鼓勵有張力的情節發展`;
+  }
+  
+  if (currentRound >= 3) {
+    return `
+【故事階段】故事發展期
+- 評價時注意情節是否推進
+- 鼓勵引入問題或挑戰`;
+  }
+  
+  return `
+【故事階段】故事開端
+- 評價時注意場景和角色是否清晰
+- 鼓勵建立故事基礎`;
 }
 

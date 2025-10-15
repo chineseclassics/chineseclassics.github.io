@@ -88,6 +88,11 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
       requestBody.level3Tag = wordlistOptions.level3Tag || null
     }
     
+    // 🎓 添加用戶年級（僅 AI 模式使用，作為輔助參考）
+    if (gameState.user?.grade) {
+      requestBody.userGrade = gameState.user.grade
+    }
+    
     // 獲取用戶的 session token
     const supabase = getSupabase()
     const { data: { session } } = await supabase.auth.getSession()
