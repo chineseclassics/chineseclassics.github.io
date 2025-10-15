@@ -434,13 +434,41 @@ export class StandaloneAuth extends AuthService {
       console.log('📊 加載用戶完整檔案...');
       
       // 1. 加載用戶檔案（校準信息）
-      const { data: profile } = await this.supabase
+      let { data: profile } = await this.supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
       
       console.log('📋 用戶檔案:', profile ? '已找到' : '未找到（新用戶）');
+      
+      // 🆕 如果是新用戶（沒有 profile），根據年級創建
+      if (!profile && user.grade) {
+        console.log('🆕 新用戶，根據年級創建檔案...');
+        const { getDifficultyByGrade } = await import('../config/difficulty-levels.js');
+        const initialLevel = getDifficultyByGrade(user.grade);
+        
+        const { data: newProfile, error: createError } = await this.supabase
+          .from('user_profiles')
+          .insert({
+            user_id: user.id,
+            baseline_level: initialLevel,
+            current_level: initialLevel,
+            calibrated: true,  // ✅ 不再需要校準！
+            confidence: 'medium',  // 🆕 初始信心度
+            total_games: 0,
+            total_rounds: 0
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('❌ 創建用戶檔案失敗:', createError);
+        } else {
+          profile = newProfile;
+          console.log(`✅ 新用戶檔案已創建：年級 ${user.grade} → L${initialLevel}`);
+        }
+      }
       
       // 2. 加載詞表偏好
       const { data: prefs } = await this.supabase

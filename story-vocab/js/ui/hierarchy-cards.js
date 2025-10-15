@@ -39,7 +39,7 @@ export function renderLevel2Cards(wordlist, tags) {
     return;
   }
 
-  // 渲染卡片（复用 L1-L6 的样式，使用 .level-card 类）
+  // 渲染卡片（使用 .level-card 类）
   level2Container.innerHTML = level2Tags.map(tag => {
     // 获取描述文本：只使用标签自己的描述，如果没有则不显示
     const descText = tag.description || '';

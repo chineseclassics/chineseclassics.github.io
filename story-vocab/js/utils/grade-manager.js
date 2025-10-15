@@ -7,22 +7,32 @@ import { getSupabase } from '../supabase-client.js';
 import { showToast } from './toast.js';
 
 /**
- * 年級到難度的映射配置
+ * 年級到難度的映射配置（L1-L5 體系）
+ * 對應 5 個年級階段
  */
 export const GRADE_TO_DIFFICULTY = {
-  1: { center: 1.0, range: [1, 2], minLevel: 1.0, maxLevel: 2.0 },
-  2: { center: 1.5, range: [1, 2], minLevel: 1.0, maxLevel: 2.0 },
-  3: { center: 2.0, range: [1, 3], minLevel: 1.0, maxLevel: 3.0 },
-  4: { center: 2.5, range: [2, 3], minLevel: 2.0, maxLevel: 3.0 },
-  5: { center: 2.5, range: [2, 4], minLevel: 2.0, maxLevel: 4.0 },
-  6: { center: 3.0, range: [2, 4], minLevel: 2.0, maxLevel: 4.0 },
-  7: { center: 3.5, range: [3, 5], minLevel: 3.0, maxLevel: 5.0 },
-  8: { center: 4.0, range: [3, 5], minLevel: 3.0, maxLevel: 5.0 },
-  9: { center: 4.5, range: [4, 6], minLevel: 4.0, maxLevel: 6.0 },
-  10: { center: 5.0, range: [4, 6], minLevel: 4.0, maxLevel: 6.0 },
-  11: { center: 5.5, range: [5, 6], minLevel: 5.0, maxLevel: 6.0 },
-  12: { center: 6.0, range: [5, 6], minLevel: 5.0, maxLevel: 6.0 },
-  13: { center: 6.0, range: [5, 6], minLevel: 5.0, maxLevel: 6.0 } // 12+ (成人)
+  // 低年級（L1）
+  1: { center: 1.0, range: [1, 2], minLevel: 1.0, maxLevel: 1.5 },
+  2: { center: 1.2, range: [1, 2], minLevel: 1.0, maxLevel: 2.0 },
+  3: { center: 1.5, range: [1, 2], minLevel: 1.0, maxLevel: 2.0 },
+  
+  // 中年級（L2）
+  4: { center: 2.0, range: [1, 3], minLevel: 1.5, maxLevel: 2.5 },
+  5: { center: 2.3, range: [2, 3], minLevel: 2.0, maxLevel: 3.0 },
+  6: { center: 2.5, range: [2, 3], minLevel: 2.0, maxLevel: 3.0 },
+  
+  // 初中（L3）
+  7: { center: 3.0, range: [2, 4], minLevel: 2.5, maxLevel: 3.5 },
+  8: { center: 3.3, range: [3, 4], minLevel: 3.0, maxLevel: 4.0 },
+  9: { center: 3.5, range: [3, 4], minLevel: 3.0, maxLevel: 4.0 },
+  
+  // 高中（L4）
+  10: { center: 4.0, range: [3, 5], minLevel: 3.5, maxLevel: 4.5 },
+  11: { center: 4.3, range: [4, 5], minLevel: 4.0, maxLevel: 5.0 },
+  12: { center: 4.5, range: [4, 5], minLevel: 4.0, maxLevel: 5.0 },
+  
+  // 大學及以上（L5）
+  13: { center: 5.0, range: [4, 5], minLevel: 4.5, maxLevel: 5.0 }
 };
 
 /**

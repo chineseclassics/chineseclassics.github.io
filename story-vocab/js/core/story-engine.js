@@ -88,8 +88,6 @@ export async function startGame(level, theme, onSuccess) {
  * @returns {Promise<Object>} AI 响应数据
  */
 export async function getAIResponse(userSentence = '', selectedWord = '', skipFeedback = false) {
-    // 不再显示底部的加载动画，改为在消息内显示内联加载动画
-    
     try {
         // 确保会话 ID 存在
         if (!gameState.sessionId) {
@@ -105,7 +103,71 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
         // 构建对话历史（只包含文本）
         const conversationHistory = gameState.storyHistory.map(entry => entry.sentence);
         
-        // 发送请求到 Edge Function
+        // 檢查是否為探索期
+        const totalGames = gameState.user?.total_games || 0;
+        const explorationMode = totalGames < 3;
+        
+        // 🚀 優先嘗試使用統一 API（同時獲取句子和詞語）
+        const useUnifiedAPI = true; // 可設為 feature flag
+        
+        if (useUnifiedAPI) {
+            try {
+                console.log('🚀 調用統一 API（unified-story-agent）...');
+                const unifiedResult = await callUnifiedAPI({
+                    userSentence: userSentence || '開始故事',
+                    selectedWord: selectedWord,
+                    sessionId: gameState.sessionId,
+                    conversationHistory: conversationHistory,
+                    userLevel: userLevel,
+                    storyTheme: storyTheme,
+                    currentRound: gameState.turn - 1,
+                    usedWords: gameState.usedWords.map(w => w.word),
+                    skipFeedback: skipFeedback,
+                    userGrade: gameState.user?.grade || 6,
+                    cachedUserProfile: {
+                        baseline_level: gameState.user?.baseline_level || 2,
+                        current_level: gameState.user?.current_level || 2,
+                        total_games: gameState.user?.total_games || 0,
+                        confidence: gameState.user?.confidence || 'medium'
+                    },
+                    explorationMode: explorationMode
+                });
+                
+                // 統一 API 成功，直接返回（包含詞語）
+                addStoryEntry('ai', unifiedResult.aiSentence);
+                
+                // 更新詞彙狀態
+                gameState.currentWords = unifiedResult.recommendedWords || [];
+                gameState.allRecommendedWords.push(unifiedResult.recommendedWords || []);
+                
+                // 🚀 預加載拼音（在背景進行）
+                if (unifiedResult.recommendedWords && unifiedResult.recommendedWords.length > 0) {
+                    const wordsToPreload = unifiedResult.recommendedWords
+                        .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
+                        .map(w => w.word);
+                    
+                    if (wordsToPreload.length > 0) {
+                        const { preloadWords } = await import('../utils/word-cache.js');
+                        const { getWordBriefInfo } = await import('../features/dictionary.js');
+                        
+                        console.log(`🚀 後台預加載 ${wordsToPreload.length} 個詞彙拼音...`);
+                        preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
+                            console.log('⚠️ 預加載拼音失敗（不影響使用）:', err);
+                        });
+                    }
+                }
+                
+                return unifiedResult;
+                
+            } catch (unifiedError) {
+                console.warn('⚠️ 統一 API 失敗，降級到分離調用:', unifiedError);
+                // 降級到舊的分離調用模式
+            }
+        }
+        
+        // 降級方案：使用舊的分離調用（story-agent + vocab-recommender）
+        console.log('📤 使用分離 API（story-agent + vocab-recommender）...');
+        
         const requestBody = {
             userSentence: userSentence || '開始故事',
             selectedWord: selectedWord,
@@ -115,11 +177,9 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
             storyTheme: storyTheme,
             currentRound: gameState.turn - 1,
             usedWords: gameState.usedWords.map(w => w.word),
-            skipFeedback: skipFeedback,  // 🚀 新增：是否跳過反饋生成
-            userGrade: gameState.user?.grade || 6  // 🎓 新增：用戶年級
+            skipFeedback: skipFeedback,
+            userGrade: gameState.user?.grade || 6
         };
-        
-        console.log('📤 發送請求:', requestBody);
         
         const response = await fetch(
             `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
@@ -140,25 +200,17 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
         }
         
         const result = await response.json();
-        console.log('📥 AI 響應:', result);
         
-        // 检查是否成功
         if (!result.success) {
             throw new Error(result.error || 'AI 調用失敗');
         }
         
         const data = result.data;
-        
-        // 添加到历史
         addStoryEntry('ai', data.aiSentence);
         
-        // 立即返回 AI 句子，詞彙推薦在背景進行
-        const aiResult = {
-            ...data,
-            recommendedWords: [] // 先返回空陣列
-        };
+        // 背景獲取詞彙（分離模式）
+        const aiResult = { ...data, recommendedWords: [] };
         
-        // 🚀 在背景獲取推薦詞彙（非阻塞）
         const wordlistOptions = {
           mode: gameState.wordlistMode,
           wordlistId: gameState.wordlistId,
@@ -167,49 +219,27 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
         };
         
         getRecommendedWords(gameState.turn, wordlistOptions).then(async recommendedWords => {
-            // 詞彙返回後更新 gameState
             gameState.currentWords = recommendedWords || [];
             gameState.allRecommendedWords.push(recommendedWords || []);
-            
-            // 將詞彙保存為待顯示狀態，不立即顯示
-            // 等待打字機結束後再由 displayAIResponse 處理
             gameState.pendingWords = recommendedWords;
             
-            console.log('📦 詞彙已加載，等待打字機結束後顯示');
-            
-            // 🚀 立即預加載拼音（在背景進行，不阻塞）
             if (recommendedWords && recommendedWords.length > 0) {
                 const wordsToPreload = recommendedWords
                     .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
                     .map(w => w.word);
                 
                 if (wordsToPreload.length > 0) {
-                    // 動態導入需要的模塊
                     const { preloadWords } = await import('../utils/word-cache.js');
                     const { getWordBriefInfo } = await import('../features/dictionary.js');
-                    
-                    console.log(`🚀 後台預加載 ${wordsToPreload.length} 個詞彙拼音...`);
-                    preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
-                        console.log('⚠️ 預加載拼音失敗（不影響使用）:', err);
-                    });
+                    preloadWords(wordsToPreload, getWordBriefInfo).catch(() => {});
                 }
             }
         }).catch(err => {
-            console.error('❌ 獲取推薦詞彙失敗（背景任務）:', err);
-            console.error('❌ 錯誤堆棧:', err.stack);
-            console.error('❌ 遊戲狀態:', {
-                turn: gameState.turn,
-                wordlistMode: gameState.wordlistMode,
-                wordlistId: gameState.wordlistId,
-                level2Tag: gameState.level2Tag,
-                level3Tag: gameState.level3Tag
-            });
-            // 設置空數組而不是 null，避免前端判斷錯誤
+            console.error('❌ 獲取推薦詞彙失敗:', err);
             gameState.pendingWords = [];
             gameState.currentWords = [];
         });
         
-        // 立即返回（不等待詞彙）
         return aiResult;
         
     } catch (error) {
@@ -217,6 +247,39 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
         showToast('❌ AI 調用失敗：' + error.message);
         throw error;
     }
+}
+
+/**
+ * 調用統一 API（同時獲取句子和詞語）
+ * @param {Object} params - 請求參數
+ * @returns {Promise<Object>} 包含句子和詞語的結果
+ */
+async function callUnifiedAPI(params) {
+    const response = await fetch(
+        `${SUPABASE_CONFIG.url}/functions/v1/unified-story-agent`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+            },
+            body: JSON.stringify(params)
+        }
+    );
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`統一 API 失敗: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error(result.error || '統一 API 調用失敗');
+    }
+    
+    console.log('✅ 統一 API 成功（句子 + 詞語）');
+    return result.data;
 }
 
 /**

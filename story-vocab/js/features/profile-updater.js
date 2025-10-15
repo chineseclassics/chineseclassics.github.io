@@ -67,6 +67,16 @@ export async function reassessUserLevel(userId) {
   const supabase = getSupabase()
   
   try {
+    // 獲取用戶檔案（判斷是否為探索期）
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('total_games, current_level')
+      .eq('user_id', userId)
+      .maybeSingle()
+    
+    const totalGames = (profile?.total_games || 0) + 1
+    const isExplorationPhase = totalGames <= 3
+    
     // 獲取最近20輪數據（只需要選擇難度）
     const { data: recent20, error } = await supabase
       .from('game_rounds')
@@ -90,19 +100,27 @@ export async function reassessUserLevel(userId) {
     const recent10Avg = calculateAverage(recent10, 'selected_difficulty')
     const older10Avg = older10.length > 0 ? calculateAverage(older10, 'selected_difficulty') : avgDifficulty
     
-    // 基準水平
-    let newLevel = Math.round(avgDifficulty)
+    // 🆕 探索期：更激進的調整（快速找到真實水平）
+    const adjustmentFactor = isExplorationPhase ? 0.6 : 0.3
+    const currentLevel = profile?.current_level || 2
+    
+    // 基準水平（加權平均）
+    let newLevel = currentLevel * (1 - adjustmentFactor) + avgDifficulty * adjustmentFactor
     
     // 根據趨勢微調
     if (recent10Avg > older10Avg + 0.5) {
       // 最近在挑戰更難的詞 → 提升
-      newLevel = Math.min(6, Math.ceil(avgDifficulty))
+      newLevel = Math.min(5, newLevel + 0.2)
     } else if (recent10Avg < older10Avg - 0.5) {
       // 最近在選擇更簡單的詞 → 降低
-      newLevel = Math.max(1, Math.floor(avgDifficulty))
+      newLevel = Math.max(1, newLevel - 0.2)
     }
     
-    console.log(`[重新評估] 最近20輪平均難度=${avgDifficulty.toFixed(1)}, 最近10輪=${recent10Avg.toFixed(1)}, 新等級=L${newLevel}`)
+    // 限制在 L1-L5 範圍
+    newLevel = Math.max(1, Math.min(5, newLevel))
+    
+    const phaseLabel = isExplorationPhase ? '探索期' : '穩定期'
+    console.log(`[重新評估/${phaseLabel}] 最近20輪平均=${avgDifficulty.toFixed(1)}, 調整因子=${adjustmentFactor}, 新等級=L${newLevel.toFixed(1)}`)
     
     return newLevel
   } catch (error) {
@@ -146,12 +164,23 @@ export async function summarizeGameSession(userId, sessionId) {
     // 重新評估水平
     const estimatedLevelAfter = await reassessUserLevel(userId)
     
+    // 計算信心度（基於遊戲次數）
+    const totalGames = (profile?.total_games || 0) + 1
+    let confidence = 'medium'
+    if (totalGames < 3) {
+      confidence = 'low'  // 探索期
+    } else if (totalGames < 10) {
+      confidence = 'medium'
+    } else {
+      confidence = 'high'
+    }
+    
     // 創建會話彙總
     const summary = {
       user_id: userId,
       session_id: sessionId,
-      session_number: (profile?.total_games || 0) + 1,
-      session_type: profile?.calibrated ? 'normal' : 'calibration',
+      session_number: totalGames,
+      session_type: totalGames <= 3 ? 'exploration' : 'normal',
       total_rounds: rounds.length,
       avg_score: avgScore,
       avg_selected_difficulty: avgSelectedDifficulty,
@@ -166,11 +195,12 @@ export async function summarizeGameSession(userId, sessionId) {
     
     if (summaryError) throw summaryError
     
-    // 更新用戶總遊戲數
+    // 更新用戶檔案（遊戲數 + 信心度）
     await supabase
       .from('user_profiles')
       .update({
-        total_games: (profile?.total_games || 0) + 1,
+        total_games: totalGames,
+        confidence: confidence,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', userId)

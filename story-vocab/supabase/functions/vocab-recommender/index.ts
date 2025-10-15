@@ -7,7 +7,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { corsHeaders } from '../_shared/cors.ts'
 import { VOCAB_RECOMMENDER_SYSTEM_PROMPT, buildAIPrompt } from './prompts.ts'
-import { getCalibrationWords, buildCumulativeUserProfile } from './helpers.ts'
+import { buildCumulativeUserProfile } from './helpers.ts'
 
 serve(async (req) => {
   // 處理 CORS preflight 請求
@@ -27,7 +27,8 @@ serve(async (req) => {
       level2Tag = null,            // 第二层级标签
       level3Tag = null,            // 第三层级标签
       userGrade = 0,               // 🎓 用戶年級（僅AI模式使用）
-      cachedUserProfile = null     // 🚀 緩存的用戶數據（優化性能）
+      cachedUserProfile = null,    // 🚀 緩存的用戶數據（優化性能）
+      explorationMode = false      // 🔍 探索模式（前3次遊戲）
     } = await req.json()
 
     if (!userId || !sessionId || !roundNumber) {
@@ -82,18 +83,14 @@ serve(async (req) => {
         console.log('⚠️ 緩存數據不可用，查詢數據庫')
       }
 
-      if (!profile || !profile.calibrated) {
-        // AI模式且未校準：使用校準詞庫
-        console.log(`[校準模式] 用戶 ${userId} 第一次遊戲，輪次 ${roundNumber}`)
-        words = await getCalibrationWords(supabase, userId, roundNumber)
-        source = 'calibration'
-      } else {
-        // AI模式且已校準：AI智能推薦（🎓 傳入年級作為輔助參考）
-        const totalGames = profile.total_games || 0
-        console.log(`[AI 模式] 用戶 ${userId} 第 ${totalGames + 1} 次遊戲，輪次 ${roundNumber}`)
-        words = await recommendByAI(supabase, userId, sessionId, roundNumber, storyContext, userGrade)
-        source = 'ai'
-      }
+      // AI 智能推薦（所有用戶統一使用）
+      const totalGames = profile?.total_games || 0
+      const modeLabel = explorationMode ? '探索模式' : 'AI 模式'
+      console.log(`[${modeLabel}] 用戶 ${userId} 第 ${totalGames + 1} 次遊戲，輪次 ${roundNumber}`)
+      
+      // 🎓 傳入年級、探索模式標記
+      words = await recommendByAI(supabase, userId, sessionId, roundNumber, storyContext, userGrade, explorationMode)
+      source = explorationMode ? 'ai_exploration' : 'ai'
     }
 
     // 記錄推薦歷史
@@ -280,8 +277,8 @@ async function recommendFromWordlist(
 
   } catch (error) {
     console.error('❌ 詞表推薦失敗:', error)
-    // 降級到校準詞庫
-    return await getCalibrationWords(supabase, userId, roundNumber)
+    // 降級：使用默認詞彙
+    return getDefaultFallbackWords(2)  // 使用 L2 默認詞彙
   }
 }
 
@@ -295,7 +292,8 @@ async function recommendByAI(
   sessionId: string,
   roundNumber: number,
   storyContext: string,
-  userGrade: number = 0  // 🎓 新增參數：用戶年級（僅作輔助參考）
+  userGrade: number = 0,        // 🎓 用戶年級（僅作輔助參考）
+  explorationMode: boolean = false  // 🔍 探索模式（前3次遊戲）
 ) {
   try {
     // 1. 獲取本次會話已推薦的詞（去重）
@@ -314,10 +312,10 @@ async function recommendByAI(
     // 2. 構建用戶累積畫像
     const userProfile = await buildCumulativeUserProfile(supabase, userId)
 
-    // 3. 構建動態 Prompt（包含已用詞列表和年級信息）
+    // 3. 構建動態 Prompt（包含已用詞列表、年級信息、探索模式）
     // 🎓 年級僅作輔助參考，主要依賴 userProfile.current_level
     const usedWordsList = Array.from(recentWords).join('、')
-    const prompt = buildAIPrompt(userProfile, storyContext, roundNumber, usedWordsList, userGrade)
+    const prompt = buildAIPrompt(userProfile, storyContext, roundNumber, usedWordsList, userGrade, explorationMode)
 
     // 4. 調用 DeepSeek API
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -353,14 +351,14 @@ async function recommendByAI(
     // 5. 過濾掉已推薦的詞（雙重保險）
     let filteredWords = (aiWords.words || []).filter((w: any) => !recentWords.has(w.word))
     
-    // 6. 如果過濾後不足 5 個，從校準詞庫補充
+    // 6. 如果過濾後不足 5 個，使用默認詞彙補充
     if (filteredWords.length < 5) {
-      console.warn(`⚠️ AI 推薦過濾後只有 ${filteredWords.length} 個詞，從校準詞庫補充`)
-      const calibrationWords = await getCalibrationWords(supabase, userId, roundNumber)
+      console.warn(`⚠️ AI 推薦過濾後只有 ${filteredWords.length} 個詞，使用默認詞彙補充`)
+      const defaultWords = getDefaultFallbackWords(userProfile.current_level)
       
       // 補充到 5 個
       const needed = 5 - filteredWords.length
-      const supplements = calibrationWords
+      const supplements = defaultWords
         .filter((w: any) => !recentWords.has(w.word) && !filteredWords.some((fw: any) => fw.word === w.word))
         .slice(0, needed)
       
@@ -372,9 +370,45 @@ async function recommendByAI(
     return filteredWords
   } catch (error) {
     console.error('❌ AI 推薦失敗:', error)
-    // 降級到校準詞庫
-    console.log('[降級] 使用校準詞庫作為備用')
-    return await getCalibrationWords(supabase, userId, roundNumber)
+    // 降級：使用默認詞彙
+    console.log('[降級] 使用默認詞彙作為備用')
+    return getDefaultFallbackWords(2)  // 使用 L2 作為安全默認值
   }
+}
+
+/**
+ * 獲取默認備用詞彙（基於用戶水平）
+ * @param {number} userLevel - 用戶難度水平 (1-5)
+ * @returns {Array} 默認詞彙列表
+ */
+function getDefaultFallbackWords(userLevel: number) {
+  // 根據用戶水平提供不同難度的默認詞彙
+  const allDefaults = [
+    // L1
+    { word: '高興', difficulty: 1 },
+    { word: '朋友', difficulty: 1 },
+    // L2
+    { word: '探險', difficulty: 2 },
+    { word: '勇敢', difficulty: 2 },
+    { word: '發現', difficulty: 2 },
+    // L3
+    { word: '寧靜', difficulty: 3 },
+    { word: '凝視', difficulty: 3 },
+    { word: '沉思', difficulty: 3 },
+    // L4
+    { word: '翱翔', difficulty: 4 },
+    { word: '蛻變', difficulty: 4 },
+    // L5
+    { word: '悠然', difficulty: 5 },
+    { word: '斟酌', difficulty: 5 }
+  ];
+  
+  // 過濾出用戶水平附近的詞（±1.5 級）
+  const minLevel = Math.max(1, userLevel - 1.5);
+  const maxLevel = Math.min(5, userLevel + 1.5);
+  
+  return allDefaults.filter(w => 
+    w.difficulty >= minLevel && w.difficulty <= maxLevel
+  );
 }
 

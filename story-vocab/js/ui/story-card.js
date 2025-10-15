@@ -24,12 +24,11 @@ function getThemeDisplayName(theme) {
  */
 function getLevelDisplayName(level) {
     const levelMap = {
-        'L1': '啟蒙',
-        'L2': '初級',
-        'L3': '進階',
-        'L4': '高級',
-        'L5': '精通',
-        'L6': '大師'
+        'L1': '低年級',
+        'L2': '中年級',
+        'L3': '初中',
+        'L4': '高中',
+        'L5': '大學+'
     };
     return levelMap[level] || level;
 }

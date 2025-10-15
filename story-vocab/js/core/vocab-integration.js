@@ -1,13 +1,12 @@
 /**
  * 詞彙推薦集成模塊
- * 負責調用 vocab-recommender Edge Function 和校準遊戲邏輯
+ * 負責調用 vocab-recommender Edge Function
  */
 
 import { gameState } from './game-state.js'
 import { getSupabase } from '../supabase-client.js'
 import { SUPABASE_CONFIG } from '../config.js'
-import { isUserCalibrated, getCalibrationWords, finalCalibrationAssessment } from '../features/calibration-game.js'
-import { summarizeGameSession, buildCumulativeUserProfile } from '../features/profile-updater.js'
+import { summarizeGameSession } from '../features/profile-updater.js'
 
 /**
  * 獲取本輪推薦詞彙
@@ -19,34 +18,17 @@ export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
   try {
     console.log(`🎯 getRecommendedWords 被調用，輪次: ${roundNumber}，模式: ${wordlistOptions?.mode}`)
     
-    // 1. 優先檢查詞表模式（詞表模式無需校準，直接使用詞表）
-    if (wordlistOptions?.mode === 'wordlist' && wordlistOptions?.wordlistId) {
-      console.log(`[詞表模式] 直接從詞表推薦，跳過校準檢查`)
-      console.log(`  詞表ID: ${wordlistOptions.wordlistId}, L2: ${wordlistOptions.level2Tag}, L3: ${wordlistOptions.level3Tag}`)
-      const result = await getAIRecommendedWords(roundNumber, wordlistOptions)
-      console.log(`✅ getRecommendedWords 返回 ${result.length} 個詞`)
-      return result
+    // 檢查是否為探索期（前 3 次遊戲）
+    const totalGames = gameState.user?.total_games || 0;
+    const isExplorationMode = totalGames < 3;
+    
+    if (isExplorationMode) {
+      console.log(`🔍 探索模式（第 ${totalGames + 1} 次遊戲），推薦範圍更寬`);
     }
     
-    // 2. AI智能模式：✅ 從緩存讀取校準狀態（不查數據庫）
-    const calibrated = gameState.user?.calibrated || false
-    console.log(`📊 校準狀態（從緩存）: ${calibrated ? '已校準' : '未校準'}`)
+    // 調用 AI 推薦（所有模式統一使用 AI）
+    return await getAIRecommendedWords(roundNumber, wordlistOptions, isExplorationMode);
     
-    if (!calibrated) {
-      // AI模式且未校準：使用校準詞庫
-      console.log(`[校準模式] 獲取第 ${roundNumber} 輪詞彙`)
-      const words = await getCalibrationWords(gameState.userId, roundNumber)
-      return words.map(w => ({
-        word: w.word,
-        difficulty_level: w.difficulty,
-        category: w.category,
-        source: 'calibration'
-      }))
-    } else {
-      // AI模式且已校準：AI智能推薦
-      console.log(`[AI智能模式] 模式: ${wordlistOptions?.mode || 'ai'}, 輪次: ${roundNumber}`)
-      return await getAIRecommendedWords(roundNumber, wordlistOptions)
-    }
   } catch (error) {
     console.error('❌ 獲取推薦詞彙失敗:', error)
     console.error('❌ 錯誤堆棧:', error.stack)
@@ -62,8 +44,9 @@ export async function getRecommendedWords(roundNumber, wordlistOptions = null) {
  * 調用 vocab-recommender AI 獲取推薦詞彙
  * @param {number} roundNumber - 轮次
  * @param {Object} wordlistOptions - 词表选项
+ * @param {boolean} isExplorationMode - 是否為探索模式
  */
-async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
+async function getAIRecommendedWords(roundNumber, wordlistOptions = null, isExplorationMode = false) {
   try {
     // 構建故事上下文（最近3句）
     const recentStory = gameState.storyHistory
@@ -95,12 +78,19 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
     // 🚀 優化：傳遞緩存的用戶數據（減少 Edge Function 查詢）
     if (gameState.user) {
       requestBody.cachedUserProfile = {
-        calibrated: gameState.user.calibrated || false,
+        calibrated: true,  // 不再需要校準檢查
         baseline_level: gameState.user.baseline_level || 2,
         current_level: gameState.user.current_level || 2,
-        total_games: gameState.user.total_games || 0
+        total_games: gameState.user.total_games || 0,
+        confidence: gameState.user.confidence || 'medium'
       }
       console.log('📦 傳遞緩存的用戶數據，減少數據庫查詢')
+    }
+    
+    // 🔍 傳遞探索模式標記
+    if (isExplorationMode) {
+      requestBody.explorationMode = true
+      console.log('🔍 標記為探索模式')
     }
     
     // 獲取用戶的 session token
@@ -198,45 +188,33 @@ export async function recordRoundData(roundData) {
  * 完成遊戲後的處理
  */
 export async function handleGameCompletion() {
-  const supabase = getSupabase()
-  
   try {
-    // 檢查是否是第一次遊戲（校準）
-    const calibrated = await isUserCalibrated(gameState.userId)
+    // 生成會話彙總
+    console.log('[遊戲完成] 生成會話彙總')
+    const summary = await summarizeGameSession(
+      gameState.userId,
+      gameState.sessionId
+    )
     
-    if (!calibrated) {
-      // 第一次遊戲：執行最終校準評估
-      console.log('[校準完成] 開始最終評估')
-      const assessment = await finalCalibrationAssessment(
-        gameState.userId,
-        gameState.sessionId
-      )
-      
-      console.log('✅ 校準評估完成:', assessment)
-      
-      return {
-        isFirstGame: true,
-        assessment: assessment,
-        message: '恭喜完成你的第一個故事！🎉'
-      }
-    } else {
-      // 正常遊戲：生成會話彙總
-      console.log('[正常遊戲] 生成會話彙總')
-      const summary = await summarizeGameSession(
-        gameState.userId,
-        gameState.sessionId
-      )
-      
-      return {
-        isFirstGame: false,
-        summary: summary,
-        message: '故事創作完成！'
-      }
+    // 檢查是否是前 3 次遊戲（探索期）
+    const totalGames = gameState.user?.total_games || 0;
+    const isExplorationPhase = totalGames < 3;
+    
+    return {
+      isFirstGame: totalGames === 0,
+      isExplorationPhase: isExplorationPhase,
+      summary: summary,
+      message: totalGames === 0 
+        ? '恭喜完成你的第一個故事！🎉' 
+        : (isExplorationPhase 
+          ? `第 ${totalGames + 1} 個故事完成！系統正在了解你的水平...` 
+          : '故事創作完成！')
     }
   } catch (error) {
     console.error('❌ 遊戲完成處理失敗:', error)
     return {
       isFirstGame: false,
+      isExplorationPhase: false,
       message: '遊戲完成'
     }
   }
