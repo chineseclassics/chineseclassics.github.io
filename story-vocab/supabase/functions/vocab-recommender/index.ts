@@ -26,7 +26,8 @@ serve(async (req) => {
       wordlistId = null,           // 指定词表ID
       level2Tag = null,            // 第二层级标签
       level3Tag = null,            // 第三层级标签
-      userGrade = 0                // 🎓 用戶年級（僅AI模式使用）
+      userGrade = 0,               // 🎓 用戶年級（僅AI模式使用）
+      cachedUserProfile = null     // 🚀 緩存的用戶數據（優化性能）
     } = await req.json()
 
     if (!userId || !sessionId || !roundNumber) {
@@ -63,11 +64,23 @@ serve(async (req) => {
       source = 'wordlist'
     } else {
       // 2. AI模式：檢查用戶校準狀態
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle()
+      // 🚀 優化：優先使用緩存數據，避免查詢 user_profiles
+      let profile: any = null
+      
+      if (cachedUserProfile && cachedUserProfile.calibrated !== undefined) {
+        // 使用前端傳來的緩存數據
+        profile = cachedUserProfile
+        console.log('🚀 使用緩存的用戶數據（避免數據庫查詢）')
+      } else {
+        // 降級：查詢數據庫
+        const { data: dbProfile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle()
+        profile = dbProfile
+        console.log('⚠️ 緩存數據不可用，查詢數據庫')
+      }
 
       if (!profile || !profile.calibrated) {
         // AI模式且未校準：使用校準詞庫
@@ -76,7 +89,8 @@ serve(async (req) => {
         source = 'calibration'
       } else {
         // AI模式且已校準：AI智能推薦（🎓 傳入年級作為輔助參考）
-        console.log(`[AI 模式] 用戶 ${userId} 第 ${profile.total_games + 1} 次遊戲，輪次 ${roundNumber}`)
+        const totalGames = profile.total_games || 0
+        console.log(`[AI 模式] 用戶 ${userId} 第 ${totalGames + 1} 次遊戲，輪次 ${roundNumber}`)
         words = await recommendByAI(supabase, userId, sessionId, roundNumber, storyContext, userGrade)
         source = 'ai'
       }

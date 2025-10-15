@@ -92,6 +92,17 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null) {
       requestBody.userGrade = gameState.user.grade
     }
     
+    // 🚀 優化：傳遞緩存的用戶數據（減少 Edge Function 查詢）
+    if (gameState.user) {
+      requestBody.cachedUserProfile = {
+        calibrated: gameState.user.calibrated || false,
+        baseline_level: gameState.user.baseline_level || 2,
+        current_level: gameState.user.current_level || 2,
+        total_games: gameState.user.total_games || 0
+      }
+      console.log('📦 傳遞緩存的用戶數據，減少數據庫查詢')
+    }
+    
     // 獲取用戶的 session token
     const supabase = getSupabase()
     const { data: { session } } = await supabase.auth.getSession()

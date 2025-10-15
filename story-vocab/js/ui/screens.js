@@ -229,8 +229,8 @@ export async function displayAIResponse(data) {
     // 清空加载动画，开始打字机效果
     messageContent.innerHTML = '';
     
-    // 用打字机效果显示纯文本（速度调整为 90ms，提供更好的閱讀體驗）
-    await typewriterEffect(messageContent, data.aiSentence, 90);
+    // 用打字机效果显示纯文本（速度调整为 130ms，給詞彙推薦更多時間）
+    await typewriterEffect(messageContent, data.aiSentence, 130);
     
     // 然后替换为可点击的词语版本（此時詞彙可能還沒到，先用空陣列）
     messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, data.recommendedWords);
