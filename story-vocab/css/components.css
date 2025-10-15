@@ -1605,14 +1605,16 @@ button:active {
     position: relative;
     z-index: 1;
     background: white;
-    border-radius: 20px;
+    border-radius: 16px;
     width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
+    max-width: 650px;
+    max-height: 85vh;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     transform: translateY(20px);
     transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .grade-selector-modal.show .grade-selector-container {
@@ -1620,33 +1622,69 @@ button:active {
 }
 
 .grade-selector-header {
-    padding: 30px;
+    padding: 20px 25px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .grade-selector-header h2 {
-    margin: 0 0 10px 0;
-    font-size: 1.8em;
+    margin: 0 0 8px 0;
+    font-size: 1.6em;
 }
 
 .grade-selector-hint {
     margin: 0;
-    font-size: 0.95em;
+    font-size: 0.9em;
     opacity: 0.95;
 }
 
+.grade-selector-info {
+    padding: 15px 25px;
+    background: #f8f9ff;
+    border-bottom: 1px solid #e0e7ff;
+    flex-shrink: 0;
+}
+
+.grade-selector-info p {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.9em;
+}
+
+.grade-selector-info ul {
+    margin: 0;
+    padding-left: 20px;
+    list-style: none;
+}
+
+.grade-selector-info ul li {
+    margin-bottom: 4px;
+    font-size: 0.85em;
+    color: #666;
+    position: relative;
+    padding-left: 15px;
+}
+
+.grade-selector-info ul li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #667eea;
+}
+
 .grade-selector-body {
-    padding: 30px;
-    max-height: 60vh;
+    padding: 20px 25px;
+    flex: 1;
     overflow-y: auto;
 }
 
 .grade-options-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
 }
 
 .grade-option-btn {
@@ -1654,12 +1692,12 @@ button:active {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px 15px;
+    padding: 12px 8px;
     border: 2px solid #e0e0e0;
-    border-radius: 12px;
+    border-radius: 10px;
     background: white;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     box-shadow: none;
 }
 
@@ -1667,42 +1705,43 @@ button:active {
     border-color: #667eea;
     background: #f8f9ff;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
 }
 
 .grade-option-btn.selected {
     border-color: #667eea;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
 }
 
 .grade-label {
     display: block;
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: 700;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .grade-age {
     display: block;
-    font-size: 0.85em;
+    font-size: 0.75em;
     opacity: 0.8;
 }
 
 .grade-selector-footer {
-    padding: 20px 30px;
+    padding: 15px 25px;
     border-top: 1px solid #e0e0e0;
     display: flex;
-    gap: 15px;
+    gap: 12px;
     justify-content: flex-end;
+    flex-shrink: 0;
 }
 
 .grade-selector-footer .btn-primary,
 .grade-selector-footer .btn-secondary {
-    padding: 12px 30px;
+    padding: 10px 25px;
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 0.95em;
     box-shadow: none;
 }
 
@@ -1722,35 +1761,50 @@ button:active {
     .grade-selector-container {
         width: 95%;
         max-width: none;
+        max-height: 90vh;
     }
     
     .grade-options-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
     }
     
     .grade-option-btn {
-        padding: 15px 10px;
+        padding: 10px 6px;
     }
     
     .grade-label {
-        font-size: 1em;
+        font-size: 0.9em;
     }
     
     .grade-age {
-        font-size: 0.8em;
+        font-size: 0.7em;
     }
     
     .grade-selector-header {
-        padding: 20px;
+        padding: 15px 20px;
     }
     
     .grade-selector-header h2 {
-        font-size: 1.5em;
+        font-size: 1.4em;
+    }
+    
+    .grade-selector-info {
+        padding: 12px 20px;
     }
     
     .grade-selector-body {
-        padding: 20px;
+        padding: 15px 20px;
+    }
+    
+    .grade-selector-footer {
+        padding: 12px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .grade-options-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 

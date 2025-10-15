@@ -702,65 +702,74 @@ async function ensureSessionReady() {
  * 开始游戏（从启动界面）
  */
 async function handleStartGame() {
-    console.log('🎮 handleStartGame 被調用');
-    
-    const themeBtn = document.querySelector('.theme-btn.selected');
-    
-    if (!themeBtn) {
-        showToast('請選擇故事主題');
-        return;
-    }
-    
-    // 🔍 驗證 gameState 狀態
-    console.log('🔍 當前 gameState 狀態:', {
-        wordlistMode: gameState.wordlistMode,
-        wordlistId: gameState.wordlistId,
-        level2Tag: gameState.level2Tag,
-        level3Tag: gameState.level3Tag,
-        userId: gameState.userId
-    });
-    
-    // 🔒 確保詞表模式值有效
-    if (!gameState.wordlistMode || (gameState.wordlistMode !== 'ai' && gameState.wordlistMode !== 'wordlist')) {
-        console.warn('⚠️ 詞表模式值無效，重置為 AI 模式');
-        gameState.wordlistMode = 'ai';
-        gameState.wordlistId = null;
-        gameState.level2Tag = null;
-        gameState.level3Tag = null;
-    }
-    
-    // 词表选择已经在 initStartScreen() 中设置到 gameState
-    // 如果是词表模式且有层级，验证是否选择了层级
-    if (gameState.wordlistMode === 'wordlist' && gameState.wordlistId) {
-        const level2Container = document.getElementById('level-2-cards');
-        if (level2Container && level2Container.children.length > 0) {
-            // 有第二层级卡片，检查是否选中
-            if (!gameState.level2Tag) {
-                console.warn('⚠️ 詞表有層級但未選擇');
-                showToast('請選擇詞語範圍');
-                return;
+    try {
+        console.log('🎮 handleStartGame 被調用');
+        
+        const themeBtn = document.querySelector('.theme-btn.selected');
+        
+        if (!themeBtn) {
+            showToast('請選擇故事主題');
+            return;
+        }
+        
+        // 🔍 驗證 gameState 狀態
+        console.log('🔍 當前 gameState 狀態:', {
+            wordlistMode: gameState.wordlistMode,
+            wordlistId: gameState.wordlistId,
+            level2Tag: gameState.level2Tag,
+            level3Tag: gameState.level3Tag,
+            userId: gameState.userId
+        });
+        
+        // 🔒 確保詞表模式值有效
+        if (!gameState.wordlistMode || (gameState.wordlistMode !== 'ai' && gameState.wordlistMode !== 'wordlist')) {
+            console.warn('⚠️ 詞表模式值無效，重置為 AI 模式');
+            gameState.wordlistMode = 'ai';
+            gameState.wordlistId = null;
+            gameState.level2Tag = null;
+            gameState.level3Tag = null;
+        }
+        
+        // 词表选择已经在 initStartScreen() 中设置到 gameState
+        // 如果是词表模式且有层级，验证是否选择了层级
+        if (gameState.wordlistMode === 'wordlist' && gameState.wordlistId) {
+            const level2Container = document.getElementById('level-2-cards');
+            if (level2Container && level2Container.children.length > 0) {
+                // 有第二层级卡片，检查是否选中
+                if (!gameState.level2Tag) {
+                    console.warn('⚠️ 詞表有層級但未選擇');
+                    showToast('請選擇詞語範圍');
+                    return;
+                }
             }
         }
-    }
-    
-    console.log('📚 开始游戏 - 词表模式:', gameState.wordlistMode);
-    console.log('📚 词表ID:', gameState.wordlistId);
-    console.log('📚 层级2:', gameState.level2Tag);
-    console.log('📚 层级3:', gameState.level3Tag);
-    
-    // 🔒 确保 session 已就绪（防止竞态条件）
-    await ensureSessionReady();
-    
-    // 设置级别和主题
-    const level = 'L2';  // 仅用于兼容性，实际词汇推荐由 vocab-recommender 根据用户水平和词表设置决定
-    const theme = themeBtn.dataset.theme;
-    
-    // 初始化游戏界面
-    initGameScreen(level, theme);
-    showScreen('game-screen');
-    
-    // 开始游戏
-    try {
+        
+        console.log('📚 开始游戏 - 词表模式:', gameState.wordlistMode);
+        console.log('📚 词表ID:', gameState.wordlistId);
+        console.log('📚 层级2:', gameState.level2Tag);
+        console.log('📚 层级3:', gameState.level3Tag);
+        
+        // 🔒 确保 session 已就绪（防止竞态条件）
+        const sessionReady = await ensureSessionReady();
+        if (!sessionReady) {
+            console.error('❌ Session 未就緒');
+            showToast('❌ 初始化失敗，請重新登入');
+            return;
+        }
+        
+        // 设置级别和主题
+        const level = 'L2';  // 仅用于兼容性，实际词汇推荐由 vocab-recommender 根据用户水平和词表设置决定
+        const theme = themeBtn.dataset.theme;
+        
+        console.log('🎬 準備初始化遊戲界面...');
+        
+        // 初始化游戏界面
+        initGameScreen(level, theme);
+        showScreen('game-screen');
+        
+        console.log('🎮 準備啟動遊戲...');
+        
+        // 开始游戏
         await startGame(level, theme, async () => {
             // 成功创建会话后的回调
             try {
@@ -803,14 +812,17 @@ async function handleStartGame() {
                 }, 1500);
             }
         });
+        
+        console.log('✅ handleStartGame 執行完成');
+        
     } catch (error) {
-        console.error('❌ 啟動遊戲失敗:', error);
+        console.error('❌ handleStartGame 執行失敗:', error);
+        console.error('   錯誤詳情:', error.message);
+        console.error('   錯誤堆棧:', error.stack);
         showToast('❌ 啟動失敗，請重試');
         
         // 返回开始界面
-        setTimeout(() => {
-            showScreen('start-screen');
-        }, 1500);
+        showScreen('start-screen');
     }
 }
 

@@ -20,16 +20,8 @@ import { SUPABASE_CONFIG } from '../config.js';
 export async function initStartScreen() {
     console.log('🎬 開始初始化啟動界面...');
     
-    // 🎓 根據用戶年級動態加載主題
+    // 🎓 根據用戶年級動態加載主題（內部已經綁定事件，無需重複綁定）
     await loadThemesByGrade();
-    
-    // 主题选择交互（先绑定，确保始终可用）
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
-            this.classList.add('selected');
-        });
-    });
 
     const supabase = getSupabase();
 
@@ -1072,9 +1064,33 @@ window.selectWordlist = async function(value, displayName, wordCount) {
             
             console.log('✅ 詞表偏好已自動保存:', value);
             
-            // 重新加載開始界面
-            await initStartScreen();
+            // ✅ 方案2：不重新初始化整個界面，只更新詞表狀態
+            // 更新 gameState
+            if (value === 'ai') {
+                gameState.wordlistMode = 'ai';
+                gameState.wordlistId = null;
+                gameState.level2Tag = null;
+                gameState.level3Tag = null;
+            } else {
+                gameState.wordlistMode = 'wordlist';
+                gameState.wordlistId = value;
+                gameState.level2Tag = null;
+                gameState.level3Tag = null;
+            }
+            
+            // 更新顯示
+            updateWordlistNameDisplay(value === 'ai' ? 'AI智能推薦' : '自定義詞表');
+            
+            // 清除層級卡片（如果有）
+            clearHierarchyCards();
+            
+            // 如果是詞表模式，重新渲染層級卡片
+            if (value !== 'ai') {
+                await renderLevel2Cards(value);
+            }
+            
             showToast('✅ 詞表已切換');
+            console.log('✅ 詞表切換完成，gameState已更新');
         }
     } catch (error) {
         console.error('保存詞表設置失敗:', error);
@@ -1482,9 +1498,19 @@ export async function showGradeSelector(options = {}) {
                 <p class="grade-selector-hint">
                     ${required 
                         ? '請選擇正確的年級以獲得最佳學習體驗' 
-                        : '你可以隨時在設定中調整年級'}
+                        : '你可以隨時調整年級'}
                 </p>
             </div>
+            
+            <div class="grade-selector-info">
+                <p>💡 年級影響：</p>
+                <ul>
+                    <li>AI 故事風格和語言複雜度</li>
+                    <li>可選擇的故事主題類型</li>
+                    <li>詞彙推薦的初始難度範圍</li>
+                </ul>
+            </div>
+            
             <div class="grade-selector-body">
                 <div class="grade-options-grid">
                     ${GRADE_OPTIONS.map(opt => `
