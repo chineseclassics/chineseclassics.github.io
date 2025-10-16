@@ -389,30 +389,27 @@
             <div class="content finish-content">
                 <h1 class="screen-title">📊 创作报告</h1>
                 
-                <!-- 统计卡片网格 -->
-                <div class="stats-grid">
-                    <div class="stat-card" data-index="0">
-                        <div class="stat-icon">⏱️</div>
-                        <div class="stat-label">总用时</div>
-                        <div class="stat-value" id="total-duration">--</div>
-                    </div>
-                    
-                    <div class="stat-card" data-index="1">
-                        <div class="stat-icon">📚</div>
-                        <div class="stat-label">使用词汇</div>
-                        <div class="stat-value" id="vocab-count-final">--</div>
-                    </div>
-                    
-                    <div class="stat-card" data-index="2">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-label">平均难度</div>
-                        <div class="stat-value" id="avg-level">L--</div>
-                    </div>
-                    
-                    <div class="stat-card highlighted" data-index="3">
-                        <div class="stat-icon">⭐</div>
-                        <div class="stat-label">你的水平</div>
-                        <div class="stat-value" id="user-level-final">L--</div>
+                <!-- 第一部分：核心数据统计 -->
+                <div class="report-section">
+                    <h2 class="section-heading">📈 数据统计</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card" data-index="0">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-label">总用时</div>
+                            <div class="stat-value" id="total-duration">--</div>
+                        </div>
+                        
+                        <div class="stat-card" data-index="1">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-label">本轮平均选词难度</div>
+                            <div class="stat-value" id="avg-level">L--</div>
+                        </div>
+                        
+                        <div class="stat-card highlighted" data-index="2">
+                            <div class="stat-icon">⭐</div>
+                            <div class="stat-label">你的当前词语水平</div>
+                            <div class="stat-value" id="user-level-final">L--</div>
+                        </div>
                     </div>
                 </div>
                 
@@ -436,19 +433,22 @@
                     <div id="words-timeline"></div>
                 </div>
                 
-                <!-- 完整故事 -->
-                <div class="story-display-section">
-                    <h2>📖 你的完整故事</h2>
-                    <h3 class="story-title-display" id="story-title-display"></h3>
+                <!-- 第二部分：完整故事 -->
+                <div class="report-section">
+                    <h2 class="section-heading">📖 你的完整故事</h2>
+                    <div class="story-title-display" id="story-title-display"></div>
                     <div id="full-story-text"></div>
                 </div>
                 
-                <!-- AI 评价（异步加载，初始显示骨架屏） -->
-                <div id="story-summary-container" class="skeleton-loading">
-                    <div class="skeleton-header"></div>
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line short"></div>
-                    <div class="skeleton-line"></div>
+                <!-- 第三部分：AI 评价 -->
+                <div class="report-section">
+                    <h2 class="section-heading">🤖 AI 老师点评</h2>
+                    <div id="story-summary-container" class="skeleton-loading">
+                        <div class="skeleton-header"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
                 </div>
                 
                 <!-- 操作按钮 -->
@@ -974,13 +974,13 @@
         </div>
     </div>
 
+    <!-- 五彩纸屑容器（全屏） -->
+    <div class="confetti-container" id="confetti-container"></div>
+
     <!-- 祝贺弹窗 -->
     <div id="congratulations-modal" class="modal">
         <div class="modal-overlay celebration"></div>
         <div class="congratulations-container">
-            <!-- 五彩纸屑容器 -->
-            <div class="confetti-container" id="confetti-container"></div>
-            
             <div class="congratulations-content">
                 <div class="celebration-emoji">🎉</div>
                 <h2 class="celebration-title">故事创作完成！</h2>

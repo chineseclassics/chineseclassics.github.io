@@ -722,26 +722,54 @@ function showCongratulationsModal() {
 }
 
 /**
- * 五彩纸屑动画
+ * 五彩纸屑动画（全屏华丽效果）
  */
 function launchConfetti() {
     const container = document.getElementById('confetti-container');
     if (!container) return;
     
-    // 创建30个纸屑
-    for (let i = 0; i < 30; i++) {
+    // 显示容器
+    container.classList.add('active');
+    container.innerHTML = '';
+    
+    // 丰富的颜色方案
+    const colors = [
+        '#f093fb', '#f5576c', '#4facfe', '#00f2fe', 
+        '#43e97b', '#38f9d7', '#feca57', '#ff9ff3',
+        '#54a0ff', '#48dbfb', '#ff6b6b', '#ee5a6f'
+    ];
+    
+    // 创建60个纸屑
+    for (let i = 0; i < 60; i++) {
         const confetti = document.createElement('div');
-        confetti.className = 'confetti-piece';
+        
+        // 随机形状
+        const shapes = ['square', 'rectangle', 'circle'];
+        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+        
+        // 随机动画类型
+        const fallTypes = ['fall-1', 'fall-2', 'fall-3'];
+        const fallType = fallTypes[Math.floor(Math.random() * fallTypes.length)];
+        
+        confetti.className = `confetti-piece ${shape} ${fallType}`;
+        
+        // 随机位置（整个屏幕宽度）
         confetti.style.left = `${Math.random() * 100}%`;
-        confetti.style.animationDelay = `${Math.random() * 0.5}s`;
-        confetti.style.backgroundColor = ['#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'][Math.floor(Math.random() * 6)];
+        
+        // 随机延迟（让纸屑不是同时下落）
+        confetti.style.animationDelay = `${Math.random() * 0.8}s`;
+        
+        // 随机颜色
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
         container.appendChild(confetti);
     }
     
-    // 3秒后清除纸屑
+    // 4秒后清除纸屑并隐藏容器
     setTimeout(() => {
+        container.classList.remove('active');
         container.innerHTML = '';
-    }, 3000);
+    }, 4500);
 }
 
 /**

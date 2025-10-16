@@ -1028,27 +1028,31 @@
 
 /* 故事命名输入 */
 .story-naming {
-    margin: 20px 0;
+    margin: 25px 0;
 }
 
 .story-naming input {
     width: 100%;
-    padding: 12px 20px;
-    font-size: 16px;
+    padding: 14px 24px;
+    font-size: 17px;
+    font-weight: 500;
     border: 2px solid #667eea;
-    border-radius: 12px;
+    border-radius: 14px;
     text-align: center;
     outline: none;
     transition: all 0.3s ease;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
 }
 
 .story-naming input:focus {
     border-color: #764ba2;
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+    background: white;
 }
 
 .story-naming input::placeholder {
-    color: #aaa;
+    color: #999;
+    font-weight: normal;
 }
 
 .quick-stats {
@@ -1086,23 +1090,57 @@
     font-weight: bold;
 }
 
-/* 五彩纸屑容器 */
+/* 五彩纸屑容器（全屏） */
 .confetti-container {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     pointer-events: none;
     overflow: hidden;
+    z-index: 10000;
+    display: none;
+}
+
+.confetti-container.active {
+    display: block;
 }
 
 .confetti-piece {
     position: absolute;
+    top: -20px;
+    opacity: 0.9;
+}
+
+/* 不同形状的纸屑 */
+.confetti-piece.square {
+    width: 12px;
+    height: 12px;
+}
+
+.confetti-piece.rectangle {
+    width: 8px;
+    height: 16px;
+}
+
+.confetti-piece.circle {
     width: 10px;
     height: 10px;
-    top: -10px;
-    animation: confettiFall 3s ease-out forwards;
+    border-radius: 50%;
+}
+
+/* 不同的下落动画（速度和旋转不同） */
+.confetti-piece.fall-1 {
+    animation: confettiFall1 3s ease-out forwards;
+}
+
+.confetti-piece.fall-2 {
+    animation: confettiFall2 3.5s ease-out forwards;
+}
+
+.confetti-piece.fall-3 {
+    animation: confettiFall3 4s ease-out forwards;
 }
 
 @keyframes bounceIn {
@@ -1136,9 +1174,39 @@
     }
 }
 
-@keyframes confettiFall {
-    to {
-        transform: translateY(100vh) rotate(720deg);
+@keyframes confettiFall1 {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translateY(110vh) translateX(100px) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+@keyframes confettiFall2 {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translateY(110vh) translateX(-80px) rotate(-540deg);
+        opacity: 0;
+    }
+}
+
+@keyframes confettiFall3 {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translateY(55vh) translateX(50px) rotate(360deg) scale(1.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: translateY(110vh) translateX(-30px) rotate(900deg) scale(0.8);
         opacity: 0;
     }
 }
@@ -1147,18 +1215,33 @@
    总结页面样式
    ============================================ */
 
+/* 统一的部分标题样式 */
+.section-heading {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+/* 报告区块 */
+.report-section {
+    margin-bottom: 30px;
+}
+
 /* 统计卡片网格 */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 15px;
-    margin: 20px 0;
+    margin-bottom: 20px;
 }
 
 .stat-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 20px;
+    padding: 20px 15px;
     border-radius: 12px;
     text-align: center;
     opacity: 0;
@@ -1177,35 +1260,38 @@
 }
 
 .stat-card .stat-icon {
-    font-size: 32px;
-    margin-bottom: 8px;
-}
-
-.stat-card .stat-label {
-    font-size: 14px;
-    opacity: 0.9;
+    font-size: 28px;
     margin-bottom: 5px;
 }
 
+.stat-card .stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 1;
+    margin-bottom: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 .stat-card .stat-value {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* 用时分析 */
 .timing-analysis {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin: 20px 0;
+    gap: 12px;
+    margin-bottom: 25px;
 }
 
 .timing-item {
-    padding: 20px;
-    border-radius: 12px;
+    padding: 15px 18px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
     opacity: 0;
     transform: translateX(-20px);
     transition: all 0.4s ease;
@@ -1225,36 +1311,41 @@
 }
 
 .timing-item .label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
+    color: rgba(0, 0, 0, 0.7);
 }
 
 .timing-item .word {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: bold;
+    color: rgba(0, 0, 0, 0.85);
 }
 
 .timing-item .time {
-    font-size: 14px;
-    opacity: 0.8;
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.6);
 }
 
 /* 词语使用详情 */
 .words-details-section {
-    margin: 30px 0;
+    margin-bottom: 25px;
 }
 
 .words-details-section h3 {
-    font-size: 20px;
-    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: bold;
     color: var(--primary-color);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
 }
 
 .word-timing-bar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     opacity: 0;
     transform: scaleX(0);
     transform-origin: left;
@@ -1267,16 +1358,17 @@
 }
 
 .word-timing-bar .word-text {
-    min-width: 60px;
+    min-width: 55px;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 15px;
+    color: var(--text-dark);
 }
 
 .timing-bar-container {
     flex: 1;
     background: #f0f0f0;
-    height: 32px;
-    border-radius: 16px;
+    height: 28px;
+    border-radius: 14px;
     overflow: hidden;
 }
 
@@ -1286,20 +1378,20 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 0 12px;
+    padding: 0 10px;
     color: white;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: bold;
     transition: width 0.5s ease;
 }
 
 .level-badge {
-    min-width: 45px;
-    padding: 4px 10px;
+    min-width: 42px;
+    padding: 3px 8px;
     background: linear-gradient(135deg, #f093fb, #f5576c);
     color: white;
-    border-radius: 12px;
-    font-size: 12px;
+    border-radius: 10px;
+    font-size: 11px;
     font-weight: bold;
     text-align: center;
 }
@@ -1316,44 +1408,6 @@
     transform: translateY(0);
 }
 
-/* 骨架屏加载动画 */
-.skeleton-loading {
-    padding: 20px;
-    background: white;
-    border-radius: 12px;
-    margin: 20px 0;
-}
-
-.skeleton-header {
-    height: 30px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-    margin-bottom: 15px;
-}
-
-.skeleton-line {
-    height: 20px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-
-.skeleton-line.short {
-    width: 60%;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
-}
 
 /* AI评价延迟提示 */
 .ai-summary-delayed {
@@ -1369,11 +1423,123 @@
 /* 故事标题显示 */
 .story-title-display {
     text-align: center;
-    font-size: 24px;
+    font-size: 20px;
+    font-weight: bold;
     color: var(--primary-color);
-    margin: 20px 0;
-    padding: 15px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    border-radius: 12px;
+    margin-bottom: 15px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+    border-radius: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* 完整故事文本 */
+#full-story-text {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(102, 126, 234, 0.15);
+    line-height: 2;
+}
+
+#full-story-text p {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+/* 骨架屏加载动画 */
+.skeleton-loading {
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    margin: 0;
+    border: 1px solid rgba(102, 126, 234, 0.15);
+}
+
+.skeleton-header {
+    height: 24px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.skeleton-line {
+    height: 16px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* 页面标题 */
+.screen-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .timing-analysis {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 11px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 28px;
+    }
+    
+    .section-heading {
+        font-size: 18px;
+    }
+    
+    .congratulations-container {
+        padding: 40px 30px;
+        margin: 20px;
+    }
+    
+    .celebration-emoji {
+        font-size: 80px;
+    }
+    
+    .celebration-title {
+        font-size: 24px;
+    }
+    
+    .quick-stats {
+        flex-direction: row;
+        gap: 15px;
+    }
+    
+    .quick-stat .stat-number {
+        font-size: 32px;
+    }
 }
 

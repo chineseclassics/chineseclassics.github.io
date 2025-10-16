@@ -619,12 +619,10 @@ export async function initFinishScreenAnimated(stats) {
 function setFinishScreenData(stats) {
     // 基础统计
     const totalDuration = document.getElementById('total-duration');
-    const vocabCount = document.getElementById('vocab-count-final');
     const avgLevel = document.getElementById('avg-level');
     const userLevel = document.getElementById('user-level-final');
     
     if (totalDuration) totalDuration.textContent = formatDuration(stats.totalDuration);
-    if (vocabCount) vocabCount.textContent = stats.vocabUsed;
     if (avgLevel) avgLevel.textContent = `L${stats.avgSelectedLevel.toFixed(1)}`;
     if (userLevel) userLevel.textContent = `L${stats.userCurrentLevel.toFixed(1)}`;
     
