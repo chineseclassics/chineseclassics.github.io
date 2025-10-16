@@ -107,8 +107,9 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         const totalGames = gameState.user?.total_games || 0;
         const explorationMode = totalGames < 3;
         
-        // 🚀 使用分離 API（story-agent + vocab-recommender 並發調用）
-        console.log('🚀 調用分離 API（story-agent + vocab-recommender）...');
+        // 🚀 使用分離 API（story-agent + vocab-recommender 真正並行調用）
+        console.log('🚀 並行調用 story-agent + vocab-recommender...');
+        console.log('📊 當前故事歷史句數:', gameState.storyHistory.length);
         
         const requestBody = {
             userSentence: userSentence || '開始故事',
@@ -122,66 +123,82 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
             userGrade: gameState.user?.grade || 6
         };
         
-        const response = await fetch(
-            `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
-                },
-                body: JSON.stringify(requestBody)
-            }
-        );
+        const wordlistOptions = {
+            mode: gameState.wordlistMode,
+            wordlistId: gameState.wordlistId,
+            level2Tag: gameState.level2Tag,
+            level3Tag: gameState.level3Tag
+        };
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('API 錯誤響應:', errorText);
-            throw new Error(`API 請求失敗: ${response.status} - ${errorText}`);
+        // 🔥 關鍵：並行調用兩個 API（在加入新句子到歷史之前）
+        const [storyResponse, recommendedWords] = await Promise.all([
+            // 1️⃣ 調用 story-agent（生成新句子）
+            fetch(
+                `${SUPABASE_CONFIG.url}/functions/v1/story-agent`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                }
+            ),
+            
+            // 2️⃣ 並行調用 vocab-recommender
+            // ⚠️ 此時 gameState.storyHistory 還不包含新句子
+            // AI 基於「舊上下文」預測故事發展需要的詞
+            getRecommendedWords(gameState.turn, wordlistOptions)
+        ]);
+        
+        console.log('✅ 兩個 API 並行完成');
+        
+        // 解析 story-agent 結果
+        if (!storyResponse.ok) {
+            const errorText = await storyResponse.text();
+            console.error('❌ story-agent 錯誤響應:', errorText);
+            throw new Error(`story-agent 失敗: ${storyResponse.status} - ${errorText}`);
         }
         
-        const result = await response.json();
+        const result = await storyResponse.json();
         
         if (!result.success) {
             throw new Error(result.error || 'AI 調用失敗');
         }
         
         const data = result.data;
+        
+        // ⚠️ 現在才加入歷史（vocab-recommender 已完成，沒看到新句子）
         addStoryEntry('ai', data.aiSentence);
+        console.log('📝 新句子已加入歷史，長度:', data.aiSentence.length);
         
-        // 背景獲取詞彙（分離模式）
-        const aiResult = { ...data, recommendedWords: [] };
+        // 更新詞彙狀態
+        gameState.currentWords = recommendedWords || [];
+        gameState.allRecommendedWords.push(recommendedWords || []);
+        gameState.pendingWords = recommendedWords;
+        gameState.allHighlightWords.push(data.highlight || []);
         
-        const wordlistOptions = {
-          mode: gameState.wordlistMode,
-          wordlistId: gameState.wordlistId,
-          level2Tag: gameState.level2Tag,
-          level3Tag: gameState.level3Tag
-        };
-        
-        getRecommendedWords(gameState.turn, wordlistOptions).then(async recommendedWords => {
-            gameState.currentWords = recommendedWords || [];
-            gameState.allRecommendedWords.push(recommendedWords || []);
-            gameState.pendingWords = recommendedWords;
+        // 🚀 預加載拼音（在背景進行）
+        if (recommendedWords && recommendedWords.length > 0) {
+            const wordsToPreload = recommendedWords
+                .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
+                .map(w => w.word);
             
-            if (recommendedWords && recommendedWords.length > 0) {
-                const wordsToPreload = recommendedWords
-                    .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
-                    .map(w => w.word);
-                
-                if (wordsToPreload.length > 0) {
-                    const { preloadWords } = await import('../utils/word-cache.js');
-                    const { getWordBriefInfo } = await import('../features/dictionary.js');
-                    preloadWords(wordsToPreload, getWordBriefInfo).catch(() => {});
-                }
+            if (wordsToPreload.length > 0) {
+                const { preloadWords } = await import('../utils/word-cache.js');
+                const { getWordBriefInfo } = await import('../features/dictionary.js');
+                preloadWords(wordsToPreload, getWordBriefInfo).catch(() => {});
             }
-        }).catch(err => {
-            console.error('❌ 獲取推薦詞彙失敗:', err);
-            gameState.pendingWords = [];
-            gameState.currentWords = [];
-        });
+        }
         
-        return aiResult;
+        // 返回完整結果（包含句子和詞彙）
+        return {
+            aiSentence: data.aiSentence,
+            highlight: data.highlight || [],
+            recommendedWords: recommendedWords || [],
+            currentRound: data.currentRound,
+            isComplete: data.isComplete
+        };
         
     } catch (error) {
         console.error('AI 調用失敗:', error);
