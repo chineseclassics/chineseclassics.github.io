@@ -67,6 +67,7 @@ export async function reassessUserLevel(userId) {
   const supabase = getSupabase()
   
   try {
+    console.log('  🔍 [reassess] 步骤4.1: 查询用户档案...')
     // 獲取用戶檔案（判斷是否為探索期）
     const { data: profile } = await supabase
       .from('user_profiles')
@@ -76,7 +77,9 @@ export async function reassessUserLevel(userId) {
     
     const totalGames = (profile?.total_games || 0) + 1
     const isExplorationPhase = totalGames <= 3
+    console.log(`  ✅ [reassess] 步骤4.1完成: 游戏数=${totalGames}, 探索期=${isExplorationPhase}`)
     
+    console.log('  🔍 [reassess] 步骤4.2: 查询最近20轮数据...')
     // 獲取最近20輪數據（只需要選擇難度）
     const { data: recent20, error } = await supabase
       .from('game_rounds')
@@ -86,7 +89,10 @@ export async function reassessUserLevel(userId) {
       .limit(20)
     
     if (error) throw error
+    console.log(`  ✅ [reassess] 步骤4.2完成: 找到 ${recent20?.length || 0} 轮数据`)
+    
     if (!recent20 || recent20.length === 0) {
+      console.log('  ℹ️ [reassess] 无历史数据，返回默认 L2')
       return 2 // 默認L2
     }
     
@@ -136,6 +142,7 @@ export async function summarizeGameSession(userId, sessionId) {
   const supabase = getSupabase()
   
   try {
+    console.log('🔍 [summarize] 步骤1: 查询游戏回合数据...')
     // 獲取本次遊戲的所有回合
     const { data: rounds, error: roundsError } = await supabase
       .from('game_rounds')
@@ -143,11 +150,14 @@ export async function summarizeGameSession(userId, sessionId) {
       .eq('session_id', sessionId)
     
     if (roundsError) throw roundsError
+    console.log(`✅ [summarize] 步骤1完成: 找到 ${rounds?.length || 0} 个回合`)
+    
     if (!rounds || rounds.length === 0) {
       console.warn('⚠️ 未找到遊戲回合數據')
       return
     }
     
+    console.log('🔍 [summarize] 步骤2: 查询用户档案...')
     // 獲取用戶畫像
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
@@ -156,14 +166,20 @@ export async function summarizeGameSession(userId, sessionId) {
       .maybeSingle()
     
     if (profileError) throw profileError
+    console.log('✅ [summarize] 步骤2完成: 档案查询成功')
     
+    console.log('🔍 [summarize] 步骤3: 计算统计数据...')
     // 計算統計數據
     const avgScore = calculateAverage(rounds, 'ai_score')
     const avgSelectedDifficulty = calculateAverage(rounds, 'selected_difficulty')
+    console.log('✅ [summarize] 步骤3完成')
     
+    console.log('🔍 [summarize] 步骤4: 重新评估用户水平...')
     // 重新評估水平
     const estimatedLevelAfter = await reassessUserLevel(userId)
+    console.log('✅ [summarize] 步骤4完成: 新水平 L' + estimatedLevelAfter)
     
+    console.log('🔍 [summarize] 步骤5: 计算信心度...')
     // 計算信心度（基於遊戲次數）
     const totalGames = (profile?.total_games || 0) + 1
     let confidence = 'medium'
@@ -174,7 +190,9 @@ export async function summarizeGameSession(userId, sessionId) {
     } else {
       confidence = 'high'
     }
+    console.log(`✅ [summarize] 步骤5完成: 游戏数=${totalGames}, 信心度=${confidence}`)
     
+    console.log('🔍 [summarize] 步骤6: 创建会话汇总记录...')
     // 創建會話彙總
     const summary = {
       user_id: userId,
@@ -194,7 +212,9 @@ export async function summarizeGameSession(userId, sessionId) {
       .insert(summary)
     
     if (summaryError) throw summaryError
+    console.log('✅ [summarize] 步骤6完成: 汇总记录已插入')
     
+    console.log('🔍 [summarize] 步骤7: 更新用户档案...')
     // 更新用戶檔案（遊戲數 + 信心度）
     await supabase
       .from('user_profiles')
@@ -204,16 +224,20 @@ export async function summarizeGameSession(userId, sessionId) {
         updated_at: new Date().toISOString()
       })
       .eq('user_id', userId)
+    console.log('✅ [summarize] 步骤7完成: 用户档案已更新')
     
+    console.log('🔍 [summarize] 步骤8: 同步更新 gameState...')
     // 🔄 同步更新 gameState.user（確保探索模式判斷準確）
     const { gameState } = await import('../core/game-state.js')
     if (gameState.user && gameState.user.id === userId) {
       gameState.user.total_games = totalGames
       gameState.user.confidence = confidence
-      console.log(`🔄 已同步更新 gameState.user.total_games = ${totalGames}`)
+      console.log(`  ✅ [summarize] 步骤8完成: gameState.user.total_games = ${totalGames}`)
+    } else {
+      console.warn('  ⚠️ [summarize] gameState.user 不存在或ID不匹配')
     }
     
-    console.log(`[會話彙總] 遊戲 #${summary.session_number} 已記錄`)
+    console.log(`✅ [會話彙總完成] 遊戲 #${summary.session_number} 已記錄`)
     
     return summary
   } catch (error) {
