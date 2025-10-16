@@ -138,16 +138,6 @@ export async function saveSettings() {
 }
 
 /**
- * 根据年级获取默认轮数
- * @param {number} grade - 用户年级
- * @returns {string} 默认轮数
- */
-function getDefaultStoryLength(grade) {
-    // 1-6 年级默认 6 轮，其他年级默认 8 轮
-    return (grade >= 1 && grade <= 6) ? '6' : '8';
-}
-
-/**
  * 加载设置
  */
 export function loadSettings() {
@@ -168,17 +158,25 @@ export function loadSettings() {
         const soundEffects = getSetting('sound_effects', 'true') !== 'false';
         const typingEffect = getSetting('typing_effect', 'true') !== 'false';
         
-        // 🎮 根据年级动态设置默认轮数
+        // 🎮 根据年级动态设置默认轮数（与 app.js 中逻辑一致）
         const userGrade = gameState.user?.grade || 6;
-        const defaultLength = getDefaultStoryLength(userGrade);
-        const storyLength = getSetting('story_length', defaultLength);
+        const defaultTurns = (userGrade >= 1 && userGrade <= 6) ? 6 : 8;
+        const validOptions = [6, 8, 12, 16];
+        
+        let storyTurns = parseInt(getSetting('story_length', defaultTurns.toString()));
+        
+        // 数据迁移：如果不是有效选项，使用默认值
+        if (!validOptions.includes(storyTurns)) {
+            storyTurns = defaultTurns;
+            saveSetting('story_length', defaultTurns.toString());
+        }
         
         const soundEffectsElem = document.getElementById('sound-effects');
         const typingEffectElem = document.getElementById('typing-effect');
         const storyLengthElem = document.getElementById('story-length');
         if (soundEffectsElem) soundEffectsElem.checked = soundEffects;
         if (typingEffectElem) typingEffectElem.checked = typingEffect;
-        if (storyLengthElem) storyLengthElem.value = storyLength;
+        if (storyLengthElem) storyLengthElem.value = storyTurns.toString();
     } catch (error) {
         console.error('加載設置失敗:', error);
     }

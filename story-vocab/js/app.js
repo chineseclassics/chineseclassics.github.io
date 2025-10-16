@@ -29,7 +29,7 @@ import { loadMyStoriesScreen } from './ui/story-card.js';
 
 // 导入工具
 import { showToast } from './utils/toast.js';
-import { getSetting, updateSidebarStats } from './utils/storage.js';
+import { getSetting, saveSetting, updateSidebarStats } from './utils/storage.js';
 import { preloadWords } from './utils/word-cache.js';
 
 // 导入故事存储模块
@@ -787,10 +787,19 @@ async function handleStartGame() {
         
         // 🎮 读取故事长度设置并应用（根据年级动态设置默认值）
         const userGrade = gameState.user?.grade || 6;
-        // 1-6 年级默认 6 轮，其他年级默认 8 轮
-        const defaultTurns = (userGrade >= 1 && userGrade <= 6) ? '6' : '8';
-        const storyLengthSetting = getSetting('story_length', defaultTurns);
-        gameState.maxTurns = parseInt(storyLengthSetting) || parseInt(defaultTurns);
+        const defaultTurns = (userGrade >= 1 && userGrade <= 6) ? 6 : 8;  // 数字类型
+        const validOptions = [6, 8, 12, 16];  // 有效选项
+        
+        let storyTurns = parseInt(getSetting('story_length', defaultTurns.toString()));
+        
+        // 数据迁移：如果读取到的不是有效选项，使用默认值
+        if (!validOptions.includes(storyTurns)) {
+            console.warn(`⚠️ 检测到已废弃的轮数设置: ${storyTurns}，重置为年级默认值: ${defaultTurns}`);
+            storyTurns = defaultTurns;
+            saveSetting('story_length', defaultTurns.toString());
+        }
+        
+        gameState.maxTurns = storyTurns;
         console.log(`🎯 故事轮数设定为: ${gameState.maxTurns} 轮（年级: ${userGrade}）`);
         
         console.log('🎬 準備初始化遊戲界面...');

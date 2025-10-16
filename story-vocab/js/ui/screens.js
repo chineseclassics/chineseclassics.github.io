@@ -154,16 +154,8 @@ export function initGameScreen(level, theme) {
     const maxTurn = document.getElementById('max-turn');
     const progressBar = document.getElementById('progress-bar');
     
-    // 🔍 诊断日志
-    console.log('📊 [initGameScreen] 當前 gameState.maxTurns:', gameState.maxTurns);
-    console.log('📊 [initGameScreen] maxTurn 元素:', maxTurn);
-    console.log('📊 [initGameScreen] maxTurn 當前值:', maxTurn?.textContent);
-    
     if (currentTurn) currentTurn.textContent = '1';
-    if (maxTurn) {
-        maxTurn.textContent = gameState.maxTurns;
-        console.log('📊 [initGameScreen] maxTurn 設置後:', maxTurn.textContent);
-    }
+    if (maxTurn) maxTurn.textContent = gameState.maxTurns;
     if (progressBar) {
         progressBar.style.strokeDashoffset = '220';
     }
