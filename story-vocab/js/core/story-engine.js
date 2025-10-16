@@ -108,72 +108,8 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         const totalGames = gameState.user?.total_games || 0;
         const explorationMode = totalGames < 3;
         
-        // 🚀 優先嘗試使用統一 API（同時獲取句子和詞語）
-        // 🧪 測試：強制跳過統一 API，使用分離模式
-        const FORCE_USE_SEPARATE_MODE = true; // 🧪 測試標記
-        const useUnifiedAPI = !FORCE_USE_SEPARATE_MODE;
-        
-        if (useUnifiedAPI) {
-            try {
-                console.log('🚀 調用統一 API（unified-story-agent）...');
-                const unifiedResult = await callUnifiedAPI({
-                    userSentence: userSentence || '開始故事',
-                    selectedWord: selectedWord,
-                    sessionId: gameState.sessionId,
-                    conversationHistory: conversationHistory,
-                    userLevel: userLevel,
-                    storyTheme: storyTheme,
-                    currentRound: gameState.turn - 1,
-                    usedWords: gameState.usedWords.map(w => w.word),
-                    userGrade: gameState.user?.grade || 6,
-                    cachedUserProfile: {
-                        baseline_level: gameState.user?.baseline_level || 2,
-                        current_level: gameState.user?.current_level || 2,
-                        total_games: gameState.user?.total_games || 0,
-                        confidence: gameState.user?.confidence || 'medium'
-                    },
-                    explorationMode: explorationMode
-                });
-                
-                // 統一 API 成功，直接返回（包含詞語）
-                addStoryEntry('ai', unifiedResult.aiSentence);
-                
-                // 更新詞彙狀態
-                gameState.currentWords = unifiedResult.recommendedWords || [];
-                gameState.allRecommendedWords.push(unifiedResult.recommendedWords || []);
-                gameState.allHighlightWords.push(unifiedResult.highlight || []);  // 🆕 保存學習詞標記
-                
-                // 🚀 預加載拼音（在背景進行）
-                if (unifiedResult.recommendedWords && unifiedResult.recommendedWords.length > 0) {
-                    const wordsToPreload = unifiedResult.recommendedWords
-                        .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
-                        .map(w => w.word);
-                    
-                    if (wordsToPreload.length > 0) {
-                        const { preloadWords } = await import('../utils/word-cache.js');
-                        const { getWordBriefInfo } = await import('../features/dictionary.js');
-                        
-                        console.log(`🚀 後台預加載 ${wordsToPreload.length} 個詞彙拼音...`);
-                        preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
-                            console.log('⚠️ 預加載拼音失敗（不影響使用）:', err);
-                        });
-                    }
-                }
-                
-                return unifiedResult;
-                
-            } catch (unifiedError) {
-                console.warn('⚠️ 統一 API 失敗，降級到分離調用:', unifiedError);
-                // 降級到舊的分離調用模式
-            }
-        }
-        
-        // 降級方案：使用舊的分離調用（story-agent + vocab-recommender）
-        if (FORCE_USE_SEPARATE_MODE) {
-            console.log('🧪 測試模式：強制使用分離 API（story-agent + vocab-recommender）');
-        } else {
-            console.log('📤 使用分離 API（story-agent + vocab-recommender）...');
-        }
+        // 🚀 使用分離 API（story-agent + vocab-recommender 並發調用）
+        console.log('🚀 調用分離 API（story-agent + vocab-recommender）...');
         
         const requestBody = {
             userSentence: userSentence || '開始故事',
@@ -253,47 +189,6 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         showToast('❌ AI 調用失敗：' + error.message);
         throw error;
     }
-}
-
-/**
- * 調用統一 API（同時獲取句子和詞語）
- * @param {Object} params - 請求參數
- * @returns {Promise<Object>} 包含句子和詞語的結果
- */
-async function callUnifiedAPI(params) {
-    // 獲取用戶的 session token（需要用戶認證）
-    const supabase = getSupabase();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-        throw new Error('用戶未登入');
-    }
-    
-    const response = await fetch(
-        `${SUPABASE_CONFIG.url}/functions/v1/unified-story-agent`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`  // ✅ 使用用戶 token
-            },
-            body: JSON.stringify(params)
-        }
-    );
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`統一 API 失敗: ${response.status} - ${errorText}`);
-    }
-    
-    const result = await response.json();
-    
-    if (!result.success) {
-        throw new Error(result.error || '統一 API 調用失敗');
-    }
-    
-    console.log('✅ 統一 API 成功（句子 + 詞語）');
-    return result.data;
 }
 
 /**

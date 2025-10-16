@@ -29,7 +29,8 @@ serve(async (req) => {
       conversationHistory,    // 对话历史
       storyTheme,             // 故事主题
       currentRound,           // 当前轮次
-      userGrade               // 🎓 用戶年級（新增）
+      userGrade,              // 🎓 用戶年級（新增）
+      userLevel               // 🎯 用戶詞語水平（用於 highlight）
       // 注意：反饋功能已移至專門的 sentence-feedback Edge Function
     } = await req.json()
 
@@ -52,14 +53,15 @@ serve(async (req) => {
     // ===== 生成故事流程 =====
     // 注意：反饋評價由專門的 sentence-feedback Edge Function 處理
     
-    // 1. 生成 AI 回應（故事下一句）
-    console.log('🤖 生成 AI 故事句子...')
-    const aiSentence = await generateAiResponse({
+    // 1. 生成 AI 回應（故事下一句 + highlight 學習詞）
+    console.log('🤖 生成 AI 故事句子 + highlight...')
+    const { aiSentence, highlight } = await generateAiResponse({
       userSentence,
       conversationHistory,
       storyTheme,
       currentRound,
       userGrade: userGrade || 6,  // 🎓 傳入年級，默認6年級
+      userLevel: userLevel || 2.0, // 🎯 傳入詞語水平，默認 L2.0
       apiKey: deepseekApiKey
     })
 
@@ -76,7 +78,7 @@ serve(async (req) => {
       supabase
     })
 
-    // 3. 返回结果（只包含故事句子）
+    // 3. 返回结果（故事句子 + highlight 學習詞）
     // 詞彙推薦由前端另外調用 vocab-recommender 獲取
     // 句子反饋由前端另外調用 sentence-feedback 獲取
     return new Response(
@@ -84,6 +86,7 @@ serve(async (req) => {
         success: true,
         data: {
           aiSentence,              // AI 生成的句子
+          highlight: highlight || [], // 🆕 標記的學習詞（0-2個）
           currentRound: currentRound + 1,
           isComplete: currentRound >= 9  // 10 轮完成
         }
@@ -118,6 +121,7 @@ async function generateAiResponse({
   storyTheme,
   currentRound,
   userGrade,  // 🎓 新增參數
+  userLevel,  // 🎯 用戶詞語水平
   apiKey
 }: {
   userSentence: string
@@ -125,11 +129,12 @@ async function generateAiResponse({
   storyTheme: string
   currentRound: number
   userGrade: number  // 🎓 新增類型定義
+  userLevel: number  // 🎯 用戶詞語水平（L1-L5）
   apiKey: string
-}): Promise<string> {
+}): Promise<{ aiSentence: string; highlight: string[] }> {
   
-  // 构建系统提示词（傳入年級）
-  const systemPrompt = buildSystemPrompt(storyTheme, currentRound, userGrade)
+  // 构建系统提示词（傳入年級和詞語水平）
+  const systemPrompt = buildSystemPrompt(storyTheme, currentRound, userGrade, userLevel)
   
   // 构建对话历史（保留完整歷史以保證故事連貫性）
   const messages = [
@@ -163,7 +168,7 @@ async function generateAiResponse({
   }
 
   const data = await response.json()
-  let aiSentence = data.choices[0].message.content.trim()
+  let rawContent = data.choices[0].message.content.trim()
   
   // 檢查是否被截斷
   const finishReason = data.choices[0].finish_reason
@@ -197,9 +202,30 @@ async function generateAiResponse({
     
     if (retryResponse.ok) {
       const retryData = await retryResponse.json()
-      aiSentence = retryData.choices[0].message.content.trim()
+      rawContent = retryData.choices[0].message.content.trim()
       console.log('✅ 重試成功')
     }
+  }
+  
+  // 🎯 嘗試解析 JSON 格式（包含 aiSentence 和 highlight）
+  let aiSentence: string
+  let highlight: string[] = []
+  
+  try {
+    const parsed = JSON.parse(rawContent)
+    if (parsed.aiSentence) {
+      aiSentence = parsed.aiSentence
+      highlight = parsed.highlight || []
+      console.log('✅ 解析 JSON 成功，highlight:', highlight)
+    } else {
+      // JSON 格式錯誤，當作純文本
+      aiSentence = rawContent
+      console.log('📝 JSON 無 aiSentence 欄位，視為純文本')
+    }
+  } catch (e) {
+    // 不是 JSON，視為純文本（向後兼容）
+    aiSentence = rawContent
+    console.log('📝 AI 返回純文本（非 JSON），highlight 為空')
   }
   
   // 確保句子以標點符號結尾
@@ -211,7 +237,7 @@ async function generateAiResponse({
   }
   
   console.log('✅ AI 生成:', aiSentence)
-  return aiSentence
+  return { aiSentence, highlight }
 }
 
 // =====================================================
