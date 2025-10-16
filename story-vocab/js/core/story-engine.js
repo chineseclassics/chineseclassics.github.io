@@ -109,7 +109,9 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         const explorationMode = totalGames < 3;
         
         // 🚀 優先嘗試使用統一 API（同時獲取句子和詞語）
-        const useUnifiedAPI = true; // 可設為 feature flag
+        // 🧪 測試：強制跳過統一 API，使用分離模式
+        const FORCE_USE_SEPARATE_MODE = true; // 🧪 測試標記
+        const useUnifiedAPI = !FORCE_USE_SEPARATE_MODE;
         
         if (useUnifiedAPI) {
             try {
@@ -167,7 +169,11 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         }
         
         // 降級方案：使用舊的分離調用（story-agent + vocab-recommender）
-        console.log('📤 使用分離 API（story-agent + vocab-recommender）...');
+        if (FORCE_USE_SEPARATE_MODE) {
+            console.log('🧪 測試模式：強制使用分離 API（story-agent + vocab-recommender）');
+        } else {
+            console.log('📤 使用分離 API（story-agent + vocab-recommender）...');
+        }
         
         const requestBody = {
             userSentence: userSentence || '開始故事',

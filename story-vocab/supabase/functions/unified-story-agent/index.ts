@@ -198,12 +198,9 @@ serve(async (req) => {
     console.log(`   - 推薦詞數: ${result.words?.length || 0}`)
     console.log(`   - 標記學習詞: ${result.highlight?.length || 0}`)
 
-    // 過濾重複的詞（雙重保險）
-    const highlightWords: string[] = Array.isArray(result.highlight)
-      ? result.highlight.map((h: any) => String(h))
-      : []
+    // 過濾已使用的詞
     const filteredWords = (result.words || []).filter((w: any) =>
-      !allUsedWords.includes(w.word) && !highlightWords.includes(w.word)
+      !allUsedWords.includes(w.word)
     )
 
     // 如果過濾後不足 5 個，補充默認詞
@@ -213,8 +210,7 @@ serve(async (req) => {
       const needed = 5 - filteredWords.length
       const supplements = defaultWords
         .filter(w => !allUsedWords.includes(w.word)
-          && !filteredWords.some((fw: any) => fw.word === w.word)
-          && !highlightWords.includes(w.word))
+          && !filteredWords.some((fw: any) => fw.word === w.word))
         .slice(0, needed)
       filteredWords.push(...supplements)
     }
