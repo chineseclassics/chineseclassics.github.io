@@ -62,13 +62,18 @@ export function buildUnifiedPrompt(
   const minDiff = Math.max(1, userProfile.current_level - rangeAdjust);
   const maxDiff = Math.min(5, userProfile.current_level + rangeAdjust);
 
+  // 構建用戶輸入描述（處理第1輪的特殊情況）
+  const userInput = selectedWord 
+    ? `"${userSentence}"（用詞：${selectedWord}）` 
+    : (userSentence === '開始故事' ? '請開始故事' : `"${userSentence}"`);
+
   return `
 用戶：L${userProfile.current_level.toFixed(1)}，第 ${currentRound} 輪${explorationMode ? '（探索期）' : ''}
 
 故事：${storyTheme}
 ${historyText}
 
-用戶剛說："${userSentence}"（用詞：${selectedWord}）
+用戶剛說：${userInput}
 已用詞：${usedWords.length > 0 ? usedWords.join('、') : '無'}
 
 任務：
