@@ -78,6 +78,52 @@ export const VOCAB_RECOMMENDER_SYSTEM_PROMPT = `
 `
 
 /**
+ * 構建簡化 AI Prompt（探索模式專用）
+ * 🚀 從 1200 字精簡到 400-500 字，減少 DeepSeek 處理時間
+ */
+export function buildSimplifiedPrompt(
+  userProfile: any,
+  storyContext: string,
+  roundNumber: number,
+  usedWordsList: string = ''
+): string {
+  return `
+## 用戶信息（探索期）
+
+**當前水平**：L${userProfile.current_level}（第 ${userProfile.total_games + 1} 次遊戲）
+**難度範圍**：L${Math.max(1, userProfile.current_level - 1.5)} 到 L${Math.min(5, userProfile.current_level + 1.5)}
+
+## 故事情境
+
+${storyContext || '故事剛開始'}
+
+${usedWordsList ? `
+## ⚠️ 已推薦的詞（避開）
+
+${usedWordsList}
+` : ''}
+
+## 推薦要求
+
+推薦 5 個詞，難度中心 L${userProfile.current_level}，範圍更寬（探索用戶水平）。
+
+【必須】
+- 難度梯度分布（如 L2, L3, L3, L4, L4）
+- 至少 3 個新詞
+- 預測故事發展方向，不要摘詞
+- 每次推薦都要不同
+- 只返回 word 和 difficulty
+
+JSON 格式：
+{
+  "words": [
+    {"word": "詞語", "difficulty": 1-5整數}
+  ]
+}
+`.trim()
+}
+
+/**
  * 構建動態 AI Prompt（支持探索模式）
  */
 export function buildAIPrompt(

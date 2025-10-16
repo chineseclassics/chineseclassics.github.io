@@ -5,7 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { buildSystemPrompt } from './prompts.ts'
+import { buildSystemPrompt, buildSimplifiedPrompt } from './prompts.ts'
 
 // CORS 头
 const corsHeaders = {
@@ -137,8 +137,10 @@ async function generateAiResponse({
   apiKey: string
 }): Promise<{ aiSentence: string; highlight: string[] }> {
   
-  // 构建系统提示词（傳入年級、詞語水平和最大輪數）
-  const systemPrompt = buildSystemPrompt(storyTheme, currentRound, userGrade, userLevel, maxRounds)
+  // 构建系统提示词（第一輪使用簡化版，減少 token 數量 🚀）
+  const systemPrompt = currentRound === 0
+    ? buildSimplifiedPrompt(storyTheme, userGrade, userLevel)
+    : buildSystemPrompt(storyTheme, currentRound, userGrade, userLevel, maxRounds)
   
   // 构建对话历史（保留完整歷史以保證故事連貫性）
   const messages = [

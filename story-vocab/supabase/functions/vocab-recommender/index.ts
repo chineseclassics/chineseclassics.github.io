@@ -6,8 +6,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { corsHeaders } from '../_shared/cors.ts'
-import { VOCAB_RECOMMENDER_SYSTEM_PROMPT, buildAIPrompt } from './prompts.ts'
-import { buildCumulativeUserProfile } from './helpers.ts'
+import { VOCAB_RECOMMENDER_SYSTEM_PROMPT, buildAIPrompt, buildSimplifiedPrompt } from './prompts.ts'
+import { buildCumulativeUserProfile, buildSimplifiedUserProfile } from './helpers.ts'
 
 serve(async (req) => {
   // 處理 CORS preflight 請求
@@ -309,13 +309,16 @@ async function recommendByAI(
     
     console.log(`[AI 推薦去重] 本次會話已推薦 ${recentWords.size} 個詞`)
 
-    // 2. 構建用戶累積畫像
-    const userProfile = await buildCumulativeUserProfile(supabase, userId)
+    // 2. 構建用戶畫像（探索模式使用簡化版，減少查詢）
+    const userProfile = explorationMode 
+      ? await buildSimplifiedUserProfile(supabase, userId)
+      : await buildCumulativeUserProfile(supabase, userId)
 
-    // 3. 構建動態 Prompt（包含已用詞列表、年級信息、探索模式）
-    // 🎓 年級僅作輔助參考，主要依賴 userProfile.current_level
+    // 3. 構建 Prompt（探索模式使用簡化版，減少 token 數量）
     const usedWordsList = Array.from(recentWords).join('、')
-    const prompt = buildAIPrompt(userProfile, storyContext, roundNumber, usedWordsList, userGrade, explorationMode)
+    const prompt = explorationMode
+      ? buildSimplifiedPrompt(userProfile, storyContext, roundNumber, usedWordsList)
+      : buildAIPrompt(userProfile, storyContext, roundNumber, usedWordsList, userGrade, explorationMode)
 
     // 4. 調用 DeepSeek API
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {

@@ -205,6 +205,14 @@ export async function summarizeGameSession(userId, sessionId) {
       })
       .eq('user_id', userId)
     
+    // 🔄 同步更新 gameState.user（確保探索模式判斷準確）
+    const { gameState } = await import('../core/game-state.js')
+    if (gameState.user && gameState.user.id === userId) {
+      gameState.user.total_games = totalGames
+      gameState.user.confidence = confidence
+      console.log(`🔄 已同步更新 gameState.user.total_games = ${totalGames}`)
+    }
+    
     console.log(`[會話彙總] 遊戲 #${summary.session_number} 已記錄`)
     
     return summary

@@ -692,13 +692,14 @@ function useOptimizedSentence() {
 async function ensureSessionReady() {
     console.log('🔍 檢查 session 狀態...');
     
-    // 🔧 使用 SessionManager 統一管理 session
+    // 🚀 優化：如果 SessionManager 已有緩存，立即通過（減少 0-5 秒延遲）
     if (sessionManager.isAuthenticated()) {
-        console.log('✅ Session 已就緒（來自緩存）');
+        console.log('✅ Session 已就緒（來自緩存），立即通過');
         return true;
     }
     
-    // 等待 session 就緒（最多 5 秒）
+    // 只在無緩存時才等待（極少數情況）
+    console.warn('⚠️ Session 緩存不可用，等待中...');
     const isReady = await sessionManager.waitForSession(5000);
     
     if (!isReady) {

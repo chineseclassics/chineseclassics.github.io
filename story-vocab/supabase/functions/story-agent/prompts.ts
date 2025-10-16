@@ -223,6 +223,63 @@ AI 不應該生成故事句，而是應該：
 }
 
 /**
+ * 構建簡化提示詞（第一輪專用）
+ * 🚀 從 800 字精簡到 300-400 字，減少 DeepSeek 處理時間
+ */
+export function buildSimplifiedPrompt(
+  storyTheme: string,
+  userGrade: number,
+  userLevel: number = 2.0
+): string {
+  const roleGuide = getRoleGuide(userGrade);
+  const sentenceGuide = getSentenceGuide(userGrade);
+  const ageInfo = GRADE_STAGES[getGradeStage(userGrade) as keyof typeof GRADE_STAGES];
+  
+  const themeGuides: Record<string, string> = {
+    'natural_exploration': '自然探索',
+    'school_life': '校園生活',
+    'fantasy_adventure': '奇幻冒險',
+    'sci_fi': '科幻未來',
+    'cute_animals': '可愛動物',
+    'family_daily': '家庭日常',
+    'toy_world': '玩具世界',
+    'school_adventure': '校園冒險',
+    'science_discovery': '科學發現',
+    'friendship': '友誼故事',
+    'growth_story': '成長故事',
+    'future_tech': '未來科技',
+    'mystery': '推理懸疑',
+    'youth_literature': '青春文學',
+    'social_observation': '社會觀察',
+    'philosophical': '哲學思考',
+    'historical': '歷史穿越',
+    'human_nature': '人性探索',
+    'urban_reality': '都市現實',
+    'poetic': '詩意表達',
+    'experimental': '實驗創作',
+    'no_theme': '自由發揮'
+  };
+  
+  const themeGuide = themeGuides[storyTheme] || '自由發揮';
+  
+  return `你是${roleGuide}，與${ageInfo.age}的學生共創故事。使用繁體中文。
+
+【第一輪：開場】建立時空背景，引入主角或關鍵元素
+主題：${themeGuide}
+句式：${sentenceGuide}
+
+【輸出格式】JSON：
+{
+  "aiSentence": "故事開場句",
+  "highlight": ["學習詞1", "學習詞2"]
+}
+
+highlight：從句子中標記 0-2 個略高於 L${userLevel.toFixed(1)} 的學習詞（可為空）。
+
+直接輸出 JSON，無需解釋。`;
+}
+
+/**
  * 構建完整的系統提示詞
  */
 export function buildSystemPrompt(
