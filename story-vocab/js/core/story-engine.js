@@ -8,6 +8,7 @@ import { createSession } from './session-manager.js';
 import { showToast } from '../utils/toast.js';
 import { saveCompletedStory, updateSidebarStats } from '../utils/storage.js';
 import { SUPABASE_CONFIG } from '../config.js';
+import { getSupabase } from '../supabase-client.js';
 import { getRecommendedWords, recordRoundData, handleGameCompletion } from './vocab-integration.js';
 import { saveStory, generateDefaultTitle } from './story-storage.js';
 
@@ -254,13 +255,21 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
  * @returns {Promise<Object>} 包含句子和詞語的結果
  */
 async function callUnifiedAPI(params) {
+    // 獲取用戶的 session token（需要用戶認證）
+    const supabase = getSupabase();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+        throw new Error('用戶未登入');
+    }
+    
     const response = await fetch(
         `${SUPABASE_CONFIG.url}/functions/v1/unified-story-agent`,
         {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+                'Authorization': `Bearer ${session.access_token}`  // ✅ 使用用戶 token
             },
             body: JSON.stringify(params)
         }
