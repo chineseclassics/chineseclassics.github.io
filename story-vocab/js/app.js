@@ -23,13 +23,13 @@ import { addToWordbook, openWordbook, removeFromWordbook, loadWordbookScreen } f
 
 // 导入 UI 模块
 import { showScreen, toggleMobileSidebar, closeMobileSidebar, navigateTo, handleLogout, initSidebarSwipe } from './ui/navigation.js';
-import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, getSetting, initModalClickOutside } from './ui/modals.js';
+import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, initModalClickOutside } from './ui/modals.js';
 import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initSettingsScreen, showFeedbackLoading, displayFeedback, hideFeedbackSection } from './ui/screens.js';
 import { loadMyStoriesScreen } from './ui/story-card.js';
 
 // 导入工具
 import { showToast } from './utils/toast.js';
-import { updateSidebarStats } from './utils/storage.js';
+import { getSetting, updateSidebarStats } from './utils/storage.js';
 import { preloadWords } from './utils/word-cache.js';
 
 // 导入故事存储模块
