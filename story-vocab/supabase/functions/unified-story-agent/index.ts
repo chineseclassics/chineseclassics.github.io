@@ -75,35 +75,70 @@ serve(async (req) => {
       throw new Error('找不到用戶身份')
     }
 
-    // 構建用戶檔案（優先使用緩存）
+    // 構建用戶檔案（輕量化，只查必要數據）
     let userProfile
     if (cachedUserProfile && cachedUserProfile.current_level) {
-      // 使用前端緩存數據，補充遊戲歷史信息
-      console.log('🚀 使用緩存的用戶數據')
-      userProfile = await buildCumulativeUserProfile(supabase, userId)
-      // 用緩存數據覆蓋基本字段（避免查詢）
-      userProfile.baseline_level = cachedUserProfile.baseline_level
-      userProfile.current_level = cachedUserProfile.current_level
-      userProfile.total_games = cachedUserProfile.total_games
-      userProfile.confidence = cachedUserProfile.confidence || 'medium'
+      // 使用緩存數據，只查遊戲歷史和生詞本
+      console.log('🚀 使用緩存的用戶數據（輕量查詢）')
+      
+      // 只查最近20輪（用於計算平均分）
+      const { data: recentRounds } = await supabase
+        .from('game_rounds')
+        .select('ai_score, selected_difficulty')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      
+      // 只查生詞本前10個未推薦的詞
+      const { data: wordbook } = await supabase
+        .from('user_wordbook')
+        .select('word')
+        .eq('user_id', userId)
+        .is('last_recommended_at', null)
+        .order('created_at', { ascending: true })
+        .limit(10)
+      
+      // 計算平均值
+      const avgScore = recentRounds && recentRounds.length > 0
+        ? recentRounds.reduce((sum, r) => sum + (r.ai_score || 0), 0) / recentRounds.length
+        : 0
+      const avgDifficulty = recentRounds && recentRounds.length > 0
+        ? recentRounds.reduce((sum, r) => sum + (r.selected_difficulty || 0), 0) / recentRounds.length
+        : cachedUserProfile.current_level
+      
+      userProfile = {
+        baseline_level: cachedUserProfile.baseline_level,
+        current_level: cachedUserProfile.current_level,
+        total_games: cachedUserProfile.total_games,
+        confidence: cachedUserProfile.confidence || 'medium',
+        total_rounds: 0,  // 不需要精確值
+        level_growth: 0,  // 不需要
+        first_game_score: 0,  // 不需要
+        last_game_score: 0,  // 不需要
+        recent_avg_score: avgScore,
+        recent_avg_difficulty: avgDifficulty,
+        wordbook_words: wordbook?.map((w: any) => w.word) || []
+      }
     } else {
-      // 完整構建用戶檔案
+      // 完整構建用戶檔案（降級方案）
+      console.log('⚠️ 緩存不可用，完整查詢')
       userProfile = await buildCumulativeUserProfile(supabase, userId)
     }
 
-    // 獲取本次會話已推薦的詞（去重）
+    // 獲取本次會話已推薦的詞（去重用，查詢很快）
     const { data: recentRec } = await supabase
       .from('recommendation_history')
       .select('recommended_words')
       .eq('session_id', sessionId)
-      .order('created_at', { ascending: false })
 
     const recentWords = new Set(
       (recentRec || []).flatMap(r => r.recommended_words || [])
     )
     
-    // 合併 usedWords 和已推薦的詞
+    // 合併用戶已選的詞和所有已推薦的詞
     const allUsedWords = [...new Set([...usedWords, ...Array.from(recentWords)])]
+    
+    console.log(`📋 去重：用戶已選 ${usedWords.length} 詞，已推薦 ${recentWords.size} 詞`)
 
     // 構建統一 Prompt
     const prompt = buildUnifiedPrompt(
