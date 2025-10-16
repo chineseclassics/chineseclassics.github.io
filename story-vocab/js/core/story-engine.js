@@ -120,7 +120,8 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
             storyTheme: storyTheme,
             currentRound: gameState.turn - 1,
             usedWords: gameState.usedWords.map(w => w.word),
-            userGrade: gameState.user?.grade || 6
+            userGrade: gameState.user?.grade || 6,
+            maxRounds: gameState.maxTurns  // 🎮 新增：傳遞最大輪數
         };
         
         const wordlistOptions = {

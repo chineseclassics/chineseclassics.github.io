@@ -30,7 +30,8 @@ serve(async (req) => {
       storyTheme,             // 故事主题
       currentRound,           // 当前轮次
       userGrade,              // 🎓 用戶年級（新增）
-      userLevel               // 🎯 用戶詞語水平（用於 highlight）
+      userLevel,              // 🎯 用戶詞語水平（用於 highlight）
+      maxRounds               // 🎮 最大輪數（支持自定義）
       // 注意：反饋功能已移至專門的 sentence-feedback Edge Function
     } = await req.json()
 
@@ -62,6 +63,7 @@ serve(async (req) => {
       currentRound,
       userGrade: userGrade || 6,  // 🎓 傳入年級，默認6年級
       userLevel: userLevel || 2.0, // 🎯 傳入詞語水平，默認 L2.0
+      maxRounds: maxRounds || 8,   // 🎮 傳入最大輪數，默認8輪
       apiKey: deepseekApiKey
     })
 
@@ -88,7 +90,7 @@ serve(async (req) => {
           aiSentence,              // AI 生成的句子
           highlight: highlight || [], // 🆕 標記的學習詞（0-2個）
           currentRound: currentRound + 1,
-          isComplete: currentRound >= 9  // 10 轮完成
+          isComplete: currentRound >= ((maxRounds || 8) - 1)  // 動態判斷完成
         }
       }),
       {
@@ -120,21 +122,23 @@ async function generateAiResponse({
   conversationHistory,
   storyTheme,
   currentRound,
-  userGrade,  // 🎓 新增參數
-  userLevel,  // 🎯 用戶詞語水平
+  userGrade,   // 🎓 新增參數
+  userLevel,   // 🎯 用戶詞語水平
+  maxRounds = 8,  // 🎮 最大輪數
   apiKey
 }: {
   userSentence: string
   conversationHistory: string[]
   storyTheme: string
   currentRound: number
-  userGrade: number  // 🎓 新增類型定義
-  userLevel: number  // 🎯 用戶詞語水平（L1-L5）
+  userGrade: number   // 🎓 新增類型定義
+  userLevel: number   // 🎯 用戶詞語水平（L1-L5）
+  maxRounds: number   // 🎮 最大輪數
   apiKey: string
 }): Promise<{ aiSentence: string; highlight: string[] }> {
   
-  // 构建系统提示词（傳入年級和詞語水平）
-  const systemPrompt = buildSystemPrompt(storyTheme, currentRound, userGrade, userLevel)
+  // 构建系统提示词（傳入年級、詞語水平和最大輪數）
+  const systemPrompt = buildSystemPrompt(storyTheme, currentRound, userGrade, userLevel, maxRounds)
   
   // 构建对话历史（保留完整歷史以保證故事連貫性）
   const messages = [

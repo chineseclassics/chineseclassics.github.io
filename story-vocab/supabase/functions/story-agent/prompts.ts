@@ -141,7 +141,7 @@ export function getSentenceGuide(grade: number): string {
 }
 
 /**
- * 8輪故事階段劃分（所有年級通用）
+ * 故事階段劃分（支持自定義輪數）
  */
 export interface StoryStageInfo {
   name: string;
@@ -149,10 +149,16 @@ export interface StoryStageInfo {
   guidance: string;
 }
 
-export function getStoryStageInfo(currentRound: number): StoryStageInfo {
-  if (currentRound < 2) {
+export function getStoryStageInfo(currentRound: number, maxTurns: number = 8): StoryStageInfo {
+  // 動態計算各階段邊界（比例基於標準8輪）
+  const openingEnd = Math.ceil(maxTurns * 0.25);      // 25% 開端
+  const developmentEnd = Math.ceil(maxTurns * 0.5);   // 25% 發展
+  const turningEnd = Math.ceil(maxTurns * 0.75);      // 25% 轉折
+  const climaxEnd = maxTurns - 1;                      // 高潮到倒數第二輪
+  
+  if (currentRound < openingEnd) {
     return {
-      name: '開端期（第1-2輪）',
+      name: `開端期（第1-${openingEnd}輪）`,
       description: '建立時空背景，引入主角或關鍵元素',
       guidance: `
 - 設定清晰的時間、地點
@@ -163,9 +169,9 @@ export function getStoryStageInfo(currentRound: number): StoryStageInfo {
     };
   }
   
-  if (currentRound < 4) {
+  if (currentRound < developmentEnd) {
     return {
-      name: '發展期（第3-4輪）',
+      name: `發展期（第${openingEnd + 1}-${developmentEnd}輪）`,
       description: '推進情節，引入問題或挑戰',
       guidance: `
 - 深化場景細節
@@ -176,22 +182,22 @@ export function getStoryStageInfo(currentRound: number): StoryStageInfo {
     };
   }
   
-  if (currentRound < 6) {
+  if (currentRound < turningEnd) {
     return {
-      name: '轉折期（第5-6輪）',
+      name: `轉折期（第${developmentEnd + 1}-${turningEnd}輪）`,
       description: '衝突加劇，關鍵轉折點',
       guidance: `
 - 衝突或問題進一步加劇
 - 角色面臨重要選擇或掙扎
 - 營造緊張感
-- **第6輪是轉折點**：意外發現、反轉、關鍵決定
+- **第${turningEnd}輪是轉折點**：意外發現、反轉、關鍵決定
 示例：「小明決定先救小鹿。就在他包紮傷口時，小鹿突然開口說話：『謝謝你，勇敢的孩子。』」`
     };
   }
   
-  if (currentRound < 8) {
+  if (currentRound < climaxEnd) {
     return {
-      name: '高潮/解決期（第7輪）',
+      name: `高潮/解決期（第${turningEnd + 1}-${climaxEnd}輪）`,
       description: '開始處理衝突，但不要完全解決',
       guidance: `
 ⚠️ **關鍵要求**：為用戶的結局留出空間！
@@ -205,7 +211,7 @@ export function getStoryStageInfo(currentRound: number): StoryStageInfo {
   }
   
   return {
-    name: '結局期（第8輪）',
+    name: `結局期（第${maxTurns}輪）`,
     description: '用戶寫結局',
     guidance: `
 ⚠️ **這一輪由用戶寫結局句！**
@@ -223,13 +229,14 @@ export function buildSystemPrompt(
   storyTheme: string,
   currentRound: number,
   userGrade: number,
-  userLevel: number = 2.0  // 🎯 用戶詞語水平（L1-L5）
+  userLevel: number = 2.0,  // 🎯 用戶詞語水平（L1-L5）
+  maxTurns: number = 8      // 🎮 最大輪數（支持自定義）
 ): string {
   const roleGuide = getRoleGuide(userGrade);
   const styleGuide = getStyleGuide(userGrade);
   const contentGuide = getContentGuide(userGrade);
   const sentenceGuide = getSentenceGuide(userGrade);
-  const stageInfo = getStoryStageInfo(currentRound);
+  const stageInfo = getStoryStageInfo(currentRound, maxTurns);
   
   // 主題指導
   const themeGuides: Record<string, string> = {
@@ -286,7 +293,7 @@ ${contentGuide}
 年級：${userGrade}年級（${ageInfo.age}）
 主題：${themeGuide}
 階段：${stageInfo.name}
-輪次：${currentRound + 1}/8
+輪次：${currentRound + 1}/${maxTurns}
 
 【故事階段指導】
 ${stageInfo.guidance}

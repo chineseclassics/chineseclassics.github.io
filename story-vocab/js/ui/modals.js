@@ -5,6 +5,7 @@
 
 import { showToast } from '../utils/toast.js';
 import { getSetting, saveSetting } from '../utils/storage.js';
+import { gameState } from '../core/game-state.js';
 
 /**
  * 显示词汇模式选择弹窗
@@ -137,6 +138,16 @@ export async function saveSettings() {
 }
 
 /**
+ * 根据年级获取默认轮数
+ * @param {number} grade - 用户年级
+ * @returns {string} 默认轮数
+ */
+function getDefaultStoryLength(grade) {
+    // 1-6 年级默认 6 轮，其他年级默认 8 轮
+    return (grade >= 1 && grade <= 6) ? '6' : '8';
+}
+
+/**
  * 加载设置
  */
 export function loadSettings() {
@@ -156,7 +167,12 @@ export function loadSettings() {
         // 加载游戏设置
         const soundEffects = getSetting('sound_effects', 'true') !== 'false';
         const typingEffect = getSetting('typing_effect', 'true') !== 'false';
-        const storyLength = getSetting('story_length', '10');
+        
+        // 🎮 根据年级动态设置默认轮数
+        const userGrade = gameState.user?.grade || 6;
+        const defaultLength = getDefaultStoryLength(userGrade);
+        const storyLength = getSetting('story_length', defaultLength);
+        
         const soundEffectsElem = document.getElementById('sound-effects');
         const typingEffectElem = document.getElementById('typing-effect');
         const storyLengthElem = document.getElementById('story-length');

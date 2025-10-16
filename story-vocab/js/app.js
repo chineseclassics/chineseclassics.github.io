@@ -23,7 +23,7 @@ import { addToWordbook, openWordbook, removeFromWordbook, loadWordbookScreen } f
 
 // 导入 UI 模块
 import { showScreen, toggleMobileSidebar, closeMobileSidebar, navigateTo, handleLogout, initSidebarSwipe } from './ui/navigation.js';
-import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, initModalClickOutside } from './ui/modals.js';
+import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, getSetting, initModalClickOutside } from './ui/modals.js';
 import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initSettingsScreen, showFeedbackLoading, displayFeedback, hideFeedbackSection } from './ui/screens.js';
 import { loadMyStoriesScreen } from './ui/story-card.js';
 
@@ -550,27 +550,6 @@ async function confirmAndSubmit(sentence, word) {
     // 显示用户消息到故事区
     displayUserMessage(sentence, word);
     
-    // 显示AI加载动画
-    const storyDisplay = document.getElementById('story-display');
-    if (storyDisplay) {
-        const loadingMessage = document.createElement('div');
-        loadingMessage.className = 'message ai';
-        loadingMessage.innerHTML = `
-            <div class="message-label ai">
-                <span class="emoji">🤖</span>
-                <span class="name">AI故事家</span>
-            </div>
-            <div class="message-content">
-                <div class="inline-loading">
-                    <div class="inline-loading-spinner"></div>
-                    <span class="inline-loading-text">正在創作中...</span>
-                </div>
-            </div>
-        `;
-        storyDisplay.appendChild(loadingMessage);
-        storyDisplay.scrollTop = storyDisplay.scrollHeight;
-    }
-    
     // 隐藏反馈区
     hideFeedbackSection();
     
@@ -580,7 +559,7 @@ async function confirmAndSubmit(sentence, word) {
     if (input) input.disabled = true;
     if (submitBtn) submitBtn.disabled = true;
     
-    // 调用正常的提交流程（生成故事）
+    // 🎯 先调用 submitSentence 检查是否游戏结束
     // 🚀 傳遞 skipFeedback=true 來跳過後端反饋生成（節省 1-1.5 秒）
     const result = await submitSentence(sentence, word, true);
     
@@ -589,16 +568,16 @@ async function confirmAndSubmit(sentence, word) {
         // 驗證失敗，恢復 UI 狀態
         console.log('❌ 驗證失敗，恢復 UI');
         
-        // 移除加載動畫
+        // 移除用户消息（因为验证失败）
         const storyDisplay = document.getElementById('story-display');
         if (storyDisplay) {
-            const loadingMessages = storyDisplay.querySelectorAll('.message.ai .inline-loading');
-            loadingMessages.forEach(msg => msg.closest('.message')?.remove());
+            const userMessages = storyDisplay.querySelectorAll('.message.user');
+            if (userMessages.length > 0) {
+                userMessages[userMessages.length - 1].remove();
+            }
         }
         
         // 啟用輸入
-        const input = document.getElementById('user-input');
-        const submitBtn = document.getElementById('submit-btn');
         if (input) input.disabled = false;
         if (submitBtn) submitBtn.disabled = false;
         
@@ -611,8 +590,9 @@ async function confirmAndSubmit(sentence, word) {
         return;
     }
     
-    // 更新轮次显示
-    updateTurnDisplay(gameState.turn);
+    // 更新轮次显示（但不超过maxTurns）
+    const displayTurn = Math.min(gameState.turn, gameState.maxTurns);
+    updateTurnDisplay(displayTurn);
     
     // 清除反馈标记
     delete window._feedbackShown;
@@ -620,13 +600,50 @@ async function confirmAndSubmit(sentence, word) {
     
     // 检查游戏是否结束
     if (result.gameOver) {
-        setTimeout(async () => {
+        console.log('🎬 遊戲結束，準備跳轉到完成頁面');
+        
+        try {
+            // 立即执行结束流程（不延迟）
             const stats = await finishStory();
+            console.log('✅ finishStory 完成，stats:', stats);
+            
             showScreen('finish-screen');
+            console.log('✅ 已切換到 finish-screen');
+            
             initFinishScreen(stats);
-        }, 1000);
+            console.log('✅ initFinishScreen 完成');
+        } catch (error) {
+            console.error('❌ 遊戲結束流程失敗:', error);
+            showToast('❌ 故事總結生成失敗，請重試');
+            
+            // 显示错误后返回开始页面
+            setTimeout(() => {
+                showScreen('start-screen');
+            }, 2000);
+        }
     } else if (result.aiData) {
         console.log('📝 显示 AI 响应...');
+        
+        // 显示AI加载动画（只在游戏继续时显示）
+        const storyDisplay = document.getElementById('story-display');
+        if (storyDisplay) {
+            const loadingMessage = document.createElement('div');
+            loadingMessage.className = 'message ai';
+            loadingMessage.innerHTML = `
+                <div class="message-label ai">
+                    <span class="emoji">🤖</span>
+                    <span class="name">AI故事家</span>
+                </div>
+                <div class="message-content">
+                    <div class="inline-loading">
+                        <div class="inline-loading-spinner"></div>
+                        <span class="inline-loading-text">正在創作中...</span>
+                    </div>
+                </div>
+            `;
+            storyDisplay.appendChild(loadingMessage);
+            storyDisplay.scrollTop = storyDisplay.scrollHeight;
+        }
         
         // 🚀 立即预加载词汇信息（在打字机效果前）
         if (result.aiData.recommendedWords && result.aiData.recommendedWords.length > 0) {
@@ -767,6 +784,14 @@ async function handleStartGame() {
         // 设置级别和主题
         const level = 'L2';  // 仅用于兼容性，实际词汇推荐由 vocab-recommender 根据用户水平和词表设置决定
         const theme = themeBtn.dataset.theme;
+        
+        // 🎮 读取故事长度设置并应用（根据年级动态设置默认值）
+        const userGrade = gameState.user?.grade || 6;
+        // 1-6 年级默认 6 轮，其他年级默认 8 轮
+        const defaultTurns = (userGrade >= 1 && userGrade <= 6) ? '6' : '8';
+        const storyLengthSetting = getSetting('story_length', defaultTurns);
+        gameState.maxTurns = parseInt(storyLengthSetting) || parseInt(defaultTurns);
+        console.log(`🎯 故事轮数设定为: ${gameState.maxTurns} 轮（年级: ${userGrade}）`);
         
         console.log('🎬 準備初始化遊戲界面...');
         

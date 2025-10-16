@@ -478,22 +478,27 @@ export function displayUserMessage(sentence, usedWord) {
 
 /**
  * 更新轮次显示
- * @param {number} turn - 当前轮次
+ * @param {number} turn - 当前轮次（可選，默認使用 gameState.turn）
  */
 export function updateTurnDisplay(turn) {
+    // 🔧 如果沒有傳入 turn，使用 gameState.turn，但不超過 maxTurns
+    const actualTurn = turn !== undefined ? turn : gameState.turn;
+    const displayTurn = Math.min(actualTurn, gameState.maxTurns);
+    
     const currentTurn = document.getElementById('current-turn');
     const progressBar = document.getElementById('progress-bar');
     const progressCircle = document.getElementById('progress-circle');
     const maxTurn = document.getElementById('max-turn');
     
     if (currentTurn) {
-        currentTurn.textContent = turn;
+        currentTurn.textContent = displayTurn;
     }
     
     // 更新 SVG 圓形進度條
     if (progressBar && maxTurn) {
-        const maxTurns = parseInt(maxTurn.textContent) || 10;
-        const progress = turn / maxTurns;
+        // 使用 gameState.maxTurns（支持自定義輪數，不硬編碼）
+        const maxTurns = gameState.maxTurns;
+        const progress = displayTurn / maxTurns;
         const circumference = 220; // 2 * PI * r (r=35)
         const offset = circumference - (progress * circumference);
         progressBar.style.strokeDashoffset = offset;
@@ -507,8 +512,8 @@ export function updateTurnDisplay(turn) {
         }
     }
     
-    // 🎬 顯示階段提醒（第 6/7/8 輪）
-    showStageHint(turn, gameState.maxTurns);
+    // 🎬 顯示階段提醒（根據自定義輪數動態調整）
+    showStageHint(displayTurn, gameState.maxTurns);
 }
 
 /**
@@ -535,21 +540,26 @@ function showStageHint(turn, maxTurns) {
     hintContainer.innerHTML = '';
     hintContainer.className = 'stage-hint-container';
     
-    // 根據輪次顯示不同的提醒
+    // 🔧 動態計算提醒時機（支持自定義輪數）
     let hintText = '';
     let hintClass = '';
     
-    if (turn === 6) {
-        // 第 6 輪：故事過半提醒
-        hintText = '📖 故事過半 (6/8)';
+    // 倒數第三轮（但至少是第3轮以后）
+    const thirdLastTurn = Math.max(3, maxTurns - 2);
+    const secondLastTurn = maxTurns - 1;
+    const lastTurn = maxTurns;
+    
+    if (turn === thirdLastTurn && maxTurns >= 5) {
+        // 倒數第三輪：進入收尾階段提醒（只在總輪數>=5時顯示）
+        hintText = `📖 故事進入後段 (${turn}/${maxTurns})`;
         hintClass = 'hint-info';
-    } else if (turn === 7) {
-        // 第 7 輪：倒數第二輪，重要提醒
-        hintText = '⚠️ 倒數第二輪 (7/8) - 故事快收尾了';
+    } else if (turn === secondLastTurn) {
+        // 倒數第二輪：重要提醒
+        hintText = `⚠️ 倒數第二輪 (${turn}/${maxTurns}) - 故事快收尾了`;
         hintClass = 'hint-warning';
-    } else if (turn === 8) {
-        // 第 8 輪：最後一輪
-        hintText = '🎬 最後一輪，寫下你的結局';
+    } else if (turn === lastTurn) {
+        // 最後一輪：最終提醒
+        hintText = `🎬 最後一輪，寫下你的結局 (${turn}/${maxTurns})`;
         hintClass = 'hint-final';
     }
     
@@ -560,8 +570,8 @@ function showStageHint(turn, maxTurns) {
             <div class="stage-hint-text">${hintText}</div>
         `;
         
-        // 3 秒後淡出（除非是第 8 輪，保持顯示）
-        if (turn !== 8) {
+        // 3 秒後淡出（除非是最後一輪，保持顯示）
+        if (turn !== lastTurn) {
             setTimeout(() => {
                 hintContainer.classList.remove('show');
                 setTimeout(() => {
