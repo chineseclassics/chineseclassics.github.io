@@ -108,7 +108,7 @@
 
     #game-screen .story-display {
         flex: 0 1 auto; /* 允許根據內容調整大小 */
-        max-height: none; /* 移除最大高度限制 */
+        max-height: 350px; /* 移動端設置合適的最大高度，確保進度圓環可見 */
         min-height: 150px;
         margin-bottom: 0;
         padding: 15px; /* 移動端減少內邊距，進度圓圈懸浮不佔空間 */
@@ -120,13 +120,12 @@
 
     /* 進度圓圈移動端優化 */
     .progress-circle {
-        /* 移動端：fixed 定位在視口右下角，不隨內容滾動 */
-        position: fixed;
-        right: 15px;
-        bottom: 15px;
+        /* 移動端：absolute 定位在 story-display 容器的右下角 */
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
         width: 60px;
         height: 60px;
-        z-index: 100; /* 確保在移動端也始終可見 */
     }
     
     .progress-circle svg {
