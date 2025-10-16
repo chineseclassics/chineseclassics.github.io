@@ -7,6 +7,16 @@ import { gameState } from './game-state.js'
 import { getSupabase } from '../supabase-client.js'
 import { SUPABASE_CONFIG } from '../config.js'
 import { summarizeGameSession } from '../features/profile-updater.js'
+import sessionManager from './session-manager.js'
+
+/**
+ * 清除 session 緩存（在登出時調用）
+ * @deprecated 使用 sessionManager.clear() 代替
+ */
+export function clearSessionCache() {
+  console.log('🧹 清除 session 緩存（轉發到 SessionManager）')
+  sessionManager.clear()
+}
 
 /**
  * 獲取本輪推薦詞彙
@@ -93,13 +103,14 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null, isExpl
       console.log('🔍 標記為探索模式')
     }
     
-    // 獲取用戶的 session token
-    const supabase = getSupabase()
-    const { data: { session } } = await supabase.auth.getSession()
+    // 🔧 優化：使用 SessionManager 統一管理 session
+    const accessToken = await sessionManager.getAccessToken()
     
-    if (!session) {
-      throw new Error('用戶未登入')
+    if (!accessToken) {
+      throw new Error('用戶未登入或 session 已過期')
     }
+    
+    console.log(`✅ 使用 SessionManager 獲取 token，輪次: ${roundNumber}`);
     
     // 調用 Edge Function（使用用戶的 auth token）
     console.log(`🌐 開始調用 vocab-recommender，輪次: ${roundNumber}`)
@@ -111,7 +122,7 @@ async function getAIRecommendedWords(roundNumber, wordlistOptions = null, isExpl
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(requestBody)
       }

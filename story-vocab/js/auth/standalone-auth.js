@@ -105,8 +105,9 @@ export class StandaloneAuth extends AuthService {
     console.log('👤 匿名登入（訪客試用）...');
     
     try {
-      // ✅ 先檢查是否已有匿名 session
-      const { data: { session } } = await this.supabase.auth.getSession();
+      // 🔧 優化：使用 SessionManager 檢查現有 session
+      const sessionManager = (await import('../core/session-manager.js')).default;
+      const session = await sessionManager.getSession();
       
       if (session && session.user) {
         console.log('🔍 檢查現有 session...');
@@ -158,6 +159,10 @@ export class StandaloneAuth extends AuthService {
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_avatar_url');
     localStorage.removeItem('user_type');
+    
+    // 清除 session 緩存
+    const sessionManager = (await import('../core/session-manager.js')).default;
+    sessionManager.clear();
     
     // 調用 Supabase 登出
     await this.supabase.auth.signOut();
@@ -216,8 +221,9 @@ export class StandaloneAuth extends AuthService {
       // 如為 Google 且仍無頭像，嘗試使用 provider token 從 Google UserInfo 補齊
       if (!isAnonymous && !avatarUrl) {
         try {
-          const { data: { session } } = await this.supabase.auth.getSession();
-          const googleToken = session?.provider_token;
+          // 🔧 優化：使用 SessionManager 獲取 provider token
+          const sessionManager = (await import('../core/session-manager.js')).default;
+          const googleToken = await sessionManager.getProviderToken();
           if (googleToken) {
             const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
               headers: { Authorization: `Bearer ${googleToken}` }

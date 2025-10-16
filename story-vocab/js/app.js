@@ -14,6 +14,7 @@ import { getRunMode } from './auth/run-mode-detector.js';
 // 导入核心模块
 import { gameState } from './core/game-state.js';
 import { startGame, getAIResponse, submitSentence, finishStory, shareStory } from './core/story-engine.js';
+import sessionManager from './core/session-manager.js';
 
 // 导入功能模块
 import { selectWord } from './features/word-manager.js';
@@ -73,6 +74,10 @@ async function initializeApp() {
         // 1. 初始化 Supabase
         const supabase = await initSupabase();
         console.log('✅ Supabase 客戶端初始化成功');
+        
+        // 1.5. 初始化 Session 管理器（必須在認證服務之前）
+        await sessionManager.initialize();
+        console.log('✅ Session 管理器初始化完成');
         
         // 2. 初始化認證系統（雙模式支持）
         authService = await createAuthService();
@@ -664,67 +669,27 @@ function useOptimizedSentence() {
 }
 
 /**
- * 确保 Supabase session 已就绪（只在必要时等待）
+ * 确保 Supabase session 已就绪（使用 SessionManager 統一管理）
  * 解决首次登入后立即开始游戏时的竞态条件
  */
 async function ensureSessionReady() {
     console.log('🔍 檢查 session 狀態...');
-    const supabase = getSupabase();
     
-    // 添加超時保護：5秒超時
-    const timeout = new Promise((resolve) => {
-        setTimeout(() => {
-            console.error('⏰ Session 檢查超時（5秒）');
-            resolve(false);
-        }, 5000);
-    });
+    // 🔧 使用 SessionManager 統一管理 session
+    if (sessionManager.isAuthenticated()) {
+        console.log('✅ Session 已就緒（來自緩存）');
+        return true;
+    }
     
-    // 快速检查：如果已经有 session，立即返回
-    const checkSession = async () => {
-        try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error) {
-                console.error('❌ 獲取 session 失敗:', error);
-                return false;
-            }
-            
-            if (session?.user) {
-                console.log('✅ Session 已就緒，用戶:', session.user.email);
-                return true;
-            }
-            
-            // 如果没有 session，等待最多 2 秒
-            console.log('⏳ 等待 session 就绪...');
-            return new Promise((resolve) => {
-                let attempts = 0;
-                const maxAttempts = 10; // 10 次 x 200ms = 2 秒
-                
-                const checkInterval = setInterval(async () => {
-                    attempts++;
-                    const { data: { session } } = await supabase.auth.getSession();
-                    
-                    console.log(`🔄 Session 檢查 ${attempts}/${maxAttempts}:`, session?.user ? '✅ 已登入' : '❌ 未登入');
-                    
-                    if (session?.user) {
-                        clearInterval(checkInterval);
-                        console.log('✅ Session 已就绪');
-                        resolve(true);
-                    } else if (attempts >= maxAttempts) {
-                        clearInterval(checkInterval);
-                        console.error('❌ Session 等待超时');
-                        resolve(false);
-                    }
-                }, 200);
-            });
-        } catch (error) {
-            console.error('❌ Session 檢查異常:', error);
-            return false;
-        }
-    };
+    // 等待 session 就緒（最多 5 秒）
+    const isReady = await sessionManager.waitForSession(5000);
     
-    // 使用 Promise.race 實現超時保護
-    return Promise.race([checkSession(), timeout]);
+    if (!isReady) {
+        console.error('❌ Session 未就緒，無法開始遊戲');
+        showToast('⚠️ 系統未就緒，請稍後再試');
+    }
+    
+    return isReady;
 }
 
 /**
