@@ -174,8 +174,7 @@ serve(async (req) => {
             content: prompt
           }
         ],
-        temperature: 0.8,
-        response_format: { type: 'json_object' }
+        temperature: 0.7
       })
     })
 
@@ -186,7 +185,13 @@ serve(async (req) => {
     }
 
     const data = await response.json()
-    const result = JSON.parse(data.choices[0].message.content)
+    let result: any
+    try {
+      result = JSON.parse(data.choices?.[0]?.message?.content ?? '{}')
+    } catch (e) {
+      console.error('❌ 解析 DeepSeek 響應失敗，原始內容:', data)
+      throw new Error('DeepSeek 響應解析失敗')
+    }
 
     console.log('📥 AI 響應成功')
     console.log(`   - 句子長度: ${result.aiSentence?.length || 0}`)
@@ -194,8 +199,11 @@ serve(async (req) => {
     console.log(`   - 標記學習詞: ${result.highlight?.length || 0}`)
 
     // 過濾重複的詞（雙重保險）
-    const filteredWords = (result.words || []).filter((w: any) => 
-      !allUsedWords.includes(w.word)
+    const highlightWords: string[] = Array.isArray(result.highlight)
+      ? result.highlight.map((h: any) => String(h))
+      : []
+    const filteredWords = (result.words || []).filter((w: any) =>
+      !allUsedWords.includes(w.word) && !highlightWords.includes(w.word)
     )
 
     // 如果過濾後不足 5 個，補充默認詞
@@ -204,7 +212,9 @@ serve(async (req) => {
       const defaultWords = getDefaultWords(userProfile.current_level)
       const needed = 5 - filteredWords.length
       const supplements = defaultWords
-        .filter(w => !allUsedWords.includes(w.word) && !filteredWords.some((fw: any) => fw.word === w.word))
+        .filter(w => !allUsedWords.includes(w.word)
+          && !filteredWords.some((fw: any) => fw.word === w.word)
+          && !highlightWords.includes(w.word))
         .slice(0, needed)
       filteredWords.push(...supplements)
     }
