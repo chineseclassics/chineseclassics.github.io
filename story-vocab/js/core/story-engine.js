@@ -10,6 +10,8 @@ import { SUPABASE_CONFIG } from '../config.js';
 import { getSupabase, createStorySession } from '../supabase-client.js';
 import { getRecommendedWords, recordRoundData, handleGameCompletion } from './vocab-integration.js';
 import { saveStory, generateDefaultTitle } from './story-storage.js';
+import { preloadWords } from '../utils/word-cache.js';
+import { getWordBriefInfo } from '../features/dictionary.js';
 
 /**
  * 获取主题的中文名称
@@ -179,15 +181,14 @@ export async function getAIResponse(userSentence = '', selectedWord = '') {
         gameState.pendingWords = recommendedWords;
         gameState.allHighlightWords.push(data.highlight || []);
         
-        // 🚀 預加載拼音（在背景進行）
+        // 🚀 預加載拼音（在背景進行，不阻塞）
         if (recommendedWords && recommendedWords.length > 0) {
             const wordsToPreload = recommendedWords
                 .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
                 .map(w => w.word);
             
             if (wordsToPreload.length > 0) {
-                const { preloadWords } = await import('../utils/word-cache.js');
-                const { getWordBriefInfo } = await import('../features/dictionary.js');
+                // 移除 await，讓預加載真正在背景進行
                 preloadWords(wordsToPreload, getWordBriefInfo).catch(() => {});
             }
         }

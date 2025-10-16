@@ -18,7 +18,7 @@ import sessionManager from './core/session-manager.js';
 
 // 导入功能模块
 import { selectWord } from './features/word-manager.js';
-import { showWordDetailFromVocab, closeWordModal, getWordBriefInfo } from './features/dictionary.js';
+import { showWordDetailFromVocab, closeWordModal } from './features/dictionary.js';
 import { addToWordbook, openWordbook, removeFromWordbook, loadWordbookScreen } from './features/wordbook.js';
 
 // 导入 UI 模块
@@ -30,7 +30,6 @@ import { loadMyStoriesScreen } from './ui/story-card.js';
 // 导入工具
 import { showToast } from './utils/toast.js';
 import { getSetting, saveSetting, updateSidebarStats } from './utils/storage.js';
-import { preloadWords } from './utils/word-cache.js';
 
 // 导入故事存储模块
 import { updateStory, getStory } from './core/story-storage.js';
@@ -650,19 +649,7 @@ async function confirmAndSubmit(sentence, word) {
     } else if (result.aiData) {
         console.log('📝 显示 AI 响应...');
         
-        // 🚀 立即预加载词汇信息（在打字机效果前）
-        if (result.aiData.recommendedWords && result.aiData.recommendedWords.length > 0) {
-            const wordsToPreload = result.aiData.recommendedWords
-                .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
-                .map(w => w.word);
-            
-            if (wordsToPreload.length > 0) {
-                console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
-                preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
-                    console.log('⚠️ 预加载失败（不影响使用）:', err);
-                });
-            }
-        }
+        // 預加載已在 getAIResponse() 內部執行，此處移除重複調用
         
         await displayAIResponse(result.aiData);
     }
@@ -824,19 +811,7 @@ async function handleStartGame() {
                 const data = await getAIResponse();
                 console.log('✅ getAIResponse 完成，准备显示...');
                 
-                // 🚀 立即预加载词汇信息（在打字机效果前）
-                if (data.recommendedWords && data.recommendedWords.length > 0) {
-                    const wordsToPreload = data.recommendedWords
-                        .filter(w => !gameState.usedWords.map(u => u.word).includes(w.word))
-                        .map(w => w.word);
-                    
-                    if (wordsToPreload.length > 0) {
-                        console.log(`🚀 提前预加载 ${wordsToPreload.length} 个词汇...`);
-                        preloadWords(wordsToPreload, getWordBriefInfo).catch(err => {
-                            console.log('⚠️ 预加载失败（不影响使用）:', err);
-                        });
-                    }
-                }
+                // 預加載已在 getAIResponse() 內部執行，此處移除重複調用
                 
                 await displayAIResponse(data);
                 console.log('✅ displayAIResponse 完成');
