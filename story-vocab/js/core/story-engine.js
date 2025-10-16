@@ -4,11 +4,10 @@
  */
 
 import { gameState, addStoryEntry, addUsedWord, incrementTurn } from './game-state.js';
-import { createSession } from './session-manager.js';
 import { showToast } from '../utils/toast.js';
 import { saveCompletedStory, updateSidebarStats } from '../utils/storage.js';
 import { SUPABASE_CONFIG } from '../config.js';
-import { getSupabase } from '../supabase-client.js';
+import { getSupabase, createStorySession } from '../supabase-client.js';
 import { getRecommendedWords, recordRoundData, handleGameCompletion } from './vocab-integration.js';
 import { saveStory, generateDefaultTitle } from './story-storage.js';
 
@@ -62,7 +61,7 @@ export async function startGame(level, theme, onSuccess) {
     
     try {
         // 创建数据库会话记录（不显示底部动画，内联动画已在游戏界面显示）
-        const session = await createSession(gameState.userId, {
+        const session = await createStorySession(gameState.userId, {
             theme: themeMapping[theme] || theme,
             choice: '開始故事',
             variant: 1,
