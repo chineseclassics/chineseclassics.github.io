@@ -24,7 +24,7 @@ import { addToWordbook, openWordbook, removeFromWordbook, loadWordbookScreen } f
 // 导入 UI 模块
 import { showScreen, toggleMobileSidebar, closeMobileSidebar, navigateTo, handleLogout, initSidebarSwipe } from './ui/navigation.js';
 import { showVocabModeSelector, closeVocabModeModal, selectVocabMode, saveSettings, initModalClickOutside } from './ui/modals.js';
-import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initSettingsScreen, showFeedbackLoading, displayFeedback, hideFeedbackSection } from './ui/screens.js';
+import { initStartScreen, initGameScreen, displayAIResponse, displayUserMessage, updateTurnDisplay, initFinishScreen, initFinishScreenAnimated, initSettingsScreen, showFeedbackLoading, displayFeedback, hideFeedbackSection } from './ui/screens.js';
 import { loadMyStoriesScreen } from './ui/story-card.js';
 
 // 导入工具
@@ -32,7 +32,7 @@ import { showToast } from './utils/toast.js';
 import { getSetting, saveSetting, updateSidebarStats } from './utils/storage.js';
 
 // 导入故事存储模块
-import { updateStory, getStory } from './core/story-storage.js';
+import { updateStory, getStory, generateDefaultTitle } from './core/story-storage.js';
 
 // 全局认证服务实例
 let authService = null;
@@ -702,10 +702,17 @@ function showCongratulationsModal() {
     document.getElementById('quick-words').textContent = turns;
     document.getElementById('quick-chars').textContent = chars;
     
-    // 设置消息
+    // 设置消息（使用中文主题名）
     const themeName = getThemeName(gameState.theme);
-    const message = `你完成了一个${gameState.maxTurns}轮的${themeName}故事！`;
+    const message = `你完成了一个${gameState.maxTurns}轮的「${themeName}」故事！`;
     document.getElementById('celebration-message').textContent = message;
+    
+    // 生成默认标题并填入输入框
+    const defaultTitle = generateDefaultTitle();
+    const titleInput = document.getElementById('celebration-story-title');
+    if (titleInput) {
+        titleInput.value = defaultTitle;
+    }
     
     // 显示弹窗
     modal.classList.add('active');
@@ -741,6 +748,10 @@ function launchConfetti() {
  * 查看完整报告
  */
 window.viewFullReport = async function() {
+    // 读取用户输入的标题
+    const titleInput = document.getElementById('celebration-story-title');
+    const userTitle = titleInput?.value.trim();
+    
     // 关闭祝贺弹窗
     const modal = document.getElementById('congratulations-modal');
     if (modal) modal.classList.remove('active');
@@ -750,6 +761,15 @@ window.viewFullReport = async function() {
         // 计算最终统计数据
         const stats = await finishStory();
         console.log('✅ 统计数据生成完成');
+        
+        // 如果用户输入了标题，覆盖默认标题
+        if (userTitle) {
+            stats.defaultTitle = userTitle;
+            // 更新 localStorage 中的故事标题
+            if (gameState.currentStoryId) {
+                updateStory(gameState.currentStoryId, { title: userTitle });
+            }
+        }
         
         // 跳转到总结页面
         showScreen('finish-screen');

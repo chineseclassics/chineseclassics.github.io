@@ -120,12 +120,13 @@
 
     /* 進度圓圈移動端優化 */
     .progress-circle {
-        /* 移動端：absolute 定位，固定在內容底部（隨內容增長，整頁滾動時始終可見） */
-        position: absolute;
-        right: 10px;
-        bottom: 10px;
+        /* 移動端：fixed 定位在視口右下角，不隨內容滾動 */
+        position: fixed;
+        right: 15px;
+        bottom: 15px;
         width: 60px;
         height: 60px;
+        z-index: 100; /* 確保在移動端也始終可見 */
     }
     
     .progress-circle svg {

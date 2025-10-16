@@ -439,11 +439,7 @@
                 <!-- 完整故事 -->
                 <div class="story-display-section">
                     <h2>📖 你的完整故事</h2>
-                    <!-- 故事标题编辑 -->
-                    <div class="story-title-edit">
-                        <input type="text" id="story-title-input" placeholder="給故事起個名字..." maxlength="30">
-                        <button class="btn-title-confirm" onclick="confirmStoryTitle()">✓</button>
-                    </div>
+                    <h3 class="story-title-display" id="story-title-display"></h3>
                     <div id="full-story-text"></div>
                 </div>
                 
@@ -989,6 +985,11 @@
                 <div class="celebration-emoji">🎉</div>
                 <h2 class="celebration-title">故事创作完成！</h2>
                 <p class="celebration-message" id="celebration-message"></p>
+                
+                <!-- 故事命名 -->
+                <div class="story-naming">
+                    <input type="text" id="celebration-story-title" placeholder="给你的故事起个名字..." maxlength="30">
+                </div>
                 
                 <div class="quick-stats">
                     <div class="quick-stat">

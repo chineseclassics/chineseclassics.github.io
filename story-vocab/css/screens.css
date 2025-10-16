@@ -104,7 +104,7 @@
     overflow-x: visible; /* 允许可点击词语的hover效果不被裁剪 */
     margin-bottom: 30px;
     background: var(--light-blue);
-    border-radius: 15px;
+    border-radius: 15px !important; /* 確保四周都是圓角 */
     padding: 20px;
     min-height: 250px;
     position: relative;
@@ -1022,7 +1022,32 @@
 .celebration-message {
     font-size: 16px;
     color: var(--text-light);
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+}
+
+/* 故事命名输入 */
+.story-naming {
+    margin: 20px 0;
+}
+
+.story-naming input {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 16px;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.story-naming input:focus {
+    border-color: #764ba2;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.story-naming input::placeholder {
+    color: #aaa;
 }
 
 .quick-stats {
@@ -1338,5 +1363,16 @@
 
 .ai-summary-delayed button {
     margin-top: 15px;
+}
+
+/* 故事标题显示 */
+.story-title-display {
+    text-align: center;
+    font-size: 24px;
+    color: var(--primary-color);
+    margin: 20px 0;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 12px;
 }
 

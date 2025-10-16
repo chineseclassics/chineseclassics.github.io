@@ -593,7 +593,7 @@ export async function initFinishScreen(stats) {
 /**
  * 分阶段动画展示总结页面
  */
-async function initFinishScreenAnimated(stats) {
+export async function initFinishScreenAnimated(stats) {
     // 立即设置所有数据（但元素初始隐藏）
     setFinishScreenData(stats);
     
@@ -643,10 +643,10 @@ function setFinishScreenData(stats) {
         if (fastestTime) fastestTime.textContent = formatDuration(stats.shortestTiming.duration);
     }
     
-    // 设置故事标题默认值
-    const titleInput = document.getElementById('story-title-input');
-    if (titleInput && stats.defaultTitle) {
-        titleInput.value = stats.defaultTitle;
+    // 设置故事标题显示
+    const titleDisplay = document.getElementById('story-title-display');
+    if (titleDisplay && stats.defaultTitle) {
+        titleDisplay.textContent = stats.defaultTitle;
     }
     
     // 渲染词语时间线
