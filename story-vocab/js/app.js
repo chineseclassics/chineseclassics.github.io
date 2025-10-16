@@ -668,41 +668,79 @@ function useOptimizedSentence() {
  * 解决首次登入后立即开始游戏时的竞态条件
  */
 async function ensureSessionReady() {
+    console.log('🔍 檢查 session 狀態...');
     const supabase = getSupabase();
     
-    // 快速检查：如果已经有 session，立即返回
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-        return true;
-    }
+    // 添加超時保護：5秒超時
+    const timeout = new Promise((resolve) => {
+        setTimeout(() => {
+            console.error('⏰ Session 檢查超時（5秒）');
+            resolve(false);
+        }, 5000);
+    });
     
-    // 如果没有 session，等待最多 2 秒
-    console.log('⏳ 等待 session 就绪...');
-    return new Promise((resolve) => {
-        let attempts = 0;
-        const maxAttempts = 10; // 10 次 x 200ms = 2 秒
-        
-        const checkInterval = setInterval(async () => {
-            attempts++;
-            const { data: { session } } = await supabase.auth.getSession();
+    // 快速检查：如果已经有 session，立即返回
+    const checkSession = async () => {
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error) {
+                console.error('❌ 獲取 session 失敗:', error);
+                return false;
+            }
             
             if (session?.user) {
-                clearInterval(checkInterval);
-                console.log('✅ Session 已就绪');
-                resolve(true);
-            } else if (attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                console.warn('⚠️ Session 等待超时（但继续尝试）');
-                resolve(false);
+                console.log('✅ Session 已就緒，用戶:', session.user.email);
+                return true;
             }
-        }, 200);
-    });
+            
+            // 如果没有 session，等待最多 2 秒
+            console.log('⏳ 等待 session 就绪...');
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 10; // 10 次 x 200ms = 2 秒
+                
+                const checkInterval = setInterval(async () => {
+                    attempts++;
+                    const { data: { session } } = await supabase.auth.getSession();
+                    
+                    console.log(`🔄 Session 檢查 ${attempts}/${maxAttempts}:`, session?.user ? '✅ 已登入' : '❌ 未登入');
+                    
+                    if (session?.user) {
+                        clearInterval(checkInterval);
+                        console.log('✅ Session 已就绪');
+                        resolve(true);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        console.error('❌ Session 等待超时');
+                        resolve(false);
+                    }
+                }, 200);
+            });
+        } catch (error) {
+            console.error('❌ Session 檢查異常:', error);
+            return false;
+        }
+    };
+    
+    // 使用 Promise.race 實現超時保護
+    return Promise.race([checkSession(), timeout]);
 }
 
 /**
  * 开始游戏（从启动界面）
  */
+let isStartingGame = false; // 🔒 防止重複點擊標記
+
 async function handleStartGame() {
+    // 🔒 防止重複點擊
+    if (isStartingGame) {
+        console.log('⚠️ 遊戲正在啟動中，請勿重複點擊');
+        return;
+    }
+    
+    isStartingGame = true;
+    
     try {
         console.log('🎮 handleStartGame 被調用');
         
@@ -710,6 +748,7 @@ async function handleStartGame() {
         
         if (!themeBtn) {
             showToast('請選擇故事主題');
+            isStartingGame = false;
             return;
         }
         
@@ -740,6 +779,7 @@ async function handleStartGame() {
                 if (!gameState.level2Tag) {
                     console.warn('⚠️ 詞表有層級但未選擇');
                     showToast('請選擇詞語範圍');
+                    isStartingGame = false;
                     return;
                 }
             }
@@ -755,6 +795,7 @@ async function handleStartGame() {
         if (!sessionReady) {
             console.error('❌ Session 未就緒');
             showToast('❌ 初始化失敗，請重新登入');
+            isStartingGame = false;
             return;
         }
         
@@ -824,6 +865,10 @@ async function handleStartGame() {
         
         // 返回开始界面
         showScreen('start-screen');
+        isStartingGame = false;
+    } finally {
+        // 🔒 確保標記被重置（遊戲成功啟動後，後續流程由遊戲引擎管理）
+        isStartingGame = false;
     }
 }
 
@@ -1006,6 +1051,15 @@ function setupErrorHandling() {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🎮 故事詞彙接龍遊戲已載入！');
     
+    // 🔒 立即禁用開始按鈕，直到完全初始化完成
+    const startGameBtn = document.getElementById('start-game-btn');
+    if (startGameBtn) {
+        startGameBtn.disabled = true;
+        startGameBtn.style.opacity = '0.5';
+        startGameBtn.style.cursor = 'not-allowed';
+        console.log('🔒 開始按鈕已禁用，等待初始化完成...');
+    }
+    
     // 设置错误处理
     setupErrorHandling();
     
@@ -1023,14 +1077,30 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 初始化应用（登录等）- 必须先完成 Supabase 初始化
     await initializeApp();
     
+    // 等待一小段時間確保認證狀態穩定
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // 初始化启动界面（在 Supabase 初始化之后）
     console.log('⏳ 開始初始化啟動界面...');
     try {
         await initStartScreen();
         console.log('✅ 啟動界面初始化完成');
+        
+        // 🔓 啟用開始按鈕
+        if (startGameBtn) {
+            startGameBtn.disabled = false;
+            startGameBtn.style.opacity = '1';
+            startGameBtn.style.cursor = 'pointer';
+            console.log('🔓 開始按鈕已啟用，可以開始遊戲');
+        }
     } catch (error) {
         console.error('❌ 啟動界面初始化失敗:', error);
-        // 即使失敗也繼續，因為已經設置了默認狀態
+        // 即使失敗也啟用按鈕，讓用戶可以嘗試
+        if (startGameBtn) {
+            startGameBtn.disabled = false;
+            startGameBtn.style.opacity = '1';
+            startGameBtn.style.cursor = 'pointer';
+        }
     }
     
     // 检查是否有保存的用户信息
