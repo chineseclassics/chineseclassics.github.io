@@ -26,7 +26,6 @@ serve(async (req) => {
       storyTheme,
       currentRound,
       usedWords,
-      skipFeedback = false,
       userGrade = 0,
       cachedUserProfile = null,
       explorationMode = false
@@ -116,7 +115,6 @@ serve(async (req) => {
       currentRound,
       allUsedWords,
       userProfile,
-      skipFeedback,
       explorationMode
     )
 
@@ -158,6 +156,7 @@ serve(async (req) => {
     console.log('📥 AI 響應成功')
     console.log(`   - 句子長度: ${result.aiSentence?.length || 0}`)
     console.log(`   - 推薦詞數: ${result.words?.length || 0}`)
+    console.log(`   - 標記學習詞: ${result.highlight?.length || 0}`)
 
     // 過濾重複的詞（雙重保險）
     const filteredWords = (result.words || []).filter((w: any) => 
@@ -185,17 +184,16 @@ serve(async (req) => {
         source: explorationMode ? 'unified_exploration' : 'unified'
       })
 
-    // 返回統一結果
+    // 返回統一結果（不包含 score 和 feedback）
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           aiSentence: result.aiSentence,
-          score: skipFeedback ? null : (result.score || null),
-          feedback: skipFeedback ? null : (result.feedback || null),
           currentRound: currentRound,
           isComplete: false,
-          recommendedWords: filteredWords
+          recommendedWords: filteredWords,
+          highlight: result.highlight || []  // 🆕 學習詞標記
         }
       }),
       {

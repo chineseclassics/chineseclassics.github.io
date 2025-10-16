@@ -56,6 +56,7 @@ export async function startGame(level, theme, onSuccess) {
     gameState.storyHistory = [];
     gameState.usedWords = [];
     gameState.allRecommendedWords = [];
+    gameState.allHighlightWords = [];
     gameState.sessionId = null;
     
     try {
@@ -84,10 +85,9 @@ export async function startGame(level, theme, onSuccess) {
  * 调用 AI Agent 获取响应
  * @param {string} userSentence - 用户句子
  * @param {string} selectedWord - 选中的词汇
- * @param {boolean} skipFeedback - 是否跳過反饋生成（默認 false）
  * @returns {Promise<Object>} AI 响应数据
  */
-export async function getAIResponse(userSentence = '', selectedWord = '', skipFeedback = false) {
+export async function getAIResponse(userSentence = '', selectedWord = '') {
     try {
         // 确保会话 ID 存在
         if (!gameState.sessionId) {
@@ -122,7 +122,6 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
                     storyTheme: storyTheme,
                     currentRound: gameState.turn - 1,
                     usedWords: gameState.usedWords.map(w => w.word),
-                    skipFeedback: skipFeedback,
                     userGrade: gameState.user?.grade || 6,
                     cachedUserProfile: {
                         baseline_level: gameState.user?.baseline_level || 2,
@@ -139,6 +138,7 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
                 // 更新詞彙狀態
                 gameState.currentWords = unifiedResult.recommendedWords || [];
                 gameState.allRecommendedWords.push(unifiedResult.recommendedWords || []);
+                gameState.allHighlightWords.push(unifiedResult.highlight || []);  // 🆕 保存學習詞標記
                 
                 // 🚀 預加載拼音（在背景進行）
                 if (unifiedResult.recommendedWords && unifiedResult.recommendedWords.length > 0) {
@@ -177,7 +177,6 @@ export async function getAIResponse(userSentence = '', selectedWord = '', skipFe
             storyTheme: storyTheme,
             currentRound: gameState.turn - 1,
             usedWords: gameState.usedWords.map(w => w.word),
-            skipFeedback: skipFeedback,
             userGrade: gameState.user?.grade || 6
         };
         
@@ -288,7 +287,7 @@ async function callUnifiedAPI(params) {
  * @param {Object} selectedWord - 选中的词汇对象
  * @returns {Promise<Object>} { gameOver: boolean, aiData?: Object }
  */
-export async function submitSentence(sentence, selectedWord, skipFeedback = false) {
+export async function submitSentence(sentence, selectedWord) {
     if (!sentence) {
         showToast('請輸入句子！');
         return { gameOver: false };
@@ -319,8 +318,8 @@ export async function submitSentence(sentence, selectedWord, skipFeedback = fals
         return { gameOver: true }; // 游戏结束
     }
     
-    // 继续获取 AI 响应（傳遞 skipFeedback 參數）
-    const aiData = await getAIResponse(sentence, selectedWord.word, skipFeedback);
+    // 继续获取 AI 响应
+    const aiData = await getAIResponse(sentence, selectedWord.word);
     
     // 記錄本輪數據到數據庫（非阻塞，不影響遊戲流程）
     recordRoundData({
@@ -447,6 +446,7 @@ export function autoSaveProgress() {
             usedWords: gameState.usedWords,
             currentWords: gameState.currentWords,
             allRecommendedWords: gameState.allRecommendedWords,
+            allHighlightWords: gameState.allHighlightWords,  // 🆕 保存學習詞標記
             sessionId: gameState.sessionId
         };
         const savedStory = saveStory(storyData);
@@ -459,7 +459,8 @@ export function autoSaveProgress() {
             storyHistory: gameState.storyHistory,
             usedWords: gameState.usedWords,
             currentWords: gameState.currentWords,
-            allRecommendedWords: gameState.allRecommendedWords
+            allRecommendedWords: gameState.allRecommendedWords,
+            allHighlightWords: gameState.allHighlightWords  // 🆕 保存學習詞標記
         };
         saveStory({ id: gameState.currentStoryId, ...updates });
         console.log('✅ 更新進度:', gameState.currentStoryId);

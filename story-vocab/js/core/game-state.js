@@ -16,6 +16,7 @@ export const gameState = {
     currentWords: [],         // 当前可选词汇列表
     usedWords: [],            // 已使用的词汇列表
     allRecommendedWords: [],  // 所有轮次的推荐词汇
+    allHighlightWords: [],    // 🆕 所有轮次的学习词标记
     currentStoryId: null,     // 当前故事在 localStorage 中的 ID
     
     // 词表模式相关（新增）
@@ -33,6 +34,7 @@ export function resetGameState() {
     gameState.storyHistory = [];
     gameState.usedWords = [];
     gameState.allRecommendedWords = [];
+    gameState.allHighlightWords = [];
     gameState.sessionId = null;
     gameState.selectedWord = null;
     gameState.currentWords = [];

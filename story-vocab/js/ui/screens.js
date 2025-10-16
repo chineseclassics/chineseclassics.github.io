@@ -232,8 +232,8 @@ export async function displayAIResponse(data) {
     // 用打字机效果显示纯文本（速度调整为 130ms，給詞彙推薦更多時間）
     await typewriterEffect(messageContent, data.aiSentence, 130);
     
-    // 然后替换为可点击的词语版本（此時詞彙可能還沒到，先用空陣列）
-    messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, data.recommendedWords);
+    // 然后替换为可点击的词语版本（使用 highlight 數組標記學習詞）
+    messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, data.highlight || []);
     
     storyDisplay.scrollTop = storyDisplay.scrollHeight;
     
@@ -268,8 +268,8 @@ export async function displayAIResponse(data) {
     }
     
     if (wordsToDisplay && wordsToDisplay.length > 0) {
-        // 更新可點擊的詞語版本（現在有詞彙了）
-        messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, wordsToDisplay);
+        // 更新可點擊的詞語版本（使用 highlight 數組，不用推薦詞）
+        messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, data.highlight || []);
         
         // 有詞彙數據，顯示詞卡
         const usedWordsList = gameState.usedWords.map(w => w.word);
@@ -296,9 +296,9 @@ export async function displayAIResponse(data) {
                 const pendingWords = gameState.pendingWords;
                 gameState.pendingWords = null;
                 
-                // 更新可點擊的詞語版本（如果 messageContent 還存在）
+                // 更新可點擊的詞語版本（如果 messageContent 還存在，使用 highlight）
                 if (messageContent && messageContent.parentElement) {
-                    messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, pendingWords);
+                    messageContent.innerHTML = makeAIWordsClickable(data.aiSentence, data.highlight || []);
                 }
                 
                 // 🔧 修復：確保容器存在後再顯示詞卡
@@ -623,11 +623,11 @@ export function initFinishScreen(stats) {
         p.style.fontSize = '1.2em';
         
         if (item.role === 'ai') {
-            // AI句子：标记当时推荐的词汇（使用allRecommendedWords）
+            // AI句子：标记当时的学习词（使用 allHighlightWords）
             const aiIndex = Math.floor(index / 2);
-            const recommendedWords = aiIndex < gameState.allRecommendedWords.length ? 
-                gameState.allRecommendedWords[aiIndex] : [];
-            p.innerHTML = `🤖 ${makeAIWordsClickable(item.sentence, recommendedWords)}`;
+            const highlightWords = aiIndex < gameState.allHighlightWords.length ? 
+                gameState.allHighlightWords[aiIndex] : [];
+            p.innerHTML = `🤖 ${makeAIWordsClickable(item.sentence, highlightWords)}`;
         } else {
             // 用户句子：高亮用户使用的词汇
             const userIndex = Math.floor((index - 1) / 2);
@@ -1523,18 +1523,22 @@ export async function showGradeSelector(options = {}) {
             return;
         }
         
-        // 關閉模態框
-        modal.classList.add('closing');
-        setTimeout(() => modal.remove(), 300);
+        console.log(`🎓 開始更新年級: ${selectedGrade}`);
         
-        // 更新用戶年級
+        // 更新用戶年級到數據庫
         if (gameState.userId) {
             const { updateUserGrade } = await import('../utils/grade-manager.js');
             const success = await updateUserGrade(gameState.userId, selectedGrade);
             
             if (success) {
-                // 更新 gameState
+                console.log(`✅ 數據庫更新成功`);
+                
+                // 更新 gameState（確保對象存在）
+                if (!gameState.user) {
+                    gameState.user = {};
+                }
                 gameState.user.grade = selectedGrade;
+                console.log(`✅ gameState.user.grade 已更新為: ${gameState.user.grade}`);
                 
                 // 更新 localStorage
                 localStorage.setItem('user_grade', selectedGrade);
@@ -1542,15 +1546,29 @@ export async function showGradeSelector(options = {}) {
                 // 更新 UI 顯示
                 updateGradeBadge(selectedGrade);
                 
+                // 關閉模態框
+                modal.classList.add('closing');
+                setTimeout(() => modal.remove(), 300);
+                
                 showToast(`✅ 年級已設定為 ${selectedGrade} 年級`);
                 
-                // 調用回調
+                // 調用回調（重新加載主題）
                 if (onSelect) {
-                    onSelect(selectedGrade);
+                    console.log(`🔄 調用 onSelect 回調，重新加載主題`);
+                    await onSelect(selectedGrade);
+                    console.log(`✅ 主題已更新`);
                 }
             } else {
                 showToast('設定年級失敗，請重試');
+                // 失敗時也關閉模態框
+                modal.classList.add('closing');
+                setTimeout(() => modal.remove(), 300);
             }
+        } else {
+            console.warn('⚠️ 用戶未登入，無法更新年級');
+            showToast('請先登入');
+            modal.classList.add('closing');
+            setTimeout(() => modal.remove(), 300);
         }
     });
     
@@ -1607,10 +1625,11 @@ export async function initGradeBadge() {
         if (user && !user.grade) {
             showGradeSelector({
                 required: true,
-                onSelect: (grade) => {
-                    console.log(`✅ 用戶選擇年級: ${grade}`);
+                onSelect: async (grade) => {
+                    console.log(`✅ 用戶首次選擇年級: ${grade}`);
                     // 重新加載主題
-                    loadThemesByGrade();
+                    await loadThemesByGrade();
+                    console.log(`✅ 首次年級設定完成，主題已加載`);
                 }
             });
         }
@@ -1624,13 +1643,18 @@ export async function initGradeBadge() {
     const badge = document.getElementById('user-grade-badge');
     if (badge) {
         badge.addEventListener('click', () => {
+            // 使用最新的 gameState.user.grade（避免閉包問題）
+            const currentGrade = gameState.user?.grade || 6;
+            console.log(`📝 點擊年級徽章，當前年級: ${currentGrade}`);
+            
             showGradeSelector({
                 required: false,
-                currentGrade: user.grade,
-                onSelect: (grade) => {
-                    console.log(`✅ 年級已更新: ${grade}`);
+                currentGrade: currentGrade,
+                onSelect: async (grade) => {
+                    console.log(`✅ 年級已更新為: ${grade}`);
                     // 重新加載主題
-                    loadThemesByGrade();
+                    await loadThemesByGrade();
+                    console.log(`✅ 主題重新加載完成`);
                 }
             });
         });
@@ -1649,9 +1673,14 @@ export async function loadThemesByGrade() {
         const user = gameState.user;
         const grade = user?.grade || 6; // 默認6年級
         
+        console.log(`📚 開始加載主題，當前年級: ${grade}`);
+        console.log(`📊 gameState.user:`, user);
+        
         // 動態導入配置
         const { getThemesForGrade } = await import('../config.js');
         const themeConfig = getThemesForGrade(grade);
+        
+        console.log(`📖 主題配置:`, themeConfig.name, themeConfig.themes.length, '個主題');
         
         // 獲取主題按鈕容器
         const themeContainer = document.querySelector('.theme-buttons');
@@ -1662,6 +1691,7 @@ export async function loadThemesByGrade() {
         
         // 清空現有主題
         themeContainer.innerHTML = '';
+        console.log(`🧹 已清空舊主題`);
         
         // 生成主題按鈕
         themeConfig.themes.forEach((theme, index) => {
@@ -1683,10 +1713,14 @@ export async function loadThemesByGrade() {
             themeContainer.appendChild(button);
         });
         
-        console.log(`✅ 已加載 ${themeConfig.name}（${themeConfig.ageRange}）的主題`);
+        console.log(`✅ 已加載 ${themeConfig.name}（${themeConfig.ageRange}）的 ${themeConfig.themes.length} 個主題`);
+        
+        // 顯示成功提示
+        showToast(`🎨 主題已更新為 ${themeConfig.name}`);
         
     } catch (error) {
         console.error('❌ 加載主題失敗:', error);
+        showToast('❌ 主題加載失敗');
         // 如果失敗，保留現有的主題按鈕
     }
 }

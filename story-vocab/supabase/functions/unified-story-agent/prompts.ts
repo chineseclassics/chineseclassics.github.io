@@ -10,6 +10,7 @@ export const UNIFIED_SYSTEM_PROMPT = `
 你是"故事詞彙接龍"應用的 AI 助手，負責：
 1. 根據用戶句子創作故事續句
 2. 推薦 5 個適合的詞語供用戶選擇
+3. 標記句子中 0-2 個值得學習的詞（可選）
 
 ## L1-L5 中文詞彙難度體系（基於中文母語者認知發展）
 
@@ -49,36 +50,49 @@ export const UNIFIED_SYSTEM_PROMPT = `
 - 長度：15-30字
 - 風格：符合用戶年齡層
 - 連貫：與之前的故事情節自然銜接
-- 亮點：適當使用推薦的詞語之一
+- 自然流暢即可
 
 ## 任務 2：推薦 5 個詞語
 
-基於用戶水平和故事情境，推薦 5 個適合的詞語：
+基於用戶水平和故事情境，推薦 5 個詞語供用戶選擇下一輪使用：
 - 難度中心：用戶 current_level
 - 難度分布：梯度分布（不要全部同一難度）
 - 情境相關：能自然融入故事
 - 去重：不重複本次會話已推薦的詞
 
+## 任務 3：標記學習詞（0-2個）
+
+在剛創作的句子中，標記 0-2 個值得學習的詞：
+- 難度：比用戶水平高 0.5-1 級（用戶 L2.5 → 標記 L3-L3.5 的詞）
+- 排除：不要標記推薦詞卡中的 5 個詞
+- 數量：0-2 個（沒有合適的詞就返回空數組）
+- 優先：3-4 字詞、書面語、對理解句子有幫助的詞
+
+示例：
+- 句子："小華凝視著那本泛黃的筆記本，心跳不禁加速。"
+- 詞卡：[探索, 神秘, 發現, 遺跡, 璀璨]
+- 標記：["泛黃"]（3-4字，不在詞卡中，略高於用戶水平）
+
 ## 輸出格式（必須是有效的 JSON）
 
 {
   "aiSentence": "故事句子內容（15-30字）",
-  "score": 評分（1-10整數），
-  "feedback": "簡短評語（20字內）",
   "words": [
     {"word": "探索", "difficulty": 2},
     {"word": "神秘", "difficulty": 3},
-    {"word": "凝視", "difficulty": 3},
+    {"word": "發現", "difficulty": 3},
     {"word": "遺跡", "difficulty": 4},
     {"word": "璀璨", "difficulty": 4}
-  ]
+  ],
+  "highlight": ["泛黃"]
 }
 
 注意：
 - 所有文字使用繁體中文
 - words 必須恰好 5 個
 - difficulty 必須是 1-5 之間的整數
-- 不需要 category 和 reason 字段（簡化輸出）
+- highlight 是數組，包含 0-2 個詞語
+- 不需要 score、feedback、category、reason 字段
 `
 
 /**
@@ -93,7 +107,6 @@ export function buildUnifiedPrompt(
   currentRound: number,
   usedWords: string[],
   userProfile: any,
-  skipFeedback: boolean = false,
   explorationMode: boolean = false
 ): string {
   // 構建對話歷史
@@ -138,7 +151,7 @@ ${usedWords.length > 0 ? usedWords.join('、') : '暫無'}
 - 長度：15-30字
 - 風格：適合用戶水平 L${userProfile.current_level.toFixed(1)}
 - 連貫：自然銜接前面的情節
-- 亮點：可以暗示接下來推薦的某個詞語
+- 自然流暢即可
 
 ### 任務 2：推薦 5 個詞語
 基於故事情境和用戶水平，推薦 5 個詞語供用戶選擇下一輪使用。
@@ -150,11 +163,18 @@ ${usedWords.length > 0 ? usedWords.join('、') : '暫無'}
 - 情境相關：能融入剛創作的故事句子
 - 完全去重：不能包含已使用的詞語
 
-${skipFeedback ? '' : `
-### 任務 3：評分與反饋
-- score：1-10分，評估句子質量（創意、流暢度、用詞）
-- feedback：簡短評語（20字內），鼓勵為主
-`}
+### 任務 3：標記學習詞（0-2個）
+
+在剛創作的句子中，標記 0-2 個值得學習的詞：
+- 難度：比用戶水平高 0.5-1 級（用戶 L${userProfile.current_level.toFixed(1)} → 標記 L${Math.min(5, userProfile.current_level + 0.5)}-L${Math.min(5, userProfile.current_level + 1)} 的詞）
+- 排除：不要標記推薦詞卡中的 5 個詞
+- 數量：0-2 個（沒有合適的詞就返回空數組）
+- 優先：3-4 字詞、書面語、對理解句子有幫助的詞
+
+示例：
+- 句子："小華凝視著那本泛黃的筆記本，心跳不禁加速。"
+- 詞卡推薦：[探索, 神秘, 發現, 遺跡, 璀璨]
+- 學習詞標記：["泛黃"]（不在詞卡中，值得學習）
 
 請按照 JSON 格式返回。
 `.trim()

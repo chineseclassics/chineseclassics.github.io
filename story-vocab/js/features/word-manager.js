@@ -8,16 +8,25 @@ import { getWordBriefInfo } from './dictionary.js';
 import { getBriefInfo } from '../utils/word-cache.js';
 
 /**
- * AI句子中标记词库中的词语（可点击查询）
+ * AI句子中标记学习词（可点击查询）
  * @param {string} text - 原始文本
- * @param {Array} recommendedWords - 推荐词汇列表
+ * @param {Array} highlightWords - 需要標記的詞語列表（字符串數組或對象數組）
  * @returns {string} 处理后的 HTML 文本
  */
-export function makeAIWordsClickable(text, recommendedWords) {
+export function makeAIWordsClickable(text, highlightWords) {
     if (!text) return '';
     
-    // 从推荐词库中提取所有词语
-    const vocabularyWords = recommendedWords ? recommendedWords.map(w => w.word) : [];
+    // 兼容處理：支持字符串數組和對象數組
+    let vocabularyWords = [];
+    if (highlightWords && highlightWords.length > 0) {
+        if (typeof highlightWords[0] === 'string') {
+            // 新格式：字符串數組（highlight）
+            vocabularyWords = highlightWords;
+        } else {
+            // 舊格式：對象數組（recommendedWords）
+            vocabularyWords = highlightWords.map(w => w.word);
+        }
+    }
     
     // 按长度降序排序，优先匹配长词
     vocabularyWords.sort((a, b) => b.length - a.length);
