@@ -627,7 +627,13 @@ async function confirmAndSubmit(sentence, word) {
     if (result.gameOver) {
         console.log('🎬 遊戲結束，準備跳轉到完成頁面');
         
+        // 🔧 游戏结束时移除加载动画（因为不需要AI续写了）
+        const loadingMessages = document.querySelectorAll('.message.ai .inline-loading');
+        loadingMessages.forEach(msg => msg.closest('.message')?.remove());
+        console.log('✅ 已移除加載動畫（遊戲結束）');
+        
         try {
+            console.log('🔍 準備調用 finishStory()...');
             // 立即执行结束流程（不延迟）
             const stats = await finishStory();
             console.log('✅ finishStory 完成，stats:', stats);
@@ -639,6 +645,8 @@ async function confirmAndSubmit(sentence, word) {
             console.log('✅ initFinishScreen 完成');
         } catch (error) {
             console.error('❌ 遊戲結束流程失敗:', error);
+            console.error('   錯誤詳情:', error.message);
+            console.error('   錯誤堆棧:', error.stack);
             showToast('❌ 故事總結生成失敗，請重試');
             
             // 显示错误后返回开始页面
