@@ -200,24 +200,16 @@ export async function recordRoundData(roundData) {
  */
 export async function handleGameCompletion() {
   try {
-    // 生成會話彙總
-    console.log('[遊戲完成] 生成會話彙總')
-    console.log('🔍 [handleGameCompletion] userId:', gameState.userId)
-    console.log('🔍 [handleGameCompletion] sessionId:', gameState.sessionId)
-    console.log('🔍 [handleGameCompletion] 準備調用 summarizeGameSession...')
-    
     const summary = await summarizeGameSession(
       gameState.userId,
       gameState.sessionId
     )
     
-    console.log('✅ [handleGameCompletion] summarizeGameSession 完成，返回值:', summary)
-    
     // 檢查是否是前 3 次遊戲（探索期）
     const totalGames = gameState.user?.total_games || 0;
     const isExplorationPhase = totalGames < 3;
     
-    console.log('✅ [handleGameCompletion] 準備返回結果')
+    console.log(`✅ [後台] 用戶檔案更新完成`);
     
     return {
       isFirstGame: totalGames === 0,
@@ -230,9 +222,7 @@ export async function handleGameCompletion() {
           : '故事創作完成！')
     }
   } catch (error) {
-    console.error('❌ 遊戲完成處理失敗:', error)
-    console.error('   錯誤詳情:', error.message)
-    console.error('   錯誤堆棧:', error.stack)
+    console.error('❌ 後台用戶檔案更新失敗:', error.message)
     return {
       isFirstGame: false,
       isExplorationPhase: false,

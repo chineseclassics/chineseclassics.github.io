@@ -23,7 +23,12 @@ export const gameState = {
     wordlistMode: 'ai',       // 'ai' | 'wordlist'
     wordlistId: null,         // 指定词表ID
     level2Tag: null,          // 第二层级标签
-    level3Tag: null           // 第三层级标签
+    level3Tag: null,          // 第三层级标签
+    
+    // 时间追踪
+    gameStartTime: null,      // 游戏开始时间
+    wordSelectionTime: null,  // 当前选词时间
+    wordTimings: []           // [{word, level, duration}]
 };
 
 /**
@@ -39,6 +44,9 @@ export function resetGameState() {
     gameState.selectedWord = null;
     gameState.currentWords = [];
     gameState.currentStoryId = null;
+    gameState.gameStartTime = null;
+    gameState.wordSelectionTime = null;
+    gameState.wordTimings = [];
     // 词表状态在新游戏开始时会重新设置，这里不重置
 }
 

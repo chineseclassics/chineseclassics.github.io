@@ -61,6 +61,10 @@ export async function startGame(level, theme, onSuccess) {
     gameState.allHighlightWords = [];
     gameState.sessionId = null;
     
+    // 🕐 记录游戏开始时间
+    gameState.gameStartTime = Date.now();
+    gameState.wordTimings = [];
+    
     try {
         // 创建数据库会话记录（不显示底部动画，内联动画已在游戏界面显示）
         const session = await createStorySession(gameState.userId, {
@@ -232,6 +236,17 @@ export async function submitSentence(sentence, selectedWord) {
         return { gameOver: false };
     }
     
+    // 🕐 记录造句用时
+    if (gameState.wordSelectionTime) {
+        const duration = Date.now() - gameState.wordSelectionTime;
+        gameState.wordTimings.push({
+            word: selectedWord.word,
+            level: selectedWord.difficulty_level || 2,
+            duration: duration
+        });
+        gameState.wordSelectionTime = null;
+    }
+    
     // 记录使用的词汇
     addUsedWord(selectedWord);
     
@@ -311,11 +326,30 @@ export async function finishStory() {
     const fullStory = gameState.storyHistory.map(h => h.sentence).join('');
     const storyLength = fullStory.length;
     
+    // 🕐 计算时间统计
+    const totalDuration = Date.now() - (gameState.gameStartTime || Date.now());
+    const wordTimings = gameState.wordTimings || [];
+    
+    // 找出用时最长和最短的词
+    let longestTiming = null;
+    let shortestTiming = null;
+    if (wordTimings.length > 0) {
+        longestTiming = wordTimings.reduce((max, t) => 
+            t.duration > max.duration ? t : max, wordTimings[0]);
+        shortestTiming = wordTimings.reduce((min, t) => 
+            t.duration < min.duration ? t : min, wordTimings[0]);
+    }
+    
+    // 计算平均选择 level
+    const avgSelectedLevel = wordTimings.length > 0
+        ? wordTimings.reduce((sum, t) => sum + (t.level || 2), 0) / wordTimings.length
+        : 2;
+    
     // 更新侧边栏统计
     updateSidebarStats();
     
-    // 處理遊戲完成（校準評估或會話彙總）
-    const completionData = await handleGameCompletion();
+    // ✅ 改为后台异步执行（不阻塞页面显示）
+    handleGameCompletionAsync();
     
     return {
         totalTurns,
@@ -323,8 +357,23 @@ export async function finishStory() {
         storyLength,
         defaultTitle,
         storyId: savedStory.id,
-        ...completionData
+        // 新增统计
+        totalDuration,
+        wordTimings,
+        longestTiming,
+        shortestTiming,
+        avgSelectedLevel,
+        userCurrentLevel: gameState.user?.current_level || 2
     };
+}
+
+/**
+ * 后台异步处理游戏完成（不阻塞）
+ */
+function handleGameCompletionAsync() {
+    handleGameCompletion().catch(err => {
+        console.error('⚠️ 后台更新用户档案失败（不影响用户）:', err);
+    });
 }
 
 /**

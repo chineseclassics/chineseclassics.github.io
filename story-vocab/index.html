@@ -386,46 +386,83 @@
 
         <!-- ===== 完成界面 ===== -->
         <div id="finish-screen" class="screen">
-            <div class="header">
-                <h1>🎉 故事創作完成！</h1>
-                <p>你和AI一起創作了一個精彩的故事</p>
-            </div>
             <div class="content finish-content">
-                <div class="celebration">🎊</div>
-                <h2>太棒了！</h2>
-
-                <!-- 故事標題編輯 -->
-                <div class="story-title-edit">
-                    <input type="text" id="story-title-input" placeholder="給故事起個名字..." maxlength="30">
-                    <button class="btn-title-confirm" onclick="confirmStoryTitle()">✓</button>
-                </div>
-                <p class="edit-hint">💡 你可以修改故事的標題</p>
-
-                <div class="story-stats">
-                    <div class="stat-card">
-                        <div class="stat-number" id="total-turns">18</div>
-                        <div class="stat-label">創作輪次</div>
+                <h1 class="screen-title">📊 创作报告</h1>
+                
+                <!-- 统计卡片网格 -->
+                <div class="stats-grid">
+                    <div class="stat-card" data-index="0">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-label">总用时</div>
+                        <div class="stat-value" id="total-duration">--</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="vocab-used">9</div>
-                        <div class="stat-label">使用詞彙</div>
+                    
+                    <div class="stat-card" data-index="1">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-label">使用词汇</div>
+                        <div class="stat-value" id="vocab-count-final">--</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="story-length">0</div>
-                        <div class="stat-label">故事字數</div>
+                    
+                    <div class="stat-card" data-index="2">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-label">平均难度</div>
+                        <div class="stat-value" id="avg-level">L--</div>
                     </div>
-                </div>
-
-                <div class="full-story-container">
-                    <h3>📖 完整故事</h3>
-                    <div class="full-story-text" id="full-story-text">
-                        <!-- 完整故事文本将通过 JavaScript 生成 -->
+                    
+                    <div class="stat-card highlighted" data-index="3">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-label">你的水平</div>
+                        <div class="stat-value" id="user-level-final">L--</div>
                     </div>
                 </div>
-
+                
+                <!-- 用时分析 -->
+                <div class="timing-analysis">
+                    <div class="timing-item fastest">
+                        <span class="label">⚡ 最快造句</span>
+                        <span class="word" id="fastest-word">--</span>
+                        <span class="time" id="fastest-time">--</span>
+                    </div>
+                    <div class="timing-item slowest">
+                        <span class="label">🤔 思考最久</span>
+                        <span class="word" id="slowest-word">--</span>
+                        <span class="time" id="slowest-time">--</span>
+                    </div>
+                </div>
+                
+                <!-- 词语使用详情 -->
+                <div class="words-details-section">
+                    <h3>📝 词语使用详情</h3>
+                    <div id="words-timeline"></div>
+                </div>
+                
+                <!-- 完整故事 -->
+                <div class="story-display-section">
+                    <h2>📖 你的完整故事</h2>
+                    <!-- 故事标题编辑 -->
+                    <div class="story-title-edit">
+                        <input type="text" id="story-title-input" placeholder="給故事起個名字..." maxlength="30">
+                        <button class="btn-title-confirm" onclick="confirmStoryTitle()">✓</button>
+                    </div>
+                    <div id="full-story-text"></div>
+                </div>
+                
+                <!-- AI 评价（异步加载，初始显示骨架屏） -->
+                <div id="story-summary-container" class="skeleton-loading">
+                    <div class="skeleton-header"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line"></div>
+                </div>
+                
+                <!-- 操作按钮 -->
                 <div class="action-buttons">
-                    <button class="btn-primary" onclick="restartGame()">🔄 再玩一次</button>
-                    <button class="btn-secondary" onclick="shareStory()">📤 分享故事</button>
+                    <button class="btn-primary" onclick="restartGame()">
+                        🎮 再玩一次
+                    </button>
+                    <button class="btn-secondary" onclick="shareStory()">
+                        📤 分享故事
+                    </button>
                 </div>
             </div>
         </div>
@@ -937,6 +974,40 @@
             <div class="modal-footer">
                 <button class="btn-secondary modal-btn" onclick="closeUploadWordlistModal()">取消</button>
                 <button class="btn-primary modal-btn" onclick="uploadWordlistFromModal()" id="upload-wordlist-btn">確認上傳</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 祝贺弹窗 -->
+    <div id="congratulations-modal" class="modal">
+        <div class="modal-overlay celebration"></div>
+        <div class="congratulations-container">
+            <!-- 五彩纸屑容器 -->
+            <div class="confetti-container" id="confetti-container"></div>
+            
+            <div class="congratulations-content">
+                <div class="celebration-emoji">🎉</div>
+                <h2 class="celebration-title">故事创作完成！</h2>
+                <p class="celebration-message" id="celebration-message"></p>
+                
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <div class="stat-number" id="quick-turns">--</div>
+                        <div class="stat-label">轮对话</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="stat-number" id="quick-words">--</div>
+                        <div class="stat-label">个词语</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="stat-number" id="quick-chars">--</div>
+                        <div class="stat-label">字故事</div>
+                    </div>
+                </div>
+                
+                <button class="btn-primary celebration-btn" onclick="viewFullReport()">
+                    📊 查看创作报告
+                </button>
             </div>
         </div>
     </div>

@@ -13,7 +13,7 @@ import { getRunMode } from './auth/run-mode-detector.js';
 
 // 导入核心模块
 import { gameState } from './core/game-state.js';
-import { startGame, getAIResponse, submitSentence, finishStory, shareStory } from './core/story-engine.js';
+import { startGame, getAIResponse, submitSentence, finishStory, shareStory, getThemeName } from './core/story-engine.js';
 import sessionManager from './core/session-manager.js';
 
 // 导入功能模块
@@ -625,35 +625,17 @@ async function confirmAndSubmit(sentence, word) {
     
     // 检查游戏是否结束
     if (result.gameOver) {
-        console.log('🎬 遊戲結束，準備跳轉到完成頁面');
+        console.log('🎬 游戏结束');
         
-        // 🔧 游戏结束时移除加载动画（因为不需要AI续写了）
+        // 移除加载动画
         const loadingMessages = document.querySelectorAll('.message.ai .inline-loading');
         loadingMessages.forEach(msg => msg.closest('.message')?.remove());
-        console.log('✅ 已移除加載動畫（遊戲結束）');
         
-        try {
-            console.log('🔍 準備調用 finishStory()...');
-            // 立即执行结束流程（不延迟）
-            const stats = await finishStory();
-            console.log('✅ finishStory 完成，stats:', stats);
-            
-            showScreen('finish-screen');
-            console.log('✅ 已切換到 finish-screen');
-            
-            initFinishScreen(stats);
-            console.log('✅ initFinishScreen 完成');
-        } catch (error) {
-            console.error('❌ 遊戲結束流程失敗:', error);
-            console.error('   錯誤詳情:', error.message);
-            console.error('   錯誤堆棧:', error.stack);
-            showToast('❌ 故事總結生成失敗，請重試');
-            
-            // 显示错误后返回开始页面
-            setTimeout(() => {
-                showScreen('start-screen');
-            }, 2000);
-        }
+        // 🚀 立即预加载 AI 评价（不等待）
+        window.aiSummaryPromise = preloadAISummary();
+        
+        // 显示祝贺弹窗
+        showCongratulationsModal();
     } else if (result.aiData) {
         console.log('📝 显示 AI 响应...');
         
@@ -662,6 +644,123 @@ async function confirmAndSubmit(sentence, word) {
         await displayAIResponse(result.aiData);
     }
 }
+
+/**
+ * 预加载 AI 故事评价
+ */
+async function preloadAISummary() {
+    try {
+        console.log('🚀 开始预加载 AI 故事评价...');
+        const response = await fetch(
+            `${SUPABASE_CONFIG.url}/functions/v1/story-summary`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+                },
+                body: JSON.stringify({
+                    storyHistory: gameState.storyHistory,
+                    usedWords: gameState.usedWords.map(w => w.word),
+                    storyTheme: gameState.theme,
+                    userGrade: gameState.user?.grade || 6,
+                    userLevel: gameState.user?.current_level || 2.0
+                })
+            }
+        );
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ AI 评价预加载成功');
+            return result;
+        } else {
+            console.warn('⚠️ AI 评价预加载失败，状态码:', response.status);
+        }
+    } catch (error) {
+        console.error('⚠️ AI 评价预加载失败:', error);
+    }
+    return null;
+}
+
+/**
+ * 显示祝贺弹窗
+ */
+function showCongratulationsModal() {
+    const modal = document.getElementById('congratulations-modal');
+    if (!modal) {
+        console.error('❌ 找不到祝贺弹窗元素');
+        // 如果没有弹窗，直接进入总结页面
+        viewFullReport();
+        return;
+    }
+    
+    // 设置快速统计
+    const turns = gameState.usedWords.length;
+    const chars = gameState.storyHistory.map(h => h.sentence).join('').length;
+    
+    document.getElementById('quick-turns').textContent = turns;
+    document.getElementById('quick-words').textContent = turns;
+    document.getElementById('quick-chars').textContent = chars;
+    
+    // 设置消息
+    const themeName = getThemeName(gameState.theme);
+    const message = `你完成了一个${gameState.maxTurns}轮的${themeName}故事！`;
+    document.getElementById('celebration-message').textContent = message;
+    
+    // 显示弹窗
+    modal.classList.add('active');
+    
+    // 触发五彩纸屑动画
+    launchConfetti();
+}
+
+/**
+ * 五彩纸屑动画
+ */
+function launchConfetti() {
+    const container = document.getElementById('confetti-container');
+    if (!container) return;
+    
+    // 创建30个纸屑
+    for (let i = 0; i < 30; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-piece';
+        confetti.style.left = `${Math.random() * 100}%`;
+        confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+        confetti.style.backgroundColor = ['#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'][Math.floor(Math.random() * 6)];
+        container.appendChild(confetti);
+    }
+    
+    // 3秒后清除纸屑
+    setTimeout(() => {
+        container.innerHTML = '';
+    }, 3000);
+}
+
+/**
+ * 查看完整报告
+ */
+window.viewFullReport = async function() {
+    // 关闭祝贺弹窗
+    const modal = document.getElementById('congratulations-modal');
+    if (modal) modal.classList.remove('active');
+    
+    try {
+        console.log('🔍 准备生成统计数据...');
+        // 计算最终统计数据
+        const stats = await finishStory();
+        console.log('✅ 统计数据生成完成');
+        
+        // 跳转到总结页面
+        showScreen('finish-screen');
+        
+        // 分阶段展示
+        initFinishScreenAnimated(stats);
+    } catch (error) {
+        console.error('❌ 生成报告失败:', error);
+        showToast('❌ 生成报告失败，请重试');
+    }
+};
 
 /**
  * 1. 使用優化版句子

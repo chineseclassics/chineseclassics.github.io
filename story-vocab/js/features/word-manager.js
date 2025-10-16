@@ -131,6 +131,9 @@ function formatBriefInfoHTML(word, briefInfo, fallbackPinyin = '') {
 export async function selectWord(wordObj) {
     gameState.selectedWord = wordObj;
     
+    // 🕐 记录选词时间（用于计算造句用时）
+    gameState.wordSelectionTime = Date.now();
+    
     // 更新按钮状态
     document.querySelectorAll('.word-btn').forEach(btn => {
         btn.classList.remove('selected');

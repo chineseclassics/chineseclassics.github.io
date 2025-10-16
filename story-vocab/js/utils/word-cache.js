@@ -138,21 +138,21 @@ export async function preloadWords(wordList, fetchBriefFn, fetchFullFn = null) {
     // 并发加载所有词汇（使用 allSettled 避免单个失败影响整体）
     const promises = wordsToLoad.map(async (word) => {
         try {
-            // 加载简要信息
+            // 加载简要信息（fetchBriefFn 內部已經會緩存，不需要重複調用）
             const briefInfo = await fetchBriefFn(word);
-            if (briefInfo) {
-                cacheBriefInfo(word, briefInfo);
-            }
             
-            // 如果提供了完整信息加载函数，也加载完整信息
-            if (fetchFullFn) {
+            // ✅ 移除重複緩存：getWordBriefInfo() 內部已經調用了 cacheBriefInfo() 和 cacheFullInfo()
+            // 不需要在這裡再次緩存
+            
+            // 如果提供了額外的完整信息加载函数，才調用（目前未使用）
+            if (fetchFullFn && briefInfo) {
                 const fullInfo = await fetchFullFn(word);
                 if (fullInfo) {
                     cacheFullInfo(word, fullInfo);
                 }
             }
             
-            return { word, success: true };
+            return { word, success: briefInfo ? true : false };
         } catch (error) {
             console.log(`⚠️ 预加载失败: ${word}`, error.message);
             return { word, success: false };

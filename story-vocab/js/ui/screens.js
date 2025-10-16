@@ -583,44 +583,186 @@ function showStageHint(turn, maxTurns) {
 }
 
 /**
- * 初始化完成界面
+ * 初始化完成界面（分阶段动画展示）
  * @param {Object} stats - 统计数据
  */
-export function initFinishScreen(stats) {
-    const totalTurns = document.getElementById('total-turns');
-    const vocabUsed = document.getElementById('vocab-used');
-    const storyLength = document.getElementById('story-length');
+export async function initFinishScreen(stats) {
+    await initFinishScreenAnimated(stats);
+}
+
+/**
+ * 分阶段动画展示总结页面
+ */
+async function initFinishScreenAnimated(stats) {
+    // 立即设置所有数据（但元素初始隐藏）
+    setFinishScreenData(stats);
     
-    if (totalTurns) totalTurns.textContent = stats.totalTurns;
-    if (vocabUsed) vocabUsed.textContent = stats.vocabUsed;
-    if (storyLength) storyLength.textContent = stats.storyLength;
+    // 阶段1: 统计卡片飞入（0-2秒）
+    await animateStatsCards();
     
-    // 设置默认标题
+    // 阶段2: 用时分析显示（2-3秒）
+    await animateTimingAnalysis();
+    
+    // 阶段3: 词语时间线展开（3-5秒）
+    await animateWordsTimeline();
+    
+    // 阶段4: 故事全文逐行显示（5-7秒）+ 自动滚动
+    await animateFullStoryByLine();
+    
+    // 阶段5: AI评价（异步，可能已就绪）
+    await loadAISummaryWithFallback();
+}
+
+/**
+ * 设置所有数据到页面元素
+ */
+function setFinishScreenData(stats) {
+    // 基础统计
+    const totalDuration = document.getElementById('total-duration');
+    const vocabCount = document.getElementById('vocab-count-final');
+    const avgLevel = document.getElementById('avg-level');
+    const userLevel = document.getElementById('user-level-final');
+    
+    if (totalDuration) totalDuration.textContent = formatDuration(stats.totalDuration);
+    if (vocabCount) vocabCount.textContent = stats.vocabUsed;
+    if (avgLevel) avgLevel.textContent = `L${stats.avgSelectedLevel.toFixed(1)}`;
+    if (userLevel) userLevel.textContent = `L${stats.userCurrentLevel.toFixed(1)}`;
+    
+    // 用时分析
+    if (stats.longestTiming) {
+        const slowestWord = document.getElementById('slowest-word');
+        const slowestTime = document.getElementById('slowest-time');
+        if (slowestWord) slowestWord.textContent = stats.longestTiming.word;
+        if (slowestTime) slowestTime.textContent = formatDuration(stats.longestTiming.duration);
+    }
+    
+    if (stats.shortestTiming) {
+        const fastestWord = document.getElementById('fastest-word');
+        const fastestTime = document.getElementById('fastest-time');
+        if (fastestWord) fastestWord.textContent = stats.shortestTiming.word;
+        if (fastestTime) fastestTime.textContent = formatDuration(stats.shortestTiming.duration);
+    }
+    
+    // 设置故事标题默认值
     const titleInput = document.getElementById('story-title-input');
     if (titleInput && stats.defaultTitle) {
         titleInput.value = stats.defaultTitle;
     }
     
-    // 如果是第一次遊戲（校準完成），顯示特殊消息
-    if (stats.isFirstGame && stats.assessment) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'calibration-complete-message';
-        messageDiv.style.cssText = 'margin: 20px 0; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px; text-align: center;';
-        messageDiv.innerHTML = `
-            <h3 style="margin: 0 0 10px 0;">🎉 ${stats.message}</h3>
-            <p style="margin: 0; opacity: 0.9;">下次我將為你推薦更合適的詞彙！</p>
-        `;
-        
-        const finishScreen = document.getElementById('finish-screen');
-        if (finishScreen) {
-            const contentDiv = finishScreen.querySelector('.content');
-            if (contentDiv && contentDiv.firstChild) {
-                contentDiv.insertBefore(messageDiv, contentDiv.firstChild);
-            }
+    // 渲染词语时间线
+    renderWordsTimeline(stats.wordTimings || []);
+    
+    // 渲染完整故事
+    prepareFullStory();
+}
+
+/**
+ * 格式化时长
+ */
+function formatDuration(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainSeconds = seconds % 60;
+    
+    if (minutes > 0) {
+        return `${minutes}分${remainSeconds}秒`;
+    }
+    return `${seconds}秒`;
+}
+
+/**
+ * 阶段1: 统计卡片飞入动画
+ */
+async function animateStatsCards() {
+    const cards = document.querySelectorAll('.stats-grid .stat-card');
+    for (let i = 0; i < cards.length; i++) {
+        cards[i].classList.add('fly-in');
+        await new Promise(r => setTimeout(r, 150));
+    }
+    await new Promise(r => setTimeout(r, 300));
+}
+
+/**
+ * 阶段2: 用时分析显示
+ */
+async function animateTimingAnalysis() {
+    const items = document.querySelectorAll('.timing-analysis .timing-item');
+    items.forEach((item, index) => {
+        setTimeout(() => {
+            item.classList.add('slide-in');
+        }, index * 200);
+    });
+    await new Promise(r => setTimeout(r, 800));
+}
+
+/**
+ * 阶段3: 词语时间线展开动画
+ */
+async function animateWordsTimeline() {
+    const bars = document.querySelectorAll('.word-timing-bar');
+    for (let i = 0; i < bars.length; i++) {
+        bars[i].classList.add('expand');
+        // 滚动到当前元素
+        bars[i].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        await new Promise(r => setTimeout(r, 100));
+    }
+    await new Promise(r => setTimeout(r, 300));
+}
+
+/**
+ * 阶段4: 故事全文逐行显示
+ */
+async function animateFullStoryByLine() {
+    const container = document.getElementById('full-story-text');
+    if (!container) return;
+    
+    const paragraphs = container.querySelectorAll('p');
+    for (let i = 0; i < paragraphs.length; i++) {
+        paragraphs[i].classList.add('fade-in-line');
+        // 每3行滚动一次
+        if (i % 3 === 0) {
+            paragraphs[i].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+        await new Promise(r => setTimeout(r, 80));  // 快速逐行显示
+    }
+    await new Promise(r => setTimeout(r, 500));
+}
+
+/**
+ * 渲染词语时间线
+ */
+function renderWordsTimeline(wordTimings) {
+    const container = document.getElementById('words-timeline');
+    if (!container) return;
+    
+    if (!wordTimings || wordTimings.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-light);">暂无数据</p>';
+        return;
     }
     
-    // 显示完整故事
+    // 找出最大用时（用于计算条形宽度）
+    const maxDuration = Math.max(...wordTimings.map(t => t.duration));
+    
+    container.innerHTML = wordTimings.map(t => {
+        const widthPercent = (t.duration / maxDuration) * 100;
+        return `
+            <div class="word-timing-bar">
+                <span class="word-text">${t.word}</span>
+                <div class="timing-bar-container">
+                    <div class="timing-bar" style="width: ${widthPercent}%">
+                        <span class="duration-text">${formatDuration(t.duration)}</span>
+                    </div>
+                </div>
+                <span class="level-badge">L${t.level || 2}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * 准备完整故事内容
+ */
+function prepareFullStory() {
     const fullStoryText = document.getElementById('full-story-text');
     if (!fullStoryText) return;
     
@@ -630,16 +772,15 @@ export function initFinishScreen(stats) {
         const p = document.createElement('p');
         p.style.marginBottom = '15px';
         p.style.lineHeight = '2';
-        p.style.fontSize = '1.2em';
+        p.style.fontSize = '1.1em';
+        p.classList.add('story-line');  // 用于动画
         
         if (item.role === 'ai') {
-            // AI句子：标记当时的学习词（使用 allHighlightWords）
             const aiIndex = Math.floor(index / 2);
             const highlightWords = aiIndex < gameState.allHighlightWords.length ? 
                 gameState.allHighlightWords[aiIndex] : [];
             p.innerHTML = `🤖 ${makeAIWordsClickable(item.sentence, highlightWords)}`;
         } else {
-            // 用户句子：高亮用户使用的词汇
             const userIndex = Math.floor((index - 1) / 2);
             const usedWord = userIndex < gameState.usedWords.length ? 
                 gameState.usedWords[userIndex] : null;
@@ -647,10 +788,81 @@ export function initFinishScreen(stats) {
         }
         fullStoryText.appendChild(p);
     });
-    
-    // 🌟 加載並顯示故事整體點評
-    loadStorySummary();
 }
+
+/**
+ * 阶段5: 加载 AI 评价（带回退处理）
+ */
+async function loadAISummaryWithFallback() {
+    const container = document.getElementById('story-summary-container');
+    if (!container) return;
+    
+    // 滚动到 AI 评价区域
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    try {
+        // 检查预加载的Promise
+        if (window.aiSummaryPromise) {
+            const result = await Promise.race([
+                window.aiSummaryPromise,
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('timeout')), 15000)
+                )
+            ]);
+            
+            if (result && result.success) {
+                // 成功：移除骨架屏，显示内容
+                container.classList.remove('skeleton-loading');
+                displayStorySummary(result.data);
+                return;
+            }
+        }
+        
+        // 如果没有预加载或失败，显示友好提示
+        throw new Error('AI 评价未能预加载');
+        
+    } catch (error) {
+        // 超时或失败：显示友好提示
+        container.classList.remove('skeleton-loading');
+        container.innerHTML = `
+            <div class="ai-summary-delayed">
+                <p>💭 AI老师还在思考中...</p>
+                <button class="btn-secondary" onclick="retryLoadSummary()">
+                    🔄 重新加载
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * 重试加载 AI 评价
+ */
+window.retryLoadSummary = async function() {
+    const container = document.getElementById('story-summary-container');
+    if (!container) return;
+    
+    // 显示加载状态
+    container.innerHTML = `
+        <div class="story-summary-loading">
+            <div class="inline-loading">
+                <div class="inline-loading-spinner"></div>
+                <span class="inline-loading-text">AI老师正在撰写整体点评...</span>
+            </div>
+        </div>
+    `;
+    
+    try {
+        await loadStorySummary();
+    } catch (error) {
+        container.innerHTML = `
+            <div class="ai-summary-error">
+                <p>⚠️ 加载失败，请稍后重试</p>
+            </div>
+        `;
+    }
+};
+
 
 /**
  * 加載並顯示故事整體點評
