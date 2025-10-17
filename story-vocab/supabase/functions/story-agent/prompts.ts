@@ -154,7 +154,7 @@ export function getStoryStageInfo(currentRound: number, maxTurns: number = 8): S
   const openingEnd = Math.ceil(maxTurns * 0.25);      // 25% 開端
   const developmentEnd = Math.ceil(maxTurns * 0.5);   // 25% 發展
   const turningEnd = Math.ceil(maxTurns * 0.75);      // 25% 轉折
-  const climaxEnd = maxTurns - 1;                      // 高潮到倒數第二輪
+  // 注意：最後一個AI句子（currentRound = maxTurns - 1）也屬於高潮期
   
   if (currentRound < openingEnd) {
     return {
@@ -195,30 +195,19 @@ export function getStoryStageInfo(currentRound: number, maxTurns: number = 8): S
     };
   }
   
-  if (currentRound < climaxEnd) {
-    return {
-      name: `高潮/解決期（第${turningEnd + 1}-${climaxEnd}輪）`,
-      description: '開始處理衝突，但不要完全解決',
-      guidance: `
+  // 高潮期：包括最後一個AI句子（為用戶結局留空間）
+  return {
+    name: `高潮/解決期（第${turningEnd + 1}-${maxTurns}輪）`,
+    description: '開始處理衝突，但不要完全解決，為用戶結局留出空間',
+    guidance: `
 ⚠️ **關鍵要求**：為用戶的結局留出空間！
 - 開始展現解決的曙光
 - 可以展現希望或出口
 - **絕對不要完全解決衝突**
 - 不要寫「高興地回家了」等完結性語句
-- 而是寫「他們終於看到了...」「答案漸漸浮現...」
+- 而是寫「他們終於看到了...」「答案漸漸浮現...」「真相就在眼前...」
+- ${currentRound === maxTurns - 1 ? '⚠️ 這是最後一個AI句子，務必留出懸念讓用戶收尾！' : ''}
 示例：「跟著會說話的小鹿，小明來到了一片閃爍著金光的空地，地圖上的寶藏原來是...」`
-    };
-  }
-  
-  return {
-    name: `結局期（第${maxTurns}輪）`,
-    description: '用戶寫結局',
-    guidance: `
-⚠️ **這一輪由用戶寫結局句！**
-AI 不應該生成故事句，而是應該：
-- 等待用戶輸入結局
-- 給予點評和鼓勵（如果有反饋功能）
-- 讓用戶有掌控感地結束故事`
   };
 }
 
