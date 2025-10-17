@@ -100,6 +100,7 @@
     overflow-x: visible; /* 允许内容自然显示 */
     max-width: 1000px;
     margin: 0 auto;
+    padding-bottom: 40px; /* 確保底部有足夠空間 */
     width: 100%;
     padding: 40px;
     display: flex;

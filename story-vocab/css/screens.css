@@ -67,10 +67,19 @@
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 15px;
     margin-bottom: 20px;
+    width: 100%;
+}
+
+/* 確保二級卡片容器能完整顯示所有卡片 */
+#level-2-cards {
+    max-height: none; /* 移除任何高度限制 */
+    overflow: visible; /* 確保所有卡片可見 */
 }
 
 #wordlist-hierarchy-section {
     margin-bottom: 30px;
+    max-height: none; /* 移除高度限制 */
+    overflow: visible; /* 允許完整顯示 */
 }
 
 #wordlist-hierarchy-section h2 {

@@ -4,6 +4,7 @@
  */
 
 import { gameState } from '../core/game-state.js';
+import { getSupabase } from '../supabase-client.js';
 
 let currentWordlist = null;
 let allTags = [];
@@ -70,10 +71,11 @@ export function renderLevel2Cards(wordlist, tags) {
       gameState.level2Tag = tagCode;
       gameState.level3Tag = null;
 
-      // 检查是否有第三层级
+      // 檢查是否有第三層級，並過濾出屬於該二級分類的三級標籤
       const level3Tags = allTags.filter(t => t.tag_level === 3);
       if (level3Tags.length > 0) {
-        renderLevel3Cards(level3Tags);
+        // ✅ 查詢該二級分類下的三級標籤
+        loadLevel3TagsForLevel2(tagCode, level3Tags);
       } else {
         // 没有第三层级，隐藏第三层级区域
         if (level3Container) {
@@ -82,6 +84,49 @@ export function renderLevel2Cards(wordlist, tags) {
       }
     });
   });
+}
+
+/**
+ * 查詢並加載某個二級分類下的三級標籤
+ * @param {string} level2TagCode - 二級標籤代碼
+ * @param {Array} allLevel3Tags - 所有三級標籤列表
+ */
+async function loadLevel3TagsForLevel2(level2TagCode, allLevel3Tags) {
+  const supabase = getSupabase();
+  
+  try {
+    console.log('🔍 查詢單元下的課文:', level2TagCode);
+    
+    // 查詢該二級分類下有哪些三級分類
+    const { data: vocabData, error } = await supabase
+      .from('wordlist_vocabulary')
+      .select('level_3_tag')
+      .eq('wordlist_id', currentWordlist.id)
+      .eq('level_2_tag', level2TagCode)
+      .not('level_3_tag', 'is', null);
+    
+    if (error) {
+      console.error('❌ 查詢三級標籤失敗:', error);
+      renderLevel3Cards(allLevel3Tags);  // 降級：顯示所有三級標籤
+      return;
+    }
+    
+    // 提取唯一的三級標籤代碼
+    const level3TagCodes = [...new Set(vocabData.map(v => v.level_3_tag))];
+    console.log('✅ 找到課文數量:', level3TagCodes.length);
+    
+    // 過濾出對應的三級標籤對象
+    const filteredLevel3Tags = allLevel3Tags.filter(tag => 
+      level3TagCodes.includes(tag.tag_code)
+    );
+    
+    // 渲染過濾後的三級標籤
+    renderLevel3Cards(filteredLevel3Tags);
+    
+  } catch (error) {
+    console.error('❌ 加載三級標籤失敗:', error);
+    renderLevel3Cards(allLevel3Tags);  // 降級：顯示所有三級標籤
+  }
 }
 
 /**
