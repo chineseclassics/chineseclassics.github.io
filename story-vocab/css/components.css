@@ -40,6 +40,8 @@ button:active {
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
+    box-sizing: border-box; /* 確保 padding 和 border 包含在寬度內 */
+    width: 100%; /* 確保卡片寬度正確 */
 }
 
 .level-card:hover {

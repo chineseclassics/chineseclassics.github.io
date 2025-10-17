@@ -68,6 +68,8 @@
     gap: 15px;
     margin-bottom: 20px;
     width: 100%;
+    max-width: 100%; /* 防止溢出 */
+    box-sizing: border-box; /* 包含 padding 和 border */
 }
 
 /* 確保二級卡片容器能完整顯示所有卡片（只在開始創作界面） */

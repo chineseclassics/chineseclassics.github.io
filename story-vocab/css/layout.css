@@ -97,12 +97,12 @@
 /* 启动界面内容特殊样式 */
 #start-screen .content {
     overflow-y: auto;
-    overflow-x: visible; /* 允许内容自然显示 */
+    overflow-x: hidden; /* 防止水平溢出 */
     max-width: 1000px;
     margin: 0 auto;
-    padding-bottom: 40px; /* 確保底部有足夠空間 */
     width: 100%;
     padding: 40px;
+    padding-bottom: 60px; /* 確保底部有足夠空間 */
     display: flex;
     flex-direction: column;
     justify-content: center;
