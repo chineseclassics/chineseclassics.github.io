@@ -1115,16 +1115,36 @@ async function loadWordlistSelectorSetting() {
             .eq('user_id', userId)
             .maybeSingle();
 
-        // 加载所有可用词表
-        const { data: wordlists } = await supabase
+        // 加载所有可用词表（分開查詢系統和自定義）
+        console.log('📥 加載詞表列表...');
+        
+        // 查詢系統詞表
+        const { data: systemWordlists, error: sysError } = await supabase
             .from('wordlists')
             .select('*')
-            .or(`type.eq.system,owner_id.eq.${userId}`)
-            .order('type', { ascending: false })
+            .eq('type', 'system')
             .order('name');
-
-        const systemWordlists = wordlists?.filter(w => w.type === 'system') || [];
-        const customWordlists = wordlists?.filter(w => w.owner_id === userId) || [];
+        
+        if (sysError) {
+            console.error('❌ 查詢系統詞表失敗:', sysError);
+        }
+        
+        // 查詢自定義詞表
+        const { data: customWordlists, error: customError } = await supabase
+            .from('wordlists')
+            .select('*')
+            .eq('owner_id', userId)
+            .order('name');
+        
+        if (customError) {
+            console.error('❌ 查詢自定義詞表失敗:', customError);
+        }
+        
+        console.log('✅ 系統詞表數量:', systemWordlists?.length || 0);
+        console.log('✅ 自定義詞表數量:', customWordlists?.length || 0);
+        
+        // 合併所有詞表
+        const wordlists = [...(systemWordlists || []), ...(customWordlists || [])];
 
         // 填充系统词表到自定义下拉菜单
         const systemDropdown = document.getElementById('system-wordlists-dropdown');
@@ -1166,8 +1186,19 @@ async function loadWordlistSelectorSetting() {
         }
 
         // 设置当前选中并更新显示
-        let selectedId = prefs?.default_wordlist_id || 'ai';
+        // ✅ 優先使用 default_mode，確保與實際狀態一致
+        const defaultMode = prefs?.default_mode || 'ai';
+        const defaultWordlistId = prefs?.default_wordlist_id;
+        
+        let selectedId = 'ai';  // 默認 AI 模式
+        
+        if (defaultMode === 'wordlist' && defaultWordlistId) {
+            selectedId = defaultWordlistId;
+        }
+        
         selectedWordlistIdInSetting = selectedId === 'ai' ? null : selectedId;
+        
+        console.log('📊 設置界面當前選中:', selectedId === 'ai' ? 'AI模式' : selectedId);
         
         // 更新选择器头部显示
         const headerIcon = document.querySelector('.wordlist-selector-header .wordlist-icon');
@@ -1183,6 +1214,9 @@ async function loadWordlistSelectorSetting() {
                     const icon = selectedWordlist.type === 'system' ? '📖' : '✨';
                     headerIcon.textContent = icon;
                     selectedNameElement.textContent = selectedWordlist.name;
+                    console.log('📖 顯示詞表:', selectedWordlist.name);
+                } else {
+                    console.warn('⚠️ 找不到詞表:', selectedId);
                 }
             }
         }
@@ -1191,6 +1225,7 @@ async function loadWordlistSelectorSetting() {
         document.querySelectorAll('.wordlist-option').forEach(opt => {
             if (opt.dataset.value === selectedId) {
                 opt.classList.add('active');
+                console.log('✅ 標記選中:', opt.querySelector('.wordlist-name-text')?.textContent);
             } else {
                 opt.classList.remove('active');
             }
