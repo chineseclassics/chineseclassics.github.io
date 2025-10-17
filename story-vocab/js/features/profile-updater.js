@@ -191,22 +191,11 @@ export async function summarizeGameSession(userId, sessionId) {
       completed_at: new Date().toISOString()
     }
     
-    console.log('🔍 準備插入會話彙總，數據:', {
-      total_rounds: `${rounds.length} (${typeof rounds.length})`,
-      avg_score: `${avgScore} (${typeof avgScore})`,
-      avg_selected_difficulty: `${avgSelectedDifficulty} (${typeof avgSelectedDifficulty})`,
-      estimated_level_before: `${summary.estimated_level_before} (${typeof summary.estimated_level_before})`,
-      estimated_level_after: `${estimatedLevelAfter} (${typeof estimatedLevelAfter})`
-    });
-    
     const { error: summaryError } = await supabase
       .from('game_session_summary')
       .insert(summary)
     
-    if (summaryError) {
-      console.error('❌ 插入會話彙總失敗，錯誤詳情:', summaryError);
-      throw summaryError;
-    }
+    if (summaryError) throw summaryError
     
     // 更新用戶檔案（遊戲數 + 信心度）
     await supabase
