@@ -70,16 +70,14 @@
     width: 100%;
 }
 
-/* 確保二級卡片容器能完整顯示所有卡片 */
-#level-2-cards {
+/* 確保二級卡片容器能完整顯示所有卡片（只在開始創作界面） */
+#start-screen #level-2-cards {
     max-height: none; /* 移除任何高度限制 */
-    overflow: visible; /* 確保所有卡片可見 */
 }
 
-#wordlist-hierarchy-section {
+#start-screen #wordlist-hierarchy-section {
     margin-bottom: 30px;
     max-height: none; /* 移除高度限制 */
-    overflow: visible; /* 允許完整顯示 */
 }
 
 #wordlist-hierarchy-section h2 {

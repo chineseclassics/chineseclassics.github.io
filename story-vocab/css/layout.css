@@ -87,8 +87,8 @@
 .content {
     padding: 30px 40px;
     flex: 1;
-    overflow-y: visible; /* 允许父容器控制滚动 */
-    overflow-x: visible; /* 允许hover效果正常显示 */
+    overflow-y: auto; /* 恢復原有的滾動行為 */
+    overflow-x: hidden; /* 恢復原有的溢出隱藏 */
     display: flex;
     flex-direction: column;
     max-width: 100%; /* 限制最大寬度 */
