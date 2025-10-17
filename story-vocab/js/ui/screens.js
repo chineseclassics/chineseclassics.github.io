@@ -61,18 +61,49 @@ export async function initStartScreen() {
             return;
         }
 
-        // 用户选择了特定词表，使用緩存的詞表信息
-        const wordlistInfo = prefs.wordlist_info;
+        // 用户选择了特定词表，優先使用緩存，如果沒有則查詢
+        let wordlistInfo = prefs.wordlist_info;
         
-        if (!wordlistInfo) {
-            console.warn('⚠️ 詞表信息未緩存，使用AI模式');
-            gameState.wordlistMode = 'ai';
-            gameState.wordlistId = null;
-            updateWordlistNameDisplay('AI智能推薦');
-            return;
+        if (!wordlistInfo || !wordlistInfo.tags || wordlistInfo.tags.length === 0) {
+            console.log('📥 詞表信息未緩存或無標籤，重新查詢...');
+            
+            // 查詢詞表信息
+            const { data: wordlist, error: wlError } = await supabase
+                .from('wordlists')
+                .select('*')
+                .eq('id', prefs.default_wordlist_id)
+                .maybeSingle();
+            
+            if (wlError || !wordlist) {
+                console.warn('⚠️ 查詢詞表失敗，使用AI模式');
+                gameState.wordlistMode = 'ai';
+                gameState.wordlistId = null;
+                updateWordlistNameDisplay('AI智能推薦');
+                return;
+            }
+            
+            // 查詢標籤
+            const { data: tags, error: tagError } = await supabase
+                .from('wordlist_tags')
+                .select('*')
+                .eq('wordlist_id', wordlist.id)
+                .order('tag_level')
+                .order('sort_order');
+            
+            if (tagError) {
+                console.error('⚠️ 查詢標籤失敗:', tagError);
+            }
+            
+            wordlistInfo = {
+                id: wordlist.id,
+                name: wordlist.name,
+                tags: tags || []
+            };
+            
+            console.log('✅ 詞表信息已查詢:', wordlist.name, '標籤數:', tags?.length || 0);
+        } else {
+            console.log('📚 詞表信息（從緩存）:', wordlistInfo.name);
         }
-
-        console.log('📚 詞表信息（從緩存）:', wordlistInfo.name);
 
         // 设置gameState
         gameState.wordlistMode = 'wordlist';
@@ -83,7 +114,7 @@ export async function initStartScreen() {
 
         // 如果有层级标签，显示层级卡片
         if (level2Tags.length > 0) {
-            console.log('📚 显示词表层级卡片');
+            console.log('📚 显示词表层级卡片，共', level2Tags.length, '個');
             showWordlistHierarchy();
             renderLevel2Cards(wordlistInfo, wordlistInfo.tags);
             updateWordlistNameDisplay(wordlistInfo.name);
@@ -1304,9 +1335,24 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                 
                 // 渲染層級卡片
                 await renderLevel2Cards(wordlist, tags || []);
+                
+                // ✅ 更新緩存的詞表信息（用於下次頁面加載）
+                if (gameState.user && gameState.user.wordlist_preference) {
+                    gameState.user.wordlist_preference.wordlist_info = {
+                        id: wordlist.id,
+                        name: wordlist.name,
+                        tags: tags || []
+                    };
+                    console.log('✅ 詞表信息已緩存');
+                }
             } else {
                 // AI 模式
                 updateWordlistNameDisplay('AI智能推薦');
+                
+                // 清除緩存的詞表信息
+                if (gameState.user && gameState.user.wordlist_preference) {
+                    gameState.user.wordlist_preference.wordlist_info = null;
+                }
             }
             
             showToast('✅ 詞表已切換');
