@@ -946,10 +946,6 @@ function displayStorySummary(summary) {
     if (!summaryContainer) return;
     
     summaryContainer.innerHTML = `
-        <div class="story-summary-header">
-            <h3>🌟 故事整體點評</h3>
-        </div>
-        
         <div class="story-summary-content">
             ${summary.evaluation ? `
                 <div class="summary-section summary-evaluation">

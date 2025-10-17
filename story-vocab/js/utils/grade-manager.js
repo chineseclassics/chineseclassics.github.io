@@ -248,6 +248,8 @@ export async function checkAndUpgradeGrade(user) {
  */
 export async function updateUserGrade(userId, newGrade) {
   try {
+    console.log('🔍 [updateUserGrade] 開始執行，參數:', { userId, newGrade });
+    
     if (!userId || !newGrade) {
       console.error('❌ 缺少必要參數');
       return false;
@@ -258,6 +260,7 @@ export async function updateUserGrade(userId, newGrade) {
       return false;
     }
     
+    console.log('🔍 [updateUserGrade] 準備更新數據庫...');
     const supabase = getSupabase();
     const { error } = await supabase
       .from('users')
@@ -267,6 +270,8 @@ export async function updateUserGrade(userId, newGrade) {
         grade_auto_upgraded: false // 手動設定，重置自動升級標記
       })
       .eq('id', userId);
+    
+    console.log('🔍 [updateUserGrade] 數據庫響應:', { error });
     
     if (error) {
       console.error('❌ 更新年級失敗:', error);
@@ -278,6 +283,8 @@ export async function updateUserGrade(userId, newGrade) {
     
   } catch (error) {
     console.error('❌ 更新年級異常:', error);
+    console.error('   錯誤詳情:', error.message);
+    console.error('   錯誤堆棧:', error.stack);
     return false;
   }
 }

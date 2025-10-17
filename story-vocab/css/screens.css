@@ -1262,19 +1262,21 @@
 .stat-card .stat-icon {
     font-size: 28px;
     margin-bottom: 5px;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
 }
 
 .stat-card .stat-label {
     font-size: 12px;
     font-weight: 600;
-    opacity: 1;
+    color: rgba(255, 255, 255, 0.85);
     margin-bottom: 8px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card .stat-value {
     font-size: 32px;
     font-weight: bold;
+    color: #ffffff;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
