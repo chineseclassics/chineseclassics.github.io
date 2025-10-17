@@ -19,6 +19,14 @@ with open(input_file, 'r', encoding='utf-8') as f:
 
 print(f"✅ 讀取完成，共 {len(rows)} 個詞語")
 
+# 提取唯一的標籤
+level_2_tags = sorted(set(row['第二層級'] for row in rows if row['第二層級']))
+level_3_tags = sorted(set(row['第三層級'] for row in rows if row['第三層級']))
+
+print(f"📊 統計：")
+print(f"   - 第二層級標籤：{len(level_2_tags)} 個")
+print(f"   - 第三層級標籤：{len(level_3_tags)} 個")
+
 # 生成 SQL 腳本
 print(f"📝 生成 SQL 腳本...")
 
@@ -62,7 +70,55 @@ SET
   updated_at = NOW();
 
 -- ========================================
--- 2. 導入詞彙數據
+-- 2. 創建層級標籤
+-- ========================================
+
+-- 第二層級標籤（單元）
+INSERT INTO wordlist_tags (wordlist_id, tag_level, tag_code, tag_display_name, sort_order)
+SELECT 
+  (SELECT id FROM wordlists WHERE code = 'primary_chinese_2025'),
+  2,
+  tag_name,
+  tag_name,
+  ROW_NUMBER() OVER (ORDER BY tag_name)
+FROM (VALUES
+""".format(len(rows), len(rows), len(rows)))
+
+    # 寫入第二層級標籤
+    for i, tag in enumerate(level_2_tags):
+        tag_escaped = tag.replace("'", "''")
+        line = f"  ('{tag_escaped}')"
+        if i < len(level_2_tags) - 1:
+            line += ","
+        f.write(line + "\n")
+    
+    f.write(""") AS tags(tag_name)
+ON CONFLICT (wordlist_id, tag_level, tag_code) DO NOTHING;
+
+-- 第三層級標籤（課文）
+INSERT INTO wordlist_tags (wordlist_id, tag_level, tag_code, tag_display_name, sort_order)
+SELECT 
+  (SELECT id FROM wordlists WHERE code = 'primary_chinese_2025'),
+  3,
+  tag_name,
+  tag_name,
+  ROW_NUMBER() OVER (ORDER BY tag_name)
+FROM (VALUES
+""")
+
+    # 寫入第三層級標籤
+    for i, tag in enumerate(level_3_tags):
+        tag_escaped = tag.replace("'", "''")
+        line = f"  ('{tag_escaped}')"
+        if i < len(level_3_tags) - 1:
+            line += ","
+        f.write(line + "\n")
+    
+    f.write(""") AS tags(tag_name)
+ON CONFLICT (wordlist_id, tag_level, tag_code) DO NOTHING;
+
+-- ========================================
+-- 3. 導入詞彙數據
 -- ========================================
 
 -- 批量插入所有詞語
