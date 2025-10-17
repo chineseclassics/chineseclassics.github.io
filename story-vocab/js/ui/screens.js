@@ -1262,15 +1262,51 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                 gameState.level3Tag = null;
             }
             
-            // 更新顯示
-            updateWordlistNameDisplay(value === 'ai' ? 'AI智能推薦' : '自定義詞表');
-            
             // 清除層級卡片（如果有）
             clearHierarchyCards();
             
-            // 如果是詞表模式，重新渲染層級卡片
+            // 如果是詞表模式，查詢並渲染層級卡片
             if (value !== 'ai') {
-                await renderLevel2Cards(value);
+                // 查詢詞表信息和標籤
+                const { data: wordlist, error: wlError } = await supabase
+                    .from('wordlists')
+                    .select('*')
+                    .eq('id', value)
+                    .maybeSingle();
+                
+                if (wlError) {
+                    console.error('查詢詞表失敗:', wlError);
+                    throw wlError;
+                }
+                
+                if (!wordlist) {
+                    console.warn('詞表不存在:', value);
+                    updateWordlistNameDisplay('AI智能推薦');
+                    showToast('⚠️ 詞表不存在，已切換到AI模式');
+                    return;
+                }
+                
+                // 查詢標籤
+                const { data: tags, error: tagError } = await supabase
+                    .from('wordlist_tags')
+                    .select('*')
+                    .eq('wordlist_id', value)
+                    .order('tag_level')
+                    .order('sort_order');
+                
+                if (tagError) {
+                    console.error('查詢標籤失敗:', tagError);
+                    throw tagError;
+                }
+                
+                // 更新顯示
+                updateWordlistNameDisplay(wordlist.name);
+                
+                // 渲染層級卡片
+                await renderLevel2Cards(wordlist, tags || []);
+            } else {
+                // AI 模式
+                updateWordlistNameDisplay('AI智能推薦');
             }
             
             showToast('✅ 詞表已切換');

@@ -538,8 +538,8 @@
         `导入过程中会：\n` +
         `1. 创建词表记录\n` +
         `2. 创建层级标签\n` +
-        `3. 导入词汇（不存在的词会调用AI评估难度）\n` +
-        `4. 创建词汇-词表关联`
+        `3. 批量導入詞彙到詞表\n` +
+        `4. 自動跳過重複詞彙`
       )
 
       if (!confirmed) return
@@ -630,94 +630,57 @@
         let aiEvaluatedCount = 0
         let mappingCount = 0
 
-        for (let i = 0; i < fileData.length; i++) {
-          const item = fileData[i]
+        // 批量插入到 wordlist_vocabulary 表
+        const batchSize = 100
+        for (let i = 0; i < fileData.length; i += batchSize) {
+          const batch = fileData.slice(i, i + batchSize)
           
           updateProgress((i / fileData.length) * 100)
 
           try {
-            // 查找或创建词汇
-            let { data: vocab, error: findError } = await supabase
-              .from('vocabulary')
-              .select('*')
-              .eq('word', item.word)
-              .maybeSingle()
+            // 準備批量插入數據
+            const insertData = batch.map(item => ({
+              wordlist_id: wordlist.id,
+              word: item.word,
+              level_2_tag: item.level_2_tag || null,
+              level_3_tag: item.level_3_tag || null
+            }))
 
-            if (findError) throw findError
+            // 批量插入
+            const { error: insertError } = await supabase
+              .from('wordlist_vocabulary')
+              .insert(insertData)
 
-            if (!vocab) {
-              // 新词汇：需要AI评估难度
-              addLog(`  🤖 新词"${item.word}"，调用AI评估难度...`)
-              
-              // 调用AI评估
-              const { data: evalData, error: evalError } = await supabase.functions.invoke(
-                'vocab-difficulty-evaluator',
-                {
-                  body: {
-                    words: [{ word: item.word }],
-                    mode: 'single'
-                  }
+            if (insertError) {
+              // 如果批量插入失敗，嘗試逐個插入（跳過重複）
+              for (const item of batch) {
+                const { error: singleError } = await supabase
+                  .from('wordlist_vocabulary')
+                  .insert({
+                    wordlist_id: wordlist.id,
+                    word: item.word,
+                    level_2_tag: item.level_2_tag || null,
+                    level_3_tag: item.level_3_tag || null
+                  })
+                
+                if (singleError && singleError.code !== '23505') {
+                  addLog(`  ⚠️ 跳過: ${item.word} - ${singleError.message}`, 'error')
+                } else if (!singleError) {
+                  newVocabCount++
+                } else {
+                  existingVocabCount++
                 }
-              )
-
-              if (evalError) {
-                console.error('AI评估失败，使用默认值', evalError)
               }
-
-              const evaluation = evalData?.results?.[0] || { 
-                difficulty: 3, 
-                category: '未知', 
-                confidence: 'low',
-                reasoning: 'AI评估失败，使用默认值'
-              }
-
-              // 创建词汇
-              const { data: newVocab, error: insertError } = await supabase
-                .from('vocabulary')
-                .insert({
-                  word: item.word,
-                  difficulty_level: evaluation.difficulty,
-                  category: evaluation.category,
-                  frequency: 50,
-                  difficulty_confidence: evaluation.confidence,
-                  difficulty_reasoning: evaluation.reasoning,
-                  difficulty_evaluated_at: new Date().toISOString()
-                })
-                .select()
-                .single()
-
-              if (insertError) throw insertError
-              
-              vocab = newVocab
-              newVocabCount++
-              aiEvaluatedCount++
-              addLog(`  ✅ 新增: ${item.word} (AI评估为 L${evaluation.difficulty})`, 'success')
             } else {
-              existingVocabCount++
-            }
-
-            // 创建关联
-            const tagPath = [item.level_2_tag, item.level_3_tag].filter(Boolean)
-            
-            const { error: mappingError } = await supabase
-              .from('vocabulary_wordlist_mapping')
-              .insert({
-                vocabulary_id: vocab.id,
-                wordlist_id: wordlist.id,
-                tag_path: JSON.stringify(tagPath),
-                level_2_tag: item.level_2_tag || null,
-                level_3_tag: item.level_3_tag || null
-              })
-
-            if (mappingError && mappingError.code !== '23505') { // 忽略重复错误
-              throw mappingError
+              newVocabCount += batch.length
+              addLog(`  ✅ 已導入 ${i + batch.length}/${fileData.length} 個詞語`, 'success')
             }
             
-            mappingCount++
+            mappingCount += batch.length
 
           } catch (error) {
-            console.error(`处理失败: ${item.word}`, error)
-            addLog(`  ❌ 失败: ${item.word} - ${error.message}`, 'error')
+            console.error(`批次處理失敗:`, error)
+            addLog(`  ❌ 批次失敗 (${i}-${i + batch.length}): ${error.message}`, 'error')
           }
         }
 
@@ -726,10 +689,9 @@
         addLog('\n============================', 'success')
         addLog(`✅ 导入完成！`, 'success')
         addLog(`📊 统计：`, 'success')
-        addLog(`  - 新增词汇: ${newVocabCount}`, 'success')
-        addLog(`  - 已存在词汇: ${existingVocabCount}`, 'success')
-        addLog(`  - AI评估: ${aiEvaluatedCount}`, 'success')
-        addLog(`  - 创建关联: ${mappingCount}`, 'success')
+        addLog(`  - 成功導入: ${newVocabCount}`, 'success')
+        addLog(`  - 重複跳過: ${existingVocabCount}`, 'success')
+        addLog(`  - 總計處理: ${mappingCount}`, 'success')
         addLog('============================', 'success')
 
         btn.textContent = '✅ 导入完成'
@@ -738,9 +700,9 @@
           alert(
             `✅ 系统词表导入成功！\n\n` +
             `词表名称：${name}\n` +
-            `导入词汇：${fileData.length} 个\n` +
-            `新增词汇：${newVocabCount} 个\n` +
-            `AI评估：${aiEvaluatedCount} 个`
+            `成功導入：${newVocabCount} 個詞語\n` +
+            `重複跳過：${existingVocabCount} 個\n` +
+            `總計處理：${fileData.length} 個`
           )
         }, 500)
 
