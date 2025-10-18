@@ -10,6 +10,7 @@
 
 import { RichTextEditor } from '../editor/rich-text-editor.js';
 import { AppState } from '../app.js';
+import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-storage.js';
 
 // ================================
 // 編輯器狀態管理
@@ -32,6 +33,9 @@ export async function initializeEssayEditor() {
     console.log('📝 初始化論文編輯器...');
     
     try {
+        // 0. 初始化存儲模組
+        initializeStorage();
+        
         // 1. 初始化引言編輯器
         const introContainer = document.getElementById('intro-editor');
         if (!introContainer) {
@@ -435,14 +439,18 @@ async function autoSave() {
             last_saved_at: new Date().toISOString()
         };
         
-        // 保存到 localStorage（離線備份）
+        // 1. 保存到 localStorage（離線備份）
         localStorage.setItem('essay-draft', JSON.stringify(essayData));
         
-        // TODO: 保存到 Supabase（階段 1.6.2 完成後實現）
-        // await saveToSupabase(essayData);
-        
-        console.log('✅ 自動保存完成');
-        updateSaveStatus('saved');
+        // 2. 保存到 Supabase 數據庫
+        try {
+            await saveEssayToSupabase(essayData);
+            console.log('✅ 自動保存完成（Supabase + localStorage）');
+            updateSaveStatus('saved');
+        } catch (dbError) {
+            console.warn('⚠️ Supabase 保存失敗，已保存到 localStorage:', dbError.message);
+            updateSaveStatus('saved'); // 至少 localStorage 保存成功了
+        }
         
     } catch (error) {
         console.error('❌ 自動保存失敗:', error);
