@@ -490,26 +490,65 @@ export class StandaloneAuth extends AuthService {
       if (prefs && prefs.default_wordlist_id && prefs.default_mode === 'wordlist') {
         const { data: wordlist } = await this.supabase
           .from('wordlists')
-          .select('*')
+          .select('id, name, code, type, description')  // ✅ 包含 code 和 type，避免後續重複查詢
           .eq('id', prefs.default_wordlist_id)
           .maybeSingle();
         
         if (wordlist) {
-          // 加載詞表標籤
-          const { data: tags } = await this.supabase
-            .from('wordlist_tags')
-            .select('*')
-            .eq('wordlist_id', wordlist.id)
-            .order('tag_level')
-            .order('sort_order');
-          
-          wordlistInfo = {
-            id: wordlist.id,
-            name: wordlist.name,
-            tags: tags || []
-          };
-          
-          console.log('📚 詞表信息已加載:', wordlist.name);
+          // ✅ 優化：如果是系統詞表，從 JSON 加載標籤（更快，無需查詢數據庫）
+          if (wordlist.type === 'system' && wordlist.code) {
+            try {
+              const { getWordlistWithTags } = await import('../core/wordlist-loader.js');
+              const jsonData = await getWordlistWithTags(wordlist.code);
+              
+              wordlistInfo = {
+                id: wordlist.id,
+                name: wordlist.name,
+                code: wordlist.code,
+                type: wordlist.type,
+                tags: jsonData.tags || []
+              };
+              
+              console.log('📚 詞表信息已從 JSON 加載:', wordlist.name, '標籤數:', jsonData.tags?.length || 0);
+            } catch (jsonError) {
+              // JSON 加載失敗，回退到數據庫查詢
+              console.warn('⚠️ JSON 加載失敗，使用數據庫查詢:', jsonError.message);
+              const { data: tags } = await this.supabase
+                .from('wordlist_tags')
+                .select('*')
+                .eq('wordlist_id', wordlist.id)
+                .order('tag_level')
+                .order('sort_order');
+              
+              wordlistInfo = {
+                id: wordlist.id,
+                name: wordlist.name,
+                code: wordlist.code,
+                type: wordlist.type,
+                tags: tags || []
+              };
+              
+              console.log('📚 詞表信息已從數據庫加載:', wordlist.name);
+            }
+          } else {
+            // 自定義詞表，從數據庫查詢標籤
+            const { data: tags } = await this.supabase
+              .from('wordlist_tags')
+              .select('*')
+              .eq('wordlist_id', wordlist.id)
+              .order('tag_level')
+              .order('sort_order');
+            
+            wordlistInfo = {
+              id: wordlist.id,
+              name: wordlist.name,
+              code: wordlist.code,
+              type: wordlist.type,
+              tags: tags || []
+            };
+            
+            console.log('📚 詞表信息已加載:', wordlist.name);
+          }
         }
       }
       

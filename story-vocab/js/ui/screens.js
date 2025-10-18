@@ -25,7 +25,7 @@ export async function initStartScreen() {
     clearHierarchyCards();
     console.log('✅ 已清理舊的層級卡片狀態');
     
-    // 🎓 根據用戶年級動態加載主題（內部已經綁定事件，無需重複綁定）
+    // 🎓 根據用戶年級動態加載主題（兩種模式都需要）
     await loadThemesByGrade();
 
     const supabase = getSupabase();
@@ -143,30 +143,37 @@ export async function initStartScreen() {
                 console.log('✅ 詞表信息已查詢:', wordlist.name, '標籤數:', tags?.length || 0);
             }
         } else {
-            console.log('📚 詞表信息（從緩存）:', wordlistInfo.name);
-            // 檢查緩存是否有 code（舊版本可能沒有）
-            if (!wordlistInfo.code) {
-                console.warn('⚠️ 緩存的詞表信息缺少 code，重新查詢...');
-                // 從 Supabase 查詢以獲取 code
-                const { data: wordlist } = await supabase
-                    .from('wordlists')
-                    .select('id, name, code, type')
-                    .eq('id', wordlistInfo.id)
-                    .maybeSingle();
+            // ✅ 優化：認證服務已經提供了完整的詞表信息（包含 code 和 tags）
+            console.log('📚 詞表信息（從認證服務）:', wordlistInfo.name);
+            
+            // 如果缺少必要信息（向後兼容），才重新查詢
+            if (!wordlistInfo.code || !wordlistInfo.tags || wordlistInfo.tags.length === 0) {
+                console.warn('⚠️ 詞表信息不完整，補充加載...');
                 
-                if (wordlist && wordlist.code) {
-                    wordlistInfo.code = wordlist.code;
-                    console.log('✅ 已補充 code:', wordlist.code);
+                if (!wordlistInfo.code) {
+                    // 只查詢 code 和 type
+                    const { data: wordlist } = await supabase
+                        .from('wordlists')
+                        .select('code, type')
+                        .eq('id', wordlistInfo.id)
+                        .maybeSingle();
                     
-                    // 如果是系統詞表，重新從 JSON 加載標籤
-                    if (wordlist.type === 'system') {
-                        try {
-                            const jsonWordlist = await getWordlistWithTags(wordlist.code);
-                            wordlistInfo.tags = jsonWordlist.tags;
-                            console.log('✅ 已從 JSON 重新加載標籤');
-                        } catch (e) {
-                            console.warn('⚠️ JSON 加載失敗，使用緩存的標籤');
-                        }
+                    if (wordlist) {
+                        wordlistInfo.code = wordlist.code;
+                        wordlistInfo.type = wordlist.type;
+                        console.log('✅ 已補充 code:', wordlist.code);
+                    }
+                }
+                
+                // 如果是系統詞表且缺少標籤，從 JSON 加載
+                if (wordlistInfo.type === 'system' && wordlistInfo.code && 
+                    (!wordlistInfo.tags || wordlistInfo.tags.length === 0)) {
+                    try {
+                        const jsonWordlist = await getWordlistWithTags(wordlistInfo.code);
+                        wordlistInfo.tags = jsonWordlist.tags;
+                        console.log('✅ 已從 JSON 加載標籤');
+                    } catch (e) {
+                        console.warn('⚠️ JSON 加載失敗:', e.message);
                     }
                 }
             }
@@ -1500,6 +1507,13 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                 // 渲染層級卡片
                 await renderLevel2Cards(wordlistInfo, tags || []);
                 
+                // ✅ 驗證 UI 已更新
+                console.log('✅ UI 更新完成:', {
+                    displayName: document.getElementById('current-wordlist-name-inline')?.textContent,
+                    hierarchyVisible: document.getElementById('wordlist-hierarchy-section')?.style.display !== 'none',
+                    level2CardsCount: document.getElementById('level-2-cards')?.children.length
+                });
+                
                 // ✅ 更新緩存的詞表信息（用於下次頁面加載）
                 if (gameState.user && gameState.user.wordlist_preference) {
                     gameState.user.wordlist_preference.default_mode = 'wordlist';
@@ -1523,10 +1537,14 @@ window.selectWordlist = async function(value, displayName, wordCount) {
             
             showToast('✅ 詞表已切換');
             console.log('✅ 詞表切換完成，gameState已更新');
+            console.log('   - wordlistMode:', gameState.wordlistMode);
+            console.log('   - wordlistId:', gameState.wordlistId);
+            console.log('   - 詞表名稱:', document.getElementById('current-wordlist-name-inline')?.textContent);
         }
     } catch (error) {
         console.error('保存詞表設置失敗:', error);
-        showToast('❌ 保存失敗，請重試');
+        console.error('   錯誤詳情:', error.message);
+        showToast('❌ 保存失敗，請重試：' + error.message);
     }
 };
 

@@ -5,6 +5,8 @@
 
 import { getStories, getStoriesStats, formatRelativeTime, updateStory, deleteStory } from '../core/story-storage.js';
 import { showToast } from '../utils/toast.js';
+import { gameState } from '../core/game-state.js';
+import { getSupabase } from '../supabase-client.js';
 
 /**
  * 获取主题显示名称
@@ -124,15 +126,15 @@ export async function loadMyStoriesScreen() {
     // 🔥 從 Supabase 加載雲端故事數據
     let stories = [];
     
-    if (window.gameState && window.gameState.userId) {
+    if (gameState && gameState.userId) {
         try {
-            const supabase = window.supabase; // 使用全局 supabase 客戶端
+            const supabase = getSupabase();
             if (!supabase) throw new Error('Supabase 未初始化');
             
             const { data, error } = await supabase
                 .from('story_sessions')
                 .select('*')
-                .eq('user_id', window.gameState.userId)
+                .eq('user_id', gameState.userId)
                 .order('updated_at', { ascending: false });
             
             if (error) throw error;
