@@ -20,6 +20,10 @@ import { SUPABASE_CONFIG } from '../config.js';
 export async function initStartScreen() {
     console.log('🎬 開始初始化啟動界面...');
     
+    // 🧹 首先清理所有舊狀態（防止重複進入時狀態混亂）
+    clearHierarchyCards();
+    console.log('✅ 已清理舊的層級卡片狀態');
+    
     // 🎓 根據用戶年級動態加載主題（內部已經綁定事件，無需重複綁定）
     await loadThemesByGrade();
 

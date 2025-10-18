@@ -25,6 +25,12 @@ export function renderLevel2Cards(wordlist, tags) {
   
   if (!level2Container) return;
 
+  // 清理舊的模態窗口（防止狀態混亂）
+  if (modalOverlay && modalOverlay.parentNode) {
+    modalOverlay.remove();
+    modalOverlay = null;
+  }
+
   // 隐藏旧的三级容器（如果存在）
   const oldLevel3Container = document.getElementById('level-3-cards');
   if (oldLevel3Container) {
@@ -278,24 +284,42 @@ async function loadLevel3TagsForLevel2(level2TagCode) {
   const allLevel3Tags = allTags.filter(t => t.tag_level === 3);
   
   if (allLevel3Tags.length === 0) {
+    console.log('ℹ️ 沒有三級標籤，直接返回空數組');
     return [];
   }
   
   try {
-    console.log('🔍 查詢單元下的課文:', level2TagCode);
+    console.log('🔍 查詢單元下的課文:', level2TagCode, '| 詞表ID:', currentWordlist?.id);
     
-    // 查询该二级分类下有哪些三级分类
-    const { data: vocabData, error } = await supabase
+    if (!currentWordlist || !currentWordlist.id) {
+      console.error('❌ currentWordlist 未定義或缺少 ID');
+      return allLevel3Tags;
+    }
+    
+    // 查询该二级分类下有哪些三级分类（添加超時保護：10秒）
+    const queryPromise = supabase
       .from('wordlist_vocabulary')
       .select('level_3_tag')
       .eq('wordlist_id', currentWordlist.id)
       .eq('level_2_tag', level2TagCode)
       .not('level_3_tag', 'is', null);
     
+    const timeoutPromise = new Promise((resolve) => 
+      setTimeout(() => {
+        console.warn('⚠️ 查詢超時（10秒），使用降級方案');
+        resolve({ data: null, error: { message: '查詢超時' } });
+      }, 10000)
+    );
+    
+    const result = await Promise.race([queryPromise, timeoutPromise]);
+    const { data: vocabData, error } = result;
+    
     if (error) {
       console.error('❌ 查詢三級標籤失敗:', error);
       return allLevel3Tags;  // 降級：顯示所有三級標籤
     }
+    
+    console.log('✅ 查詢成功，返回數據:', vocabData?.length, '條記錄');
     
     // 提取唯一的三級標籤代碼
     const level3TagCodes = [...new Set(vocabData.map(v => v.level_3_tag))];
@@ -305,6 +329,8 @@ async function loadLevel3TagsForLevel2(level2TagCode) {
     const filteredLevel3Tags = allLevel3Tags.filter(tag => 
       level3TagCodes.includes(tag.tag_code)
     );
+    
+    console.log('✅ 已過濾三級標籤:', filteredLevel3Tags.length, '個');
     
     return filteredLevel3Tags;
     
@@ -324,8 +350,12 @@ export function clearHierarchyCards() {
     level2Container.innerHTML = '';
   }
 
-  // 关闭模态窗口
+  // 关闭并完全移除模态窗口
   closeModal();
+  if (modalOverlay && modalOverlay.parentNode) {
+    modalOverlay.remove();
+    modalOverlay = null; // 重置為 null，下次會重新創建
+  }
 
   // 清除选择状态
   selectedLevel2 = null;
