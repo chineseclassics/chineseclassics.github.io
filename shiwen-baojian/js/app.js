@@ -93,6 +93,9 @@ async function handleAuthenticatedUser(user) {
     
     AppState.currentUser = user;
     
+    // 確保 users 表中有記錄
+    await ensureUserRecord(user);
+    
     // 識別用戶角色
     AppState.userRole = detectUserRole(user);
     console.log('🎭 用戶角色:', AppState.userRole);
@@ -128,6 +131,51 @@ function detectUserRole(user) {
     
     // 默認為學生（用於其他郵箱格式）
     return 'student';
+}
+
+/**
+ * 確保 users 表中有用戶記錄
+ */
+async function ensureUserRecord(user) {
+    try {
+        // 檢查用戶是否已存在
+        const { data: existingUser, error: checkError } = await AppState.supabase
+            .from('users')
+            .select('id')
+            .eq('id', user.id)
+            .single();
+        
+        if (existingUser) {
+            console.log('✅ 用戶記錄已存在');
+            return;
+        }
+        
+        // 創建用戶記錄
+        const userRole = detectUserRole(user);
+        const userRecord = {
+            id: user.id,
+            email: user.email || null,
+            full_name: user.user_metadata?.full_name || (user.is_anonymous ? '匿名測試' : null),
+            role: userRole === 'teacher' ? 'teacher' : 'student',
+            user_type: user.is_anonymous ? 'anonymous' : 'google'
+        };
+        
+        const { error: insertError } = await AppState.supabase
+            .from('users')
+            .insert(userRecord);
+        
+        if (insertError) {
+            console.error('❌ 創建用戶記錄失敗:', insertError);
+            // 不拋出錯誤，允許繼續（可能是權限問題）
+            return;
+        }
+        
+        console.log('✅ 已創建用戶記錄:', userRole);
+        
+    } catch (error) {
+        console.error('❌ 確保用戶記錄異常:', error);
+        // 不拋出錯誤，允許繼續
+    }
 }
 
 /**
@@ -215,6 +263,10 @@ async function handleAnonymousLogin() {
         }
         
         console.log('✅ 匿名登錄成功');
+        
+        // 確保 users 表中有記錄
+        await ensureUserRecord(data.user);
+        
         showLoading(false);
         
     } catch (error) {
