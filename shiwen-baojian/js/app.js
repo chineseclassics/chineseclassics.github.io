@@ -59,10 +59,15 @@ async function initializeApp() {
         AppState.supabase.auth.onAuthStateChange((event, session) => {
             console.log('🔔 認證狀態變化:', event);
             
-            if (event === 'SIGNED_IN' && session) {
+            // 只在真正登入或登出時處理，忽略 token 刷新和初始會話事件
+            if (event === 'SIGNED_IN' && session && !AppState.currentUser) {
+                // 只有在沒有當前用戶時才處理（避免重複處理）
                 handleAuthenticatedUser(session.user);
             } else if (event === 'SIGNED_OUT') {
                 handleSignOut();
+            } else if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+                // Token 刷新和初始會話不需要重新初始化界面
+                console.log('ℹ️ Token 刷新或初始會話，無需重新初始化');
             }
         });
         

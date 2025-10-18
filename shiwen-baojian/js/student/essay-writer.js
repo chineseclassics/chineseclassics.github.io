@@ -22,7 +22,8 @@ const EditorState = {
     arguments: [], // { id, titleEditor, paragraphs: [{ id, editor }] }
     totalWordCount: 0,
     saveTimer: null,
-    initialized: false
+    initialized: false,
+    isInitializing: false  // 防止重复初始化
 };
 
 // ================================
@@ -30,6 +31,13 @@ const EditorState = {
 // ================================
 
 export async function initializeEssayEditor() {
+    // 防止重複初始化
+    if (EditorState.initialized || EditorState.isInitializing) {
+        console.log('⏸️ 編輯器已初始化或正在初始化中，跳過');
+        return;
+    }
+    
+    EditorState.isInitializing = true;
     console.log('📝 初始化論文編輯器...');
     
     try {
@@ -76,10 +84,12 @@ export async function initializeEssayEditor() {
         updateWordCount();
         
         EditorState.initialized = true;
+        EditorState.isInitializing = false;
         console.log('✅ 論文編輯器初始化完成');
         
     } catch (error) {
         console.error('❌ 編輯器初始化失敗:', error);
+        EditorState.isInitializing = false;  // 發生錯誤時也要重置狀態
     }
 }
 
