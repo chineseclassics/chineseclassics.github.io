@@ -137,6 +137,12 @@ function detectUserRole(user) {
  * 確保 users 表中有用戶記錄
  */
 async function ensureUserRecord(user) {
+    console.log('🔍 開始檢查用戶記錄...', {
+        userId: user.id,
+        email: user.email,
+        isAnonymous: user.is_anonymous
+    });
+    
     try {
         // 檢查用戶是否已存在
         const { data: existingUser, error: checkError } = await AppState.supabase
@@ -145,10 +151,17 @@ async function ensureUserRecord(user) {
             .eq('id', user.id)
             .single();
         
+        if (checkError && checkError.code !== 'PGRST116') {
+            // PGRST116 = 未找到記錄，這是正常的
+            console.error('❌ 檢查用戶記錄失敗:', checkError);
+        }
+        
         if (existingUser) {
-            console.log('✅ 用戶記錄已存在');
+            console.log('✅ 用戶記錄已存在:', existingUser.id);
             return;
         }
+        
+        console.log('📝 用戶記錄不存在，準備創建...');
         
         // 創建用戶記錄
         const userRole = detectUserRole(user);
@@ -160,21 +173,34 @@ async function ensureUserRecord(user) {
             user_type: user.is_anonymous ? 'anonymous' : 'google'
         };
         
-        const { error: insertError } = await AppState.supabase
+        console.log('💾 準備插入用戶記錄:', userRecord);
+        
+        const { data: insertedUser, error: insertError } = await AppState.supabase
             .from('users')
-            .insert(userRecord);
+            .insert(userRecord)
+            .select();
         
         if (insertError) {
-            console.error('❌ 創建用戶記錄失敗:', insertError);
-            // 不拋出錯誤，允許繼續（可能是權限問題）
+            console.error('❌ 創建用戶記錄失敗:', {
+                error: insertError,
+                message: insertError.message,
+                code: insertError.code,
+                details: insertError.details
+            });
             return;
         }
         
-        console.log('✅ 已創建用戶記錄:', userRole);
+        console.log('✅ 已創建用戶記錄:', {
+            role: userRole,
+            user: insertedUser
+        });
         
     } catch (error) {
-        console.error('❌ 確保用戶記錄異常:', error);
-        // 不拋出錯誤，允許繼續
+        console.error('❌ 確保用戶記錄異常:', {
+            error: error,
+            message: error.message,
+            stack: error.stack
+        });
     }
 }
 

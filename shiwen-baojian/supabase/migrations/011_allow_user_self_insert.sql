@@ -9,6 +9,7 @@
 -- 删除可能存在的旧策略
 DROP POLICY IF EXISTS "Users can view own profile" ON users;
 DROP POLICY IF EXISTS "Users can insert own profile" ON users;
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
 
 -- 用户可以查看自己的资料
 CREATE POLICY "Users can view own profile"
