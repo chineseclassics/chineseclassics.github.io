@@ -80,7 +80,18 @@ export async function initializeEssayEditor() {
             addArgumentBtn.addEventListener('click', addArgument);
         }
         
-        // 4. 初始化字數統計
+        // 4. 綁定標題輸入框變化事件
+        const titleInput = document.getElementById('essay-title');
+        const subtitleInput = document.getElementById('essay-subtitle');
+        
+        if (titleInput) {
+            titleInput.addEventListener('input', handleEditorChange);
+        }
+        if (subtitleInput) {
+            subtitleInput.addEventListener('input', handleEditorChange);
+        }
+        
+        // 5. 初始化字數統計
         updateWordCount();
         
         EditorState.initialized = true;
@@ -437,6 +448,8 @@ async function autoSave() {
         
         // 收集所有內容
         const essayData = {
+            title: document.getElementById('essay-title')?.value || '',
+            subtitle: document.getElementById('essay-subtitle')?.value || '',
             introduction: EditorState.introEditor ? EditorState.introEditor.getHTML() : '',
             arguments: EditorState.arguments.map(arg => ({
                 title: document.getElementById(`${arg.id}-title`)?.value || '',

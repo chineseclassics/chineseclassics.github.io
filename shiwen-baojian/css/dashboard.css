@@ -5,79 +5,53 @@
  */
 
 /* ================================
-   儀表板容器
+   儀表板容器 - 扁平化
    ================================ */
 
 #teacher-dashboard,
 #student-dashboard {
     min-height: 100vh;
-    background: linear-gradient(to bottom, #f9fafb, #ffffff);
+    background: #f9fafb;
 }
 
 /* ================================
-   導航欄增強
+   導航欄增強 - 扁平化
    ================================ */
 
-/* 導航欄內容 */
-nav .max-w-7xl {
-    transition: all 0.3s ease;
-}
-
-/* Logo 容器 */
-nav .flex.items-center.gap-3 {
-    transition: all 0.2s ease;
-}
-
-nav .flex.items-center.gap-3:hover {
-    transform: translateX(2px);
-}
+/* 移除導航欄動畫效果 */
 
 /* 用戶信息區域 */
 nav .text-right {
     padding: 8px 12px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
 }
 
 nav .text-right:hover {
-    background: rgba(59, 130, 246, 0.05);
+    background: #f3f4f6;
 }
 
 /* ================================
-   主內容區域優化
+   主內容區域優化 - 扁平化
    ================================ */
 
-main.max-w-7xl {
-    animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* 移除淡入動畫 */
 
 /* ================================
-   工具欄卡片
+   工具欄卡片 - 扁平化
    ================================ */
 
-/* 頂部工具欄 */
+/* 頂部工具欄 - 扁平化 */
 .bg-white.rounded-lg.shadow-sm.p-4.mb-6 {
-    border-radius: 12px !important;
-    background: linear-gradient(to bottom, #ffffff, #fafafa) !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
     border: 1px solid #e5e7eb;
-    transition: all 0.3s ease;
+    box-shadow: none !important;
 }
 
 /* 工具欄圖標 */
 .bg-white.rounded-lg.shadow-sm.p-4.mb-6 i {
     color: #6b7280;
-    transition: color 0.2s ease;
 }
 
 /* 字數顯示 */
@@ -88,20 +62,15 @@ main.max-w-7xl {
 }
 
 /* ================================
-   編輯器主容器
+   編輯器主容器 - 扁平化
    ================================ */
 
-/* 編輯器外層卡片 */
+/* 編輯器外層卡片 - 扁平化 */
 .bg-white.rounded-lg.shadow-sm:has(#intro-editor) {
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     overflow: hidden;
     border: 1px solid #e5e7eb;
-    transition: all 0.3s ease;
-}
-
-/* 懸停效果 */
-.bg-white.rounded-lg.shadow-sm:has(#intro-editor):hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: none !important;
 }
 
 /* ================================
@@ -125,19 +94,13 @@ main.max-w-7xl {
 }
 
 /* ================================
-   分論點編號徽章
+   分論點編號徽章 - 扁平化
    ================================ */
 
 .rounded-full.bg-blue-600.text-white {
-    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    background: #3b82f6 !important;
+    box-shadow: none;
     font-weight: 700;
-    transition: all 0.3s ease;
-}
-
-.rounded-full.bg-blue-600.text-white:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 /* ================================

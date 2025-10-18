@@ -2,10 +2,10 @@
  * 時文寶鑑 - 編輯器樣式
  * 
  * 設計理念：
+ * - 扁平化極簡風格
  * - 淡雅配色，不分散注意力
- * - 極簡現代，高級感
  * - 統一圓角，視覺協調
- * - 微妙陰影，層次分明
+ * - 無立體感，純粹平面設計
  */
 
 /* ================================
@@ -13,51 +13,51 @@
    ================================ */
 
 .ql-container {
-    border-radius: 0 0 12px 12px !important;
+    border-radius: 0 !important;
     border: 1px solid #e5e7eb !important;
     border-top: none !important;
     background: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
     font-size: 16px;
-    transition: all 0.3s ease;
+    transition: border-color 0.2s ease;
 }
 
 .ql-container:focus-within {
     border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* 工具栏样式 */
+/* 工具栏样式 - 扁平化 */
 .ql-toolbar {
-    border-radius: 12px 12px 0 0 !important;
+    border-radius: 0 !important;
     border: 1px solid #e5e7eb !important;
-    background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+    background: #fafafa;
     padding: 10px 12px !important;
-    transition: all 0.3s ease;
+    transition: background-color 0.2s ease;
 }
 
-/* 工具栏按钮 */
+/* 工具栏按钮 - 扁平化 */
 .ql-toolbar button {
     width: 32px !important;
     height: 32px !important;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
     margin: 0 2px;
+    background: transparent;
 }
 
 .ql-toolbar button:hover {
-    background: rgba(59, 130, 246, 0.08);
+    background: #e5e7eb;
 }
 
 .ql-toolbar button:active,
 .ql-toolbar button.ql-active {
-    background: rgba(59, 130, 246, 0.12);
+    background: #dbeafe;
     color: #3b82f6;
 }
 
 .ql-toolbar button svg {
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
+    opacity: 0.65;
+    transition: opacity 0.15s ease;
 }
 
 .ql-toolbar button:hover svg,
@@ -65,17 +65,22 @@
     opacity: 1;
 }
 
-/* 工具栏下拉菜单 */
+/* 工具栏下拉菜单 - 扁平化 */
 .ql-toolbar select {
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 4px 8px;
     background: white;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease;
 }
 
 .ql-toolbar select:hover {
+    border-color: #cbd5e1;
+}
+
+.ql-toolbar select:focus {
     border-color: #3b82f6;
+    outline: none;
 }
 
 /* ================================
@@ -124,17 +129,17 @@
     margin-bottom: 0.5em;
 }
 
-/* 引用样式 */
+/* 引用样式 - 扁平化 */
 .ql-editor blockquote {
-    border-left: 4px solid #3b82f6;
+    border-left: 3px solid #3b82f6;
     padding-left: 1em;
     margin-left: 0;
     margin-right: 0;
     color: #4b5563;
     font-style: italic;
-    background: rgba(59, 130, 246, 0.03);
+    background: #f0f9ff;
     padding: 12px 16px;
-    border-radius: 0 8px 8px 0;
+    border-radius: 0;
 }
 
 /* Placeholder 样式 */
@@ -145,132 +150,133 @@
 }
 
 /* ================================
-   分論點和段落樣式優化
+   分論點和段落樣式優化 - 扁平化
    ================================ */
 
-/* 分論點容器 */
+/* 分論點容器 - 扁平化 */
 .bg-gradient-to-r.from-blue-50 {
-    background: linear-gradient(to right, #eff6ff, #ffffff) !important;
-    border-radius: 12px;
-    border: 1px solid #dbeafe;
+    background: #f0f9ff !important;
+    border-radius: 0;
+    border: 1px solid #e0f2fe;
+    border-left: 3px solid #3b82f6;
     padding: 24px !important;
-    margin-bottom: 16px;
-    transition: all 0.3s ease;
+    margin-bottom: 0;
+    transition: border-color 0.15s ease;
 }
 
 .bg-gradient-to-r.from-blue-50:hover {
-    border-color: #93c5fd;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+    border-left-color: #2563eb;
 }
 
-/* 分論點標題輸入框 */
+/* 分論點標題輸入框 - 扁平化 */
 .bg-transparent.border-b-2 {
-    border-radius: 4px !important;
+    border-radius: 0 !important;
     padding: 8px 12px !important;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease;
 }
 
 .bg-transparent.border-b-2:hover {
-    background: rgba(59, 130, 246, 0.04) !important;
+    background: transparent !important;
+    border-color: #cbd5e1 !important;
 }
 
 .bg-transparent.border-b-2:focus {
-    background: rgba(59, 130, 246, 0.06) !important;
+    background: transparent !important;
+    border-color: #3b82f6 !important;
 }
 
-/* 分論點編號徽章 */
+/* 分論點編號徽章 - 扁平化 */
 .rounded-full.bg-blue-600 {
-    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    background: #3b82f6 !important;
+    box-shadow: none;
 }
 
-/* 段落卡片 */
+/* 段落卡片 - 扁平化 */
 .bg-white.rounded-lg.border {
-    border-radius: 10px !important;
+    border-radius: 0 !important;
     border-color: #e5e7eb !important;
-    transition: all 0.3s ease;
+    transition: border-color 0.15s ease;
     overflow: hidden;
+    background: #ffffff;
 }
 
 .bg-white.rounded-lg.border:hover {
-    border-color: #3b82f6 !important;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    border-color: #cbd5e1 !important;
 }
 
 /* ================================
-   按鈕樣式優化
+   按鈕樣式優化 - 扁平化
    ================================ */
 
-/* 添加分論點按鈕 */
+/* 添加分論點按鈕 - 扁平化 */
 #add-argument-btn {
-    border-radius: 10px !important;
-    border: 2px dashed #cbd5e1 !important;
-    background: linear-gradient(to bottom, #ffffff, #f9fafb) !important;
-    transition: all 0.3s ease;
+    border-radius: 0 !important;
+    border: 1px dashed #cbd5e1 !important;
+    background: #ffffff !important;
+    transition: all 0.15s ease;
 }
 
 #add-argument-btn:hover {
     border-color: #3b82f6 !important;
-    background: linear-gradient(to bottom, #eff6ff, #dbeafe) !important;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    border-style: solid !important;
+    background: #f0f9ff !important;
 }
 
-/* 添加段落按鈕 */
+/* 添加段落按鈕 - 扁平化 */
 .add-paragraph-btn {
-    border-radius: 8px !important;
-    border-color: #bfdbfe !important;
-    background: linear-gradient(to bottom, #ffffff, #eff6ff) !important;
-    transition: all 0.3s ease;
+    border-radius: 0 !important;
+    border-color: #e0f2fe !important;
+    background: #ffffff !important;
+    transition: all 0.15s ease;
 }
 
 .add-paragraph-btn:hover {
-    border-color: #60a5fa !important;
-    background: linear-gradient(to bottom, #dbeafe, #bfdbfe) !important;
+    border-color: #3b82f6 !important;
+    border-style: solid !important;
+    background: #eff6ff !important;
 }
 
-/* 刪除按鈕 */
+/* 刪除按鈕 - 扁平化 */
 .delete-argument-btn,
 .delete-paragraph-btn {
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    border-radius: 4px;
+    transition: all 0.15s ease;
 }
 
 .delete-argument-btn:hover,
 .delete-paragraph-btn:hover {
-    background: #fee2e2 !important;
+    background: #fef2f2 !important;
     color: #dc2626 !important;
 }
 
 /* ================================
-   引言和結論區域樣式
+   引言和結論區域樣式 - 扁平化
    ================================ */
 
-/* 引言編輯器容器 */
+/* 引言編輯器容器 - 扁平化，移除外层背景框 */
 #intro-editor,
 #conclusion-editor {
-    border-radius: 12px !important;
-    background: #fafafa;
-    border: 1px solid #e5e7eb;
-    padding: 4px;
-    transition: all 0.3s ease;
+    border-radius: 0 !important;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 
 #intro-editor:focus-within,
 #conclusion-editor:focus-within {
-    background: #ffffff;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: transparent;
 }
 
 /* ================================
-   頂部工具欄樣式
+   頂部工具欄樣式 - 扁平化
    ================================ */
 
-/* 字數統計和保存狀態 */
+/* 字數統計和保存狀態 - 扁平化 */
 .bg-white.rounded-lg.shadow-sm.p-4 {
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     border: 1px solid #e5e7eb;
-    background: linear-gradient(to bottom, #ffffff, #fafafa) !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
 }
 
 /* 保存狀態指示器 */
@@ -333,37 +339,62 @@ input:focus-visible {
 }
 
 /* ================================
-   微妙動畫效果
+   微妙動畫效果 - 保持極簡
    ================================ */
 
-/* 淡入動畫 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* 移除淡入動畫，保持扁平 */
 
-.bg-gradient-to-r.from-blue-50 {
-    animation: fadeIn 0.3s ease;
-}
-
-/* 脈動動畫（保存中） */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
+/* 保存中動畫（僅保留必要的旋轉） */
 #save-status .fa-spinner {
-    animation: pulse 1.5s ease-in-out infinite;
+    /* 已由 Font Awesome 自带的 fa-spin 类处理 */
+}
+
+/* ================================
+   標題輸入區樣式
+   ================================ */
+
+/* 主標題輸入框 */
+#essay-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #111827;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+#essay-title:focus {
+    color: #1f2937;
+}
+
+#essay-title::placeholder {
+    color: #d1d5db;
+    font-weight: 600;
+}
+
+/* 副標題輸入框 */
+#essay-subtitle {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #6b7280;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+#essay-subtitle:focus {
+    color: #4b5563;
+}
+
+#essay-subtitle::placeholder {
+    color: #d1d5db;
+    font-weight: 400;
+}
+
+/* 標題區容器 */
+.border-b.border-gray-200.p-6:has(#essay-title) {
+    background: #fafafa;
+    border-bottom: 2px solid #e5e7eb !important;
 }
 
 /* ================================

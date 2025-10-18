@@ -99,10 +99,16 @@ export async function saveEssayToSupabase(essayData) {
  * 創建或更新論文記錄
  */
 async function upsertEssay(essayData) {
+    // 組合完整標題：主標題 + 副標題
+    let fullTitle = essayData.title || '論文草稿';
+    if (essayData.subtitle) {
+        fullTitle += ` - ${essayData.subtitle}`;
+    }
+    
     const essayRecord = {
         student_id: AppState.currentUser.id,
         assignment_id: null,  // 測試草稿暫時為 NULL
-        title: '論文草稿',
+        title: fullTitle,
         status: 'draft',
         total_word_count: essayData.word_count || 0
     };

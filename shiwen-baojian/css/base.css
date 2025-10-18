@@ -24,19 +24,19 @@ body {
 }
 
 /* ================================
-   頂部導航欄優化
+   頂部導航欄優化 - 扁平化
    ================================ */
 
 nav {
     background: #ffffff !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    box-shadow: none !important;
     border-bottom: 1px solid #e5e7eb !important;
 }
 
-/* Logo 和標題區域 */
+/* Logo 和標題區域 - 扁平化 */
 nav .bg-gradient-to-r {
-    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-    border-radius: 10px !important;
+    background: #3b82f6 !important;
+    border-radius: 6px !important;
 }
 
 /* 登出按鈕 */
@@ -57,20 +57,22 @@ main {
     padding: 24px 0;
 }
 
-/* 背景卡片統一樣式 */
+/* 背景卡片統一樣式 - 扁平化 */
 .bg-white.rounded-lg {
-    border-radius: 12px !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 8px !important;
+    box-shadow: none !important;
     border: 1px solid #e5e7eb;
 }
 
 /* ================================
-   卡片和容器樣式
+   卡片和容器樣式 - 扁平化
    ================================ */
 
-/* 頂部工具欄卡片 */
-.shadow-sm {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+/* 移除所有陰影 */
+.shadow-sm,
+.shadow,
+.shadow-lg {
+    box-shadow: none !important;
 }
 
 /* 懸停效果 */
@@ -93,17 +95,16 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* 主要按鈕 */
+/* 主要按鈕 - 扁平化 */
 .bg-blue-600 {
-    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    background: #3b82f6 !important;
 }
 
 .bg-blue-600:hover {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    background: #2563eb !important;
 }
 
-/* 次要按鈕 */
+/* 次要按鈕 - 扁平化 */
 .bg-gray-100 {
     background: #f3f4f6 !important;
 }
