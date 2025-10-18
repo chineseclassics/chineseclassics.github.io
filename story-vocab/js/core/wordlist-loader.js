@@ -20,7 +20,14 @@ export async function loadWordlist(wordlistCode) {
   
   try {
     console.log(`📥 加載詞表 JSON: ${wordlistCode}`);
-    const response = await fetch(`/assets/data/wordlists/${wordlistCode}.json`);
+    
+    // 自動檢測路徑前綴
+    // 本地開發：服務器在 story-vocab/ 目錄，使用 /assets/...
+    // GitHub Pages：使用 /story-vocab/assets/...
+    const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const pathPrefix = isLocalDev ? '' : '/story-vocab';
+    
+    const response = await fetch(`${pathPrefix}/assets/data/wordlists/${wordlistCode}.json`);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
