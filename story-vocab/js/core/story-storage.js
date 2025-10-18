@@ -24,8 +24,8 @@ export function getStories() {
 }
 
 /**
- * 生成默认故事标题
- * @returns {string} 故事标题（如"故事一"、"故事二"）
+ * 生成未完成故事的默认标题
+ * @returns {string} 故事标题（如"未完成故事一"、"未完成故事二"）
  */
 export function generateDefaultTitle() {
     const stories = getStories();
@@ -35,9 +35,9 @@ export function generateDefaultTitle() {
                        '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
     
     if (count <= 20) {
-        return `故事${numberMap[count]}`;
+        return `未完成故事${numberMap[count]}`;
     } else {
-        return `故事${count}`;
+        return `未完成故事${count}`;
     }
 }
 

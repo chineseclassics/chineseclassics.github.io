@@ -288,12 +288,10 @@ export async function submitSentence(sentence, selectedWord) {
  * @returns {Promise<Object>} 统计数据
  */
 export async function finishStory() {
-    // 生成默认标题
-    const defaultTitle = generateDefaultTitle();
-    
     // 保存完成的故事到新的 localStorage 结构
+    // 标题留空，等待用户在祝贺窗口输入
     const storyData = {
-        title: defaultTitle,
+        title: '',  // 空标题，等待用户输入
         status: 'completed',
         level: gameState.level,
         theme: gameState.theme,
@@ -355,7 +353,7 @@ export async function finishStory() {
         totalTurns,
         vocabUsed,
         storyLength,
-        defaultTitle,
+        defaultTitle: '',  // 空标题，由用户在祝贺窗口输入
         storyId: savedStory.id,
         // 新增统计
         totalDuration,

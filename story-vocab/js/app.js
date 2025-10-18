@@ -707,11 +707,12 @@ function showCongratulationsModal() {
     const message = `你完成了一个${gameState.maxTurns}轮的「${themeName}」故事！`;
     document.getElementById('celebration-message').textContent = message;
     
-    // 生成默认标题并填入输入框
-    const defaultTitle = generateDefaultTitle();
+    // 清空输入框，等待用户输入
     const titleInput = document.getElementById('celebration-story-title');
     if (titleInput) {
-        titleInput.value = defaultTitle;
+        titleInput.value = '';
+        // 延迟聚焦，确保动画效果显示
+        setTimeout(() => titleInput.focus(), 300);
     }
     
     // 显示弹窗
@@ -780,6 +781,24 @@ window.viewFullReport = async function() {
     const titleInput = document.getElementById('celebration-story-title');
     const userTitle = titleInput?.value.trim();
     
+    // 验证：必须输入标题
+    if (!userTitle) {
+        showToast('請為你的故事起個名字吧 📝');
+        
+        // 添加动画提示class
+        if (titleInput) {
+            titleInput.classList.add('need-input-hint');
+            titleInput.focus();
+            
+            // 3秒后移除动画class
+            setTimeout(() => {
+                titleInput.classList.remove('need-input-hint');
+            }, 3000);
+        }
+        
+        return; // 阻止继续执行
+    }
+    
     // 关闭祝贺弹窗
     const modal = document.getElementById('congratulations-modal');
     if (modal) modal.classList.remove('active');
@@ -790,13 +809,12 @@ window.viewFullReport = async function() {
         const stats = await finishStory();
         console.log('✅ 统计数据生成完成');
         
-        // 如果用户输入了标题，覆盖默认标题
-        if (userTitle) {
-            stats.defaultTitle = userTitle;
-            // 更新 localStorage 中的故事标题
-            if (gameState.currentStoryId) {
-                updateStory(gameState.currentStoryId, { title: userTitle });
-            }
+        // 使用用户输入的标题
+        stats.defaultTitle = userTitle;
+        
+        // 更新 localStorage 中的故事标题
+        if (gameState.currentStoryId) {
+            updateStory(gameState.currentStoryId, { title: userTitle });
         }
         
         // 跳转到总结页面
