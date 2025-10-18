@@ -1,0 +1,219 @@
+/**
+ * 時文寶鑑 - AI 反饋側邊欄樣式
+ */
+
+/* ================================
+   側邊欄基礎樣式
+   ================================ */
+
+#ai-feedback-sidebar {
+    transition: all 0.3s ease;
+}
+
+/* 側邊欄內容區域滾動優化 */
+#sidebar-feedback-content {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+#sidebar-feedback-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+#sidebar-feedback-content::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+#sidebar-feedback-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+#sidebar-feedback-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ================================
+   動畫效果
+   ================================ */
+
+/* 移動端模態框滑入動畫 */
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+
+/* 移動端內聯反饋下滑動畫 */
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-down {
+    animation: slide-down 0.3s ease-out;
+}
+
+/* 模態框背景淡入 */
+#ai-feedback-modal {
+    animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ================================
+   響應式調整
+   ================================ */
+
+/* 桌面端：側邊欄固定在右側 */
+@media (min-width: 1024px) {
+    #ai-feedback-sidebar {
+        max-height: calc(100vh - 120px);
+    }
+    
+    /* 確保側邊欄不會太窄 */
+    aside.lg\:w-1\/3 {
+        min-width: 320px;
+        max-width: 450px;
+    }
+}
+
+/* 平板端：調整側邊欄寬度 */
+@media (min-width: 1024px) and (max-width: 1280px) {
+    aside.lg\:w-1\/3 {
+        width: 35%;
+    }
+}
+
+/* 大屏端：限制側邊欄最大寬度 */
+@media (min-width: 1536px) {
+    aside.lg\:w-1\/3 {
+        width: 30%;
+        max-width: 500px;
+    }
+}
+
+/* ================================
+   反饋卡片樣式優化（側邊欄專用）
+   ================================ */
+
+#sidebar-feedback-content .bg-gradient-to-br {
+    /* 側邊欄中的反饋卡片使用更柔和的背景 */
+    background: linear-gradient(to bottom right, #eff6ff, #eef2ff);
+}
+
+/* 側邊欄中的反饋組件間距優化 */
+#sidebar-feedback-content > div > div {
+    margin-bottom: 1rem;
+}
+
+/* 側邊欄中的按鈕樣式 */
+#sidebar-feedback-content button {
+    cursor: pointer;
+}
+
+/* ================================
+   移動端模態框樣式優化
+   ================================ */
+
+@media (max-width: 1023px) {
+    /* 確保模態框在最上層 */
+    #ai-feedback-modal {
+        z-index: 9999;
+    }
+    
+    /* 模態框內容滾動優化 */
+    #ai-feedback-modal .overflow-y-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ================================
+   段落高亮效果
+   ================================ */
+
+.paragraph-highlighted {
+    transition: all 0.3s ease;
+}
+
+/* 問題徽章樣式 */
+.feedback-badge {
+    display: inline-flex;
+    align-items: center;
+    animation: badge-appear 0.3s ease-out;
+}
+
+@keyframes badge-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ================================
+   內聯反饋容器樣式
+   ================================ */
+
+.inline-feedback-container {
+    position: relative;
+}
+
+/* 內聯反饋的視覺連接線 */
+.inline-feedback-container::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 2px;
+    height: 8px;
+    background: linear-gradient(to bottom, transparent, #60a5fa);
+}
+
+/* ================================
+   打印樣式（隱藏側邊欄和反饋）
+   ================================ */
+
+@media print {
+    #ai-feedback-sidebar {
+        display: none;
+    }
+    
+    .inline-feedback-container {
+        display: none;
+    }
+    
+    .lg\:w-2\/3 {
+        width: 100% !important;
+    }
+    
+    .paragraph-highlighted {
+        border: none !important;
+        background: none !important;
+    }
+}
+

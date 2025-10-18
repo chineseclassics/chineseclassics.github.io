@@ -125,10 +125,22 @@ export async function getHistoricalFeedback(paragraphId) {
  * 顯示加載狀態
  */
 function showLoadingState(paragraphId) {
-    const feedbackContainer = getFeedbackContainer(paragraphId);
-    if (!feedbackContainer) return;
+    // 獲取段落標題
+    const paragraphTitle = getParagraphTitle(paragraphId);
     
-    feedbackContainer.innerHTML = `
+    // 判斷是桌面端還是移動端
+    const isMobile = window.innerWidth < 1024;
+    
+    const loadingHTML = `
+        <!-- 當前段落標識 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <div class="flex items-center space-x-2 text-blue-800">
+                <i class="fas fa-file-alt text-sm"></i>
+                <span class="text-sm font-semibold">${paragraphTitle}</span>
+            </div>
+        </div>
+        
+        <!-- 加載動畫 -->
         <div class="flex flex-col items-center justify-center py-12 space-y-4">
             <div class="relative">
                 <div class="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
@@ -141,7 +153,77 @@ function showLoadingState(paragraphId) {
         </div>
     `;
     
-    feedbackContainer.classList.remove('hidden');
+    if (isMobile) {
+        // 移動端：內聯展開在段落下方
+        showMobileInlineLoading(paragraphId, paragraphTitle, loadingHTML);
+    } else {
+        // 桌面端：在側邊欄顯示
+        const sidebarContent = document.getElementById('sidebar-feedback-content');
+        if (sidebarContent) {
+            sidebarContent.innerHTML = loadingHTML;
+            sidebarContent.scrollTop = 0;
+        }
+    }
+}
+
+/**
+ * 移動端：內聯顯示加載狀態
+ */
+function showMobileInlineLoading(paragraphId, paragraphTitle, loadingHTML) {
+    const paragraphElement = document.getElementById(paragraphId);
+    if (!paragraphElement) return;
+    
+    // 查找或創建反饋容器
+    let feedbackContainer = paragraphElement.querySelector('.inline-feedback-container');
+    
+    if (!feedbackContainer) {
+        feedbackContainer = document.createElement('div');
+        feedbackContainer.className = 'inline-feedback-container mt-4';
+        paragraphElement.appendChild(feedbackContainer);
+    }
+    
+    // 顯示加載動畫（帶連接線）
+    feedbackContainer.innerHTML = `
+        <div class="bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 rounded-lg p-1 mb-4 animate-slide-down">
+            <!-- 視覺連接線 -->
+            <div class="flex justify-center -mt-3">
+                <div class="w-0.5 h-3 bg-blue-400"></div>
+            </div>
+            
+            <div class="bg-white p-4 rounded">
+                ${loadingHTML}
+            </div>
+        </div>
+    `;
+    
+    // 滾動到加載位置
+    feedbackContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/**
+ * 獲取段落標題
+ */
+function getParagraphTitle(paragraphId) {
+    if (paragraphId === 'intro') {
+        return '引言';
+    } else if (paragraphId === 'conclusion') {
+        return '結論';
+    } else {
+        // 嘗試從 DOM 中獲取分論點標題
+        const argumentId = paragraphId.split('-para-')[0];
+        const titleInput = document.getElementById(`${argumentId}-title`);
+        const argumentTitle = titleInput?.value || '';
+        
+        // 獲取段落編號
+        const paragraphElement = document.getElementById(paragraphId);
+        const paragraphLabel = paragraphElement?.querySelector('.text-sm.font-medium')?.textContent || '段落';
+        
+        if (argumentTitle) {
+            return `${argumentTitle} - ${paragraphLabel}`;
+        } else {
+            return paragraphLabel;
+        }
+    }
 }
 
 /**
@@ -155,10 +237,19 @@ function hideLoadingState(paragraphId) {
  * 顯示錯誤狀態
  */
 function showErrorState(paragraphId, errorMessage) {
-    const feedbackContainer = getFeedbackContainer(paragraphId);
-    if (!feedbackContainer) return;
+    const paragraphTitle = getParagraphTitle(paragraphId);
+    const isMobile = window.innerWidth < 1024;
     
-    feedbackContainer.innerHTML = `
+    const errorHTML = `
+        <!-- 當前段落標識 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <div class="flex items-center space-x-2 text-blue-800">
+                <i class="fas fa-file-alt text-sm"></i>
+                <span class="text-sm font-semibold">${paragraphTitle}</span>
+            </div>
+        </div>
+        
+        <!-- 錯誤信息 -->
         <div class="bg-red-50 border border-red-200 rounded-lg p-6">
             <div class="flex items-start space-x-3">
                 <i class="fas fa-exclamation-circle text-red-500 text-xl mt-0.5"></i>
@@ -174,29 +265,16 @@ function showErrorState(paragraphId, errorMessage) {
         </div>
     `;
     
-    feedbackContainer.classList.remove('hidden');
-}
-
-/**
- * 獲取反饋容器
- */
-function getFeedbackContainer(paragraphId) {
-    const containerId = `${paragraphId}-feedback`;
-    let container = document.getElementById(containerId);
-    
-    if (!container) {
-        // 如果容器不存在，創建一個
-        const paragraphElement = document.getElementById(paragraphId);
-        if (!paragraphElement) return null;
-        
-        container = document.createElement('div');
-        container.id = containerId;
-        container.className = 'mt-4 hidden';
-        
-        paragraphElement.appendChild(container);
+    if (isMobile) {
+        // 移動端：內聯展開在段落下方
+        showMobileInlineLoading(paragraphId, paragraphTitle, errorHTML);
+    } else {
+        // 桌面端：顯示在側邊欄
+        const sidebarContent = document.getElementById('sidebar-feedback-content');
+        if (sidebarContent) {
+            sidebarContent.innerHTML = errorHTML;
+        }
     }
-    
-    return container;
 }
 
 // ================================

@@ -286,8 +286,7 @@ function addParagraph(argumentId) {
             <div class="mt-2 flex items-center justify-between">
                 <span id="${paragraphId}-word-count" class="text-xs text-gray-500">0 字</span>
             </div>
-            <!-- AI 反饋容器 -->
-            <div id="${paragraphId}-feedback" class="hidden mt-4"></div>
+            <!-- 移動端 AI 反饋容器（內聯展開） -->
         </div>
     `;
     

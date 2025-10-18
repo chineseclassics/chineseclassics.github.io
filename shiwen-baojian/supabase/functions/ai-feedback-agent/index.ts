@@ -395,7 +395,7 @@ async function analyzeContentWithDeepSeek(
 }
 
 /**
- * 构建 AI 分析提示词
+ * 构建 AI 分析提示词（完全基于 JSON）
  */
 function buildAnalysisPrompt(
   content: string,
@@ -409,9 +409,79 @@ function buildAnalysisPrompt(
   
   const paragraphType = rules.type || type
   
-  // 根据段落类型定义不同的分析维度
-  const analysisDimensions = getAnalysisDimensionsByType(paragraphType)
+  // ✅ 从 JSON 中读取分析维度
+  const analysisDimensions = rules.analysis_dimensions || []
   
+  // 如果 JSON 中没有定义分析维度，使用默认
+  if (analysisDimensions.length === 0) {
+    console.warn('⚠️ JSON 中未定义 analysis_dimensions，使用默认维度')
+    const fallbackDimensions = getAnalysisDimensionsByType(paragraphType)
+    return buildPromptWithFallback(content, paragraphType, elementsDesc, structural, fallbackDimensions)
+  }
+  
+  // ✅ 根据 JSON 中的 analysis_dimensions 构建提示词
+  const dimensionsDesc = analysisDimensions
+    .map((dim: any) => `
+${analysisDimensions.indexOf(dim) + 1}. **${dim.id}（${dim.name}）** [权重: ${dim.weight}]：
+   ${dim.description || ''}
+   ${dim.checks?.map((c: string) => `- ${c}`).join('\n   ') || ''}
+    `)
+    .join('\n')
+  
+  const jsonFormat = `{
+  ${analysisDimensions
+    .map((dim: any) => `"${dim.id}": {
+    "score": 0-10,
+    "issues": ["问题描述"],
+    "sentence_numbers": [句子编号]
+  }`)
+    .join(',\n  ')}
+}`
+  
+  return `
+请分析以下学生撰写的论文段落（类型：${paragraphType}）。
+
+【段落内容】
+${content}
+
+【格式要求 - 必需元素】
+${elementsDesc}
+
+【结构检查结果】
+- 完整度：${structural.completeness}%
+- 缺少元素：${structural.missing_elements.join('、') || '无'}
+- 已包含：${structural.present_elements.join('、') || '无'}
+- 句子数量：${structural.sentences_count}
+
+【分析任务】
+请严格按照以下 ${analysisDimensions.length} 个维度分析这个段落，并以 JSON 格式返回：
+
+${dimensionsDesc}
+
+【返回格式】
+${jsonFormat}
+
+【重要说明】
+- 只分析上述 ${analysisDimensions.length} 个维度，不要添加其他维度
+- 每个维度的 score 范围是 0-10 分
+- issues 数组列出该维度发现的问题（繁體中文）
+- sentence_numbers 数组标注问题所在的句子编号（从 1 开始）
+- 如果某个维度没有问题，issues 可以为空数组
+- 不要提供具体的修改示例，只指出问题和改进方向
+- 使用繁體中文回应
+`
+}
+
+/**
+ * 备用：构建带默认维度的提示词
+ */
+function buildPromptWithFallback(
+  content: string,
+  paragraphType: string,
+  elementsDesc: string,
+  structural: any,
+  fallbackDimensions: any
+): string {
   return `
 请分析以下学生撰写的论文段落（类型：${paragraphType}）。
 
@@ -427,19 +497,12 @@ ${elementsDesc}
 - 句子数量：${structural.sentences_count}
 
 【分析任务】
-请从以下维度分析这个段落，并以 JSON 格式返回：
-
-${analysisDimensions.description}
+${fallbackDimensions.description}
 
 【返回格式】
-${analysisDimensions.jsonFormat}
+${fallbackDimensions.jsonFormat}
 
-注意：
-- 只指出问题所在的句子编号和问题描述
-- 不要提供具体的修改示例
-- 问题描述要精准、有建设性
-- 使用繁體中文
-- 严格按照段落类型（${paragraphType}）的要求进行分析
+注意：使用繁體中文，不提供具体修改示例。
 `
 }
 

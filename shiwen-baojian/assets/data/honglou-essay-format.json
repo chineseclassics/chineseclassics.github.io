@@ -1,11 +1,14 @@
 {
   "metadata": {
+    "id": "honglou-essay",
     "name": "红楼梦论文格式规范",
     "version": "1.0",
-    "target": "十年级学生",
+    "type": "system",
+    "category": "文学分析",
+    "target_audience": "十年级学生",
     "essay_type": "学术论文（文学分析）",
     "word_count": "1500-2500字",
-    "description": "基于《论文格式宝典》优化，用于 AI 反馈引擎"
+    "description": "基于《论文格式宝典》优化，适用于《红楼梦》文学分析论文的格式规范和 AI 反馈引擎"
   },
 
   "structure": {
@@ -40,6 +43,45 @@
     "introduction": {
       "name": "引言段",
       "purpose": "吸引读者、确立主题、概述论点",
+      "analysis_dimensions": [
+        {
+          "id": "structure_completeness",
+          "name": "结构完整性",
+          "weight": 0.4,
+          "description": "检查是否包含引言段的所有必需元素",
+          "checks": [
+            "是否包含背景引入（Hook）？",
+            "是否定义了关键概念？",
+            "是否指出研究缺口？",
+            "是否从宏观到具体 Zoom In？"
+          ]
+        },
+        {
+          "id": "thesis_clarity",
+          "name": "论文主张清晰度",
+          "weight": 0.4,
+          "description": "检查核心问题和论文主张是否明确",
+          "checks": [
+            "核心问题是否明确（疑问句形式）？",
+            "论文主张是否用一句话精炼陈述？",
+            "主张是否直接回答核心问题？",
+            "是否避免模糊表述？",
+            "是否使用了标记词（'本文认为'、'本文旨在探讨'）？"
+          ]
+        },
+        {
+          "id": "roadmap",
+          "name": "结构预告",
+          "weight": 0.2,
+          "description": "检查是否预告了论证结构",
+          "checks": [
+            "是否预告了正文将从哪几个方面论证？",
+            "结构预告是否清晰？",
+            "是否使用了序数词（一、二、三）？",
+            "分论点数量是否合理（2-4个）？"
+          ]
+        }
+      ],
       "required_elements": [
         {
           "id": "hook",
@@ -134,6 +176,46 @@
     "body_paragraph": {
       "name": "正文段",
       "purpose": "支撑论文主张的基石",
+      "analysis_dimensions": [
+        {
+          "id": "topic_sentence",
+          "name": "主题句",
+          "weight": 0.2,
+          "description": "检查主题句是否清晰且支撑总主张",
+          "checks": [
+            "主题句是否在段落开头第一句？",
+            "是否清晰表达本段的分论点？",
+            "是否直接支持论文总主张？",
+            "是否使用了连接词（首先、其次、再者、此外、最后）？"
+          ]
+        },
+        {
+          "id": "textual_evidence",
+          "name": "文本证据",
+          "weight": 0.3,
+          "description": "检查是否引用了《红楼梦》原文或情节",
+          "checks": [
+            "是否引用了《红楼梦》原文或概述相关情节？",
+            "引用是否准确完整？",
+            "引用是否与主题句紧密相关？",
+            "引用数量是否充分（1-2处）？"
+          ]
+        },
+        {
+          "id": "close_reading",
+          "name": "文本细读",
+          "weight": 0.5,
+          "description": "检查文本分析的深度和质量（最关键）",
+          "checks": [
+            "是否紧扣文本的字、词、句细节进行分析？",
+            "是否从细节推导出深层含义（由小见大）？",
+            "分析长度是否大于引用长度？",
+            "是否反复使用主题句关键词保持焦点？",
+            "是否避免了空泛议论（'这说明'、'这体现'、'这反映'）？",
+            "是否展示了'如何从文本推导出意义'的过程？"
+          ]
+        }
+      ],
       "required_elements": [
         {
           "id": "topic_sentence",
@@ -240,6 +322,42 @@
     "conclusion": {
       "name": "结论段",
       "purpose": "Zoom Out 回归宏观视野",
+      "analysis_dimensions": [
+        {
+          "id": "restate_thesis",
+          "name": "重申主张",
+          "weight": 0.3,
+          "description": "检查是否重申了论文主张",
+          "checks": [
+            "是否重申了论文主张？",
+            "是否用了不同的措辞（避免简单重复）？",
+            "是否清晰明确？"
+          ]
+        },
+        {
+          "id": "summarize_points",
+          "name": "总结分论点",
+          "weight": 0.3,
+          "description": "检查是否总结了正文论点",
+          "checks": [
+            "是否回顾了正文中的分论点？",
+            "总结是否简洁（不重复正文细节）？",
+            "是否展示了分论点如何共同支撑总主张？"
+          ]
+        },
+        {
+          "id": "broader_implications",
+          "name": "引申思考 (So What)",
+          "weight": 0.4,
+          "description": "检查是否提出了研究的深远意义（最重要）",
+          "checks": [
+            "是否回答了'所以呢？'（So What）这个问题？",
+            "是否与更大的文化、历史背景关联？",
+            "是否提升了论文格局？",
+            "是否避免提出新论点？"
+          ]
+        }
+      ],
       "required_elements": [
         {
           "id": "restate_thesis",
