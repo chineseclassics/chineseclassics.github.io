@@ -9,6 +9,7 @@
 
 import { AppState } from '../app.js';
 import { renderFeedback } from './feedback-renderer.js';
+import { loadHonglouFormatSpec } from '../data/format-spec-loader.js';
 
 // ================================
 // 反饋請求器
@@ -33,13 +34,19 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 1. 顯示加載狀態
         showLoadingState(paragraphId);
         
-        // 2. 調用 Edge Function
+        // 2. 加載格式規範（如果沒有傳入）
+        if (!formatSpec) {
+            console.log('📥 加載紅樓夢論文格式規範...');
+            formatSpec = await loadHonglouFormatSpec();
+        }
+        
+        // 3. 調用 Edge Function
         const { data, error } = await AppState.supabase.functions.invoke('ai-feedback-agent', {
             body: {
                 paragraph_id: paragraphId,
                 paragraph_content: paragraphContent,
                 paragraph_type: paragraphType,
-                format_spec: formatSpec
+                format_spec: formatSpec  // ✅ 現在會傳入完整的格式規範
             }
         });
         
@@ -53,13 +60,13 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         
         console.log('✅ AI 反饋獲取成功:', data);
         
-        // 3. 隱藏加載狀態
+        // 4. 隱藏加載狀態
         hideLoadingState(paragraphId);
         
-        // 4. 渲染反饋
+        // 5. 渲染反饋
         renderFeedback(paragraphId, data.feedback);
         
-        // 5. 返回結果
+        // 6. 返回結果
         return {
             success: true,
             feedback: data.feedback,
