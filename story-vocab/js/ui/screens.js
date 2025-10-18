@@ -30,6 +30,9 @@ export async function initStartScreen() {
     gameState.wordlistId = null;
     gameState.level2Tag = null;
     gameState.level3Tag = null;
+    
+    // 默认显示 AI 模式（可能会被后续逻辑覆盖）
+    showAIMode();
     console.log('✅ 默認狀態已設置: AI 模式');
 
     try {
@@ -1374,6 +1377,9 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                 // 更新顯示
                 updateWordlistNameDisplay(wordlist.name);
                 
+                // 显示词表层级区域
+                showWordlistHierarchy();
+                
                 // 渲染層級卡片
                 await renderLevel2Cards(wordlist, tags || []);
                 
@@ -1388,6 +1394,7 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                 }
             } else {
                 // AI 模式
+                showAIMode();
                 updateWordlistNameDisplay('AI智能推薦');
                 
                 // 清除緩存的詞表信息

@@ -5,7 +5,7 @@
 
 import { showToast } from '../utils/toast.js';
 import { openWordbook } from '../features/wordbook.js';
-import { initSettingsScreen } from './screens.js';
+import { initSettingsScreen, initStartScreen } from './screens.js';
 
 /**
  * 页面切换
@@ -104,7 +104,7 @@ export function initSidebarSwipe() {
  * 导航到指定目标
  * @param {string} destination - 目标页面或功能
  */
-export function navigateTo(destination) {
+export async function navigateTo(destination) {
     console.log('導航到:', destination);
     
     // 移动端：关闭侧边栏
@@ -126,8 +126,10 @@ export function navigateTo(destination) {
     // 根据目标执行不同操作
     switch(destination) {
         case 'new-story':
-            // 返回开始页面
+            // 返回开始页面，并重新初始化
             showScreen('start-screen');
+            // 重新初始化以反映最新的词表设置
+            await initStartScreen();
             break;
         
         case 'my-stories':
