@@ -68,17 +68,35 @@
         max-width: 100%; /* 限制最大寬度 */
     }
 
-    #start-screen .welcome-title {
-        font-size: 2em;
+    /* AI 推荐说明区域移动端优化 */
+    .ai-recommendation-explanation {
+        padding: 16px;
+        margin-bottom: 16px;
     }
-
-    #start-screen .welcome-subtitle {
-        font-size: 1.1em;
+    
+    .explanation-header .icon {
+        font-size: 1.6em;
     }
-
-    #start-screen .welcome-hint {
-        font-size: 0.95em;
-        padding: 12px 20px;
+    
+    .explanation-header h3 {
+        font-size: 1.2em;
+    }
+    
+    .explanation-item {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .explanation-item .item-icon {
+        font-size: 1.3em;
+    }
+    
+    .explanation-item .item-text {
+        font-size: 0.9em;
+    }
+    
+    .explanation-footer {
+        font-size: 0.85em;
     }
 
     #start-screen .theme-selector h2,

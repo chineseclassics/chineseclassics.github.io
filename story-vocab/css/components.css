@@ -3,9 +3,9 @@
 /* 按钮样式 */
 button {
     border: none;
-    padding: 15px 40px;
+    padding: 12px 32px;
     border-radius: 50px;
-    font-size: 1.1em;
+    font-size: 1.05em;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -35,13 +35,17 @@ button:active {
 .level-card {
     background: var(--light-blue);
     border: 3px solid transparent;
-    border-radius: 15px;
-    padding: 18px 15px;
+    border-radius: 12px;
+    padding: 14px 12px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-sizing: border-box; /* 確保 padding 和 border 包含在寬度內 */
-    width: 100%; /* 確保卡片寬度正確 */
+    /* Flexbox 布局 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* 默认垂直居中 */
+    align-items: center;
+    min-height: 100px; /* 固定最小高度 */
 }
 
 .level-card:hover {
@@ -55,32 +59,55 @@ button:active {
     box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
 }
 
+/* 有选择时：两端对齐 */
+.level-card.has-selection {
+    justify-content: space-between; /* 标题在上，选择信息在下 */
+}
+
 .level-card input[type="radio"] {
     display: none;
 }
 
 .level-card .level-name {
-    font-size: 1.3em;
+    font-size: 1.15em;
     font-weight: bold;
     color: var(--primary-blue);
-    margin-bottom: 5px;
+    text-align: center;
 }
 
 .level-card .level-desc {
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: var(--text-light);
+}
+
+/* 底部选择显示区域 */
+.level-card .level-selection-info {
+    display: none; /* 默认隐藏 */
+    font-size: 0.9em;
+    color: #667eea;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+    text-align: center;
+}
+
+/* 有选择时显示底部信息 */
+.level-card.has-selection .level-selection-info {
+    display: block;
 }
 
 /* 主题按钮 */
 .theme-btn {
     background: white;
     border: 3px solid var(--light-pink);
-    border-radius: 15px;
-    padding: 20px 15px;
+    border-radius: 12px;
+    padding: 16px 12px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 1.05em;
+    font-size: 1em;
 }
 
 .theme-btn:hover {
@@ -94,9 +121,9 @@ button:active {
 }
 
 .theme-btn .emoji {
-    font-size: 2em;
+    font-size: 1.8em;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 /* 词汇按钮 */
@@ -1993,6 +2020,258 @@ button:active {
     }
     
     .summary-section p {
+        font-size: 1em;
+    }
+}
+
+/* ===== 层级选择模态窗口 ===== */
+/* 遮罩层 */
+.level-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    /* 始终保持居中，即使没有 active 类 */
+    align-items: center;
+    justify-content: center;
+}
+
+.level-modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* 模态窗口容器 */
+.level-modal {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.9) translateY(-20px);
+    opacity: 0;
+    /* 关闭时使用平滑的缓动 */
+    transition: all 0.25s ease-out;
+}
+
+.level-modal-overlay.active .level-modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    /* 打开时使用弹性缓动 */
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 模态窗口头部 */
+.level-modal-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.level-modal-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.level-modal-title span {
+    -webkit-text-fill-color: initial;
+    background: none;
+}
+
+.level-modal-close {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;  /* 防止被压缩 */
+    min-height: 36px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    border: none;
+    font-size: 1.3em;
+    line-height: 1;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;  /* 防止 flex 布局压缩 */
+    padding: 0;  /* 移除可能的 padding */
+}
+
+.level-modal-close:hover {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+    color: white;
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.level-modal-close:active {
+    transform: rotate(90deg) scale(0.95);
+}
+
+/* 模态窗口内容区 */
+.level-modal-body {
+    padding: 30px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* 使用整个单元按钮区域 */
+.use-whole-unit-section {
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 2px dashed rgba(102, 126, 234, 0.2);
+}
+
+.use-whole-unit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 18px 30px;
+    border-radius: 12px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.use-whole-unit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.use-whole-unit-btn:active {
+    transform: translateY(0);
+}
+
+.use-whole-unit-btn.selected {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.use-whole-unit-btn .icon {
+    font-size: 1.3em;
+}
+
+/* 三级标签提示 */
+.level-3-hint {
+    text-align: center;
+    color: var(--text-light);
+    margin-bottom: 20px;
+    font-size: 1.05em;
+}
+
+/* 三级卡片网格 */
+.level-3-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+/* 三级卡片样式 */
+.level-3-card {
+    background: var(--light-blue);
+    border: 3px solid transparent;
+    border-radius: 12px;
+    padding: 15px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.level-3-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-blue);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.level-3-card.selected {
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+    color: white;
+    border-color: var(--primary-blue);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.level-3-card-name {
+    font-weight: bold;
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+.level-3-card.selected .level-3-card-name {
+    color: white;
+}
+
+/* 选中标记 */
+.level-3-card.selected::before {
+    content: '✓';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 22px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .level-modal {
+        width: 95%;
+        max-height: 85vh;
+    }
+    
+    .level-modal-header {
+        padding: 20px;
+    }
+    
+    .level-modal-title {
+        font-size: 1.3em;
+    }
+    
+    .level-modal-body {
+        padding: 20px;
+    }
+    
+    .level-3-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    
+    .use-whole-unit-btn {
+        padding: 15px 20px;
         font-size: 1em;
     }
 }

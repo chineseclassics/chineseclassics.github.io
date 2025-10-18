@@ -258,31 +258,55 @@
         <!-- ===== 启动界面 ===== -->
         <div id="start-screen" class="screen">
             <div class="content">
-                <!-- AI 模式欢迎信息 -->
+                <!-- AI 智能推荐说明 -->
                 <div id="ai-mode-section">
-                    <div class="ai-mode-welcome">
-                        <p class="welcome-subtitle">讓我們一起創作精彩的故事！</p>
-                        <p class="welcome-hint">💡 AI 會根據你的表現，推薦最合適的詞彙</p>
+                    <div class="ai-recommendation-explanation">
+                        <div class="explanation-header">
+                            <span class="icon">🤖</span>
+                            <h3>AI 智能推薦詞彙</h3>
+                        </div>
+                        <div class="explanation-content">
+                            <div class="explanation-item">
+                                <span class="item-icon">📊</span>
+                                <div class="item-text">
+                                    <strong>智能評估：</strong>系統會根據你的學習進度和表現，動態調整詞彙難度
+                                </div>
+                            </div>
+                            <div class="explanation-item">
+                                <span class="item-icon">🎯</span>
+                                <div class="item-text">
+                                    <strong>精準匹配：</strong>AI 會推薦最適合你當前水平的詞語，確保學習效果
+                                </div>
+                            </div>
+                            <div class="explanation-item">
+                                <span class="item-icon">📈</span>
+                                <div class="item-text">
+                                    <strong>持續優化：</strong>隨著你的進步，詞彙難度會自動提升，保持最佳挑戰度
+                                </div>
+                            </div>
+                        </div>
+                        <div class="explanation-footer">
+                            如需使用固定詞表，請前往 <a href="#" onclick="navigateTo('settings'); return false;">設置</a> 切換
+                        </div>
                     </div>
                 </div>
 
                 <!-- 词表层级选择区域（在主题选择上方） -->
                 <div id="wordlist-hierarchy-section" style="display: none;">
                     <!-- 标题栏：左侧标题 + 右侧词表信息 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 id="hierarchy-title" style="margin: 0;">選擇詞語範圍：</h2>
-                        <div id="current-wordlist-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border-radius: 20px; border: 1px solid #667eea30;">
-                            <span style="font-size: 13px; color: #666;">當前詞表：</span>
-                            <span id="current-wordlist-name-inline" style="font-size: 13px; color: #667eea; font-weight: 600;">AI智能推薦</span>
-                            <a href="#" onclick="navigateTo('settings'); return false;" style="font-size: 12px; color: #667eea; text-decoration: none; padding: 4px 10px; background: white; border-radius: 12px; border: 1px solid #667eea; transition: all 0.2s;" onmouseover="this.style.background='#667eea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#667eea';">更換</a>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 id="hierarchy-title" style="margin: 0; font-size: 1.2em;">選擇詞語範圍：</h2>
+                        <div id="current-wordlist-indicator" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border-radius: 16px; border: 1px solid #667eea30;">
+                            <span style="font-size: 12px; color: #666;">當前詞表：</span>
+                            <span id="current-wordlist-name-inline" style="font-size: 12px; color: #667eea; font-weight: 600;">AI智能推薦</span>
+                            <a href="#" onclick="navigateTo('settings'); return false;" style="font-size: 11px; color: #667eea; text-decoration: none; padding: 3px 8px; background: white; border-radius: 10px; border: 1px solid #667eea; transition: all 0.2s;" onmouseover="this.style.background='#667eea'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='#667eea';">更換</a>
                         </div>
                     </div>
                     
-                    <!-- 第二层级卡片 -->
+                    <!-- 第二层级卡片（点击后弹出模态窗口） -->
                     <div id="level-2-cards" class="difficulty-grid"></div>
                     
-                    <!-- 第三层级卡片（点击第二层级后展开） -->
-                    <div id="level-3-cards" class="difficulty-grid" style="display: none; margin-top: 20px;"></div>
+                    <!-- 三级层级现在使用模态窗口显示，不再需要此容器 -->
                 </div>
 
                 <!-- 主题选择（始终显示） -->

@@ -37,8 +37,9 @@ export async function initStartScreen() {
         const userId = gameState.userId;
         if (!userId) {
             console.log('ℹ️ 用户未登录，使用默认AI模式');
+            showAIMode();
             updateWordlistNameDisplay('AI智能推薦');
-            return; // AI模式已经是默认显示的
+            return;
         }
 
         // ✅ 從緩存讀取詞表偏好（不查數據庫）
@@ -46,6 +47,7 @@ export async function initStartScreen() {
         
         if (!prefs) {
             console.log('⚠️ 用戶資料未加載完成，使用默認AI模式');
+            showAIMode();
             updateWordlistNameDisplay('AI智能推薦');
             return;
         }
@@ -57,6 +59,7 @@ export async function initStartScreen() {
             console.log('✅ 使用AI智能推荐模式');
             gameState.wordlistMode = 'ai';
             gameState.wordlistId = null;
+            showAIMode();
             updateWordlistNameDisplay('AI智能推薦');
             return;
         }
@@ -78,6 +81,7 @@ export async function initStartScreen() {
                 console.warn('⚠️ 查詢詞表失敗，使用AI模式');
                 gameState.wordlistMode = 'ai';
                 gameState.wordlistId = null;
+                showAIMode();
                 updateWordlistNameDisplay('AI智能推薦');
                 return;
             }
@@ -121,6 +125,7 @@ export async function initStartScreen() {
         } else {
             // 没有层级，使用整个词表但保持AI模式的UI显示
             console.log('📚 词表无层级，保持AI模式UI');
+            showAIMode();
             updateWordlistNameDisplay(wordlistInfo.name);
         }
 
@@ -135,6 +140,7 @@ export async function initStartScreen() {
         gameState.wordlistId = null;
         gameState.level2Tag = null;
         gameState.level3Tag = null;
+        showAIMode();
         updateWordlistNameDisplay('AI智能推薦');
     }
 }

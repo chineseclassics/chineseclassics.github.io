@@ -5,8 +5,7 @@
     overflow: hidden;
     background: white;
     margin-left: 280px;
-    width: calc(100vw - 280px); /* 正確計算剩餘寬度 */
-    box-sizing: border-box;
+    /* flex: 1 會自動填充剩餘空間，不需要 max-width */
 }
 
 .container {
@@ -38,7 +37,8 @@
 #start-screen.active {
     display: flex;
     height: 100%;
-    overflow: hidden;
+    overflow-y: auto;  /* 滚动条在这一层，紧贴右边 */
+    overflow-x: hidden;
 }
 
 /* 游戏界面：固定布局，不滚动 */
@@ -63,7 +63,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow-y: auto;
+    overflow-y: auto;  /* 滚动条在这一层，紧贴右边 */
     overflow-x: hidden;
 }
 
@@ -88,8 +88,8 @@
 .content {
     padding: 30px 40px;
     flex: 1;
-    overflow-y: auto; /* 恢復原有的滾動行為 */
-    overflow-x: hidden; /* 恢復原有的溢出隱藏 */
+    overflow-y: visible; /* 允许父容器控制滚动 */
+    overflow-x: visible; /* 允许hover效果正常显示 */
     display: flex;
     flex-direction: column;
     max-width: 100%; /* 限制最大寬度 */
@@ -97,17 +97,15 @@
 
 /* 启动界面内容特殊样式 */
 #start-screen .content {
-    overflow-y: auto;
-    overflow-x: hidden; /* 防止水平溢出 */
+    overflow-y: visible; /* 让父容器 (#start-screen) 控制滚动 */
+    overflow-x: visible; /* 允许内容自然显示 */
     max-width: 1000px;
     margin: 0 auto;
     width: 100%;
-    padding: 40px;
-    padding-bottom: 60px; /* 確保底部有足夠空間 */
+    padding: 30px 40px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    min-height: 100vh;
+    justify-content: flex-start; /* 从顶部开始，不居中 */
 }
 
 /* ===== 側邊欄樣式 ===== */
