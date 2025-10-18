@@ -1,351 +1,402 @@
 /**
  * 時文寶鑑 - 編輯器樣式
  * 
- * 包含：Quill 編輯器自定義、段落結構樣式、反饋顯示
+ * 設計理念：
+ * - 淡雅配色，不分散注意力
+ * - 極簡現代，高級感
+ * - 統一圓角，視覺協調
+ * - 微妙陰影，層次分明
  */
 
 /* ================================
-   Quill 編輯器容器
+   編輯器容器統一樣式
    ================================ */
 
-.editor-container {
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-/* Quill 編輯器自定義 */
 .ql-container {
-    font-family: "Microsoft JhengHei", "微軟正黑體", "PingFang TC", sans-serif;
+    border-radius: 0 0 12px 12px !important;
+    border: 1px solid #e5e7eb !important;
+    border-top: none !important;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
     font-size: 16px;
-    line-height: 1.8;
+    transition: all 0.3s ease;
 }
 
-.ql-editor {
-    min-height: 200px;
-    padding: 1.5rem;
-}
-
-.ql-editor p {
-    margin-bottom: 1rem;
-}
-
-/* 工具欄樣式 */
-.ql-toolbar {
-    border-bottom: 1px solid #e5e7eb !important;
-    background-color: #f9fafb;
-}
-
-.ql-toolbar button:hover,
-.ql-toolbar button:focus {
-    color: #3b82f6 !important;
-}
-
-.ql-toolbar button.ql-active {
-    color: #3b82f6 !important;
-}
-
-/* ================================
-   分層段落結構
-   ================================ */
-
-.essay-structure {
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-/* 段落容器 */
-.paragraph-container {
-    margin-bottom: 2rem;
-    background: white;
-    border-radius: 0.5rem;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-}
-
-.paragraph-container:hover {
-    border-color: #e5e7eb;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.paragraph-container.active {
-    border-color: #3b82f6;
+.ql-container:focus-within {
+    border-color: #3b82f6 !important;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* 段落標題 */
-.paragraph-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-    background-color: #f9fafb;
+/* 工具栏样式 */
+.ql-toolbar {
+    border-radius: 12px 12px 0 0 !important;
+    border: 1px solid #e5e7eb !important;
+    background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+    padding: 10px 12px !important;
+    transition: all 0.3s ease;
 }
 
-.paragraph-type {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-weight: 600;
-    color: #374151;
+/* 工具栏按钮 */
+.ql-toolbar button {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    margin: 0 2px;
 }
 
-.paragraph-type-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
+.ql-toolbar button:hover {
+    background: rgba(59, 130, 246, 0.08);
 }
 
-.paragraph-type-icon.introduction {
-    background-color: #dbeafe;
-    color: #1e40af;
+.ql-toolbar button:active,
+.ql-toolbar button.ql-active {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
 }
 
-.paragraph-type-icon.body {
-    background-color: #fef3c7;
-    color: #92400e;
+.ql-toolbar button svg {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
 }
 
-.paragraph-type-icon.conclusion {
-    background-color: #d1fae5;
-    color: #065f46;
+.ql-toolbar button:hover svg,
+.ql-toolbar button.ql-active svg {
+    opacity: 1;
 }
 
-/* 段落操作按鈕 */
-.paragraph-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.paragraph-actions button {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-    border-radius: 0.25rem;
-    background-color: white;
-    border: 1px solid #d1d5db;
-    color: #6b7280;
-    cursor: pointer;
+/* 工具栏下拉菜单 */
+.ql-toolbar select {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 4px 8px;
+    background: white;
     transition: all 0.2s ease;
 }
 
-.paragraph-actions button:hover {
-    background-color: #f3f4f6;
-    color: #374151;
-}
-
-/* 段落內容 */
-.paragraph-body {
-    padding: 1.5rem;
-}
-
-/* ================================
-   分論點容器
-   ================================ */
-
-.argument-section {
-    margin-bottom: 2rem;
-    border: 2px dashed #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    background-color: #fafbfc;
-}
-
-.argument-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid #e5e7eb;
-}
-
-.argument-title {
-    flex: 1;
-    margin-right: 1rem;
-}
-
-.argument-title input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    background-color: white;
-}
-
-.argument-title input:focus {
-    outline: none;
+.ql-toolbar select:hover {
     border-color: #3b82f6;
 }
 
-.argument-paragraphs {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+/* ================================
+   編輯器內容區樣式
+   ================================ */
+
+.ql-editor {
+    padding: 24px 28px !important;
+    min-height: 180px;
+    line-height: 1.8;
+    color: #1f2937;
+}
+
+/* 段落样式 */
+.ql-editor p {
+    margin-bottom: 1em;
+    text-indent: 0;
+}
+
+.ql-editor p:last-child {
+    margin-bottom: 0;
+}
+
+/* 标题样式 */
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3 {
+    font-weight: 600;
+    color: #111827;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.ql-editor h1 { font-size: 1.5em; }
+.ql-editor h2 { font-size: 1.3em; }
+.ql-editor h3 { font-size: 1.1em; }
+
+/* 列表样式 */
+.ql-editor ul,
+.ql-editor ol {
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.ql-editor li {
+    margin-bottom: 0.5em;
+}
+
+/* 引用样式 */
+.ql-editor blockquote {
+    border-left: 4px solid #3b82f6;
+    padding-left: 1em;
+    margin-left: 0;
+    margin-right: 0;
+    color: #4b5563;
+    font-style: italic;
+    background: rgba(59, 130, 246, 0.03);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+}
+
+/* Placeholder 样式 */
+.ql-editor.ql-blank::before {
+    color: #9ca3af;
+    font-style: normal;
+    left: 28px;
+}
+
+/* ================================
+   分論點和段落樣式優化
+   ================================ */
+
+/* 分論點容器 */
+.bg-gradient-to-r.from-blue-50 {
+    background: linear-gradient(to right, #eff6ff, #ffffff) !important;
+    border-radius: 12px;
+    border: 1px solid #dbeafe;
+    padding: 24px !important;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+.bg-gradient-to-r.from-blue-50:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+/* 分論點標題輸入框 */
+.bg-transparent.border-b-2 {
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    transition: all 0.2s ease;
+}
+
+.bg-transparent.border-b-2:hover {
+    background: rgba(59, 130, 246, 0.04) !important;
+}
+
+.bg-transparent.border-b-2:focus {
+    background: rgba(59, 130, 246, 0.06) !important;
+}
+
+/* 分論點編號徽章 */
+.rounded-full.bg-blue-600 {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* 段落卡片 */
+.bg-white.rounded-lg.border {
+    border-radius: 10px !important;
+    border-color: #e5e7eb !important;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.bg-white.rounded-lg.border:hover {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+/* ================================
+   按鈕樣式優化
+   ================================ */
+
+/* 添加分論點按鈕 */
+#add-argument-btn {
+    border-radius: 10px !important;
+    border: 2px dashed #cbd5e1 !important;
+    background: linear-gradient(to bottom, #ffffff, #f9fafb) !important;
+    transition: all 0.3s ease;
+}
+
+#add-argument-btn:hover {
+    border-color: #3b82f6 !important;
+    background: linear-gradient(to bottom, #eff6ff, #dbeafe) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 /* 添加段落按鈕 */
 .add-paragraph-btn {
-    width: 100%;
-    padding: 0.75rem;
-    margin-top: 1rem;
-    border: 2px dashed #d1d5db;
-    border-radius: 0.375rem;
-    background-color: white;
-    color: #6b7280;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    border-radius: 8px !important;
+    border-color: #bfdbfe !important;
+    background: linear-gradient(to bottom, #ffffff, #eff6ff) !important;
+    transition: all 0.3s ease;
 }
 
 .add-paragraph-btn:hover {
-    border-color: #3b82f6;
-    color: #3b82f6;
-    background-color: #f0f9ff;
+    border-color: #60a5fa !important;
+    background: linear-gradient(to bottom, #dbeafe, #bfdbfe) !important;
 }
 
-/* ================================
-   AI 反饋側邊欄
-   ================================ */
-
-.feedback-sidebar {
-    position: fixed;
-    top: 4rem;
-    right: 0;
-    width: 24rem;
-    height: calc(100vh - 4rem);
-    background: white;
-    border-left: 1px solid #e5e7eb;
-    box-shadow: -4px 0 6px -1px rgba(0, 0, 0, 0.1);
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-    z-index: 40;
-}
-
-.feedback-sidebar.show {
-    transform: translateX(0);
-}
-
-.feedback-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.feedback-content {
-    padding: 1.5rem;
-    height: calc(100% - 4rem);
-    overflow-y: auto;
-}
-
-/* 反饋項目 */
-.feedback-item {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background-color: #f9fafb;
-    border-left: 4px solid #3b82f6;
-    border-radius: 0.375rem;
-}
-
-.feedback-item.warning {
-    border-left-color: #f59e0b;
-    background-color: #fffbeb;
-}
-
-.feedback-item.error {
-    border-left-color: #ef4444;
-    background-color: #fef2f2;
-}
-
-.feedback-sentence {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.5rem;
-}
-
-.feedback-message {
-    font-size: 0.875rem;
-    color: #6b7280;
-    line-height: 1.6;
-}
-
-/* ================================
-   字數統計
-   ================================ */
-
-.word-count {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: #f3f4f6;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.word-count-number {
-    font-weight: 600;
-    color: #374151;
-}
-
-/* ================================
-   保存狀態指示器
-   ================================ */
-
-.save-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
+/* 刪除按鈕 */
+.delete-argument-btn,
+.delete-paragraph-btn {
+    border-radius: 6px;
     transition: all 0.2s ease;
 }
 
-.save-indicator.saving {
-    background-color: #fef3c7;
-    color: #92400e;
-}
-
-.save-indicator.saved {
-    background-color: #d1fae5;
-    color: #065f46;
-}
-
-.save-indicator.error {
-    background-color: #fee2e2;
-    color: #991b1b;
+.delete-argument-btn:hover,
+.delete-paragraph-btn:hover {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
 }
 
 /* ================================
-   響應式設計
+   引言和結論區域樣式
+   ================================ */
+
+/* 引言編輯器容器 */
+#intro-editor,
+#conclusion-editor {
+    border-radius: 12px !important;
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    padding: 4px;
+    transition: all 0.3s ease;
+}
+
+#intro-editor:focus-within,
+#conclusion-editor:focus-within {
+    background: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ================================
+   頂部工具欄樣式
+   ================================ */
+
+/* 字數統計和保存狀態 */
+.bg-white.rounded-lg.shadow-sm.p-4 {
+    border-radius: 12px !important;
+    border: 1px solid #e5e7eb;
+    background: linear-gradient(to bottom, #ffffff, #fafafa) !important;
+}
+
+/* 保存狀態指示器 */
+#save-status i {
+    transition: all 0.3s ease;
+}
+
+#save-status .fa-spinner {
+    color: #3b82f6;
+}
+
+#save-status .fa-check-circle {
+    color: #10b981;
+}
+
+#save-status .fa-exclamation-circle {
+    color: #ef4444;
+}
+
+/* ================================
+   響應式優化
    ================================ */
 
 @media (max-width: 768px) {
-    .feedback-sidebar {
-        width: 100%;
-        top: 0;
-        height: 100vh;
+    .ql-toolbar {
+        padding: 8px !important;
     }
     
-    .essay-structure {
-        padding: 1rem;
+    .ql-toolbar button {
+        width: 28px !important;
+        height: 28px !important;
+        margin: 0 1px;
     }
     
-    .paragraph-container {
-        margin-bottom: 1rem;
+    .ql-editor {
+        padding: 16px 20px !important;
+        font-size: 15px;
+    }
+    
+    #intro-editor,
+    #conclusion-editor {
+        min-height: 150px !important;
     }
 }
 
+/* ================================
+   焦點和選中狀態
+   ================================ */
+
+/* 選中文字的樣式 */
+.ql-editor ::selection {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+/* 焦點環樣式 */
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* ================================
+   微妙動畫效果
+   ================================ */
+
+/* 淡入動畫 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bg-gradient-to-r.from-blue-50 {
+    animation: fadeIn 0.3s ease;
+}
+
+/* 脈動動畫（保存中） */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+#save-status .fa-spinner {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ================================
+   字體優化（可選）
+   ================================ */
+
+/* 如果需要更優雅的中文字體，可以啟用以下樣式 */
+/*
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap');
+
+.ql-editor {
+    font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+}
+*/
+
+/* ================================
+   打印樣式優化
+   ================================ */
+
+@media print {
+    .ql-toolbar {
+        display: none;
+    }
+    
+    .ql-container {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    #add-argument-btn,
+    .delete-argument-btn,
+    .delete-paragraph-btn,
+    .add-paragraph-btn {
+        display: none;
+    }
+}
