@@ -82,6 +82,16 @@
             url: '/leiyushandian.html',
             description: '扮演曹禺《雷雨》中的經典角色躲避命運閃電，在街機遊戲中體驗家庭悲劇的文學深度'
         },
+        {
+            id: 'shiwen-baojian',
+            category: 'hanmo',
+            name: '時文寶鑑',
+            icon: 'fas fa-pen-fancy',
+            gradient: 'from-indigo-500 to-blue-600',
+            url: '/shiwen-baojian/index.html',
+            description: 'AI 論文寫作指導系統，提供段落級即時反饋，幫助學生掌握學術論文格式與寫作技巧',
+            isNew: true
+        },
         
         // 千古堂 - 古代經典體驗
         {
