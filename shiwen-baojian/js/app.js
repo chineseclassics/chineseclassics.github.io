@@ -167,10 +167,9 @@ async function ensureUserRecord(user) {
         const userRole = detectUserRole(user);
         const userRecord = {
             id: user.id,
-            email: user.email || null,
-            full_name: user.user_metadata?.full_name || (user.is_anonymous ? '匿名測試' : null),
-            role: userRole === 'teacher' ? 'teacher' : 'student',
-            user_type: user.is_anonymous ? 'anonymous' : 'google'
+            email: user.email || `anonymous-${user.id}@test.local`,  // 生成唯一的邮箱
+            display_name: user.user_metadata?.full_name || (user.is_anonymous ? '匿名測試' : '學生'),
+            role: userRole === 'teacher' ? 'teacher' : 'student'
         };
         
         console.log('💾 準備插入用戶記錄:', userRecord);
