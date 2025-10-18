@@ -413,6 +413,10 @@ async function showStudentDashboard() {
     
     // 初始化論文編輯器
     await initializeEssayEditor();
+    
+    // 初始化防作弊系統
+    const { initializeAntiCheat } = await import('./features/anti-cheat.js');
+    initializeAntiCheat();
 }
 
 /**

@@ -91,7 +91,18 @@ export async function initializeEssayEditor() {
             subtitleInput.addEventListener('input', handleEditorChange);
         }
         
-        // 5. 初始化字數統計
+        // 5. 綁定引言和結論的 AI 反饋按鈕
+        const introFeedbackBtn = document.getElementById('intro-feedback-btn');
+        if (introFeedbackBtn) {
+            introFeedbackBtn.addEventListener('click', () => requestParagraphFeedback('intro', 'introduction'));
+        }
+        
+        const conclusionFeedbackBtn = document.getElementById('conclusion-feedback-btn');
+        if (conclusionFeedbackBtn) {
+            conclusionFeedbackBtn.addEventListener('click', () => requestParagraphFeedback('conclusion', 'conclusion'));
+        }
+        
+        // 6. 初始化字數統計
         updateWordCount();
         
         EditorState.initialized = true;
@@ -255,16 +266,28 @@ function addParagraph(argumentId) {
         <div id="${paragraphId}" class="bg-white rounded-lg border border-gray-200 p-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium text-gray-600">段落 ${paragraphIndex}</span>
-                <button class="delete-paragraph-btn text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-all"
-                        data-paragraph-id="${paragraphId}"
-                        data-argument-id="${argumentId}">
-                    <i class="fas fa-times text-sm"></i>
-                </button>
+                <div class="flex items-center space-x-2">
+                    <!-- AI 反饋按鈕 -->
+                    <button class="request-feedback-btn text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1 rounded text-xs font-medium transition-all"
+                            data-paragraph-id="${paragraphId}"
+                            title="獲取 AI 反饋">
+                        <i class="fas fa-robot mr-1"></i>
+                        AI 反饋
+                    </button>
+                    <!-- 刪除按鈕 -->
+                    <button class="delete-paragraph-btn text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-all"
+                            data-paragraph-id="${paragraphId}"
+                            data-argument-id="${argumentId}">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
             </div>
             <div id="${paragraphId}-editor" class="min-h-[150px]"></div>
-            <div class="mt-2 text-right">
+            <div class="mt-2 flex items-center justify-between">
                 <span id="${paragraphId}-word-count" class="text-xs text-gray-500">0 字</span>
             </div>
+            <!-- AI 反饋容器 -->
+            <div id="${paragraphId}-feedback" class="hidden mt-4"></div>
         </div>
     `;
     
@@ -293,15 +316,22 @@ function addParagraph(argumentId) {
     const paragraph = {
         id: paragraphId,
         index: paragraphIndex,
-        editor: editor
+        editor: editor,
+        type: 'body' // 正文段落
     };
     
     argument.paragraphs.push(paragraph);
     
     // 綁定刪除按鈕
-    const deleteBtn = document.querySelector(`[data-paragraph-id="${paragraphId}"]`);
+    const deleteBtn = document.querySelector(`[data-paragraph-id="${paragraphId}"].delete-paragraph-btn`);
     if (deleteBtn) {
         deleteBtn.addEventListener('click', () => deleteParagraph(argumentId, paragraphId));
+    }
+    
+    // 綁定 AI 反饋按鈕
+    const feedbackBtn = document.querySelector(`[data-paragraph-id="${paragraphId}"].request-feedback-btn`);
+    if (feedbackBtn) {
+        feedbackBtn.addEventListener('click', () => requestParagraphFeedback(paragraphId, 'body'));
     }
     
     console.log(`✅ 已添加段落到分論點 ${argument.index}`);
@@ -513,8 +543,59 @@ function updateSaveStatus(status) {
 }
 
 // ================================
+// AI 反饋請求
+// ================================
+
+/**
+ * 請求段落 AI 反饋
+ */
+async function requestParagraphFeedback(paragraphId, paragraphType) {
+    console.log('🤖 請求段落 AI 反饋:', paragraphId);
+    
+    // 動態導入 AI 反饋模組
+    try {
+        const { requestAIFeedback } = await import('../ai/feedback-requester.js');
+        
+        // 獲取段落內容
+        let content = '';
+        let type = paragraphType;
+        
+        // 根據段落 ID 判斷類型和獲取內容
+        if (paragraphId === 'intro') {
+            content = EditorState.introEditor?.getHTML() || '';
+            type = 'introduction';
+        } else if (paragraphId === 'conclusion') {
+            content = EditorState.conclusionEditor?.getHTML() || '';
+            type = 'conclusion';
+        } else {
+            // 從分論點中查找段落
+            for (const arg of EditorState.arguments) {
+                const para = arg.paragraphs.find(p => p.id === paragraphId);
+                if (para) {
+                    content = para.editor?.getHTML() || '';
+                    type = 'body';
+                    break;
+                }
+            }
+        }
+        
+        if (!content || content.trim() === '') {
+            alert('段落內容為空，請先撰寫內容再請求反饋');
+            return;
+        }
+        
+        // 調用 AI 反饋 API
+        await requestAIFeedback(paragraphId, content, type);
+        
+    } catch (error) {
+        console.error('❌ 請求 AI 反饋失敗:', error);
+        alert(`獲取 AI 反饋失敗：${error.message}`);
+    }
+}
+
+// ================================
 // 導出
 // ================================
 
-export { EditorState };
+export { EditorState, requestParagraphFeedback };
 
