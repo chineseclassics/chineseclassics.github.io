@@ -27,8 +27,8 @@ export async function loadHonglouFormatSpec() {
     console.log('📥 加載論文格式規範...');
     
     try {
-        // 加載 JSON 文件
-        const response = await fetch('/shiwen-baojian/assets/data/honglou-essay-format.json');
+        // 加載 JSON 文件（使用相對路徑）
+        const response = await fetch('assets/data/honglou-essay-format.json');
         
         if (!response.ok) {
             throw new Error(`加載格式規範失敗: ${response.status}`);
