@@ -6,6 +6,7 @@
 import { showToast } from '../utils/toast.js';
 import { openWordbook } from '../features/wordbook.js';
 import { initSettingsScreen, initStartScreen } from './screens.js';
+import { loadMyStoriesScreen } from './story-card.js';
 
 /**
  * 页面切换
@@ -135,9 +136,7 @@ export async function navigateTo(destination) {
         case 'my-stories':
             showScreen('my-stories-screen');
             // 加载故事列表
-            if (typeof window.loadMyStoriesScreen === 'function') {
-                window.loadMyStoriesScreen();
-            }
+            await loadMyStoriesScreen();
             break;
         
         case 'wordbook':
