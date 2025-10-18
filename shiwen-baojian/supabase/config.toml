@@ -1,0 +1,94 @@
+# Supabase Configuration for 时文宝鉴 (Shiwen-Baojian)
+# 时文宝鉴论文写作辅助系统 - 独立 Supabase 项目配置
+
+project_id = "shiwen-baojian"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# 生产环境 URL（部署后需要更新）
+site_url = "https://chineseclassics.github.io/shiwen-baojian"
+# 本地开发 URL
+additional_redirect_urls = [
+  "http://127.0.0.1:3000",
+  "http://localhost:3000",
+  "https://chineseclassics.github.io/shiwen-baojian"
+]
+jwt_expiry = 604800  # 7 天
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = true  # 启用匿名登录（测试用）
+minimum_password_length = 6
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+max_frequency = "1s"
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+# Google OAuth 配置（需要在 Supabase Dashboard 设置）
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
+redirect_uri = ""
+skip_nonce_check = false
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+inspector_port = 8083
+deno_version = 2
+
+[analytics]
+enabled = true
+port = 54327
+backend = "postgres"
+

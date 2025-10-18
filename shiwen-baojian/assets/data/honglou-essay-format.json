@@ -1,0 +1,515 @@
+{
+  "metadata": {
+    "name": "红楼梦论文格式规范",
+    "version": "1.0",
+    "target": "十年级学生",
+    "essay_type": "学术论文（文学分析）",
+    "word_count": "1500-2500字",
+    "description": "基于《论文格式宝典》优化，用于 AI 反馈引擎"
+  },
+
+  "structure": {
+    "required_sections": [
+      {
+        "id": "introduction",
+        "name": "引言",
+        "required": true,
+        "order": 1,
+        "description": "从宏观背景 Zoom In 到研究问题"
+      },
+      {
+        "id": "body",
+        "name": "正文",
+        "required": true,
+        "order": 2,
+        "min_paragraphs": 3,
+        "max_paragraphs": 5,
+        "description": "每段支撑一个分论点"
+      },
+      {
+        "id": "conclusion",
+        "name": "结论",
+        "required": true,
+        "order": 3,
+        "description": "总结并 Zoom Out 到更大背景"
+      }
+    ]
+  },
+
+  "paragraph_types": {
+    "introduction": {
+      "name": "引言段",
+      "purpose": "吸引读者、确立主题、概述论点",
+      "required_elements": [
+        {
+          "id": "hook",
+          "name": "背景引入 (Hook)",
+          "required": true,
+          "position": "开头 1-2 句",
+          "description": "从较广泛的背景切入，引出核心文本或主题",
+          "keywords": ["《红楼梦》", "艺术成就", "人物塑造", "文学价值"],
+          "check_points": [
+            "是否从宏观背景切入",
+            "是否避免直接进入主题",
+            "是否逐步聚焦到研究对象"
+          ]
+        },
+        {
+          "id": "definition",
+          "name": "关键词定义",
+          "required": true,
+          "position": "引入背景后",
+          "description": "对论文标题或核心概念进行简要定义与阐释",
+          "check_points": [
+            "是否界定了核心概念",
+            "定义是否准确清晰",
+            "是否有助于理解论文主题"
+          ]
+        },
+        {
+          "id": "research_gap",
+          "name": "研究缺口",
+          "required": true,
+          "position": "提出核心问题前",
+          "description": "指出学界普遍看法及较少探讨的切入点",
+          "check_points": [
+            "是否简述现有研究",
+            "是否指出研究不足之处",
+            "是否凸显本文研究价值"
+          ]
+        },
+        {
+          "id": "thesis_statement",
+          "name": "核心问题与论文主张",
+          "required": true,
+          "position": "引言中后部",
+          "description": "明确陈述研究问题和核心论点",
+          "check_points": [
+            "核心问题是否明确（疑问句形式）",
+            "论文主张是否用一句话精煉陈述",
+            "主张是否直接回答核心问题",
+            "是否避免模糊表述"
+          ],
+          "max_length": 40,
+          "markers": ["本文认为", "本文旨在探讨", "本文主张"]
+        },
+        {
+          "id": "roadmap",
+          "name": "结构预告",
+          "required": true,
+          "position": "引言结尾",
+          "description": "预告正文将从哪几个方面支持论文主张",
+          "check_points": [
+            "是否预告了 2-4 个分论点",
+            "分论点是否清晰列出",
+            "是否使用序数词（一、二、三）"
+          ],
+          "markers": ["以下将从", "本文将从", "分别从"]
+        }
+      ],
+      "common_errors": [
+        {
+          "id": "intro_error_1",
+          "error": "缺少背景引入，直接进入主题",
+          "example": "林黛玉的形象通过瀟湘館的環境描寫來塑造。",
+          "problem": "过于突兀，缺少 Zoom In 过程",
+          "fix": "先从《红楼梦》的艺术成就谈起，再逐步聚焦到林黛玉"
+        },
+        {
+          "id": "intro_error_2",
+          "error": "论文主张不清晰",
+          "example": "瀟湘館很重要。",
+          "problem": "过于笼统，没有明确论点",
+          "fix": "明确说明'如何'重要，提出具体论点"
+        },
+        {
+          "id": "intro_error_3",
+          "error": "没有预告结构",
+          "problem": "读者不知道下文将如何展开",
+          "fix": "明确说明'以下将从三个层面...'"
+        }
+      ]
+    },
+
+    "body_paragraph": {
+      "name": "正文段",
+      "purpose": "支撑论文主张的基石",
+      "required_elements": [
+        {
+          "id": "topic_sentence",
+          "name": "主题句 (Topic Sentence)",
+          "required": true,
+          "position": "段落开头第一句",
+          "description": "清晰表达本段的分论点",
+          "check_points": [
+            "是否在段落第一句",
+            "是否直接支持论文总主张",
+            "是否使用连接词（首先、其次、再者）",
+            "是否表述清晰、独立"
+          ],
+          "markers": ["首先", "其次", "再者", "此外", "最后"]
+        },
+        {
+          "id": "textual_evidence",
+          "name": "文本证据 (Textual Evidence)",
+          "required": true,
+          "min_count": 1,
+          "recommended_count": 2,
+          "position": "主题句之后",
+          "description": "从原著引用相关例子或情节",
+          "check_points": [
+            "是否引用了原文或概述情节",
+            "引用是否准确完整",
+            "是否与主题句紧密相关",
+            "引用数量是否充分（1-2处）"
+          ]
+        },
+        {
+          "id": "close_reading",
+          "name": "文本细读 (Close Reading)",
+          "required": true,
+          "min_percentage": 60,
+          "position": "文本证据之后",
+          "description": "紧扣文本字、词、句进行深入分析",
+          "importance": "最关键",
+          "check_points": [
+            "是否紧扣文本的字、词、句细节",
+            "是否由小见大阐释深层含义",
+            "分析长度是否 > 引用长度",
+            "是否反复使用主题句关键词",
+            "是否避免空泛议论",
+            "是否展示'如何从文本推导出意义'"
+          ],
+          "forbidden": [
+            "这说明...",
+            "这体现了...",
+            "这反映出..."
+          ],
+          "recommended": [
+            "具体分析某个字的含义",
+            "分析某个词的选择",
+            "分析句式结构的作用",
+            "分析修辞手法的效果"
+          ]
+        },
+        {
+          "id": "concluding_sentence",
+          "name": "段落总结",
+          "required": true,
+          "position": "段落结尾",
+          "description": "总结本段论点，可为下段铺陈",
+          "check_points": [
+            "是否总结了本段论点",
+            "是否呼应主题句",
+            "是否为下段做过渡（可选）"
+          ]
+        }
+      ],
+      "common_errors": [
+        {
+          "id": "body_error_1",
+          "error": "缺少主题句",
+          "example": "直接引用原文，没有说明要论证什么",
+          "problem": "读者不知道本段要证明什么",
+          "fix": "先用一句话说明本段要证明的分论点"
+        },
+        {
+          "id": "body_error_2",
+          "error": "只引用不分析",
+          "example": "大段引用原文，但没有细读分析",
+          "problem": "堆砌材料，没有论证",
+          "fix": "引用后必须逐字逐句分析"
+        },
+        {
+          "id": "body_error_3",
+          "error": "分析空泛",
+          "example": "这说明林黛玉很聪明。",
+          "problem": "没有从文本细节推导",
+          "fix": "分析具体的字、词、句如何体现聪明"
+        },
+        {
+          "id": "body_error_4",
+          "error": "离题",
+          "example": "分析过程偏离主题句",
+          "problem": "论证焦点不集中",
+          "fix": "反复使用主题句关键词，保持焦点"
+        }
+      ]
+    },
+
+    "conclusion": {
+      "name": "结论段",
+      "purpose": "Zoom Out 回归宏观视野",
+      "required_elements": [
+        {
+          "id": "restate_thesis",
+          "name": "重申论文主张",
+          "required": true,
+          "position": "开头",
+          "description": "用不同措辞重新陈述核心论点",
+          "check_points": [
+            "是否重申了论文主张",
+            "是否用了不同的措辞（避免简单重复）",
+            "是否清晰明确"
+          ]
+        },
+        {
+          "id": "summarize_points",
+          "name": "总结分论点",
+          "required": true,
+          "position": "重申主张后",
+          "description": "简要回顾正文中的几个分论点",
+          "check_points": [
+            "是否回顾了所有分论点",
+            "是否简洁（不重复正文细节）",
+            "是否展示分论点如何共同支撑总主张"
+          ]
+        },
+        {
+          "id": "broader_implications",
+          "name": "引申思考 (So What)",
+          "required": true,
+          "position": "结尾",
+          "description": "提出研究的深远意义或延伸思考",
+          "importance": "最重要",
+          "check_points": [
+            "是否回答了'所以呢？'这个问题",
+            "是否与更大的文化、历史背景关联",
+            "是否提升了论文格局",
+            "是否避免提出新论点"
+          ],
+          "recommended_directions": [
+            "连接文学传统",
+            "连接文化背景",
+            "连接美学理念",
+            "提出未来研究方向"
+          ]
+        }
+      ],
+      "common_errors": [
+        {
+          "id": "conclusion_error_1",
+          "error": "提出新论点",
+          "example": "在结论中讨论引言和正文未涉及的内容",
+          "problem": "破坏论文结构完整性",
+          "fix": "只总结已论述的内容"
+        },
+        {
+          "id": "conclusion_error_2",
+          "error": "简单重复",
+          "example": "原封不动重复引言的话",
+          "problem": "缺少新意，浪费空间",
+          "fix": "用不同措辞重新表述"
+        },
+        {
+          "id": "conclusion_error_3",
+          "error": "缺少 Zoom Out",
+          "example": "只总结论点，不提升高度",
+          "problem": "未体现研究的深远意义",
+          "fix": "连接更大的文化、历史背景"
+        }
+      ]
+    }
+  },
+
+  "sentence_level_rules": {
+    "hook_sentence": {
+      "position": 1,
+      "should": "从宏观背景切入",
+      "should_not": "直接提出核心问题",
+      "examples": {
+        "good": "《紅樓夢》的藝術成就，主要體現在其生動立體的人物塑造上。",
+        "bad": "林黛玉住在瀟湘館。"
+      }
+    },
+    "thesis_statement_sentence": {
+      "should": "一句完整的陈述句",
+      "max_length": 40,
+      "position": "引言后半部分",
+      "markers": ["本文认为", "本文旨在探讨", "本文主张"],
+      "examples": {
+        "good": "本文認為，瀟湘館的環境描寫並非單純的背景設定，而是曹雪芹用以塑造林黛玉形象的關鍵一環。",
+        "bad": "瀟湘館很重要，林黛玉的形象很複雜。"
+      }
+    },
+    "topic_sentence": {
+      "position": "段落第一句",
+      "should": "直接支持论文主张",
+      "markers": ["首先", "其次", "此外", "最后"],
+      "examples": {
+        "good": "首先，瀟湘館的命名，已然透過用典暗示了林黛玉終將淚盡而逝的悲劇性命運。",
+        "bad": "瀟湘館有竹子。"
+      }
+    },
+    "quote_sentence": {
+      "should": "有引号标注",
+      "position": "主题句之后",
+      "min_count_per_paragraph": 1
+    },
+    "analysis_sentence": {
+      "should": "紧扣引用内容",
+      "should_be_longer_than": "引用内容",
+      "forbidden_patterns": ["这说明", "这体现", "这反映"],
+      "should_analyze": ["具体的字", "具体的词", "具体的句"]
+    }
+  },
+
+  "weights_and_scoring": {
+    "paragraph_weights": {
+      "introduction": {
+        "weight": 20,
+        "elements": {
+          "hook": 4,
+          "definition": 4,
+          "research_gap": 4,
+          "thesis_statement": 6,
+          "roadmap": 2
+        }
+      },
+      "body": {
+        "weight": 60,
+        "elements": {
+          "topic_sentence": 10,
+          "textual_evidence": 10,
+          "close_reading": 35,
+          "concluding_sentence": 5
+        }
+      },
+      "conclusion": {
+        "weight": 20,
+        "elements": {
+          "restate_thesis": 6,
+          "summarize_points": 6,
+          "broader_implications": 8
+        }
+      }
+    },
+    
+    "ib_criteria_mapping": {
+      "criterion_a_analysis": {
+        "name": "标准A：分析",
+        "max_score": 8,
+        "levels": {
+          "7-8": {
+            "description": "敏锐地分析文本内容、语言、结构、技巧",
+            "indicators": [
+              "深入的文本细读",
+              "精准的字词句分析",
+              "透彻的解释",
+              "准确的术语运用"
+            ]
+          },
+          "5-6": {
+            "description": "熟练地分析文本",
+            "indicators": [
+              "充分的文本分析",
+              "运用实例和解释",
+              "准确的术语"
+            ]
+          },
+          "3-4": {
+            "description": "尚充分地分析文本",
+            "indicators": [
+              "一些实例和解释",
+              "运用一些术语",
+              "分析不够一致"
+            ]
+          },
+          "1-2": {
+            "description": "对文本分析稍有",
+            "indicators": [
+              "很少运用实例",
+              "极少或没有运用术语"
+            ]
+          }
+        }
+      },
+      "criterion_b_organization": {
+        "name": "标准B：组织",
+        "max_score": 8,
+        "levels": {
+          "7-8": {
+            "description": "巧妙运用组织结构，有效服务情境和意图",
+            "indicators": [
+              "持续、连贯、符合逻辑",
+              "巧妙地环环相扣",
+              "出色运用注明和格式化工具"
+            ]
+          },
+          "5-6": {
+            "description": "适当采用组织结构",
+            "indicators": [
+              "连贯一致和符合逻辑",
+              "环环相扣",
+              "熟练运用注明和格式化"
+            ]
+          },
+          "3-4": {
+            "description": "尚令人满意地采用组织结构",
+            "indicators": [
+              "有一定程度的连贯性和逻辑性",
+              "尚令人满意地运用格式化"
+            ]
+          },
+          "1-2": {
+            "description": "对组织结构稍有采用",
+            "indicators": [
+              "缺乏连贯性和逻辑性",
+              "很少运用格式化工具"
+            ]
+          }
+        }
+      }
+    },
+    
+    "severity_levels": {
+      "critical": {
+        "score_impact": -3,
+        "examples": [
+          "缺少论文主张",
+          "缺少主题句",
+          "完全没有文本分析",
+          "引言或结论缺失"
+        ]
+      },
+      "major": {
+        "score_impact": -2,
+        "examples": [
+          "论文主张不清晰",
+          "缺少文本证据",
+          "分析空泛无细节",
+          "缺少结构预告"
+        ]
+      },
+      "minor": {
+        "score_impact": -1,
+        "examples": [
+          "主题句位置不当",
+          "段落总结不够清晰",
+          "连接词使用不当"
+        ]
+      },
+      "suggestion": {
+        "score_impact": 0,
+        "examples": [
+          "可以增加更多文本细节",
+          "建议使用更准确的术语",
+          "引申思考可以更深入"
+        ]
+      }
+    }
+  },
+
+  "feedback_templates": {
+    "structure_complete": "✅ 段落结构完整，包含所有必需元素。",
+    "structure_incomplete": "⚠️ 段落结构不完整，缺少：{missing_elements}",
+    "sentence_level_issue": "📍 第{sentence_number}句存在问题：{issue_description}",
+    "analysis_insufficient": "⚠️ 文本分析不够深入，建议从具体的{aspect}（字/词/句）进行细读。",
+    "evidence_missing": "❌ 缺少文本证据。请引用《红楼梦》原文或概述相关情节。",
+    "topic_sentence_unclear": "⚠️ 主题句不够清晰。建议明确表达本段要证明的分论点。",
+    "thesis_vague": "❌ 论文主张过于笼统。请用一句话精炼地陈述你的核心论点。",
+    "good_analysis": "✅ 文本细读深入，能够从字、词、句细节推导出意义。",
+    "critical_warning": "🚨 严重问题：{issue}。这将显著影响论文质量，请优先修改。"
+  }
+}
+
