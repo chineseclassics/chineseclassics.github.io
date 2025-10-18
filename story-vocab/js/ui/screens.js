@@ -1405,21 +1405,26 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                 
                 // ✅ 更新緩存的詞表信息（用於下次頁面加載）
                 if (gameState.user && gameState.user.wordlist_preference) {
+                    gameState.user.wordlist_preference.default_mode = 'wordlist';
+                    gameState.user.wordlist_preference.default_wordlist_id = wordlist.id;
                     gameState.user.wordlist_preference.wordlist_info = {
                         id: wordlist.id,
                         name: wordlist.name,
                         tags: tags || []
                     };
-                    console.log('✅ 詞表信息已緩存');
+                    console.log('✅ 詞表信息和模式已緩存: wordlist');
                 }
             } else {
                 // AI 模式
                 showAIMode();
                 updateWordlistNameDisplay('AI智能推薦');
                 
-                // 清除緩存的詞表信息
+                // 清除緩存的詞表信息，更新模式为 ai
                 if (gameState.user && gameState.user.wordlist_preference) {
+                    gameState.user.wordlist_preference.default_mode = 'ai';
+                    gameState.user.wordlist_preference.default_wordlist_id = null;
                     gameState.user.wordlist_preference.wordlist_info = null;
+                    console.log('✅ 已更新緩存為 AI 模式');
                 }
             }
             
