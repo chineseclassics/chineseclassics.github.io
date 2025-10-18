@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試 Wordlist Loader</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Wordlist Loader 測試工具</h1>
+    
+    <div class="test-section">
+        <h2>1. 加載詞表測試</h2>
+        <button onclick="testLoadWordlist('primary_chinese_2025')">加載小學詞表</button>
+        <button onclick="testLoadWordlist('hsk_standard')">加載 HSK 詞表</button>
+        <div id="load-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 獲取第二層級標籤</h2>
+        <button onclick="testGetLevel2Tags('primary_chinese_2025')">小學詞表第二層級</button>
+        <button onclick="testGetLevel2Tags('hsk_standard')">HSK 詞表第二層級</button>
+        <div id="level2-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 獲取第三層級標籤</h2>
+        <button onclick="testGetLevel3Tags('primary_chinese_2025', '二下單元一')">二下單元一的課文</button>
+        <button onclick="testGetLevel3Tags('primary_chinese_2025', '三上單元一')">三上單元一的課文</button>
+        <div id="level3-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 獲取詞語列表</h2>
+        <button onclick="testGetWords('primary_chinese_2025', '二下單元一', '狐狸和烏鴉')">二下單元一 - 狐狸和烏鴉</button>
+        <button onclick="testGetWords('primary_chinese_2025', '二下單元一', null)">二下單元一 - 全部</button>
+        <div id="words-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. 性能測試</h2>
+        <button onclick="performanceTest()">運行性能測試</button>
+        <div id="perf-result"></div>
+    </div>
+
+    <script type="module">
+        import { 
+            loadWordlist, 
+            getLevel2Tags, 
+            getLevel3Tags, 
+            getWords,
+            getWordlistMetadata,
+            generateTagsFromJSON,
+            getWordlistWithTags
+        } from './js/core/wordlist-loader.js';
+        
+        // 全局函數
+        window.testLoadWordlist = async (code) => {
+            const resultDiv = document.getElementById('load-result');
+            resultDiv.innerHTML = '<p>⏳ 加載中...</p>';
+            
+            try {
+                const start = performance.now();
+                const data = await loadWordlist(code);
+                const time = (performance.now() - start).toFixed(2);
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ 加載成功 (${time}ms)</p>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ ${error.message}</p>`;
+            }
+        };
+        
+        window.testGetLevel2Tags = async (code) => {
+            const resultDiv = document.getElementById('level2-result');
+            resultDiv.innerHTML = '<p>⏳ 查詢中...</p>';
+            
+            try {
+                const start = performance.now();
+                const tags = await getLevel2Tags(code);
+                const time = (performance.now() - start).toFixed(2);
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ 找到 ${tags.length} 個第二層級 (${time}ms)</p>
+                    <pre>${JSON.stringify(tags, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ ${error.message}</p>`;
+            }
+        };
+        
+        window.testGetLevel3Tags = async (code, level2Tag) => {
+            const resultDiv = document.getElementById('level3-result');
+            resultDiv.innerHTML = '<p>⏳ 查詢中...</p>';
+            
+            try {
+                const start = performance.now();
+                const tags = await getLevel3Tags(code, level2Tag);
+                const time = (performance.now() - start).toFixed(2);
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ 找到 ${tags.length} 個第三層級 (${time}ms)</p>
+                    <pre>${JSON.stringify(tags, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ ${error.message}</p>`;
+            }
+        };
+        
+        window.testGetWords = async (code, level2Tag, level3Tag) => {
+            const resultDiv = document.getElementById('words-result');
+            resultDiv.innerHTML = '<p>⏳ 查詢中...</p>';
+            
+            try {
+                const start = performance.now();
+                const words = await getWords(code, level2Tag, level3Tag);
+                const time = (performance.now() - start).toFixed(2);
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ 找到 ${words.length} 個詞語 (${time}ms)</p>
+                    <pre>${JSON.stringify(words.slice(0, 20), null, 2)} ... (顯示前20個)</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ ${error.message}</p>`;
+            }
+        };
+        
+        window.performanceTest = async () => {
+            const resultDiv = document.getElementById('perf-result');
+            resultDiv.innerHTML = '<p>⏳ 運行性能測試...</p>';
+            
+            try {
+                const results = [];
+                
+                // 測試 1: 首次加載
+                const t1 = performance.now();
+                await loadWordlist('primary_chinese_2025');
+                const loadTime = performance.now() - t1;
+                results.push(`首次加載: ${loadTime.toFixed(2)}ms`);
+                
+                // 測試 2: 緩存加載
+                const t2 = performance.now();
+                await loadWordlist('primary_chinese_2025');
+                const cacheTime = performance.now() - t2;
+                results.push(`緩存加載: ${cacheTime.toFixed(2)}ms`);
+                
+                // 測試 3: 獲取第三層級（模擬點擊二級卡片）
+                const t3 = performance.now();
+                await getLevel3Tags('primary_chinese_2025', '二下單元一');
+                const level3Time = performance.now() - t3;
+                results.push(`獲取第三層級: ${level3Time.toFixed(2)}ms`);
+                
+                // 測試 4: 獲取詞語
+                const t4 = performance.now();
+                await getWords('primary_chinese_2025', '二下單元一', '狐狸和烏鴉');
+                const wordsTime = performance.now() - t4;
+                results.push(`獲取詞語: ${wordsTime.toFixed(2)}ms`);
+                
+                // 測試 5: 生成標籤
+                const t5 = performance.now();
+                const tags = await generateTagsFromJSON('primary_chinese_2025');
+                const tagsTime = performance.now() - t5;
+                results.push(`生成標籤 (${tags.length}個): ${tagsTime.toFixed(2)}ms`);
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ 性能測試完成</p>
+                    <pre>${results.join('\n')}</pre>
+                    <p><strong>結論</strong>: 所有操作都應該在 < 50ms 內完成（除首次加載）</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ ${error.message}</p>`;
+            }
+        };
+    </script>
+</body>
+</html>
+

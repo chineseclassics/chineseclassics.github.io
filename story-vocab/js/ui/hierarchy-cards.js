@@ -4,7 +4,7 @@
  */
 
 import { gameState } from '../core/game-state.js';
-import { getSupabase } from '../supabase-client.js';
+import { getLevel3Tags } from '../core/wordlist-loader.js';
 
 let currentWordlist = null;
 let allTags = [];
@@ -17,6 +17,12 @@ let modalOverlay = null;
  * @param {Array} tags - 所有标签列表
  */
 export function renderLevel2Cards(wordlist, tags) {
+  console.log('🎨 renderLevel2Cards 被調用:', {
+    wordlist: wordlist,
+    hasCode: !!wordlist?.code,
+    tagsCount: tags?.length || 0
+  });
+  
   currentWordlist = wordlist;
   allTags = tags;
   selectedLevel2 = null;
@@ -61,9 +67,9 @@ export function renderLevel2Cards(wordlist, tags) {
     `;
   }).join('');
 
-  // 绑定点击事件 - 弹出模态窗口
+  // 绑定点击事件 - 根據是否有三級標籤決定行為
   level2Container.querySelectorAll('.level-card').forEach(card => {
-    card.addEventListener('click', function(e) {
+    card.addEventListener('click', async function(e) {
       e.preventDefault();
       
       const tagCode = this.dataset.tag;
@@ -79,8 +85,18 @@ export function renderLevel2Cards(wordlist, tags) {
       selectedLevel2 = tagCode;
       gameState.level2Tag = tagCode;
 
-      // 弹出模态窗口选择三级
-      showLevel3Modal(tagCode, tagName);
+      // 檢查是否有三級標籤
+      const level3Tags = await loadLevel3TagsForLevel2(tagCode);
+      
+      if (level3Tags && level3Tags.length > 0) {
+        // 有三級標籤：弹出模态窗口选择
+        showLevel3Modal(tagCode, tagName, level3Tags);
+      } else {
+        // 沒有三級標籤：直接使用整個二級分類
+        console.log('ℹ️ 無三級標籤，直接使用整個二級分類:', tagCode);
+        gameState.level3Tag = null;  // 設為 null 表示使用整個二級
+        updateLevel2CardSelection();
+      }
     });
   });
   
@@ -94,15 +110,13 @@ export function renderLevel2Cards(wordlist, tags) {
  * 显示三级选择模态窗口
  * @param {string} level2TagCode - 二级标签代码
  * @param {string} level2TagName - 二级标签名称
+ * @param {Array} level3Tags - 三级标签列表
  */
-async function showLevel3Modal(level2TagCode, level2TagName) {
+async function showLevel3Modal(level2TagCode, level2TagName, level3Tags) {
   // 创建或获取模态窗口
   if (!modalOverlay) {
     createModalOverlay();
   }
-
-  // 查询该二级分类下的三级标签
-  const level3Tags = await loadLevel3TagsForLevel2(level2TagCode);
 
   // 渲染模态窗口内容
   renderModalContent(level2TagName, level3Tags);
@@ -218,13 +232,15 @@ function renderModalContent(level2TagName, level3Tags) {
  * 关闭模态窗口
  */
 function closeModal() {
-  if (modalOverlay) {
+  if (modalOverlay && modalOverlay.parentNode) {
     // 先移除 active 类触发淡出动画
     modalOverlay.classList.remove('active');
     
     // 等待动画完成后隐藏
     setTimeout(() => {
-      modalOverlay.style.display = 'none';
+      if (modalOverlay) {  // 再次檢查防止 null
+        modalOverlay.style.display = 'none';
+      }
     }, 250); // 与 CSS transition 时间一致 (0.25s)
     
     document.body.style.overflow = ''; // 恢复背景滚动
@@ -258,8 +274,9 @@ function updateLevel2CardSelection() {
   // 只更新当前选中的卡片
   if (gameState.level2Tag === selectedLevel2) {
     if (gameState.level3Tag === null) {
-      // 使用整个单元
-      infoEl.textContent = '✨ 全部課文';
+      // 使用整个单元/級別（有三級標籤的顯示"全部課文"，沒有的顯示"已選中"）
+      const hasLevel3 = allTags.some(t => t.tag_level === 3);
+      infoEl.textContent = hasLevel3 ? '✨ 全部課文' : '✅ 已選中';
       card.classList.add('has-selection');
     } else if (gameState.level3Tag) {
       // 选择了具体课文 - 需要找到课文名称
@@ -275,68 +292,47 @@ function updateLevel2CardSelection() {
 /**
  * 查询并加载某个二级分类下的三级标签
  * @param {string} level2TagCode - 二级标签代码
- * @returns {Promise<Array>} 三级标签列表
+ * @returns {Promise<Array>} 三级标签列表（空數組表示沒有三級標籤）
  */
 async function loadLevel3TagsForLevel2(level2TagCode) {
-  const supabase = getSupabase();
-  
   // 获取所有三级标签
   const allLevel3Tags = allTags.filter(t => t.tag_level === 3);
   
   if (allLevel3Tags.length === 0) {
-    console.log('ℹ️ 沒有三級標籤，直接返回空數組');
+    console.log('ℹ️ 詞表無三級標籤（如 HSK 詞表），直接使用二級分類');
     return [];
   }
   
   try {
-    console.log('🔍 查詢單元下的課文:', level2TagCode, '| 詞表ID:', currentWordlist?.id);
+    console.log('🔍 從本地 JSON 查詢單元下的課文:', level2TagCode);
     
-    if (!currentWordlist || !currentWordlist.id) {
-      console.error('❌ currentWordlist 未定義或缺少 ID');
-      return allLevel3Tags;
+    if (!currentWordlist || !currentWordlist.code) {
+      console.error('❌ currentWordlist 未定義或缺少 code');
+      return [];
     }
     
-    // 查询该二级分类下有哪些三级分类（添加超時保護：10秒）
-    const queryPromise = supabase
-      .from('wordlist_vocabulary')
-      .select('level_3_tag')
-      .eq('wordlist_id', currentWordlist.id)
-      .eq('level_2_tag', level2TagCode)
-      .not('level_3_tag', 'is', null);
+    // 使用本地加載器獲取第三層級標籤
+    const level3TagNames = await getLevel3Tags(currentWordlist.code, level2TagCode);
     
-    const timeoutPromise = new Promise((resolve) => 
-      setTimeout(() => {
-        console.warn('⚠️ 查詢超時（10秒），使用降級方案');
-        resolve({ data: null, error: { message: '查詢超時' } });
-      }, 10000)
-    );
-    
-    const result = await Promise.race([queryPromise, timeoutPromise]);
-    const { data: vocabData, error } = result;
-    
-    if (error) {
-      console.error('❌ 查詢三級標籤失敗:', error);
-      return allLevel3Tags;  // 降級：顯示所有三級標籤
+    if (!level3TagNames || level3TagNames.length === 0) {
+      console.log('ℹ️ 該二級分類無三級標籤，直接使用整個二級分類');
+      return [];
     }
     
-    console.log('✅ 查詢成功，返回數據:', vocabData?.length, '條記錄');
-    
-    // 提取唯一的三級標籤代碼
-    const level3TagCodes = [...new Set(vocabData.map(v => v.level_3_tag))];
-    console.log('✅ 找到課文數量:', level3TagCodes.length);
+    console.log('✅ 找到課文數量:', level3TagNames.length);
     
     // 過濾出對應的三級標籤對象
     const filteredLevel3Tags = allLevel3Tags.filter(tag => 
-      level3TagCodes.includes(tag.tag_code)
+      level3TagNames.includes(tag.tag_code)
     );
     
-    console.log('✅ 已過濾三級標籤:', filteredLevel3Tags.length, '個');
+    console.log('✅ 已匹配三級標籤:', filteredLevel3Tags.length, '個');
     
     return filteredLevel3Tags;
     
   } catch (error) {
     console.error('❌ 加載三級標籤失敗:', error);
-    return allLevel3Tags;  // 降級：顯示所有三級標籤
+    return [];
   }
 }
 

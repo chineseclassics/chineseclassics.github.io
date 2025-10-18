@@ -13,6 +13,7 @@ import { renderLevel2Cards, clearHierarchyCards } from './hierarchy-cards.js';
 import { getSupabase } from '../supabase-client.js';
 import { showToast } from '../utils/toast.js';
 import { SUPABASE_CONFIG } from '../config.js';
+import { getWordlistWithTags } from '../core/wordlist-loader.js';
 
 /**
  * 初始化启动界面
@@ -74,13 +75,16 @@ export async function initStartScreen() {
         // 用户选择了特定词表，優先使用緩存，如果沒有則查詢
         let wordlistInfo = prefs.wordlist_info;
         
-        if (!wordlistInfo || !wordlistInfo.tags || wordlistInfo.tags.length === 0) {
-            console.log('📥 詞表信息未緩存或無標籤，重新查詢...');
+        // 檢查是否需要重新加載詞表信息
+        const needsReload = !wordlistInfo || !wordlistInfo.tags || wordlistInfo.tags.length === 0;
+        
+        if (needsReload) {
+            console.log('📥 詞表信息未緩存或無標籤，重新加載...');
             
-            // 查詢詞表信息
+            // 先嘗試從 Supabase 查詢詞表基本信息，獲取 code
             const { data: wordlist, error: wlError } = await supabase
                 .from('wordlists')
-                .select('*')
+                .select('id, name, code, type')
                 .eq('id', prefs.default_wordlist_id)
                 .maybeSingle();
             
@@ -93,27 +97,80 @@ export async function initStartScreen() {
                 return;
             }
             
-            // 查詢標籤
-            const { data: tags, error: tagError } = await supabase
-                .from('wordlist_tags')
-                .select('*')
-                .eq('wordlist_id', wordlist.id)
-                .order('tag_level')
-                .order('sort_order');
-            
-            if (tagError) {
-                console.error('⚠️ 查詢標籤失敗:', tagError);
+            // 系統詞表：從本地 JSON 加載
+            if (wordlist.type === 'system' && wordlist.code) {
+                try {
+                    console.log('📖 從 JSON 加載系統詞表:', wordlist.code);
+                    wordlistInfo = await getWordlistWithTags(wordlist.code);
+                    console.log('✅ 詞表信息已從 JSON 加載:', wordlistInfo.name, '標籤數:', wordlistInfo.tags?.length || 0);
+                } catch (jsonError) {
+                    console.error('❌ JSON 加載失敗，嘗試從 Supabase 加載:', jsonError);
+                    // 降級：從 Supabase 查詢標籤
+                    const { data: tags, error: tagError } = await supabase
+                        .from('wordlist_tags')
+                        .select('*')
+                        .eq('wordlist_id', wordlist.id)
+                        .order('tag_level')
+                        .order('sort_order');
+                    
+                    wordlistInfo = {
+                        id: wordlist.id,
+                        code: wordlist.code,
+                        name: wordlist.name,
+                        tags: tags || []
+                    };
+                }
+            } else {
+                // 自定義詞表：從 Supabase 查詢標籤
+                console.log('📥 從 Supabase 查詢自定義詞表標籤...');
+                const { data: tags, error: tagError } = await supabase
+                    .from('wordlist_tags')
+                    .select('*')
+                    .eq('wordlist_id', wordlist.id)
+                    .order('tag_level')
+                    .order('sort_order');
+                
+                if (tagError) {
+                    console.error('⚠️ 查詢標籤失敗:', tagError);
+                }
+                
+                wordlistInfo = {
+                    id: wordlist.id,
+                    code: wordlist.code,
+                    name: wordlist.name,
+                    tags: tags || []
+                };
+                
+                console.log('✅ 詞表信息已查詢:', wordlist.name, '標籤數:', tags?.length || 0);
             }
-            
-            wordlistInfo = {
-                id: wordlist.id,
-                name: wordlist.name,
-                tags: tags || []
-            };
-            
-            console.log('✅ 詞表信息已查詢:', wordlist.name, '標籤數:', tags?.length || 0);
         } else {
             console.log('📚 詞表信息（從緩存）:', wordlistInfo.name);
+            // 檢查緩存是否有 code（舊版本可能沒有）
+            if (!wordlistInfo.code) {
+                console.warn('⚠️ 緩存的詞表信息缺少 code，重新查詢...');
+                // 從 Supabase 查詢以獲取 code
+                const { data: wordlist } = await supabase
+                    .from('wordlists')
+                    .select('id, name, code, type')
+                    .eq('id', wordlistInfo.id)
+                    .maybeSingle();
+                
+                if (wordlist && wordlist.code) {
+                    wordlistInfo.code = wordlist.code;
+                    console.log('✅ 已補充 code:', wordlist.code);
+                    
+                    // 如果是系統詞表，重新從 JSON 加載標籤
+                    if (wordlist.type === 'system') {
+                        try {
+                            const jsonWordlist = await getWordlistWithTags(wordlist.code);
+                            wordlistInfo.tags = jsonWordlist.tags;
+                            console.log('✅ 已從 JSON 重新加載標籤');
+                        } catch (e) {
+                            console.warn('⚠️ JSON 加載失敗，使用緩存的標籤');
+                        }
+                    }
+                }
+            }
         }
 
         // 设置gameState
@@ -1366,10 +1423,10 @@ window.selectWordlist = async function(value, displayName, wordCount) {
             
             // 如果是詞表模式，查詢並渲染層級卡片
             if (value !== 'ai') {
-                // 查詢詞表信息和標籤
+                // 查詢詞表基本信息
                 const { data: wordlist, error: wlError } = await supabase
                     .from('wordlists')
-                    .select('*')
+                    .select('id, name, code, type')
                     .eq('id', value)
                     .maybeSingle();
                 
@@ -1385,18 +1442,55 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                     return;
                 }
                 
-                // 查詢標籤
-                const { data: tags, error: tagError } = await supabase
-                    .from('wordlist_tags')
-                    .select('*')
-                    .eq('wordlist_id', value)
-                    .order('tag_level')
-                    .order('sort_order');
+                let tags = [];
                 
-                if (tagError) {
-                    console.error('查詢標籤失敗:', tagError);
-                    throw tagError;
+                // 系統詞表：從 JSON 加載標籤
+                if (wordlist.type === 'system' && wordlist.code) {
+                    try {
+                        console.log('📖 從 JSON 加載系統詞表標籤:', wordlist.code);
+                        const wordlistInfo = await getWordlistWithTags(wordlist.code);
+                        tags = wordlistInfo.tags;
+                        console.log('✅ 標籤已從 JSON 加載:', tags?.length || 0, '個');
+                    } catch (jsonError) {
+                        console.error('❌ JSON 加載失敗，從 Supabase 加載:', jsonError);
+                        // 降級：從 Supabase 查詢
+                        const { data: fallbackTags, error: tagError } = await supabase
+                            .from('wordlist_tags')
+                            .select('*')
+                            .eq('wordlist_id', value)
+                            .order('tag_level')
+                            .order('sort_order');
+                        
+                        if (tagError) {
+                            console.error('查詢標籤失敗:', tagError);
+                            throw tagError;
+                        }
+                        tags = fallbackTags || [];
+                    }
+                } else {
+                    // 自定義詞表：從 Supabase 查詢標籤
+                    console.log('📥 從 Supabase 查詢自定義詞表標籤...');
+                    const { data: supabaseTags, error: tagError } = await supabase
+                        .from('wordlist_tags')
+                        .select('*')
+                        .eq('wordlist_id', value)
+                        .order('tag_level')
+                        .order('sort_order');
+                    
+                    if (tagError) {
+                        console.error('查詢標籤失敗:', tagError);
+                        throw tagError;
+                    }
+                    tags = supabaseTags || [];
                 }
+                
+                // 構建完整的詞表信息對象
+                const wordlistInfo = {
+                    id: wordlist.id,
+                    code: wordlist.code,
+                    name: wordlist.name,
+                    tags: tags || []
+                };
                 
                 // 更新顯示
                 updateWordlistNameDisplay(wordlist.name);
@@ -1405,17 +1499,13 @@ window.selectWordlist = async function(value, displayName, wordCount) {
                 showWordlistHierarchy();
                 
                 // 渲染層級卡片
-                await renderLevel2Cards(wordlist, tags || []);
+                await renderLevel2Cards(wordlistInfo, tags || []);
                 
                 // ✅ 更新緩存的詞表信息（用於下次頁面加載）
                 if (gameState.user && gameState.user.wordlist_preference) {
                     gameState.user.wordlist_preference.default_mode = 'wordlist';
                     gameState.user.wordlist_preference.default_wordlist_id = wordlist.id;
-                    gameState.user.wordlist_preference.wordlist_info = {
-                        id: wordlist.id,
-                        name: wordlist.name,
-                        tags: tags || []
-                    };
+                    gameState.user.wordlist_preference.wordlist_info = wordlistInfo;
                     console.log('✅ 詞表信息和模式已緩存: wordlist');
                 }
             } else {
