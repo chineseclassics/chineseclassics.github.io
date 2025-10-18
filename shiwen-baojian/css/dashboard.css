@@ -202,6 +202,13 @@ span[id$="-word-count"] {
     outline-offset: 2px;
 }
 
+/* 編輯器除外：避免雙重外框 */
+.ql-editor:focus-visible,
+.ql-container:focus-visible,
+.ql-toolbar:focus-visible {
+    outline: none !important;
+}
+
 /* 減少動畫（為有需要的用戶） */
 @media (prefers-reduced-motion: reduce) {
     *,
