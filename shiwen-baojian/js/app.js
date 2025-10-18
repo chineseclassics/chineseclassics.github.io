@@ -8,6 +8,7 @@
  */
 
 import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
+import { initializeEssayEditor } from './student/essay-writer.js';
 
 // ================================
 // 全局狀態管理
@@ -327,6 +328,9 @@ async function showStudentDashboard() {
     }
     
     AppState.currentScreen = 'student-dashboard';
+    
+    // 初始化論文編輯器
+    await initializeEssayEditor();
 }
 
 /**
