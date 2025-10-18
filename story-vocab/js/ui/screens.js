@@ -152,11 +152,21 @@ export async function initStartScreen() {
  * 显示AI模式
  */
 function showAIMode() {
+    console.log('🎨 showAIMode() 被调用');
     const aiSection = document.getElementById('ai-mode-section');
     const hierarchySection = document.getElementById('wordlist-hierarchy-section');
 
-    if (aiSection) aiSection.style.display = 'block';
-    if (hierarchySection) hierarchySection.style.display = 'none';
+    console.log('  ai-mode-section 存在:', !!aiSection);
+    console.log('  wordlist-hierarchy-section 存在:', !!hierarchySection);
+
+    if (aiSection) {
+        aiSection.style.display = 'block';
+        console.log('  ✅ 已显示 ai-mode-section');
+    }
+    if (hierarchySection) {
+        hierarchySection.style.display = 'none';
+        console.log('  ✅ 已隐藏 wordlist-hierarchy-section');
+    }
 
     clearHierarchyCards();
 }
@@ -165,11 +175,21 @@ function showAIMode() {
  * 显示词表层级选择
  */
 function showWordlistHierarchy() {
+    console.log('📚 showWordlistHierarchy() 被调用');
     const aiSection = document.getElementById('ai-mode-section');
     const hierarchySection = document.getElementById('wordlist-hierarchy-section');
 
-    if (aiSection) aiSection.style.display = 'none';
-    if (hierarchySection) hierarchySection.style.display = 'block';
+    console.log('  ai-mode-section 存在:', !!aiSection);
+    console.log('  wordlist-hierarchy-section 存在:', !!hierarchySection);
+
+    if (aiSection) {
+        aiSection.style.display = 'none';
+        console.log('  ✅ 已隐藏 ai-mode-section');
+    }
+    if (hierarchySection) {
+        hierarchySection.style.display = 'block';
+        console.log('  ✅ 已显示 wordlist-hierarchy-section');
+    }
 }
 
 /**
