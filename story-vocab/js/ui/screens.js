@@ -36,9 +36,8 @@ export async function initStartScreen() {
     gameState.level2Tag = null;
     gameState.level3Tag = null;
     
-    // 默认显示 AI 模式（可能会被后续逻辑覆盖）
-    showAIMode();
-    console.log('✅ 默認狀態已設置: AI 模式');
+    // 不要在讀取偏好前更新 UI，避免閃爍
+    console.log('✅ 默認狀態已設置，等待讀取用戶偏好...');
 
     try {
         // 使用 gameState 中的用戶 ID（已經是正確的 users.id）

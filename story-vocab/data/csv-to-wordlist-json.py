@@ -113,7 +113,7 @@ def main():
     
     # 配置：HSK 標準詞表
     hsk_csv = os.path.join(project_root, 'docs/hsk_standard_traditional.csv')
-    hsk_json = os.path.join(project_root, 'assets/data/wordlists/hsk_standard.json')
+    hsk_json = os.path.join(project_root, 'assets/data/wordlists/hsk_standard_2012.json')
     
     # 轉換小學詞表
     print("\n" + "=" * 60)
@@ -136,7 +136,7 @@ def main():
         output_path=hsk_json,
         wordlist_id="hsk-standard-traditional",
         wordlist_name="HSK 標準詞表（繁體）",
-        wordlist_code="hsk_standard"
+        wordlist_code="hsk_standard_2012"
     )
     
     print("\n" + "=" * 60)

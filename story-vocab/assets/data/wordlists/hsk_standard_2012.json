@@ -1,7 +1,7 @@
 {
   "id": "hsk-standard-traditional",
   "name": "HSK 標準詞表（繁體）",
-  "code": "hsk_standard",
+  "code": "hsk_standard_2012",
   "total_words": 4991,
   "hierarchy": {
     "HSK1級": {

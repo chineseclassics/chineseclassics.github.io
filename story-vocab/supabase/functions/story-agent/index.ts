@@ -162,7 +162,7 @@ async function generateAiResponse({
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: messages,
-      temperature: 0.7,        // 降低以提高承接连贯性
+      temperature: currentRound === 0 ? 0.95 : 0.7,  // 第一輪高創意(0.95)，其他輪確保連貫性(0.7)
       max_tokens: 300,         // 增加到300，確保句子完整（中文約100-150字）
       top_p: 0.9
     })
