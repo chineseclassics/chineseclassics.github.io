@@ -407,8 +407,13 @@ function buildAnalysisPrompt(
     ?.map((e: any) => `- ${e.name}: ${e.description}`)
     .join('\n') || '无特定要求'
   
+  const paragraphType = rules.type || type
+  
+  // 根据段落类型定义不同的分析维度
+  const analysisDimensions = getAnalysisDimensionsByType(paragraphType)
+  
   return `
-请分析以下学生撰写的论文段落（类型：${rules.type || type}）。
+请分析以下学生撰写的论文段落（类型：${paragraphType}）。
 
 【段落内容】
 ${content}
@@ -422,48 +427,174 @@ ${elementsDesc}
 - 句子数量：${structural.sentences_count}
 
 【分析任务】
-请从以下三个维度分析这个段落，并以 JSON 格式返回：
+请从以下维度分析这个段落，并以 JSON 格式返回：
 
-1. **clarity（论点清晰度）**：
-   - 主题句是否清晰？
-   - 论点是否明确？
-   - 是否与总主张一致？
-
-2. **evidence（文本证据）**：
-   - 是否引用了原文？
-   - 引用是否准确？
-   - 引用是否充分支撑论点？
-
-3. **depth（分析深度）**：
-   - 是否进行了文本细读？
-   - 是否从字、词、句层面分析？
-   - 分析是否避免空泛议论？
+${analysisDimensions.description}
 
 【返回格式】
-{
-  "clarity": {
-    "score": 0-10,
-    "issues": ["问题1", "问题2"],
-    "sentence_numbers": [1, 3]
-  },
-  "evidence": {
-    "score": 0-10,
-    "issues": ["问题1"],
-    "sentence_numbers": [2]
-  },
-  "depth": {
-    "score": 0-10,
-    "issues": ["问题1", "问题2"],
-    "sentence_numbers": [4, 5]
-  }
-}
+${analysisDimensions.jsonFormat}
 
 注意：
 - 只指出问题所在的句子编号和问题描述
 - 不要提供具体的修改示例
 - 问题描述要精准、有建设性
 - 使用繁體中文
+- 严格按照段落类型（${paragraphType}）的要求进行分析
 `
+}
+
+/**
+ * 根据段落类型获取分析维度
+ */
+function getAnalysisDimensionsByType(paragraphType: string): any {
+  if (paragraphType === 'introduction') {
+    // 引言段的分析维度
+    return {
+      description: `
+1. **structure_completeness（结构完整性）**：
+   - 是否包含背景引入（Hook）？
+   - 是否定义了关键概念？
+   - 是否指出研究缺口？
+   
+2. **thesis_clarity（论文主张清晰度）**：
+   - 核心问题是否明确？
+   - 论文主张是否用一句话精炼陈述？
+   - 主张是否直接回答核心问题？
+   
+3. **roadmap（结构预告）**：
+   - 是否预告了正文将从哪几个方面论证？
+   - 结构预告是否清晰？
+   - 是否使用了序数词（一、二、三）？
+`,
+      jsonFormat: `{
+  "structure_completeness": {
+    "score": 0-10,
+    "issues": ["问题1", "问题2"],
+    "sentence_numbers": [1, 2]
+  },
+  "thesis_clarity": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [3]
+  },
+  "roadmap": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [4]
+  }
+}`
+    }
+  } else if (paragraphType === 'body_paragraph') {
+    // 正文段的分析维度
+    return {
+      description: `
+1. **topic_sentence（主题句）**：
+   - 主题句是否在段落开头？
+   - 是否清晰表达分论点？
+   - 是否直接支持论文总主张？
+   
+2. **textual_evidence（文本证据）**：
+   - 是否引用了原文或概述情节？
+   - 引用是否准确完整？
+   - 引用是否充分支撑主题句？
+   
+3. **close_reading（文本细读）**：
+   - 是否紧扣文本的字、词、句细节？
+   - 是否从细节推导出深层含义？
+   - 分析长度是否充分（>引用长度）？
+   - 是否避免了空泛议论（"这说明"、"这体现"）？
+`,
+      jsonFormat: `{
+  "topic_sentence": {
+    "score": 0-10,
+    "issues": ["问题1", "问题2"],
+    "sentence_numbers": [1]
+  },
+  "textual_evidence": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [2, 3]
+  },
+  "close_reading": {
+    "score": 0-10,
+    "issues": ["问题1", "问题2"],
+    "sentence_numbers": [4, 5]
+  }
+}`
+    }
+  } else if (paragraphType === 'conclusion') {
+    // 结论段的分析维度
+    return {
+      description: `
+1. **restate_thesis（重申主张）**：
+   - 是否重申了论文主张？
+   - 是否用了不同的措辞（避免简单重复）？
+   - 是否清晰明确？
+   
+2. **summarize_points（总结分论点）**：
+   - 是否回顾了正文中的分论点？
+   - 总结是否简洁（不重复正文细节）？
+   - 是否展示了分论点如何共同支撑总主张？
+   
+3. **broader_implications（引申思考）**：
+   - 是否回答了"所以呢？"（So What）？
+   - 是否与更大的文化、历史背景关联？
+   - 是否提升了论文格局？
+   - 是否避免提出新论点？
+`,
+      jsonFormat: `{
+  "restate_thesis": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [1]
+  },
+  "summarize_points": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [2, 3]
+  },
+  "broader_implications": {
+    "score": 0-10,
+    "issues": ["问题1", "问题2"],
+    "sentence_numbers": [4, 5]
+  }
+}`
+    }
+  } else {
+    // 默认使用通用维度
+    return {
+      description: `
+1. **clarity（清晰度）**：
+   - 论点是否清晰？
+   - 表达是否明确？
+   
+2. **coherence（连贯性）**：
+   - 逻辑是否连贯？
+   - 结构是否合理？
+   
+3. **depth（深度）**：
+   - 分析是否深入？
+   - 是否有具体论证？
+`,
+      jsonFormat: `{
+  "clarity": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [1]
+  },
+  "coherence": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [2]
+  },
+  "depth": {
+    "score": 0-10,
+    "issues": ["问题1"],
+    "sentence_numbers": [3]
+  }
+}`
+    }
+  }
 }
 
 /**
@@ -490,20 +621,20 @@ function identifySentenceIssues(
     }
   }
   
-  // 从内容分析中提取句子级问题
-  const dimensions = ['clarity', 'evidence', 'depth']
-  for (const dim of dimensions) {
-    const analysis = contentAnalysis[dim]
-    if (!analysis) continue
+  // 从内容分析中提取句子级问题（动态处理所有维度）
+  for (const [dim, analysis] of Object.entries(contentAnalysis)) {
+    if (!analysis || typeof analysis !== 'object') continue
+    if (dim === 'skipped' || dim === 'error' || dim === 'raw_analysis') continue
     
-    const dimIssues = analysis.issues || []
-    const sentenceNumbers = analysis.sentence_numbers || []
+    const dimIssues = (analysis as any).issues || []
+    const sentenceNumbers = (analysis as any).sentence_numbers || []
+    const score = (analysis as any).score || 0
     
     for (let i = 0; i < dimIssues.length; i++) {
       issues.push({
         sentence_number: sentenceNumbers[i] || 0,
         type: dim,
-        severity: analysis.score < 5 ? 'major' : 'minor',
+        severity: score < 5 ? 'major' : 'minor',
         message: dimIssues[i],
         suggestion: `请修改第 ${sentenceNumbers[i] || '相关'} 句`
       })
@@ -562,23 +693,38 @@ function generateSuggestions(
     )
   }
   
-  // 2. 内容分析建议
-  if (contentAnalysis.clarity && contentAnalysis.clarity.score < 7) {
-    suggestions.push(
-      '💡 建议：进一步明确主题句，确保论点清晰明确'
-    )
-  }
-  
-  if (contentAnalysis.evidence && contentAnalysis.evidence.score < 7) {
-    suggestions.push(
-      '💡 建议：增加文本证据，引用《红楼梦》原文或概述相关情节'
-    )
-  }
-  
-  if (contentAnalysis.depth && contentAnalysis.depth.score < 7) {
-    suggestions.push(
-      '💡 建议：深化文本细读，从具体的字、词、句层面进行分析'
-    )
+  // 2. 内容分析建议（动态处理所有维度）
+  for (const [dim, analysis] of Object.entries(contentAnalysis)) {
+    if (!analysis || typeof analysis !== 'object') continue
+    if (dim === 'skipped' || dim === 'error' || dim === 'raw_analysis') continue
+    
+    const score = (analysis as any).score || 0
+    const issues = (analysis as any).issues || []
+    
+    if (score < 7 && issues.length > 0) {
+      // 根据维度名称生成建议
+      const dimensionSuggestions: Record<string, string> = {
+        // 引言段维度
+        'structure_completeness': '💡 建议：补充缺失的结构元素（背景引入、关键词定义、研究缺口）',
+        'thesis_clarity': '💡 建议：明确提出核心问题和论文主张，用一句话精炼陈述',
+        'roadmap': '💡 建议：预告正文结构，说明将从哪几个方面论证',
+        // 正文段维度
+        'topic_sentence': '💡 建议：在段落开头用一句话明确表达分论点',
+        'textual_evidence': '💡 建议：增加文本证据，引用《红楼梦》原文或概述相关情节',
+        'close_reading': '💡 建议：深化文本细读，从具体的字、词、句层面进行分析',
+        // 结论段维度
+        'restate_thesis': '💡 建议：用不同措辞重申论文主张',
+        'summarize_points': '💡 建议：简要回顾正文中的分论点',
+        'broader_implications': '💡 建议：提出引申思考，回答"所以呢？"（So What）',
+        // 通用维度
+        'clarity': '💡 建议：进一步明确论点，确保表达清晰',
+        'coherence': '💡 建议：加强逻辑连贯性',
+        'depth': '💡 建议：深化分析，提供具体论证'
+      }
+      
+      const suggestion = dimensionSuggestions[dim] || `💡 建议：改进 ${dim}`
+      suggestions.push(suggestion)
+    }
   }
   
   // 3. 常见错误建议
@@ -607,17 +753,30 @@ function estimateGrading(
   // 基于 IB 标准估算评分
   // 每个标准 0-8 分
   
-  // 标准 A：分析能力（基于 depth 分数）
-  const criterionA = Math.min(8, Math.round((contentAnalysis.depth?.score || 0) * 0.8))
+  // 计算平均分数（从所有维度）
+  let totalScore = 0
+  let dimensionCount = 0
+  
+  for (const [key, value] of Object.entries(contentAnalysis)) {
+    if (value && typeof value === 'object' && 'score' in value) {
+      totalScore += (value as any).score || 0
+      dimensionCount++
+    }
+  }
+  
+  const avgScore = dimensionCount > 0 ? totalScore / dimensionCount : 0
+  
+  // 标准 A：分析能力（基于平均分数和结构完整度）
+  const criterionA = Math.min(8, Math.round((avgScore * 0.6 + structural.completeness / 100 * 10 * 0.4) * 0.8))
   
   // 标准 B：组织能力（基于结构完整度）
   const criterionB = Math.min(8, Math.round((structural.completeness / 100) * 8))
   
-  // 标准 C：创作能力（基于 clarity）
-  const criterionC = Math.min(8, Math.round((contentAnalysis.clarity?.score || 0) * 0.8))
+  // 标准 C：创作能力（基于平均分数）
+  const criterionC = Math.min(8, Math.round(avgScore * 0.8))
   
-  // 标准 D：语言运用（基于 evidence 和整体表现）
-  const criterionD = Math.min(8, Math.round((contentAnalysis.evidence?.score || 0) * 0.8))
+  // 标准 D：语言运用（基于平均分数和结构完整度）
+  const criterionD = Math.min(8, Math.round((avgScore * 0.7 + structural.completeness / 100 * 10 * 0.3) * 0.8))
   
   return {
     criterion_a: criterionA,
