@@ -7,14 +7,14 @@
 
 // Supabase 项目配置
 // 项目：时文宝鉴（shiwen-baojian）
-// 项目 ID: ohseemszgahvojgocjqq
+// 项目 ID: fjvgfhdqrezutrmbidds
 export const SUPABASE_CONFIG = {
   // Supabase 项目 URL
-  url: 'https://ohseemszgahvojgocjqq.supabase.co',
+  url: 'https://fjvgfhdqrezutrmbidds.supabase.co',
   
   // Supabase 匿名密钥（Anon Key）
   // 这是公开的，可以在前端使用
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oc2VlbXN6Z2Fodm9qZ29janFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3OTAyMDIsImV4cCI6MjA3NjM2NjIwMn0.Q79ML8tgC4CJ0Nf9PHZy4DzUMd4ApBBF9lMWKB1MYi8',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqdmdmaGRxcmV6dXRybWJpZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDE3ODIsImV4cCI6MjA3NjM3Nzc4Mn0.eVX46FM_UfLBk9vJiCfA_zC9PIMTJxmG8QNZQWdG8T8',
   
   // 项目标识
   projectId: 'shiwen-baojian'
