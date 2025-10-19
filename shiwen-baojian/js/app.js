@@ -585,17 +585,19 @@ async function initializeStudentModules() {
     console.log('📚 初始化學生端功能...');
     
     try {
-        // 清理所有編輯狀態（返回列表時重置）
-        AppState.currentAssignmentId = null;  // ✅ 清除任務 ID
-        AppState.currentPracticeEssayId = null;  // ✅ 清除練筆 ID
+        // ✅ 清理所有編輯狀態（返回列表時重置）
+        AppState.currentAssignmentId = null;
+        AppState.currentPracticeEssayId = null;
         AppState.currentFormatSpec = null;
-        AppState.currentPracticeContent = null;
+        AppState.currentEssayContent = null;  // ✅ 清除任務內容
+        AppState.currentPracticeContent = null;  // ✅ 清除練筆內容
         
-        // 同時清理 essay-storage 的狀態
+        // ✅ 同時清理 essay-storage 的狀態和 localStorage
         const { StorageState } = await import('./student/essay-storage.js');
         if (StorageState) {
             StorageState.currentEssayId = null;
         }
+        localStorage.removeItem('current-essay-id');  // ✅ 清除 localStorage 中的 essay ID
         
         const container = document.getElementById('student-dashboard-content');
         if (!container) {
@@ -616,7 +618,7 @@ async function initializeStudentModules() {
         const { initializeAntiCheat } = await import('./features/anti-cheat.js');
         initializeAntiCheat();
 
-        // 設置學生端導航
+        // 設置學生端導航（只綁定一次）
         setupStudentNavigation();
         
         console.log('✅ 學生端功能初始化完成');
@@ -627,20 +629,83 @@ async function initializeStudentModules() {
 }
 
 /**
+ * 顯示任務列表（不重新初始化所有模組）
+ */
+async function showAssignmentList() {
+    console.log('📋 顯示任務列表...');
+    
+    try {
+        // ✅ 清理編輯狀態
+        AppState.currentAssignmentId = null;
+        AppState.currentPracticeEssayId = null;
+        AppState.currentFormatSpec = null;
+        AppState.currentEssayContent = null;
+        AppState.currentPracticeContent = null;
+        
+        // ✅ 清理 essay-storage 的狀態
+        const { StorageState } = await import('./student/essay-storage.js');
+        if (StorageState) {
+            StorageState.currentEssayId = null;
+        }
+        localStorage.removeItem('current-essay-id');
+        
+        const container = document.getElementById('student-dashboard-content');
+        if (!container) {
+            console.error('❌ 找不到學生儀表板容器');
+            return;
+        }
+        
+        // ✅ 重新渲染任務列表（但不重新初始化整個模組）
+        const { default: StudentAssignmentViewer } = await import('./student/assignment-viewer.js');
+        const assignmentViewer = new StudentAssignmentViewer(AppState.supabase);
+        await assignmentViewer.render(container);
+        
+        console.log('✅ 任務列表顯示完成');
+    } catch (error) {
+        console.error('❌ 顯示任務列表失敗:', error);
+        showError('顯示任務列表失敗: ' + error.message);
+    }
+}
+
+/**
  * 設置學生端導航
  */
+let navigationHandlerBound = false;  // ✅ 防止重複綁定
+let isNavigating = false;  // ✅ 防止導航循環
+
 function setupStudentNavigation() {
+    // ✅ 只綁定一次事件監聽器
+    if (navigationHandlerBound) {
+        console.log('⏸️ 導航處理器已綁定，跳過');
+        return;
+    }
+    
     window.addEventListener('navigate', async (e) => {
+        // ✅ 防止重複導航
+        if (isNavigating) {
+            console.log('⏸️ 正在導航中，跳過重複請求');
+            return;
+        }
+        
         const { page, assignmentId, mode, formatTemplate, essayId } = e.detail;
         
         console.log('🧭 學生端導航:', { page, assignmentId, mode, formatTemplate, essayId });
         
-        if (page === 'essay-writer') {
-            await showEssayEditor(assignmentId, mode, formatTemplate, essayId);
-        } else if (page === 'assignment-list') {
-            await initializeStudentModules();
+        isNavigating = true;
+        
+        try {
+            if (page === 'essay-writer') {
+                await showEssayEditor(assignmentId, mode, formatTemplate, essayId);
+            } else if (page === 'assignment-list') {
+                await showAssignmentList();  // ✅ 使用新函數，不重新初始化
+            }
+        } finally {
+            isNavigating = false;
         }
     });
+    
+    navigationHandlerBound = true;
+    console.log('✅ 學生端導航處理器已綁定');
 }
 
 /**
@@ -773,13 +838,16 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         // 等待編輯器完全準備好（DOM 渲染完成）
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        // 如果有已保存的內容，恢復到編輯器
-        if (AppState.currentEssayContent) {
-            console.log('📂 恢復作業內容...');
+        // ✅ 只在對應模式下恢復內容
+        if (mode === 'assignment' && AppState.currentEssayContent) {
+            console.log('📂 恢復任務作業內容...');
             await restoreEssayContent(AppState.currentEssayContent);
-        } else if (AppState.currentPracticeContent) {
+        } else if (mode === 'free-writing' && AppState.currentPracticeContent) {
             console.log('📂 恢復練筆內容...');
             await restoreEssayContent(AppState.currentPracticeContent);
+        } else if (mode === 'free-writing' && !essayId) {
+            console.log('✨ 新練筆模式，內容為空');
+            // 新練筆，不恢復任何內容
         }
 
         console.log('✅ 論文編輯器顯示完成');

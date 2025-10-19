@@ -34,11 +34,18 @@ export function initializeStorage() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     
-    // 從 localStorage 恢復當前論文 ID
-    const savedEssayId = localStorage.getItem('current-essay-id');
-    if (savedEssayId) {
-        StorageState.currentEssayId = savedEssayId;
-        console.log(`✅ 恢復論文 ID: ${savedEssayId}`);
+    // ✅ 只在任務模式下恢復 localStorage 中的 essay ID
+    // 練筆模式下，應該創建新的 essay 或使用傳入的 essayId
+    if (AppState.currentAssignmentId) {
+        const savedEssayId = localStorage.getItem('current-essay-id');
+        if (savedEssayId) {
+            StorageState.currentEssayId = savedEssayId;
+            console.log(`✅ 任務模式：恢復論文 ID ${savedEssayId}`);
+        }
+    } else {
+        console.log('✨ 練筆模式：不從 localStorage 恢復 ID');
+        // 練筆模式下，清除舊的 essay ID
+        StorageState.currentEssayId = null;
     }
     
     console.log(`📡 網絡狀態: ${StorageState.isOnline ? '在線' : '離線'}`);
