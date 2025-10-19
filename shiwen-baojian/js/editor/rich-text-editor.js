@@ -180,13 +180,13 @@ export class RichTextEditor {
     }
     
     /**
-     * 獲取字數（中文字符數）
+     * 獲取字數（只統計中文字符，不含標點）
      */
     getWordCount() {
         const text = this.getText().trim();
         
-        // 統計中文字符
-        const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+        // 統計中文字符（包括擴展區域）
+        const chineseChars = (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
         
         // 統計英文單詞
         const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
@@ -195,7 +195,7 @@ export class RichTextEditor {
         const punctuation = (text.match(/[，。！？；：、""''（）]/g) || []).length;
         
         return {
-            total: chineseChars + englishWords + punctuation,
+            total: chineseChars,  // 只返回中文字符數，不含標點
             chinese: chineseChars,
             english: englishWords,
             punctuation: punctuation
