@@ -621,6 +621,31 @@ window.handleSentenceClick = async function(paragraphId, sentenceNumber) {
 }
 
 /**
+ * 切換詳細分析展開/收起（全局函數）
+ */
+window.toggleDetailedAnalysis = function(button) {
+    const detailedContent = button.nextElementSibling;
+    const toggleText = button.querySelector('.toggle-text');
+    const icon = button.querySelector('i');
+    
+    if (detailedContent && detailedContent.classList.contains('hidden')) {
+        detailedContent.classList.remove('hidden');
+        if (toggleText) toggleText.textContent = '收起詳細分析';
+        if (icon) {
+            icon.classList.remove('fa-chart-line');
+            icon.classList.add('fa-chevron-up');
+        }
+    } else if (detailedContent) {
+        detailedContent.classList.add('hidden');
+        if (toggleText) toggleText.textContent = '查看詳細分析';
+        if (icon) {
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chart-line');
+        }
+    }
+}
+
+/**
  * 高亮句子級問題
  */
 function highlightSentenceIssues(paragraphId, sentenceIssues) {

@@ -100,7 +100,22 @@ export async function saveEssayToSupabase(essayData) {
  */
 async function upsertEssay(essayData) {
     // 組合完整標題：主標題 + 副標題
-    let fullTitle = essayData.title || '論文草稿';
+    let fullTitle = essayData.title || '';
+    
+    // 如果沒有標題且是練筆模式，生成默認標題
+    if (!fullTitle && AppState.currentFormatSpec) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('zh-Hant-TW', { 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        fullTitle = `練筆 - ${dateStr}`;
+    } else if (!fullTitle) {
+        fullTitle = '論文草稿';
+    }
+    
     if (essayData.subtitle) {
         fullTitle += ` - ${essayData.subtitle}`;
     }
@@ -109,29 +124,43 @@ async function upsertEssay(essayData) {
         student_id: AppState.currentUser.id,
         assignment_id: null,  // 測試草稿暫時為 NULL
         title: fullTitle,
+        content_json: JSON.stringify(essayData),  // ✅ 保存完整內容
         status: 'draft',
         total_word_count: essayData.word_count || 0
     };
     
+    // 優先使用 currentPracticeEssayId（繼續編輯練筆）
+    const targetEssayId = AppState.currentPracticeEssayId || StorageState.currentEssayId;
+    
     // 如果已有論文 ID，執行更新
-    if (StorageState.currentEssayId) {
+    if (targetEssayId) {
         const { data, error } = await AppState.supabase
             .from('essays')
             .update(essayRecord)
-            .eq('id', StorageState.currentEssayId)
+            .eq('id', targetEssayId)  // ✅ 使用 targetEssayId 而非 StorageState.currentEssayId
             .select()
             .single();
             
         if (error) {
             console.error('❌ 更新論文失敗:', error);
             // 可能是論文被刪除了，嘗試創建新的
-            return await createNewEssay(essayRecord);
+            const newEssay = await createNewEssay(essayRecord);
+            StorageState.currentEssayId = newEssay.id;
+            if (AppState.currentFormatSpec) {
+                AppState.currentPracticeEssayId = newEssay.id;
+            }
+            return newEssay;
         }
         
         return data;
     } else {
         // 創建新論文
-        return await createNewEssay(essayRecord);
+        const newEssay = await createNewEssay(essayRecord);
+        StorageState.currentEssayId = newEssay.id;
+        if (AppState.currentFormatSpec) {
+            AppState.currentPracticeEssayId = newEssay.id;
+        }
+        return newEssay;
     }
 }
 

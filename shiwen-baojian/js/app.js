@@ -563,6 +563,11 @@ async function initializeStudentModules() {
     console.log('📚 初始化學生端功能...');
     
     try {
+        // 清理練筆狀態（返回列表時重置）
+        AppState.currentPracticeEssayId = null;
+        AppState.currentFormatSpec = null;
+        AppState.currentPracticeContent = null;
+        
         const container = document.getElementById('student-dashboard-content');
         if (!container) {
             console.error('❌ 找不到學生儀表板容器');
@@ -597,12 +602,12 @@ async function initializeStudentModules() {
  */
 function setupStudentNavigation() {
     window.addEventListener('navigate', async (e) => {
-        const { page, assignmentId } = e.detail;
+        const { page, assignmentId, mode, formatTemplate, essayId } = e.detail;
         
-        console.log('🧭 學生端導航:', page, assignmentId);
+        console.log('🧭 學生端導航:', { page, assignmentId, mode, formatTemplate, essayId });
         
         if (page === 'essay-writer') {
-            await showEssayEditor(assignmentId);
+            await showEssayEditor(assignmentId, mode, formatTemplate, essayId);
         } else if (page === 'assignment-list') {
             await initializeStudentModules();
         }
@@ -611,8 +616,12 @@ function setupStudentNavigation() {
 
 /**
  * 顯示論文編輯器
+ * @param {string} assignmentId - 任務 ID（可選，自主練筆時為 null）
+ * @param {string} mode - 寫作模式：'assignment'（任務）或 'free-writing'（自主練筆）
+ * @param {string} formatTemplate - 格式模板（如 'honglou'）
+ * @param {string} essayId - 作業 ID（繼續編輯現有練筆時使用）
  */
-async function showEssayEditor(assignmentId) {
+async function showEssayEditor(assignmentId = null, mode = 'assignment', formatTemplate = null, essayId = null) {
     try {
         const container = document.getElementById('student-dashboard-content');
         if (!container) {
@@ -632,12 +641,13 @@ async function showEssayEditor(assignmentId) {
         const editorContent = template.content.cloneNode(true);
         container.appendChild(editorContent);
 
-        console.log('📝 準備初始化論文編輯器，任務 ID:', assignmentId);
+        console.log('📝 準備初始化論文編輯器', { assignmentId, mode, formatTemplate, essayId });
 
         // 綁定返回按鈕
         const backBtn = container.querySelector('#back-to-list-btn');
         if (backBtn) {
             backBtn.addEventListener('click', () => {
+                console.log('🔙 返回任務列表');
                 window.dispatchEvent(new CustomEvent('navigate', {
                     detail: { page: 'assignment-list' }
                 }));
@@ -647,6 +657,35 @@ async function showEssayEditor(assignmentId) {
         // 綁定展開/收起按鈕
         const toggleBtn = container.querySelector('#toggle-description-btn');
         const descArea = container.querySelector('#assignment-description-area');
+        
+        if (mode === 'free-writing') {
+            // 自主練筆模式：顯示不同的提示
+            const titleEl = container.querySelector('#assignment-title');
+            if (titleEl) {
+                titleEl.innerHTML = '<i class="fas fa-feather-alt mr-2"></i>自主練筆';
+            }
+            
+            const descEl = container.querySelector('#assignment-description');
+            if (descEl) {
+                descEl.innerHTML = `
+                    <div class="space-y-2">
+                        <p>📝 這是您的自由創作空間</p>
+                        <p>💡 當前使用格式：<strong>《紅樓夢》論文格式</strong></p>
+                        <p>🎯 您可以選擇任何主題進行寫作練習</p>
+                    </div>
+                `;
+            }
+            
+            // 默認展開說明
+            if (descArea) {
+                descArea.classList.remove('hidden');
+                if (toggleBtn) {
+                    toggleBtn.querySelector('i')?.classList.remove('fa-chevron-down');
+                    toggleBtn.querySelector('i')?.classList.add('fa-chevron-up');
+                }
+            }
+        }
+        
         if (toggleBtn && descArea) {
             toggleBtn.addEventListener('click', () => {
                 const isHidden = descArea.classList.contains('hidden');
@@ -662,8 +701,17 @@ async function showEssayEditor(assignmentId) {
             });
         }
 
-        // 加載任務數據
-        if (assignmentId) {
+        // 加載任務數據或格式模板
+        if (mode === 'free-writing') {
+            // 自主練筆模式：加載格式模板
+            await loadFormatTemplate(formatTemplate || 'honglou');
+            
+            // 如果是繼續編輯現有練筆，加載內容
+            if (essayId) {
+                await loadPracticeEssayContent(essayId);
+            }
+        } else if (assignmentId) {
+            // 任務模式：加載任務數據
             console.log('📂 加載任務數據:', assignmentId);
             await loadAssignmentData(assignmentId);
         }
@@ -709,6 +757,77 @@ async function loadAssignmentData(assignmentId) {
     } catch (error) {
         console.error('❌ 加載任務數據失敗:', error);
         // 不阻斷編輯器加載，只記錄錯誤
+    }
+}
+
+/**
+ * 加載格式模板（用於自主練筆）
+ */
+async function loadFormatTemplate(templateName) {
+    try {
+        console.log('📋 加載格式模板:', templateName);
+        
+        // TODO: 將來擴展為可選擇的模板系統
+        // 當前只有紅樓夢格式，預留接口
+        const formatTemplates = {
+            'honglou': 'shiwen-baojian/assets/data/honglou-essay-format.json',
+            // 預留：將來可以添加更多格式
+            // 'classical': '...',
+            // 'modern': '...'
+        };
+        
+        const templatePath = formatTemplates[templateName];
+        if (!templatePath) {
+            console.warn('⚠️ 未知的格式模板:', templateName);
+            return;
+        }
+        
+        // 預載格式規範（供 AI 反饋使用）
+        const response = await fetch(templatePath);
+        if (response.ok) {
+            const formatSpec = await response.json();
+            // 將格式規範存儲到 AppState 供後續使用
+            AppState.currentFormatSpec = formatSpec;
+            console.log('✅ 格式模板加載完成:', formatSpec.title);
+        }
+    } catch (error) {
+        console.error('❌ 加載格式模板失敗:', error);
+        // 不阻斷編輯器，只記錄錯誤
+    }
+}
+
+/**
+ * 加載練筆作品內容（用於繼續編輯）
+ */
+async function loadPracticeEssayContent(essayId) {
+    try {
+        console.log('📂 加載練筆作品:', essayId);
+        
+        const { data: essay, error } = await AppState.supabase
+            .from('essays')
+            .select('*')
+            .eq('id', essayId)
+            .single();
+
+        if (error) throw error;
+
+        // 存儲當前練筆 ID 到 AppState
+        AppState.currentPracticeEssayId = essayId;
+
+        // 更新任務標題
+        const titleEl = document.getElementById('assignment-title');
+        if (titleEl) {
+            titleEl.innerHTML = `<i class="fas fa-feather-alt mr-2"></i>${essay.title || '未命名練筆'}`;
+        }
+
+        // TODO: 加載練筆內容到編輯器
+        // 這需要在 essay-writer.js 中實現內容恢復功能
+        AppState.currentPracticeContent = essay.content_json ? JSON.parse(essay.content_json) : null;
+
+        console.log('✅ 練筆作品數據加載完成');
+    } catch (error) {
+        console.error('❌ 加載練筆作品失敗:', error);
+        showError('無法加載練筆作品: ' + error.message);
     }
 }
 

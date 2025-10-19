@@ -132,12 +132,12 @@ function showSentenceTooltip(paragraphId, sentenceNumber, sentenceText) {
     
     document.body.appendChild(tooltip);
     
-    // 3 秒後自動移除
+    // ✅ 改為 8 秒後自動移除（給用戶更多時間閱讀）
     setTimeout(() => {
         if (tooltip.parentElement) {
             tooltip.remove();
         }
-    }, 5000);
+    }, 8000);
 }
 
 /**
@@ -173,12 +173,10 @@ function highlightInEditor(editorInstance, sentenceText, paragraphId) {
         paragraphId: paragraphId
     };
     
-    // 3 秒後移除高亮
-    setTimeout(() => {
-        clearSentenceHighlight();
-    }, 3000);
+    // ✅ 移除自動清除邏輯，保持高亮直到用戶點擊其他建議
+    // 用戶點擊其他建議時會調用 clearSentenceHighlight() 清除
     
-    console.log('✅ 句子已在編輯器中高亮');
+    console.log('✅ 句子已在編輯器中高亮（持續顯示）');
 }
 
 /**
