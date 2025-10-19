@@ -202,6 +202,9 @@ async function ensureUserRecord(user) {
         if (existingUser) {
             console.log('✅ 用戶記錄已存在:', existingUser.id);
             
+            // 檢測用戶角色（使用已有記錄的角色）
+            const userRole = existingUser.role;
+            
             // 更新最后登录时间和姓名（如果 Google 提供了新信息）
             const updates = {
                 last_login_at: new Date().toISOString()

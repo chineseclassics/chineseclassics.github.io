@@ -1,11 +1,19 @@
 // 學生端診斷腳本
 // 請在學生端（3023022 登入後）的瀏覽器 Console 中執行
+// 確保頁面已完全加載（看到學生儀表板後再執行）
 
 async function debugStudentView() {
   console.log('🔍 開始診斷學生端問題...');
   
+  // 獲取 Supabase 客戶端
+  const supabase = window.AppState?.supabase || window.supabase;
+  if (!supabase) {
+    console.error('❌ 找不到 Supabase 客戶端！請確保頁面已完全加載');
+    return;
+  }
+  
   // 1. 檢查當前登入用戶
-  const { data: { user } } = await AppState.supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   console.log('👤 當前用戶:', {
     id: user.id,
     email: user.email,
@@ -13,7 +21,7 @@ async function debugStudentView() {
   });
   
   // 2. 檢查用戶記錄
-  const { data: userRecord, error: userError } = await AppState.supabase
+  const { data: userRecord, error: userError } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
@@ -25,7 +33,7 @@ async function debugStudentView() {
   }
   
   // 3. 檢查班級成員關係
-  const { data: classMemberships, error: memberError } = await AppState.supabase
+  const { data: classMemberships, error: memberError } = await supabase
     .from('class_members')
     .select(`
       id,
@@ -57,7 +65,7 @@ async function debugStudentView() {
   }
   
   // 4. 檢查待激活記錄
-  const { data: pendingRecords } = await AppState.supabase
+  const { data: pendingRecords } = await supabase
     .from('pending_students')
     .select('*')
     .eq('email', user.email);
@@ -73,7 +81,7 @@ async function debugStudentView() {
   if (classMemberships && classMemberships.length > 0) {
     const classIds = classMemberships.map(m => m.class_id);
     
-    const { data: assignments, error: assignError } = await AppState.supabase
+    const { data: assignments, error: assignError } = await supabase
       .from('assignments')
       .select('*')
       .in('class_id', classIds);

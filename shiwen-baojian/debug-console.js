@@ -1,11 +1,19 @@
 // 請在瀏覽器 Console 中複製粘貼執行這段代碼
+// 確保頁面已完全加載（看到老師儀表板後再執行）
 
 // 直接查詢數據庫，看看 class_members 表的完整數據
 async function debugStudentList() {
   console.log('🔍 開始診斷學生列表問題...');
   
+  // 獲取 Supabase 客戶端
+  const supabase = window.AppState?.supabase || window.supabase;
+  if (!supabase) {
+    console.error('❌ 找不到 Supabase 客戶端！請確保頁面已完全加載');
+    return;
+  }
+  
   // 1. 查詢所有 class_members（包括關聯的 users 數據）
-  const { data: classMembers, error: membersError } = await AppState.supabase
+  const { data: classMembers, error: membersError } = await supabase
     .from('class_members')
     .select(`
       id,
