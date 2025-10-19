@@ -21,6 +21,7 @@ let selectedFormatId = null;
 let hasBeenOptimized = false;
 let cachedFormatJSON = null;
 let originalContent = '';
+let editingFormatId = null;  // 如果正在編輯現有格式，存儲其 ID
 
 // Supabase 配置
 const SUPABASE_URL = 'https://fjvgfhdqrezutrmbidds.supabase.co';
@@ -34,6 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeQuillEditor();
     loadSystemFormats();
     updateStatus();
+    
+    // 檢查是否是編輯模式
+    const urlParams = new URLSearchParams(window.location.search);
+    const editFormatId = urlParams.get('edit');
+    if (editFormatId) {
+        loadFormatForEdit(editFormatId);
+    }
 });
 
 /**
@@ -310,22 +318,65 @@ async function confirmSave() {
     }
     
     try {
-        // TODO: 保存到 Supabase
-        // 暫時只在控制台輸出
-        console.log('[FormatEditor] 保存格式:', {
-            name,
-            description,
-            mode: currentMode,
-            based_on: selectedFormatId,
-            format_json: cachedFormatJSON,
-            human_readable: quillEditor.getText()
-        });
+        // 更新 metadata 中的名稱
+        if (cachedFormatJSON.metadata) {
+            cachedFormatJSON.metadata.name = name;
+        }
         
-        alert('格式已保存！（開發中：實際保存功能待實現）');
+        // 構建保存數據
+        const formatData = {
+            name: name,
+            description: description,
+            essay_type: cachedFormatJSON.metadata?.essay_type || 'custom',
+            is_system: false,
+            is_public: false,
+            spec_json: cachedFormatJSON,
+            parent_spec_id: selectedFormatId || null
+        };
+        
+        // 判斷是創建還是更新
+        let response;
+        if (editingFormatId) {
+            // 更新現有格式
+            response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications?id=eq.${editingFormatId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${ANON_KEY}`,
+                    'apikey': ANON_KEY,
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(formatData)
+            });
+        } else {
+            // 創建新格式
+            response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${ANON_KEY}`,
+                    'apikey': ANON_KEY,
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(formatData)
+            });
+        }
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || '保存失敗');
+        }
+        
+        const savedFormat = await response.json();
+        console.log('[FormatEditor] 格式已保存:', savedFormat);
+        
+        alert(editingFormatId ? '✅ 格式已更新！' : '✅ 格式已保存！');
         closeSaveDialog();
         
         // 跳轉到格式管理頁面
-        // window.location.href = 'format-manager.html';
+        setTimeout(() => {
+            window.location.href = 'format-manager.html';
+        }, 500);
     } catch (error) {
         console.error('[FormatEditor] 保存失敗:', error);
         alert('保存失敗：' + error.message);
@@ -505,6 +556,56 @@ function clearEditor() {
         originalContent = '';
         updateButtonStates();
         updateStatus();
+    }
+}
+
+/**
+ * 加載格式進行編輯
+ */
+async function loadFormatForEdit(formatId) {
+    try {
+        // 從 Supabase 加載格式
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications?id=eq.${formatId}&select=*`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${ANON_KEY}`,
+                'apikey': ANON_KEY
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('加載格式失敗');
+        }
+        
+        const formats = await response.json();
+        if (formats.length === 0) {
+            throw new Error('格式不存在');
+        }
+        
+        const format = formats[0];
+        
+        // 設置編輯模式
+        editingFormatId = format.id;
+        
+        // 轉換為人類可讀格式並顯示
+        const humanReadable = formatJSONToHumanReadable(format.spec_json);
+        quillEditor.setText(humanReadable);
+        originalContent = humanReadable;
+        
+        // 設置狀態
+        selectedFormatId = format.parent_spec_id;
+        currentMode = 'custom';  // 編輯模式視為自定義
+        cachedFormatJSON = format.spec_json;
+        hasBeenOptimized = true;
+        
+        updateButtonStates();
+        updateStatus();
+        
+        console.log('[FormatEditor] 格式已加載編輯:', format.name);
+    } catch (error) {
+        console.error('[FormatEditor] 加載格式失敗:', error);
+        alert('加載格式失敗：' + error.message);
     }
 }
 
