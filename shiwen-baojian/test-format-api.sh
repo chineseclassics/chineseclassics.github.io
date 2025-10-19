@@ -5,18 +5,10 @@
 echo "🧪 测试 AI 格式生成器..."
 echo ""
 
-# 检查是否提供了 ANON_KEY
-if [ -z "$1" ]; then
-    echo "❌ 用法：./test-format-api.sh YOUR_ANON_KEY"
-    echo ""
-    echo "获取 Anon Key："
-    echo "1. 访问：https://supabase.com/dashboard/project/fjvgfhdqrezutrmbidds/settings/api"
-    echo "2. 复制 'anon' 'public' key"
-    echo ""
-    exit 1
-fi
+# 預設使用時文寶鑑的 Anon Key（如果未提供參數）
+DEFAULT_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqdmdmaGRxcmV6dXRybWJpZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDE3ODIsImV4cCI6MjA3NjM3Nzc4Mn0.eVX46FM_UfLBk9vJiCfA_zC9PIMTJxmG8QNZQWdG8T8"
 
-ANON_KEY=$1
+ANON_KEY="${1:-$DEFAULT_ANON_KEY}"
 URL="https://fjvgfhdqrezutrmbidds.supabase.co/functions/v1/format-spec-generator"
 
 echo "📡 发送测试请求到 Edge Function..."

@@ -2,16 +2,11 @@
 # 測試兩階段流程 - format-spec-generator
 # Created: 2025-10-19
 
-ANON_KEY="$1"
-URL="https://fjvgfhdqrezutrmbidds.supabase.co/functions/v1/format-spec-generator"
+# 預設使用時文寶鑑的 Anon Key（如果未提供參數）
+DEFAULT_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqdmdmaGRxcmV6dXRybWJpZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDE3ODIsImV4cCI6MjA3NjM3Nzc4Mn0.eVX46FM_UfLBk9vJiCfA_zC9PIMTJxmG8QNZQWdG8T8"
 
-if [ -z "$ANON_KEY" ]; then
-    echo "❌ 用法：./test-two-stage-flow.sh YOUR_ANON_KEY"
-    echo ""
-    echo "獲取 Anon Key："
-    echo "https://supabase.com/dashboard/project/fjvgfhdqrezutrmbidds/settings/api"
-    exit 1
-fi
+ANON_KEY="${1:-$DEFAULT_ANON_KEY}"
+URL="https://fjvgfhdqrezutrmbidds.supabase.co/functions/v1/format-spec-generator"
 
 echo "🧪 測試兩階段流程..."
 echo ""
