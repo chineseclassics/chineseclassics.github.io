@@ -2,6 +2,8 @@
  * 學生端任務列表查看器（精简版）
  */
 
+import { AppState } from '../app.js';
+
 class StudentAssignmentViewer {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
