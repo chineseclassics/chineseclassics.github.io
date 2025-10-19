@@ -90,9 +90,11 @@ class ClassUI {
       </div>
     `;
 
-    // 绑定表单提交事件
-    const form = document.getElementById('createClassForm');
-    form.addEventListener('submit', (e) => this.handleCreateClass(e));
+    // 绑定表单提交事件（使用容器的 querySelector）
+    const form = this.container.querySelector('#createClassForm');
+    if (form) {
+      form.addEventListener('submit', (e) => this.handleCreateClass(e));
+    }
   }
 
   /**
@@ -236,7 +238,7 @@ class ClassUI {
         <div class="modal-content">
           <div class="modal-header">
             <h3>批量添加学生</h3>
-            <button class="modal-close" onclick="document.getElementById('addStudentsModal').style.display='none'">
+            <button class="modal-close" id="closeModalBtn">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -360,41 +362,55 @@ class ClassUI {
    */
   bindDashboardEvents(members) {
     // 批量添加学生按钮
-    const addStudentsBtn = document.getElementById('addStudentsBtn');
+    const addStudentsBtn = this.container.querySelector('#addStudentsBtn');
     if (addStudentsBtn) {
       addStudentsBtn.addEventListener('click', () => {
-        document.getElementById('addStudentsModal').style.display = 'flex';
+        const modal = this.container.querySelector('#addStudentsModal');
+        if (modal) modal.style.display = 'flex';
+      });
+    }
+
+    // 模态框关闭按钮（X）
+    const closeModalBtn = this.container.querySelector('#closeModalBtn');
+    if (closeModalBtn) {
+      closeModalBtn.addEventListener('click', () => {
+        const modal = this.container.querySelector('#addStudentsModal');
+        const input = this.container.querySelector('#emailListInput');
+        if (modal) modal.style.display = 'none';
+        if (input) input.value = '';
       });
     }
 
     // 模态框取消按钮
-    const cancelAddBtn = document.getElementById('cancelAddBtn');
+    const cancelAddBtn = this.container.querySelector('#cancelAddBtn');
     if (cancelAddBtn) {
       cancelAddBtn.addEventListener('click', () => {
-        document.getElementById('addStudentsModal').style.display = 'none';
-        document.getElementById('emailListInput').value = '';
+        const modal = this.container.querySelector('#addStudentsModal');
+        const input = this.container.querySelector('#emailListInput');
+        if (modal) modal.style.display = 'none';
+        if (input) input.value = '';
       });
     }
 
     // 模态框确认按钮
-    const confirmAddBtn = document.getElementById('confirmAddBtn');
+    const confirmAddBtn = this.container.querySelector('#confirmAddBtn');
     if (confirmAddBtn) {
       confirmAddBtn.addEventListener('click', () => this.handleBatchAddStudents());
     }
 
     // 停用/激活班级
-    const deactivateBtn = document.getElementById('deactivateBtn');
+    const deactivateBtn = this.container.querySelector('#deactivateBtn');
     if (deactivateBtn) {
       deactivateBtn.addEventListener('click', () => this.handleDeactivateClass());
     }
 
-    const activateBtn = document.getElementById('activateBtn');
+    const activateBtn = this.container.querySelector('#activateBtn');
     if (activateBtn) {
       activateBtn.addEventListener('click', () => this.handleActivateClass());
     }
 
     // 移除学生按钮
-    const removeButtons = document.querySelectorAll('.remove-student-btn');
+    const removeButtons = this.container.querySelectorAll('.remove-student-btn');
     removeButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const memberId = e.currentTarget.getAttribute('data-member-id');
@@ -404,7 +420,7 @@ class ClassUI {
     });
 
     // 搜索功能
-    const searchInput = document.getElementById('studentSearch');
+    const searchInput = this.container.querySelector('#studentSearch');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         this.filterStudents(e.target.value, members);
@@ -412,7 +428,7 @@ class ClassUI {
     }
 
     // 表格排序
-    const sortHeaders = document.querySelectorAll('[data-sort]');
+    const sortHeaders = this.container.querySelectorAll('[data-sort]');
     sortHeaders.forEach(header => {
       header.addEventListener('click', (e) => {
         const sortKey = e.currentTarget.getAttribute('data-sort');
@@ -425,8 +441,13 @@ class ClassUI {
    * 处理批量添加学生
    */
   async handleBatchAddStudents() {
-    const emailListInput = document.getElementById('emailListInput');
-    const confirmBtn = document.getElementById('confirmAddBtn');
+    const emailListInput = this.container.querySelector('#emailListInput');
+    const confirmBtn = this.container.querySelector('#confirmAddBtn');
+
+    if (!emailListInput || !confirmBtn) {
+      console.error('找不到表单元素');
+      return;
+    }
 
     try {
       const emailListText = emailListInput.value.trim();
@@ -444,7 +465,8 @@ class ClassUI {
       const result = await this.classManager.batchAddStudents(emailListText);
 
       // 关闭模态框
-      document.getElementById('addStudentsModal').style.display = 'none';
+      const modal = this.container.querySelector('#addStudentsModal');
+      if (modal) modal.style.display = 'none';
       emailListInput.value = '';
 
       // 显示结果
@@ -526,7 +548,7 @@ class ClassUI {
    */
   filterStudents(searchTerm, members) {
     const term = searchTerm.toLowerCase();
-    const rows = document.querySelectorAll('#studentsTable tbody tr');
+    const rows = this.container.querySelectorAll('#studentsTable tbody tr');
     
     rows.forEach(row => {
       const memberId = row.getAttribute('data-member-id');

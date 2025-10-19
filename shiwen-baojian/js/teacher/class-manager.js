@@ -63,7 +63,7 @@ class ClassManager {
         .from('classes')
         .insert([
           {
-            name: className.trim(),
+            class_name: className.trim(),
             description: description.trim(),
             teacher_id: user.id,
             is_active: true
@@ -106,7 +106,7 @@ class ClassManager {
       // 检查已存在的学生
       const { data: existingMembers, error: checkError } = await this.supabase
         .from('class_members')
-        .select('user_id, users!inner(email)')
+        .select('student_id, users!inner(email)')
         .eq('class_id', this.currentClass.id);
 
       if (checkError) throw checkError;
@@ -227,7 +227,7 @@ class ClassManager {
             .insert([
               {
                 class_id: this.currentClass.id,
-                user_id: userId,
+                student_id: userId,
                 added_by: user.id
               }
             ]);
@@ -264,7 +264,7 @@ class ClassManager {
         .from('class_members')
         .select(`
           id,
-          user_id,
+          student_id,
           added_at,
           users!inner(
             id,
@@ -283,11 +283,11 @@ class ClassManager {
       const enrichedMembers = await Promise.all(
         data.map(async member => {
           const activityStatus = this.calculateActivityStatus(member.users.last_login_at);
-          const assignmentProgress = await this.getStudentAssignmentProgress(member.user_id);
+          const assignmentProgress = await this.getStudentAssignmentProgress(member.student_id);
 
           return {
             id: member.id,
-            userId: member.user_id,
+            userId: member.student_id,
             email: member.users.email,
             displayName: member.users.display_name,
             status: member.users.status,
