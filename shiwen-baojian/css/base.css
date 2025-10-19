@@ -35,7 +35,7 @@ nav {
 
 /* Logo 和標題區域 - 扁平化 */
 nav .bg-gradient-to-r {
-    background: #3b82f6 !important;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
     border-radius: 6px !important;
 }
 
@@ -97,11 +97,30 @@ button:disabled {
 
 /* 主要按鈕 - 扁平化 */
 .bg-blue-600 {
-    background: #3b82f6 !important;
+    background: #3498db !important;
 }
 
 .bg-blue-600:hover {
-    background: #2563eb !important;
+    background: #2980b9 !important;
+}
+
+/* 高級藍色漸變類 */
+.premium-blue-gradient {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+/* 高級藍色文字 */
+.premium-blue-text {
+    color: #3498db;
+}
+
+.premium-blue-text-dark {
+    color: #2980b9;
+}
+
+/* 高級藍色懸停背景 */
+.premium-blue-hover {
+    background-color: #e3f2fd !important;
 }
 
 /* 次要按鈕 - 扁平化 */
@@ -198,12 +217,12 @@ i.fab {
    ================================ */
 
 ::selection {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(52, 152, 219, 0.2);
     color: inherit;
 }
 
 ::-moz-selection {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(52, 152, 219, 0.2);
     color: inherit;
 }
 
@@ -221,8 +240,8 @@ textarea {
 input:focus,
 textarea:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 /* ================================

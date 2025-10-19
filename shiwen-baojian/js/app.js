@@ -634,19 +634,81 @@ async function showEssayEditor(assignmentId) {
 
         console.log('📝 準備初始化論文編輯器，任務 ID:', assignmentId);
 
-        // 初始化論文編輯器
-        await initializeEssayEditor();
+        // 綁定返回按鈕
+        const backBtn = container.querySelector('#back-to-list-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('navigate', {
+                    detail: { page: 'assignment-list' }
+                }));
+            });
+        }
 
-        // 如果有 assignmentId，加載對應的任務數據
+        // 綁定展開/收起按鈕
+        const toggleBtn = container.querySelector('#toggle-description-btn');
+        const descArea = container.querySelector('#assignment-description-area');
+        if (toggleBtn && descArea) {
+            toggleBtn.addEventListener('click', () => {
+                const isHidden = descArea.classList.contains('hidden');
+                if (isHidden) {
+                    descArea.classList.remove('hidden');
+                    toggleBtn.querySelector('i').classList.remove('fa-chevron-down');
+                    toggleBtn.querySelector('i').classList.add('fa-chevron-up');
+                } else {
+                    descArea.classList.add('hidden');
+                    toggleBtn.querySelector('i').classList.remove('fa-chevron-up');
+                    toggleBtn.querySelector('i').classList.add('fa-chevron-down');
+                }
+            });
+        }
+
+        // 加載任務數據
         if (assignmentId) {
             console.log('📂 加載任務數據:', assignmentId);
-            // TODO: 加載任務的格式要求等數據
+            await loadAssignmentData(assignmentId);
         }
+
+        // 初始化論文編輯器
+        await initializeEssayEditor();
 
         console.log('✅ 論文編輯器顯示完成');
     } catch (error) {
         console.error('❌ 顯示論文編輯器失敗:', error);
         showError('無法加載論文編輯器: ' + error.message);
+    }
+}
+
+/**
+ * 加載任務數據
+ */
+async function loadAssignmentData(assignmentId) {
+    try {
+        const { data: assignment, error } = await AppState.supabase
+            .from('assignments')
+            .select('*')
+            .eq('id', assignmentId)
+            .single();
+
+        if (error) throw error;
+
+        // 更新任務標題
+        const titleEl = document.getElementById('assignment-title');
+        if (titleEl) {
+            titleEl.textContent = assignment.title || '未命名任務';
+        }
+
+        // 更新任務描述
+        const descEl = document.getElementById('assignment-description');
+        if (descEl && assignment.description) {
+            descEl.textContent = assignment.description;
+        } else if (descEl) {
+            descEl.textContent = '老師未提供詳細說明。';
+        }
+
+        console.log('✅ 任務數據加載完成:', assignment.title);
+    } catch (error) {
+        console.error('❌ 加載任務數據失敗:', error);
+        // 不阻斷編輯器加載，只記錄錯誤
     }
 }
 
