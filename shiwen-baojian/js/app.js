@@ -552,12 +552,41 @@ async function showStudentDashboard() {
     
     AppState.currentScreen = 'student-dashboard';
     
-    // 初始化論文編輯器
-    await initializeEssayEditor();
+    // ✅ 修改：先顯示任務列表，而非直接顯示編輯器
+    await initializeStudentModules();
+}
+
+/**
+ * 初始化學生端功能模組
+ */
+async function initializeStudentModules() {
+    console.log('📚 初始化學生端功能...');
     
-    // 初始化防作弊系統
-    const { initializeAntiCheat } = await import('./features/anti-cheat.js');
-    initializeAntiCheat();
+    try {
+        const container = document.getElementById('student-dashboard-content');
+        if (!container) {
+            console.error('❌ 找不到學生儀表板容器');
+            // 降級：使用舊的編輯器初始化
+            await initializeEssayEditor();
+            const { initializeAntiCheat } = await import('./features/anti-cheat.js');
+            initializeAntiCheat();
+            return;
+        }
+        
+        // 動態加載任務查看器
+        const { default: StudentAssignmentViewer } = await import('./student/assignment-viewer.js');
+        const assignmentViewer = new StudentAssignmentViewer(AppState.supabase);
+        await assignmentViewer.render(container);
+        
+        // 初始化防作弊系統
+        const { initializeAntiCheat } = await import('./features/anti-cheat.js');
+        initializeAntiCheat();
+        
+        console.log('✅ 學生端功能初始化完成');
+    } catch (error) {
+        console.error('❌ 學生端功能初始化失敗:', error);
+        showError('學生端功能初始化失敗: ' + error.message);
+    }
 }
 
 /**

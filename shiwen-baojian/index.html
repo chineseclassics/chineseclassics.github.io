@@ -176,10 +176,21 @@
                     </div>
                 </nav>
                 
-                <!-- 主內容區（響應式布局：桌面端左右分欄，移動端單欄） -->
-                <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div class="flex flex-col lg:flex-row gap-6">
-                        <!-- 左側：論文編輯區 -->
+                <!-- 動態內容容器（任務列表或編輯器） -->
+                <main id="student-dashboard-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- 學生端功能將動態加載到這裡 -->
+                    <div class="text-center py-12">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>
+                        <p class="mt-4 text-gray-500">載入中...</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+        
+        <!-- 舊的編輯器 HTML（暫時保留為備用模板） -->
+        <template id="essay-editor-template">
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- 左側：論文編輯區 -->
                         <div class="w-full lg:w-2/3 flex-shrink-0">
                             <!-- 頂部工具欄 -->
                             <div class="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
@@ -315,10 +326,8 @@
                         <!-- 右側側邊欄結束 -->
                     </div>
                     <!-- flex 容器結束 -->
-                </main>
-            </div>
-        </div>
-    </div>
+        </template>
+        <!-- 編輯器模板結束 -->
     
     <!-- 移動端 AI 反饋模態框（動態創建） -->
     <div id="mobile-feedback-modal" class="hidden"></div>
