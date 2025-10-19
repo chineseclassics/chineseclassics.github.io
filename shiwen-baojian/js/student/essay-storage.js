@@ -458,5 +458,5 @@ function countWords(html) {
 // 導出
 // ================================
 
-export { StorageState };
+// StorageState 已在文件開頭導出（第 16 行），無需重複導出
 

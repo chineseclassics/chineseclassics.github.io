@@ -155,7 +155,7 @@ class StudentAssignmentViewer {
         <div class="practice-section ${hasAssignments ? 'mt-12' : ''}">
           <div class="list-header">
             <h2><i class="fas fa-feather-alt"></i> 我的練筆</h2>
-            <button id="free-writing-btn" class="btn-action start-btn" style="padding: 0.625rem 1.25rem; font-size: 0.9rem;">
+            <button id="free-writing-btn">
               <i class="fas fa-plus"></i>
               開始新的練筆
             </button>
@@ -474,7 +474,7 @@ class StudentAssignmentViewer {
         <!-- 自主練筆選項 -->
         <div class="mt-8">
           <p class="text-gray-600 text-sm mb-4">您也可以開始自主練筆</p>
-          <button id="free-writing-btn-no-class" class="btn-action start-btn" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
+          <button id="free-writing-btn-no-class" class="practice-writing-btn" style="padding: 0.875rem 1.5rem; font-size: 1rem;">
             <i class="fas fa-feather-alt"></i>
             開始自主練筆
           </button>

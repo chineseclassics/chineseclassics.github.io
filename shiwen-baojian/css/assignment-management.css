@@ -329,6 +329,32 @@
   margin: 0.5rem 0;
 }
 
+/* 練筆按鈕統一樣式 */
+.practice-writing-btn {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+}
+
+.practice-writing-btn:hover {
+  background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
+  transform: translateY(-1px);
+}
+
+.practice-writing-btn i {
+  font-size: 1rem;
+}
+
 /* 空状态 */
 .error-state {
   text-align: center;
@@ -814,8 +840,32 @@
 
 /* 練筆區域樣式 */
 .practice-section {
-  border-top: 2px solid #ecf0f1;
+  margin-top: 3rem;
   padding-top: 2rem;
+  border-top: 2px solid #ecf0f1;
+}
+
+.practice-section .list-header h2 {
+  color: #9b59b6;
+}
+
+.practice-section .list-header h2 i {
+  color: #9b59b6;
+}
+
+/* 開始新的練筆按鈕 - 紫色漸變 */
+.practice-section #free-writing-btn {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+  padding: 0.75rem 1.5rem !important;
+  font-size: 0.95rem !important;
+}
+
+.practice-section #free-writing-btn:hover {
+  background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
+  transform: translateY(-1px);
 }
 
 .empty-practice-state {
