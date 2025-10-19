@@ -5,10 +5,16 @@
 async function debugStudentList() {
   console.log('🔍 開始診斷學生列表問題...');
   
-  // 獲取 Supabase 客戶端
-  const supabase = window.AppState?.supabase || window.supabase;
-  if (!supabase) {
-    console.error('❌ 找不到 Supabase 客戶端！請確保頁面已完全加載');
+  // 獲取 Supabase 客戶端（使用全局 window 對象）
+  let supabase;
+  if (typeof AppState !== 'undefined' && AppState.supabase) {
+    supabase = AppState.supabase;
+  } else if (typeof window.createClient !== 'undefined') {
+    console.error('❌ AppState 未定義，無法使用已初始化的客戶端');
+    console.log('請確保頁面已完全加載並登入');
+    return;
+  } else {
+    console.error('❌ 找不到 Supabase 客戶端！');
     return;
   }
   
