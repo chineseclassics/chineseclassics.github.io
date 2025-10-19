@@ -336,7 +336,7 @@ class AssignmentManager {
         .from('essays')
         .select('*', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
-        .eq('is_submitted', true);
+        .eq('status', 'submitted');
 
       // 获取已批改的作业数
       const { count: graded } = await this.supabase
@@ -348,12 +348,12 @@ class AssignmentManager {
       // 获取平均字数（从已提交的作业中计算）
       const { data: essays } = await this.supabase
         .from('essays')
-        .select('word_count')
+        .select('total_word_count')
         .eq('assignment_id', assignmentId)
-        .eq('is_submitted', true);
+        .eq('status', 'submitted');
 
       const avgWordCount = essays && essays.length > 0
-        ? Math.round(essays.reduce((sum, e) => sum + (e.word_count || 0), 0) / essays.length)
+        ? Math.round(essays.reduce((sum, e) => sum + (e.total_word_count || 0), 0) / essays.length)
         : 0;
 
       // 获取平均 AI 反馈次数
@@ -364,7 +364,7 @@ class AssignmentManager {
           ai_feedback:ai_feedback(count)
         `)
         .eq('assignment_id', assignmentId)
-        .eq('is_submitted', true);
+        .eq('status', 'submitted');
 
       const avgFeedbackCount = feedbackCounts && feedbackCounts.length > 0
         ? (feedbackCounts.reduce((sum, e) => sum + (e.ai_feedback?.length || 0), 0) / feedbackCounts.length).toFixed(1)

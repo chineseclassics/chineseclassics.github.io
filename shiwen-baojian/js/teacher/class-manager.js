@@ -106,12 +106,12 @@ class ClassManager {
       // 检查已存在的学生
       const { data: existingMembers, error: checkError } = await this.supabase
         .from('class_members')
-        .select('student_id, users!inner(email)')
+        .select('student_id, student:users!student_id(email)')
         .eq('class_id', this.currentClass.id);
 
       if (checkError) throw checkError;
 
-      const existingEmails = new Set(existingMembers.map(m => m.users.email));
+      const existingEmails = new Set(existingMembers.map(m => m.student.email));
       const duplicates = validEmails.filter(email => existingEmails.has(email));
       const newEmails = validEmails.filter(email => !existingEmails.has(email));
 
@@ -266,7 +266,7 @@ class ClassManager {
           id,
           student_id,
           added_at,
-          users!inner(
+          student:users!student_id(
             id,
             email,
             display_name,
@@ -282,16 +282,16 @@ class ClassManager {
       // 计算每个学生的活跃状态和作业进度
       const enrichedMembers = await Promise.all(
         data.map(async member => {
-          const activityStatus = this.calculateActivityStatus(member.users.last_login_at);
+          const activityStatus = this.calculateActivityStatus(member.student.last_login_at);
           const assignmentProgress = await this.getStudentAssignmentProgress(member.student_id);
 
           return {
             id: member.id,
             userId: member.student_id,
-            email: member.users.email,
-            displayName: member.users.display_name,
-            status: member.users.status,
-            lastLoginAt: member.users.last_login_at,
+            email: member.student.email,
+            displayName: member.student.display_name,
+            status: member.student.status,
+            lastLoginAt: member.student.last_login_at,
             activityStatus: activityStatus,
             assignmentProgress: assignmentProgress,
             addedAt: member.added_at
@@ -348,9 +348,9 @@ class ClassManager {
       const { data: essays, error: essaysError } = await this.supabase
         .from('essays')
         .select('id')
-        .eq('user_id', userId)
+        .eq('student_id', userId)
         .in('assignment_id', assignments.map(a => a.id))
-        .eq('is_submitted', true);
+        .eq('status', 'submitted');
 
       if (essaysError) throw essaysError;
 
@@ -459,9 +459,9 @@ class ClassManager {
 
       const { count: activeStudents, error: activeError } = await this.supabase
         .from('class_members')
-        .select('users!inner(*)', { count: 'exact', head: true })
+        .select('student:users!student_id(*)', { count: 'exact', head: true })
         .eq('class_id', this.currentClass.id)
-        .gte('users.last_login_at', sevenDaysAgo.toISOString());
+        .gte('student.last_login_at', sevenDaysAgo.toISOString());
 
       if (activeError) throw activeError;
 
@@ -476,9 +476,9 @@ class ClassManager {
       // 获取待批改作业数
       const { count: pendingGrading, error: pendingError } = await this.supabase
         .from('essays')
-        .select('assignment:assignments!inner(*)', { count: 'exact', head: true })
+        .select('assignment:assignments!assignment_id(*)', { count: 'exact', head: true })
         .eq('assignment.class_id', this.currentClass.id)
-        .eq('is_submitted', true)
+        .eq('status', 'submitted')
         .is('graded_at', null);
 
       if (pendingError) throw pendingError;
@@ -488,9 +488,9 @@ class ClassManager {
       if (totalStudents > 0 && totalAssignments > 0) {
         const { count: completedEssays, error: completedError } = await this.supabase
           .from('essays')
-          .select('assignment:assignments!inner(*)', { count: 'exact', head: true })
+          .select('assignment:assignments!assignment_id(*)', { count: 'exact', head: true })
           .eq('assignment.class_id', this.currentClass.id)
-          .eq('is_submitted', true);
+          .eq('status', 'submitted');
 
         if (completedError) throw completedError;
 

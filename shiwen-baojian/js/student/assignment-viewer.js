@@ -27,7 +27,7 @@ class StudentAssignmentViewer {
       const { data: memberships } = await this.supabase
         .from('class_members')
         .select('class_id')
-        .eq('user_id', user.id);
+        .eq('student_id', user.id);
 
       if (!memberships || memberships.length === 0) {
         this.renderNoClass();
@@ -55,7 +55,7 @@ class StudentAssignmentViewer {
             .from('essays')
             .select('*')
             .eq('assignment_id', assignment.id)
-            .eq('user_id', user.id)
+            .eq('student_id', user.id)
             .maybeSingle();
 
           return {
@@ -117,7 +117,7 @@ class StudentAssignmentViewer {
 
         <div class="assignment-meta">
           <div><i class="fas fa-calendar"></i> 截止：${dueDate.toLocaleDateString('zh-CN')} ${dueDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
-          ${essay ? `<div><i class="fas fa-file-alt"></i> 字数：${essay.word_count || 0}</div>` : ''}
+          ${essay ? `<div><i class="fas fa-file-alt"></i> 字数：${essay.total_word_count || 0}</div>` : ''}
         </div>
 
         ${assignment.description ? `<p class="assignment-desc">${assignment.description}</p>` : ''}
@@ -125,7 +125,7 @@ class StudentAssignmentViewer {
         <div class="assignment-actions">
           ${essay
             ? `<button class="btn btn-primary continue-btn" data-id="${assignment.id}">
-                <i class="fas fa-edit"></i> ${essay.is_submitted ? '查看作业' : '继续写作'}
+                <i class="fas fa-edit"></i> ${essay.status === 'submitted' ? '查看作业' : '继续写作'}
               </button>`
             : `<button class="btn btn-primary start-btn" data-id="${assignment.id}">
                 <i class="fas fa-pen"></i> 开始写作
@@ -146,7 +146,7 @@ class StudentAssignmentViewer {
         : { text: '未开始', class: 'not-started' };
     }
 
-    if (essay.is_submitted) {
+    if (essay.status === 'submitted' || essay.status === 'graded') {
       if (essay.graded_at) {
         return { text: '已批改', class: 'graded' };
       }

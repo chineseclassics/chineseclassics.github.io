@@ -20,8 +20,8 @@ class GradingUI {
         .from('essays')
         .select(`
           *,
-          user:users(display_name, email),
-          assignment:assignments(title, grading_rubric_json),
+          student:users!student_id(display_name, email),
+          assignment:assignments!assignment_id(title, grading_rubric_json),
           paragraphs(*),
           ai_feedback(*)
         `)
@@ -50,7 +50,7 @@ class GradingUI {
         <div class="grading-header">
           <div>
             <h2>${essay.assignment.title}</h2>
-            <p>学生：${essay.user.display_name} (${essay.user.email})</p>
+            <p>学生：${essay.student.display_name} (${essay.student.email})</p>
           </div>
           <button id="backBtn" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> 返回
