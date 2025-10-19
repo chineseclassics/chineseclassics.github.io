@@ -1,6 +1,6 @@
 /**
- * 班级管理模块
- * 负责老师端的班级创建、学生管理、班级统计等功能
+ * 班級管理模块
+ * 負責老師端的班級創建、學生管理、班級統計等功能
  */
 
 class ClassManager {
@@ -10,17 +10,17 @@ class ClassManager {
   }
 
   /**
-   * 初始化班级管理器
-   * 加载老师的班级信息
+   * 初始化班級管理器
+   * 加載老師的班級信息
    */
   async initialize() {
     try {
       const { data: { user } } = await this.supabase.auth.getUser();
       if (!user) {
-        throw new Error('用户未登录');
+        throw new Error('用户未登入');
       }
 
-      // 加载老师的班级（MVP 版本只支持单个班级）
+      // 加載老師的班級（MVP 版本只支持單個班級）
       const { data: classes, error } = await this.supabase
         .from('classes')
         .select('*')
@@ -33,30 +33,30 @@ class ClassManager {
       this.currentClass = classes && classes.length > 0 ? classes[0] : null;
       return this.currentClass;
     } catch (error) {
-      console.error('初始化班级管理器失败:', error);
+      console.error('初始化班級管理器失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 创建新班级
-   * @param {string} className - 班级名称
-   * @param {string} description - 班级描述（可选）
+   * 創建新班級
+   * @param {string} className - 班級名稱
+   * @param {string} description - 班級描述（可選）
    */
   async createClass(className, description = '') {
     try {
-      // MVP 版本：检查是否已有班级
+      // MVP 版本：檢查是否已有班級
       if (this.currentClass) {
-        throw new Error('MVP 版本仅支持单个班级，多班级功能即将推出');
+        throw new Error('MVP 版本僅支持單個班級，多班級功能即將推出');
       }
 
       if (!className || className.trim() === '') {
-        throw new Error('请输入班级名称');
+        throw new Error('請輸入班級名稱');
       }
 
       const { data: { user } } = await this.supabase.auth.getUser();
       if (!user) {
-        throw new Error('用户未登录');
+        throw new Error('用户未登入');
       }
 
       const { data, error } = await this.supabase
@@ -77,33 +77,33 @@ class ClassManager {
       this.currentClass = data;
       return data;
     } catch (error) {
-      console.error('创建班级失败:', error);
+      console.error('創建班級失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 批量添加学生
-   * @param {string} emailListText - 邮箱列表文本（换行或逗号分隔）
+   * 批量添加學生
+   * @param {string} emailListText - 郵箱列表文本（換行或逗號分隔）
    * @returns {Object} { validEmails, invalidEmails, duplicates, added }
    */
   async batchAddStudents(emailListText) {
     try {
       if (!this.currentClass) {
-        throw new Error('请先创建班级');
+        throw new Error('請先創建班級');
       }
 
-      // 解析邮箱列表
+      // 解析郵箱列表
       const emails = this.parseEmailList(emailListText);
       const validationResult = this.validateEmails(emails);
 
       const { validEmails, invalidEmails } = validationResult;
 
       if (validEmails.length === 0) {
-        throw new Error('没有有效的邮箱地址');
+        throw new Error('没有有效的郵箱地址');
       }
 
-      // 检查已存在的学生（包括 active 和 pending）
+      // 檢查已存在的學生（包括 active 和 pending）
       const { data: activeMembers } = await this.supabase
         .from('class_members')
         .select('student:users!student_id(email)')
@@ -122,7 +122,7 @@ class ClassManager {
       const duplicates = validEmails.filter(email => existingEmails.has(email));
       const newEmails = validEmails.filter(email => !existingEmails.has(email));
 
-      // 为新邮箱创建或查找用户记录
+      // 為新郵箱創建或查找用户記錄
       const addedCount = await this.addStudentsToClass(newEmails);
 
       return {
@@ -133,20 +133,20 @@ class ClassManager {
         invalidList: invalidEmails
       };
     } catch (error) {
-      console.error('批量添加学生失败:', error);
+      console.error('批量添加學生失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 解析邮箱列表文本
-   * @param {string} text - 邮箱列表文本
-   * @returns {Array} 邮箱数组
+   * 解析郵箱列表文本
+   * @param {string} text - 郵箱列表文本
+   * @returns {Array} 郵箱数組
    */
   parseEmailList(text) {
     if (!text) return [];
 
-    // 按换行或逗号分隔，去除空白，过滤空字符串
+    // 按換行或逗號分隔，去除空白，過滤空字符串
     return text
       .split(/[\n,]/)
       .map(email => email.trim().toLowerCase())
@@ -154,8 +154,8 @@ class ClassManager {
   }
 
   /**
-   * 验证邮箱列表
-   * @param {Array} emails - 邮箱数组
+   * 驗證郵箱列表
+   * @param {Array} emails - 郵箱数組
    * @returns {Object} { validEmails, invalidEmails }
    */
   validateEmails(emails) {
@@ -175,9 +175,9 @@ class ClassManager {
   }
 
   /**
-   * 添加学生到班级（方案 A：使用 pending_students 表）
-   * @param {Array} emails - 学生邮箱数组
-   * @returns {number} 成功添加的学生数
+   * 添加學生到班級（方案 A：使用 pending_students 表）
+   * @param {Array} emails - 學生郵箱数組
+   * @returns {number} 成功添加的學生数
    */
   async addStudentsToClass(emails) {
     if (emails.length === 0) return 0;
@@ -200,39 +200,39 @@ class ClassManager {
             ]);
 
           if (addError) {
-            // 如果是唯一约束冲突（邮箱已存在），跳过
+            // 如果是唯一約束冲突（郵箱已存在），跳過
             if (addError.code === '23505') {
-              console.log(`邮箱 ${email} 已在待加入列表中`);
+              console.log(`郵箱 ${email} 已在待加入列表中`);
             } else {
-              console.warn(`添加邮箱 ${email} 失败:`, addError);
+              console.warn(`添加郵箱 ${email} 失敗:`, addError);
             }
             continue;
           }
 
           addedCount++;
         } catch (emailError) {
-          console.warn(`处理邮箱 ${email} 时出错:`, emailError);
+          console.warn(`處理郵箱 ${email} 時出错:`, emailError);
         }
       }
 
       return addedCount;
     } catch (error) {
-      console.error('添加学生到班级失败:', error);
+      console.error('添加學生到班級失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 获取班级成员列表（包括 active 和 pending 学生）
-   * @returns {Array} 学生列表
+   * 獲取班級成员列表（包括 active 和 pending 學生）
+   * @returns {Array} 學生列表
    */
   async getClassMembers() {
     try {
       if (!this.currentClass) {
-        throw new Error('未找到班级');
+        throw new Error('未找到班級');
       }
 
-      // 获取已激活的学生（已登录）
+      // 獲取已激活的學生（已登入）
       const { data: activeMembers, error: activeError } = await this.supabase
         .from('class_members')
         .select(`
@@ -252,7 +252,7 @@ class ClassManager {
 
       if (activeError) throw activeError;
 
-      // 获取待激活的学生（老师添加但未登录）
+      // 獲取待激活的學生（老師添加但未登入）
       const { data: pendingStudents, error: pendingError } = await this.supabase
         .from('pending_students')
         .select('id, email, added_at, added_by')
@@ -261,7 +261,7 @@ class ClassManager {
 
       if (pendingError) throw pendingError;
 
-      // 合并并丰富数据
+      // 合并并丰富數據
       const activeEnriched = await Promise.all(
         (activeMembers || []).map(async member => {
           const activityStatus = this.calculateActivityStatus(member.student.last_login_at);
@@ -295,22 +295,22 @@ class ClassManager {
         addedAt: pending.added_at
       }));
 
-      // 合并两个列表
+      // 合并兩個列表
       const allMembers = [...activeEnriched, ...pendingEnriched];
 
-      // 按添加时间排序
+      // 按添加時間排序
       allMembers.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
 
       return allMembers;
     } catch (error) {
-      console.error('获取班级成员失败:', error);
+      console.error('獲取班級成员失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 计算学生活跃状态
-   * @param {string} lastLoginAt - 最后登录时间
+   * 計算學生活躍狀態
+   * @param {string} lastLoginAt - 最後登入時間
    * @returns {string} 'active' | 'inactive' | 'dormant' | 'pending'
    */
   calculateActivityStatus(lastLoginAt) {
@@ -326,13 +326,13 @@ class ClassManager {
   }
 
   /**
-   * 获取学生的作业进度
-   * @param {string} userId - 学生 ID
+   * 獲取學生的作業進度
+   * @param {string} userId - 學生 ID
    * @returns {Object} { completed, total }
    */
   async getStudentAssignmentProgress(userId) {
     try {
-      // 获取班级的所有任务
+      // 獲取班級的所有任務
       const { data: assignments, error: assignmentsError } = await this.supabase
         .from('assignments')
         .select('id')
@@ -346,7 +346,7 @@ class ClassManager {
         return { completed: 0, total: 0 };
       }
 
-      // 获取学生已完成的作业
+      // 獲取學生已完成的作業
       const { data: essays, error: essaysError } = await this.supabase
         .from('essays')
         .select('id')
@@ -363,20 +363,20 @@ class ClassManager {
         total: totalAssignments
       };
     } catch (error) {
-      console.error('获取学生作业进度失败:', error);
+      console.error('獲取學生作業進度失敗:', error);
       return { completed: 0, total: 0 };
     }
   }
 
   /**
-   * 从班级移除学生
-   * @param {string} memberId - 成员记录 ID
-   * @param {boolean} isPending - 是否为待激活学生
+   * 從班級移除學生
+   * @param {string} memberId - 成员記錄 ID
+   * @param {boolean} isPending - 是否為待激活學生
    */
   async removeStudent(memberId, isPending = false) {
     try {
       if (isPending) {
-        // 删除 pending_students 记录
+        // 刪除 pending_students 記錄
         const { error } = await this.supabase
           .from('pending_students')
           .delete()
@@ -385,7 +385,7 @@ class ClassManager {
 
         if (error) throw error;
       } else {
-        // 删除 class_members 记录
+        // 刪除 class_members 記錄
         const { error } = await this.supabase
           .from('class_members')
           .delete()
@@ -397,18 +397,18 @@ class ClassManager {
 
       return true;
     } catch (error) {
-      console.error('移除学生失败:', error);
+      console.error('移除學生失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 停用班级
+   * 停用班級
    */
   async deactivateClass() {
     try {
       if (!this.currentClass) {
-        throw new Error('未找到班级');
+        throw new Error('未找到班級');
       }
 
       const { error } = await this.supabase
@@ -421,18 +421,18 @@ class ClassManager {
       this.currentClass.is_active = false;
       return true;
     } catch (error) {
-      console.error('停用班级失败:', error);
+      console.error('停用班級失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 激活班级
+   * 激活班級
    */
   async activateClass() {
     try {
       if (!this.currentClass) {
-        throw new Error('未找到班级');
+        throw new Error('未找到班級');
       }
 
       const { error } = await this.supabase
@@ -445,22 +445,22 @@ class ClassManager {
       this.currentClass.is_active = true;
       return true;
     } catch (error) {
-      console.error('激活班级失败:', error);
+      console.error('激活班級失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 获取班级统计数据
-   * @returns {Object} 班级统计信息
+   * 獲取班級統計數據
+   * @returns {Object} 班級統計信息
    */
   async getClassStatistics() {
     try {
       if (!this.currentClass) {
-        throw new Error('未找到班级');
+        throw new Error('未找到班級');
       }
 
-      // 获取学生总数（active + pending）
+      // 獲取學生總數（active + pending）
       const { count: activeStudentsCount } = await this.supabase
         .from('class_members')
         .select('*', { count: 'exact', head: true })
@@ -473,7 +473,7 @@ class ClassManager {
 
       const totalStudents = (activeStudentsCount || 0) + (pendingStudentsCount || 0);
 
-      // 获取活跃学生数（最近 7 天登录）
+      // 獲取活躍學生数（最近 7 天登入）
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -485,7 +485,7 @@ class ClassManager {
 
       if (activeError) throw activeError;
 
-      // 获取任务总数
+      // 獲取任務總數
       const { count: totalAssignments, error: assignmentsError } = await this.supabase
         .from('assignments')
         .select('*', { count: 'exact', head: true })
@@ -493,8 +493,8 @@ class ClassManager {
 
       if (assignmentsError) throw assignmentsError;
 
-      // 获取待批改作业数
-      // 先获取该班级的所有任务ID
+      // 獲取待批改作業数
+      // 先獲取該班級的所有任務ID
       const assignmentIds = totalAssignments > 0
         ? (await this.supabase
             .from('assignments')
@@ -513,13 +513,13 @@ class ClassManager {
           .is('graded_at', null);
 
         if (pendingError) {
-          console.warn('获取待批改作业数失败:', pendingError);
+          console.warn('獲取待批改作業数失敗:', pendingError);
         } else {
           pendingGrading = count || 0;
         }
       }
 
-      // 计算平均完成率（只计算已激活的学生）
+      // 計算平均完成率（只計算已激活的學生）
       let averageCompletion = 0;
       if (activeStudentsCount > 0 && totalAssignments > 0 && assignmentIds.length > 0) {
         const { count: completedEssays, error: completedError } = await this.supabase
@@ -541,7 +541,7 @@ class ClassManager {
         averageCompletion: averageCompletion
       };
     } catch (error) {
-      console.error('获取班级统计失败:', error);
+      console.error('獲取班級統計失敗:', error);
       return {
         totalStudents: 0,
         activeStudents: 0,

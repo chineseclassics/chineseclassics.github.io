@@ -1,6 +1,6 @@
 /**
- * 班级管理 UI 组件
- * 负责渲染班级管理界面和处理用户交互
+ * 班級管理 UI 組件
+ * 負責渲染班級管理界面和處理用户交互
  */
 
 import ClassManager from './class-manager.js';
@@ -18,7 +18,7 @@ class ClassUI {
   async initialize(container) {
     this.container = container;
     
-    // 加载班级信息
+    // 加載班級信息
     await this.classManager.initialize();
 
     // 渲染界面
@@ -26,71 +26,71 @@ class ClassUI {
   }
 
   /**
-   * 渲染班级管理界面
+   * 渲染班級管理界面
    */
   async render() {
     if (!this.container) {
-      console.error('未设置容器元素');
+      console.error('未設置容器元素');
       return;
     }
 
     if (!this.classManager.currentClass) {
-      // 未创建班级，显示创建表单
+      // 未創建班級，顯示創建表單
       this.renderCreateClassForm();
     } else {
-      // 已有班级，显示班级管理界面
+      // 已有班級，顯示班級管理界面
       await this.renderClassDashboard();
     }
   }
 
   /**
-   * 渲染创建班级表单
+   * 渲染創建班級表單
    */
   renderCreateClassForm() {
     this.container.innerHTML = `
       <div class="create-class-container">
         <div class="create-class-card">
-          <h2>创建班级</h2>
-          <p class="text-muted">创建班级以开始管理学生和布置写作任务</p>
+          <h2>創建班級</h2>
+          <p class="text-muted">創建班級以開始管理學生和布置寫作任務</p>
           
           <form id="createClassForm" class="create-class-form">
             <div class="form-group">
-              <label for="className">班级名称 <span class="required">*</span></label>
+              <label for="className">班級名稱 <span class="required">*</span></label>
               <input
                 type="text"
                 id="className"
                 name="className"
-                placeholder="例如：十年级A班"
+                placeholder="例如：十年級A班"
                 required
                 maxlength="100"
               />
             </div>
 
             <div class="form-group">
-              <label for="classDescription">班级描述（可选）</label>
+              <label for="classDescription">班級描述（可選）</label>
               <textarea
                 id="classDescription"
                 name="classDescription"
-                placeholder="例如：2024-2025 学年 十年级 中国古典文学"
+                placeholder="例如：2024-2025 學年 十年級 中國古典文學"
                 rows="3"
                 maxlength="500"
               ></textarea>
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary">创建班级</button>
+              <button type="submit" class="btn btn-primary">創建班級</button>
             </div>
 
             <p class="mvp-notice">
               <i class="fas fa-info-circle"></i>
-              MVP 版本仅支持单个班级，多班级功能即将推出
+              MVP 版本僅支持單個班級，多班級功能即將推出
             </p>
           </form>
         </div>
       </div>
     `;
 
-    // 绑定表单提交事件（使用容器的 querySelector）
+    // 綁定表單提交事件（使用容器的 querySelector）
     const form = this.container.querySelector('#createClassForm');
     if (form) {
       form.addEventListener('submit', (e) => this.handleCreateClass(e));
@@ -98,7 +98,7 @@ class ClassUI {
   }
 
   /**
-   * 处理创建班级表单提交
+   * 處理創建班級表單提交
    */
   async handleCreateClass(event) {
     event.preventDefault();
@@ -108,32 +108,32 @@ class ClassUI {
     const description = form.classDescription.value.trim();
 
     try {
-      // 显示加载状态
+      // 顯示加載狀態
       const submitBtn = form.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 创建中...';
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 創建中...';
 
-      // 创建班级
+      // 創建班級
       await this.classManager.createClass(className, description);
 
-      // 显示成功消息
-      this.showToast('success', '班级创建成功！');
+      // 顯示成功消息
+      this.showToast('success', '班級創建成功！');
 
       // 重新渲染界面
       await this.render();
     } catch (error) {
-      console.error('创建班级失败:', error);
-      this.showToast('error', error.message || '创建班级失败，请重试');
+      console.error('創建班級失敗:', error);
+      this.showToast('error', error.message || '創建班級失敗，請重試');
 
-      // 恢复按钮状态
+      // 恢复按鈕狀態
       const submitBtn = form.querySelector('button[type="submit"]');
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '创建班级';
+      submitBtn.innerHTML = '創建班級';
     }
   }
 
   /**
-   * 渲染班级管理仪表板
+   * 渲染班級管理儀表板
    */
   async renderClassDashboard() {
     const classInfo = this.classManager.currentClass;
@@ -142,7 +142,7 @@ class ClassUI {
 
     this.container.innerHTML = `
       <div class="class-dashboard">
-        <!-- 班级概览 -->
+        <!-- 班級概覽 -->
         <div class="class-header">
           <div class="class-info">
             <h2>${this.escapeHtml(classInfo.class_name)}</h2>
@@ -150,16 +150,16 @@ class ClassUI {
           </div>
           <div class="class-actions">
             <button id="addStudentsBtn" class="btn btn-primary">
-              <i class="fas fa-user-plus"></i> 批量添加学生
+              <i class="fas fa-user-plus"></i> 批量添加學生
             </button>
             ${classInfo.is_active
-              ? '<button id="deactivateBtn" class="btn btn-secondary"><i class="fas fa-pause"></i> 停用班级</button>'
-              : '<button id="activateBtn" class="btn btn-success"><i class="fas fa-play"></i> 激活班级</button>'
+              ? '<button id="deactivateBtn" class="btn btn-secondary"><i class="fas fa-pause"></i> 停用班級</button>'
+              : '<button id="activateBtn" class="btn btn-success"><i class="fas fa-play"></i> 激活班級</button>'
             }
           </div>
         </div>
 
-        <!-- 统计卡片 -->
+        <!-- 統計卡片 -->
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon">
@@ -167,7 +167,7 @@ class ClassUI {
             </div>
             <div class="stat-content">
               <div class="stat-value">${stats.totalStudents}</div>
-              <div class="stat-label">学生总数</div>
+              <div class="stat-label">學生總數</div>
             </div>
           </div>
 
@@ -177,8 +177,8 @@ class ClassUI {
             </div>
             <div class="stat-content">
               <div class="stat-value">${stats.activeStudents}</div>
-              <div class="stat-label">活跃学生</div>
-              <div class="stat-sublabel">最近 7 天登录</div>
+              <div class="stat-label">活躍學生</div>
+              <div class="stat-sublabel">最近 7 天登入</div>
             </div>
           </div>
 
@@ -188,7 +188,7 @@ class ClassUI {
             </div>
             <div class="stat-content">
               <div class="stat-value">${stats.totalAssignments}</div>
-              <div class="stat-label">任务总数</div>
+              <div class="stat-label">任務總數</div>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ class ClassUI {
             </div>
             <div class="stat-content">
               <div class="stat-value">${stats.pendingGrading}</div>
-              <div class="stat-label">待批改作业</div>
+              <div class="stat-label">待批改作業</div>
             </div>
           </div>
 
@@ -213,16 +213,16 @@ class ClassUI {
           </div>
         </div>
 
-        <!-- 学生列表 -->
+        <!-- 學生列表 -->
         <div class="students-section">
           <div class="section-header">
-            <h3>学生列表</h3>
+            <h3>學生列表</h3>
             <div class="search-box">
               <i class="fas fa-search"></i>
               <input
                 type="text"
                 id="studentSearch"
-                placeholder="搜索学生姓名或邮箱..."
+                placeholder="搜索學生姓名或郵箱..."
               />
             </div>
           </div>
@@ -233,21 +233,21 @@ class ClassUI {
         </div>
       </div>
 
-      <!-- 批量添加学生模态框 -->
+      <!-- 批量添加學生模态框 -->
       <div id="addStudentsModal" class="modal" style="display: none;">
         <div class="modal-content">
           <div class="modal-header">
-            <h3>批量添加学生</h3>
+            <h3>批量添加學生</h3>
             <button class="modal-close" id="closeModalBtn">
               <i class="fas fa-times"></i>
             </button>
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label>学生邮箱列表</label>
+              <label>學生郵箱列表</label>
               <textarea
                 id="emailListInput"
-                placeholder="请输入学生邮箱，每行一个或用逗号分隔
+                placeholder="請輸入學生郵箱，每行一個或用逗號分隔
 
 例如：
 3015174@student.isf.edu.hk
@@ -255,31 +255,31 @@ class ClassUI {
 3015176@student.isf.edu.hk"
                 rows="10"
               ></textarea>
-              <p class="help-text">仅支持 @student.isf.edu.hk 邮箱</p>
+              <p class="help-text">僅支持 @student.isf.edu.hk 郵箱</p>
             </div>
           </div>
           <div class="modal-footer">
             <button id="cancelAddBtn" class="btn btn-secondary">取消</button>
-            <button id="confirmAddBtn" class="btn btn-primary">添加学生</button>
+            <button id="confirmAddBtn" class="btn btn-primary">添加學生</button>
           </div>
         </div>
       </div>
     `;
 
-    // 绑定事件
+    // 綁定事件
     this.bindDashboardEvents(members);
   }
 
   /**
-   * 渲染学生表格
+   * 渲染學生表格
    */
   renderStudentsTable(members) {
     if (members.length === 0) {
       return `
         <div class="empty-state">
           <i class="fas fa-users"></i>
-          <p>还没有学生</p>
-          <p class="text-muted">点击"批量添加学生"按钮添加学生到班级</p>
+          <p>還沒有學生</p>
+          <p class="text-muted">點擊"批量添加學生"按鈕添加學生到班級</p>
         </div>
       `;
     }
@@ -289,11 +289,11 @@ class ClassUI {
         <thead>
           <tr>
             <th data-sort="displayName">姓名 <i class="fas fa-sort"></i></th>
-            <th data-sort="email">邮箱 <i class="fas fa-sort"></i></th>
-            <th data-sort="status">状态 <i class="fas fa-sort"></i></th>
-            <th data-sort="activityStatus">活跃度 <i class="fas fa-sort"></i></th>
-            <th>作业进度</th>
-            <th data-sort="addedAt">加入时间 <i class="fas fa-sort"></i></th>
+            <th data-sort="email">郵箱 <i class="fas fa-sort"></i></th>
+            <th data-sort="status">狀態 <i class="fas fa-sort"></i></th>
+            <th data-sort="activityStatus">活躍度 <i class="fas fa-sort"></i></th>
+            <th>作業進度</th>
+            <th data-sort="addedAt">加入時間 <i class="fas fa-sort"></i></th>
             <th>操作</th>
           </tr>
         </thead>
@@ -305,11 +305,11 @@ class ClassUI {
   }
 
   /**
-   * 渲染单个学生行
+   * 渲染單個學生行
    */
   renderStudentRow(member) {
     const activityBadge = this.getActivityBadge(member.activityStatus);
-    const statusBadge = member.status === 'active' ? '已登录' : member.isPending ? '待激活' : '未登录';
+    const statusBadge = member.status === 'active' ? '已登入' : member.isPending ? '待激活' : '未登入';
     const addedDate = new Date(member.addedAt).toLocaleDateString('zh-CN');
 
     return `
@@ -337,7 +337,7 @@ class ClassUI {
             data-member-id="${member.id}"
             data-student-name="${this.escapeHtml(member.displayName)}"
             data-is-pending="${member.isPending || false}"
-            title="移除学生"
+            title="移除學生"
           >
             <i class="fas fa-trash"></i>
           </button>
@@ -347,23 +347,23 @@ class ClassUI {
   }
 
   /**
-   * 获取活跃度徽章
+   * 獲取活躍度徽章
    */
   getActivityBadge(status) {
     const badges = {
       pending: '<span class="activity-badge pending">⚪ 待激活</span>',
-      active: '<span class="activity-badge active">🟢 活跃</span>',
-      inactive: '<span class="activity-badge inactive">🟡 不活跃</span>',
-      dormant: '<span class="activity-badge dormant">🔴 长期未登录</span>'
+      active: '<span class="activity-badge active">🟢 活躍</span>',
+      inactive: '<span class="activity-badge inactive">🟡 不活躍</span>',
+      dormant: '<span class="activity-badge dormant">🔴 長期未登入</span>'
     };
     return badges[status] || badges.dormant;
   }
 
   /**
-   * 绑定仪表板事件
+   * 綁定儀表板事件
    */
   bindDashboardEvents(members) {
-    // 批量添加学生按钮
+    // 批量添加學生按鈕
     const addStudentsBtn = this.container.querySelector('#addStudentsBtn');
     if (addStudentsBtn) {
       addStudentsBtn.addEventListener('click', () => {
@@ -372,7 +372,7 @@ class ClassUI {
       });
     }
 
-    // 模态框关闭按钮（X）
+    // 模态框關闭按鈕（X）
     const closeModalBtn = this.container.querySelector('#closeModalBtn');
     if (closeModalBtn) {
       closeModalBtn.addEventListener('click', () => {
@@ -383,7 +383,7 @@ class ClassUI {
       });
     }
 
-    // 模态框取消按钮
+    // 模态框取消按鈕
     const cancelAddBtn = this.container.querySelector('#cancelAddBtn');
     if (cancelAddBtn) {
       cancelAddBtn.addEventListener('click', () => {
@@ -394,13 +394,13 @@ class ClassUI {
       });
     }
 
-    // 模态框确认按钮
+    // 模态框确認按鈕
     const confirmAddBtn = this.container.querySelector('#confirmAddBtn');
     if (confirmAddBtn) {
       confirmAddBtn.addEventListener('click', () => this.handleBatchAddStudents());
     }
 
-    // 停用/激活班级
+    // 停用/激活班級
     const deactivateBtn = this.container.querySelector('#deactivateBtn');
     if (deactivateBtn) {
       deactivateBtn.addEventListener('click', () => this.handleDeactivateClass());
@@ -411,7 +411,7 @@ class ClassUI {
       activateBtn.addEventListener('click', () => this.handleActivateClass());
     }
 
-    // 移除学生按钮
+    // 移除學生按鈕
     const removeButtons = this.container.querySelectorAll('.remove-student-btn');
     removeButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -441,14 +441,14 @@ class ClassUI {
   }
 
   /**
-   * 处理批量添加学生
+   * 處理批量添加學生
    */
   async handleBatchAddStudents() {
     const emailListInput = this.container.querySelector('#emailListInput');
     const confirmBtn = this.container.querySelector('#confirmAddBtn');
 
     if (!emailListInput || !confirmBtn) {
-      console.error('找不到表单元素');
+      console.error('找不到表單元素');
       return;
     }
 
@@ -456,29 +456,29 @@ class ClassUI {
       const emailListText = emailListInput.value.trim();
       
       if (!emailListText) {
-        this.showToast('warning', '请输入学生邮箱列表');
+        this.showToast('warning', '請輸入學生郵箱列表');
         return;
       }
 
-      // 显示加载状态
+      // 顯示加載狀態
       confirmBtn.disabled = true;
       confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 添加中...';
 
       // 批量添加
       const result = await this.classManager.batchAddStudents(emailListText);
 
-      // 关闭模态框
+      // 關闭模态框
       const modal = this.container.querySelector('#addStudentsModal');
       if (modal) modal.style.display = 'none';
       emailListInput.value = '';
 
-      // 显示结果
-      let message = `成功添加 ${result.added} 名学生`;
+      // 顯示結果
+      let message = `成功添加 ${result.added} 名學生`;
       if (result.duplicates > 0) {
-        message += `，${result.duplicates} 个重复已跳过`;
+        message += `，${result.duplicates} 個重复已跳過`;
       }
       if (result.invalidEmails > 0) {
-        message += `，${result.invalidEmails} 个无效邮箱已忽略`;
+        message += `，${result.invalidEmails} 個無效郵箱已忽略`;
       }
 
       this.showToast('success', message);
@@ -486,21 +486,21 @@ class ClassUI {
       // 刷新界面
       await this.render();
     } catch (error) {
-      console.error('批量添加学生失败:', error);
-      this.showToast('error', error.message || '添加学生失败');
+      console.error('批量添加學生失敗:', error);
+      this.showToast('error', error.message || '添加學生失敗');
     } finally {
       confirmBtn.disabled = false;
-      confirmBtn.innerHTML = '添加学生';
+      confirmBtn.innerHTML = '添加學生';
     }
   }
 
   /**
-   * 处理移除学生
+   * 處理移除學生
    */
   async handleRemoveStudent(memberId, studentName, isPending) {
     const message = isPending
-      ? `确定移除待激活邮箱 ${studentName}？`
-      : `确定将 ${studentName} 移出班级？\n\n学生的作业记录将保留，但将无法访问班级任务。`;
+      ? `確定移除待激活郵箱 ${studentName}？`
+      : `確定將 ${studentName} 移出班級？\n\n學生的作業記錄將保留，但將無法访问班級任務。`;
     
     const confirmed = confirm(message);
     
@@ -508,50 +508,50 @@ class ClassUI {
 
     try {
       await this.classManager.removeStudent(memberId, isPending);
-      this.showToast('success', isPending ? '已移除待激活邮箱' : `已将 ${studentName} 移出班级`);
+      this.showToast('success', isPending ? '已移除待激活郵箱' : `已將 ${studentName} 移出班級`);
       
       // 刷新界面
       await this.render();
     } catch (error) {
-      console.error('移除学生失败:', error);
-      this.showToast('error', '移除学生失败，请重试');
+      console.error('移除學生失敗:', error);
+      this.showToast('error', '移除學生失敗，請重試');
     }
   }
 
   /**
-   * 处理停用班级
+   * 處理停用班級
    */
   async handleDeactivateClass() {
-    const confirmed = confirm('确定停用班级？\n\n学生将无法提交新作业，但可以查看现有作业。');
+    const confirmed = confirm('確定停用班級？\n\n學生將無法提交新作業，但可以查看現有作業。');
     
     if (!confirmed) return;
 
     try {
       await this.classManager.deactivateClass();
-      this.showToast('success', '班级已停用');
+      this.showToast('success', '班級已停用');
       await this.render();
     } catch (error) {
-      console.error('停用班级失败:', error);
-      this.showToast('error', '停用班级失败');
+      console.error('停用班級失敗:', error);
+      this.showToast('error', '停用班級失敗');
     }
   }
 
   /**
-   * 处理激活班级
+   * 處理激活班級
    */
   async handleActivateClass() {
     try {
       await this.classManager.activateClass();
-      this.showToast('success', '班级已激活');
+      this.showToast('success', '班級已激活');
       await this.render();
     } catch (error) {
-      console.error('激活班级失败:', error);
-      this.showToast('error', '激活班级失败');
+      console.error('激活班級失敗:', error);
+      this.showToast('error', '激活班級失敗');
     }
   }
 
   /**
-   * 过滤学生列表
+   * 過滤學生列表
    */
   filterStudents(searchTerm, members) {
     const term = searchTerm.toLowerCase();
@@ -572,19 +572,19 @@ class ClassUI {
   }
 
   /**
-   * 排序学生列表
+   * 排序學生列表
    */
   sortStudents(sortKey, members) {
-    // 实现排序逻辑（这里简化处理，实际应该重新渲染）
+    // 實現排序逻輯（這里简化處理，实際應該重新渲染）
     console.log('排序:', sortKey);
-    // TODO: 实现排序并重新渲染
+    // TODO: 實現排序并重新渲染
   }
 
   /**
-   * 显示提示消息
+   * 顯示提示消息
    */
   showToast(type, message) {
-    // 简单的提示实现
+    // 简單的提示實現
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
@@ -605,7 +605,7 @@ class ClassUI {
   }
 
   /**
-   * HTML 转义
+   * HTML 轉義
    */
   escapeHtml(unsafe) {
     if (unsafe === null || unsafe === undefined) {

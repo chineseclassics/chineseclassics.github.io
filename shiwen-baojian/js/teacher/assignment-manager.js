@@ -1,6 +1,6 @@
 /**
- * 任务管理模块
- * 负责老师端的任务创建、编辑、删除、发布等功能
+ * 任務管理模块
+ * 負責老師端的任務創建、編輯、刪除、發佈等功能
  */
 
 class AssignmentManager {
@@ -11,18 +11,18 @@ class AssignmentManager {
   }
 
   /**
-   * 初始化任务管理器
+   * 初始化任務管理器
    */
   async initialize() {
     try {
       const { data: { user } } = await this.supabase.auth.getUser();
       if (!user) {
-        throw new Error('用户未登录');
+        throw new Error('用户未登入');
       }
 
       this.currentUser = user;
 
-      // 加载老师的班级
+      // 加載老師的班級
       const { data: classes, error } = await this.supabase
         .from('classes')
         .select('*')
@@ -33,21 +33,21 @@ class AssignmentManager {
       if (error) throw error;
 
       if (!classes || classes.length === 0) {
-        throw new Error('请先创建班级');
+        throw new Error('請先創建班級');
       }
 
       this.currentClass = classes[0];
       return true;
     } catch (error) {
-      console.error('初始化任务管理器失败:', error);
+      console.error('初始化任務管理器失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 创建新任务
-   * @param {Object} assignmentData - 任务数据
-   * @returns {Object} 创建的任务
+   * 創建新任務
+   * @param {Object} assignmentData - 任務數據
+   * @returns {Object} 創建的任務
    */
   async createAssignment(assignmentData) {
     try {
@@ -60,21 +60,21 @@ class AssignmentManager {
         isDraft = true
       } = assignmentData;
 
-      // 验证必需字段
+      // 驗證必需字段
       if (!title || !title.trim()) {
-        throw new Error('请输入任务标题');
+        throw new Error('請輸入任務標題');
       }
 
       if (!dueDate) {
-        throw new Error('请设置截止日期');
+        throw new Error('請設置截止日期');
       }
 
       if (!formatSpecJson) {
-        throw new Error('请选择或设置格式要求');
+        throw new Error('請選擇或設置格式要求');
       }
 
       if (!gradingRubricJson) {
-        throw new Error('请选择或设置评分标准');
+        throw new Error('請選擇或設置評分標準');
       }
 
       const { data, error } = await this.supabase
@@ -99,15 +99,15 @@ class AssignmentManager {
 
       return data;
     } catch (error) {
-      console.error('创建任务失败:', error);
+      console.error('創建任務失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 获取任务列表
-   * @param {Object} filters - 筛选条件
-   * @returns {Array} 任务列表
+   * 獲取任務列表
+   * @param {Object} filters - 筛选條件
+   * @returns {Array} 任務列表
    */
   async getAssignments(filters = {}) {
     try {
@@ -115,13 +115,12 @@ class AssignmentManager {
         .from('assignments')
         .select(`
           *,
-          class:classes(id, name),
-          essay_stats:essays(count)
+          class:classes(id, class_name)
         `)
         .eq('teacher_id', this.currentUser.id)
         .order('created_at', { ascending: false });
 
-      // 应用筛选
+      // 應用筛选
       if (filters.status === 'draft') {
         query = query.eq('is_published', false);
       } else if (filters.status === 'published') {
@@ -136,7 +135,7 @@ class AssignmentManager {
 
       if (error) throw error;
 
-      // 为每个任务计算额外统计信息
+      // 為每個任務計算额外統計信息
       const enrichedAssignments = await Promise.all(
         data.map(async assignment => {
           const stats = await this.getAssignmentStats(assignment.id);
@@ -149,15 +148,15 @@ class AssignmentManager {
 
       return enrichedAssignments;
     } catch (error) {
-      console.error('获取任务列表失败:', error);
+      console.error('獲取任務列表失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 获取单个任务详情
-   * @param {string} assignmentId - 任务 ID
-   * @returns {Object} 任务详情
+   * 獲取單個任務詳情
+   * @param {string} assignmentId - 任務 ID
+   * @returns {Object} 任務詳情
    */
   async getAssignment(assignmentId) {
     try {
@@ -165,7 +164,7 @@ class AssignmentManager {
         .from('assignments')
         .select(`
           *,
-          class:classes(id, name)
+          class:classes(id, class_name)
         `)
         .eq('id', assignmentId)
         .eq('teacher_id', this.currentUser.id)
@@ -175,27 +174,27 @@ class AssignmentManager {
 
       return data;
     } catch (error) {
-      console.error('获取任务详情失败:', error);
+      console.error('獲取任務詳情失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 更新任务
-   * @param {string} assignmentId - 任务 ID
-   * @param {Object} updates - 更新数据
-   * @returns {Object} 更新后的任务
+   * 更新任務
+   * @param {string} assignmentId - 任務 ID
+   * @param {Object} updates - 更新數據
+   * @returns {Object} 更新後的任務
    */
   async updateAssignment(assignmentId, updates) {
     try {
-      // 检查任务是否存在
+      // 檢查任務是否存在
       const existing = await this.getAssignment(assignmentId);
 
       if (!existing) {
-        throw new Error('任务不存在');
+        throw new Error('任務不存在');
       }
 
-      // 如果任务已发布且有学生提交，警告但允许更新
+      // 如果任務已發佈且有學生提交，警告但允許更新
       if (existing.is_published && !updates.confirmUpdate) {
         const { count } = await this.supabase
           .from('essays')
@@ -219,22 +218,22 @@ class AssignmentManager {
 
       return data;
     } catch (error) {
-      console.error('更新任务失败:', error);
+      console.error('更新任務失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 发布任务（从草稿转为发布状态）
-   * @param {string} assignmentId - 任务 ID
-   * @returns {Object} 更新后的任务
+   * 發佈任務（從草稿轉為發佈狀態）
+   * @param {string} assignmentId - 任務 ID
+   * @returns {Object} 更新後的任務
    */
   async publishAssignment(assignmentId) {
     try {
       const assignment = await this.getAssignment(assignmentId);
 
       if (assignment.is_published) {
-        throw new Error('任务已经发布');
+        throw new Error('任務已經發佈');
       }
 
       const { data, error } = await this.supabase
@@ -249,20 +248,20 @@ class AssignmentManager {
 
       return data;
     } catch (error) {
-      console.error('发布任务失败:', error);
+      console.error('發佈任務失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 删除任务
-   * @param {string} assignmentId - 任务 ID
-   * @param {boolean} confirmed - 是否已确认删除
-   * @returns {boolean} 删除成功
+   * 刪除任務
+   * @param {string} assignmentId - 任務 ID
+   * @param {boolean} confirmed - 是否已确認刪除
+   * @returns {boolean} 刪除成功
    */
   async deleteAssignment(assignmentId, confirmed = false) {
     try {
-      // 检查是否有学生提交
+      // 檢查是否有學生提交
       const { count: essayCount } = await this.supabase
         .from('essays')
         .select('*', { count: 'exact', head: true })
@@ -282,22 +281,22 @@ class AssignmentManager {
 
       return true;
     } catch (error) {
-      console.error('删除任务失败:', error);
+      console.error('刪除任務失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 复制任务
-   * @param {string} assignmentId - 要复制的任务 ID
-   * @returns {Object} 新任务
+   * 複製任務
+   * @param {string} assignmentId - 要複製的任務 ID
+   * @returns {Object} 新任務
    */
   async duplicateAssignment(assignmentId) {
     try {
       const original = await this.getAssignment(assignmentId);
 
       if (!original) {
-        throw new Error('任务不存在');
+        throw new Error('任務不存在');
       }
 
       const duplicatedData = {
@@ -306,46 +305,46 @@ class AssignmentManager {
         formatSpecJson: original.format_spec_json,
         gradingRubricJson: original.grading_rubric_json,
         isDraft: true,
-        dueDate: null // 需要老师重新设置
+        dueDate: null // 需要老師重新設置
       };
 
       const newAssignment = await this.createAssignment(duplicatedData);
 
       return newAssignment;
     } catch (error) {
-      console.error('复制任务失败:', error);
+      console.error('複製任務失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 获取任务统计数据
-   * @param {string} assignmentId - 任务 ID
-   * @returns {Object} 统计数据
+   * 獲取任務統計數據
+   * @param {string} assignmentId - 任務 ID
+   * @returns {Object} 統計數據
    */
   async getAssignmentStats(assignmentId) {
     try {
-      // 获取班级学生总数
+      // 獲取班級學生總數（只計算已激活的學生）
       const { count: totalStudents } = await this.supabase
         .from('class_members')
         .select('*', { count: 'exact', head: true })
         .eq('class_id', this.currentClass.id);
 
-      // 获取已提交的作业数
+      // 獲取已提交的作業数
       const { count: submitted } = await this.supabase
         .from('essays')
         .select('*', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
         .eq('status', 'submitted');
 
-      // 获取已批改的作业数
+      // 獲取已批改的作業数
       const { count: graded } = await this.supabase
         .from('essays')
         .select('*', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
         .not('graded_at', 'is', null);
 
-      // 获取平均字数（从已提交的作业中计算）
+      // 獲取平均字数（從已提交的作業中計算）
       const { data: essays } = await this.supabase
         .from('essays')
         .select('total_word_count')
@@ -356,7 +355,7 @@ class AssignmentManager {
         ? Math.round(essays.reduce((sum, e) => sum + (e.total_word_count || 0), 0) / essays.length)
         : 0;
 
-      // 获取平均 AI 反馈次数
+      // 獲取平均 AI 反馈次数
       const { data: feedbackCounts } = await this.supabase
         .from('essays')
         .select(`
@@ -378,7 +377,7 @@ class AssignmentManager {
         avgFeedbackCount
       };
     } catch (error) {
-      console.error('获取任务统计失败:', error);
+      console.error('獲取任務統計失敗:', error);
       return {
         totalStudents: 0,
         submitted: 0,
@@ -390,7 +389,7 @@ class AssignmentManager {
   }
 
   /**
-   * 加载内置格式模板
+   * 加載内置格式模板
    * @param {string} templateId - 模板 ID ('honglou-essay', 'argumentative-essay', etc.)
    * @returns {Object} 格式规范 JSON
    */
@@ -409,52 +408,52 @@ class AssignmentManager {
 
       const response = await fetch(templateFile);
       if (!response.ok) {
-        throw new Error('加载模板失败');
+        throw new Error('加載模板失敗');
       }
 
       const templateJson = await response.json();
       return templateJson;
     } catch (error) {
-      console.error('加载内置模板失败:', error);
+      console.error('加載内置模板失敗:', error);
       throw error;
     }
   }
 
   /**
-   * 加载内置评分标准
-   * @param {string} rubricId - 评分标准 ID ('ib-myp', 'ib-dp', etc.)
-   * @returns {Object} 评分标准 JSON
+   * 加載内置評分標準
+   * @param {string} rubricId - 評分標準 ID ('ib-myp', 'ib-dp', etc.)
+   * @returns {Object} 評分標準 JSON
    */
   loadBuiltInRubric(rubricId) {
-    // 这里先返回硬编码的 IB MYP 标准
-    // 未来可以从文件加载
+    // 這里先返回硬编碼的 IB MYP 標準
+    // 未来可以從文件加載
     if (rubricId === 'ib-myp') {
       return {
         id: 'ib-myp',
-        name: 'IB MYP 中国古典文学评分标准',
+        name: 'IB MYP 中國古典文學評分標準',
         criteria: [
           {
             code: 'A',
             name: '分析',
             maxScore: 8,
             descriptors: [
-              { range: '0', description: '学生没有达到以下任何细则所描述的标准。' },
-              { range: '1-2', description: 'i. 对文本/材料的内容、背景、语言、结构、技巧和风格以及各种文本/材料之间的关系稍有分析...' },
-              { range: '3-4', description: 'i. 尚充分地分析了文本/材料的内容、背景、语言、结构、技巧和风格...' },
-              { range: '5-6', description: 'i. 熟练地分析了文本/材料的内容、背景、语言、结构、技巧和风格...' },
-              { range: '7-8', description: 'i. 敏锐地分析了文本/材料的内容、背景、语言、结构、技巧和风格...' }
+              { range: '0', description: '學生没有达到以下任何細则所描述的標準。' },
+              { range: '1-2', description: 'i. 對文本/材料的內容、背景、語言、結构、技巧和風格以及各种文本/材料之间的關系稍有分析...' },
+              { range: '3-4', description: 'i. 尚充分地分析了文本/材料的內容、背景、語言、結构、技巧和風格...' },
+              { range: '5-6', description: 'i. 熟練地分析了文本/材料的內容、背景、語言、結构、技巧和風格...' },
+              { range: '7-8', description: 'i. 敏锐地分析了文本/材料的內容、背景、語言、結构、技巧和風格...' }
             ]
           },
           {
             code: 'B',
-            name: '组织',
+            name: '組織',
             maxScore: 8,
             descriptors: [
-              { range: '0', description: '学生没有达到以下任何细则所描述的标准。' },
-              { range: '1-2', description: 'i. 对组织结构稍有采用，尽管不总是适合情境和意图...' },
-              { range: '3-4', description: 'i. 尚令人满意地采用了适合情境和意图的组织结构...' },
-              { range: '5-6', description: 'i. 适当地采用了适合情境和意图的组织结构...' },
-              { range: '7-8', description: 'i. 巧妙地运用了组织结构，有效地服务于情境和意图...' }
+              { range: '0', description: '學生没有达到以下任何細则所描述的標準。' },
+              { range: '1-2', description: 'i. 對組織結构稍有采用，尽管不總是适合情境和意圖...' },
+              { range: '3-4', description: 'i. 尚令人滿意地采用了适合情境和意圖的組織結构...' },
+              { range: '5-6', description: 'i. 适当地采用了适合情境和意圖的組織結构...' },
+              { range: '7-8', description: 'i. 巧妙地運用了組織結构，有效地服務于情境和意圖...' }
             ]
           },
           {
@@ -462,30 +461,30 @@ class AssignmentManager {
             name: '创作文本/材料',
             maxScore: 8,
             descriptors: [
-              { range: '0', description: '学生没有达到以下任何细则所描述的标准。' },
-              { range: '1-2', description: 'i. 创作的文本/材料展示出个人对创作过程的投入有限...' },
-              { range: '3-4', description: 'i. 创作的文本/材料展示出个人对创作过程的投入尚令人满意...' },
-              { range: '5-6', description: 'i. 创作的文本/材料展示出对创作过程相当好的个人投入...' },
-              { range: '7-8', description: 'i. 创作的文本/材料展示出对创作过程高度的个人投入...' }
+              { range: '0', description: '學生没有达到以下任何細则所描述的標準。' },
+              { range: '1-2', description: 'i. 创作的文本/材料展示出個人對创作過程的投入有限...' },
+              { range: '3-4', description: 'i. 创作的文本/材料展示出個人對创作過程的投入尚令人滿意...' },
+              { range: '5-6', description: 'i. 创作的文本/材料展示出對创作過程相当好的個人投入...' },
+              { range: '7-8', description: 'i. 创作的文本/材料展示出對创作過程高度的個人投入...' }
             ]
           },
           {
             code: 'D',
-            name: '运用知识及语言',
+            name: '運用知识及語言',
             maxScore: 8,
             descriptors: [
-              { range: '0', description: '学生没有达到以下任何细则所描述的标准。' },
-              { range: '1-2', description: 'i. 运用了有限范围的适当词汇和表达形式...' },
-              { range: '3-4', description: 'i. 运用了一定范围的适当词汇、句子结构和表达形式...' },
-              { range: '5-6', description: 'i. 熟练地运用了广泛而恰当的词汇、句子结构和表达形式...' },
-              { range: '7-8', description: 'i. 有效地运用了一系列恰当的词汇、句子结构和表达形式...' }
+              { range: '0', description: '學生没有达到以下任何細则所描述的標準。' },
+              { range: '1-2', description: 'i. 運用了有限范围的适当词汇和表达形式...' },
+              { range: '3-4', description: 'i. 運用了一定范围的适当词汇、句子結构和表达形式...' },
+              { range: '5-6', description: 'i. 熟練地運用了广泛而恰当的词汇、句子結构和表达形式...' },
+              { range: '7-8', description: 'i. 有效地運用了一系列恰当的词汇、句子結构和表达形式...' }
             ]
           }
         ]
       };
     }
 
-    throw new Error('未知的评分标准 ID');
+    throw new Error('未知的評分標準 ID');
   }
 }
 

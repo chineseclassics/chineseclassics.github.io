@@ -1,5 +1,5 @@
 /**
- * 任务列表 UI（精简版）
+ * 任務列表 UI（精简版）
  */
 
 import AssignmentManager from './assignment-manager.js';
@@ -12,7 +12,7 @@ class AssignmentList {
   }
 
   /**
-   * 渲染任务列表
+   * 渲染任務列表
    */
   async render(container) {
     this.container = container;
@@ -20,7 +20,7 @@ class AssignmentList {
   }
 
   /**
-   * 加载并渲染任务
+   * 加載并渲染任務
    */
   async loadAndRenderAssignments() {
     try {
@@ -29,9 +29,9 @@ class AssignmentList {
       this.container.innerHTML = `
         <div class="assignment-list-container">
           <div class="list-header">
-            <h2>我的任务</h2>
+            <h2>我的任務</h2>
             <button id="createAssignmentBtn" class="btn btn-primary">
-              <i class="fas fa-plus"></i> 创建新任务
+              <i class="fas fa-plus"></i> 創建新任務
             </button>
           </div>
 
@@ -46,18 +46,18 @@ class AssignmentList {
 
       this.bindEvents();
     } catch (error) {
-      console.error('加载任务列表失败:', error);
+      console.error('加載任務列表失敗:', error);
       this.container.innerHTML = `
         <div class="error-state">
           <i class="fas fa-exclamation-triangle"></i>
-          <p>加载失败：${error.message}</p>
+          <p>加載失敗：${error.message}</p>
         </div>
       `;
     }
   }
 
   /**
-   * 渲染任务卡片
+   * 渲染任務卡片
    */
   renderAssignmentCard(assignment) {
     const dueDate = new Date(assignment.due_date);
@@ -69,7 +69,7 @@ class AssignmentList {
         <div class="card-header">
           <h3>${assignment.title}</h3>
           <span class="badge badge-${assignment.is_published ? 'success' : 'secondary'}">
-            ${assignment.is_published ? '已发布' : '草稿'}
+            ${assignment.is_published ? '已發佈' : '草稿'}
           </span>
         </div>
 
@@ -97,10 +97,10 @@ class AssignmentList {
             <i class="fas fa-eye"></i> 查看
           </button>
           <button class="btn-action edit-btn" data-id="${assignment.id}">
-            <i class="fas fa-edit"></i> 编辑
+            <i class="fas fa-edit"></i> 編輯
           </button>
           <button class="btn-action delete-btn" data-id="${assignment.id}">
-            <i class="fas fa-trash"></i> 删除
+            <i class="fas fa-trash"></i> 刪除
           </button>
         </div>
       </div>
@@ -108,34 +108,37 @@ class AssignmentList {
   }
 
   /**
-   * 渲染空状态
+   * 渲染空狀態
    */
   renderEmptyState() {
     return `
       <div class="empty-state">
         <i class="fas fa-clipboard-list"></i>
-        <p>还没有创建任务</p>
-        <p class="text-muted">点击"创建新任务"开始布置写作任务</p>
+        <p>還沒有創建任務</p>
+        <p class="text-muted">點擊"創建新任務"開始布置寫作任務</p>
       </div>
     `;
   }
 
   /**
-   * 绑定事件
+   * 綁定事件
    */
   bindEvents() {
-    // 创建任务
-    const createBtn = document.getElementById('createAssignmentBtn');
+    // 創建任務
+    const createBtn = this.container.querySelector('#createAssignmentBtn');
     if (createBtn) {
       createBtn.addEventListener('click', () => {
+        console.log('🔘 點擊創建新任務按鈕');
         window.dispatchEvent(new CustomEvent('navigate', {
           detail: { page: 'assignment-create' }
         }));
       });
+    } else {
+      console.warn('⚠️ 找不到創建任務按鈕');
     }
 
-    // 查看、编辑、删除按钮
-    document.querySelectorAll('.view-btn').forEach(btn => {
+    // 查看、編輯、刪除按鈕
+    this.container.querySelectorAll('.view-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         window.dispatchEvent(new CustomEvent('navigate', {
@@ -144,7 +147,7 @@ class AssignmentList {
       });
     });
 
-    document.querySelectorAll('.edit-btn').forEach(btn => {
+    this.container.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         window.dispatchEvent(new CustomEvent('navigate', {
@@ -153,7 +156,7 @@ class AssignmentList {
       });
     });
 
-    document.querySelectorAll('.delete-btn').forEach(btn => {
+    this.container.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         await this.handleDelete(id);
@@ -162,17 +165,17 @@ class AssignmentList {
   }
 
   /**
-   * 处理删除任务
+   * 處理刪除任務
    */
   async handleDelete(assignmentId) {
-    const confirmed = confirm('确定删除此任务吗？此操作无法撤销。');
+    const confirmed = confirm('確定刪除此任務吗？此操作無法撤销。');
     if (!confirmed) return;
 
     try {
       await this.assignmentManager.deleteAssignment(assignmentId, true);
       await this.loadAndRenderAssignments();
     } catch (error) {
-      alert('删除失败：' + error.message);
+      alert('刪除失敗：' + error.message);
     }
   }
 }
