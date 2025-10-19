@@ -58,9 +58,10 @@
    - 防止删除正在使用的模板
 
 4. **扩展格式规范系统**
-   - 新增字段：`constraints`（字数、段落数）
-   - 新增字段：`content_requirements`（内容要求）
-   - 动态模板引用（任务使用最新版模板）
+   - 格式 JSON 新增頂層字段：`constraints`（字數、段落數限制）
+   - 格式 JSON 新增頂層字段：`content_requirements`（內容焦點要求）
+   - 格式模板庫（可重用、可編輯，影響未來任務）
+   - 創建任務時保存格式快照（任務要求固定）
 
 5. **AI 评分代理**（新 Edge Function）
    - Edge Function: `grading-agent`
@@ -126,13 +127,22 @@ shiwen-baojian/
 
 ### Database Changes
 
-**扩展表**：`format_specifications`
-```sql
-ALTER TABLE format_specifications ADD COLUMN IF NOT EXISTS
-  constraints JSONB,              -- 字数、段落数限制
-  content_requirements JSONB,     -- 内容要求
-  is_shared BOOLEAN DEFAULT false,-- 是否分享给其他老师
-  shared_with TEXT[];             -- 分享给哪些老师（email 列表）
+**不需要修改表結構** - `format_specifications` 表的 `spec_json` 字段已足夠
+
+**格式 JSON 擴展結構**：
+```json
+{
+  "metadata": {...},
+  "structure": {...},
+  "paragraph_types": {...},
+  "constraints": {              // ← AI 解析生成
+    "total_word_count": { "min": 1800, "max": 2000 },
+    "body_paragraphs": 3
+  },
+  "content_requirements": [...], // ← AI 解析生成
+  "sentence_level_rules": {...},
+  "weights_and_scoring": {...}
+}
 ```
 
 **新增表**：`grading_rubrics`
@@ -198,25 +208,35 @@ CREATE TABLE ai_grading_suggestions (
 
 ### ✅ MVP 必须包含
 
-1. **AI 格式生成器**
+1. **AI 格式生成器**（双重输出）
    - Edge Function 实现
-   - 单次解析 + 确认流程
-   - 智能合并系统模板 + 老师要求
-   - 冲突解决（老师优先）
+   - 一次调用生成两种输出：
+     - human_readable：显示在 Quill 编辑器
+     - format_json：缓存并保存到数据库
+   - 支持两种模式：
+     - 增量模式：合并系统模板 + 老师要求
+     - 自定义模式：生成完整格式 JSON
 
-2. **老师端格式编辑器**
-   - Quill.js 富文本编辑器
-   - AI 理解结果可视化
-   - 导出为 Markdown 格式
+2. **老师端格式编辑器**（统一 Quill 界面）
+   - 所有格式操作都在一个 Quill 编辑器中完成
+   - 系统格式预览也显示在 Quill 中（人类可读）
+   - 三种使用模式自然流转：
+     - 模式 A：直接使用系统格式（无需 AI）
+     - 模式 B：基于系统格式修改（AI 增量优化）
+     - 模式 C：从零开始自定义（AI 完整生成）
+   - AI 优化一次生成双重输出（人类可读 + JSON）
+   - 老师可直接从 Quill 复制内容（无需导出功能）
 
 3. **自定义格式管理**
    - 保存、命名、重用
-   - 查看和编辑
-   - 防止删除正在使用的模板
+   - 查看和编辑（加载到 Quill 编辑器）
+   - 格式预览（系统格式和自定义格式统一展示）
+   - 简化删除逻辑（只能删除自己创建的，不检查使用情况）
 
-4. **动态模板引用**
-   - 任务引用模板 ID（不快照）
-   - 模板更新实时生效
+4. **格式模板管理**
+   - 創建/編輯格式模板（系統內置 + 老師自定義）
+   - 創建任務時選擇模板，保存快照到任務
+   - 編輯模板只影響未來創建的任務
 
 5. **评分标准系统**
    - 系统内置「中國古典文學」IB MYP 标准
@@ -229,10 +249,10 @@ CREATE TABLE ai_grading_suggestions (
 
 ### ⏸️ 第二阶段
 
-1. 导出为 Word 格式（.docx）
+1. 导出为 Word 格式（.docx）- MVP 阶段可从 Quill 直接复制
 2. 模板分享功能（老师之间）
 3. 老师上传自定义评分标准
-4. AI 对话式澄清（多轮交互）
+4. 格式版本历史（允许回退到之前的版本）
 
 ### 🔮 第三阶段
 
