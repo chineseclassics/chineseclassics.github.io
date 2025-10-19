@@ -370,16 +370,28 @@ async function confirmSave() {
             throw new Error('請先登錄才能保存格式');
         }
         
+        // 驗證 parent_spec_id 是否為有效 UUID
+        let parentSpecId = null;
+        if (selectedFormatId) {
+            // 檢查是否為 UUID 格式
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (uuidRegex.test(selectedFormatId)) {
+                parentSpecId = selectedFormatId;
+            } else {
+                console.warn('[FormatEditor] selectedFormatId 不是有效的 UUID，設為 NULL:', selectedFormatId);
+            }
+        }
+        
         // 構建保存數據
         const formatData = {
             name: name,
             description: description,
             essay_type: cachedFormatJSON.metadata?.essay_type || 'custom',
-            created_by: session.user.id,  // ← 关键：设置创建者 ID
+            created_by: session.user.id,
             is_system: false,
             is_public: false,
             spec_json: cachedFormatJSON,
-            parent_spec_id: selectedFormatId || null
+            parent_spec_id: parentSpecId  // 只有有效 UUID 才設置
         };
         
         // 判斷是創建還是更新
