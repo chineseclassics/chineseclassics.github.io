@@ -181,21 +181,28 @@ export class RichTextEditor {
     
     /**
      * 獲取字數（只統計中文字符，不含標點）
+     * v2.0 - 2025-10-19: 優化為只統計純中文字符
      */
     getWordCount() {
         const text = this.getText().trim();
         
-        // 統計中文字符（包括擴展區域）
-        const chineseChars = (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+        // 只統計中文字符（常用漢字範圍）
+        // 使用更精確的範圍，排除所有標點符號
+        const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
         
         // 統計英文單詞
         const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
         
-        // 統計標點符號
-        const punctuation = (text.match(/[，。！？；：、""''（）]/g) || []).length;
+        // 統計標點符號（中文和英文）
+        const punctuation = (text.match(/[，。！？；：、""''（）,.!?;:()\[\]]/g) || []).length;
+        
+        // 調試信息（可在控制台查看）
+        if (text.length > 0 && text.length < 50) {
+            console.log(`字數統計: 文本="${text}" 中文=${chineseChars} 英文=${englishWords} 標點=${punctuation}`);
+        }
         
         return {
-            total: chineseChars,  // 只返回中文字符數，不含標點
+            total: chineseChars,  // 只返回中文字符數，不含標點和英文
             chinese: chineseChars,
             english: englishWords,
             punctuation: punctuation
