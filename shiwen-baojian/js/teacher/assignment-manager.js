@@ -198,7 +198,7 @@ class AssignmentManager {
       if (existing.is_published && !updates.confirmUpdate) {
         const { count } = await this.supabase
           .from('essays')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('assignment_id', assignmentId);
 
         if (count > 0) {
@@ -264,7 +264,7 @@ class AssignmentManager {
       // 檢查是否有學生提交
       const { count: essayCount } = await this.supabase
         .from('essays')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId);
 
       if (essayCount > 0 && !confirmed) {
@@ -327,20 +327,20 @@ class AssignmentManager {
       // 獲取班級學生總數（只計算已激活的學生）
       const { count: totalStudents } = await this.supabase
         .from('class_members')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('class_id', this.currentClass.id);
 
       // 獲取已提交的作業数
       const { count: submitted } = await this.supabase
         .from('essays')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
         .eq('status', 'submitted');
 
       // 獲取已批改的作業数
       const { count: graded } = await this.supabase
         .from('essays')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
         .not('graded_at', 'is', null);
 

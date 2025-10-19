@@ -261,25 +261,27 @@ class ClassManager {
 
       if (pendingError) throw pendingError;
 
-      // 合并并丰富數據
+      // 合并并丰富數據（過濾掉 student 為 null 的記錄）
       const activeEnriched = await Promise.all(
-        (activeMembers || []).map(async member => {
-          const activityStatus = this.calculateActivityStatus(member.student.last_login_at);
-          const assignmentProgress = await this.getStudentAssignmentProgress(member.student_id);
+        (activeMembers || [])
+          .filter(member => member.student !== null) // 過濾掉已刪除的學生
+          .map(async member => {
+            const activityStatus = this.calculateActivityStatus(member.student.last_login_at);
+            const assignmentProgress = await this.getStudentAssignmentProgress(member.student_id);
 
-          return {
-            id: member.id,
-            userId: member.student_id,
-            email: member.student.email,
-            displayName: member.student.display_name,
-            status: 'active', // 已激活
-            isPending: false,
-            lastLoginAt: member.student.last_login_at,
-            activityStatus: activityStatus,
-            assignmentProgress: assignmentProgress,
-            addedAt: member.added_at
-          };
-        })
+            return {
+              id: member.id,
+              userId: member.student_id,
+              email: member.student.email,
+              displayName: member.student.display_name,
+              status: 'active', // 已激活
+              isPending: false,
+              lastLoginAt: member.student.last_login_at,
+              activityStatus: activityStatus,
+              assignmentProgress: assignmentProgress,
+              addedAt: member.added_at
+            };
+          })
       );
 
       const pendingEnriched = (pendingStudents || []).map(pending => ({
@@ -463,32 +465,39 @@ class ClassManager {
       // 獲取學生總數（active + pending）
       const { count: activeStudentsCount } = await this.supabase
         .from('class_members')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('class_id', this.currentClass.id);
 
       const { count: pendingStudentsCount } = await this.supabase
         .from('pending_students')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('class_id', this.currentClass.id);
 
       const totalStudents = (activeStudentsCount || 0) + (pendingStudentsCount || 0);
 
       // 獲取活躍學生数（最近 7 天登入）
+      // 注意：無法在 head: true 查詢中使用關聯表字段過濾，需要獲取完整數據
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      const { count: activeStudents, error: activeError } = await this.supabase
+      const { data: classMembersData, error: classMembersError } = await this.supabase
         .from('class_members')
-        .select('student:users!student_id(*)', { count: 'exact', head: true })
-        .eq('class_id', this.currentClass.id)
-        .gte('student.last_login_at', sevenDaysAgo.toISOString());
+        .select('student:users!student_id(last_login_at)')
+        .eq('class_id', this.currentClass.id);
 
-      if (activeError) throw activeError;
+      if (classMembersError) throw classMembersError;
+
+      const activeStudents = (classMembersData || [])
+        .filter(member => 
+          member.student && 
+          member.student.last_login_at && 
+          new Date(member.student.last_login_at) >= sevenDaysAgo
+        ).length;
 
       // 獲取任務總數
       const { count: totalAssignments, error: assignmentsError } = await this.supabase
         .from('assignments')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('class_id', this.currentClass.id);
 
       if (assignmentsError) throw assignmentsError;
@@ -507,7 +516,7 @@ class ClassManager {
       if (assignmentIds.length > 0) {
         const { count, error: pendingError } = await this.supabase
           .from('essays')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .in('assignment_id', assignmentIds)
           .eq('status', 'submitted')
           .is('graded_at', null);
@@ -524,7 +533,7 @@ class ClassManager {
       if (activeStudentsCount > 0 && totalAssignments > 0 && assignmentIds.length > 0) {
         const { count: completedEssays, error: completedError } = await this.supabase
           .from('essays')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .in('assignment_id', assignmentIds)
           .eq('status', 'submitted');
 
