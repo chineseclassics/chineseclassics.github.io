@@ -150,20 +150,77 @@ async function ensureUserRecord(user) {
     });
     
     try {
-        // 檢查用戶是否已存在
-        const { data: existingUser, error: checkError } = await AppState.supabase
+        // 先通過 ID 查找
+        let { data: existingUser, error: checkError } = await AppState.supabase
             .from('users')
-            .select('id')
+            .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
         
-        if (checkError && checkError.code !== 'PGRST116') {
-            // PGRST116 = 未找到記錄，這是正常的
+        if (checkError) {
             console.error('❌ 檢查用戶記錄失敗:', checkError);
+        }
+        
+        // 如果通過 ID 沒找到，且有郵箱，嘗試通過郵箱查找（處理老師預先添加的情況）
+        if (!existingUser && user.email && !user.is_anonymous) {
+            console.log('🔍 通過郵箱查找已存在的記錄...');
+            
+            const { data: emailMatch, error: emailError } = await AppState.supabase
+                .from('users')
+                .select('*')
+                .eq('email', user.email)
+                .maybeSingle();
+            
+            if (emailError) {
+                console.error('❌ 通過郵箱查找失敗:', emailError);
+            }
+            
+            if (emailMatch) {
+                console.log('✅ 找到老師預先添加的記錄，更新 ID...');
+                
+                // 更新記錄的 ID 為 Auth ID，並更新其他信息
+                const { error: updateError } = await AppState.supabase
+                    .from('users')
+                    .update({
+                        id: user.id,
+                        display_name: user.user_metadata?.full_name || emailMatch.display_name,
+                        status: 'active',
+                        last_login_at: new Date().toISOString()
+                    })
+                    .eq('email', user.email);
+                
+                if (updateError) {
+                    console.error('❌ 更新用戶 ID 失敗:', updateError);
+                } else {
+                    console.log('✅ 已將預添加記錄與 Auth 用戶關聯');
+                }
+                
+                return;
+            }
         }
         
         if (existingUser) {
             console.log('✅ 用戶記錄已存在:', existingUser.id);
+            
+            // 更新最后登录时间和姓名（如果 Google 提供了新信息）
+            const updates = {
+                last_login_at: new Date().toISOString()
+            };
+            
+            if (user.user_metadata?.full_name && existingUser.display_name !== user.user_metadata.full_name) {
+                updates.display_name = user.user_metadata.full_name;
+                console.log('🔄 更新用戶姓名為:', user.user_metadata.full_name);
+            }
+            
+            if (existingUser.status === 'pending') {
+                updates.status = 'active';
+            }
+            
+            await AppState.supabase
+                .from('users')
+                .update(updates)
+                .eq('id', user.id);
+            
             return;
         }
         
@@ -173,9 +230,11 @@ async function ensureUserRecord(user) {
         const userRole = detectUserRole(user);
         const userRecord = {
             id: user.id,
-            email: user.email || `anonymous-${user.id}@test.local`,  // 生成唯一的邮箱
+            email: user.email || `anonymous-${user.id}@test.local`,
             display_name: user.user_metadata?.full_name || (user.is_anonymous ? '匿名測試' : '學生'),
-            role: userRole === 'teacher' ? 'teacher' : 'student'
+            role: userRole === 'teacher' ? 'teacher' : 'student',
+            status: 'active',
+            last_login_at: new Date().toISOString()
         };
         
         console.log('💾 準備插入用戶記錄:', userRecord);
@@ -199,6 +258,30 @@ async function ensureUserRecord(user) {
             role: userRole,
             user: insertedUser
         });
+        
+        // 如果是学生，检查是否有待激活的班级（老师预先添加的邮箱）
+        if (userRole === 'student' && user.email && !user.is_anonymous) {
+            console.log('🔍 檢查待激活的班級...');
+            
+            try {
+                const { data: activationResult, error: activateError } = await AppState.supabase
+                    .rpc('activate_pending_student', {
+                        student_email: user.email,
+                        student_auth_id: user.id
+                    });
+                
+                if (activateError) {
+                    console.error('❌ 激活待加入班級失敗:', activateError);
+                } else if (activationResult && activationResult.length > 0 && activationResult[0].activated) {
+                    console.log('✅ 已自動加入班級:', activationResult[0].class_ids);
+                    console.log('📢', activationResult[0].display_name);
+                } else {
+                    console.log('ℹ️ 無待加入班級');
+                }
+            } catch (activateError) {
+                console.error('❌ 激活流程異常:', activateError);
+            }
+        }
         
     } catch (error) {
         console.error('❌ 確保用戶記錄異常:', {

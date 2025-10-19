@@ -103,15 +103,22 @@ class ClassManager {
         throw new Error('没有有效的邮箱地址');
       }
 
-      // 检查已存在的学生
-      const { data: existingMembers, error: checkError } = await this.supabase
+      // 检查已存在的学生（包括 active 和 pending）
+      const { data: activeMembers } = await this.supabase
         .from('class_members')
-        .select('student_id, student:users!student_id(email)')
+        .select('student:users!student_id(email)')
         .eq('class_id', this.currentClass.id);
 
-      if (checkError) throw checkError;
+      const { data: pendingMembers } = await this.supabase
+        .from('pending_students')
+        .select('email')
+        .eq('class_id', this.currentClass.id);
 
-      const existingEmails = new Set(existingMembers.map(m => m.student.email));
+      const existingEmails = new Set([
+        ...(activeMembers?.map(m => m.student.email) || []),
+        ...(pendingMembers?.map(p => p.email) || [])
+      ]);
+
       const duplicates = validEmails.filter(email => existingEmails.has(email));
       const newEmails = validEmails.filter(email => !existingEmails.has(email));
 
@@ -168,7 +175,7 @@ class ClassManager {
   }
 
   /**
-   * 添加学生到班级
+   * 添加学生到班级（方案 A：使用 pending_students 表）
    * @param {Array} emails - 学生邮箱数组
    * @returns {number} 成功添加的学生数
    */
@@ -179,61 +186,26 @@ class ClassManager {
       const { data: { user } } = await this.supabase.auth.getUser();
       let addedCount = 0;
 
-      // 逐个处理学生（因为需要先创建用户记录）
+      // 批量添加到 pending_students 表
       for (const email of emails) {
         try {
-          // 查找或创建用户记录
-          let { data: existingUser, error: findError } = await this.supabase
-            .from('users')
-            .select('id')
-            .eq('email', email)
-            .maybeSingle();
-
-          if (findError) {
-            console.warn(`查找用户 ${email} 失败:`, findError);
-            continue;
-          }
-
-          let userId;
-
-          if (existingUser) {
-            userId = existingUser.id;
-          } else {
-            // 创建新用户记录（状态为 pending）
-            const { data: newUser, error: createError } = await this.supabase
-              .from('users')
-              .insert([
-                {
-                  email: email,
-                  display_name: `学生-${email.split('@')[0]}`,
-                  role: 'student',
-                  status: 'pending'
-                }
-              ])
-              .select()
-              .single();
-
-            if (createError) {
-              console.warn(`创建用户 ${email} 失败:`, createError);
-              continue;
-            }
-
-            userId = newUser.id;
-          }
-
-          // 添加到班级
           const { error: addError } = await this.supabase
-            .from('class_members')
+            .from('pending_students')
             .insert([
               {
                 class_id: this.currentClass.id,
-                student_id: userId,
+                email: email,
                 added_by: user.id
               }
             ]);
 
           if (addError) {
-            console.warn(`添加学生 ${email} 到班级失败:`, addError);
+            // 如果是唯一约束冲突（邮箱已存在），跳过
+            if (addError.code === '23505') {
+              console.log(`邮箱 ${email} 已在待加入列表中`);
+            } else {
+              console.warn(`添加邮箱 ${email} 失败:`, addError);
+            }
             continue;
           }
 
@@ -251,7 +223,7 @@ class ClassManager {
   }
 
   /**
-   * 获取班级成员列表
+   * 获取班级成员列表（包括 active 和 pending 学生）
    * @returns {Array} 学生列表
    */
   async getClassMembers() {
@@ -260,7 +232,8 @@ class ClassManager {
         throw new Error('未找到班级');
       }
 
-      const { data, error } = await this.supabase
+      // 获取已激活的学生（已登录）
+      const { data: activeMembers, error: activeError } = await this.supabase
         .from('class_members')
         .select(`
           id,
@@ -277,11 +250,20 @@ class ClassManager {
         .eq('class_id', this.currentClass.id)
         .order('added_at', { ascending: false });
 
-      if (error) throw error;
+      if (activeError) throw activeError;
 
-      // 计算每个学生的活跃状态和作业进度
-      const enrichedMembers = await Promise.all(
-        data.map(async member => {
+      // 获取待激活的学生（老师添加但未登录）
+      const { data: pendingStudents, error: pendingError } = await this.supabase
+        .from('pending_students')
+        .select('id, email, added_at, added_by')
+        .eq('class_id', this.currentClass.id)
+        .order('added_at', { ascending: false });
+
+      if (pendingError) throw pendingError;
+
+      // 合并并丰富数据
+      const activeEnriched = await Promise.all(
+        (activeMembers || []).map(async member => {
           const activityStatus = this.calculateActivityStatus(member.student.last_login_at);
           const assignmentProgress = await this.getStudentAssignmentProgress(member.student_id);
 
@@ -290,7 +272,8 @@ class ClassManager {
             userId: member.student_id,
             email: member.student.email,
             displayName: member.student.display_name,
-            status: member.student.status,
+            status: 'active', // 已激活
+            isPending: false,
             lastLoginAt: member.student.last_login_at,
             activityStatus: activityStatus,
             assignmentProgress: assignmentProgress,
@@ -299,7 +282,26 @@ class ClassManager {
         })
       );
 
-      return enrichedMembers;
+      const pendingEnriched = (pendingStudents || []).map(pending => ({
+        id: pending.id,
+        userId: null,
+        email: pending.email,
+        displayName: `待激活-${pending.email.split('@')[0]}`,
+        status: 'pending', // 待激活
+        isPending: true,
+        lastLoginAt: null,
+        activityStatus: 'pending',
+        assignmentProgress: { completed: 0, total: 0 },
+        addedAt: pending.added_at
+      }));
+
+      // 合并两个列表
+      const allMembers = [...activeEnriched, ...pendingEnriched];
+
+      // 按添加时间排序
+      allMembers.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+
+      return allMembers;
     } catch (error) {
       console.error('获取班级成员失败:', error);
       throw error;
@@ -309,7 +311,7 @@ class ClassManager {
   /**
    * 计算学生活跃状态
    * @param {string} lastLoginAt - 最后登录时间
-   * @returns {string} 'active' | 'inactive' | 'dormant'
+   * @returns {string} 'active' | 'inactive' | 'dormant' | 'pending'
    */
   calculateActivityStatus(lastLoginAt) {
     if (!lastLoginAt) return 'dormant';
@@ -368,17 +370,30 @@ class ClassManager {
 
   /**
    * 从班级移除学生
-   * @param {string} memberId - 班级成员记录 ID
+   * @param {string} memberId - 成员记录 ID
+   * @param {boolean} isPending - 是否为待激活学生
    */
-  async removeStudent(memberId) {
+  async removeStudent(memberId, isPending = false) {
     try {
-      const { error } = await this.supabase
-        .from('class_members')
-        .delete()
-        .eq('id', memberId)
-        .eq('class_id', this.currentClass.id);
+      if (isPending) {
+        // 删除 pending_students 记录
+        const { error } = await this.supabase
+          .from('pending_students')
+          .delete()
+          .eq('id', memberId)
+          .eq('class_id', this.currentClass.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // 删除 class_members 记录
+        const { error } = await this.supabase
+          .from('class_members')
+          .delete()
+          .eq('id', memberId)
+          .eq('class_id', this.currentClass.id);
+
+        if (error) throw error;
+      }
 
       return true;
     } catch (error) {
@@ -445,13 +460,18 @@ class ClassManager {
         throw new Error('未找到班级');
       }
 
-      // 获取学生总数
-      const { count: totalStudents, error: studentsError } = await this.supabase
+      // 获取学生总数（active + pending）
+      const { count: activeStudentsCount } = await this.supabase
         .from('class_members')
         .select('*', { count: 'exact', head: true })
         .eq('class_id', this.currentClass.id);
 
-      if (studentsError) throw studentsError;
+      const { count: pendingStudentsCount } = await this.supabase
+        .from('pending_students')
+        .select('*', { count: 'exact', head: true })
+        .eq('class_id', this.currentClass.id);
+
+      const totalStudents = (activeStudentsCount || 0) + (pendingStudentsCount || 0);
 
       // 获取活跃学生数（最近 7 天登录）
       const sevenDaysAgo = new Date();
@@ -474,34 +494,50 @@ class ClassManager {
       if (assignmentsError) throw assignmentsError;
 
       // 获取待批改作业数
-      const { count: pendingGrading, error: pendingError } = await this.supabase
-        .from('essays')
-        .select('assignment:assignments!assignment_id(*)', { count: 'exact', head: true })
-        .eq('assignment.class_id', this.currentClass.id)
-        .eq('status', 'submitted')
-        .is('graded_at', null);
+      // 先获取该班级的所有任务ID
+      const assignmentIds = totalAssignments > 0
+        ? (await this.supabase
+            .from('assignments')
+            .select('id')
+            .eq('class_id', this.currentClass.id)
+          ).data?.map(a => a.id) || []
+        : [];
 
-      if (pendingError) throw pendingError;
+      let pendingGrading = 0;
+      if (assignmentIds.length > 0) {
+        const { count, error: pendingError } = await this.supabase
+          .from('essays')
+          .select('*', { count: 'exact', head: true })
+          .in('assignment_id', assignmentIds)
+          .eq('status', 'submitted')
+          .is('graded_at', null);
 
-      // 计算平均完成率
+        if (pendingError) {
+          console.warn('获取待批改作业数失败:', pendingError);
+        } else {
+          pendingGrading = count || 0;
+        }
+      }
+
+      // 计算平均完成率（只计算已激活的学生）
       let averageCompletion = 0;
-      if (totalStudents > 0 && totalAssignments > 0) {
+      if (activeStudentsCount > 0 && totalAssignments > 0 && assignmentIds.length > 0) {
         const { count: completedEssays, error: completedError } = await this.supabase
           .from('essays')
-          .select('assignment:assignments!assignment_id(*)', { count: 'exact', head: true })
-          .eq('assignment.class_id', this.currentClass.id)
+          .select('*', { count: 'exact', head: true })
+          .in('assignment_id', assignmentIds)
           .eq('status', 'submitted');
 
         if (completedError) throw completedError;
 
-        averageCompletion = Math.round((completedEssays / (totalStudents * totalAssignments)) * 100);
+        averageCompletion = Math.round((completedEssays / (activeStudentsCount * totalAssignments)) * 100);
       }
 
       return {
         totalStudents: totalStudents || 0,
         activeStudents: activeStudents || 0,
         totalAssignments: totalAssignments || 0,
-        pendingGrading: pendingGrading || 0,
+        pendingGrading: pendingGrading,
         averageCompletion: averageCompletion
       };
     } catch (error) {

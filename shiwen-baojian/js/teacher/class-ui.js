@@ -145,7 +145,7 @@ class ClassUI {
         <!-- 班级概览 -->
         <div class="class-header">
           <div class="class-info">
-            <h2>${this.escapeHtml(classInfo.name)}</h2>
+            <h2>${this.escapeHtml(classInfo.class_name)}</h2>
             ${classInfo.description ? `<p class="class-description">${this.escapeHtml(classInfo.description)}</p>` : ''}
           </div>
           <div class="class-actions">
@@ -309,11 +309,11 @@ class ClassUI {
    */
   renderStudentRow(member) {
     const activityBadge = this.getActivityBadge(member.activityStatus);
-    const statusBadge = member.status === 'active' ? '已登录' : '未登录';
+    const statusBadge = member.status === 'active' ? '已登录' : member.isPending ? '待激活' : '未登录';
     const addedDate = new Date(member.addedAt).toLocaleDateString('zh-CN');
 
     return `
-      <tr data-member-id="${member.id}">
+      <tr data-member-id="${member.id}" data-is-pending="${member.isPending || false}">
         <td>${this.escapeHtml(member.displayName)}</td>
         <td>${this.escapeHtml(member.email)}</td>
         <td>
@@ -336,6 +336,7 @@ class ClassUI {
             class="btn-icon btn-danger remove-student-btn"
             data-member-id="${member.id}"
             data-student-name="${this.escapeHtml(member.displayName)}"
+            data-is-pending="${member.isPending || false}"
             title="移除学生"
           >
             <i class="fas fa-trash"></i>
@@ -350,6 +351,7 @@ class ClassUI {
    */
   getActivityBadge(status) {
     const badges = {
+      pending: '<span class="activity-badge pending">⚪ 待激活</span>',
       active: '<span class="activity-badge active">🟢 活跃</span>',
       inactive: '<span class="activity-badge inactive">🟡 不活跃</span>',
       dormant: '<span class="activity-badge dormant">🔴 长期未登录</span>'
@@ -415,7 +417,8 @@ class ClassUI {
       btn.addEventListener('click', (e) => {
         const memberId = e.currentTarget.getAttribute('data-member-id');
         const studentName = e.currentTarget.getAttribute('data-student-name');
-        this.handleRemoveStudent(memberId, studentName);
+        const isPending = e.currentTarget.getAttribute('data-is-pending') === 'true';
+        this.handleRemoveStudent(memberId, studentName, isPending);
       });
     });
 
@@ -494,14 +497,18 @@ class ClassUI {
   /**
    * 处理移除学生
    */
-  async handleRemoveStudent(memberId, studentName) {
-    const confirmed = confirm(`确定将 ${studentName} 移出班级？\n\n学生的作业记录将保留，但将无法访问班级任务。`);
+  async handleRemoveStudent(memberId, studentName, isPending) {
+    const message = isPending
+      ? `确定移除待激活邮箱 ${studentName}？`
+      : `确定将 ${studentName} 移出班级？\n\n学生的作业记录将保留，但将无法访问班级任务。`;
+    
+    const confirmed = confirm(message);
     
     if (!confirmed) return;
 
     try {
-      await this.classManager.removeStudent(memberId);
-      this.showToast('success', `已将 ${studentName} 移出班级`);
+      await this.classManager.removeStudent(memberId, isPending);
+      this.showToast('success', isPending ? '已移除待激活邮箱' : `已将 ${studentName} 移出班级`);
       
       // 刷新界面
       await this.render();
@@ -601,7 +608,10 @@ class ClassUI {
    * HTML 转义
    */
   escapeHtml(unsafe) {
-    return unsafe
+    if (unsafe === null || unsafe === undefined) {
+      return '';
+    }
+    return String(unsafe)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")

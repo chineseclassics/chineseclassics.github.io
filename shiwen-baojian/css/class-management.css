@@ -341,6 +341,11 @@
   font-weight: 500;
 }
 
+.activity-badge.pending {
+  background: #e2e3e5;
+  color: #6c757d;
+}
+
 .activity-badge.active {
   background: #d4edda;
   color: #155724;
