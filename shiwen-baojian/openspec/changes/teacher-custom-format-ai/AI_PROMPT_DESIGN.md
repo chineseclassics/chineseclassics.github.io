@@ -101,9 +101,269 @@
 
 ---
 
-## 🎓 Few-shot Examples
+## 🎓 Few-shot Examples（基于真实教学案例）
 
-### Example 1：基本字數和段落要求（增量模式）
+### Example 1：极简任务（两段话，无完整结构）
+
+**真实案例**：春江花月夜结构分析
+
+**輸入**：
+```json
+{
+  "mode": "custom",
+  "teacher_input": "请从至少两个方面，写两段话（不需要开头结尾），分析《春江花月夜》结构安排的精妙之处。\n\n字数：400-600 字\n评分标准：B 理解"
+}
+```
+
+**AI 輸出**：
+```json
+{
+  "human_readable": "【任務類型】\n片段分析（無需完整論文結構）\n\n【字數要求】\n• 總字數：400-600 字\n\n【段落要求】\n兩段話（每段分析一個方面）\n\n【內容要求】\n• 分析《春江花月夜》的結構安排\n• 至少從兩個方面分析（如：意象穿插、句間過渡、部分呼應等）\n• 必須引用原文\n\n【檢查維度】\n結構分析充分性：\n- 是否引用了《春江花月夜》原文？\n- 是否分析了至少兩個結構方面？\n- 分析是否具體、有細節？\n\n【評分標準】\nIB MYP 標準 B（組織）",
+  
+  "format_json": {
+    "metadata": {
+      "name": "春江花月夜結構分析",
+      "essay_type": "片段分析",
+      "structure_type": "精簡式"
+    },
+    "structure": {
+      "required_sections": [
+        {
+          "id": "analysis_para_1",
+          "name": "分析段一",
+          "order": 1,
+          "description": "從一個方面分析結構"
+        },
+        {
+          "id": "analysis_para_2",
+          "name": "分析段二",
+          "order": 2,
+          "description": "從另一個方面分析結構"
+        }
+      ]
+    },
+    "paragraph_types": {
+      "analysis": {
+        "name": "分析段",
+        "analysis_dimensions": [
+          {
+            "id": "structure_analysis_depth",
+            "name": "結構分析充分性",
+            "weight": 1.0,
+            "checks": [
+              "是否引用了《春江花月夜》原文？",
+              "是否分析了至少兩個結構方面？",
+              "分析是否具體、有細節？",
+              "是否避免空泛評論？"
+            ]
+          }
+        ],
+        "required_elements": [
+          {
+            "id": "textual_reference",
+            "name": "原文引用",
+            "required": true
+          },
+          {
+            "id": "analysis",
+            "name": "具體分析",
+            "required": true
+          }
+        ]
+      }
+    },
+    "constraints": {
+      "total_word_count": { "min": 400, "max": 600 },
+      "required_paragraphs": 2
+    },
+    "grading_rubric": {
+      "type": "ib-myp-chinese-literature",
+      "active_criteria": ["B"]
+    }
+  },
+  "understanding_summary": "我理解您的要求：這是一個片段分析任務，學生寫兩段話（無需開頭結尾），從至少兩個方面分析《春江花月夜》的結構安排，字數 400-600 字，使用 IB MYP 標準 B 評分。"
+}
+```
+
+---
+
+### Example 2：三段固定結構（短寫練習）
+
+**真實案例**：鶯鶯傳人物分析短寫
+
+**輸入**：
+```json
+{
+  "mode": "custom",
+  "teacher_input": "《鶯鶯傳》人物形象分析短寫\n\n結合對原文的引用，分析崔鶯鶯的一個人物形象特點，最少 400 字。\n\n按照以下三段格式：\n1. 開頭：崔鶯鶯的簡要背景，心路歷程梳理\n2. 概括人物一個最主要形象特點的主題句，兩到三處原文引用和分析，段末總結\n3. 結尾：整體形象總結，個人評價及延伸思考\n\n評分標準：A 分析、D 運用語言"
+}
+```
+
+**AI 輸出**：
+```json
+{
+  "human_readable": "【任務類型】\n人物形象分析短寫\n\n【字數要求】\n• 至少 400 字\n\n【段落結構】\n\n一、開頭段\n• 崔鶯鶯的簡要背景\n• 心路歷程梳理\n\n二、分析段（主體）\n• 主題句：概括一個最主要形象特點\n• 原文引用：2-3 處\n• 細讀分析\n• 段末總結\n\n三、結尾段\n• 整體形象總結\n• 個人評價\n• 延伸思考\n\n【內容要求】\n• 聚焦崔鶯鶯的**一個**形象特點（不要面面俱到）\n• 必須結合原文引用\n\n【檢查維度】\n人物形象分析深度：\n- 是否明確概括了一個形象特點？\n- 是否引用了 2-3 處原文？\n- 是否對引用進行了分析？\n- 是否聚焦單一特點（避免散亂）？\n\n【評分標準】\nIB MYP 標準 A（分析）、標準 D（運用語言）",
+  
+  "format_json": {
+    "metadata": {
+      "name": "人物形象分析短寫",
+      "essay_type": "人物分析",
+      "structure_type": "三段固定式"
+    },
+    "structure": {
+      "required_sections": [
+        {"id": "opening", "name": "開頭段", "order": 1},
+        {"id": "analysis", "name": "分析段", "order": 2},
+        {"id": "closing", "name": "結尾段", "order": 3}
+      ]
+    },
+    "paragraph_types": {
+      "opening": {
+        "name": "開頭段",
+        "required_elements": [
+          {"id": "background", "name": "人物背景", "required": true},
+          {"id": "journey", "name": "心路歷程", "required": true}
+        ]
+      },
+      "analysis": {
+        "name": "分析段",
+        "required_elements": [
+          {"id": "topic_sentence", "name": "主題句", "required": true, "description": "概括形象特點"},
+          {"id": "textual_evidence", "name": "原文引用", "required": true, "min_count": 2, "max_count": 3},
+          {"id": "close_reading", "name": "細讀分析", "required": true},
+          {"id": "summary", "name": "段末總結", "required": true}
+        ],
+        "analysis_dimensions": [
+          {
+            "id": "character_analysis_depth",
+            "name": "人物形象分析深度",
+            "weight": 1.0,
+            "checks": [
+              "是否明確概括了一個形象特點？",
+              "是否引用了 2-3 處原文？",
+              "是否對引用進行了細讀分析？",
+              "是否聚焦單一特點（避免面面俱到）？"
+            ]
+          }
+        ]
+      },
+      "closing": {
+        "name": "結尾段",
+        "required_elements": [
+          {"id": "overall_summary", "name": "整體形象總結", "required": true},
+          {"id": "personal_view", "name": "個人評價", "required": true},
+          {"id": "extension", "name": "延伸思考", "required": true}
+        ]
+      }
+    },
+    "constraints": {
+      "total_word_count": { "min": 400 }
+    },
+    "content_requirements": [
+      {
+        "type": "content_focus",
+        "description": "聚焦崔鶯鶯的一個形象特點",
+        "specific_criteria": [
+          "選擇一個最主要的形象特點",
+          "不要面面俱到"
+        ]
+      }
+    ],
+    "grading_rubric": {
+      "type": "ib-myp-chinese-literature",
+      "active_criteria": ["A", "D"]
+    }
+  },
+  "understanding_summary": "我理解您的要求：這是一個 400 字以上的短寫任務，三段固定結構（開頭、分析、結尾）。學生需要聚焦崔鶯鶯的一個形象特點，結合 2-3 處原文引用進行分析。使用 IB MYP 標準 A 和 D 評分。"
+}
+```
+
+---
+
+### Example 3：開放選題（選擇性要求）
+
+**真實案例**：詩歌論文自選角度
+
+**輸入**：
+```json
+{
+  "mode": "custom",
+  "teacher_input": "從以下詩歌賞析角度選擇一個，從以下詩歌範圍選擇一個，寫論文。\n\n角度：意象、意境、象徵、對比、感官描寫、呼應、重複...\n範圍：《詩經》及《古詩十九首》、魏晉詩、唐詩\n\n字數：1000-2000 字\n評分標準：A 分析、B 組織、D 運用語言"
+}
+```
+
+**AI 輸出**：
+```json
+{
+  "human_readable": "【任務類型】\n詩歌賞析（開放選題）\n\n【字數要求】\n• 總字數：1000-2000 字\n\n【選擇要求】\n\n一、選擇分析角度（選一個）：\n• 意象\n• 意境\n• 象徵\n• 對比、襯托\n• 感官描寫\n• 呼應\n• 重複、反復\n...更多選項\n\n二、選擇詩歌範圍（選一個）：\n• 《詩經》及《古詩十九首》\n• 魏晉詩\n• 唐詩\n\n【內容要求】\n• 論文主題明確\n• 論證充分\n• 必須引用原文並分析\n\n【檢查策略】\nAI 反饋時會：\n1. 識別學生選擇的角度和範圍\n2. 檢查論證是否圍繞該角度展開\n3. 檢查引用是否來自選定範圍\n4. 不強制要求特定分析角度（因為是學生自選）\n\n【評分標準】\nIB MYP 標準 A（分析）、B（組織）、D（運用語言）",
+  
+  "format_json": {
+    "metadata": {
+      "name": "詩歌賞析開放選題",
+      "essay_type": "詩歌分析",
+      "structure_type": "開放式"
+    },
+    "structure": {
+      "required_sections": [
+        {"id": "introduction", "name": "引言", "order": 1},
+        {"id": "body", "name": "正文", "order": 2},
+        {"id": "conclusion", "name": "結論", "order": 3}
+      ]
+    },
+    "paragraph_types": {
+      "any": {
+        "name": "通用段落",
+        "analysis_dimensions": [
+          {
+            "id": "argumentation_quality",
+            "name": "論證充分性",
+            "weight": 0.6,
+            "checks": [
+              "論點是否明確？",
+              "是否引用了原文？",
+              "是否進行了具體分析？",
+              "論證是否圍繞選定角度展開？"
+            ]
+          },
+          {
+            "id": "textual_evidence",
+            "name": "文本證據完整性",
+            "weight": 0.4,
+            "checks": [
+              "是否引用了詩歌原文？",
+              "引用是否來自選定範圍？",
+              "引用是否準確？"
+            ]
+          }
+        ]
+      }
+    },
+    "constraints": {
+      "total_word_count": { "min": 1000, "max": 2000 }
+    },
+    "content_requirements": [
+      {
+        "type": "optional_selection",
+        "description": "學生自選分析角度和詩歌範圍",
+        "selection_options": {
+          "analysis_angle": ["意象", "意境", "象徵", "對比", "感官描寫", "呼應", "重複"],
+          "poem_range": ["《詩經》及《古詩十九首》", "魏晉詩", "唐詩"]
+        },
+        "feedback_strategy": "識別學生選擇，基於該角度進行檢查，不強制特定角度"
+      }
+    ],
+    "grading_rubric": {
+      "type": "ib-myp-chinese-literature",
+      "active_criteria": ["A", "B", "D"]
+    }
+  },
+  "understanding_summary": "我理解您的要求：這是一個開放選題的詩歌分析任務。學生可以從多個角度選一個，從多個詩歌範圍選一個，寫 1000-2000 字論文。AI 反饋時會識別學生選擇，不強制特定角度。使用 IB MYP 標準 A、B、D 評分。"
+}
+```
+
+---
+
+### Example 4：基於系統格式的增量（標準用法）（增量模式）
 
 **輸入**：
 ```json
