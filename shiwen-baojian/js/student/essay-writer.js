@@ -50,7 +50,22 @@ export function getEditorByParagraphId(paragraphId) {
 // 初始化編輯器
 // ================================
 
-export async function initializeEssayEditor() {
+export async function initializeEssayEditor(forceReinit = false) {
+    // 如果強制重新初始化，先重置狀態
+    if (forceReinit) {
+        console.log('🔄 強制重新初始化編輯器...');
+        EditorState.initialized = false;
+        EditorState.isInitializing = false;
+        EditorState.introEditor = null;
+        EditorState.conclusionEditor = null;
+        EditorState.arguments = [];
+        EditorState.totalWordCount = 0;
+        if (EditorState.saveTimer) {
+            clearTimeout(EditorState.saveTimer);
+            EditorState.saveTimer = null;
+        }
+    }
+    
     // 防止重複初始化
     if (EditorState.initialized || EditorState.isInitializing) {
         console.log('⏸️ 編輯器已初始化或正在初始化中，跳過');

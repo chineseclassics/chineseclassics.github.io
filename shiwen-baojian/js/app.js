@@ -745,8 +745,14 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             await loadStudentEssayForAssignment(assignmentId);
         }
 
-        // 初始化論文編輯器
-        await initializeEssayEditor();
+        // 初始化論文編輯器（強制重新初始化）
+        await initializeEssayEditor(true);
+
+        // TODO: 如果有已保存的內容，恢復到編輯器
+        if (AppState.currentEssayContent) {
+            console.log('📂 準備恢復作業內容...');
+            // 將來實現內容恢復功能
+        }
 
         console.log('✅ 論文編輯器顯示完成');
     } catch (error) {

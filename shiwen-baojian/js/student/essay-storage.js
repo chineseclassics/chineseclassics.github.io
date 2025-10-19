@@ -152,14 +152,17 @@ async function upsertEssay(essayData) {
             .single();
             
         if (error) {
-            console.error('❌ 更新論文失敗:', error);
-            // 可能是論文被刪除了，嘗試創建新的
+            // 可能是論文被刪除了或 ID 無效，創建新的
+            console.warn('⚠️ 更新作業失敗（可能已被刪除），創建新作業:', error.code);
             const newEssay = await createNewEssay(essayRecord);
+            // 更新所有相關的 ID
             StorageState.currentEssayId = newEssay.id;
+            localStorage.setItem('current-essay-id', newEssay.id);
             if (!AppState.currentAssignmentId) {
                 // 只有練筆才設置 currentPracticeEssayId
                 AppState.currentPracticeEssayId = newEssay.id;
             }
+            console.log(`✅ 已創建新作業替代: ${newEssay.id}`);
             return newEssay;
         }
         
