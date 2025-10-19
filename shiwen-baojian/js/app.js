@@ -799,7 +799,7 @@ async function loadFormatTemplate(templateName) {
         // TODO: 將來擴展為可選擇的模板系統
         // 當前只有紅樓夢格式，預留接口
         const formatTemplates = {
-            'honglou': 'shiwen-baojian/assets/data/honglou-essay-format.json',
+            'honglou': '/shiwen-baojian/assets/data/honglou-essay-format.json',
             // 預留：將來可以添加更多格式
             // 'classical': '...',
             // 'modern': '...'

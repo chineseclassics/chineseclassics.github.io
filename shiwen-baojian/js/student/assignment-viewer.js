@@ -153,9 +153,9 @@ class StudentAssignmentViewer {
 
         <!-- 我的練筆 -->
         <div class="practice-section ${hasAssignments ? 'mt-12' : ''}">
-          <div class="list-header">
+          <div class="practice-header">
             <h2><i class="fas fa-feather-alt"></i> 我的練筆</h2>
-            <button id="free-writing-btn">
+            <button id="free-writing-btn" class="practice-new-btn">
               <i class="fas fa-plus"></i>
               開始新的練筆
             </button>
