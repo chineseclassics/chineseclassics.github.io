@@ -9,6 +9,7 @@
 
 import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
+import TeacherDashboard from './teacher/teacher-dashboard.js';
 
 // ================================
 // 全局狀態管理
@@ -386,6 +387,36 @@ async function showTeacherDashboard() {
     }
     
     AppState.currentScreen = 'teacher-dashboard';
+    
+    // 初始化老師端功能
+    await initializeTeacherModules();
+}
+
+/**
+ * 初始化老師端功能模塊
+ */
+async function initializeTeacherModules() {
+    console.log('📚 初始化老師端功能...');
+    
+    try {
+        // 獲取老師儀表板容器
+        const container = document.getElementById('teacher-dashboard-content');
+        
+        if (!container) {
+            console.error('❌ 找不到老師儀表板容器');
+            return;
+        }
+        
+        // 創建並初始化老師端儀表板
+        const teacherDashboard = new TeacherDashboard(AppState.supabase);
+        await teacherDashboard.initialize(container);
+        
+        console.log('✅ 老師端功能初始化完成');
+        
+    } catch (error) {
+        console.error('❌ 老師端功能初始化失敗:', error);
+        showError('老師端功能初始化失敗: ' + error.message);
+    }
 }
 
 /**
