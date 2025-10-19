@@ -41,7 +41,13 @@
         
         <!-- 測試場景選擇 -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">📝 測試場景</h2>
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">📝 測試場景（兩階段流程）</h2>
+            
+            <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-sm text-yellow-800">
+                    💡 <strong>新流程</strong>：先生成人類可讀版本（階段1），確認後再轉換為 JSON（階段2）
+                </p>
+            </div>
             
             <div class="space-y-4">
                 <button 
@@ -53,18 +59,10 @@
                 </button>
                 
                 <button 
-                    onclick="testScenario2()" 
-                    class="w-full text-left px-4 py-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
-                >
-                    <div class="font-semibold text-green-800">場景 2：增量模式（基於紅樓夢格式）</div>
-                    <div class="text-sm text-green-600 mt-1">在系統模板基礎上添加字數和段落數要求</div>
-                </button>
-                
-                <button 
                     onclick="testScenario3()" 
                     class="w-full text-left px-4 py-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition"
                 >
-                    <div class="font-semibold text-purple-800">場景 3：自定義內容焦點</div>
+                    <div class="font-semibold text-purple-800">場景 2：自定義內容焦點</div>
                     <div class="text-sm text-purple-600 mt-1">包含具體內容要求（人物外貌分析）</div>
                 </button>
             </div>
@@ -162,19 +160,16 @@
     </div>
     
     <script>
+        // 全局變量：存儲階段 1 的結果
+        let stage1Result = null;
+        
         // 測試場景 1：極簡任務
         function testScenario1() {
             document.getElementById('mode').value = 'custom';
             document.getElementById('teacherInput').value = `請從至少兩個方面，寫兩段話（不需要開頭結尾），分析《春江花月夜》結構安排的精妙之處。
 
-字數：400-600 字
-評分標準：B 理解`;
-            testCustomInput();
-        }
-        
-        // 測試場景 2：增量模式
-        function testScenario2() {
-            alert('❌ 增量模式需要先加載系統模板，目前僅測試自定義模式。請使用場景 1 或場景 3。');
+字數：400-600 字`;
+            testStage1();
         }
         
         // 測試場景 3：自定義內容焦點
@@ -182,14 +177,12 @@
             document.getElementById('mode').value = 'custom';
             document.getElementById('teacherInput').value = `論文總字數 1500-2000 字，必須 3 個分論點。
 
-學生需要詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫，每個人物的分析不少於 300 字。
-
-評分標準：A 分析、B 組織`;
-            testCustomInput();
+學生需要詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫，每個人物的分析不少於 300 字。`;
+            testStage1();
         }
         
-        // 測試自定義輸入
-        async function testCustomInput() {
+        // 【階段 1】生成人類可讀版本
+        async function testStage1() {
             const supabaseUrl = document.getElementById('supabaseUrl').value;
             const anonKey = document.getElementById('anonKey').value;
             const mode = document.getElementById('mode').value;
@@ -208,6 +201,7 @@
             // 顯示結果容器和加載指示器
             document.getElementById('resultContainer').classList.remove('hidden');
             document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('loadingIndicator').querySelector('p').textContent = '階段 1：AI 正在生成人類可讀版本...';
             document.getElementById('resultContent').classList.add('hidden');
             document.getElementById('errorContent').classList.add('hidden');
             
@@ -221,6 +215,7 @@
                         'Authorization': `Bearer ${anonKey}`
                     },
                     body: JSON.stringify({
+                        stage: 'generate_readable',
                         mode: mode,
                         teacher_input: teacherInput
                     })
@@ -232,11 +227,17 @@
                 document.getElementById('loadingIndicator').classList.add('hidden');
                 
                 if (result.success) {
-                    // 顯示成功結果
+                    // 保存階段 1 結果
+                    stage1Result = result;
+                    
+                    // 顯示人類可讀版本
                     document.getElementById('resultContent').classList.remove('hidden');
-                    document.getElementById('understandingSummary').textContent = result.understanding_summary;
+                    document.getElementById('understandingSummary').textContent = '階段 1 完成！請確認格式說明，然後點擊下方按鈕轉換為 JSON。';
                     document.getElementById('humanReadable').textContent = result.human_readable;
-                    document.getElementById('formatJson').textContent = JSON.stringify(result.format_json, null, 2);
+                    document.getElementById('formatJson').textContent = '等待階段 2 轉換...';
+                    
+                    // 顯示「轉換為 JSON」按鈕
+                    showStage2Button();
                 } else {
                     // 顯示錯誤
                     document.getElementById('errorContent').classList.remove('hidden');
@@ -247,6 +248,85 @@
                 document.getElementById('errorContent').classList.remove('hidden');
                 document.getElementById('errorMessage').textContent = error.message;
             }
+        }
+        
+        // 【階段 2】轉換為 JSON
+        async function testStage2() {
+            if (!stage1Result) {
+                alert('❌ 請先執行階段 1');
+                return;
+            }
+            
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const anonKey = document.getElementById('anonKey').value;
+            
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('loadingIndicator').querySelector('p').textContent = '階段 2：純代碼轉換為 JSON（毫秒級）...';
+            
+            try {
+                const url = `${supabaseUrl}/functions/v1/format-spec-generator`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${anonKey}`
+                    },
+                    body: JSON.stringify({
+                        stage: 'convert_to_json',
+                        human_readable: stage1Result.human_readable
+                    })
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                
+                if (result.success) {
+                    document.getElementById('understandingSummary').textContent = 
+                        `✅ 完成！階段 2 耗時：${result.parse_duration_ms}ms（極快！）`;
+                    document.getElementById('formatJson').textContent = JSON.stringify(result.format_json, null, 2);
+                    
+                    // 隱藏「轉換為 JSON」按鈕
+                    hideStage2Button();
+                } else {
+                    document.getElementById('errorContent').classList.remove('hidden');
+                    document.getElementById('errorMessage').textContent = result.error;
+                }
+            } catch (error) {
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                document.getElementById('errorContent').classList.remove('hidden');
+                document.getElementById('errorMessage').textContent = error.message;
+            }
+        }
+        
+        // 顯示階段 2 按鈕
+        function showStage2Button() {
+            let btn = document.getElementById('stage2Button');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.id = 'stage2Button';
+                btn.className = 'w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold mt-4';
+                btn.textContent = '✅ 確認格式，轉換為 JSON（階段 2）';
+                btn.onclick = testStage2;
+                
+                const container = document.getElementById('resultContent');
+                container.insertBefore(btn, container.lastElementChild);
+            }
+            btn.classList.remove('hidden');
+        }
+        
+        // 隱藏階段 2 按鈕
+        function hideStage2Button() {
+            const btn = document.getElementById('stage2Button');
+            if (btn) {
+                btn.classList.add('hidden');
+            }
+        }
+        
+        // 測試自定義輸入（直接調用階段 1）
+        function testCustomInput() {
+            testStage1();
         }
         
         // 複製到剪貼板
