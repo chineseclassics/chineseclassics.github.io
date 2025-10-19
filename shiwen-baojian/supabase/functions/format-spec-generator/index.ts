@@ -222,7 +222,7 @@ function parseHumanReadableToJSON(text: string): any {
             result.analysis_dimensions.push({
               id: `dimension_${index + 1}`,
               name: dimensionName,
-              weight: 1.0,
+              weight: 1.0,  // 浮点数格式
               checks: checks
             });
           }
