@@ -195,6 +195,51 @@
 }
 
 /* ================================
+   句子提示條樣式
+   ================================ */
+
+#sentence-tooltip {
+    max-width: 90vw;
+    animation: tooltip-appear 0.3s ease-out;
+}
+
+@keyframes tooltip-appear {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -10px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+/* 句子問題條目 hover 效果 */
+.sentence-issue-item {
+    position: relative;
+}
+
+.sentence-issue-item:hover {
+    transform: translateX(2px);
+}
+
+.sentence-issue-item::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: #eab308;
+    transition: height 0.2s ease;
+}
+
+.sentence-issue-item:hover::before {
+    height: 80%;
+}
+
+/* ================================
    打印樣式（隱藏側邊欄和反饋）
    ================================ */
 

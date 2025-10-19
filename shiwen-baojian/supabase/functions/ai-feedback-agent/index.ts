@@ -694,12 +694,13 @@ function identifySentenceIssues(
     const score = (analysis as any).score || 0
     
     for (let i = 0; i < dimIssues.length; i++) {
+      const sentenceNum = sentenceNumbers[i] || 0
       issues.push({
-        sentence_number: sentenceNumbers[i] || 0,
+        sentence_number: sentenceNum,
         type: dim,
         severity: score < 5 ? 'major' : 'minor',
         message: dimIssues[i],
-        suggestion: `请修改第 ${sentenceNumbers[i] || '相关'} 句`
+        suggestion: sentenceNum > 0 ? `请修改第 ${sentenceNum} 句` : undefined
       })
     }
   }

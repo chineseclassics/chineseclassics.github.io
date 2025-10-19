@@ -26,6 +26,26 @@ const EditorState = {
     isInitializing: false  // 防止重复初始化
 };
 
+/**
+ * 獲取編輯器實例（供外部模組使用）
+ */
+export function getEditorByParagraphId(paragraphId) {
+    if (paragraphId === 'intro') {
+        return EditorState.introEditor;
+    } else if (paragraphId === 'conclusion') {
+        return EditorState.conclusionEditor;
+    } else {
+        // 從分論點中查找
+        for (const arg of EditorState.arguments) {
+            const para = arg.paragraphs.find(p => p.id === paragraphId);
+            if (para) {
+                return para.editor;
+            }
+        }
+    }
+    return null;
+}
+
 // ================================
 // 初始化編輯器
 // ================================
@@ -267,12 +287,12 @@ function addParagraph(argumentId) {
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium text-gray-600">段落 ${paragraphIndex}</span>
                 <div class="flex items-center space-x-2">
-                    <!-- AI 反饋按鈕 -->
-                    <button class="request-feedback-btn text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1 rounded text-xs font-medium transition-all"
+                    <!-- 雨村評點按鈕 -->
+                    <button class="request-feedback-btn text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
                             data-paragraph-id="${paragraphId}"
-                            title="獲取 AI 反饋">
-                        <i class="fas fa-robot mr-1"></i>
-                        AI 反饋
+                            title="請雨村評點">
+                        <i class="fas fa-pen-fancy mr-2 text-base"></i>
+                        雨村評點
                     </button>
                     <!-- 刪除按鈕 -->
                     <button class="delete-paragraph-btn text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-all"

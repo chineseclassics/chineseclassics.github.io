@@ -355,14 +355,20 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
             <h5 class="font-semibold text-gray-800 mb-3">
                 <i class="fas fa-list-ul text-blue-600 mr-2"></i>
                 具體問題 (${sentenceIssues.length})
+                <span class="text-xs text-gray-500 font-normal ml-2">點擊查看原句</span>
             </h5>
             
             <div class="space-y-2">
-                ${sentenceIssues.map((issue, index) => `
-                    <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
-                         onclick="scrollToParagraph('${paragraphId}')">
+                ${sentenceIssues.map((issue, index) => {
+                    const sentenceNum = issue.sentence_number || 0;
+                    
+                    return `
+                    <div class="sentence-issue-item flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-yellow-50 hover:border-yellow-300 transition-all cursor-pointer group"
+                         data-paragraph-id="${paragraphId}"
+                         data-sentence-number="${sentenceNum}"
+                         onclick="handleSentenceClick('${paragraphId}', ${sentenceNum})">
                         <div class="flex-shrink-0 w-8 h-8 rounded-full ${getSeverityColor(issue.severity)} flex items-center justify-center">
-                            <span class="text-white text-xs font-bold">${issue.sentence_number || '!'}</span>
+                            <span class="text-white text-xs font-bold">${sentenceNum || '!'}</span>
                         </div>
                         <div class="flex-1">
                             <p class="text-sm font-medium text-gray-800">${issue.message}</p>
@@ -373,11 +379,12 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
                                 </p>
                             ` : ''}
                         </div>
-                        <div class="text-blue-500 text-xs">
-                            <i class="fas fa-arrow-right"></i>
+                        <div class="text-yellow-500 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-eye"></i>
                         </div>
                     </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
@@ -587,6 +594,29 @@ window.scrollToParagraph = function(paragraphId) {
         setTimeout(() => {
             paragraphElement.classList.remove('ring-4', 'ring-yellow-300');
         }, 2000);
+    }
+}
+
+/**
+ * 處理句子點擊事件（全局函數）
+ */
+window.handleSentenceClick = async function(paragraphId, sentenceNumber) {
+    console.log('🖱️ 點擊句子問題:', { paragraphId, sentenceNumber });
+    
+    if (sentenceNumber === 0) {
+        // 整體問題，只滾動到段落
+        scrollToParagraph(paragraphId);
+        return;
+    }
+    
+    // 動態導入句子高亮器
+    try {
+        const { highlightSentence } = await import('./sentence-highlighter.js');
+        highlightSentence(paragraphId, sentenceNumber);
+    } catch (error) {
+        console.error('❌ 加載句子高亮器失敗:', error);
+        // 備用方案：只滾動到段落
+        scrollToParagraph(paragraphId);
     }
 }
 
