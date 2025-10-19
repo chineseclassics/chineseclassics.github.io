@@ -196,11 +196,6 @@ export class RichTextEditor {
         // 統計標點符號（中文和英文）
         const punctuation = (text.match(/[，。！？；：、""''（）,.!?;:()\[\]]/g) || []).length;
         
-        // 調試信息（可在控制台查看）
-        if (text.length > 0 && text.length < 50) {
-            console.log(`字數統計: 文本="${text}" 中文=${chineseChars} 英文=${englishWords} 標點=${punctuation}`);
-        }
-        
         return {
             total: chineseChars,  // 只返回中文字符數，不含標點和英文
             chinese: chineseChars,
