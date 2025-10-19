@@ -20,7 +20,29 @@ const AppState = {
     currentUser: null,
     userRole: null, // 'teacher' | 'student' | 'anonymous'
     currentScreen: null,
-    initialized: false
+    initialized: false,
+    
+    // ✅ 數據緩存
+    cache: {
+        // 靜態數據
+        formatTemplates: {},           // { templateName: templateData }
+        
+        // 半靜態數據（可刷新）
+        assignmentsList: [],           // 任務列表
+        practiceEssaysList: [],        // 練筆列表
+        classList: [],                 // 班級列表
+        lastRefreshTime: null,         // 上次刷新時間
+        
+        // AI 反饋緩存（智能緩存）
+        aiFeedbackCache: {},           // { paragraphId: { contentHash: xxx, feedback: {...} } }
+    },
+    
+    // 當前編輯狀態
+    currentAssignmentId: null,
+    currentPracticeEssayId: null,
+    currentEssayContent: null,
+    currentPracticeContent: null,
+    currentFormatSpec: null
 };
 
 // ================================
@@ -748,10 +770,16 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         // 初始化論文編輯器（強制重新初始化）
         await initializeEssayEditor(true);
 
-        // TODO: 如果有已保存的內容，恢復到編輯器
+        // 等待編輯器完全準備好（DOM 渲染完成）
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // 如果有已保存的內容，恢復到編輯器
         if (AppState.currentEssayContent) {
-            console.log('📂 準備恢復作業內容...');
-            // 將來實現內容恢復功能
+            console.log('📂 恢復作業內容...');
+            await restoreEssayContent(AppState.currentEssayContent);
+        } else if (AppState.currentPracticeContent) {
+            console.log('📂 恢復練筆內容...');
+            await restoreEssayContent(AppState.currentPracticeContent);
         }
 
         console.log('✅ 論文編輯器顯示完成');
@@ -802,8 +830,28 @@ async function loadFormatTemplate(templateName) {
     try {
         console.log('📋 加載格式模板:', templateName);
         
-        // TODO: 將來擴展為可選擇的模板系統
-        // 當前只有紅樓夢格式，預留接口
+        // ✅ 先檢查內存緩存
+        if (AppState.cache.formatTemplates[templateName]) {
+            console.log('📦 使用緩存的格式模板:', templateName);
+            AppState.currentFormatSpec = AppState.cache.formatTemplates[templateName];
+            return;
+        }
+        
+        // ✅ 檢查 localStorage 緩存
+        const cachedTemplate = localStorage.getItem(`format-template-${templateName}`);
+        if (cachedTemplate) {
+            try {
+                const formatSpec = JSON.parse(cachedTemplate);
+                console.log('📦 從 localStorage 恢復格式模板:', templateName);
+                AppState.currentFormatSpec = formatSpec;
+                AppState.cache.formatTemplates[templateName] = formatSpec;
+                return;
+            } catch (e) {
+                console.warn('⚠️ localStorage 緩存解析失敗，重新加載');
+            }
+        }
+        
+        // 從網絡加載
         const formatTemplates = {
             'honglou': '/shiwen-baojian/assets/data/honglou-essay-format.json',
             // 預留：將來可以添加更多格式
@@ -817,13 +865,16 @@ async function loadFormatTemplate(templateName) {
             return;
         }
         
-        // 預載格式規範（供 AI 反饋使用）
         const response = await fetch(templatePath);
         if (response.ok) {
             const formatSpec = await response.json();
-            // 將格式規範存儲到 AppState 供後續使用
-            AppState.currentFormatSpec = formatSpec;
-            console.log('✅ 格式模板加載完成:', formatSpec.title);
+            
+            // ✅ 三層緩存
+            AppState.currentFormatSpec = formatSpec;                              // 當前使用
+            AppState.cache.formatTemplates[templateName] = formatSpec;            // 內存緩存
+            localStorage.setItem(`format-template-${templateName}`, JSON.stringify(formatSpec));  // 持久化緩存
+            
+            console.log('✅ 格式模板加載完成並已緩存:', formatSpec.title);
         }
     } catch (error) {
         console.error('❌ 加載格式模板失敗:', error);
@@ -890,16 +941,80 @@ async function loadStudentEssayForAssignment(assignmentId) {
             const { StorageState } = await import('./student/essay-storage.js');
             StorageState.currentEssayId = essay.id;
             
-            // TODO: 加載作業內容到編輯器
+            // 解析並保存作業內容
             AppState.currentEssayContent = essay.content_json ? JSON.parse(essay.content_json) : null;
+            console.log('📋 已加載作業內容，字數:', essay.total_word_count);
         } else {
             console.log('ℹ️ 這是新的任務作業，將創建新記錄');
             const { StorageState } = await import('./student/essay-storage.js');
             StorageState.currentEssayId = null;
+            AppState.currentEssayContent = null;
         }
     } catch (error) {
         console.error('❌ 加載任務作業失敗:', error);
         // 不阻斷編輯器加載
+    }
+}
+
+/**
+ * 恢復作業內容到編輯器
+ */
+async function restoreEssayContent(contentData) {
+    try {
+        if (!contentData) {
+            console.log('ℹ️ 沒有內容需要恢復');
+            return;
+        }
+        
+        console.log('🔄 開始恢復內容到編輯器...', contentData);
+        
+        // 動態導入 essay-writer 模組獲取編輯器實例
+        const { getEditorByParagraphId } = await import('./student/essay-writer.js');
+        
+        // 1. 恢復標題和副標題
+        const titleInput = document.getElementById('essay-title');
+        const subtitleInput = document.getElementById('essay-subtitle');
+        
+        if (titleInput && contentData.title) {
+            titleInput.value = contentData.title;
+            console.log('✅ 已恢復標題:', contentData.title);
+        }
+        if (subtitleInput && contentData.subtitle) {
+            subtitleInput.value = contentData.subtitle;
+            console.log('✅ 已恢復副標題:', contentData.subtitle);
+        }
+        
+        // 2. 恢復引言
+        if (contentData.introduction) {
+            const introEditor = getEditorByParagraphId('intro');
+            if (introEditor) {
+                introEditor.setHTML(contentData.introduction);
+                console.log('✅ 已恢復引言內容');
+            } else {
+                console.warn('⚠️ 找不到引言編輯器');
+            }
+        }
+        
+        // 3. 恢復結論
+        if (contentData.conclusion) {
+            const conclusionEditor = getEditorByParagraphId('conclusion');
+            if (conclusionEditor) {
+                conclusionEditor.setHTML(contentData.conclusion);
+                console.log('✅ 已恢復結論內容');
+            } else {
+                console.warn('⚠️ 找不到結論編輯器');
+            }
+        }
+        
+        // 4. 恢復分論點（暫時跳過，需要更複雜的邏輯）
+        if (contentData.arguments && contentData.arguments.length > 0) {
+            console.log(`ℹ️ 檢測到 ${contentData.arguments.length} 個分論點，暫時不恢復（需要動態創建分論點功能）`);
+            // TODO: 實現分論點的動態恢復
+        }
+        
+        console.log('✅ 內容恢復完成');
+    } catch (error) {
+        console.error('❌ 恢復內容失敗:', error);
     }
 }
 

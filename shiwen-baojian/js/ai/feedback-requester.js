@@ -5,11 +5,38 @@
  * - 向 Edge Function 發送段落反饋請求
  * - 處理請求狀態和錯誤
  * - 提供加載狀態管理
+ * - 智能緩存（基於內容哈希，內容變化時重新請求）
  */
 
 import { AppState } from '../app.js';
 import { renderFeedback } from './feedback-renderer.js';
 import { loadHonglouFormatSpec } from '../data/format-spec-loader.js';
+
+// ================================
+// 工具函數
+// ================================
+
+/**
+ * 計算內容的簡單哈希值（用於判斷內容是否變化）
+ * @param {string} content - 內容文本
+ * @returns {string} - 哈希值
+ */
+function simpleHash(content) {
+    // 移除 HTML 標籤和多餘空白，只比較純文本
+    const cleanText = content
+        .replace(/<[^>]*>/g, '')  // 移除 HTML 標籤
+        .replace(/\s+/g, ' ')      // 多個空白合併為一個
+        .trim();
+    
+    // 使用簡單的字符串哈希算法
+    let hash = 0;
+    for (let i = 0; i < cleanText.length; i++) {
+        const char = cleanText.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // 轉換為 32 位整數
+    }
+    return hash.toString(16);
+}
 
 // ================================
 // 反饋請求器
@@ -31,22 +58,48 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
     console.log('📤 請求 AI 反饋:', { paragraphId, paragraphType });
     
     try {
-        // 1. 顯示加載狀態
+        // 1. 計算內容哈希值
+        const contentHash = simpleHash(paragraphContent);
+        console.log('🔑 內容哈希:', contentHash);
+        
+        // 2. 檢查緩存
+        const cachedFeedback = AppState.cache.aiFeedbackCache[paragraphId];
+        if (cachedFeedback && cachedFeedback.contentHash === contentHash) {
+            console.log('📦 使用緩存的 AI 反饋（內容未變化）');
+            
+            // 直接渲染緩存的反饋
+            renderFeedback(paragraphId, cachedFeedback.feedback);
+            
+            return {
+                success: true,
+                feedback: cachedFeedback.feedback,
+                fromCache: true
+            };
+        }
+        
+        // 3. 內容已變化或無緩存，重新請求
+        if (cachedFeedback) {
+            console.log('🔄 內容已變化，重新請求 AI 反饋');
+        } else {
+            console.log('🆕 首次請求 AI 反饋');
+        }
+        
+        // 4. 顯示加載狀態
         showLoadingState(paragraphId);
         
-        // 2. 加載格式規範（如果沒有傳入）
+        // 5. 加載格式規範（如果沒有傳入）
         if (!formatSpec) {
             console.log('📥 加載紅樓夢論文格式規範...');
             formatSpec = await loadHonglouFormatSpec();
         }
         
-        // 3. 調用 Edge Function
+        // 6. 調用 Edge Function
         const { data, error } = await AppState.supabase.functions.invoke('ai-feedback-agent', {
             body: {
                 paragraph_id: paragraphId,
                 paragraph_content: paragraphContent,
                 paragraph_type: paragraphType,
-                format_spec: formatSpec  // ✅ 現在會傳入完整的格式規範
+                format_spec: formatSpec
             }
         });
         
@@ -60,17 +113,26 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         
         console.log('✅ AI 反饋獲取成功:', data);
         
-        // 4. 隱藏加載狀態
+        // 7. 更新緩存
+        AppState.cache.aiFeedbackCache[paragraphId] = {
+            contentHash: contentHash,
+            feedback: data.feedback,
+            timestamp: Date.now()
+        };
+        console.log('💾 AI 反饋已緩存');
+        
+        // 8. 隱藏加載狀態
         hideLoadingState(paragraphId);
         
-        // 5. 渲染反饋
+        // 9. 渲染反饋
         renderFeedback(paragraphId, data.feedback);
         
-        // 6. 返回結果
+        // 10. 返回結果
         return {
             success: true,
             feedback: data.feedback,
-            feedback_id: data.feedback_id
+            feedback_id: data.feedback_id,
+            fromCache: false
         };
         
     } catch (error) {

@@ -20,51 +20,72 @@ class StudentAssignmentViewer {
   /**
    * 加載并渲染任務
    */
-  async loadAndRenderAssignments() {
+  async loadAndRenderAssignments(useCache = true) {
     try {
       const { data: { user } } = await this.supabase.auth.getUser();
       
-      // 1. 獲取學生所在的班級
-      const { data: memberships } = await this.supabase
-        .from('class_members')
-        .select('class_id')
-        .eq('student_id', user.id);
-
-      const hasClass = memberships && memberships.length > 0;
+      // ✅ 檢查緩存（如果允許使用緩存且緩存未過期）
+      const cacheAge = AppState.cache.lastRefreshTime 
+        ? (Date.now() - AppState.cache.lastRefreshTime) / 1000 
+        : Infinity;
+      const cacheValid = useCache && cacheAge < 300; // 5 分鐘內有效
       
-      // 2. 如果有班級，獲取班級任務
-      if (hasClass) {
-        const classIds = memberships.map(m => m.class_id);
+      if (cacheValid && AppState.cache.assignmentsList.length > 0) {
+        console.log('📦 使用緩存的任務列表（緩存時間:', Math.floor(cacheAge), '秒）');
+        this.assignments = AppState.cache.assignmentsList;
+        this.practiceEssays = AppState.cache.practiceEssaysList;
+      } else {
+        console.log('🔄 從 Supabase 加載最新數據...');
+        
+        // 1. 獲取學生所在的班級
+        const { data: memberships } = await this.supabase
+          .from('class_members')
+          .select('class_id')
+          .eq('student_id', user.id);
 
-        const { data: assignments, error } = await this.supabase
-          .from('assignments')
+        const hasClass = memberships && memberships.length > 0;
+        
+        // 2. 如果有班級，獲取班級任務
+        if (hasClass) {
+          const classIds = memberships.map(m => m.class_id);
+
+          const { data: assignments, error } = await this.supabase
+            .from('assignments')
+            .select('*')
+            .in('class_id', classIds)
+            .eq('is_published', true)
+            .order('due_date', { ascending: true });
+
+          if (error) throw error;
+          this.assignments = assignments || [];
+        } else {
+          this.assignments = [];
+        }
+
+        // 3. 獲取自主練筆作品（assignment_id 為 NULL）
+        const { data: practiceEssays, error: practiceError } = await this.supabase
+          .from('essays')
           .select('*')
-          .in('class_id', classIds)
-          .eq('is_published', true)
-          .order('due_date', { ascending: true });
+          .eq('student_id', user.id)
+          .is('assignment_id', null)
+          .order('updated_at', { ascending: false });
 
-        if (error) throw error;
-        this.assignments = assignments || [];
-      } else {
-        this.assignments = [];
-      }
-
-      // 3. 獲取自主練筆作品（assignment_id 為 NULL）
-      const { data: practiceEssays, error: practiceError } = await this.supabase
-        .from('essays')
-        .select('*')
-        .eq('student_id', user.id)
-        .is('assignment_id', null)
-        .order('updated_at', { ascending: false });
-
-      if (practiceError) {
-        console.error('獲取練筆作品失敗:', practiceError);
-        this.practiceEssays = [];
-      } else {
-        this.practiceEssays = practiceEssays || [];
+        if (practiceError) {
+          console.error('獲取練筆作品失敗:', practiceError);
+          this.practiceEssays = [];
+        } else {
+          this.practiceEssays = practiceEssays || [];
+        }
+        
+        // ✅ 更新緩存
+        AppState.cache.assignmentsList = this.assignments;
+        AppState.cache.practiceEssaysList = this.practiceEssays;
+        AppState.cache.lastRefreshTime = Date.now();
+        console.log('✅ 緩存已更新');
       }
 
       // 4. 如果既沒有班級也沒有練筆作品，顯示空狀態
+      const hasClass = this.assignments.length > 0 || AppState.cache.assignmentsList.length > 0;
       if (!hasClass && this.practiceEssays.length === 0) {
         this.renderNoClass();
         return;
@@ -131,6 +152,7 @@ class StudentAssignmentViewer {
     const hasAssignments = this.assignments.length > 0;
     const hasPractices = this.practiceEssays.length > 0;
 
+    // ✅ 添加刷新按鈕
     this.container.innerHTML = `
       <div class="student-assignment-list">
         ${hasAssignments ? `
@@ -143,6 +165,10 @@ class StudentAssignmentViewer {
                   <i class="fas fa-clipboard-list"></i>
                   共 ${this.assignments.length} 個任務
                 </span>
+                <button id="refresh-assignments-btn" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2">
+                  <i class="fas fa-sync-alt"></i>
+                  刷新
+                </button>
               </div>
             </div>
             <div class="student-assignments-grid">
@@ -380,6 +406,17 @@ class StudentAssignmentViewer {
    * 綁定事件
    */
   bindEvents() {
+    // ✅ 刷新按鈕
+    const refreshBtn = this.container.querySelector('#refresh-assignments-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', async () => {
+        console.log('🔄 手動刷新任務列表...');
+        refreshBtn.querySelector('i').classList.add('fa-spin');
+        await this.loadAndRenderAssignments(false); // 強制刷新
+        refreshBtn.querySelector('i').classList.remove('fa-spin');
+      });
+    }
+    
     // 任務寫作按鈕
     this.container.querySelectorAll('.student-assignment-card .start-btn, .student-assignment-card .continue-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
