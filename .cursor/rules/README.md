@@ -13,6 +13,7 @@
 | `coding-standards.mdc` | 代碼規範 | ✅ Always |
 | `documentation-standards.mdc` | 文檔創建規範 - 少而精，避免過度記錄 | ✅ Always |
 | `app-development.mdc` | 應用開發規範 - 應用切換器、URL 路徑規範 | ✅ Always |
+| `problem-solving-principles.mdc` | 問題解決原則 - 避免過度複雜化，追求簡單有效 | ✅ Always |
 
 ### Auto Attached Rules（自動附加）
 
