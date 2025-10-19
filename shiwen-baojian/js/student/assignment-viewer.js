@@ -492,8 +492,8 @@ class StudentAssignmentViewer {
 
       console.log('✅ 練筆已刪除');
       
-      // 重新加載列表
-      await this.loadAndRenderAssignments();
+      // ✅ 強制刷新列表（不使用緩存）
+      await this.loadAndRenderAssignments(false);
     } catch (error) {
       console.error('❌ 刪除練筆失敗:', error);
       alert('刪除失敗：' + error.message);

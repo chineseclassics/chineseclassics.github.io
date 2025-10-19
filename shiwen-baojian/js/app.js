@@ -630,9 +630,10 @@ async function initializeStudentModules() {
 
 /**
  * 顯示任務列表（不重新初始化所有模組）
+ * @param {boolean} forceRefresh - 是否強制刷新（不使用緩存）
  */
-async function showAssignmentList() {
-    console.log('📋 顯示任務列表...');
+async function showAssignmentList(forceRefresh = false) {
+    console.log('📋 顯示任務列表...', forceRefresh ? '（強制刷新）' : '');
     
     try {
         // ✅ 清理編輯狀態
@@ -655,10 +656,14 @@ async function showAssignmentList() {
             return;
         }
         
-        // ✅ 重新渲染任務列表（但不重新初始化整個模組）
+        // ✅ 重新渲染任務列表（可選擇是否使用緩存）
         const { default: StudentAssignmentViewer } = await import('./student/assignment-viewer.js');
         const assignmentViewer = new StudentAssignmentViewer(AppState.supabase);
-        await assignmentViewer.render(container);
+        
+        // 直接調用 render 會使用緩存，我們需要手動控制
+        assignmentViewer.container = container;
+        assignmentViewer.practiceEssays = [];
+        await assignmentViewer.loadAndRenderAssignments(!forceRefresh);  // 反轉參數：forceRefresh=true → useCache=false
         
         console.log('✅ 任務列表顯示完成');
     } catch (error) {
@@ -687,9 +692,9 @@ function setupStudentNavigation() {
             return;
         }
         
-        const { page, assignmentId, mode, formatTemplate, essayId } = e.detail;
+        const { page, assignmentId, mode, formatTemplate, essayId, forceRefresh } = e.detail;
         
-        console.log('🧭 學生端導航:', { page, assignmentId, mode, formatTemplate, essayId });
+        console.log('🧭 學生端導航:', { page, assignmentId, mode, formatTemplate, essayId, forceRefresh });
         
         isNavigating = true;
         
@@ -697,7 +702,8 @@ function setupStudentNavigation() {
             if (page === 'essay-writer') {
                 await showEssayEditor(assignmentId, mode, formatTemplate, essayId);
             } else if (page === 'assignment-list') {
-                await showAssignmentList();  // ✅ 使用新函數，不重新初始化
+                // ✅ 支持強制刷新參數（如從練筆模式返回）
+                await showAssignmentList(forceRefresh || false);
             }
         } finally {
             isNavigating = false;
@@ -763,8 +769,13 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         if (backBtn) {
             backBtn.addEventListener('click', () => {
                 console.log('🔙 返回任務列表');
+                // ✅ 如果是練筆模式，返回時強制刷新列表（可能創建了新練筆）
+                const shouldForceRefresh = mode === 'free-writing';
                 window.dispatchEvent(new CustomEvent('navigate', {
-                    detail: { page: 'assignment-list' }
+                    detail: { 
+                        page: 'assignment-list',
+                        forceRefresh: shouldForceRefresh
+                    }
                 }));
             });
         }
