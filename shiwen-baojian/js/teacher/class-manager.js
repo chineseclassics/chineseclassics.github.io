@@ -514,18 +514,17 @@ class ClassManager {
 
       let pendingGrading = 0;
       if (assignmentIds.length > 0) {
-        // 注意：使用 is('graded_at', null) 在 HEAD 請求中會出錯，改為獲取數據後過濾
-        const { data: submittedEssays, error: pendingError } = await this.supabase
+        // 待批改作業 = 狀態為 submitted 的作業（status = 'submitted'）
+        const { count, error: pendingError } = await this.supabase
           .from('essays')
-          .select('id, graded_at')
+          .select('id', { count: 'exact', head: true })
           .in('assignment_id', assignmentIds)
           .eq('status', 'submitted');
 
         if (pendingError) {
           console.warn('獲取待批改作業数失敗:', pendingError);
         } else {
-          // 在客戶端過濾出未批改的（graded_at 為 null）
-          pendingGrading = (submittedEssays || []).filter(essay => !essay.graded_at).length;
+          pendingGrading = count || 0;
         }
       }
 
