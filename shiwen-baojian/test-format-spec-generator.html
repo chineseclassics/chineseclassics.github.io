@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試 AI 格式生成器 - format-spec-generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">🧪 AI 格式生成器測試</h1>
+        
+        <!-- 配置區 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">⚙️ 配置</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Supabase URL（时文宝鉴项目）
+                </label>
+                <input 
+                    type="text" 
+                    id="supabaseUrl" 
+                    value="https://fjvgfhdqrezutrmbidds.supabase.co"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Anon Key（從 Supabase Dashboard → Settings → API 獲取）
+                </label>
+                <input 
+                    type="password" 
+                    id="anonKey" 
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+        </div>
+        
+        <!-- 測試場景選擇 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">📝 測試場景</h2>
+            
+            <div class="space-y-4">
+                <button 
+                    onclick="testScenario1()" 
+                    class="w-full text-left px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+                >
+                    <div class="font-semibold text-blue-800">場景 1：極簡任務（春江花月夜結構分析）</div>
+                    <div class="text-sm text-blue-600 mt-1">400-600 字，兩段話，無完整論文結構</div>
+                </button>
+                
+                <button 
+                    onclick="testScenario2()" 
+                    class="w-full text-left px-4 py-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
+                >
+                    <div class="font-semibold text-green-800">場景 2：增量模式（基於紅樓夢格式）</div>
+                    <div class="text-sm text-green-600 mt-1">在系統模板基礎上添加字數和段落數要求</div>
+                </button>
+                
+                <button 
+                    onclick="testScenario3()" 
+                    class="w-full text-left px-4 py-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition"
+                >
+                    <div class="font-semibold text-purple-800">場景 3：自定義內容焦點</div>
+                    <div class="text-sm text-purple-600 mt-1">包含具體內容要求（人物外貌分析）</div>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 自定義測試 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">✏️ 自定義測試</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    模式
+                </label>
+                <select 
+                    id="mode" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="custom">自定義模式（完全自定義）</option>
+                    <option value="incremental">增量模式（基於系統模板）</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    老師輸入
+                </label>
+                <textarea 
+                    id="teacherInput" 
+                    rows="6"
+                    placeholder="請輸入您的論文要求...&#10;&#10;例如：&#10;總字數 1800-2000 字&#10;必須 3 個分論點&#10;詳細分析林黛玉和薛寶釵的外貌描寫"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                ></textarea>
+            </div>
+            
+            <button 
+                onclick="testCustomInput()" 
+                class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+            >
+                🚀 測試自定義輸入
+            </button>
+        </div>
+        
+        <!-- 結果顯示 -->
+        <div id="resultContainer" class="hidden bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">📊 測試結果</h2>
+            
+            <div id="loadingIndicator" class="hidden text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p class="mt-4 text-gray-600">AI 正在解析要求...</p>
+            </div>
+            
+            <div id="resultContent" class="hidden">
+                <!-- 理解總結 -->
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 class="font-semibold text-blue-800 mb-2">💡 AI 理解總結</h3>
+                    <p id="understandingSummary" class="text-blue-900 whitespace-pre-wrap"></p>
+                </div>
+                
+                <!-- 人類可讀版本 -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-2">📄 人類可讀版本</h3>
+                    <pre id="humanReadable" class="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm border border-gray-200 whitespace-pre-wrap"></pre>
+                </div>
+                
+                <!-- 格式 JSON -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-2">🔧 格式 JSON</h3>
+                    <pre id="formatJson" class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs"></pre>
+                </div>
+                
+                <!-- 複製按鈕 -->
+                <div class="flex gap-2">
+                    <button 
+                        onclick="copyToClipboard('humanReadable')" 
+                        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+                    >
+                        📋 複製人類可讀版本
+                    </button>
+                    <button 
+                        onclick="copyToClipboard('formatJson')" 
+                        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+                    >
+                        📋 複製 JSON
+                    </button>
+                </div>
+            </div>
+            
+            <div id="errorContent" class="hidden">
+                <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h3 class="font-semibold text-red-800 mb-2">❌ 錯誤</h3>
+                    <p id="errorMessage" class="text-red-900 whitespace-pre-wrap"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 測試場景 1：極簡任務
+        function testScenario1() {
+            document.getElementById('mode').value = 'custom';
+            document.getElementById('teacherInput').value = `請從至少兩個方面，寫兩段話（不需要開頭結尾），分析《春江花月夜》結構安排的精妙之處。
+
+字數：400-600 字
+評分標準：B 理解`;
+            testCustomInput();
+        }
+        
+        // 測試場景 2：增量模式
+        function testScenario2() {
+            alert('❌ 增量模式需要先加載系統模板，目前僅測試自定義模式。請使用場景 1 或場景 3。');
+        }
+        
+        // 測試場景 3：自定義內容焦點
+        function testScenario3() {
+            document.getElementById('mode').value = 'custom';
+            document.getElementById('teacherInput').value = `論文總字數 1500-2000 字，必須 3 個分論點。
+
+學生需要詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫，每個人物的分析不少於 300 字。
+
+評分標準：A 分析、B 組織`;
+            testCustomInput();
+        }
+        
+        // 測試自定義輸入
+        async function testCustomInput() {
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const anonKey = document.getElementById('anonKey').value;
+            const mode = document.getElementById('mode').value;
+            const teacherInput = document.getElementById('teacherInput').value;
+            
+            if (!supabaseUrl || !anonKey) {
+                alert('❌ 請先填寫 Supabase URL 和 Anon Key');
+                return;
+            }
+            
+            if (!teacherInput.trim()) {
+                alert('❌ 請輸入老師要求');
+                return;
+            }
+            
+            // 顯示結果容器和加載指示器
+            document.getElementById('resultContainer').classList.remove('hidden');
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('resultContent').classList.add('hidden');
+            document.getElementById('errorContent').classList.add('hidden');
+            
+            try {
+                const url = `${supabaseUrl}/functions/v1/format-spec-generator`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${anonKey}`
+                    },
+                    body: JSON.stringify({
+                        mode: mode,
+                        teacher_input: teacherInput
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // 隱藏加載指示器
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                
+                if (result.success) {
+                    // 顯示成功結果
+                    document.getElementById('resultContent').classList.remove('hidden');
+                    document.getElementById('understandingSummary').textContent = result.understanding_summary;
+                    document.getElementById('humanReadable').textContent = result.human_readable;
+                    document.getElementById('formatJson').textContent = JSON.stringify(result.format_json, null, 2);
+                } else {
+                    // 顯示錯誤
+                    document.getElementById('errorContent').classList.remove('hidden');
+                    document.getElementById('errorMessage').textContent = result.error + '\n\n' + (result.details || '');
+                }
+            } catch (error) {
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                document.getElementById('errorContent').classList.remove('hidden');
+                document.getElementById('errorMessage').textContent = error.message;
+            }
+        }
+        
+        // 複製到剪貼板
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ 已複製到剪貼板');
+            }).catch(err => {
+                alert('❌ 複製失敗：' + err);
+            });
+        }
+    </script>
+</body>
+</html>
+
