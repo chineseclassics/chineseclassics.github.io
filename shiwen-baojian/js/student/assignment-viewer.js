@@ -146,10 +146,11 @@ class StudentAssignmentViewer {
         : { text: '未開始', class: 'not-started' };
     }
 
-    if (essay.status === 'submitted' || essay.status === 'graded') {
-      if (essay.graded_at) {
-        return { text: '已批改', class: 'graded' };
-      }
+    if (essay.status === 'graded') {
+      return { text: '已批改', class: 'graded' };
+    }
+    
+    if (essay.status === 'submitted') {
       return { text: '已提交', class: 'submitted' };
     }
 

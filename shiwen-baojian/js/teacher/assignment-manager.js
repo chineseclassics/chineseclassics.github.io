@@ -342,7 +342,7 @@ class AssignmentManager {
         .from('essays')
         .select('id', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
-        .not('graded_at', 'is', null);
+        .eq('status', 'graded');
 
       // 獲取平均字数（從已提交的作業中計算）
       const { data: essays } = await this.supabase
@@ -356,17 +356,17 @@ class AssignmentManager {
         : 0;
 
       // 獲取平均 AI 反馈次数
-      const { data: feedbackCounts } = await this.supabase
+      const { data: essaysWithFeedback } = await this.supabase
         .from('essays')
         .select(`
           id,
-          ai_feedback:ai_feedback(count)
+          ai_feedback(id)
         `)
         .eq('assignment_id', assignmentId)
         .eq('status', 'submitted');
 
-      const avgFeedbackCount = feedbackCounts && feedbackCounts.length > 0
-        ? (feedbackCounts.reduce((sum, e) => sum + (e.ai_feedback?.length || 0), 0) / feedbackCounts.length).toFixed(1)
+      const avgFeedbackCount = essaysWithFeedback && essaysWithFeedback.length > 0
+        ? (essaysWithFeedback.reduce((sum, e) => sum + (e.ai_feedback?.length || 0), 0) / essaysWithFeedback.length).toFixed(1)
         : 0;
 
       return {

@@ -161,21 +161,33 @@ class GradingUI {
     try {
       const formData = new FormData(form);
       
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) throw new Error('未登入');
+      
+      // 準備評分數據（插入到 grades 表）
       const gradingData = {
+        essay_id: this.currentEssay.id,
+        teacher_id: user.id,
         criterion_a_score: parseInt(formData.get('criterion_a')),
         criterion_b_score: parseInt(formData.get('criterion_b')),
         criterion_c_score: parseInt(formData.get('criterion_c')),
         criterion_d_score: parseInt(formData.get('criterion_d')),
-        teacher_comments: formData.get('comments'),
-        graded_at: new Date().toISOString()
+        overall_comment: formData.get('comments'),
+        status: 'final' // 設置為最終評分
       };
 
+      // 插入或更新 grades 表（使用 upsert）
       const { error } = await this.supabase
-        .from('essays')
-        .update(gradingData)
-        .eq('id', this.currentEssay.id);
+        .from('grades')
+        .upsert(gradingData, {
+          onConflict: 'essay_id'
+        });
 
       if (error) throw error;
+
+      // 觸發器會自動：
+      // 1. 設置 grades.graded_at = NOW()
+      // 2. 更新 essays.status = 'graded'
 
       alert('批改已提交！');
       window.dispatchEvent(new CustomEvent('navigate', {
