@@ -366,7 +366,7 @@ async function confirmSave() {
         }
         
         const { data: { session } } = await window.supabaseClient.auth.getSession();
-        if (!session) {
+        if (!session || !session.user) {
             throw new Error('請先登錄才能保存格式');
         }
         
@@ -375,6 +375,7 @@ async function confirmSave() {
             name: name,
             description: description,
             essay_type: cachedFormatJSON.metadata?.essay_type || 'custom',
+            created_by: session.user.id,  // ← 关键：设置创建者 ID
             is_system: false,
             is_public: false,
             spec_json: cachedFormatJSON,
@@ -384,10 +385,13 @@ async function confirmSave() {
         // 判斷是創建還是更新
         let result;
         if (editingFormatId) {
-            // 更新現有格式
+            // 更新現有格式（移除 created_by，不應該在更新時修改）
+            const updateData = { ...formatData };
+            delete updateData.created_by;
+            
             const { data, error } = await window.supabaseClient
                 .from('format_specifications')
-                .update(formatData)
+                .update(updateData)
                 .eq('id', editingFormatId)
                 .select()
                 .single();
