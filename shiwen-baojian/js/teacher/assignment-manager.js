@@ -356,18 +356,33 @@ class AssignmentManager {
         : 0;
 
       // 獲取平均 AI 反馈次数
-      const { data: essaysWithFeedback } = await this.supabase
+      // 由於 ai_feedback 關聯 paragraphs 而非 essays，需要先獲取 essays 再查詢 feedback
+      const { data: submittedEssays } = await this.supabase
         .from('essays')
-        .select(`
-          id,
-          ai_feedback(id)
-        `)
+        .select('id')
         .eq('assignment_id', assignmentId)
         .eq('status', 'submitted');
 
-      const avgFeedbackCount = essaysWithFeedback && essaysWithFeedback.length > 0
-        ? (essaysWithFeedback.reduce((sum, e) => sum + (e.ai_feedback?.length || 0), 0) / essaysWithFeedback.length).toFixed(1)
-        : 0;
+      let avgFeedbackCount = 0;
+      if (submittedEssays && submittedEssays.length > 0) {
+        const essayIds = submittedEssays.map(e => e.id);
+        
+        // 查詢這些 essays 的所有 paragraphs 的 feedback 數量
+        const { count: totalFeedback } = await this.supabase
+          .from('ai_feedback')
+          .select('id', { count: 'exact', head: true })
+          .in('paragraph_id', 
+            (await this.supabase
+              .from('paragraphs')
+              .select('id')
+              .in('essay_id', essayIds)
+            ).data?.map(p => p.id) || []
+          );
+        
+        avgFeedbackCount = totalFeedback && submittedEssays.length > 0
+          ? (totalFeedback / submittedEssays.length).toFixed(1)
+          : 0;
+      }
 
       return {
         totalStudents: totalStudents || 0,
