@@ -581,11 +581,72 @@ async function initializeStudentModules() {
         // 初始化防作弊系統
         const { initializeAntiCheat } = await import('./features/anti-cheat.js');
         initializeAntiCheat();
+
+        // 設置學生端導航
+        setupStudentNavigation();
         
         console.log('✅ 學生端功能初始化完成');
     } catch (error) {
         console.error('❌ 學生端功能初始化失敗:', error);
         showError('學生端功能初始化失敗: ' + error.message);
+    }
+}
+
+/**
+ * 設置學生端導航
+ */
+function setupStudentNavigation() {
+    window.addEventListener('navigate', async (e) => {
+        const { page, assignmentId } = e.detail;
+        
+        console.log('🧭 學生端導航:', page, assignmentId);
+        
+        if (page === 'essay-writer') {
+            await showEssayEditor(assignmentId);
+        } else if (page === 'assignment-list') {
+            await initializeStudentModules();
+        }
+    });
+}
+
+/**
+ * 顯示論文編輯器
+ */
+async function showEssayEditor(assignmentId) {
+    try {
+        const container = document.getElementById('student-dashboard-content');
+        if (!container) {
+            console.error('❌ 找不到學生儀表板容器');
+            return;
+        }
+
+        // 從 template 獲取編輯器 HTML
+        const template = document.getElementById('essay-editor-template');
+        if (!template) {
+            console.error('❌ 找不到論文編輯器模板');
+            return;
+        }
+
+        // 清空容器並插入編輯器 HTML
+        container.innerHTML = '';
+        const editorContent = template.content.cloneNode(true);
+        container.appendChild(editorContent);
+
+        console.log('📝 準備初始化論文編輯器，任務 ID:', assignmentId);
+
+        // 初始化論文編輯器
+        await initializeEssayEditor();
+
+        // 如果有 assignmentId，加載對應的任務數據
+        if (assignmentId) {
+            console.log('📂 加載任務數據:', assignmentId);
+            // TODO: 加載任務的格式要求等數據
+        }
+
+        console.log('✅ 論文編輯器顯示完成');
+    } catch (error) {
+        console.error('❌ 顯示論文編輯器失敗:', error);
+        showError('無法加載論文編輯器: ' + error.message);
     }
 }
 

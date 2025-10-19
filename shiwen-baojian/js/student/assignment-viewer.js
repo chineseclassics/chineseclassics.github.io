@@ -81,16 +81,24 @@ class StudentAssignmentViewer {
       this.container.innerHTML = `
         <div class="empty-state">
           <i class="fas fa-inbox"></i>
-          <p>暂時没有寫作任務</p>
+          <p>暫時沒有寫作任務</p>
         </div>
       `;
       return;
     }
 
     this.container.innerHTML = `
-      <div class="student-assignments">
-        <h2>我的任務</h2>
-        <div class="assignments-list">
+      <div class="student-assignment-list">
+        <div class="list-header">
+          <h2><i class="fas fa-tasks"></i> 我的任務</h2>
+          <div class="assignment-stats">
+            <span class="stat-item">
+              <i class="fas fa-clipboard-list"></i>
+              共 ${this.assignments.length} 個任務
+            </span>
+          </div>
+        </div>
+        <div class="student-assignments-grid">
           ${this.assignments.map(a => this.renderAssignmentCard(a)).join('')}
         </div>
       </div>
@@ -104,36 +112,78 @@ class StudentAssignmentViewer {
    */
   renderAssignmentCard(assignment) {
     const dueDate = new Date(assignment.due_date);
-    const isOverdue = dueDate < new Date();
+    const now = new Date();
+    const isOverdue = dueDate < now;
+    const daysLeft = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
     const essay = assignment.studentEssay;
     const status = this.getStatus(essay, isOverdue);
 
     return `
-      <div class="assignment-item ${status.class}">
-        <div class="assignment-header">
-          <h3>${assignment.title}</h3>
+      <div class="student-assignment-card ${status.class}">
+        <div class="card-header">
+          <h3>${this.escapeHtml(assignment.title)}</h3>
           <span class="status-badge ${status.class}">${status.text}</span>
         </div>
 
-        <div class="assignment-meta">
-          <div><i class="fas fa-calendar"></i> 截止：${dueDate.toLocaleDateString('zh-CN')} ${dueDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
-          ${essay ? `<div><i class="fas fa-file-alt"></i> 字数：${essay.total_word_count || 0}</div>` : ''}
+        ${assignment.description ? `
+          <div class="card-description">
+            <p>${this.escapeHtml(assignment.description)}</p>
+          </div>
+        ` : ''}
+
+        <div class="card-meta">
+          <div class="meta-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>截止：${dueDate.toLocaleDateString('zh-Hant-TW', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })} ${dueDate.toLocaleTimeString('zh-Hant-TW', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}</span>
+          </div>
+          ${!isOverdue && daysLeft >= 0 ? `
+            <div class="meta-item ${daysLeft <= 3 ? 'urgent' : ''}">
+              <i class="fas fa-clock"></i>
+              <span>${daysLeft === 0 ? '今天截止' : `還有 ${daysLeft} 天`}</span>
+            </div>
+          ` : ''}
+          ${essay ? `
+            <div class="meta-item">
+              <i class="fas fa-file-word"></i>
+              <span>已寫 ${essay.total_word_count || 0} 字</span>
+            </div>
+          ` : ''}
         </div>
 
-        ${assignment.description ? `<p class="assignment-desc">${assignment.description}</p>` : ''}
-
-        <div class="assignment-actions">
+        <div class="card-actions">
           ${essay
-            ? `<button class="btn btn-primary continue-btn" data-id="${assignment.id}">
-                <i class="fas fa-edit"></i> ${essay.status === 'submitted' ? '查看作業' : '繼續寫作'}
+            ? `<button class="btn-action continue-btn ${essay.status === 'submitted' ? 'view' : 'edit'}" data-id="${assignment.id}">
+                <i class="fas ${essay.status === 'submitted' ? 'fa-eye' : 'fa-edit'}"></i>
+                ${essay.status === 'submitted' ? '查看作業' : '繼續寫作'}
               </button>`
-            : `<button class="btn btn-primary start-btn" data-id="${assignment.id}">
-                <i class="fas fa-pen"></i> 開始寫作
+            : `<button class="btn-action start-btn" data-id="${assignment.id}">
+                <i class="fas fa-pen"></i>
+                開始寫作
               </button>`
           }
         </div>
       </div>
     `;
+  }
+
+  /**
+   * 轉義 HTML 特殊字符
+   */
+  escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   /**
@@ -163,9 +213,11 @@ class StudentAssignmentViewer {
    * 綁定事件
    */
   bindEvents() {
-    document.querySelectorAll('.start-btn, .continue-btn').forEach(btn => {
+    // 使用容器內查詢，確保正確綁定動態內容
+    this.container.querySelectorAll('.start-btn, .continue-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const assignmentId = e.currentTarget.getAttribute('data-id');
+        console.log('📝 開始寫作任務:', assignmentId);
         window.dispatchEvent(new CustomEvent('navigate', {
           detail: { page: 'essay-writer', assignmentId }
         }));
