@@ -21,6 +21,9 @@
                     <h1 class="text-xl font-bold text-gray-900">📝 格式編輯器</h1>
                 </div>
                 <div class="flex items-center gap-4">
+                    <div id="userInfo" class="text-sm text-gray-600">
+                        <!-- 用户信息将通过 JS 填充 -->
+                    </div>
                     <a href="index.html" class="text-gray-600 hover:text-gray-900">返回主頁</a>
                     <a href="format-manager.html" class="text-blue-600 hover:text-blue-700">我的格式</a>
                 </div>
@@ -187,6 +190,34 @@
         </div>
     </div>
 
+    <!-- Supabase 客户端 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        // 初始化 Supabase 客户端
+        import { SessionManager } from './js/auth/session-manager.js';
+        
+        const { createClient } = supabase;
+        window.supabaseClient = createClient(
+            'https://fjvgfhdqrezutrmbidds.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqdmdmaGRxcmV6dXRybWJpZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDE3ODIsImV4cCI6MjA3NjM3Nzc4Mn0.eVX46FM_UfLBk9vJiCfA_zC9PIMTJxmG8QNZQWdG8T8'
+        );
+        
+        // 初始化会话管理
+        window.sessionManager = new SessionManager(window.supabaseClient);
+        
+        // 检查登录状态
+        window.sessionManager.addListener((event) => {
+            if (event === 'SIGNED_IN') {
+                console.log('✅ 用户已登录');
+                // 启用保存功能
+                if (window.onAuthReady) window.onAuthReady();
+            } else if (event === 'SIGNED_OUT') {
+                console.log('⚠️ 用户未登录，保存功能受限');
+            }
+        });
+        
+        window.sessionManager.initialize();
+    </script>
     <script src="js/data/grading-rubric-loader.js"></script>
     <script src="js/teacher/format-editor.js"></script>
 </body>

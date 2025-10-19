@@ -133,6 +133,21 @@
         </div>
     </div>
 
+    <!-- Supabase 客户端 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        // 初始化 Supabase 客户端
+        import { SessionManager } from './js/auth/session-manager.js';
+        
+        const { createClient } = supabase;
+        window.supabaseClient = createClient(
+            'https://fjvgfhdqrezutrmbidds.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqdmdmaGRxcmV6dXRybWJpZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDE3ODIsImV4cCI6MjA3NjM3Nzc4Mn0.eVX46FM_UfLBk9vJiCfA_zC9PIMTJxmG8QNZQWdG8T8'
+        );
+        
+        window.sessionManager = new SessionManager(window.supabaseClient);
+        window.sessionManager.initialize();
+    </script>
     <script src="js/teacher/format-manager.js"></script>
 </body>
 </html>

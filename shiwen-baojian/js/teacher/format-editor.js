@@ -27,6 +27,16 @@ let editingFormatId = null;  // 如果正在編輯現有格式，存儲其 ID
 const SUPABASE_URL = 'https://fjvgfhdqrezutrmbidds.supabase.co';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqdmdmaGRxcmV6dXRybWJpZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDE3ODIsImV4cCI6MjA3NjM3Nzc4Mn0.eVX46FM_UfLBk9vJiCfA_zC9PIMTJxmG8QNZQWdG8T8';
 
+// 獲取當前用戶的認證 Token
+async function getAuthToken() {
+    if (!window.supabaseClient) {
+        return ANON_KEY;
+    }
+    
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    return session?.access_token || ANON_KEY;
+}
+
 // ============================================================
 // 初始化
 // ============================================================
@@ -43,6 +53,31 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFormatForEdit(editFormatId);
     }
 });
+
+/**
+ * 認證就緒回調
+ */
+window.onAuthReady = async function() {
+    if (!window.supabaseClient) return;
+    
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    
+    if (session && session.user) {
+        // 顯示用戶信息
+        const userEmail = session.user.email || '已登錄';
+        document.getElementById('userInfo').innerHTML = `
+            <span class="text-green-600">✓ ${userEmail}</span>
+        `;
+        console.log('[FormatEditor] 用戶已登錄:', userEmail);
+    } else {
+        // 顯示未登錄警告
+        document.getElementById('userInfo').innerHTML = `
+            <span class="text-red-600">⚠️ 未登錄</span>
+            <a href="index.html" class="text-blue-600 hover:underline">前往登錄</a>
+        `;
+        console.warn('[FormatEditor] 用戶未登錄');
+    }
+};
 
 /**
  * 初始化 Quill 編輯器（純文本模式）
@@ -204,11 +239,12 @@ async function optimizeWithAI() {
     
     try {
         // 調用 Edge Function - 階段 1：生成人類可讀版本
+        const authToken = await getAuthToken();
         const response = await fetch(`${SUPABASE_URL}/functions/v1/format-spec-generator`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ANON_KEY}`
+                'Authorization': `Bearer ${authToken}`
             },
             body: JSON.stringify({
                 stage: 'generate_readable',
@@ -250,11 +286,12 @@ async function optimizeWithAI() {
  */
 async function convertToJSON(humanReadable) {
     try {
+        const authToken = await getAuthToken();
         const response = await fetch(`${SUPABASE_URL}/functions/v1/format-spec-generator`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ANON_KEY}`
+                'Authorization': `Bearer ${authToken}`
             },
             body: JSON.stringify({
                 stage: 'convert_to_json',
@@ -323,6 +360,16 @@ async function confirmSave() {
             cachedFormatJSON.metadata.name = name;
         }
         
+        // 檢查是否已登錄
+        if (!window.supabaseClient) {
+            throw new Error('Supabase 客戶端未初始化');
+        }
+        
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) {
+            throw new Error('請先登錄才能保存格式');
+        }
+        
         // 構建保存數據
         const formatData = {
             name: name,
@@ -335,40 +382,31 @@ async function confirmSave() {
         };
         
         // 判斷是創建還是更新
-        let response;
+        let result;
         if (editingFormatId) {
             // 更新現有格式
-            response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications?id=eq.${editingFormatId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${ANON_KEY}`,
-                    'apikey': ANON_KEY,
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(formatData)
-            });
+            const { data, error } = await window.supabaseClient
+                .from('format_specifications')
+                .update(formatData)
+                .eq('id', editingFormatId)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            result = data;
         } else {
             // 創建新格式
-            response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${ANON_KEY}`,
-                    'apikey': ANON_KEY,
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(formatData)
-            });
+            const { data, error } = await window.supabaseClient
+                .from('format_specifications')
+                .insert(formatData)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            result = data;
         }
         
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || '保存失敗');
-        }
-        
-        const savedFormat = await response.json();
-        console.log('[FormatEditor] 格式已保存:', savedFormat);
+        console.log('[FormatEditor] 格式已保存:', result);
         
         alert(editingFormatId ? '✅ 格式已更新！' : '✅ 格式已保存！');
         closeSaveDialog();
@@ -565,25 +603,18 @@ function clearEditor() {
 async function loadFormatForEdit(formatId) {
     try {
         // 從 Supabase 加載格式
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications?id=eq.${formatId}&select=*`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ANON_KEY}`,
-                'apikey': ANON_KEY
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('加載格式失敗');
+        if (!window.supabaseClient) {
+            throw new Error('Supabase 客戶端未初始化');
         }
         
-        const formats = await response.json();
-        if (formats.length === 0) {
-            throw new Error('格式不存在');
-        }
+        const { data: format, error } = await window.supabaseClient
+            .from('format_specifications')
+            .select('*')
+            .eq('id', formatId)
+            .single();
         
-        const format = formats[0];
+        if (error) throw error;
+        if (!format) throw new Error('格式不存在');
         
         // 設置編輯模式
         editingFormatId = format.id;

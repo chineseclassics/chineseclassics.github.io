@@ -44,20 +44,16 @@ async function loadFormats() {
         document.getElementById('emptyState').classList.add('hidden');
 
         // 從 Supabase 加載格式
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications?select=*&order=created_at.desc`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ANON_KEY}`,
-                'apikey': ANON_KEY
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('加載格式失敗');
+        if (!window.supabaseClient) {
+            throw new Error('Supabase 客戶端未初始化');
         }
         
-        const formats = await response.json();
+        const { data: formats, error } = await window.supabaseClient
+            .from('format_specifications')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
         
         // 處理數據：添加 type 字段
         allFormats = formats.map(f => ({
@@ -427,19 +423,16 @@ async function confirmDelete() {
     
     try {
         // 從 Supabase 刪除
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/format_specifications?id=eq.${currentFormatToDelete}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ANON_KEY}`,
-                'apikey': ANON_KEY
-            }
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || '刪除失敗');
+        if (!window.supabaseClient) {
+            throw new Error('Supabase 客戶端未初始化');
         }
+        
+        const { error } = await window.supabaseClient
+            .from('format_specifications')
+            .delete()
+            .eq('id', currentFormatToDelete);
+        
+        if (error) throw error;
         
         console.log('[FormatManager] 格式已刪除:', currentFormatToDelete);
         
