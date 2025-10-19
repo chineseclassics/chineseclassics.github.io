@@ -1,0 +1,650 @@
+/**
+ * 班级管理样式
+ */
+
+/* 创建班级表单 */
+.create-class-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+  padding: 2rem;
+}
+
+.create-class-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+}
+
+.create-class-card h2 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.create-class-card .text-muted {
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+.create-class-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.create-class-form label {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.create-class-form label .required {
+  color: #e74c3c;
+}
+
+.create-class-form input,
+.create-class-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.create-class-form input:focus,
+.create-class-form textarea:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.create-class-form textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-actions {
+  margin-top: 2rem;
+}
+
+.mvp-notice {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #856404;
+}
+
+.mvp-notice i {
+  margin-right: 0.5rem;
+}
+
+/* 班级仪表板 */
+.class-dashboard {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.class-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.class-info h2 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.class-description {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
+
+.class-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: #ecf0f1;
+  color: #7f8c8d;
+}
+
+.stat-icon.active {
+  background: #d4edda;
+  color: #28a745;
+}
+
+.stat-icon.pending {
+  background: #fff3cd;
+  color: #ffc107;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.stat-sublabel {
+  font-size: 0.75rem;
+  color: #95a5a6;
+  margin-top: 0.25rem;
+}
+
+/* 学生列表部分 */
+.students-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+  color: #2c3e50;
+  margin: 0;
+}
+
+.search-box {
+  position: relative;
+  width: 300px;
+}
+
+.search-box i {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #95a5a6;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+/* 学生表格 */
+.students-table-container {
+  overflow-x: auto;
+}
+
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.students-table thead {
+  background: #f8f9fa;
+}
+
+.students-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #ecf0f1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.students-table th:hover {
+  background: #e9ecef;
+}
+
+.students-table th i {
+  margin-left: 0.5rem;
+  color: #95a5a6;
+  font-size: 0.75rem;
+}
+
+.students-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.students-table tbody tr {
+  transition: background-color 0.2s;
+}
+
+.students-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* 徽章 */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: #d4edda;
+  color: #28a745;
+}
+
+.badge-secondary {
+  background: #e2e3e5;
+  color: #6c757d;
+}
+
+.activity-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.activity-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.activity-badge.inactive {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.activity-badge.dormant {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* 进度指示器 */
+.progress-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-indicator span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 3rem;
+}
+
+.progress-bar-mini {
+  flex: 1;
+  height: 6px;
+  background: #ecf0f1;
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 100px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #95a5a6;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  color: #bdc3c7;
+}
+
+.empty-state p {
+  margin: 0.5rem 0;
+}
+
+.empty-state .text-muted {
+  font-size: 0.9rem;
+}
+
+/* 模态框 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #ecf0f1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #95a5a6;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: #2c3e50;
+}
+
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.modal-body .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.modal-body label {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.modal-body textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: monospace;
+  resize: vertical;
+}
+
+.modal-body textarea:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.modal-body .help-text {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+
+.modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #ecf0f1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.btn-secondary {
+  background: #ecf0f1;
+  color: #2c3e50;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #bdc3c7;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger {
+  background: #f8d7da;
+  color: #e74c3c;
+}
+
+.btn-danger:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+/* 提示消息 */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+  z-index: 2000;
+  max-width: 400px;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-success {
+  border-left: 4px solid #28a745;
+}
+
+.toast-success i {
+  color: #28a745;
+  font-size: 1.25rem;
+}
+
+.toast-error {
+  border-left: 4px solid #e74c3c;
+}
+
+.toast-error i {
+  color: #e74c3c;
+  font-size: 1.25rem;
+}
+
+.toast-warning {
+  border-left: 4px solid #ffc107;
+}
+
+.toast-warning i {
+  color: #ffc107;
+  font-size: 1.25rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .class-dashboard {
+    padding: 1rem;
+  }
+
+  .class-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .class-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-box {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .students-table {
+    font-size: 0.85rem;
+  }
+
+  .students-table th,
+  .students-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 1rem;
+  }
+
+  .toast {
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+}
+
