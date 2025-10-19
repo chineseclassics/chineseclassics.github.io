@@ -563,10 +563,17 @@ async function initializeStudentModules() {
     console.log('📚 初始化學生端功能...');
     
     try {
-        // 清理練筆狀態（返回列表時重置）
-        AppState.currentPracticeEssayId = null;
+        // 清理所有編輯狀態（返回列表時重置）
+        AppState.currentAssignmentId = null;  // ✅ 清除任務 ID
+        AppState.currentPracticeEssayId = null;  // ✅ 清除練筆 ID
         AppState.currentFormatSpec = null;
         AppState.currentPracticeContent = null;
+        
+        // 同時清理 essay-storage 的狀態
+        const { StorageState } = await import('./student/essay-storage.js');
+        if (StorageState) {
+            StorageState.currentEssayId = null;
+        }
         
         const container = document.getElementById('student-dashboard-content');
         if (!container) {
@@ -621,7 +628,11 @@ function setupStudentNavigation() {
  * @param {string} formatTemplate - 格式模板（如 'honglou'）
  * @param {string} essayId - 作業 ID（繼續編輯現有練筆時使用）
  */
-async function showEssayEditor(assignmentId = null, mode = 'assignment', formatTemplate = null, essayId = null) {
+async function showEssayEditor(assignmentId = null, mode = null, formatTemplate = null, essayId = null) {
+    // ✅ 根據參數自動判斷模式
+    if (!mode) {
+        mode = assignmentId ? 'assignment' : 'free-writing';
+    }
     try {
         const container = document.getElementById('student-dashboard-content');
         if (!container) {
@@ -642,6 +653,23 @@ async function showEssayEditor(assignmentId = null, mode = 'assignment', formatT
         container.appendChild(editorContent);
 
         console.log('📝 準備初始化論文編輯器', { assignmentId, mode, formatTemplate, essayId });
+
+        // 保存當前任務 ID 到 AppState（用於區分任務寫作和練筆）
+        if (assignmentId) {
+            // 有 assignmentId 就是任務模式
+            AppState.currentAssignmentId = assignmentId;
+            AppState.currentPracticeEssayId = null;  // 清除練筆 ID
+            console.log('📋 任務寫作模式，任務 ID:', assignmentId);
+        } else if (mode === 'free-writing') {
+            // 明確的練筆模式
+            AppState.currentAssignmentId = null;  // 清除任務 ID
+            console.log('✍️ 自主練筆模式');
+            // essayId 會在 loadPracticeEssayContent 中設置
+        } else {
+            // 兜底：清除所有 ID
+            AppState.currentAssignmentId = null;
+            AppState.currentPracticeEssayId = null;
+        }
 
         // 綁定返回按鈕
         const backBtn = container.querySelector('#back-to-list-btn');
@@ -711,9 +739,10 @@ async function showEssayEditor(assignmentId = null, mode = 'assignment', formatT
                 await loadPracticeEssayContent(essayId);
             }
         } else if (assignmentId) {
-            // 任務模式：加載任務數據
+            // 任務模式：加載任務數據和學生已有的作業（如果存在）
             console.log('📂 加載任務數據:', assignmentId);
             await loadAssignmentData(assignmentId);
+            await loadStudentEssayForAssignment(assignmentId);
         }
 
         // 初始化論文編輯器
@@ -828,6 +857,43 @@ async function loadPracticeEssayContent(essayId) {
     } catch (error) {
         console.error('❌ 加載練筆作品失敗:', error);
         showError('無法加載練筆作品: ' + error.message);
+    }
+}
+
+/**
+ * 加載學生對某個任務的已有作業（用於繼續編輯任務）
+ */
+async function loadStudentEssayForAssignment(assignmentId) {
+    try {
+        console.log('📂 查找任務的已有作業:', assignmentId);
+        
+        const { data: { user } } = await AppState.supabase.auth.getUser();
+        
+        const { data: essay, error } = await AppState.supabase
+            .from('essays')
+            .select('*')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', user.id)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (essay) {
+            console.log('✅ 找到已有作業，將繼續編輯:', essay.id);
+            // 保存 essay ID 供後續更新使用
+            const { StorageState } = await import('./student/essay-storage.js');
+            StorageState.currentEssayId = essay.id;
+            
+            // TODO: 加載作業內容到編輯器
+            AppState.currentEssayContent = essay.content_json ? JSON.parse(essay.content_json) : null;
+        } else {
+            console.log('ℹ️ 這是新的任務作業，將創建新記錄');
+            const { StorageState } = await import('./student/essay-storage.js');
+            StorageState.currentEssayId = null;
+        }
+    } catch (error) {
+        console.error('❌ 加載任務作業失敗:', error);
+        // 不阻斷編輯器加載
     }
 }
 

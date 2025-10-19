@@ -386,7 +386,11 @@ class StudentAssignmentViewer {
         const assignmentId = e.currentTarget.getAttribute('data-id');
         console.log('📝 開始寫作任務:', assignmentId);
         window.dispatchEvent(new CustomEvent('navigate', {
-          detail: { page: 'essay-writer', assignmentId }
+          detail: { 
+            page: 'essay-writer', 
+            assignmentId: assignmentId,
+            mode: 'assignment'  // ✅ 明確指定這是任務寫作模式
+          }
         }));
       });
     });

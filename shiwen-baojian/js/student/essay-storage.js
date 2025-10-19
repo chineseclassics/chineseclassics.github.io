@@ -13,7 +13,7 @@ import { AppState } from '../app.js';
 // 存儲狀態
 // ================================
 
-const StorageState = {
+export const StorageState = {
     currentEssayId: null,  // 當前論文 ID
     pendingSaves: [],      // 待同步的保存操作
     isOnline: navigator.onLine,
@@ -122,22 +122,32 @@ async function upsertEssay(essayData) {
     
     const essayRecord = {
         student_id: AppState.currentUser.id,
-        assignment_id: null,  // 測試草稿暫時為 NULL
+        assignment_id: AppState.currentAssignmentId || null,  // ✅ 如果有任務 ID，保存到 assignment_id
         title: fullTitle,
         content_json: JSON.stringify(essayData),  // ✅ 保存完整內容
         status: 'draft',
         total_word_count: essayData.word_count || 0
     };
     
+    // 調試信息
+    console.log('💾 準備保存作業:', {
+        assignmentId: AppState.currentAssignmentId,
+        practiceEssayId: AppState.currentPracticeEssayId,
+        storageEssayId: StorageState.currentEssayId,
+        title: fullTitle,
+        wordCount: essayData.word_count
+    });
+    
     // 優先使用 currentPracticeEssayId（繼續編輯練筆）
     const targetEssayId = AppState.currentPracticeEssayId || StorageState.currentEssayId;
     
     // 如果已有論文 ID，執行更新
     if (targetEssayId) {
+        console.log(`📝 更新現有作業: ${targetEssayId}`);
         const { data, error } = await AppState.supabase
             .from('essays')
             .update(essayRecord)
-            .eq('id', targetEssayId)  // ✅ 使用 targetEssayId 而非 StorageState.currentEssayId
+            .eq('id', targetEssayId)
             .select()
             .single();
             
@@ -146,20 +156,25 @@ async function upsertEssay(essayData) {
             // 可能是論文被刪除了，嘗試創建新的
             const newEssay = await createNewEssay(essayRecord);
             StorageState.currentEssayId = newEssay.id;
-            if (AppState.currentFormatSpec) {
+            if (!AppState.currentAssignmentId) {
+                // 只有練筆才設置 currentPracticeEssayId
                 AppState.currentPracticeEssayId = newEssay.id;
             }
             return newEssay;
         }
         
+        console.log(`✅ 作業更新成功，assignment_id = ${data.assignment_id || 'NULL（練筆）'}`);
         return data;
     } else {
         // 創建新論文
+        console.log('📝 創建新作業');
         const newEssay = await createNewEssay(essayRecord);
         StorageState.currentEssayId = newEssay.id;
-        if (AppState.currentFormatSpec) {
+        if (!AppState.currentAssignmentId) {
+            // 只有練筆才設置 currentPracticeEssayId
             AppState.currentPracticeEssayId = newEssay.id;
         }
+        console.log(`✅ 作業創建成功: ${newEssay.id}, assignment_id = ${newEssay.assignment_id || 'NULL（練筆）'}`);
         return newEssay;
     }
 }
