@@ -221,6 +221,30 @@ async function ensureUserRecord(user) {
                 .update(updates)
                 .eq('id', user.id);
             
+            // 如果是學生，檢查是否有待激活的班級（即使用戶已存在）
+            if (userRole === 'student' && user.email && !user.is_anonymous) {
+                console.log('🔍 檢查待激活的班級（已有用戶）...');
+                
+                try {
+                    const { data: activationResult, error: activateError } = await AppState.supabase
+                        .rpc('activate_pending_student', {
+                            student_email: user.email,
+                            student_auth_id: user.id
+                        });
+                    
+                    if (activateError) {
+                        console.error('❌ 激活待加入班級失敗:', activateError);
+                    } else if (activationResult && activationResult.length > 0 && activationResult[0].activated) {
+                        console.log('✅ 已自動加入班級:', activationResult[0].class_ids);
+                        console.log('📢', activationResult[0].display_name);
+                    } else {
+                        console.log('ℹ️ 無待加入班級');
+                    }
+                } catch (activateError) {
+                    console.error('❌ 激活流程異常:', activateError);
+                }
+            }
+            
             return;
         }
         
