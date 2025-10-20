@@ -27,6 +27,12 @@ class FormatTemplatePage {
     this.hasBeenOptimized = false;  // 是否已經過 AI 優化
     this.originalContent = '';  // 原始內容基線（用於檢測修改）
     this.cachedFormatJSON = null;  // 緩存的格式 JSON
+    
+    // 🚨 階段 3.5.3.1-3.5.3.2：搜索、篩選和排序狀態
+    this.allTemplates = [];  // 所有模板
+    this.searchQuery = '';  // 搜索關鍵字
+    this.currentFilter = 'all';  // 'all' | 'system' | 'custom'
+    this.currentSort = 'created_desc';  // 排序方式
   }
   
   /**
@@ -75,6 +81,46 @@ class FormatTemplatePage {
           >
             ➕ 創建新模板
           </button>
+        </div>
+        
+        <!-- 🚨 階段 3.5.3.1-3.5.3.2：搜索、篩選和排序 -->
+        <div class="mb-6 bg-white rounded-lg shadow p-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 搜索框 -->
+            <div class="md:col-span-2">
+              <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input 
+                  type="text" 
+                  id="searchInput"
+                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="搜索模板名稱或描述..."
+                />
+              </div>
+            </div>
+            
+            <!-- 篩選和排序 -->
+            <div class="flex gap-2">
+              <select 
+                id="filterType"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">全部類型</option>
+                <option value="system">系統格式</option>
+                <option value="custom">自定義格式</option>
+              </select>
+              
+              <select 
+                id="sortBy"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="created_desc">最新創建</option>
+                <option value="created_asc">最早創建</option>
+                <option value="name_asc">名稱 A-Z</option>
+                <option value="name_desc">名稱 Z-A</option>
+              </select>
+            </div>
+          </div>
         </div>
         
         <!-- 加载状态 -->
@@ -151,6 +197,32 @@ class FormatTemplatePage {
         if (modal) modal.classList.add('hidden');
       };
     }
+    
+    // 🚨 階段 3.5.3.1-3.5.3.2：搜索、篩選和排序事件
+    const searchInput = this.container.querySelector('#searchInput');
+    const filterType = this.container.querySelector('#filterType');
+    const sortBy = this.container.querySelector('#sortBy');
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.searchQuery = e.target.value.toLowerCase();
+        this.filterAndRenderTemplates();
+      });
+    }
+    
+    if (filterType) {
+      filterType.addEventListener('change', (e) => {
+        this.currentFilter = e.target.value;
+        this.filterAndRenderTemplates();
+      });
+    }
+    
+    if (sortBy) {
+      sortBy.addEventListener('change', (e) => {
+        this.currentSort = e.target.value;
+        this.filterAndRenderTemplates();
+      });
+    }
   }
   
   /**
@@ -203,15 +275,82 @@ class FormatTemplatePage {
   }
   
   /**
-   * 渲染模板卡片
+   * 🚨 階段 3.5.3.1-3.5.3.2：篩選和渲染模板
+   */
+  filterAndRenderTemplates() {
+    let filtered = [...this.allTemplates];
+    
+    // 搜索過濾
+    if (this.searchQuery) {
+      filtered = filtered.filter(template => {
+        const nameMatch = template.name.toLowerCase().includes(this.searchQuery);
+        const descMatch = template.description?.toLowerCase().includes(this.searchQuery) || false;
+        return nameMatch || descMatch;
+      });
+    }
+    
+    // 類型篩選
+    if (this.currentFilter === 'system') {
+      filtered = filtered.filter(t => t.is_system);
+    } else if (this.currentFilter === 'custom') {
+      filtered = filtered.filter(t => !t.is_system);
+    }
+    
+    // 排序
+    filtered.sort((a, b) => {
+      switch (this.currentSort) {
+        case 'created_desc':
+          return new Date(b.created_at) - new Date(a.created_at);
+        case 'created_asc':
+          return new Date(a.created_at) - new Date(b.created_at);
+        case 'name_asc':
+          return a.name.localeCompare(b.name, 'zh-Hant');
+        case 'name_desc':
+          return b.name.localeCompare(a.name, 'zh-Hant');
+        default:
+          return 0;
+      }
+    });
+    
+    // 保存過濾後的列表
+    this.filteredTemplates = filtered;
+    
+    // 渲染
+    const templateGrid = this.container.querySelector('#templateGrid');
+    const emptyState = this.container.querySelector('#emptyState');
+    
+    if (filtered.length === 0) {
+      if (templateGrid) templateGrid.classList.add('hidden');
+      if (emptyState) {
+        emptyState.classList.remove('hidden');
+        // 更新空狀態消息
+        if (this.searchQuery || this.currentFilter !== 'all') {
+          emptyState.querySelector('h3').textContent = '沒有符合條件的模板';
+          emptyState.querySelector('p').textContent = '請嘗試調整搜索或篩選條件';
+        }
+      }
+    } else {
+      if (emptyState) emptyState.classList.add('hidden');
+      if (templateGrid) templateGrid.classList.remove('hidden');
+      this.renderTemplateCards();
+    }
+    
+    console.log('[FormatTemplatePage] 篩選完成:', filtered.length, '個模板');
+  }
+  
+  /**
+   * 🚨 階段 3.5.3.1-3.5.3.2：渲染模板卡片（使用過濾後的列表）
    */
   renderTemplateCards() {
     const grid = this.container.querySelector('#templateGrid');
     if (!grid) return;
     
+    // 使用過濾後的列表
+    const templates = this.filteredTemplates || this.allTemplates;
+    
     // 分组：系统模板和自定义模板
-    const systemTemplates = this.allTemplates.filter(t => t.is_system);
-    const customTemplates = this.allTemplates.filter(t => !t.is_system);
+    const systemTemplates = templates.filter(t => t.is_system);
+    const customTemplates = templates.filter(t => !t.is_system);
     
     let html = '';
     
@@ -330,17 +469,27 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
               </div>
             </div>
           </div>
+          <!-- 🚨 階段 3.5.3.3：完善查看詳情功能 - 添加複製按鈕 -->
           <div class="flex justify-between items-center pt-4 border-t border-gray-200">
             <div class="text-sm text-gray-500">
               <i class="fas fa-clock mr-1"></i>
               創建於 ${new Date(template.created_at).toLocaleDateString('zh-TW')}
             </div>
-            <button 
-              onclick="window.formatTemplatePageInstance.showDetail = null; window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
-              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-            >
-              <i class="fas fa-edit mr-1"></i>${isSystem ? '基於此創建' : '編輯模板'}
-            </button>
+            <div class="flex gap-2">
+              <button 
+                onclick="window.formatTemplatePageInstance.copyFormatDescription('${template.id}')"
+                class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition text-sm font-medium"
+                title="複製格式說明到剪貼板"
+              >
+                <i class="fas fa-copy mr-1"></i>複製說明
+              </button>
+              <button 
+                onclick="window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+              >
+                <i class="fas fa-edit mr-1"></i>${isSystem ? '基於此創建' : '編輯模板'}
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -349,6 +498,25 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     } catch (error) {
       console.error('[FormatTemplatePage] 显示详情失败:', error);
       alert('显示详情失败：' + error.message);
+    }
+  }
+  
+  /**
+   * 🚨 階段 3.5.3.3：複製格式說明到剪貼板
+   */
+  async copyFormatDescription(templateId) {
+    try {
+      const template = this.allTemplates.find(t => t.id === templateId);
+      if (!template) throw new Error('模板不存在');
+      
+      const textToCopy = template.human_input || '（暫無內容）';
+      
+      await navigator.clipboard.writeText(textToCopy);
+      alert('✅ 格式說明已複製到剪貼板！');
+      console.log('[FormatTemplatePage] 已複製格式說明:', template.name);
+    } catch (error) {
+      console.error('[FormatTemplatePage] 複製失敗:', error);
+      alert('❌ 複製失敗：' + error.message);
     }
   }
   
@@ -427,6 +595,64 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
           
           <!-- 编辑器区域 -->
           <div class="p-8">
+            <!-- 🚨 階段 3.5.2.4：選擇起點（僅在新建模式顯示） -->
+            ${!isEdit ? `
+            <div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                <i class="fas fa-compass text-blue-500 mr-2"></i>選擇起點（可選）
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- 從零開始 -->
+                <div 
+                  id="templateStartScratch" 
+                  class="template-start-card p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer transition hover:shadow-md"
+                >
+                  <div class="flex items-center gap-3">
+                    <div style="font-size: 1.5rem;">✏️</div>
+                    <div class="flex-1">
+                      <h5 class="font-semibold text-blue-900 text-sm">從零開始</h5>
+                      <p class="text-xs text-blue-700">完全自定義</p>
+                    </div>
+                    <div class="template-start-check text-blue-600 font-bold" style="font-size: 1.2rem;">✓</div>
+                  </div>
+                </div>
+                
+                <!-- 基於系統格式 -->
+                <div 
+                  id="templateStartSystem" 
+                  class="template-start-card p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition hover:shadow-md hover:border-blue-400"
+                >
+                  <div class="flex items-center gap-3">
+                    <div style="font-size: 1.5rem;">📖</div>
+                    <div class="flex-1">
+                      <h5 class="font-semibold text-gray-800 text-sm">基於系統格式</h5>
+                      <p class="text-xs text-gray-600">選擇系統格式開始</p>
+                    </div>
+                    <div class="template-start-check text-blue-600 font-bold hidden" style="font-size: 1.2rem;">✓</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 系統格式選擇器（基於系統格式時顯示） -->
+              <div id="templateSystemSelector" class="mt-3 hidden">
+                <select 
+                  id="templateBaseFormatSelect"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- 選擇系統格式 --</option>
+                  <!-- 動態加載 -->
+                </select>
+                <button 
+                  id="templateLoadPreviewBtn"
+                  class="w-full mt-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+                  disabled
+                >
+                  📄 加載預覽
+                </button>
+              </div>
+            </div>
+            ` : ''}
+            
             <div class="mb-6">
               <label class="block text-sm font-semibold text-gray-700 mb-3">
                 <i class="fas fa-edit text-blue-500 mr-2"></i>寫作要求內容
@@ -459,6 +685,13 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                 <span id="statusText" class="text-gray-700 font-medium">準備就緒</span>
               </div>
               <div class="flex gap-3">
+                <!-- 🚨 階段 3.5.3.5：清空編輯器按鈕 -->
+                <button 
+                  id="clearEditorBtn"
+                  class="bg-gray-500 text-white px-4 py-2.5 rounded-lg hover:bg-gray-600 transition font-medium shadow-sm"
+                >
+                  <i class="fas fa-eraser mr-2"></i>清空
+                </button>
                 <button 
                   id="optimizeBtn"
                   class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-purple-600 hover:to-purple-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -564,6 +797,9 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         this.hasBeenOptimized = false;
         this.originalContent = '';
         this.cachedFormatJSON = null;
+        
+        // 🚨 階段 3.5.2.4：加載系統格式列表到選擇器
+        await this.loadSystemFormatsForSelector();
       }
       
       // 绑定事件
@@ -630,6 +866,10 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     const backBtn = this.container.querySelector('#backToListBtn');
     if (backBtn) backBtn.onclick = () => this.switchToListMode();
     
+    // 🚨 階段 3.5.3.5：清空編輯器按鈕
+    const clearBtn = this.container.querySelector('#clearEditorBtn');
+    if (clearBtn) clearBtn.onclick = () => this.handleClearEditor();
+    
     // AI 优化按钮
     const optimizeBtn = this.container.querySelector('#optimizeBtn');
     if (optimizeBtn) optimizeBtn.onclick = () => this.handleOptimize();
@@ -656,6 +896,183 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         this.handleContentChange();
       });
     }
+    
+    // 🚨 階段 3.5.2.4：綁定選擇起點事件（僅新建模式）
+    if (!this.editingFormatId) {
+      const scratchCard = this.container.querySelector('#templateStartScratch');
+      const systemCard = this.container.querySelector('#templateStartSystem');
+      const baseFormatSelect = this.container.querySelector('#templateBaseFormatSelect');
+      const loadPreviewBtn = this.container.querySelector('#templateLoadPreviewBtn');
+      
+      if (scratchCard) {
+        scratchCard.onclick = () => this.selectTemplateStartPoint('scratch');
+      }
+      if (systemCard) {
+        systemCard.onclick = () => this.selectTemplateStartPoint('system');
+      }
+      if (baseFormatSelect) {
+        baseFormatSelect.onchange = (e) => {
+          const loadBtn = this.container.querySelector('#templateLoadPreviewBtn');
+          if (loadBtn) loadBtn.disabled = !e.target.value;
+        };
+      }
+      if (loadPreviewBtn) {
+        loadPreviewBtn.onclick = () => this.loadTemplatePreview();
+      }
+    }
+  }
+  
+  /**
+   * 🚨 階段 3.5.2.4：加載系統格式列表到選擇器
+   */
+  async loadSystemFormatsForSelector() {
+    const selector = this.container.querySelector('#templateBaseFormatSelect');
+    if (!selector) return;
+    
+    try {
+      const { data: systemFormats, error } = await this.supabase
+        .from('format_specifications')
+        .select('id, name, description')
+        .eq('is_system', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      selector.innerHTML = '<option value="">-- 選擇系統格式 --</option>';
+      systemFormats.forEach(format => {
+        const option = document.createElement('option');
+        option.value = format.id;
+        option.textContent = format.name;
+        selector.appendChild(option);
+      });
+      
+      console.log('[FormatTemplatePage] 系統格式已加載到選擇器:', systemFormats.length);
+    } catch (error) {
+      console.error('[FormatTemplatePage] 加載系統格式失敗:', error);
+    }
+  }
+  
+  /**
+   * 🚨 階段 3.5.2.4：選擇模板起點
+   */
+  selectTemplateStartPoint(type) {
+    const scratchCard = this.container.querySelector('#templateStartScratch');
+    const systemCard = this.container.querySelector('#templateStartSystem');
+    const systemSelector = this.container.querySelector('#templateSystemSelector');
+    
+    // 重置卡片樣式
+    [scratchCard, systemCard].forEach(card => {
+      if (card) {
+        card.classList.remove('border-blue-500', 'bg-blue-50');
+        card.classList.add('border-gray-200');
+        const check = card.querySelector('.template-start-check');
+        if (check) check.classList.add('hidden');
+      }
+    });
+    
+    if (type === 'scratch') {
+      // 從零開始
+      if (scratchCard) {
+        scratchCard.classList.remove('border-gray-200');
+        scratchCard.classList.add('border-blue-500', 'bg-blue-50');
+        const check = scratchCard.querySelector('.template-start-check');
+        if (check) check.classList.remove('hidden');
+      }
+      if (systemSelector) systemSelector.classList.add('hidden');
+      
+      this.editorMode = 'custom';
+      
+    } else if (type === 'system') {
+      // 基於系統格式
+      if (systemCard) {
+        systemCard.classList.remove('border-gray-200');
+        systemCard.classList.add('border-blue-500', 'bg-blue-50');
+        const check = systemCard.querySelector('.template-start-check');
+        if (check) check.classList.remove('hidden');
+      }
+      if (systemSelector) systemSelector.classList.remove('hidden');
+    }
+    
+    console.log('[FormatTemplatePage] 起點已選擇:', type);
+  }
+  
+  /**
+   * 🚨 階段 3.5.2.4：加載模板預覽
+   */
+  async loadTemplatePreview() {
+    const selector = this.container.querySelector('#templateBaseFormatSelect');
+    const formatId = selector?.value;
+    
+    if (!formatId) {
+      alert('請先選擇系統格式');
+      return;
+    }
+    
+    try {
+      const format = await FormatEditorCore.loadSystemFormat(formatId, this.supabase);
+      
+      // 顯示在編輯器中
+      let humanReadable = format.human_input;
+      if (!humanReadable && format.spec_json) {
+        humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
+      }
+      
+      if (this.currentQuill && humanReadable) {
+        this.currentQuill.setText(humanReadable);
+        this.originalContent = humanReadable;
+      }
+      
+      // 設置狀態
+      this.editorMode = 'direct';
+      this.hasBeenOptimized = true;
+      this.cachedFormatJSON = format.spec_json;
+      this.cachedFormat = {
+        human_input: humanReadable,
+        spec_json: format.spec_json
+      };
+      
+      this.updateButtonStates();
+      this.updateStatus();
+      
+      console.log('[FormatTemplatePage] 模板預覽已加載');
+    } catch (error) {
+      console.error('[FormatTemplatePage] 加載預覽失敗:', error);
+      alert('加載預覽失敗：' + error.message);
+    }
+  }
+  
+  /**
+   * 🚨 階段 3.5.3.5：處理清空編輯器
+   */
+  handleClearEditor() {
+    if (!this.currentQuill) return;
+    
+    const text = this.currentQuill.getText().trim();
+    if (!text) {
+      alert('編輯器已經是空的');
+      return;
+    }
+    
+    if (!confirm('確定要清空編輯器內容嗎？此操作無法撤銷。')) {
+      return;
+    }
+    
+    // 清空編輯器
+    this.currentQuill.setText('');
+    
+    // 重置所有狀態
+    this.editorMode = 'custom';
+    this.hasBeenOptimized = false;
+    this.originalContent = '';
+    this.cachedFormatJSON = null;
+    this.cachedFormat = null;
+    this.editingFormatId = null;
+    
+    // 更新按鈕狀態和狀態面板
+    this.updateButtonStates();
+    this.updateStatus();
+    
+    console.log('[FormatTemplatePage] 編輯器已清空，狀態已重置');
   }
   
   /**
@@ -892,8 +1309,14 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       
       console.log('[FormatTemplatePage] 模板已保存:', result.id);
       
-      // 清除草稿
+      // 🚨 階段 3.5.4.3：保存成功後清除草稿
       FormatEditorCore.clearDraft('format-editor-draft-template');
+      
+      // 🚨 停止草稿自動保存監聽
+      if (this.draftCleanup) {
+        this.draftCleanup();
+        this.draftCleanup = null;
+      }
       
       // 关闭对话框
       const dialog = this.container.querySelector('#saveDialog');
@@ -914,25 +1337,39 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
   // ============================================================
   
   /**
-   * 切换回列表模式
+   * 🚨 階段 3.5.4.3：切換回列表模式（完善草稿清理）
    */
   async switchToListMode() {
-    // 清理编辑器
+    // 🚨 清理草稿監聽器
     if (this.draftCleanup) {
       this.draftCleanup();
       this.draftCleanup = null;
     }
     
+    // 🚨 詢問是否清除草稿（如果有未保存的內容）
+    const text = this.currentQuill?.getText().trim();
+    if (text && !this.hasBeenOptimized) {
+      const shouldClearDraft = confirm('您有未保存的草稿，離開後草稿將保留。\n\n下次進入時可以選擇恢復。');
+      // 無論用戶選擇什麼，草稿都會保留（由 localStorage 管理）
+    }
+    
+    // 重置所有狀態
     this.currentQuill = null;
     this.currentMode = 'list';
     this.editingFormatId = null;
     this.cachedFormat = null;
+    this.editorMode = 'custom';
+    this.hasBeenOptimized = false;
+    this.originalContent = '';
+    this.cachedFormatJSON = null;
     
     // 重新渲染
     const container = document.querySelector('#teacher-dashboard-content #mainContent');
     if (container) {
       await this.render(container);
     }
+    
+    console.log('[FormatTemplatePage] 已切換回列表模式');
   }
   
   // ============================================================

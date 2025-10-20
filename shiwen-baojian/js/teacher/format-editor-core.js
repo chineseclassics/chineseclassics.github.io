@@ -82,44 +82,94 @@ class FormatEditorCore {
    * @param {Object} formatJSON - 格式 JSON 对象
    * @returns {string} 人类可读文本
    */
+  /**
+   * 🚨 階段 3.5.2.5：完善 JSON 轉人類可讀格式
+   * 將格式 JSON 轉換為易讀的自然語言文本
+   */
   static formatJSONToHumanReadable(formatJSON) {
     if (!formatJSON) return '';
     
-    const lines = [];
+    let text = '';
     
-    // 添加元数据
-    if (formatJSON.metadata) {
-      const { name, essay_type, description } = formatJSON.metadata;
-      if (name) lines.push(`# ${name}`);
-      if (essay_type) lines.push(`類型：${essay_type}`);
-      if (description) lines.push(`說明：${description}`);
-      lines.push('');
+    // 任務類型
+    if (formatJSON.metadata && formatJSON.metadata.structure_type) {
+      text += `【任務類型】\n${formatJSON.metadata.structure_type}\n\n`;
     }
     
-    // 添加内容要求
-    if (formatJSON.content_requirements) {
-      lines.push('## 內容要求');
-      formatJSON.content_requirements.forEach(req => {
-        lines.push(`- ${req.description || req.requirement}`);
-      });
-      lines.push('');
+    // 字數要求
+    if (formatJSON.constraints && formatJSON.constraints.total_word_count) {
+      const wc = formatJSON.constraints.total_word_count;
+      if (wc.min && wc.max) {
+        text += `【字數要求】\n• 總字數：${wc.min}-${wc.max} 字\n\n`;
+      } else if (wc.min) {
+        text += `【字數要求】\n• 總字數：至少 ${wc.min} 字\n\n`;
+      } else if (wc.max) {
+        text += `【字數要求】\n• 總字數：最多 ${wc.max} 字\n\n`;
+      }
     }
     
-    // 添加约束条件
-    if (formatJSON.constraints) {
-      lines.push('## 格式約束');
-      formatJSON.constraints.forEach(constraint => {
-        if (constraint.type === 'length') {
-          lines.push(`- 字數：${constraint.min || '不限'} - ${constraint.max || '不限'} 字`);
-        } else if (constraint.type === 'structure') {
-          lines.push(`- 結構：${constraint.description}`);
-        } else {
-          lines.push(`- ${constraint.description || JSON.stringify(constraint)}`);
+    // 段落結構
+    if (formatJSON.structure && formatJSON.structure.required_sections) {
+      text += `【段落結構】\n`;
+      formatJSON.structure.required_sections.forEach(section => {
+        const desc = section.description || section.content_requirements || '';
+        text += `• ${section.name}${desc ? '：' + desc : ''}\n`;
+        if (section.word_count) {
+          const wc = section.word_count;
+          if (wc.min && wc.max) {
+            text += `  字數：${wc.min}-${wc.max} 字\n`;
+          }
         }
       });
+      text += '\n';
     }
     
-    return lines.join('\n');
+    // 內容要求
+    if (formatJSON.content_requirements && formatJSON.content_requirements.length > 0) {
+      text += `【內容要求】\n`;
+      formatJSON.content_requirements.forEach(req => {
+        if (req.literary_work) {
+          text += `• 作品：${req.literary_work}\n`;
+        }
+        if (req.theme) {
+          text += `• 主題：${req.theme}\n`;
+        }
+        if (req.specific_criteria && Array.isArray(req.specific_criteria)) {
+          text += `• 要求：${req.specific_criteria.join('、')}\n`;
+        } else if (req.description || req.requirement) {
+          text += `• ${req.description || req.requirement}\n`;
+        }
+      });
+      text += '\n';
+    }
+    
+    // 檢查維度
+    if (formatJSON.analysis_dimensions && formatJSON.analysis_dimensions.length > 0) {
+      text += `【檢查維度】\n`;
+      formatJSON.analysis_dimensions.forEach(dim => {
+        text += `${dim.name}：\n`;
+        if (dim.checks && Array.isArray(dim.checks)) {
+          dim.checks.forEach(check => {
+            text += `  - ${check}\n`;
+          });
+        }
+        text += '\n';
+      });
+    }
+    
+    // 如果沒有任何內容，返回基本信息
+    if (!text) {
+      if (formatJSON.metadata) {
+        text = `【格式名稱】\n${formatJSON.metadata.name || '未命名'}\n\n`;
+        if (formatJSON.metadata.description) {
+          text += `【描述】\n${formatJSON.metadata.description}\n`;
+        }
+      } else {
+        text = '（格式內容為空）';
+      }
+    }
+    
+    return text.trim();
   }
   
   // ============================================================
@@ -310,11 +360,15 @@ class FormatEditorCore {
       throw new Error('Quill 实例不能为空');
     }
     
-    // 草稿保存处理函数
+    // 🚨 階段 3.5.4.2：草稿保存處理函數（帶時間戳）
     const saveDraft = () => {
       const text = quill.getText().trim();
       if (text) {
-        localStorage.setItem(draftKey, text);
+        const draftData = {
+          content: text,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(draftKey, JSON.stringify(draftData));
         console.log('[FormatEditorCore] 草稿已自动保存:', draftKey);
       }
     };
@@ -339,17 +393,41 @@ class FormatEditorCore {
   }
   
   /**
-   * 加载草稿
+   * 🚨 階段 3.5.4.2：加載草稿（支持過期管理）
    * @param {string} draftKey - localStorage key
    * @returns {string|null} 草稿文本或 null
    */
   static loadDraft(draftKey) {
-    const draft = localStorage.getItem(draftKey);
-    if (draft) {
-      console.log('[FormatEditorCore] 草稿已加载:', draftKey);
-      return draft;
+    const draftStr = localStorage.getItem(draftKey);
+    if (!draftStr) return null;
+    
+    try {
+      // 嘗試解析 JSON 格式（新格式帶時間戳）
+      const draftData = JSON.parse(draftStr);
+      
+      // 檢查過期（24小時）
+      if (draftData.timestamp) {
+        const draftTime = new Date(draftData.timestamp);
+        const now = new Date();
+        const hoursDiff = (now - draftTime) / (1000 * 60 * 60);
+        
+        if (hoursDiff > 24) {
+          console.log('[FormatEditorCore] 草稿已過期（超過24小時），自動清除');
+          this.clearDraft(draftKey);
+          return null;
+        }
+        
+        console.log('[FormatEditorCore] 草稿已加載:', draftKey, `(${Math.floor(hoursDiff)}小時前)`);
+        return draftData.content;
+      }
+      
+      // 如果沒有時間戳但有 content，也返回
+      return draftData.content || draftData;
+    } catch (e) {
+      // 如果不是 JSON，視為舊格式（純文本）
+      console.log('[FormatEditorCore] 草稿已加載（舊格式）:', draftKey);
+      return draftStr;
     }
-    return null;
   }
   
   /**

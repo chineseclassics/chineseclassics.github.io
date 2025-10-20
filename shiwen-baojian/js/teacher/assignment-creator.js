@@ -939,8 +939,14 @@ class AssignmentCreator {
         console.log('[AssignmentCreator] 新模板已創建:', result.id);
       }
       
-      // 清除草稿
+      // 🚨 階段 3.5.4.3：保存成功後清除草稿
       FormatEditorCore.clearDraft('format-editor-draft-inline');
+      
+      // 🚨 停止草稿自動保存監聽
+      if (this.draftCleanup) {
+        this.draftCleanup();
+        this.draftCleanup = null;
+      }
       
       // 关闭对话框
       this.container.querySelector('#saveFormatDialog').classList.add('hidden');
