@@ -807,9 +807,15 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             if (descArea) {
                 descArea.classList.remove('hidden');
                 if (toggleBtn) {
-                    toggleBtn.querySelector('i')?.classList.remove('fa-chevron-down');
-                    toggleBtn.querySelector('i')?.classList.add('fa-chevron-up');
-                    toggleBtn.querySelector('span')?.textContent = '收起指引';
+                    const btnIcon = toggleBtn.querySelector('i');
+                    const btnText = toggleBtn.querySelector('span');
+                    if (btnIcon) {
+                        btnIcon.classList.remove('fa-chevron-down');
+                        btnIcon.classList.add('fa-chevron-up');
+                    }
+                    if (btnText) {
+                        btnText.textContent = '收起指引';
+                    }
                 }
             }
         }
