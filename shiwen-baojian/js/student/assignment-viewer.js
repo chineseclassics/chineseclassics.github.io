@@ -296,7 +296,7 @@ class StudentAssignmentViewer {
    */
   renderActionButtons(assignment, essay, canWithdraw) {
     // 未開始
-    if (!essay || essay.status === 'draft' && !assignment.actualWordCount) {
+    if (!essay || !assignment.actualWordCount) {
       return `
         <button class="btn-action start-btn" data-id="${assignment.id}">
           <i class="fas fa-pen"></i>
@@ -305,13 +305,23 @@ class StudentAssignmentViewer {
       `;
     }
     
-    // 草稿中
+    // 草稿中（有內容）
     if (essay && essay.status === 'draft') {
+      // 檢查是否有必填內容（標題、引言、結論）
+      const hasContent = assignment.actualWordCount > 0;
+      const canSubmit = hasContent; // 簡化檢查，實際提交時會做詳細驗證
+      
       return `
         <button class="btn-action continue-btn edit" data-id="${assignment.id}">
           <i class="fas fa-edit"></i>
           繼續寫作
         </button>
+        ${canSubmit ? `
+          <button class="btn-action submit-btn" data-id="${assignment.id}" data-essay-id="${essay.id}">
+            <i class="fas fa-paper-plane"></i>
+            提交作業
+          </button>
+        ` : ''}
       `;
     }
     
@@ -522,6 +532,15 @@ class StudentAssignmentViewer {
       });
     });
     
+    // 提交作業按鈕（在卡片上）
+    this.container.querySelectorAll('.student-assignment-card .submit-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const assignmentId = e.currentTarget.getAttribute('data-id');
+        const essayId = e.currentTarget.getAttribute('data-essay-id');
+        await this.submitAssignment(assignmentId, essayId);
+      });
+    });
+    
     // 撤回並編輯按鈕
     this.container.querySelectorAll('.student-assignment-card .withdraw-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -571,6 +590,112 @@ class StudentAssignmentViewer {
     });
   }
 
+  /**
+   * 提交作業（從卡片）
+   */
+  async submitAssignment(assignmentId, essayId) {
+    try {
+      // 1. 獲取作業內容
+      const { data: essay, error: fetchError } = await this.supabase
+        .from('essays')
+        .select('*')
+        .eq('id', essayId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      if (!essay || !essay.content_json) {
+        toast.error('找不到作業內容');
+        return;
+      }
+      
+      // 2. 解析內容並檢查
+      const content = JSON.parse(essay.content_json);
+      
+      // 檢查標題
+      if (!content.title || content.title.trim() === '') {
+        toast.warning('請先填寫論文標題');
+        return;
+      }
+      
+      // 檢查引言
+      if (!content.introduction || content.introduction.trim() === '' || content.introduction === '<p><br></p>') {
+        toast.warning('請先完成引言部分');
+        return;
+      }
+      
+      // 檢查結論
+      if (!content.conclusion || content.conclusion.trim() === '' || content.conclusion === '<p><br></p>') {
+        toast.warning('請先完成結論部分');
+        return;
+      }
+      
+      // 3. 計算字數
+      const wordCount = this.calculateWordCount(content);
+      
+      // 4. 字數檢查（可選警告）
+      if (wordCount < 100) {
+        const proceed = await new Promise(resolve => {
+          dialog.confirm({
+            title: '字數較少',
+            message: `當前字數：${wordCount} 字<br><br>字數可能不夠，確定要提交嗎？`,
+            confirmText: '確定提交',
+            cancelText: '繼續寫作',
+            onConfirm: () => resolve(true),
+            onCancel: () => resolve(false)
+          });
+        });
+        if (!proceed) return;
+      }
+      
+      // 5. 最終確認
+      const argumentCount = content.arguments ? content.arguments.length : 0;
+      const confirmed = await new Promise(resolve => {
+        dialog.confirm({
+          title: '確定提交作業嗎？',
+          message: `
+            <div class="text-left">
+              <p class="mb-2">📝 論文標題：${this.escapeHtml(content.title)}</p>
+              <p class="mb-2">📊 總字數：${wordCount} 字</p>
+              <p class="mb-4">📚 包含：引言、${argumentCount} 個分論點、結論</p>
+              <p class="text-yellow-700 font-semibold">⚠️ 提交後將無法修改，請確認已完成寫作</p>
+            </div>
+          `,
+          confirmText: '確定提交',
+          cancelText: '再檢查一下',
+          onConfirm: () => resolve(true),
+          onCancel: () => resolve(false)
+        });
+      });
+      
+      if (!confirmed) return;
+      
+      // 6. 執行提交
+      toast.info('正在提交作業...');
+      
+      const { error: submitError } = await this.supabase
+        .from('essays')
+        .update({
+          status: 'submitted',
+          submitted_at: new Date().toISOString()
+        })
+        .eq('id', essayId);
+        
+      if (submitError) throw submitError;
+      
+      // 7. 提交成功
+      console.log('✅ 作業提交成功');
+      toast.success('作業提交成功！<br>老師收到後會開始批改', 3000);
+      
+      // 8. 刷新列表
+      await this.loadAndRenderAssignments(false);
+      
+    } catch (error) {
+      console.error('❌ 提交失敗:', error);
+      toast.error('提交失敗：' + error.message);
+    }
+  }
+  
   /**
    * 撤回提交
    */

@@ -826,6 +826,54 @@
   font-size: 1rem;
 }
 
+/* 查看按鈕樣式（已提交/已批改） */
+.student-assignment-card .btn-action.view-btn {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.student-assignment-card .btn-action.view-btn:hover {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+  transform: translateY(-1px);
+}
+
+.student-assignment-card .btn-action.view-btn.graded {
+  background: linear-gradient(135deg, #ffc107 0%, #f57c00 100%);
+}
+
+.student-assignment-card .btn-action.view-btn.graded:hover {
+  background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+}
+
+/* 提交按鈕樣式（在卡片上） */
+.student-assignment-card .btn-action.submit-btn {
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  font-weight: 700;
+}
+
+.student-assignment-card .btn-action.submit-btn:hover {
+  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 撤回按鈕樣式 */
+.student-assignment-card .btn-action.withdraw-btn {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.student-assignment-card .btn-action.withdraw-btn:hover {
+  background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+  transform: translateY(-1px);
+}
+
 /* 刪除按鈕樣式 */
 .student-assignment-card .btn-action.delete-practice-btn {
   background: #f5f5f5;
@@ -1158,42 +1206,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   color: #4caf50;
 }
 
-/* ================================
-   提交和撤回按鈕
-   ================================ */
-
-.btn-action.withdraw-btn {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  color: white;
-  border: none;
-}
-
-.btn-action.withdraw-btn:hover {
-  background: linear-gradient(135deg, #f57c00, #e65100);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 124, 0, 0.4);
-}
-
-.btn-action.view-btn {
-  background: linear-gradient(135deg, #2196f3, #1976d2);
-  color: white;
-  border: none;
-}
-
-.btn-action.view-btn:hover {
-  background: linear-gradient(135deg, #1976d2, #1565c0);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
-}
-
-.btn-action.view-btn.graded {
-  background: linear-gradient(135deg, #ffc107, #ffa000);
-}
-
-.btn-action.view-btn.graded:hover {
-  background: linear-gradient(135deg, #ffa000, #ff8f00);
-  box-shadow: 0 4px 12px rgba(255, 160, 0, 0.4);
-}
 
 /* 提交區域 */
 .essay-submission-section {

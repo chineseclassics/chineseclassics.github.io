@@ -893,9 +893,15 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             // 新練筆，不恢復任何內容
         }
         
-        // ✅ 設置提交功能和狀態顯示（只在任務模式）
+        // ✅ 設置狀態顯示（只在任務模式）
         if (mode === 'assignment') {
-            await setupSubmissionFeature(assignmentId, editable);
+            await setupEssayStatus(assignmentId, editable);
+        }
+        
+        // ✅ 隱藏右側的提交區域（提交功能在列表卡片上）
+        const submissionSection = document.getElementById('submission-section');
+        if (submissionSection) {
+            submissionSection.classList.add('hidden');
         }
 
         console.log('✅ 論文編輯器顯示完成');
@@ -1092,27 +1098,19 @@ async function loadStudentEssayForAssignment(assignmentId) {
 }
 
 /**
- * 設置提交功能（只在任務模式）
+ * 設置作業狀態顯示（只在任務模式）
  */
-async function setupSubmissionFeature(assignmentId, editable = true) {
+async function setupEssayStatus(assignmentId, editable = true) {
     try {
-        const submissionSection = document.getElementById('submission-section');
-        const submitBtn = document.getElementById('submit-essay-btn');
         const statusText = document.getElementById('essay-status-text');
         const statusDisplay = document.getElementById('essay-status-display');
-        
-        if (!submissionSection || !submitBtn) {
-            console.warn('⚠️ 找不到提交相關元素');
-            return;
-        }
         
         // 獲取當前作業狀態
         const { StorageState } = await import('./student/essay-storage.js');
         const essayId = StorageState.currentEssayId;
         
         if (!essayId) {
-            // 新作業，顯示草稿狀態和提交按鈕
-            submissionSection.classList.remove('hidden');
+            // 新作業，顯示草稿狀態
             if (statusText) statusText.textContent = '草稿';
             return;
         }
@@ -1125,7 +1123,6 @@ async function setupSubmissionFeature(assignmentId, editable = true) {
             .single();
             
         if (!essay) {
-            submissionSection.classList.remove('hidden');
             if (statusText) statusText.textContent = '草稿';
             return;
         }
@@ -1142,17 +1139,13 @@ async function setupSubmissionFeature(assignmentId, editable = true) {
                     icon.className = 'fas fa-check-circle text-green-600 text-xs';
                 }
             }
-            // 隱藏提交按鈕
-            submissionSection.classList.add('hidden');
         } else if (essay.status === 'graded') {
             if (statusText) {
                 statusText.textContent = '已批改';
                 statusText.classList.add('text-yellow-600', 'font-semibold');
             }
-            submissionSection.classList.add('hidden');
         } else {
-            // 草稿狀態，顯示提交按鈕
-            submissionSection.classList.remove('hidden');
+            // 草稿狀態
             if (statusText) statusText.textContent = '草稿';
         }
         
@@ -1160,18 +1153,10 @@ async function setupSubmissionFeature(assignmentId, editable = true) {
         if (!editable) {
             console.log('📖 只讀模式：禁用編輯功能');
             disableEditing();
-            submissionSection.classList.add('hidden');
-        }
-        
-        // 綁定提交按鈕
-        if (editable) {
-            submitBtn.addEventListener('click', async () => {
-                await handleSubmitEssay(assignmentId);
-            });
         }
         
     } catch (error) {
-        console.error('❌ 設置提交功能失敗:', error);
+        console.error('❌ 設置狀態顯示失敗:', error);
     }
 }
 
@@ -1219,102 +1204,6 @@ function disableEditing() {
         if (assignmentInfo) {
             assignmentInfo.after(notice);
         }
-    }
-}
-
-/**
- * 處理提交作業
- */
-async function handleSubmitEssay(assignmentId) {
-    try {
-        const { StorageState } = await import('./student/essay-storage.js');
-        const { submitEssay } = await import('./student/essay-storage.js');
-        const { EditorState } = await import('./student/essay-writer.js');
-        
-        const essayId = StorageState.currentEssayId;
-        
-        if (!essayId) {
-            toast.error('請先保存作業再提交');
-            return;
-        }
-        
-        // 1. 檢查必填項
-        const titleInput = document.getElementById('essay-title');
-        if (!titleInput?.value || titleInput.value.trim() === '') {
-            toast.warning('請先填寫論文標題');
-            titleInput?.focus();
-            return;
-        }
-        
-        // 檢查引言
-        if (!EditorState.introEditor || EditorState.introEditor.getHTML().trim() === '<p><br></p>') {
-            toast.warning('請先完成引言部分');
-            return;
-        }
-        
-        // 檢查結論
-        if (!EditorState.conclusionEditor || EditorState.conclusionEditor.getHTML().trim() === '<p><br></p>') {
-            toast.warning('請先完成結論部分');
-            return;
-        }
-        
-        // 2. 檢查字數（可選，根據任務要求）
-        const totalWords = EditorState.totalWordCount;
-        if (totalWords < 100) {
-            const confirmed = await new Promise(resolve => {
-                dialog.confirm({
-                    title: '字數較少',
-                    message: `當前字數：${totalWords} 字<br><br>字數可能不夠，確定要提交嗎？`,
-                    confirmText: '確定提交',
-                    cancelText: '繼續寫作',
-                    onConfirm: () => resolve(true),
-                    onCancel: () => resolve(false)
-                });
-            });
-            if (!confirmed) return;
-        }
-        
-        // 3. 最終確認
-        const confirmed = await new Promise(resolve => {
-            dialog.confirm({
-                title: '確定提交作業嗎？',
-                message: `
-                    <div class="text-left">
-                        <p class="mb-2">📝 論文標題：${titleInput.value}</p>
-                        <p class="mb-2">📊 總字數：${totalWords} 字</p>
-                        <p class="mb-4">📚 包含：引言、${EditorState.arguments.length} 個分論點、結論</p>
-                        <p class="text-yellow-700 font-semibold">⚠️ 提交後將無法修改，請確認已完成寫作</p>
-                    </div>
-                `,
-                confirmText: '確定提交',
-                cancelText: '再檢查一下',
-                onConfirm: () => resolve(true),
-                onCancel: () => resolve(false)
-            });
-        });
-        
-        if (!confirmed) return;
-        
-        // 4. 執行提交
-        toast.info('正在提交作業...');
-        await submitEssay(essayId);
-        
-        // 5. 提交成功
-        toast.success('作業提交成功！<br>老師收到後會開始批改', 3000);
-        
-        // 6. 返回任務列表
-        setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('navigate', {
-                detail: { 
-                    page: 'assignment-list',
-                    forceRefresh: true
-                }
-            }));
-        }, 1500);
-        
-    } catch (error) {
-        console.error('❌ 提交失敗:', error);
-        toast.error('提交失敗：' + error.message);
     }
 }
 
