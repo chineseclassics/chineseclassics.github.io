@@ -783,6 +783,7 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
 
         // 綁定展開/收起按鈕
         const toggleBtn = container.querySelector('#toggle-description-btn');
+        const collapseBtn = container.querySelector('#collapse-description-btn');  // 底部收起按鈕
         const descArea = container.querySelector('#assignment-description-area');
         
         if (mode === 'free-writing') {
@@ -803,51 +804,59 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
                 `;
             }
             
-            // 默認展開說明
-            if (descArea) {
-                descArea.classList.remove('hidden');
-                if (toggleBtn) {
-                    const btnIcon = toggleBtn.querySelector('i');
-                    const btnText = toggleBtn.querySelector('span');
-                    if (btnIcon) {
-                        btnIcon.classList.remove('fa-chevron-down');
-                        btnIcon.classList.add('fa-chevron-up');
-                    }
-                    if (btnText) {
-                        btnText.textContent = '收起指引';
-                    }
-                }
-            }
         }
         
+        // 定義展開和收起的函數（需要在自主練筆模式之後定義，因為要用到 toggleBtn）
+        const expandDescription = () => {
+            descArea.classList.remove('hidden');
+            const btnIcon = toggleBtn.querySelector('i');
+            const btnText = toggleBtn.querySelector('span');
+            if (btnIcon) {
+                btnIcon.classList.remove('fa-chevron-down');
+                btnIcon.classList.add('fa-chevron-up');
+            }
+            if (btnText) {
+                btnText.textContent = '收起指引';
+            }
+        };
+        
+        const collapseDescription = () => {
+            descArea.classList.add('hidden');
+            const btnIcon = toggleBtn.querySelector('i');
+            const btnText = toggleBtn.querySelector('span');
+            if (btnIcon) {
+                btnIcon.classList.remove('fa-chevron-up');
+                btnIcon.classList.add('fa-chevron-down');
+            }
+            if (btnText) {
+                btnText.textContent = '查看寫作指引';
+            }
+        };
+        
+        // 綁定頂部切換按鈕
         if (toggleBtn && descArea) {
             toggleBtn.addEventListener('click', () => {
                 const isHidden = descArea.classList.contains('hidden');
-                const btnText = toggleBtn.querySelector('span');
-                const btnIcon = toggleBtn.querySelector('i');
-                
                 if (isHidden) {
-                    // 展開
-                    descArea.classList.remove('hidden');
-                    if (btnIcon) {
-                        btnIcon.classList.remove('fa-chevron-down');
-                        btnIcon.classList.add('fa-chevron-up');
-                    }
-                    if (btnText) {
-                        btnText.textContent = '收起指引';
-                    }
+                    expandDescription();
                 } else {
-                    // 收起
-                    descArea.classList.add('hidden');
-                    if (btnIcon) {
-                        btnIcon.classList.remove('fa-chevron-up');
-                        btnIcon.classList.add('fa-chevron-down');
-                    }
-                    if (btnText) {
-                        btnText.textContent = '查看寫作指引';
-                    }
+                    collapseDescription();
                 }
             });
+        }
+        
+        // 綁定底部收起按鈕
+        if (collapseBtn && descArea) {
+            collapseBtn.addEventListener('click', () => {
+                collapseDescription();
+                // 滾動到頂部，讓用戶看到已收起
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+        
+        // 自主練筆模式：默認展開指引
+        if (mode === 'free-writing' && descArea && toggleBtn) {
+            expandDescription();
         }
 
         // 加載任務數據或格式模板

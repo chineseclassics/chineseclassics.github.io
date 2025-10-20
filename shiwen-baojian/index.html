@@ -225,27 +225,13 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 頂部工具欄 -->
-                            <div class="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
-                                <div class="flex items-center gap-6">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-file-alt text-gray-400"></i>
-                                        <span class="text-sm font-medium text-gray-700">論文草稿</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-font text-gray-400"></i>
-                                        <span id="word-count-display" class="text-sm text-gray-600">0 字</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <!-- 保存狀態指示器 -->
-                                    <div id="save-status" class="flex items-center gap-2 text-sm">
-                                        <i class="fas fa-check-circle text-green-500"></i>
-                                        <span class="text-gray-600">已保存</span>
+                                        <!-- 底部收起按鈕 -->
+                                        <div class="mt-4 pt-3 border-t border-gray-200 flex justify-center">
+                                            <button id="collapse-description-btn" class="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg px-4 py-2 transition-all flex items-center gap-2 text-sm">
+                                                <span>收起指引</span>
+                                                <i class="fas fa-chevron-up"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -342,6 +328,26 @@
                                         <div class="flex items-center space-x-2">
                                             <i class="fas fa-user-tie text-xl text-yellow-100"></i>
                                             <h3 class="font-bold text-xl text-yellow-50" style="letter-spacing: 0.1em;">賈雨村說</h3>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 論文狀態信息欄 -->
+                                    <div class="bg-gradient-to-r from-blue-50 to-transparent border-b border-gray-200 px-4 py-3">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <div class="flex items-center gap-4">
+                                                <div class="flex items-center gap-1.5">
+                                                    <i class="fas fa-file-alt text-gray-400 text-xs"></i>
+                                                    <span class="text-gray-600">論文草稿</span>
+                                                </div>
+                                                <div class="flex items-center gap-1.5">
+                                                    <i class="fas fa-font text-gray-400 text-xs"></i>
+                                                    <span id="word-count-display" class="text-gray-700 font-medium">0 字</span>
+                                                </div>
+                                            </div>
+                                            <div id="save-status" class="flex items-center gap-1.5">
+                                                <i class="fas fa-check-circle text-green-500 text-xs"></i>
+                                                <span class="text-gray-600">已保存</span>
+                                            </div>
                                         </div>
                                     </div>
                                     
