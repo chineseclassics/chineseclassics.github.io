@@ -53,6 +53,7 @@ class FormatTemplatePage {
    * 渲染列表模式
    */
   async renderListMode(container) {
+    this.container = container;  // 保存 container 引用
     container.innerHTML = `
       <div class="max-w-7xl mx-auto">
         <!-- 页面标题 -->
@@ -120,7 +121,7 @@ class FormatTemplatePage {
           <div class="p-6">
             <div class="flex justify-between items-start mb-4">
               <h3 class="text-2xl font-bold text-gray-900" id="detailTitle">模板詳情</h3>
-              <button onclick="document.getElementById('detailModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+              <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-600">
                 <i class="fas fa-times text-xl"></i>
               </button>
             </div>
@@ -144,8 +145,8 @@ class FormatTemplatePage {
    */
   bindListModeEvents() {
     // 创建按钮
-    const createBtn = document.getElementById('createNewBtn');
-    const emptyCreateBtn = document.getElementById('emptyCreateBtn');
+    const createBtn = this.container.querySelector('#createNewBtn');
+    const emptyCreateBtn = this.container.querySelector('#emptyCreateBtn');
     
     if (createBtn) {
       createBtn.onclick = () => this.switchToEditMode(null);
@@ -155,15 +156,24 @@ class FormatTemplatePage {
     }
     
     // 搜索
-    const searchInput = document.getElementById('searchInput');
+    const searchInput = this.container.querySelector('#searchInput');
     if (searchInput) {
       searchInput.oninput = () => this.filterTemplates();
     }
     
     // 筛选
-    const filterType = document.getElementById('filterType');
+    const filterType = this.container.querySelector('#filterType');
     if (filterType) {
       filterType.onchange = () => this.filterTemplates();
+    }
+    
+    // 关闭模态框
+    const closeModalBtn = this.container.querySelector('#closeDetailModalBtn');
+    if (closeModalBtn) {
+      closeModalBtn.onclick = () => {
+        const modal = this.container.querySelector('#detailModal');
+        if (modal) modal.classList.add('hidden');
+      };
     }
   }
   
@@ -171,9 +181,9 @@ class FormatTemplatePage {
    * 加载模板列表
    */
   async loadTemplates() {
-    const loadingState = document.getElementById('loadingState');
-    const templateGrid = document.getElementById('templateGrid');
-    const emptyState = document.getElementById('emptyState');
+    const loadingState = this.container.querySelector('#loadingState');
+    const templateGrid = this.container.querySelector('#templateGrid');
+    const emptyState = this.container.querySelector('#emptyState');
     
     try {
       // 查询通用模板和系统模板
@@ -188,29 +198,31 @@ class FormatTemplatePage {
       this.allTemplates = data || [];
       
       // 隐藏加载状态
-      loadingState.classList.add('hidden');
+      if (loadingState) loadingState.classList.add('hidden');
       
       // 渲染模板
       if (this.allTemplates.length === 0) {
-        emptyState.classList.remove('hidden');
-        templateGrid.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (templateGrid) templateGrid.classList.add('hidden');
       } else {
-        emptyState.classList.add('hidden');
-        templateGrid.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+        if (templateGrid) templateGrid.classList.remove('hidden');
         this.renderTemplateCards();
       }
       
       console.log('[FormatTemplatePage] 模板已加载:', this.allTemplates.length);
     } catch (error) {
       console.error('[FormatTemplatePage] 加载模板失败:', error);
-      loadingState.classList.add('hidden');
-      templateGrid.innerHTML = `
-        <div class="col-span-full text-center py-8 text-red-600">
-          <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
-          <p>加载失败：${error.message}</p>
-        </div>
-      `;
-      templateGrid.classList.remove('hidden');
+      if (loadingState) loadingState.classList.add('hidden');
+      if (templateGrid) {
+        templateGrid.innerHTML = `
+          <div class="col-span-full text-center py-8 text-red-600">
+            <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
+            <p>加载失败：${error.message}</p>
+          </div>
+        `;
+        templateGrid.classList.remove('hidden');
+      }
     }
   }
   
@@ -218,9 +230,9 @@ class FormatTemplatePage {
    * 渲染模板卡片
    */
   renderTemplateCards() {
-    const grid = document.getElementById('templateGrid');
-    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    const filterType = document.getElementById('filterType')?.value || 'all';
+    const grid = this.container.querySelector('#templateGrid');
+    const searchTerm = this.container.querySelector('#searchInput')?.value.toLowerCase() || '';
+    const filterType = this.container.querySelector('#filterType')?.value || 'all';
     
     // 筛选模板
     let filtered = this.allTemplates;
@@ -291,9 +303,9 @@ class FormatTemplatePage {
       const template = this.allTemplates.find(t => t.id === templateId);
       if (!template) throw new Error('模板不存在');
       
-      const modal = document.getElementById('detailModal');
-      const title = document.getElementById('detailTitle');
-      const content = document.getElementById('detailContent');
+      const modal = this.container.querySelector('#detailModal');
+      const title = this.container.querySelector('#detailTitle');
+      const content = this.container.querySelector('#detailContent');
       
       title.textContent = template.name;
       content.innerHTML = `
@@ -374,6 +386,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
    * 渲染编辑模式（整页编辑器）
    */
   async renderEditMode(container) {
+    this.container = container;  // 保存 container 引用
     container.innerHTML = `
       <div class="max-w-4xl mx-auto">
         <!-- 返回按钮 -->
@@ -519,8 +532,10 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       }
       
       // 预填保存对话框
-      document.getElementById('saveTemplateName').value = format.name || '';
-      document.getElementById('saveTemplateDesc').value = format.description || '';
+      const nameInput = this.container.querySelector('#saveTemplateName');
+      const descInput = this.container.querySelector('#saveTemplateDesc');
+      if (nameInput) nameInput.value = format.name || '';
+      if (descInput) descInput.value = format.description || '';
       
       console.log('[FormatTemplatePage] 格式已加载用于编辑');
     } catch (error) {
@@ -534,20 +549,28 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
    */
   bindEditModeEvents() {
     // 返回按钮
-    document.getElementById('backToListBtn').onclick = () => this.switchToListMode();
+    const backBtn = this.container.querySelector('#backToListBtn');
+    if (backBtn) backBtn.onclick = () => this.switchToListMode();
     
     // AI 优化按钮
-    document.getElementById('optimizeBtn').onclick = () => this.handleOptimize();
+    const optimizeBtn = this.container.querySelector('#optimizeBtn');
+    if (optimizeBtn) optimizeBtn.onclick = () => this.handleOptimize();
     
     // 保存按钮
-    document.getElementById('saveBtn').onclick = () => this.handleSave();
+    const saveBtn = this.container.querySelector('#saveBtn');
+    if (saveBtn) saveBtn.onclick = () => this.handleSave();
     
     // 保存对话框
-    document.getElementById('cancelSaveBtn').onclick = () => {
-      document.getElementById('saveDialog').classList.add('hidden');
-    };
+    const cancelBtn = this.container.querySelector('#cancelSaveBtn');
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        const dialog = this.container.querySelector('#saveDialog');
+        if (dialog) dialog.classList.add('hidden');
+      };
+    }
     
-    document.getElementById('confirmSaveBtn').onclick = () => this.handleConfirmSave();
+    const confirmBtn = this.container.querySelector('#confirmSaveBtn');
+    if (confirmBtn) confirmBtn.onclick = () => this.handleConfirmSave();
   }
   
   /**
@@ -560,10 +583,14 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       return;
     }
     
+    const aiProcessing = this.container.querySelector('#aiProcessing');
+    const optimizeBtn = this.container.querySelector('#optimizeBtn');
+    const statusText = this.container.querySelector('#statusText');
+    
     try {
-      document.getElementById('aiProcessing').classList.remove('hidden');
-      document.getElementById('optimizeBtn').disabled = true;
-      document.getElementById('statusText').textContent = 'AI 優化中...';
+      if (aiProcessing) aiProcessing.classList.remove('hidden');
+      if (optimizeBtn) optimizeBtn.disabled = true;
+      if (statusText) statusText.textContent = 'AI 優化中...';
       
       const result = await FormatEditorCore.optimizeWithAI(
         text,
@@ -581,15 +608,15 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         spec_json: result.format_json
       };
       
-      document.getElementById('statusText').textContent = 'AI 優化完成！';
+      if (statusText) statusText.textContent = 'AI 優化完成！';
       console.log('[FormatTemplatePage] AI 优化完成');
     } catch (error) {
       console.error('[FormatTemplatePage] AI 优化失败:', error);
       alert('AI 優化失敗：' + error.message);
-      document.getElementById('statusText').textContent = '優化失敗';
+      if (statusText) statusText.textContent = '優化失敗';
     } finally {
-      document.getElementById('aiProcessing').classList.add('hidden');
-      document.getElementById('optimizeBtn').disabled = false;
+      if (aiProcessing) aiProcessing.classList.add('hidden');
+      if (optimizeBtn) optimizeBtn.disabled = false;
     }
   }
   
@@ -603,15 +630,16 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     }
     
     // 打开保存对话框
-    document.getElementById('saveDialog').classList.remove('hidden');
+    const dialog = this.container.querySelector('#saveDialog');
+    if (dialog) dialog.classList.remove('hidden');
   }
   
   /**
    * 确认保存
    */
   async handleConfirmSave() {
-    const name = document.getElementById('saveTemplateName').value.trim();
-    const description = document.getElementById('saveTemplateDesc').value.trim();
+    const name = this.container.querySelector('#saveTemplateName')?.value.trim();
+    const description = this.container.querySelector('#saveTemplateDesc')?.value.trim();
     
     if (!name) {
       alert('請輸入模板名稱');
@@ -637,7 +665,8 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       FormatEditorCore.clearDraft('format-editor-draft-template');
       
       // 关闭对话框
-      document.getElementById('saveDialog').classList.add('hidden');
+      const dialog = this.container.querySelector('#saveDialog');
+      if (dialog) dialog.classList.add('hidden');
       
       alert(this.editingFormatId ? '✅ 模板已更新！' : '✅ 模板已保存！');
       
