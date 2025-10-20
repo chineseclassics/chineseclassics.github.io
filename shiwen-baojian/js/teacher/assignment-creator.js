@@ -27,6 +27,9 @@ class AssignmentCreator {
     this.hasBeenOptimized = false;  // 是否已經過 AI 優化
     this.originalContent = '';  // 原始內容基線（用於檢測修改）
     this.cachedFormatJSON = null;  // 緩存的格式 JSON
+    
+    // 🚨 任務專用格式（當前會話臨時保存）
+    this.currentTaskFormatId = null;  // 本次任務的專用格式ID
   }
 
   /**
@@ -87,19 +90,19 @@ class AssignmentCreator {
             </div>
           </section>
 
-          <!-- 寫作要求 -->
+          <!-- 寫作指引 -->
           <section class="form-section">
-            <h3><i class="fas fa-file-alt" style="color: #3498db; margin-right: 0.5rem;"></i>寫作要求</h3>
+            <h3><i class="fas fa-file-alt" style="color: #3498db; margin-right: 0.5rem;"></i>寫作指引</h3>
             
-            <!-- 下拉菜單選擇寫作要求 -->
+            <!-- 下拉菜單選擇寫作指引 -->
             <div class="form-group">
-              <label>選擇寫作要求 <span class="required">*</span></label>
+              <label>選擇寫作指引 <span class="required">*</span></label>
               <select id="formatSelector" name="formatSpec" required>
-                <option value="">-- 請選擇寫作要求 --</option>
-                <option value="__create_new__">✨ 新建寫作要求</option>
+                <option value="">-- 請選擇寫作指引 --</option>
+                <option value="__create_new__">✨ 新建寫作指引</option>
                 <!-- 選項將動態加載 -->
               </select>
-              <p class="help-text">選擇系統模板、已有模板或新建寫作要求</p>
+              <p class="help-text">選擇系統寫作指引模板、我的通用模板或新建寫作指引</p>
             </div>
 
             <!-- 展开式编辑器区域（選擇後顯示） -->
@@ -165,7 +168,7 @@ class AssignmentCreator {
               <h3 class="text-xl font-bold mb-4">保存寫作要求</h3>
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">模板類型</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">保存類型</label>
                   <div class="space-y-2">
                     <label class="flex items-center cursor-pointer">
                       <input 
@@ -175,7 +178,7 @@ class AssignmentCreator {
                         checked
                         class="mr-2"
                       />
-                      <span>僅用於本次任務（默認）</span>
+                      <span>本次任務專用（寫作要求）</span>
                     </label>
                     <label class="flex items-center cursor-pointer">
                       <input 
@@ -184,9 +187,12 @@ class AssignmentCreator {
                         value="template"
                         class="mr-2"
                       />
-                      <span>通用模板（可複用，顯示在模板庫）</span>
+                      <span>通用模板（寫作要求模板，可複用）</span>
                     </label>
                   </div>
+                  <p class="text-xs text-gray-500 mt-2">
+                    💡 提示：模板類請在名稱中加「模板」二字，如「紅樓夢人物分析寫作要求模板」
+                  </p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">名稱 *</label>
@@ -194,7 +200,7 @@ class AssignmentCreator {
                     id="saveFormatName"
                     type="text" 
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder="例如：紅樓夢人物分析格式"
+                    placeholder="例如：紅樓夢人物分析寫作要求"
                   />
                 </div>
                 <div>
@@ -463,14 +469,11 @@ class AssignmentCreator {
    */
   expandInlineEditor() {
     const editorContainer = this.container.querySelector('#inlineEditorContainer');
-    const formatSelector = this.container.querySelector('#formatSelector');
     
     if (!editorContainer) return;
     
-    // 禁用下拉菜單（不清空 value，保持選中狀態）
-    if (formatSelector) {
-      formatSelector.disabled = true;
-    }
+    // 🚨 修復：下拉菜單保持可用，讓用戶可以隨時切換
+    // 不禁用 formatSelector
     
     // 显示编辑器
     editorContainer.classList.remove('hidden');
@@ -636,7 +639,6 @@ class AssignmentCreator {
    */
   collapseInlineEditor() {
     const editorContainer = this.container.querySelector('#inlineEditorContainer');
-    const formatSelector = this.container.querySelector('#formatSelector');
     
     if (!editorContainer) return;
     
@@ -644,11 +646,7 @@ class AssignmentCreator {
     editorContainer.classList.add('hidden');
     this.isInlineEditorExpanded = false;
     
-    // 启用下拉菜單並清空選擇
-    if (formatSelector) {
-      formatSelector.disabled = false;
-      formatSelector.value = '';
-    }
+    // 🚨 不清空下拉菜單的選擇，保持當前選中狀態
     
     // 清空编辑器内容（草稿已通过 localStorage 保护）
     if (this.inlineQuill) {
@@ -824,28 +822,42 @@ class AssignmentCreator {
       const saveDialog = this.container.querySelector('#saveFormatDialog');
       if (saveDialog) saveDialog.classList.add('hidden');
       
-      // 折疊編輯器
-      this.collapseInlineEditor();
-      
-      // 重新加載寫作要求列表
-      await this.loadFormatSpecifications();
-      
-      // 🚨 修復：保存後的處理
+      // 🚨 保存後的處理
       if (formatType === 'template') {
-        // 通用模板：提示用戶到模板庫查看
-        alert('✅ 通用模板已保存！\n\n您可以在「寫作模板庫」頁面中查看和編輯此模板。\n也可以在創建任務時從下拉菜單中選擇使用。');
-      } else {
-        // 任務專用格式：自動選中
+        // 通用模板：記錄ID
+        this.selectedTemplateId = result.id;
+        
+        // 重新加載列表
+        await this.loadFormatSpecifications();
+        
+        // 折疊編輯器
+        this.collapseInlineEditor();
+        
+        // 自動選中
         const formatSelector = this.container.querySelector('#formatSelector');
         if (formatSelector) {
-          // 等待列表加載後再設置值
-          setTimeout(() => {
-            formatSelector.value = result.id;
-            this.selectedTemplateId = result.id;
-          }, 100);
+          formatSelector.value = result.id;
         }
         
-        alert('✅ 寫作要求已保存！\n\n已自動選中此寫作要求，請繼續完成任務設置。');
+        alert('✅ 寫作要求模板已保存！\n\n已自動選中此模板，您可以直接使用或繼續修改。');
+      } else {
+        // 任務專用格式：記錄為當前任務專用
+        this.currentTaskFormatId = result.id;
+        this.selectedTemplateId = result.id;
+        
+        // 重新加載列表（會顯示「本次任務專用」分組）
+        await this.loadFormatSpecifications();
+        
+        // 折疊編輯器
+        this.collapseInlineEditor();
+        
+        // 自動選中
+        const formatSelector = this.container.querySelector('#formatSelector');
+        if (formatSelector) {
+          formatSelector.value = result.id;
+        }
+        
+        alert('✅ 寫作要求已保存！\n\n已自動選中，您可以繼續完成任務設置。');
       }
     } catch (error) {
       console.error('[AssignmentCreator] 保存失败:', error);
@@ -886,32 +898,46 @@ class AssignmentCreator {
         <option value="__create_new__">✨ 新建寫作要求</option>
       `;
 
-      // 添加系統寫作要求
+      // 🚨 如果有本次任務專用格式，優先顯示
+      if (this.currentTaskFormatId) {
+        const taskFormat = formats.find(f => f.id === this.currentTaskFormatId);
+        if (taskFormat) {
+          const taskOptgroup = document.createElement('optgroup');
+          taskOptgroup.label = '📝 本次任務';
+          const option = document.createElement('option');
+          option.value = taskFormat.id;
+          option.textContent = taskFormat.name;  // 使用原名稱（應為「XXX 寫作要求」）
+          taskOptgroup.appendChild(option);
+          selector.appendChild(taskOptgroup);
+        }
+      }
+
+      // 添加系統寫作要求模板
       const systemFormats = formats.filter(f => f.is_system);
       if (systemFormats.length > 0) {
         const systemOptgroup = document.createElement('optgroup');
-        systemOptgroup.label = '📚 系統寫作要求';
+        systemOptgroup.label = '📚 系統寫作要求模板';
         systemFormats.forEach(format => {
           const option = document.createElement('option');
           option.value = format.id;
-          option.textContent = format.name;
+          option.textContent = format.name;  // 應為「XXX 寫作要求模板」
           systemOptgroup.appendChild(option);
         });
         selector.appendChild(systemOptgroup);
       }
 
-      // 添加自定義寫作要求
-      const customFormats = formats.filter(f => !f.is_system);
-      if (customFormats.length > 0) {
-        const customOptgroup = document.createElement('optgroup');
-        customOptgroup.label = '✏️ 我的寫作要求';
-        customFormats.forEach(format => {
+      // 添加我的通用模板（is_template = true）
+      const templateFormats = formats.filter(f => !f.is_system && f.is_template);
+      if (templateFormats.length > 0) {
+        const templateOptgroup = document.createElement('optgroup');
+        templateOptgroup.label = '✏️ 我的寫作要求模板';
+        templateFormats.forEach(format => {
           const option = document.createElement('option');
           option.value = format.id;
-          option.textContent = format.name;
-          customOptgroup.appendChild(option);
+          option.textContent = format.name;  // 應為「XXX 寫作要求模板」
+          templateOptgroup.appendChild(option);
         });
-        selector.appendChild(customOptgroup);
+        selector.appendChild(templateOptgroup);
       }
 
       console.log('✅ 寫作要求已加載到下拉菜單:', formats.length, '個');

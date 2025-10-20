@@ -71,7 +71,7 @@ class FormatTemplatePage {
         <!-- 页面标题 -->
         <div class="mb-6 flex justify-between items-center">
           <div>
-            <h2 class="text-2xl font-bold text-gray-900">📚 寫作模板庫</h2>
+            <h2 class="text-2xl font-bold text-gray-900">📚 寫作要求模板庫</h2>
             <p class="text-gray-600 mt-1">查看和管理可複用的寫作要求模板</p>
           </div>
           <button 
@@ -79,7 +79,7 @@ class FormatTemplatePage {
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             style="box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);"
           >
-            ➕ 創建新模板
+            ➕ 創建新寫作要求模板
           </button>
         </div>
         
@@ -360,7 +360,7 @@ class FormatTemplatePage {
         <div class="col-span-full">
           <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
             <i class="fas fa-star text-yellow-500 mr-2"></i>
-            系統內置模板
+            系統寫作要求模板
             <span class="ml-2 text-sm text-gray-500 font-normal">(${systemTemplates.length})</span>
           </h3>
         </div>
@@ -374,7 +374,7 @@ class FormatTemplatePage {
         <div class="col-span-full mt-6">
           <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
             <i class="fas fa-user-edit text-blue-500 mr-2"></i>
-            我的自定義模板
+            我的寫作要求模板
             <span class="ml-2 text-sm text-gray-500 font-normal">(${customTemplates.length})</span>
           </h3>
         </div>
@@ -572,8 +572,8 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     this.container = container;  // 保存 container 引用
     
     const isEdit = !!this.editingFormatId;
-    const title = isEdit ? '編輯模板' : '創建新模板';
-    const subtitle = isEdit ? '修改現有模板的寫作要求' : '使用 AI 輔助生成結構化的寫作要求';
+    const title = isEdit ? '編輯寫作要求模板' : '創建新寫作要求模板';
+    const subtitle = isEdit ? '修改現有模板的寫作要求' : '使用 AI 輔助生成結構化的寫作要求模板';
     
     container.innerHTML = `
       <div class="max-w-5xl mx-auto">
@@ -695,7 +695,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                   id="saveBtn"
                   class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <i class="fas fa-save mr-2"></i>保存模板
+                  <i class="fas fa-save mr-2"></i>保存為模板
                 </button>
               </div>
             </div>
@@ -715,7 +715,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         <div id="saveDialog" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4 text-white">
-              <h3 class="text-xl font-bold">💾 保存模板</h3>
+              <h3 class="text-xl font-bold">💾 保存寫作要求模板</h3>
             </div>
             <div class="p-6 space-y-4">
               <div>
@@ -726,7 +726,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                   id="saveTemplateName"
                   type="text" 
                   class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                  placeholder="例如：紅樓夢人物分析格式"
+                  placeholder="例如：紅樓夢人物分析寫作要求模板"
                 />
               </div>
               <div>
