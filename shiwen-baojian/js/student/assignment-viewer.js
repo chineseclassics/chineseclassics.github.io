@@ -687,8 +687,13 @@ class StudentAssignmentViewer {
       console.log('✅ 作業提交成功');
       toast.success('作業提交成功！<br>老師收到後會開始批改', 3000);
       
-      // 8. 刷新列表
-      await this.loadAndRenderAssignments(false);
+      // 8. 清除緩存並強制刷新列表
+      const { AppState } = await import('../app.js');
+      AppState.cache.assignmentsList = [];
+      AppState.cache.lastRefreshTime = null;
+      console.log('🗑️ 已清除任務列表緩存');
+      
+      await this.loadAndRenderAssignments(false); // 強制重新加載
       
     } catch (error) {
       console.error('❌ 提交失敗:', error);
@@ -720,7 +725,12 @@ class StudentAssignmentViewer {
           console.log('✅ 作業已撤回');
           toast.success('作業已撤回，可以繼續編輯了！');
           
-          // 刷新列表
+          // 清除緩存並強制刷新列表
+          const { AppState } = await import('../app.js');
+          AppState.cache.assignmentsList = [];
+          AppState.cache.lastRefreshTime = null;
+          console.log('🗑️ 已清除任務列表緩存');
+          
           await this.loadAndRenderAssignments(false);
         } catch (error) {
           console.error('❌ 撤回失敗:', error);

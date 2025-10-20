@@ -770,12 +770,17 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         if (backBtn) {
             backBtn.addEventListener('click', () => {
                 console.log('🔙 返回任務列表');
-                // ✅ 如果是練筆模式，返回時強制刷新列表（可能創建了新練筆）
-                const shouldForceRefresh = mode === 'free-writing';
+                
+                // ✅ 清除緩存並強制刷新（確保看到最新狀態）
+                AppState.cache.assignmentsList = [];
+                AppState.cache.practiceEssaysList = [];
+                AppState.cache.lastRefreshTime = null;
+                console.log('🗑️ 已清除任務列表緩存');
+                
                 window.dispatchEvent(new CustomEvent('navigate', {
                     detail: { 
                         page: 'assignment-list',
-                        forceRefresh: shouldForceRefresh
+                        forceRefresh: true // 總是強制刷新
                     }
                 }));
             });
