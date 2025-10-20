@@ -78,10 +78,9 @@ class FormatTemplatePage {
           </div>
           <button 
             id="createNewBtn"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            style="box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);"
+            class="btn btn-primary"
           >
-            ➕ 創建新模板
+            <i class="fas fa-plus"></i> 創建新模板
           </button>
         </div>
         
