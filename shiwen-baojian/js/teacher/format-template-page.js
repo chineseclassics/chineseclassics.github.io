@@ -167,7 +167,7 @@ class FormatTemplatePage {
               關閉
             </button>
             <button id="copyDetailBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-              <i class="fas fa-copy mr-1"></i>複製說明
+              <i class="fas fa-copy mr-1"></i>複製
             </button>
           </div>
         </div>
@@ -197,24 +197,28 @@ class FormatTemplatePage {
     }
     
     // 关闭模态框
+    // 🚨 修復：使用 addEventListener 而非 onclick，避免重複綁定
     const closeModalBtn = this.container.querySelector('#closeDetailModalBtn');
     const closeModalBtn2 = this.container.querySelector('#closeDetailModalBtn2');
     const copyDetailBtn = this.container.querySelector('#copyDetailBtn');
     
-    if (closeModalBtn) {
-      closeModalBtn.onclick = () => {
+    if (closeModalBtn && !closeModalBtn.dataset.bound) {
+      closeModalBtn.addEventListener('click', () => {
         const modal = this.container.querySelector('#detailModal');
         if (modal) modal.classList.add('hidden');
-      };
+      });
+      closeModalBtn.dataset.bound = 'true';
     }
-    if (closeModalBtn2) {
-      closeModalBtn2.onclick = () => {
+    if (closeModalBtn2 && !closeModalBtn2.dataset.bound) {
+      closeModalBtn2.addEventListener('click', () => {
         const modal = this.container.querySelector('#detailModal');
         if (modal) modal.classList.add('hidden');
-      };
+      });
+      closeModalBtn2.dataset.bound = 'true';
     }
-    if (copyDetailBtn) {
-      copyDetailBtn.onclick = () => this.copyFormatDescription();
+    if (copyDetailBtn && !copyDetailBtn.dataset.bound) {
+      copyDetailBtn.addEventListener('click', () => this.copyFormatDescription());
+      copyDetailBtn.dataset.bound = 'true';
     }
     
     // 🚨 階段 3.5.3.1-3.5.3.2：搜索、篩選和排序事件
@@ -489,34 +493,16 @@ class FormatTemplatePage {
             </div>
           ` : ''}
           <div>
-            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">寫作要求詳情</h4>
+            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">寫作指引詳情</h4>
             <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-100">
               <div class="text-gray-800 whitespace-pre-wrap leading-relaxed" style="font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;">
 ${this.escapeHtml(template.human_input || '暫無內容')}
               </div>
             </div>
           </div>
-          <!-- 🚨 階段 3.5.3.3：完善查看詳情功能 - 添加複製按鈕 -->
-          <div class="flex justify-between items-center pt-4 border-t border-gray-200">
-            <div class="text-sm text-gray-500">
-              <i class="fas fa-clock mr-1"></i>
-              創建於 ${new Date(template.created_at).toLocaleDateString('zh-TW')}
-            </div>
-            <div class="flex gap-2">
-              <button 
-                onclick="window.formatTemplatePageInstance.copyFormatDescription('${template.id}')"
-                class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition text-sm font-medium"
-                title="複製格式說明到剪貼板"
-              >
-                <i class="fas fa-copy mr-1"></i>複製說明
-              </button>
-              <button 
-                onclick="window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
-                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-              >
-                <i class="fas fa-edit mr-1"></i>${isSystem ? '基於此創建' : '編輯模板'}
-              </button>
-            </div>
+          <div class="pt-4 text-sm text-gray-500">
+            <i class="fas fa-clock mr-1"></i>
+            創建於 ${new Date(template.created_at).toLocaleDateString('zh-TW')}
           </div>
         </div>
       `;
@@ -544,7 +530,8 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       const textToCopy = template.human_input || '（暫無內容）';
       
       await navigator.clipboard.writeText(textToCopy);
-      toast.success('格式說明已複製到剪貼板！');
+      toast.success('已複製到剪貼板！');
+      
       console.log('[FormatTemplatePage] 已複製格式說明:', template.name);
     } catch (error) {
       console.error('[FormatTemplatePage] 複製失敗:', error);

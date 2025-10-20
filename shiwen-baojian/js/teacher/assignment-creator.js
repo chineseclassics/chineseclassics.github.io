@@ -109,7 +109,7 @@ class AssignmentCreator {
             <!-- 展开式编辑器区域（選擇後顯示） -->
             <div id="inlineEditorContainer" class="hidden" style="margin-top: 1.5rem; border: 2px solid #3498db; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
               <div class="flex justify-between items-center mb-4">
-                <h4 class="text-lg font-bold text-gray-900">
+                <h4 id="inlineEditorTitle" class="text-lg font-bold text-gray-900">
                   <i class="fas fa-magic text-purple-600 mr-2"></i>編輯寫作指引
                 </h4>
                 <button 
@@ -543,10 +543,20 @@ class AssignmentCreator {
   updateButtonStates() {
     const optimizeBtn = this.container?.querySelector('#inlineOptimizeBtn');
     const saveBtn = this.container?.querySelector('#inlineSaveBtn');
+    const editorTitle = this.container?.querySelector('#inlineEditorTitle');
     
     if (!optimizeBtn || !saveBtn) return;
     
     const content = this.inlineQuill?.getText().trim() || '';
+    
+    // 🚨 動態更新標題
+    if (editorTitle) {
+      if (this.currentMode === 'direct' || this.currentMode === 'incremental') {
+        editorTitle.innerHTML = '<i class="fas fa-magic text-purple-600 mr-2"></i>使用或自定義寫作指引模板';
+      } else {
+        editorTitle.innerHTML = '<i class="fas fa-magic text-purple-600 mr-2"></i>編輯寫作指引';
+      }
+    }
     
     // AI 優化按鈕邏輯
     if (this.currentMode === 'direct') {
@@ -563,15 +573,17 @@ class AssignmentCreator {
           : '請先輸入內容';
     }
     
-    // 保存按鈕邏輯
+    // 🚨 動態更新保存按鈕文字和狀態
     if (this.currentMode === 'direct') {
-      // direct 模式：只要有 JSON 就可以保存
+      // direct 模式：直接使用系統格式
+      saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>直接使用';
       saveBtn.disabled = !this.cachedFormatJSON;
       saveBtn.title = this.cachedFormatJSON 
-        ? '直接使用系統格式'
-        : '請先加載預覽';
+        ? '直接使用此寫作指引模板'
+        : '請先選擇寫作指引';
     } else {
-      // incremental 或 custom 模式：必須優化後才能保存
+      // incremental 或 custom 模式：保存並使用
+      saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>保存並使用';
       saveBtn.disabled = !this.hasBeenOptimized || !this.cachedFormatJSON;
       saveBtn.title = !this.hasBeenOptimized
         ? '⚠️ 必須先經過 AI 優化才能保存'
@@ -727,7 +739,23 @@ class AssignmentCreator {
   }
   
   /**
-   * 处理内联保存（打开对话框）
+   * 🚨 處理直接使用系統格式（不保存）
+   */
+  handleDirectUse() {
+    // 直接使用系統格式，不需要保存到數據庫
+    this.selectedTemplateId = this.selectedTemplateId;  // 保持選中的系統格式ID
+    
+    // 折疊編輯器
+    this.collapseInlineEditor();
+    
+    // 提示用戶
+    toast.success('已選用此寫作指引模板！<br>請繼續完成任務設置。', 3000);
+    
+    console.log('[AssignmentCreator] 直接使用系統格式:', this.selectedTemplateId);
+  }
+  
+  /**
+   * 🚨 處理保存/直接使用
    */
   handleInlineSave() {
     const text = this.inlineQuill?.getText().trim();
@@ -749,6 +777,13 @@ class AssignmentCreator {
       return;
     }
     
+    // 🚨 direct 模式：直接使用，不打開保存對話框
+    if (this.currentMode === 'direct') {
+      this.handleDirectUse();
+      return;
+    }
+    
+    // incremental/custom 模式：打開保存對話框
     const dialog = this.container.querySelector('#saveFormatDialog');
     const nameInput = this.container.querySelector('#saveFormatName');
     const typeRadios = this.container.querySelectorAll('input[name="formatType"]');

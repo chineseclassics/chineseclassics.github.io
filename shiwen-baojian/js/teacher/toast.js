@@ -1,6 +1,6 @@
 /**
  * Toast 通知系統
- * 優雅的消息提示組件
+ * 優雅的消息提示組件（單例模式）
  */
 
 class Toast {
@@ -13,6 +13,13 @@ class Toast {
    * 初始化 Toast 容器
    */
   init() {
+    // 🚨 檢查是否已存在容器（避免重複創建）
+    let existingContainer = document.getElementById('toast-container');
+    if (existingContainer) {
+      this.container = existingContainer;
+      return;
+    }
+    
     // 創建容器
     this.container = document.createElement('div');
     this.container.id = 'toast-container';
@@ -79,10 +86,12 @@ class Toast {
       min-width: 300px;
       max-width: 500px;
       pointer-events: auto;
-      animation: slideIn 0.3s ease-out;
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.2);
     `;
+    
+    // 添加滑入動畫 class
+    toast.classList.add('toast-slide-in');
     
     toast.innerHTML = `
       <div style="
@@ -102,110 +111,161 @@ class Toast {
       <div style="flex: 1; font-size: 14px; line-height: 1.5;">
         ${message}
       </div>
-      <button onclick="this.parentElement.remove()" style="
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        transition: background 0.2s;
-        flex-shrink: 0;
-      " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+      <button class="toast-close-btn">
         ×
       </button>
     `;
     
     this.container.appendChild(toast);
     
-    // 自動移除
+    // 綁定關閉按鈕
+    const closeBtn = toast.querySelector('.toast-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.removeToast(toast);
+      });
+    }
+    
+    // 🚨 自動移除
     if (duration > 0) {
-      setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease-in';
-        setTimeout(() => toast.remove(), 300);
+      toast.autoRemoveTimer = setTimeout(() => {
+        this.removeToast(toast);
       }, duration);
     }
     
     return toast;
   }
+  
+  /**
+   * 移除 Toast（帶動畫）
+   */
+  removeToast(toast) {
+    if (!toast || !toast.parentNode) return;
+    
+    // 清除自動移除定時器
+    if (toast.autoRemoveTimer) {
+      clearTimeout(toast.autoRemoveTimer);
+      toast.autoRemoveTimer = null;
+    }
+    
+    // 添加滑出動畫
+    toast.classList.remove('toast-slide-in');
+    toast.classList.add('toast-slide-out');
+    
+    // 動畫結束後移除元素
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.remove();
+      }
+    }, 400);
+  }
 
   /**
    * 成功消息
    */
-  success(message, duration = 3000) {
+  success(message, duration = 1800) {
     return this.show(message, 'success', duration);
   }
 
   /**
    * 錯誤消息
    */
-  error(message, duration = 4000) {
+  error(message, duration = 2500) {
     return this.show(message, 'error', duration);
   }
 
   /**
    * 警告消息
    */
-  warning(message, duration = 3500) {
+  warning(message, duration = 2000) {
     return this.show(message, 'warning', duration);
   }
 
   /**
    * 信息消息
    */
-  info(message, duration = 3000) {
+  info(message, duration = 1800) {
     return this.show(message, 'info', duration);
   }
 }
 
-// 添加動畫樣式
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from {
-      transform: translateX(400px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes slideOut {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(400px);
-      opacity: 0;
-    }
-  }
-  
-  @media (max-width: 640px) {
-    #toast-container {
-      left: 20px;
-      right: 20px;
-      top: 20px;
+// 🚨 只添加一次樣式（避免重複）
+if (!document.getElementById('toast-animations')) {
+  const style = document.createElement('style');
+  style.id = 'toast-animations';
+  style.textContent = `
+    .toast-slide-in {
+      animation: toastSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     
-    .toast {
-      min-width: auto !important;
-      max-width: 100% !important;
+    .toast-slide-out {
+      animation: toastSlideOut 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
-  }
-`;
-document.head.appendChild(style);
+    
+    @keyframes toastSlideIn {
+      from {
+        transform: translateX(450px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes toastSlideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(450px);
+        opacity: 0;
+      }
+    }
+    
+    .toast-close-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .toast-close-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+    
+    @media (max-width: 640px) {
+      #toast-container {
+        left: 20px;
+        right: 20px;
+        top: 20px;
+      }
+      
+      .toast {
+        min-width: auto !important;
+        max-width: 100% !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
-// 創建全局實例
-const toast = new Toast();
+// 🚨 單例模式：確保全局只有一個 Toast 實例
+if (!window.__toastInstance) {
+  window.__toastInstance = new Toast();
+}
 
-// 導出
-export default toast;
+// 導出全局單例
+export default window.__toastInstance;
 
