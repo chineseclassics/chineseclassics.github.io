@@ -809,6 +809,7 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
                 if (toggleBtn) {
                     toggleBtn.querySelector('i')?.classList.remove('fa-chevron-down');
                     toggleBtn.querySelector('i')?.classList.add('fa-chevron-up');
+                    toggleBtn.querySelector('span')?.textContent = '收起指引';
                 }
             }
         }
@@ -816,14 +817,29 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         if (toggleBtn && descArea) {
             toggleBtn.addEventListener('click', () => {
                 const isHidden = descArea.classList.contains('hidden');
+                const btnText = toggleBtn.querySelector('span');
+                const btnIcon = toggleBtn.querySelector('i');
+                
                 if (isHidden) {
+                    // 展開
                     descArea.classList.remove('hidden');
-                    toggleBtn.querySelector('i').classList.remove('fa-chevron-down');
-                    toggleBtn.querySelector('i').classList.add('fa-chevron-up');
+                    if (btnIcon) {
+                        btnIcon.classList.remove('fa-chevron-down');
+                        btnIcon.classList.add('fa-chevron-up');
+                    }
+                    if (btnText) {
+                        btnText.textContent = '收起指引';
+                    }
                 } else {
+                    // 收起
                     descArea.classList.add('hidden');
-                    toggleBtn.querySelector('i').classList.remove('fa-chevron-up');
-                    toggleBtn.querySelector('i').classList.add('fa-chevron-down');
+                    if (btnIcon) {
+                        btnIcon.classList.remove('fa-chevron-up');
+                        btnIcon.classList.add('fa-chevron-down');
+                    }
+                    if (btnText) {
+                        btnText.textContent = '查看寫作指引';
+                    }
                 }
             });
         }
@@ -901,7 +917,9 @@ async function loadAssignmentData(assignmentId) {
         const descEl = document.getElementById('assignment-description');
         if (descEl && assignment.format_specifications) {
             // 顯示 human_input（AI 優化後的結構化文本）
-            descEl.textContent = assignment.format_specifications.human_input || '老師未提供寫作要求。';
+            // ✅ 保留換行符：使用 innerHTML 並將 \n 轉換為 <br>
+            const humanInput = assignment.format_specifications.human_input || '老師未提供寫作要求。';
+            descEl.innerHTML = humanInput.replace(/\n/g, '<br>');
             
             // 保存 spec_json 到 AppState（供 AI 反饋使用）
             if (assignment.format_specifications.spec_json) {

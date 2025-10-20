@@ -597,71 +597,84 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     const subtitle = isEdit ? '修改現有模板的寫作指引' : '使用 AI 輔助生成結構化的寫作指引模板';
     
     container.innerHTML = `
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-6xl mx-auto">
         <!-- 返回按钮 -->
         <button 
           id="backToListBtn"
-          class="mb-6 inline-flex items-center text-gray-600 hover:text-blue-600 transition font-medium"
+          class="mb-6 inline-flex items-center text-gray-600 hover:text-blue-600 transition-all font-medium group"
         >
-          <i class="fas fa-arrow-left mr-2"></i>返回模板庫
+          <i class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i>返回模板庫
         </button>
         
-        <!-- 编辑器卡片 -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden" style="border: 1px solid #e5e7eb;">
-          <!-- 标题区 -->
-          <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-6 text-white">
-            <h2 id="templateEditorTitle" class="text-2xl font-bold mb-2">${title}</h2>
-            <p id="templateEditorSubtitle" class="text-blue-100">${subtitle}</p>
+        <!-- 编辑器卡片 - 優化版 -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+          <!-- 标题区 - 更簡潔優雅 -->
+          <div class="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 px-10 py-8 text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+            <div class="absolute bottom-0 left-0 w-96 h-96 bg-indigo-700 opacity-10 rounded-full -ml-48 -mb-48"></div>
+            <div class="relative">
+              <h2 id="templateEditorTitle" class="text-3xl font-bold mb-2">${title}</h2>
+              <p id="templateEditorSubtitle" class="text-blue-50 text-lg">${subtitle}</p>
+            </div>
           </div>
           
-          <!-- 编辑器区域 -->
-          <div class="p-8">
-            
-            <div class="mb-6">
-              <label class="block text-sm font-semibold text-gray-700 mb-3">
-                <i class="fas fa-edit text-blue-500 mr-2"></i>寫作指引內容
+          <!-- 编辑器区域 - 優化排版 -->
+          <div class="p-10">
+            <!-- 編輯器主體 -->
+            <div class="mb-8">
+              <label class="block text-base font-semibold text-gray-800 mb-4 flex items-center">
+                <span class="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full mr-3"></span>
+                寫作指引內容
               </label>
-              <div id="template-editor" class="border-2 border-gray-200 rounded-lg p-4 bg-white" style="min-height: 400px;">
+              <div id="template-editor" class="border-2 border-gray-200 rounded-xl p-6 bg-gray-50 hover:bg-white hover:border-blue-300 transition-all" style="min-height: 450px;">
                 <!-- Quill 将在这里初始化 -->
               </div>
-              <p class="text-sm text-gray-500 mt-2">
-                <i class="fas fa-info-circle mr-1"></i>
-                輸入您的寫作指引，然後使用 AI 優化以生成結構化版本
-              </p>
-            </div>
-            
-            <!-- 🚨 階段 3.5.1.5：實時狀態面板 -->
-            <div id="templateStatusPanel" class="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-              <h4 class="text-sm font-semibold text-gray-700 mb-2">
-                <i class="fas fa-info-circle text-blue-600 mr-2"></i>📊 當前狀態
-              </h4>
-              <div id="templateStatusContent" class="text-sm text-gray-600 space-y-1">
-                <p>✏️ 模式：<span id="templateStatusMode" class="font-medium">從零開始</span></p>
-                <p>📝 已優化：<span id="templateStatusOptimized" class="font-medium">否</span></p>
-                <p>💾 可保存：<span id="templateStatusCanSave" class="font-medium">否</span></p>
+              <div class="mt-3 flex items-start gap-2 text-sm text-gray-500 bg-blue-50 rounded-lg p-3">
+                <i class="fas fa-lightbulb text-blue-500 mt-0.5"></i>
+                <p>輸入您的寫作指引，使用自然語言描述即可。AI 會幫您整理成結構化的格式。</p>
               </div>
             </div>
             
-            <!-- 状态和操作区 -->
-            <div class="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div class="flex items-center gap-2">
-                <i class="fas fa-check-circle text-green-500"></i>
-                <span id="statusText" class="text-gray-700 font-medium">準備就緒</span>
+            <!-- 狀態面板 - 重新設計 -->
+            <div id="templateStatusPanel" class="mb-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-100 rounded-xl p-5 shadow-sm">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-chart-line text-white"></i>
+                </div>
+                <h4 class="text-base font-bold text-gray-800">當前狀態</h4>
               </div>
-              <div class="flex gap-3">
-                <button 
-                  id="optimizeBtn"
-                  class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-purple-600 hover:to-purple-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <i class="fas fa-magic mr-2"></i>AI 優化
-                </button>
-                <button 
-                  id="saveBtn"
-                  class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <i class="fas fa-save mr-2"></i>保存為模板
-                </button>
+              <div id="templateStatusContent" class="grid grid-cols-3 gap-4 text-sm">
+                <div class="bg-white rounded-lg p-3 border border-blue-100">
+                  <div class="text-gray-500 text-xs mb-1">模式</div>
+                  <div id="templateStatusMode" class="font-semibold text-gray-800">從零開始</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 border border-blue-100">
+                  <div class="text-gray-500 text-xs mb-1">AI 優化</div>
+                  <div id="templateStatusOptimized" class="font-semibold text-gray-800">未優化</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 border border-blue-100">
+                  <div class="text-gray-500 text-xs mb-1">保存狀態</div>
+                  <div id="templateStatusCanSave" class="font-semibold text-gray-800">未就緒</div>
+                </div>
               </div>
+            </div>
+            
+            <!-- 操作按鈕區 - 更突出 -->
+            <div class="flex items-center justify-end gap-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+              <button 
+                id="optimizeBtn"
+                class="inline-flex items-center px-8 py-3.5 bg-gradient-to-r from-purple-500 via-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:via-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                <i class="fas fa-wand-magic-sparkles mr-2.5 text-lg"></i>
+                AI 優化
+              </button>
+              <button 
+                id="saveBtn"
+                class="inline-flex items-center px-8 py-3.5 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:via-blue-700 hover:to-indigo-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                <i class="fas fa-save mr-2.5 text-lg"></i>
+                保存為模板
+              </button>
             </div>
           </div>
         </div>
