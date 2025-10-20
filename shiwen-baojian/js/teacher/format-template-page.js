@@ -685,13 +685,6 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                 <span id="statusText" class="text-gray-700 font-medium">準備就緒</span>
               </div>
               <div class="flex gap-3">
-                <!-- 🚨 階段 3.5.3.5：清空編輯器按鈕 -->
-                <button 
-                  id="clearEditorBtn"
-                  class="bg-gray-500 text-white px-4 py-2.5 rounded-lg hover:bg-gray-600 transition font-medium shadow-sm"
-                >
-                  <i class="fas fa-eraser mr-2"></i>清空
-                </button>
                 <button 
                   id="optimizeBtn"
                   class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-purple-600 hover:to-purple-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -830,13 +823,14 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         this.originalContent = format.human_input;  // 設置基線內容
       }
       
-      // 🚨 階段 3.5.1 + 修復：設置編輯模式的正確狀態
+      // 🚨 修復：正確設置狀態
       if (format.is_system) {
         // 系統格式：基於此創建（不是更新）
-        this.editorMode = 'direct';
-        this.hasBeenOptimized = true;  // 系統格式已經優化過
-        this.cachedFormatJSON = format.spec_json;
-        this.editingFormatId = null;  // 🚨 重要：清空 editingFormatId，避免誤更新系統格式
+        this.editorMode = 'incremental';  // 🚨 修復：應該是 incremental，因為用戶會修改
+        this.hasBeenOptimized = false;  // 🚨 修復：用戶需要先 AI 優化
+        this.cachedFormatJSON = null;  // 🚨 修復：還沒有優化後的 JSON
+        this.cachedFormat = format;  // 保留原始格式供參考
+        this.editingFormatId = null;  // 清空 editingFormatId，避免誤更新系統格式
       } else {
         // 自定義格式：真正的編輯模式
         this.editorMode = 'custom';
@@ -876,10 +870,6 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     // 返回按钮
     const backBtn = this.container.querySelector('#backToListBtn');
     if (backBtn) backBtn.onclick = () => this.switchToListMode();
-    
-    // 🚨 階段 3.5.3.5：清空編輯器按鈕
-    const clearBtn = this.container.querySelector('#clearEditorBtn');
-    if (clearBtn) clearBtn.onclick = () => this.handleClearEditor();
     
     // AI 优化按钮
     const optimizeBtn = this.container.querySelector('#optimizeBtn');
@@ -1050,40 +1040,6 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       console.error('[FormatTemplatePage] 加載預覽失敗:', error);
       alert('加載預覽失敗：' + error.message);
     }
-  }
-  
-  /**
-   * 🚨 階段 3.5.3.5：處理清空編輯器
-   */
-  handleClearEditor() {
-    if (!this.currentQuill) return;
-    
-    const text = this.currentQuill.getText().trim();
-    if (!text) {
-      alert('編輯器已經是空的');
-      return;
-    }
-    
-    if (!confirm('確定要清空編輯器內容嗎？此操作無法撤銷。')) {
-      return;
-    }
-    
-    // 清空編輯器
-    this.currentQuill.setText('');
-    
-    // 重置所有狀態
-    this.editorMode = 'custom';
-    this.hasBeenOptimized = false;
-    this.originalContent = '';
-    this.cachedFormatJSON = null;
-    this.cachedFormat = null;
-    this.editingFormatId = null;
-    
-    // 更新按鈕狀態和狀態面板
-    this.updateButtonStates();
-    this.updateStatus();
-    
-    console.log('[FormatTemplatePage] 編輯器已清空，狀態已重置');
   }
   
   /**
