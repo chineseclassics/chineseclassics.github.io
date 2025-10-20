@@ -1294,12 +1294,18 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       return;
     }
     
+    // 🚨 修復：檢查是否有 spec_json（必須先 AI 優化）
+    if (!this.cachedFormatJSON) {
+      alert('⚠️ 格式 JSON 不存在，請先使用 AI 優化！');
+      return;
+    }
+    
     try {
       const formatData = {
         id: this.editingFormatId,  // 如果是编辑模式
         name: name,
         description: description,
-        spec_json: this.cachedFormat.spec_json,
+        spec_json: this.cachedFormatJSON,  // 🚨 修復：使用正確的變量
         human_input: this.currentQuill.getText().trim(),
         is_template: true,  // 通用模板
         parent_spec_id: null

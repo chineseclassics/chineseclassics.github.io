@@ -166,6 +166,13 @@ class AssignmentCreator {
               <div class="flex justify-end gap-3">
                 <button 
                   type="button"
+                  id="inlineClearBtn"
+                  class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
+                >
+                  <i class="fas fa-eraser mr-2"></i>清空
+                </button>
+                <button 
+                  type="button"
                   id="inlineOptimizeBtn"
                   class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -562,6 +569,7 @@ class AssignmentCreator {
    */
   bindInlineEditorEvents() {
     const closeEditorBtn = this.container.querySelector('#closeInlineEditorBtn');
+    const clearBtn = this.container.querySelector('#inlineClearBtn');
     const optimizeBtn = this.container.querySelector('#inlineOptimizeBtn');
     const saveBtn = this.container.querySelector('#inlineSaveBtn');
     const cancelSaveBtn = this.container.querySelector('#cancelSaveFormatBtn');
@@ -569,6 +577,10 @@ class AssignmentCreator {
     
     if (closeEditorBtn) {
       closeEditorBtn.addEventListener('click', () => this.collapseInlineEditor());
+    }
+    
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => this.handleInlineClear());
     }
     
     if (optimizeBtn) {
@@ -764,6 +776,39 @@ class AssignmentCreator {
   }
   
   /**
+   * 🚨 階段 3.5.3.5：清空內聯編輯器
+   */
+  handleInlineClear() {
+    if (!this.inlineQuill) return;
+    
+    const text = this.inlineQuill.getText().trim();
+    if (!text) {
+      alert('編輯器已經是空的');
+      return;
+    }
+    
+    if (!confirm('確定要清空編輯器內容嗎？此操作無法撤銷。')) {
+      return;
+    }
+    
+    // 清空編輯器
+    this.inlineQuill.setText('');
+    
+    // 重置所有狀態
+    this.currentMode = 'custom';
+    this.hasBeenOptimized = false;
+    this.originalContent = '';
+    this.cachedFormatJSON = null;
+    this.cachedFormatData = null;
+    
+    // 更新按鈕狀態和狀態面板
+    this.updateButtonStates();
+    this.updateStatus();
+    
+    console.log('[AssignmentCreator] 編輯器已清空，狀態已重置');
+  }
+  
+  /**
    * 折叠内联编辑器
    */
   collapseInlineEditor() {
@@ -874,7 +919,8 @@ class AssignmentCreator {
       return;
     }
     
-    if (!this.cachedFormatData || !this.cachedFormatData.spec_json) {
+    // 🚨 統一使用 cachedFormatJSON 檢查
+    if (!this.cachedFormatJSON) {
       alert('請先使用 AI 優化生成格式 JSON');
       return;
     }
@@ -920,7 +966,7 @@ class AssignmentCreator {
       const formatData = {
         name: name,
         description: description,
-        spec_json: this.cachedFormatData.spec_json,
+        spec_json: this.cachedFormatJSON,  // 🚨 修復：使用統一的變量
         human_input: this.inlineQuill.getText().trim(),
         is_template: formatType === 'template',  // 是否为通用模板
         parent_spec_id: this.isEditingSystemTemplate ? this.selectedTemplateId : null

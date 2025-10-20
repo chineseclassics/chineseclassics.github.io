@@ -309,10 +309,15 @@ class FormatEditorCore {
         is_public: false
       };
       
-      // 判断是创建还是更新
+      // 🚨 修復：判斷是創建還是更新（檢查 ID 是否為真實 UUID）
       let result;
-      if (formatData.id) {
-        // 更新现有格式
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isValidId = formatData.id && uuidRegex.test(formatData.id);
+      
+      if (isValidId) {
+        // 更新现有格式（只有當 ID 是真實 UUID 時）
+        console.log('[FormatEditorCore] 更新現有格式:', formatData.id);
+        
         const { data, error } = await supabase
           .from('format_specifications')
           .update(saveData)
@@ -320,11 +325,23 @@ class FormatEditorCore {
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('[FormatEditorCore] 更新失敗，錯誤詳情:', error);
+          throw error;
+        }
+        
+        if (!data) {
+          throw new Error('更新失敗：找不到對應的格式記錄');
+        }
+        
         result = data;
         console.log('[FormatEditorCore] 格式已更新:', result.id);
       } else {
         // 创建新格式
+        if (formatData.id) {
+          console.warn('[FormatEditorCore] ID 格式無效，將創建新格式而非更新:', formatData.id);
+        }
+        
         saveData.created_by = session.user.id;
         
         const { data, error } = await supabase
@@ -333,7 +350,11 @@ class FormatEditorCore {
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('[FormatEditorCore] 創建失敗，錯誤詳情:', error);
+          throw error;
+        }
+        
         result = data;
         console.log('[FormatEditorCore] 格式已创建:', result.id);
       }
