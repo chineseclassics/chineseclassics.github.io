@@ -371,18 +371,25 @@ class FormatEditorCore {
   // ============================================================
   
   /**
-   * 设置草稿自动保存
+   * 🚨 優化：設置智能草稿自動保存
    * @param {Quill} quill - Quill 实例
    * @param {string} draftKey - localStorage key（区分不同场景）
+   * @param {Function} shouldSaveCondition - 可選的條件函數，返回 true 時才保存草稿
    * @returns {Function} 清理函数（取消监听）
    */
-  static setupDraftAutoSave(quill, draftKey) {
+  static setupDraftAutoSave(quill, draftKey, shouldSaveCondition = null) {
     if (!quill) {
       throw new Error('Quill 实例不能为空');
     }
     
     // 🚨 階段 3.5.4.2：草稿保存處理函數（帶時間戳）
     const saveDraft = () => {
+      // 🚨 優化：檢查條件函數
+      if (shouldSaveCondition && !shouldSaveCondition()) {
+        console.log('[FormatEditorCore] 跳過草稿保存（條件不滿足）:', draftKey);
+        return;
+      }
+      
       const text = quill.getText().trim();
       if (text) {
         const draftData = {
@@ -403,7 +410,7 @@ class FormatEditorCore {
     
     quill.on('text-change', debouncedSave);
     
-    console.log('[FormatEditorCore] 草稿自动保存已启用:', draftKey);
+    console.log('[FormatEditorCore] 草稿自动保存已启用:', draftKey, shouldSaveCondition ? '（帶條件檢查）' : '');
     
     // 返回清理函数
     return () => {

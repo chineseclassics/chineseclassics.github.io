@@ -31,6 +31,9 @@ class AssignmentCreator {
     
     // 🚨 任務專用格式（當前會話臨時保存）
     this.currentTaskFormatId = null;  // 本次任務的專用格式ID
+    
+    // 🚨 優化：草稿管理
+    this.isLoadingTemplate = false;  // 標記是否正在加載模板（避免觸發草稿保存）
   }
 
   /**
@@ -404,9 +407,12 @@ class AssignmentCreator {
         humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
       }
       
+      // 🚨 優化：加載模板時標記狀態，避免觸發草稿保存
       if (this.inlineQuill && humanReadable) {
+        this.isLoadingTemplate = true;  // 設置標記
         this.inlineQuill.setText(humanReadable);
         this.originalContent = humanReadable;
+        this.isLoadingTemplate = false;  // 重置標記
       }
       
       // 設置狀態
@@ -487,14 +493,17 @@ class AssignmentCreator {
           placeholder: '請輸入寫作指引...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
         });
         
-        // 设置草稿自动保存
+        // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）
         this.draftCleanup = FormatEditorCore.setupDraftAutoSave(
           this.inlineQuill,
-          'format-editor-draft-inline'  // 任务创建专用 key
+          'format-editor-draft-inline',  // 任务创建专用 key
+          () => !this.isLoadingTemplate  // 🆕 只在非加載模板時保存草稿
         );
         
-        // 询问恢复草稿
-        FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
+        // 🚨 優化：只在"從零開始新建"時詢問恢復草稿
+        if (!this.selectedTemplateId && this.currentMode === 'custom') {
+          FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
+        }
         
         // 🚨 階段 3.5.1.7：綁定內容變化監聽
         this.inlineQuill.on('text-change', () => {
@@ -648,12 +657,19 @@ class AssignmentCreator {
   }
   
   /**
-   * 折叠内联编辑器
+   * 🚨 優化：完善編輯器清理邏輯
    */
   collapseInlineEditor() {
     const editorContainer = this.container.querySelector('#inlineEditorContainer');
     
     if (!editorContainer) return;
+    
+    // 🚨 優化：停止草稿自動保存監聽器
+    if (this.draftCleanup) {
+      this.draftCleanup();
+      this.draftCleanup = null;
+      console.log('[AssignmentCreator] 草稿自動保存已停止');
+    }
     
     // 隐藏编辑器
     editorContainer.classList.add('hidden');
@@ -661,10 +677,15 @@ class AssignmentCreator {
     
     // 🚨 不清空下拉菜單的選擇，保持當前選中狀態
     
-    // 清空编辑器内容（草稿已通过 localStorage 保护）
+    // 🚨 優化：清空编辑器内容（標記為加載狀態，避免觸發保存）
     if (this.inlineQuill) {
+      this.isLoadingTemplate = true;
       this.inlineQuill.setText('');
+      this.isLoadingTemplate = false;
     }
+    
+    // 🚨 優化：清除草稿（避免下次打開時誤恢復）
+    FormatEditorCore.clearDraft('format-editor-draft-inline');
     
     // 清空缓存和状态
     this.cachedFormatData = null;
@@ -677,7 +698,7 @@ class AssignmentCreator {
     this.originalContent = '';
     this.cachedFormatJSON = null;
     
-    console.log('[AssignmentCreator] 编辑器已折叠，所有狀態已重置');
+    console.log('[AssignmentCreator] 编辑器已折叠，所有狀態已重置，草稿已清除');
   }
   
   /**

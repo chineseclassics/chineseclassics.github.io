@@ -35,6 +35,9 @@ class FormatTemplatePage {
     this.searchQuery = '';  // 搜索關鍵字
     this.currentFilter = 'all';  // 'all' | 'system' | 'custom'
     this.currentSort = 'created_desc';  // 排序方式
+    
+    // 🚨 優化：草稿管理
+    this.isLoadingTemplate = false;  // 標記是否正在加載模板（避免觸發草稿保存）
   }
   
   /**
@@ -613,8 +616,8 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         <div class="bg-white rounded-lg shadow-lg overflow-hidden" style="border: 1px solid #e5e7eb;">
           <!-- 标题区 -->
           <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-6 text-white">
-            <h2 class="text-2xl font-bold mb-2">${title}</h2>
-            <p class="text-blue-100">${subtitle}</p>
+            <h2 id="templateEditorTitle" class="text-2xl font-bold mb-2">${title}</h2>
+            <p id="templateEditorSubtitle" class="text-blue-100">${subtitle}</p>
           </div>
           
           <!-- 编辑器区域 -->
@@ -796,17 +799,19 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         placeholder: '請輸入寫作要求...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
       });
       
-      // 设置草稿自动保存
+      // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）
       this.draftCleanup = FormatEditorCore.setupDraftAutoSave(
         this.currentQuill, 
-        'format-editor-draft-template'  // 模板库专用 key
+        'format-editor-draft-template',  // 模板库专用 key
+        () => !this.isLoadingTemplate  // 🆕 只在非加載模板時保存草稿
       );
       
       // 如果是编辑模式，加载现有格式
       if (this.editingFormatId) {
         await this.loadFormatForEdit();
       } else {
-        // 新建模式：询问是否恢复草稿
+        // 🚨 優化：新建模式且沒有選擇系統格式時，才詢問恢復草稿
+        // （避免在選擇模板後又彈出草稿恢復提示）
         FormatEditorCore.askRestoreDraft('format-editor-draft-template', this.currentQuill);
         
         // 🚨 階段 3.5.1：新建模式的初始狀態
@@ -841,10 +846,12 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       const format = await FormatEditorCore.loadSystemFormat(this.editingFormatId, this.supabase);
       this.cachedFormat = format;
       
-      // 显示 human_input 在编辑器中
+      // 🚨 優化：加載格式時標記狀態，避免觸發草稿保存
       if (format.human_input) {
+        this.isLoadingTemplate = true;  // 設置標記
         this.currentQuill.setText(format.human_input);
         this.originalContent = format.human_input;  // 設置基線內容
+        this.isLoadingTemplate = false;  // 重置標記
       }
       
       // 🚨 修復：正確設置狀態
@@ -1042,9 +1049,12 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
       }
       
+      // 🚨 優化：加載模板時標記狀態，避免觸發草稿保存
       if (this.currentQuill && humanReadable) {
+        this.isLoadingTemplate = true;  // 設置標記
         this.currentQuill.setText(humanReadable);
         this.originalContent = humanReadable;
+        this.isLoadingTemplate = false;  // 重置標記
       }
       
       // 設置狀態
@@ -1096,10 +1106,23 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
   updateButtonStates() {
     const optimizeBtn = this.container?.querySelector('#optimizeBtn');
     const saveBtn = this.container?.querySelector('#saveBtn');
+    const editorTitle = this.container?.querySelector('#templateEditorTitle');
+    const editorSubtitle = this.container?.querySelector('#templateEditorSubtitle');
     
     if (!optimizeBtn || !saveBtn) return;
     
     const content = this.currentQuill?.getText().trim() || '';
+    
+    // 🚨 動態更新標題和副標題
+    if (editorTitle && editorSubtitle) {
+      if (this.editorMode === 'direct' || this.editorMode === 'incremental') {
+        editorTitle.textContent = '使用或自定義寫作指引模板';
+        editorSubtitle.textContent = '可以直接使用，或修改後保存為新模板';
+      } else {
+        editorTitle.textContent = this.editingFormatId ? '編輯寫作指引模板' : '創建新模板';
+        editorSubtitle.textContent = this.editingFormatId ? '修改現有模板的寫作指引' : '使用 AI 輔助生成結構化的寫作指引模板';
+      }
+    }
     
     // AI 優化按鈕邏輯
     if (this.editorMode === 'direct') {
@@ -1116,20 +1139,22 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
           : '請先輸入內容';
     }
     
-    // 保存按鈕邏輯
+    // 🚨 動態更新保存按鈕文字和狀態
     if (this.editorMode === 'direct') {
-      // direct 模式：只要有 JSON 就可以保存
+      // direct 模式：直接使用系統格式
+      saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>直接使用';
       saveBtn.disabled = !this.cachedFormatJSON;
       saveBtn.title = this.cachedFormatJSON 
-        ? '直接使用系統格式'
-        : '請先加載格式';
+        ? '直接使用此寫作指引模板'
+        : '請先選擇格式';
     } else {
-      // incremental 或 custom 模式：必須優化後才能保存
+      // incremental 或 custom 模式：保存為模板
+      saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>保存為模板';
       saveBtn.disabled = !this.hasBeenOptimized || !this.cachedFormatJSON;
       saveBtn.title = !this.hasBeenOptimized
         ? '⚠️ 必須先經過 AI 優化才能保存'
         : this.cachedFormatJSON
-          ? '保存模板'
+          ? '保存為新模板'
           : '請先進行 AI 優化';
     }
     
@@ -1246,7 +1271,23 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
   }
   
   /**
-   * 处理保存
+   * 🚨 處理直接使用系統格式（不保存）
+   */
+  handleDirectUse() {
+    // 直接使用系統格式，不需要保存到數據庫
+    // 只需返回列表即可
+    toast.success('已選用此寫作指引模板！', 2000);
+    
+    // 延遲後返回列表
+    setTimeout(() => {
+      this.switchToListMode();
+    }, 1500);
+    
+    console.log('[FormatTemplatePage] 直接使用系統格式:', this.editingFormatId);
+  }
+  
+  /**
+   * 处理保存/直接使用
    */
   handleSave() {
     const text = this.currentQuill?.getText().trim();
@@ -1267,7 +1308,13 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       return;
     }
     
-    // 打开保存对话框
+    // 🚨 direct 模式：直接使用，不打開保存對話框
+    if (this.editorMode === 'direct') {
+      this.handleDirectUse();
+      return;
+    }
+    
+    // incremental/custom 模式：打開保存對話框
     const dialog = this.container.querySelector('#saveDialog');
     if (dialog) dialog.classList.remove('hidden');
   }
@@ -1333,21 +1380,25 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
   // ============================================================
   
   /**
-   * 🚨 階段 3.5.4.3：切換回列表模式（完善草稿清理）
+   * 🚨 優化：切換回列表模式（完善草稿清理）
    */
   async switchToListMode() {
-    // 🚨 清理草稿監聽器
+    // 🚨 優化：停止草稿監聽器
     if (this.draftCleanup) {
       this.draftCleanup();
       this.draftCleanup = null;
+      console.log('[FormatTemplatePage] 草稿自動保存已停止');
     }
     
-    // 🚨 詢問是否清除草稿（如果有未保存的內容）
-    const text = this.currentQuill?.getText().trim();
-    if (text && !this.hasBeenOptimized) {
-      const shouldClearDraft = confirm('您有未保存的草稿，離開後草稿將保留。\n\n下次進入時可以選擇恢復。');
-      // 無論用戶選擇什麼，草稿都會保留（由 localStorage 管理）
+    // 🚨 優化：清除編輯器內容（避免觸發保存）
+    if (this.currentQuill) {
+      this.isLoadingTemplate = true;
+      this.currentQuill.setText('');
+      this.isLoadingTemplate = false;
     }
+    
+    // 🚨 優化：清除草稿（避免下次進入時誤恢復）
+    FormatEditorCore.clearDraft('format-editor-draft-template');
     
     // 重置所有狀態
     this.currentQuill = null;
@@ -1365,7 +1416,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       await this.render(container);
     }
     
-    console.log('[FormatTemplatePage] 已切換回列表模式');
+    console.log('[FormatTemplatePage] 已切換回列表模式，草稿已清除');
   }
   
   // ============================================================
