@@ -92,8 +92,42 @@ js/
 └── ...
 ```
 
+### Tooltip 提示系統（`tooltip.js`）
+
+優雅的懸停提示組件，支持懸停和點擊觸發。
+
+**使用方式**：
+```javascript
+import tooltip from '../ui/tooltip.js';
+
+// 綁定 tooltip 到元素
+tooltip.bind(buttonElement, '這是提示文字', {
+  type: 'warning',     // 'info' | 'success' | 'warning' | 'error'
+  position: 'top',     // 'top' | 'bottom'
+  trigger: 'both'      // 'hover' | 'click' | 'both'
+});
+
+// 動態內容（使用函數）
+tooltip.bind(button, () => {
+  return isReady ? '✅ 可以點擊' : '⚠️ 請先完成操作';
+}, { type: 'info' });
+
+// 手動顯示/隱藏
+tooltip.show(element, '提示文字', { type: 'info' });
+tooltip.hide();
+```
+
+**特點**：
+- 單例模式（全局唯一實例）
+- 支持懸停和點擊觸發（移動端友好）
+- 自動定位（智能避免溢出）
+- 平滑動畫效果
+- 支持動態內容（函數返回值）
+- 四種樣式類型（info/success/warning/error）
+
 ---
 
 **維護者**：時文寶鑑開發團隊  
-**創建時間**：2025-10-20
+**創建時間**：2025-10-20  
+**最後更新**：2025-10-20
 

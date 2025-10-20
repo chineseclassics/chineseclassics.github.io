@@ -58,14 +58,14 @@ class FormatEditorCore {
     try {
       const { data, error } = await supabase
         .from('format_specifications')
-        .select('spec_json, human_input')
+        .select('id, name, description, spec_json, human_input, is_system, is_template')
         .eq('id', formatId)
         .single();
       
       if (error) throw error;
       if (!data) throw new Error('格式不存在');
       
-      console.log('[FormatEditorCore] 系统格式加载成功:', formatId);
+      console.log('[FormatEditorCore] 格式加載成功:', formatId, '名稱:', data.name, 'is_system:', data.is_system);
       return data;
     } catch (error) {
       console.error('[FormatEditorCore] 加载系统格式失败:', error);

@@ -416,13 +416,13 @@ class AssignmentCreator {
       }
       
       // 設置狀態
-      if (format.is_system) {
-        // 系統格式：可以直接使用
+      if (format.is_system || format.is_template) {
+        // 系統格式或可複用模板：可以直接使用
         this.currentMode = 'direct';
         this.hasBeenOptimized = true;
         this.cachedFormatJSON = format.spec_json;
       } else {
-        // 自定義格式：視為已優化
+        // 任務專用格式：視為已優化的自定義格式
         this.currentMode = 'custom';
         this.hasBeenOptimized = true;
         this.cachedFormatJSON = format.spec_json;
@@ -431,7 +431,7 @@ class AssignmentCreator {
       this.updateButtonStates();
       this.updateStatus();
       
-      console.log('[AssignmentCreator] 格式已加載:', format.name, '模式:', this.currentMode);
+      console.log('[AssignmentCreator] 格式已加載:', format.name, '模式:', this.currentMode, 'is_system:', format.is_system, 'is_template:', format.is_template);
     } catch (error) {
       console.error('[AssignmentCreator] 加載格式失敗:', error);
       toast.error('加載格式失敗：' + error.message);
@@ -571,15 +571,9 @@ class AssignmentCreator {
     if (this.currentMode === 'direct') {
       // direct 模式：系統格式已經優化過，禁用 AI 優化按鈕
       optimizeBtn.disabled = true;
-      optimizeBtn.title = '系統格式已優化，無需再次優化';
     } else {
       // incremental 或 custom 模式：有內容且未優化時啟用
       optimizeBtn.disabled = !content || this.hasBeenOptimized;
-      optimizeBtn.title = this.hasBeenOptimized 
-        ? '已經優化過了'
-        : content 
-          ? '點擊進行 AI 優化'
-          : '請先輸入內容';
     }
     
     // 🚨 動態更新保存按鈕文字和狀態
@@ -587,18 +581,36 @@ class AssignmentCreator {
       // direct 模式：直接使用系統格式
       saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>直接使用';
       saveBtn.disabled = !this.cachedFormatJSON;
-      saveBtn.title = this.cachedFormatJSON 
-        ? '直接使用此寫作指引模板'
-        : '請先選擇寫作指引';
+      saveBtn.style.cursor = this.cachedFormatJSON ? 'pointer' : 'not-allowed';
     } else {
       // incremental 或 custom 模式：保存並使用
       saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>保存並使用';
       saveBtn.disabled = !this.hasBeenOptimized || !this.cachedFormatJSON;
-      saveBtn.title = !this.hasBeenOptimized
-        ? '⚠️ 必須先經過 AI 優化才能保存'
-        : this.cachedFormatJSON
-          ? '保存並使用此格式'
-          : '請先進行 AI 優化';
+      saveBtn.style.cursor = (this.hasBeenOptimized && this.cachedFormatJSON) ? 'pointer' : 'not-allowed';
+    }
+    
+    // 🚨 綁定 Tooltip（動態內容）
+    if (window.tooltip) {
+      // 為保存按鈕綁定 tooltip
+      tooltip.bind(saveBtn, () => {
+        if (this.currentMode === 'direct') {
+          return this.cachedFormatJSON 
+            ? '✅ 直接使用此寫作指引模板'
+            : '⚠️ 請先選擇寫作指引';
+        } else {
+          if (!this.hasBeenOptimized) {
+            return '💡 提示：請先使用 AI 優化功能，讓系統幫您整理格式哦~';
+          } else if (this.cachedFormatJSON) {
+            return '✅ 保存並使用此格式';
+          } else {
+            return '⚠️ 請先進行 AI 優化';
+          }
+        }
+      }, {
+        type: (this.hasBeenOptimized || this.currentMode === 'direct') ? 'success' : 'warning',
+        position: 'top',
+        trigger: 'both'
+      });
     }
     
     console.log('[AssignmentCreator] 按鈕狀態已更新:', {
@@ -935,7 +947,7 @@ class AssignmentCreator {
       // 查詢所有可用的寫作要求（系統 + 自己的）
       const { data: formats, error } = await this.assignmentManager.supabase
         .from('format_specifications')
-        .select('id, name, description, is_system, essay_type')
+        .select('id, name, description, is_system, is_template, essay_type')
         .or(`is_system.eq.true,created_by.eq.${session.user.id}`)
         .order('is_system', { ascending: false })  // 系統格式優先
         .order('created_at', { ascending: false });
@@ -944,6 +956,12 @@ class AssignmentCreator {
         console.error('加載寫作要求失敗:', error);
         return;
       }
+      
+      console.log('[AssignmentCreator] 查詢到格式:', formats.length, '個', formats.map(f => ({
+        name: f.name,
+        is_system: f.is_system,
+        is_template: f.is_template
+      })));
 
       // 填充下拉菜單
       const selector = this.container.querySelector('#formatSelector');

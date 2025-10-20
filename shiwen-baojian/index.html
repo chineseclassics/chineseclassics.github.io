@@ -371,6 +371,20 @@
     <!-- 太虛幻境應用切換器（必需） -->
     <script src="/assets/js/taixu-app-switcher.js"></script>
     
+    <!-- UI 組件（以模塊方式引入並掛載到全局） -->
+    <script type="module">
+      import toast from './js/ui/toast.js';
+      import dialog from './js/ui/dialog.js';
+      import tooltip from './js/ui/tooltip.js';
+      
+      // 掛載到全局，供非模塊代碼使用
+      window.toast = toast;
+      window.dialog = dialog;
+      window.tooltip = tooltip;
+      
+      console.log('✅ UI 組件已加載並掛載到全局');
+    </script>
+    
     <!-- 應用 JavaScript 模組（ES6 Modules） -->
     <script type="module" src="js/app.js"></script>
 </body>

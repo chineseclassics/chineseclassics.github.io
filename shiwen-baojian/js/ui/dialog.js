@@ -362,5 +362,6 @@ if (!window.__dialogInstance) {
   window.__dialogInstance = new Dialog();
 }
 
+// 導出單例（ES6 模塊）
 export default window.__dialogInstance;
 

@@ -73,57 +73,51 @@ class FormatTemplatePage {
     this.container = container;  // 保存 container 引用
     container.innerHTML = `
       <div class="max-w-7xl mx-auto">
-        <!-- 页面标题 -->
-        <div class="mb-6 flex justify-between items-center">
-          <div>
-            <h2 class="text-2xl font-bold text-gray-900">📚 寫作指引模板庫</h2>
-            <p class="text-gray-600 mt-1">查看和管理可複用的寫作指引模板</p>
-          </div>
+        <!-- 頂部操作欄：按鈕 + 搜索框 -->
+        <div class="mb-8 flex items-center justify-between gap-4">
+          <!-- 左側：創建按鈕 -->
           <button 
             id="createNewBtn"
-            class="btn btn-primary"
+            class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
           >
-            <i class="fas fa-plus"></i> 創建新模板
+            <i class="fas fa-plus mr-2"></i>創建新模板
           </button>
-        </div>
-        
-        <!-- 🚨 階段 3.5.3.1-3.5.3.2：搜索、篩選和排序 -->
-        <div class="mb-6 bg-white rounded-lg shadow p-4">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- 右側：搜索與篩選 -->
+          <div class="flex items-center gap-3">
             <!-- 搜索框 -->
-            <div class="md:col-span-2">
-              <div class="relative">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input 
-                  type="text" 
-                  id="searchInput"
-                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="搜索模板名稱或描述..."
-                />
-              </div>
+            <div class="relative">
+              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <input 
+                type="text" 
+                id="searchInput"
+                class="w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                placeholder="搜索模板..."
+              />
             </div>
             
-            <!-- 篩選和排序 -->
-            <div class="flex gap-2">
-              <select 
-                id="filterType"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">全部類型</option>
-                <option value="system">系統格式</option>
-                <option value="custom">自定義格式</option>
-              </select>
-              
-              <select 
-                id="sortBy"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="created_desc">最新創建</option>
-                <option value="created_asc">最早創建</option>
-                <option value="name_asc">名稱 A-Z</option>
-                <option value="name_desc">名稱 Z-A</option>
-              </select>
-            </div>
+            <!-- 篩選 -->
+            <select 
+              id="filterType"
+              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+              style="padding-right: 2rem; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;"
+            >
+              <option value="all">全部類型</option>
+              <option value="system">系統格式</option>
+              <option value="custom">自定義格式</option>
+            </select>
+            
+            <!-- 排序 -->
+            <select 
+              id="sortBy"
+              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+              style="padding-right: 2rem; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;"
+            >
+              <option value="created_desc">最新創建</option>
+              <option value="created_asc">最早創建</option>
+              <option value="name_asc">名稱 A-Z</option>
+              <option value="name_desc">名稱 Z-A</option>
+            </select>
           </div>
         </div>
         
@@ -1144,18 +1138,35 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       // direct 模式：直接使用系統格式
       saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>直接使用';
       saveBtn.disabled = !this.cachedFormatJSON;
-      saveBtn.title = this.cachedFormatJSON 
-        ? '直接使用此寫作指引模板'
-        : '請先選擇格式';
+      saveBtn.style.cursor = this.cachedFormatJSON ? 'pointer' : 'not-allowed';
     } else {
       // incremental 或 custom 模式：保存為模板
       saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>保存為模板';
       saveBtn.disabled = !this.hasBeenOptimized || !this.cachedFormatJSON;
-      saveBtn.title = !this.hasBeenOptimized
-        ? '⚠️ 必須先經過 AI 優化才能保存'
-        : this.cachedFormatJSON
-          ? '保存為新模板'
-          : '請先進行 AI 優化';
+      saveBtn.style.cursor = (this.hasBeenOptimized && this.cachedFormatJSON) ? 'pointer' : 'not-allowed';
+    }
+    
+    // 🚨 綁定 Tooltip（動態內容）
+    if (window.tooltip) {
+      tooltip.bind(saveBtn, () => {
+        if (this.editorMode === 'direct') {
+          return this.cachedFormatJSON 
+            ? '✅ 直接使用此寫作指引模板'
+            : '⚠️ 請先選擇格式';
+        } else {
+          if (!this.hasBeenOptimized) {
+            return '💡 提示：請先使用 AI 優化功能，讓系統幫您整理格式哦~';
+          } else if (this.cachedFormatJSON) {
+            return '✅ 保存為新模板';
+          } else {
+            return '⚠️ 請先進行 AI 優化';
+          }
+        }
+      }, {
+        type: (this.hasBeenOptimized || this.editorMode === 'direct') ? 'success' : 'warning',
+        position: 'top',
+        trigger: 'both'
+      });
     }
     
     console.log('[FormatTemplatePage] 按鈕狀態已更新:', {

@@ -266,6 +266,6 @@ if (!window.__toastInstance) {
   window.__toastInstance = new Toast();
 }
 
-// 導出全局單例
+// 導出單例（ES6 模塊）
 export default window.__toastInstance;
 
