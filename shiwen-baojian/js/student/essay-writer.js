@@ -159,7 +159,7 @@ export async function initializeEssayEditor(forceReinit = false) {
 /**
  * 添加新分論點
  */
-function addArgument() {
+export function addArgument() {
     const argumentId = `arg-${Date.now()}`;
     const argumentIndex = EditorState.arguments.length + 1;
     
@@ -292,7 +292,7 @@ function renumberArguments() {
 /**
  * 添加段落到分論點
  */
-function addParagraph(argumentId) {
+export function addParagraph(argumentId) {
     const argument = EditorState.arguments.find(arg => arg.id === argumentId);
     if (!argument) {
         console.error('❌ 找不到分論點:', argumentId);

@@ -1136,10 +1136,72 @@ async function restoreEssayContent(contentData) {
             }
         }
         
-        // 4. 恢復分論點（暫時跳過，需要更複雜的邏輯）
+        // 4. 恢復分論點
         if (contentData.arguments && contentData.arguments.length > 0) {
-            console.log(`ℹ️ 檢測到 ${contentData.arguments.length} 個分論點，暫時不恢復（需要動態創建分論點功能）`);
-            // TODO: 實現分論點的動態恢復
+            console.log(`🔄 開始恢復 ${contentData.arguments.length} 個分論點...`);
+            
+            // 動態導入分論點管理函數
+            const { addArgument, addParagraph, EditorState } = await import('./student/essay-writer.js');
+            
+            // 為每個分論點創建結構並填充內容
+            for (let i = 0; i < contentData.arguments.length; i++) {
+                const argData = contentData.arguments[i];
+                
+                // 1. 創建新的分論點
+                addArgument();
+                
+                // 等待 DOM 更新
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // 2. 獲取剛創建的分論點
+                const currentArg = EditorState.arguments[EditorState.arguments.length - 1];
+                
+                if (!currentArg) {
+                    console.error(`❌ 無法獲取第 ${i + 1} 個分論點`);
+                    continue;
+                }
+                
+                // 3. 填充分論點標題
+                if (argData.title) {
+                    const titleInput = document.getElementById(`${currentArg.id}-title`);
+                    if (titleInput) {
+                        titleInput.value = argData.title;
+                        console.log(`✅ 已恢復分論點 ${i + 1} 標題:`, argData.title);
+                    }
+                }
+                
+                // 4. 恢復段落（第一個段落已經自動創建）
+                if (argData.paragraphs && argData.paragraphs.length > 0) {
+                    // 填充第一個段落
+                    if (currentArg.paragraphs.length > 0) {
+                        const firstPara = currentArg.paragraphs[0];
+                        if (firstPara.editor && argData.paragraphs[0].content) {
+                            firstPara.editor.setHTML(argData.paragraphs[0].content);
+                            console.log(`✅ 已恢復分論點 ${i + 1} 的第 1 個段落`);
+                        }
+                    }
+                    
+                    // 創建並填充其他段落
+                    for (let j = 1; j < argData.paragraphs.length; j++) {
+                        const paraData = argData.paragraphs[j];
+                        
+                        // 添加新段落
+                        addParagraph(currentArg.id);
+                        
+                        // 等待 DOM 更新
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
+                        // 填充段落內容
+                        const para = currentArg.paragraphs[j];
+                        if (para && para.editor && paraData.content) {
+                            para.editor.setHTML(paraData.content);
+                            console.log(`✅ 已恢復分論點 ${i + 1} 的第 ${j + 1} 個段落`);
+                        }
+                    }
+                }
+            }
+            
+            console.log(`✅ 已恢復 ${contentData.arguments.length} 個分論點`);
         }
         
         console.log('✅ 內容恢復完成');
