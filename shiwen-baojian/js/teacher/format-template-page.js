@@ -81,7 +81,7 @@ class FormatTemplatePage {
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             style="box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);"
           >
-            ➕ 創建新寫作指引模板
+            ➕ 創建新模板
           </button>
         </div>
         
@@ -597,7 +597,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     this.container = container;  // 保存 container 引用
     
     const isEdit = !!this.editingFormatId;
-    const title = isEdit ? '編輯寫作指引模板' : '創建新寫作指引模板';
+    const title = isEdit ? '編輯寫作指引模板' : '創建新模板';
     const subtitle = isEdit ? '修改現有模板的寫作指引' : '使用 AI 輔助生成結構化的寫作指引模板';
     
     container.innerHTML = `
