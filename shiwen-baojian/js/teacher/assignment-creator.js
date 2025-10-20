@@ -19,6 +19,8 @@ class AssignmentCreator {
     this.inlineQuill = null;
     this.draftCleanup = null;
     this.cachedFormatData = null;  // 缓存 AI 优化结果
+    this.currentEditingFormatId = null;  // 当前编辑的格式ID（用于判断是新建还是修改）
+    this.isEditingSystemTemplate = false;  // 是否正在编辑系统模板
   }
 
   /**
@@ -84,28 +86,15 @@ class AssignmentCreator {
             <h3><i class="fas fa-file-alt" style="color: #3498db; margin-right: 0.5rem;"></i>寫作要求</h3>
             
             <div class="form-group">
-              <label>選擇寫作要求 <span class="required">*</span></label>
+              <label>選擇起點 <span class="required">*</span></label>
               <select id="templateSelector" name="template" required>
-                <option value="">-- 請選擇寫作要求 --</option>
+                <option value="">-- 請選擇起點 --</option>
+                <option value="__create_new__">✨ 從零開始創建</option>
                 <!-- 選項將動態加載 -->
               </select>
-              <p class="help-text">寫作要求定義了論文的結构、內容要求和评价维度</p>
+              <p class="help-text">選擇系統模板、已有模板或從零開始創建</p>
             </div>
 
-            <div class="form-group" style="margin-top: 0.5rem;">
-              <button 
-                type="button"
-                id="createNewFormatBtn"
-                class="text-blue-600 hover:text-blue-700 text-sm bg-transparent border-none cursor-pointer p-0"
-              >
-                <i class="fas fa-plus-circle"></i> 創建新寫作要求
-              </button>
-            </div>
-
-            <div id="templatePreview" class="template-preview" style="display: none;">
-              <!-- 預覽將動態填充 -->
-            </div>
-            
             <!-- 展开式编辑器区域 -->
             <div id="inlineEditorContainer" class="hidden" style="margin-top: 1.5rem; border: 2px solid #3498db; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
               <div class="flex justify-between items-center mb-4">
@@ -354,16 +343,11 @@ class AssignmentCreator {
    * 绑定展开式编辑器事件
    */
   bindInlineEditorEvents() {
-    const createNewBtn = this.container.querySelector('#createNewFormatBtn');
     const closeEditorBtn = this.container.querySelector('#closeInlineEditorBtn');
     const optimizeBtn = this.container.querySelector('#inlineOptimizeBtn');
     const saveBtn = this.container.querySelector('#inlineSaveBtn');
     const cancelSaveBtn = this.container.querySelector('#cancelSaveFormatBtn');
     const confirmSaveBtn = this.container.querySelector('#confirmSaveFormatBtn');
-    
-    if (createNewBtn) {
-      createNewBtn.addEventListener('click', () => this.expandInlineEditor());
-    }
     
     if (closeEditorBtn) {
       closeEditorBtn.addEventListener('click', () => this.collapseInlineEditor());
@@ -444,15 +428,17 @@ class AssignmentCreator {
     this.isInlineEditorExpanded = false;
     
     // 启用下拉菜单
-    templateSelector.disabled = false;
+    if (templateSelector) templateSelector.disabled = false;
     
     // 清空编辑器内容（草稿已通过 localStorage 保护）
     if (this.inlineQuill) {
       this.inlineQuill.setText('');
     }
     
-    // 清空缓存
+    // 清空缓存和状态
     this.cachedFormatData = null;
+    this.currentEditingFormatId = null;
+    this.isEditingSystemTemplate = false;
     
     console.log('[AssignmentCreator] 编辑器已折叠');
   }
@@ -509,13 +495,39 @@ class AssignmentCreator {
    * 处理内联保存（打开对话框）
    */
   handleInlineSave() {
+    const text = this.inlineQuill?.getText().trim();
+    if (!text) {
+      alert('請先輸入寫作要求');
+      return;
+    }
+    
     if (!this.cachedFormatData || !this.cachedFormatData.spec_json) {
       alert('請先使用 AI 優化');
       return;
     }
     
+    const dialog = this.container.querySelector('#saveFormatDialog');
+    const nameInput = this.container.querySelector('#saveFormatName');
+    const typeRadios = this.container.querySelectorAll('input[name="formatType"]');
+    
+    // 根据当前状态设置默认值和提示
+    if (this.isEditingSystemTemplate) {
+      // 基于系统模板修改 -> 必须另存为新模板
+      if (nameInput) nameInput.value = this.selectedTemplate.name + '（副本）';
+      // 禁用"通用模板"选项
+      typeRadios.forEach(radio => radio.disabled = false);
+    } else if (this.currentEditingFormatId) {
+      // 修改自己的模板 -> 可以直接更新
+      if (nameInput) nameInput.value = this.selectedTemplate.name;
+      typeRadios.forEach(radio => radio.disabled = false);
+    } else {
+      // 新建模板
+      if (nameInput) nameInput.value = '';
+      typeRadios.forEach(radio => radio.disabled = false);
+    }
+    
     // 打开保存对话框
-    this.container.querySelector('#saveFormatDialog').classList.remove('hidden');
+    if (dialog) dialog.classList.remove('hidden');
   }
   
   /**
@@ -538,15 +550,21 @@ class AssignmentCreator {
         spec_json: this.cachedFormatData.spec_json,
         human_input: this.inlineQuill.getText().trim(),
         is_template: formatType === 'template',  // 是否为通用模板
-        parent_spec_id: null
+        parent_spec_id: this.isEditingSystemTemplate ? this.selectedTemplateId : null
       };
       
-      const result = await FormatEditorCore.saveFormat(
-        formatData,
-        this.assignmentManager.supabase
-      );
-      
-      console.log('[AssignmentCreator] 格式已保存:', result.id);
+      // 判断是更新还是创建
+      let result;
+      if (this.currentEditingFormatId && !this.isEditingSystemTemplate) {
+        // 更新自己的模板
+        formatData.id = this.currentEditingFormatId;
+        result = await FormatEditorCore.saveFormat(formatData, this.assignmentManager.supabase);
+        console.log('[AssignmentCreator] 模板已更新:', result.id);
+      } else {
+        // 创建新模板（包括基于系统模板的副本）
+        result = await FormatEditorCore.saveFormat(formatData, this.assignmentManager.supabase);
+        console.log('[AssignmentCreator] 新模板已創建:', result.id);
+      }
       
       // 清除草稿
       FormatEditorCore.clearDraft('format-editor-draft-inline');
@@ -560,17 +578,21 @@ class AssignmentCreator {
       // 重新加载写作要求列表
       await this.loadFormatSpecifications();
       
-      // 自动选中新创建的格式
+      // 自动选中保存的格式
       const templateSelector = this.container.querySelector('#templateSelector');
       templateSelector.value = result.id;
       this.selectedTemplateId = result.id;
       
-      // 显示预览
+      // 重新展开并显示（现在是已保存的版本）
       await this.handleTemplateChange(result.id);
       
-      alert(formatType === 'template' 
-        ? '✅ 通用模板已保存並自動選中！您可以在模板庫中查看和編輯。' 
-        : '✅ 寫作要求已保存並自動選中！');
+      const message = this.currentEditingFormatId && !this.isEditingSystemTemplate
+        ? '✅ 寫作要求已更新！'
+        : formatType === 'template'
+          ? '✅ 通用模板已保存！您可以在模板庫中查看和編輯。'
+          : '✅ 寫作要求已保存！';
+      
+      alert(message);
     } catch (error) {
       console.error('[AssignmentCreator] 保存失败:', error);
       alert('保存失敗：' + error.message);
@@ -605,8 +627,11 @@ class AssignmentCreator {
       const selector = this.container.querySelector('#templateSelector');
       if (!selector) return;
 
-      // 保留默認選項
-      selector.innerHTML = '<option value="">-- 請選擇寫作要求 --</option>';
+      // 保留默認選項和"從零開始"選項
+      selector.innerHTML = `
+        <option value="">-- 請選擇起點 --</option>
+        <option value="__create_new__">✨ 從零開始創建</option>
+      `;
 
       // 添加系統寫作要求
       const systemFormats = formats.filter(f => f.is_system);
@@ -636,7 +661,7 @@ class AssignmentCreator {
         selector.appendChild(customOptgroup);
       }
 
-      console.log('✅ 寫作要求列表已加載:', formats.length, '個');
+      console.log('✅ 寫作要求列表已加載:', formats.length, '個（系統:', systemFormats.length, '個）');
     } catch (error) {
       console.error('加載寫作要求失敗:', error);
     }
@@ -649,13 +674,21 @@ class AssignmentCreator {
     if (!templateId) {
       this.selectedTemplate = null;
       this.selectedTemplateId = null;
+      this.collapseInlineEditor();
+      return;
+    }
+
+    // 如果选择"从零开始创建"
+    if (templateId === '__create_new__') {
+      this.selectedTemplate = null;
+      this.selectedTemplateId = null;
+      this.currentEditingFormatId = null;
+      this.isEditingSystemTemplate = false;
+      this.expandInlineEditor();
       return;
     }
 
     try {
-      // 保存格式ID（引用模式）
-      this.selectedTemplateId = templateId;
-      
       // 從 Supabase 查詢寫作要求詳情
       const { data: formatSpec, error } = await this.assignmentManager.supabase
         .from('format_specifications')
@@ -666,27 +699,20 @@ class AssignmentCreator {
       if (error) throw error;
       
       this.selectedTemplate = formatSpec;
+      this.selectedTemplateId = templateId;
+      this.currentEditingFormatId = formatSpec.is_system ? null : templateId;
+      this.isEditingSystemTemplate = formatSpec.is_system;
 
-      // 顯示預覽（使用 human_input）
-      const preview = this.container.querySelector('#templatePreview');
-      if (preview && formatSpec) {
-        preview.style.display = 'block';
-        preview.innerHTML = `
-          <div style="padding: 1rem; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #3498db;">
-            <h4 style="margin: 0 0 0.5rem 0; color: #2c3e50;">
-              <i class="fas fa-check-circle" style="color: #3498db;"></i> ${formatSpec.name}
-            </h4>
-            <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem; white-space: pre-wrap;">
-              ${formatSpec.human_input ? formatSpec.human_input.substring(0, 200) + '...' : formatSpec.description}
-            </p>
-            <a href="format-editor.html?view=${formatSpec.id}" target="_blank" class="text-blue-600 hover:text-blue-700 text-sm" style="margin-top: 0.5rem; display: inline-block;">
-              <i class="fas fa-eye"></i> 查看完整要求
-            </a>
-          </div>
-        `;
-      }
+      // 展开编辑器并显示内容
+      this.expandInlineEditor();
       
-      console.log('✅ 寫作要求已選擇:', formatSpec.name);
+      // 在编辑器中显示 human_input
+      if (this.inlineQuill && formatSpec.human_input) {
+        this.inlineQuill.setText(formatSpec.human_input);
+      }
+
+      console.log('✅ 已選擇寫作要求:', formatSpec.name, 
+                  formatSpec.is_system ? '（系統模板）' : '（自定義模板）');
     } catch (error) {
       console.error('加載寫作要求失敗:', error);
       alert('加載寫作要求失敗：' + error.message);

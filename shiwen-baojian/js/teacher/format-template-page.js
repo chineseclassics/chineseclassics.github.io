@@ -60,39 +60,20 @@ class FormatTemplatePage {
         <div class="mb-6 flex justify-between items-center">
           <div>
             <h2 class="text-2xl font-bold text-gray-900">📚 寫作模板庫</h2>
-            <p class="text-gray-600 mt-1">管理可複用的寫作要求模板</p>
+            <p class="text-gray-600 mt-1">查看和管理可複用的寫作要求模板</p>
           </div>
           <button 
             id="createNewBtn"
-            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            style="box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);"
           >
-            <i class="fas fa-plus mr-2"></i>創建新模板
+            ➕ 創建新模板
           </button>
-        </div>
-        
-        <!-- 搜索和筛选 -->
-        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div class="flex gap-4">
-            <input 
-              id="searchInput"
-              type="text" 
-              placeholder="搜索模板名稱或描述..." 
-              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-            <select 
-              id="filterType"
-              class="px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="all">全部模板</option>
-              <option value="system">系統模板</option>
-              <option value="custom">我的模板</option>
-            </select>
-          </div>
         </div>
         
         <!-- 加载状态 -->
         <div id="loadingState" class="text-center py-12">
-          <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p class="text-gray-600">加載中...</p>
         </div>
         
@@ -103,14 +84,15 @@ class FormatTemplatePage {
         
         <!-- 空状态 -->
         <div id="emptyState" class="text-center py-12 hidden">
-          <i class="fas fa-bookmark text-6xl text-gray-300 mb-4"></i>
-          <h3 class="text-xl font-semibold text-gray-700 mb-2">暫無模板</h3>
-          <p class="text-gray-500 mb-6">創建您的第一個寫作要求模板</p>
+          <div class="text-6xl mb-4">📝</div>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">還沒有自定義模板</h3>
+          <p class="text-gray-600 mb-6">點擊「創建新模板」按鈕開始</p>
           <button 
             id="emptyCreateBtn"
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            style="box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);"
           >
-            <i class="fas fa-plus mr-2"></i>創建新模板
+            ➕ 創建第一個模板
           </button>
         </div>
       </div>
@@ -153,18 +135,6 @@ class FormatTemplatePage {
     }
     if (emptyCreateBtn) {
       emptyCreateBtn.onclick = () => this.switchToEditMode(null);
-    }
-    
-    // 搜索
-    const searchInput = this.container.querySelector('#searchInput');
-    if (searchInput) {
-      searchInput.oninput = () => this.filterTemplates();
-    }
-    
-    // 筛选
-    const filterType = this.container.querySelector('#filterType');
-    if (filterType) {
-      filterType.onchange = () => this.filterTemplates();
     }
     
     // 关闭模态框
@@ -231,27 +201,43 @@ class FormatTemplatePage {
    */
   renderTemplateCards() {
     const grid = this.container.querySelector('#templateGrid');
-    const searchTerm = this.container.querySelector('#searchInput')?.value.toLowerCase() || '';
-    const filterType = this.container.querySelector('#filterType')?.value || 'all';
+    if (!grid) return;
     
-    // 筛选模板
-    let filtered = this.allTemplates;
+    // 分组：系统模板和自定义模板
+    const systemTemplates = this.allTemplates.filter(t => t.is_system);
+    const customTemplates = this.allTemplates.filter(t => !t.is_system);
     
-    if (searchTerm) {
-      filtered = filtered.filter(t => 
-        t.name.toLowerCase().includes(searchTerm) ||
-        (t.description && t.description.toLowerCase().includes(searchTerm))
-      );
+    let html = '';
+    
+    // 系统模板区域
+    if (systemTemplates.length > 0) {
+      html += `
+        <div class="col-span-full">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+            <i class="fas fa-star text-yellow-500 mr-2"></i>
+            系統內置模板
+            <span class="ml-2 text-sm text-gray-500 font-normal">(${systemTemplates.length})</span>
+          </h3>
+        </div>
+      `;
+      html += systemTemplates.map(template => this.createTemplateCard(template)).join('');
     }
     
-    if (filterType === 'system') {
-      filtered = filtered.filter(t => t.is_system);
-    } else if (filterType === 'custom') {
-      filtered = filtered.filter(t => !t.is_system);
+    // 自定义模板区域
+    if (customTemplates.length > 0) {
+      html += `
+        <div class="col-span-full mt-6">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+            <i class="fas fa-user-edit text-blue-500 mr-2"></i>
+            我的自定義模板
+            <span class="ml-2 text-sm text-gray-500 font-normal">(${customTemplates.length})</span>
+          </h3>
+        </div>
+      `;
+      html += customTemplates.map(template => this.createTemplateCard(template)).join('');
     }
     
-    // 渲染卡片
-    grid.innerHTML = filtered.map(template => this.createTemplateCard(template)).join('');
+    grid.innerHTML = html;
   }
   
   /**
