@@ -11,6 +11,8 @@
 import { RichTextEditor } from '../editor/rich-text-editor.js';
 import { AppState } from '../app.js';
 import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-storage.js';
+import toast from '../ui/toast.js';
+import dialog from '../ui/dialog.js';
 
 // ================================
 // 編輯器狀態管理
@@ -232,37 +234,41 @@ function addArgument() {
  * 刪除分論點
  */
 function deleteArgument(argumentId) {
-    if (!confirm('確定要刪除此分論點及其所有段落嗎？')) {
-        return;
-    }
-    
-    // 從 DOM 中移除
-    const element = document.getElementById(argumentId);
-    if (element) {
-        element.remove();
-    }
-    
-    // 從狀態中移除
-    const index = EditorState.arguments.findIndex(arg => arg.id === argumentId);
-    if (index !== -1) {
-        // 銷毀所有段落編輯器
-        const argument = EditorState.arguments[index];
-        argument.paragraphs.forEach(para => {
-            if (para.editor) {
-                para.editor.destroy();
+    dialog.confirmDelete({
+        message: '確定要刪除此分論點及其所有段落嗎？<br><br>此操作無法撤銷。',
+        onConfirm: () => {
+            // 從 DOM 中移除
+            const element = document.getElementById(argumentId);
+            if (element) {
+                element.remove();
             }
-        });
-        
-        EditorState.arguments.splice(index, 1);
-    }
-    
-    // 重新編號
-    renumberArguments();
-    
-    // 更新字數
-    updateWordCount();
-    
-    console.log(`✅ 已刪除分論點: ${argumentId}`);
+            
+            // 從狀態中移除
+            const index = EditorState.arguments.findIndex(arg => arg.id === argumentId);
+            if (index !== -1) {
+                // 銷毀所有段落編輯器
+                const argument = EditorState.arguments[index];
+                argument.paragraphs.forEach(para => {
+                    if (para.editor) {
+                        para.editor.destroy();
+                    }
+                });
+                
+                EditorState.arguments.splice(index, 1);
+            }
+            
+            // 重新編號
+            renumberArguments();
+            
+            // 更新字數
+            updateWordCount();
+            
+            // 提示
+            toast.success('分論點已刪除！');
+            
+            console.log(`✅ 已刪除分論點: ${argumentId}`);
+        }
+    });
 }
 
 /**
@@ -614,7 +620,7 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
         }
         
         if (!content || content.trim() === '') {
-            alert('段落內容為空，請先撰寫內容再請求反饋');
+            toast.warning('段落內容為空，請先撰寫內容再請求反饋');
             return;
         }
         
@@ -623,7 +629,7 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
         
     } catch (error) {
         console.error('❌ 請求 AI 反饋失敗:', error);
-        alert(`獲取 AI 反饋失敗：${error.message}`);
+        toast.error(`獲取 AI 反饋失敗：${error.message}`);
     }
 }
 

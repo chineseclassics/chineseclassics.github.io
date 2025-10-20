@@ -2,6 +2,8 @@
  * 批改功能 UI（精简版）
  */
 
+import toast from '../ui/toast.js';
+
 class GradingUI {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
@@ -226,13 +228,16 @@ class GradingUI {
       // 1. 設置 grades.graded_at = NOW()
       // 2. 更新 essays.status = 'graded'
 
-      alert('批改已提交！');
-      window.dispatchEvent(new CustomEvent('navigate', {
-        detail: { page: 'assignments' }
-      }));
+      toast.success('批改已提交！正在返回任務列表...');
+      
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('navigate', {
+          detail: { page: 'assignments' }
+        }));
+      }, 1000);
     } catch (error) {
       console.error('提交批改失敗:', error);
-      alert('提交失敗：' + error.message);
+      toast.error('提交失敗：' + error.message);
     }
   }
 
@@ -274,7 +279,7 @@ class GradingUI {
       document.getElementById('aiLoadingState').classList.add('hidden');
       document.getElementById('getAISuggestionBtn').disabled = false;
 
-      alert('獲取 AI 評分建議失敗：' + error.message);
+      toast.error('獲取 AI 評分建議失敗：' + error.message);
     }
   }
 
@@ -386,7 +391,7 @@ class GradingUI {
       }
     });
 
-    alert('✅ AI 建議已填充到評分表單！請檢查並調整，然後填寫評語。');
+    toast.success('AI 建議已填充到評分表單！<br>請檢查並調整，然後填寫評語。', 3000);
     
     // 滾動到評分表單
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });

@@ -4,6 +4,8 @@
  */
 
 import ClassManager from './class-manager.js';
+import toast from '../ui/toast.js';
+import dialog from '../ui/dialog.js';
 
 class ClassUI {
   constructor(classManager) {
@@ -117,13 +119,13 @@ class ClassUI {
       await this.classManager.createClass(className, description);
 
       // 顯示成功消息
-      this.showToast('success', '班級創建成功！');
+      toast.success('班級創建成功！');
 
       // 重新渲染界面
       await this.render();
     } catch (error) {
       console.error('創建班級失敗:', error);
-      this.showToast('error', error.message || '創建班級失敗，請重試');
+      toast.error(error.message || '創建班級失敗，請重試');
 
       // 恢复按鈕狀態
       const submitBtn = form.querySelector('button[type="submit"]');
@@ -456,7 +458,7 @@ class ClassUI {
       const emailListText = emailListInput.value.trim();
       
       if (!emailListText) {
-        this.showToast('warning', '請輸入學生郵箱列表');
+        toast.warning('請輸入學生郵箱列表');
         return;
       }
 
@@ -481,13 +483,13 @@ class ClassUI {
         message += `，${result.invalidEmails} 個無效郵箱已忽略`;
       }
 
-      this.showToast('success', message);
+      toast.success(message);
 
       // 刷新界面
       await this.render();
     } catch (error) {
       console.error('批量添加學生失敗:', error);
-      this.showToast('error', error.message || '添加學生失敗');
+      toast.error(error.message || '添加學生失敗');
     } finally {
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = '添加學生';
@@ -497,43 +499,47 @@ class ClassUI {
   /**
    * 處理移除學生
    */
-  async handleRemoveStudent(memberId, studentName, isPending) {
+  handleRemoveStudent(memberId, studentName, isPending) {
     const message = isPending
-      ? `確定移除待激活郵箱 ${studentName}？`
-      : `確定將 ${studentName} 移出班級？\n\n學生的作業記錄將保留，但將無法访问班級任務。`;
+      ? `確定移除待激活郵箱 <strong>${studentName}</strong>？`
+      : `確定將 <strong>${studentName}</strong> 移出班級？<br><br>學生的作業記錄將保留，但將無法访问班級任務。`;
     
-    const confirmed = confirm(message);
-    
-    if (!confirmed) return;
-
-    try {
-      await this.classManager.removeStudent(memberId, isPending);
-      this.showToast('success', isPending ? '已移除待激活郵箱' : `已將 ${studentName} 移出班級`);
-      
-      // 刷新界面
-      await this.render();
-    } catch (error) {
-      console.error('移除學生失敗:', error);
-      this.showToast('error', '移除學生失敗，請重試');
-    }
+    dialog.confirmDelete({
+      title: '確認移除',
+      message: message,
+      confirmText: '確認移除',
+      onConfirm: async () => {
+        try {
+          await this.classManager.removeStudent(memberId, isPending);
+          toast.success(isPending ? '已移除待激活郵箱' : `已將 ${studentName} 移出班級`);
+          await this.render();
+        } catch (error) {
+          console.error('移除學生失敗:', error);
+          toast.error('移除學生失敗，請重試');
+        }
+      }
+    });
   }
 
   /**
    * 處理停用班級
    */
-  async handleDeactivateClass() {
-    const confirmed = confirm('確定停用班級？\n\n學生將無法提交新作業，但可以查看現有作業。');
-    
-    if (!confirmed) return;
-
-    try {
-      await this.classManager.deactivateClass();
-      this.showToast('success', '班級已停用');
-      await this.render();
-    } catch (error) {
-      console.error('停用班級失敗:', error);
-      this.showToast('error', '停用班級失敗');
-    }
+  handleDeactivateClass() {
+    dialog.confirmWarning({
+      title: '確認停用',
+      message: '確定停用班級？<br><br>學生將無法提交新作業，但可以查看現有作業。',
+      confirmText: '確認停用',
+      onConfirm: async () => {
+        try {
+          await this.classManager.deactivateClass();
+          toast.warning('班級已停用');
+          await this.render();
+        } catch (error) {
+          console.error('停用班級失敗:', error);
+          toast.error('停用班級失敗');
+        }
+      }
+    });
   }
 
   /**

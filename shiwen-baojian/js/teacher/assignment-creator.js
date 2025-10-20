@@ -5,7 +5,7 @@
 
 import AssignmentManager from './assignment-manager.js';
 import FormatEditorCore from './format-editor-core.js';
-import toast from './toast.js';
+import toast from '../ui/toast.js';
 
 class AssignmentCreator {
   constructor(assignmentManager) {

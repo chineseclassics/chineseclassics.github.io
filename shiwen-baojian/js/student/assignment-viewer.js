@@ -3,6 +3,8 @@
  */
 
 import { AppState } from '../app.js';
+import toast from '../ui/toast.js';
+import dialog from '../ui/dialog.js';
 
 class StudentAssignmentViewer {
   constructor(supabaseClient) {
@@ -477,27 +479,27 @@ class StudentAssignmentViewer {
   /**
    * 刪除練筆作品
    */
-  async deletePracticeEssay(essayId) {
-    if (!confirm('確定要刪除這篇練筆嗎？此操作無法恢復。')) {
-      return;
-    }
+  deletePracticeEssay(essayId) {
+    dialog.confirmDelete({
+      message: '確定要刪除這篇練筆嗎？<br><br>此操作無法恢復。',
+      onConfirm: async () => {
+        try {
+          const { error } = await this.supabase
+            .from('essays')
+            .delete()
+            .eq('id', essayId);
 
-    try {
-      const { error } = await this.supabase
-        .from('essays')
-        .delete()
-        .eq('id', essayId);
+          if (error) throw error;
 
-      if (error) throw error;
-
-      console.log('✅ 練筆已刪除');
-      
-      // ✅ 強制刷新列表（不使用緩存）
-      await this.loadAndRenderAssignments(false);
-    } catch (error) {
-      console.error('❌ 刪除練筆失敗:', error);
-      alert('刪除失敗：' + error.message);
-    }
+          console.log('✅ 練筆已刪除');
+          toast.success('練筆已刪除！');
+          await this.loadAndRenderAssignments(false);
+        } catch (error) {
+          console.error('❌ 刪除練筆失敗:', error);
+          toast.error('刪除失敗：' + error.message);
+        }
+      }
+    });
   }
 
   /**

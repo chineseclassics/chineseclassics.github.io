@@ -12,7 +12,8 @@
  */
 
 import FormatEditorCore from './format-editor-core.js';
-import toast from './toast.js';
+import toast from '../ui/toast.js';
+import dialog from '../ui/dialog.js';
 
 class FormatTemplatePage {
   constructor(supabaseClient) {
@@ -510,7 +511,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       modal.classList.remove('hidden');
     } catch (error) {
       console.error('[FormatTemplatePage] 显示详情失败:', error);
-      alert('显示详情失败：' + error.message);
+      toast.error('顯示詳情失敗：' + error.message);
     }
   }
   
@@ -540,30 +541,35 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
   }
   
   /**
-   * 删除模板
+   * 刪除模板
    */
-  async deleteTemplate(templateId) {
-    if (!confirm('確定要刪除這個模板嗎？此操作無法撤銷。')) {
+  deleteTemplate(templateId) {
+    const template = this.allTemplates.find(t => t.id === templateId);
+    if (!template) {
+      toast.error('模板不存在');
       return;
     }
     
-    try {
-      const { error } = await this.supabase
-        .from('format_specifications')
-        .delete()
-        .eq('id', templateId);
-      
-      if (error) throw error;
-      
-      console.log('[FormatTemplatePage] 模板已删除:', templateId);
-      alert('✅ 模板已刪除');
-      
-      // 重新加载
-      await this.loadTemplates();
-    } catch (error) {
-      console.error('[FormatTemplatePage] 删除失败:', error);
-      alert('刪除失敗：' + error.message);
-    }
+    dialog.confirmDelete({
+      message: `確定要刪除「<strong>${template.name}</strong>」嗎？<br><br>此操作無法撤銷。`,
+      onConfirm: async () => {
+        try {
+          const { error } = await this.supabase
+            .from('format_specifications')
+            .delete()
+            .eq('id', templateId);
+          
+          if (error) throw error;
+          
+          console.log('[FormatTemplatePage] 模板已删除:', templateId);
+          toast.success('模板已刪除！');
+          await this.loadTemplates();
+        } catch (error) {
+          console.error('[FormatTemplatePage] 删除失败:', error);
+          toast.error('刪除失敗：' + error.message);
+        }
+      }
+    });
   }
   
   // ============================================================
@@ -824,7 +830,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       console.log('[FormatTemplatePage] 编辑器初始化完成');
     } catch (error) {
       console.error('[FormatTemplatePage] 编辑器初始化失败:', error);
-      alert('编辑器初始化失败：' + error.message);
+      toast.error('編輯器初始化失敗：' + error.message);
     }
   }
   
@@ -878,7 +884,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       console.log('[FormatTemplatePage] 格式已加载用于编辑，模式:', this.editorMode);
     } catch (error) {
       console.error('[FormatTemplatePage] 加载格式失败:', error);
-      alert('加载格式失败：' + error.message);
+      toast.error('加載格式失敗：' + error.message);
     }
   }
   
@@ -1024,7 +1030,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     const formatId = selector?.value;
     
     if (!formatId) {
-      alert('請先選擇系統格式');
+      toast.warning('請先選擇系統格式');
       return;
     }
     
@@ -1057,7 +1063,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       console.log('[FormatTemplatePage] 模板預覽已加載');
     } catch (error) {
       console.error('[FormatTemplatePage] 加載預覽失敗:', error);
-      alert('加載預覽失敗：' + error.message);
+      toast.error('加載預覽失敗：' + error.message);
     }
   }
   
@@ -1189,7 +1195,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
   async handleOptimize() {
     const text = this.currentQuill.getText().trim();
     if (!text) {
-      alert('請先輸入寫作要求');
+      toast.warning('請先輸入寫作指引');
       return;
     }
     
@@ -1231,7 +1237,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       console.log('[FormatTemplatePage] AI 优化完成，狀態已更新');
     } catch (error) {
       console.error('[FormatTemplatePage] AI 优化失败:', error);
-      alert('AI 優化失敗：' + error.message);
+      toast.error('AI 優化失敗：' + error.message);
       if (statusText) statusText.textContent = '優化失敗';
     } finally {
       if (aiProcessing) aiProcessing.classList.add('hidden');
@@ -1246,20 +1252,19 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
   handleSave() {
     const text = this.currentQuill?.getText().trim();
     if (!text) {
-      alert('請先輸入寫作要求');
+      toast.warning('請先輸入寫作指引');
       return;
     }
     
     // 🚨 階段 3.5.1.3：強制 AI 優化檢查邏輯
     if (!this.hasBeenOptimized && this.editorMode !== 'direct') {
-      alert('⚠️ 必須先經過 AI 優化才能保存！\n\n當前模式：' + 
-            (this.editorMode === 'incremental' ? '基於系統格式修改' : '從零開始自定義') +
-            '\n請點擊「AI 優化」按鈕進行優化。');
+      const modeText = this.editorMode === 'incremental' ? '基於系統格式修改' : '從零開始自定義';
+      toast.warning(`必須先經過 AI 優化才能保存！<br><br>當前模式：${modeText}<br>請點擊「AI 優化」按鈕進行優化。`, 4000);
       return;
     }
     
     if (!this.cachedFormat || !this.cachedFormat.spec_json) {
-      alert('請先使用 AI 優化格式');
+      toast.warning('請先使用 AI 優化格式');
       return;
     }
     
@@ -1276,13 +1281,13 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     const description = this.container.querySelector('#saveTemplateDesc')?.value.trim();
     
     if (!name) {
-      alert('請輸入模板名稱');
+      toast.warning('請輸入模板名稱');
       return;
     }
     
     // 🚨 修復：檢查是否有 spec_json（必須先 AI 優化）
     if (!this.cachedFormatJSON) {
-      alert('⚠️ 格式 JSON 不存在，請先使用 AI 優化！');
+      toast.warning('格式 JSON 不存在，請先使用 AI 優化！');
       return;
     }
     
@@ -1314,13 +1319,13 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       const dialog = this.container.querySelector('#saveDialog');
       if (dialog) dialog.classList.add('hidden');
       
-      alert(this.editingFormatId ? '✅ 模板已更新！' : '✅ 模板已保存！');
+      toast.success(this.editingFormatId ? '模板已更新！' : '模板已保存！');
       
       // 返回列表
       this.switchToListMode();
     } catch (error) {
       console.error('[FormatTemplatePage] 保存失败:', error);
-      alert('保存失敗：' + error.message);
+      toast.error('保存失敗：' + error.message);
     }
   }
   

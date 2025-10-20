@@ -3,6 +3,8 @@
  */
 
 import AssignmentManager from './assignment-manager.js';
+import toast from '../ui/toast.js';
+import dialog from '../ui/dialog.js';
 
 class AssignmentList {
   constructor(assignmentManager) {
@@ -157,9 +159,9 @@ class AssignmentList {
     });
 
     this.container.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
-        await this.handleDelete(id);
+        this.handleDelete(id);
       });
     });
   }
@@ -167,18 +169,29 @@ class AssignmentList {
   /**
    * 處理刪除任務
    */
-  async handleDelete(assignmentId) {
-    const confirmed = confirm('確定刪除此任務吗？此操作無法撤销。');
-    if (!confirmed) return;
-
-    try {
-      await this.assignmentManager.deleteAssignment(assignmentId, true);
-      await this.loadAndRenderAssignments();
-    } catch (error) {
-      alert('刪除失敗：' + error.message);
+  handleDelete(assignmentId) {
+    const assignment = this.assignments.find(a => a.id === assignmentId);
+    if (!assignment) {
+      toast.error('任務不存在');
+      return;
     }
+    
+    dialog.confirmDelete({
+      message: `確定要刪除任務「<strong>${assignment.title}</strong>」嗎？<br><br>此操作無法撤銷。`,
+      onConfirm: async () => {
+        try {
+          await this.assignmentManager.deleteAssignment(assignmentId, true);
+          toast.success('任務已刪除！');
+          await this.loadAndRenderAssignments();
+        } catch (error) {
+          console.error('刪除失敗:', error);
+          toast.error('刪除失敗：' + error.message);
+        }
+      }
+    });
   }
 }
 
 export default AssignmentList;
+
 

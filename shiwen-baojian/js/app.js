@@ -10,6 +10,7 @@
 import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
+import toast from './ui/toast.js';
 
 // ================================
 // 全局狀態管理
@@ -1144,7 +1145,7 @@ function showLoading(show = true) {
  * 顯示錯誤消息
  */
 function showError(message) {
-    alert(message); // 臨時使用 alert，後續替換為更優雅的提示
+    toast.error(message);
 }
 
 // ================================
