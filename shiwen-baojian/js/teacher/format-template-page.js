@@ -616,63 +616,6 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
           
           <!-- 编辑器区域 -->
           <div class="p-8">
-            <!-- 🚨 階段 3.5.2.4：選擇起點（僅在新建模式顯示） -->
-            ${!isEdit ? `
-            <div class="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <h4 class="text-sm font-semibold text-gray-700 mb-3">
-                <i class="fas fa-compass text-blue-500 mr-2"></i>選擇起點（可選）
-              </h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- 從零開始 -->
-                <div 
-                  id="templateStartScratch" 
-                  class="template-start-card p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer transition hover:shadow-md"
-                >
-                  <div class="flex items-center gap-3">
-                    <div style="font-size: 1.5rem;">✏️</div>
-                    <div class="flex-1">
-                      <h5 class="font-semibold text-blue-900 text-sm">從零開始</h5>
-                      <p class="text-xs text-blue-700">完全自定義</p>
-                    </div>
-                    <div class="template-start-check text-blue-600 font-bold" style="font-size: 1.2rem;">✓</div>
-                  </div>
-                </div>
-                
-                <!-- 基於系統格式 -->
-                <div 
-                  id="templateStartSystem" 
-                  class="template-start-card p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition hover:shadow-md hover:border-blue-400"
-                >
-                  <div class="flex items-center gap-3">
-                    <div style="font-size: 1.5rem;">📖</div>
-                    <div class="flex-1">
-                      <h5 class="font-semibold text-gray-800 text-sm">基於系統格式</h5>
-                      <p class="text-xs text-gray-600">選擇系統格式開始</p>
-                    </div>
-                    <div class="template-start-check text-blue-600 font-bold hidden" style="font-size: 1.2rem;">✓</div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- 系統格式選擇器（基於系統格式時顯示） -->
-              <div id="templateSystemSelector" class="mt-3 hidden">
-                <select 
-                  id="templateBaseFormatSelect"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- 選擇系統格式 --</option>
-                  <!-- 動態加載 -->
-                </select>
-                <button 
-                  id="templateLoadPreviewBtn"
-                  class="w-full mt-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
-                  disabled
-                >
-                  📄 加載預覽
-                </button>
-              </div>
-            </div>
-            ` : ''}
             
             <div class="mb-6">
               <label class="block text-sm font-semibold text-gray-700 mb-3">
@@ -923,29 +866,8 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       });
     }
     
-    // 🚨 階段 3.5.2.4：綁定選擇起點事件（僅新建模式）
-    if (!this.editingFormatId) {
-      const scratchCard = this.container.querySelector('#templateStartScratch');
-      const systemCard = this.container.querySelector('#templateStartSystem');
-      const baseFormatSelect = this.container.querySelector('#templateBaseFormatSelect');
-      const loadPreviewBtn = this.container.querySelector('#templateLoadPreviewBtn');
-      
-      if (scratchCard) {
-        scratchCard.onclick = () => this.selectTemplateStartPoint('scratch');
-      }
-      if (systemCard) {
-        systemCard.onclick = () => this.selectTemplateStartPoint('system');
-      }
-      if (baseFormatSelect) {
-        baseFormatSelect.onchange = (e) => {
-          const loadBtn = this.container.querySelector('#templateLoadPreviewBtn');
-          if (loadBtn) loadBtn.disabled = !e.target.value;
-        };
-      }
-      if (loadPreviewBtn) {
-        loadPreviewBtn.onclick = () => this.loadTemplatePreview();
-      }
-    }
+    // 🚨 簡化：「創建新模板」直接進入「從零開始」模式，無需選擇起點UI
+    // 相關的 UI 已移除（選擇起點卡片、系統格式選擇器等）
   }
   
   /**
