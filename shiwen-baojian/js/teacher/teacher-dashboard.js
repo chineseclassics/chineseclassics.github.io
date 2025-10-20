@@ -9,6 +9,7 @@ import AssignmentManager from './assignment-manager.js';
 import AssignmentCreator from './assignment-creator.js';
 import AssignmentList from './assignment-list.js';
 import GradingUI from './grading-ui.js';
+import FormatTemplatePage from './format-template-page.js';
 
 class TeacherDashboard {
   constructor(supabaseClient) {
@@ -19,6 +20,10 @@ class TeacherDashboard {
     this.assignmentCreator = new AssignmentCreator(this.assignmentManager);
     this.assignmentList = new AssignmentList(this.assignmentManager);
     this.gradingUI = new GradingUI(supabaseClient);
+    this.formatTemplatePage = new FormatTemplatePage(supabaseClient);
+    
+    // 设置全局引用（供模板库页面使用）
+    window.formatTemplatePageInstance = this.formatTemplatePage;
     
     this.currentPage = 'overview';
     this.container = null;
@@ -34,10 +39,9 @@ class TeacherDashboard {
       // 設置導航監聽
       this.setupNavigation();
       
-      // 渲染初始頁面（班級管理）
-      // 注意：不在這里初始化 AssignmentManager，因為可能還沒有班級
-      // AssignmentManager 會在有班級後按需初始化
-      await this.navigate('class-management');
+      // 渲染初始頁面（作業管理）
+      // 2025-10-20 更新：默認頁面從「班級管理」改為「作業管理」
+      await this.navigate('assignments');
     } catch (error) {
       console.error('初始化失敗:', error);
       this.renderError(error.message);
@@ -135,6 +139,10 @@ class TeacherDashboard {
           
         case 'grading':
           await this.gradingUI.render(mainContent, params.id);
+          break;
+          
+        case 'format-templates':
+          await this.formatTemplatePage.render(mainContent);
           break;
           
         default:

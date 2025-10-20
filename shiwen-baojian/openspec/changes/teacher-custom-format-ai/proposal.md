@@ -5,6 +5,12 @@
 > - 新定位：**智能写作辅导系统**（格式 + 内容要求）
 > - UI 统一使用：**「写作要求」**（而非「格式」）
 
+> **重要补充**（2025-10-20）：
+> - **集成到单页应用**：format-editor 和 format-manager 功能需完全集成到 index.html
+> - **导航栏统一**：班級管理 / 作業管理 / 模板庫
+> - **区分模板类型**：通用模板（可复用）vs 任务专属（一次性）
+> - **默认页面**：老师登录后默认显示"作業管理"
+
 ## Why
 
 ### 当前痛点
@@ -103,6 +109,18 @@
    - UI 文字统一使用「写作要求」
    - 代码层保持 `formatSpec` 等变量名（避免大规模重构）
    - 更准确反映系统实际功能
+
+8. **集成到单页应用** → ✅ **完全集成 + 区分模板类型**（2025-10-20 补充）
+   - 阶段 2 创建的独立页面需集成到 index.html
+   - 添加导航：**班級管理 / 作業管理 / 模板庫**
+   - 默认页面：老师登录后显示"作業管理"
+   - 区分写作要求类型：
+     - **通用模板**（is_template = true）：可复用，显示在模板库
+     - **任务专属**（is_template = false）：一次性，不显示在模板库
+   - 在任务创建界面添加展开式编辑器
+   - **草稿自动保存**：使用 localStorage 防止意外丢失
+   - 统一 UI 风格（index.html 蓝色主题）
+   - 复用现有代码，提取共享组件
 
 ---
 
@@ -208,6 +226,13 @@ ADD COLUMN human_input TEXT;  -- AI 优化后的结构化文本（学生端显�
 
 COMMENT ON COLUMN format_specifications.human_input IS 
 '保存 AI 优化后的结构化文本（非老师原始输入），学生端显示用。模式 A 使用预设自然语言，模式 B/C 使用 AI 优化后的文本。';
+
+-- 新增 is_template 字段（2025-10-20 补充）
+ALTER TABLE format_specifications
+ADD COLUMN is_template BOOLEAN DEFAULT false;
+
+COMMENT ON COLUMN format_specifications.is_template IS 
+'是否为通用模板。true = 可复用模板，显示在模板库；false = 任务专属写作要求，不显示在模板库。';
 ```
 
 **修改 `assignments` 表**：

@@ -11,8 +11,12 @@
 
 **分 3 个会话完成，每个会话一个阶段。**
 
-**总任务数**：81 个（78 个 MVP 必需 + 3 个可选）  
-**阶段划分**：22 个 + 29 个 + 27 个 = 78 个（MVP 必需）
+**总任务数**：111 个（108 个 MVP 必需 + 3 个可选）  
+**阶段划分**：23 个 + 41 个 + 14 个 + 30 个 = 108 个（MVP 必需）
+- 阶段 1（数据库 + AI）：23 个 ✅
+- 阶段 2（格式编辑器）：41 个 ✅
+- 阶段 3.1-3.3（集成）：14 个（进行中）
+- 阶段 3.4（单页应用集成）：30 个（2025-10-20 审查后确定）
 
 **划分原则**：
 - 每个阶段 20-30 个任务（可管理的范围，单次会话可完成）
@@ -335,7 +339,261 @@
   - 提交最终评分
   - 学生查看（只看到老师评分，看不到 AI 建议）
 
-**阶段 3 交付成果**：
+---
+
+### 3.4 集成到单页应用（补充任务，2025-10-20）
+
+**背景**：阶段 2 创建了独立页面（format-editor.html, format-manager.html），未集成到 index.html 单页应用，导致体验割裂。
+
+**核心设计**（方案 C：混合模式）：
+- ✅ 区分写作要求类型：通用模板（可复用）vs 任务专属（一次性）
+- ✅ 添加导航：班級管理 / 作業管理 / 模板庫
+- ✅ 默认页面：老师登录后显示"作業管理"
+- ✅ 完全集成功能到单页应用
+
+#### 3.4.1 数据库扩展 + 默认页面（2 个任务）
+
+- [ ] 3.4.1.1 创建数据库迁移 `019_add_is_template_field.sql`
+  - 添加 `format_specifications.is_template BOOLEAN DEFAULT false`
+  - 注释：区分通用模板（true）和任务专属（false）
+  - **自动更新系统格式**：`UPDATE ... SET is_template = true WHERE is_system = true`
+  - 在 Dashboard SQL Editor 手动执行
+
+- [ ] 3.4.1.2 修改 teacher-dashboard.js 默认页面
+  - 修改 `initialize()` 方法：约第 40 行
+  - 从 `await this.navigate('class-management')` 改为 `await this.navigate('assignments')`
+  - 测试：老师登录后默认看到"作業管理"
+
+#### 3.4.2 提取共享编辑器组件（5 个任务）⭐ 优化顺序：先做工具，后面直接用
+
+- [ ] 3.4.2.1 创建 `js/teacher/format-editor-core.js`（纯工具类）
+  - **设计为纯工具类**：所有方法都是 static，不持有状态
+  - 定义 `FormatEditorCore` 类
+  - Quill 初始化：`static initQuill(container, options)`
+  - 系统格式加载：`static async loadSystemFormat(formatId, supabase)`
+  - JSON → 人类可读：`static formatJSONToHumanReadable(json)`
+  - 复用 format-editor.js 的相关代码
+
+- [ ] 3.4.2.2 实现 AI 优化逻辑
+  - 静态方法：`static async optimizeWithAI(text, mode, baseFormatId, supabase)`
+  - 调用 format-spec-generator Edge Function
+  - 两阶段流程处理（已部署的函数）
+  - 返回：{ human_readable, format_json }
+  - 错误处理和日志
+
+- [ ] 3.4.2.3 实现格式保存逻辑
+  - 静态方法：`static async saveFormat(formatData, supabaseClient)`
+  - 支持创建（INSERT）和更新（UPDATE）
+  - 参数：{ name, description, essay_type, spec_json, human_input, is_template, parent_spec_id }
+  - 返回保存的格式对象（含 id）
+
+- [ ] 3.4.2.4 实现草稿自动保存（localStorage）
+  - 静态方法：`static setupDraftAutoSave(quill, draftKey)`
+  - **区分不同场景的 key**：
+    - 模板库：'format-editor-draft-template'
+    - 任务创建：'format-editor-draft-inline'
+  - 监听 Quill 内容变化：`quill.on('text-change', ...)`
+  - 自动保存到 localStorage
+  - 恢复草稿：`static loadDraft(draftKey)` → 返回草稿文本或 null
+  - 清除草稿：`static clearDraft(draftKey)`
+  - 页面加载时调用 loadDraft，询问用户是否恢复
+
+- [ ] 3.4.2.5 测试共享组件独立工作
+  - 创建测试页面或在控制台测试
+  - 验证所有方法正常工作
+  - 准备供其他组件使用
+
+#### 3.4.3 添加"模板庫"导航和路由（4 个任务）
+
+- [ ] 3.4.3.1 修改 index.html 导航栏文字和按钮
+  - 位置：老师端导航栏（约第 129-134 行）
+  - **修改现有按钮**：将「我的任務」改为「作業管理」
+  - **添加新按钮**：`<button class="nav-tab" data-page="format-templates"><i class="fas fa-bookmark"></i> 模板庫</button>`
+  - 最终导航栏：**班級管理 / 作業管理 / 模板庫**
+
+- [ ] 3.4.3.2 修改 teacher-dashboard.js 添加路由占位符
+  - 在文件开头添加 TODO 注释：`// TODO: import FormatTemplatePage from './format-template-page.js';`
+  - 在构造函数（约第 14-24 行）添加 TODO：`// TODO: this.formatTemplatePage = new FormatTemplatePage(supabaseClient);`
+  - 在 `navigate()` switch（约第 119-142 行）添加占位：
+    ```javascript
+    case 'format-templates':
+      // TODO: await this.formatTemplatePage.render(mainContent);
+      mainContent.innerHTML = '<div class="text-center py-12"><p class="text-gray-500">模板库开发中...</p></div>';
+      break;
+    ```
+
+- [ ] 3.4.3.3 测试导航切换（占位符版本）
+  - 点击三个导航按钮
+  - 验证页面切换正常（模板库显示"开发中"）
+  - 验证导航激活状态正确
+
+- [ ] 3.4.3.4 在 teacher-dashboard.js 取消注释（在 3.4.4.1 完成后）
+  - 取消 import 注释
+  - 取消构造函数注释
+  - 取消 switch 中的占位代码
+  - 启用真实的 formatTemplatePage.render()
+
+#### 3.4.4 创建模板库页面组件（5 个任务）⭐ 使用共享组件
+
+- [ ] 3.4.4.1 创建 `js/teacher/format-template-page.js`
+  - 导入 FormatEditorCore
+  - 定义类：`class FormatTemplatePage`
+  - 构造函数：初始化 supabase 和 editorCore
+  - 状态：currentMode ('list' | 'edit'), editingFormatId
+
+- [ ] 3.4.4.2 实现列表模式（复用 format-manager.js）
+  - `renderListMode(container)` 方法
+  - 查询：`(is_template = true OR is_system = true) AND (is_system = true OR created_by = userId)`
+  - 卡片网格布局（使用 index.html 风格）
+  - 搜索/筛选/排序功能
+  - **卡片操作**：
+    - 点击卡片 → 模态框显示 human_input（查看详情）
+    - 编辑按钮 → 切换到编辑模式
+    - 删除按钮 → 确认后删除（系统格式不显示删除按钮）
+  - 创建按钮：+ 创建新模板 → 切换到编辑模式（空白）
+
+- [ ] 3.4.4.3 实现编辑模式（使用 FormatEditorCore）
+  - `renderEditMode(container, formatId)` 方法
+  - 整页布局：返回按钮 + 标题 + Quill + 操作按钮
+  - 使用 `editorCore.initQuill()`
+  - 使用 `editorCore.optimizeWithAI()`
+  - 保存时设置 `is_template = true`（通用模板）
+
+- [ ] 3.4.4.4 实现模式切换
+  - `switchMode(mode, formatId)` 方法
+  - 列表 → 编辑：清空容器，渲染编辑模式
+  - 编辑 → 列表：清空容器，渲染列表模式，刷新数据
+  - 编辑器实例的正确销毁和创建
+
+- [ ] 3.4.4.5 测试模板库页面
+  - 导航到"模板庫"
+  - 查看模板列表（系统 + 自定义）
+  - 创建新模板 → 编辑 → AI 优化 → 保存 → 返回列表
+  - 编辑现有模板
+  - 删除模板
+  - 草稿自动保存和恢复
+
+#### 3.4.5 任务创建界面集成编辑器（7 个任务）⭐ 展开式
+
+- [ ] 3.4.5.1 修改 assignment-creator.js HTML 模板
+  - 在"寫作要求"section（约第 75-97 行）添加：
+    - 保留下拉菜单
+    - 添加"+ 创建新写作要求"按钮
+    - 添加展开编辑器区域（默认 `class="hidden"`）
+      - 起点选择按钮
+      - Quill 编辑器容器（id="inline-quill-editor"）
+      - 操作按钮：AI 优化、保存并使用、取消
+
+- [ ] 3.4.5.2 实现展开/折叠逻辑
+  - 添加状态：`isInlineEditorExpanded = false`
+  - 点击"创建新" → 展开编辑器，清空并禁用下拉菜单
+  - 点击"取消" → 折叠编辑器，启用下拉菜单（localStorage 已保护草稿）
+  - 保存成功 → 折叠编辑器，自动选中新格式
+
+- [ ] 3.4.5.3 集成 Quill 编辑器（使用 FormatEditorCore）
+  - 导入 FormatEditorCore
+  - 确保容器 ID 唯一：`#inline-quill-editor`（模板库用 `#template-editor`）
+  - 检查是否已初始化，避免重复创建
+  - 展开时初始化：`FormatEditorCore.initQuill('#inline-quill-editor', options)`
+  - 选择起点功能（从零/基于系统格式）
+  - 折叠时销毁 Quill 实例（避免内存泄漏）
+
+- [ ] 3.4.5.4 实现 AI 优化（使用 FormatEditorCore）
+  - 按钮绑定：调用 `editorCore.optimizeWithAI()`
+  - 显示加载状态（旋转图标）
+  - 成功后更新 Quill 内容
+
+- [ ] 3.4.5.5 实现保存对话框
+  - 模态框 HTML 结构
+  - 询问：○ 通用模板（可复用） ● 仅用于本次任务（默认）
+  - 输入：名称（必填）、描述（可选）
+  - 验证：名称不为空
+
+- [ ] 3.4.5.6 实现"保存并使用"流程
+  - 收集数据：human_input, spec_json, is_template
+  - 调用 `editorCore.saveFormat()`
+  - 刷新下拉菜单：重新调用 `loadFormatSpecifications()`
+  - 自动选中：`templateSelector.value = newFormatId`
+  - 折叠编辑器
+  - 清除 localStorage 草稿
+
+- [ ] 3.4.5.7 测试任务创建集成
+  - 已选格式时点击"创建新" → 清空选择，开启空白编辑器 ✅
+  - 从零创建 + AI 优化
+  - 保存为"通用模板" → 应显示在模板库
+  - 保存为"任务专属" → 不显示在模板库
+  - 自动选中新格式并继续创建任务
+
+#### 3.4.6 统一 UI 样式（3 个任务）
+
+- [ ] 3.4.6.1 统一颜色主题和组件样式
+  - 使用 index.html 的蓝色主题（#3498db）
+  - 按钮样式：btn-primary, btn-secondary
+  - 卡片样式：白色背景，圆角 8px，阴影
+  - 主要使用内联样式和 Tailwind classes
+
+- [ ] 3.4.6.2 确保响应式设计
+  - 移动端适配
+  - 编辑器在小屏幕正常显示
+  - 卡片网格自适应
+
+- [ ] 3.4.6.3 测试 UI 一致性
+  - 对比三个页面的视觉风格
+  - 确保完美融入 index.html
+  - 无样式冲突
+
+#### 3.4.7 完整集成测试（2 个任务）
+
+- [ ] 3.4.7.1 测试完整用户流程
+  - 登录 → 默认看到"作業管理" ✅
+  - 导航到"模板庫" → 查看/创建/编辑模板 ✅
+  - 导航到"作業管理" → 创建任务 ✅
+  - 在任务创建中创建新写作要求（展开式）✅
+  - 保存为通用模板 → 在模板库中可见 ✅
+  - 保存为任务专属 → 在模板库中不可见 ✅
+
+- [ ] 3.4.7.2 验证所有核心功能
+  - 引用模式：老师修改模板，学生实时看到 ✅
+  - 草稿保存：刷新页面不丢失内容 ✅
+  - UI 统一：完美融入 index.html ✅
+  - 三个页面导航流畅 ✅
+
+#### 3.4.8 清理和文档（2 个任务）
+
+- [ ] 3.4.8.1 决定独立页面的处理
+  - 测试集成版本完全正常后
+  - 保留 format-editor.html 和 format-manager.html 作为备用
+  - 可能删除 format-editor.js 和 format-manager.js（逻辑已提取）
+  - 或全部保留（允许直接链接访问）
+
+- [ ] 3.4.8.2 更新文档
+  - 创建 INTEGRATION_COMPLETE.md（集成完成总结）
+  - 更新 tasks.md 状态
+  - 更新 proposal.md
+  - 记录最终架构和文件组织
+
+**阶段 3.4 小计**：30 个任务（优化后的顺序，2025-10-20 审查后更新）
+
+**关键调整**：
+- ✅ FormatEditorCore 设计为纯工具类（静态方法）
+- ✅ 草稿保存区分场景（template / inline）
+- ✅ 导航文字更新（我的任務 → 作業管理）
+- ✅ 导入顺序优化（先占位，后启用）
+- ✅ 查看功能澄清（模态框显示详情）
+
+**实施顺序说明**：
+1. 数据库准备（3.4.1）- 2 个任务
+2. 提取共享工具（3.4.2）- 5 个任务 ← 先做好"轮子"
+3. 添加导航框架（3.4.3）- 4 个任务
+4. 实现模板库页面（3.4.4）- 5 个任务 ← 使用共享工具
+5. 实现任务创建集成（3.4.5）- 7 个任务 ← 使用共享工具
+6. 统一样式（3.4.6）- 3 个任务
+7. 测试（3.4.7）- 2 个任务
+8. 清理（3.4.8）- 2 个任务
+
+---
+
+**阶段 3 交付成果**（2025-10-20 更新）：
 - ✅ 引用模式：老师修改写作要求后，学生看到最新内容
 - ✅ 移除任务描述字段：避免与写作要求混淆
 - ✅ 学生看到自然语言：AI 优化后的结构化文本，易于理解
@@ -344,11 +602,16 @@
 - ✅ AI 评分建议：基于选定标准，只客观评分
 - ✅ RLS 策略保护：学生不可见 AI 评分建议
 - ✅ UI 文字统一：所有界面使用「写作要求」
+- ✅ **完全集成到单页应用**（阶段 3.4 补充）：
+  - 导航栏：班級管理 / 作業管理 / 模板庫
+  - 模板库页面：管理可复用模板
+  - 任务创建集成：展开式编辑器
+  - 区分模板类型：通用 vs 任务专属
 - ✅ 系统完全集成，生产就绪
 
 ---
 
-## 📊 总任务统计（2025-10-20 最终确认）
+## 📊 总任务统计（2025-10-20 最终更新）
 
 **阶段 1：数据库 + AI 核心引擎**
 - 1.1 数据库准备：5 个任务
@@ -362,18 +625,21 @@
 - 2.3 复制功能：4 个任务（MVP）
 - **小计：29 个任务** ✅ 已完成
 
-**阶段 3：任务集成 + AI 评分系统**（2025-10-20 调整）
+**阶段 3：任务集成 + AI 评分系统**（2025-10-20 扩展）
 - 3.1 任务创建集成 + 学生端显示：9 个任务
 - 3.2 AI 评分 Edge Function：10 个任务
 - 3.3 AI 评分 UI：8 个任务
-- **小计：27 个任务** ⏳ 待实施
+- **3.4 集成到单页应用**（补充任务）：28 个任务 ⭐
+- **小计：55 个任务** ⏳ 部分完成（13/55）
 
-**总计：78 个任务**（MVP 必需）+ **3 个可选任务**（Word/PDF 导出）= **81 个任务**
+**总计：106 个任务**（MVP 必需）+ **3 个可选任务**（Word/PDF 导出）= **109 个任务**
 
 **任务分布**：
-- 阶段 1：22 个任务（28%）✅ 已完成
-- 阶段 2：29 个任务（37%）✅ 已完成
-- 阶段 3：27 个任务（35%）⏳ 待实施
+- 阶段 1：22 个任务（21%）✅ 已完成
+- 阶段 2：29 个任务（27%）✅ 已完成
+- 阶段 3：55 个任务（52%）⏳ 部分完成
+  - 3.1-3.3：27 个任务（13 已完成，14 待测试）
+  - 3.4 集成：28 个任务（0 已完成，28 待实施）
 
 **关键设计决策**（2025-10-20 最终确认）：
 - ✅ **引用模式**：assignments.format_spec_id（实时生效）
@@ -384,24 +650,32 @@
 - ✅ **评分标准多选**：老师可选择使用部分标准（如只用 A/C/D）
 - ✅ **手动触发 AI 评分**：按钮点击触发
 - ✅ **手动部署 Edge Function**：Dashboard 复制粘贴
+- ✅ **集成到单页应用**（补充决策）：
+  - 导航栏统一：班級管理 / 作業管理 / 模板庫
+  - 默认页面：作業管理
+  - 区分模板类型：通用模板（is_template=true）vs 任务专属（false）
+  - 展开式编辑器：在任务创建界面内联编辑
+  - UI 风格统一：index.html 蓝色主题
 
 ---
 
 ## 🎯 当前状态
 
-**状态**：阶段 1-2-3 功能代码已完成，等待测试  
+**状态**：阶段 1-2-3.1~3.3 功能代码已完成，发现集成问题，需补充 3.4
 **完成日期**：
 - 2025-10-19（阶段 1-2）
-- 2025-10-20（阶段 3 功能代码）
-**进度**：64/78 任务（82%）
+- 2025-10-20（阶段 3.1-3.3 功能代码）
+- 2025-10-20（发现集成问题，规划 3.4）
+**进度**：64/106 任务（60%）
 
 **已完成**：
 - ✅ 阶段 1：数据库 + AI 核心引擎（22/22 任务）
-- ✅ 阶段 2：统一 Quill 编辑器 + 格式管理（29/29 任务）
-- ✅ 阶段 3：任务集成 + AI 评分系统（13/27 任务，功能代码已全部完成）
+- ✅ 阶段 2：统一 Quill 编辑器 + 格式管理（29/29 任务，独立页面）
+- ⏳ 阶段 3：任务集成 + AI 评分系统（13/55 任务）
   - ✅ 3.1 任务创建集成（8/9 完成，剩 1 个测试任务）
-  - ✅ 3.2 AI 评分 Edge Function（8/10 完成，剩 2 个部署/测试任务）
+  - ✅ 3.2 AI 评分 Edge Function（9/10 完成，剩 1 个测试任务）
   - ✅ 3.3 AI 评分 UI（5/8 完成，剩 3 个测试任务）
+  - ⏳ 3.4 集成到单页应用（0/28 任务，规划中）
 
 **阶段 3 设计方案已确认**（2025-10-20）：
 - ✅ 引用模式 vs 快照模式 → 选择**引用模式**
@@ -411,6 +685,11 @@
 - ✅ UI 文字统一 → 所有界面使用**「写作要求」**（代码保持 formatSpec）
 - ✅ 评分标准选择 → **单选标准集 + 多选具体标准**
 - ✅ AI 评分触发 → **手动触发**（按钮点击）
+- ✅ **集成架构**（2025-10-20 补充）：
+  - 导航栏：**班級管理 / 作業管理 / 模板庫**
+  - 默认页面：**作業管理**
+  - 模板类型：**通用模板**（is_template=true）vs **任务专属**（false）
+  - 编辑器形式：**模板库=整页切换**，**任务创建=展开式**
 
 **依赖的已完成功能**：
 - ✅ 任务管理系统（老师可创建任务）
