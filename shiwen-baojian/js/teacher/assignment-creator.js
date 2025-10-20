@@ -823,27 +823,26 @@ class AssignmentCreator {
       // 关闭对话框
       this.container.querySelector('#saveFormatDialog').classList.add('hidden');
       
-      // 折叠编辑器
-      this.collapseInlineEditor();
-      
       // 重新加载写作要求列表
       await this.loadFormatSpecifications();
       
-      // 自动选中保存的格式
-      const templateSelector = this.container.querySelector('#templateSelector');
-      templateSelector.value = result.id;
-      this.selectedTemplateId = result.id;
-      
-      // 重新展开并显示（现在是已保存的版本）
-      await this.handleTemplateChange(result.id);
-      
-      const message = this.currentEditingFormatId && !this.isEditingSystemTemplate
-        ? '✅ 寫作要求已更新！'
-        : formatType === 'template'
-          ? '✅ 通用模板已保存！您可以在模板庫中查看和編輯。'
-          : '✅ 寫作要求已保存！';
-      
-      alert(message);
+      // 🚨 修復：保存後的處理
+      if (formatType === 'template') {
+        // 通用模板：提示用戶到模板庫查看
+        alert('✅ 通用模板已保存！您可以在「寫作模板庫」頁面中查看和編輯。');
+        this.collapseInlineEditor();
+      } else {
+        // 任務專用格式：自動選中
+        const formatSelector = this.container.querySelector('#formatSelector');
+        if (formatSelector) {
+          formatSelector.value = result.id;
+          formatSelector.disabled = false;  // 重新啟用下拉菜單
+        }
+        this.selectedTemplateId = result.id;
+        this.collapseInlineEditor();
+        
+        alert('✅ 寫作要求已保存！請繼續完成任務設置。');
+      }
     } catch (error) {
       console.error('[AssignmentCreator] 保存失败:', error);
       alert('保存失敗：' + error.message);
@@ -924,83 +923,6 @@ class AssignmentCreator {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-  }
-
-  /**
-   * 處理模板變更（從 Supabase 查詢）
-   */
-  async handleTemplateChange(templateId) {
-    if (!templateId) {
-      this.selectedTemplate = null;
-      this.selectedTemplateId = null;
-      this.collapseInlineEditor();
-      return;
-    }
-
-    // 如果选择"从零开始创建"
-    if (templateId === '__create_new__') {
-      this.selectedTemplate = null;
-      this.selectedTemplateId = null;
-      this.currentEditingFormatId = null;
-      this.isEditingSystemTemplate = false;
-      
-      // 🚨 階段 3.5.1：設置正確的模式和狀態
-      this.currentMode = 'custom';
-      this.hasBeenOptimized = false;
-      this.originalContent = '';
-      this.cachedFormatJSON = null;
-      
-      this.expandInlineEditor();
-      return;
-    }
-
-    try {
-      // 從 Supabase 查詢寫作要求詳情
-      const { data: formatSpec, error } = await this.assignmentManager.supabase
-        .from('format_specifications')
-        .select('*')
-        .eq('id', templateId)
-        .single();
-
-      if (error) throw error;
-      
-      this.selectedTemplate = formatSpec;
-      this.selectedTemplateId = templateId;
-      this.currentEditingFormatId = formatSpec.is_system ? null : templateId;
-      this.isEditingSystemTemplate = formatSpec.is_system;
-
-      // 🚨 階段 3.5.1：設置正確的模式和狀態
-      // 如果是系統格式，模式為 direct；如果是自定義格式，模式為 custom（可編輯）
-      if (formatSpec.is_system) {
-        this.currentMode = 'direct';
-        this.hasBeenOptimized = true;  // 系統格式已經優化過
-        this.cachedFormatJSON = formatSpec.spec_json;
-      } else {
-        this.currentMode = 'custom';
-        this.hasBeenOptimized = true;  // 已保存的格式視為已優化
-        this.cachedFormatJSON = formatSpec.spec_json;
-      }
-
-      // 展开编辑器并显示内容
-      this.expandInlineEditor();
-      
-      // 在编辑器中显示 human_input
-      if (this.inlineQuill && formatSpec.human_input) {
-        this.inlineQuill.setText(formatSpec.human_input);
-        this.originalContent = formatSpec.human_input;  // 設置基線內容
-      }
-      
-      // 更新按鈕狀態和狀態面板
-      this.updateButtonStates();
-      this.updateStatus();
-
-      console.log('✅ 已選擇寫作要求:', formatSpec.name, 
-                  formatSpec.is_system ? '（系統模板）' : '（自定義模板）',
-                  '模式:', this.currentMode);
-    } catch (error) {
-      console.error('加載寫作要求失敗:', error);
-      alert('加載寫作要求失敗：' + error.message);
-    }
   }
 
   /**
