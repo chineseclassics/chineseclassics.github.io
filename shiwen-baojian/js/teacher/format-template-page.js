@@ -830,22 +830,33 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         this.originalContent = format.human_input;  // 設置基線內容
       }
       
-      // 🚨 階段 3.5.1：設置編輯模式的正確狀態
+      // 🚨 階段 3.5.1 + 修復：設置編輯模式的正確狀態
       if (format.is_system) {
+        // 系統格式：基於此創建（不是更新）
         this.editorMode = 'direct';
         this.hasBeenOptimized = true;  // 系統格式已經優化過
         this.cachedFormatJSON = format.spec_json;
+        this.editingFormatId = null;  // 🚨 重要：清空 editingFormatId，避免誤更新系統格式
       } else {
+        // 自定義格式：真正的編輯模式
         this.editorMode = 'custom';
         this.hasBeenOptimized = true;  // 已保存的格式視為已優化
         this.cachedFormatJSON = format.spec_json;
+        // 保留 this.editingFormatId 用於更新
       }
       
-      // 预填保存对话框
+      // 🚨 修復：預填保存對話框（系統格式加「副本」標記）
       const nameInput = this.container.querySelector('#saveTemplateName');
       const descInput = this.container.querySelector('#saveTemplateDesc');
-      if (nameInput) nameInput.value = format.name || '';
-      if (descInput) descInput.value = format.description || '';
+      if (format.is_system) {
+        // 系統格式：基於此創建，名稱加「副本」
+        if (nameInput) nameInput.value = format.name + '（副本）';
+        if (descInput) descInput.value = '基於系統格式「' + format.name + '」創建';
+      } else {
+        // 自定義格式：真正編輯，保留原名稱
+        if (nameInput) nameInput.value = format.name || '';
+        if (descInput) descInput.value = format.description || '';
+      }
       
       // 更新按鈕狀態和狀態面板
       this.updateButtonStates();
