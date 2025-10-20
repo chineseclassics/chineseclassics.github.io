@@ -12,6 +12,7 @@
  */
 
 import FormatEditorCore from './format-editor-core.js';
+import toast from './toast.js';
 
 class FormatTemplatePage {
   constructor(supabaseClient) {
@@ -71,15 +72,15 @@ class FormatTemplatePage {
         <!-- 页面标题 -->
         <div class="mb-6 flex justify-between items-center">
           <div>
-            <h2 class="text-2xl font-bold text-gray-900">📚 寫作要求模板庫</h2>
-            <p class="text-gray-600 mt-1">查看和管理可複用的寫作要求模板</p>
+            <h2 class="text-2xl font-bold text-gray-900">📚 寫作指引模板庫</h2>
+            <p class="text-gray-600 mt-1">查看和管理可複用的寫作指引模板</p>
           </div>
           <button 
             id="createNewBtn"
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             style="box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);"
           >
-            ➕ 創建新寫作要求模板
+            ➕ 創建新寫作指引模板
           </button>
         </div>
         
@@ -151,17 +152,23 @@ class FormatTemplatePage {
       
       <!-- 查看详情模态框 -->
       <div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="p-6">
-            <div class="flex justify-between items-start mb-4">
-              <h3 class="text-2xl font-bold text-gray-900" id="detailTitle">模板詳情</h3>
-              <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times text-xl"></i>
-              </button>
-            </div>
-            <div id="detailContent" class="prose max-w-none">
-              <!-- 动态填充 -->
-            </div>
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+            <h3 class="text-xl font-semibold text-gray-900" id="detailTitle">模板詳情</h3>
+            <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-600">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          <div id="detailContent" class="px-6 py-4 overflow-y-auto flex-1">
+            <!-- 动态填充 -->
+          </div>
+          <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
+            <button id="closeDetailModalBtn2" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
+              關閉
+            </button>
+            <button id="copyDetailBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+              <i class="fas fa-copy mr-1"></i>複製說明
+            </button>
           </div>
         </div>
       </div>
@@ -191,11 +198,23 @@ class FormatTemplatePage {
     
     // 关闭模态框
     const closeModalBtn = this.container.querySelector('#closeDetailModalBtn');
+    const closeModalBtn2 = this.container.querySelector('#closeDetailModalBtn2');
+    const copyDetailBtn = this.container.querySelector('#copyDetailBtn');
+    
     if (closeModalBtn) {
       closeModalBtn.onclick = () => {
         const modal = this.container.querySelector('#detailModal');
         if (modal) modal.classList.add('hidden');
       };
+    }
+    if (closeModalBtn2) {
+      closeModalBtn2.onclick = () => {
+        const modal = this.container.querySelector('#detailModal');
+        if (modal) modal.classList.add('hidden');
+      };
+    }
+    if (copyDetailBtn) {
+      copyDetailBtn.onclick = () => this.copyFormatDescription();
     }
     
     // 🚨 階段 3.5.3.1-3.5.3.2：搜索、篩選和排序事件
@@ -360,7 +379,7 @@ class FormatTemplatePage {
         <div class="col-span-full">
           <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
             <i class="fas fa-star text-yellow-500 mr-2"></i>
-            系統寫作要求模板
+            系統寫作指引模板
             <span class="ml-2 text-sm text-gray-500 font-normal">(${systemTemplates.length})</span>
           </h3>
         </div>
@@ -374,7 +393,7 @@ class FormatTemplatePage {
         <div class="col-span-full mt-6">
           <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
             <i class="fas fa-user-edit text-blue-500 mr-2"></i>
-            我的寫作要求模板
+            我的寫作指引模板
             <span class="ml-2 text-sm text-gray-500 font-normal">(${customTemplates.length})</span>
           </h3>
         </div>
@@ -396,8 +415,7 @@ class FormatTemplatePage {
       : '<span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-medium">自定義</span>';
     
     return `
-      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-all border border-gray-200 cursor-pointer overflow-hidden"
-           onclick="window.formatTemplatePageInstance.showDetail('${template.id}')"
+      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-all border border-gray-200 overflow-hidden"
            style="transition: all 0.2s ease;">
         <div class="p-6">
           <div class="flex justify-between items-start mb-3">
@@ -406,19 +424,25 @@ class FormatTemplatePage {
           </div>
           <h3 class="text-lg font-bold text-gray-900 mb-2 leading-tight">${this.escapeHtml(template.name)}</h3>
           <p class="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
-            ${this.escapeHtml(template.description || '點擊查看詳細寫作要求')}
+            ${this.escapeHtml(template.description || '點擊查看按鈕查看詳細寫作要求')}
           </p>
         </div>
         <div class="px-6 pb-4 flex gap-2 border-t border-gray-100 pt-4">
           <button 
-            onclick="event.stopPropagation(); window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
+            onclick="window.formatTemplatePageInstance.showDetail('${template.id}')"
+            class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition text-sm font-medium"
+          >
+            <i class="fas fa-eye mr-1"></i>查看
+          </button>
+          <button 
+            onclick="window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
             class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition text-sm font-medium"
           >
             <i class="fas fa-edit mr-1"></i>${isSystem ? '基於此創建' : '編輯'}
           </button>
           ${!isSystem ? `
             <button 
-              onclick="event.stopPropagation(); window.formatTemplatePageInstance.deleteTemplate('${template.id}')"
+              onclick="window.formatTemplatePageInstance.deleteTemplate('${template.id}')"
               class="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition text-sm font-medium"
             >
               <i class="fas fa-trash mr-1"></i>刪除
@@ -436,6 +460,9 @@ class FormatTemplatePage {
     try {
       const template = this.allTemplates.find(t => t.id === templateId);
       if (!template) throw new Error('模板不存在');
+      
+      // 保存當前顯示的模板，供複製功能使用
+      this.currentDetailTemplate = template;
       
       const modal = this.container.querySelector('#detailModal');
       const title = this.container.querySelector('#detailTitle');
@@ -506,17 +533,22 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
    */
   async copyFormatDescription(templateId) {
     try {
+      // 如果沒有傳入 templateId，從當前顯示的模態窗口中獲取
+      if (!templateId && this.currentDetailTemplate) {
+        templateId = this.currentDetailTemplate.id;
+      }
+      
       const template = this.allTemplates.find(t => t.id === templateId);
       if (!template) throw new Error('模板不存在');
       
       const textToCopy = template.human_input || '（暫無內容）';
       
       await navigator.clipboard.writeText(textToCopy);
-      alert('✅ 格式說明已複製到剪貼板！');
+      toast.success('格式說明已複製到剪貼板！');
       console.log('[FormatTemplatePage] 已複製格式說明:', template.name);
     } catch (error) {
       console.error('[FormatTemplatePage] 複製失敗:', error);
-      alert('❌ 複製失敗：' + error.message);
+      toast.error('複製失敗：' + error.message);
     }
   }
   
@@ -572,8 +604,8 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     this.container = container;  // 保存 container 引用
     
     const isEdit = !!this.editingFormatId;
-    const title = isEdit ? '編輯寫作要求模板' : '創建新寫作要求模板';
-    const subtitle = isEdit ? '修改現有模板的寫作要求' : '使用 AI 輔助生成結構化的寫作要求模板';
+    const title = isEdit ? '編輯寫作指引模板' : '創建新寫作指引模板';
+    const subtitle = isEdit ? '修改現有模板的寫作指引' : '使用 AI 輔助生成結構化的寫作指引模板';
     
     container.innerHTML = `
       <div class="max-w-5xl mx-auto">
@@ -655,14 +687,14 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
             
             <div class="mb-6">
               <label class="block text-sm font-semibold text-gray-700 mb-3">
-                <i class="fas fa-edit text-blue-500 mr-2"></i>寫作要求內容
+                <i class="fas fa-edit text-blue-500 mr-2"></i>寫作指引內容
               </label>
               <div id="template-editor" class="border-2 border-gray-200 rounded-lg p-4 bg-white" style="min-height: 400px;">
                 <!-- Quill 将在这里初始化 -->
               </div>
               <p class="text-sm text-gray-500 mt-2">
                 <i class="fas fa-info-circle mr-1"></i>
-                輸入您的寫作要求，然後使用 AI 優化以生成結構化版本
+                輸入您的寫作指引，然後使用 AI 優化以生成結構化版本
               </p>
             </div>
             
@@ -715,7 +747,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         <div id="saveDialog" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4 text-white">
-              <h3 class="text-xl font-bold">💾 保存寫作要求模板</h3>
+              <h3 class="text-xl font-bold">💾 保存寫作指引模板</h3>
             </div>
             <div class="p-6 space-y-4">
               <div>
@@ -726,7 +758,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                   id="saveTemplateName"
                   type="text" 
                   class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                  placeholder="例如：紅樓夢人物分析寫作要求模板"
+                  placeholder="例如：紅樓夢人物分析寫作指引模板"
                 />
               </div>
               <div>

@@ -5,6 +5,7 @@
 
 import AssignmentManager from './assignment-manager.js';
 import FormatEditorCore from './format-editor-core.js';
+import toast from './toast.js';
 
 class AssignmentCreator {
   constructor(assignmentManager) {
@@ -109,7 +110,7 @@ class AssignmentCreator {
             <div id="inlineEditorContainer" class="hidden" style="margin-top: 1.5rem; border: 2px solid #3498db; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
               <div class="flex justify-between items-center mb-4">
                 <h4 class="text-lg font-bold text-gray-900">
-                  <i class="fas fa-magic text-purple-600 mr-2"></i>創建新寫作要求
+                  <i class="fas fa-magic text-purple-600 mr-2"></i>編輯寫作指引
                 </h4>
                 <button 
                   type="button"
@@ -165,7 +166,7 @@ class AssignmentCreator {
           <!-- 保存写作要求对话框 -->
           <div id="saveFormatDialog" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-lg max-w-md w-full p-6">
-              <h3 class="text-xl font-bold mb-4">保存寫作要求</h3>
+              <h3 class="text-xl font-bold mb-4">保存寫作指引</h3>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">保存類型</label>
@@ -178,7 +179,7 @@ class AssignmentCreator {
                         checked
                         class="mr-2"
                       />
-                      <span>本次任務專用（寫作要求）</span>
+                      <span>本次任務專用（寫作指引）</span>
                     </label>
                     <label class="flex items-center cursor-pointer">
                       <input 
@@ -187,11 +188,11 @@ class AssignmentCreator {
                         value="template"
                         class="mr-2"
                       />
-                      <span>通用模板（寫作要求模板，可複用）</span>
+                      <span>通用模板（寫作指引模板，可複用）</span>
                     </label>
                   </div>
                   <p class="text-xs text-gray-500 mt-2">
-                    💡 提示：模板類請在名稱中加「模板」二字，如「紅樓夢人物分析寫作要求模板」
+                    💡 提示：模板類請在名稱中加「模板」二字，如「紅樓夢人物分析寫作指引模板」
                   </p>
                 </div>
                 <div>
@@ -200,7 +201,7 @@ class AssignmentCreator {
                     id="saveFormatName"
                     type="text" 
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder="例如：紅樓夢人物分析寫作要求"
+                    placeholder="例如：紅樓夢人物分析寫作指引"
                   />
                 </div>
                 <div>
@@ -209,7 +210,7 @@ class AssignmentCreator {
                     id="saveFormatDesc"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg"
                     rows="3"
-                    placeholder="簡要描述這個寫作要求..."
+                    placeholder="簡要描述這個寫作指引..."
                   ></textarea>
                 </div>
               </div>
@@ -427,7 +428,7 @@ class AssignmentCreator {
       console.log('[AssignmentCreator] 格式已加載:', format.name, '模式:', this.currentMode);
     } catch (error) {
       console.error('[AssignmentCreator] 加載格式失敗:', error);
-      alert('加載格式失敗：' + error.message);
+      toast.error('加載格式失敗：' + error.message);
     }
   }
 
@@ -483,7 +484,7 @@ class AssignmentCreator {
     if (!this.inlineQuill) {
       try {
         this.inlineQuill = FormatEditorCore.initQuill('#inline-quill-editor', {
-          placeholder: '請輸入寫作要求...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
+          placeholder: '請輸入寫作指引...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
         });
         
         // 设置草稿自动保存
@@ -503,7 +504,7 @@ class AssignmentCreator {
         console.log('[AssignmentCreator] 内联编辑器已初始化');
       } catch (error) {
         console.error('[AssignmentCreator] 编辑器初始化失败:', error);
-        alert('编辑器初始化失败：' + error.message);
+        toast.error('編輯器初始化失敗：' + error.message);
       }
     }
     
@@ -675,7 +676,7 @@ class AssignmentCreator {
     
     const text = this.inlineQuill.getText().trim();
     if (!text) {
-      alert('請先輸入寫作要求');
+      toast.warning('請先輸入寫作指引');
       return;
     }
     
@@ -713,11 +714,11 @@ class AssignmentCreator {
       this.updateButtonStates();
       this.updateStatus();
       
-      alert('✅ AI 優化完成！');
+      toast.success('AI 優化完成！可以點擊「保存並使用」了');
       console.log('[AssignmentCreator] AI 优化完成，狀態已更新');
     } catch (error) {
       console.error('[AssignmentCreator] AI 优化失败:', error);
-      alert('AI 優化失敗：' + error.message);
+      toast.error('AI 優化失敗：' + error.message);
     } finally {
       processingDiv.classList.add('hidden');
       // 不要在這裡禁用按鈕，讓 updateButtonStates 控制
@@ -731,21 +732,20 @@ class AssignmentCreator {
   handleInlineSave() {
     const text = this.inlineQuill?.getText().trim();
     if (!text) {
-      alert('請先輸入寫作要求');
+      toast.warning('請先輸入寫作指引');
       return;
     }
     
     // 🚨 階段 3.5.1.3：強制 AI 優化檢查邏輯
     if (!this.hasBeenOptimized && this.currentMode !== 'direct') {
-      alert('⚠️ 必須先經過 AI 優化才能保存！\n\n當前模式：' + 
-            (this.currentMode === 'incremental' ? '基於系統格式修改' : '從零開始自定義') +
-            '\n請點擊「AI 優化」按鈕進行優化。');
+      const modeText = this.currentMode === 'incremental' ? '基於系統格式修改' : '從零開始自定義';
+      toast.warning(`必須先經過 AI 優化才能保存！<br><br>當前模式：${modeText}<br>請點擊「AI 優化」按鈕進行優化。`, 4000);
       return;
     }
     
     // 🚨 統一使用 cachedFormatJSON 檢查
     if (!this.cachedFormatJSON) {
-      alert('請先使用 AI 優化生成格式 JSON');
+      toast.warning('請先使用 AI 優化生成格式 JSON');
       return;
     }
     
@@ -782,7 +782,7 @@ class AssignmentCreator {
     const formatType = this.container.querySelector('input[name="formatType"]:checked')?.value;
     
     if (!name) {
-      alert('請輸入名稱');
+      toast.warning('請輸入名稱');
       return;
     }
     
@@ -839,7 +839,7 @@ class AssignmentCreator {
           formatSelector.value = result.id;
         }
         
-        alert('✅ 寫作要求模板已保存！\n\n已自動選中此模板，您可以直接使用或繼續修改。');
+        toast.success('寫作指引模板已保存！<br>已自動選中此模板，您可以直接使用或繼續修改。', 4000);
       } else {
         // 任務專用格式：記錄為當前任務專用
         this.currentTaskFormatId = result.id;
@@ -857,11 +857,11 @@ class AssignmentCreator {
           formatSelector.value = result.id;
         }
         
-        alert('✅ 寫作要求已保存！\n\n已自動選中，您可以繼續完成任務設置。');
+        toast.success('寫作指引已保存！<br>已自動選中，您可以繼續完成任務設置。', 4000);
       }
     } catch (error) {
       console.error('[AssignmentCreator] 保存失败:', error);
-      alert('保存失敗：' + error.message);
+      toast.error('保存失敗：' + error.message);
     }
   }
 
@@ -906,21 +906,21 @@ class AssignmentCreator {
           taskOptgroup.label = '📝 本次任務';
           const option = document.createElement('option');
           option.value = taskFormat.id;
-          option.textContent = taskFormat.name;  // 使用原名稱（應為「XXX 寫作要求」）
+          option.textContent = taskFormat.name;  // 使用原名稱（應為「XXX 寫作指引」）
           taskOptgroup.appendChild(option);
           selector.appendChild(taskOptgroup);
         }
       }
 
-      // 添加系統寫作要求模板
+      // 添加系統寫作指引模板
       const systemFormats = formats.filter(f => f.is_system);
       if (systemFormats.length > 0) {
         const systemOptgroup = document.createElement('optgroup');
-        systemOptgroup.label = '📚 系統寫作要求模板';
+        systemOptgroup.label = '📚 系統寫作指引模板';
         systemFormats.forEach(format => {
           const option = document.createElement('option');
           option.value = format.id;
-          option.textContent = format.name;  // 應為「XXX 寫作要求模板」
+          option.textContent = format.name;  // 應為「XXX 寫作指引模板」
           systemOptgroup.appendChild(option);
         });
         selector.appendChild(systemOptgroup);
@@ -930,17 +930,17 @@ class AssignmentCreator {
       const templateFormats = formats.filter(f => !f.is_system && f.is_template);
       if (templateFormats.length > 0) {
         const templateOptgroup = document.createElement('optgroup');
-        templateOptgroup.label = '✏️ 我的寫作要求模板';
+        templateOptgroup.label = '✏️ 我的寫作指引模板';
         templateFormats.forEach(format => {
           const option = document.createElement('option');
           option.value = format.id;
-          option.textContent = format.name;  // 應為「XXX 寫作要求模板」
+          option.textContent = format.name;  // 應為「XXX 寫作指引模板」
           templateOptgroup.appendChild(option);
         });
         selector.appendChild(templateOptgroup);
       }
 
-      console.log('✅ 寫作要求已加載到下拉菜單:', formats.length, '個');
+      console.log('✅ 寫作指引已加載到下拉菜單:', formats.length, '個');
     } catch (error) {
       console.error('加載寫作要求失敗:', error);
     }
@@ -963,7 +963,7 @@ class AssignmentCreator {
       const formData = new FormData(form);
 
       if (!this.selectedTemplateId) {
-        alert('請選擇寫作要求');
+        toast.warning('請選擇寫作指引');
         return;
       }
 
@@ -972,7 +972,7 @@ class AssignmentCreator {
         .map(checkbox => checkbox.value);
       
       if (selectedCriteria.length === 0) {
-        alert('請至少選擇一個評分標準');
+        toast.warning('請至少選擇一個評分標準');
         return;
       }
 
@@ -1023,7 +1023,7 @@ class AssignmentCreator {
 
     } catch (error) {
       console.error('保存任務失敗:', error);
-      alert('保存任務失敗：' + error.message);
+      toast.error('保存任務失敗：' + error.message);
 
       // 恢复按鈕
       const submitBtn = form.querySelector('button[type="submit"]');
