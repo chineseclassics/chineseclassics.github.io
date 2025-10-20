@@ -245,33 +245,36 @@ class FormatTemplatePage {
    */
   createTemplateCard(template) {
     const isSystem = template.is_system;
-    const icon = isSystem ? '🏛️' : '📝';
+    const icon = isSystem ? '📚' : '📝';
     const badge = isSystem 
-      ? '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">系統</span>'
-      : '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">自定義</span>';
+      ? '<span class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded font-medium">系統內置</span>'
+      : '<span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-medium">自定義</span>';
     
     return `
-      <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition p-6 border border-gray-200 cursor-pointer"
-           onclick="window.formatTemplatePageInstance.showDetail('${template.id}')">
-        <div class="flex justify-between items-start mb-3">
-          <div class="text-3xl">${icon}</div>
-          ${badge}
+      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-all border border-gray-200 cursor-pointer overflow-hidden"
+           onclick="window.formatTemplatePageInstance.showDetail('${template.id}')"
+           style="transition: all 0.2s ease;">
+        <div class="p-6">
+          <div class="flex justify-between items-start mb-3">
+            <div class="text-4xl">${icon}</div>
+            ${badge}
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2 leading-tight">${this.escapeHtml(template.name)}</h3>
+          <p class="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
+            ${this.escapeHtml(template.description || '點擊查看詳細寫作要求')}
+          </p>
         </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">${this.escapeHtml(template.name)}</h3>
-        <p class="text-gray-600 text-sm mb-4 line-clamp-2">
-          ${this.escapeHtml(template.description || '暫無描述')}
-        </p>
-        <div class="flex gap-2 mt-4">
+        <div class="px-6 pb-4 flex gap-2 border-t border-gray-100 pt-4">
           <button 
             onclick="event.stopPropagation(); window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
-            class="flex-1 bg-blue-50 text-blue-700 px-4 py-2 rounded hover:bg-blue-100 transition text-sm"
+            class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition text-sm font-medium"
           >
-            <i class="fas fa-edit mr-1"></i>編輯
+            <i class="fas fa-edit mr-1"></i>${isSystem ? '基於此創建' : '編輯'}
           </button>
           ${!isSystem ? `
             <button 
               onclick="event.stopPropagation(); window.formatTemplatePageInstance.deleteTemplate('${template.id}')"
-              class="bg-red-50 text-red-700 px-4 py-2 rounded hover:bg-red-100 transition text-sm"
+              class="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition text-sm font-medium"
             >
               <i class="fas fa-trash mr-1"></i>刪除
             </button>
@@ -293,18 +296,45 @@ class FormatTemplatePage {
       const title = this.container.querySelector('#detailTitle');
       const content = this.container.querySelector('#detailContent');
       
-      title.textContent = template.name;
+      const isSystem = template.is_system;
+      const badge = isSystem 
+        ? '<span class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-medium">系統內置</span>'
+        : '<span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">自定義</span>';
+      
+      title.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span>${this.escapeHtml(template.name)}</span>
+          ${badge}
+        </div>
+      `;
+      
       content.innerHTML = `
-        <div class="space-y-4">
-          <div>
-            <h4 class="font-semibold text-gray-700 mb-2">描述</h4>
-            <p class="text-gray-600">${this.escapeHtml(template.description || '暫無描述')}</p>
-          </div>
-          <div>
-            <h4 class="font-semibold text-gray-700 mb-2">寫作要求</h4>
-            <div class="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">
-${this.escapeHtml(template.human_input || '暫無內容')}
+        <div class="space-y-6">
+          ${template.description ? `
+            <div>
+              <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">描述</h4>
+              <p class="text-gray-700 leading-relaxed">${this.escapeHtml(template.description)}</p>
             </div>
+          ` : ''}
+          <div>
+            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">寫作要求詳情</h4>
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-100">
+              <div class="text-gray-800 whitespace-pre-wrap leading-relaxed" style="font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;">
+${this.escapeHtml(template.human_input || '暫無內容')}
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+            <div class="text-sm text-gray-500">
+              <i class="fas fa-clock mr-1"></i>
+              創建於 ${new Date(template.created_at).toLocaleDateString('zh-TW')}
+            </div>
+            <button 
+              onclick="window.formatTemplatePageInstance.showDetail = null; window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+            >
+              <i class="fas fa-edit mr-1"></i>${isSystem ? '基於此創建' : '編輯模板'}
+            </button>
           </div>
         </div>
       `;
@@ -314,13 +344,6 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       console.error('[FormatTemplatePage] 显示详情失败:', error);
       alert('显示详情失败：' + error.message);
     }
-  }
-  
-  /**
-   * 筛选模板
-   */
-  filterTemplates() {
-    this.renderTemplateCards();
   }
   
   /**
@@ -373,90 +396,115 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
    */
   async renderEditMode(container) {
     this.container = container;  // 保存 container 引用
+    
+    const isEdit = !!this.editingFormatId;
+    const title = isEdit ? '編輯模板' : '創建新模板';
+    const subtitle = isEdit ? '修改現有模板的寫作要求' : '使用 AI 輔助生成結構化的寫作要求';
+    
     container.innerHTML = `
-      <div class="max-w-4xl mx-auto">
+      <div class="max-w-5xl mx-auto">
         <!-- 返回按钮 -->
         <button 
           id="backToListBtn"
-          class="mb-4 text-gray-600 hover:text-gray-900 transition"
+          class="mb-6 inline-flex items-center text-gray-600 hover:text-blue-600 transition font-medium"
         >
           <i class="fas fa-arrow-left mr-2"></i>返回模板庫
         </button>
         
-        <!-- 编辑器标题 -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 class="text-2xl font-bold text-gray-900 mb-2">
-            ${this.editingFormatId ? '編輯模板' : '創建新模板'}
-          </h2>
-          <p class="text-gray-600">使用 AI 輔助生成結構化的寫作要求</p>
-        </div>
-        
-        <!-- Quill 编辑器 -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div id="template-editor" class="min-h-[400px] border border-gray-300 rounded-lg p-4"></div>
-        </div>
-        
-        <!-- 操作按钮 -->
-        <div class="bg-white rounded-lg shadow-sm p-6 flex justify-between items-center">
-          <div id="statusText" class="text-gray-600">準備就緒</div>
-          <div class="flex gap-3">
-            <button 
-              id="optimizeBtn"
-              class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition"
-            >
-              <i class="fas fa-magic mr-2"></i>AI 優化
-            </button>
-            <button 
-              id="saveBtn"
-              class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-              <i class="fas fa-save mr-2"></i>保存模板
-            </button>
+        <!-- 编辑器卡片 -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden" style="border: 1px solid #e5e7eb;">
+          <!-- 标题区 -->
+          <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-6 text-white">
+            <h2 class="text-2xl font-bold mb-2">${title}</h2>
+            <p class="text-blue-100">${subtitle}</p>
+          </div>
+          
+          <!-- 编辑器区域 -->
+          <div class="p-8">
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-gray-700 mb-3">
+                <i class="fas fa-edit text-blue-500 mr-2"></i>寫作要求內容
+              </label>
+              <div id="template-editor" class="border-2 border-gray-200 rounded-lg p-4 bg-white" style="min-height: 400px;">
+                <!-- Quill 将在这里初始化 -->
+              </div>
+              <p class="text-sm text-gray-500 mt-2">
+                <i class="fas fa-info-circle mr-1"></i>
+                輸入您的寫作要求，然後使用 AI 優化以生成結構化版本
+              </p>
+            </div>
+            
+            <!-- 状态和操作区 -->
+            <div class="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-check-circle text-green-500"></i>
+                <span id="statusText" class="text-gray-700 font-medium">準備就緒</span>
+              </div>
+              <div class="flex gap-3">
+                <button 
+                  id="optimizeBtn"
+                  class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-purple-600 hover:to-purple-700 transition font-medium shadow-sm"
+                >
+                  <i class="fas fa-magic mr-2"></i>AI 優化
+                </button>
+                <button 
+                  id="saveBtn"
+                  class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-medium shadow-sm"
+                >
+                  <i class="fas fa-save mr-2"></i>保存模板
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         
         <!-- AI 处理中状态 -->
         <div id="aiProcessing" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div class="bg-white rounded-lg p-8 text-center">
-            <i class="fas fa-spinner fa-spin text-4xl text-purple-600 mb-4"></i>
-            <p class="text-lg font-semibold">AI 正在優化...</p>
+          <div class="bg-white rounded-lg shadow-xl p-8 text-center">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mb-4"></div>
+            <p class="text-xl font-semibold text-gray-800">AI 正在優化...</p>
+            <p class="text-sm text-gray-500 mt-2">這可能需要幾秒鐘</p>
           </div>
         </div>
         
         <!-- 保存对话框 -->
         <div id="saveDialog" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 class="text-xl font-bold mb-4">保存模板</h3>
-            <div class="space-y-4">
+          <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4 text-white">
+              <h3 class="text-xl font-bold">💾 保存模板</h3>
+            </div>
+            <div class="p-6 space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">模板名稱 *</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  模板名稱 <span class="text-red-500">*</span>
+                </label>
                 <input 
                   id="saveTemplateName"
                   type="text" 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
                   placeholder="例如：紅樓夢人物分析格式"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">描述</label>
                 <textarea 
                   id="saveTemplateDesc"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
                   rows="3"
                   placeholder="簡要描述這個模板的用途..."
                 ></textarea>
               </div>
             </div>
-            <div class="flex gap-3 mt-6">
+            <div class="px-6 pb-6 flex gap-3">
               <button 
                 id="cancelSaveBtn"
-                class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+                class="flex-1 bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium"
               >
                 取消
               </button>
               <button 
                 id="confirmSaveBtn"
-                class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-medium shadow-sm"
               >
                 確認保存
               </button>
