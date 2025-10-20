@@ -693,15 +693,15 @@ function setupStudentNavigation() {
             return;
         }
         
-        const { page, assignmentId, mode, formatTemplate, essayId, forceRefresh } = e.detail;
+        const { page, assignmentId, mode, formatTemplate, essayId, forceRefresh, editable } = e.detail;
         
-        console.log('🧭 學生端導航:', { page, assignmentId, mode, formatTemplate, essayId, forceRefresh });
+        console.log('🧭 學生端導航:', { page, assignmentId, mode, formatTemplate, essayId, forceRefresh, editable });
         
         isNavigating = true;
         
         try {
             if (page === 'essay-writer') {
-                await showEssayEditor(assignmentId, mode, formatTemplate, essayId);
+                await showEssayEditor(assignmentId, mode, formatTemplate, essayId, editable !== undefined ? editable : true);
             } else if (page === 'assignment-list') {
                 // ✅ 支持強制刷新參數（如從練筆模式返回）
                 await showAssignmentList(forceRefresh || false);
@@ -722,7 +722,7 @@ function setupStudentNavigation() {
  * @param {string} formatTemplate - 格式模板（如 'honglou'）
  * @param {string} essayId - 作業 ID（繼續編輯現有練筆時使用）
  */
-async function showEssayEditor(assignmentId = null, mode = null, formatTemplate = null, essayId = null) {
+async function showEssayEditor(assignmentId = null, mode = null, formatTemplate = null, essayId = null, editable = true) {
     // ✅ 根據參數自動判斷模式
     if (!mode) {
         mode = assignmentId ? 'assignment' : 'free-writing';
@@ -891,6 +891,11 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         } else if (mode === 'free-writing' && !essayId) {
             console.log('✨ 新練筆模式，內容為空');
             // 新練筆，不恢復任何內容
+        }
+        
+        // ✅ 設置提交功能和狀態顯示（只在任務模式）
+        if (mode === 'assignment') {
+            await setupSubmissionFeature(assignmentId, editable);
         }
 
         console.log('✅ 論文編輯器顯示完成');
@@ -1083,6 +1088,233 @@ async function loadStudentEssayForAssignment(assignmentId) {
     } catch (error) {
         console.error('❌ 加載任務作業失敗:', error);
         // 不阻斷編輯器加載
+    }
+}
+
+/**
+ * 設置提交功能（只在任務模式）
+ */
+async function setupSubmissionFeature(assignmentId, editable = true) {
+    try {
+        const submissionSection = document.getElementById('submission-section');
+        const submitBtn = document.getElementById('submit-essay-btn');
+        const statusText = document.getElementById('essay-status-text');
+        const statusDisplay = document.getElementById('essay-status-display');
+        
+        if (!submissionSection || !submitBtn) {
+            console.warn('⚠️ 找不到提交相關元素');
+            return;
+        }
+        
+        // 獲取當前作業狀態
+        const { StorageState } = await import('./student/essay-storage.js');
+        const essayId = StorageState.currentEssayId;
+        
+        if (!essayId) {
+            // 新作業，顯示草稿狀態和提交按鈕
+            submissionSection.classList.remove('hidden');
+            if (statusText) statusText.textContent = '草稿';
+            return;
+        }
+        
+        // 從數據庫獲取最新狀態
+        const { data: essay } = await AppState.supabase
+            .from('essays')
+            .select('status, submitted_at')
+            .eq('id', essayId)
+            .single();
+            
+        if (!essay) {
+            submissionSection.classList.remove('hidden');
+            if (statusText) statusText.textContent = '草稿';
+            return;
+        }
+        
+        // 更新狀態顯示
+        if (essay.status === 'submitted') {
+            if (statusText) {
+                statusText.textContent = '已提交';
+                statusText.classList.add('text-green-600', 'font-semibold');
+            }
+            if (statusDisplay) {
+                const icon = statusDisplay.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-check-circle text-green-600 text-xs';
+                }
+            }
+            // 隱藏提交按鈕
+            submissionSection.classList.add('hidden');
+        } else if (essay.status === 'graded') {
+            if (statusText) {
+                statusText.textContent = '已批改';
+                statusText.classList.add('text-yellow-600', 'font-semibold');
+            }
+            submissionSection.classList.add('hidden');
+        } else {
+            // 草稿狀態，顯示提交按鈕
+            submissionSection.classList.remove('hidden');
+            if (statusText) statusText.textContent = '草稿';
+        }
+        
+        // 只讀模式：禁用所有編輯功能
+        if (!editable) {
+            console.log('📖 只讀模式：禁用編輯功能');
+            disableEditing();
+            submissionSection.classList.add('hidden');
+        }
+        
+        // 綁定提交按鈕
+        if (editable) {
+            submitBtn.addEventListener('click', async () => {
+                await handleSubmitEssay(assignmentId);
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ 設置提交功能失敗:', error);
+    }
+}
+
+/**
+ * 禁用編輯功能（只讀模式）
+ */
+function disableEditing() {
+    // 禁用所有輸入和編輯器
+    const inputs = document.querySelectorAll('#essay-title, #essay-subtitle, input[id*="-title"]');
+    inputs.forEach(input => {
+        input.disabled = true;
+        input.style.opacity = '0.6';
+    });
+    
+    // 禁用所有按鈕（除了返回按鈕）
+    const buttons = document.querySelectorAll('#student-dashboard-content button:not(#back-to-list-btn):not(#toggle-description-btn):not(#collapse-description-btn)');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    });
+    
+    // Quill 編輯器設為只讀（需要在編輯器初始化後設置）
+    setTimeout(() => {
+        const quillEditors = document.querySelectorAll('.ql-editor');
+        quillEditors.forEach(editor => {
+            editor.setAttribute('contenteditable', 'false');
+            editor.style.opacity = '0.8';
+            editor.style.backgroundColor = '#f9f9f9';
+        });
+    }, 500);
+    
+    // 顯示只讀提示
+    const container = document.getElementById('student-dashboard-content');
+    if (container) {
+        const notice = document.createElement('div');
+        notice.className = 'bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4';
+        notice.innerHTML = `
+            <div class="flex items-center gap-2">
+                <i class="fas fa-eye text-yellow-600"></i>
+                <span class="text-yellow-800 font-medium">只讀模式：此作業已提交，無法編輯</span>
+            </div>
+        `;
+        const assignmentInfo = container.querySelector('#assignment-info-panel');
+        if (assignmentInfo) {
+            assignmentInfo.after(notice);
+        }
+    }
+}
+
+/**
+ * 處理提交作業
+ */
+async function handleSubmitEssay(assignmentId) {
+    try {
+        const { StorageState } = await import('./student/essay-storage.js');
+        const { submitEssay } = await import('./student/essay-storage.js');
+        const { EditorState } = await import('./student/essay-writer.js');
+        
+        const essayId = StorageState.currentEssayId;
+        
+        if (!essayId) {
+            toast.error('請先保存作業再提交');
+            return;
+        }
+        
+        // 1. 檢查必填項
+        const titleInput = document.getElementById('essay-title');
+        if (!titleInput?.value || titleInput.value.trim() === '') {
+            toast.warning('請先填寫論文標題');
+            titleInput?.focus();
+            return;
+        }
+        
+        // 檢查引言
+        if (!EditorState.introEditor || EditorState.introEditor.getHTML().trim() === '<p><br></p>') {
+            toast.warning('請先完成引言部分');
+            return;
+        }
+        
+        // 檢查結論
+        if (!EditorState.conclusionEditor || EditorState.conclusionEditor.getHTML().trim() === '<p><br></p>') {
+            toast.warning('請先完成結論部分');
+            return;
+        }
+        
+        // 2. 檢查字數（可選，根據任務要求）
+        const totalWords = EditorState.totalWordCount;
+        if (totalWords < 100) {
+            const confirmed = await new Promise(resolve => {
+                dialog.confirm({
+                    title: '字數較少',
+                    message: `當前字數：${totalWords} 字<br><br>字數可能不夠，確定要提交嗎？`,
+                    confirmText: '確定提交',
+                    cancelText: '繼續寫作',
+                    onConfirm: () => resolve(true),
+                    onCancel: () => resolve(false)
+                });
+            });
+            if (!confirmed) return;
+        }
+        
+        // 3. 最終確認
+        const confirmed = await new Promise(resolve => {
+            dialog.confirm({
+                title: '確定提交作業嗎？',
+                message: `
+                    <div class="text-left">
+                        <p class="mb-2">📝 論文標題：${titleInput.value}</p>
+                        <p class="mb-2">📊 總字數：${totalWords} 字</p>
+                        <p class="mb-4">📚 包含：引言、${EditorState.arguments.length} 個分論點、結論</p>
+                        <p class="text-yellow-700 font-semibold">⚠️ 提交後將無法修改，請確認已完成寫作</p>
+                    </div>
+                `,
+                confirmText: '確定提交',
+                cancelText: '再檢查一下',
+                onConfirm: () => resolve(true),
+                onCancel: () => resolve(false)
+            });
+        });
+        
+        if (!confirmed) return;
+        
+        // 4. 執行提交
+        toast.info('正在提交作業...');
+        await submitEssay(essayId);
+        
+        // 5. 提交成功
+        toast.success('作業提交成功！<br>老師收到後會開始批改', 3000);
+        
+        // 6. 返回任務列表
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('navigate', {
+                detail: { 
+                    page: 'assignment-list',
+                    forceRefresh: true
+                }
+            }));
+        }, 1500);
+        
+    } catch (error) {
+        console.error('❌ 提交失敗:', error);
+        toast.error('提交失敗：' + error.message);
     }
 }
 

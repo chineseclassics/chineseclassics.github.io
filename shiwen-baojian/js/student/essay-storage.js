@@ -465,6 +465,50 @@ function countWords(html) {
 }
 
 // ================================
+// 提交作業
+// ================================
+
+/**
+ * 提交作業
+ * @param {string} essayId - 論文 ID
+ * @returns {Promise<Object>} - 提交結果
+ */
+export async function submitEssay(essayId) {
+    if (!AppState.supabase || !AppState.currentUser) {
+        throw new Error('未登錄或 Supabase 未初始化');
+    }
+    
+    console.log('📤 開始提交作業:', essayId);
+    
+    try {
+        const { data, error } = await AppState.supabase
+            .from('essays')
+            .update({
+                status: 'submitted',
+                submitted_at: new Date().toISOString()
+            })
+            .eq('id', essayId)
+            .select()
+            .single();
+            
+        if (error) {
+            throw new Error(`提交失敗: ${error.message}`);
+        }
+        
+        console.log('✅ 作業提交成功');
+        
+        return {
+            success: true,
+            essay: data
+        };
+        
+    } catch (error) {
+        console.error('❌ 提交作業失敗:', error);
+        throw error;
+    }
+}
+
+// ================================
 // 導出
 // ================================
 

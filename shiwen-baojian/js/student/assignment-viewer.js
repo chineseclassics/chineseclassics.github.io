@@ -219,6 +219,12 @@ class StudentAssignmentViewer {
     const daysLeft = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
     const essay = assignment.studentEssay;
     const status = this.getStatus(essay, isOverdue);
+    
+    // 判断是否可以撤回（截止日期前 + 未批改）
+    const canWithdraw = essay && 
+                       essay.status === 'submitted' && 
+                       !isOverdue && 
+                       (!essay.graded_at);
 
     return `
       <div class="student-assignment-card ${status.class}">
@@ -257,22 +263,85 @@ class StudentAssignmentViewer {
               <span>已寫 ${assignment.actualWordCount} 字</span>
             </div>
           ` : ''}
+          ${essay && essay.submitted_at ? `
+            <div class="meta-item">
+              <i class="fas fa-check-circle text-green-600"></i>
+              <span>已於 ${new Date(essay.submitted_at).toLocaleDateString('zh-Hant-TW', { 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })} 提交</span>
+            </div>
+          ` : ''}
         </div>
+        
+        ${essay && essay.status === 'submitted' ? `
+          <!-- 已提交狀態的提示 -->
+          <div class="submission-notice">
+            <i class="fas fa-info-circle"></i>
+            <span>${essay.graded_at ? '老師已批改，可查看評語' : '等待老師批改中...'}</span>
+          </div>
+        ` : ''}
 
         <div class="card-actions">
-          ${essay || assignment.actualWordCount > 0
-            ? `<button class="btn-action continue-btn ${essay && essay.status === 'submitted' ? 'view' : 'edit'}" data-id="${assignment.id}">
-                <i class="fas ${essay && essay.status === 'submitted' ? 'fa-eye' : 'fa-edit'}"></i>
-                ${essay && essay.status === 'submitted' ? '查看作業' : '繼續寫作'}
-              </button>`
-            : `<button class="btn-action start-btn" data-id="${assignment.id}">
-                <i class="fas fa-pen"></i>
-                開始寫作
-              </button>`
-          }
+          ${this.renderActionButtons(assignment, essay, canWithdraw)}
         </div>
       </div>
     `;
+  }
+  
+  /**
+   * 渲染操作按鈕
+   */
+  renderActionButtons(assignment, essay, canWithdraw) {
+    // 未開始
+    if (!essay || essay.status === 'draft' && !assignment.actualWordCount) {
+      return `
+        <button class="btn-action start-btn" data-id="${assignment.id}">
+          <i class="fas fa-pen"></i>
+          開始寫作
+        </button>
+      `;
+    }
+    
+    // 草稿中
+    if (essay && essay.status === 'draft') {
+      return `
+        <button class="btn-action continue-btn edit" data-id="${assignment.id}">
+          <i class="fas fa-edit"></i>
+          繼續寫作
+        </button>
+      `;
+    }
+    
+    // 已提交
+    if (essay && essay.status === 'submitted') {
+      return `
+        <button class="btn-action view-btn" data-id="${assignment.id}">
+          <i class="fas fa-eye"></i>
+          查看作業
+        </button>
+        ${canWithdraw ? `
+          <button class="btn-action withdraw-btn" data-id="${assignment.id}" data-essay-id="${essay.id}">
+            <i class="fas fa-undo"></i>
+            撤回並編輯
+          </button>
+        ` : ''}
+      `;
+    }
+    
+    // 已批改
+    if (essay && essay.status === 'graded') {
+      return `
+        <button class="btn-action view-btn graded" data-id="${assignment.id}">
+          <i class="fas fa-star"></i>
+          查看批改結果
+        </button>
+      `;
+    }
+    
+    return '';
   }
 
   /**
@@ -421,7 +490,7 @@ class StudentAssignmentViewer {
       });
     }
     
-    // 任務寫作按鈕
+    // 開始寫作/繼續寫作按鈕
     this.container.querySelectorAll('.student-assignment-card .start-btn, .student-assignment-card .continue-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const assignmentId = e.currentTarget.getAttribute('data-id');
@@ -430,9 +499,35 @@ class StudentAssignmentViewer {
           detail: { 
             page: 'essay-writer', 
             assignmentId: assignmentId,
-            mode: 'assignment'  // ✅ 明確指定這是任務寫作模式
+            mode: 'assignment',
+            editable: true  // 可編輯
           }
         }));
+      });
+    });
+    
+    // 查看作業按鈕（只讀模式）
+    this.container.querySelectorAll('.student-assignment-card .view-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const assignmentId = e.currentTarget.getAttribute('data-id');
+        console.log('👁️ 查看作業:', assignmentId);
+        window.dispatchEvent(new CustomEvent('navigate', {
+          detail: { 
+            page: 'essay-writer', 
+            assignmentId: assignmentId,
+            mode: 'assignment',
+            editable: false  // 只讀模式
+          }
+        }));
+      });
+    });
+    
+    // 撤回並編輯按鈕
+    this.container.querySelectorAll('.student-assignment-card .withdraw-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const assignmentId = e.currentTarget.getAttribute('data-id');
+        const essayId = e.currentTarget.getAttribute('data-essay-id');
+        await this.withdrawSubmission(assignmentId, essayId);
       });
     });
 
@@ -476,6 +571,40 @@ class StudentAssignmentViewer {
     });
   }
 
+  /**
+   * 撤回提交
+   */
+  async withdrawSubmission(assignmentId, essayId) {
+    dialog.confirm({
+      title: '確定要撤回提交嗎？',
+      message: '撤回後作業將變回草稿狀態，您可以繼續編輯。<br><br>⚠️ 撤回後需要重新提交，請謹慎操作。',
+      confirmText: '確定撤回',
+      cancelText: '取消',
+      onConfirm: async () => {
+        try {
+          const { error } = await this.supabase
+            .from('essays')
+            .update({
+              status: 'draft',
+              submitted_at: null
+            })
+            .eq('id', essayId);
+
+          if (error) throw error;
+
+          console.log('✅ 作業已撤回');
+          toast.success('作業已撤回，可以繼續編輯了！');
+          
+          // 刷新列表
+          await this.loadAndRenderAssignments(false);
+        } catch (error) {
+          console.error('❌ 撤回失敗:', error);
+          toast.error('撤回失敗：' + error.message);
+        }
+      }
+    });
+  }
+  
   /**
    * 刪除練筆作品
    */
