@@ -30,10 +30,13 @@ class AssignmentList {
 
       this.container.innerHTML = `
         <div class="assignment-list-container">
-          <div class="list-header">
-            <h2>我的任務</h2>
-            <button id="createAssignmentBtn" class="btn btn-primary">
-              <i class="fas fa-plus"></i> 創建新任務
+          <!-- 頂部操作欄：統一樣式 -->
+          <div class="mb-8">
+            <button 
+              id="createAssignmentBtn" 
+              class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
+            >
+              <i class="fas fa-plus mr-2"></i>創建新任務
             </button>
           </div>
 
