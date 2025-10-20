@@ -917,9 +917,10 @@ async function loadAssignmentData(assignmentId) {
         const descEl = document.getElementById('assignment-description');
         if (descEl && assignment.format_specifications) {
             // 顯示 human_input（AI 優化後的結構化文本）
-            // ✅ 保留換行符：使用 innerHTML 並將 \n 轉換為 <br>
+            // ✅ 保留換行符：使用 white-space: pre-wrap 來保留所有空白和換行
             const humanInput = assignment.format_specifications.human_input || '老師未提供寫作要求。';
-            descEl.innerHTML = humanInput.replace(/\n/g, '<br>');
+            descEl.textContent = humanInput;
+            descEl.style.whiteSpace = 'pre-wrap';  // 保留換行和空白，但允許自動換行
             
             // 保存 spec_json 到 AppState（供 AI 反饋使用）
             if (assignment.format_specifications.spec_json) {
