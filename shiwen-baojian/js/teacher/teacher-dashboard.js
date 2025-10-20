@@ -9,6 +9,7 @@ import AssignmentManager from './assignment-manager.js';
 import AssignmentCreator from './assignment-creator.js';
 import AssignmentList from './assignment-list.js';
 import GradingUI from './grading-ui.js';
+import GradingQueue from './grading-queue.js';
 import FormatTemplatePage from './format-template-page.js';
 
 class TeacherDashboard {
@@ -20,6 +21,7 @@ class TeacherDashboard {
     this.assignmentCreator = new AssignmentCreator(this.assignmentManager);
     this.assignmentList = new AssignmentList(this.assignmentManager);
     this.gradingUI = new GradingUI(supabaseClient);
+    this.gradingQueue = new GradingQueue(supabaseClient);
     this.formatTemplatePage = new FormatTemplatePage(supabaseClient);
     
     // 设置全局引用（供模板库页面使用）
@@ -39,12 +41,72 @@ class TeacherDashboard {
       // 設置導航監聽
       this.setupNavigation();
       
+      // 更新待批改徽章
+      await this.updatePendingGradingBadge();
+      
       // 渲染初始頁面（作業管理）
       // 2025-10-20 更新：默認頁面從「班級管理」改為「作業管理」
       await this.navigate('assignments');
     } catch (error) {
       console.error('初始化失敗:', error);
       this.renderError(error.message);
+    }
+  }
+  
+  /**
+   * 更新待批改徽章
+   */
+  async updatePendingGradingBadge() {
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      
+      // 獲取老師的班級
+      const { data: classes } = await this.supabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', user.id);
+        
+      if (!classes || classes.length === 0) {
+        return;
+      }
+      
+      const classIds = classes.map(c => c.id);
+      
+      // 獲取所有已發布任務
+      const { data: assignments } = await this.supabase
+        .from('assignments')
+        .select('id')
+        .in('class_id', classIds)
+        .eq('is_published', true);
+        
+      if (!assignments || assignments.length === 0) {
+        return;
+      }
+      
+      const assignmentIds = assignments.map(a => a.id);
+      
+      // 統計待批改作業數量
+      const { count } = await this.supabase
+        .from('essays')
+        .select('*', { count: 'exact', head: true })
+        .in('assignment_id', assignmentIds)
+        .eq('status', 'submitted');
+      
+      // 更新徽章
+      const badge = document.getElementById('pending-grading-badge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+      
+      console.log('✅ 待批改徽章已更新:', count);
+      
+    } catch (error) {
+      console.error('❌ 更新待批改徽章失敗:', error);
     }
   }
 
@@ -135,6 +197,10 @@ class TeacherDashboard {
           
         case 'assignment-edit':
           await this.assignmentCreator.render(mainContent, params.id);
+          break;
+          
+        case 'grading-queue':
+          await this.gradingQueue.render(mainContent);
           break;
           
         case 'grading':

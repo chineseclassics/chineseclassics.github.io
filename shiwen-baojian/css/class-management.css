@@ -35,6 +35,26 @@
   background: #3498db;
 }
 
+/* 导航标签徽章（待批改数量） */
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 12px;
+  margin-left: 0.25rem;
+}
+
+.nav-badge.hidden {
+  display: none;
+}
+
 /* 创建班级表单 */
 .create-class-container {
   display: flex;
