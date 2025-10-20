@@ -96,20 +96,40 @@ class AssignmentCreator {
             <h3><i class="fas fa-clipboard-check" style="color: #3498db; margin-right: 0.5rem;"></i>評分標準</h3>
             
             <div class="form-group">
-              <label>選擇評分標準</label>
+              <label>選擇評分標準集</label>
               <select name="rubric">
                 <option value="ib-myp" selected>📋 IB MYP 中國古典文學評分標準</option>
               </select>
-              <p class="help-text">使用 A/B/C/D 四個標準，每個標準 0-8 分</p>
+              <p class="help-text">選擇評分標準集，然後選擇本次使用的具體標準</p>
+            </div>
+
+            <div class="form-group">
+              <label>使用哪些標準 <span class="required">*</span></label>
+              <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                  <input type="checkbox" name="rubric-criteria" value="A" checked style="margin-right: 0.5rem;">
+                  <strong>標準 A：分析</strong>
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                  <input type="checkbox" name="rubric-criteria" value="B" checked style="margin-right: 0.5rem;">
+                  <strong>標準 B：組織</strong>
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                  <input type="checkbox" name="rubric-criteria" value="C" checked style="margin-right: 0.5rem;">
+                  <strong>標準 C：創作</strong>
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                  <input type="checkbox" name="rubric-criteria" value="D" checked style="margin-right: 0.5rem;">
+                  <strong>標準 D：語言</strong>
+                </label>
+              </div>
+              <p class="help-text">至少選擇 1 個標準，每個標準 0-8 分</p>
             </div>
 
             <div class="rubric-info">
               <i class="fas fa-lightbulb"></i>
               <p>
-                <strong>標準 A：分析</strong> | 
-                <strong>標準 B：組織</strong> | 
-                <strong>標準 C：创作</strong> | 
-                <strong>標準 D：語言</strong>
+                老師可以根據任務特點選擇使用部分標準（例如只評分析和語言）
               </p>
             </div>
           </section>
@@ -235,13 +255,31 @@ class AssignmentCreator {
         return;
       }
 
-      const rubric = this.assignmentManager.loadBuiltInRubric(formData.get('rubric'));
+      // 獲取選中的評分標準
+      const selectedCriteria = Array.from(form.querySelectorAll('input[name="rubric-criteria"]:checked'))
+        .map(checkbox => checkbox.value);
+      
+      if (selectedCriteria.length === 0) {
+        alert('請至少選擇一個評分標準');
+        return;
+      }
+
+      // 加載完整的評分標準
+      const fullRubric = this.assignmentManager.loadBuiltInRubric(formData.get('rubric'));
+      
+      // 過濾選中的標準
+      const filteredRubric = {
+        ...fullRubric,
+        criteria: fullRubric.criteria.filter(criterion => 
+          selectedCriteria.includes(criterion.id)
+        )
+      };
 
       const assignmentData = {
         title: formData.get('title'),
         dueDate: formData.get('dueDate'),
         formatSpecId: this.selectedTemplateId,  // 引用模式：保存格式ID
-        gradingRubricJson: rubric,
+        gradingRubricJson: filteredRubric,  // 只包含選中的標準
         isDraft
       };
 
