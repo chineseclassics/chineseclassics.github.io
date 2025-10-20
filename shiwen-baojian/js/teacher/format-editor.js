@@ -382,6 +382,9 @@ async function confirmSave() {
             }
         }
         
+        // 獲取 Quill 編輯器的純文本內容（human_input，學生端顯示用）
+        const humanInput = quill.getText().trim();
+        
         // 構建保存數據
         const formatData = {
             name: name,
@@ -391,6 +394,7 @@ async function confirmSave() {
             is_system: false,
             is_public: false,
             spec_json: cachedFormatJSON,
+            human_input: humanInput,  // AI 優化後的結構化文本（模式 B/C）或系統格式預設文本（模式 A）
             parent_spec_id: parentSpecId  // 只有有效 UUID 才設置
         };
         

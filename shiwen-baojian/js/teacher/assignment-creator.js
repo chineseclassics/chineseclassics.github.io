@@ -10,6 +10,7 @@ class AssignmentCreator {
     this.assignmentManager = assignmentManager;
     this.container = null;
     this.selectedTemplate = null;
+    this.selectedTemplateId = null;  // 保存格式ID（引用模式）
     this.selectedRubric = 'ib-myp';
   }
 
@@ -57,20 +58,7 @@ class AssignmentCreator {
               />
             </div>
 
-            <div class="form-group">
-              <label>任務描述</label>
-              <textarea
-                name="description"
-                rows="4"
-                placeholder="說明寫作任務的目標、重點和要求...
-
-例如：
-- 選擇《紅樓夢》中的兩個主要人物
-- 分析其外貌描寫的象徵意義
-- 聯系人物性格和命運發展"
-              >${existingAssignment?.description || ''}</textarea>
-              <p class="help-text">學生將在任務列表中看到此描述</p>
-            </div>
+            <!-- 任務描述已移除：統一使用寫作要求，避免混淆 -->
 
             <div class="form-group">
               <label>截止日期 <span class="required">*</span></label>
@@ -206,10 +194,14 @@ class AssignmentCreator {
   async handleTemplateChange(templateId) {
     if (!templateId) {
       this.selectedTemplate = null;
+      this.selectedTemplateId = null;
       return;
     }
 
     try {
+      // 保存格式ID（引用模式）
+      this.selectedTemplateId = templateId;
+      
       if (templateId === 'custom') {
         this.selectedTemplate = this.getEmptyTemplate();
       } else {
@@ -238,8 +230,8 @@ class AssignmentCreator {
     try {
       const formData = new FormData(form);
 
-      if (!this.selectedTemplate) {
-        alert('請選擇格式模板');
+      if (!this.selectedTemplateId) {
+        alert('請選擇寫作要求');
         return;
       }
 
@@ -247,9 +239,8 @@ class AssignmentCreator {
 
       const assignmentData = {
         title: formData.get('title'),
-        description: formData.get('description'),
         dueDate: formData.get('dueDate'),
-        formatSpecJson: this.selectedTemplate,
+        formatSpecId: this.selectedTemplateId,  // 引用模式：保存格式ID
         gradingRubricJson: rubric,
         isDraft
       };

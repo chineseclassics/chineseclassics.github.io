@@ -53,9 +53,8 @@ class AssignmentManager {
     try {
       const {
         title,
-        description,
         dueDate,
-        formatSpecJson,
+        formatSpecId,  // 引用模式：格式ID
         gradingRubricJson,
         isDraft = true
       } = assignmentData;
@@ -69,8 +68,8 @@ class AssignmentManager {
         throw new Error('請設置截止日期');
       }
 
-      if (!formatSpecJson) {
-        throw new Error('請選擇或設置格式要求');
+      if (!formatSpecId) {
+        throw new Error('請選擇寫作要求');
       }
 
       if (!gradingRubricJson) {
@@ -82,11 +81,10 @@ class AssignmentManager {
         .insert([
           {
             title: title.trim(),
-            description: description?.trim() || '',
             class_id: this.currentClass.id,
             teacher_id: this.currentUser.id,
             due_date: dueDate,
-            format_spec_json: formatSpecJson,
+            format_spec_id: formatSpecId,  // 引用模式：保存格式ID
             grading_rubric_json: gradingRubricJson,
             is_published: !isDraft,
             created_at: new Date().toISOString()
@@ -301,8 +299,7 @@ class AssignmentManager {
 
       const duplicatedData = {
         title: `${original.title} (副本)`,
-        description: original.description,
-        formatSpecJson: original.format_spec_json,
+        formatSpecId: original.format_spec_id,  // 引用模式：复制格式ID
         gradingRubricJson: original.grading_rubric_json,
         isDraft: true,
         dueDate: null // 需要老師重新設置

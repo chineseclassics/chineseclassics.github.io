@@ -618,8 +618,8 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
             return;
         }
         
-        // 調用 AI 反饋 API
-        await requestAIFeedback(paragraphId, content, type);
+        // 調用 AI 反饋 API（傳遞格式規範）
+        await requestAIFeedback(paragraphId, content, type, AppState.currentFormatSpec);
         
     } catch (error) {
         console.error('❌ 請求 AI 反饋失敗:', error);
