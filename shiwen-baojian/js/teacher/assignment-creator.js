@@ -820,28 +820,32 @@ class AssignmentCreator {
         this.draftCleanup = null;
       }
       
-      // 关闭对话框
-      this.container.querySelector('#saveFormatDialog').classList.add('hidden');
+      // 關閉對話框
+      const saveDialog = this.container.querySelector('#saveFormatDialog');
+      if (saveDialog) saveDialog.classList.add('hidden');
       
-      // 重新加载写作要求列表
+      // 折疊編輯器
+      this.collapseInlineEditor();
+      
+      // 重新加載寫作要求列表
       await this.loadFormatSpecifications();
       
       // 🚨 修復：保存後的處理
       if (formatType === 'template') {
         // 通用模板：提示用戶到模板庫查看
-        alert('✅ 通用模板已保存！您可以在「寫作模板庫」頁面中查看和編輯。');
-        this.collapseInlineEditor();
+        alert('✅ 通用模板已保存！\n\n您可以在「寫作模板庫」頁面中查看和編輯此模板。\n也可以在創建任務時從下拉菜單中選擇使用。');
       } else {
         // 任務專用格式：自動選中
         const formatSelector = this.container.querySelector('#formatSelector');
         if (formatSelector) {
-          formatSelector.value = result.id;
-          formatSelector.disabled = false;  // 重新啟用下拉菜單
+          // 等待列表加載後再設置值
+          setTimeout(() => {
+            formatSelector.value = result.id;
+            this.selectedTemplateId = result.id;
+          }, 100);
         }
-        this.selectedTemplateId = result.id;
-        this.collapseInlineEditor();
         
-        alert('✅ 寫作要求已保存！請繼續完成任務設置。');
+        alert('✅ 寫作要求已保存！\n\n已自動選中此寫作要求，請繼續完成任務設置。');
       }
     } catch (error) {
       console.error('[AssignmentCreator] 保存失败:', error);
