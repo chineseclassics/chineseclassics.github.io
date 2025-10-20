@@ -21,6 +21,12 @@ class AssignmentCreator {
     this.cachedFormatData = null;  // 缓存 AI 优化结果
     this.currentEditingFormatId = null;  // 当前编辑的格式ID（用于判断是新建还是修改）
     this.isEditingSystemTemplate = false;  // 是否正在编辑系统模板
+    
+    // 🚨 階段 3.5.1：完整狀態管理系統
+    this.currentMode = 'custom';  // 'direct' | 'incremental' | 'custom'
+    this.hasBeenOptimized = false;  // 是否已經過 AI 優化
+    this.originalContent = '';  // 原始內容基線（用於檢測修改）
+    this.cachedFormatJSON = null;  // 緩存的格式 JSON
   }
 
   /**
@@ -85,14 +91,43 @@ class AssignmentCreator {
           <section class="form-section">
             <h3><i class="fas fa-file-alt" style="color: #3498db; margin-right: 0.5rem;"></i>寫作要求</h3>
             
+            <!-- 🚨 階段 3.5.2.1：卡片式選擇起點 UI -->
             <div class="form-group">
               <label>選擇起點 <span class="required">*</span></label>
-              <select id="templateSelector" name="template" required>
-                <option value="">-- 請選擇起點 --</option>
-                <option value="__create_new__">✨ 從零開始創建</option>
-                <!-- 選項將動態加載 -->
-              </select>
-              <p class="help-text">選擇系統模板、已有模板或從零開始創建</p>
+              
+              <!-- 從零開始卡片 -->
+              <div 
+                id="startFromScratchCard" 
+                class="format-selection-card mb-3 p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer transition hover:shadow-md"
+                style="position: relative;"
+              >
+                <div class="flex items-center gap-3">
+                  <div style="font-size: 2rem;">✏️</div>
+                  <div class="flex-1">
+                    <h4 class="font-semibold text-blue-900" style="margin: 0; font-size: 1rem;">從零開始</h4>
+                    <p class="text-sm text-blue-700" style="margin: 0.25rem 0 0 0;">完全自定義寫作要求</p>
+                  </div>
+                  <div id="scratchCheckmark" class="text-blue-600 font-bold" style="font-size: 1.5rem;">✓</div>
+                </div>
+              </div>
+
+              <!-- 系統寫作要求列表 -->
+              <h4 class="text-sm font-medium text-gray-700" style="margin: 1rem 0 0.5rem 0;">或基於系統寫作要求：</h4>
+              <div id="systemFormatsCardList" class="space-y-3" style="max-height: 300px; overflow-y: auto;">
+                <!-- 系統格式卡片將動態生成 -->
+              </div>
+
+              <!-- 加載預覽按鈕 -->
+              <button 
+                type="button"
+                id="loadPreviewBtn"
+                class="w-full mt-3 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled
+              >
+                📄 加載預覽
+              </button>
+              
+              <p class="help-text" style="margin-top: 0.5rem;">選擇起點後，可以在下方編輯器中查看和修改</p>
             </div>
 
             <!-- 展开式编辑器区域 -->
@@ -110,18 +145,21 @@ class AssignmentCreator {
                 </button>
               </div>
               
-              <!-- 起点选择（可选） -->
-              <div id="startPointSelector" class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">選擇起點（可選）</label>
-                <select id="baseFormatSelector" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                  <option value="">從零開始</option>
-                  <!-- 系统格式选项将动态加载 -->
-                </select>
-              </div>
-              
               <!-- Quill 编辑器 -->
               <div id="inline-quill-editor" class="bg-white border border-gray-300 rounded-lg p-4 mb-4" style="min-height: 300px;">
                 <!-- Quill 将在这里初始化 -->
+              </div>
+              
+              <!-- 🚨 階段 3.5.1.5：實時狀態面板 -->
+              <div id="inlineStatusPanel" class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <h4 class="text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-info-circle text-blue-600 mr-2"></i>📊 當前狀態
+                </h4>
+                <div id="inlineStatusContent" class="text-sm text-gray-600 space-y-1">
+                  <p>✏️ 模式：<span id="statusMode" class="font-medium">從零開始</span></p>
+                  <p>📝 已優化：<span id="statusOptimized" class="font-medium">否</span></p>
+                  <p>💾 可保存：<span id="statusCanSave" class="font-medium">否</span></p>
+                </div>
               </div>
               
               <!-- 操作按钮 -->
@@ -129,14 +167,14 @@ class AssignmentCreator {
                 <button 
                   type="button"
                   id="inlineOptimizeBtn"
-                  class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+                  class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i class="fas fa-magic mr-2"></i>AI 優化
                 </button>
                 <button 
                   type="button"
                   id="inlineSaveBtn"
-                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i class="fas fa-save mr-2"></i>保存並使用
                 </button>
@@ -283,13 +321,11 @@ class AssignmentCreator {
    */
   bindEvents(assignmentId) {
     const form = this.container.querySelector('#assignmentForm');
-    const templateSelector = this.container.querySelector('#templateSelector');
     const saveDraftBtn = this.container.querySelector('#saveDraftBtn');
     const backBtn = this.container.querySelector('#backBtn');
 
     console.log('🔍 查找表單元素:', {
       form: !!form,
-      templateSelector: !!templateSelector,
       saveDraftBtn: !!saveDraftBtn,
       backBtn: !!backBtn,
       container: this.container
@@ -297,10 +333,6 @@ class AssignmentCreator {
 
     if (!form) {
       console.error('❌ 找不到表單元素 #assignmentForm');
-      return;
-    }
-    if (!templateSelector) {
-      console.error('❌ 找不到模板選擇器 #templateSelector');
       return;
     }
     if (!saveDraftBtn) {
@@ -312,10 +344,8 @@ class AssignmentCreator {
       return;
     }
 
-    // 模板選擇
-    templateSelector.addEventListener('change', async (e) => {
-      await this.handleTemplateChange(e.target.value);
-    });
+    // 🚨 階段 3.5.2.2：綁定卡片選擇事件
+    this.bindFormatSelectionEvents();
 
     // 保存草稿
     saveDraftBtn.addEventListener('click', async () => {
@@ -337,6 +367,194 @@ class AssignmentCreator {
     this.bindInlineEditorEvents();
     
     console.log('✅ 表單事件綁定完成');
+  }
+  
+  /**
+   * 🚨 階段 3.5.2.2：綁定格式選擇卡片事件
+   */
+  bindFormatSelectionEvents() {
+    // 從零開始卡片
+    const scratchCard = this.container.querySelector('#startFromScratchCard');
+    if (scratchCard) {
+      scratchCard.addEventListener('click', () => this.selectStartPoint('scratch'));
+    }
+    
+    // 系統格式卡片（使用事件代理）
+    const cardList = this.container.querySelector('#systemFormatsCardList');
+    if (cardList) {
+      cardList.addEventListener('click', (e) => {
+        const card = e.target.closest('.format-selection-card');
+        if (card) {
+          const formatId = card.getAttribute('data-format-id');
+          if (formatId) {
+            this.selectStartPoint(formatId);
+          }
+        }
+      });
+    }
+    
+    // 加載預覽按鈕
+    const loadPreviewBtn = this.container.querySelector('#loadPreviewBtn');
+    if (loadPreviewBtn) {
+      loadPreviewBtn.addEventListener('click', () => this.loadFormatPreview());
+    }
+  }
+  
+  /**
+   * 🚨 階段 3.5.2.2：選擇起點（卡片點擊處理）
+   */
+  selectStartPoint(formatId) {
+    console.log('[AssignmentCreator] 選擇起點:', formatId);
+    
+    // 更新所有卡片的選中狀態
+    const allCards = this.container.querySelectorAll('.format-selection-card');
+    const scratchCard = this.container.querySelector('#startFromScratchCard');
+    const loadPreviewBtn = this.container.querySelector('#loadPreviewBtn');
+    
+    // 重置所有卡片樣式
+    allCards.forEach(card => {
+      card.classList.remove('border-blue-500', 'bg-blue-50');
+      card.classList.add('border-gray-200');
+      const checkmark = card.querySelector('.format-checkmark');
+      if (checkmark) checkmark.classList.add('hidden');
+    });
+    
+    if (scratchCard) {
+      scratchCard.classList.remove('border-blue-500', 'bg-blue-50');
+      scratchCard.classList.add('border-gray-200');
+      const scratchCheck = scratchCard.querySelector('#scratchCheckmark');
+      if (scratchCheck) scratchCheck.classList.add('hidden');
+    }
+    
+    if (formatId === 'scratch') {
+      // 選擇從零開始
+      this.selectedTemplateId = null;
+      this.currentMode = 'custom';
+      this.hasBeenOptimized = false;
+      this.originalContent = '';
+      this.cachedFormatJSON = null;
+      
+      // 更新從零開始卡片樣式
+      if (scratchCard) {
+        scratchCard.classList.remove('border-gray-200');
+        scratchCard.classList.add('border-blue-500', 'bg-blue-50');
+        const scratchCheck = scratchCard.querySelector('#scratchCheckmark');
+        if (scratchCheck) scratchCheck.classList.remove('hidden');
+      }
+      
+      // 禁用加載預覽按鈕
+      if (loadPreviewBtn) loadPreviewBtn.disabled = true;
+      
+      // 展開編輯器
+      this.expandInlineEditor();
+      
+      // 清空編輯器
+      if (this.inlineQuill) {
+        this.inlineQuill.setText('');
+      }
+      
+    } else {
+      // 選擇系統格式
+      this.selectedTemplateId = formatId;
+      this.currentMode = 'direct';  // 暫時設為 direct，加載預覽後確認
+      
+      // 更新選中的卡片樣式
+      const selectedCard = this.container.querySelector(`.format-selection-card[data-format-id="${formatId}"]`);
+      if (selectedCard) {
+        selectedCard.classList.remove('border-gray-200');
+        selectedCard.classList.add('border-blue-500', 'bg-blue-50');
+        const checkmark = selectedCard.querySelector('.format-checkmark');
+        if (checkmark) checkmark.classList.remove('hidden');
+      }
+      
+      // 啟用加載預覽按鈕
+      if (loadPreviewBtn) loadPreviewBtn.disabled = false;
+    }
+    
+    // 更新狀態
+    this.updateButtonStates();
+    this.updateStatus();
+    
+    console.log('[AssignmentCreator] 起點已選擇，模式:', this.currentMode);
+  }
+  
+  /**
+   * 🚨 階段 3.5.2.3：加載格式預覽
+   */
+  async loadFormatPreview() {
+    if (!this.selectedTemplateId) {
+      alert('請先選擇一個系統格式');
+      return;
+    }
+    
+    const loadPreviewBtn = this.container.querySelector('#loadPreviewBtn');
+    const originalText = loadPreviewBtn?.textContent;
+    
+    try {
+      if (loadPreviewBtn) {
+        loadPreviewBtn.disabled = true;
+        loadPreviewBtn.textContent = '⏳ 加載中...';
+      }
+      
+      console.log('[AssignmentCreator] 加載格式預覽:', this.selectedTemplateId);
+      
+      // 從數據庫加載格式
+      const format = await FormatEditorCore.loadSystemFormat(
+        this.selectedTemplateId,
+        this.assignmentManager.supabase
+      );
+      
+      if (!format) {
+        throw new Error('格式不存在');
+      }
+      
+      console.log('[AssignmentCreator] 格式已加載:', format.name);
+      
+      // 展開編輯器（如果還沒展開）
+      if (!this.isInlineEditorExpanded) {
+        this.expandInlineEditor();
+      }
+      
+      // 轉換 JSON 為人類可讀格式
+      let humanReadable = '';
+      if (format.human_input) {
+        // 優先使用保存的 human_input
+        humanReadable = format.human_input;
+      } else if (format.spec_json) {
+        // 否則從 JSON 轉換
+        humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
+      }
+      
+      // 顯示在編輯器中
+      if (this.inlineQuill && humanReadable) {
+        this.inlineQuill.setText(humanReadable);
+        this.originalContent = humanReadable;  // 設置基線內容
+      }
+      
+      // 設置狀態
+      this.currentMode = 'direct';  // 直接使用系統格式
+      this.hasBeenOptimized = true;  // 系統格式已優化
+      this.cachedFormatJSON = format.spec_json;
+      this.cachedFormatData = {
+        human_input: humanReadable,
+        spec_json: format.spec_json
+      };
+      
+      // 更新按鈕狀態和狀態面板
+      this.updateButtonStates();
+      this.updateStatus();
+      
+      console.log('[AssignmentCreator] 預覽已加載，模式:', this.currentMode);
+      
+    } catch (error) {
+      console.error('[AssignmentCreator] 加載預覽失敗:', error);
+      alert('加載預覽失敗：' + error.message);
+    } finally {
+      if (loadPreviewBtn) {
+        loadPreviewBtn.disabled = false;
+        loadPreviewBtn.textContent = originalText || '📄 加載預覽';
+      }
+    }
   }
 
   /**
@@ -406,12 +624,143 @@ class AssignmentCreator {
         // 询问恢复草稿
         FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
         
+        // 🚨 階段 3.5.1.7：綁定內容變化監聽
+        this.inlineQuill.on('text-change', () => {
+          this.handleContentChange();
+        });
+        
         console.log('[AssignmentCreator] 内联编辑器已初始化');
       } catch (error) {
         console.error('[AssignmentCreator] 编辑器初始化失败:', error);
         alert('编辑器初始化失败：' + error.message);
       }
     }
+    
+    // 初始化後更新狀態
+    this.updateButtonStates();
+    this.updateStatus();
+  }
+  
+  /**
+   * 🚨 階段 3.5.1.7：處理內容變化
+   */
+  handleContentChange() {
+    if (!this.inlineQuill) return;
+    
+    const content = this.inlineQuill.getText().trim();
+    
+    // 檢測模式變化：如果用戶修改了從系統格式加載的內容
+    if (this.selectedTemplateId && content !== this.originalContent) {
+      if (this.currentMode === 'direct') {
+        this.currentMode = 'incremental';
+        console.log('[AssignmentCreator] 模式切換：direct → incremental（用戶修改了系統格式）');
+      }
+      // 內容被修改，重置優化狀態
+      this.hasBeenOptimized = false;
+      this.cachedFormatJSON = null;
+    }
+    
+    // 更新按鈕狀態和狀態面板
+    this.updateButtonStates();
+    this.updateStatus();
+  }
+  
+  /**
+   * 🚨 階段 3.5.1.4：智能按鈕狀態管理
+   */
+  updateButtonStates() {
+    const optimizeBtn = this.container?.querySelector('#inlineOptimizeBtn');
+    const saveBtn = this.container?.querySelector('#inlineSaveBtn');
+    
+    if (!optimizeBtn || !saveBtn) return;
+    
+    const content = this.inlineQuill?.getText().trim() || '';
+    
+    // AI 優化按鈕邏輯
+    if (this.currentMode === 'direct') {
+      // direct 模式：系統格式已經優化過，禁用 AI 優化按鈕
+      optimizeBtn.disabled = true;
+      optimizeBtn.title = '系統格式已優化，無需再次優化';
+    } else {
+      // incremental 或 custom 模式：有內容且未優化時啟用
+      optimizeBtn.disabled = !content || this.hasBeenOptimized;
+      optimizeBtn.title = this.hasBeenOptimized 
+        ? '已經優化過了'
+        : content 
+          ? '點擊進行 AI 優化'
+          : '請先輸入內容';
+    }
+    
+    // 保存按鈕邏輯
+    if (this.currentMode === 'direct') {
+      // direct 模式：只要有 JSON 就可以保存
+      saveBtn.disabled = !this.cachedFormatJSON;
+      saveBtn.title = this.cachedFormatJSON 
+        ? '直接使用系統格式'
+        : '請先加載預覽';
+    } else {
+      // incremental 或 custom 模式：必須優化後才能保存
+      saveBtn.disabled = !this.hasBeenOptimized || !this.cachedFormatJSON;
+      saveBtn.title = !this.hasBeenOptimized
+        ? '⚠️ 必須先經過 AI 優化才能保存'
+        : this.cachedFormatJSON
+          ? '保存並使用此格式'
+          : '請先進行 AI 優化';
+    }
+    
+    console.log('[AssignmentCreator] 按鈕狀態已更新:', {
+      mode: this.currentMode,
+      optimized: this.hasBeenOptimized,
+      hasJSON: !!this.cachedFormatJSON,
+      optimizeBtnDisabled: optimizeBtn.disabled,
+      saveBtnDisabled: saveBtn.disabled
+    });
+  }
+  
+  /**
+   * 🚨 階段 3.5.1.6：更新狀態面板
+   */
+  updateStatus() {
+    const statusMode = this.container?.querySelector('#statusMode');
+    const statusOptimized = this.container?.querySelector('#statusOptimized');
+    const statusCanSave = this.container?.querySelector('#statusCanSave');
+    
+    if (!statusMode || !statusOptimized || !statusCanSave) return;
+    
+    // 模式文本映射
+    const modeText = {
+      'direct': '直接使用系統格式',
+      'incremental': '基於系統格式修改',
+      'custom': '從零開始自定義'
+    };
+    
+    // 更新模式顯示
+    statusMode.textContent = modeText[this.currentMode];
+    statusMode.className = this.currentMode === 'direct' 
+      ? 'font-medium text-green-600'
+      : this.currentMode === 'incremental'
+        ? 'font-medium text-orange-600'
+        : 'font-medium text-blue-600';
+    
+    // 更新優化狀態
+    statusOptimized.textContent = this.hasBeenOptimized ? '是 ✓' : '否';
+    statusOptimized.className = this.hasBeenOptimized 
+      ? 'font-medium text-green-600'
+      : 'font-medium text-gray-600';
+    
+    // 更新保存狀態
+    const canSave = (this.currentMode === 'direct' && this.cachedFormatJSON) ||
+                    (this.hasBeenOptimized && this.cachedFormatJSON);
+    statusCanSave.textContent = canSave ? '是 ✓' : '否';
+    statusCanSave.className = canSave 
+      ? 'font-medium text-green-600'
+      : 'font-medium text-gray-600';
+    
+    console.log('[AssignmentCreator] 狀態面板已更新:', {
+      mode: this.currentMode,
+      optimized: this.hasBeenOptimized,
+      canSave: canSave
+    });
   }
   
   /**
@@ -440,7 +789,13 @@ class AssignmentCreator {
     this.currentEditingFormatId = null;
     this.isEditingSystemTemplate = false;
     
-    console.log('[AssignmentCreator] 编辑器已折叠');
+    // 🚨 階段 3.5.1：重置狀態管理變量
+    this.currentMode = 'custom';
+    this.hasBeenOptimized = false;
+    this.originalContent = '';
+    this.cachedFormatJSON = null;
+    
+    console.log('[AssignmentCreator] 编辑器已折叠，所有狀態已重置');
   }
   
   /**
@@ -480,14 +835,24 @@ class AssignmentCreator {
         spec_json: result.format_json
       };
       
+      // 🚨 階段 3.5.1：更新狀態管理變量
+      this.hasBeenOptimized = true;
+      this.cachedFormatJSON = result.format_json;
+      this.originalContent = result.human_readable;  // 更新基線內容
+      
+      // 更新按鈕狀態和狀態面板
+      this.updateButtonStates();
+      this.updateStatus();
+      
       alert('✅ AI 優化完成！');
-      console.log('[AssignmentCreator] AI 优化完成');
+      console.log('[AssignmentCreator] AI 优化完成，狀態已更新');
     } catch (error) {
       console.error('[AssignmentCreator] AI 优化失败:', error);
       alert('AI 優化失敗：' + error.message);
     } finally {
       processingDiv.classList.add('hidden');
-      optimizeBtn.disabled = false;
+      // 不要在這裡禁用按鈕，讓 updateButtonStates 控制
+      this.updateButtonStates();
     }
   }
   
@@ -501,8 +866,16 @@ class AssignmentCreator {
       return;
     }
     
+    // 🚨 階段 3.5.1.3：強制 AI 優化檢查邏輯
+    if (!this.hasBeenOptimized && this.currentMode !== 'direct') {
+      alert('⚠️ 必須先經過 AI 優化才能保存！\n\n當前模式：' + 
+            (this.currentMode === 'incremental' ? '基於系統格式修改' : '從零開始自定義') +
+            '\n請點擊「AI 優化」按鈕進行優化。');
+      return;
+    }
+    
     if (!this.cachedFormatData || !this.cachedFormatData.spec_json) {
-      alert('請先使用 AI 優化');
+      alert('請先使用 AI 優化生成格式 JSON');
       return;
     }
     
@@ -600,7 +973,7 @@ class AssignmentCreator {
   }
 
   /**
-   * 加載寫作要求列表（從 Supabase）
+   * 🚨 階段 3.5.2.1：加載寫作要求列表並生成卡片（從 Supabase）
    */
   async loadFormatSpecifications() {
     try {
@@ -623,48 +996,48 @@ class AssignmentCreator {
         return;
       }
 
-      // 填充下拉菜單
-      const selector = this.container.querySelector('#templateSelector');
-      if (!selector) return;
+      // 保存格式列表供後續使用
+      this.allFormats = formats;
 
-      // 保留默認選項和"從零開始"選項
-      selector.innerHTML = `
-        <option value="">-- 請選擇起點 --</option>
-        <option value="__create_new__">✨ 從零開始創建</option>
-      `;
+      // 🚨 生成系統格式卡片
+      const cardList = this.container.querySelector('#systemFormatsCardList');
+      if (!cardList) return;
 
-      // 添加系統寫作要求
       const systemFormats = formats.filter(f => f.is_system);
-      if (systemFormats.length > 0) {
-        const systemOptgroup = document.createElement('optgroup');
-        systemOptgroup.label = '📚 系統寫作要求';
-        systemFormats.forEach(format => {
-          const option = document.createElement('option');
-          option.value = format.id;
-          option.textContent = format.name;
-          systemOptgroup.appendChild(option);
-        });
-        selector.appendChild(systemOptgroup);
+      
+      if (systemFormats.length === 0) {
+        cardList.innerHTML = '<p class="text-sm text-gray-500">暫無系統寫作要求</p>';
+      } else {
+        cardList.innerHTML = systemFormats.map(format => `
+          <div 
+            class="format-selection-card p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition hover:border-blue-400 hover:shadow-md"
+            data-format-id="${format.id}"
+          >
+            <div class="flex items-center gap-3">
+              <div style="font-size: 1.5rem;">📖</div>
+              <div class="flex-1">
+                <h4 class="font-semibold text-gray-800" style="margin: 0; font-size: 0.95rem;">${this.escapeHtml(format.name)}</h4>
+                ${format.description ? `<p class="text-xs text-gray-600" style="margin: 0.25rem 0 0 0;">${this.escapeHtml(format.description)}</p>` : ''}
+              </div>
+              <div class="format-checkmark text-blue-600 font-bold hidden" style="font-size: 1.5rem;">✓</div>
+            </div>
+          </div>
+        `).join('');
       }
 
-      // 添加自定義寫作要求
-      const customFormats = formats.filter(f => !f.is_system);
-      if (customFormats.length > 0) {
-        const customOptgroup = document.createElement('optgroup');
-        customOptgroup.label = '✏️ 我的寫作要求';
-        customFormats.forEach(format => {
-          const option = document.createElement('option');
-          option.value = format.id;
-          option.textContent = format.name;
-          customOptgroup.appendChild(option);
-        });
-        selector.appendChild(customOptgroup);
-      }
-
-      console.log('✅ 寫作要求列表已加載:', formats.length, '個（系統:', systemFormats.length, '個）');
+      console.log('✅ 寫作要求卡片已生成:', formats.length, '個（系統:', systemFormats.length, '個）');
     } catch (error) {
       console.error('加載寫作要求失敗:', error);
     }
+  }
+  
+  /**
+   * 🚨 輔助方法：HTML 轉義
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   /**
@@ -684,6 +1057,13 @@ class AssignmentCreator {
       this.selectedTemplateId = null;
       this.currentEditingFormatId = null;
       this.isEditingSystemTemplate = false;
+      
+      // 🚨 階段 3.5.1：設置正確的模式和狀態
+      this.currentMode = 'custom';
+      this.hasBeenOptimized = false;
+      this.originalContent = '';
+      this.cachedFormatJSON = null;
+      
       this.expandInlineEditor();
       return;
     }
@@ -703,16 +1083,34 @@ class AssignmentCreator {
       this.currentEditingFormatId = formatSpec.is_system ? null : templateId;
       this.isEditingSystemTemplate = formatSpec.is_system;
 
+      // 🚨 階段 3.5.1：設置正確的模式和狀態
+      // 如果是系統格式，模式為 direct；如果是自定義格式，模式為 custom（可編輯）
+      if (formatSpec.is_system) {
+        this.currentMode = 'direct';
+        this.hasBeenOptimized = true;  // 系統格式已經優化過
+        this.cachedFormatJSON = formatSpec.spec_json;
+      } else {
+        this.currentMode = 'custom';
+        this.hasBeenOptimized = true;  // 已保存的格式視為已優化
+        this.cachedFormatJSON = formatSpec.spec_json;
+      }
+
       // 展开编辑器并显示内容
       this.expandInlineEditor();
       
       // 在编辑器中显示 human_input
       if (this.inlineQuill && formatSpec.human_input) {
         this.inlineQuill.setText(formatSpec.human_input);
+        this.originalContent = formatSpec.human_input;  // 設置基線內容
       }
+      
+      // 更新按鈕狀態和狀態面板
+      this.updateButtonStates();
+      this.updateStatus();
 
       console.log('✅ 已選擇寫作要求:', formatSpec.name, 
-                  formatSpec.is_system ? '（系統模板）' : '（自定義模板）');
+                  formatSpec.is_system ? '（系統模板）' : '（自定義模板）',
+                  '模式:', this.currentMode);
     } catch (error) {
       console.error('加載寫作要求失敗:', error);
       alert('加載寫作要求失敗：' + error.message);

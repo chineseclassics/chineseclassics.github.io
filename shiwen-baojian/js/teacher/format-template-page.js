@@ -21,6 +21,12 @@ class FormatTemplatePage {
     this.currentQuill = null;  // Quill 实例
     this.draftCleanup = null;  // 草稿清理函数
     this.cachedFormat = null;  // 缓存的格式数据
+    
+    // 🚨 階段 3.5.1.2：完整狀態管理系統
+    this.editorMode = 'custom';  // 'direct' | 'incremental' | 'custom'
+    this.hasBeenOptimized = false;  // 是否已經過 AI 優化
+    this.originalContent = '';  // 原始內容基線（用於檢測修改）
+    this.cachedFormatJSON = null;  // 緩存的格式 JSON
   }
   
   /**
@@ -434,6 +440,18 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
               </p>
             </div>
             
+            <!-- 🚨 階段 3.5.1.5：實時狀態面板 -->
+            <div id="templateStatusPanel" class="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+              <h4 class="text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-info-circle text-blue-600 mr-2"></i>📊 當前狀態
+              </h4>
+              <div id="templateStatusContent" class="text-sm text-gray-600 space-y-1">
+                <p>✏️ 模式：<span id="templateStatusMode" class="font-medium">從零開始</span></p>
+                <p>📝 已優化：<span id="templateStatusOptimized" class="font-medium">否</span></p>
+                <p>💾 可保存：<span id="templateStatusCanSave" class="font-medium">否</span></p>
+              </div>
+            </div>
+            
             <!-- 状态和操作区 -->
             <div class="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
               <div class="flex items-center gap-2">
@@ -443,13 +461,13 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
               <div class="flex gap-3">
                 <button 
                   id="optimizeBtn"
-                  class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-purple-600 hover:to-purple-700 transition font-medium shadow-sm"
+                  class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-purple-600 hover:to-purple-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i class="fas fa-magic mr-2"></i>AI 優化
                 </button>
                 <button 
                   id="saveBtn"
-                  class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-medium shadow-sm"
+                  class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i class="fas fa-save mr-2"></i>保存模板
                 </button>
@@ -540,10 +558,20 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       } else {
         // 新建模式：询问是否恢复草稿
         FormatEditorCore.askRestoreDraft('format-editor-draft-template', this.currentQuill);
+        
+        // 🚨 階段 3.5.1：新建模式的初始狀態
+        this.editorMode = 'custom';
+        this.hasBeenOptimized = false;
+        this.originalContent = '';
+        this.cachedFormatJSON = null;
       }
       
       // 绑定事件
       this.bindEditModeEvents();
+      
+      // 🚨 階段 3.5.1：初始化後更新狀態
+      this.updateButtonStates();
+      this.updateStatus();
       
       console.log('[FormatTemplatePage] 编辑器初始化完成');
     } catch (error) {
@@ -563,6 +591,18 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       // 显示 human_input 在编辑器中
       if (format.human_input) {
         this.currentQuill.setText(format.human_input);
+        this.originalContent = format.human_input;  // 設置基線內容
+      }
+      
+      // 🚨 階段 3.5.1：設置編輯模式的正確狀態
+      if (format.is_system) {
+        this.editorMode = 'direct';
+        this.hasBeenOptimized = true;  // 系統格式已經優化過
+        this.cachedFormatJSON = format.spec_json;
+      } else {
+        this.editorMode = 'custom';
+        this.hasBeenOptimized = true;  // 已保存的格式視為已優化
+        this.cachedFormatJSON = format.spec_json;
       }
       
       // 预填保存对话框
@@ -571,7 +611,11 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       if (nameInput) nameInput.value = format.name || '';
       if (descInput) descInput.value = format.description || '';
       
-      console.log('[FormatTemplatePage] 格式已加载用于编辑');
+      // 更新按鈕狀態和狀態面板
+      this.updateButtonStates();
+      this.updateStatus();
+      
+      console.log('[FormatTemplatePage] 格式已加载用于编辑，模式:', this.editorMode);
     } catch (error) {
       console.error('[FormatTemplatePage] 加载格式失败:', error);
       alert('加载格式失败：' + error.message);
@@ -605,6 +649,135 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     
     const confirmBtn = this.container.querySelector('#confirmSaveBtn');
     if (confirmBtn) confirmBtn.onclick = () => this.handleConfirmSave();
+    
+    // 🚨 階段 3.5.1.7：綁定內容變化監聽
+    if (this.currentQuill) {
+      this.currentQuill.on('text-change', () => {
+        this.handleContentChange();
+      });
+    }
+  }
+  
+  /**
+   * 🚨 階段 3.5.1.7：處理內容變化
+   */
+  handleContentChange() {
+    if (!this.currentQuill) return;
+    
+    const content = this.currentQuill.getText().trim();
+    
+    // 檢測模式變化：如果用戶修改了從系統格式加載的內容
+    if (this.editingFormatId && content !== this.originalContent) {
+      if (this.editorMode === 'direct') {
+        this.editorMode = 'incremental';
+        console.log('[FormatTemplatePage] 模式切換：direct → incremental（用戶修改了系統格式）');
+      }
+      // 內容被修改，重置優化狀態
+      this.hasBeenOptimized = false;
+      this.cachedFormatJSON = null;
+    }
+    
+    // 更新按鈕狀態和狀態面板
+    this.updateButtonStates();
+    this.updateStatus();
+  }
+  
+  /**
+   * 🚨 階段 3.5.1.4：智能按鈕狀態管理
+   */
+  updateButtonStates() {
+    const optimizeBtn = this.container?.querySelector('#optimizeBtn');
+    const saveBtn = this.container?.querySelector('#saveBtn');
+    
+    if (!optimizeBtn || !saveBtn) return;
+    
+    const content = this.currentQuill?.getText().trim() || '';
+    
+    // AI 優化按鈕邏輯
+    if (this.editorMode === 'direct') {
+      // direct 模式：系統格式已經優化過，禁用 AI 優化按鈕
+      optimizeBtn.disabled = true;
+      optimizeBtn.title = '系統格式已優化，無需再次優化';
+    } else {
+      // incremental 或 custom 模式：有內容且未優化時啟用
+      optimizeBtn.disabled = !content || this.hasBeenOptimized;
+      optimizeBtn.title = this.hasBeenOptimized 
+        ? '已經優化過了'
+        : content 
+          ? '點擊進行 AI 優化'
+          : '請先輸入內容';
+    }
+    
+    // 保存按鈕邏輯
+    if (this.editorMode === 'direct') {
+      // direct 模式：只要有 JSON 就可以保存
+      saveBtn.disabled = !this.cachedFormatJSON;
+      saveBtn.title = this.cachedFormatJSON 
+        ? '直接使用系統格式'
+        : '請先加載格式';
+    } else {
+      // incremental 或 custom 模式：必須優化後才能保存
+      saveBtn.disabled = !this.hasBeenOptimized || !this.cachedFormatJSON;
+      saveBtn.title = !this.hasBeenOptimized
+        ? '⚠️ 必須先經過 AI 優化才能保存'
+        : this.cachedFormatJSON
+          ? '保存模板'
+          : '請先進行 AI 優化';
+    }
+    
+    console.log('[FormatTemplatePage] 按鈕狀態已更新:', {
+      mode: this.editorMode,
+      optimized: this.hasBeenOptimized,
+      hasJSON: !!this.cachedFormatJSON,
+      optimizeBtnDisabled: optimizeBtn.disabled,
+      saveBtnDisabled: saveBtn.disabled
+    });
+  }
+  
+  /**
+   * 🚨 階段 3.5.1.6：更新狀態面板
+   */
+  updateStatus() {
+    const statusMode = this.container?.querySelector('#templateStatusMode');
+    const statusOptimized = this.container?.querySelector('#templateStatusOptimized');
+    const statusCanSave = this.container?.querySelector('#templateStatusCanSave');
+    
+    if (!statusMode || !statusOptimized || !statusCanSave) return;
+    
+    // 模式文本映射
+    const modeText = {
+      'direct': '直接使用系統格式',
+      'incremental': '基於系統格式修改',
+      'custom': '從零開始自定義'
+    };
+    
+    // 更新模式顯示
+    statusMode.textContent = modeText[this.editorMode];
+    statusMode.className = this.editorMode === 'direct' 
+      ? 'font-medium text-green-600'
+      : this.editorMode === 'incremental'
+        ? 'font-medium text-orange-600'
+        : 'font-medium text-blue-600';
+    
+    // 更新優化狀態
+    statusOptimized.textContent = this.hasBeenOptimized ? '是 ✓' : '否';
+    statusOptimized.className = this.hasBeenOptimized 
+      ? 'font-medium text-green-600'
+      : 'font-medium text-gray-600';
+    
+    // 更新保存狀態
+    const canSave = (this.editorMode === 'direct' && this.cachedFormatJSON) ||
+                    (this.hasBeenOptimized && this.cachedFormatJSON);
+    statusCanSave.textContent = canSave ? '是 ✓' : '否';
+    statusCanSave.className = canSave 
+      ? 'font-medium text-green-600'
+      : 'font-medium text-gray-600';
+    
+    console.log('[FormatTemplatePage] 狀態面板已更新:', {
+      mode: this.editorMode,
+      optimized: this.hasBeenOptimized,
+      canSave: canSave
+    });
   }
   
   /**
@@ -642,15 +815,25 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         spec_json: result.format_json
       };
       
+      // 🚨 階段 3.5.1：更新狀態管理變量
+      this.hasBeenOptimized = true;
+      this.cachedFormatJSON = result.format_json;
+      this.originalContent = result.human_readable;  // 更新基線內容
+      
+      // 更新按鈕狀態和狀態面板
+      this.updateButtonStates();
+      this.updateStatus();
+      
       if (statusText) statusText.textContent = 'AI 優化完成！';
-      console.log('[FormatTemplatePage] AI 优化完成');
+      console.log('[FormatTemplatePage] AI 优化完成，狀態已更新');
     } catch (error) {
       console.error('[FormatTemplatePage] AI 优化失败:', error);
       alert('AI 優化失敗：' + error.message);
       if (statusText) statusText.textContent = '優化失敗';
     } finally {
       if (aiProcessing) aiProcessing.classList.add('hidden');
-      if (optimizeBtn) optimizeBtn.disabled = false;
+      // 不要在這裡重新啟用按鈕，讓 updateButtonStates 控制
+      this.updateButtonStates();
     }
   }
   
@@ -658,6 +841,20 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
    * 处理保存
    */
   handleSave() {
+    const text = this.currentQuill?.getText().trim();
+    if (!text) {
+      alert('請先輸入寫作要求');
+      return;
+    }
+    
+    // 🚨 階段 3.5.1.3：強制 AI 優化檢查邏輯
+    if (!this.hasBeenOptimized && this.editorMode !== 'direct') {
+      alert('⚠️ 必須先經過 AI 優化才能保存！\n\n當前模式：' + 
+            (this.editorMode === 'incremental' ? '基於系統格式修改' : '從零開始自定義') +
+            '\n請點擊「AI 優化」按鈕進行優化。');
+      return;
+    }
+    
     if (!this.cachedFormat || !this.cachedFormat.spec_json) {
       alert('請先使用 AI 優化格式');
       return;
