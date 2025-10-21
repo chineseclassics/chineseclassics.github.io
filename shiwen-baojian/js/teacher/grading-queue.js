@@ -67,10 +67,14 @@ class GradingQueue {
       }
       
       // 2. 為每個任務獲取提交統計
+      console.log('📊 開始加載任務提交統計，共', assignments.length, '個任務');
+      
       this.assignmentsWithSubmissions = await Promise.all(
         assignments.map(async (assignment) => {
+          console.log('📝 加載任務提交:', assignment.title);
+          
           // 獲取所有提交
-          const { data: allEssays } = await this.supabase
+          const { data: allEssays, error: essaysError } = await this.supabase
             .from('essays')
             .select(`
               id,
@@ -79,7 +83,7 @@ class GradingQueue {
               status,
               total_word_count,
               submitted_at,
-              students!inner (
+              users!student_id (
                 id,
                 display_name,
                 email
@@ -87,6 +91,24 @@ class GradingQueue {
             `)
             .eq('assignment_id', assignment.id)
             .in('status', ['submitted', 'graded']);
+          
+          if (essaysError) {
+            console.error('❌ 獲取任務提交失敗:', assignment.title, essaysError);
+            return {
+              ...assignment,
+              submissions: {
+                pending: [],
+                graded: [],
+                total: 0,
+                totalStudents: 0
+              }
+            };
+          }
+          
+          console.log(`✅ 任務「${assignment.title}」找到 ${allEssays?.length || 0} 份提交`);
+          if (allEssays && allEssays.length > 0) {
+            console.log('  - 狀態分佈:', allEssays.map(e => e.status).join(', '));
+          }
             
           // 分類
           const submitted = allEssays?.filter(e => e.status === 'submitted') || [];
@@ -110,13 +132,17 @@ class GradingQueue {
         })
       );
       
+      // 計算總待批改數
+      this.totalPending = this.assignmentsWithSubmissions
+        .reduce((sum, a) => sum + a.submissions.pending.length, 0);
+      
+      console.log('📊 統計結果：總待批改', this.totalPending, '份');
+      
       // 只顯示有待批改作業的任務
       this.assignmentsWithSubmissions = this.assignmentsWithSubmissions
         .filter(a => a.submissions.pending.length > 0);
       
-      // 計算總待批改數
-      this.totalPending = this.assignmentsWithSubmissions
-        .reduce((sum, a) => sum + a.submissions.pending.length, 0);
+      console.log('📋 過濾後：', this.assignmentsWithSubmissions.length, '個任務有待批改作業');
       
       // 更新導航徽章
       this.updateNavigationBadge();
@@ -264,7 +290,7 @@ class GradingQueue {
    */
   renderSubmissionCard(essay, assignmentId) {
     const submittedDate = new Date(essay.submitted_at);
-    const student = essay.students;
+    const student = essay.users;
 
     return `
       <div class="submission-card pending">
@@ -308,7 +334,7 @@ class GradingQueue {
    * 渲染已批改卡片
    */
   renderGradedCard(essay, assignmentId) {
-    const student = essay.students;
+    const student = essay.users;
 
     return `
       <div class="submission-card graded">
