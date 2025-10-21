@@ -217,6 +217,9 @@ class GradingUI {
     setTimeout(() => {
       console.log('🔗 開始綁定事件...');
       this.bindEvents();
+      
+      // 自動加載已保存的 AI 評分建議（如果存在）
+      this.loadSavedAISuggestion();
     }, 100);
   }
 
@@ -452,6 +455,48 @@ class GradingUI {
     } catch (error) {
       console.error('提交批改失敗:', error);
       toast.error('提交失敗：' + error.message);
+    }
+  }
+
+  /**
+   * 加載已保存的 AI 評分建議（如果存在）
+   */
+  async loadSavedAISuggestion() {
+    try {
+      console.log('🔍 檢查是否有已保存的 AI 評分建議...');
+      
+      // 動態導入 AI 評分請求模塊
+      const { loadSavedAISuggestion } = await import('./ai-grading-requester.js');
+      
+      // 從 Supabase 加載已保存的建議
+      const savedSuggestion = await loadSavedAISuggestion(
+        this.currentEssay.id,
+        this.supabase
+      );
+
+      if (savedSuggestion && savedSuggestion.criteria_scores) {
+        console.log('✅ 找到已保存的 AI 評分建議');
+        
+        // 顯示已保存的建議
+        this.renderAISuggestion(
+          savedSuggestion.criteria_scores, 
+          savedSuggestion.overall_comment
+        );
+        
+        // 禁用「獲取 AI 建議」按鈕
+        const btn = document.getElementById('getAISuggestionBtn');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-check-circle"></i> 已獲取 AI 建議';
+          btn.style.opacity = '0.6';
+          btn.style.cursor = 'not-allowed';
+        }
+      } else {
+        console.log('ℹ️ 沒有已保存的 AI 評分建議');
+      }
+    } catch (error) {
+      console.error('⚠️ 加載已保存的 AI 建議失敗:', error);
+      // 失敗不影響正常使用，老師可以手動點擊獲取
     }
   }
 

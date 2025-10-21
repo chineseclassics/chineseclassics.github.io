@@ -138,11 +138,13 @@ class GradingQueue {
       
       console.log('📊 統計結果：總待批改', this.totalPending, '份');
       
-      // 只顯示有待批改作業的任務
+      // 顯示有提交記錄的任務（包括待批改和已批改）
       this.assignmentsWithSubmissions = this.assignmentsWithSubmissions
-        .filter(a => a.submissions.pending.length > 0);
+        .filter(a => a.submissions.total > 0);
       
-      console.log('📋 過濾後：', this.assignmentsWithSubmissions.length, '個任務有待批改作業');
+      console.log('📋 過濾後：', this.assignmentsWithSubmissions.length, '個任務有提交記錄');
+      console.log('  - 其中', this.assignmentsWithSubmissions.filter(a => a.submissions.pending.length > 0).length, '個有待批改');
+      console.log('  - 其中', this.assignmentsWithSubmissions.filter(a => a.submissions.graded.length > 0).length, '個有已批改');
       
       // 更新導航徽章
       this.updateNavigationBadge();
@@ -180,11 +182,36 @@ class GradingQueue {
    * 渲染頁面
    */
   renderPage() {
+    // 如果完全没有提交记录，显示空状态
     if (this.assignmentsWithSubmissions.length === 0) {
-      this.renderNoPending();
+      this.renderNoSubmissions();
+      return;
+    }
+    
+    // 如果没有待批改（但有已批改），仍然显示任务列表
+    if (this.totalPending === 0) {
+      // 显示成功消息，但仍然渲染任务列表（显示已批改记录）
+      this.container.innerHTML = `
+        <div class="grading-queue-container">
+          <!-- 顶部成功消息 -->
+          <div class="success-banner" style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
+            <i class="fas fa-check-double text-green-600 text-4xl mb-3"></i>
+            <p class="text-gray-700 text-lg font-semibold">太棒了！沒有待批改的作業</p>
+            <p class="text-gray-600 text-sm mt-2">所有提交的作業都已批改完成，您可以查看已批改記錄</p>
+          </div>
+          
+          <!-- 任務列表（显示已批改记录） -->
+          <div class="grading-assignments-list">
+            ${this.assignmentsWithSubmissions.map(a => this.renderAssignmentSection(a)).join('')}
+          </div>
+        </div>
+      `;
+      
+      this.bindEvents();
       return;
     }
 
+    // 有待批改作业，正常显示
     this.container.innerHTML = `
       <div class="grading-queue-container">
         <!-- 任務列表 -->
@@ -428,14 +455,14 @@ class GradingQueue {
   }
 
   /**
-   * 渲染無待批改狀態
+   * 渲染無提交記錄狀態
    */
-  renderNoPending() {
+  renderNoSubmissions() {
     this.container.innerHTML = `
       <div class="empty-state">
-        <i class="fas fa-check-double text-green-400 text-5xl mb-4"></i>
-        <p class="text-gray-600 text-lg">太棒了！沒有待批改的作業</p>
-        <p class="text-gray-500 text-sm mt-2">所有提交的作業都已批改完成</p>
+        <i class="fas fa-inbox text-gray-400 text-5xl mb-4"></i>
+        <p class="text-gray-600 text-lg">還沒有學生提交作業</p>
+        <p class="text-gray-500 text-sm mt-2">學生提交後會顯示在這裡</p>
       </div>
     `;
   }
