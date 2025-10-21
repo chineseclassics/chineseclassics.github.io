@@ -54,8 +54,10 @@ class GradingUI {
     console.log('🎯 開始渲染批改表單');
     console.log('  - 作業:', essay.title);
     console.log('  - 評分標準:', rubric ? '已加載' : '❌ 缺失');
+    console.log('  - rubric 對象:', rubric);
+    console.log('  - criteria 數量:', rubric?.criteria?.length || 0);
     
-    if (!rubric || !rubric.criteria) {
+    if (!rubric || !rubric.criteria || rubric.criteria.length === 0) {
       this.container.innerHTML = `
         <div class="error-state">
           <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
@@ -167,7 +169,15 @@ class GradingUI {
                 
                 <div class="panel-content">
                   <form id="gradingForm">
-                    ${rubric.criteria.map(criterion => this.renderCriterionForm(criterion)).join('')}
+                    ${(() => {
+                      console.log('📝 開始渲染評分標準，共', rubric.criteria.length, '個');
+                      const criteriaHTML = rubric.criteria.map((criterion, idx) => {
+                        console.log(`  - 標準 ${idx + 1}:`, criterion.code, criterion.name);
+                        return this.renderCriterionForm(criterion);
+                      }).join('');
+                      console.log('✅ 評分標準 HTML 生成完成');
+                      return criteriaHTML;
+                    })()}
 
                     <div class="form-group">
                       <label>總體評語</label>
