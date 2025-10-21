@@ -76,8 +76,8 @@ export async function loadSavedAISuggestion(essayId, supabaseClient) {
     if (!data) return null;
 
     // 转换数据库结构为前端期望的格式
-    // 数据库: criterion_a_score, criterion_b_score, etc. + reasoning
-    // 前端期望: criteria_scores = { "A": { "score": 6, "reason": "..." }, ... }
+    // 数据库: criterion_a_score, criterion_b_score, etc. + reasoning + overall_comment
+    // 前端期望: criteria_scores = { "A": { "score": 6, "reason": "..." }, ... } + overall_comment
     const criteriaScores = {};
     
     if (data.criterion_a_score !== null) {
@@ -105,9 +105,20 @@ export async function loadSavedAISuggestion(essayId, supabaseClient) {
       };
     }
 
+    // 解析总评（如果存在）
+    let overallComment = null;
+    if (data.overall_comment) {
+      try {
+        overallComment = JSON.parse(data.overall_comment);
+      } catch (e) {
+        console.warn('解析总评失败:', e);
+      }
+    }
+
     return {
       ...data,
-      criteria_scores: criteriaScores
+      criteria_scores: criteriaScores,
+      overall_comment: overallComment
     };
   } catch (error) {
     console.error('加载 AI 评分建议失败:', error);

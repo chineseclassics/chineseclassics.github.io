@@ -467,8 +467,8 @@ class GradingUI {
       // 隱藏加載狀態
       loadingState.classList.add('hidden');
 
-      // 顯示結果
-      this.renderAISuggestion(result.criteria_scores);
+      // 顯示結果（包含总评）
+      this.renderAISuggestion(result.criteria_scores, result.overall_comment);
 
       btn.disabled = false;
     } catch (error) {
@@ -485,7 +485,7 @@ class GradingUI {
   /**
    * 渲染 AI 評分建議
    */
-  renderAISuggestion(criteriaScores) {
+  renderAISuggestion(criteriaScores, overallComment = null) {
     const resultsDiv = document.getElementById('aiSuggestionResults');
     
     // 計算總分
@@ -525,6 +525,43 @@ class GradingUI {
       `;
     }).filter(html => html).join('');
 
+    // 生成总评卡片
+    const overallCommentHTML = overallComment ? `
+      <div style="background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #f39c12;">
+        <h4 style="margin: 0 0 1rem 0; color: #2c3e50; font-size: 1.1rem;">
+          <i class="fas fa-comment-dots" style="color: #f39c12;"></i> AI 總評
+        </h4>
+        
+        <!-- 優點 -->
+        <div style="margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <i class="fas fa-thumbs-up" style="color: #27ae60;"></i>
+            <strong style="color: #27ae60;">做得好的方面</strong>
+          </div>
+          <div style="background: #f0fdf4; padding: 0.875rem; border-radius: 6px; border-left: 3px solid #27ae60;">
+            <p style="margin: 0; color: #2c3e50; line-height: 1.6; white-space: pre-wrap;">${overallComment.strengths || '暂无'}</p>
+          </div>
+        </div>
+        
+        <!-- 改進建議 -->
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <i class="fas fa-arrow-up" style="color: #e67e22;"></i>
+            <strong style="color: #e67e22;">需要改進的方面</strong>
+          </div>
+          <div style="background: #fff7ed; padding: 0.875rem; border-radius: 6px; border-left: 3px solid #e67e22;">
+            <p style="margin: 0; color: #2c3e50; line-height: 1.6; white-space: pre-wrap;">${overallComment.improvements || '暂无'}</p>
+          </div>
+        </div>
+        
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e9ecef;">
+          <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">
+            <i class="fas fa-lightbulb"></i> 老師可參考此總評撰寫評語，也可以自由修改或補充
+          </p>
+        </div>
+      </div>
+    ` : '';
+
     resultsDiv.innerHTML = `
       <div style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 1.5rem;">
         <!-- 總分顯示 -->
@@ -533,6 +570,9 @@ class GradingUI {
           <div style="color: white; font-size: 3rem; font-weight: 700;">${totalScore}</div>
           <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">/ ${criteriaCount * 8} 分（${criteriaCount} 個標準）</div>
         </div>
+
+        <!-- AI 總評 -->
+        ${overallCommentHTML}
 
         <!-- 各標準評分卡片 -->
         ${cardsHTML}
@@ -543,7 +583,7 @@ class GradingUI {
             <i class="fas fa-check-double"></i> 採用 AI 建議
           </button>
           <p style="margin-top: 0.75rem; color: #7f8c8d; font-size: 0.85rem;">
-            <i class="fas fa-info-circle"></i> 採用後可以手動調整分數，評語仍需老師填寫
+            <i class="fas fa-info-circle"></i> 採用後分數會自動填入，總評可複製到評語欄參考
           </p>
         </div>
       </div>
@@ -551,11 +591,14 @@ class GradingUI {
 
     resultsDiv.classList.remove('hidden');
 
+    // 保存总评到实例变量，供「採用建議」使用
+    this.currentAIOverallComment = overallComment;
+
     // 綁定「採用建議」按鈕
     const applyBtn = document.getElementById('applyAISuggestionBtn');
     if (applyBtn) {
       applyBtn.addEventListener('click', () => {
-        this.applyAISuggestion(criteriaScores);
+        this.applyAISuggestion(criteriaScores, overallComment);
       });
     }
   }
@@ -576,9 +619,10 @@ class GradingUI {
   /**
    * 採用 AI 建議（一鍵填充評分表單）
    */
-  applyAISuggestion(criteriaScores) {
+  applyAISuggestion(criteriaScores, overallComment = null) {
     const form = document.getElementById('gradingForm');
     
+    // 填充各标准分数
     Object.entries(criteriaScores).forEach(([criterionId, data]) => {
       if (data && data.score !== null && data.score !== undefined) {
         const inputName = `criterion_${criterionId.toLowerCase()}`;
@@ -590,7 +634,27 @@ class GradingUI {
       }
     });
 
-    toast.success('AI 建議已填充到評分表單！<br>請檢查並調整，然後填寫評語。', 3000);
+    // 填充总评到评语栏（作为参考起点）
+    if (overallComment) {
+      const commentsTextarea = form.querySelector('textarea[name="comments"]');
+      if (commentsTextarea) {
+        const aiComment = `【AI 參考評語】
+
+✅ 做得好的方面：
+${overallComment.strengths || ''}
+
+📈 需要改進的方面：
+${overallComment.improvements || ''}
+
+---
+（老師可以在此基礎上修改、補充或完全重寫）`;
+        
+        commentsTextarea.value = aiComment;
+        console.log('✅ 已將 AI 總評填入評語欄');
+      }
+    }
+
+    toast.success('AI 建議已填充！<br>分數和參考評語已填入，請檢查調整後提交。', 3000);
     
     // 滾動到評分表單
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });

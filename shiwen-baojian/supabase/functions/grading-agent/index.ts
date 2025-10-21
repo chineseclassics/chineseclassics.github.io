@@ -103,10 +103,20 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // 1. 查询论文内容
+    // 1. 查询论文内容及关联的任务信息
     const { data: essay, error: essayError } = await supabase
       .from('essays')
-      .select('id, title, student_id, assignment_id')
+      .select(`
+        id, 
+        title, 
+        student_id, 
+        assignment_id,
+        assignment:assignments(
+          title,
+          format_spec_id,
+          format_spec:format_specifications(spec_json)
+        )
+      `)
       .eq('id', essay_id)
       .single()
 
@@ -115,6 +125,13 @@ serve(async (req) => {
         JSON.stringify({ error: '论文不存在' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // 提取写作指引
+    const formatSpec = essay.assignment?.format_spec?.spec_json
+    console.log('📖 任务写作指引:', formatSpec ? '已加载' : '无')
+    if (formatSpec) {
+      console.log('📖 写作指引预览:', JSON.stringify(formatSpec).substring(0, 200))
     }
 
     // 2. 查询所有段落
@@ -165,6 +182,19 @@ serve(async (req) => {
       )
     }
 
+    // 构建写作指引文本
+    let formatGuidelines = ''
+    if (formatSpec) {
+      // 提取写作指引的关键信息
+      const sections = formatSpec.sections || []
+      formatGuidelines = `
+**本次任务的写作要求**：
+${sections.map((s: any) => `- ${s.title || s.name}: ${s.description || s.requirements || ''}`).join('\n')}
+${formatSpec.metadata?.word_count ? `- 字数要求：${formatSpec.metadata.word_count}` : ''}
+${formatSpec.metadata?.structure ? `- 结构要求：${formatSpec.metadata.structure}` : ''}
+`
+    }
+
     // 构建 System Prompt
     const systemPrompt = `你是一位专业的文学教师，负责基于 IB MYP 评分标准为学生论文评分。
 
@@ -172,25 +202,36 @@ serve(async (req) => {
 1. ✅ 只做客观评分：严格按照评分标准描述符判断
 2. ❌ 不做主观判断：不评价观点的对错，不建议思考方向
 3. 📊 基于证据：每个评分必须有论文中的具体证据支持
-
+${formatGuidelines ? '\n4. 📖 结合任务要求：检查是否符合本次任务的写作要求\n' : ''}
 **评分标准说明**：
 ${criteria.map(c => `
 **${c.code}. ${c.name}**（0-8 分）
 ${c.descriptors.map(d => `- ${d.range} 分：${d.description}`).join('\n')}
 `).join('\n')}
-
+${formatGuidelines}
 **输出格式**：
-返回 JSON 格式，包含每个标准的评分和理由：
+返回 JSON 格式，包含每个标准的评分、理由和总评：
 {
-  "A": { "score": 6, "reason": "客观理由..." },
-  "B": { "score": 7, "reason": "客观理由..." },
-  ...
+  "criteria": {
+    "A": { "score": 6, "reason": "客观理由..." },
+    "B": { "score": 7, "reason": "客观理由..." }
+  },
+  "overall_comment": {
+    "strengths": "学生做得好的方面（2-3点，具体客观）",
+    "improvements": "学生需要改进的方面（2-3点，具体客观）"
+  }
 }
 
-**理由撰写要求**：
+**评分理由撰写要求**：
 - 必须引用论文中的具体内容作为证据
 - 说明符合哪个分数段的描述符
-- 避免主观评价（如"观点深刻"），只陈述客观事实（如"引用了 3 处原文"）`
+- 结合任务要求检查（如字数、结构、主题）
+- 避免主观评价（如"观点深刻"），只陈述客观事实（如"引用了 3 处原文"）
+
+**总评撰写要求**：
+- strengths：指出 2-3 个具体优点（如"引用原文恰当"、"结构清晰"等）
+- improvements：指出 2-3 个具体改进点（如"分论点数量不足"、"分析深度可加强"等）
+- 语气客观友善，重点是帮助学生进步`
 
     // 构建 User Prompt
     const userPrompt = `请为以下论文评分：
@@ -236,14 +277,23 @@ ${essayText}
     const aiContent = deepseekData.choices[0].message.content
 
     // 解析 AI 返回的 JSON
-    let criteriaScores: Record<string, { score: number; reason: string }>
+    let aiResult: {
+      criteria: Record<string, { score: number; reason: string }>;
+      overall_comment: { strengths: string; improvements: string };
+    }
+    
     try {
       // 尝试提取 JSON（AI 可能返回带有说明的文本）
       const jsonMatch = aiContent.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        criteriaScores = JSON.parse(jsonMatch[0])
+        aiResult = JSON.parse(jsonMatch[0])
       } else {
-        criteriaScores = JSON.parse(aiContent)
+        aiResult = JSON.parse(aiContent)
+      }
+      
+      // 验证结构
+      if (!aiResult.criteria || !aiResult.overall_comment) {
+        throw new Error('AI 返回结构不完整')
       }
     } catch (parseError) {
       console.error('解析 AI 返回的 JSON 失败:', aiContent)
@@ -252,13 +302,17 @@ ${essayText}
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    
+    const criteriaScores = aiResult.criteria
+    const overallComment = aiResult.overall_comment
 
     // 6. 转换为数据库表结构并保存
-    // 表结构：criterion_a_score, criterion_b_score, criterion_c_score, criterion_d_score, reasoning
+    // 表结构：criterion_a_score, criterion_b_score, criterion_c_score, criterion_d_score, reasoning, overall_comment
     const insertData: any = {
       essay_id: essay_id,
       grading_rubric_id: null,  // 暂时设为 NULL（因为我们没有在 grading_rubrics 表中创建记录）
-      reasoning: {}  // 存储所有标准的评分理由
+      reasoning: {},  // 存储所有标准的评分理由
+      overall_comment: JSON.stringify(overallComment)  // 存储总评（strengths + improvements）
     }
 
     // 提取分数和理由
