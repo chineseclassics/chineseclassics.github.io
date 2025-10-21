@@ -110,9 +110,8 @@ class GradingUI {
 
         <!-- 左右分欄佈局 -->
         <div class="grading-layout">
-          <!-- 左側：作業內容 + 評分表單 -->
+          <!-- 左側：作業內容（完整顯示） -->
           <div class="grading-main-column">
-            <!-- 作業內容 -->
             <div class="essay-content-section">
               <h3 class="section-title">
                 <i class="fas fa-book-open mr-2"></i>作業內容
@@ -121,39 +120,13 @@ class GradingUI {
                 ${this.renderEssayContent(essay)}
               </div>
             </div>
-
-            <!-- 評分表單 -->
-            <div class="grading-form-section">
-              <h3 class="section-title">
-                <i class="fas fa-clipboard-check mr-2"></i>評分
-              </h3>
-              <form id="gradingForm">
-                ${rubric.criteria.map(criterion => this.renderCriterionForm(criterion)).join('')}
-
-                <div class="form-group">
-                  <label>總體評語</label>
-                  <textarea
-                    name="comments"
-                    rows="6"
-                    placeholder="請填寫對學生作業的總體評價和改進建議..."
-                    required
-                  >${essay.teacher_comments || ''}</textarea>
-                </div>
-
-                <div class="form-actions">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-check"></i> 提交批改
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
 
-          <!-- 右側：AI 評分建議（固定） -->
+          <!-- 右側：AI 評分建議 + 評分表單（固定） -->
           <aside class="grading-sidebar">
             <div class="sticky top-24">
+              <!-- AI 評分建議面板 -->
               <div class="ai-grading-panel">
-                <!-- 標題 -->
                 <div class="panel-header">
                   <div class="flex items-center gap-2">
                     <i class="fas fa-robot text-xl"></i>
@@ -161,7 +134,6 @@ class GradingUI {
                   </div>
                 </div>
                 
-                <!-- 獲取建議按鈕 -->
                 <div class="panel-actions">
                   <button id="getAISuggestionBtn" class="btn-ai-suggest">
                     <i class="fas fa-magic"></i>
@@ -173,16 +145,47 @@ class GradingUI {
                   </p>
                 </div>
                 
-                <!-- 加載狀態 -->
                 <div id="aiLoadingState" class="hidden ai-loading">
                   <div class="spinner"></div>
                   <p class="loading-text">AI 正在分析論文...</p>
                   <p class="loading-hint">預計需要 5-15 秒</p>
                 </div>
 
-                <!-- AI 建議結果 -->
                 <div id="aiSuggestionResults" class="hidden ai-results">
                   <!-- 結果將動態生成 -->
+                </div>
+              </div>
+
+              <!-- 評分表單（在 AI 建議下方）-->
+              <div class="grading-form-panel">
+                <div class="panel-header">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-clipboard-check text-xl"></i>
+                    <h3 class="font-bold text-lg">評分</h3>
+                  </div>
+                </div>
+                
+                <div class="panel-content">
+                  <form id="gradingForm">
+                    ${rubric.criteria.map(criterion => this.renderCriterionForm(criterion)).join('')}
+
+                    <div class="form-group">
+                      <label>總體評語</label>
+                      <textarea
+                        name="comments"
+                        rows="6"
+                        placeholder="請填寫對學生作業的總體評價和改進建議..."
+                        required
+                      >${essay.teacher_comments || ''}</textarea>
+                    </div>
+
+                    <div class="form-actions">
+                      <button type="submit" class="btn-submit-grading">
+                        <i class="fas fa-check"></i>
+                        提交批改
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
