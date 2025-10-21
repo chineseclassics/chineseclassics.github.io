@@ -83,76 +83,110 @@ class GradingUI {
     }
 
     this.container.innerHTML = `
-      <div class="grading-container">
-        <div class="grading-header">
-          <div>
-            <h2>${essay.assignment.title}</h2>
-            <p>學生：${essay.student.display_name} (${essay.student.email})</p>
-          </div>
-          <button id="backBtn" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> 返回
+      <div class="grading-container-wrapper">
+        <!-- 頂部標題欄 -->
+        <div class="grading-top-bar">
+          <button id="backBtn" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回批改列表</span>
           </button>
-        </div>
-
-        <!-- 作業內容（只讀） -->
-        <div class="essay-content">
-          <h3>作業內容</h3>
-          <div class="essay-viewer">
-            ${this.renderEssayContent(essay)}
+          <div class="grading-title-info">
+            <h2 class="text-xl font-bold text-gray-800">
+              <i class="fas fa-file-alt mr-2"></i>${this.escapeHtml(essay.title || '未命名論文')}
+            </h2>
+            <div class="text-sm text-gray-600 mt-1">
+              <span class="mr-4">
+                <i class="fas fa-tasks mr-1"></i>任務：${essay.assignment.title}
+              </span>
+              <span class="mr-4">
+                <i class="fas fa-user mr-1"></i>學生：${essay.student.display_name}
+              </span>
+              <span>
+                <i class="fas fa-envelope mr-1"></i>${essay.student.email}
+              </span>
+            </div>
           </div>
         </div>
 
-        <!-- AI 評分建議區域 -->
-        <div class="ai-grading-section" style="margin: 2rem 0; padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="color: white; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-              <i class="fas fa-robot"></i> AI 評分建議
-            </h3>
-            <button id="getAISuggestionBtn" class="btn" style="background: white; color: #667eea; border: none; padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;">
-              <i class="fas fa-magic"></i> 獲取 AI 評分建議
-            </button>
-          </div>
-          
-          <!-- 加載狀態 -->
-          <div id="aiLoadingState" class="hidden" style="text-align: center; padding: 2rem; background: rgba(255,255,255,0.9); border-radius: 8px;">
-            <div class="spinner" style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-            <p style="margin-top: 1rem; color: #667eea; font-weight: 600;">AI 正在分析論文...</p>
-            <p style="margin-top: 0.5rem; color: #764ba2; font-size: 0.9rem;">預計需要 5-15 秒</p>
-          </div>
-
-          <!-- AI 建議結果 -->
-          <div id="aiSuggestionResults" class="hidden">
-            <!-- 結果將動態生成 -->
-          </div>
-
-          <!-- 提示信息 -->
-          <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin: 0.5rem 0 0 0; text-align: center;">
-            <i class="fas fa-info-circle"></i> AI 建議僅供參考，老師可自由調整評分
-          </p>
-        </div>
-
-        <!-- 評分表單 -->
-        <div class="grading-form">
-          <h3>評分</h3>
-          <form id="gradingForm">
-            ${rubric.criteria.map(criterion => this.renderCriterionForm(criterion)).join('')}
-
-            <div class="form-group">
-              <label>總體评语</label>
-              <textarea
-                name="comments"
-                rows="6"
-                placeholder="請填寫對學生作業的總體评价和改进建議..."
-                required
-              >${essay.teacher_comments || ''}</textarea>
+        <!-- 左右分欄佈局 -->
+        <div class="grading-layout">
+          <!-- 左側：作業內容 + 評分表單 -->
+          <div class="grading-main-column">
+            <!-- 作業內容 -->
+            <div class="essay-content-section">
+              <h3 class="section-title">
+                <i class="fas fa-book-open mr-2"></i>作業內容
+              </h3>
+              <div class="essay-viewer">
+                ${this.renderEssayContent(essay)}
+              </div>
             </div>
 
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">
-                <i class="fas fa-check"></i> 提交批改
-              </button>
+            <!-- 評分表單 -->
+            <div class="grading-form-section">
+              <h3 class="section-title">
+                <i class="fas fa-clipboard-check mr-2"></i>評分
+              </h3>
+              <form id="gradingForm">
+                ${rubric.criteria.map(criterion => this.renderCriterionForm(criterion)).join('')}
+
+                <div class="form-group">
+                  <label>總體評語</label>
+                  <textarea
+                    name="comments"
+                    rows="6"
+                    placeholder="請填寫對學生作業的總體評價和改進建議..."
+                    required
+                  >${essay.teacher_comments || ''}</textarea>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> 提交批改
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
+
+          <!-- 右側：AI 評分建議（固定） -->
+          <aside class="grading-sidebar">
+            <div class="sticky top-24">
+              <div class="ai-grading-panel">
+                <!-- 標題 -->
+                <div class="panel-header">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-robot text-xl"></i>
+                    <h3 class="font-bold text-lg">AI 評分建議</h3>
+                  </div>
+                </div>
+                
+                <!-- 獲取建議按鈕 -->
+                <div class="panel-actions">
+                  <button id="getAISuggestionBtn" class="btn-ai-suggest">
+                    <i class="fas fa-magic"></i>
+                    獲取 AI 評分建議
+                  </button>
+                  <p class="ai-hint">
+                    <i class="fas fa-info-circle"></i>
+                    AI 建議僅供參考，老師可自由調整
+                  </p>
+                </div>
+                
+                <!-- 加載狀態 -->
+                <div id="aiLoadingState" class="hidden ai-loading">
+                  <div class="spinner"></div>
+                  <p class="loading-text">AI 正在分析論文...</p>
+                  <p class="loading-hint">預計需要 5-15 秒</p>
+                </div>
+
+                <!-- AI 建議結果 -->
+                <div id="aiSuggestionResults" class="hidden ai-results">
+                  <!-- 結果將動態生成 -->
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     `;
@@ -540,6 +574,19 @@ class GradingUI {
     
     // 滾動到評分表單
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  
+  /**
+   * 轉義 HTML 特殊字符
+   */
+  escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 }
 

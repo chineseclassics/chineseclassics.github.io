@@ -377,6 +377,239 @@
    批改界面
    ================================ */
 
+/* ================================
+   批改界面佈局（左右分欄）
+   ================================ */
+
+.grading-container-wrapper {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 頂部標題欄 */
+.grading-top-bar {
+  background: white;
+  border-bottom: 2px solid #ecf0f1;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn-back {
+  background: white;
+  border: 2px solid #ddd;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  color: #666;
+}
+
+.btn-back:hover {
+  border-color: #3498db;
+  color: #3498db;
+  background: #f0f9ff;
+}
+
+.grading-title-info {
+  flex: 1;
+}
+
+/* 左右分欄佈局 */
+.grading-layout {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* 左側主欄（作業內容 + 評分表單）*/
+.grading-main-column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 右側側邊欄（AI 評分建議）*/
+.grading-sidebar {
+  width: 380px;
+  flex-shrink: 0;
+}
+
+/* 作業內容區域 */
+.essay-content-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #ecf0f1;
+  display: flex;
+  align-items: center;
+}
+
+/* 作業查看器（不限制高度，完整顯示） */
+.essay-viewer {
+  /* 不設置 max-height，讓內容完整顯示 */
+  line-height: 1.8;
+  color: #2c3e50;
+}
+
+.paragraph-block {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.paragraph-block.argument-section {
+  border-left-color: #f39c12;
+  background: linear-gradient(to right, #fff8f0 0%, #f8f9fa 10%);
+}
+
+.paragraph-block h4 {
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.paragraph-content {
+  color: #34495e;
+  line-height: 1.8;
+}
+
+.paragraph-content.sub-paragraph {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+  border-left: 3px solid #95a5a6;
+}
+
+.paragraph-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #7f8c8d;
+  margin-bottom: 0.5rem;
+}
+
+/* 評分表單區域 */
+.grading-form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* AI 評分面板（固定在右側）*/
+.ai-grading-panel {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
+}
+
+.panel-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1.25rem 1.5rem;
+  color: white;
+}
+
+.panel-actions {
+  padding: 1.5rem;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.btn-ai-suggest {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-ai-suggest:hover {
+  background: linear-gradient(135deg, #5568d3, #6a3f91);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.ai-hint {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  text-align: center;
+}
+
+/* AI 加載狀態 */
+.ai-loading {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.ai-loading .spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 1rem;
+  color: #667eea;
+  font-weight: 600;
+}
+
+.loading-hint {
+  margin-top: 0.5rem;
+  color: #764ba2;
+  font-size: 0.9rem;
+}
+
+/* AI 結果區域 */
+.ai-results {
+  padding: 1.5rem;
+  max-height: calc(100vh - 400px);
+  overflow-y: auto;
+}
+
+/* 舊版批改容器（保留兼容） */
 .grading-container {
   max-width: 1000px;
   margin: 0 auto;
@@ -952,6 +1185,28 @@
    ================================ */
 
 @media (max-width: 768px) {
+  /* 批改界面響應式 */
+  .grading-layout {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .grading-sidebar {
+    width: 100%;
+    order: -1; /* AI 面板移到頂部 */
+  }
+  
+  .grading-sidebar .sticky {
+    position: static !important;
+  }
+  
+  .grading-top-bar {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
   .assignment-creator,
   .grading-container,
   .assignment-list-container,
