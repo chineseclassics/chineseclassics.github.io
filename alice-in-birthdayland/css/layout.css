@@ -1,0 +1,158 @@
+/* ========================================
+   Alice in Birthdayland - 佈局樣式
+   ======================================== */
+
+/* 主應用容器 */
+#app {
+    min-height: 100vh;
+    position: relative;
+}
+
+/* 歡迎畫面 */
+#welcome-screen {
+    padding: var(--spacing-xl);
+}
+
+/* 遊戲畫面 */
+#game-screen {
+    padding: var(--spacing-xl);
+    min-height: 100vh;
+}
+
+/* 容器 */
+.container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+}
+
+/* 居中容器 */
+.center-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* 網格佈局 */
+.grid {
+    display: grid;
+    gap: var(--spacing-lg);
+}
+
+.grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Flex 佈局 */
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-sm {
+    gap: var(--spacing-sm);
+}
+
+.gap-md {
+    gap: var(--spacing-md);
+}
+
+.gap-lg {
+    gap: var(--spacing-lg);
+}
+
+/* 響應式斷點 */
+@media (max-width: 768px) {
+    .grid-cols-2,
+    .grid-cols-3 {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+    
+    #welcome-screen {
+        padding: var(--spacing-md);
+    }
+    
+    #game-screen {
+        padding: var(--spacing-md);
+    }
+    
+    .container {
+        padding: 0 var(--spacing-md);
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --font-6xl: 2.5rem;
+        --font-5xl: 2rem;
+        --font-4xl: 1.75rem;
+        --font-3xl: 1.5rem;
+    }
+}
+
+/* 平板橫向 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid-cols-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 隱藏/顯示工具類 */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+/* 內容區域 */
+#content-area {
+    min-height: 400px;
+}
+
+/* 頁面過渡效果 */
+.page-transition {
+    transition: opacity var(--transition-slow) ease,
+                transform var(--transition-slow) ease;
+}
+
+.page-transition.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.page-transition.fade-in {
+    opacity: 1;
+    transform: scale(1);
+}
+

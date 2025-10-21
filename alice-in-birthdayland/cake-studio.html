@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>好味道食品屋 - Alice in Birthdayland</title>
+    <meta name="description" content="為 Alice 設計專屬生日蛋糕，發揮創意製作美味蛋糕！">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Bubblegum+Sans&display=swap" rel="stylesheet">
+    
+    <!-- 自定義樣式 -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/cake-game.css">
+    <link rel="stylesheet" href="css/ipad-optimization.css">
+</head>
+<body>
+    <!-- 主容器 -->
+    <div id="app" class="min-h-screen cake-theme">
+        
+        <!-- 蛋糕製作工作室 -->
+        <div id="cake-studio" class="studio-container">
+            
+            <!-- 頂部控制欄 -->
+            <div class="studio-header">
+                <div class="header-left">
+                    <button id="back-btn" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        返回地圖
+                    </button>
+                </div>
+                
+                <div class="header-center">
+                    <h1 class="studio-title">
+                        🍰 好味道食品屋 🍰
+                    </h1>
+                    <p class="studio-subtitle">
+                        為 Alice 設計專屬生日蛋糕
+                    </p>
+                </div>
+                
+                <div class="header-right">
+                    <div class="studio-actions">
+                        <button id="undo-btn" class="btn-secondary">
+                            <i class="fas fa-undo"></i>
+                            撤銷
+                        </button>
+                        <button id="clear-btn" class="btn-secondary">
+                            <i class="fas fa-trash"></i>
+                            清空
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工作室區域 -->
+            <div class="studio-workspace">
+                
+                <!-- 左側：基本選項 -->
+                <div class="tools-panel">
+                    
+                    <!-- 蛋糕底座選擇 -->
+                    <div class="tool-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-circle"></i>
+                            蛋糕底座
+                        </h3>
+                        <div class="cake-base-options">
+                            <button class="cake-option active" data-shape="round">
+                                <div class="option-icon">⭕</div>
+                                <span>圓形</span>
+                            </button>
+                            <button class="cake-option" data-shape="heart">
+                                <div class="option-icon">❤️</div>
+                                <span>愛心</span>
+                            </button>
+                            <button class="cake-option" data-shape="star">
+                                <div class="option-icon">⭐</div>
+                                <span>星星</span>
+                            </button>
+                            <button class="cake-option" data-shape="flower">
+                                <div class="option-icon">🌸</div>
+                                <span>花朵</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 糖霜顏色選擇 -->
+                    <div class="tool-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-palette"></i>
+                            糖霜顏色
+                        </h3>
+                        <div class="frosting-colors">
+                            <button class="color-btn active" data-color="pink">
+                                <div class="color-preview" style="background: #FFB6C1;"></div>
+                                <span>草莓粉</span>
+                            </button>
+                            <button class="color-btn" data-color="yellow">
+                                <div class="color-preview" style="background: #FFD700;"></div>
+                                <span>檸檬黃</span>
+                            </button>
+                            <button class="color-btn" data-color="green">
+                                <div class="color-preview" style="background: #98FF98;"></div>
+                                <span>抹茶綠</span>
+                            </button>
+                            <button class="color-btn" data-color="purple">
+                                <div class="color-preview" style="background: #DDA0DD;"></div>
+                                <span>葡萄紫</span>
+                            </button>
+                            <button class="color-btn" data-color="blue">
+                                <div class="color-preview" style="background: #87CEEB;"></div>
+                                <span>天藍</span>
+                            </button>
+                            <button class="color-btn" data-color="white">
+                                <div class="color-preview" style="background: #FFF;"></div>
+                                <span>奶油白</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 文字添加 -->
+                    <div class="tool-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-font"></i>
+                            添加文字
+                        </h3>
+                        <select id="preset-text" class="text-select">
+                            <option value="Happy Birthday Alice">Happy Birthday Alice</option>
+                            <option value="7 歲生日快樂">7 歲生日快樂</option>
+                            <option value="張思味">張思味</option>
+                            <option value="Goji">Goji</option>
+                            <option value="枸杞">枸杞</option>
+                            <option value="Love from 爸爸媽媽和 Amos">Love from 爸爸媽媽和 Amos</option>
+                        </select>
+                        <input type="text" id="custom-text" class="text-input" placeholder="自定義文字...">
+                        <button id="add-text-btn" class="btn-primary">
+                            <i class="fas fa-plus"></i>
+                            添加文字
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 中間：蛋糕畫布 -->
+                <div class="cake-canvas-wrapper">
+                    <h2 class="canvas-title">為 Alice 設計生日蛋糕 🎂</h2>
+                    <div id="cake-canvas" class="cake-canvas">
+                        <!-- 蛋糕會動態生成在這裡 -->
+                        <div id="cake-base" class="cake-base round pink"></div>
+                        <div id="decorations-layer" class="decorations"></div>
+                        <div id="text-layer" class="text-elements"></div>
+                    </div>
+                    
+                    <div class="canvas-actions">
+                        <button id="save-cake-btn" class="btn-primary">
+                            <i class="fas fa-camera"></i>
+                            完成蛋糕！
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 右側：裝飾元素 -->
+                <div class="decoration-panel">
+                    <h3 class="panel-title">
+                        <i class="fas fa-star"></i>
+                        裝飾元素
+                    </h3>
+                    
+                    <div class="decoration-items">
+                        <!-- 水果系列 -->
+                        <div class="deco-category">
+                            <h4>🍓 水果系列</h4>
+                            <div class="deco-items-grid">
+                                <div class="deco-item" draggable="true" data-type="strawberry">🍓</div>
+                                <div class="deco-item" draggable="true" data-type="cherry">🍒</div>
+                                <div class="deco-item" draggable="true" data-type="peach">🍑</div>
+                                <div class="deco-item" draggable="true" data-type="kiwi">🥝</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 糖果系列 -->
+                        <div class="deco-category">
+                            <h4>🍬 糖果系列</h4>
+                            <div class="deco-items-grid">
+                                <div class="deco-item" draggable="true" data-type="candy">🍬</div>
+                                <div class="deco-item" draggable="true" data-type="lollipop">🍭</div>
+                                <div class="deco-item" draggable="true" data-type="donut">🍩</div>
+                                <div class="deco-item" draggable="true" data-type="cupcake">🧁</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 花朵系列 -->
+                        <div class="deco-category">
+                            <h4>🌸 花朵系列</h4>
+                            <div class="deco-items-grid">
+                                <div class="deco-item" draggable="true" data-type="cherry-blossom">🌸</div>
+                                <div class="deco-item" draggable="true" data-type="rose">🌹</div>
+                                <div class="deco-item" draggable="true" data-type="sunflower">🌻</div>
+                                <div class="deco-item" draggable="true" data-type="bouquet">💐</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 特殊元素 -->
+                        <div class="deco-category">
+                            <h4>✨ 特殊元素</h4>
+                            <div class="deco-items-grid">
+                                <div class="deco-item" draggable="true" data-type="star">⭐</div>
+                                <div class="deco-item" draggable="true" data-type="heart">❤️</div>
+                                <div class="deco-item" draggable="true" data-type="unicorn">🦄</div>
+                                <div class="deco-item" draggable="true" data-type="palette">🎨</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 枸杞元素 -->
+                        <div class="deco-category">
+                            <h4>🍵 枸杞專屬</h4>
+                            <div class="deco-items-grid">
+                                <div class="deco-item" draggable="true" data-type="goji">🍵</div>
+                                <div class="deco-item" draggable="true" data-type="family">👨‍👩‍👧‍👦</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 完成模態框 -->
+        <div id="completion-modal" class="modal hidden">
+            <div class="modal-overlay">
+                <div class="modal-content">
+                    <div class="celebration-header">
+                        <div class="celebration-icon">🎉</div>
+                        <h2 class="celebration-title">蛋糕完成了！</h2>
+                    </div>
+                    
+                    <div class="cake-preview">
+                        <div id="cake-preview-image" class="preview-cake"></div>
+                    </div>
+                    
+                    <div class="completion-message">
+                        <p>你設計的蛋糕真漂亮，Alice！</p>
+                        <p>這個蛋糕充滿了愛和創意！</p>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button id="download-cake" class="btn-primary">
+                            <i class="fas fa-download"></i>
+                            下載蛋糕
+                        </button>
+                        <button id="remake-cake" class="btn-secondary">
+                            <i class="fas fa-redo"></i>
+                            重新製作
+                        </button>
+                        <button id="back-to-map" class="btn-secondary">
+                            <i class="fas fa-home"></i>
+                            返回地圖
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript 模組 -->
+    <script type="module" src="js/features/cake-builder.js"></script>
+    <script type="module" src="js/features/cake-ui.js"></script>
+    <script type="module" src="js/utils/audio-manager.js"></script>
+    
+    <!-- ⭐ 必需：應用切換器組件 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>

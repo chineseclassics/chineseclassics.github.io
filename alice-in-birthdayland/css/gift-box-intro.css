@@ -1,0 +1,351 @@
+/* 神秘禮物盒開場動畫 */
+
+/* 開場容器 */
+#gift-intro {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 1s ease, transform 1s ease;
+}
+
+#gift-intro.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.2);
+}
+
+/* 星空背景 */
+.stars-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.5); }
+}
+
+/* 禮物盒容器 */
+.gift-box-wrapper {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    animation: floatGift 3s ease-in-out infinite;
+}
+
+.gift-box-wrapper:hover {
+    transform: scale(1.05);
+}
+
+@keyframes floatGift {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* 禮物盒主體 */
+.gift-box {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+}
+
+/* 盒蓋 */
+.gift-lid {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    height: 60px;
+    background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+    border-radius: 15px 15px 5px 5px;
+    box-shadow: 0 10px 30px rgba(255,105,180,0.4);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform-origin: bottom center;
+    z-index: 2;
+}
+
+.gift-box.opening .gift-lid {
+    transform: translateX(-50%) rotateX(-110deg) translateY(-100px);
+    opacity: 0;
+}
+
+/* 蝴蝶結 */
+.gift-bow {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 60px;
+    z-index: 3;
+}
+
+.bow-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background: #FF1493;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255,20,147,0.6);
+}
+
+.bow-left, .bow-right {
+    position: absolute;
+    top: 50%;
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #FF1493, #FF69B4);
+    border-radius: 50% 50% 0 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 5px 15px rgba(255,20,147,0.3);
+}
+
+.bow-left {
+    left: 0;
+    transform: translateY(-50%) rotate(-45deg);
+}
+
+.bow-right {
+    right: 0;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+/* 盒身 */
+.gift-body {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 150px;
+    background: linear-gradient(135deg, #FFB6C1, #FFC0CB);
+    border-radius: 10px;
+    box-shadow: 0 15px 40px rgba(255,105,180,0.4);
+    z-index: 1;
+}
+
+/* 絲帶 */
+.gift-ribbon-v {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(90deg, #FF1493, #FF69B4, #FF1493);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+
+.gift-ribbon-h {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(180deg, #FF1493, #FF69B4, #FF1493);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* 閃光效果 */
+.gift-sparkles {
+    position: absolute;
+    inset: -50px;
+    pointer-events: none;
+}
+
+.sparkle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    animation: sparkleFloat 2s ease-in-out infinite;
+    opacity: 0;
+}
+
+@keyframes sparkleFloat {
+    0%, 100% { opacity: 0; transform: translateY(0) scale(0); }
+    50% { opacity: 1; transform: translateY(-30px) scale(1); }
+}
+
+.sparkle:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; }
+.sparkle:nth-child(2) { top: 30%; right: 10%; animation-delay: 0.3s; }
+.sparkle:nth-child(3) { bottom: 30%; left: 15%; animation-delay: 0.6s; }
+.sparkle:nth-child(4) { bottom: 20%; right: 15%; animation-delay: 0.9s; }
+.sparkle:nth-child(5) { top: 50%; left: 5%; animation-delay: 1.2s; }
+.sparkle:nth-child(6) { top: 50%; right: 5%; animation-delay: 1.5s; }
+
+/* 提示文字 */
+.gift-hint {
+    position: absolute;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: white;
+    font-family: 'Fredoka One', cursive;
+    animation: bounce 2s ease-in-out infinite;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.gift-hint-title {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(45deg, #FFD700, #FFF, #FFD700);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% auto;
+    animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+    to { background-position: 200% center; }
+}
+
+.gift-hint-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.click-icon {
+    display: inline-block;
+    font-size: 1.5rem;
+    margin-top: 0.5rem;
+    animation: pointDown 1s ease-in-out infinite;
+}
+
+@keyframes pointDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(10px); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-10px); }
+}
+
+/* 打開後的慶祝動畫 */
+.gift-box.opening {
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+}
+
+/* 光芒爆發效果 */
+.light-burst {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.gift-box.opening .light-burst {
+    animation: burst 1s ease-out forwards;
+}
+
+@keyframes burst {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+    100% {
+        width: 600px;
+        height: 600px;
+        opacity: 0;
+    }
+}
+
+/* 魔法粒子 */
+.magic-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    pointer-events: none;
+}
+
+.magic-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.gift-box.opening .magic-particle {
+    animation: particleExplode 1.5s ease-out forwards;
+}
+
+@keyframes particleExplode {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(0);
+    }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .gift-box {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .gift-lid {
+        width: 180px;
+        height: 50px;
+    }
+    
+    .gift-body {
+        width: 160px;
+        height: 120px;
+    }
+    
+    .gift-hint-title {
+        font-size: 1.5rem;
+    }
+    
+    .gift-hint-subtitle {
+        font-size: 1rem;
+    }
+}
+

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Alice in Birthdayland - 太虛幻境</title>
+    <meta name="description" content="專為張思味（枸杞/Goji）7歲生日設計的魔幻甜品樂園">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Bubblegum+Sans&display=swap" rel="stylesheet">
+    
+    <!-- Particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
+    <!-- 自定義樣式 -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/gift-box-intro.css">
+    <link rel="stylesheet" href="css/ipad-optimization.css">
+</head>
+<body>
+    <!-- 神秘禮物盒開場 -->
+    <div id="gift-intro">
+        <!-- 星空背景 -->
+        <div class="stars-background"></div>
+        
+        <!-- 禮物盒 -->
+        <div class="gift-box-wrapper">
+            <!-- 閃光效果 -->
+            <div class="gift-sparkles">
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+            </div>
+            
+            <!-- 禮物盒主體 -->
+            <div class="gift-box">
+                <!-- 光芒爆發 -->
+                <div class="light-burst"></div>
+                
+                <!-- 魔法粒子 -->
+                <div class="magic-particles"></div>
+                
+                <!-- 盒蓋 -->
+                <div class="gift-lid">
+                    <!-- 蝴蝶結 -->
+                    <div class="gift-bow">
+                        <div class="bow-left"></div>
+                        <div class="bow-center"></div>
+                        <div class="bow-right"></div>
+                    </div>
+                </div>
+                
+                <!-- 盒身 -->
+                <div class="gift-body">
+                    <div class="gift-ribbon-v"></div>
+                    <div class="gift-ribbon-h"></div>
+                </div>
+            </div>
+            
+            <!-- 提示文字 -->
+            <div class="gift-hint">
+                <div class="gift-hint-title">✨ For Alice ✨</div>
+                <div class="gift-hint-subtitle">點擊打開你的生日驚喜</div>
+                <div class="click-icon">👇</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div id="app" class="min-h-screen candy-theme">
+        
+        <!-- Birthdayland 地圖 -->
+        <div id="birthdayland-map" class="relative min-h-screen overflow-hidden" style="display: none;">
+            
+            <!-- 頂部橫幅 -->
+            <div class="birthday-banner text-center py-8 px-4">
+                <h1 class="magical-title text-5xl md:text-7xl font-bold mb-4">
+                    ✨ Alice's Birthday Wonderland ✨
+                </h1>
+                <p class="subtitle text-xl md:text-2xl text-white/90 mb-2">
+                    親愛的張思味（枸杞/Goji），7 歲生日快樂！🎂
+                </p>
+                <p class="text-lg text-white/80">
+                    Welcome to your magical birthday adventure!
+                </p>
+            </div>
+            
+            <!-- 音樂控制按鈕 -->
+            <button id="music-toggle" class="music-control" title="背景音樂">
+                <i class="fas fa-music"></i>
+            </button>
+
+            <!-- 地圖背景 -->
+            <div class="map-background candy-gradient">
+                <div class="decorative-candies"></div>
+            </div>
+            
+            <!-- 遊戲建築（2x2 網格） -->
+            <div class="map-locations grid-2x2">
+                <!-- 第一排 -->
+                <div class="location-row">
+                    <!-- 記憶拼圖屋 -->
+                    <div class="location puzzle-house cake-building active" 
+                         data-game="puzzle" 
+                         data-url="puzzle-house.html"
+                         data-status="active">
+                        <div class="building-decoration">🍓🍒</div>
+                        <div class="location-icon">🎂✨</div>
+                        <div class="location-name">記憶拼圖屋</div>
+                        <div class="location-subtitle">Memory Puzzle</div>
+                        <div class="location-glow pink-glow"></div>
+                    </div>
+                    
+                    <!-- 好味道食品屋 -->
+                    <div class="location cake-studio bakery-building active" 
+                         data-game="cake" 
+                         data-url="cake-studio.html"
+                         data-status="active">
+                        <div class="building-decoration">👨‍🍳🎨</div>
+                        <div class="location-icon">🍰✨</div>
+                        <div class="location-name">好味道食品屋</div>
+                        <div class="location-subtitle">Yummy Cake Studio</div>
+                        <div class="location-glow yellow-glow"></div>
+                    </div>
+                </div>
+
+                <!-- 第二排（預留） -->
+                <div class="location-row">
+                    <!-- 史萊姆實驗室 -->
+                    <div class="location slime-lab lab-building locked" 
+                         data-game="slime" 
+                         data-status="coming-soon">
+                        <div class="building-decoration">🧪💧</div>
+                        <div class="location-icon">🔒</div>
+                        <div class="location-name">史萊姆實驗室</div>
+                        <div class="location-subtitle">Coming Soon</div>
+                        <div class="coming-soon-badge">即將推出</div>
+                    </div>
+                    
+                    <!-- 夢幻廁所設計室 -->
+                    <div class="location bathroom-studio house-building locked" 
+                         data-game="bathroom" 
+                         data-status="coming-soon">
+                        <div class="building-decoration">🛁🦆</div>
+                        <div class="location-icon">🔒</div>
+                        <div class="location-name">夢幻廁所設計室</div>
+                        <div class="location-subtitle">Coming Soon</div>
+                        <div class="coming-soon-badge">即將推出</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 粒子效果容器 -->
+            <div id="particles-js" class="absolute inset-0 pointer-events-none"></div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript 模組 -->
+    <script type="module" src="js/features/gift-box-intro.js"></script>
+    <script type="module" src="js/core/app.js"></script>
+    <script type="module" src="js/features/particles-effect.js"></script>
+    <script type="module" src="js/features/map-navigation.js"></script>
+    
+    <!-- ⭐ 必需：應用切換器組件 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>
+

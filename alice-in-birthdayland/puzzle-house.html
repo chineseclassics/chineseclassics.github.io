@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>記憶拼圖屋 - Alice in Birthdayland</title>
+    <meta name="description" content="從混合照片碎片中完成 3 張照片，解鎖生日驚喜！">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Bubblegum+Sans&display=swap" rel="stylesheet">
+    
+    <!-- 自定義樣式 -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/puzzle-game.css">
+    <link rel="stylesheet" href="css/ipad-optimization.css">
+</head>
+<body>
+    <!-- 主容器 -->
+    <div id="app" class="min-h-screen puzzle-theme">
+        
+        <!-- 拼圖遊戲區域 -->
+        <div id="puzzle-game" class="puzzle-container">
+            
+            <!-- 頂部控制欄 -->
+            <div class="game-header">
+                <div class="header-left">
+                    <button id="back-btn" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        返回地圖
+                    </button>
+                </div>
+                
+                <div class="header-center">
+                    <h1 class="game-title">
+                        🎂 記憶拼圖屋 🎂
+                    </h1>
+                    <p class="game-subtitle">
+                        從混合碎片中完成 3 張照片
+                    </p>
+                </div>
+                
+                <div class="header-right">
+                    <div class="game-timer">
+                        <i class="fas fa-clock"></i>
+                        <span id="timer-display">00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 進度指示器 -->
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progress-count">0 / 3</span> 完成
+                </div>
+            </div>
+
+            <!-- 遊戲區域 -->
+            <div class="game-workspace">
+                
+                <!-- 左側：碎片池 -->
+                <div class="piece-pool-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-puzzle-piece"></i>
+                        碎片池
+                    </h3>
+                    <div id="piece-pool" class="piece-pool">
+                        <!-- 碎片會動態生成 -->
+                    </div>
+                    <div class="pool-actions">
+                        <button id="hint-btn" class="btn-hint">
+                            <i class="fas fa-lightbulb"></i>
+                            提示 (3)
+                        </button>
+                        <button id="shuffle-btn" class="btn-secondary">
+                            <i class="fas fa-random"></i>
+                            重新排列
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 右側：拼圖工作區 -->
+                <div class="puzzle-workspace-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-th"></i>
+                        拼圖工作區
+                    </h3>
+                    
+                    <!-- 照片選擇區域 -->
+                    <div class="photo-selection">
+                        <h4>選擇要拼的照片：</h4>
+                        <div id="photo-thumbnails" class="photo-thumbnails">
+                            <!-- 照片縮圖會動態生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 拼圖網格區域 -->
+                    <div id="puzzle-grids" class="puzzle-grids">
+                        <!-- 拼圖網格會動態生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部提示 -->
+            <div class="game-tips">
+                <div class="tip-item">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <span>拖拽碎片到正確位置</span>
+                </div>
+                <div class="tip-item">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>使用提示查看完整照片</span>
+                </div>
+                <div class="tip-item">
+                    <i class="fas fa-trophy"></i>
+                    <span>完成 3 張照片解鎖驚喜！</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 完成慶祝模態框 -->
+        <div id="completion-modal" class="modal hidden">
+            <div class="modal-overlay">
+                <div class="modal-content">
+                    <div class="celebration-header">
+                        <div class="celebration-icon">🎉</div>
+                        <h2 class="celebration-title">恭喜完成！</h2>
+                    </div>
+                    
+                    <div class="completion-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span>完成時間：<span id="final-time">00:00</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-puzzle-piece"></i>
+                            <span>完成照片：3 / 3</span>
+                        </div>
+                    </div>
+                    
+                    <div class="birthday-message">
+                        <h3>🎂 生日快樂，親愛的張思味（枸杞）！🎂</h3>
+                        <p>你成功完成了記憶拼圖挑戰！</p>
+                        <p>這些美好的回憶都是我們和毛豆一起創造的。</p>
+                        <p>希望你永遠保持這份好奇心、創造力和甜蜜笑容。</p>
+                        <p class="signature">爸爸媽媽和 Amos 永遠愛你！❤️</p>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button id="video-btn" class="btn-primary">
+                            <i class="fas fa-play"></i>
+                            查看驚喜影片
+                        </button>
+                        <button id="restart-btn" class="btn-secondary">
+                            <i class="fas fa-redo"></i>
+                            再玩一次
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- YouTube 影片模態框 -->
+        <div id="video-modal" class="modal hidden">
+            <div class="modal-overlay">
+                <div class="modal-content video-content">
+                    <div class="video-header">
+                        <h3>🎬 生日驚喜影片 🎬</h3>
+                        <button id="close-video" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="video-container">
+                        <iframe id="birthday-video" 
+                                width="100%" 
+                                height="315" 
+                                frameborder="0" 
+                                allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript 模組 -->
+    <script type="module" src="js/features/puzzle-engine.js"></script>
+    <script type="module" src="js/features/puzzle-ui.js"></script>
+    <script type="module" src="js/utils/timer.js"></script>
+    <script type="module" src="js/utils/audio-manager.js"></script>
+    
+    <!-- ⭐ 必需：應用切換器組件 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>

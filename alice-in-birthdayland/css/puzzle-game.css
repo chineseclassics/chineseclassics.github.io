@@ -1,0 +1,802 @@
+/* ========================================
+   Alice in Birthdayland - 拼圖遊戲樣式
+   ======================================== */
+
+/* 拼圖主題背景 */
+.puzzle-theme {
+    background: linear-gradient(135deg, 
+        #FFB6C1 0%,    /* 草莓粉 */
+        #FFF8DC 25%,   /* 奶油黃 */
+        #98FF98 50%,   /* 薄荷綠 */
+        #DDA0DD 75%,   /* 藍莓紫 */
+        #87CEEB 100%   /* 天藍 */
+    );
+    min-height: 100vh;
+}
+
+/* 拼圖容器 */
+.puzzle-container {
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* 遊戲標題欄 */
+.game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.header-left, .header-right {
+    flex: 1;
+}
+
+.header-center {
+    flex: 2;
+    text-align: center;
+}
+
+.game-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    background: linear-gradient(135deg, #FF69B4, #FFD700, #87CEEB);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.game-subtitle {
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+.game-timer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 15px rgba(255,105,180,0.3);
+}
+
+/* 進度指示器 */
+.progress-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,182,193,0.3);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF69B4, #FFD700, #87CEEB);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    box-shadow: 0 2px 10px rgba(255,105,180,0.4);
+}
+
+.progress-text {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #666;
+}
+
+/* 遊戲工作區 */
+.game-workspace {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* 碎片池區域 */
+.piece-pool-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: #333;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.piece-pool {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    align-content: start;
+    padding: 12px;
+    background: rgba(255,182,193,0.1);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.piece-pool::-webkit-scrollbar {
+    width: 6px;
+}
+
+.piece-pool::-webkit-scrollbar-track {
+    background: rgba(255,182,193,0.2);
+    border-radius: 3px;
+}
+
+.piece-pool::-webkit-scrollbar-thumb {
+    background: #FFB6C1;
+    border-radius: 3px;
+}
+
+.pool-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* 返回地圖按鈕 */
+#back-btn {
+    background: linear-gradient(135deg, #6C757D, #495057);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(108,117,125,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108,117,125,0.4);
+    background: linear-gradient(135deg, #495057, #343A40);
+}
+
+#back-btn:active {
+    transform: translateY(0);
+}
+
+/* 重新排列按鈕 */
+#shuffle-btn {
+    background: linear-gradient(135deg, #87CEEB, #4FC3F7);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(135,206,235,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#shuffle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(135,206,235,0.4);
+    background: linear-gradient(135deg, #4FC3F7, #29B6F6);
+}
+
+#shuffle-btn:active {
+    transform: translateY(0);
+}
+
+.btn-hint {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 12px rgba(255,165,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-hint:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255,165,0,0.4);
+    background: linear-gradient(135deg, #FFA500, #FFD700);
+}
+
+.btn-hint:active {
+    transform: translateY(0);
+}
+
+.btn-hint:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    background: linear-gradient(135deg, #ccc, #999);
+}
+
+/* 拼圖工作區 */
+.puzzle-workspace-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+/* 照片選擇區域 */
+.photo-selection {
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.photo-selection h4 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: #333;
+    margin: 0 0 10px 0;
+}
+
+.photo-thumbnails {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.photo-thumbnail {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    object-fit: cover;
+}
+
+.photo-thumbnail:hover {
+    transform: scale(1.1);
+    border-color: #FF69B4;
+}
+
+.photo-thumbnail.selected {
+    border-color: #FF69B4;
+    box-shadow: 0 0 15px rgba(255,105,180,0.5);
+}
+
+.photo-thumbnail.completed {
+    border-color: #4CAF50;
+    box-shadow: 0 0 15px rgba(76,175,80,0.5);
+    opacity: 0.7;
+}
+
+/* 拼圖網格區域 */
+.puzzle-grids {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    align-items: start;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.puzzle-grid {
+    background: rgba(255,182,193,0.1);
+    border-radius: 12px;
+    padding: 12px;
+    border: 2px dashed rgba(255,105,180,0.3);
+    transition: all 0.3s ease;
+}
+
+.puzzle-grid.active {
+    border-color: #FF69B4;
+    background: rgba(255,105,180,0.1);
+    box-shadow: 0 0 20px rgba(255,105,180,0.2);
+}
+
+.puzzle-grid.completed {
+    border-color: #4CAF50;
+    background: rgba(76,175,80,0.1);
+    box-shadow: 0 0 20px rgba(76,175,80,0.2);
+}
+
+.grid-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.grid-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.grid-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.grid-status.waiting {
+    background: rgba(255,165,0,0.2);
+    color: #FF9800;
+}
+
+.grid-status.active {
+    background: rgba(255,105,180,0.2);
+    color: #FF69B4;
+}
+
+.grid-status.completed {
+    background: rgba(76,175,80,0.2);
+    color: #4CAF50;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 3px;
+    width: 100%;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
+.grid-slot {
+    background: #f5f5f5;
+    border: 2px dashed #ddd;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.grid-slot:hover {
+    background: rgba(255,105,180,0.1);
+    border-color: #FF69B4;
+}
+
+.grid-slot.occupied {
+    background: #fff;
+    border-color: #4CAF50;
+    border-style: solid;
+}
+
+.grid-slot.correct {
+    background: rgba(76,175,80,0.1);
+    border-color: #4CAF50;
+    animation: correctPulse 0.6s ease-out;
+}
+
+@keyframes correctPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* 拼圖碎片 */
+.puzzle-piece {
+    border-radius: 5px;
+    cursor: grab;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    user-select: none;
+    background: white;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 碎片池中的碎片 */
+.piece-pool .puzzle-piece {
+    width: 100%;
+    aspect-ratio: 1;
+    min-height: 90px;
+}
+
+/* 網格槽位中的碎片 */
+.grid-slot .puzzle-piece {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    box-shadow: none;
+}
+
+.puzzle-piece:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.puzzle-piece:active {
+    cursor: grabbing;
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.puzzle-piece.dragging {
+    transform: scale(1.1) rotate(5deg);
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.puzzle-piece.locked {
+    cursor: default;
+    opacity: 0.8;
+}
+
+.puzzle-piece.locked:hover {
+    transform: none;
+}
+
+.puzzle-piece.correct-piece {
+    border: 2px solid #4CAF50;
+    box-shadow: 0 0 10px rgba(76,175,80,0.3);
+}
+
+.puzzle-piece.placed-piece {
+    border: 2px solid #FF9800;
+    box-shadow: 0 0 10px rgba(255,152,0,0.2);
+    cursor: grab;
+    animation: wrongPlacePulse 2s ease-in-out infinite;
+}
+
+.puzzle-piece.placed-piece:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255,152,0,0.4);
+}
+
+.puzzle-piece.placed-piece:active {
+    cursor: grabbing;
+}
+
+@keyframes wrongPlacePulse {
+    0%, 100% { border-color: #FF9800; }
+    50% { border-color: #FFA726; }
+}
+
+/* 網格槽位樣式增強 */
+.grid-slot.placed {
+    background: rgba(255,152,0,0.05);
+    border-color: #FF9800;
+    border-style: solid;
+}
+
+.grid-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 遊戲提示 */
+.game-tips {
+    display: none;
+}
+
+.tip-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 1rem;
+    color: #666;
+}
+
+.tip-item i {
+    color: #FF69B4;
+    font-size: 1.2rem;
+}
+
+/* 模態框樣式 */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #FFF8DC, #FFB6C1);
+    border-radius: 25px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    text-align: center;
+}
+
+.modal.show .modal-content {
+    transform: scale(1);
+}
+
+.celebration-header {
+    margin-bottom: 30px;
+}
+
+.celebration-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    animation: celebrationBounce 2s ease-in-out infinite;
+}
+
+@keyframes celebrationBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-20px);
+    }
+    60% {
+        transform: translateY(-10px);
+    }
+}
+
+.celebration-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #FF69B4, #FFD700);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.completion-stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 15px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.stat-item i {
+    color: #FF69B4;
+}
+
+.birthday-message {
+    margin-bottom: 30px;
+    text-align: left;
+    background: rgba(255,255,255,0.7);
+    padding: 25px;
+    border-radius: 15px;
+}
+
+.birthday-message h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: #FF69B4;
+    margin: 0 0 15px 0;
+    text-align: center;
+}
+
+.birthday-message p {
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 1.1rem;
+    color: #333;
+    line-height: 1.6;
+    margin: 10px 0;
+}
+
+.signature {
+    font-weight: bold;
+    color: #FF69B4;
+    text-align: center;
+    margin-top: 20px !important;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* 影片模態框 */
+.video-content {
+    max-width: 800px;
+}
+
+.video-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.video-header h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: #333;
+    margin: 0;
+}
+
+.btn-close {
+    background: #ff4757;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.btn-close:hover {
+    background: #ff3742;
+    transform: scale(1.1);
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%; /* 16:9 比例 */
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+}
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+    .game-workspace {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .piece-pool {
+        max-height: 300px;
+    }
+    
+    .game-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .header-left, .header-right {
+        flex: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .puzzle-container {
+        padding: 10px;
+    }
+    
+    .game-title {
+        font-size: 2rem;
+    }
+    
+    .grid-container {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .game-tips {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .completion-stats {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+}

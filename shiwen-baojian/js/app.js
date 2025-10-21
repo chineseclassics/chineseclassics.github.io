@@ -1149,6 +1149,9 @@ async function setupEssayStatus(assignmentId, editable = true) {
                 statusText.textContent = '已批改';
                 statusText.classList.add('text-yellow-600', 'font-semibold');
             }
+            
+            // ✅ 如果已批改，顯示老師的評分和評語（替換「賈雨村說」）
+            await displayTeacherGrading(essayId);
         } else {
             // 草稿狀態
             if (statusText) statusText.textContent = '草稿';
@@ -1373,6 +1376,124 @@ function showError(message) {
 // ================================
 // 應用啟動
 // ================================
+
+/**
+ * 顯示老師的評分和評語（替換「賈雨村說」側邊欄）
+ */
+async function displayTeacherGrading(essayId) {
+    try {
+        console.log('📊 加載老師評分:', essayId);
+        
+        // 查詢老師的評分
+        const { data: grade, error } = await AppState.supabase
+            .from('grades')
+            .select(`
+                *,
+                teacher:users!teacher_id(display_name)
+            `)
+            .eq('essay_id', essayId)
+            .eq('status', 'final')
+            .maybeSingle();
+        
+        if (error) {
+            console.error('❌ 查詢評分失敗:', error);
+            return;
+        }
+        
+        if (!grade) {
+            console.log('ℹ️ 還沒有評分記錄');
+            return;
+        }
+        
+        console.log('✅ 找到老師評分:', grade);
+        
+        // 獲取側邊欄容器
+        const sidebar = document.getElementById('ai-feedback-sidebar');
+        if (!sidebar) {
+            console.warn('⚠️ 找不到側邊欄容器');
+            return;
+        }
+        
+        // 計算總分
+        const scores = [];
+        if (grade.criterion_a_score !== null) scores.push({ code: 'A', name: '分析', score: grade.criterion_a_score });
+        if (grade.criterion_b_score !== null) scores.push({ code: 'B', name: '組織', score: grade.criterion_b_score });
+        if (grade.criterion_c_score !== null) scores.push({ code: 'C', name: '創作', score: grade.criterion_c_score });
+        if (grade.criterion_d_score !== null) scores.push({ code: 'D', name: '語言', score: grade.criterion_d_score });
+        
+        const totalScore = grade.total_score || scores.reduce((sum, s) => sum + s.score, 0);
+        const maxScore = scores.length * 8;
+        
+        // 替換側邊欄內容為老師評分
+        sidebar.innerHTML = `
+            <!-- 側邊欄標題 -->
+            <div class="premium-blue-gradient px-4 py-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-chalkboard-teacher text-xl text-yellow-100"></i>
+                    <h3 class="font-bold text-xl text-yellow-50" style="letter-spacing: 0.1em;">老師評分</h3>
+                </div>
+            </div>
+            
+            <!-- 總分顯示 -->
+            <div class="bg-gradient-to-br from-blue-600 to-purple-600 px-4 py-6 text-center text-white">
+                <div class="text-sm mb-2 opacity-90">總分</div>
+                <div class="text-5xl font-bold mb-1">${totalScore}</div>
+                <div class="text-sm opacity-90">/ ${maxScore} 分</div>
+            </div>
+            
+            <!-- 各標準評分 -->
+            <div class="p-4 space-y-3">
+                ${scores.map(s => `
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border-l-4 border-blue-500">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-semibold text-gray-700">標準 ${s.code}：${s.name}</span>
+                            <span class="text-2xl font-bold text-blue-600">${s.score}</span>
+                        </div>
+                        <div class="text-xs text-gray-500">/ 8 分</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <!-- 老師評語 -->
+            ${grade.overall_comment ? `
+                <div class="border-t border-gray-200 p-4">
+                    <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <i class="fas fa-comment-dots text-blue-600"></i>
+                        老師評語
+                    </h4>
+                    <div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-400">
+                        <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${grade.overall_comment}</p>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- 批改時間 -->
+            <div class="border-t border-gray-200 px-4 py-3 bg-gray-50">
+                <p class="text-xs text-gray-600 text-center">
+                    <i class="fas fa-clock mr-1"></i>
+                    批改時間：${new Date(grade.graded_at).toLocaleString('zh-Hant-TW', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
+                </p>
+                ${grade.teacher?.display_name ? `
+                    <p class="text-xs text-gray-600 text-center mt-1">
+                        <i class="fas fa-user-tie mr-1"></i>
+                        批改老師：${grade.teacher.display_name}
+                    </p>
+                ` : ''}
+            </div>
+        `;
+        
+        console.log('✅ 老師評分已顯示在側邊欄');
+        
+    } catch (error) {
+        console.error('❌ 顯示老師評分失敗:', error);
+    }
+}
 
 // 等待 DOM 加載完成後初始化應用
 if (document.readyState === 'loading') {

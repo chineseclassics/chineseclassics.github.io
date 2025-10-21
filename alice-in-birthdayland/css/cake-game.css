@@ -1,0 +1,806 @@
+/* ========================================
+   Alice in Birthdayland - 蛋糕遊戲樣式
+   ======================================== */
+
+/* 蛋糕主題背景 */
+.cake-theme {
+    background: linear-gradient(135deg, 
+        #FFF8DC 0%,    /* 奶油黃 */
+        #FFB6C1 25%,   /* 草莓粉 */
+        #98FF98 50%,   /* 薄荷綠 */
+        #DDA0DD 75%,   /* 藍莓紫 */
+        #87CEEB 100%   /* 天藍 */
+    );
+    min-height: 100vh;
+}
+
+/* 工作室容器 */
+.studio-container {
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* 工作室標題欄 */
+.studio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.header-left, .header-right {
+    flex: 1;
+}
+
+.header-center {
+    flex: 2;
+    text-align: center;
+}
+
+.studio-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    background: linear-gradient(135deg, #FF69B4, #FFD700, #87CEEB);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.studio-subtitle {
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+.studio-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* 工作室工作區 */
+.studio-workspace {
+    display: grid;
+    grid-template-columns: 280px 1fr 350px;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* 工具面板 */
+.tools-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.tools-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tools-panel::-webkit-scrollbar-track {
+    background: rgba(255,182,193,0.2);
+    border-radius: 3px;
+}
+
+.tools-panel::-webkit-scrollbar-thumb {
+    background: #FFB6C1;
+    border-radius: 3px;
+}
+
+/* 工具區段 */
+.tool-section {
+    background: rgba(255,182,193,0.1);
+    border-radius: 12px;
+    padding: 12px;
+    flex-shrink: 0;
+}
+
+.section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #333;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 蛋糕底座選項 */
+.cake-base-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.cake-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 10px;
+    background: white;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 0.9rem;
+}
+
+.cake-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.cake-option.active {
+    border-color: #FF69B4;
+    background: rgba(255,105,180,0.1);
+    box-shadow: 0 0 15px rgba(255,105,180,0.3);
+}
+
+.option-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+/* 糖霜顏色選擇 */
+.frosting-colors {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.color-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: white;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 0.9rem;
+}
+
+.color-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.color-btn.active {
+    border-color: #FF69B4;
+    background: rgba(255,105,180,0.1);
+}
+
+.color-preview {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+}
+
+/* 裝飾元素 */
+.scrollable {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.decoration-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.deco-category {
+    margin-bottom: 8px;
+}
+
+.deco-category h4 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    color: #333;
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #FFB6C1;
+}
+
+.deco-item {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    font-size: 1.6rem;
+    text-align: center;
+    line-height: 44px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.3s ease;
+    margin: 3px;
+    user-select: none;
+}
+
+.deco-item:hover {
+    transform: scale(1.1);
+    border-color: #FF69B4;
+    box-shadow: 0 5px 15px rgba(255,105,180,0.3);
+}
+
+.deco-item:active {
+    cursor: grabbing;
+    transform: scale(1.2);
+}
+
+/* 文字添加 */
+.text-select, .text-input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 1rem;
+    margin-bottom: 10px;
+    transition: border-color 0.3s ease;
+}
+
+.text-select:focus, .text-input:focus {
+    outline: none;
+    border-color: #FF69B4;
+}
+
+.text-input {
+    margin-bottom: 15px;
+}
+
+/* 蛋糕畫布區域 */
+.cake-canvas-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    overflow: hidden;
+}
+
+.canvas-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: #333;
+    margin: 0 0 15px 0;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.cake-canvas {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #FFF8DC, #FFB6C1);
+    border-radius: 15px;
+    border: 4px solid #FFF;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    margin-bottom: 15px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* 蛋糕底座 */
+.cake-base {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+/* 圓形底座 */
+.cake-base.round {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+}
+
+/* 愛心底座 */
+.cake-base.heart {
+    width: 200px;
+    height: 200px;
+    position: relative;
+}
+
+.cake-base.heart::before,
+.cake-base.heart::after {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 160px;
+    background-color: inherit;
+    border-radius: 100px 100px 0 0;
+}
+
+.cake-base.heart::before {
+    top: 0;
+    left: 50px;
+    transform: rotate(-45deg);
+    transform-origin: 0 100%;
+}
+
+.cake-base.heart::after {
+    top: 0;
+    left: 50px;
+    transform: rotate(45deg);
+    transform-origin: 100% 100%;
+}
+
+/* 星星底座 */
+.cake-base.star {
+    width: 200px;
+    height: 200px;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* 花朵底座 - 使用多個圓形組成花瓣 */
+.cake-base.flower {
+    width: 200px;
+    height: 200px;
+    position: relative;
+}
+
+.cake-base.flower::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 50% 0%, currentColor 35%, transparent 35%),
+        radial-gradient(circle at 100% 50%, currentColor 35%, transparent 35%),
+        radial-gradient(circle at 50% 100%, currentColor 35%, transparent 35%),
+        radial-gradient(circle at 0% 50%, currentColor 35%, transparent 35%),
+        radial-gradient(circle at 85% 15%, currentColor 35%, transparent 35%),
+        radial-gradient(circle at 85% 85%, currentColor 35%, transparent 35%),
+        radial-gradient(circle at 15% 85%, currentColor 35%, transparent 35%),
+        radial-gradient(circle at 15% 15%, currentColor 35%, transparent 35%);
+    color: inherit;
+}
+
+.cake-base.flower::after {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: inherit;
+    border-radius: 50%;
+}
+
+/* 糖霜顏色 */
+.cake-base.round.pink,
+.cake-base.heart.pink,
+.cake-base.star.pink { 
+    background-color: #FFB6C1; 
+}
+.cake-base.flower.pink { 
+    background-color: #FFB6C1;
+    color: #FFB6C1;
+}
+
+.cake-base.round.yellow,
+.cake-base.heart.yellow,
+.cake-base.star.yellow { 
+    background-color: #FFD700; 
+}
+.cake-base.flower.yellow { 
+    background-color: #FFD700;
+    color: #FFD700;
+}
+
+.cake-base.round.green,
+.cake-base.heart.green,
+.cake-base.star.green { 
+    background-color: #98FF98; 
+}
+.cake-base.flower.green { 
+    background-color: #98FF98;
+    color: #98FF98;
+}
+
+.cake-base.round.purple,
+.cake-base.heart.purple,
+.cake-base.star.purple { 
+    background-color: #DDA0DD; 
+}
+.cake-base.flower.purple { 
+    background-color: #DDA0DD;
+    color: #DDA0DD;
+}
+
+.cake-base.round.blue,
+.cake-base.heart.blue,
+.cake-base.star.blue { 
+    background-color: #87CEEB; 
+}
+.cake-base.flower.blue { 
+    background-color: #87CEEB;
+    color: #87CEEB;
+}
+
+.cake-base.round.white,
+.cake-base.heart.white,
+.cake-base.star.white { 
+    background-color: #FFF; 
+}
+.cake-base.flower.white { 
+    background-color: #FFF;
+    color: #FFF;
+}
+
+/* 裝飾層 */
+.decorations {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.decorations .deco-item {
+    position: absolute;
+    pointer-events: all;
+    cursor: move;
+    transition: all 0.3s ease;
+}
+
+.decorations .deco-item:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+/* 文字層 */
+.text-elements {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.text-elements .text-item {
+    position: absolute;
+    pointer-events: all;
+    cursor: move;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: #333;
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+    transition: all 0.3s ease;
+}
+
+.text-elements .text-item:hover {
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+/* 畫布操作 */
+.canvas-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* 裝飾面板（右側） */
+.decoration-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.decoration-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.decoration-panel::-webkit-scrollbar-track {
+    background: rgba(255,182,193,0.2);
+    border-radius: 3px;
+}
+
+.decoration-panel::-webkit-scrollbar-thumb {
+    background: #FFB6C1;
+    border-radius: 3px;
+}
+
+.panel-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: #333;
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255,105,180,0.3);
+}
+
+.deco-items-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.tip-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tip-list li {
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 6px;
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.tip-list li::before {
+    content: '✨';
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 0.8rem;
+}
+
+/* 靈感畫廊 */
+.inspiration-gallery {
+    flex-shrink: 0;
+}
+
+.inspiration-gallery h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: #333;
+    margin: 0 0 10px 0;
+}
+
+.inspiration-images {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inspiration-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.inspiration-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.inspiration-preview {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,182,193,0.2);
+    border-radius: 8px;
+}
+
+.inspiration-item span {
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+/* 模態框樣式 */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #FFF8DC, #FFB6C1);
+    border-radius: 25px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    text-align: center;
+}
+
+.modal.show .modal-content {
+    transform: scale(1);
+}
+
+.celebration-header {
+    margin-bottom: 30px;
+}
+
+.celebration-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    animation: celebrationBounce 2s ease-in-out infinite;
+}
+
+@keyframes celebrationBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-20px);
+    }
+    60% {
+        transform: translateY(-10px);
+    }
+}
+
+.celebration-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #FF69B4, #FFD700);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.cake-preview {
+    margin-bottom: 30px;
+}
+
+.preview-cake {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    background: #FFB6C1;
+    border-radius: 50%;
+    border: 5px solid #FFF;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.completion-message {
+    margin-bottom: 30px;
+    background: rgba(255,255,255,0.7);
+    padding: 25px;
+    border-radius: 15px;
+}
+
+.completion-message p {
+    font-family: 'Bubblegum Sans', cursive;
+    font-size: 1.1rem;
+    color: #333;
+    line-height: 1.6;
+    margin: 10px 0;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* 響應式設計 */
+@media (max-width: 1200px) {
+    .studio-workspace {
+        grid-template-columns: 250px 1fr 200px;
+        gap: 20px;
+    }
+    
+    .cake-canvas {
+        width: 350px;
+        height: 350px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .studio-workspace {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .tools-panel, .tips-panel {
+        max-height: none;
+    }
+    
+    .studio-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .header-left, .header-right {
+        flex: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .studio-container {
+        padding: 10px;
+    }
+    
+    .studio-title {
+        font-size: 2rem;
+    }
+    
+    .cake-canvas {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .cake-base.round {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+}
