@@ -73,7 +73,42 @@ export async function loadSavedAISuggestion(essayId, supabaseClient) {
 
     if (error) throw error;
 
-    return data;
+    if (!data) return null;
+
+    // 转换数据库结构为前端期望的格式
+    // 数据库: criterion_a_score, criterion_b_score, etc. + reasoning
+    // 前端期望: criteria_scores = { "A": { "score": 6, "reason": "..." }, ... }
+    const criteriaScores = {};
+    
+    if (data.criterion_a_score !== null) {
+      criteriaScores.A = {
+        score: data.criterion_a_score,
+        reason: data.reasoning?.A || ''
+      };
+    }
+    if (data.criterion_b_score !== null) {
+      criteriaScores.B = {
+        score: data.criterion_b_score,
+        reason: data.reasoning?.B || ''
+      };
+    }
+    if (data.criterion_c_score !== null) {
+      criteriaScores.C = {
+        score: data.criterion_c_score,
+        reason: data.reasoning?.C || ''
+      };
+    }
+    if (data.criterion_d_score !== null) {
+      criteriaScores.D = {
+        score: data.criterion_d_score,
+        reason: data.reasoning?.D || ''
+      };
+    }
+
+    return {
+      ...data,
+      criteria_scores: criteriaScores
+    };
   } catch (error) {
     console.error('加载 AI 评分建议失败:', error);
     return null;

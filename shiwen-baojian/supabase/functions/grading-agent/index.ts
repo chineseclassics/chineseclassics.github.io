@@ -71,9 +71,9 @@ serve(async (req) => {
     // 2. 查询所有段落
     const { data: paragraphs, error: paragraphsError } = await supabase
       .from('paragraphs')
-      .select('paragraph_type, content, paragraph_order')
+      .select('paragraph_type, content, order_index')
       .eq('essay_id', essay_id)
-      .order('paragraph_order')
+      .order('order_index')
 
     if (paragraphsError) {
       return new Response(
@@ -116,7 +116,7 @@ serve(async (req) => {
 
 **评分标准说明**：
 ${criteria.map(c => `
-**${c.id}. ${c.name}**（0-8 分）
+**${c.code}. ${c.name}**（0-8 分）
 ${c.descriptors.map(d => `- ${d.range} 分：${d.description}`).join('\n')}
 `).join('\n')}
 
@@ -142,7 +142,7 @@ ${c.descriptors.map(d => `- ${d.range} 分：${d.description}`).join('\n')}
 ${essayText}
 
 **评分要求**：
-- 只为以下标准评分：${criteria.map(c => c.id).join('、')}
+- 只为以下标准评分：${criteria.map(c => c.code).join('、')}
 - 每个标准 0-8 分
 - 提供客观的评分理由`
 
@@ -194,21 +194,31 @@ ${essayText}
       )
     }
 
-    // 6. 保存评分建议到数据库
+    // 6. 转换为数据库表结构并保存
+    // 表结构：criterion_a_score, criterion_b_score, criterion_c_score, criterion_d_score, reasoning
+    const insertData: any = {
+      essay_id: essay_id,
+      grading_rubric_id: grading_rubric_json.id || 'ib-myp',  // 使用传入的 rubric ID
+      reasoning: {}  // 存储所有标准的评分理由
+    }
+
+    // 提取分数和理由
+    for (const [code, scoreData] of Object.entries(criteriaScores)) {
+      const columnName = `criterion_${code.toLowerCase()}_score`
+      insertData[columnName] = (scoreData as any).score
+      insertData.reasoning[code] = (scoreData as any).reason
+    }
+
     const { data: suggestion, error: saveError } = await supabase
       .from('ai_grading_suggestions')
-      .insert({
-        essay_id: essay_id,
-        criteria_scores: criteriaScores,
-        created_at: new Date().toISOString()
-      })
+      .insert(insertData)
       .select()
       .single()
 
     if (saveError) {
       console.error('保存评分建议失败:', saveError)
       return new Response(
-        JSON.stringify({ error: '保存评分建议失败', criteria_scores: criteriaScores }),
+        JSON.stringify({ error: '保存评分建议失败', details: saveError.message, criteria_scores: criteriaScores }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
