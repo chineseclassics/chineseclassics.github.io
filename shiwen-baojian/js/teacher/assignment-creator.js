@@ -1057,7 +1057,7 @@ class AssignmentCreator {
       const filteredRubric = {
         ...fullRubric,
         criteria: fullRubric.criteria.filter(criterion => 
-          selectedCriteria.includes(criterion.id)
+          selectedCriteria.includes(criterion.code)
         )
       };
 
