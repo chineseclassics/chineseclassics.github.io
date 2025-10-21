@@ -17,14 +17,15 @@ class GradingUI {
     this.container = container;
     
     try {
-      // 加載作業詳情
+      // 加載作業詳情（包含已有的評分）
       const { data: essay, error } = await this.supabase
         .from('essays')
         .select(`
           *,
           student:users!student_id(display_name, email),
           assignment:assignments!assignment_id(title, grading_rubric_json),
-          paragraphs(*)
+          paragraphs(*),
+          grade:grades(*)
         `)
         .eq('id', essayId)
         .single();
@@ -40,7 +41,9 @@ class GradingUI {
         assignmentTitle: essay.assignment?.title,
         hasRubric: !!essay.assignment?.grading_rubric_json,
         rubricType: typeof essay.assignment?.grading_rubric_json,
-        rubric: essay.assignment?.grading_rubric_json
+        rubric: essay.assignment?.grading_rubric_json,
+        hasExistingGrade: !!essay.grade,
+        existingGrade: essay.grade
       });
 
       this.currentEssay = essay;
@@ -177,10 +180,23 @@ class GradingUI {
                 <div class="panel-content">
                   <form id="gradingForm">
                     ${(() => {
+                      // 提取已有的評分（如果存在）
+                      const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                      
                       console.log('📝 開始渲染評分標準，共', rubric.criteria.length, '個');
+                      if (existingGrade) {
+                        console.log('📊 找到已有評分:', existingGrade);
+                      }
+                      
                       const criteriaHTML = rubric.criteria.map((criterion, idx) => {
                         console.log(`  - 標準 ${idx + 1}:`, criterion.code, criterion.name);
-                        return this.renderCriterionForm(criterion);
+                        
+                        // 獲取該標準的已有分數
+                        const existingScore = existingGrade 
+                          ? existingGrade[`criterion_${criterion.code.toLowerCase()}_score`]
+                          : null;
+                        
+                        return this.renderCriterionForm(criterion, existingScore);
                       }).join('');
                       console.log('✅ 評分標準 HTML 生成完成');
                       return criteriaHTML;
@@ -193,14 +209,32 @@ class GradingUI {
                         rows="6"
                         placeholder="請填寫對學生作業的總體評價和改進建議..."
                         required
-                      >${essay.teacher_comments || ''}</textarea>
+                      >${(() => {
+                        const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                        return existingGrade?.overall_comment || '';
+                      })()}</textarea>
                     </div>
 
                     <div class="form-actions">
                       <button type="submit" class="btn-submit-grading">
                         <i class="fas fa-check"></i>
-                        提交批改
+                        ${(() => {
+                          const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                          return existingGrade ? '更新批改' : '提交批改';
+                        })()}
                       </button>
+                      ${(() => {
+                        const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                        if (existingGrade) {
+                          return `
+                            <p class="text-sm text-gray-500 mt-2">
+                              <i class="fas fa-info-circle"></i>
+                              此作業已批改，您可以修改評分並重新提交
+                            </p>
+                          `;
+                        }
+                        return '';
+                      })()}
                     </div>
                   </form>
                 </div>
@@ -334,14 +368,14 @@ class GradingUI {
   /**
    * 渲染評分標準表單
    */
-  renderCriterionForm(criterion) {
+  renderCriterionForm(criterion, existingScore = null) {
     return `
       <div class="criterion-group">
         <label>標準 ${criterion.code}：${criterion.name} (0-${criterion.maxScore})</label>
         <select name="criterion_${criterion.code.toLowerCase()}" required>
           <option value="">請選擇分数</option>
           ${Array.from({ length: criterion.maxScore + 1 }, (_, i) => `
-            <option value="${i}">${i} 分</option>
+            <option value="${i}" ${existingScore === i ? 'selected' : ''}>${i} 分</option>
           `).join('')}
         </select>
         <details class="criterion-details">
