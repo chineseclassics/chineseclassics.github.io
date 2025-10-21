@@ -204,8 +204,27 @@ class AssignmentManager {
         }
       }
 
-      // 從 updates 中移除 confirmUpdate（這只是控制標志，不應該寫入數據庫）
-      const { confirmUpdate, ...dataToUpdate } = updates;
+      // 從 updates 中提取字段並轉換為數據庫列名（蛇形命名）
+      const {
+        confirmUpdate,  // 控制標志，不寫入數據庫
+        title,
+        dueDate,
+        formatSpecId,
+        gradingRubricJson,
+        isDraft,
+        ...otherUpdates
+      } = updates;
+
+      // 構建數據庫更新對象
+      const dataToUpdate = {
+        ...otherUpdates
+      };
+
+      if (title !== undefined) dataToUpdate.title = title.trim();
+      if (dueDate !== undefined) dataToUpdate.due_date = dueDate;
+      if (formatSpecId !== undefined) dataToUpdate.format_spec_id = formatSpecId;
+      if (gradingRubricJson !== undefined) dataToUpdate.grading_rubric_json = gradingRubricJson;
+      if (isDraft !== undefined) dataToUpdate.is_published = !isDraft;
 
       const { data, error } = await this.supabase
         .from('assignments')
