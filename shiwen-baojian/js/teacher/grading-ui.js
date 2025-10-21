@@ -50,6 +50,37 @@ class GradingUI {
   renderGradingForm() {
     const essay = this.currentEssay;
     const rubric = essay.assignment.grading_rubric_json;
+    
+    console.log('🎯 開始渲染批改表單');
+    console.log('  - 作業:', essay.title);
+    console.log('  - 評分標準:', rubric ? '已加載' : '❌ 缺失');
+    
+    if (!rubric || !rubric.criteria) {
+      this.container.innerHTML = `
+        <div class="error-state">
+          <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+          <p class="text-gray-700 text-lg">此任務缺少評分標準</p>
+          <p class="text-gray-500 text-sm mt-2">請返回編輯任務並設置評分標準</p>
+          <button id="backBtn" class="btn btn-secondary mt-4">
+            <i class="fas fa-arrow-left"></i> 返回
+          </button>
+        </div>
+      `;
+      
+      // 綁定返回按鈕
+      setTimeout(() => {
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+          backBtn.addEventListener('click', () => {
+            window.dispatchEvent(new CustomEvent('navigate', {
+              detail: { page: 'grading-queue' }
+            }));
+          });
+        }
+      }, 100);
+      
+      return;
+    }
 
     this.container.innerHTML = `
       <div class="grading-container">
@@ -125,8 +156,14 @@ class GradingUI {
         </div>
       </div>
     `;
+    
+    console.log('✅ 批改表單 HTML 已渲染');
 
-    this.bindEvents();
+    // 等待 DOM 更新後再綁定事件
+    setTimeout(() => {
+      console.log('🔗 開始綁定事件...');
+      this.bindEvents();
+    }, 100);
   }
 
   /**
@@ -176,15 +213,25 @@ class GradingUI {
    */
   bindEvents() {
     const form = document.getElementById('gradingForm');
+    if (!form) {
+      console.error('❌ 找不到批改表單元素');
+      return;
+    }
+    
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       await this.handleSubmitGrading(form);
     });
 
     const backBtn = document.getElementById('backBtn');
+    if (!backBtn) {
+      console.error('❌ 找不到返回按鈕');
+      return;
+    }
+    
     backBtn.addEventListener('click', () => {
       window.dispatchEvent(new CustomEvent('navigate', {
-        detail: { page: 'assignments' }
+        detail: { page: 'grading-queue' }  // ✅ 返回批改隊列而非作業管理
       }));
     });
 
