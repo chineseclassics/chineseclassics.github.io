@@ -24,13 +24,17 @@ class GradingUI {
           *,
           student:users!student_id(display_name, email),
           assignment:assignments!assignment_id(title, grading_rubric_json),
-          paragraphs(*),
-          ai_feedback(*)
+          paragraphs(*)
         `)
         .eq('id', essayId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ 查詢作業失敗:', error);
+        throw error;
+      }
+      
+      console.log('✅ 作業數據加載成功:', essay.title);
 
       this.currentEssay = essay;
       this.renderGradingForm();
