@@ -198,7 +198,7 @@ ${essayText}
     // 表结构：criterion_a_score, criterion_b_score, criterion_c_score, criterion_d_score, reasoning
     const insertData: any = {
       essay_id: essay_id,
-      grading_rubric_id: grading_rubric_json.id || 'ib-myp',  // 使用传入的 rubric ID
+      grading_rubric_id: null,  // 暂时设为 NULL（因为我们没有在 grading_rubrics 表中创建记录）
       reasoning: {}  // 存储所有标准的评分理由
     }
 
