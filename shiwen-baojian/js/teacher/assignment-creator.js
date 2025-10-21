@@ -1078,10 +1078,43 @@ class AssignmentCreator {
       let result;
       if (assignmentId) {
         // 更新現有任務
-        result = await this.assignmentManager.updateAssignment(assignmentId, {
-          ...assignmentData,
-          is_published: !isDraft
-        });
+        try {
+          result = await this.assignmentManager.updateAssignment(assignmentId, {
+            ...assignmentData,
+            is_published: !isDraft
+          });
+        } catch (updateError) {
+          // 如果需要確認（有學生已提交）
+          if (updateError.message === 'REQUIRES_CONFIRMATION') {
+            const confirmed = await new Promise(resolve => {
+              dialog.confirm({
+                title: '⚠️ 確認更新任務',
+                message: '此任務已有學生提交作業。<br><br>更新任務可能影響已提交的作業和評分標準。<br><br>確定要繼續更新嗎？',
+                confirmText: '確定更新',
+                cancelText: '取消',
+                onConfirm: () => resolve(true),
+                onCancel: () => resolve(false)
+              });
+            });
+            
+            if (!confirmed) {
+              // 恢復按鈕
+              const submitBtn = form.querySelector('button[type="submit"]');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = assignmentId ? '更新任務' : '發佈任務';
+              return;
+            }
+            
+            // 用戶確認後，帶上 confirmUpdate 標記重新更新
+            result = await this.assignmentManager.updateAssignment(assignmentId, {
+              ...assignmentData,
+              is_published: !isDraft,
+              confirmUpdate: true
+            });
+          } else {
+            throw updateError;
+          }
+        }
       } else {
         // 創建新任務
         result = await this.assignmentManager.createAssignment(assignmentData);

@@ -187,17 +187,6 @@ class GradingQueue {
 
     this.container.innerHTML = `
       <div class="grading-queue-container">
-        <!-- 頂部統計 -->
-        <div class="grading-stats-bar">
-          <div class="stats-content">
-            <i class="fas fa-clipboard-check text-2xl"></i>
-            <div>
-              <h2 class="text-xl font-bold">待批改作業</h2>
-              <p class="text-sm opacity-90">共 ${this.totalPending} 份作業需要批改</p>
-            </div>
-          </div>
-        </div>
-
         <!-- 任務列表 -->
         <div class="grading-assignments-list">
           ${this.assignmentsWithSubmissions.map(a => this.renderAssignmentSection(a)).join('')}

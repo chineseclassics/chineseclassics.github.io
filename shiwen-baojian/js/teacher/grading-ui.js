@@ -35,6 +35,13 @@ class GradingUI {
       }
       
       console.log('✅ 作業數據加載成功:', essay.title);
+      console.log('📊 完整數據結構:', {
+        essayTitle: essay.title,
+        assignmentTitle: essay.assignment?.title,
+        hasRubric: !!essay.assignment?.grading_rubric_json,
+        rubricType: typeof essay.assignment?.grading_rubric_json,
+        rubric: essay.assignment?.grading_rubric_json
+      });
 
       this.currentEssay = essay;
       this.renderGradingForm();
