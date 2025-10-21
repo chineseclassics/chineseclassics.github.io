@@ -170,7 +170,7 @@ class GradingUI {
                 <div class="panel-header">
                   <div class="flex items-center gap-2">
                     <i class="fas fa-clipboard-check text-xl"></i>
-                    <h3 class="font-bold text-lg">評分</h3>
+                    <h3 class="font-bold text-lg">老師最終評分</h3>
                   </div>
                 </div>
                 
@@ -622,14 +622,16 @@ class GradingUI {
   applyAISuggestion(criteriaScores, overallComment = null) {
     const form = document.getElementById('gradingForm');
     
-    // 填充各标准分数
+    // 填充各标准分数（使用 select 下拉菜单）
     Object.entries(criteriaScores).forEach(([criterionId, data]) => {
       if (data && data.score !== null && data.score !== undefined) {
-        const inputName = `criterion_${criterionId.toLowerCase()}`;
-        const input = form.querySelector(`input[name="${inputName}"]`);
-        if (input) {
-          input.value = data.score;
+        const selectName = `criterion_${criterionId.toLowerCase()}`;
+        const select = form.querySelector(`select[name="${selectName}"]`);
+        if (select) {
+          select.value = data.score;
           console.log(`✅ 填充 ${criterionId}：${data.score} 分`);
+        } else {
+          console.warn(`⚠️ 找不到 select[name="${selectName}"]`);
         }
       }
     });
