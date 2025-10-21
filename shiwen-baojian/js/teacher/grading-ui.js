@@ -170,14 +170,108 @@ class GradingUI {
    * 渲染作業內容
    */
   renderEssayContent(essay) {
-    return essay.paragraphs
-      .sort((a, b) => a.order_index - b.order_index)
-      .map(p => `
-        <div class="paragraph-block">
-          <h4>${p.type === 'introduction' ? '引言' : p.type === 'conclusion' ? '結论' : '正文段落'}</h4>
-          <div class="paragraph-content">${p.content_html || p.content}</div>
-        </div>
-      `).join('');
+    console.log('📄 渲染作業內容...');
+    console.log('  - content_json 存在?', !!essay.content_json);
+    console.log('  - paragraphs 數量:', essay.paragraphs?.length || 0);
+    
+    // 優先從 content_json 獲取完整結構化內容
+    if (essay.content_json) {
+      try {
+        const content = typeof essay.content_json === 'string' 
+          ? JSON.parse(essay.content_json) 
+          : essay.content_json;
+        
+        console.log('✅ 從 content_json 渲染');
+        console.log('  - 引言:', !!content.introduction);
+        console.log('  - 分論點:', content.arguments?.length || 0);
+        console.log('  - 結論:', !!content.conclusion);
+        
+        let html = '';
+        
+        // 引言
+        if (content.introduction) {
+          html += `
+            <div class="paragraph-block">
+              <h4 class="text-lg font-semibold text-gray-800 mb-2">
+                <i class="fas fa-quote-left mr-2 text-blue-500"></i>引言
+              </h4>
+              <div class="paragraph-content">${content.introduction}</div>
+            </div>
+          `;
+        }
+        
+        // 分論點
+        if (content.arguments && content.arguments.length > 0) {
+          content.arguments.forEach((arg, index) => {
+            html += `
+              <div class="paragraph-block argument-section">
+                <h4 class="text-lg font-semibold text-gray-800 mb-2">
+                  <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
+                  分論點 ${index + 1}${arg.title ? `：${arg.title}` : ''}
+                </h4>
+            `;
+            
+            if (arg.paragraphs && arg.paragraphs.length > 0) {
+              arg.paragraphs.forEach((para, pIndex) => {
+                html += `
+                  <div class="paragraph-content sub-paragraph">
+                    <div class="paragraph-label">段落 ${pIndex + 1}</div>
+                    ${para.content || ''}
+                  </div>
+                `;
+              });
+            }
+            
+            html += `</div>`;
+          });
+        }
+        
+        // 結論
+        if (content.conclusion) {
+          html += `
+            <div class="paragraph-block">
+              <h4 class="text-lg font-semibold text-gray-800 mb-2">
+                <i class="fas fa-flag-checkered mr-2 text-green-500"></i>結論
+              </h4>
+              <div class="paragraph-content">${content.conclusion}</div>
+            </div>
+          `;
+        }
+        
+        return html || '<p class="text-gray-500">作業內容為空</p>';
+        
+      } catch (e) {
+        console.error('❌ 解析作業內容失敗:', e);
+      }
+    }
+    
+    // 備用：從 paragraphs 表渲染（舊格式）
+    if (essay.paragraphs && essay.paragraphs.length > 0) {
+      console.log('⚠️ 從 paragraphs 表渲染（備用方案）');
+      console.log('  - 第一個段落的 content 類型:', typeof essay.paragraphs[0].content);
+      console.log('  - 第一個段落的 content:', essay.paragraphs[0].content);
+      
+      return essay.paragraphs
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(p => {
+          // 提取 HTML 內容
+          let htmlContent = '';
+          if (p.content && typeof p.content === 'object') {
+            htmlContent = p.content.html || JSON.stringify(p.content);
+          } else {
+            htmlContent = p.content || '';
+          }
+          
+          return `
+            <div class="paragraph-block">
+              <h4>${p.paragraph_type === 'introduction' ? '引言' : p.paragraph_type === 'conclusion' ? '結論' : '正文段落'}</h4>
+              <div class="paragraph-content">${htmlContent}</div>
+            </div>
+          `;
+        }).join('');
+    }
+    
+    return '<p class="text-gray-500">作業內容為空</p>';
   }
 
   /**
