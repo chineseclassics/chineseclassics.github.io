@@ -24,6 +24,55 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+/**
+ * 从数据库 content 字段提取纯文本
+ * @param content 数据库中的 content 字段（可能是 { html: "..." } 或 Quill Delta 或纯文本）
+ * @returns 纯文本字符串
+ */
+function extractTextFromContent(content: any): string {
+  // 如果是字符串，直接返回
+  if (typeof content === 'string') {
+    return content
+  }
+  
+  // 如果是 { html: "..." } 格式（时文宝鉴的存储格式）
+  if (content && content.html) {
+    // html 字段可能是 Quill Delta JSON 或纯文本
+    if (typeof content.html === 'string') {
+      return content.html
+    }
+    // 如果是 Quill Delta
+    if (content.html.ops && Array.isArray(content.html.ops)) {
+      return content.html.ops
+        .map((op: any) => {
+          if (typeof op.insert === 'string') {
+            return op.insert
+          }
+          return ''
+        })
+        .join('')
+        .trim()
+    }
+  }
+  
+  // 如果是 Quill Delta 格式
+  if (content && content.ops && Array.isArray(content.ops)) {
+    return content.ops
+      .map((op: any) => {
+        if (typeof op.insert === 'string') {
+          return op.insert
+        }
+        return ''
+      })
+      .join('')
+      .trim()
+  }
+  
+  // 其他情况，返回空字符串（避免 [object Object]）
+  console.warn('⚠️ 未知的 content 格式:', typeof content)
+  return ''
+}
+
 serve(async (req) => {
   // 处理 CORS 预检请求
   if (req.method === 'OPTIONS') {
@@ -82,10 +131,20 @@ serve(async (req) => {
       )
     }
 
-    // 3. 组装完整论文
+    // 3. 组装完整论文（从 Quill Delta JSON 提取纯文本）
+    console.log('📊 段落数量:', paragraphs.length)
+    console.log('📊 第一个段落 content 类型:', typeof paragraphs[0]?.content)
+    console.log('📊 第一个段落 content 内容:', JSON.stringify(paragraphs[0]?.content).substring(0, 200))
+    
     const essayText = paragraphs
-      .map(p => `【${p.paragraph_type}】\n${p.content}`)
+      .map(p => {
+        const text = extractTextFromContent(p.content)
+        return `【${p.paragraph_type}】\n${text}`
+      })
       .join('\n\n')
+    
+    console.log('📝 论文文本长度:', essayText.length)
+    console.log('📝 论文文本预览:', essayText.substring(0, 500))
 
     // 4. 解析评分标准（可能只包含部分标准）
     const criteria = grading_rubric_json.criteria || []
