@@ -402,17 +402,27 @@ class GradingUI {
       const { data: { user } } = await this.supabase.auth.getUser();
       if (!user) throw new Error('未登入');
       
-      // 準備評分數據（插入到 grades 表）
+      // 準備評分數據（只收集實際存在的標準）
       const gradingData = {
         essay_id: this.currentEssay.id,
         teacher_id: user.id,
-        criterion_a_score: parseInt(formData.get('criterion_a')),
-        criterion_b_score: parseInt(formData.get('criterion_b')),
-        criterion_c_score: parseInt(formData.get('criterion_c')),
-        criterion_d_score: parseInt(formData.get('criterion_d')),
         overall_comment: formData.get('comments'),
         status: 'final' // 設置為最終評分
       };
+
+      // 動態收集各標準的評分（只收集實際存在的）
+      const criteriaFields = ['a', 'b', 'c', 'd'];
+      criteriaFields.forEach(criterion => {
+        const value = formData.get(`criterion_${criterion}`);
+        if (value !== null && value !== '') {
+          const score = parseInt(value);
+          if (!isNaN(score)) {
+            gradingData[`criterion_${criterion}_score`] = score;
+          }
+        }
+      });
+
+      console.log('📊 提交評分數據:', gradingData);
 
       // 插入或更新 grades 表（使用 upsert）
       const { error } = await this.supabase
@@ -421,19 +431,24 @@ class GradingUI {
           onConflict: 'essay_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ 插入 grades 表失敗:', error);
+        throw error;
+      }
+
+      console.log('✅ 評分已保存到 grades 表');
 
       // 觸發器會自動：
       // 1. 設置 grades.graded_at = NOW()
       // 2. 更新 essays.status = 'graded'
 
-      toast.success('批改已提交！正在返回任務列表...');
+      toast.success('批改已提交！正在返回批改列表...');
       
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('navigate', {
-          detail: { page: 'assignments' }
+          detail: { page: 'grading-queue' }
         }));
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error('提交批改失敗:', error);
       toast.error('提交失敗：' + error.message);
@@ -470,7 +485,11 @@ class GradingUI {
       // 顯示結果（包含总评）
       this.renderAISuggestion(result.criteria_scores, result.overall_comment);
 
-      btn.disabled = false;
+      // 禁用按鈕並更改文字（已生成，不需要再次點擊）
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-check-circle"></i> 已獲取 AI 建議';
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
     } catch (error) {
       console.error('獲取 AI 評分建議失敗:', error);
       
