@@ -204,9 +204,12 @@ class AssignmentManager {
         }
       }
 
+      // 從 updates 中移除 confirmUpdate（這只是控制標志，不應該寫入數據庫）
+      const { confirmUpdate, ...dataToUpdate } = updates;
+
       const { data, error } = await this.supabase
         .from('assignments')
-        .update(updates)
+        .update(dataToUpdate)
         .eq('id', assignmentId)
         .eq('teacher_id', this.currentUser.id)
         .select()
