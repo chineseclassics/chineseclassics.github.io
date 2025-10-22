@@ -121,12 +121,15 @@ class GradingQueue {
             console.log('    4. 作業與任務關聯有問題');
           }
             
-          // 分類 - 檢查所有可能的狀態
+          // 分類 - 包含所有狀態的作業
           const submitted = allEssays?.filter(e => e.status === 'submitted') || [];
           const graded = allEssays?.filter(e => e.status === 'graded') || [];
+          const draft = allEssays?.filter(e => e.status === 'draft') || [];
+          
+          console.log(`  - 狀態統計: draft=${draft.length}, submitted=${submitted.length}, graded=${graded.length}`);
           
           // 檢查是否有其他狀態的作業
-          const otherStatuses = allEssays?.filter(e => e.status !== 'submitted' && e.status !== 'graded') || [];
+          const otherStatuses = allEssays?.filter(e => e.status !== 'submitted' && e.status !== 'graded' && e.status !== 'draft') || [];
           if (otherStatuses.length > 0) {
             console.log('  - 發現其他狀態的作業:', otherStatuses.map(e => ({
               id: e.id,
@@ -144,9 +147,9 @@ class GradingQueue {
           return {
             ...assignment,
             submissions: {
-              pending: submitted,      // 待批改
-              graded: graded,         // 已批改
-              total: (submitted.length + graded.length),
+              pending: [...submitted, ...draft],  // 待批改（包含已提交和草稿）
+              graded: graded,                      // 已批改
+              total: (submitted.length + graded.length + draft.length),
               totalStudents: totalStudents || 0
             }
           };
@@ -337,9 +340,10 @@ class GradingQueue {
   renderSubmissionCard(essay, assignmentId) {
     const submittedDate = new Date(essay.submitted_at);
     const student = essay.users;
+    const isDraft = essay.status === 'draft';
 
     return `
-      <div class="submission-card pending">
+      <div class="submission-card pending ${isDraft ? 'draft' : ''}">
         <div class="student-info">
           <div class="student-avatar">
             ${student.display_name ? student.display_name.charAt(0) : '學'}
@@ -364,12 +368,13 @@ class GradingQueue {
               minute: '2-digit'
             })}
           </span>
+          ${isDraft ? '<span class="meta-item draft-status"><i class="fas fa-edit"></i>草稿</span>' : ''}
         </div>
         
         <div class="submission-actions">
           <button class="btn-grade" data-essay-id="${essay.id}" data-assignment-id="${assignmentId}">
             <i class="fas fa-pen-fancy"></i>
-            開始批改
+            ${isDraft ? '查看草稿' : '開始批改'}
           </button>
         </div>
       </div>

@@ -537,6 +537,7 @@ class StudentAssignmentViewer {
       btn.addEventListener('click', async (e) => {
         const assignmentId = e.currentTarget.getAttribute('data-id');
         const essayId = e.currentTarget.getAttribute('data-essay-id');
+        console.log('🖱️ 學生點擊提交按鈕:', { assignmentId, essayId });
         await this.submitAssignment(assignmentId, essayId);
       });
     });
@@ -595,7 +596,15 @@ class StudentAssignmentViewer {
    */
   async submitAssignment(assignmentId, essayId) {
     try {
+      console.log('🚀 開始提交作業流程...');
+      console.log('📋 參數:', { assignmentId, essayId });
+      
+      // 0. 檢查認證狀態
+      const { data: { user } } = await this.supabase.auth.getUser();
+      console.log('🔐 當前認證用戶:', user?.id, user?.email);
+      
       // 1. 獲取作業內容
+      console.log('📄 正在獲取作業內容...');
       const { data: essay, error: fetchError } = await this.supabase
         .from('essays')
         .select('*')
@@ -671,17 +680,40 @@ class StudentAssignmentViewer {
       if (!confirmed) return;
       
       // 6. 執行提交
+      console.log('🚀 開始執行提交操作...');
+      console.log('📝 更新參數:', {
+        essayId,
+        status: 'submitted',
+        submitted_at: new Date().toISOString()
+      });
+      
       toast.info('正在提交作業...');
       
-      const { error: submitError } = await this.supabase
+      const { data: updateResult, error: submitError } = await this.supabase
         .from('essays')
         .update({
           status: 'submitted',
           submitted_at: new Date().toISOString()
         })
-        .eq('id', essayId);
+        .eq('id', essayId)
+        .select();
         
-      if (submitError) throw submitError;
+      console.log('📊 更新結果:', updateResult);
+      console.log('❌ 錯誤信息:', submitError);
+        
+      if (submitError) {
+        console.error('❌ 數據庫更新失敗:', submitError);
+        console.error('❌ 錯誤詳情:', {
+          code: submitError.code,
+          message: submitError.message,
+          details: submitError.details,
+          hint: submitError.hint
+        });
+        throw submitError;
+      }
+      
+      console.log('✅ 更新結果:', updateResult);
+      console.log('✅ 作業提交成功，狀態已更新為 submitted');
       
       // 7. 提交成功
       console.log('✅ 作業提交成功');

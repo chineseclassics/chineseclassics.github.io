@@ -1580,6 +1580,29 @@
 }
 
 /* ========================================
+   草稿狀態樣式
+   ======================================== */
+
+.submission-card.draft {
+  border-left: 4px solid var(--warning-500);
+  background: var(--warning-50);
+}
+
+.submission-card.draft .student-avatar {
+  background: var(--warning-200);
+  color: var(--warning-700);
+}
+
+.meta-item.draft-status {
+  color: var(--warning-600);
+  font-weight: var(--font-medium);
+}
+
+.meta-item.draft-status i {
+  margin-right: var(--spacing-1);
+}
+
+/* ========================================
    響應式斷點（供參考）
    ======================================== */
 
