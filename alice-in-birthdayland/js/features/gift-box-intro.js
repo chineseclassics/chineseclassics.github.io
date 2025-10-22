@@ -2,7 +2,7 @@
  * 神秘禮物盒開場動畫
  */
 
-import { playSound } from '../utils/audio-manager.js';
+import { playSound, soundInstances } from '../utils/audio-manager.js';
 
 /**
  * 初始化禮物盒開場
@@ -129,6 +129,30 @@ function openGiftBox(giftBox, giftIntro, birthdaylandMap) {
         }
     }, 200);
     
+    // 立即嘗試播放背景音樂（利用音效播放作為用戶交互）
+    setTimeout(() => {
+        try {
+            const bgmAudio = soundInstances['map-bgm'];
+            if (bgmAudio) {
+                bgmAudio.loop = true;
+                bgmAudio.volume = 0.25;
+                bgmAudio.play()
+                    .then(() => {
+                        console.log('🎵 背景音樂在禮物盒打開時開始播放');
+                        const musicToggle = document.getElementById('music-toggle');
+                        if (musicToggle) {
+                            musicToggle.classList.remove('muted');
+                        }
+                    })
+                    .catch(err => {
+                        console.log('🎵 背景音樂需要更多用戶交互');
+                    });
+            }
+        } catch (error) {
+            console.warn('背景音樂播放失敗:', error);
+        }
+    }, 500);
+    
     // 慶祝動畫序列
     setTimeout(() => {
         // 1.8 秒後開始淡出禮物盒場景
@@ -145,6 +169,12 @@ function openGiftBox(giftBox, giftIntro, birthdaylandMap) {
                 
                 // 觸發地圖入場動畫
                 triggerMapEntranceAnimation();
+                
+                // 觸發背景音樂播放
+                triggerBackgroundMusic();
+                
+                // 顯示音樂控制提示
+                showMusicControlHint();
                 
                 // 2.5 秒後完全移除禮物盒 DOM
                 setTimeout(() => {
@@ -205,6 +235,102 @@ function triggerMapEntranceAnimation() {
     });
     
     console.log('🏰 地圖入場動畫已觸發');
+}
+
+/**
+ * 觸發背景音樂播放
+ */
+function triggerBackgroundMusic() {
+    // 延遲一點播放，讓地圖完全顯示
+    setTimeout(() => {
+        try {
+            // 模擬用戶交互來觸發背景音樂
+            const bgmAudio = soundInstances['map-bgm'];
+            if (bgmAudio) {
+                bgmAudio.loop = true;
+                bgmAudio.volume = 0.25;
+                
+                // 嘗試播放背景音樂
+                bgmAudio.play()
+                    .then(() => {
+                        console.log('🎵 背景音樂自動播放成功');
+                        
+                        // 更新音樂控制按鈕狀態
+                        const musicToggle = document.getElementById('music-toggle');
+                        if (musicToggle) {
+                            musicToggle.classList.remove('muted');
+                        }
+                    })
+                    .catch(err => {
+                        console.log('🎵 背景音樂需要用戶交互，等待中...');
+                        
+                        // 如果自動播放失敗，設置用戶交互監聽
+                        const enableBGM = () => {
+                            bgmAudio.play()
+                                .then(() => {
+                                    console.log('🎵 背景音樂開始播放');
+                                    const musicToggle = document.getElementById('music-toggle');
+                                    if (musicToggle) {
+                                        musicToggle.classList.remove('muted');
+                                    }
+                                })
+                                .catch(e => console.warn('背景音樂播放失敗:', e));
+                        };
+                        
+                        // 監聽用戶交互
+                        ['click', 'touchstart', 'keydown'].forEach(event => {
+                            document.addEventListener(event, enableBGM, { once: true });
+                        });
+                    });
+            }
+        } catch (error) {
+            console.warn('觸發背景音樂時發生錯誤:', error);
+        }
+    }, 1000);
+}
+
+/**
+ * 顯示音樂控制提示
+ */
+function showMusicControlHint() {
+    setTimeout(() => {
+        const musicToggle = document.getElementById('music-toggle');
+        if (musicToggle) {
+            // 添加脈衝動畫提示
+            musicToggle.style.animation = 'musicPulse 2s ease-in-out infinite';
+            
+            // 添加提示樣式
+            addMusicHintStyles();
+            
+            // 3秒後移除動畫
+            setTimeout(() => {
+                musicToggle.style.animation = '';
+            }, 3000);
+        }
+    }, 2000);
+}
+
+/**
+ * 添加音樂提示樣式
+ */
+function addMusicHintStyles() {
+    if (document.getElementById('music-hint-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'music-hint-styles';
+    style.textContent = `
+        @keyframes musicPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 105, 180, 0.7);
+            }
+            50% { 
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(255, 105, 180, 0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 /**

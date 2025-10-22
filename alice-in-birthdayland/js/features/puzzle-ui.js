@@ -117,6 +117,30 @@ class PuzzleUI {
                 this.closeVideoModal();
             });
         }
+
+        // 問答題按鈕
+        const quizBtn = document.getElementById('quiz-btn');
+        if (quizBtn) {
+            console.log('🎯 問答題按鈕已找到，綁定點擊事件');
+            quizBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🎯 問答題按鈕被點擊');
+                this.showQuizModal();
+            });
+        } else {
+            console.error('❌ 問答題按鈕未找到');
+        }
+
+        // 關閉問答題按鈕
+        const closeQuizBtn = document.getElementById('close-quiz');
+        if (closeQuizBtn) {
+            closeQuizBtn.addEventListener('click', () => {
+                this.closeQuizModal();
+            });
+        }
+
+        // 問答題選項
+        this.bindQuizOptions();
     }
 
     /**
@@ -442,6 +466,128 @@ class PuzzleUI {
         if (confirmed) {
             // 重新載入頁面
             window.location.reload();
+        }
+    }
+
+    /**
+     * 顯示問答題模態框
+     */
+    showQuizModal() {
+        const quizModal = document.getElementById('quiz-modal');
+        if (quizModal) {
+            quizModal.classList.remove('hidden');
+            quizModal.classList.add('show');
+            
+            // 重置問答題狀態
+            this.resetQuizState();
+            
+            // 添加點擊外部關閉功能
+            const overlay = quizModal.querySelector('.modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        this.closeQuizModal();
+                    }
+                });
+            }
+            
+            playSound('location-click');
+            console.log('💝 顯示愛的問答題');
+        } else {
+            console.error('❌ 問答題模態框未找到');
+        }
+    }
+
+    /**
+     * 關閉問答題模態框
+     */
+    closeQuizModal() {
+        const quizModal = document.getElementById('quiz-modal');
+        if (quizModal) {
+            quizModal.classList.add('hidden');
+            quizModal.classList.remove('show');
+            
+            // 重置問答題狀態
+            this.resetQuizState();
+        }
+    }
+
+    /**
+     * 綁定問答題選項
+     */
+    bindQuizOptions() {
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('quiz-option')) {
+                const selectedAnswer = e.target.dataset.answer;
+                this.handleQuizAnswer(selectedAnswer, e.target);
+            }
+        });
+    }
+
+    /**
+     * 處理問答題答案
+     */
+    handleQuizAnswer(selectedAnswer, optionElement) {
+        const correctAnswer = '爸媽豆';
+        const feedback = document.querySelector('.quiz-feedback');
+        const feedbackIcon = document.querySelector('.feedback-icon');
+        const feedbackText = document.querySelector('.feedback-text');
+        
+        // 禁用所有選項
+        document.querySelectorAll('.quiz-option').forEach(option => {
+            option.style.pointerEvents = 'none';
+        });
+        
+        if (selectedAnswer === correctAnswer) {
+            // 正確答案
+            optionElement.classList.add('correct');
+            feedback.classList.remove('hidden');
+            feedback.classList.add('correct');
+            feedbackIcon.textContent = '✅';
+            feedbackText.textContent = '太棒了！答對了！';
+            
+            playSound('final-celebration');
+            
+            // 2秒後顯示視頻
+            setTimeout(() => {
+                this.closeQuizModal();
+                this.showVideoModal();
+            }, 2000);
+            
+            console.log('🎉 問答題答對了！');
+        } else {
+            // 錯誤答案
+            optionElement.classList.add('wrong');
+            feedback.classList.remove('hidden');
+            feedbackIcon.textContent = '❌';
+            feedbackText.textContent = '再試試看吧！';
+            
+            playSound('locked');
+            
+            // 2秒後重置
+            setTimeout(() => {
+                this.resetQuizState();
+            }, 2000);
+            
+            console.log('❌ 問答題答錯了，再試試');
+        }
+    }
+
+    /**
+     * 重置問答題狀態
+     */
+    resetQuizState() {
+        // 重置選項樣式
+        document.querySelectorAll('.quiz-option').forEach(option => {
+            option.classList.remove('correct', 'wrong');
+            option.style.pointerEvents = 'auto';
+        });
+        
+        // 隱藏反饋
+        const feedback = document.querySelector('.quiz-feedback');
+        if (feedback) {
+            feedback.classList.add('hidden');
+            feedback.classList.remove('correct');
         }
     }
 

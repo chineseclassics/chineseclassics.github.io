@@ -73,7 +73,7 @@ function initializeModules() {
     // 播放背景音樂（延遲更長，等禮物盒打開後播放）
     setTimeout(() => {
         playBackgroundMusic();
-    }, 3000);
+    }, 5000); // 延長到5秒，確保禮物盒動畫完成
 }
 
 /**
