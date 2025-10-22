@@ -100,7 +100,7 @@ nav .text-right:hover {
    分論點編號徽章 - 扁平化
    ================================ */
 
-.rounded-full.bg-blue-600.text-white {
+.rounded-full.bg-stone-600.text-white {
     background: var(--primary-600) !important;
     box-shadow: none;
     font-weight: var(--font-bold);

@@ -97,11 +97,11 @@ button:disabled {
 }
 
 /* 主要按鈕 - 青灰雅士風格 */
-.bg-blue-600 {
+.bg-stone-600 {
     background: var(--primary-600) !important;
 }
 
-.bg-blue-600:hover {
+.bg-stone-600:hover {
     background: var(--primary-700) !important;
 }
 

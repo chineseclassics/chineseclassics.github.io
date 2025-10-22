@@ -213,7 +213,7 @@ div[id$="-editor"]:focus-within .ql-toolbar {
 }
 
 /* 分論點編號徽章 - 扁平化 */
-.rounded-full.bg-blue-600 {
+.rounded-full.bg-stone-600 {
     background: var(--primary-600) !important;
     box-shadow: none;
 }

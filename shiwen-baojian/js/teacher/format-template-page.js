@@ -78,7 +78,7 @@ class FormatTemplatePage {
           <!-- 左側：創建按鈕 -->
           <button 
             id="createNewBtn"
-            class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
+            class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-stone-600 to-stone-700 text-white font-medium rounded-lg hover:from-stone-700 hover:to-stone-800 transition-all shadow-sm hover:shadow-md"
           >
             <i class="fas fa-plus mr-2"></i>創建新模板
           </button>
@@ -91,7 +91,7 @@ class FormatTemplatePage {
               <input 
                 type="text" 
                 id="searchInput"
-                class="w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-stone-500 transition-all"
+                class="w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all"
                 placeholder="搜索模板..."
               />
             </div>
@@ -431,13 +431,13 @@ class FormatTemplatePage {
         <div class="px-6 pb-4 flex gap-2 border-t border-gray-100 pt-4">
           <button 
             onclick="window.formatTemplatePageInstance.showDetail('${template.id}')"
-            class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition text-sm font-medium"
+            class="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-4 py-2 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition text-sm font-medium"
           >
             <i class="fas fa-eye mr-1"></i>查看
           </button>
           <button 
             onclick="window.formatTemplatePageInstance.switchToEditMode('${template.id}')"
-            class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition text-sm font-medium"
+            class="flex-1 bg-gradient-to-r from-stone-600 to-stone-700 text-white px-4 py-2 rounded-lg hover:from-stone-700 hover:to-stone-800 transition text-sm font-medium"
           >
             <i class="fas fa-edit mr-1"></i>${isSystem ? '基於此創建' : '編輯'}
           </button>
