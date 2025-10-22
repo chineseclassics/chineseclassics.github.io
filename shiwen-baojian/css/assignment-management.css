@@ -306,7 +306,7 @@
 }
 
 .practice-writing-btn:hover {
-  background: var(--btn-primary-hover-bg);
+  background: var(--btn-primary-hover);
   box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
   transform: translateY(-1px);
 }
@@ -514,13 +514,13 @@
 
 .loading-text {
   margin-top: 1rem;
-  color: #667eea;
+  color: var(--primary-600);
   font-weight: 600;
 }
 
 .loading-hint {
   margin-top: 0.5rem;
-  color: #764ba2;
+  color: var(--primary-700);
   font-size: 0.9rem;
 }
 
@@ -638,7 +638,7 @@
   border-radius: 6px;
   font-size: 0.85rem;
   line-height: 1.6;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* 舊版批改容器（保留兼容） */
@@ -872,12 +872,12 @@
 
 /* 練筆卡片特殊樣式 */
 .student-assignment-card.practice-card {
-  border-left-color: #9b59b6;
+  border-left-color: var(--primary-600);
   background: linear-gradient(to right, var(--primary-50) 0%, var(--bg-card) 8%);
 }
 
 .student-assignment-card.practice-card:hover {
-  border-left-color: #8e44ad;
+  border-left-color: var(--primary-700);
 }
 
 /* 狀態樣式 */
@@ -896,7 +896,7 @@
 }
 
 .student-assignment-card.graded {
-  border-left-color: #9b59b6;
+  border-left-color: var(--primary-600);
   background: linear-gradient(to right, var(--primary-50) 0%, var(--bg-card) 8%);
 }
 
@@ -948,7 +948,7 @@
 
 .status-badge.graded {
   background: var(--primary-100);
-  color: #7b1fa2;
+  color: var(--primary-700);
 }
 
 .status-badge.overdue {
@@ -958,7 +958,7 @@
 
 .status-badge.practice {
   background: var(--primary-100);
-  color: #7b1fa2;
+  color: var(--primary-700);
 }
 
 /* 新徽章 */
@@ -1003,7 +1003,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  color: #5a6c7d;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -1096,7 +1096,7 @@
 }
 
 .practice-new-btn:hover {
-  background: var(--btn-primary-hover-bg);
+  background: var(--btn-primary-hover);
   box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
   transform: translateY(-1px);
 }

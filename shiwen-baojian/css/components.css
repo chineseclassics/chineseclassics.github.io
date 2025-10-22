@@ -1368,6 +1368,78 @@
     background: var(--error-200);
 }
 
+/* 開始寫作按鈕 */
+.btn-action.start-btn {
+    background: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.btn-action.start-btn:hover {
+    background: var(--primary-200);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary);
+}
+
+/* 繼續寫作按鈕 */
+.btn-action.continue-btn {
+    background: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.btn-action.continue-btn:hover {
+    background: var(--primary-200);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary);
+}
+
+/* 提交作業按鈕 */
+.btn-action.submit-btn {
+    background: var(--success-100);
+    color: var(--success-700);
+}
+
+.btn-action.submit-btn:hover {
+    background: var(--success-200);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-success);
+}
+
+/* 撤回並編輯按鈕 */
+.btn-action.withdraw-btn {
+    background: var(--warning-100);
+    color: var(--warning-700);
+}
+
+.btn-action.withdraw-btn:hover {
+    background: var(--warning-200);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-warning);
+}
+
+/* 刪除練筆按鈕 */
+.btn-action.delete-practice-btn {
+    background: var(--error-100);
+    color: var(--error-700);
+}
+
+.btn-action.delete-practice-btn:hover {
+    background: var(--error-200);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-error);
+}
+
+/* 繼續練筆按鈕 */
+.btn-action.continue-practice-btn {
+    background: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.btn-action.continue-practice-btn:hover {
+    background: var(--primary-200);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary);
+}
+
 /* 返回按鈕 */
 .btn-back {
     background: var(--gray-100);
