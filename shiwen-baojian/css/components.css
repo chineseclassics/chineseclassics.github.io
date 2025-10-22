@@ -1054,6 +1054,124 @@
 }
 
 /* ================================
+       表單組件系統
+       ================================ */
+
+/* 下拉菜單樣式 */
+.select {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  padding-right: var(--spacing-8);
+  background: var(--bg-card);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%237594a8%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e');
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-2) center;
+  background-size: 1em;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.select:hover {
+  border-color: var(--gray-400);
+}
+
+.select:disabled {
+  background: var(--gray-100);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  opacity: var(--opacity-50);
+}
+
+/* 下拉菜單選項樣式 */
+.select option {
+  padding: var(--spacing-2);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.select option:hover {
+  background: var(--primary-50);
+}
+
+.select option:checked {
+  background: var(--primary-100);
+  color: var(--primary-700);
+}
+
+/* 輸入框樣式 */
+.input {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
+  color: var(--text-primary);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.input:hover {
+  border-color: var(--gray-400);
+}
+
+.input:disabled {
+  background: var(--gray-100);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  opacity: var(--opacity-50);
+}
+
+.input::placeholder {
+  color: var(--text-placeholder);
+}
+
+/* 表單組樣式 */
+.form-group {
+  margin-bottom: var(--spacing-4);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.form-group .required {
+  color: var(--error-600);
+  margin-left: var(--spacing-1);
+}
+
+.form-group .help-text {
+  margin-top: var(--spacing-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  line-height: var(--leading-normal);
+}
+
+/* ================================
        特定功能按鈕（統一管理）
        ================================ */
 

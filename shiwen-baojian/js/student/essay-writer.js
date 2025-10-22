@@ -172,7 +172,7 @@ export function addArgument() {
                     <div class="flex items-center justify-center w-8 h-8 rounded-full bg-stone-600 text-white text-sm font-bold">
                         ${argumentIndex}
                     </div>
-                    <input type="text" 
+                    <input type="text" class="input"
                            id="${argumentId}-title"
                            placeholder="輸入分論點標題..."
                            class="flex-1 text-lg font-semibold text-gray-900 bg-transparent border-b-2 border-transparent hover:border-stone-400 focus:border-stone-600 focus:outline-none px-2 py-1 transition-colors">

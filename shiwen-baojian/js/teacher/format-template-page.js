@@ -99,8 +99,7 @@ class FormatTemplatePage {
             <!-- 篩選 -->
             <select 
               id="filterType"
-              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-stone-500 transition-all appearance-none cursor-pointer"
-              style="padding-right: 2rem; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;"
+              class="select"
             >
               <option value="all">全部類型</option>
               <option value="system">系統格式</option>
@@ -110,8 +109,7 @@ class FormatTemplatePage {
             <!-- 排序 -->
             <select 
               id="sortBy"
-              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-stone-500 transition-all appearance-none cursor-pointer"
-              style="padding-right: 2rem; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;"
+              class="select"
             >
               <option value="created_desc">最新創建</option>
               <option value="created_asc">最早創建</option>

@@ -101,7 +101,7 @@ class AssignmentCreator {
             <!-- 下拉菜單選擇寫作指引 -->
             <div class="form-group">
               <label>選擇寫作指引 <span class="required">*</span></label>
-              <select id="formatSelector" name="formatSpec" required>
+              <select id="formatSelector" name="formatSpec" class="select" required>
                 <option value="">-- 請選擇寫作指引 --</option>
                 <option value="__create_new__">✨ 新建寫作指引</option>
                 <!-- 選項將動態加載 -->
@@ -242,7 +242,7 @@ class AssignmentCreator {
             
             <div class="form-group">
               <label>選擇評分標準集</label>
-              <select name="rubric">
+              <select name="rubric" class="select">
                 <option value="ib-myp" selected>📋 IB MYP 中國古典文學評分標準</option>
               </select>
               <p class="help-text">選擇評分標準集，然後選擇本次使用的具體標準</p>

@@ -372,7 +372,7 @@ class GradingUI {
     return `
       <div class="criterion-group">
         <label>標準 ${criterion.code}：${criterion.name} (0-${criterion.maxScore})</label>
-        <select name="criterion_${criterion.code.toLowerCase()}" required>
+        <select name="criterion_${criterion.code.toLowerCase()}" class="select" required>
           <option value="">請選擇分数</option>
           ${Array.from({ length: criterion.maxScore + 1 }, (_, i) => `
             <option value="${i}" ${existingScore === i ? 'selected' : ''}>${i} 分</option>
