@@ -194,7 +194,7 @@ class GradingQueue {
       this.container.innerHTML = `
         <div class="grading-queue-container">
           <!-- 顶部成功消息 -->
-          <div class="success-banner" style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
+          <div class="success-banner" style="background: var(--success-100); border: 1px solid var(--success-300); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
             <i class="fas fa-check-double text-emerald-600 text-4xl mb-3"></i>
             <p class="text-gray-700 text-lg font-semibold">太棒了！沒有待批改的作業</p>
             <p class="text-gray-600 text-sm mt-2">所有提交的作業都已批改完成，您可以查看已批改記錄</p>
