@@ -243,6 +243,13 @@
     transition: all 0.3s ease;
     margin: 3px;
     user-select: none;
+    /* 觸摸優化 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .deco-item:hover {
@@ -254,6 +261,44 @@
 .deco-item:active {
     cursor: grabbing;
     transform: scale(1.2);
+}
+
+/* 觸摸設備優化 */
+@media (hover: none) and (pointer: coarse) {
+    .deco-item {
+        width: 48px;
+        height: 48px;
+        font-size: 1.8rem;
+        line-height: 48px;
+        margin: 4px;
+        /* 增加觸摸區域 */
+        padding: 4px;
+    }
+    
+    .deco-item:hover {
+        transform: none; /* 觸摸設備禁用 hover 效果 */
+    }
+    
+    .deco-item:active {
+        transform: scale(1.1);
+        background: linear-gradient(135deg, #FFB6C1, #FFF8DC);
+        border-color: #FF69B4;
+    }
+    
+    /* iPad 觸摸拖拽優化 */
+    .cake-canvas {
+        /* 增加觸摸響應區域 */
+        min-height: 400px;
+        min-width: 400px;
+    }
+    
+    /* 拖拽時的視覺反饋 */
+    .deco-item.dragging {
+        transform: scale(1.3) !important;
+        z-index: 1000 !important;
+        opacity: 0.8 !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+    }
 }
 
 /* 文字添加 */
@@ -313,6 +358,9 @@
     margin-bottom: 15px;
     overflow: hidden;
     flex-shrink: 0;
+    /* 觸摸優化 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* 蛋糕底座 */

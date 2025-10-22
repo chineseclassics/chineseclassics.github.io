@@ -116,13 +116,24 @@ function bindFrostingSelection() {
 function bindDecorationDrag() {
     const decorationItems = document.querySelectorAll('.deco-item');
     decorationItems.forEach(item => {
+        // HTML5 拖拽支持
         item.addEventListener('dragstart', handleDecorationDragStart);
+        
+        // 觸摸設備支持
+        item.addEventListener('touchstart', handleDecorationTouchStart, { passive: false });
+        item.addEventListener('touchmove', handleDecorationTouchMove, { passive: false });
+        item.addEventListener('touchend', handleDecorationTouchEnd, { passive: false });
     });
     
     const canvas = document.getElementById('cake-canvas');
     if (canvas) {
+        // HTML5 拖拽支持
         canvas.addEventListener('dragover', handleCanvasDragOver);
         canvas.addEventListener('drop', handleCanvasDrop);
+        
+        // 觸摸設備支持
+        canvas.addEventListener('touchmove', handleCanvasTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleCanvasTouchEnd, { passive: false });
     }
 }
 
@@ -280,6 +291,113 @@ function handleCanvasDrop(e) {
         
         addDecorationToCake(decorationType, decorationIcon, x, y);
         playSound('deco-place');
+    }
+}
+
+/**
+ * 觸摸拖拽狀態
+ */
+let touchDragState = {
+    isDragging: false,
+    draggedItem: null,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0
+};
+
+/**
+ * 處理裝飾觸摸開始
+ */
+function handleDecorationTouchStart(e) {
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const item = e.target;
+    
+    touchDragState.isDragging = true;
+    touchDragState.draggedItem = item;
+    touchDragState.startX = touch.clientX;
+    touchDragState.startY = touch.clientY;
+    touchDragState.currentX = touch.clientX;
+    touchDragState.currentY = touch.clientY;
+    
+    // 添加拖拽視覺效果
+    item.classList.add('dragging');
+    
+    playSound('pickup');
+}
+
+/**
+ * 處理裝飾觸摸移動
+ */
+function handleDecorationTouchMove(e) {
+    if (!touchDragState.isDragging) return;
+    
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    touchDragState.currentX = touch.clientX;
+    touchDragState.currentY = touch.clientY;
+    
+    // 更新拖拽元素位置
+    if (touchDragState.draggedItem) {
+        const deltaX = touchDragState.currentX - touchDragState.startX;
+        const deltaY = touchDragState.currentY - touchDragState.startY;
+        
+        touchDragState.draggedItem.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.2)`;
+    }
+}
+
+/**
+ * 處理裝飾觸摸結束
+ */
+function handleDecorationTouchEnd(e) {
+    if (!touchDragState.isDragging) return;
+    
+    e.preventDefault();
+    
+    const canvas = document.getElementById('cake-canvas');
+    if (canvas && touchDragState.draggedItem) {
+        const rect = canvas.getBoundingClientRect();
+        const x = touchDragState.currentX - rect.left;
+        const y = touchDragState.currentY - rect.top;
+        
+        // 檢查是否在畫布範圍內
+        if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+            const decorationType = touchDragState.draggedItem.dataset.type;
+            const decorationIcon = touchDragState.draggedItem.textContent;
+            
+            if (decorationType && decorationIcon) {
+                addDecorationToCake(decorationType, decorationIcon, x, y);
+                playSound('deco-place');
+            }
+        }
+        
+        // 重置拖拽元素樣式
+        touchDragState.draggedItem.classList.remove('dragging');
+    }
+    
+    // 重置拖拽狀態
+    touchDragState.isDragging = false;
+    touchDragState.draggedItem = null;
+}
+
+/**
+ * 處理畫布觸摸移動
+ */
+function handleCanvasTouchMove(e) {
+    if (touchDragState.isDragging) {
+        e.preventDefault();
+    }
+}
+
+/**
+ * 處理畫布觸摸結束
+ */
+function handleCanvasTouchEnd(e) {
+    if (touchDragState.isDragging) {
+        e.preventDefault();
     }
 }
 
