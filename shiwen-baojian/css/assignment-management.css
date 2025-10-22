@@ -467,7 +467,14 @@
 .panel-header {
   background: var(--btn-primary-bg);
   padding: 1.25rem 1.5rem;
-  color: white;
+  color: var(--text-inverse);
+}
+
+/* 確保標題文字使用正確的設計令牌 */
+.panel-header h3 {
+  color: var(--text-inverse);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
 }
 
 .panel-actions {
@@ -537,7 +544,14 @@
 .grading-form-panel .panel-header {
   background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
   padding: 1.25rem 1.5rem;
-  color: white;
+  color: var(--text-inverse);
+}
+
+/* 確保評分表單標題文字使用正確的設計令牌 */
+.grading-form-panel .panel-header h3 {
+  color: var(--text-inverse);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
 }
 
 .grading-form-panel .panel-content {
@@ -1375,7 +1389,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   padding: 1.5rem 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  color: white;
+  color: var(--text-inverse);
 }
 
 .grading-stats-bar .stats-content {
@@ -1386,10 +1400,15 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .grading-stats-bar h2 {
   margin: 0;
+  color: var(--text-inverse);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
 }
 
 .grading-stats-bar p {
   margin: 0.25rem 0 0 0;
+  color: var(--text-inverse);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* 任務區域 */
