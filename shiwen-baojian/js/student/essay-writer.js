@@ -165,7 +165,7 @@ export function addArgument() {
     
     // 創建分論點 HTML 結構
     const argumentHTML = `
-        <div id="${argumentId}" class="border-b border-gray-200 p-6 bg-gradient-to-r from-blue-50 to-transparent">
+        <div id="${argumentId}" class="border-b border-gray-200 p-6 bg-gradient-to-r from-stone-50 to-transparent">
             <!-- 分論點標題 -->
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3 flex-1">

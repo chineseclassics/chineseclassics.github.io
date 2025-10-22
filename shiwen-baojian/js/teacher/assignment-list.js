@@ -34,7 +34,7 @@ class AssignmentList {
           <div class="mb-8">
             <button 
               id="createAssignmentBtn" 
-              class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
+              class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-stone-600 to-stone-700 text-white font-medium rounded-lg hover:from-stone-700 hover:to-stone-800 transition-all shadow-sm hover:shadow-md"
             >
               <i class="fas fa-plus mr-2"></i>創建新任務
             </button>
