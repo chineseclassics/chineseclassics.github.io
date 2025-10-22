@@ -55,7 +55,7 @@ class AssignmentCreator {
         <div class="creator-header">
           <div>
             <h2>${isEdit ? '編輯任務' : '創建新任務'}</h2>
-            <p class="text-muted" style="margin: 0.5rem 0 0 0; color: #7f8c8d; font-size: 0.95rem;">
+            <p class="text-muted" style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.95rem;">
               設置任務的基本信息、寫作要求和評分標準
             </p>
           </div>
@@ -67,7 +67,7 @@ class AssignmentCreator {
         <form id="assignmentForm" class="assignment-form">
           <!-- 基本信息 -->
           <section class="form-section">
-            <h3><i class="fas fa-info-circle" style="color: #3498db; margin-right: 0.5rem;"></i>基本信息</h3>
+            <h3><i class="fas fa-info-circle" style="color: var(--primary-600); margin-right: 0.5rem;"></i>基本信息</h3>
             
             <div class="form-group">
               <label>任務標題 <span class="required">*</span></label>
@@ -96,7 +96,7 @@ class AssignmentCreator {
 
           <!-- 寫作指引 -->
           <section class="form-section">
-            <h3><i class="fas fa-file-alt" style="color: #3498db; margin-right: 0.5rem;"></i>寫作指引</h3>
+            <h3><i class="fas fa-file-alt" style="color: var(--primary-600); margin-right: 0.5rem;"></i>寫作指引</h3>
             
             <!-- 下拉菜單選擇寫作指引 -->
             <div class="form-group">
@@ -110,7 +110,7 @@ class AssignmentCreator {
             </div>
 
             <!-- 展开式编辑器区域（選擇後顯示） -->
-            <div id="inlineEditorContainer" class="hidden" style="margin-top: 1.5rem; border: 2px solid #3498db; border-radius: 8px; padding: 1.5rem; background: #f8f9fa;">
+            <div id="inlineEditorContainer" class="hidden" style="margin-top: 1.5rem; border: 2px solid var(--primary-600); border-radius: 8px; padding: 1.5rem; background: var(--bg-secondary);">
               <div class="flex justify-between items-center mb-4">
                 <h4 id="inlineEditorTitle" class="text-lg font-bold text-gray-900">
                   <i class="fas fa-magic text-purple-600 mr-2"></i>編輯寫作指引
@@ -238,7 +238,7 @@ class AssignmentCreator {
 
           <!-- 評分標準 -->
           <section class="form-section">
-            <h3><i class="fas fa-clipboard-check" style="color: #3498db; margin-right: 0.5rem;"></i>評分標準</h3>
+            <h3><i class="fas fa-clipboard-check" style="color: var(--primary-600); margin-right: 0.5rem;"></i>評分標準</h3>
             
             <div class="form-group">
               <label>選擇評分標準集</label>

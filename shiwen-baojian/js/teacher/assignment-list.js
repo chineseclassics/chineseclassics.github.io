@@ -70,7 +70,7 @@ class AssignmentList {
     const stats = assignment.stats || {};
 
     return `
-      <div class="assignment-card${isOverdue ? ' overdue' : ''}" data-id="${assignment.id}">
+      <div class="assignment-card card${isOverdue ? ' overdue' : ''}" data-id="${assignment.id}">
         <div class="card-header">
           <h3>${assignment.title}</h3>
           <span class="badge badge-${assignment.is_published ? 'success' : 'secondary'}">

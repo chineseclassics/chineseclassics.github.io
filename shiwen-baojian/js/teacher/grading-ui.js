@@ -141,7 +141,7 @@ class GradingUI {
               <div class="ai-grading-panel">
                 <div class="panel-header">
                   <div class="flex items-center gap-2">
-                    <i class="fas fa-robot text-xl"></i>
+                    <i class="fas fa-robot text-xl" style="color: var(--primary-600);"></i>
                     <h3 class="font-bold text-lg">AI 評分建議</h3>
                   </div>
                 </div>
@@ -172,7 +172,7 @@ class GradingUI {
               <div class="grading-form-panel">
                 <div class="panel-header">
                   <div class="flex items-center gap-2">
-                    <i class="fas fa-clipboard-check text-xl"></i>
+                    <i class="fas fa-clipboard-check text-xl" style="color: var(--primary-600);"></i>
                     <h3 class="font-bold text-lg">老師最終評分</h3>
                   </div>
                 </div>
@@ -284,7 +284,7 @@ class GradingUI {
           html += `
             <div class="paragraph-block">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                <i class="fas fa-quote-left mr-2 text-stone-500"></i>引言
+                <i class="fas fa-quote-left mr-2" style="color: var(--primary-500);"></i>引言
               </h4>
               <div class="paragraph-content">${content.introduction}</div>
             </div>
@@ -297,7 +297,7 @@ class GradingUI {
             html += `
               <div class="paragraph-block argument-section">
                 <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                  <i class="fas fa-lightbulb mr-2 text-amber-600"></i>
+                  <i class="fas fa-lightbulb mr-2" style="color: var(--warning-500);"></i>
                   分論點 ${index + 1}${arg.title ? `：${arg.title}` : ''}
                 </h4>
             `;
@@ -322,7 +322,7 @@ class GradingUI {
           html += `
             <div class="paragraph-block">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                <i class="fas fa-flag-checkered mr-2 text-emerald-600"></i>結論
+                <i class="fas fa-flag-checkered mr-2" style="color: var(--success-500);"></i>結論
               </h4>
               <div class="paragraph-content">${content.conclusion}</div>
             </div>
@@ -603,21 +603,21 @@ class GradingUI {
       const criterionInfo = this.getCriterionInfo(criterionId);
       
       return `
-        <div class="ai-criterion-card" style="background: white; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="ai-criterion-card card" style="margin-bottom: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
             <div>
-              <h4 style="margin: 0; color: #2c3e50; font-size: 1.1rem;">
-                <i class="fas fa-check-circle" style="color: #667eea;"></i> 
+              <h4 style="margin: 0; color: var(--text-primary); font-size: 1.1rem;">
+                <i class="fas fa-check-circle" style="color: var(--primary-600);"></i> 
                 標準 ${criterionId}：${criterionInfo.name}
               </h4>
             </div>
             <div style="text-align: center; min-width: 60px;">
-              <div style="font-size: 2rem; font-weight: 700; color: #667eea;">${data.score}</div>
-              <div style="font-size: 0.75rem; color: #7f8c8d;">/ 8 分</div>
+              <div style="font-size: 2rem; font-weight: 700; color: var(--primary-600);">${data.score}</div>
+              <div style="font-size: 0.75rem; color: var(--text-tertiary);">/ 8 分</div>
             </div>
           </div>
-          <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; border-left: 3px solid #667eea;">
-            <p style="margin: 0; color: #2c3e50; line-height: 1.6; white-space: pre-wrap;">${data.reason}</p>
+          <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; border-left: 3px solid var(--primary-600);">
+            <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${data.reason}</p>
           </div>
         </div>
       `;
@@ -625,16 +625,16 @@ class GradingUI {
 
     // 生成总评卡片
     const overallCommentHTML = overallComment ? `
-      <div style="background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #f39c12;">
-        <h4 style="margin: 0 0 1rem 0; color: #2c3e50; font-size: 1.1rem;">
-          <i class="fas fa-comment-dots" style="color: #f39c12;"></i> AI 總評
+      <div class="card" style="margin-bottom: 1.5rem; border: 2px solid var(--warning-500);">
+        <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1.1rem;">
+          <i class="fas fa-comment-dots" style="color: var(--warning-500);"></i> AI 總評
         </h4>
         
         <!-- 優點 -->
         <div style="margin-bottom: 1rem;">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <i class="fas fa-thumbs-up" style="color: #27ae60;"></i>
-            <strong style="color: #27ae60;">做得好的方面</strong>
+            <i class="fas fa-thumbs-up" style="color: var(--success-500);"></i>
+            <strong style="color: var(--success-500);">做得好的方面</strong>
           </div>
           <div style="background: #f0fdf4; padding: 0.875rem; border-radius: 6px; border-left: 3px solid #27ae60;">
             <p style="margin: 0; color: #2c3e50; line-height: 1.6; white-space: pre-wrap;">${overallComment.strengths || '暂无'}</p>
