@@ -73,7 +73,7 @@ class GradingQueue {
         assignments.map(async (assignment) => {
           console.log('📝 加載任務提交:', assignment.title);
           
-          // 獲取所有提交（先不限制狀態，查看所有狀態）
+          // 獲取已提交和已批改的論文（老師端不應該看到草稿）
           const { data: allEssays, error: essaysError } = await this.supabase
             .from('essays')
             .select(`
@@ -89,7 +89,8 @@ class GradingQueue {
                 email
               )
             `)
-            .eq('assignment_id', assignment.id);
+            .eq('assignment_id', assignment.id)
+            .in('status', ['submitted', 'graded']);
           
           if (essaysError) {
             console.error('❌ 獲取任務提交失敗:', assignment.title, essaysError);
@@ -104,39 +105,9 @@ class GradingQueue {
             };
           }
           
-          console.log(`✅ 任務「${assignment.title}」找到 ${allEssays?.length || 0} 份提交`);
-          if (allEssays && allEssays.length > 0) {
-            console.log('  - 狀態分佈:', allEssays.map(e => e.status).join(', '));
-            console.log('  - 詳細提交信息:', allEssays.map(e => ({
-              id: e.id,
-              student: e.users?.display_name || e.users?.email,
-              status: e.status,
-              submitted_at: e.submitted_at
-            })));
-          } else {
-            console.log('  - 沒有找到任何提交，可能的原因：');
-            console.log('    1. 學生還沒有提交作業');
-            console.log('    2. 作業狀態不是 submitted 或 graded');
-            console.log('    3. 數據庫權限問題');
-            console.log('    4. 作業與任務關聯有問題');
-          }
-            
-          // 分類 - 包含所有狀態的作業
+          // 分類提交狀態
           const submitted = allEssays?.filter(e => e.status === 'submitted') || [];
           const graded = allEssays?.filter(e => e.status === 'graded') || [];
-          const draft = allEssays?.filter(e => e.status === 'draft') || [];
-          
-          console.log(`  - 狀態統計: draft=${draft.length}, submitted=${submitted.length}, graded=${graded.length}`);
-          
-          // 檢查是否有其他狀態的作業
-          const otherStatuses = allEssays?.filter(e => e.status !== 'submitted' && e.status !== 'graded' && e.status !== 'draft') || [];
-          if (otherStatuses.length > 0) {
-            console.log('  - 發現其他狀態的作業:', otherStatuses.map(e => ({
-              id: e.id,
-              student: e.users?.display_name || e.users?.email,
-              status: e.status
-            })));
-          }
           
           // 獲取班級學生總數
           const { count: totalStudents } = await this.supabase
@@ -147,9 +118,9 @@ class GradingQueue {
           return {
             ...assignment,
             submissions: {
-              pending: [...submitted, ...draft],  // 待批改（包含已提交和草稿）
+              pending: submitted,                   // 待批改（只包含已提交）
               graded: graded,                      // 已批改
-              total: (submitted.length + graded.length + draft.length),
+              total: (submitted.length + graded.length),
               totalStudents: totalStudents || 0
             }
           };
@@ -162,22 +133,10 @@ class GradingQueue {
       
       console.log('📊 統計結果：總待批改', this.totalPending, '份');
       
-      // 顯示有提交記錄的任務（包括待批改和已批改）
-      console.log('🔍 過濾前詳細數據：');
-      this.assignmentsWithSubmissions.forEach((a, index) => {
-        console.log(`  任務 ${index + 1}: "${a.title}"`);
-        console.log(`    - 待批改: ${a.submissions.pending.length}`);
-        console.log(`    - 已批改: ${a.submissions.graded.length}`);
-        console.log(`    - 總提交: ${a.submissions.total}`);
-        console.log(`    - 班級學生數: ${a.submissions.totalStudents}`);
-      });
-      
       this.assignmentsWithSubmissions = this.assignmentsWithSubmissions
         .filter(a => a.submissions.total > 0);
       
       console.log('📋 過濾後：', this.assignmentsWithSubmissions.length, '個任務有提交記錄');
-      console.log('  - 其中', this.assignmentsWithSubmissions.filter(a => a.submissions.pending.length > 0).length, '個有待批改');
-      console.log('  - 其中', this.assignmentsWithSubmissions.filter(a => a.submissions.graded.length > 0).length, '個有已批改');
       
       // 更新導航徽章
       this.updateNavigationBadge();
