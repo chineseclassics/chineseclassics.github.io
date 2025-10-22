@@ -397,12 +397,21 @@ class PuzzleUI {
         const iframe = document.getElementById('birthday-video');
         
         if (videoModal && iframe) {
+            // 顯示載入提示
+            this.showNotification('正在載入生日祝福影片...', 'info');
+            
             // 設置 YouTube 嵌入鏈接，支持 Shorts 格式
-            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
             videoModal.classList.remove('hidden');
             videoModal.classList.add('show');
             
             playSound('location-click');
+            
+            // 監聽視頻載入完成
+            iframe.onload = () => {
+                console.log('🎬 生日祝福影片載入完成:', videoId);
+                this.showNotification('影片載入完成！', 'success');
+            };
             
             console.log('🎬 播放生日祝福影片:', videoId);
         }

@@ -697,6 +697,8 @@
 /* 影片模態框 */
 .video-content {
     max-width: 800px;
+    width: 90vw;
+    max-height: 90vh;
 }
 
 .video-header {
@@ -739,6 +741,20 @@
     padding-bottom: 56.25%; /* 16:9 比例 */
     border-radius: 15px;
     overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* 響應式視頻容器 */
+@media (max-width: 768px) {
+    .video-content {
+        width: 95vw;
+        max-width: none;
+        padding: 20px;
+    }
+    
+    .video-container {
+        border-radius: 10px;
+    }
 }
 
 .video-container iframe {
