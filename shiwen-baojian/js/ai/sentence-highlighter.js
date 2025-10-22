@@ -113,17 +113,17 @@ function showSentenceTooltip(paragraphId, sentenceNumber, sentenceText) {
     tooltip.id = 'sentence-tooltip';
     tooltip.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-40 animate-slide-down';
     tooltip.innerHTML = `
-        <div class="bg-yellow-100 border-2 border-yellow-400 rounded-lg shadow-lg px-4 py-3 max-w-2xl">
+        <div class="bg-amber-100 border-2 border-amber-500 rounded-lg shadow-lg px-4 py-3 max-w-2xl">
             <div class="flex items-start space-x-3">
-                <div class="flex-shrink-0 w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold">
+                <div class="flex-shrink-0 w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold">
                     ${sentenceNumber}
                 </div>
                 <div class="flex-1">
-                    <p class="text-sm font-semibold text-yellow-900 mb-1">第 ${sentenceNumber} 句：</p>
-                    <p class="text-sm text-yellow-800">${sentenceText}</p>
+                    <p class="text-sm font-semibold text-amber-900 mb-1">第 ${sentenceNumber} 句：</p>
+                    <p class="text-sm text-amber-800">${sentenceText}</p>
                 </div>
                 <button onclick="this.closest('#sentence-tooltip').remove()" 
-                        class="text-yellow-700 hover:text-yellow-900 p-1">
+                        class="text-amber-700 hover:text-amber-900 p-1">
                     <i class="fas fa-times"></i>
                 </button>
             </div>

@@ -169,15 +169,15 @@ export function addArgument() {
             <!-- 分論點標題 -->
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3 flex-1">
-                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-stone-600 text-white text-sm font-bold">
                         ${argumentIndex}
                     </div>
                     <input type="text" 
                            id="${argumentId}-title"
                            placeholder="輸入分論點標題..."
-                           class="flex-1 text-lg font-semibold text-gray-900 bg-transparent border-b-2 border-transparent hover:border-blue-300 focus:border-blue-500 focus:outline-none px-2 py-1 transition-colors">
+                           class="flex-1 text-lg font-semibold text-gray-900 bg-transparent border-b-2 border-transparent hover:border-stone-400 focus:border-stone-600 focus:outline-none px-2 py-1 transition-colors">
                 </div>
-                <button class="delete-argument-btn text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-all"
+                <button class="delete-argument-btn text-gray-400 hover:text-rose-600 p-2 rounded-lg hover:bg-rose-100 transition-all"
                         data-argument-id="${argumentId}">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -190,7 +190,7 @@ export function addArgument() {
             
             <!-- 添加段落按鈕 -->
             <div class="ml-11 mt-4">
-                <button class="add-paragraph-btn w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:border-blue-500 hover:bg-blue-50 text-sm transition-all"
+                <button class="add-paragraph-btn w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-stone-400 rounded-lg text-stone-600 hover:border-stone-600 hover:bg-stone-50 text-sm transition-all"
                         data-argument-id="${argumentId}">
                     <i class="fas fa-plus"></i>
                     <span>添加段落</span>
@@ -309,14 +309,14 @@ export function addParagraph(argumentId) {
                 <span class="text-sm font-medium text-gray-600">段落 ${paragraphIndex}</span>
                 <div class="flex items-center space-x-2">
                     <!-- 雨村評點按鈕 -->
-                    <button class="request-feedback-btn text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
+                    <button class="request-feedback-btn text-stone-600 hover:text-stone-800 hover:bg-stone-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
                             data-paragraph-id="${paragraphId}"
                             title="請雨村評點">
                         <i class="fas fa-pen-fancy mr-2 text-base"></i>
                         雨村評點
                     </button>
                     <!-- 刪除按鈕 -->
-                    <button class="delete-paragraph-btn text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-all"
+                    <button class="delete-paragraph-btn text-gray-400 hover:text-rose-600 p-1 rounded hover:bg-rose-100 transition-all"
                             data-paragraph-id="${paragraphId}"
                             data-argument-id="${argumentId}">
                         <i class="fas fa-times text-sm"></i>
@@ -563,21 +563,21 @@ function updateSaveStatus(status) {
     
     switch (status) {
         case 'saving':
-            icon.className = 'fas fa-spinner fa-spin text-blue-500';
+            icon.className = 'fas fa-spinner fa-spin text-stone-500';
             text.textContent = '保存中...';
             text.className = 'text-gray-600';
             break;
             
         case 'saved':
-            icon.className = 'fas fa-check-circle text-green-500';
+            icon.className = 'fas fa-check-circle text-emerald-600';
             text.textContent = '已保存';
             text.className = 'text-gray-600';
             break;
             
         case 'error':
-            icon.className = 'fas fa-exclamation-circle text-red-500';
+            icon.className = 'fas fa-exclamation-circle text-rose-600';
             text.textContent = '保存失敗';
-            text.className = 'text-red-600';
+            text.className = 'text-rose-700';
             break;
     }
 }

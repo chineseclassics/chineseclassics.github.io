@@ -70,7 +70,7 @@ class GradingUI {
     if (!rubric || !rubric.criteria || rubric.criteria.length === 0) {
       this.container.innerHTML = `
         <div class="error-state">
-          <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+          <i class="fas fa-exclamation-triangle text-rose-600 text-4xl mb-4"></i>
           <p class="text-gray-700 text-lg">此任務缺少評分標準</p>
           <p class="text-gray-500 text-sm mt-2">請返回編輯任務並設置評分標準</p>
           <button id="backBtn" class="btn btn-secondary mt-4">
@@ -284,7 +284,7 @@ class GradingUI {
           html += `
             <div class="paragraph-block">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                <i class="fas fa-quote-left mr-2 text-blue-500"></i>引言
+                <i class="fas fa-quote-left mr-2 text-stone-500"></i>引言
               </h4>
               <div class="paragraph-content">${content.introduction}</div>
             </div>
@@ -297,7 +297,7 @@ class GradingUI {
             html += `
               <div class="paragraph-block argument-section">
                 <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                  <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
+                  <i class="fas fa-lightbulb mr-2 text-amber-600"></i>
                   分論點 ${index + 1}${arg.title ? `：${arg.title}` : ''}
                 </h4>
             `;
@@ -322,7 +322,7 @@ class GradingUI {
           html += `
             <div class="paragraph-block">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                <i class="fas fa-flag-checkered mr-2 text-green-500"></i>結論
+                <i class="fas fa-flag-checkered mr-2 text-emerald-600"></i>結論
               </h4>
               <div class="paragraph-content">${content.conclusion}</div>
             </div>

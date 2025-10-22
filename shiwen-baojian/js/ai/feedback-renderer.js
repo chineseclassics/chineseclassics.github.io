@@ -41,11 +41,11 @@ export function renderFeedback(paragraphId, feedback) {
     
     // 構建反饋 HTML
     const feedbackHTML = `
-        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 space-y-4">
+        <div class="bg-gradient-to-br from-stone-100 to-stone-200 border border-stone-300 rounded-lg p-6 space-y-4">
             <!-- 反饋標題和嚴重程度 -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
-                    <i class="fas fa-robot text-blue-600 text-xl"></i>
+                    <i class="fas fa-robot text-stone-600 text-xl"></i>
                     <h4 class="text-lg font-bold text-gray-800">AI 反饋</h4>
                 </div>
                 ${renderSeverityBadge(feedback.severity_level)}
@@ -115,10 +115,10 @@ function renderMobileInlineFeedback(paragraphId, paragraphTitle, feedback) {
     
     // 構建反饋 HTML（帶收起功能）
     const feedbackHTML = `
-        <div class="bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 rounded-lg p-1 mb-4 animate-slide-down">
+        <div class="bg-gradient-to-r from-stone-100 to-stone-200 border-2 border-stone-400 rounded-lg p-1 mb-4 animate-slide-down">
             <!-- 視覺連接線 -->
             <div class="flex justify-center -mt-3">
-                <div class="w-0.5 h-3 bg-blue-400"></div>
+                <div class="w-0.5 h-3 bg-stone-400"></div>
             </div>
             
             <!-- 反饋標題欄 -->
@@ -154,8 +154,8 @@ function renderMobileInlineFeedback(paragraphId, paragraphTitle, feedback) {
 function buildFeedbackHTML(paragraphId, paragraphTitle, feedback) {
     return `
         <!-- 當前段落標識 -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <div class="flex items-center space-x-2 text-blue-800">
+        <div class="bg-stone-50 border border-stone-300 rounded-lg p-3 mb-4">
+            <div class="flex items-center space-x-2 text-stone-800">
                 <i class="fas fa-file-alt text-sm"></i>
                 <span class="text-sm font-semibold">${paragraphTitle}</span>
             </div>
@@ -198,7 +198,7 @@ function buildSimpleFeedbackHTML(feedback) {
         
         <!-- 詳細分析按鈕 -->
         <button onclick="this.nextElementSibling.classList.toggle('hidden')" 
-                class="w-full text-sm text-blue-600 hover:text-blue-800 mt-3 py-2 border border-blue-200 rounded hover:bg-blue-50 transition-colors">
+                class="w-full text-sm text-stone-600 hover:text-stone-800 mt-3 py-2 border border-stone-300 rounded hover:bg-stone-50 transition-colors">
             <i class="fas fa-chart-line mr-1"></i>
             查看詳細分析
         </button>
@@ -241,9 +241,9 @@ function renderSeverityBadge(severity) {
         critical: {
             label: '嚴重問題',
             icon: 'fas fa-exclamation-triangle',
-            bgColor: 'bg-red-100',
-            textColor: 'text-red-800',
-            borderColor: 'border-red-300'
+            bgColor: 'bg-rose-100',
+            textColor: 'text-rose-800',
+            borderColor: 'border-rose-400'
         },
         major: {
             label: '主要問題',
@@ -255,16 +255,16 @@ function renderSeverityBadge(severity) {
         moderate: {
             label: '中等問題',
             icon: 'fas fa-info-circle',
-            bgColor: 'bg-yellow-100',
-            textColor: 'text-yellow-800',
-            borderColor: 'border-yellow-300'
+            bgColor: 'bg-amber-100',
+            textColor: 'text-amber-800',
+            borderColor: 'border-amber-400'
         },
         minor: {
             label: '輕微問題',
             icon: 'fas fa-check-circle',
-            bgColor: 'bg-green-100',
-            textColor: 'text-green-800',
-            borderColor: 'border-green-300'
+            bgColor: 'bg-emerald-100',
+            textColor: 'text-emerald-800',
+            borderColor: 'border-emerald-400'
         }
     };
     
@@ -292,41 +292,41 @@ function renderStructureCheck(structureCheck) {
         <div class="bg-white rounded-lg p-4 border border-gray-200">
             <div class="flex items-center justify-between mb-3">
                 <h5 class="font-semibold text-gray-800">
-                    <i class="fas fa-check-square text-blue-600 mr-2"></i>
+                    <i class="fas fa-check-square text-stone-600 mr-2"></i>
                     結構完整度
                 </h5>
-                <div class="text-2xl font-bold ${completeness >= 80 ? 'text-green-600' : completeness >= 50 ? 'text-yellow-600' : 'text-red-600'}">
+                <div class="text-2xl font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">
                     ${completeness}%
                 </div>
             </div>
             
             <!-- 進度條 -->
             <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3">
-                <div class="h-2.5 rounded-full transition-all ${completeness >= 80 ? 'bg-green-600' : completeness >= 50 ? 'bg-yellow-600' : 'bg-red-600'}" 
+                <div class="h-2.5 rounded-full transition-all ${completeness >= 80 ? 'bg-emerald-600' : completeness >= 50 ? 'bg-amber-600' : 'bg-rose-600'}" 
                      style="width: ${completeness}%"></div>
             </div>
             
             ${missingElements.length > 0 ? `
-                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
-                    <p class="text-sm font-semibold text-red-800 mb-1">
+                <div class="bg-rose-50 border border-rose-200 rounded-lg p-3 mb-2">
+                    <p class="text-sm font-semibold text-rose-800 mb-1">
                         <i class="fas fa-times-circle mr-1"></i>
                         缺少的必需元素：
                     </p>
-                    <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                    <ul class="list-disc list-inside text-sm text-rose-700 space-y-1">
                         ${missingElements.map(el => `<li>${el}</li>`).join('')}
                     </ul>
                 </div>
             ` : ''}
             
             ${presentElements.length > 0 ? `
-                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-green-800 mb-1">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                    <p class="text-sm font-semibold text-emerald-800 mb-1">
                         <i class="fas fa-check-circle mr-1"></i>
                         已包含的元素：
                     </p>
                     <div class="flex flex-wrap gap-2">
                         ${presentElements.map(el => `
-                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">${el}</span>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded">${el}</span>
                         `).join('')}
                     </div>
                 </div>
@@ -341,8 +341,8 @@ function renderStructureCheck(structureCheck) {
 function renderSentenceIssues(sentenceIssues, paragraphId) {
     if (!sentenceIssues || sentenceIssues.length === 0) {
         return `
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p class="text-green-800 flex items-center">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <p class="text-emerald-800 flex items-center">
                     <i class="fas fa-check-circle mr-2"></i>
                     <span>沒有發現明顯問題，請繼續保持！</span>
                 </p>
@@ -353,7 +353,7 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
     return `
         <div class="bg-white rounded-lg p-4 border border-gray-200">
             <h5 class="font-semibold text-gray-800 mb-3">
-                <i class="fas fa-list-ul text-blue-600 mr-2"></i>
+                <i class="fas fa-list-ul text-stone-600 mr-2"></i>
                 具體問題 (${sentenceIssues.length})
                 <span class="text-xs text-gray-500 font-normal ml-2">點擊查看原句</span>
             </h5>
@@ -363,7 +363,7 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
                     const sentenceNum = issue.sentence_number || 0;
                     
                     return `
-                    <div class="sentence-issue-item flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-yellow-50 hover:border-yellow-300 transition-all cursor-pointer group"
+                    <div class="sentence-issue-item flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer group"
                          data-paragraph-id="${paragraphId}"
                          data-sentence-number="${sentenceNum}"
                          onclick="handleSentenceClick('${paragraphId}', ${sentenceNum})">
@@ -379,7 +379,7 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
                                 </p>
                             ` : ''}
                         </div>
-                        <div class="text-yellow-500 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="text-amber-600 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
                             <i class="fas fa-eye"></i>
                         </div>
                     </div>
@@ -396,8 +396,8 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
 function renderSentenceIssuesSimple(sentenceIssues) {
     if (!sentenceIssues || sentenceIssues.length === 0) {
         return `
-            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p class="text-green-800 text-sm flex items-center">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <p class="text-emerald-800 text-sm flex items-center">
                     <i class="fas fa-check-circle mr-2"></i>
                     <span>沒有發現明顯問題</span>
                 </p>
@@ -436,14 +436,14 @@ function renderSuggestions(suggestions) {
     return `
         <div class="bg-white rounded-lg p-4 border border-gray-200">
             <h5 class="font-semibold text-gray-800 mb-3">
-                <i class="fas fa-lightbulb text-yellow-600 mr-2"></i>
+                <i class="fas fa-lightbulb text-amber-600 mr-2"></i>
                 改進建議
             </h5>
             
             <ul class="space-y-2">
                 ${suggestions.map(suggestion => `
                     <li class="flex items-start space-x-2 text-sm text-gray-700">
-                        <i class="fas fa-arrow-right text-blue-500 mt-1"></i>
+                        <i class="fas fa-arrow-right text-stone-500 mt-1"></i>
                         <span>${suggestion}</span>
                     </li>
                 `).join('')}
@@ -493,7 +493,7 @@ function renderAnalysisDimension(id, name, data) {
         <div class="bg-gray-50 rounded-lg p-3">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium text-gray-700">${name}</span>
-                <span class="text-sm font-bold ${score >= 7 ? 'text-green-600' : score >= 5 ? 'text-yellow-600' : 'text-red-600'}">
+                <span class="text-sm font-bold ${score >= 7 ? 'text-emerald-600' : score >= 5 ? 'text-amber-600' : 'text-rose-600'}">
                     ${score}/10
                 </span>
             </div>
@@ -507,7 +507,7 @@ function renderAnalysisDimension(id, name, data) {
                         </li>
                     `).join('')}
                 </ul>
-            ` : '<p class="text-xs text-green-600">表現良好</p>'}
+            ` : '<p class="text-xs text-emerald-600">表現良好</p>'}
         </div>
     `;
 }
@@ -522,13 +522,13 @@ function renderAnalysisDimension(id, name, data) {
 function highlightCurrentParagraph(paragraphId) {
     // 移除所有段落的高亮
     document.querySelectorAll('.paragraph-highlighted').forEach(el => {
-        el.classList.remove('paragraph-highlighted', 'ring-2', 'ring-blue-400', 'bg-blue-50');
+        el.classList.remove('paragraph-highlighted', 'ring-2', 'ring-blue-400', 'bg-stone-50');
     });
     
     // 高亮當前段落
     const paragraphElement = document.getElementById(paragraphId);
     if (paragraphElement) {
-        paragraphElement.classList.add('paragraph-highlighted', 'ring-2', 'ring-blue-400', 'bg-blue-50');
+        paragraphElement.classList.add('paragraph-highlighted', 'ring-2', 'ring-blue-400', 'bg-stone-50');
         console.log('✅ 段落已高亮:', paragraphId);
     }
 }
@@ -571,7 +571,7 @@ function updateParagraphBadge(paragraphId, feedback) {
         }
     } else {
         const badge = document.createElement('span');
-        badge.className = 'feedback-badge bg-green-500 text-white text-xs px-2 py-1 rounded-full font-semibold ml-2';
+        badge.className = 'feedback-badge bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold ml-2';
         badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i>無問題`;
         
         const titleEl = badgeContainer.querySelector('h3, .text-sm.font-medium');
@@ -674,10 +674,10 @@ function highlightSentenceIssues(paragraphId, sentenceIssues) {
  */
 function getSeverityColor(severity) {
     const colors = {
-        critical: 'bg-red-500',
+        critical: 'bg-rose-500',
         major: 'bg-orange-500',
-        moderate: 'bg-yellow-500',
-        minor: 'bg-blue-500'
+        moderate: 'bg-amber-600',
+        minor: 'bg-stone-500'
     };
     return colors[severity] || 'bg-gray-500';
 }
@@ -732,18 +732,18 @@ function renderStructureCheckSimple(structureCheck) {
         <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-semibold text-gray-800">結構完整度</span>
-                <span class="text-lg font-bold ${completeness >= 80 ? 'text-green-600' : completeness >= 50 ? 'text-yellow-600' : 'text-red-600'}">
+                <span class="text-lg font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">
                     ${completeness}%
                 </span>
             </div>
             
             <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                <div class="h-2 rounded-full ${completeness >= 80 ? 'bg-green-600' : completeness >= 50 ? 'bg-yellow-600' : 'bg-red-600'}" 
+                <div class="h-2 rounded-full ${completeness >= 80 ? 'bg-emerald-600' : completeness >= 50 ? 'bg-amber-600' : 'bg-rose-600'}" 
                      style="width: ${completeness}%"></div>
             </div>
             
             ${missingElements.length > 0 ? `
-                <div class="text-xs text-red-700 mt-2">
+                <div class="text-xs text-rose-700 mt-2">
                     <span class="font-semibold">缺少：</span>
                     ${missingElements.join('、')}
                 </div>
@@ -770,7 +770,7 @@ function renderContentAnalysisSimple(contentAnalysis) {
             <div class="bg-gray-50 rounded p-2">
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-xs font-medium text-gray-700">${key}</span>
-                    <span class="text-xs font-bold ${score >= 7 ? 'text-green-600' : score >= 5 ? 'text-yellow-600' : 'text-red-600'}">
+                    <span class="text-xs font-bold ${score >= 7 ? 'text-emerald-600' : score >= 5 ? 'text-amber-600' : 'text-rose-600'}">
                         ${score}/10
                     </span>
                 </div>

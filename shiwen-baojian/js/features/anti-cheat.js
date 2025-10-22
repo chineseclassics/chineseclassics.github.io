@@ -134,7 +134,7 @@ function showPasteWarning(length) {
     
     // 創建臨時提示
     const warning = document.createElement('div');
-    warning.className = 'fixed top-20 right-4 bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-lg shadow-lg z-50 max-w-sm';
+    warning.className = 'fixed top-20 right-4 bg-amber-100 border border-amber-400 text-amber-800 px-4 py-3 rounded-lg shadow-lg z-50 max-w-sm';
     warning.innerHTML = `
         <div class="flex items-start space-x-2">
             <i class="fas fa-exclamation-triangle mt-0.5"></i>

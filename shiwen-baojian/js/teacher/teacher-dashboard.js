@@ -168,11 +168,11 @@ class TeacherDashboard {
           console.warn('需要先創建班級:', error.message);
           mainContent.innerHTML = `
             <div class="text-center py-12">
-              <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 mb-4"></i>
+              <i class="fas fa-exclamation-triangle text-6xl text-amber-600 mb-4"></i>
               <h3 class="text-xl font-bold text-gray-900 mb-2">需要先創建班級</h3>
               <p class="text-gray-600 mb-6">在創建任務之前，請先創建班級并添加學生</p>
               <button onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'class-management' } }))" 
-                      class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                      class="bg-stone-600 text-white px-6 py-2 rounded-lg hover:bg-stone-700">
                 前往班級管理
               </button>
             </div>

@@ -390,23 +390,21 @@ class PuzzleUI {
      * 顯示影片模態框
      */
     showVideoModal() {
-        // 這裡需要用戶提供 YouTube 影片 ID
-        const videoId = 'YOUR_VIDEO_ID'; // 需要替換為實際的影片 ID
-        
-        if (videoId === 'YOUR_VIDEO_ID') {
-            this.showNotification('影片尚未準備好，敬請期待！', 'info');
-            return;
-        }
+        // 生日祝福影片 ID
+        const videoId = 'MwrbNGJi-oQ';
         
         const videoModal = document.getElementById('video-modal');
         const iframe = document.getElementById('birthday-video');
         
         if (videoModal && iframe) {
-            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            // 設置 YouTube 嵌入鏈接，支持 Shorts 格式
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
             videoModal.classList.remove('hidden');
             videoModal.classList.add('show');
             
             playSound('location-click');
+            
+            console.log('🎬 播放生日祝福影片:', videoId);
         }
     }
 

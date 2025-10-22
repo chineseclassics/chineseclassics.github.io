@@ -195,8 +195,8 @@ function showLoadingState(paragraphId) {
     
     const loadingHTML = `
         <!-- 當前段落標識 -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <div class="flex items-center space-x-2 text-blue-800">
+        <div class="bg-stone-50 border border-stone-300 rounded-lg p-3 mb-4">
+            <div class="flex items-center space-x-2 text-stone-800">
                 <i class="fas fa-file-alt text-sm"></i>
                 <span class="text-sm font-semibold">${paragraphTitle}</span>
             </div>
@@ -205,8 +205,8 @@ function showLoadingState(paragraphId) {
         <!-- 加載動畫 -->
         <div class="flex flex-col items-center justify-center py-12 space-y-4">
             <div class="relative">
-                <div class="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
-                <div class="absolute top-0 left-0 w-16 h-16 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                <div class="w-16 h-16 border-4 border-stone-300 rounded-full"></div>
+                <div class="absolute top-0 left-0 w-16 h-16 border-4 border-stone-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
             <div class="text-center">
                 <p class="text-lg font-medium text-gray-700">AI 正在分析您的段落...</p>
@@ -246,10 +246,10 @@ function showMobileInlineLoading(paragraphId, paragraphTitle, loadingHTML) {
     
     // 顯示加載動畫（帶連接線）
     feedbackContainer.innerHTML = `
-        <div class="bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 rounded-lg p-1 mb-4 animate-slide-down">
+        <div class="bg-gradient-to-r from-stone-100 to-stone-200 border-2 border-stone-400 rounded-lg p-1 mb-4 animate-slide-down">
             <!-- 視覺連接線 -->
             <div class="flex justify-center -mt-3">
-                <div class="w-0.5 h-3 bg-blue-400"></div>
+                <div class="w-0.5 h-3 bg-stone-400"></div>
             </div>
             
             <div class="bg-white p-4 rounded">
@@ -304,22 +304,22 @@ function showErrorState(paragraphId, errorMessage) {
     
     const errorHTML = `
         <!-- 當前段落標識 -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <div class="flex items-center space-x-2 text-blue-800">
+        <div class="bg-stone-50 border border-stone-300 rounded-lg p-3 mb-4">
+            <div class="flex items-center space-x-2 text-stone-800">
                 <i class="fas fa-file-alt text-sm"></i>
                 <span class="text-sm font-semibold">${paragraphTitle}</span>
             </div>
         </div>
         
         <!-- 錯誤信息 -->
-        <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div class="bg-rose-50 border border-rose-200 rounded-lg p-6">
             <div class="flex items-start space-x-3">
-                <i class="fas fa-exclamation-circle text-red-500 text-xl mt-0.5"></i>
+                <i class="fas fa-exclamation-circle text-rose-600 text-xl mt-0.5"></i>
                 <div class="flex-1">
-                    <h4 class="text-red-800 font-semibold mb-1">獲取 AI 反饋失敗</h4>
-                    <p class="text-red-700 text-sm">${errorMessage}</p>
+                    <h4 class="text-rose-800 font-semibold mb-1">獲取 AI 反饋失敗</h4>
+                    <p class="text-rose-700 text-sm">${errorMessage}</p>
                     <button onclick="location.reload()" 
-                            class="mt-3 text-sm text-red-600 hover:text-red-800 font-medium">
+                            class="mt-3 text-sm text-rose-700 hover:text-rose-800 font-medium">
                         <i class="fas fa-redo mr-1"></i> 重新加載頁面
                     </button>
                 </div>

@@ -63,6 +63,7 @@
     width: 200px;
     height: 200px;
     margin: 0 auto;
+    will-change: transform;
 }
 
 /* 盒蓋 */
@@ -79,11 +80,13 @@
     transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     transform-origin: bottom center;
     z-index: 2;
+    will-change: transform, opacity;
 }
 
 .gift-box.opening .gift-lid {
     transform: translateX(-50%) rotateX(-110deg) translateY(-100px);
     opacity: 0;
+    transition: all 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* 蝴蝶結 */
@@ -257,6 +260,17 @@
     75% { transform: rotate(10deg); }
 }
 
+/* 優化動畫性能 */
+.gift-box.opening .gift-body {
+    animation: bodyGlow 1s ease-out;
+}
+
+@keyframes bodyGlow {
+    0% { box-shadow: 0 15px 40px rgba(255,105,180,0.4); }
+    50% { box-shadow: 0 15px 40px rgba(255,105,180,0.8), 0 0 30px rgba(255,255,255,0.6); }
+    100% { box-shadow: 0 15px 40px rgba(255,105,180,0.4); }
+}
+
 /* 光芒爆發效果 */
 .light-burst {
     position: absolute;
@@ -346,6 +360,45 @@
     
     .gift-hint-subtitle {
         font-size: 1rem;
+    }
+    
+    /* 移動端優化動畫性能 */
+    .gift-box-wrapper {
+        animation: none; /* 移動端禁用浮動動畫以提升性能 */
+    }
+    
+    .gift-box-wrapper:hover {
+        transform: none; /* 移動端禁用 hover 效果 */
+    }
+}
+
+/* 超小屏幕優化 */
+@media (max-width: 480px) {
+    .gift-box {
+        width: 140px;
+        height: 140px;
+    }
+    
+    .gift-lid {
+        width: 160px;
+        height: 45px;
+    }
+    
+    .gift-body {
+        width: 140px;
+        height: 100px;
+    }
+    
+    .gift-hint {
+        bottom: -60px;
+    }
+    
+    .gift-hint-title {
+        font-size: 1.2rem;
+    }
+    
+    .gift-hint-subtitle {
+        font-size: 0.9rem;
     }
 }
 

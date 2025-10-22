@@ -130,9 +130,9 @@ class AssignmentCreator {
               </div>
               
               <!-- 🚨 階段 3.5.1.5：實時狀態面板 -->
-              <div id="inlineStatusPanel" class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div id="inlineStatusPanel" class="bg-gradient-to-r from-stone-100 to-stone-200 border border-stone-300 rounded-lg p-4 mb-4">
                 <h4 class="text-sm font-semibold text-gray-700 mb-2">
-                  <i class="fas fa-info-circle text-blue-600 mr-2"></i>📊 當前狀態
+                  <i class="fas fa-info-circle text-stone-600 mr-2"></i>📊 當前狀態
                 </h4>
                 <div id="inlineStatusContent" class="text-sm text-gray-600 space-y-1">
                   <p>✏️ 模式：<span id="statusMode" class="font-medium">從零開始</span></p>
@@ -153,7 +153,7 @@ class AssignmentCreator {
                 <button 
                   type="button"
                   id="inlineSaveBtn"
-                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="bg-stone-600 text-white px-4 py-2 rounded-lg hover:bg-stone-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i class="fas fa-save mr-2"></i>保存並使用
                 </button>
@@ -228,7 +228,7 @@ class AssignmentCreator {
                 <button 
                   type="button"
                   id="confirmSaveFormatBtn"
-                  class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  class="flex-1 bg-stone-600 text-white px-4 py-2 rounded-lg hover:bg-stone-700"
                 >
                   確認保存
                 </button>
@@ -642,15 +642,15 @@ class AssignmentCreator {
     // 更新模式顯示
     statusMode.textContent = modeText[this.currentMode];
     statusMode.className = this.currentMode === 'direct' 
-      ? 'font-medium text-green-600'
+      ? 'font-medium text-emerald-600'
       : this.currentMode === 'incremental'
         ? 'font-medium text-orange-600'
-        : 'font-medium text-blue-600';
+        : 'font-medium text-stone-600';
     
     // 更新優化狀態
     statusOptimized.textContent = this.hasBeenOptimized ? '是 ✓' : '否';
     statusOptimized.className = this.hasBeenOptimized 
-      ? 'font-medium text-green-600'
+      ? 'font-medium text-emerald-600'
       : 'font-medium text-gray-600';
     
     // 更新保存狀態
@@ -658,7 +658,7 @@ class AssignmentCreator {
                     (this.hasBeenOptimized && this.cachedFormatJSON);
     statusCanSave.textContent = canSave ? '是 ✓' : '否';
     statusCanSave.className = canSave 
-      ? 'font-medium text-green-600'
+      ? 'font-medium text-emerald-600'
       : 'font-medium text-gray-600';
     
     console.log('[AssignmentCreator] 狀態面板已更新:', {

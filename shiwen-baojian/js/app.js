@@ -1136,18 +1136,18 @@ async function setupEssayStatus(assignmentId, editable = true) {
         if (essay.status === 'submitted') {
             if (statusText) {
                 statusText.textContent = '已提交';
-                statusText.classList.add('text-green-600', 'font-semibold');
+                statusText.classList.add('text-emerald-600', 'font-semibold');
             }
             if (statusDisplay) {
                 const icon = statusDisplay.querySelector('i');
                 if (icon) {
-                    icon.className = 'fas fa-check-circle text-green-600 text-xs';
+                    icon.className = 'fas fa-check-circle text-emerald-600 text-xs';
                 }
             }
         } else if (essay.status === 'graded') {
             if (statusText) {
                 statusText.textContent = '已批改';
-                statusText.classList.add('text-yellow-600', 'font-semibold');
+                statusText.classList.add('text-amber-700', 'font-semibold');
             }
             
             // ✅ 如果已批改，顯示老師的評分和評語（替換「賈雨村說」）
@@ -1201,11 +1201,11 @@ function disableEditing() {
     const container = document.getElementById('student-dashboard-content');
     if (container) {
         const notice = document.createElement('div');
-        notice.className = 'bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4';
+        notice.className = 'bg-amber-50 border-l-4 border-amber-500 p-4 mb-4';
         notice.innerHTML = `
             <div class="flex items-center gap-2">
-                <i class="fas fa-eye text-yellow-600"></i>
-                <span class="text-yellow-800 font-medium">只讀模式：此作業已提交，無法編輯</span>
+                <i class="fas fa-eye text-amber-700"></i>
+                <span class="text-amber-800 font-medium">只讀模式：此作業已提交，無法編輯</span>
             </div>
         `;
         const assignmentInfo = container.querySelector('#assignment-info-panel');
@@ -1429,8 +1429,8 @@ async function displayTeacherGrading(essayId) {
             <!-- 側邊欄標題 -->
             <div class="premium-blue-gradient px-4 py-3">
                 <div class="flex items-center space-x-2">
-                    <i class="fas fa-chalkboard-teacher text-xl text-yellow-100"></i>
-                    <h3 class="font-bold text-xl text-yellow-50" style="letter-spacing: 0.1em;">老師評分</h3>
+                    <i class="fas fa-chalkboard-teacher text-xl text-amber-100"></i>
+                    <h3 class="font-bold text-xl text-amber-50" style="letter-spacing: 0.1em;">老師評分</h3>
                 </div>
             </div>
             
@@ -1446,10 +1446,10 @@ async function displayTeacherGrading(essayId) {
                 <!-- 各標準評分 -->
                 <div class="p-4 space-y-3">
                     ${scores.map(s => `
-                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border-l-4 border-blue-500">
+                        <div class="bg-gradient-to-r from-stone-100 to-stone-200 rounded-lg p-3 border-l-4 border-stone-600">
                             <div class="flex items-center justify-between mb-1">
                                 <span class="font-semibold text-gray-700">標準 ${s.code}：${s.name}</span>
-                                <span class="text-2xl font-bold text-blue-600">${s.score}</span>
+                                <span class="text-2xl font-bold text-stone-600">${s.score}</span>
                             </div>
                             <div class="text-xs text-gray-500">/ 8 分</div>
                         </div>
@@ -1460,10 +1460,10 @@ async function displayTeacherGrading(essayId) {
                 ${grade.overall_comment ? `
                     <div class="border-t border-gray-200 p-4">
                         <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="fas fa-comment-dots text-blue-600"></i>
+                            <i class="fas fa-comment-dots text-stone-600"></i>
                             老師評語
                         </h4>
-                        <div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-400">
+                        <div class="bg-amber-50 rounded-lg p-4 border-l-4 border-amber-500">
                             <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${grade.overall_comment}</p>
                         </div>
                     </div>

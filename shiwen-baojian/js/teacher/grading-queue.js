@@ -30,7 +30,7 @@ class GradingQueue {
       // 顯示加載狀態
       this.container.innerHTML = `
         <div class="text-center py-12">
-          <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+          <i class="fas fa-spinner fa-spin text-4xl text-stone-600"></i>
           <p class="mt-4 text-gray-600">正在加載待批改作業...</p>
         </div>
       `;
@@ -156,7 +156,7 @@ class GradingQueue {
       console.error('❌ 加載批改隊列失敗:', error);
       this.container.innerHTML = `
         <div class="error-state">
-          <i class="fas fa-exclamation-triangle text-red-500 text-4xl"></i>
+          <i class="fas fa-exclamation-triangle text-rose-500 text-4xl"></i>
           <p class="mt-4 text-gray-700">加載失敗：${error.message}</p>
         </div>
       `;
@@ -195,7 +195,7 @@ class GradingQueue {
         <div class="grading-queue-container">
           <!-- 顶部成功消息 -->
           <div class="success-banner" style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
-            <i class="fas fa-check-double text-green-600 text-4xl mb-3"></i>
+            <i class="fas fa-check-double text-emerald-600 text-4xl mb-3"></i>
             <p class="text-gray-700 text-lg font-semibold">太棒了！沒有待批改的作業</p>
             <p class="text-gray-600 text-sm mt-2">所有提交的作業都已批改完成，您可以查看已批改記錄</p>
           </div>
@@ -252,7 +252,7 @@ class GradingQueue {
                     hour: '2-digit',
                     minute: '2-digit'
                   })}
-                  ${isOverdue ? '<span class="text-red-600 font-semibold ml-2">已過期</span>' : ''}
+                  ${isOverdue ? '<span class="text-rose-600 font-semibold ml-2">已過期</span>' : ''}
                 </span>
                 <span>
                   <i class="fas fa-users mr-1"></i>
@@ -366,7 +366,7 @@ class GradingQueue {
         
         <div class="submission-meta">
           <span class="meta-item">
-            <i class="fas fa-check-circle text-green-600"></i>
+            <i class="fas fa-check-circle text-emerald-600"></i>
             已批改
           </span>
         </div>

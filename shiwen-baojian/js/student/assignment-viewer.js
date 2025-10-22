@@ -169,7 +169,7 @@ class StudentAssignmentViewer {
                   <i class="fas fa-clipboard-list"></i>
                   共 ${this.assignments.length} 個任務
                 </span>
-                <button id="refresh-assignments-btn" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2">
+                <button id="refresh-assignments-btn" class="text-sm text-stone-600 hover:text-stone-800 flex items-center gap-2">
                   <i class="fas fa-sync-alt"></i>
                   刷新
                 </button>
@@ -265,7 +265,7 @@ class StudentAssignmentViewer {
           ` : ''}
           ${essay && essay.submitted_at ? `
             <div class="meta-item">
-              <i class="fas fa-check-circle text-green-600"></i>
+              <i class="fas fa-check-circle text-emerald-600"></i>
               <span>已於 ${new Date(essay.submitted_at).toLocaleDateString('zh-Hant-TW', { 
                 month: 'long', 
                 day: 'numeric',
@@ -658,7 +658,7 @@ class StudentAssignmentViewer {
               <p class="mb-2">📝 論文標題：${this.escapeHtml(content.title)}</p>
               <p class="mb-2">📊 總字數：${wordCount} 字</p>
               <p class="mb-4">📚 包含：引言、${argumentCount} 個分論點、結論</p>
-              <p class="text-yellow-700 font-semibold">⚠️ 提交後將無法修改，請確認已完成寫作</p>
+              <p class="text-amber-700 font-semibold">⚠️ 提交後將無法修改，請確認已完成寫作</p>
             </div>
           `,
           confirmText: '確定提交',

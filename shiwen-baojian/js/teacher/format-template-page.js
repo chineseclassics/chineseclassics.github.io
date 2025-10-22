@@ -54,7 +54,7 @@ class FormatTemplatePage {
       console.error('[FormatTemplatePage] 渲染失败:', error);
       container.innerHTML = `
         <div class="text-center py-12">
-          <i class="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
+          <i class="fas fa-exclamation-circle text-6xl text-rose-500 mb-4"></i>
           <h3 class="text-xl font-bold text-gray-900 mb-2">加载失败</h3>
           <p class="text-gray-600">${error.message}</p>
         </div>
@@ -91,7 +91,7 @@ class FormatTemplatePage {
               <input 
                 type="text" 
                 id="searchInput"
-                class="w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                class="w-64 pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-stone-500 transition-all"
                 placeholder="搜索模板..."
               />
             </div>
@@ -99,7 +99,7 @@ class FormatTemplatePage {
             <!-- 篩選 -->
             <select 
               id="filterType"
-              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-stone-500 transition-all appearance-none cursor-pointer"
               style="padding-right: 2rem; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;"
             >
               <option value="all">全部類型</option>
@@ -110,7 +110,7 @@ class FormatTemplatePage {
             <!-- 排序 -->
             <select 
               id="sortBy"
-              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+              class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-stone-500 transition-all appearance-none cursor-pointer"
               style="padding-right: 2rem; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;"
             >
               <option value="created_desc">最新創建</option>
@@ -123,7 +123,7 @@ class FormatTemplatePage {
         
         <!-- 加载状态 -->
         <div id="loadingState" class="text-center py-12">
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mb-4"></div>
           <p class="text-gray-600">加載中...</p>
         </div>
         
@@ -139,7 +139,7 @@ class FormatTemplatePage {
           <p class="text-gray-600 mb-6">點擊「創建新模板」按鈕開始</p>
           <button 
             id="emptyCreateBtn"
-            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            class="px-6 py-3 bg-stone-600 text-white rounded-lg hover:bg-stone-700 transition"
             style="box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);"
           >
             ➕ 創建第一個模板
@@ -163,7 +163,7 @@ class FormatTemplatePage {
             <button id="closeDetailModalBtn2" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
               關閉
             </button>
-            <button id="copyDetailBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <button id="copyDetailBtn" class="px-4 py-2 bg-stone-600 text-white rounded-lg hover:bg-stone-700 transition">
               <i class="fas fa-copy mr-1"></i>複製
             </button>
           </div>
@@ -284,7 +284,7 @@ class FormatTemplatePage {
       if (loadingState) loadingState.classList.add('hidden');
       if (templateGrid) {
         templateGrid.innerHTML = `
-          <div class="col-span-full text-center py-8 text-red-600">
+          <div class="col-span-full text-center py-8 text-rose-600">
             <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
             <p>加载失败：${error.message}</p>
           </div>
@@ -379,7 +379,7 @@ class FormatTemplatePage {
       html += `
         <div class="col-span-full">
           <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-            <i class="fas fa-star text-yellow-500 mr-2"></i>
+            <i class="fas fa-star text-amber-600 mr-2"></i>
             系統寫作指引模板
             <span class="ml-2 text-sm text-gray-500 font-normal">(${systemTemplates.length})</span>
           </h3>
@@ -393,7 +393,7 @@ class FormatTemplatePage {
       html += `
         <div class="col-span-full mt-6">
           <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-            <i class="fas fa-user-edit text-blue-500 mr-2"></i>
+            <i class="fas fa-user-edit text-stone-500 mr-2"></i>
             我的寫作指引模板
             <span class="ml-2 text-sm text-gray-500 font-normal">(${customTemplates.length})</span>
           </h3>
@@ -413,7 +413,7 @@ class FormatTemplatePage {
     const icon = isSystem ? '📚' : '📝';
     const badge = isSystem 
       ? '<span class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded font-medium">系統內置</span>'
-      : '<span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-medium">自定義</span>';
+      : '<span class="bg-stone-100 text-stone-700 text-xs px-2 py-1 rounded font-medium">自定義</span>';
     
     return `
       <div class="bg-white rounded-lg shadow hover:shadow-lg transition-all border border-gray-200 overflow-hidden"
@@ -444,7 +444,7 @@ class FormatTemplatePage {
           ${!isSystem ? `
             <button 
               onclick="window.formatTemplatePageInstance.deleteTemplate('${template.id}')"
-              class="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition text-sm font-medium"
+              class="bg-rose-50 text-rose-600 px-4 py-2 rounded-lg hover:bg-rose-100 transition text-sm font-medium"
             >
               <i class="fas fa-trash mr-1"></i>刪除
             </button>
@@ -472,7 +472,7 @@ class FormatTemplatePage {
       const isSystem = template.is_system;
       const badge = isSystem 
         ? '<span class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-medium">系統內置</span>'
-        : '<span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">自定義</span>';
+        : '<span class="bg-stone-100 text-stone-700 text-xs px-3 py-1 rounded-full font-medium">自定義</span>';
       
       title.innerHTML = `
         <div class="flex items-center gap-3">
@@ -491,7 +491,7 @@ class FormatTemplatePage {
           ` : ''}
           <div>
             <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">寫作指引詳情</h4>
-            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-100">
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-stone-100">
               <div class="text-gray-800 whitespace-pre-wrap leading-relaxed" style="font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;">
 ${this.escapeHtml(template.human_input || '暫無內容')}
               </div>
@@ -601,7 +601,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
         <!-- 返回按钮 -->
         <button 
           id="backToListBtn"
-          class="mb-6 inline-flex items-center text-gray-600 hover:text-blue-600 transition-all font-medium group"
+          class="mb-6 inline-flex items-center text-gray-600 hover:text-stone-600 transition-all font-medium group"
         >
           <i class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i>返回模板庫
         </button>
@@ -614,7 +614,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
             <div class="absolute bottom-0 left-0 w-96 h-96 bg-indigo-700 opacity-10 rounded-full -ml-48 -mb-48"></div>
             <div class="relative">
               <h2 id="templateEditorTitle" class="text-3xl font-bold mb-2">${title}</h2>
-              <p id="templateEditorSubtitle" class="text-blue-50 text-lg">${subtitle}</p>
+              <p id="templateEditorSubtitle" class="text-stone-50 text-lg">${subtitle}</p>
             </div>
           </div>
           
@@ -626,17 +626,17 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                 <span class="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full mr-3"></span>
                 寫作指引內容
               </label>
-              <div id="template-editor" class="border-2 border-gray-200 rounded-xl p-6 bg-gray-50 hover:bg-white hover:border-blue-300 transition-all" style="min-height: 450px;">
+              <div id="template-editor" class="border-2 border-gray-200 rounded-xl p-6 bg-gray-50 hover:bg-white hover:border-stone-300 transition-all" style="min-height: 450px;">
                 <!-- Quill 将在这里初始化 -->
               </div>
-              <div class="mt-3 flex items-start gap-2 text-sm text-gray-500 bg-blue-50 rounded-lg p-3">
-                <i class="fas fa-lightbulb text-blue-500 mt-0.5"></i>
+              <div class="mt-3 flex items-start gap-2 text-sm text-gray-500 bg-stone-50 rounded-lg p-3">
+                <i class="fas fa-lightbulb text-stone-500 mt-0.5"></i>
                 <p>輸入您的寫作指引，使用自然語言描述即可。AI 會幫您整理成結構化的格式。</p>
               </div>
             </div>
             
             <!-- 狀態面板 - 重新設計 -->
-            <div id="templateStatusPanel" class="mb-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-100 rounded-xl p-5 shadow-sm">
+            <div id="templateStatusPanel" class="mb-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-stone-100 rounded-xl p-5 shadow-sm">
               <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                   <i class="fas fa-chart-line text-white"></i>
@@ -644,15 +644,15 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                 <h4 class="text-base font-bold text-gray-800">當前狀態</h4>
               </div>
               <div id="templateStatusContent" class="grid grid-cols-3 gap-4 text-sm">
-                <div class="bg-white rounded-lg p-3 border border-blue-100">
+                <div class="bg-white rounded-lg p-3 border border-stone-100">
                   <div class="text-gray-500 text-xs mb-1">模式</div>
                   <div id="templateStatusMode" class="font-semibold text-gray-800">從零開始</div>
                 </div>
-                <div class="bg-white rounded-lg p-3 border border-blue-100">
+                <div class="bg-white rounded-lg p-3 border border-stone-100">
                   <div class="text-gray-500 text-xs mb-1">AI 優化</div>
                   <div id="templateStatusOptimized" class="font-semibold text-gray-800">未優化</div>
                 </div>
-                <div class="bg-white rounded-lg p-3 border border-blue-100">
+                <div class="bg-white rounded-lg p-3 border border-stone-100">
                   <div class="text-gray-500 text-xs mb-1">保存狀態</div>
                   <div id="templateStatusCanSave" class="font-semibold text-gray-800">未就緒</div>
                 </div>
@@ -697,12 +697,12 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
             <div class="p-6 space-y-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                  模板名稱 <span class="text-red-500">*</span>
+                  模板名稱 <span class="text-rose-500">*</span>
                 </label>
                 <input 
                   id="saveTemplateName"
                   type="text" 
-                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-stone-500 focus:ring-2 focus:ring-blue-200 transition"
                   placeholder="例如：紅樓夢人物分析寫作指引模板"
                 />
               </div>
@@ -710,7 +710,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                 <label class="block text-sm font-semibold text-gray-700 mb-2">描述</label>
                 <textarea 
                   id="saveTemplateDesc"
-                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-stone-500 focus:ring-2 focus:ring-blue-200 transition"
                   rows="3"
                   placeholder="簡要描述這個模板的用途..."
                 ></textarea>
@@ -924,7 +924,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     // 重置卡片樣式
     [scratchCard, systemCard].forEach(card => {
       if (card) {
-        card.classList.remove('border-blue-500', 'bg-blue-50');
+        card.classList.remove('border-stone-500', 'bg-stone-50');
         card.classList.add('border-gray-200');
         const check = card.querySelector('.template-start-check');
         if (check) check.classList.add('hidden');
@@ -935,7 +935,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       // 從零開始
       if (scratchCard) {
         scratchCard.classList.remove('border-gray-200');
-        scratchCard.classList.add('border-blue-500', 'bg-blue-50');
+        scratchCard.classList.add('border-stone-500', 'bg-stone-50');
         const check = scratchCard.querySelector('.template-start-check');
         if (check) check.classList.remove('hidden');
       }
@@ -947,7 +947,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
       // 基於系統格式
       if (systemCard) {
         systemCard.classList.remove('border-gray-200');
-        systemCard.classList.add('border-blue-500', 'bg-blue-50');
+        systemCard.classList.add('border-stone-500', 'bg-stone-50');
         const check = systemCard.querySelector('.template-start-check');
         if (check) check.classList.remove('hidden');
       }
@@ -1133,15 +1133,15 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     // 更新模式顯示
     statusMode.textContent = modeText[this.editorMode];
     statusMode.className = this.editorMode === 'direct' 
-      ? 'font-medium text-green-600'
+      ? 'font-medium text-emerald-600'
       : this.editorMode === 'incremental'
         ? 'font-medium text-orange-600'
-        : 'font-medium text-blue-600';
+        : 'font-medium text-stone-600';
     
     // 更新優化狀態
     statusOptimized.textContent = this.hasBeenOptimized ? '是 ✓' : '否';
     statusOptimized.className = this.hasBeenOptimized 
-      ? 'font-medium text-green-600'
+      ? 'font-medium text-emerald-600'
       : 'font-medium text-gray-600';
     
     // 更新保存狀態
@@ -1149,7 +1149,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
                     (this.hasBeenOptimized && this.cachedFormatJSON);
     statusCanSave.textContent = canSave ? '是 ✓' : '否';
     statusCanSave.className = canSave 
-      ? 'font-medium text-green-600'
+      ? 'font-medium text-emerald-600'
       : 'font-medium text-gray-600';
     
     console.log('[FormatTemplatePage] 狀態面板已更新:', {

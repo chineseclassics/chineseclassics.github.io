@@ -69,21 +69,40 @@ function bindGiftBoxEvents() {
     const giftIntro = document.getElementById('gift-intro');
     const birthdaylandMap = document.getElementById('birthdayland-map');
     
-    if (!giftBoxWrapper || !giftBox || !giftIntro) return;
+    if (!giftBoxWrapper || !giftBox || !giftIntro) {
+        console.error('禮物盒元素未找到');
+        return;
+    }
     
     // 點擊禮物盒打開
-    giftBoxWrapper.addEventListener('click', () => {
+    giftBoxWrapper.addEventListener('click', (e) => {
+        e.preventDefault();
         openGiftBox(giftBox, giftIntro, birthdaylandMap);
     });
     
     // 添加觸摸反饋
-    giftBoxWrapper.addEventListener('touchstart', () => {
+    giftBoxWrapper.addEventListener('touchstart', (e) => {
+        e.preventDefault();
         giftBoxWrapper.style.transform = 'scale(0.95)';
     });
     
-    giftBoxWrapper.addEventListener('touchend', () => {
+    giftBoxWrapper.addEventListener('touchend', (e) => {
+        e.preventDefault();
         giftBoxWrapper.style.transform = 'scale(1)';
     });
+    
+    // 添加鍵盤支持（無障礙訪問）
+    giftBoxWrapper.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openGiftBox(giftBox, giftIntro, birthdaylandMap);
+        }
+    });
+    
+    // 設置可聚焦
+    giftBoxWrapper.setAttribute('tabindex', '0');
+    giftBoxWrapper.setAttribute('role', 'button');
+    giftBoxWrapper.setAttribute('aria-label', '點擊打開生日驚喜禮物盒');
 }
 
 /**
@@ -92,21 +111,27 @@ function bindGiftBoxEvents() {
 function openGiftBox(giftBox, giftIntro, birthdaylandMap) {
     console.log('🎉 打開禮物盒！');
     
-    // 播放音效
-    playSound('final-celebration');
-    
-    // 添加打開動畫類
-    giftBox.classList.add('opening');
-    
     // 移除點擊事件，防止重複點擊
     const wrapper = document.querySelector('.gift-box-wrapper');
     if (wrapper) {
         wrapper.style.pointerEvents = 'none';
     }
     
+    // 添加打開動畫類
+    giftBox.classList.add('opening');
+    
+    // 播放音效（延遲一點，讓動畫開始）
+    setTimeout(() => {
+        try {
+            playSound('final-celebration');
+        } catch (error) {
+            console.warn('音效播放失敗，繼續動畫:', error);
+        }
+    }, 200);
+    
     // 慶祝動畫序列
     setTimeout(() => {
-        // 1.5 秒後開始淡出禮物盒場景
+        // 1.8 秒後開始淡出禮物盒場景
         giftIntro.classList.add('hidden');
         
         // 顯示地圖
@@ -123,12 +148,22 @@ function openGiftBox(giftBox, giftIntro, birthdaylandMap) {
                 
                 // 2.5 秒後完全移除禮物盒 DOM
                 setTimeout(() => {
-                    giftIntro.remove();
-                    console.log('✨ 禮物盒場景已移除');
+                    try {
+                        giftIntro.remove();
+                        console.log('✨ 禮物盒場景已移除');
+                        
+                        // 清理動畫相關的樣式
+                        document.querySelectorAll('.gift-box, .gift-lid, .gift-body').forEach(el => {
+                            el.style.animation = 'none';
+                            el.style.transition = 'none';
+                        });
+                    } catch (error) {
+                        console.warn('移除禮物盒場景時發生錯誤:', error);
+                    }
                 }, 1000);
             }, 100);
         }
-    }, 1500);
+    }, 1800);
 }
 
 /**
@@ -208,4 +243,5 @@ style.textContent = `
 document.head.appendChild(style);
 
 console.log('✨ 禮物盒開場模組已加載');
+
 
