@@ -725,14 +725,7 @@ class StudentAssignmentViewer {
       AppState.cache.lastRefreshTime = null;
       console.log('🗑️ 已清除任務列表緩存');
       
-      // 9. 關閉模態窗口並返回主界面
-      console.log('🔙 關閉模態窗口並返回主界面');
-      
-      // 觸發導航事件返回主界面
-      const { navigateToPage } = await import('../app.js');
-      await navigateToPage('assignments');
-      
-      // 重新加載任務列表
+      // 9. 重新加載任務列表
       await this.loadAndRenderAssignments(false);
       
     } catch (error) {
