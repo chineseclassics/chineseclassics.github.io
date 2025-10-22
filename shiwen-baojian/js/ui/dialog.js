@@ -277,30 +277,30 @@ class Dialog {
     cancelBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      onCancel();
       this.close();
+      onCancel();
     });
 
     confirmBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      onConfirm();
       this.close();
+      onConfirm();
     });
 
     // 點擊遮罩關閉
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
-        onCancel();
         this.close();
+        onCancel();
       }
     });
 
     // ESC 鍵關閉
     const escHandler = (e) => {
       if (e.key === 'Escape') {
-        onCancel();
         this.close();
+        onCancel();
         document.removeEventListener('keydown', escHandler);
       }
     };
