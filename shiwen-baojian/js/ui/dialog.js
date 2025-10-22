@@ -213,6 +213,28 @@ class Dialog {
     // 關閉現有對話框
     this.close();
 
+    // 等待現有對話框完全關閉後再創建新的
+    setTimeout(() => {
+      this.createDialog(options);
+    }, 50);
+
+    return this;
+  }
+
+  /**
+   * 創建對話框內容
+   */
+  createDialog(options) {
+    const {
+      title = '確認操作',
+      message = '確定要執行此操作嗎？',
+      type = 'danger',  // danger, warning, info
+      confirmText = '確認',
+      cancelText = '取消',
+      onConfirm = () => {},
+      onCancel = () => {}
+    } = options;
+
     // 圖標映射（使用設計令牌）
     const icons = {
       danger: '<i class="fas fa-exclamation-triangle" style="color: var(--error-600);"></i>',
@@ -255,28 +277,28 @@ class Dialog {
     const confirmBtn = overlay.querySelector('[data-action="confirm"]');
 
     cancelBtn.addEventListener('click', () => {
-      this.close();
       onCancel();
+      this.close();
     });
 
     confirmBtn.addEventListener('click', () => {
-      this.close();
       onConfirm();
+      this.close();
     });
 
     // 點擊遮罩關閉
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
-        this.close();
         onCancel();
+        this.close();
       }
     });
 
     // ESC 鍵關閉
     const escHandler = (e) => {
       if (e.key === 'Escape') {
-        this.close();
         onCancel();
+        this.close();
         document.removeEventListener('keydown', escHandler);
       }
     };
@@ -288,8 +310,6 @@ class Dialog {
 
     // 聚焦到確認按鈕
     setTimeout(() => confirmBtn.focus(), 100);
-
-    return this;
   }
 
   /**
@@ -320,8 +340,11 @@ class Dialog {
   close() {
     if (!this.currentDialog) return;
 
-    // 添加淡出動畫（使用設計令牌時長）
+    // 防止重複關閉
     const overlay = this.currentDialog;
+    this.currentDialog = null;
+
+    // 添加淡出動畫（使用設計令牌時長）
     overlay.style.animation = 'dialogFadeOut 0.15s ease-in';  // var(--duration-fast)
     const content = overlay.querySelector('.dialog-content');
     if (content) {
@@ -333,7 +356,6 @@ class Dialog {
       if (overlay && overlay.parentNode) {
         overlay.remove();
       }
-      this.currentDialog = null;
     }, 200);  // 比動畫時長稍長，確保動畫完成
   }
 
