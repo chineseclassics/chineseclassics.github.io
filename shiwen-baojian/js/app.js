@@ -1434,57 +1434,60 @@ async function displayTeacherGrading(essayId) {
                 </div>
             </div>
             
-            <!-- 總分顯示 -->
-            <div class="bg-gradient-to-br from-blue-600 to-purple-600 px-4 py-6 text-center text-white">
-                <div class="text-sm mb-2 opacity-90">總分</div>
-                <div class="text-5xl font-bold mb-1">${totalScore}</div>
-                <div class="text-sm opacity-90">/ ${maxScore} 分</div>
-            </div>
-            
-            <!-- 各標準評分 -->
-            <div class="p-4 space-y-3">
-                ${scores.map(s => `
-                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border-l-4 border-blue-500">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="font-semibold text-gray-700">標準 ${s.code}：${s.name}</span>
-                            <span class="text-2xl font-bold text-blue-600">${s.score}</span>
-                        </div>
-                        <div class="text-xs text-gray-500">/ 8 分</div>
-                    </div>
-                `).join('')}
-            </div>
-            
-            <!-- 老師評語 -->
-            ${grade.overall_comment ? `
-                <div class="border-t border-gray-200 p-4">
-                    <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <i class="fas fa-comment-dots text-blue-600"></i>
-                        老師評語
-                    </h4>
-                    <div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-400">
-                        <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${grade.overall_comment}</p>
-                    </div>
+            <!-- 可滾動內容區域 -->
+            <div class="max-h-[calc(100vh-200px)] overflow-y-auto">
+                <!-- 總分顯示 -->
+                <div class="bg-gradient-to-br from-blue-600 to-purple-600 px-4 py-6 text-center text-white">
+                    <div class="text-sm mb-2 opacity-90">總分</div>
+                    <div class="text-5xl font-bold mb-1">${totalScore}</div>
+                    <div class="text-sm opacity-90">/ ${maxScore} 分</div>
                 </div>
-            ` : ''}
-            
-            <!-- 批改時間 -->
-            <div class="border-t border-gray-200 px-4 py-3 bg-gray-50">
-                <p class="text-xs text-gray-600 text-center">
-                    <i class="fas fa-clock mr-1"></i>
-                    批改時間：${new Date(grade.graded_at).toLocaleString('zh-Hant-TW', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}
-                </p>
-                ${grade.teacher?.display_name ? `
-                    <p class="text-xs text-gray-600 text-center mt-1">
-                        <i class="fas fa-user-tie mr-1"></i>
-                        批改老師：${grade.teacher.display_name}
-                    </p>
+                
+                <!-- 各標準評分 -->
+                <div class="p-4 space-y-3">
+                    ${scores.map(s => `
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-semibold text-gray-700">標準 ${s.code}：${s.name}</span>
+                                <span class="text-2xl font-bold text-blue-600">${s.score}</span>
+                            </div>
+                            <div class="text-xs text-gray-500">/ 8 分</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <!-- 老師評語 -->
+                ${grade.overall_comment ? `
+                    <div class="border-t border-gray-200 p-4">
+                        <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-comment-dots text-blue-600"></i>
+                            老師評語
+                        </h4>
+                        <div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-400">
+                            <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">${grade.overall_comment}</p>
+                        </div>
+                    </div>
                 ` : ''}
+                
+                <!-- 批改時間 -->
+                <div class="border-t border-gray-200 px-4 py-3 bg-gray-50">
+                    <p class="text-xs text-gray-600 text-center">
+                        <i class="fas fa-clock mr-1"></i>
+                        批改時間：${new Date(grade.graded_at).toLocaleString('zh-Hant-TW', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </p>
+                    ${grade.teacher?.display_name ? `
+                        <p class="text-xs text-gray-600 text-center mt-1">
+                            <i class="fas fa-user-tie mr-1"></i>
+                            批改老師：${grade.teacher.display_name}
+                        </p>
+                    ` : ''}
+                </div>
             </div>
         `;
         
