@@ -161,7 +161,7 @@
 }
 
 .btn-text:hover:not(:disabled) {
-  background: var(--primary-50);
+  background: var(--primary-100);
   color: var(--primary-700);
 }
 
@@ -179,7 +179,7 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--primary-50);
+  background: var(--primary-100);
   border-color: var(--primary-700);
   color: var(--primary-700);
 }
@@ -727,7 +727,7 @@
 
 .tab:hover {
   color: var(--primary-600);
-  background: var(--primary-50);
+  background: var(--primary-100);
 }
 
 .tab.active {
@@ -798,7 +798,7 @@
 }
 
 .dropdown-item:hover {
-  background: var(--primary-50);
+  background: var(--primary-100);
   color: var(--primary-600);
 }
 
@@ -1103,7 +1103,7 @@
 }
 
 .select option:hover {
-  background: var(--primary-50);
+  background: var(--primary-100);
 }
 
 .select option:checked {
@@ -1231,6 +1231,10 @@
   border-top: 1px solid var(--border-divider);
   background: var(--bg-secondary);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
 }
 
 /* 容器樣式 */
@@ -1403,7 +1407,8 @@
 }
 
 .btn-ai-suggest:hover {
-    background: var(--btn-ai-hover-bg);
+    background: linear-gradient(135deg, var(--scholar-400), var(--scholar-600));
+    color: var(--text-inverse);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(var(--scholar-500-rgb), 0.3);
 }
@@ -1425,9 +1430,9 @@
 }
 
 .btn-submit-grading:hover {
-    background: var(--btn-success-hover-bg);
+    background: var(--btn-success-hover);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(var(--success-500-rgb), 0.3);
+    box-shadow: 0 4px 12px rgba(124, 152, 133, 0.3);
 }
 
 /* 評分按鈕 */
@@ -1447,9 +1452,9 @@
 }
 
 .btn-grade:hover {
-    background: var(--btn-primary-hover-bg);
+    background: var(--btn-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--primary-600-rgb), 0.3);
+    box-shadow: 0 4px 12px rgba(95, 125, 149, 0.3);
 }
 
 /* 查看評分按鈕 */
@@ -1491,9 +1496,9 @@
 }
 
 .btn-submit-essay:hover {
-    background: var(--btn-primary-hover-bg);
+    background: var(--btn-primary-hover);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(var(--primary-600-rgb), 0.3);
+    box-shadow: 0 4px 12px rgba(95, 125, 149, 0.3);
 }
 
 .btn-submit-essay:disabled {
@@ -1524,7 +1529,7 @@
     color: var(--text-primary);
     border-color: var(--gray-300);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(var(--gray-500-rgb), 0.1);
+    box-shadow: 0 2px 8px rgba(156, 163, 175, 0.1);
 }
 
 .skeleton-text {

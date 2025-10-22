@@ -290,22 +290,33 @@ ${essayText}
     }
     
     try {
-      // 尝试提取 JSON（AI 可能返回带有说明的文本）
-      const jsonMatch = aiContent.match(/\{[\s\S]*\}/)
+      // 清理 AI 返回的內容，移除 markdown 代碼塊包裝
+      let cleanedContent = aiContent.trim()
+      
+      // 移除 ```json 和 ``` 包裝
+      if (cleanedContent.startsWith('```json')) {
+        cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+      
+      // 嘗試提取 JSON（AI 可能返回帶有說明的文本）
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         aiResult = JSON.parse(jsonMatch[0])
       } else {
-        aiResult = JSON.parse(aiContent)
+        aiResult = JSON.parse(cleanedContent)
       }
       
-      // 验证结构
+      // 驗證結構
       if (!aiResult.criteria || !aiResult.overall_comment) {
-        throw new Error('AI 返回结构不完整')
+        throw new Error('AI 返回結構不完整')
       }
     } catch (parseError) {
-      console.error('解析 AI 返回的 JSON 失败:', aiContent)
+      console.error('解析 AI 返回的 JSON 失敗:', aiContent)
+      console.error('清理後的內容:', cleanedContent)
       return new Response(
-        JSON.stringify({ error: 'AI 返回格式错误', raw_content: aiContent }),
+        JSON.stringify({ error: 'AI 返回格式錯誤', raw_content: aiContent }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

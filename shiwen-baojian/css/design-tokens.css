@@ -76,6 +76,7 @@
   --scholar-700: #6d5a43;  /* 深栗褐 - 按鈕 hover */
   --scholar-600: #7d6a52;  /* 栗褐中 - 過渡色 */
   --scholar-500: #8b7355;  /* 栗褐色 ⭐ 主色 - AI 按鈕 */
+  --scholar-500-rgb: 139, 115, 85;  /* RGB 值用於 rgba() */
   --scholar-400: #a08969;  /* 淡栗褐 */
   --scholar-300: #b5a088;  /* 淺栗褐 */
   --scholar-200: #cbb9a6;  /* 極淺栗褐 */
