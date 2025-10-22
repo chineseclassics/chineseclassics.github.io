@@ -486,9 +486,24 @@ class StudentAssignmentViewer {
   }
 
   /**
+   * 移除所有事件監聽器
+   */
+  removeAllEventListeners() {
+    // 克隆所有按鈕並重新綁定事件
+    const allButtons = this.container.querySelectorAll('button');
+    allButtons.forEach(btn => {
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+    });
+  }
+
+  /**
    * 綁定事件
    */
   bindEvents() {
+    // 先移除所有舊的事件監聽器
+    this.removeAllEventListeners();
+    
     // ✅ 刷新按鈕
     const refreshBtn = this.container.querySelector('#refresh-assignments-btn');
     if (refreshBtn) {

@@ -213,10 +213,8 @@ class Dialog {
     // 關閉現有對話框
     this.close();
 
-    // 等待現有對話框完全關閉後再創建新的
-    setTimeout(() => {
-      this.createDialog(options);
-    }, 50);
+    // 直接創建新對話框，不需要延遲
+    this.createDialog(options);
 
     return this;
   }
@@ -276,12 +274,16 @@ class Dialog {
     const cancelBtn = overlay.querySelector('[data-action="cancel"]');
     const confirmBtn = overlay.querySelector('[data-action="confirm"]');
 
-    cancelBtn.addEventListener('click', () => {
+    cancelBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       onCancel();
       this.close();
     });
 
-    confirmBtn.addEventListener('click', () => {
+    confirmBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       onConfirm();
       this.close();
     });
@@ -339,7 +341,7 @@ class Dialog {
    */
   close() {
     if (!this.currentDialog) return;
-
+    
     // 防止重複關閉
     const overlay = this.currentDialog;
     this.currentDialog = null;
