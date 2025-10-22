@@ -346,19 +346,10 @@ class Dialog {
     const overlay = this.currentDialog;
     this.currentDialog = null;
 
-    // 添加淡出動畫（使用設計令牌時長）
-    overlay.style.animation = 'dialogFadeOut 0.15s ease-in';  // var(--duration-fast)
-    const content = overlay.querySelector('.dialog-content');
-    if (content) {
-      content.style.animation = 'dialogSlideOut 0.15s ease-in';
+    // 直接移除，不使用動畫
+    if (overlay && overlay.parentNode) {
+      overlay.remove();
     }
-
-    // 動畫結束後移除（確保動畫完成）
-    setTimeout(() => {
-      if (overlay && overlay.parentNode) {
-        overlay.remove();
-      }
-    }, 200);  // 比動畫時長稍長，確保動畫完成
   }
 
   /**
