@@ -27,7 +27,7 @@ class Dialog {
           position: fixed;
           inset: 0;
           background: rgba(0, 0, 0, 0.5);
-          z-index: 9999;
+          z-index: 10000;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -328,13 +328,13 @@ class Dialog {
       content.style.animation = 'dialogSlideOut 0.15s ease-in';
     }
 
-    // 動畫結束後移除（與動畫時長同步）
+    // 動畫結束後移除（確保動畫完成）
     setTimeout(() => {
       if (overlay && overlay.parentNode) {
         overlay.remove();
       }
       this.currentDialog = null;
-    }, 150);  // 與 --duration-fast 一致
+    }, 200);  // 比動畫時長稍長，確保動畫完成
   }
 
   /**
