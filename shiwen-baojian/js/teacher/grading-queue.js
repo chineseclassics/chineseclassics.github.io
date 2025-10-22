@@ -73,7 +73,7 @@ class GradingQueue {
         assignments.map(async (assignment) => {
           console.log('📝 加載任務提交:', assignment.title);
           
-          // 獲取所有提交
+          // 獲取所有提交（先不限制狀態，查看所有狀態）
           const { data: allEssays, error: essaysError } = await this.supabase
             .from('essays')
             .select(`
@@ -89,8 +89,7 @@ class GradingQueue {
                 email
               )
             `)
-            .eq('assignment_id', assignment.id)
-            .in('status', ['submitted', 'graded']);
+            .eq('assignment_id', assignment.id);
           
           if (essaysError) {
             console.error('❌ 獲取任務提交失敗:', assignment.title, essaysError);
@@ -114,11 +113,27 @@ class GradingQueue {
               status: e.status,
               submitted_at: e.submitted_at
             })));
+          } else {
+            console.log('  - 沒有找到任何提交，可能的原因：');
+            console.log('    1. 學生還沒有提交作業');
+            console.log('    2. 作業狀態不是 submitted 或 graded');
+            console.log('    3. 數據庫權限問題');
+            console.log('    4. 作業與任務關聯有問題');
           }
             
-          // 分類
+          // 分類 - 檢查所有可能的狀態
           const submitted = allEssays?.filter(e => e.status === 'submitted') || [];
           const graded = allEssays?.filter(e => e.status === 'graded') || [];
+          
+          // 檢查是否有其他狀態的作業
+          const otherStatuses = allEssays?.filter(e => e.status !== 'submitted' && e.status !== 'graded') || [];
+          if (otherStatuses.length > 0) {
+            console.log('  - 發現其他狀態的作業:', otherStatuses.map(e => ({
+              id: e.id,
+              student: e.users?.display_name || e.users?.email,
+              status: e.status
+            })));
+          }
           
           // 獲取班級學生總數
           const { count: totalStudents } = await this.supabase
