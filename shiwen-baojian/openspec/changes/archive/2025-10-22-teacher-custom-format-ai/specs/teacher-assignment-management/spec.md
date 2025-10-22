@@ -1,6 +1,6 @@
 # Teacher Assignment Management
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Assignment Creation Workflow
 

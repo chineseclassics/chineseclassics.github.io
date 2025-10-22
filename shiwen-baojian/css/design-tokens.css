@@ -1,0 +1,365 @@
+/**
+ * 時文寶鑑 - 設計令牌系統
+ * 
+ * 方案 A：青灰雅士
+ * 靈感：煙雨江南、文人書院、清雅內斂
+ * 理念：低調有質感、突出內容、減少視覺干擾
+ */
+
+:root {
+  /* ========================================
+     主色調：青灰石（Stone Blue Gray）
+     靈感：青石硯台、煙雨江南、文人素衫
+     ======================================== */
+  --primary-900: #3a4a57;  /* 深墨青 - 深色標題 */
+  --primary-800: #4a5f6f;  /* 墨青 - 深色元素 */
+  --primary-700: #4a6274;  /* 青灰深 - 按鈕 hover、深色背景 */
+  --primary-600: #5f7d95;  /* 青灰 ⭐ 主色 - 主要按鈕、鏈接 */
+  --primary-500: #7594a8;  /* 淡青灰 - 淺色按鈕 */
+  --primary-400: #8fa8bd;  /* 煙灰青 - 輔助元素 */
+  --primary-300: #a8bfcf;  /* 淺煙青 - 禁用狀態 */
+  --primary-200: #c5d5e0;  /* 雲青 - 淺背景 */
+  --primary-100: #e1ecf4;  /* 天青淺 - 高亮背景 */
+  --primary-50:  #f0f5f9;  /* 天青極淺 - 微妙背景 */
+
+  /* ========================================
+     輔助色：成功（青苔綠）
+     靈感：青苔、竹葉、文人愛的青綠山水
+     ======================================== */
+  --success-900: #4a5d51;
+  --success-800: #546a5c;
+  --success-700: #5d7566;  /* 深青綠 - 按鈕 hover */
+  --success-600: #6d8876;  /* 青綠中 - 過渡色 */
+  --success-500: #7c9885;  /* 青苔綠 ⭐ 主色 - 成功按鈕 */
+  --success-400: #93a999;  /* 淡青綠 */
+  --success-300: #aabaa8;  /* 淺青綠 */
+  --success-200: #c3cfc0;  /* 極淺青綠 */
+  --success-100: #d9e5dc;  /* 青綠淺背景 */
+  --success-50:  #eef5f1;  /* 青綠極淺背景 */
+
+  /* ========================================
+     輔助色：警告（秋香色）
+     靈感：秋天的銀杏葉、陳年宣紙、溫潤提醒
+     ======================================== */
+  --warning-900: #8a6e3a;
+  --warning-800: #9a7d47;
+  --warning-700: #a58950;  /* 深秋香 - 按鈕 hover */
+  --warning-600: #b59a62;  /* 秋香中 - 過渡色 */
+  --warning-500: #c4a574;  /* 秋香色 ⭐ 主色 - 警告按鈕 */
+  --warning-400: #d1b68a;  /* 淡秋香 */
+  --warning-300: #ddc7a0;  /* 淺秋香 */
+  --warning-200: #e8d9b7;  /* 極淺秋香 */
+  --warning-100: #f0e8d8;  /* 秋香淺背景 */
+  --warning-50:  #f8f3eb;  /* 秋香極淺背景 */
+
+  /* ========================================
+     輔助色：錯誤（豆沙紅）
+     靈感：豆沙餡、朱砂印泥（降低飽和度）、柔和警示
+     ======================================== */
+  --error-900: #7a4a4a;
+  --error-800: #8a5555;
+  --error-700: #985858;    /* 深豆沙 - 按鈕 hover */
+  --error-600: #a86868;    /* 豆沙中 - 過渡色 */
+  --error-500: #b47c7c;    /* 豆沙紅 ⭐ 主色 - 錯誤按鈕 */
+  --error-400: #c49393;    /* 淡豆沙 */
+  --error-300: #d4aaaa;    /* 淺豆沙 */
+  --error-200: #e3c1c1;    /* 極淺豆沙 */
+  --error-100: #ecdede;    /* 豆沙淺背景 */
+  --error-50:  #f6eeee;    /* 豆沙極淺背景 */
+
+  /* ========================================
+     AI 專用色：賈雨村（栗褐色）
+     靈感：文人長衫、古舊書籍、木質書桌、博學沉穩
+     ======================================== */
+  --scholar-900: #5a4d38;
+  --scholar-800: #6a5942;
+  --scholar-700: #6d5a43;  /* 深栗褐 - 按鈕 hover */
+  --scholar-600: #7d6a52;  /* 栗褐中 - 過渡色 */
+  --scholar-500: #8b7355;  /* 栗褐色 ⭐ 主色 - AI 按鈕 */
+  --scholar-400: #a08969;  /* 淡栗褐 */
+  --scholar-300: #b5a088;  /* 淺栗褐 */
+  --scholar-200: #cbb9a6;  /* 極淺栗褐 */
+  --scholar-100: #e0d7cc;  /* 栗褐淺背景 */
+  --scholar-50:  #f0ebe4;  /* 栗褐極淺背景 */
+
+  /* ========================================
+     中性色階：墨分五色
+     靈感：水墨畫的濃淡層次、文房四寶
+     ======================================== */
+  --gray-900: #2c3e50;  /* 濃墨 - 標題、重要文字 */
+  --gray-800: #374151;  /* 墨 - 正文 */
+  --gray-700: #4b5563;  /* 淡墨 - 次要文字 */
+  --gray-600: #6b7280;  /* 煙墨 - 提示文字 */
+  --gray-500: #9ca3af;  /* 淡煙 - 禁用文字 */
+  --gray-400: #c5cad0;  /* 墨痕 - 邊框深 */
+  --gray-300: #d4d9dd;  /* 淡墨痕 - 邊框 */
+  --gray-200: #e5e8eb;  /* 宣紙紋理 - 淺邊框 */
+  --gray-100: #f3f4f6;  /* 素箋 - 淺背景 */
+  --gray-50:  #fafaf8;  /* 雲母白 - 極淺背景 */
+
+  /* ========================================
+     背景色系統
+     ======================================== */
+  --bg-primary: #faf9f6;     /* 主背景 - 宣紙白（微微帶黃的溫潤白） */
+  --bg-secondary: #f3f4f6;   /* 次要背景 - 素箋灰 */
+  --bg-tertiary: #e5e8eb;    /* 第三層背景 - 淺灰 */
+  --bg-card: #ffffff;        /* 卡片背景 - 純白（突出內容） */
+  --bg-editor: #ffffff;      /* 編輯器背景 - 純白（最重要） */
+  --bg-toolbar: #f3f4f6;     /* 工具欄背景 - 淡灰 */
+
+  /* ========================================
+     文字顏色系統
+     ======================================== */
+  --text-primary: #2c3e50;    /* 主文字 - 墨色 */
+  --text-secondary: #6b7280;  /* 次要文字 - 煙墨 */
+  --text-tertiary: #9ca3af;   /* 第三級文字 - 淡煙 */
+  --text-disabled: #c5cad0;   /* 禁用文字 - 墨痕 */
+  --text-inverse: #ffffff;    /* 反色文字 - 白色 */
+
+  /* ========================================
+     邊框顏色系統
+     ======================================== */
+  --border-primary: #d4d9dd;   /* 主邊框 - 淡墨痕 */
+  --border-secondary: #e5e8eb; /* 次要邊框 - 宣紙紋理 */
+  --border-tertiary: #f3f4f6;  /* 第三級邊框 - 極淺 */
+  --border-focus: var(--primary-600);  /* 焦點邊框 - 青灰 */
+
+  /* ========================================
+     間距系統（4px 倍數，符合設計規範）
+     ======================================== */
+  --spacing-0: 0;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-7: 28px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* ========================================
+     圓角系統
+     ======================================== */
+  --radius-none: 0;
+  --radius-sm: 6px;     /* 小元素 - 按鈕、標籤、輸入框 */
+  --radius-md: 8px;     /* 中等元素 - 卡片、容器 */
+  --radius-lg: 12px;    /* 大元素 - 模態框、大卡片 */
+  --radius-xl: 16px;    /* 特大元素 - 特殊容器 */
+  --radius-2xl: 20px;   /* 超大元素 */
+  --radius-full: 9999px; /* 圓形 - 徽章、頭像 */
+
+  /* ========================================
+     陰影系統（扁平化設計，慎用）
+     ======================================== */
+  --shadow-none: none;
+  --shadow-subtle: 0 1px 2px rgba(44, 62, 80, 0.05);  /* 極輕微 */
+  --shadow-sm: 0 2px 4px rgba(44, 62, 80, 0.06);      /* 小 */
+  --shadow-md: 0 4px 8px rgba(44, 62, 80, 0.08);      /* 中 */
+  --shadow-lg: 0 8px 16px rgba(44, 62, 80, 0.10);     /* 大 */
+  --shadow-xl: 0 12px 24px rgba(44, 62, 80, 0.12);    /* 特大 */
+  
+  /* 特殊陰影 - 用於按鈕 hover */
+  --shadow-primary: 0 4px 12px rgba(95, 125, 149, 0.25);
+  --shadow-success: 0 4px 12px rgba(124, 152, 133, 0.25);
+  --shadow-warning: 0 4px 12px rgba(196, 165, 116, 0.25);
+  --shadow-error: 0 4px 12px rgba(180, 124, 124, 0.25);
+  --shadow-scholar: 0 4px 12px rgba(139, 115, 85, 0.25);
+
+  /* ========================================
+     動畫時長系統
+     ======================================== */
+  --duration-instant: 150ms;  /* 即時反饋 - 按鈕點擊 */
+  --duration-fast: 200ms;     /* 快速過渡 - hover 效果 */
+  --duration-normal: 300ms;   /* 標準動畫 - 模態框、側邊欄 */
+  --duration-slow: 500ms;     /* 慢速動畫 - 複雜過渡 */
+
+  /* ========================================
+     動畫緩動函數
+     ======================================== */
+  --ease-default: ease;
+  --ease-in: ease-in;
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);  /* 柔和緩出 */
+  --ease-in-out: ease-in-out;
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 彈性效果 */
+
+  /* ========================================
+     字體大小系統
+     ======================================== */
+  --text-xs: 0.75rem;     /* 12px - 小標籤 */
+  --text-sm: 0.875rem;    /* 14px - 次要文字 */
+  --text-base: 1rem;      /* 16px - 正文 */
+  --text-lg: 1.125rem;    /* 18px - 大文字 */
+  --text-xl: 1.25rem;     /* 20px - 小標題 */
+  --text-2xl: 1.5rem;     /* 24px - 標題 */
+  --text-3xl: 1.875rem;   /* 30px - 大標題 */
+  --text-4xl: 2.25rem;    /* 36px - 特大標題 */
+
+  /* ========================================
+     字體粗細系統
+     ======================================== */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* ========================================
+     行高系統
+     ======================================== */
+  --leading-tight: 1.25;   /* 緊湊 - 標題 */
+  --leading-snug: 1.375;   /* 略緊 - 副標題 */
+  --leading-normal: 1.5;   /* 標準 - 界面文字 */
+  --leading-relaxed: 1.625; /* 舒適 - 說明文字 */
+  --leading-loose: 1.8;    /* 寬鬆 - 編輯器正文（閱讀舒適） */
+
+  /* ========================================
+     字間距系統
+     ======================================== */
+  --tracking-tight: -0.025em;  /* 緊湊 */
+  --tracking-normal: 0;        /* 標準 */
+  --tracking-wide: 0.025em;    /* 寬鬆 */
+  --tracking-wider: 0.05em;    /* 更寬 */
+  --tracking-widest: 0.1em;    /* 最寬 - 標題、強調 */
+
+  /* ========================================
+     Z-index 層級系統
+     ======================================== */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* ========================================
+     特殊效果：毛玻璃（Frosted Glass）
+     ======================================== */
+  --backdrop-blur-sm: blur(4px);
+  --backdrop-blur-md: blur(8px);
+  --backdrop-blur-lg: blur(12px);
+
+  /* ========================================
+     不透明度系統
+     ======================================== */
+  --opacity-0: 0;
+  --opacity-5: 0.05;
+  --opacity-10: 0.1;
+  --opacity-20: 0.2;
+  --opacity-30: 0.3;
+  --opacity-40: 0.4;
+  --opacity-50: 0.5;
+  --opacity-60: 0.6;
+  --opacity-70: 0.7;
+  --opacity-80: 0.8;
+  --opacity-90: 0.9;
+  --opacity-100: 1;
+
+  /* ========================================
+     語義化顏色別名（便於使用）
+     ======================================== */
+  
+  /* 按鈕顏色 */
+  --btn-primary-bg: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  --btn-primary-hover: linear-gradient(135deg, var(--primary-700), var(--primary-800));
+  --btn-primary-text: var(--text-inverse);
+
+  --btn-success-bg: linear-gradient(135deg, var(--success-500), var(--success-700));
+  --btn-success-hover: linear-gradient(135deg, var(--success-600), var(--success-800));
+  --btn-success-text: var(--text-inverse);
+
+  --btn-warning-bg: linear-gradient(135deg, var(--warning-500), var(--warning-700));
+  --btn-warning-hover: linear-gradient(135deg, var(--warning-600), var(--warning-800));
+  --btn-warning-text: var(--text-inverse);
+
+  --btn-danger-bg: linear-gradient(135deg, var(--error-500), var(--error-700));
+  --btn-danger-hover: linear-gradient(135deg, var(--error-600), var(--error-800));
+  --btn-danger-text: var(--text-inverse);
+
+  --btn-ai-bg: linear-gradient(135deg, var(--scholar-500), var(--scholar-700));
+  --btn-ai-hover: linear-gradient(135deg, var(--scholar-600), var(--scholar-800));
+  --btn-ai-text: var(--text-inverse);
+
+  --btn-secondary-bg: var(--gray-100);
+  --btn-secondary-hover: var(--gray-200);
+  --btn-secondary-text: var(--text-primary);
+
+  /* 反饋卡片背景 */
+  --feedback-success-bg: var(--success-100);
+  --feedback-success-border: var(--success-600);
+  --feedback-success-text: var(--success-800);
+
+  --feedback-warning-bg: var(--warning-100);
+  --feedback-warning-border: var(--warning-600);
+  --feedback-warning-text: var(--warning-800);
+
+  --feedback-error-bg: var(--error-100);
+  --feedback-error-border: var(--error-600);
+  --feedback-error-text: var(--error-800);
+
+  --feedback-info-bg: var(--primary-100);
+  --feedback-info-border: var(--primary-600);
+  --feedback-info-text: var(--primary-800);
+
+  /* 狀態徽章 */
+  --badge-primary-bg: var(--primary-100);
+  --badge-primary-text: var(--primary-700);
+
+  --badge-success-bg: var(--success-100);
+  --badge-success-text: var(--success-700);
+
+  --badge-warning-bg: var(--warning-100);
+  --badge-warning-text: var(--warning-700);
+
+  --badge-error-bg: var(--error-100);
+  --badge-error-text: var(--error-700);
+}
+
+/* ========================================
+   使用範例和註釋
+   ======================================== */
+
+/*
+【主色調使用場景】
+- primary-600: 主要按鈕、鏈接、Logo
+- primary-100: 高亮背景、選中狀態
+- primary-50: 微妙背景、hover 背景
+
+【輔助色使用場景】
+- success: 提交成功、任務完成、保存成功
+- warning: 截止日期臨近、需要注意的提示
+- error: 錯誤信息、刪除操作、嚴重警告
+- scholar: AI 功能、賈雨村、智能評點
+
+【中性色使用場景】
+- gray-900: 頁面標題、重要標題
+- gray-800: 正文文字
+- gray-600: 次要文字、提示文字
+- gray-300: 邊框
+- gray-100: 淺背景
+- gray-50: 極淺背景
+
+【間距使用建議】
+- spacing-2: 小間隙（按鈕內 icon 間距）
+- spacing-4: 標準間距（元素間距）
+- spacing-6: 大間距（組件間距）
+- spacing-8: 特大間距（區塊間距）
+
+【圓角使用建議】
+- radius-sm: 按鈕、標籤、輸入框
+- radius-md: 卡片、容器
+- radius-lg: 模態框、大卡片
+
+【動畫時長建議】
+- duration-instant: 按鈕點擊反饋
+- duration-fast: hover 效果
+- duration-normal: 模態框、側邊欄
+- duration-slow: 頁面切換
+*/
+

@@ -1,6 +1,11 @@
 /**
  * Dialog 對話框系統（單例模式）
  * 提供統一優雅的確認、提示對話框
+ * 
+ * 配色方案：青灰雅士
+ * 使用設計令牌系統
+ * 
+ * @updated 2025-10-22 - 遷移到設計令牌系統
  */
 
 class Dialog {
@@ -27,109 +32,109 @@ class Dialog {
           align-items: center;
           justify-content: center;
           padding: 1rem;
-          animation: dialogFadeIn 0.2s ease-out;
+          animation: dialogFadeIn var(--duration-fast) var(--ease-out);
         }
         
         .dialog-content {
-          background: white;
-          border-radius: 16px;
+          background: var(--bg-card);
+          border-radius: var(--radius-lg);
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
           max-width: 28rem;
           width: 100%;
           overflow: hidden;
-          animation: dialogSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          animation: dialogSlideIn var(--duration-normal) var(--ease-bounce);
         }
         
         .dialog-header {
-          padding: 1.5rem;
-          border-bottom: 1px solid #e5e7eb;
+          padding: var(--spacing-6);
+          border-bottom: 1px solid var(--border-secondary);
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: var(--spacing-3);
         }
         
         .dialog-header.confirm {
-          background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+          background: linear-gradient(135deg, var(--error-100) 0%, var(--error-200) 100%);
         }
         
         .dialog-header.warning {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          background: linear-gradient(135deg, var(--warning-100) 0%, var(--warning-200) 100%);
         }
         
         .dialog-header.info {
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-200) 100%);
         }
         
         .dialog-icon {
-          font-size: 1.5rem;
+          font-size: var(--text-2xl);
           flex-shrink: 0;
         }
         
         .dialog-title {
-          font-size: 1.125rem;
-          font-weight: 600;
-          color: #111827;
+          font-size: var(--text-lg);
+          font-weight: var(--font-semibold);
+          color: var(--gray-900);
           margin: 0;
         }
         
         .dialog-body {
-          padding: 1.5rem;
-          color: #374151;
-          line-height: 1.6;
+          padding: var(--spacing-6);
+          color: var(--text-primary);
+          line-height: var(--leading-relaxed);
         }
         
         .dialog-footer {
-          padding: 1rem 1.5rem;
-          border-top: 1px solid #e5e7eb;
+          padding: var(--spacing-4) var(--spacing-6);
+          border-top: 1px solid var(--border-secondary);
           display: flex;
           justify-content: flex-end;
-          gap: 0.75rem;
+          gap: var(--spacing-3);
         }
         
         .dialog-btn {
-          padding: 0.5rem 1rem;
-          border-radius: 0.5rem;
-          font-weight: 500;
-          transition: all 0.2s;
+          padding: var(--spacing-2) var(--spacing-4);
+          border-radius: var(--radius-md);
+          font-weight: var(--font-medium);
+          transition: all var(--duration-fast) var(--ease-out);
           border: none;
           cursor: pointer;
-          font-size: 0.875rem;
+          font-size: var(--text-sm);
         }
         
         .dialog-btn-cancel {
-          background: #e5e7eb;
-          color: #374151;
+          background: var(--gray-200);
+          color: var(--text-primary);
         }
         
         .dialog-btn-cancel:hover {
-          background: #d1d5db;
+          background: var(--gray-300);
         }
         
         .dialog-btn-confirm {
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          color: white;
+          background: var(--btn-primary-bg);
+          color: var(--btn-primary-text);
         }
         
         .dialog-btn-confirm:hover {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          background: var(--btn-primary-hover);
         }
         
         .dialog-btn-danger {
-          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-          color: white;
+          background: var(--btn-danger-bg);
+          color: var(--btn-danger-text);
         }
         
         .dialog-btn-danger:hover {
-          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+          background: var(--btn-danger-hover);
         }
         
         .dialog-btn-warning {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-          color: white;
+          background: var(--btn-warning-bg);
+          color: var(--btn-warning-text);
         }
         
         .dialog-btn-warning:hover {
-          background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+          background: var(--btn-warning-hover);
         }
         
         @keyframes dialogFadeIn {
@@ -208,11 +213,11 @@ class Dialog {
     // 關閉現有對話框
     this.close();
 
-    // 圖標映射
+    // 圖標映射（使用設計令牌）
     const icons = {
-      danger: '<i class="fas fa-exclamation-triangle text-red-500"></i>',
-      warning: '<i class="fas fa-exclamation-circle text-orange-500"></i>',
-      info: '<i class="fas fa-info-circle text-blue-500"></i>'
+      danger: '<i class="fas fa-exclamation-triangle" style="color: var(--error-600);"></i>',
+      warning: '<i class="fas fa-exclamation-circle" style="color: var(--warning-600);"></i>',
+      info: '<i class="fas fa-info-circle" style="color: var(--primary-600);"></i>'
     };
 
     // 按鈕類型映射
@@ -315,21 +320,21 @@ class Dialog {
   close() {
     if (!this.currentDialog) return;
 
-    // 添加淡出動畫
+    // 添加淡出動畫（使用設計令牌時長）
     const overlay = this.currentDialog;
-    overlay.style.animation = 'dialogFadeOut 0.2s ease-in';
+    overlay.style.animation = 'dialogFadeOut 0.15s ease-in';  // var(--duration-fast)
     const content = overlay.querySelector('.dialog-content');
     if (content) {
-      content.style.animation = 'dialogSlideOut 0.2s ease-in';
+      content.style.animation = 'dialogSlideOut 0.15s ease-in';
     }
 
-    // 動畫結束後移除
+    // 動畫結束後移除（與動畫時長同步）
     setTimeout(() => {
       if (overlay && overlay.parentNode) {
         overlay.remove();
       }
       this.currentDialog = null;
-    }, 200);
+    }, 150);  // 與 --duration-fast 一致
   }
 
   /**

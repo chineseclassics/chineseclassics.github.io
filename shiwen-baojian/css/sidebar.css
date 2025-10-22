@@ -1,5 +1,10 @@
 /**
  * 時文寶鑑 - AI 反饋側邊欄樣式
+ * 
+ * 配色方案：青灰雅士
+ * AI 專用色：栗褐色（賈雨村）
+ * 
+ * @updated 2025-10-22 - 遷移到設計令牌系統
  */
 
 /* ================================
@@ -7,13 +12,13 @@
    ================================ */
 
 #ai-feedback-sidebar {
-    transition: all 0.3s ease;
+    transition: all var(--duration-normal) var(--ease-out);
 }
 
 /* 側邊欄內容區域滾動優化 */
 #sidebar-feedback-content {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
+    scrollbar-color: var(--gray-400) var(--gray-100);
 }
 
 #sidebar-feedback-content::-webkit-scrollbar {
@@ -21,17 +26,17 @@
 }
 
 #sidebar-feedback-content::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: var(--gray-100);
     border-radius: 3px;
 }
 
 #sidebar-feedback-content::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--gray-400);
     border-radius: 3px;
 }
 
 #sidebar-feedback-content::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: var(--gray-500);
 }
 
 /* ================================
@@ -39,48 +44,21 @@
    ================================ */
 
 /* 移動端模態框滑入動畫 */
-@keyframes slide-up {
-    from {
-        transform: translateY(100%);
-    }
-    to {
-        transform: translateY(0);
-    }
-}
-
 .animate-slide-up {
-    animation: slide-up 0.3s ease-out;
+    animation: slideUp var(--duration-normal) var(--ease-out);
 }
 
 /* 移動端內聯反饋下滑動畫 */
-@keyframes slide-down {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 .animate-slide-down {
-    animation: slide-down 0.3s ease-out;
+    animation: slideDown var(--duration-normal) var(--ease-out);
 }
 
 /* 模態框背景淡入 */
 #ai-feedback-modal {
-    animation: fade-in 0.3s ease-out;
+    animation: fadeIn var(--duration-normal) var(--ease-out);
 }
 
-@keyframes fade-in {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
+/* 注意：slideUp, slideDown, fadeIn 動畫已在 animations.css 中定義 */
 
 /* ================================
    響應式調整
@@ -120,7 +98,7 @@
 
 #sidebar-feedback-content .bg-gradient-to-br {
     /* 側邊欄中的反饋卡片使用更柔和的背景 */
-    background: linear-gradient(to bottom right, #eff6ff, #eef2ff);
+    background: linear-gradient(to bottom right, var(--primary-50), var(--primary-100));
 }
 
 /* 側邊欄中的反饋組件間距優化 */
@@ -191,7 +169,7 @@
     left: 50%;
     width: 2px;
     height: 8px;
-    background: linear-gradient(to bottom, transparent, #60a5fa);
+    background: linear-gradient(to bottom, transparent, var(--primary-400));
 }
 
 /* ================================
@@ -200,10 +178,11 @@
 
 #sentence-tooltip {
     max-width: 90vw;
-    animation: tooltip-appear 0.3s ease-out;
+    animation: tooltipAppear var(--duration-normal) var(--ease-out);
 }
 
-@keyframes tooltip-appear {
+/* 注意：使用自定義動畫，與 components.css 的 tooltip 動畫類似 */
+@keyframes tooltipAppear {
     from {
         opacity: 0;
         transform: translate(-50%, -10px);
@@ -231,8 +210,8 @@
     transform: translateY(-50%);
     width: 3px;
     height: 0;
-    background: #eab308;
-    transition: height 0.2s ease;
+    background: var(--warning-500);  /* 秋香色 */
+    transition: height var(--duration-fast) var(--ease-out);
 }
 
 .sentence-issue-item:hover::before {

@@ -1,6 +1,11 @@
 /**
  * Toast 通知系統
  * 優雅的消息提示組件（單例模式）
+ * 
+ * 配色方案：青灰雅士
+ * 使用設計令牌系統
+ * 
+ * @updated 2025-10-22 - 遷移到設計令牌系統
  */
 
 class Toast {
@@ -54,35 +59,39 @@ class Toast {
       info: 'ℹ'
     };
     
-    // 顏色配置
+    // 顏色配置（使用設計令牌 - 青灰雅士）
     const colors = {
       success: {
-        bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        icon: '#4ade80'
+        bg: 'var(--btn-success-bg)',  // 青松色
+        text: 'var(--btn-success-text)',
+        icon: 'var(--success-300)'
       },
       error: {
-        bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        icon: '#f87171'
+        bg: 'var(--btn-danger-bg)',  // 緋紅色
+        text: 'var(--btn-danger-text)',
+        icon: 'var(--error-300)'
       },
       warning: {
-        bg: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-        icon: '#fbbf24'
+        bg: 'var(--btn-warning-bg)',  // 秋香色
+        text: 'var(--btn-warning-text)',
+        icon: 'var(--warning-300)'
       },
       info: {
-        bg: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-        icon: '#60a5fa'
+        bg: 'var(--btn-primary-bg)',  // 青灰色
+        text: 'var(--btn-primary-text)',
+        icon: 'var(--primary-300)'
       }
     };
     
     toast.style.cssText = `
       background: ${colors[type].bg};
-      color: white;
+      color: ${colors[type].text};
       padding: 16px 24px;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--spacing-3);
       min-width: 300px;
       max-width: 500px;
       pointer-events: auto;
@@ -97,8 +106,8 @@ class Toast {
       <div style="
         width: 32px;
         height: 32px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.3);
+        border-radius: var(--radius-full);
+        background: rgba(255, 255, 255, 0.25);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -108,7 +117,7 @@ class Toast {
       ">
         ${icons[type]}
       </div>
-      <div style="flex: 1; font-size: 14px; line-height: 1.5;">
+      <div style="flex: 1; font-size: var(--text-sm); line-height: var(--leading-normal);">
         ${message}
       </div>
       <button class="toast-close-btn">

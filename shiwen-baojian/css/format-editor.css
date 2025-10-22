@@ -1,25 +1,30 @@
 /**
  * 格式編輯器樣式
+ * 
+ * 配色方案：青灰雅士
+ * 使用設計令牌系統
+ * 
  * @created 2025-10-19
+ * @updated 2025-10-22 - 遷移到設計令牌系統
  */
 
 /* Quill 編輯器自定義樣式 */
 #editor-container .ql-editor {
     font-size: 15px;
-    line-height: 1.8;
+    line-height: var(--leading-loose);
     min-height: 400px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
 }
 
 #editor-container .ql-editor.ql-blank::before {
-    color: #9ca3af;
+    color: var(--text-tertiary);
     font-style: normal;
 }
 
 /* 格式卡片樣式 */
 .format-card {
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--duration-fast) var(--ease-out);
 }
 
 .format-card:hover {
@@ -34,38 +39,29 @@
     overflow: hidden;
 }
 
-/* 滾動條樣式 */
+/* 滾動條樣式（繼承全局設計） */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--gray-100);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
+    background: var(--gray-400);
+    border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--gray-500);
 }
 
-/* 動畫 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
+/* 動畫（使用動畫系統） */
 .format-card {
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn var(--duration-normal) var(--ease-out);
 }
+
+/* 注意：fadeIn 動畫已在 animations.css 中定義 */
 

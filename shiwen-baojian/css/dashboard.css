@@ -1,7 +1,10 @@
 /**
  * 時文寶鑑 - 儀表板樣式
  * 
+ * 配色方案：青灰雅士
  * 老師端和學生端儀表板專用樣式
+ * 
+ * @updated 2025-10-22 - 遷移到設計令牌系統
  */
 
 /* ================================
@@ -11,7 +14,7 @@
 #teacher-dashboard,
 #student-dashboard {
     min-height: 100vh;
-    background: #f9fafb;
+    background: var(--bg-primary);
 }
 
 /* ================================
@@ -22,13 +25,13 @@
 
 /* 用戶信息區域 */
 nav .text-right {
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: background-color 0.15s ease;
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--duration-instant) var(--ease-out);
 }
 
 nav .text-right:hover {
-    background: #f3f4f6;
+    background: var(--gray-100);
 }
 
 /* ================================
@@ -43,21 +46,21 @@ nav .text-right:hover {
 
 /* 頂部工具欄 - 扁平化 */
 .bg-white.rounded-lg.shadow-sm.p-4.mb-6 {
-    border-radius: 8px !important;
-    background: #ffffff !important;
-    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-md) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-secondary);
     box-shadow: none !important;
 }
 
 /* 工具欄圖標 */
 .bg-white.rounded-lg.shadow-sm.p-4.mb-6 i {
-    color: #6b7280;
+    color: var(--text-secondary);
 }
 
 /* 字數顯示 */
 #word-count-display {
-    font-weight: 600;
-    color: #3b82f6;
+    font-weight: var(--font-semibold);
+    color: var(--primary-600);
     font-variant-numeric: tabular-nums;
 }
 
@@ -67,9 +70,9 @@ nav .text-right:hover {
 
 /* 編輯器外層卡片 - 扁平化 */
 .bg-white.rounded-lg.shadow-sm:has(#intro-editor) {
-    border-radius: 8px !important;
+    border-radius: var(--radius-md) !important;
     overflow: hidden;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-secondary);
     box-shadow: none !important;
 }
 
@@ -80,16 +83,16 @@ nav .text-right:hover {
 /* 引言、結論標題樣式 */
 .border-b.border-gray-200.p-6 h3,
 .p-6 h3 {
-    color: #111827;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    color: var(--gray-900);
+    font-weight: var(--font-semibold);
+    letter-spacing: var(--tracking-tight);
 }
 
 /* 英文副標題 */
 .text-xs.text-gray-500 {
-    color: #9ca3af !important;
-    font-weight: 500;
-    letter-spacing: 0.025em;
+    color: var(--text-tertiary) !important;
+    font-weight: var(--font-medium);
+    letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
 }
 
@@ -98,9 +101,9 @@ nav .text-right:hover {
    ================================ */
 
 .rounded-full.bg-blue-600.text-white {
-    background: #3b82f6 !important;
+    background: var(--primary-600) !important;
     box-shadow: none;
-    font-weight: 700;
+    font-weight: var(--font-bold);
 }
 
 /* ================================
@@ -109,16 +112,16 @@ nav .text-right:hover {
 
 /* 字數統計容器 */
 .mt-3.text-right {
-    padding-top: 8px;
-    border-top: 1px solid #f3f4f6;
+    padding-top: var(--spacing-2);
+    border-top: 1px solid var(--gray-100);
 }
 
 /* 字數文字 */
 span[id$="-word-count"] {
-    color: #6b7280;
-    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
     font-variant-numeric: tabular-nums;
-    font-weight: 500;
+    font-weight: var(--font-medium);
 }
 
 /* ================================
@@ -126,13 +129,13 @@ span[id$="-word-count"] {
    ================================ */
 
 .text-center.text-gray-500 {
-    padding: 64px 24px;
-    color: #9ca3af !important;
+    padding: var(--spacing-16) var(--spacing-6);
+    color: var(--text-tertiary) !important;
 }
 
 .text-center.text-gray-500 p {
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
 }
 
 /* ================================
@@ -198,7 +201,7 @@ span[id$="-word-count"] {
 
 /* 焦點可見性 */
 *:focus-visible {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid var(--primary-600);
     outline-offset: 2px;
 }
 
@@ -210,15 +213,7 @@ span[id$="-word-count"] {
 }
 
 /* 減少動畫（為有需要的用戶） */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
+/* 注意：此功能已在 animations.css 中全局定義 */
 
 /* ================================
    高對比度模式支持

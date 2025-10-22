@@ -1,6 +1,6 @@
 # Format Specification System
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Extended Format Specification Schema
 

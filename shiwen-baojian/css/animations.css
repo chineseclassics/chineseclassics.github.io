@@ -1,0 +1,603 @@
+/**
+ * 時文寶鑑 - 動畫效果系統
+ * 
+ * 設計原則：
+ * - 流暢自然（60fps）
+ * - 克制優雅（不過度炫技）
+ * - 提升體驗（有意義的動畫）
+ * - 性能優先（使用 transform 和 opacity）
+ */
+
+/* ========================================
+   淡入淡出動畫
+   ======================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+.animate-fade-out {
+  animation: fadeOut var(--duration-normal) var(--ease-out);
+}
+
+/* 快速淡入（頁面內容） */
+.animate-fade-in-fast {
+  animation: fadeIn var(--duration-fast) var(--ease-out);
+}
+
+/* ========================================
+   滑入滑出動畫
+   ======================================== */
+
+/* 從下往上滑入（移動端模態框） */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp var(--duration-normal) var(--ease-out);
+}
+
+/* 從上往下滑入（下拉菜單、通知） */
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown var(--duration-normal) var(--ease-out);
+}
+
+/* 從左往右滑入（側邊欄） */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft var(--duration-normal) var(--ease-out);
+}
+
+/* 從右往左滑入（側邊欄） */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--duration-normal) var(--ease-out);
+}
+
+/* ========================================
+   彈性彈入動畫（Dialog、Toast）
+   ======================================== */
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-in {
+  animation: bounceIn var(--duration-normal) var(--ease-bounce);
+}
+
+/* 縮小淡出 */
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+.animate-scale-out {
+  animation: scaleOut var(--duration-fast) var(--ease-out);
+}
+
+/* ========================================
+   Ripple 點擊波紋效果（按鈕專用）
+   ======================================== */
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.btn-ripple:active::after {
+  animation: ripple 0.6s var(--ease-out);
+}
+
+/* ========================================
+   搖晃警示動畫（錯誤提示）
+   ======================================== */
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s var(--ease-default);
+}
+
+/* ========================================
+   脈衝動畫（提示、通知）
+   ======================================== */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 快速脈衝（加載中） */
+.animate-pulse-fast {
+  animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ========================================
+   旋轉加載動畫
+   ======================================== */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 慢速旋轉 */
+.animate-spin-slow {
+  animation: spin 2s linear infinite;
+}
+
+/* ========================================
+   進度條動畫
+   ======================================== */
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-indeterminate::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: progress 1.5s ease-in-out infinite;
+}
+
+/* ========================================
+   打字動畫（可選）
+   ======================================== */
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ========================================
+   閃爍提示（新消息、新通知）
+   ======================================== */
+
+@keyframes blink-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-blink {
+  animation: blink-subtle 1.5s ease-in-out 3;  /* 閃爍 3 次後停止 */
+}
+
+/* ========================================
+   數字增長動畫（統計數據）
+   ======================================== */
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count-up {
+  animation: countUp var(--duration-normal) var(--ease-out);
+}
+
+/* ========================================
+   Hover 效果輔助類
+   ======================================== */
+
+/* 微微上移（卡片、按鈕） */
+.hover-lift {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* 微微放大（圖標、頭像） */
+.hover-scale {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* 微微向右移動（列表項） */
+.hover-slide {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.hover-slide:hover {
+  transform: translateX(4px);
+}
+
+/* 旋轉效果（圖標） */
+.hover-rotate {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.hover-rotate:hover {
+  transform: rotate(90deg);
+}
+
+/* ========================================
+   頁面切換動畫
+   ======================================== */
+
+/* 頁面淡入 */
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: pageIn var(--duration-normal) var(--ease-out);
+}
+
+/* ========================================
+   模態框動畫
+   ======================================== */
+
+/* 背景淡入 */
+@keyframes modalBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-backdrop-enter {
+  animation: modalBackdropIn var(--duration-fast) var(--ease-out);
+}
+
+/* 內容彈入 */
+@keyframes modalContentIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-content-enter {
+  animation: modalContentIn var(--duration-normal) var(--ease-bounce);
+}
+
+/* ========================================
+   Toast 通知動畫
+   ======================================== */
+
+/* Toast 滑入（從右側） */
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-enter {
+  animation: toastIn var(--duration-normal) var(--ease-out);
+}
+
+/* Toast 滑出 */
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.toast-exit {
+  animation: toastOut var(--duration-fast) var(--ease-out);
+}
+
+/* ========================================
+   下拉選單動畫
+   ======================================== */
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-enter {
+  animation: dropdownIn var(--duration-fast) var(--ease-out);
+}
+
+/* ========================================
+   骨架屏閃爍
+   ======================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ========================================
+   特殊效果：水波紋擴散（點擊反饋）
+   ======================================== */
+
+@keyframes rippleExpand {
+  from {
+    width: 0;
+    height: 0;
+    opacity: 0.5;
+  }
+  to {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+  }
+}
+
+/* ========================================
+   特殊效果：光暈閃爍（成功提示）
+   ======================================== */
+
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--success-400);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--success-400);
+  }
+}
+
+.animate-glow {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* ========================================
+   動畫輔助類
+   ======================================== */
+
+/* 動畫延遲 */
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+/* 無限循環 */
+.animation-infinite {
+  animation-iteration-count: infinite;
+}
+
+/* 暫停動畫 */
+.animation-paused {
+  animation-play-state: paused;
+}
+
+/* ========================================
+   性能優化
+   ======================================== */
+
+/* 為動畫元素啟用硬件加速 */
+.will-animate {
+  will-change: transform, opacity;
+}
+
+/* 動畫完成後移除 will-change */
+.animation-end {
+  will-change: auto;
+}
+
+/* ========================================
+   減弱動畫（尊重用戶偏好設置）
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
+   打印時禁用所有動畫
+   ======================================== */
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
