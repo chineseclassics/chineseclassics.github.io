@@ -70,10 +70,10 @@ function initializeModules() {
     // 初始化地圖導航
     initMapNavigation();
     
-    // 播放背景音樂（延遲更長，等禮物盒打開後播放）
+    // 播放背景音樂（延遲更長，等禮物盒動畫完全結束後播放）
     setTimeout(() => {
         playBackgroundMusic();
-    }, 5000); // 延長到5秒，確保禮物盒動畫完成
+    }, 8000); // 延長到8秒，確保禮物盒動畫和地圖入場動畫都完成
 }
 
 /**

@@ -80,15 +80,30 @@ function bindGiftBoxEvents() {
         openGiftBox(giftBox, giftIntro, birthdaylandMap);
     });
     
-    // 添加觸摸反饋
+    // 觸摸事件處理
+    let touchStartTime = 0;
+    let touchMoved = false;
+    
     giftBoxWrapper.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        touchStartTime = Date.now();
+        touchMoved = false;
         giftBoxWrapper.style.transform = 'scale(0.95)';
+    });
+    
+    giftBoxWrapper.addEventListener('touchmove', (e) => {
+        touchMoved = true;
     });
     
     giftBoxWrapper.addEventListener('touchend', (e) => {
         e.preventDefault();
         giftBoxWrapper.style.transform = 'scale(1)';
+        
+        // 只有短時間觸摸且沒有移動才觸發
+        const touchDuration = Date.now() - touchStartTime;
+        if (touchDuration < 500 && !touchMoved) {
+            openGiftBox(giftBox, giftIntro, birthdaylandMap);
+        }
     });
     
     // 添加鍵盤支持（無障礙訪問）
@@ -103,6 +118,24 @@ function bindGiftBoxEvents() {
     giftBoxWrapper.setAttribute('tabindex', '0');
     giftBoxWrapper.setAttribute('role', 'button');
     giftBoxWrapper.setAttribute('aria-label', '點擊打開生日驚喜禮物盒');
+    
+    // 為整個開場容器添加觸摸事件，讓用戶可以點擊任何地方打開禮物盒
+    giftIntro.addEventListener('touchstart', (e) => {
+        // 如果觸摸的不是禮物盒本身，也觸發打開
+        if (!giftBoxWrapper.contains(e.target)) {
+            e.preventDefault();
+            openGiftBox(giftBox, giftIntro, birthdaylandMap);
+        }
+    });
+    
+    // 添加點擊整個區域的支持
+    giftIntro.addEventListener('click', (e) => {
+        // 如果點擊的不是禮物盒本身，也觸發打開
+        if (!giftBoxWrapper.contains(e.target)) {
+            e.preventDefault();
+            openGiftBox(giftBox, giftIntro, birthdaylandMap);
+        }
+    });
 }
 
 /**
@@ -129,29 +162,7 @@ function openGiftBox(giftBox, giftIntro, birthdaylandMap) {
         }
     }, 200);
     
-    // 立即嘗試播放背景音樂（利用音效播放作為用戶交互）
-    setTimeout(() => {
-        try {
-            const bgmAudio = soundInstances['map-bgm'];
-            if (bgmAudio) {
-                bgmAudio.loop = true;
-                bgmAudio.volume = 0.25;
-                bgmAudio.play()
-                    .then(() => {
-                        console.log('🎵 背景音樂在禮物盒打開時開始播放');
-                        const musicToggle = document.getElementById('music-toggle');
-                        if (musicToggle) {
-                            musicToggle.classList.remove('muted');
-                        }
-                    })
-                    .catch(err => {
-                        console.log('🎵 背景音樂需要更多用戶交互');
-                    });
-            }
-        } catch (error) {
-            console.warn('背景音樂播放失敗:', error);
-        }
-    }, 500);
+    // 移除立即播放背景音樂的邏輯，改為在地圖顯示後播放
     
     // 慶祝動畫序列
     setTimeout(() => {
@@ -170,11 +181,11 @@ function openGiftBox(giftBox, giftIntro, birthdaylandMap) {
                 // 觸發地圖入場動畫
                 triggerMapEntranceAnimation();
                 
-                // 觸發背景音樂播放
-                triggerBackgroundMusic();
-                
-                // 顯示音樂控制提示
-                showMusicControlHint();
+                // 延遲播放背景音樂，確保地圖動畫完成
+                setTimeout(() => {
+                    triggerBackgroundMusic();
+                    showMusicControlHint();
+                }, 2000); // 地圖顯示後再等2秒
                 
                 // 2.5 秒後完全移除禮物盒 DOM
                 setTimeout(() => {
@@ -241,52 +252,50 @@ function triggerMapEntranceAnimation() {
  * 觸發背景音樂播放
  */
 function triggerBackgroundMusic() {
-    // 延遲一點播放，讓地圖完全顯示
-    setTimeout(() => {
-        try {
-            // 模擬用戶交互來觸發背景音樂
-            const bgmAudio = soundInstances['map-bgm'];
-            if (bgmAudio) {
-                bgmAudio.loop = true;
-                bgmAudio.volume = 0.25;
-                
-                // 嘗試播放背景音樂
-                bgmAudio.play()
-                    .then(() => {
-                        console.log('🎵 背景音樂自動播放成功');
-                        
-                        // 更新音樂控制按鈕狀態
-                        const musicToggle = document.getElementById('music-toggle');
-                        if (musicToggle) {
-                            musicToggle.classList.remove('muted');
-                        }
-                    })
-                    .catch(err => {
-                        console.log('🎵 背景音樂需要用戶交互，等待中...');
-                        
-                        // 如果自動播放失敗，設置用戶交互監聽
-                        const enableBGM = () => {
-                            bgmAudio.play()
-                                .then(() => {
-                                    console.log('🎵 背景音樂開始播放');
-                                    const musicToggle = document.getElementById('music-toggle');
-                                    if (musicToggle) {
-                                        musicToggle.classList.remove('muted');
-                                    }
-                                })
-                                .catch(e => console.warn('背景音樂播放失敗:', e));
-                        };
-                        
-                        // 監聽用戶交互
-                        ['click', 'touchstart', 'keydown'].forEach(event => {
-                            document.addEventListener(event, enableBGM, { once: true });
-                        });
+    try {
+        const bgmAudio = soundInstances['map-bgm'];
+        if (bgmAudio) {
+            bgmAudio.loop = true;
+            bgmAudio.volume = 0.25;
+            
+            console.log('🎵 準備播放背景音樂...');
+            
+            // 嘗試播放背景音樂
+            bgmAudio.play()
+                .then(() => {
+                    console.log('🎵 背景音樂自動播放成功');
+                    
+                    // 更新音樂控制按鈕狀態
+                    const musicToggle = document.getElementById('music-toggle');
+                    if (musicToggle) {
+                        musicToggle.classList.remove('muted');
+                    }
+                })
+                .catch(err => {
+                    console.log('🎵 背景音樂需要用戶交互，等待中...');
+                    
+                    // 如果自動播放失敗，設置用戶交互監聽
+                    const enableBGM = () => {
+                        bgmAudio.play()
+                            .then(() => {
+                                console.log('🎵 背景音樂開始播放');
+                                const musicToggle = document.getElementById('music-toggle');
+                                if (musicToggle) {
+                                    musicToggle.classList.remove('muted');
+                                }
+                            })
+                            .catch(e => console.warn('背景音樂播放失敗:', e));
+                    };
+                    
+                    // 監聽用戶交互
+                    ['click', 'touchstart', 'keydown'].forEach(event => {
+                        document.addEventListener(event, enableBGM, { once: true });
                     });
-            }
-        } catch (error) {
-            console.warn('觸發背景音樂時發生錯誤:', error);
+                });
         }
-    }, 1000);
+    } catch (error) {
+        console.warn('觸發背景音樂時發生錯誤:', error);
+    }
 }
 
 /**

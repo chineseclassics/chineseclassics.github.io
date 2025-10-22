@@ -49,10 +49,39 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* 增加觸摸區域 */
+    padding: 20px;
+    min-width: 240px;
+    min-height: 240px;
+    /* 確保觸摸響應 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .gift-box-wrapper:hover {
     transform: scale(1.05);
+}
+
+/* 觸摸提示動畫 */
+.gift-box-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    animation: touchHint 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes touchHint {
+    0%, 100% { 
+        opacity: 0;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
 @keyframes floatGift {
@@ -309,13 +338,24 @@
     }
     
     
-    /* 移動端優化動畫性能 */
+    /* 移動端優化觸摸體驗 */
     .gift-box-wrapper {
-        animation: none; /* 移動端禁用浮動動畫以提升性能 */
+        /* 移動端保持浮動動畫，但減少頻率 */
+        animation: floatGift 4s ease-in-out infinite;
+        /* 增加觸摸區域 */
+        padding: 30px;
+        min-width: 280px;
+        min-height: 280px;
     }
     
     .gift-box-wrapper:hover {
         transform: none; /* 移動端禁用 hover 效果 */
+    }
+    
+    /* 移動端觸摸提示更明顯 */
+    .gift-box-wrapper::before {
+        border-width: 3px;
+        animation: touchHint 1.5s ease-in-out infinite;
     }
 }
 
