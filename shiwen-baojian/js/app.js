@@ -944,12 +944,12 @@ async function loadAssignmentData(assignmentId) {
             titleEl.textContent = assignment.title || '未命名任務';
         }
 
-        // 更新寫作要求（自然語言顯示）
+        // 更新寫作指引（自然語言顯示）
         const descEl = document.getElementById('assignment-description');
         if (descEl && assignment.format_specifications) {
             // 顯示 human_input（AI 優化後的結構化文本）
             // ✅ 保留換行符：使用 white-space: pre-wrap 來保留所有空白和換行
-            const humanInput = assignment.format_specifications.human_input || '老師未提供寫作要求。';
+            const humanInput = assignment.format_specifications.human_input || '老師未提供寫作指引。';
             descEl.textContent = humanInput;
             descEl.style.whiteSpace = 'pre-wrap';  // 保留換行和空白，但允許自動換行
             
@@ -959,7 +959,7 @@ async function loadAssignmentData(assignmentId) {
                 console.log('✅ 格式規範已加載（供 AI 反饋使用）');
             }
         } else if (descEl) {
-            descEl.textContent = '老師未提供寫作要求。';
+            descEl.textContent = '老師未提供寫作指引。';
         }
 
         console.log('✅ 任務數據加載完成:', assignment.title);

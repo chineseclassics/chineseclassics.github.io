@@ -29,7 +29,7 @@ class FormatEditorCore {
       modules: {
         toolbar: false  // 纯文本编辑，无工具栏
       },
-      placeholder: options.placeholder || '請輸入寫作要求...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫',
+      placeholder: options.placeholder || '請輸入寫作指引...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫',
     };
     
     const quillOptions = { ...defaultOptions, ...options };

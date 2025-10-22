@@ -423,7 +423,7 @@ class FormatTemplatePage {
           </div>
           <h3 class="text-lg font-bold text-gray-900 mb-2 leading-tight">${this.escapeHtml(template.name)}</h3>
           <p class="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
-            ${this.escapeHtml(template.description || '點擊查看按鈕查看詳細寫作要求')}
+            ${this.escapeHtml(template.description || '點擊查看按鈕查看詳細寫作指引')}
           </p>
         </div>
         <div class="px-6 pb-4 flex gap-2 border-t border-gray-100 pt-4">
@@ -744,7 +744,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
     try {
       // 初始化 Quill
       this.currentQuill = FormatEditorCore.initQuill('#template-editor', {
-        placeholder: '請輸入寫作要求...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
+        placeholder: '請輸入寫作指引...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
       });
       
       // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）

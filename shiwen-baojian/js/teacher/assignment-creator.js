@@ -56,7 +56,7 @@ class AssignmentCreator {
           <div>
             <h2>${isEdit ? '編輯任務' : '創建新任務'}</h2>
             <p class="text-muted" style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.95rem;">
-              設置任務的基本信息、寫作要求和評分標準
+              設置任務的基本信息、寫作指引和評分標準
             </p>
           </div>
           <button id="backBtn" class="btn btn-secondary">
@@ -80,7 +80,7 @@ class AssignmentCreator {
               />
             </div>
 
-            <!-- 任務描述已移除：統一使用寫作要求，避免混淆 -->
+            <!-- 任務描述已移除：統一使用寫作指引，避免混淆 -->
 
             <div class="form-group">
               <label>截止日期 <span class="required">*</span></label>
@@ -294,7 +294,7 @@ class AssignmentCreator {
 
     this.bindEvents(assignmentId);
     
-    // 加載寫作要求列表
+    // 加載寫作指引列表
     await this.loadFormatSpecifications();
   }
 
@@ -326,7 +326,7 @@ class AssignmentCreator {
       return;
     }
 
-    // 綁定寫作要求選擇器
+    // 綁定寫作指引選擇器
     const formatSelector = this.container.querySelector('#formatSelector');
     if (formatSelector) {
       formatSelector.addEventListener('change', (e) => this.handleFormatSelection(e.target.value));
@@ -355,10 +355,10 @@ class AssignmentCreator {
   }
   
   /**
-   * 處理寫作要求選擇（下拉菜單）
+   * 處理寫作指引選擇（下拉菜單）
    */
   async handleFormatSelection(formatId) {
-    console.log('[AssignmentCreator] 選擇寫作要求:', formatId);
+    console.log('[AssignmentCreator] 選擇寫作指引:', formatId);
     
     if (!formatId) {
       // 未選擇，折疊編輯器
@@ -367,7 +367,7 @@ class AssignmentCreator {
     }
     
     if (formatId === '__create_new__') {
-      // 新建寫作要求
+      // 新建寫作指引
       this.selectedTemplateId = null;
       this.currentMode = 'custom';
       this.hasBeenOptimized = false;
@@ -934,17 +934,17 @@ class AssignmentCreator {
   }
 
   /**
-   * 加載寫作要求列表到下拉菜單（從 Supabase）
+   * 加載寫作指引列表到下拉菜單（從 Supabase）
    */
   async loadFormatSpecifications() {
     try {
       const { data: { session } } = await this.assignmentManager.supabase.auth.getSession();
       if (!session) {
-        console.warn('未登錄，無法加載寫作要求');
+        console.warn('未登錄，無法加載寫作指引');
         return;
       }
 
-      // 查詢所有可用的寫作要求（系統 + 自己的）
+      // 查詢所有可用的寫作指引（系統 + 自己的）
       const { data: formats, error } = await this.assignmentManager.supabase
         .from('format_specifications')
         .select('id, name, description, is_system, is_template, essay_type')
@@ -953,7 +953,7 @@ class AssignmentCreator {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('加載寫作要求失敗:', error);
+        console.error('加載寫作指引失敗:', error);
         return;
       }
       
@@ -968,8 +968,8 @@ class AssignmentCreator {
       if (!selector) return;
 
       selector.innerHTML = `
-        <option value="">-- 請選擇寫作要求 --</option>
-        <option value="__create_new__">✨ 新建寫作要求</option>
+        <option value="">-- 請選擇寫作指引 --</option>
+        <option value="__create_new__">✨ 新建寫作指引</option>
       `;
 
       // 🚨 如果有本次任務專用格式，優先顯示
@@ -1016,7 +1016,7 @@ class AssignmentCreator {
 
       console.log('✅ 寫作指引已加載到下拉菜單:', formats.length, '個');
     } catch (error) {
-      console.error('加載寫作要求失敗:', error);
+      console.error('加載寫作指引失敗:', error);
     }
   }
   

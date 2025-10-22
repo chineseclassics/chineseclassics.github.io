@@ -69,7 +69,7 @@ class AssignmentManager {
       }
 
       if (!formatSpecId) {
-        throw new Error('請選擇寫作要求');
+        throw new Error('請選擇寫作指引');
       }
 
       if (!gradingRubricJson) {
