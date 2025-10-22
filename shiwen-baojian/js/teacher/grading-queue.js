@@ -108,6 +108,12 @@ class GradingQueue {
           console.log(`✅ 任務「${assignment.title}」找到 ${allEssays?.length || 0} 份提交`);
           if (allEssays && allEssays.length > 0) {
             console.log('  - 狀態分佈:', allEssays.map(e => e.status).join(', '));
+            console.log('  - 詳細提交信息:', allEssays.map(e => ({
+              id: e.id,
+              student: e.users?.display_name || e.users?.email,
+              status: e.status,
+              submitted_at: e.submitted_at
+            })));
           }
             
           // 分類
@@ -139,6 +145,15 @@ class GradingQueue {
       console.log('📊 統計結果：總待批改', this.totalPending, '份');
       
       // 顯示有提交記錄的任務（包括待批改和已批改）
+      console.log('🔍 過濾前詳細數據：');
+      this.assignmentsWithSubmissions.forEach((a, index) => {
+        console.log(`  任務 ${index + 1}: "${a.title}"`);
+        console.log(`    - 待批改: ${a.submissions.pending.length}`);
+        console.log(`    - 已批改: ${a.submissions.graded.length}`);
+        console.log(`    - 總提交: ${a.submissions.total}`);
+        console.log(`    - 班級學生數: ${a.submissions.totalStudents}`);
+      });
+      
       this.assignmentsWithSubmissions = this.assignmentsWithSubmissions
         .filter(a => a.submissions.total > 0);
       
