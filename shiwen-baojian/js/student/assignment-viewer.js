@@ -489,9 +489,9 @@ class StudentAssignmentViewer {
    * 移除所有事件監聽器
    */
   removeAllEventListeners() {
-    // 克隆所有按鈕並重新綁定事件
-    const allButtons = this.container.querySelectorAll('button');
-    allButtons.forEach(btn => {
+    // 只移除任務卡片中的按鈕，避免影響對話框
+    const cardButtons = this.container.querySelectorAll('.student-assignment-card button');
+    cardButtons.forEach(btn => {
       const newBtn = btn.cloneNode(true);
       btn.parentNode.replaceChild(newBtn, btn);
     });
