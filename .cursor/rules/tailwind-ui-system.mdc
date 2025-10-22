@@ -1,0 +1,484 @@
+---
+description: Tailwind CSS 統一 UI 和配色系統規範 - 新項目開發最佳實踐
+alwaysApply: false
+globs:
+  - "**/tailwind.config.js"
+  - "**/*.css"
+  - "**/*.html"
+---
+
+# Tailwind CSS 統一 UI 和配色系統規範
+
+> **適用範圍**：新項目開發  
+> **目標**：建立統一的 UI 設計系統，確保配色、組件、響應式設計的一致性
+
+## 🎯 核心原則
+
+### 1. 設計系統優先
+- ✅ 使用 Tailwind CSS 建立統一的設計系統
+- ✅ 自定義配色方案，保持品牌一致性
+- ✅ 建立可重複使用的組件庫
+- ❌ 避免硬編碼顏色值
+- ❌ 避免重複定義樣式
+
+### 2. 響應式設計內建
+- ✅ 使用 Tailwind 的響應式前綴（sm:, md:, lg:, xl:）
+- ✅ 移動優先的設計策略
+- ✅ 統一的斷點系統
+- ❌ 手動處理響應式設計
+- ❌ 忽略移動端體驗
+
+### 3. 組件化開發
+- ✅ 建立可重複使用的 CSS 組件類
+- ✅ 使用 @layer components 組織樣式
+- ✅ 語義化的類名命名
+- ❌ 內聯樣式重複
+- ❌ 組件樣式分散
+
+---
+
+## 🎨 配色系統配置
+
+### Tailwind 配置範本
+
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: ['./**/*.{html,js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        // 主色調：品牌色
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',  // 主色
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          950: '#172554'
+        },
+        
+        // 輔助色：成功
+        success: {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#22c55e',  // 成功色
+          600: '#16a34a',
+          700: '#15803d',
+          800: '#166534',
+          900: '#14532d'
+        },
+        
+        // 輔助色：警告
+        warning: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',  // 警告色
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f'
+        },
+        
+        // 輔助色：錯誤
+        error: {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          200: '#fecaca',
+          300: '#fca5a5',
+          400: '#f87171',
+          500: '#ef4444',  // 錯誤色
+          600: '#dc2626',
+          700: '#b91c1c',
+          800: '#991b1b',
+          900: '#7f1d1d'
+        },
+        
+        // 中性色：灰色調
+        gray: {
+          50: '#f9fafb',
+          100: '#f3f4f6',
+          200: '#e5e7eb',
+          300: '#d1d5db',
+          400: '#9ca3af',
+          500: '#6b7280',
+          600: '#4b5563',
+          700: '#374151',
+          800: '#1f2937',
+          900: '#111827',
+          950: '#030712'
+        }
+      },
+      
+      // 字體系統
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Georgia', 'serif'],
+        mono: ['JetBrains Mono', 'monospace']
+      },
+      
+      // 間距系統
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        '128': '32rem'
+      },
+      
+      // 圓角系統
+      borderRadius: {
+        '4xl': '2rem'
+      },
+      
+      // 陰影系統
+      boxShadow: {
+        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+        'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        'strong': '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.05)'
+      }
+    }
+  },
+  plugins: []
+}
+```
+
+---
+
+## 🧩 組件系統
+
+### CSS 組件定義
+
+```css
+/* input.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* 按鈕組件 */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500;
+  }
+  
+  .btn-success {
+    @apply btn bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
+  }
+  
+  .btn-warning {
+    @apply btn bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500;
+  }
+  
+  .btn-error {
+    @apply btn bg-error-600 text-white hover:bg-error-700 focus:ring-error-500;
+  }
+  
+  /* 按鈕尺寸 */
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+  
+  /* 卡片組件 */
+  .card {
+    @apply bg-white rounded-lg shadow-soft border border-gray-200;
+  }
+  
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200;
+  }
+  
+  .card-body {
+    @apply px-6 py-4;
+  }
+  
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+  }
+  
+  /* 輸入框組件 */
+  .input {
+    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm;
+  }
+  
+  .input-error {
+    @apply border-error-300 focus:ring-error-500 focus:border-error-500;
+  }
+  
+  /* 徽章組件 */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-primary {
+    @apply badge bg-primary-100 text-primary-800;
+  }
+  
+  .badge-success {
+    @apply badge bg-success-100 text-success-800;
+  }
+  
+  .badge-warning {
+    @apply badge bg-warning-100 text-warning-800;
+  }
+  
+  .badge-error {
+    @apply badge bg-error-100 text-error-800;
+  }
+  
+  /* 模態框組件 */
+  .modal-overlay {
+    @apply fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50;
+  }
+  
+  .modal-container {
+    @apply relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white;
+  }
+  
+  /* 導航組件 */
+  .nav-link {
+    @apply px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200;
+  }
+  
+  .nav-link-active {
+    @apply nav-link bg-primary-100 text-primary-700;
+  }
+  
+  .nav-link-inactive {
+    @apply nav-link text-gray-500 hover:bg-gray-100 hover:text-gray-700;
+  }
+}
+```
+
+---
+
+## 📱 響應式設計規範
+
+### 斷點系統
+
+```css
+/* 響應式設計原則 */
+/*
+  sm: 640px   - 小屏幕（手機橫向）
+  md: 768px   - 中等屏幕（平板）
+  lg: 1024px  - 大屏幕（桌面）
+  xl: 1280px  - 超大屏幕
+  2xl: 1536px - 特大屏幕
+*/
+```
+
+### 響應式組件範例
+
+```html
+<!-- 響應式網格 -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  <!-- 手機1列，平板2列，桌面3列，大屏4列 -->
+</div>
+
+<!-- 響應式文字 -->
+<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+  響應式標題
+</h1>
+
+<!-- 響應式間距 -->
+<div class="p-4 md:p-6 lg:p-8">
+  <!-- 不同屏幕尺寸使用不同間距 -->
+</div>
+
+<!-- 響應式顯示/隱藏 -->
+<div class="hidden md:block">
+  <!-- 只在中等屏幕以上顯示 -->
+</div>
+
+<div class="block md:hidden">
+  <!-- 只在小屏幕顯示 -->
+</div>
+```
+
+---
+
+## 🎨 配色使用指南
+
+### 顏色語義化
+
+```html
+<!-- ✅ 正確：使用語義化顏色 -->
+<button class="btn-primary">主要操作</button>
+<button class="btn-success">成功操作</button>
+<button class="btn-warning">警告操作</button>
+<button class="btn-error">危險操作</button>
+
+<!-- ❌ 錯誤：硬編碼顏色 -->
+<button class="bg-blue-600 text-white">按鈕</button>
+```
+
+### 配色對比度
+
+```css
+/* 確保文字可讀性 */
+.text-primary {
+  @apply text-gray-900; /* 深色文字在淺色背景 */
+}
+
+.text-secondary {
+  @apply text-gray-600; /* 中等對比度 */
+}
+
+.text-muted {
+  @apply text-gray-500; /* 低對比度，用於次要信息 */
+}
+```
+
+---
+
+## 🛠️ 開發最佳實踐
+
+### 1. 組件優先開發
+
+```html
+<!-- ✅ 正確：使用組件類 -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="text-lg font-semibold">標題</h3>
+  </div>
+  <div class="card-body">
+    <p class="text-gray-600">內容</p>
+  </div>
+  <div class="card-footer">
+    <button class="btn-primary">操作</button>
+  </div>
+</div>
+
+<!-- ❌ 錯誤：重複寫樣式 -->
+<div class="bg-white rounded-lg shadow-md border border-gray-200">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h3 class="text-lg font-semibold">標題</h3>
+  </div>
+  <!-- ... -->
+</div>
+```
+
+### 2. 響應式優先
+
+```html
+<!-- ✅ 正確：移動優先設計 -->
+<div class="flex flex-col md:flex-row gap-4">
+  <div class="flex-1">內容1</div>
+  <div class="flex-1">內容2</div>
+</div>
+
+<!-- ❌ 錯誤：桌面優先設計 -->
+<div class="flex-row flex flex-col gap-4">
+  <!-- 響應式類順序錯誤 -->
+</div>
+```
+
+### 3. 可訪問性考慮
+
+```html
+<!-- ✅ 正確：可訪問性友好的按鈕 -->
+<button class="btn-primary" aria-label="提交表單">
+  <i class="fas fa-check mr-2"></i>
+  提交
+</button>
+
+<!-- ✅ 正確：焦點狀態 -->
+<input class="input" type="text" placeholder="請輸入內容" />
+```
+
+---
+
+## 📋 開發檢查清單
+
+### 新組件開發時檢查：
+
+- [ ] 使用了設計系統的顏色（不硬編碼）
+- [ ] 響應式設計已考慮（移動優先）
+- [ ] 可訪問性標準符合（ARIA 標籤、焦點狀態）
+- [ ] 組件可重複使用（避免內聯樣式）
+- [ ] 配色對比度符合 WCAG AA 標準
+- [ ] 動畫和過渡效果流暢（60fps）
+- [ ] 在不同屏幕尺寸測試過
+- [ ] 在暗色模式下測試過（如適用）
+
+### 配色系統檢查：
+
+- [ ] 主色調統一使用 primary 色系
+- [ ] 輔助色語義化使用（success、warning、error）
+- [ ] 中性色用於文字和背景
+- [ ] 漸變效果一致
+- [ ] 陰影效果統一
+- [ ] 品牌色彩貫徹始終
+
+---
+
+## 🚫 常見錯誤
+
+### ❌ 避免的做法
+
+```html
+<!-- 硬編碼顏色 -->
+<div class="bg-blue-500 text-white">內容</div>
+
+<!-- 忽略響應式設計 -->
+<div class="w-96 h-64">固定尺寸</div>
+
+<!-- 重複定義樣式 -->
+<button class="px-4 py-2 bg-blue-600 text-white rounded">按鈕1</button>
+<button class="px-4 py-2 bg-blue-600 text-white rounded">按鈕2</button>
+
+<!-- 缺乏語義化 -->
+<div class="bg-red-500">錯誤信息</div>
+```
+
+### ✅ 正確的做法
+
+```html
+<!-- 使用設計系統 -->
+<div class="bg-primary-600 text-white">內容</div>
+
+<!-- 響應式設計 -->
+<div class="w-full md:w-96 h-64">響應式尺寸</div>
+
+<!-- 組件化 -->
+<button class="btn-primary">按鈕1</button>
+<button class="btn-primary">按鈕2</button>
+
+<!-- 語義化 -->
+<div class="bg-error-100 text-error-800 border border-error-200">錯誤信息</div>
+```
+
+---
+
+## 📚 相關資源
+
+- [Tailwind CSS 官方文檔](https://tailwindcss.com/docs)
+- [Tailwind UI 組件庫](https://tailwindui.com/)
+- [Headless UI 無樣式組件](https://headlessui.com/)
+- [Heroicons 圖標庫](https://heroicons.com/)
+
+---
+
+**適用範圍**：所有新項目開發  
+**維護者**：太虛幻境開發團隊  
+**最後更新**：2025-01-27

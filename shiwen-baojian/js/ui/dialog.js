@@ -310,6 +310,13 @@ class Dialog {
     document.body.appendChild(overlay);
     this.currentDialog = overlay;
 
+    // 添加進入動畫
+    overlay.classList.add('modal-backdrop-enter');
+    const content = overlay.querySelector('.dialog-content');
+    if (content) {
+      content.classList.add('modal-content-enter');
+    }
+
     // 聚焦到確認按鈕
     setTimeout(() => confirmBtn.focus(), 100);
   }
@@ -346,10 +353,19 @@ class Dialog {
     const overlay = this.currentDialog;
     this.currentDialog = null;
 
-    // 直接移除，不使用動畫
-    if (overlay && overlay.parentNode) {
-      overlay.remove();
+    // 使用統一的動畫系統
+    overlay.classList.add('animate-fade-out');
+    const content = overlay.querySelector('.dialog-content');
+    if (content) {
+      content.classList.add('animate-scale-out');
     }
+
+    // 動畫結束後移除
+    setTimeout(() => {
+      if (overlay && overlay.parentNode) {
+        overlay.remove();
+      }
+    }, 200); // 與 --duration-fast 匹配
   }
 
   /**
