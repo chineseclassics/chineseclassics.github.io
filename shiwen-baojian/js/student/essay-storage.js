@@ -127,12 +127,34 @@ async function upsertEssay(essayData) {
         fullTitle += ` - ${essayData.subtitle}`;
     }
     
+    // 優先使用 currentPracticeEssayId（繼續編輯練筆）
+    const targetEssayId = AppState.currentPracticeEssayId || StorageState.currentEssayId;
+    
+    // 如果是更新現有作業，先獲取當前狀態
+    let currentStatus = 'draft'; // 默認狀態
+    if (targetEssayId) {
+        try {
+            const { data: existingEssay } = await AppState.supabase
+                .from('essays')
+                .select('status')
+                .eq('id', targetEssayId)
+                .single();
+            
+            if (existingEssay) {
+                currentStatus = existingEssay.status;
+                console.log('📋 保持現有狀態:', currentStatus);
+            }
+        } catch (error) {
+            console.log('⚠️ 無法獲取現有狀態，使用默認狀態');
+        }
+    }
+    
     const essayRecord = {
         student_id: AppState.currentUser.id,
         assignment_id: AppState.currentAssignmentId || null,  // ✅ 如果有任務 ID，保存到 assignment_id
         title: fullTitle,
         content_json: JSON.stringify(essayData),  // ✅ 保存完整內容
-        status: 'draft',
+        status: currentStatus,  // ✅ 保持現有狀態
         total_word_count: essayData.word_count || 0
     };
     
@@ -142,11 +164,9 @@ async function upsertEssay(essayData) {
         practiceEssayId: AppState.currentPracticeEssayId,
         storageEssayId: StorageState.currentEssayId,
         title: fullTitle,
-        wordCount: essayData.word_count
+        wordCount: essayData.word_count,
+        currentStatus: currentStatus
     });
-    
-    // 優先使用 currentPracticeEssayId（繼續編輯練筆）
-    const targetEssayId = AppState.currentPracticeEssayId || StorageState.currentEssayId;
     
     // 如果已有論文 ID，執行更新
     if (targetEssayId) {
