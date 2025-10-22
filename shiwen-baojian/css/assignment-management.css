@@ -262,47 +262,7 @@
   border-top: 1px solid var(--gray-200);
 }
 
-.btn-action {
-  flex: 1;
-  padding: 0.625rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.btn-action.view-btn {
-  background: var(--primary-100);
-  color: var(--primary-700);
-}
-
-.btn-action.view-btn:hover {
-  background: var(--primary-200);
-}
-
-.btn-action.edit-btn {
-  background: var(--warning-100);
-  color: var(--warning-700);
-}
-
-.btn-action.edit-btn:hover {
-  background: var(--warning-200);
-}
-
-.btn-action.delete-btn {
-  background: var(--error-100);
-  color: var(--error-700);
-}
-
-.btn-action.delete-btn:hover {
-  background: var(--error-200);
-}
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 
 /* 練筆區域分隔 */
 .practice-section {
@@ -400,25 +360,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.btn-back {
-  background: white;
-  border: 2px solid #ddd;
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 600;
-  color: #666;
-}
-
-.btn-back:hover {
-  border-color: var(--primary-600);
-  color: var(--primary-600);
-  background: var(--primary-50);
-}
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 
 .grading-title-info {
   flex: 1;
@@ -533,28 +475,7 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
-.btn-ai-suggest {
-  width: 100%;
-  background: var(--btn-primary-bg);
-  color: white;
-  border: none;
-  padding: 0.875rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.btn-ai-suggest:hover {
-  background: var(--btn-primary-hover-bg);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 
 .ai-hint {
   margin-top: 0.75rem;
@@ -665,29 +586,7 @@
   line-height: 1.6;
 }
 
-.btn-submit-grading {
-  width: 100%;
-  background: linear-gradient(135deg, var(--success-600), var(--success-700));
-  color: white;
-  border: none;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
-}
-
-.btn-submit-grading:hover {
-  background: linear-gradient(135deg, var(--success-700), var(--success-800));
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
-}
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 
 /* 評分標準項 */
 .grading-form-panel .criterion-group {
@@ -1117,121 +1016,28 @@
   padding-top: 0.5rem;
 }
 
-.student-assignment-card .btn-action {
-  flex: 1;
-  padding: 0.875rem 1.25rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.625rem;
-}
-
-.student-assignment-card .btn-action.start-btn {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-}
-
-.student-assignment-card .btn-action.start-btn:hover {
-  background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-800) 100%);
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-  transform: translateY(-1px);
-}
-
-.student-assignment-card .btn-action.continue-btn.edit {
-  background: linear-gradient(135deg, var(--warning-600) 0%, var(--warning-700) 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
-}
-
-.student-assignment-card .btn-action.continue-btn.edit:hover {
-  background: linear-gradient(135deg, var(--warning-700) 0%, var(--warning-800) 100%);
-  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
-  transform: translateY(-1px);
-}
-
-.student-assignment-card .btn-action.continue-btn.view {
-  background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
-}
-
-.student-assignment-card .btn-action.continue-btn.view:hover {
-  background: linear-gradient(135deg, var(--success-700) 0%, var(--success-800) 100%);
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
-  transform: translateY(-1px);
-}
-
-.student-assignment-card .btn-action i {
-  font-size: 1rem;
-}
-
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 /* 查看按鈕樣式（已提交/已批改） */
-.student-assignment-card .btn-action.view-btn {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
-}
-
-.student-assignment-card .btn-action.view-btn:hover {
-  background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-800) 100%);
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
-  transform: translateY(-1px);
-}
-
-.student-assignment-card .btn-action.view-btn.graded {
-  background: var(--btn-warning-bg);
-}
-
-.student-assignment-card .btn-action.view-btn.graded:hover {
-  background: var(--btn-warning-hover-bg);
-}
-
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 /* 提交按鈕樣式（在卡片上） */
-.student-assignment-card .btn-action.submit-btn {
-  background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-  font-weight: 700;
-}
-
-.student-assignment-card .btn-action.submit-btn:hover {
-  background: linear-gradient(135deg, var(--success-700) 0%, var(--success-800) 100%);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-  transform: translateY(-1px);
-}
-
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 /* 撤回按鈕樣式 */
-.student-assignment-card .btn-action.withdraw-btn {
-  background: var(--btn-warning-bg);
-  color: white;
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-}
-
-.student-assignment-card .btn-action.withdraw-btn:hover {
-  background: var(--btn-warning-hover-bg);
-  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
-  transform: translateY(-1px);
-}
-
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 /* 刪除按鈕樣式 */
-.student-assignment-card .btn-action.delete-practice-btn {
-  background: var(--gray-100);
-  color: var(--error-500);
-}
-
-.student-assignment-card .btn-action.delete-practice-btn:hover {
-  background: var(--error-100);
-  color: var(--error-700);
-  transform: translateY(-1px);
-}
-
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 /* 練筆區域樣式 */
 .practice-section {
   margin-top: 3rem;
@@ -1747,52 +1553,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   gap: 0.5rem;
 }
 
-.btn-grade {
-  flex: 1;
-  background: var(--btn-warning-bg);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(255, 152, 0, 0.3);
-}
-
-.btn-grade:hover {
-  background: var(--btn-warning-hover-bg);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
-}
-
-.btn-view-grading {
-  flex: 1;
-  background: linear-gradient(135deg, var(--success-600), var(--success-700));
-  color: white;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
-}
-
-.btn-view-grading:hover {
-  background: linear-gradient(135deg, var(--success-700), var(--success-800));
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-}
-
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
 /* 已批改摺疊區 */
 .graded-section {
   border-top: 1px solid #e0e0e0;
@@ -1891,51 +1655,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   flex-wrap: wrap;
 }
 
-.btn-submit-essay {
-  background: linear-gradient(135deg, var(--success-600), var(--success-700));
-  color: white;
-  border: none;
-  padding: 0.875rem 1.75rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-.btn-submit-essay:hover {
-  background: linear-gradient(135deg, var(--success-700), var(--success-800));
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-}
-
-.btn-submit-essay:disabled {
-  background: linear-gradient(135deg, var(--gray-400), var(--gray-500));
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-save-draft {
-  background: white;
-  color: #666;
-  border: 2px solid #ddd;
-  padding: 0.875rem 1.75rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-.btn-save-draft:hover {
-  border-color: var(--primary-600);
-  color: var(--primary-600);
-  background: var(--primary-100);
-}
-
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */
+/* 按鈕樣式已遷移到 components.css 統一管理 */

@@ -1053,6 +1053,216 @@
   }
 }
 
+/* ================================
+       特定功能按鈕（統一管理）
+       ================================ */
+
+/* 操作按鈕組 */
+.btn-action {
+    flex: 1;
+    padding: var(--spacing-2) var(--spacing-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+}
+
+.btn-action.view-btn {
+    background: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.btn-action.view-btn:hover {
+    background: var(--primary-200);
+}
+
+.btn-action.edit-btn {
+    background: var(--warning-100);
+    color: var(--warning-700);
+}
+
+.btn-action.edit-btn:hover {
+    background: var(--warning-200);
+}
+
+.btn-action.delete-btn {
+    background: var(--error-100);
+    color: var(--error-700);
+}
+
+.btn-action.delete-btn:hover {
+    background: var(--error-200);
+}
+
+/* 返回按鈕 */
+.btn-back {
+    background: var(--gray-100);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-secondary);
+    padding: var(--spacing-2) var(--spacing-4);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.btn-back:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
+    border-color: var(--gray-300);
+}
+
+/* AI 建議按鈕 */
+.btn-ai-suggest {
+    background: var(--btn-ai-bg);
+    color: var(--btn-ai-text);
+    border: none;
+    padding: var(--spacing-2) var(--spacing-4);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.btn-ai-suggest:hover {
+    background: var(--btn-ai-hover-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--scholar-500-rgb), 0.3);
+}
+
+/* 提交評分按鈕 */
+.btn-submit-grading {
+    background: var(--btn-success-bg);
+    color: var(--btn-success-text);
+    border: none;
+    padding: var(--spacing-3) var(--spacing-6);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.btn-submit-grading:hover {
+    background: var(--btn-success-hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--success-500-rgb), 0.3);
+}
+
+/* 評分按鈕 */
+.btn-grade {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    padding: var(--spacing-2) var(--spacing-4);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.btn-grade:hover {
+    background: var(--btn-primary-hover-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--primary-600-rgb), 0.3);
+}
+
+/* 查看評分按鈕 */
+.btn-view-grading {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--border-secondary);
+    padding: var(--spacing-2) var(--spacing-4);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.btn-view-grading:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
+    border-color: var(--gray-300);
+}
+
+/* 提交作文按鈕 */
+.btn-submit-essay {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    padding: var(--spacing-3) var(--spacing-6);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.btn-submit-essay:hover {
+    background: var(--btn-primary-hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--primary-600-rgb), 0.3);
+}
+
+.btn-submit-essay:disabled {
+    opacity: var(--opacity-50);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 保存草稿按鈕 */
+.btn-save-draft {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--border-secondary);
+    padding: var(--spacing-3) var(--spacing-6);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.btn-save-draft:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
+    border-color: var(--gray-300);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(var(--gray-500-rgb), 0.1);
+}
+
 .skeleton-text {
   height: 1em;
   margin-bottom: var(--spacing-2);
