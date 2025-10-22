@@ -693,8 +693,6 @@ class StudentAssignmentViewer {
         submitted_at: new Date().toISOString()
       });
       
-      toast.info('正在提交作業...');
-      
       const { data: updateResult, error: submitError } = await this.supabase
         .from('essays')
         .update({
