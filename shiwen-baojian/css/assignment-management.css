@@ -896,8 +896,8 @@
 }
 
 .student-assignment-card.graded {
-  border-left-color: var(--primary-600);
-  background: linear-gradient(to right, var(--primary-50) 0%, var(--bg-card) 8%);
+  border-left-color: var(--scholar-600);
+  background: linear-gradient(to right, var(--scholar-50) 0%, var(--bg-card) 8%);
 }
 
 .student-assignment-card.overdue {
@@ -947,8 +947,8 @@
 }
 
 .status-badge.graded {
-  background: var(--primary-100);
-  color: var(--primary-700);
+  background: var(--scholar-100);
+  color: var(--scholar-700);
 }
 
 .status-badge.overdue {
@@ -1495,8 +1495,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .submission-card.graded {
-  border-color: var(--success-600);
-  background: linear-gradient(to bottom, var(--success-50) 0%, var(--bg-card) 30%);
+  border-color: var(--scholar-600);
+  background: linear-gradient(to bottom, var(--scholar-50) 0%, var(--bg-card) 30%);
   opacity: 0.9;
 }
 
@@ -1522,7 +1522,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .student-avatar.graded {
-  background: linear-gradient(135deg, var(--success-600), var(--success-500));
+  background: linear-gradient(135deg, var(--scholar-600), var(--scholar-500));
 }
 
 .student-details {
