@@ -223,19 +223,21 @@ class GradingUI {
                           return existingGrade ? '更新批改' : '提交批改';
                         })()}
                       </button>
-                      ${(() => {
-                        const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
-                        if (existingGrade) {
-                          return `
+                    </div>
+                    ${(() => {
+                      const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                      if (existingGrade) {
+                        return `
+                          <div class="grading-info">
                             <p class="text-sm text-gray-500 mt-2">
                               <i class="fas fa-info-circle"></i>
                               此作業已批改，您可以修改評分並重新提交
                             </p>
-                          `;
-                        }
-                        return '';
-                      })()}
-                    </div>
+                          </div>
+                        `;
+                      }
+                      return '';
+                    })()}
                   </form>
                 </div>
               </div>
