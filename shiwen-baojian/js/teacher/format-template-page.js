@@ -412,7 +412,7 @@ class FormatTemplatePage {
     const isSystem = template.is_system;
     const icon = isSystem ? '📚' : '📝';
     const badge = isSystem 
-      ? '<span class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded font-medium">系統內置</span>'
+      ? '<span class="bg-stone-100 text-stone-700 text-xs px-2 py-1 rounded font-medium">系統內置</span>'
       : '<span class="bg-stone-100 text-stone-700 text-xs px-2 py-1 rounded font-medium">自定義</span>';
     
     return `
@@ -471,7 +471,7 @@ class FormatTemplatePage {
       
       const isSystem = template.is_system;
       const badge = isSystem 
-        ? '<span class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-medium">系統內置</span>'
+        ? '<span class="bg-stone-100 text-stone-700 text-xs px-3 py-1 rounded-full font-medium">系統內置</span>'
         : '<span class="bg-stone-100 text-stone-700 text-xs px-3 py-1 rounded-full font-medium">自定義</span>';
       
       title.innerHTML = `
@@ -611,7 +611,7 @@ ${this.escapeHtml(template.human_input || '暫無內容')}
           <!-- 标题区 - 更簡潔優雅 -->
           <div class="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 px-10 py-8 text-white relative overflow-hidden">
             <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
-            <div class="absolute bottom-0 left-0 w-96 h-96 bg-indigo-700 opacity-10 rounded-full -ml-48 -mb-48"></div>
+            <div class="absolute bottom-0 left-0 w-96 h-96 bg-stone-700 opacity-10 rounded-full -ml-48 -mb-48"></div>
             <div class="relative">
               <h2 id="templateEditorTitle" class="text-3xl font-bold mb-2">${title}</h2>
               <p id="templateEditorSubtitle" class="text-stone-50 text-lg">${subtitle}</p>

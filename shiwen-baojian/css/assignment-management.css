@@ -89,7 +89,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-600);
-  background: #f8fbff;
+  background: var(--primary-50);
 }
 
 .form-group textarea {
@@ -205,7 +205,7 @@
 
 .assignment-card.overdue {
   border-left-color: var(--error-500);
-  background: linear-gradient(to right, #fff5f5 0%, white 10%);
+  background: linear-gradient(to right, var(--error-50) 0%, var(--bg-card) 10%);
 }
 
 .card-header {
@@ -278,30 +278,30 @@
 }
 
 .btn-action.view-btn {
-  background: #e3f2fd;
+  background: var(--primary-100);
   color: var(--primary-700);
 }
 
 .btn-action.view-btn:hover {
-  background: #bbdefb;
+  background: var(--primary-200);
 }
 
 .btn-action.edit-btn {
-  background: #fff3e0;
-  color: #f57c00;
+  background: var(--warning-100);
+  color: var(--warning-700);
 }
 
 .btn-action.edit-btn:hover {
-  background: #ffe0b2;
+  background: var(--warning-200);
 }
 
 .btn-action.delete-btn {
-  background: #ffebee;
-  color: var(--error-600);
+  background: var(--error-100);
+  color: var(--error-700);
 }
 
 .btn-action.delete-btn:hover {
-  background: #ffcdd2;
+  background: var(--error-200);
 }
 
 /* 練筆區域分隔 */
@@ -314,7 +314,7 @@
 .empty-practice-state {
   text-align: center;
   padding: 4rem 2rem;
-  background: #fafafa;
+  background: var(--gray-50);
   border-radius: 12px;
   border: 2px dashed #e0e0e0;
   margin-top: 1.5rem;
@@ -331,7 +331,7 @@
 
 /* 練筆按鈕統一樣式 */
 .practice-writing-btn {
-  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  background: var(--btn-primary-bg);
   color: white;
   border: none;
   border-radius: 8px;
@@ -346,7 +346,7 @@
 }
 
 .practice-writing-btn:hover {
-  background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+  background: var(--btn-primary-hover-bg);
   box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
   transform: translateY(-1px);
 }
@@ -417,7 +417,7 @@
 .btn-back:hover {
   border-color: var(--primary-600);
   color: var(--primary-600);
-  background: #f0f9ff;
+  background: var(--primary-50);
 }
 
 .grading-title-info {
@@ -482,7 +482,7 @@
 
 .paragraph-block.argument-section {
   border-left-color: var(--warning-600);
-  background: linear-gradient(to right, #fff8f0 0%, var(--gray-100) 10%);
+  background: linear-gradient(to right, var(--warning-50) 0%, var(--gray-100) 10%);
 }
 
 .paragraph-block h4 {
@@ -523,7 +523,7 @@
 }
 
 .panel-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--btn-primary-bg);
   padding: 1.25rem 1.5rem;
   color: white;
 }
@@ -535,7 +535,7 @@
 
 .btn-ai-suggest {
   width: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--btn-primary-bg);
   color: white;
   border: none;
   padding: 0.875rem 1.5rem;
@@ -551,7 +551,7 @@
 }
 
 .btn-ai-suggest:hover {
-  background: linear-gradient(135deg, #5568d3, #6a3f91);
+  background: var(--btn-primary-hover-bg);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
@@ -715,7 +715,7 @@
 }
 
 .grading-form-panel .criterion-details summary:hover {
-  background: #f0f9ff;
+  background: var(--primary-50);
 }
 
 .grading-form-panel .descriptors {
@@ -960,7 +960,7 @@
 /* 練筆卡片特殊樣式 */
 .student-assignment-card.practice-card {
   border-left-color: #9b59b6;
-  background: linear-gradient(to right, #f8f4ff 0%, white 8%);
+  background: linear-gradient(to right, var(--primary-50) 0%, var(--bg-card) 8%);
 }
 
 .student-assignment-card.practice-card:hover {
@@ -974,22 +974,22 @@
 
 .student-assignment-card.in-progress {
   border-left-color: var(--primary-600);
-  background: linear-gradient(to right, #f0f8ff 0%, white 8%);
+  background: linear-gradient(to right, var(--primary-50) 0%, var(--bg-card) 8%);
 }
 
 .student-assignment-card.submitted {
   border-left-color: var(--success-600);
-  background: linear-gradient(to right, #f0fff4 0%, white 8%);
+  background: linear-gradient(to right, var(--success-50) 0%, var(--bg-card) 8%);
 }
 
 .student-assignment-card.graded {
   border-left-color: #9b59b6;
-  background: linear-gradient(to right, #f8f4ff 0%, white 8%);
+  background: linear-gradient(to right, var(--primary-50) 0%, var(--bg-card) 8%);
 }
 
 .student-assignment-card.overdue {
   border-left-color: var(--error-500);
-  background: linear-gradient(to right, #fff5f5 0%, white 8%);
+  background: linear-gradient(to right, var(--error-50) 0%, var(--bg-card) 8%);
 }
 
 /* 卡片標題和狀態徽章 */
@@ -1024,27 +1024,27 @@
 }
 
 .status-badge.in-progress {
-  background: #e3f2fd;
+  background: var(--primary-100);
   color: var(--primary-700);
 }
 
 .status-badge.submitted {
-  background: #e8f5e9;
+  background: var(--success-100);
   color: var(--success-800);
 }
 
 .status-badge.graded {
-  background: #f3e5f5;
+  background: var(--primary-100);
   color: #7b1fa2;
 }
 
 .status-badge.overdue {
-  background: #ffebee;
+  background: var(--error-100);
   color: var(--error-700);
 }
 
 .status-badge.practice {
-  background: #f3e5f5;
+  background: var(--primary-100);
   color: #7b1fa2;
 }
 
@@ -1186,11 +1186,11 @@
 }
 
 .student-assignment-card .btn-action.view-btn.graded {
-  background: linear-gradient(135deg, #ffc107 0%, #f57c00 100%);
+  background: var(--btn-warning-bg);
 }
 
 .student-assignment-card .btn-action.view-btn.graded:hover {
-  background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+  background: var(--btn-warning-hover-bg);
 }
 
 /* 提交按鈕樣式（在卡片上） */
@@ -1209,25 +1209,25 @@
 
 /* 撤回按鈕樣式 */
 .student-assignment-card .btn-action.withdraw-btn {
-  background: linear-gradient(135deg, var(--warning-600) 0%, #f57c00 100%);
+  background: var(--btn-warning-bg);
   color: white;
   box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
 }
 
 .student-assignment-card .btn-action.withdraw-btn:hover {
-  background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+  background: var(--btn-warning-hover-bg);
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
   transform: translateY(-1px);
 }
 
 /* 刪除按鈕樣式 */
 .student-assignment-card .btn-action.delete-practice-btn {
-  background: #f5f5f5;
+  background: var(--gray-100);
   color: var(--error-500);
 }
 
 .student-assignment-card .btn-action.delete-practice-btn:hover {
-  background: #ffebee;
+  background: var(--error-100);
   color: var(--error-700);
   transform: translateY(-1px);
 }
@@ -1259,7 +1259,7 @@
 
 /* 開始新的練筆按鈕 - 紫色漸變，小圓角 */
 .practice-new-btn {
-  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  background: var(--btn-primary-bg);
   color: white;
   border: none;
   border-radius: 8px;
@@ -1276,7 +1276,7 @@
 }
 
 .practice-new-btn:hover {
-  background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+  background: var(--btn-primary-hover-bg);
   box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
   transform: translateY(-1px);
 }
@@ -1288,7 +1288,7 @@
 .empty-practice-state {
   text-align: center;
   padding: 4rem 2rem;
-  background: #fafafa;
+  background: var(--gray-50);
   border-radius: 12px;
   border: 2px dashed #e0e0e0;
 }
@@ -1473,7 +1473,7 @@
 .form-group select.error,
 .form-group textarea.error {
   border-color: var(--error-500);
-  background: #fff5f5;
+  background: var(--error-50);
 }
 
 .error-message {
@@ -1564,7 +1564,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 /* 頂部統計欄 */
 .grading-stats-bar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--btn-primary-bg);
   border-radius: 12px;
   padding: 1.5rem 2rem;
   margin-bottom: 2rem;
@@ -1602,19 +1602,19 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 /* 任務標題卡 */
 .assignment-header-card {
-  background: linear-gradient(to right, #f0f9ff 0%, white 50%);
+  background: linear-gradient(to right, var(--primary-50) 0%, var(--bg-card) 50%);
   border-left: 4px solid var(--primary-600);
   padding: 1.5rem;
 }
 
 .assignment-header-card.overdue {
-  background: linear-gradient(to right, #fff5f5 0%, white 50%);
+  background: linear-gradient(to right, var(--error-50) 0%, var(--bg-card) 50%);
   border-left-color: var(--error-500);
 }
 
 /* 批改進度徽章 */
 .grading-progress-badge {
-  background: linear-gradient(135deg, var(--warning-600), #f57c00);
+  background: var(--btn-warning-bg);
   color: white;
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
@@ -1627,7 +1627,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: #e0e0e0;
+  background: var(--gray-300);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -1661,7 +1661,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .submission-card.pending {
   border-color: var(--warning-600);
-  background: linear-gradient(to bottom, #fff8f0 0%, white 30%);
+  background: linear-gradient(to bottom, var(--warning-50) 0%, var(--bg-card) 30%);
 }
 
 .submission-card.pending:hover {
@@ -1671,7 +1671,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .submission-card.graded {
   border-color: var(--success-600);
-  background: linear-gradient(to bottom, #f1f8f4 0%, white 30%);
+  background: linear-gradient(to bottom, var(--success-50) 0%, var(--bg-card) 30%);
   opacity: 0.9;
 }
 
@@ -1686,7 +1686,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--btn-primary-bg);
   color: white;
   display: flex;
   align-items: center;
@@ -1749,7 +1749,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .btn-grade {
   flex: 1;
-  background: linear-gradient(135deg, var(--warning-600), #f57c00);
+  background: var(--btn-warning-bg);
   color: white;
   border: none;
   padding: 0.75rem 1.25rem;
@@ -1765,7 +1765,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .btn-grade:hover {
-  background: linear-gradient(135deg, #f57c00, #e65100);
+  background: var(--btn-warning-hover-bg);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
 }
@@ -1797,7 +1797,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 .graded-section {
   border-top: 1px solid #e0e0e0;
   padding: 1rem;
-  background: #fafafa;
+  background: var(--gray-50);
 }
 
 .toggle-graded-btn {
@@ -1816,7 +1816,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .toggle-graded-btn:hover {
-  background: #f5f5f5;
+  background: var(--gray-100);
   border-color: var(--success-600);
   color: var(--success-600);
 }
@@ -1837,7 +1837,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
    ================================ */
 
 .submission-notice {
-  background: linear-gradient(to right, #e8f5e9, #f1f8e9);
+  background: linear-gradient(to right, var(--success-100), var(--success-50));
   border-left: 4px solid var(--success-600);
   padding: 0.875rem 1rem;
   margin: 1rem 0;
@@ -1857,7 +1857,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 /* 提交區域 */
 .essay-submission-section {
-  background: linear-gradient(to right, #e3f2fd, #f3e5f5);
+  background: linear-gradient(to right, var(--primary-100), var(--primary-50));
   border: 2px solid var(--primary-600);
   border-radius: 8px;
   padding: 1.25rem;
@@ -1913,7 +1913,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .btn-submit-essay:disabled {
-  background: linear-gradient(135deg, #bdbdbd, #9e9e9e);
+  background: linear-gradient(135deg, var(--gray-400), var(--gray-500));
   cursor: not-allowed;
   transform: none;
 }
@@ -1936,6 +1936,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 .btn-save-draft:hover {
   border-color: var(--primary-600);
   color: var(--primary-600);
-  background: #e3f2fd;
+  background: var(--primary-100);
 }
 

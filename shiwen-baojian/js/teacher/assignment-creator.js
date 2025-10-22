@@ -146,7 +146,7 @@ class AssignmentCreator {
                 <button 
                   type="button"
                   id="inlineOptimizeBtn"
-                  class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="bg-stone-600 text-white px-4 py-2 rounded-lg hover:bg-stone-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i class="fas fa-magic mr-2"></i>AI 優化
                 </button>
