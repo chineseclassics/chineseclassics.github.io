@@ -5,47 +5,6 @@
 /* iPad 專用樣式 */
 @media (min-width: 768px) and (max-width: 1024px) {
     
-    /* 禮物盒開場 iPad 優化 */
-    #gift-intro {
-        padding: 60px 40px;
-    }
-    
-    .gift-hint {
-        margin-bottom: 50px;
-        max-width: 500px;
-    }
-    
-    .gift-hint-title {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .gift-hint-subtitle {
-        font-size: 1.4rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .click-icon {
-        font-size: 2rem;
-        margin-top: 1rem;
-    }
-    
-    /* 禮物盒尺寸調整 */
-    .gift-box {
-        width: 250px;
-        height: 250px;
-    }
-    
-    .gift-lid {
-        width: 270px;
-        height: 70px;
-    }
-    
-    .gift-body {
-        width: 250px;
-        height: 190px;
-    }
-    
     /* 主頁地圖優化 */
     .birthdayland-map {
         padding: 20px;
@@ -246,39 +205,6 @@
 /* iPad 橫向模式 */
 @media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
     
-    /* 禮物盒開場橫向優化 */
-    #gift-intro {
-        padding: 40px 30px;
-    }
-    
-    .gift-hint {
-        margin-bottom: 40px;
-        max-width: 600px;
-    }
-    
-    .gift-hint-title {
-        font-size: 2.2rem;
-    }
-    
-    .gift-hint-subtitle {
-        font-size: 1.3rem;
-    }
-    
-    .gift-box {
-        width: 220px;
-        height: 220px;
-    }
-    
-    .gift-lid {
-        width: 240px;
-        height: 65px;
-    }
-    
-    .gift-body {
-        width: 220px;
-        height: 170px;
-    }
-    
     /* 主頁地圖橫向優化 */
     .birthdayland-map {
         padding: 15px;
@@ -356,46 +282,6 @@
 
 /* iPad 豎向模式 */
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
-    
-    /* 禮物盒開場豎向優化 */
-    #gift-intro {
-        padding: 80px 50px;
-    }
-    
-    .gift-hint {
-        margin-bottom: 60px;
-        max-width: 400px;
-    }
-    
-    .gift-hint-title {
-        font-size: 2.8rem;
-        margin-bottom: 1.2rem;
-    }
-    
-    .gift-hint-subtitle {
-        font-size: 1.6rem;
-        margin-bottom: 0.8rem;
-    }
-    
-    .click-icon {
-        font-size: 2.2rem;
-        margin-top: 1.2rem;
-    }
-    
-    .gift-box {
-        width: 280px;
-        height: 280px;
-    }
-    
-    .gift-lid {
-        width: 300px;
-        height: 80px;
-    }
-    
-    .gift-body {
-        width: 280px;
-        height: 210px;
-    }
     
     /* 主頁地圖豎向優化 */
     .birthdayland-map {
@@ -523,39 +409,6 @@
 
 /* iPad Pro 優化 */
 @media (min-width: 1024px) and (max-width: 1366px) {
-    
-    /* 禮物盒開場 iPad Pro 優化 */
-    #gift-intro {
-        padding: 70px 50px;
-    }
-    
-    .gift-hint {
-        margin-bottom: 55px;
-        max-width: 550px;
-    }
-    
-    .gift-hint-title {
-        font-size: 2.6rem;
-    }
-    
-    .gift-hint-subtitle {
-        font-size: 1.5rem;
-    }
-    
-    .gift-box {
-        width: 260px;
-        height: 260px;
-    }
-    
-    .gift-lid {
-        width: 280px;
-        height: 75px;
-    }
-    
-    .gift-body {
-        width: 260px;
-        height: 195px;
-    }
     
     /* 更大的觸摸目標 */
     .btn {

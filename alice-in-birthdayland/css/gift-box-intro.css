@@ -6,12 +6,10 @@
     inset: 0;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
-    flex-direction: column; /* 改為垂直佈局 */
     align-items: center;
     justify-content: center;
     z-index: 9999;
     transition: opacity 1s ease, transform 1s ease;
-    padding: 40px 20px; /* 增加內邊距 */
 }
 
 #gift-intro.hidden {
@@ -48,8 +46,9 @@
     cursor: pointer;
     transition: transform 0.3s ease;
     animation: floatGift 3s ease-in-out infinite;
-    margin: 0; /* 重置邊距 */
-    order: 2; /* 在文字下方 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .gift-box-wrapper:hover {
@@ -203,56 +202,6 @@
 .sparkle:nth-child(5) { top: 50%; left: 5%; animation-delay: 1.2s; }
 .sparkle:nth-child(6) { top: 50%; right: 5%; animation-delay: 1.5s; }
 
-/* 提示文字 */
-.gift-hint {
-    position: static; /* 改為靜態定位 */
-    text-align: center;
-    color: white;
-    font-family: 'Fredoka One', cursive;
-    animation: bounce 2s ease-in-out infinite;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    margin-bottom: 40px; /* 與禮物盒的間距 */
-    order: 1; /* 在禮物盒上方 */
-    width: 100%;
-    max-width: 500px;
-}
-
-.gift-hint-title {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(45deg, #FFD700, #FFF, #FFD700);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-size: 200% auto;
-    animation: shimmer 2s linear infinite;
-}
-
-@keyframes shimmer {
-    to { background-position: 200% center; }
-}
-
-.gift-hint-subtitle {
-    font-size: 1.2rem;
-    opacity: 0.9;
-}
-
-.click-icon {
-    display: inline-block;
-    font-size: 1.5rem;
-    margin-top: 0.5rem;
-    animation: pointDown 1s ease-in-out infinite;
-}
-
-@keyframes pointDown {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(10px); }
-}
-
-@keyframes bounce {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-10px); }
-}
 
 /* 打開後的慶祝動畫 */
 .gift-box.opening {
@@ -344,15 +293,6 @@
 
 /* 響應式設計 */
 @media (max-width: 768px) {
-    #gift-intro {
-        padding: 20px 15px;
-    }
-    
-    .gift-hint {
-        margin-bottom: 30px;
-        max-width: 300px;
-    }
-    
     .gift-box {
         width: 160px;
         height: 160px;
@@ -368,13 +308,6 @@
         height: 120px;
     }
     
-    .gift-hint-title {
-        font-size: 1.5rem;
-    }
-    
-    .gift-hint-subtitle {
-        font-size: 1rem;
-    }
     
     /* 移動端優化動畫性能 */
     .gift-box-wrapper {
@@ -388,15 +321,6 @@
 
 /* 超小屏幕優化 */
 @media (max-width: 480px) {
-    #gift-intro {
-        padding: 15px 10px;
-    }
-    
-    .gift-hint {
-        margin-bottom: 25px;
-        max-width: 250px;
-    }
-    
     .gift-box {
         width: 140px;
         height: 140px;
@@ -412,12 +336,5 @@
         height: 100px;
     }
     
-    .gift-hint-title {
-        font-size: 1.2rem;
-    }
-    
-    .gift-hint-subtitle {
-        font-size: 0.9rem;
-    }
 }
 
