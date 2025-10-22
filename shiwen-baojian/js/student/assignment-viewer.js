@@ -642,23 +642,10 @@ class StudentAssignmentViewer {
       // 3. 計算字數
       const wordCount = this.calculateWordCount(content);
       
-      // 4. 字數檢查（可選警告）
-      if (wordCount < 100) {
-        const proceed = await new Promise(resolve => {
-          dialog.confirm({
-            title: '字數較少',
-            message: `當前字數：${wordCount} 字<br><br>字數可能不夠，確定要提交嗎？`,
-            confirmText: '確定提交',
-            cancelText: '繼續寫作',
-            onConfirm: () => resolve(true),
-            onCancel: () => resolve(false)
-          });
-        });
-        if (!proceed) return;
-      }
-      
-      // 5. 最終確認
+      // 4. 最終確認（整合字數提醒）
       const argumentCount = content.arguments ? content.arguments.length : 0;
+      const isLowWordCount = wordCount < 100;
+      
       const confirmed = await new Promise(resolve => {
         dialog.confirm({
           title: '確定提交作業嗎？',
@@ -667,6 +654,10 @@ class StudentAssignmentViewer {
               <p class="mb-2">📝 論文標題：${this.escapeHtml(content.title)}</p>
               <p class="mb-2">📊 總字數：${wordCount} 字</p>
               <p class="mb-4">📚 包含：引言、${argumentCount} 個分論點、結論</p>
+              ${isLowWordCount ? 
+                '<p class="text-amber-700 font-semibold mb-2">⚠️ 字數較少，建議繼續寫作後再提交</p>' : 
+                ''
+              }
               <p class="text-amber-700 font-semibold">⚠️ 提交後將無法修改，請確認已完成寫作</p>
             </div>
           `,
