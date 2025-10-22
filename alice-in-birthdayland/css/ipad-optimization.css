@@ -6,16 +6,13 @@
 @media (min-width: 768px) and (max-width: 1024px) {
     
     /* 禮物盒開場 iPad 優化 */
-    .gift-box-wrapper {
-        margin-bottom: 120px; /* 為文字留出更多空間 */
+    #gift-intro {
+        padding: 60px 40px;
     }
     
     .gift-hint {
-        bottom: -120px; /* 增加與盒子的距離 */
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 400px;
+        margin-bottom: 50px;
+        max-width: 500px;
     }
     
     .gift-hint-title {
@@ -250,13 +247,13 @@
 @media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
     
     /* 禮物盒開場橫向優化 */
-    .gift-box-wrapper {
-        margin-bottom: 100px;
+    #gift-intro {
+        padding: 40px 30px;
     }
     
     .gift-hint {
-        bottom: -100px;
-        max-width: 500px;
+        margin-bottom: 40px;
+        max-width: 600px;
     }
     
     .gift-hint-title {
@@ -361,13 +358,13 @@
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
     
     /* 禮物盒開場豎向優化 */
-    .gift-box-wrapper {
-        margin-bottom: 140px; /* 豎向模式需要更多空間 */
+    #gift-intro {
+        padding: 80px 50px;
     }
     
     .gift-hint {
-        bottom: -140px;
-        max-width: 350px;
+        margin-bottom: 60px;
+        max-width: 400px;
     }
     
     .gift-hint-title {
@@ -528,13 +525,13 @@
 @media (min-width: 1024px) and (max-width: 1366px) {
     
     /* 禮物盒開場 iPad Pro 優化 */
-    .gift-box-wrapper {
-        margin-bottom: 130px;
+    #gift-intro {
+        padding: 70px 50px;
     }
     
     .gift-hint {
-        bottom: -130px;
-        max-width: 450px;
+        margin-bottom: 55px;
+        max-width: 550px;
     }
     
     .gift-hint-title {

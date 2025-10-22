@@ -103,6 +103,15 @@ function bindGiftBoxEvents() {
     giftBoxWrapper.setAttribute('tabindex', '0');
     giftBoxWrapper.setAttribute('role', 'button');
     giftBoxWrapper.setAttribute('aria-label', '點擊打開生日驚喜禮物盒');
+    
+    // 也為整個開場容器添加點擊事件，讓用戶可以點擊任何地方打開禮物盒
+    giftIntro.addEventListener('click', (e) => {
+        // 如果點擊的不是禮物盒本身，也觸發打開
+        if (!giftBoxWrapper.contains(e.target)) {
+            e.preventDefault();
+            openGiftBox(giftBox, giftIntro, birthdaylandMap);
+        }
+    });
 }
 
 /**
