@@ -272,6 +272,18 @@ class MultiClassManager {
       return null;
     }
   }
+
+  /**
+   * 批量添加學生
+   */
+  async batchAddStudents(classId, emailListText) {
+    try {
+      return await this.classManager.batchAddStudents(classId, emailListText);
+    } catch (error) {
+      console.error('❌ 批量添加學生失敗:', error);
+      throw error;
+    }
+  }
 }
 
 export default MultiClassManager;

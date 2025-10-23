@@ -199,6 +199,10 @@ class MultiClassUI {
               <i class="fas fa-plus"></i>
               <span>創建任務</span>
             </button>
+            <button class="action-btn" onclick="this.showBatchAddStudentsModal()">
+              <i class="fas fa-user-plus"></i>
+              <span>批量添加學生</span>
+            </button>
             <button class="action-btn" onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'grading-queue' } }))">
               <i class="fas fa-clipboard-check"></i>
               <span>批改作業</span>
@@ -422,6 +426,10 @@ class MultiClassUI {
             <button class="action-btn" onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'assignment-create' } }))">
               <i class="fas fa-plus"></i>
               <span>創建任務</span>
+            </button>
+            <button class="action-btn" onclick="this.showBatchAddStudentsModal()">
+              <i class="fas fa-user-plus"></i>
+              <span>批量添加學生</span>
             </button>
             <button class="action-btn" onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'grading-queue' } }))">
               <i class="fas fa-clipboard-check"></i>
@@ -693,6 +701,102 @@ class MultiClassUI {
         <button onclick="location.reload()" class="btn btn-primary">重新加載</button>
       </div>
     `;
+  }
+
+  /**
+   * 顯示批量添加學生模態框
+   */
+  showBatchAddStudentsModal() {
+    const currentClass = this.multiClassManager.getCurrentClass();
+    if (!currentClass) {
+      toast.error('請先選擇一個班級');
+      return;
+    }
+
+    // 創建模態框
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>批量添加學生</h3>
+          <button class="modal-close" onclick="this.closest('.modal').remove()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>學生郵箱列表</label>
+            <textarea
+              id="emailListInput"
+              placeholder="請輸入學生郵箱，每行一個或用逗號分隔&#10;例如：&#10;3015174@student.isf.edu.hk&#10;3015175@student.isf.edu.hk&#10;3015176@student.isf.edu.hk"
+              rows="10"
+            ></textarea>
+            <p class="help-text">僅支持 @student.isf.edu.hk 郵箱</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelAddBtn" class="btn btn-secondary">取消</button>
+          <button id="confirmAddBtn" class="btn btn-primary">添加學生</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 綁定事件
+    const cancelBtn = modal.querySelector('#cancelAddBtn');
+    const confirmBtn = modal.querySelector('#confirmAddBtn');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    cancelBtn.onclick = () => modal.remove();
+    closeBtn.onclick = () => modal.remove();
+    confirmBtn.onclick = () => this.handleBatchAddStudents(currentClass.id, modal);
+  }
+
+  /**
+   * 處理批量添加學生
+   */
+  async handleBatchAddStudents(classId, modal) {
+    const emailListInput = modal.querySelector('#emailListInput');
+    const confirmBtn = modal.querySelector('#confirmAddBtn');
+
+    try {
+      const emailListText = emailListInput.value.trim();
+      
+      if (!emailListText) {
+        toast.warning('請輸入學生郵箱列表');
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 添加中...';
+
+      // 調用多班級管理器的批量添加方法
+      const result = await this.multiClassManager.batchAddStudents(classId, emailListText);
+
+      modal.remove();
+
+      let message = `成功添加 ${result.added} 名學生`;
+      if (result.duplicates > 0) {
+        message += `，${result.duplicates} 個重複已跳過`;
+      }
+      if (result.invalidEmails > 0) {
+        message += `，${result.invalidEmails} 個無效郵箱已忽略`;
+      }
+
+      toast.success(message);
+      
+      // 重新渲染界面
+      await this.render();
+    } catch (error) {
+      console.error('批量添加學生失敗:', error);
+      toast.error(error.message || '添加學生失敗');
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '添加學生';
+    }
   }
 
   /**
