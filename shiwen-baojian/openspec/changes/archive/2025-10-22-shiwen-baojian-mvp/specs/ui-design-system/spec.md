@@ -1,5 +1,8 @@
 # UI Design System Specification
 
+## Purpose
+Provide a comprehensive, culturally-inspired design system for the 時文寶鑑 application that ensures visual consistency and enhances the user experience for Chinese literature education.
+
 ## ADDED Requirements
 
 ### Requirement: Design Token System
@@ -201,7 +204,7 @@ The system SHALL provide comprehensive documentation for the design system to en
 
 ---
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Application Visual Style
 
