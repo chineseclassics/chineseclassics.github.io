@@ -284,6 +284,20 @@ class MultiClassManager {
       throw error;
     }
   }
+
+  /**
+   * 獲取指定班級的學生列表
+   * @param {string} classId - 班級ID
+   * @returns {Array} 學生列表
+   */
+  async getClassStudents(classId) {
+    try {
+      return await this.classManager.getClassMembers(classId);
+    } catch (error) {
+      console.error('❌ 獲取學生列表失敗:', error);
+      throw error;
+    }
+  }
 }
 
 export default MultiClassManager;

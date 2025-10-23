@@ -390,11 +390,13 @@ class ClassManager {
 
   /**
    * 獲取班級成员列表（包括 active 和 pending 學生）
+   * @param {string} classId - 班級ID（可選，如果不提供則使用當前班級）
    * @returns {Array} 學生列表
    */
-  async getClassMembers() {
+  async getClassMembers(classId = null) {
     try {
-      if (!this.currentClass) {
+      const targetClassId = classId || this.currentClass?.id;
+      if (!targetClassId) {
         throw new Error('未找到班級');
       }
 
@@ -413,7 +415,7 @@ class ClassManager {
             last_login_at
           )
         `)
-        .eq('class_id', this.currentClass.id)
+        .eq('class_id', targetClassId)
         .order('added_at', { ascending: false });
 
       if (activeError) throw activeError;
@@ -422,7 +424,7 @@ class ClassManager {
       const { data: pendingStudents, error: pendingError } = await this.supabase
         .from('pending_students')
         .select('id, email, added_at, added_by')
-        .eq('class_id', this.currentClass.id)
+        .eq('class_id', targetClassId)
         .order('added_at', { ascending: false });
 
       if (pendingError) throw pendingError;

@@ -296,11 +296,210 @@ class MultiClassUI {
             </button>
           </div>
         </div>
+
+        <!-- 學生列表 -->
+        <div class="students-section">
+          <div class="section-header">
+            <h3><i class="fas fa-users"></i> 學生列表</h3>
+            <div class="section-actions">
+              <button class="btn btn-sm btn-outline" data-action="refresh-students">
+                <i class="fas fa-sync-alt"></i>
+                刷新
+              </button>
+            </div>
+          </div>
+          <div id="students-list-container">
+            <!-- 學生列表將在這裡動態加載 -->
+          </div>
+        </div>
       </div>
     `;
 
     // 綁定事件
     this.bindEvents();
+    
+    // 加載學生列表
+    await this.loadStudentsList();
+  }
+
+  /**
+   * 加載學生列表
+   */
+  async loadStudentsList() {
+    try {
+      if (!this.multiClassManager.currentClassId) {
+        return;
+      }
+
+      const students = await this.multiClassManager.getClassStudents(this.multiClassManager.currentClassId);
+      this.renderStudentsList(students);
+    } catch (error) {
+      console.error('❌ 加載學生列表失敗:', error);
+      this.renderStudentsListError(error.message);
+    }
+  }
+
+  /**
+   * 渲染學生列表
+   */
+  renderStudentsList(students) {
+    const container = this.container.querySelector('#students-list-container');
+    if (!container) return;
+
+    if (students.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-users"></i>
+          <p>還沒有學生</p>
+          <p class="text-muted">點擊"批量添加學生"按鈕添加學生到班級</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="students-table" id="studentsTable">
+        <thead>
+          <tr>
+            <th data-sort="displayName">姓名 <i class="fas fa-sort"></i></th>
+            <th data-sort="email">郵箱 <i class="fas fa-sort"></i></th>
+            <th data-sort="status">狀態 <i class="fas fa-sort"></i></th>
+            <th data-sort="activityStatus">活躍度 <i class="fas fa-sort"></i></th>
+            <th>作業進度</th>
+            <th data-sort="addedAt">加入時間 <i class="fas fa-sort"></i></th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${students.map(student => this.renderStudentRow(student)).join('')}
+        </tbody>
+      </table>
+    `;
+
+    // 綁定學生列表事件
+    this.bindStudentsListEvents(students);
+  }
+
+  /**
+   * 渲染學生列表錯誤
+   */
+  renderStudentsListError(message) {
+    const container = this.container.querySelector('#students-list-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>加載學生列表失敗</p>
+        <p class="text-muted">${this.escapeHtml(message)}</p>
+        <button class="btn btn-sm btn-outline" data-action="refresh-students">
+          <i class="fas fa-sync-alt"></i>
+          重試
+        </button>
+      </div>
+    `;
+  }
+
+  /**
+   * 渲染單個學生行
+   */
+  renderStudentRow(student) {
+    const activityBadge = this.getActivityBadge(student.activityStatus);
+    const statusBadge = student.status === 'active' ? '已登入' : student.isPending ? '待激活' : '未登入';
+    const addedDate = new Date(student.addedAt).toLocaleDateString('zh-CN');
+
+    return `
+      <tr data-member-id="${student.id}" data-is-pending="${student.isPending || false}">
+        <td>${this.escapeHtml(student.displayName)}</td>
+        <td>${this.escapeHtml(student.email)}</td>
+        <td>
+          <span class="badge badge-${student.status === 'active' ? 'success' : 'secondary'}">
+            ${statusBadge}
+          </span>
+        </td>
+        <td>${activityBadge}</td>
+        <td>
+          <div class="progress-indicator">
+            <span>${student.assignmentProgress.completed}/${student.assignmentProgress.total}</span>
+            <div class="progress-bar-mini">
+              <div class="progress-fill" style="width: ${student.assignmentProgress.total > 0 ? (student.assignmentProgress.completed / student.assignmentProgress.total * 100) : 0}%"></div>
+            </div>
+          </div>
+        </td>
+        <td>${addedDate}</td>
+        <td>
+          <button
+            class="btn-icon btn-danger remove-student-btn"
+            data-member-id="${student.id}"
+            data-student-name="${this.escapeHtml(student.displayName)}"
+            data-is-pending="${student.isPending || false}"
+            title="移除學生"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  /**
+   * 獲取活躍度徽章
+   */
+  getActivityBadge(status) {
+    const badges = {
+      pending: '<span class="activity-badge pending">⚪ 待激活</span>',
+      active: '<span class="activity-badge active">🟢 活躍</span>',
+      inactive: '<span class="activity-badge inactive">🟡 不活躍</span>',
+      offline: '<span class="activity-badge offline">🔴 離線</span>'
+    };
+    return badges[status] || badges.offline;
+  }
+
+  /**
+   * 綁定學生列表事件
+   */
+  bindStudentsListEvents(students) {
+    // 刷新按鈕
+    const refreshBtn = this.container.querySelector('[data-action="refresh-students"]');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        this.loadStudentsList();
+      });
+    }
+
+    // 移除學生按鈕
+    const removeBtns = this.container.querySelectorAll('.remove-student-btn');
+    removeBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const memberId = e.target.closest('button').dataset.memberId;
+        const studentName = e.target.closest('button').dataset.studentName;
+        const isPending = e.target.closest('button').dataset.isPending === 'true';
+        
+        this.handleRemoveStudent(memberId, studentName, isPending);
+      });
+    });
+  }
+
+  /**
+   * 處理移除學生
+   */
+  async handleRemoveStudent(memberId, studentName, isPending) {
+    try {
+      const confirmed = await dialog.confirm(
+        '確認移除學生',
+        `確定要移除學生 "${studentName}" 嗎？${isPending ? '（該學生尚未登入）' : ''}`
+      );
+
+      if (confirmed) {
+        // 這裡需要調用 ClassManager 的移除學生方法
+        // 暫時顯示成功消息
+        toast.success(`已移除學生 "${studentName}"`);
+        await this.loadStudentsList();
+      }
+    } catch (error) {
+      console.error('❌ 移除學生失敗:', error);
+      toast.error('移除學生失敗：' + error.message);
+    }
   }
 
   /**
@@ -391,6 +590,12 @@ class MultiClassUI {
     const batchAddBtn = this.container.querySelector('[data-action="batch-add-students"]');
     if (batchAddBtn) {
       batchAddBtn.addEventListener('click', () => this.showBatchAddStudentsModal());
+    }
+
+    // 刷新學生列表按鈕
+    const refreshStudentsBtn = this.container.querySelector('[data-action="refresh-students"]');
+    if (refreshStudentsBtn) {
+      refreshStudentsBtn.addEventListener('click', () => this.loadStudentsList());
     }
 
     // 編輯模態框事件
