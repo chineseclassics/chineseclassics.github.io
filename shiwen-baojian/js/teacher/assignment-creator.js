@@ -514,22 +514,29 @@ class AssignmentCreator {
         // 設置全局變量，供其他模組使用
         window.quill = this.inlineQuill;
         
-        // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）
-        this.draftCleanup = FormatEditorCore.setupDraftAutoSave(
-          this.inlineQuill,
-          'format-editor-draft-inline',  // 任务创建专用 key
-          () => !this.isLoadingTemplate  // 🆕 只在非加載模板時保存草稿
-        );
-        
-        // 🚨 優化：只在"從零開始新建"時詢問恢復草稿
-        if (!this.selectedTemplateId && this.currentMode === 'custom') {
-          FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
-        }
-        
-        // 🚨 階段 3.5.1.7：綁定內容變化監聽
-        this.inlineQuill.on('text-change', () => {
-          this.handleContentChange();
-        });
+        // 等待 Quill 完全初始化後再設置事件監聽
+        setTimeout(() => {
+          try {
+            // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）
+            this.draftCleanup = FormatEditorCore.setupDraftAutoSave(
+              this.inlineQuill,
+              'format-editor-draft-inline',  // 任务创建专用 key
+              () => !this.isLoadingTemplate  // 🆕 只在非加載模板時保存草稿
+            );
+            
+            // 🚨 優化：只在"從零開始新建"時詢問恢復草稿
+            if (!this.selectedTemplateId && this.currentMode === 'custom') {
+              FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
+            }
+            
+            // 🚨 階段 3.5.1.7：綁定內容變化監聽
+            this.inlineQuill.on('text-change', () => {
+              this.handleContentChange();
+            });
+          } catch (error) {
+            console.error('[AssignmentCreator] 事件綁定失敗:', error);
+          }
+        }, 100);
         
         console.log('[AssignmentCreator] 内联编辑器已初始化');
       } catch (error) {
@@ -549,7 +556,14 @@ class AssignmentCreator {
   handleContentChange() {
     if (!this.inlineQuill) return;
     
-    const content = this.inlineQuill.getText().trim();
+    // 安全地獲取內容，避免 Quill 實例未準備好的問題
+    let content = '';
+    try {
+      content = this.inlineQuill.getText()?.trim() || '';
+    } catch (error) {
+      console.warn('[AssignmentCreator] 獲取編輯器內容失敗:', error);
+      return;
+    }
     
     // 檢測模式變化：如果用戶修改了從系統格式加載的內容
     if (this.selectedTemplateId && content !== this.originalContent) {
@@ -577,7 +591,14 @@ class AssignmentCreator {
     
     if (!optimizeBtn || !saveBtn) return;
     
-    const content = this.inlineQuill?.getText().trim() || '';
+    // 安全地獲取內容，避免 Quill 實例未準備好的問題
+    let content = '';
+    try {
+      content = this.inlineQuill?.getText()?.trim() || '';
+    } catch (error) {
+      console.warn('[AssignmentCreator] 獲取編輯器內容失敗:', error);
+      content = '';
+    }
     
     // 🚨 動態更新標題
     if (editorTitle) {
