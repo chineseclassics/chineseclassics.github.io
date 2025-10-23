@@ -32,6 +32,21 @@ class TeacherDashboard {
     // 设置全局引用（供多班級管理使用）
     window.multiClassUI = this.multiClassUI;
     
+    // 添加全局事件綁定檢查機制
+    window.checkEventBinding = () => {
+      console.log('🔍 檢查事件綁定狀態...');
+      if (window.multiClassUI && window.multiClassUI.container) {
+        const batchAddBtn = window.multiClassUI.container.querySelector('[data-action="batch-add-students"]');
+        if (batchAddBtn) {
+          console.log('✅ 找到批量添加學生按鈕，重新綁定事件');
+          batchAddBtn.addEventListener('click', () => {
+            console.log('🎯 批量添加學生按鈕被點擊！');
+            window.multiClassUI.showBatchAddStudentsModal();
+          });
+        }
+      }
+    };
+    
     this.currentPage = 'overview';
     this.container = null;
   }

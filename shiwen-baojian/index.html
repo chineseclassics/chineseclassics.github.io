@@ -416,10 +416,18 @@
       window.tooltip = tooltip;
       
       console.log('✅ UI 組件已加載並掛載到全局');
+      
+      // 添加事件綁定檢查機制
+      setTimeout(() => {
+        if (window.checkEventBinding) {
+          console.log('🔄 執行事件綁定檢查...');
+          window.checkEventBinding();
+        }
+      }, 2000);
     </script>
     
     <!-- 應用 JavaScript 模組（ES6 Modules） -->
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/app.js?v=20250120"></script>
 </body>
 </html>
 

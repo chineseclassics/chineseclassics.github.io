@@ -27,6 +27,12 @@ class MultiClassUI {
       // 渲染界面
       await this.render();
       
+      // 強制重新綁定事件（確保事件綁定正確執行）
+      setTimeout(() => {
+        console.log('🔄 強制重新綁定事件...');
+        this.bindEvents();
+      }, 100);
+      
       console.log('✅ 多班級管理界面初始化完成');
     } catch (error) {
       console.error('❌ 多班級管理界面初始化失敗:', error);
@@ -301,6 +307,8 @@ class MultiClassUI {
    * 綁定事件（統一事件綁定）
    */
   bindEvents() {
+    console.log('🔧 MultiClassUI.bindEvents 開始執行');
+    
     // 班級切換
     const classTabs = this.container.querySelectorAll('.class-tab');
     classTabs.forEach(tab => {
@@ -343,7 +351,7 @@ class MultiClassUI {
       createBtn.addEventListener('click', () => this.showCreateClassModal());
     }
 
-    // 批量添加學生按鈕
+    // 批量添加學生按鈕 - 永久修復
     const batchAddBtn = this.container.querySelector('[data-action="batch-add-students"]');
     console.log('🔍 查找批量添加學生按鈕:', batchAddBtn);
     if (batchAddBtn) {
@@ -359,6 +367,8 @@ class MultiClassUI {
 
     // 編輯模態框事件
     this.bindEditModalEvents();
+    
+    console.log('✅ MultiClassUI.bindEvents 執行完成');
   }
 
   /**
