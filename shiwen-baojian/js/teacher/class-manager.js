@@ -110,6 +110,16 @@ class ClassManager {
    */
   async createClass(className, description = '') {
     try {
+      // 先獲取用戶信息
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) {
+        throw new Error('用户未登入');
+      }
+
+      if (!className || className.trim() === '') {
+        throw new Error('請輸入班級名稱');
+      }
+
       // 檢查班級名稱是否重複
       const { data: existingClasses } = await this.supabase
         .from('classes')
@@ -119,15 +129,6 @@ class ClassManager {
       
       if (existingClasses && existingClasses.some(c => c.class_name === className.trim())) {
         throw new Error('班級名稱已存在，請使用不同的名稱');
-      }
-
-      if (!className || className.trim() === '') {
-        throw new Error('請輸入班級名稱');
-      }
-
-      const { data: { user } } = await this.supabase.auth.getUser();
-      if (!user) {
-        throw new Error('用户未登入');
       }
 
       const { data, error } = await this.supabase
