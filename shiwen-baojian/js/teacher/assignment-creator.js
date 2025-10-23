@@ -570,7 +570,10 @@ class AssignmentCreator {
     
     if (!optimizeBtn || !saveBtn) return;
     
-    const content = this.inlineQuill?.getText().trim() || '';
+    // 修復：確保 inlineQuill 存在且已初始化
+    const content = (this.inlineQuill && typeof this.inlineQuill.getText === 'function') 
+      ? this.inlineQuill.getText().trim() 
+      : '';
     
     // 🚨 動態更新標題
     if (editorTitle) {
