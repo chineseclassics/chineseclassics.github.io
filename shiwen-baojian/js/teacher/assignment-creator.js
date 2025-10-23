@@ -445,6 +445,10 @@ class AssignmentCreator {
       this.updateButtonStates();
       this.updateStatus();
       
+      // 設置全局變量，供其他模組使用
+      window.currentFormatSpecId = formatId;
+      window.formatSpecData = format;
+      
       console.log('[AssignmentCreator] 格式已加載:', format.name, '模式:', this.currentMode, 'is_system:', format.is_system, 'is_template:', format.is_template);
     } catch (error) {
       console.error('[AssignmentCreator] 加載格式失敗:', error);
@@ -506,6 +510,9 @@ class AssignmentCreator {
         this.inlineQuill = FormatEditorCore.initQuill('#inline-quill-editor', {
           placeholder: '請輸入寫作指引...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
         });
+        
+        // 設置全局變量，供其他模組使用
+        window.quill = this.inlineQuill;
         
         // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）
         this.draftCleanup = FormatEditorCore.setupDraftAutoSave(
