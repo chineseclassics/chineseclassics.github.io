@@ -516,7 +516,7 @@ class AssignmentCreator {
     // 等待 DOM 更新完成後再初始化 Quill
     setTimeout(() => {
       this.initializeQuillEditor();
-    }, 50);
+    }, 200);
   }
   
   /**
@@ -526,6 +526,30 @@ class AssignmentCreator {
     // 初始化 Quill（如果还未初始化）
     if (!this.inlineQuill) {
       try {
+        // 確保 DOM 元素存在且可見
+        const editorElement = document.querySelector('#inline-quill-editor');
+        if (!editorElement) {
+          console.warn('[AssignmentCreator] 找不到編輯器容器元素，等待 DOM 更新...');
+          // 等待 DOM 更新，最多重試 5 次
+          for (let i = 0; i < 5; i++) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const retryElement = document.querySelector('#inline-quill-editor');
+            if (retryElement) {
+              console.log('[AssignmentCreator] 編輯器容器元素已找到');
+              break;
+            }
+          }
+          
+          const finalElement = document.querySelector('#inline-quill-editor');
+          if (!finalElement) {
+            console.error('[AssignmentCreator] 無法找到編輯器容器元素，跳過初始化');
+            return;
+          }
+        }
+        
+        // 等待 DOM 完全準備好
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
         this.inlineQuill = FormatEditorCore.initQuill('#inline-quill-editor', {
           placeholder: '請輸入寫作指引...\n\n例如：\n論文總字數 1500-2000 字\n必須 3 個分論點\n詳細分析紅樓夢中林黛玉和薛寶釵的外貌描寫'
         });
@@ -618,7 +642,9 @@ class AssignmentCreator {
     // 安全地獲取內容，避免 Quill 實例未準備好的問題
     let content = '';
     try {
-      content = this.inlineQuill?.getText()?.trim() || '';
+      if (this.inlineQuill && this.inlineQuill.root && this.inlineQuill.isEnabled()) {
+        content = this.inlineQuill.getText()?.trim() || '';
+      }
     } catch (error) {
       console.warn('[AssignmentCreator] 獲取編輯器內容失敗:', error);
       content = '';
@@ -1022,25 +1048,28 @@ class AssignmentCreator {
         // 如果 Quill 編輯器還沒有初始化，等待它初始化完成後再設置內容
         if (!this.inlineQuill) {
           console.log('🔧 等待 Quill 編輯器初始化完成...');
-          // 等待編輯器初始化
+          // 等待編輯器初始化，增加更嚴格的檢查
           await new Promise(resolve => {
             const checkInterval = setInterval(() => {
-              if (this.inlineQuill) {
+              if (this.inlineQuill && this.inlineQuill.root) {
                 clearInterval(checkInterval);
                 resolve();
               }
             }, 100);
             
-            // 最多等待 3 秒
+            // 最多等待 5 秒
             setTimeout(() => {
               clearInterval(checkInterval);
               resolve();
-            }, 3000);
+            }, 5000);
           });
           
           // 重新設置內容
-          if (this.inlineQuill) {
+          if (this.inlineQuill && this.inlineQuill.root) {
             try {
+              // 等待編輯器完全準備好
+              await new Promise(resolve => setTimeout(resolve, 200));
+              
               const format = await FormatEditorCore.loadSystemFormat(
                 formatSpecId,
                 this.assignmentManager.supabase
@@ -1053,14 +1082,31 @@ class AssignmentCreator {
                 }
                 
                 if (humanReadable) {
-                  this.inlineQuill.setText(humanReadable);
-                  this.originalContent = humanReadable;
-                  console.log('✅ 編輯器內容已設置:', humanReadable.substring(0, 50) + '...');
+                  // 安全地設置內容
+                  try {
+                    this.inlineQuill.setText(humanReadable);
+                    this.originalContent = humanReadable;
+                    console.log('✅ 編輯器內容已設置:', humanReadable.substring(0, 50) + '...');
+                  } catch (setError) {
+                    console.warn('[AssignmentCreator] 設置編輯器內容失敗，重試中...', setError);
+                    // 重試一次
+                    setTimeout(() => {
+                      try {
+                        this.inlineQuill.setText(humanReadable);
+                        this.originalContent = humanReadable;
+                        console.log('✅ 編輯器內容已設置（重試成功）:', humanReadable.substring(0, 50) + '...');
+                      } catch (retryError) {
+                        console.error('❌ 重試設置編輯器內容失敗:', retryError);
+                      }
+                    }, 300);
+                  }
                 }
               }
             } catch (error) {
               console.error('❌ 重新設置編輯器內容失敗:', error);
             }
+          } else {
+            console.warn('[AssignmentCreator] Quill 編輯器未完全準備好，跳過內容設置');
           }
         }
       }
