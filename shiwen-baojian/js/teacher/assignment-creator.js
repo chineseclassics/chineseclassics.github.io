@@ -995,6 +995,31 @@ class AssignmentCreator {
               console.log('✅ Quill 編輯器內容已設置:', humanReadable.substring(0, 100) + '...');
             }
           }
+        } else {
+          console.warn('⚠️ inlineQuill 尚未初始化，嘗試延遲設置...');
+          // 延遲重試設置內容
+          setTimeout(async () => {
+            if (this.inlineQuill) {
+              console.log('🔧 延遲設置 Quill 編輯器內容...');
+              const format = await FormatEditorCore.loadSystemFormat(
+                formatSpecId,
+                this.assignmentManager.supabase
+              );
+              if (format) {
+                let humanReadable = format.human_input || '';
+                if (!humanReadable && format.spec_json) {
+                  humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
+                }
+                if (humanReadable) {
+                  this.inlineQuill.setText(humanReadable);
+                  this.originalContent = humanReadable;
+                  console.log('✅ 延遲設置 Quill 編輯器內容成功:', humanReadable.substring(0, 100) + '...');
+                }
+              }
+            } else {
+              console.error('❌ 延遲設置失敗：inlineQuill 仍未初始化');
+            }
+          }, 1000);
         }
       }
       
