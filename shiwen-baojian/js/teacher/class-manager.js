@@ -288,7 +288,7 @@ class ClassManager {
       const newEmails = validEmails.filter(email => !existingEmails.has(email));
 
       // 為新郵箱創建或查找用户記錄
-      const addedCount = await this.addStudentsToClass(newEmails);
+      const addedCount = await this.addStudentsToClass(newEmails, classId);
 
       return {
         validEmails: validEmails.length,
@@ -342,9 +342,10 @@ class ClassManager {
   /**
    * 添加學生到班級（方案 A：使用 pending_students 表）
    * @param {Array} emails - 學生郵箱数組
+   * @param {string} classId - 班級ID
    * @returns {number} 成功添加的學生数
    */
-  async addStudentsToClass(emails) {
+  async addStudentsToClass(emails, classId) {
     if (emails.length === 0) return 0;
 
     try {
