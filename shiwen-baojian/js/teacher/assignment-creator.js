@@ -997,9 +997,17 @@ class AssignmentCreator {
           }
         } else {
           console.warn('⚠️ inlineQuill 尚未初始化，嘗試延遲設置...');
-          // 延遲重試設置內容
+          // 延遲重試設置內容，等待 Quill 編輯器完全初始化
           setTimeout(async () => {
-            if (this.inlineQuill) {
+            // 檢查 Quill 編輯器容器是否存在
+            const quillContainer = document.querySelector('#inline-quill-editor');
+            if (!quillContainer) {
+              console.error('❌ 延遲設置失敗：Quill 編輯器容器不存在');
+              return;
+            }
+            
+            // 檢查 Quill 實例是否存在
+            if (this.inlineQuill && typeof this.inlineQuill.setText === 'function') {
               console.log('🔧 延遲設置 Quill 編輯器內容...');
               const format = await FormatEditorCore.loadSystemFormat(
                 formatSpecId,
@@ -1011,15 +1019,19 @@ class AssignmentCreator {
                   humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
                 }
                 if (humanReadable) {
-                  this.inlineQuill.setText(humanReadable);
-                  this.originalContent = humanReadable;
-                  console.log('✅ 延遲設置 Quill 編輯器內容成功:', humanReadable.substring(0, 100) + '...');
+                  try {
+                    this.inlineQuill.setText(humanReadable);
+                    this.originalContent = humanReadable;
+                    console.log('✅ 延遲設置 Quill 編輯器內容成功:', humanReadable.substring(0, 100) + '...');
+                  } catch (error) {
+                    console.error('❌ 延遲設置 Quill 內容失敗:', error);
+                  }
                 }
               }
             } else {
-              console.error('❌ 延遲設置失敗：inlineQuill 仍未初始化');
+              console.error('❌ 延遲設置失敗：inlineQuill 仍未初始化或方法不存在');
             }
-          }, 1000);
+          }, 2000); // 增加延遲時間到 2 秒
         }
       }
       
