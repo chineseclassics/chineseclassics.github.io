@@ -964,12 +964,35 @@ class AssignmentCreator {
       formatSelector.value = formatSpecId;
       
       // 等待一下確保 FormatEditorCore 已載入
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // 觸發選擇事件，載入對應的寫作指引內容
       if (formatSpecId && formatSpecId !== '__create_new__') {
         console.log('🔧 開始載入格式內容...');
         await this.handleFormatSelection(formatSpecId);
+        
+        // 再次等待確保 Quill 編輯器完全初始化
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 檢查並重新設置內容
+        if (this.inlineQuill) {
+          console.log('🔧 重新設置 Quill 編輯器內容...');
+          const format = await FormatEditorCore.loadSystemFormat(
+            formatSpecId,
+            this.assignmentManager.supabase
+          );
+          if (format) {
+            let humanReadable = format.human_input || '';
+            if (!humanReadable && format.spec_json) {
+              humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
+            }
+            if (humanReadable) {
+              this.inlineQuill.setText(humanReadable);
+              this.originalContent = humanReadable;
+              console.log('✅ Quill 編輯器內容已設置:', humanReadable.substring(0, 100) + '...');
+            }
+          }
+        }
       }
       
       console.log('✅ 編輯模式預設寫作指引已設置');
