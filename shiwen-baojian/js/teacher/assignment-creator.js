@@ -1018,6 +1018,51 @@ class AssignmentCreator {
       // 觸發選擇事件，載入對應的寫作指引內容
       if (formatSpecId && formatSpecId !== '__create_new__') {
         await this.handleFormatSelection(formatSpecId);
+        
+        // 如果 Quill 編輯器還沒有初始化，等待它初始化完成後再設置內容
+        if (!this.inlineQuill) {
+          console.log('🔧 等待 Quill 編輯器初始化完成...');
+          // 等待編輯器初始化
+          await new Promise(resolve => {
+            const checkInterval = setInterval(() => {
+              if (this.inlineQuill) {
+                clearInterval(checkInterval);
+                resolve();
+              }
+            }, 100);
+            
+            // 最多等待 3 秒
+            setTimeout(() => {
+              clearInterval(checkInterval);
+              resolve();
+            }, 3000);
+          });
+          
+          // 重新設置內容
+          if (this.inlineQuill) {
+            try {
+              const format = await FormatEditorCore.loadSystemFormat(
+                formatSpecId,
+                this.assignmentManager.supabase
+              );
+              
+              if (format) {
+                let humanReadable = format.human_input || '';
+                if (!humanReadable && format.spec_json) {
+                  humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
+                }
+                
+                if (humanReadable) {
+                  this.inlineQuill.setText(humanReadable);
+                  this.originalContent = humanReadable;
+                  console.log('✅ 編輯器內容已設置:', humanReadable.substring(0, 50) + '...');
+                }
+              }
+            } catch (error) {
+              console.error('❌ 重新設置編輯器內容失敗:', error);
+            }
+          }
+        }
       }
       
       console.log('✅ 編輯模式預設寫作指引已設置');
