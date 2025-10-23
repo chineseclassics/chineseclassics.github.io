@@ -313,7 +313,7 @@ class MultiClassUI {
     this.bindEvents();
     
     // 加載學生列表
-    this.loadStudentsList();
+    await this.loadStudentsList();
   }
 
   /**
@@ -321,11 +321,25 @@ class MultiClassUI {
    */
   async loadStudentsList() {
     try {
+      console.log('🔄 開始加載學生列表...');
+      console.log('📍 當前班級ID:', this.multiClassManager.currentClassId);
+      
+      // 如果沒有當前班級，嘗試選擇第一個班級
       if (!this.multiClassManager.currentClassId) {
-        return;
+        const classes = this.multiClassManager.getAllClasses();
+        console.log('📚 可用班級:', classes.length);
+        if (classes.length > 0) {
+          console.log('🔄 自動選擇第一個班級:', classes[0].id);
+          await this.multiClassManager.switchClass(classes[0].id);
+        } else {
+          this.renderStudentsListError('沒有可用的班級');
+          return;
+        }
       }
 
+      console.log('📋 獲取學生數據...');
       const students = await this.multiClassManager.getClassStudents(this.multiClassManager.currentClassId);
+      console.log('✅ 學生數據:', students);
       this.renderStudentsList(students);
     } catch (error) {
       console.error('❌ 加載學生列表失敗:', error);
@@ -337,10 +351,19 @@ class MultiClassUI {
    * 渲染學生列表
    */
   renderStudentsList(students) {
+    console.log('🎨 開始渲染學生列表...');
+    console.log('📊 學生數據:', students);
+    
     const container = this.container.querySelector('#students-list-container');
-    if (!container) return;
+    if (!container) {
+      console.error('❌ 找不到學生列表容器');
+      return;
+    }
+
+    console.log('📦 找到學生列表容器');
 
     if (students.length === 0) {
+      console.log('📭 沒有學生，顯示空狀態');
       container.innerHTML = `
         <div class="empty-state">
           <i class="fas fa-users"></i>
@@ -351,6 +374,7 @@ class MultiClassUI {
       return;
     }
 
+    console.log('📋 渲染學生表格...');
     container.innerHTML = `
       <table class="students-table" id="studentsTable">
         <thead>
@@ -370,8 +394,13 @@ class MultiClassUI {
       </table>
     `;
 
+    console.log('✅ 學生表格渲染完成');
+    console.log('🔗 綁定學生列表事件...');
+
     // 綁定學生列表事件
     this.bindStudentsListEvents(students);
+    
+    console.log('✅ 學生列表渲染完成');
   }
 
   /**
