@@ -308,7 +308,10 @@ class AssignmentCreator {
     
     // 如果是編輯模式，設置寫作指引預設值
     if (isEdit && existingAssignment && existingAssignment.format_spec_id) {
-      await this.setDefaultFormatSpec(existingAssignment.format_spec_id);
+      // 等待 DOM 完全渲染後再設置預設值
+      setTimeout(async () => {
+        await this.setDefaultFormatSpec(existingAssignment.format_spec_id);
+      }, 100);
     }
   }
 
@@ -1044,6 +1047,9 @@ class AssignmentCreator {
       // 觸發選擇事件，載入對應的寫作指引內容
       if (formatSpecId && formatSpecId !== '__create_new__') {
         await this.handleFormatSelection(formatSpecId);
+        
+        // 等待編輯器容器完全渲染
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         // 如果 Quill 編輯器還沒有初始化，等待它初始化完成後再設置內容
         if (!this.inlineQuill) {
