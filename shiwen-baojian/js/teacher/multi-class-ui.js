@@ -213,12 +213,6 @@ class MultiClassUI {
 
     return `
       <div class="current-class-details">
-        <div class="class-header">
-          <div class="class-info">
-            <h2><i class="fas fa-graduation-cap"></i> ${this.escapeHtml(currentClass.class_name)}</h2>
-            ${currentClass.description ? `<p class="class-description">${this.escapeHtml(currentClass.description)}</p>` : ''}
-          </div>
-        </div>
 
         <!-- 統計卡片 -->
         <div class="stats-grid">
@@ -319,7 +313,7 @@ class MultiClassUI {
     this.bindEvents();
     
     // 加載學生列表
-    await this.loadStudentsList();
+    this.loadStudentsList();
   }
 
   /**
