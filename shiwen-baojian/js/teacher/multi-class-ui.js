@@ -132,11 +132,12 @@ class MultiClassUI {
    * 渲染多班級管理界面
    */
   async renderMultiClassDashboard() {
-    console.log('🎨 開始渲染多班級儀表板...');
-    const classes = this.multiClassManager.getAllClasses();
-    const currentClass = this.multiClassManager.getCurrentClass();
-    console.log('📚 班級數據:', classes);
-    console.log('📍 當前班級:', currentClass);
+    try {
+      console.log('🎨 開始渲染多班級儀表板...');
+      const classes = this.multiClassManager.getAllClasses();
+      const currentClass = this.multiClassManager.getCurrentClass();
+      console.log('📚 班級數據:', classes);
+      console.log('📍 當前班級:', currentClass);
 
     this.container.innerHTML = `
       <div class="multi-class-dashboard">
@@ -218,8 +219,17 @@ class MultiClassUI {
     `;
 
     // 綁定事件
-    this.bindMultiClassEvents();
+    this.bindEvents();
+    
+    // 加載學生列表
+    console.log('🔄 準備加載學生列表...');
+    await this.loadStudentsList();
+    console.log('✅ 學生列表加載完成');
+  } catch (error) {
+    console.error('❌ 渲染多班級儀表板失敗:', error);
+    this.renderError(error.message);
   }
+}
 
   /**
    * 渲染當前班級詳情
@@ -329,8 +339,14 @@ class MultiClassUI {
     this.bindEvents();
     
     // 加載學生列表
+    console.log('🔄 準備加載學生列表...');
     await this.loadStudentsList();
+    console.log('✅ 學生列表加載完成');
+  } catch (error) {
+    console.error('❌ 渲染多班級儀表板失敗:', error);
+    this.renderError(error.message);
   }
+}
 
   /**
    * 加載學生列表
