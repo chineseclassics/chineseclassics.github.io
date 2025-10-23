@@ -18,14 +18,18 @@ class MultiClassUI {
    * 初始化多班級管理界面
    */
   async initialize(container) {
+    console.log('🚀 開始初始化多班級管理界面...');
     this.container = container;
     
     try {
       // 初始化多班級管理器
+      console.log('🔄 初始化多班級管理器...');
       await this.multiClassManager.initialize();
       
       // 渲染界面
+      console.log('🎨 開始渲染界面...');
       await this.render();
+      console.log('✅ 界面渲染完成');
       
       // 強制重新綁定事件（確保事件綁定正確執行）
       setTimeout(() => {
@@ -44,19 +48,28 @@ class MultiClassUI {
    * 渲染多班級管理界面
    */
   async render() {
-    if (!this.container) {
-      console.error('未設置容器元素');
-      return;
-    }
+    try {
+      console.log('🎨 開始渲染多班級界面...');
+      if (!this.container) {
+        console.error('未設置容器元素');
+        return;
+      }
 
-    const classes = this.multiClassManager.getAllClasses();
+      const classes = this.multiClassManager.getAllClasses();
+      console.log('📚 班級數量:', classes.length);
 
-    if (classes.length === 0) {
-      // 沒有班級，顯示創建班級界面
-      this.renderCreateClassForm();
-    } else {
-      // 有班級（1個或多個），都使用統一的多班級管理界面
-      await this.renderMultiClassDashboard();
+      if (classes.length === 0) {
+        console.log('📭 沒有班級，顯示創建班級界面');
+        // 沒有班級，顯示創建班級界面
+        this.renderCreateClassForm();
+      } else {
+        console.log('📋 有班級，顯示多班級管理界面');
+        // 有班級（1個或多個），都使用統一的多班級管理界面
+        await this.renderMultiClassDashboard();
+      }
+    } catch (error) {
+      console.error('❌ 渲染多班級界面失敗:', error);
+      this.renderError(error.message);
     }
   }
 
@@ -119,8 +132,11 @@ class MultiClassUI {
    * 渲染多班級管理界面
    */
   async renderMultiClassDashboard() {
+    console.log('🎨 開始渲染多班級儀表板...');
     const classes = this.multiClassManager.getAllClasses();
     const currentClass = this.multiClassManager.getCurrentClass();
+    console.log('📚 班級數據:', classes);
+    console.log('📍 當前班級:', currentClass);
 
     this.container.innerHTML = `
       <div class="multi-class-dashboard">
