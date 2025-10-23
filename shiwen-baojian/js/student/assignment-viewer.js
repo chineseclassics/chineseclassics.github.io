@@ -55,7 +55,14 @@ class StudentAssignmentViewer {
 
           const { data: assignments, error } = await this.supabase
             .from('assignments')
-            .select('*')
+            .select(`
+              *,
+              class:classes!class_id(
+                id,
+                name,
+                description
+              )
+            `)
             .in('class_id', classIds)
             .eq('is_published', true)
             .order('due_date', { ascending: true });
@@ -240,6 +247,12 @@ class StudentAssignmentViewer {
         ` : ''}
 
         <div class="card-meta">
+          ${assignment.class ? `
+            <div class="meta-item class-info">
+              <i class="fas fa-users"></i>
+              <span>班級：${this.escapeHtml(assignment.class.name)}</span>
+            </div>
+          ` : ''}
           <div class="meta-item">
             <i class="fas fa-calendar-alt"></i>
             <span>截止：${dueDate.toLocaleDateString('zh-Hant-TW', { 

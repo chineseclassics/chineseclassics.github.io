@@ -1651,6 +1651,25 @@
   flex-shrink: 0;
 }
 
+/* ========================================
+   班級信息樣式
+   ======================================== */
+
+.class-info {
+  background: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-2) var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+  font-weight: var(--font-medium);
+  color: var(--primary-700);
+}
+
+.class-info i {
+  color: var(--primary-500);
+  margin-right: var(--spacing-2);
+}
+
 
 
 
