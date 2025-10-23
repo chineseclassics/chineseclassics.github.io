@@ -963,8 +963,12 @@ class AssignmentCreator {
       // 設置下拉菜單的值
       formatSelector.value = formatSpecId;
       
+      // 等待一下確保 FormatEditorCore 已載入
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // 觸發選擇事件，載入對應的寫作指引內容
       if (formatSpecId && formatSpecId !== '__create_new__') {
+        console.log('🔧 開始載入格式內容...');
         await this.handleFormatSelection(formatSpecId);
       }
       
