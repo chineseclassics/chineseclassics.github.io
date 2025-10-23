@@ -44,16 +44,12 @@ class MultiClassUI {
     }
 
     const classes = this.multiClassManager.getAllClasses();
-    const currentClass = this.multiClassManager.getCurrentClass();
 
     if (classes.length === 0) {
       // 沒有班級，顯示創建班級界面
       this.renderCreateClassForm();
-    } else if (classes.length === 1) {
-      // 只有一個班級，顯示單班級管理界面
-      await this.renderSingleClassDashboard();
     } else {
-      // 多個班級，顯示多班級管理界面
+      // 有班級（1個或多個），都使用統一的多班級管理界面
       await this.renderMultiClassDashboard();
     }
   }
@@ -112,153 +108,6 @@ class MultiClassUI {
     }
   }
 
-  /**
-   * 渲染單班級管理界面
-   */
-  async renderSingleClassDashboard() {
-    const currentClass = this.multiClassManager.getCurrentClass();
-    const stats = await this.multiClassManager.getClassStatistics();
-
-    this.container.innerHTML = `
-      <div class="single-class-dashboard">
-        <!-- 班級概覽 -->
-        <div class="class-header">
-          <div class="class-info">
-            <h2><i class="fas fa-graduation-cap"></i> ${this.escapeHtml(currentClass.class_name)}</h2>
-            ${currentClass.description ? `<p class="class-description">${this.escapeHtml(currentClass.description)}</p>` : ''}
-          </div>
-          <div class="class-actions">
-            <button id="editClassBtn" class="btn btn-secondary">
-              <i class="fas fa-edit"></i> 編輯班級
-            </button>
-            <button id="createNewClassBtn" class="btn btn-primary">
-              <i class="fas fa-plus"></i> 創建新班級
-            </button>
-          </div>
-        </div>
-
-        <!-- 統計卡片 -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <i class="fas fa-users"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">${stats?.totalStudents || 0}</div>
-              <div class="stat-label">學生總數</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon active">
-              <i class="fas fa-user-check"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">${stats?.activeStudents || 0}</div>
-              <div class="stat-label">活躍學生</div>
-              <div class="stat-sublabel">最近 7 天登入</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon">
-              <i class="fas fa-clipboard-list"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">${stats?.totalAssignments || 0}</div>
-              <div class="stat-label">任務總數</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon pending">
-              <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">${stats?.pendingGrading || 0}</div>
-              <div class="stat-label">待批改作業</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">${stats?.averageCompletion || 0}%</div>
-              <div class="stat-label">平均完成率</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 快速操作 -->
-        <div class="quick-actions">
-          <h3>快速操作</h3>
-          <div class="action-buttons">
-            <button class="action-btn" onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'assignment-create' } }))">
-              <i class="fas fa-plus"></i>
-              <span>創建任務</span>
-            </button>
-            <button class="action-btn" data-action="batch-add-students">
-              <i class="fas fa-user-plus"></i>
-              <span>批量添加學生</span>
-            </button>
-            <button class="action-btn" onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'grading-queue' } }))">
-              <i class="fas fa-clipboard-check"></i>
-              <span>批改作業</span>
-            </button>
-            <button class="action-btn" onclick="window.dispatchEvent(new CustomEvent('navigate', { detail: { page: 'assignments' } }))">
-              <i class="fas fa-list"></i>
-              <span>管理任務</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 編輯班級模態框 -->
-      <div id="editClassModal" class="modal" style="display: none;">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>編輯班級</h3>
-            <button class="modal-close" id="closeEditModalBtn">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form id="editClassForm">
-              <div class="form-group">
-                <label for="editClassName">班級名稱</label>
-                <input
-                  type="text"
-                  id="editClassName"
-                  name="className"
-                  value="${this.escapeHtml(currentClass.class_name)}"
-                  required
-                  maxlength="100"
-                />
-              </div>
-              <div class="form-group">
-                <label for="editClassDescription">班級描述</label>
-                <textarea
-                  id="editClassDescription"
-                  name="description"
-                  rows="3"
-                  maxlength="500"
-                >${this.escapeHtml(currentClass.description || '')}</textarea>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button id="cancelEditBtn" class="btn btn-secondary">取消</button>
-            <button id="saveEditBtn" class="btn btn-primary">保存</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // 綁定事件
-    this.bindSingleClassEvents();
-  }
 
   /**
    * 渲染多班級管理界面
@@ -449,14 +298,67 @@ class MultiClassUI {
   }
 
   /**
-   * 綁定事件
+   * 綁定事件（統一事件綁定）
    */
   bindEvents() {
-    // 綁定批量添加學生按鈕
-    const batchAddBtn = this.container.querySelector('[data-action="batch-add-students"]');
-    if (batchAddBtn) {
-      batchAddBtn.addEventListener('click', () => this.showBatchAddStudentsModal());
+    // 班級切換
+    const classTabs = this.container.querySelectorAll('.class-tab');
+    classTabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        if (e.target.closest('.tab-action-btn')) return; // 忽略操作按鈕
+        const classId = tab.getAttribute('data-class-id');
+        this.switchToClass(classId);
+      });
+    });
+
+    // 編輯班級按鈕（多班級界面）
+    const editBtns = this.container.querySelectorAll('.edit-btn');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const classId = btn.getAttribute('data-class-id');
+        this.showEditClassModal(classId);
+      });
+    });
+
+    // 編輯班級按鈕（單班級界面）
+    const editBtn = this.container.querySelector('#editClassBtn');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => this.showEditClassModal());
     }
+
+    // 刪除班級按鈕
+    const deleteBtns = this.container.querySelectorAll('.delete-btn');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const classId = btn.getAttribute('data-class-id');
+        this.deleteClass(classId);
+      });
+    });
+
+    // 創建新班級按鈕
+    const createBtn = this.container.querySelector('#createNewClassBtn');
+    if (createBtn) {
+      createBtn.addEventListener('click', () => this.showCreateClassModal());
+    }
+
+    // 批量添加學生按鈕
+    const batchAddBtn = this.container.querySelector('[data-action="batch-add-students"]');
+    console.log('🔍 查找批量添加學生按鈕:', batchAddBtn);
+    if (batchAddBtn) {
+      console.log('✅ 找到批量添加學生按鈕，添加事件監聽器');
+      batchAddBtn.addEventListener('click', () => {
+        console.log('🎯 批量添加學生按鈕被點擊！');
+        this.showBatchAddStudentsModal();
+      });
+    } else {
+      console.log('❌ 沒有找到批量添加學生按鈕');
+      console.log('容器內容:', this.container.innerHTML.substring(0, 500));
+    }
+
+    // 編輯模態框事件
+    this.bindEditModalEvents();
   }
 
   /**

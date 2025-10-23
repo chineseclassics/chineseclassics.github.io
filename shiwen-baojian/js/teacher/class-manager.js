@@ -248,13 +248,14 @@ class ClassManager {
 
   /**
    * 批量添加學生
+   * @param {string} classId - 班級ID
    * @param {string} emailListText - 郵箱列表文本（換行或逗號分隔）
    * @returns {Object} { validEmails, invalidEmails, duplicates, added }
    */
-  async batchAddStudents(emailListText) {
+  async batchAddStudents(classId, emailListText) {
     try {
-      if (!this.currentClass) {
-        throw new Error('請先創建班級');
+      if (!classId) {
+        throw new Error('請提供班級ID');
       }
 
       // 解析郵箱列表
@@ -271,12 +272,12 @@ class ClassManager {
       const { data: activeMembers } = await this.supabase
         .from('class_members')
         .select('student:users!student_id(email)')
-        .eq('class_id', this.currentClass.id);
+        .eq('class_id', classId);
 
       const { data: pendingMembers } = await this.supabase
         .from('pending_students')
         .select('email')
-        .eq('class_id', this.currentClass.id);
+        .eq('class_id', classId);
 
       const existingEmails = new Set([
         ...(activeMembers?.map(m => m.student.email) || []),
@@ -357,7 +358,7 @@ class ClassManager {
             .from('pending_students')
             .insert([
               {
-                class_id: this.currentClass.id,
+                class_id: classId,
                 email: email,
                 added_by: user.id
               }

@@ -29,6 +29,9 @@ class TeacherDashboard {
     // 设置全局引用（供模板库页面使用）
     window.formatTemplatePageInstance = this.formatTemplatePage;
     
+    // 设置全局引用（供多班級管理使用）
+    window.multiClassUI = this.multiClassUI;
+    
     this.currentPage = 'overview';
     this.container = null;
   }
