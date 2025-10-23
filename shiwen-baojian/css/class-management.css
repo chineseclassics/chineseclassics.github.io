@@ -447,7 +447,7 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   width: 90%;
   max-width: 600px;
@@ -455,6 +455,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-primary);
 }
 
 .modal-header {
