@@ -196,6 +196,7 @@ class TeacherDashboard {
           break;
           
         case 'assignment-edit':
+          console.log('🔧 進入編輯模式，任務 ID:', params.id);
           await this.assignmentCreator.render(mainContent, params.id);
           break;
           

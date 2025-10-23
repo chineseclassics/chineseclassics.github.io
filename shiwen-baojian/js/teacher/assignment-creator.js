@@ -49,6 +49,15 @@ class AssignmentCreator {
     }
 
     const isEdit = !!existingAssignment;
+    
+    // 如果是編輯模式，設置編輯標識
+    if (isEdit) {
+      document.body.setAttribute('data-mode', 'edit');
+      document.title = '編輯任務 - 時文寶鑑';
+    } else {
+      document.body.removeAttribute('data-mode');
+      document.title = '創建新任務 - 時文寶鑑';
+    }
 
     this.container.innerHTML = `
       <div class="assignment-creator">
@@ -296,6 +305,11 @@ class AssignmentCreator {
     
     // 加載寫作指引列表
     await this.loadFormatSpecifications();
+    
+    // 如果是編輯模式，設置寫作指引預設值
+    if (isEdit && existingAssignment && existingAssignment.format_spec_id) {
+      await this.setDefaultFormatSpec(existingAssignment.format_spec_id);
+    }
   }
 
   /**
@@ -930,6 +944,33 @@ class AssignmentCreator {
     } catch (error) {
       console.error('[AssignmentCreator] 保存失败:', error);
       toast.error('保存失敗：' + error.message);
+    }
+  }
+
+  /**
+   * 設置編輯模式下的寫作指引預設值
+   */
+  async setDefaultFormatSpec(formatSpecId) {
+    try {
+      console.log('🔧 設置編輯模式預設寫作指引:', formatSpecId);
+      
+      const formatSelector = this.container.querySelector('#formatSelector');
+      if (!formatSelector) {
+        console.warn('找不到寫作指引下拉菜單');
+        return;
+      }
+      
+      // 設置下拉菜單的值
+      formatSelector.value = formatSpecId;
+      
+      // 觸發選擇事件，載入對應的寫作指引內容
+      if (formatSpecId && formatSpecId !== '__create_new__') {
+        await this.handleFormatSelection(formatSpecId);
+      }
+      
+      console.log('✅ 編輯模式預設寫作指引已設置');
+    } catch (error) {
+      console.error('❌ 設置編輯模式預設寫作指引失敗:', error);
     }
   }
 
