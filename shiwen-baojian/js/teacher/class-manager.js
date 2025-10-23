@@ -20,13 +20,13 @@ class ClassManager {
         throw new Error('用户未登入');
       }
 
-      // 加載老師的班級（MVP 版本只支持單個班級）
+      // 加載老師的所有班級
       const { data: classes, error } = await this.supabase
         .from('classes')
         .select('*')
         .eq('teacher_id', user.id)
         .eq('is_active', true)
-        .limit(1);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -39,15 +39,86 @@ class ClassManager {
   }
 
   /**
+   * 獲取老師的所有班級
+   * @returns {Array} 班級列表
+   */
+  async getAllClasses() {
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) {
+        throw new Error('用户未登入');
+      }
+
+      const { data: classes, error } = await this.supabase
+        .from('classes')
+        .select(`
+          *,
+          class_members(count),
+          assignments(count)
+        `)
+        .eq('teacher_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // 格式化班級數據，包含統計信息
+      return classes.map(classData => ({
+        ...classData,
+        student_count: classData.class_members?.[0]?.count || 0,
+        assignment_count: classData.assignments?.[0]?.count || 0
+      }));
+    } catch (error) {
+      console.error('獲取班級列表失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 切換當前班級
+   * @param {string} classId - 班級 ID
+   */
+  async switchClass(classId) {
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) {
+        throw new Error('用户未登入');
+      }
+
+      const { data: classData, error } = await this.supabase
+        .from('classes')
+        .select('*')
+        .eq('id', classId)
+        .eq('teacher_id', user.id)
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+
+      this.currentClass = classData;
+      return this.currentClass;
+    } catch (error) {
+      console.error('切換班級失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 創建新班級
    * @param {string} className - 班級名稱
    * @param {string} description - 班級描述（可選）
    */
   async createClass(className, description = '') {
     try {
-      // MVP 版本：檢查是否已有班級
-      if (this.currentClass) {
-        throw new Error('MVP 版本僅支持單個班級，多班級功能即將推出');
+      // 檢查班級名稱是否重複
+      const { data: existingClasses } = await this.supabase
+        .from('classes')
+        .select('class_name')
+        .eq('teacher_id', user.id)
+        .eq('is_active', true);
+      
+      if (existingClasses && existingClasses.some(c => c.class_name === className.trim())) {
+        throw new Error('班級名稱已存在，請使用不同的名稱');
       }
 
       if (!className || className.trim() === '') {
@@ -78,6 +149,98 @@ class ClassManager {
       return data;
     } catch (error) {
       console.error('創建班級失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 編輯班級信息
+   * @param {string} classId - 班級 ID
+   * @param {string} className - 新班級名稱
+   * @param {string} description - 新班級描述
+   */
+  async editClass(classId, className, description = '') {
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) {
+        throw new Error('用户未登入');
+      }
+
+      if (!className || className.trim() === '') {
+        throw new Error('請輸入班級名稱');
+      }
+
+      // 檢查班級名稱是否重複（排除當前班級）
+      const { data: existingClasses } = await this.supabase
+        .from('classes')
+        .select('class_name')
+        .eq('teacher_id', user.id)
+        .eq('is_active', true)
+        .neq('id', classId);
+      
+      if (existingClasses && existingClasses.some(c => c.class_name === className.trim())) {
+        throw new Error('班級名稱已存在，請使用不同的名稱');
+      }
+
+      const { data, error } = await this.supabase
+        .from('classes')
+        .update({
+          class_name: className.trim(),
+          description: description.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', classId)
+        .eq('teacher_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // 如果編輯的是當前班級，更新 currentClass
+      if (this.currentClass && this.currentClass.id === classId) {
+        this.currentClass = data;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('編輯班級失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 刪除班級（軟刪除）
+   * @param {string} classId - 班級 ID
+   */
+  async deleteClass(classId) {
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser();
+      if (!user) {
+        throw new Error('用户未登入');
+      }
+
+      // 軟刪除：設置 is_active 為 false
+      const { data, error } = await this.supabase
+        .from('classes')
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', classId)
+        .eq('teacher_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // 如果刪除的是當前班級，清空 currentClass
+      if (this.currentClass && this.currentClass.id === classId) {
+        this.currentClass = null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('刪除班級失敗:', error);
       throw error;
     }
   }

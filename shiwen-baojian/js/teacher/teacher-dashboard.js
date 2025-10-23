@@ -5,6 +5,7 @@
 
 import ClassManager from './class-manager.js';
 import ClassUI from './class-ui.js';
+import MultiClassUI from './multi-class-ui.js';
 import AssignmentManager from './assignment-manager.js';
 import AssignmentCreator from './assignment-creator.js';
 import AssignmentList from './assignment-list.js';
@@ -17,6 +18,7 @@ class TeacherDashboard {
     this.supabase = supabaseClient;
     this.classManager = new ClassManager(supabaseClient);
     this.classUI = new ClassUI(this.classManager);
+    this.multiClassUI = new MultiClassUI(supabaseClient);
     this.assignmentManager = new AssignmentManager(supabaseClient);
     this.assignmentCreator = new AssignmentCreator(this.assignmentManager);
     this.assignmentList = new AssignmentList(this.assignmentManager);
@@ -184,7 +186,7 @@ class TeacherDashboard {
       
       switch (page) {
         case 'class-management':
-          await this.classUI.initialize(mainContent);
+          await this.multiClassUI.initialize(mainContent);
           break;
           
         case 'assignments':

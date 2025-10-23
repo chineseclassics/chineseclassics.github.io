@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "excel": {
+      "command": "npx",
+      "args": ["-y", "excel-mcp-server"]
+    },
+    "figma": {
+      "command": "npx",
+      "args": ["-y", "figma-context-mcp"],
+      "env": {
+        "FIGMA_ACCESS_TOKEN": "your_figma_token_here"
+      }
+    }
+  }
+}
