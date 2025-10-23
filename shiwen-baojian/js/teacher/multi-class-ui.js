@@ -199,7 +199,7 @@ class MultiClassUI {
               <i class="fas fa-plus"></i>
               <span>創建任務</span>
             </button>
-            <button class="action-btn" onclick="this.showBatchAddStudentsModal()">
+            <button class="action-btn" data-action="batch-add-students">
               <i class="fas fa-user-plus"></i>
               <span>批量添加學生</span>
             </button>
@@ -427,7 +427,7 @@ class MultiClassUI {
               <i class="fas fa-plus"></i>
               <span>創建任務</span>
             </button>
-            <button class="action-btn" onclick="this.showBatchAddStudentsModal()">
+            <button class="action-btn" data-action="batch-add-students">
               <i class="fas fa-user-plus"></i>
               <span>批量添加學生</span>
             </button>
@@ -443,6 +443,20 @@ class MultiClassUI {
         </div>
       </div>
     `;
+
+    // 綁定事件
+    this.bindEvents();
+  }
+
+  /**
+   * 綁定事件
+   */
+  bindEvents() {
+    // 綁定批量添加學生按鈕
+    const batchAddBtn = this.container.querySelector('[data-action="batch-add-students"]');
+    if (batchAddBtn) {
+      batchAddBtn.addEventListener('click', () => this.showBatchAddStudentsModal());
+    }
   }
 
   /**
@@ -459,6 +473,12 @@ class MultiClassUI {
     const createBtn = this.container.querySelector('#createNewClassBtn');
     if (createBtn) {
       createBtn.addEventListener('click', () => this.showCreateClassModal());
+    }
+
+    // 批量添加學生按鈕
+    const batchAddBtn = this.container.querySelector('[data-action="batch-add-students"]');
+    if (batchAddBtn) {
+      batchAddBtn.addEventListener('click', () => this.showBatchAddStudentsModal());
     }
 
     // 編輯模態框事件
