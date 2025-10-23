@@ -5,6 +5,7 @@
 import { AppState } from '../app.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
+import { getClassColorClass } from '../utils/class-color-utils.js';
 
 class StudentAssignmentViewer {
   constructor(supabaseClient) {
@@ -233,8 +234,10 @@ class StudentAssignmentViewer {
                        !isOverdue && 
                        (!essay.graded_at);
 
+    const classColorClass = assignment.classes ? getClassColorClass(assignment.classes.id) : 'class-1';
+    
     return `
-      <div class="student-assignment-card ${status.class}">
+      <div class="student-assignment-card ${status.class} ${classColorClass}">
         <div class="card-header">
           <h3>${this.escapeHtml(assignment.title)}</h3>
           <span class="status-badge ${status.class}">${status.text}</span>

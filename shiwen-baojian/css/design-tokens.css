@@ -84,6 +84,47 @@
   --scholar-50:  #f0ebe4;  /* 栗褐極淺背景 */
 
   /* ========================================
+     班級配色系統：多班級識別
+     靈感：古代書院、文人雅集、不同學派
+     ======================================== */
+  
+  /* 班級 1：青灰雅士（默認主色） */
+  --class-1-ribbon: var(--primary-600);
+  --class-1-bg: var(--primary-50);
+  --class-1-border: var(--primary-200);
+  --class-1-text: var(--primary-700);
+  
+  /* 班級 2：青苔書院 */
+  --class-2-ribbon: var(--success-600);
+  --class-2-bg: var(--success-50);
+  --class-2-border: var(--success-200);
+  --class-2-text: var(--success-700);
+  
+  /* 班級 3：秋香學堂 */
+  --class-3-ribbon: var(--warning-600);
+  --class-3-bg: var(--warning-50);
+  --class-3-border: var(--warning-200);
+  --class-3-text: var(--warning-700);
+  
+  /* 班級 4：豆沙書齋 */
+  --class-4-ribbon: var(--error-600);
+  --class-4-bg: var(--error-50);
+  --class-4-border: var(--error-200);
+  --class-4-text: var(--error-700);
+  
+  /* 班級 5：栗褐文苑 */
+  --class-5-ribbon: var(--scholar-600);
+  --class-5-bg: var(--scholar-50);
+  --class-5-border: var(--scholar-200);
+  --class-5-text: var(--scholar-700);
+  
+  /* 班級 6：墨色書院 */
+  --class-6-ribbon: var(--gray-600);
+  --class-6-bg: var(--gray-50);
+  --class-6-border: var(--gray-200);
+  --class-6-text: var(--gray-700);
+
+  /* ========================================
      中性色階：墨分五色
      靈感：水墨畫的濃淡層次、文房四寶
      ======================================== */

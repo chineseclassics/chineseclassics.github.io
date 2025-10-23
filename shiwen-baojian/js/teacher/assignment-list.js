@@ -5,6 +5,7 @@
 import AssignmentManager from './assignment-manager.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
+import { getClassColorClass } from '../utils/class-color-utils.js';
 
 class AssignmentList {
   constructor(assignmentManager) {
@@ -68,9 +69,10 @@ class AssignmentList {
     const dueDate = new Date(assignment.due_date);
     const isOverdue = dueDate < new Date() && assignment.is_published;
     const stats = assignment.stats || {};
+    const classColorClass = assignment.class ? getClassColorClass(assignment.class.id) : 'class-1';
 
     return `
-      <div class="assignment-card card${isOverdue ? ' overdue' : ''}" data-id="${assignment.id}">
+      <div class="assignment-card card ${classColorClass}${isOverdue ? ' overdue' : ''}" data-id="${assignment.id}">
         <div class="card-header">
           <h3>${assignment.title}</h3>
           <span class="badge badge-${assignment.is_published ? 'success' : 'secondary'}">
@@ -82,6 +84,12 @@ class AssignmentList {
           ${assignment.description ? `<p class="description">${assignment.description}</p>` : ''}
           
           <div class="card-meta">
+            ${assignment.class ? `
+              <div class="meta-item class-info">
+                <i class="fas fa-users"></i>
+                <span>班級：${this.escapeHtml(assignment.class.class_name)}</span>
+              </div>
+            ` : ''}
             <div class="meta-item">
               <i class="fas fa-calendar"></i>
               <span>截止：${dueDate.toLocaleDateString('zh-CN')}</span>
@@ -192,6 +200,21 @@ class AssignmentList {
         }
       }
     });
+  }
+
+  /**
+   * HTML 轉義方法
+   */
+  escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) {
+      return '';
+    }
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 }
 
