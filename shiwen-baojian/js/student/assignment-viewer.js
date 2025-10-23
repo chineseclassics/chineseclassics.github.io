@@ -57,9 +57,9 @@ class StudentAssignmentViewer {
             .from('assignments')
             .select(`
               *,
-              class:classes!class_id(
+              classes!class_id(
                 id,
-                name,
+                class_name,
                 description
               )
             `)
@@ -247,10 +247,10 @@ class StudentAssignmentViewer {
         ` : ''}
 
         <div class="card-meta">
-          ${assignment.class ? `
+          ${assignment.classes ? `
             <div class="meta-item class-info">
               <i class="fas fa-users"></i>
-              <span>班級：${this.escapeHtml(assignment.class.name)}</span>
+              <span>班級：${this.escapeHtml(assignment.classes.class_name)}</span>
             </div>
           ` : ''}
           <div class="meta-item">
