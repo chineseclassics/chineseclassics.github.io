@@ -37,6 +37,41 @@ class AssignmentCreator {
   }
 
   /**
+   * 加載班級列表
+   */
+  async loadClasses() {
+    try {
+      const { data: classes, error } = await this.assignmentManager.supabase
+        .from('classes')
+        .select('id, class_name, description')
+        .eq('teacher_id', this.assignmentManager.currentUser.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const classSelect = this.container.querySelector('select[name="classId"]');
+      if (classSelect) {
+        // 清空現有選項（保留第一個"請選擇班級"選項）
+        classSelect.innerHTML = '<option value="">請選擇班級</option>';
+        
+        // 添加班級選項
+        classes.forEach(cls => {
+          const option = document.createElement('option');
+          option.value = cls.id;
+          option.textContent = cls.class_name;
+          classSelect.appendChild(option);
+        });
+
+        console.log('✅ 班級列表加載完成:', classes.length);
+      }
+    } catch (error) {
+      console.error('❌ 加載班級列表失敗:', error);
+      toast.error('加載班級列表失敗：' + error.message);
+    }
+  }
+
+  /**
    * 渲染任務創建表單
    */
   async render(container, assignmentId = null) {
@@ -90,6 +125,15 @@ class AssignmentCreator {
             </div>
 
             <!-- 任務描述已移除：統一使用寫作指引，避免混淆 -->
+
+            <div class="form-group">
+              <label>佈置班級 <span class="required">*</span></label>
+              <select name="classId" required>
+                <option value="">請選擇班級</option>
+                <!-- 班級選項將由 JavaScript 動態填充 -->
+              </select>
+              <p class="help-text">選擇要佈置任務的班級</p>
+            </div>
 
             <div class="form-group">
               <label>截止日期 <span class="required">*</span></label>
@@ -342,6 +386,9 @@ class AssignmentCreator {
       console.error('❌ 找不到返回按鈕 #backBtn');
       return;
     }
+
+    // 加載班級列表
+    this.loadClasses();
 
     // 綁定寫作指引選擇器
     const formatSelector = this.container.querySelector('#formatSelector');
@@ -1254,6 +1301,7 @@ class AssignmentCreator {
       const assignmentData = {
         title: formData.get('title'),
         dueDate: formData.get('dueDate'),
+        classId: formData.get('classId'),  // 新增：班級ID
         formatSpecId: this.selectedTemplateId,  // 引用模式：保存格式ID
         gradingRubricJson: filteredRubric,  // 只包含選中的標準
         isDraft

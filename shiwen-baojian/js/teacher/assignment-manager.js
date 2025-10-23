@@ -56,6 +56,7 @@ class AssignmentManager {
         dueDate,
         formatSpecId,  // 引用模式：格式ID
         gradingRubricJson,
+        classId,  // 新增：班級ID
         isDraft = true
       } = assignmentData;
 
@@ -76,12 +77,16 @@ class AssignmentManager {
         throw new Error('請選擇或設置評分標準');
       }
 
+      if (!classId) {
+        throw new Error('請選擇佈置班級');
+      }
+
       const { data, error } = await this.supabase
         .from('assignments')
         .insert([
           {
             title: title.trim(),
-            class_id: this.currentClass.id,
+            class_id: classId,  // 使用表單中選擇的班級ID
             teacher_id: this.currentUser.id,
             due_date: dueDate,
             format_spec_id: formatSpecId,  // 引用模式：保存格式ID
