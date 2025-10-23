@@ -98,14 +98,10 @@
 }
 
 /* ========================================
-   學生端作業卡片班級配色
+   學生端作業卡片班級配色（僅標籤，不影響 ribbon）
    ======================================== */
 
 /* 班級 1：青灰雅士 */
-.student-assignment-card.class-1 {
-  border-left-color: var(--class-1-ribbon);
-}
-
 .student-assignment-card.class-1 .class-info {
   background: var(--class-1-bg);
   border: 1px solid var(--class-1-border);
@@ -117,10 +113,6 @@
 }
 
 /* 班級 2：青苔書院 */
-.student-assignment-card.class-2 {
-  border-left-color: var(--class-2-ribbon);
-}
-
 .student-assignment-card.class-2 .class-info {
   background: var(--class-2-bg);
   border: 1px solid var(--class-2-border);
@@ -132,10 +124,6 @@
 }
 
 /* 班級 3：秋香學堂 */
-.student-assignment-card.class-3 {
-  border-left-color: var(--class-3-ribbon);
-}
-
 .student-assignment-card.class-3 .class-info {
   background: var(--class-3-bg);
   border: 1px solid var(--class-3-border);
@@ -147,10 +135,6 @@
 }
 
 /* 班級 4：豆沙書齋 */
-.student-assignment-card.class-4 {
-  border-left-color: var(--class-4-ribbon);
-}
-
 .student-assignment-card.class-4 .class-info {
   background: var(--class-4-bg);
   border: 1px solid var(--class-4-border);
@@ -162,10 +146,6 @@
 }
 
 /* 班級 5：栗褐文苑 */
-.student-assignment-card.class-5 {
-  border-left-color: var(--class-5-ribbon);
-}
-
 .student-assignment-card.class-5 .class-info {
   background: var(--class-5-bg);
   border: 1px solid var(--class-5-border);
@@ -177,10 +157,6 @@
 }
 
 /* 班級 6：墨色書院 */
-.student-assignment-card.class-6 {
-  border-left-color: var(--class-6-ribbon);
-}
-
 .student-assignment-card.class-6 .class-info {
   background: var(--class-6-bg);
   border: 1px solid var(--class-6-border);
