@@ -410,14 +410,25 @@ class AnnotationManager {
     // 在原文中高亮選中的文本
     this.highlightTextInEssay(annotationId, annotation);
     
-    // 在側邊欄中顯示批注
-    this.addAnnotationToSidebar(annotationId, annotation);
+    // 等待高亮元素創建完成後，再創建浮動批注
+    setTimeout(() => {
+      this.addAnnotationToSidebar(annotationId, annotation);
+    }, 100);
   }
 
   /**
    * 在側邊欄中添加批注（Google Docs 風格）
    */
   addAnnotationToSidebar(annotationId, annotation) {
+    console.log('🎯 開始添加批注到側邊欄:', annotationId);
+    
+    // 檢查批注容器是否存在
+    const annotationsContainer = document.getElementById('annotationsContainer');
+    if (!annotationsContainer) {
+      console.log('❌ 批注容器不存在，無法添加批注');
+      return;
+    }
+    
     // 創建獨立的批注容器，放在對應的高亮文本旁邊
     this.createFloatingAnnotation(annotationId, annotation);
     
@@ -434,7 +445,8 @@ class AnnotationManager {
     // 找到對應的高亮元素
     const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
     if (!highlight) {
-      console.log('❌ 找不到對應的高亮元素');
+      console.log('❌ 找不到對應的高亮元素，annotationId:', annotationId);
+      console.log('🔍 當前頁面中的高亮元素:', document.querySelectorAll('.annotation-highlight'));
       return;
     }
 
@@ -442,8 +454,11 @@ class AnnotationManager {
     const annotationsContainer = document.getElementById('annotationsContainer');
     if (!annotationsContainer) {
       console.log('❌ 找不到批注容器');
+      console.log('🔍 當前頁面中的容器元素:', document.querySelectorAll('[id*="annotation"]'));
       return;
     }
+    
+    console.log('✅ 找到批注容器:', annotationsContainer);
 
     // 計算高亮文本在論文中的相對位置
     const essayViewer = document.getElementById('essayViewer');
@@ -489,6 +504,14 @@ class AnnotationManager {
 
     // 添加到右側批注容器中
     annotationsContainer.appendChild(floatingAnnotation);
+    console.log('✅ 批注元素已添加到容器中');
+    
+    // 測試：添加一個簡單的可見元素來確認容器工作正常
+    const testElement = document.createElement('div');
+    testElement.style.cssText = 'background: red; color: white; padding: 10px; margin: 5px;';
+    testElement.textContent = '測試批注容器';
+    annotationsContainer.appendChild(testElement);
+    console.log('🧪 測試元素已添加');
 
     // 綁定事件
     floatingAnnotation.addEventListener('click', (e) => {
@@ -515,8 +538,9 @@ class AnnotationManager {
       this.toggleFloatingAnnotation(annotationId);
     });
 
-    // 初始狀態隱藏
-    floatingAnnotation.style.display = 'none';
+    // 初始狀態顯示
+    floatingAnnotation.style.display = 'block';
+    console.log('✅ 批注已設置為顯示狀態');
   }
 
   /**
@@ -653,6 +677,7 @@ class AnnotationManager {
           const highlight = document.createElement('span');
           highlight.className = 'annotation-highlight';
           highlight.dataset.annotationId = annotationId;
+          console.log('🎨 創建高亮元素，annotationId:', annotationId);
           highlight.style.cssText = `
             background-color: #fef3c7;
             border-bottom: 2px solid #f59e0b;
@@ -664,6 +689,7 @@ class AnnotationManager {
           
           // 用高亮元素包圍選中的文本
           range.surroundContents(highlight);
+          console.log('✅ 高亮元素已包圍文本');
           
           // 添加批注標記
           const marker = document.createElement('span');
