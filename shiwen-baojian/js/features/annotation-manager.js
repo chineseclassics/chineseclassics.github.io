@@ -22,6 +22,31 @@ class AnnotationManager {
     this.bindEvents();
   }
 
+  // 設計令牌常量配置
+  static CONSTANTS = {
+    // 顏色（使用設計令牌）
+    HIGHLIGHT_BG: 'var(--warning-100)',        // 秋香淺背景
+    HIGHLIGHT_BORDER: 'var(--warning-600)',    // 秋香中
+    HIGHLIGHT_TEMP: 'var(--warning-200)',      // 極淺秋香
+    BUTTON_BG: 'var(--primary-600)',           // 青灰主色
+    BUTTON_TEXT: 'var(--text-inverse)',        // 白色文字
+    
+    // 時長
+    TEMP_HIGHLIGHT_DURATION: 2000,              // 臨時高亮持續時間
+    
+    // 尺寸
+    ANNOTATION_WIDTH: '280px',
+    BUTTON_PADDING: '8px 12px',
+    
+    // Z-index
+    BUTTON_Z_INDEX: '1000',
+    ANNOTATION_Z_INDEX: '1001',
+    
+    // 動畫
+    SCROLL_BEHAVIOR: 'smooth',
+    SCROLL_BLOCK: 'center'
+  };
+
   /**
    * 初始化批注系統
    */
@@ -156,11 +181,11 @@ class AnnotationManager {
     button.innerHTML = '📝 添加批注';
     button.style.cssText = `
       position: absolute;
-      z-index: 1000;
-      background: #3b82f6;
-      color: white;
+      z-index: ${AnnotationManager.CONSTANTS.BUTTON_Z_INDEX};
+      background: ${AnnotationManager.CONSTANTS.BUTTON_BG};
+      color: ${AnnotationManager.CONSTANTS.BUTTON_TEXT};
       border: none;
-      padding: 8px 12px;
+      padding: ${AnnotationManager.CONSTANTS.BUTTON_PADDING};
       border-radius: 6px;
       font-size: 12px;
       cursor: pointer;
@@ -217,8 +242,8 @@ class AnnotationManager {
       const highlight = document.createElement('span');
       highlight.className = 'annotation-highlight';
       highlight.style.cssText = `
-        background-color: #fef3c7;
-        border-bottom: 2px solid #f59e0b;
+        background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
+        border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
         padding: 1px 2px;
         border-radius: 2px;
         position: relative;
@@ -300,16 +325,12 @@ class AnnotationManager {
       // 顯示成功提示
       if (typeof toast !== 'undefined') {
         toast.success('批注已添加');
-      } else {
-        alert('批注已添加！');
       }
       
     } catch (error) {
       console.error('❌ 創建批注失敗:', error);
       if (typeof toast !== 'undefined') {
         toast.error('創建批注失敗: ' + error.message);
-      } else {
-        alert('創建批注失敗: ' + error.message);
       }
     }
   }
@@ -354,8 +375,8 @@ class AnnotationManager {
         border-radius: 8px;
         padding: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        width: 280px;
-        z-index: 1001;
+        width: ${AnnotationManager.CONSTANTS.ANNOTATION_WIDTH};
+        z-index: ${AnnotationManager.CONSTANTS.ANNOTATION_Z_INDEX};
         font-size: 14px;
         line-height: 1.4;
         left: 0;
@@ -496,8 +517,8 @@ class AnnotationManager {
       border-radius: 8px;
       padding: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      width: 280px;
-      z-index: 1000;
+      width: ${AnnotationManager.CONSTANTS.ANNOTATION_WIDTH};
+      z-index: ${AnnotationManager.CONSTANTS.BUTTON_Z_INDEX};
       font-size: 14px;
       line-height: 1.4;
       left: 0;
@@ -554,6 +575,23 @@ class AnnotationManager {
   }
 
   /**
+   * 臨時高亮原文文本
+   */
+  highlightTextTemporarily(annotationId) {
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (highlight) {
+      highlight.scrollIntoView({ 
+        behavior: AnnotationManager.CONSTANTS.SCROLL_BEHAVIOR, 
+        block: AnnotationManager.CONSTANTS.SCROLL_BLOCK 
+      });
+      highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_TEMP;
+      setTimeout(() => {
+        highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
+      }, AnnotationManager.CONSTANTS.TEMP_HIGHLIGHT_DURATION);
+    }
+  }
+
+  /**
    * 高亮批注（統一方法）
    */
   highlightAnnotation(annotationId) {
@@ -570,15 +608,8 @@ class AnnotationManager {
       floatingAnnotation.style.display = 'block';
     }
 
-    // 在原文中高亮對應的文本
-    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (highlight) {
-      highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      highlight.style.background = '#fde68a';
-      setTimeout(() => {
-        highlight.style.background = '#fef3c7';
-      }, 2000);
-    }
+    // 臨時高亮原文文本
+    this.highlightTextTemporarily(annotationId);
   }
 
   /**
@@ -626,15 +657,8 @@ class AnnotationManager {
       annotationItem.classList.add('active');
     }
 
-    // 在原文中高亮對應的文本
-    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (highlight) {
-      highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      highlight.style.background = '#fde68a';
-      setTimeout(() => {
-        highlight.style.background = '#fef3c7';
-      }, 2000);
-    }
+    // 臨時高亮原文文本
+    this.highlightTextTemporarily(annotationId);
   }
 
   /**
@@ -671,8 +695,8 @@ class AnnotationManager {
           highlight.dataset.annotationId = annotationId;
           console.log('🎨 創建高亮元素，annotationId:', annotationId);
           highlight.style.cssText = `
-            background-color: #fef3c7;
-            border-bottom: 2px solid #f59e0b;
+            background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
+            border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
             cursor: pointer;
             position: relative;
             padding: 1px 2px;
@@ -683,7 +707,6 @@ class AnnotationManager {
           range.surroundContents(highlight);
           console.log('✅ 高亮元素已包圍文本');
           
-          // 不再添加 📝 標記n'g
           
           // 綁定點擊事件
           highlight.addEventListener('click', (e) => {
@@ -694,11 +717,11 @@ class AnnotationManager {
           
           // 添加懸停效果
           highlight.addEventListener('mouseenter', () => {
-            highlight.style.background = '#fde68a';
+            highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_TEMP;
           });
           
           highlight.addEventListener('mouseleave', () => {
-            highlight.style.background = '#fef3c7';
+            highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
           });
           
           found = true;
@@ -804,7 +827,6 @@ class AnnotationManager {
       const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
       markers.forEach(marker => marker.remove());
       
-      // 批注已刪除
       
       toast.success('批注已刪除');
       
@@ -927,12 +949,12 @@ class AnnotationManager {
       position: fixed;
       top: 20px;
       right: 20px;
-      background: #3b82f6;
-      color: white;
-      padding: 8px 12px;
+      background: ${AnnotationManager.CONSTANTS.BUTTON_BG};
+      color: ${AnnotationManager.CONSTANTS.BUTTON_TEXT};
+      padding: ${AnnotationManager.CONSTANTS.BUTTON_PADDING};
       border-radius: 6px;
       font-size: 12px;
-      z-index: 1000;
+      z-index: ${AnnotationManager.CONSTANTS.BUTTON_Z_INDEX};
     `;
     
     document.body.appendChild(hint);
@@ -960,7 +982,6 @@ class AnnotationManager {
   destroy() {
     this.disableSelectionMode();
     this.hideAnnotationButton();
-    // 清理完成
     this.hideSelectionHint();
     
     // 移除事件監聽器
