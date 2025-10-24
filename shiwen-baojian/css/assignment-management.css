@@ -1817,23 +1817,186 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .main-content-area {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
   min-height: 600px;
 }
 
 .essay-content-section {
   flex: 1;
   min-width: 0;
+  position: relative;
 }
 
-.annotations-sidebar {
-  width: 320px;
-  background: #f8fafc;
+/* 浮動批注樣式 */
+.floating-annotation {
+  position: absolute;
+  background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 16px;
-  max-height: 600px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 280px;
+  z-index: 1000;
+  font-size: 14px;
+  line-height: 1.4;
+  max-height: 200px;
   overflow-y: auto;
+}
+
+.floating-annotation .annotation-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.floating-annotation .annotation-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.floating-annotation .annotation-author {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.floating-annotation .annotation-time {
+  font-size: 10px;
+  color: #64748b;
+  margin-left: auto;
+}
+
+.floating-annotation .annotation-content {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.floating-annotation .annotation-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.floating-annotation:hover .annotation-actions {
+  opacity: 1;
+}
+
+.floating-annotation .annotation-action-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.floating-annotation .annotation-action-btn:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+}
+
+/* 浮動批注輸入框樣式 */
+.floating-annotation-input {
+  position: absolute;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 280px;
+  z-index: 1001;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.floating-annotation-input .annotation-input-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.floating-annotation-input .annotation-input-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.floating-annotation-input .annotation-input-author {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.floating-annotation-input .annotation-input-content {
+  width: 100%;
+  min-height: 60px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+
+.floating-annotation-input .annotation-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.floating-annotation-input .annotation-input-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.floating-annotation-input .annotation-input-btn.cancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.floating-annotation-input .annotation-input-btn.cancel:hover {
+  background: #e5e7eb;
+}
+
+.floating-annotation-input .annotation-input-btn.submit {
+  background: #3b82f6;
+  color: white;
+  border: 1px solid #2563eb;
+}
+
+.floating-annotation-input .annotation-input-btn.submit:hover {
+  background: #2563eb;
 }
 
 .sidebar-header {

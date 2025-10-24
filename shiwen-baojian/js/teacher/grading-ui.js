@@ -147,19 +147,6 @@ class GradingUI {
                 ${this.renderEssayContent(essay)}
               </div>
             </div>
-
-            <!-- Google Docs 風格批注側邊欄 -->
-            <div class="annotations-sidebar">
-              <div class="sidebar-header">
-                <h4 class="sidebar-title">
-                  <i class="fas fa-comments mr-2"></i>批注
-                </h4>
-                <span class="annotation-count">0 個批注</span>
-              </div>
-              <div id="annotationsList" class="annotations-list">
-                <!-- 批注將在這裡動態添加 -->
-              </div>
-            </div>
           </div>
 
           <!-- 評分區域（移到底部） -->

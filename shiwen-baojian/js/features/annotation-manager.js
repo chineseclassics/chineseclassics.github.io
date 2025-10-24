@@ -287,9 +287,32 @@ class AnnotationManager {
     console.log('💬 顯示批注對話框:', defaultContent);
     
     return new Promise((resolve) => {
-      // 創建 Google Docs 風格的輸入框
+      // 創建浮動輸入框
       const inputBox = document.createElement('div');
-      inputBox.className = 'annotation-input-box';
+      inputBox.className = 'floating-annotation-input';
+      inputBox.style.cssText = `
+        position: absolute;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        width: 280px;
+        z-index: 1001;
+        font-size: 14px;
+        line-height: 1.4;
+      `;
+
+      // 計算位置（在選中文本右側）
+      if (this.selectedText && this.selectedText.range) {
+        const rect = this.selectedText.range.getBoundingClientRect();
+        const essayViewer = document.getElementById('essayViewer');
+        const essayRect = essayViewer.getBoundingClientRect();
+        
+        inputBox.style.left = `${rect.right - essayRect.left + 10}px`;
+        inputBox.style.top = `${rect.top - essayRect.top}px`;
+      }
+
       inputBox.innerHTML = `
         <div class="annotation-input-header">
           <div class="annotation-input-avatar">${this.getUserInitials()}</div>
@@ -306,10 +329,10 @@ class AnnotationManager {
         </div>
       `;
       
-      // 添加到側邊欄
-      const annotationsList = document.getElementById('annotationsList');
-      if (annotationsList) {
-        annotationsList.appendChild(inputBox);
+      // 添加到論文容器
+      const essayViewer = document.getElementById('essayViewer');
+      if (essayViewer) {
+        essayViewer.appendChild(inputBox);
         
         // 綁定事件
         const cancelBtn = inputBox.querySelector('.cancel');
@@ -337,11 +360,8 @@ class AnnotationManager {
         
         // 自動聚焦到文本框
         textarea.focus();
-        
-        // 滾動到輸入框
-        inputBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } else {
-        console.error('❌ 找不到批注列表容器');
+        console.error('❌ 找不到論文容器');
         resolve(null);
       }
     });
@@ -390,20 +410,56 @@ class AnnotationManager {
   }
 
   /**
-   * 在側邊欄中添加批注
+   * 在側邊欄中添加批注（Google Docs 風格）
    */
   addAnnotationToSidebar(annotationId, annotation) {
-    const annotationsList = document.getElementById('annotationsList');
-    if (!annotationsList) {
-      console.log('❌ 找不到批注列表容器');
+    // 創建獨立的批注容器，放在對應的高亮文本旁邊
+    this.createFloatingAnnotation(annotationId, annotation);
+    
+    // 更新批注計數
+    this.updateAnnotationCount();
+    
+    console.log('✅ 批注已添加到側邊欄');
+  }
+
+  /**
+   * 創建浮動批注（Google Docs 風格）
+   */
+  createFloatingAnnotation(annotationId, annotation) {
+    // 找到對應的高亮元素
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (!highlight) {
+      console.log('❌ 找不到對應的高亮元素');
       return;
     }
 
-    // 創建批注項目
-    const annotationItem = document.createElement('div');
-    annotationItem.className = 'annotation-item';
-    annotationItem.dataset.annotationId = annotationId;
-    annotationItem.innerHTML = `
+    // 創建浮動批注容器
+    const floatingAnnotation = document.createElement('div');
+    floatingAnnotation.className = 'floating-annotation';
+    floatingAnnotation.dataset.annotationId = annotationId;
+    floatingAnnotation.style.cssText = `
+      position: absolute;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      width: 280px;
+      z-index: 1000;
+      font-size: 14px;
+      line-height: 1.4;
+    `;
+
+    // 計算位置（在高亮文本右側）
+    const rect = highlight.getBoundingClientRect();
+    const essayViewer = document.getElementById('essayViewer');
+    const essayRect = essayViewer.getBoundingClientRect();
+    
+    floatingAnnotation.style.left = `${rect.right - essayRect.left + 10}px`;
+    floatingAnnotation.style.top = `${rect.top - essayRect.top}px`;
+
+    // 批注內容
+    floatingAnnotation.innerHTML = `
       <div class="annotation-header">
         <div class="annotation-avatar">${this.getUserInitials()}</div>
         <div class="annotation-author">${this.getCurrentUserName()}</div>
@@ -416,33 +472,82 @@ class AnnotationManager {
       </div>
     `;
 
+    // 添加到論文容器中
+    essayViewer.appendChild(floatingAnnotation);
+
     // 綁定事件
-    annotationItem.addEventListener('click', (e) => {
+    floatingAnnotation.addEventListener('click', (e) => {
       if (e.target.classList.contains('annotation-action-btn')) return;
       this.highlightAnnotationInText(annotationId);
     });
 
     // 編輯按鈕
-    const editBtn = annotationItem.querySelector('.edit');
+    const editBtn = floatingAnnotation.querySelector('.edit');
     editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.editAnnotation(annotationId);
     });
 
     // 刪除按鈕
-    const deleteBtn = annotationItem.querySelector('.delete');
+    const deleteBtn = floatingAnnotation.querySelector('.delete');
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.deleteAnnotation(annotationId);
     });
 
-    // 添加到側邊欄
-    annotationsList.appendChild(annotationItem);
-    
-    // 更新批注計數
-    this.updateAnnotationCount();
-    
-    console.log('✅ 批注已添加到側邊欄');
+    // 點擊高亮文本時顯示/隱藏批注
+    highlight.addEventListener('click', () => {
+      this.toggleFloatingAnnotation(annotationId);
+    });
+
+    // 初始狀態隱藏
+    floatingAnnotation.style.display = 'none';
+  }
+
+  /**
+   * 切換浮動批注顯示狀態
+   */
+  toggleFloatingAnnotation(annotationId) {
+    const floatingAnnotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
+    if (floatingAnnotation) {
+      const isVisible = floatingAnnotation.style.display !== 'none';
+      floatingAnnotation.style.display = isVisible ? 'none' : 'block';
+      
+      // 隱藏其他批注
+      if (!isVisible) {
+        document.querySelectorAll('.floating-annotation').forEach(ann => {
+          if (ann.dataset.annotationId !== annotationId) {
+            ann.style.display = 'none';
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * 高亮側邊欄中的批注
+   */
+  highlightAnnotationInSidebar(annotationId) {
+    // 隱藏所有浮動批注
+    document.querySelectorAll('.floating-annotation').forEach(ann => {
+      ann.style.display = 'none';
+    });
+
+    // 顯示當前批注
+    const floatingAnnotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
+    if (floatingAnnotation) {
+      floatingAnnotation.style.display = 'block';
+    }
+
+    // 在原文中高亮對應的文本
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (highlight) {
+      highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      highlight.style.background = '#fde68a';
+      setTimeout(() => {
+        highlight.style.background = '#fef3c7';
+      }, 2000);
+    }
   }
 
   /**
@@ -571,13 +676,13 @@ class AnnotationManager {
           highlight.addEventListener('click', (e) => {
             e.stopPropagation();
             console.log('🖱️ 點擊高亮文本:', annotationId);
-            this.showAnnotationPopup(annotationId, highlight);
+            this.highlightAnnotationInSidebar(annotationId);
           });
           
           marker.addEventListener('click', (e) => {
             e.stopPropagation();
             console.log('🖱️ 點擊批注標記:', annotationId);
-            this.showAnnotationPopup(annotationId, marker);
+            this.highlightAnnotationInSidebar(annotationId);
           });
           
           // 添加懸停效果
