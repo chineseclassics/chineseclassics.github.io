@@ -1817,58 +1817,36 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 /* 統一滾動容器 */
 .grading-content-wrapper {
-  display: flex;
-  gap: 16px;
+  position: relative;
   overflow-y: auto;
   max-height: calc(100vh - 250px);
   padding: 16px;
 }
 
 .main-content-area {
-  flex: 1;
-  min-width: 0;
+  max-width: 65%;  /* 留出右側 35% 空間給批註 */
   position: relative;
-  overflow: visible;  /* 不自己滾動 */
-}
-
-.essay-content-section {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-}
-
-.annotations-display-area {
-  width: 400px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
-  position: relative;
-  flex-shrink: 0;
-  overflow: visible;  /* 不自己滾動 */
-  height: fit-content;
-}
-
-.annotations-container {
-  position: relative;
-  min-height: 100%;
   overflow: visible;
 }
 
-/* 浮動批注樣式 - 使用絕對定位 */
+.essay-content-section {
+  position: relative;
+}
+
+/* 浮動批注樣式 - 直接浮動在右側 */
 .floating-annotation {
   position: absolute;
+  right: 20px;
+  width: 280px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
   font-size: 14px;
   line-height: 1.4;
   max-height: 300px;
   overflow-y: auto;
-  left: 0;
   /* top 由 JavaScript 動態設置 */
 }
 
@@ -1953,18 +1931,18 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   margin: -4px -8px 8px -8px;
 }
 
-/* 浮動批注輸入框樣式 - 使用絕對定位 */
+/* 浮動批注輸入框樣式 - 直接浮動在右側 */
 .floating-annotation-input {
   position: absolute;
+  right: 20px;
+  width: 280px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
   font-size: 14px;
   line-height: 1.4;
-  left: 0;
   /* top 由 JavaScript 動態設置 */
 }
 

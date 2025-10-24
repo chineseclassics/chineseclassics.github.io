@@ -342,10 +342,10 @@ class AnnotationManager {
     console.log('💬 顯示批注對話框:', defaultContent);
     
     return new Promise((resolve) => {
-      // 獲取右側批注容器
-      const annotationsContainer = document.getElementById('annotationsContainer');
-      if (!annotationsContainer) {
-        console.error('❌ 找不到批注容器');
+      // 獲取滾動容器
+      const wrapper = document.querySelector('.grading-content-wrapper');
+      if (!wrapper) {
+        console.error('❌ 找不到滾動容器');
         resolve(null);
         return;
       }
@@ -357,14 +357,17 @@ class AnnotationManager {
         const essayViewer = document.getElementById('essayViewer');
         const essayRect = essayViewer.getBoundingClientRect();
         
-        // 計算相對於原文容器的位置
+        // 計算相對於滾動容器的位置
         inputTop = rect.top - essayRect.top;
       }
+
+      // 防重疊調整
+      const finalTop = this.adjustPositionToAvoidOverlap(inputTop, 'input');
 
       // 創建浮動輸入框
       const inputBox = document.createElement('div');
       inputBox.className = 'floating-annotation-input';
-      inputBox.style.top = inputTop + 'px';
+      inputBox.style.top = finalTop + 'px';
 
       inputBox.innerHTML = `
         <div class="annotation-input-header">
@@ -382,8 +385,8 @@ class AnnotationManager {
         </div>
       `;
       
-      // 添加到右側批注容器
-      annotationsContainer.appendChild(inputBox);
+      // 直接添加到滾動容器
+      wrapper.appendChild(inputBox);
       
       // 綁定事件
       const cancelBtn = inputBox.querySelector('.cancel');
@@ -460,13 +463,35 @@ class AnnotationManager {
 
 
   /**
-   * 創建浮動批注（Google Docs 風格 - 跟隨原文滾動）
+   * 防重疊調整方法
+   */
+  adjustPositionToAvoidOverlap(idealTop, currentId) {
+    const existingAnnotations = document.querySelectorAll('.floating-annotation, .floating-annotation-input');
+    let adjustedTop = idealTop;
+    
+    existingAnnotations.forEach(ann => {
+      if (ann.dataset.annotationId === currentId || ann.classList.contains('floating-annotation-input')) return;
+      
+      const annTop = parseInt(ann.style.top) || 0;
+      const annHeight = ann.offsetHeight || 100; // 預設高度
+      
+      // 如果重疊，向下移動
+      if (Math.abs(adjustedTop - annTop) < annHeight + 12) {
+        adjustedTop = Math.max(adjustedTop, annTop + annHeight + 12);
+      }
+    });
+    
+    return adjustedTop;
+  }
+
+  /**
+   * 創建浮動批注（Google Docs 風格 - 直接浮動在右側）
    */
   createFloatingAnnotation(annotationId, annotation) {
-    // 獲取右側批注容器
-    const annotationsContainer = document.querySelector('.annotations-container');
-    if (!annotationsContainer) {
-      console.log('❌ 找不到批注容器');
+    // 獲取滾動容器
+    const wrapper = document.querySelector('.grading-content-wrapper');
+    if (!wrapper) {
+      console.log('❌ 找不到滾動容器');
       return;
     }
 
@@ -477,17 +502,17 @@ class AnnotationManager {
       return;
     }
 
-    // 計算批註位置（相對於批註容器頂部）
-    const essayViewer = document.getElementById('essayViewer');
-    const highlightRect = highlight.getBoundingClientRect();
-    const essayRect = essayViewer.getBoundingClientRect();
-    const highlightTop = highlightRect.top - essayRect.top;
+    // 計算批註位置（相對於滾動容器頂部）
+    const highlightTop = highlight.offsetTop;
+    
+    // 防重疊調整
+    const finalTop = this.adjustPositionToAvoidOverlap(highlightTop, annotationId);
     
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
     floatingAnnotation.className = 'floating-annotation';
     floatingAnnotation.dataset.annotationId = annotationId;
-    floatingAnnotation.style.top = highlightTop + 'px';
+    floatingAnnotation.style.top = finalTop + 'px';
 
     // 批注內容
     floatingAnnotation.innerHTML = `
@@ -503,10 +528,10 @@ class AnnotationManager {
       </div>
     `;
 
-    // 添加到右側批注容器中
-    annotationsContainer.appendChild(floatingAnnotation);
-    console.log('✅ 批注元素已添加到容器中');
-    console.log('📍 批注位置:', highlightTop, 'px');
+    // 直接添加到滾動容器中
+    wrapper.appendChild(floatingAnnotation);
+    console.log('✅ 批注元素已添加到滾動容器中');
+    console.log('📍 批注位置:', finalTop, 'px');
 
     // 綁定事件
     floatingAnnotation.addEventListener('click', (e) => {
