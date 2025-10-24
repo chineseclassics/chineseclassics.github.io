@@ -200,6 +200,34 @@ class AnnotationManager {
   }
 
   /**
+   * 立即高亮選中的文字
+   */
+  highlightSelectedText() {
+    if (!this.selectedText || !this.selectedRange) return;
+    
+    try {
+      // 創建高亮元素
+      const highlight = document.createElement('span');
+      highlight.className = 'annotation-highlight';
+      highlight.style.cssText = `
+        background-color: #fef3c7;
+        border-bottom: 2px solid #f59e0b;
+        padding: 1px 2px;
+        border-radius: 2px;
+        position: relative;
+        z-index: 1;
+      `;
+      
+      // 用高亮元素包圍選中的文字
+      this.selectedRange.surroundContents(highlight);
+      
+      console.log('✅ 文字已立即高亮');
+    } catch (error) {
+      console.log('⚠️ 無法立即高亮文字:', error);
+    }
+  }
+
+  /**
    * 創建批注
    */
   async createAnnotation() {
@@ -212,6 +240,9 @@ class AnnotationManager {
     
     // 隱藏批注按鈕
     this.hideAnnotationButton();
+    
+    // 立即高亮選中的文字
+    this.highlightSelectedText();
     
     // 顯示批注創建對話框
     const content = await this.showAnnotationDialog();

@@ -1835,11 +1835,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   padding: 16px;
   position: relative;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .annotations-container {
   position: relative;
   min-height: 200px;
+  overflow: visible;
 }
 
 /* 浮動批注樣式 */
