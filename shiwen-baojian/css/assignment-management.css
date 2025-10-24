@@ -1815,20 +1815,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   gap: 24px;
 }
 
-/* 單一滾動容器 - 整個批改界面 */
-.grading-page {
-  height: 100vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
 /* 統一滾動容器 */
 .grading-content-wrapper {
   position: relative;
-  overflow: visible;  /* 移除滾動條，使用頁面級滾動 */
+  overflow-y: auto;
+  max-height: calc(100vh - 250px);
   padding: 16px;
-  flex: 1;
 }
 
 .main-content-area {
@@ -2236,72 +2228,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   gap: 24px;
 }
 
-/* 可收合區域樣式 */
-.collapsible-section {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  transition: all 0.3s ease;
-}
-
-.collapsible-section.collapsed {
-  border-color: #cbd5e1;
-}
-
-.collapsible-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  cursor: pointer;
-  background: #f8fafc;
-  border-radius: 8px 8px 0 0;
-  transition: background-color 0.2s ease;
-}
-
-.collapsible-header:hover {
-  background: #f1f5f9;
-}
-
-.section-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.btn-collapse-toggle {
-  background: none;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  color: #64748b;
-  transition: color 0.2s ease;
-}
-
-.btn-collapse-toggle:hover {
-  color: #3b82f6;
-}
-
-.collapse-icon {
-  transition: transform 0.3s ease;
-}
-
-.collapsible-content {
-  padding: 0 20px 20px 20px;
-  transition: all 0.3s ease;
-}
-
-.collapsible-section.collapsed .collapsible-content {
-  display: none;
-}
-
 .ai-suggestions-section,
 .teacher-grading-section {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 20px;
-  overflow: visible;  /* 移除滾動條 */
 }
 
 /* 按鈕樣式已遷移到 components.css 統一管理 */
