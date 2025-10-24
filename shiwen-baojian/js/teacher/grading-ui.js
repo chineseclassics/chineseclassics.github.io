@@ -3,11 +3,13 @@
  */
 
 import toast from '../ui/toast.js';
+import AnnotationManager from '../features/annotation-manager.js';
 
 class GradingUI {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
     this.currentEssay = null;
+    this.annotationManager = null;
   }
 
   /**
@@ -125,10 +127,22 @@ class GradingUI {
           <!-- 左側：作業內容（完整顯示） -->
           <div class="grading-main-column">
             <div class="essay-content-section">
-              <h3 class="section-title">
-                <i class="fas fa-book-open mr-2"></i>作業內容
-              </h3>
-              <div class="essay-viewer">
+              <div class="section-header">
+                <h3 class="section-title">
+                  <i class="fas fa-book-open mr-2"></i>作業內容
+                </h3>
+                <div class="annotation-controls">
+                  <button id="toggleAnnotationMode" class="btn-annotation-mode">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>批注模式</span>
+                  </button>
+                  <button id="showAnnotationStats" class="btn-annotation-stats">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>批注統計</span>
+                  </button>
+                </div>
+              </div>
+              <div class="essay-viewer" id="essayViewer">
                 ${this.renderEssayContent(essay)}
               </div>
             </div>
@@ -429,6 +443,161 @@ class GradingUI {
         await this.handleGetAISuggestion();
       });
     }
+
+    // 批注系統事件
+    this.bindAnnotationEvents();
+  }
+
+  /**
+   * 綁定批注系統事件
+   */
+  bindAnnotationEvents() {
+    // 批注模式切換按鈕
+    const toggleBtn = document.getElementById('toggleAnnotationMode');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        this.toggleAnnotationMode();
+      });
+    }
+
+    // 批注統計按鈕
+    const statsBtn = document.getElementById('showAnnotationStats');
+    if (statsBtn) {
+      statsBtn.addEventListener('click', () => {
+        this.showAnnotationStats();
+      });
+    }
+  }
+
+  /**
+   * 切換批注模式
+   */
+  toggleAnnotationMode() {
+    if (!this.annotationManager) {
+      // 初始化批注管理器
+      this.annotationManager = new AnnotationManager(this.supabase);
+      
+      // 為每個段落初始化批注
+      const paragraphs = this.currentEssay.paragraphs || [];
+      if (paragraphs.length > 0) {
+        // 使用第一個段落作為示例
+        this.annotationManager.init(this.currentEssay.id, paragraphs[0].id);
+      }
+    }
+
+    const isActive = this.annotationManager.isSelectionMode;
+    if (isActive) {
+      this.annotationManager.disableSelectionMode();
+      this.updateAnnotationModeButton(false);
+    } else {
+      this.annotationManager.enableSelectionMode();
+      this.updateAnnotationModeButton(true);
+    }
+  }
+
+  /**
+   * 更新批注模式按鈕狀態
+   */
+  updateAnnotationModeButton(isActive) {
+    const btn = document.getElementById('toggleAnnotationMode');
+    if (btn) {
+      if (isActive) {
+        btn.classList.add('active');
+        btn.innerHTML = '<i class="fas fa-comment-dots"></i><span>退出批注</span>';
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="fas fa-comment-dots"></i><span>批注模式</span>';
+      }
+    }
+  }
+
+  /**
+   * 顯示批注統計
+   */
+  async showAnnotationStats() {
+    if (!this.annotationManager) {
+      toast.error('請先啟用批注模式');
+      return;
+    }
+
+    try {
+      // 調用統計函數
+      const { data, error } = await this.supabase.rpc('get_essay_annotation_stats', {
+        p_essay_id: this.currentEssay.id
+      });
+
+      if (error) throw error;
+
+      const stats = data[0];
+      this.showStatsDialog(stats);
+    } catch (error) {
+      console.error('❌ 獲取批注統計失敗:', error);
+      toast.error('獲取批注統計失敗: ' + error.message);
+    }
+  }
+
+  /**
+   * 顯示統計對話框
+   */
+  showStatsDialog(stats) {
+    const dialog = document.createElement('div');
+    dialog.className = 'annotation-stats-dialog';
+    dialog.innerHTML = `
+      <div class="annotation-stats-dialog-content">
+        <div class="annotation-stats-dialog-header">
+          <h3>批注統計</h3>
+          <button class="annotation-stats-close">×</button>
+        </div>
+        <div class="annotation-stats-dialog-body">
+          <div class="annotation-stats-grid">
+            <div class="annotation-stat-item">
+              <div class="annotation-stat-value">${stats.total_annotations}</div>
+              <div class="annotation-stat-label">總批注數</div>
+            </div>
+            <div class="annotation-stat-item">
+              <div class="annotation-stat-value">${stats.pending_annotations}</div>
+              <div class="annotation-stat-label">待處理</div>
+            </div>
+            <div class="annotation-stat-item">
+              <div class="annotation-stat-value">${stats.resolved_annotations}</div>
+              <div class="annotation-stat-label">已解決</div>
+            </div>
+            <div class="annotation-stat-item">
+              <div class="annotation-stat-value">${stats.high_priority_annotations}</div>
+              <div class="annotation-stat-label">高優先級</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 添加樣式
+    dialog.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    document.body.appendChild(dialog);
+
+    // 綁定關閉事件
+    dialog.querySelector('.annotation-stats-close').addEventListener('click', () => {
+      dialog.remove();
+    });
+
+    // 點擊外部關閉
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        dialog.remove();
+      }
+    });
   }
 
   /**

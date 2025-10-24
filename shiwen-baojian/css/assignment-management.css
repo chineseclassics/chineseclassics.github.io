@@ -1668,6 +1668,136 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   color: var(--success-600);
 }
 
+/* ================================
+   批注系統樣式
+   ================================ */
+
+/* 批注控制按鈕 */
+.annotation-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-annotation-mode,
+.btn-annotation-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-annotation-mode:hover,
+.btn-annotation-stats:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-annotation-mode.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* 段落標題樣式 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* 批注統計對話框 */
+.annotation-stats-dialog-content {
+  background: white;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  animation: annotationDialogContentIn 0.2s ease-out;
+}
+
+.annotation-stats-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.annotation-stats-dialog-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.annotation-stats-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.annotation-stats-close:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.annotation-stats-dialog-body {
+  padding: 20px;
+}
+
+.annotation-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.annotation-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.annotation-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.annotation-stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
 .submission-actions {
   display: flex;
   gap: 1rem;
