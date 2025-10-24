@@ -122,10 +122,11 @@ class GradingUI {
           </div>
         </div>
 
-        <!-- 左右分欄佈局 -->
-        <div class="grading-layout">
-          <!-- 左側：作業內容（完整顯示） -->
-          <div class="grading-main-column">
+        <!-- Google Docs 風格佈局 -->
+        <div class="google-docs-layout">
+          <!-- 主要內容區域 -->
+          <div class="main-content-area">
+            <!-- 論文內容區域 -->
             <div class="essay-content-section">
               <div class="section-header">
                 <h3 class="section-title">
@@ -146,117 +147,126 @@ class GradingUI {
                 ${this.renderEssayContent(essay)}
               </div>
             </div>
-          </div>
 
-          <!-- 右側：AI 評分建議 + 評分表單（固定） -->
-          <aside class="grading-sidebar">
-            <div class="sticky top-24">
-              <!-- AI 評分建議面板 -->
-              <div class="ai-grading-panel">
-                <div class="panel-header">
-                  <div class="flex items-center gap-2">
-                    <i class="fas fa-robot text-xl" style="color: var(--primary-600);"></i>
-                    <h3 class="font-bold text-lg">AI 評分建議</h3>
-                  </div>
-                </div>
-                
-                <div class="panel-actions">
-                  <button id="getAISuggestionBtn" class="btn-ai-suggest">
-                    <i class="fas fa-magic"></i>
-                    獲取 AI 評分建議
-                  </button>
-                  <p class="ai-hint">
-                    <i class="fas fa-info-circle"></i>
-                    AI 建議僅供參考，老師可自由調整
-                  </p>
-                </div>
-                
-                <div id="aiLoadingState" class="hidden ai-loading">
-                  <div class="spinner"></div>
-                  <p class="loading-text">AI 正在分析論文...</p>
-                  <p class="loading-hint">預計需要 5-15 秒</p>
-                </div>
-
-                <div id="aiSuggestionResults" class="hidden ai-results">
-                  <!-- 結果將動態生成 -->
-                </div>
+            <!-- Google Docs 風格批注側邊欄 -->
+            <div class="annotations-sidebar">
+              <div class="sidebar-header">
+                <h4 class="sidebar-title">
+                  <i class="fas fa-comments mr-2"></i>批注
+                </h4>
+                <span class="annotation-count">0 個批注</span>
               </div>
-
-              <!-- 評分表單（在 AI 建議下方）-->
-              <div class="grading-form-panel">
-                <div class="panel-header">
-                  <div class="flex items-center gap-2">
-                    <i class="fas fa-clipboard-check text-xl" style="color: var(--primary-600);"></i>
-                    <h3 class="font-bold text-lg">老師最終評分</h3>
-                  </div>
-                </div>
-                
-                <div class="panel-content">
-                  <form id="gradingForm">
-                    ${(() => {
-                      // 提取已有的評分（如果存在）
-                      const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
-                      
-                      console.log('📝 開始渲染評分標準，共', rubric.criteria.length, '個');
-                      if (existingGrade) {
-                        console.log('📊 找到已有評分:', existingGrade);
-                      }
-                      
-                      const criteriaHTML = rubric.criteria.map((criterion, idx) => {
-                        console.log(`  - 標準 ${idx + 1}:`, criterion.code, criterion.name);
-                        
-                        // 獲取該標準的已有分數
-                        const existingScore = existingGrade 
-                          ? existingGrade[`criterion_${criterion.code.toLowerCase()}_score`]
-                          : null;
-                        
-                        return this.renderCriterionForm(criterion, existingScore);
-                      }).join('');
-                      console.log('✅ 評分標準 HTML 生成完成');
-                      return criteriaHTML;
-                    })()}
-
-                    <div class="form-group">
-                      <label>總體評語</label>
-                      <textarea
-                        name="comments"
-                        rows="6"
-                        placeholder="請填寫對學生作業的總體評價和改進建議..."
-                        required
-                      >${(() => {
-                        const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
-                        return existingGrade?.overall_comment || '';
-                      })()}</textarea>
-                    </div>
-
-                    <div class="form-actions">
-                      <button type="submit" class="btn-submit-grading">
-                        <i class="fas fa-check"></i>
-                        ${(() => {
-                          const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
-                          return existingGrade ? '更新批改' : '提交批改';
-                        })()}
-                      </button>
-                    </div>
-                    ${(() => {
-                      const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
-                      if (existingGrade) {
-                        return `
-                          <div class="grading-info">
-                            <p class="text-sm text-gray-500 mt-2">
-                              <i class="fas fa-info-circle"></i>
-                              此作業已批改，您可以修改評分並重新提交
-                            </p>
-                          </div>
-                        `;
-                      }
-                      return '';
-                    })()}
-                  </form>
-                </div>
+              <div id="annotationsList" class="annotations-list">
+                <!-- 批注將在這裡動態添加 -->
               </div>
             </div>
-          </aside>
+          </div>
+
+          <!-- 評分區域（移到底部） -->
+          <div class="grading-sections">
+            <!-- AI 評分建議區域 -->
+            <div class="ai-suggestions-section">
+              <div class="section-header">
+                <h3 class="section-title">
+                  <i class="fas fa-robot mr-2"></i>AI 評分建議
+                </h3>
+                <button id="getAISuggestionBtn" class="btn-ai-suggest">
+                  <i class="fas fa-magic"></i>
+                  獲取 AI 評分建議
+                </button>
+              </div>
+              
+              <div class="panel-actions">
+                <p class="ai-hint">
+                  <i class="fas fa-info-circle"></i>
+                  AI 建議僅供參考，老師可自由調整
+                </p>
+              </div>
+              
+              <div id="aiLoadingState" class="hidden ai-loading">
+                <div class="spinner"></div>
+                <p class="loading-text">AI 正在分析論文...</p>
+                <p class="loading-hint">預計需要 5-15 秒</p>
+              </div>
+
+              <div id="aiSuggestionResults" class="hidden ai-results">
+                <!-- 結果將動態生成 -->
+              </div>
+            </div>
+
+            <!-- 老師評分區域 -->
+            <div class="teacher-grading-section">
+              <div class="section-header">
+                <h3 class="section-title">
+                  <i class="fas fa-clipboard-check mr-2"></i>老師最終評分
+                </h3>
+              </div>
+              
+              <div class="grading-form-content">
+                <form id="gradingForm">
+                  ${(() => {
+                    // 提取已有的評分（如果存在）
+                    const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                    
+                    console.log('📝 開始渲染評分標準，共', rubric.criteria.length, '個');
+                    if (existingGrade) {
+                      console.log('📊 找到已有評分:', existingGrade);
+                    }
+                    
+                    const criteriaHTML = rubric.criteria.map((criterion, idx) => {
+                      console.log(`  - 標準 ${idx + 1}:`, criterion.code, criterion.name);
+                      
+                      // 獲取該標準的已有分數
+                      const existingScore = existingGrade 
+                        ? existingGrade[`criterion_${criterion.code.toLowerCase()}_score`]
+                        : null;
+                      
+                      return this.renderCriterionForm(criterion, existingScore);
+                    }).join('');
+                    console.log('✅ 評分標準 HTML 生成完成');
+                    return criteriaHTML;
+                  })()}
+
+                  <div class="form-group">
+                    <label>總體評語</label>
+                    <textarea
+                      name="comments"
+                      rows="6"
+                      placeholder="請填寫對學生作業的總體評價和改進建議..."
+                      required
+                    >${(() => {
+                      const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                      return existingGrade?.overall_comment || '';
+                    })()}</textarea>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="submit" class="btn-submit-grading">
+                      <i class="fas fa-check"></i>
+                      ${(() => {
+                        const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                        return existingGrade ? '更新批改' : '提交批改';
+                      })()}
+                    </button>
+                  </div>
+                  ${(() => {
+                    const existingGrade = Array.isArray(essay.grade) ? essay.grade[0] : essay.grade;
+                    if (existingGrade) {
+                      return `
+                        <div class="grading-info">
+                          <p class="text-sm text-gray-500 mt-2">
+                            <i class="fas fa-info-circle"></i>
+                            此作業已批改，您可以修改評分並重新提交
+                          </p>
+                        </div>
+                      `;
+                    }
+                    return '';
+                  })()}
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;

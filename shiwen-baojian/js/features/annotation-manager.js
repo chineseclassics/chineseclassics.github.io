@@ -287,65 +287,80 @@ class AnnotationManager {
     console.log('💬 顯示批注對話框:', defaultContent);
     
     return new Promise((resolve) => {
-      // 創建對話框
-      const dialog = document.createElement('div');
-      dialog.className = 'annotation-dialog';
-      dialog.innerHTML = `
-        <div class="annotation-dialog-content">
-          <h3>${defaultContent ? '編輯批注' : '添加批注'}</h3>
-          <div class="annotation-dialog-body">
-            <label>批注內容：</label>
-            <textarea id="annotation-content" placeholder="請輸入批注內容..." rows="4">${defaultContent}</textarea>
-            <div class="annotation-dialog-actions">
-              <button id="annotation-cancel" class="btn-secondary">取消</button>
-              <button id="annotation-save" class="btn-primary">保存</button>
-            </div>
-          </div>
+      // 創建 Google Docs 風格的輸入框
+      const inputBox = document.createElement('div');
+      inputBox.className = 'annotation-input-box';
+      inputBox.innerHTML = `
+        <div class="annotation-input-header">
+          <div class="annotation-input-avatar">${this.getUserInitials()}</div>
+          <div class="annotation-input-author">${this.getCurrentUserName()}</div>
+        </div>
+        <textarea 
+          class="annotation-input-content"
+          placeholder="添加批注..."
+          rows="3"
+        >${defaultContent}</textarea>
+        <div class="annotation-input-actions">
+          <button class="annotation-input-btn cancel">取消</button>
+          <button class="annotation-input-btn submit">留言</button>
         </div>
       `;
       
-      // 添加樣式
-      dialog.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 2000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `;
-      
-      const content = dialog.querySelector('.annotation-dialog-content');
-      content.style.cssText = `
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        width: 400px;
-        max-width: 90%;
-      `;
-      
-      document.body.appendChild(dialog);
-      
-      // 綁定事件
-      dialog.querySelector('#annotation-cancel').addEventListener('click', () => {
-        console.log('❌ 用戶取消批注');
-        dialog.remove();
+      // 添加到側邊欄
+      const annotationsList = document.getElementById('annotationsList');
+      if (annotationsList) {
+        annotationsList.appendChild(inputBox);
+        
+        // 綁定事件
+        const cancelBtn = inputBox.querySelector('.cancel');
+        const submitBtn = inputBox.querySelector('.submit');
+        const textarea = inputBox.querySelector('.annotation-input-content');
+        
+        const cleanup = () => {
+          if (inputBox.parentNode) {
+            inputBox.parentNode.removeChild(inputBox);
+          }
+        };
+        
+        cancelBtn.addEventListener('click', () => {
+          console.log('❌ 用戶取消批注');
+          cleanup();
+          resolve(null);
+        });
+        
+        submitBtn.addEventListener('click', () => {
+          const content = textarea.value.trim();
+          console.log('💾 用戶保存批注:', content);
+          cleanup();
+          resolve(content);
+        });
+        
+        // 自動聚焦到文本框
+        textarea.focus();
+        
+        // 滾動到輸入框
+        inputBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        console.error('❌ 找不到批注列表容器');
         resolve(null);
-      });
-      
-      dialog.querySelector('#annotation-save').addEventListener('click', () => {
-        const content = dialog.querySelector('#annotation-content').value.trim();
-        console.log('💾 用戶保存批注:', content);
-        dialog.remove();
-        resolve(content);
-      });
-      
-      // 自動聚焦到文本框
-      dialog.querySelector('#annotation-content').focus();
+      }
     });
+  }
+
+  /**
+   * 獲取用戶姓名首字母
+   */
+  getUserInitials() {
+    // 這裡可以從用戶信息中獲取，暫時使用默認值
+    return 'Y';
+  }
+
+  /**
+   * 獲取當前用戶姓名
+   */
+  getCurrentUserName() {
+    // 這裡可以從用戶信息中獲取，暫時使用默認值
+    return 'Yulong ZHANG';
   }
 
   /**
@@ -367,53 +382,295 @@ class AnnotationManager {
       return;
     }
     
-    // 在論文內容區域添加標記
-    const essayViewer = document.getElementById('essayViewer');
-    if (essayViewer) {
-      // 創建批注標記
-      const marker = document.createElement('span');
-      marker.className = 'annotation-marker';
-      marker.dataset.annotationId = annotationId;
-      marker.innerHTML = `📝`;
-      marker.style.cssText = `
-        color: #f59e0b;
-        cursor: pointer;
-        margin-left: 4px;
-        display: inline-block;
-        font-size: 14px;
-        background: #fef3c7;
-        padding: 2px 4px;
-        border-radius: 3px;
-        border: 1px solid #f59e0b;
-        position: relative;
-        z-index: 10;
-      `;
-      
-      // 添加批注標記到論文內容區域
-      essayViewer.appendChild(marker);
-      
-      // 綁定點擊事件
-      marker.addEventListener('click', (e) => {
-        e.stopPropagation();
-        console.log('🖱️ 點擊批注標記:', annotationId);
-        this.showAnnotationPopup(annotationId, marker);
-      });
-      
-      // 添加懸停效果
-      marker.addEventListener('mouseenter', () => {
-        marker.style.background = '#fde68a';
-        marker.style.transform = 'scale(1.1)';
-      });
-      
-      marker.addEventListener('mouseleave', () => {
-        marker.style.background = '#fef3c7';
-        marker.style.transform = 'scale(1)';
-      });
-      
-      console.log('✅ 批注標記已添加');
-    } else {
-      console.log('❌ 找不到論文內容區域');
+    // 在原文中高亮選中的文本
+    this.highlightTextInEssay(annotationId, annotation);
+    
+    // 在側邊欄中顯示批注
+    this.addAnnotationToSidebar(annotationId, annotation);
+  }
+
+  /**
+   * 在側邊欄中添加批注
+   */
+  addAnnotationToSidebar(annotationId, annotation) {
+    const annotationsList = document.getElementById('annotationsList');
+    if (!annotationsList) {
+      console.log('❌ 找不到批注列表容器');
+      return;
     }
+
+    // 創建批注項目
+    const annotationItem = document.createElement('div');
+    annotationItem.className = 'annotation-item';
+    annotationItem.dataset.annotationId = annotationId;
+    annotationItem.innerHTML = `
+      <div class="annotation-header">
+        <div class="annotation-avatar">${this.getUserInitials()}</div>
+        <div class="annotation-author">${this.getCurrentUserName()}</div>
+        <div class="annotation-time">${this.formatTime(annotation.created_at)}</div>
+      </div>
+      <div class="annotation-content">${annotation.content}</div>
+      <div class="annotation-actions">
+        <button class="annotation-action-btn edit" data-annotation-id="${annotationId}">編輯</button>
+        <button class="annotation-action-btn delete" data-annotation-id="${annotationId}">刪除</button>
+      </div>
+    `;
+
+    // 綁定事件
+    annotationItem.addEventListener('click', (e) => {
+      if (e.target.classList.contains('annotation-action-btn')) return;
+      this.highlightAnnotationInText(annotationId);
+    });
+
+    // 編輯按鈕
+    const editBtn = annotationItem.querySelector('.edit');
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.editAnnotation(annotationId);
+    });
+
+    // 刪除按鈕
+    const deleteBtn = annotationItem.querySelector('.delete');
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.deleteAnnotation(annotationId);
+    });
+
+    // 添加到側邊欄
+    annotationsList.appendChild(annotationItem);
+    
+    // 更新批注計數
+    this.updateAnnotationCount();
+    
+    console.log('✅ 批注已添加到側邊欄');
+  }
+
+  /**
+   * 格式化時間
+   */
+  formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) { // 1分鐘內
+      return '剛剛';
+    } else if (diff < 3600000) { // 1小時內
+      return `${Math.floor(diff / 60000)}分鐘前`;
+    } else if (diff < 86400000) { // 1天內
+      return `${Math.floor(diff / 3600000)}小時前`;
+    } else {
+      return date.toLocaleDateString('zh-TW');
+    }
+  }
+
+  /**
+   * 更新批注計數
+   */
+  updateAnnotationCount() {
+    const countElement = document.querySelector('.annotation-count');
+    if (countElement) {
+      const count = this.annotations.size;
+      countElement.textContent = `${count} 個批注`;
+    }
+  }
+
+  /**
+   * 高亮側邊欄中的批注
+   */
+  highlightAnnotationInText(annotationId) {
+    // 移除所有高亮
+    document.querySelectorAll('.annotation-item.active').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    // 高亮當前批注
+    const annotationItem = document.querySelector(`[data-annotation-id="${annotationId}"]`);
+    if (annotationItem) {
+      annotationItem.classList.add('active');
+    }
+
+    // 在原文中高亮對應的文本
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (highlight) {
+      highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      highlight.style.background = '#fde68a';
+      setTimeout(() => {
+        highlight.style.background = '#fef3c7';
+      }, 2000);
+    }
+  }
+
+  /**
+   * 在論文中高亮文本
+   */
+  highlightTextInEssay(annotationId, annotation) {
+    const essayViewer = document.getElementById('essayViewer');
+    if (!essayViewer) {
+      console.log('❌ 找不到論文內容區域');
+      return;
+    }
+
+    // 獲取論文內容的文本節點
+    const textNodes = this.getTextNodes(essayViewer);
+    console.log('📄 找到文本節點數量:', textNodes.length);
+
+    // 嘗試在文本中找到對應的位置並高亮
+    let found = false;
+    for (let i = 0; i < textNodes.length; i++) {
+      const node = textNodes[i];
+      const text = node.textContent;
+      
+      // 檢查這個節點是否包含我們要標記的文本
+      if (text.length > annotation.highlight_start) {
+        try {
+          // 創建高亮範圍
+          const range = document.createRange();
+          range.setStart(node, annotation.highlight_start);
+          range.setEnd(node, Math.min(annotation.highlight_end, text.length));
+          
+          // 創建高亮元素
+          const highlight = document.createElement('span');
+          highlight.className = 'annotation-highlight';
+          highlight.dataset.annotationId = annotationId;
+          highlight.style.cssText = `
+            background-color: #fef3c7;
+            border-bottom: 2px solid #f59e0b;
+            cursor: pointer;
+            position: relative;
+            padding: 1px 2px;
+            border-radius: 2px;
+          `;
+          
+          // 用高亮元素包圍選中的文本
+          range.surroundContents(highlight);
+          
+          // 添加批注標記
+          const marker = document.createElement('span');
+          marker.className = 'annotation-marker';
+          marker.dataset.annotationId = annotationId;
+          marker.innerHTML = `📝`;
+          marker.style.cssText = `
+            color: #f59e0b;
+            cursor: pointer;
+            margin-left: 2px;
+            display: inline-block;
+            font-size: 12px;
+            background: #fef3c7;
+            padding: 1px 3px;
+            border-radius: 2px;
+            border: 1px solid #f59e0b;
+            position: relative;
+            z-index: 10;
+          `;
+          
+          // 將標記插入到高亮元素後面
+          highlight.parentNode.insertBefore(marker, highlight.nextSibling);
+          
+          // 綁定點擊事件
+          highlight.addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log('🖱️ 點擊高亮文本:', annotationId);
+            this.showAnnotationPopup(annotationId, highlight);
+          });
+          
+          marker.addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log('🖱️ 點擊批注標記:', annotationId);
+            this.showAnnotationPopup(annotationId, marker);
+          });
+          
+          // 添加懸停效果
+          highlight.addEventListener('mouseenter', () => {
+            highlight.style.background = '#fde68a';
+          });
+          
+          highlight.addEventListener('mouseleave', () => {
+            highlight.style.background = '#fef3c7';
+          });
+          
+          marker.addEventListener('mouseenter', () => {
+            marker.style.background = '#fde68a';
+            marker.style.transform = 'scale(1.1)';
+          });
+          
+          marker.addEventListener('mouseleave', () => {
+            marker.style.background = '#fef3c7';
+            marker.style.transform = 'scale(1)';
+          });
+          
+          found = true;
+          console.log('✅ 文本高亮已添加');
+          break;
+        } catch (error) {
+          console.log('⚠️ 高亮文本失敗:', error);
+          continue;
+        }
+      }
+    }
+    
+    if (!found) {
+      console.log('⚠️ 無法在文本中找到對應位置，使用備用方案');
+      this.addFallbackMarker(annotationId, annotation);
+    }
+  }
+
+  /**
+   * 獲取所有文本節點
+   */
+  getTextNodes(element) {
+    const textNodes = [];
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+    
+    let node;
+    while (node = walker.nextNode()) {
+      if (node.textContent.trim()) {
+        textNodes.push(node);
+      }
+    }
+    
+    return textNodes;
+  }
+
+  /**
+   * 備用方案：在論文末尾添加標記
+   */
+  addFallbackMarker(annotationId, annotation) {
+    const essayViewer = document.getElementById('essayViewer');
+    if (!essayViewer) return;
+    
+    const marker = document.createElement('span');
+    marker.className = 'annotation-marker';
+    marker.dataset.annotationId = annotationId;
+    marker.innerHTML = `📝`;
+    marker.style.cssText = `
+      color: #f59e0b;
+      cursor: pointer;
+      margin-left: 4px;
+      display: inline-block;
+      font-size: 14px;
+      background: #fef3c7;
+      padding: 2px 4px;
+      border-radius: 3px;
+      border: 1px solid #f59e0b;
+      position: relative;
+      z-index: 10;
+    `;
+    
+    essayViewer.appendChild(marker);
+    
+    marker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      console.log('🖱️ 點擊批注標記:', annotationId);
+      this.showAnnotationPopup(annotationId, marker);
+    });
+    
+    console.log('✅ 備用標記已添加');
   }
 
   /**
