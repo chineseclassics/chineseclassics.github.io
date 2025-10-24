@@ -124,27 +124,30 @@ class GradingUI {
 
         <!-- Google Docs 風格佈局 -->
         <div class="google-docs-layout">
-          <!-- 主要內容區域 -->
-          <div class="main-content-area">
-            <!-- 論文內容區域 -->
-            <div class="essay-content-section">
-              <div class="section-header">
-                <h3 class="section-title">
-                  <i class="fas fa-book-open mr-2"></i>作業內容
-                </h3>
-                <div class="annotation-controls">
-                  <button id="toggleAnnotationMode" class="btn-annotation-mode active">
-                    <i class="fas fa-comment-dots"></i>
-                    <span>關閉批注</span>
-                  </button>
-                  <button id="showAnnotationStats" class="btn-annotation-stats">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>批注統計</span>
-                  </button>
+          <!-- 統一滾動容器 -->
+          <div class="grading-content-wrapper">
+            <!-- 主要內容區域 -->
+            <div class="main-content-area">
+              <!-- 論文內容區域 -->
+              <div class="essay-content-section">
+                <div class="section-header">
+                  <h3 class="section-title">
+                    <i class="fas fa-book-open mr-2"></i>作業內容
+                  </h3>
+                  <div class="annotation-controls">
+                    <button id="toggleAnnotationMode" class="btn-annotation-mode active">
+                      <i class="fas fa-comment-dots"></i>
+                      <span>關閉批注</span>
+                    </button>
+                    <button id="showAnnotationStats" class="btn-annotation-stats">
+                      <i class="fas fa-chart-bar"></i>
+                      <span>批注統計</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div class="essay-viewer" id="essayViewer">
-                ${this.renderEssayContent(essay)}
+                <div class="essay-viewer" id="essayViewer">
+                  ${this.renderEssayContent(essay)}
+                </div>
               </div>
             </div>
 

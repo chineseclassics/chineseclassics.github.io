@@ -1815,10 +1815,20 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   gap: 24px;
 }
 
-.main-content-area {
+/* 統一滾動容器 */
+.grading-content-wrapper {
   display: flex;
   gap: 16px;
-  min-height: 600px;
+  overflow-y: auto;
+  max-height: calc(100vh - 250px);
+  padding: 16px;
+}
+
+.main-content-area {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: visible;  /* 不自己滾動 */
 }
 
 .essay-content-section {
@@ -1828,37 +1838,38 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .annotations-display-area {
-  width: 320px;
+  width: 400px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 16px;
   position: relative;
   flex-shrink: 0;
-  overflow: visible;
+  overflow: visible;  /* 不自己滾動 */
+  height: fit-content;
 }
 
 .annotations-container {
   position: relative;
-  min-height: 200px;
+  min-height: 100%;
   overflow: visible;
 }
 
-/* 浮動批注樣式 */
+/* 浮動批注樣式 - 使用絕對定位 */
 .floating-annotation {
   position: absolute;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  width: 280px;
-  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
   font-size: 14px;
   line-height: 1.4;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
   left: 0;
+  /* top 由 JavaScript 動態設置 */
 }
 
 .floating-annotation .annotation-header {
@@ -1942,19 +1953,19 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   margin: -4px -8px 8px -8px;
 }
 
-/* 浮動批注輸入框樣式 */
+/* 浮動批注輸入框樣式 - 使用絕對定位 */
 .floating-annotation-input {
   position: absolute;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  width: 280px;
-  z-index: 1001;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
   font-size: 14px;
   line-height: 1.4;
   left: 0;
+  /* top 由 JavaScript 動態設置 */
 }
 
 .floating-annotation-input .annotation-input-header {

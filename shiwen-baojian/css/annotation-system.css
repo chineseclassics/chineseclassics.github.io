@@ -62,87 +62,7 @@
   transform: scale(1.1);
 }
 
-/* 批注彈出框 */
-.annotation-popup {
-  position: absolute;
-  z-index: 1500;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  min-width: 200px;
-  max-width: 300px;
-  animation: annotationPopupIn 0.2s ease-out;
-}
-
-@keyframes annotationPopupIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.annotation-popup-content {
-  padding: 0;
-}
-
-.annotation-popup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e5e7eb;
-  border-radius: 8px 8px 0 0;
-}
-
-.annotation-type {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.annotation-close {
-  background: none;
-  border: none;
-  font-size: 18px;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.annotation-close:hover {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.annotation-popup-body {
-  padding: 16px;
-}
-
-.annotation-popup-body p {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #374151;
-}
-
-.annotation-popup-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
+/* 舊的彈窗樣式已移除 - 現在使用浮動批注系統 */
 
 /* 批注對話框 */
 .annotation-dialog {
@@ -404,9 +324,6 @@
 
 /* 響應式設計 */
 @media (max-width: 768px) {
-  .annotation-popup {
-    max-width: 250px;
-  }
   
   .annotation-dialog-content {
     width: 90%;
@@ -424,16 +341,6 @@
 
 /* 深色模式支持 */
 @media (prefers-color-scheme: dark) {
-  .annotation-popup {
-    background: #1f2937;
-    border-color: #374151;
-    color: #f9fafb;
-  }
-  
-  .annotation-popup-header {
-    background: #111827;
-    border-color: #374151;
-  }
   
   .annotation-dialog-content {
     background: #1f2937;

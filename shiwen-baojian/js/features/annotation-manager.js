@@ -350,38 +350,21 @@ class AnnotationManager {
         return;
       }
 
-      // 計算選中文本的相對位置
-      let actualTop = 0;
+      // 計算輸入框位置
+      let inputTop = 0;
       if (this.selectedText && this.selectedText.range) {
-        const essayViewer = document.getElementById('essayViewer');
-        const annotationsArea = document.querySelector('.annotations-display-area');
         const rect = this.selectedText.range.getBoundingClientRect();
+        const essayViewer = document.getElementById('essayViewer');
         const essayRect = essayViewer.getBoundingClientRect();
-        const annotationsRect = annotationsArea.getBoundingClientRect();
         
-        const relativeTop = (rect.top - essayRect.top) / essayRect.height;
-        const relativePosition = Math.max(0, Math.min(1, relativeTop));
-        const annotationsHeight = annotationsRect.height - 60;
-        actualTop = relativePosition * annotationsHeight;
+        // 計算相對於原文容器的位置
+        inputTop = rect.top - essayRect.top;
       }
 
       // 創建浮動輸入框
       const inputBox = document.createElement('div');
       inputBox.className = 'floating-annotation-input';
-      inputBox.style.cssText = `
-        position: absolute;
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        width: ${AnnotationManager.CONSTANTS.ANNOTATION_WIDTH};
-        z-index: ${AnnotationManager.CONSTANTS.ANNOTATION_Z_INDEX};
-        font-size: 14px;
-        line-height: 1.4;
-        left: 0;
-        top: ${actualTop}px;
-      `;
+      inputBox.style.top = inputTop + 'px';
 
       inputBox.innerHTML = `
         <div class="annotation-input-header">
@@ -477,53 +460,34 @@ class AnnotationManager {
 
 
   /**
-   * 創建浮動批注（在右側區域內浮動）
+   * 創建浮動批注（Google Docs 風格 - 跟隨原文滾動）
    */
   createFloatingAnnotation(annotationId, annotation) {
-    // 找到對應的高亮元素
-    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (!highlight) {
-      console.log('❌ 找不到對應的高亮元素，annotationId:', annotationId);
-      return;
-    }
-
     // 獲取右側批注容器
-    const annotationsContainer = document.getElementById('annotationsContainer');
+    const annotationsContainer = document.querySelector('.annotations-container');
     if (!annotationsContainer) {
       console.log('❌ 找不到批注容器');
       return;
     }
 
-    // 計算位置
+    // 找到對應的高亮元素
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (!highlight) {
+      console.log('❌ 找不到對應的高亮元素');
+      return;
+    }
+
+    // 計算批註位置（相對於批註容器頂部）
     const essayViewer = document.getElementById('essayViewer');
-    const annotationsArea = document.querySelector('.annotations-display-area');
     const highlightRect = highlight.getBoundingClientRect();
     const essayRect = essayViewer.getBoundingClientRect();
-    const annotationsRect = annotationsArea.getBoundingClientRect();
+    const highlightTop = highlightRect.top - essayRect.top;
     
-    const relativeTop = (highlightRect.top - essayRect.top) / essayRect.height;
-    const relativePosition = Math.max(0, Math.min(1, relativeTop));
-    const annotationsHeight = annotationsRect.height - 60;
-    const actualTop = relativePosition * annotationsHeight;
-
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
     floatingAnnotation.className = 'floating-annotation';
     floatingAnnotation.dataset.annotationId = annotationId;
-    floatingAnnotation.style.cssText = `
-      position: absolute;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      width: ${AnnotationManager.CONSTANTS.ANNOTATION_WIDTH};
-      z-index: ${AnnotationManager.CONSTANTS.BUTTON_Z_INDEX};
-      font-size: 14px;
-      line-height: 1.4;
-      left: 0;
-      top: ${actualTop}px; /* 在右側區域內垂直浮動 */
-    `;
+    floatingAnnotation.style.top = highlightTop + 'px';
 
     // 批注內容
     floatingAnnotation.innerHTML = `
@@ -606,6 +570,22 @@ class AnnotationManager {
     if (floatingAnnotation) {
       floatingAnnotation.classList.add('active');
       floatingAnnotation.style.display = 'block';
+      
+      // 滾動批註到視窗中央
+      const wrapper = document.querySelector('.grading-content-wrapper');
+      if (wrapper) {
+        const annotationRect = floatingAnnotation.getBoundingClientRect();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const currentScrollTop = wrapper.scrollTop;
+        const annotationTop = annotationRect.top - wrapperRect.top + currentScrollTop;
+        const wrapperHeight = wrapper.clientHeight;
+        const scrollTo = annotationTop - (wrapperHeight / 2) + (floatingAnnotation.offsetHeight / 2);
+        
+        wrapper.scrollTo({
+          top: scrollTo,
+          behavior: 'smooth'
+        });
+      }
     }
 
     // 臨時高亮原文文本
@@ -655,6 +635,25 @@ class AnnotationManager {
     const annotationItem = document.querySelector(`[data-annotation-id="${annotationId}"]`);
     if (annotationItem) {
       annotationItem.classList.add('active');
+    }
+
+    // 滾動原文到視窗中央
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (highlight) {
+      const wrapper = document.querySelector('.grading-content-wrapper');
+      if (wrapper) {
+        const highlightRect = highlight.getBoundingClientRect();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const currentScrollTop = wrapper.scrollTop;
+        const highlightTop = highlightRect.top - wrapperRect.top + currentScrollTop;
+        const wrapperHeight = wrapper.clientHeight;
+        const scrollTo = highlightTop - (wrapperHeight / 2) + (highlight.offsetHeight / 2);
+        
+        wrapper.scrollTo({
+          top: scrollTo,
+          behavior: 'smooth'
+        });
+      }
     }
 
     // 臨時高亮原文文本
@@ -794,9 +793,13 @@ class AnnotationManager {
       annotation.content = newContent;
       annotation.updated_at = new Date().toISOString();
       
-      // 更新彈出框內容
-      if (this.annotationPopup && this.annotationPopup.dataset.annotationId === annotationId) {
-        this.annotationPopup.querySelector('.annotation-popup-body p').textContent = newContent;
+      // 更新浮動批注內容
+      const floatingAnnotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
+      if (floatingAnnotation) {
+        const contentElement = floatingAnnotation.querySelector('.annotation-content p');
+        if (contentElement) {
+          contentElement.textContent = newContent;
+        }
       }
       
       toast.success('批注已更新');
