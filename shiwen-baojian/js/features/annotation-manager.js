@@ -26,6 +26,12 @@ class AnnotationManager {
    * 初始化批注系統
    */
   async init(essayId, paragraphId) {
+    // 防止重複初始化
+    if (this.isInitialized) {
+      console.log('ℹ️ 批注系統已初始化，跳過重複初始化');
+      return;
+    }
+    
     console.log('🚀 初始化批注系統:', { essayId, paragraphId });
     
     this.currentEssayId = essayId;
@@ -40,6 +46,7 @@ class AnnotationManager {
     // 設置 Realtime 監聽
     this.setupRealtimeListener();
     
+    this.isInitialized = true;
     console.log('✅ 批注系統初始化完成');
   }
 
@@ -281,7 +288,7 @@ class AnnotationManager {
       });
       
       // 渲染批注高亮
-      this.renderAnnotationHighlight(data);
+      this.renderAnnotationHighlight(data.id);
       
       // 清除選擇
       window.getSelection().removeAllRanges();
@@ -944,8 +951,13 @@ class AnnotationManager {
       
       // 存儲批注
       data.forEach(annotation => {
-        this.annotations.set(annotation.id, annotation);
-        this.renderAnnotationHighlight(annotation.id);
+        const annotationId = annotation.id || annotation.annotation_id;
+        if (annotationId) {
+          this.annotations.set(annotationId, annotation);
+          this.renderAnnotationHighlight(annotationId);
+        } else {
+          console.log('⚠️ 批注沒有有效的 ID:', annotation);
+        }
       });
       
       console.log(`✅ 已加載 ${data.length} 個批注`);
