@@ -100,27 +100,27 @@ class AnnotationManager {
    * 處理文本選擇
    */
   handleTextSelection(event) {
-    console.log('🔍 處理文本選擇:', {
-      isSelectionMode: this.isSelectionMode,
-      event: event.type,
-      target: event.target
-    });
-    
     if (!this.isSelectionMode) {
-      console.log('❌ 批注模式未啟用');
       return;
     }
     
     // 如果點擊的是批注按鈕，不處理
     if (event.target.classList.contains('annotation-button')) {
-      console.log('🖱️ 點擊了批注按鈕，跳過處理');
+      return;
+    }
+    
+    // 如果點擊的是批注對話框內的元素，不處理
+    if (event.target.closest('.annotation-dialog')) {
+      return;
+    }
+    
+    // 如果點擊的是批注彈出框，不處理
+    if (event.target.closest('.annotation-popup')) {
       return;
     }
     
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
-    
-    console.log('📝 選擇的文本:', selectedText);
     
     if (selectedText.length > 0) {
       this.selectedText = {
@@ -134,7 +134,6 @@ class AnnotationManager {
       // 顯示批注按鈕
       this.showAnnotationButton(event);
     } else {
-      console.log('❌ 沒有選擇文本，隱藏批注按鈕');
       this.hideAnnotationButton();
     }
   }
@@ -262,11 +261,22 @@ class AnnotationManager {
       this.selectedText = null;
       this.hideAnnotationButton();
       
-      toast.success('批注已添加');
+      console.log('✅ 批注創建成功，ID:', data);
+      
+      // 顯示成功提示
+      if (typeof toast !== 'undefined') {
+        toast.success('批注已添加');
+      } else {
+        alert('批注已添加！');
+      }
       
     } catch (error) {
       console.error('❌ 創建批注失敗:', error);
-      toast.error('創建批注失敗: ' + error.message);
+      if (typeof toast !== 'undefined') {
+        toast.error('創建批注失敗: ' + error.message);
+      } else {
+        alert('創建批注失敗: ' + error.message);
+      }
     }
   }
 
@@ -343,20 +353,14 @@ class AnnotationManager {
    */
   renderAnnotationHighlight(annotationId) {
     const annotation = this.annotations.get(annotationId);
-    if (!annotation) return;
+    if (!annotation) {
+      console.log('❌ 批注不存在:', annotationId);
+      return;
+    }
     
-    // 創建高亮元素
-    const highlight = document.createElement('span');
-    highlight.className = 'annotation-highlight';
-    highlight.dataset.annotationId = annotationId;
-    highlight.style.cssText = `
-      background-color: #fef3c7;
-      border-bottom: 2px solid #f59e0b;
-      cursor: pointer;
-      position: relative;
-    `;
+    console.log('🎨 渲染批注高亮:', annotation);
     
-    // 簡化實現：在論文內容區域添加標記
+    // 在論文內容區域添加標記
     const essayViewer = document.getElementById('essayViewer');
     if (essayViewer) {
       const marker = document.createElement('span');
@@ -368,6 +372,7 @@ class AnnotationManager {
         cursor: pointer;
         margin-left: 4px;
         display: inline-block;
+        font-size: 14px;
       `;
       
       // 在論文內容區域的末尾添加標記
@@ -376,8 +381,13 @@ class AnnotationManager {
       // 綁定點擊事件
       marker.addEventListener('click', (e) => {
         e.stopPropagation();
+        console.log('🖱️ 點擊批注標記:', annotationId);
         this.showAnnotationPopup(annotationId, marker);
       });
+      
+      console.log('✅ 批注標記已添加');
+    } else {
+      console.log('❌ 找不到論文內容區域');
     }
   }
 
