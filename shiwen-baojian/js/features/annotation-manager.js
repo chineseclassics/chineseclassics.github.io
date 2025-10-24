@@ -111,6 +111,12 @@ class AnnotationManager {
       return;
     }
     
+    // 如果點擊的是批注按鈕，不處理
+    if (event.target.classList.contains('annotation-button')) {
+      console.log('🖱️ 點擊了批注按鈕，跳過處理');
+      return;
+    }
+    
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
     
@@ -163,14 +169,28 @@ class AnnotationManager {
     
     button.addEventListener('click', (e) => {
       console.log('🖱️ 批注按鈕被點擊');
+      e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       this.createAnnotation();
+    });
+    
+    // 添加 mousedown 事件防止文本選擇干擾
+    button.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
     });
     
     document.body.appendChild(button);
     this.annotationButton = button;
     
     console.log('✅ 批注按鈕已添加到頁面');
+    console.log('🔍 按鈕元素:', button);
+    console.log('🔍 按鈕位置:', {
+      left: button.style.left,
+      top: button.style.top,
+      display: button.style.display
+    });
   }
 
   /**
@@ -178,6 +198,7 @@ class AnnotationManager {
    */
   hideAnnotationButton() {
     if (this.annotationButton) {
+      console.log('🗑️ 移除批注按鈕');
       this.annotationButton.remove();
       this.annotationButton = null;
     }
@@ -193,6 +214,9 @@ class AnnotationManager {
       console.log('❌ 沒有選擇的文本');
       return;
     }
+    
+    // 隱藏批注按鈕
+    this.hideAnnotationButton();
     
     // 顯示批注創建對話框
     const content = await this.showAnnotationDialog();
