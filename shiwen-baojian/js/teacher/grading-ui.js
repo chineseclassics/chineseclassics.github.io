@@ -147,6 +147,19 @@ class GradingUI {
                 ${this.renderEssayContent(essay)}
               </div>
             </div>
+
+            <!-- 右側批注展示區域 -->
+            <div class="annotations-display-area">
+              <div class="sidebar-header">
+                <h4 class="sidebar-title">
+                  <i class="fas fa-comments mr-2"></i>批注
+                </h4>
+                <span class="annotation-count">0 個批注</span>
+              </div>
+              <div id="annotationsContainer" class="annotations-container">
+                <!-- 浮動批注將在這裡動態添加 -->
+              </div>
+            </div>
           </div>
 
           <!-- 評分區域（移到底部） -->

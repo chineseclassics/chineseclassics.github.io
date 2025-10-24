@@ -287,6 +287,25 @@ class AnnotationManager {
     console.log('💬 顯示批注對話框:', defaultContent);
     
     return new Promise((resolve) => {
+      // 獲取右側批注容器
+      const annotationsContainer = document.getElementById('annotationsContainer');
+      if (!annotationsContainer) {
+        console.error('❌ 找不到批注容器');
+        resolve(null);
+        return;
+      }
+
+      // 計算選中文本的相對位置
+      let relativePosition = 0;
+      if (this.selectedText && this.selectedText.range) {
+        const essayViewer = document.getElementById('essayViewer');
+        const rect = this.selectedText.range.getBoundingClientRect();
+        const essayRect = essayViewer.getBoundingClientRect();
+        
+        const relativeTop = (rect.top - essayRect.top) / essayRect.height;
+        relativePosition = Math.max(0, Math.min(1, relativeTop));
+      }
+
       // 創建浮動輸入框
       const inputBox = document.createElement('div');
       inputBox.className = 'floating-annotation-input';
@@ -301,17 +320,9 @@ class AnnotationManager {
         z-index: 1001;
         font-size: 14px;
         line-height: 1.4;
+        left: 0;
+        top: ${relativePosition * 400}px;
       `;
-
-      // 計算位置（在選中文本右側）
-      if (this.selectedText && this.selectedText.range) {
-        const rect = this.selectedText.range.getBoundingClientRect();
-        const essayViewer = document.getElementById('essayViewer');
-        const essayRect = essayViewer.getBoundingClientRect();
-        
-        inputBox.style.left = `${rect.right - essayRect.left + 10}px`;
-        inputBox.style.top = `${rect.top - essayRect.top}px`;
-      }
 
       inputBox.innerHTML = `
         <div class="annotation-input-header">
@@ -329,41 +340,35 @@ class AnnotationManager {
         </div>
       `;
       
-      // 添加到論文容器
-      const essayViewer = document.getElementById('essayViewer');
-      if (essayViewer) {
-        essayViewer.appendChild(inputBox);
-        
-        // 綁定事件
-        const cancelBtn = inputBox.querySelector('.cancel');
-        const submitBtn = inputBox.querySelector('.submit');
-        const textarea = inputBox.querySelector('.annotation-input-content');
-        
-        const cleanup = () => {
-          if (inputBox.parentNode) {
-            inputBox.parentNode.removeChild(inputBox);
-          }
-        };
-        
-        cancelBtn.addEventListener('click', () => {
-          console.log('❌ 用戶取消批注');
-          cleanup();
-          resolve(null);
-        });
-        
-        submitBtn.addEventListener('click', () => {
-          const content = textarea.value.trim();
-          console.log('💾 用戶保存批注:', content);
-          cleanup();
-          resolve(content);
-        });
-        
-        // 自動聚焦到文本框
-        textarea.focus();
-      } else {
-        console.error('❌ 找不到論文容器');
+      // 添加到右側批注容器
+      annotationsContainer.appendChild(inputBox);
+      
+      // 綁定事件
+      const cancelBtn = inputBox.querySelector('.cancel');
+      const submitBtn = inputBox.querySelector('.submit');
+      const textarea = inputBox.querySelector('.annotation-input-content');
+      
+      const cleanup = () => {
+        if (inputBox.parentNode) {
+          inputBox.parentNode.removeChild(inputBox);
+        }
+      };
+      
+      cancelBtn.addEventListener('click', () => {
+        console.log('❌ 用戶取消批注');
+        cleanup();
         resolve(null);
-      }
+      });
+      
+      submitBtn.addEventListener('click', () => {
+        const content = textarea.value.trim();
+        console.log('💾 用戶保存批注:', content);
+        cleanup();
+        resolve(content);
+      });
+      
+      // 自動聚焦到文本框
+      textarea.focus();
     });
   }
 
@@ -423,7 +428,7 @@ class AnnotationManager {
   }
 
   /**
-   * 創建浮動批注（Google Docs 風格）
+   * 創建浮動批注（在右側區域內浮動）
    */
   createFloatingAnnotation(annotationId, annotation) {
     // 找到對應的高亮元素
@@ -432,6 +437,22 @@ class AnnotationManager {
       console.log('❌ 找不到對應的高亮元素');
       return;
     }
+
+    // 獲取右側批注容器
+    const annotationsContainer = document.getElementById('annotationsContainer');
+    if (!annotationsContainer) {
+      console.log('❌ 找不到批注容器');
+      return;
+    }
+
+    // 計算高亮文本在論文中的相對位置
+    const essayViewer = document.getElementById('essayViewer');
+    const highlightRect = highlight.getBoundingClientRect();
+    const essayRect = essayViewer.getBoundingClientRect();
+    
+    // 計算高亮文本相對於論文頂部的百分比位置
+    const relativeTop = (highlightRect.top - essayRect.top) / essayRect.height;
+    const relativePosition = Math.max(0, Math.min(1, relativeTop));
 
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
@@ -448,15 +469,9 @@ class AnnotationManager {
       z-index: 1000;
       font-size: 14px;
       line-height: 1.4;
+      left: 0;
+      top: ${relativePosition * 400}px; /* 在右側區域內垂直浮動 */
     `;
-
-    // 計算位置（在高亮文本右側）
-    const rect = highlight.getBoundingClientRect();
-    const essayViewer = document.getElementById('essayViewer');
-    const essayRect = essayViewer.getBoundingClientRect();
-    
-    floatingAnnotation.style.left = `${rect.right - essayRect.left + 10}px`;
-    floatingAnnotation.style.top = `${rect.top - essayRect.top}px`;
 
     // 批注內容
     floatingAnnotation.innerHTML = `
@@ -472,8 +487,8 @@ class AnnotationManager {
       </div>
     `;
 
-    // 添加到論文容器中
-    essayViewer.appendChild(floatingAnnotation);
+    // 添加到右側批注容器中
+    annotationsContainer.appendChild(floatingAnnotation);
 
     // 綁定事件
     floatingAnnotation.addEventListener('click', (e) => {

@@ -1817,7 +1817,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .main-content-area {
   display: flex;
-  flex-direction: column;
+  gap: 16px;
   min-height: 600px;
 }
 
@@ -1825,6 +1825,22 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   flex: 1;
   min-width: 0;
   position: relative;
+}
+
+.annotations-display-area {
+  width: 320px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  max-height: 600px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.annotations-container {
+  position: relative;
+  min-height: 200px;
 }
 
 /* 浮動批注樣式 */
@@ -1841,6 +1857,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   line-height: 1.4;
   max-height: 200px;
   overflow-y: auto;
+  left: 0;
+  right: 0;
 }
 
 .floating-annotation .annotation-header {
@@ -1923,6 +1941,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   z-index: 1001;
   font-size: 14px;
   line-height: 1.4;
+  left: 0;
+  right: 0;
 }
 
 .floating-annotation-input .annotation-input-header {
