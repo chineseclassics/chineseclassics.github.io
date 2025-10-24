@@ -360,9 +360,17 @@ class AnnotationManager {
     
     console.log('🎨 渲染批注高亮:', annotation);
     
+    // 檢查是否已經渲染過這個批注
+    const existingMarker = document.querySelector(`[data-annotation-id="${annotationId}"]`);
+    if (existingMarker) {
+      console.log('ℹ️ 批注標記已存在，跳過重複渲染');
+      return;
+    }
+    
     // 在論文內容區域添加標記
     const essayViewer = document.getElementById('essayViewer');
     if (essayViewer) {
+      // 創建批注標記
       const marker = document.createElement('span');
       marker.className = 'annotation-marker';
       marker.dataset.annotationId = annotationId;
@@ -373,9 +381,15 @@ class AnnotationManager {
         margin-left: 4px;
         display: inline-block;
         font-size: 14px;
+        background: #fef3c7;
+        padding: 2px 4px;
+        border-radius: 3px;
+        border: 1px solid #f59e0b;
+        position: relative;
+        z-index: 10;
       `;
       
-      // 在論文內容區域的末尾添加標記
+      // 添加批注標記到論文內容區域
       essayViewer.appendChild(marker);
       
       // 綁定點擊事件
@@ -383,6 +397,17 @@ class AnnotationManager {
         e.stopPropagation();
         console.log('🖱️ 點擊批注標記:', annotationId);
         this.showAnnotationPopup(annotationId, marker);
+      });
+      
+      // 添加懸停效果
+      marker.addEventListener('mouseenter', () => {
+        marker.style.background = '#fde68a';
+        marker.style.transform = 'scale(1.1)';
+      });
+      
+      marker.addEventListener('mouseleave', () => {
+        marker.style.background = '#fef3c7';
+        marker.style.transform = 'scale(1)';
       });
       
       console.log('✅ 批注標記已添加');
@@ -584,9 +609,20 @@ class AnnotationManager {
         filter: `paragraph_id=eq.${this.currentParagraphId}`
       }, (payload) => {
         console.log('🔄 收到新批注:', payload.new);
+        
+        // 檢查是否已經存在這個批注（避免重複處理）
+        if (this.annotations.has(payload.new.id)) {
+          console.log('ℹ️ 批注已存在，跳過重複處理');
+          return;
+        }
+        
         this.annotations.set(payload.new.id, payload.new);
         this.renderAnnotationHighlight(payload.new.id);
-        toast.info('收到新批注');
+        
+        // 只在不是當前用戶創建的批注時顯示通知
+        if (typeof toast !== 'undefined') {
+          toast.info('收到新批注');
+        }
       })
       .on('postgres_changes', {
         event: 'UPDATE',
