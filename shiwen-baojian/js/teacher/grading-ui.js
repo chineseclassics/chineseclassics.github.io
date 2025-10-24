@@ -13,6 +13,29 @@ class GradingUI {
   }
 
   /**
+   * 切換 AI 區域收合狀態
+   */
+  toggleAiSection() {
+    const section = document.querySelector('.ai-suggestions-section');
+    const content = section.querySelector('.collapsible-content');
+    const icon = section.querySelector('.collapse-icon');
+    
+    if (section.classList.contains('collapsed')) {
+      // 展開
+      section.classList.remove('collapsed');
+      content.style.display = 'block';
+      icon.classList.remove('fa-chevron-down');
+      icon.classList.add('fa-chevron-up');
+    } else {
+      // 收合
+      section.classList.add('collapsed');
+      content.style.display = 'none';
+      icon.classList.remove('fa-chevron-up');
+      icon.classList.add('fa-chevron-down');
+    }
+  }
+
+  /**
    * 渲染批改界面
    */
   async render(container, essayId) {
@@ -155,17 +178,23 @@ class GradingUI {
 
           <!-- 評分區域（移到底部） -->
           <div class="grading-sections">
-            <!-- AI 評分建議區域 -->
-            <div class="ai-suggestions-section">
-              <div class="section-header">
+            <!-- AI 評分建議區域（可收合） -->
+            <div class="ai-suggestions-section collapsible-section">
+              <div class="section-header collapsible-header" onclick="toggleAiSection()">
                 <h3 class="section-title">
                   <i class="fas fa-robot mr-2"></i>AI 評分建議
                 </h3>
-                <button id="getAISuggestionBtn" class="btn-ai-suggest">
-                  <i class="fas fa-magic"></i>
-                  獲取 AI 評分建議
-                </button>
+                <div class="section-controls">
+                  <button id="getAISuggestionBtn" class="btn-ai-suggest">
+                    <i class="fas fa-magic"></i>
+                    獲取 AI 評分建議
+                  </button>
+                  <button class="btn-collapse-toggle">
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                  </button>
+                </div>
               </div>
+              <div class="collapsible-content">
               
               <div class="panel-actions">
                 <p class="ai-hint">
@@ -183,7 +212,8 @@ class GradingUI {
               <div id="aiSuggestionResults" class="hidden ai-results">
                 <!-- 結果將動態生成 -->
               </div>
-            </div>
+              </div> <!-- 收合內容結束 -->
+            </div> <!-- AI 區域結束 -->
 
             <!-- 老師評分區域 -->
             <div class="teacher-grading-section">
@@ -974,6 +1004,27 @@ ${overallComment.improvements || ''}
       .replace(/'/g, "&#039;");
   }
 }
+
+// 全局函數，供 HTML 調用
+window.toggleAiSection = function() {
+  const section = document.querySelector('.ai-suggestions-section');
+  const content = section.querySelector('.collapsible-content');
+  const icon = section.querySelector('.collapse-icon');
+  
+  if (section.classList.contains('collapsed')) {
+    // 展開
+    section.classList.remove('collapsed');
+    content.style.display = 'block';
+    icon.classList.remove('fa-chevron-down');
+    icon.classList.add('fa-chevron-up');
+  } else {
+    // 收合
+    section.classList.add('collapsed');
+    content.style.display = 'none';
+    icon.classList.remove('fa-chevron-up');
+    icon.classList.add('fa-chevron-down');
+  }
+};
 
 export default GradingUI;
 
