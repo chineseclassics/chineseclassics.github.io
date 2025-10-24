@@ -296,14 +296,18 @@ class AnnotationManager {
       }
 
       // 計算選中文本的相對位置
-      let relativePosition = 0;
+      let actualTop = 0;
       if (this.selectedText && this.selectedText.range) {
         const essayViewer = document.getElementById('essayViewer');
+        const annotationsArea = document.querySelector('.annotations-display-area');
         const rect = this.selectedText.range.getBoundingClientRect();
         const essayRect = essayViewer.getBoundingClientRect();
+        const annotationsRect = annotationsArea.getBoundingClientRect();
         
         const relativeTop = (rect.top - essayRect.top) / essayRect.height;
-        relativePosition = Math.max(0, Math.min(1, relativeTop));
+        const relativePosition = Math.max(0, Math.min(1, relativeTop));
+        const annotationsHeight = annotationsRect.height - 60;
+        actualTop = relativePosition * annotationsHeight;
       }
 
       // 創建浮動輸入框
@@ -321,7 +325,7 @@ class AnnotationManager {
         font-size: 14px;
         line-height: 1.4;
         left: 0;
-        top: ${relativePosition * 400}px;
+        top: ${actualTop}px;
       `;
 
       inputBox.innerHTML = `
@@ -464,10 +468,16 @@ class AnnotationManager {
     const essayViewer = document.getElementById('essayViewer');
     const highlightRect = highlight.getBoundingClientRect();
     const essayRect = essayViewer.getBoundingClientRect();
+    const annotationsArea = document.querySelector('.annotations-display-area');
+    const annotationsRect = annotationsArea.getBoundingClientRect();
     
     // 計算高亮文本相對於論文頂部的百分比位置
     const relativeTop = (highlightRect.top - essayRect.top) / essayRect.height;
     const relativePosition = Math.max(0, Math.min(1, relativeTop));
+    
+    // 計算在右側區域中的實際位置
+    const annotationsHeight = annotationsRect.height - 60; // 減去標題區域高度
+    const actualTop = relativePosition * annotationsHeight;
 
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
@@ -485,7 +495,7 @@ class AnnotationManager {
       font-size: 14px;
       line-height: 1.4;
       left: 0;
-      top: ${relativePosition * 400}px; /* 在右側區域內垂直浮動 */
+      top: ${actualTop}px; /* 在右側區域內垂直浮動 */
     `;
 
     // 批注內容
@@ -505,13 +515,7 @@ class AnnotationManager {
     // 添加到右側批注容器中
     annotationsContainer.appendChild(floatingAnnotation);
     console.log('✅ 批注元素已添加到容器中');
-    
-    // 測試：添加一個簡單的可見元素來確認容器工作正常
-    const testElement = document.createElement('div');
-    testElement.style.cssText = 'background: red; color: white; padding: 10px; margin: 5px;';
-    testElement.textContent = '測試批注容器';
-    annotationsContainer.appendChild(testElement);
-    console.log('🧪 測試元素已添加');
+    console.log('📍 批注位置:', actualTop, 'px');
 
     // 綁定事件
     floatingAnnotation.addEventListener('click', (e) => {
@@ -691,38 +695,12 @@ class AnnotationManager {
           range.surroundContents(highlight);
           console.log('✅ 高亮元素已包圍文本');
           
-          // 添加批注標記
-          const marker = document.createElement('span');
-          marker.className = 'annotation-marker';
-          marker.dataset.annotationId = annotationId;
-          marker.innerHTML = `📝`;
-          marker.style.cssText = `
-            color: #f59e0b;
-            cursor: pointer;
-            margin-left: 2px;
-            display: inline-block;
-            font-size: 12px;
-            background: #fef3c7;
-            padding: 1px 3px;
-            border-radius: 2px;
-            border: 1px solid #f59e0b;
-            position: relative;
-            z-index: 10;
-          `;
-          
-          // 將標記插入到高亮元素後面
-          highlight.parentNode.insertBefore(marker, highlight.nextSibling);
+          // 不再添加 📝 標記
           
           // 綁定點擊事件
           highlight.addEventListener('click', (e) => {
             e.stopPropagation();
             console.log('🖱️ 點擊高亮文本:', annotationId);
-            this.highlightAnnotationInSidebar(annotationId);
-          });
-          
-          marker.addEventListener('click', (e) => {
-            e.stopPropagation();
-            console.log('🖱️ 點擊批注標記:', annotationId);
             this.highlightAnnotationInSidebar(annotationId);
           });
           
@@ -733,16 +711,6 @@ class AnnotationManager {
           
           highlight.addEventListener('mouseleave', () => {
             highlight.style.background = '#fef3c7';
-          });
-          
-          marker.addEventListener('mouseenter', () => {
-            marker.style.background = '#fde68a';
-            marker.style.transform = 'scale(1.1)';
-          });
-          
-          marker.addEventListener('mouseleave', () => {
-            marker.style.background = '#fef3c7';
-            marker.style.transform = 'scale(1)';
           });
           
           found = true;

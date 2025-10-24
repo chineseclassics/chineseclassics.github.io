@@ -1833,9 +1833,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 16px;
-  max-height: 600px;
-  overflow-y: auto;
   position: relative;
+  flex-shrink: 0;
 }
 
 .annotations-container {
@@ -1858,7 +1857,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   max-height: 200px;
   overflow-y: auto;
   left: 0;
-  right: 0;
 }
 
 .floating-annotation .annotation-header {
@@ -1942,7 +1940,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   font-size: 14px;
   line-height: 1.4;
   left: 0;
-  right: 0;
 }
 
 .floating-annotation-input .annotation-input-header {
