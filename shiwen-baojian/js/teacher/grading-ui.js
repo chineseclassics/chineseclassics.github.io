@@ -132,9 +132,9 @@ class GradingUI {
                   <i class="fas fa-book-open mr-2"></i>作業內容
                 </h3>
                 <div class="annotation-controls">
-                  <button id="toggleAnnotationMode" class="btn-annotation-mode">
+                  <button id="toggleAnnotationMode" class="btn-annotation-mode active">
                     <i class="fas fa-comment-dots"></i>
-                    <span>批注模式</span>
+                    <span>關閉批注</span>
                   </button>
                   <button id="showAnnotationStats" class="btn-annotation-stats">
                     <i class="fas fa-chart-bar"></i>
@@ -264,9 +264,12 @@ class GradingUI {
     console.log('✅ 批改表單 HTML 已渲染');
 
     // 等待 DOM 更新後再綁定事件
-    setTimeout(() => {
+    setTimeout(async () => {
       console.log('🔗 開始綁定事件...');
       this.bindEvents();
+      
+      // 自動初始化批注系統
+      await this.initializeAnnotationSystem();
       
       // 自動加載已保存的 AI 評分建議（如果存在）
       this.loadSavedAISuggestion();
@@ -470,9 +473,9 @@ class GradingUI {
   }
 
   /**
-   * 切換批注模式
+   * 初始化批注系統（自動開啟）
    */
-  toggleAnnotationMode() {
+  async initializeAnnotationSystem() {
     if (!this.annotationManager) {
       // 初始化批注管理器
       this.annotationManager = new AnnotationManager(this.supabase);
@@ -481,8 +484,22 @@ class GradingUI {
       const paragraphs = this.currentEssay.paragraphs || [];
       if (paragraphs.length > 0) {
         // 使用第一個段落作為示例
-        this.annotationManager.init(this.currentEssay.id, paragraphs[0].id);
+        await this.annotationManager.init(this.currentEssay.id, paragraphs[0].id);
       }
+      
+      // 自動啟用批注模式
+      this.annotationManager.enableSelectionMode();
+      this.updateAnnotationModeButton(true);
+    }
+  }
+
+  /**
+   * 切換批注模式（保留用於手動控制）
+   */
+  toggleAnnotationMode() {
+    if (!this.annotationManager) {
+      this.initializeAnnotationSystem();
+      return;
     }
 
     const isActive = this.annotationManager.isSelectionMode;
@@ -503,10 +520,10 @@ class GradingUI {
     if (btn) {
       if (isActive) {
         btn.classList.add('active');
-        btn.innerHTML = '<i class="fas fa-comment-dots"></i><span>退出批注</span>';
+        btn.innerHTML = '<i class="fas fa-comment-dots"></i><span>關閉批注</span>';
       } else {
         btn.classList.remove('active');
-        btn.innerHTML = '<i class="fas fa-comment-dots"></i><span>批注模式</span>';
+        btn.innerHTML = '<i class="fas fa-comment-dots"></i><span>開啟批注</span>';
       }
     }
   }
