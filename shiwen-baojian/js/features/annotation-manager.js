@@ -75,7 +75,7 @@ class AnnotationManager {
     if (annotationMarker) {
       const annotationId = annotationMarker.dataset.annotationId;
       // 直接高亮對應的批注，不再使用彈窗
-      this.highlightAnnotationInSidebar(annotationId);
+      this.highlightAnnotation(annotationId);
     }
   }
 
@@ -287,8 +287,8 @@ class AnnotationManager {
         created_at: new Date().toISOString()
       });
       
-      // 渲染批注高亮
-      this.renderAnnotationHighlight(data.id);
+      // 渲染批注
+      this.renderAnnotation(data.id);
       
       // 清除選擇
       window.getSelection().removeAllRanges();
@@ -427,54 +427,33 @@ class AnnotationManager {
   }
 
   /**
-   * 渲染批注高亮
+   * 渲染批注（統一入口）
    */
-  renderAnnotationHighlight(annotationId) {
+  renderAnnotation(annotationId) {
     const annotation = this.annotations.get(annotationId);
     if (!annotation) {
       console.log('❌ 批注不存在:', annotationId);
       return;
     }
     
-    console.log('🎨 渲染批注高亮:', annotation);
+    console.log('🎨 渲染批注:', annotation);
     
     // 檢查是否已經渲染過這個批注
     const existingMarker = document.querySelector(`[data-annotation-id="${annotationId}"]`);
     if (existingMarker) {
-      console.log('ℹ️ 批注標記已存在，跳過重複渲染');
+      console.log('ℹ️ 批注已存在，跳過重複渲染');
       return;
     }
     
-    // 在原文中高亮選中的文本
+    // 1. 在原文中高亮文本
     this.highlightTextInEssay(annotationId, annotation);
     
-    // 等待高亮元素創建完成後，再創建浮動批注
+    // 2. 在右側創建浮動批注
     setTimeout(() => {
-      this.addAnnotationToSidebar(annotationId, annotation);
+      this.createFloatingAnnotation(annotationId, annotation);
     }, 100);
   }
 
-  /**
-   * 在側邊欄中添加批注（Google Docs 風格）
-   */
-  addAnnotationToSidebar(annotationId, annotation) {
-    console.log('🎯 開始添加批注到側邊欄:', annotationId);
-    
-    // 檢查批注容器是否存在
-    const annotationsContainer = document.getElementById('annotationsContainer');
-    if (!annotationsContainer) {
-      console.log('❌ 批注容器不存在，無法添加批注');
-      return;
-    }
-    
-    // 創建獨立的批注容器，放在對應的高亮文本旁邊
-    this.createFloatingAnnotation(annotationId, annotation);
-    
-    // 更新批注計數
-    this.updateAnnotationCount();
-    
-    console.log('✅ 批注已添加到側邊欄');
-  }
 
   /**
    * 創建浮動批注（在右側區域內浮動）
@@ -484,7 +463,6 @@ class AnnotationManager {
     const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
     if (!highlight) {
       console.log('❌ 找不到對應的高亮元素，annotationId:', annotationId);
-      console.log('🔍 當前頁面中的高亮元素:', document.querySelectorAll('.annotation-highlight'));
       return;
     }
 
@@ -492,25 +470,19 @@ class AnnotationManager {
     const annotationsContainer = document.getElementById('annotationsContainer');
     if (!annotationsContainer) {
       console.log('❌ 找不到批注容器');
-      console.log('🔍 當前頁面中的容器元素:', document.querySelectorAll('[id*="annotation"]'));
       return;
     }
-    
-    console.log('✅ 找到批注容器:', annotationsContainer);
 
-    // 計算高亮文本在論文中的相對位置
+    // 計算位置
     const essayViewer = document.getElementById('essayViewer');
+    const annotationsArea = document.querySelector('.annotations-display-area');
     const highlightRect = highlight.getBoundingClientRect();
     const essayRect = essayViewer.getBoundingClientRect();
-    const annotationsArea = document.querySelector('.annotations-display-area');
     const annotationsRect = annotationsArea.getBoundingClientRect();
     
-    // 計算高亮文本相對於論文頂部的百分比位置
     const relativeTop = (highlightRect.top - essayRect.top) / essayRect.height;
     const relativePosition = Math.max(0, Math.min(1, relativeTop));
-    
-    // 計算在右側區域中的實際位置
-    const annotationsHeight = annotationsRect.height - 60; // 減去標題區域高度
+    const annotationsHeight = annotationsRect.height - 60;
     const actualTop = relativePosition * annotationsHeight;
 
     // 創建浮動批注容器
@@ -573,7 +545,7 @@ class AnnotationManager {
 
     // 點擊高亮文本時高亮對應批注
     highlight.addEventListener('click', () => {
-      this.highlightAnnotationInSidebar(annotationId);
+      this.highlightAnnotation(annotationId);
     });
 
     // 初始狀態顯示
@@ -582,17 +554,9 @@ class AnnotationManager {
   }
 
   /**
-   * 切換浮動批注顯示狀態（已棄用，改為高亮模式）
+   * 高亮批注（統一方法）
    */
-  toggleFloatingAnnotation(annotationId) {
-    // 直接調用高亮方法，不再切換顯示/隱藏
-    this.highlightAnnotationInSidebar(annotationId);
-  }
-
-  /**
-   * 高亮側邊欄中的批注
-   */
-  highlightAnnotationInSidebar(annotationId) {
+  highlightAnnotation(annotationId) {
     // 確保所有批注都顯示
     document.querySelectorAll('.floating-annotation').forEach(ann => {
       ann.style.display = 'block';
@@ -725,7 +689,7 @@ class AnnotationManager {
           highlight.addEventListener('click', (e) => {
             e.stopPropagation();
             console.log('🖱️ 點擊高亮文本:', annotationId);
-            this.highlightAnnotationInSidebar(annotationId);
+            this.highlightAnnotation(annotationId);
           });
           
           // 添加懸停效果
@@ -781,89 +745,9 @@ class AnnotationManager {
   addFallbackMarker(annotationId, annotation) {
     console.log('⚠️ 無法精確定位文本，直接創建浮動批注');
     // 直接創建浮動批注，不添加標記
-    this.addAnnotationToSidebar(annotationId, annotation);
+    this.createFloatingAnnotation(annotationId, annotation);
   }
 
-  /**
-   * 顯示批注彈出框
-   */
-  showAnnotationPopup(annotationId, triggerElement) {
-    const annotation = this.annotations.get(annotationId);
-    if (!annotation) return;
-    
-    // 移除現有彈出框
-    this.hideAnnotationPopup();
-    
-    // 創建彈出框
-    const popup = document.createElement('div');
-    popup.className = 'annotation-popup';
-    popup.dataset.annotationId = annotationId;
-    popup.innerHTML = `
-      <div class="annotation-popup-content">
-        <div class="annotation-popup-header">
-          <span class="annotation-type">📝 批注</span>
-          <button class="annotation-close">×</button>
-        </div>
-        <div class="annotation-popup-body">
-          <p>${annotation.content}</p>
-          <div class="annotation-popup-actions">
-            <button class="btn-small btn-secondary edit-annotation-btn" data-annotation-id="${annotationId}">編輯</button>
-            <button class="btn-small btn-danger delete-annotation-btn" data-annotation-id="${annotationId}">刪除</button>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    // 定位彈出框
-    const rect = triggerElement.getBoundingClientRect();
-    popup.style.cssText = `
-      position: absolute;
-      left: ${rect.left}px;
-      top: ${rect.bottom + 5}px;
-      z-index: 1500;
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      min-width: 200px;
-    `;
-    
-    document.body.appendChild(popup);
-    this.annotationPopup = popup;
-    
-    // 綁定關閉事件
-    popup.querySelector('.annotation-close').addEventListener('click', () => {
-      this.hideAnnotationPopup();
-    });
-    
-    // 綁定編輯和刪除按鈕事件
-    popup.querySelector('.edit-annotation-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.editAnnotation(annotationId);
-    });
-    
-    popup.querySelector('.delete-annotation-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.deleteAnnotation(annotationId);
-    });
-    
-    // 點擊外部關閉
-    document.addEventListener('click', (e) => {
-      if (!popup.contains(e.target) && !triggerElement.contains(e.target)) {
-        this.hideAnnotationPopup();
-      }
-    });
-  }
-
-  /**
-   * 隱藏批注彈出框
-   */
-  hideAnnotationPopup() {
-    if (this.annotationPopup) {
-      this.annotationPopup.remove();
-      this.annotationPopup = null;
-    }
-  }
 
   /**
    * 編輯批注
@@ -920,8 +804,7 @@ class AnnotationManager {
       const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
       markers.forEach(marker => marker.remove());
       
-      // 關閉彈出框
-      this.hideAnnotationPopup();
+      // 批注已刪除
       
       toast.success('批注已刪除');
       
@@ -954,7 +837,7 @@ class AnnotationManager {
         const annotationId = annotation.id || annotation.annotation_id;
         if (annotationId) {
           this.annotations.set(annotationId, annotation);
-          this.renderAnnotationHighlight(annotationId);
+          this.renderAnnotation(annotationId);
         } else {
           console.log('⚠️ 批注沒有有效的 ID:', annotation);
         }
@@ -990,7 +873,7 @@ class AnnotationManager {
         }
         
         this.annotations.set(payload.new.id, payload.new);
-        this.renderAnnotationHighlight(payload.new.id);
+        this.renderAnnotation(payload.new.id);
         
         // 只在不是當前用戶創建的批注時顯示通知
         if (typeof toast !== 'undefined') {
@@ -1030,7 +913,7 @@ class AnnotationManager {
     // 重新渲染高亮
     const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
     markers.forEach(marker => marker.remove());
-    this.renderAnnotationHighlight(annotationId);
+    this.renderAnnotation(annotationId);
   }
 
   /**
@@ -1077,7 +960,7 @@ class AnnotationManager {
   destroy() {
     this.disableSelectionMode();
     this.hideAnnotationButton();
-    this.hideAnnotationPopup();
+    // 清理完成
     this.hideSelectionHint();
     
     // 移除事件監聽器
