@@ -537,9 +537,9 @@ class AnnotationManager {
       this.deleteAnnotation(annotationId);
     });
 
-    // 點擊高亮文本時顯示/隱藏批注
+    // 點擊高亮文本時高亮對應批注
     highlight.addEventListener('click', () => {
-      this.toggleFloatingAnnotation(annotationId);
+      this.highlightAnnotationInSidebar(annotationId);
     });
 
     // 初始狀態顯示
@@ -548,37 +548,27 @@ class AnnotationManager {
   }
 
   /**
-   * 切換浮動批注顯示狀態
+   * 切換浮動批注顯示狀態（已棄用，改為高亮模式）
    */
   toggleFloatingAnnotation(annotationId) {
-    const floatingAnnotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
-    if (floatingAnnotation) {
-      const isVisible = floatingAnnotation.style.display !== 'none';
-      floatingAnnotation.style.display = isVisible ? 'none' : 'block';
-      
-      // 隱藏其他批注
-      if (!isVisible) {
-        document.querySelectorAll('.floating-annotation').forEach(ann => {
-          if (ann.dataset.annotationId !== annotationId) {
-            ann.style.display = 'none';
-          }
-        });
-      }
-    }
+    // 直接調用高亮方法，不再切換顯示/隱藏
+    this.highlightAnnotationInSidebar(annotationId);
   }
 
   /**
    * 高亮側邊欄中的批注
    */
   highlightAnnotationInSidebar(annotationId) {
-    // 隱藏所有浮動批注
+    // 確保所有批注都顯示
     document.querySelectorAll('.floating-annotation').forEach(ann => {
-      ann.style.display = 'none';
+      ann.style.display = 'block';
+      ann.classList.remove('active');
     });
 
-    // 顯示當前批注
+    // 為當前批注添加 active 狀態
     const floatingAnnotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
     if (floatingAnnotation) {
+      floatingAnnotation.classList.add('active');
       floatingAnnotation.style.display = 'block';
     }
 

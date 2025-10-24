@@ -1927,6 +1927,19 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   color: #3b82f6;
 }
 
+/* 批注 active 狀態 */
+.floating-annotation.active {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.floating-annotation.active .annotation-header {
+  background: #f0f9ff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: -4px -8px 8px -8px;
+}
+
 /* 浮動批注輸入框樣式 */
 .floating-annotation-input {
   position: absolute;
