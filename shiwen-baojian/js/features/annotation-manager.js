@@ -506,7 +506,7 @@ class AnnotationManager {
     // 添加到右側批注容器中
     annotationsContainer.appendChild(floatingAnnotation);
     console.log('✅ 批注元素已添加到容器中');
-    console.log('📍 批注位置:', actualTop, 'px');
+    console.log('📍 批注位置:', highlightTop, 'px');
 
     // 綁定事件
     floatingAnnotation.addEventListener('click', (e) => {
