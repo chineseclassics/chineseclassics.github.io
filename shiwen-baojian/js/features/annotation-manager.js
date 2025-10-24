@@ -67,7 +67,8 @@ class AnnotationManager {
     const annotationMarker = event.target.closest('[data-annotation-id]');
     if (annotationMarker) {
       const annotationId = annotationMarker.dataset.annotationId;
-      this.showAnnotationPopup(annotationId, annotationMarker);
+      // 直接高亮對應的批注，不再使用彈窗
+      this.highlightAnnotationInSidebar(annotationId);
     }
   }
 
@@ -110,12 +111,7 @@ class AnnotationManager {
     }
     
     // 如果點擊的是批注對話框內的元素，不處理
-    if (event.target.closest('.annotation-dialog')) {
-      return;
-    }
-    
-    // 如果點擊的是批注彈出框，不處理
-    if (event.target.closest('.annotation-popup')) {
+    if (event.target.closest('.annotation-dialog') || event.target.closest('.floating-annotation-input')) {
       return;
     }
     
@@ -685,7 +681,7 @@ class AnnotationManager {
           range.surroundContents(highlight);
           console.log('✅ 高亮元素已包圍文本');
           
-          // 不再添加 📝 標記
+          // 不再添加 📝 標記n'g
           
           // 綁定點擊事件
           highlight.addEventListener('click', (e) => {
@@ -742,39 +738,12 @@ class AnnotationManager {
   }
 
   /**
-   * 備用方案：在論文末尾添加標記
+   * 備用方案：直接創建浮動批注
    */
   addFallbackMarker(annotationId, annotation) {
-    const essayViewer = document.getElementById('essayViewer');
-    if (!essayViewer) return;
-    
-    const marker = document.createElement('span');
-    marker.className = 'annotation-marker';
-    marker.dataset.annotationId = annotationId;
-    marker.innerHTML = `📝`;
-    marker.style.cssText = `
-      color: #f59e0b;
-      cursor: pointer;
-      margin-left: 4px;
-      display: inline-block;
-      font-size: 14px;
-      background: #fef3c7;
-      padding: 2px 4px;
-      border-radius: 3px;
-      border: 1px solid #f59e0b;
-      position: relative;
-      z-index: 10;
-    `;
-    
-    essayViewer.appendChild(marker);
-    
-    marker.addEventListener('click', (e) => {
-      e.stopPropagation();
-      console.log('🖱️ 點擊批注標記:', annotationId);
-      this.showAnnotationPopup(annotationId, marker);
-    });
-    
-    console.log('✅ 備用標記已添加');
+    console.log('⚠️ 無法精確定位文本，直接創建浮動批注');
+    // 直接創建浮動批注，不添加標記
+    this.addAnnotationToSidebar(annotationId, annotation);
   }
 
   /**

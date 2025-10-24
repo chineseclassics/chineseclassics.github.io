@@ -909,10 +909,125 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             submissionSection.classList.add('hidden');
         }
 
+        // ✅ 初始化學生端批注系統（如果是任務模式且已提交）
+        if (mode === 'assignment' && !editable) {
+            await initializeStudentAnnotationSystem(assignmentId);
+        }
+        
+        // ✅ 初始化批注重新定位系統（如果是編輯模式）
+        if (mode === 'assignment' && editable) {
+            await initializeAnnotationRepositioningSystem(assignmentId);
+        }
+
         console.log('✅ 論文編輯器顯示完成');
     } catch (error) {
         console.error('❌ 顯示論文編輯器失敗:', error);
         showError('無法加載論文編輯器: ' + error.message);
+    }
+}
+
+/**
+ * 初始化學生端批注系統
+ */
+async function initializeStudentAnnotationSystem(assignmentId) {
+    try {
+        console.log('🚀 初始化學生端批注系統:', assignmentId);
+        
+        // 動態導入學生端批注查看器
+        const { default: StudentAnnotationViewer } = await import('./student/student-annotation-viewer.js');
+        
+        // 獲取當前作業的段落信息
+        const { data: essay, error: essayError } = await AppState.supabase
+            .from('essays')
+            .select(`
+                id,
+                paragraphs (
+                    id,
+                    order_index
+                )
+            `)
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', AppState.currentUser.id)
+            .single();
+            
+        if (essayError) {
+            console.error('❌ 獲取作業信息失敗:', essayError);
+            return;
+        }
+        
+        if (!essay || !essay.paragraphs || essay.paragraphs.length === 0) {
+            console.log('ℹ️ 沒有找到段落，跳過批注系統初始化');
+            return;
+        }
+        
+        // 顯示批注區域，隱藏 AI 反饋區域
+        const annotationsArea = document.getElementById('annotations-display-area');
+        const feedbackArea = document.getElementById('sidebar-feedback-content');
+        
+        if (annotationsArea) {
+            annotationsArea.classList.remove('hidden');
+        }
+        if (feedbackArea) {
+            feedbackArea.classList.add('hidden');
+        }
+        
+        // 創建批注查看器
+        const annotationViewer = new StudentAnnotationViewer(AppState.supabase);
+        
+        // 為每個段落初始化批注系統
+        for (const paragraph of essay.paragraphs) {
+            await annotationViewer.init(essay.id, paragraph.id, true); // 只讀模式
+        }
+        
+        // 將批注查看器保存到全局狀態
+        window.studentAnnotationViewer = annotationViewer;
+        
+        console.log('✅ 學生端批注系統初始化完成');
+        
+    } catch (error) {
+        console.error('❌ 初始化學生端批注系統失敗:', error);
+    }
+}
+
+/**
+ * 初始化批注重新定位系統
+ */
+async function initializeAnnotationRepositioningSystem(assignmentId) {
+    try {
+        console.log('🚀 初始化批注重新定位系統:', assignmentId);
+        
+        // 動態導入批注重新定位管理器
+        const { default: AnnotationRepositioningManager } = await import('./features/annotation-repositioning.js');
+        
+        // 獲取當前作業信息
+        const { data: essay, error: essayError } = await AppState.supabase
+            .from('essays')
+            .select('id')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', AppState.currentUser.id)
+            .single();
+            
+        if (essayError) {
+            console.error('❌ 獲取作業信息失敗:', essayError);
+            return;
+        }
+        
+        if (!essay) {
+            console.log('ℹ️ 沒有找到作業，跳過批注重新定位系統初始化');
+            return;
+        }
+        
+        // 創建批注重新定位管理器
+        const repositioningManager = new AnnotationRepositioningManager(AppState.supabase);
+        await repositioningManager.init(essay.id);
+        
+        // 將管理器保存到全局狀態
+        window.annotationRepositioningManager = repositioningManager;
+        
+        console.log('✅ 批注重新定位系統初始化完成');
+        
+    } catch (error) {
+        console.error('❌ 初始化批注重新定位系統失敗:', error);
     }
 }
 
