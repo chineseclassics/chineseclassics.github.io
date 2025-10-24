@@ -14,6 +14,10 @@ class AnnotationManager {
     this.currentEssayId = null;
     this.currentParagraphId = null;
     
+    // 保存事件處理器引用
+    this.boundHandleTextSelection = this.handleTextSelection.bind(this);
+    this.boundHandleAnnotationClick = this.handleAnnotationClick.bind(this);
+    
     // 綁定事件
     this.bindEvents();
   }
@@ -40,11 +44,23 @@ class AnnotationManager {
    */
   bindEvents() {
     // 文本選擇事件
-    document.addEventListener('mouseup', this.handleTextSelection.bind(this));
-    document.addEventListener('keyup', this.handleTextSelection.bind(this));
+    document.addEventListener('mouseup', this.boundHandleTextSelection);
+    document.addEventListener('keyup', this.boundHandleTextSelection);
     
     // 批注彈出框事件
-    document.addEventListener('click', this.handleAnnotationClick.bind(this));
+    document.addEventListener('click', this.boundHandleAnnotationClick);
+  }
+
+  /**
+   * 處理批注點擊事件
+   */
+  handleAnnotationClick(event) {
+    // 檢查是否點擊了批注標記
+    const annotationMarker = event.target.closest('[data-annotation-id]');
+    if (annotationMarker) {
+      const annotationId = annotationMarker.dataset.annotationId;
+      this.showAnnotationPopup(annotationId, annotationMarker);
+    }
   }
 
   /**
@@ -194,17 +210,17 @@ class AnnotationManager {
   /**
    * 顯示批注對話框
    */
-  async showAnnotationDialog() {
+  async showAnnotationDialog(defaultContent = '') {
     return new Promise((resolve) => {
       // 創建對話框
       const dialog = document.createElement('div');
       dialog.className = 'annotation-dialog';
       dialog.innerHTML = `
         <div class="annotation-dialog-content">
-          <h3>添加批注</h3>
+          <h3>${defaultContent ? '編輯批注' : '添加批注'}</h3>
           <div class="annotation-dialog-body">
             <label>批注內容：</label>
-            <textarea id="annotation-content" placeholder="請輸入批注內容..." rows="4"></textarea>
+            <textarea id="annotation-content" placeholder="請輸入批注內容..." rows="4">${defaultContent}</textarea>
             <div class="annotation-dialog-actions">
               <button id="annotation-cancel" class="btn-secondary">取消</button>
               <button id="annotation-save" class="btn-primary">保存</button>
@@ -273,10 +289,9 @@ class AnnotationManager {
       position: relative;
     `;
     
-    // 這裡需要根據實際的文本位置來插入高亮
-    // 簡化實現：在段落末尾添加標記
-    const paragraph = document.querySelector(`[data-paragraph-id="${this.currentParagraphId}"]`);
-    if (paragraph) {
+    // 簡化實現：在論文內容區域添加標記
+    const essayViewer = document.getElementById('essayViewer');
+    if (essayViewer) {
       const marker = document.createElement('span');
       marker.className = 'annotation-marker';
       marker.dataset.annotationId = annotationId;
@@ -285,9 +300,11 @@ class AnnotationManager {
         color: #f59e0b;
         cursor: pointer;
         margin-left: 4px;
+        display: inline-block;
       `;
       
-      paragraph.appendChild(marker);
+      // 在論文內容區域的末尾添加標記
+      essayViewer.appendChild(marker);
       
       // 綁定點擊事件
       marker.addEventListener('click', (e) => {
@@ -320,8 +337,8 @@ class AnnotationManager {
         <div class="annotation-popup-body">
           <p>${annotation.content}</p>
           <div class="annotation-popup-actions">
-            <button class="btn-small btn-secondary" onclick="annotationManager.editAnnotation('${annotationId}')">編輯</button>
-            <button class="btn-small btn-danger" onclick="annotationManager.deleteAnnotation('${annotationId}')">刪除</button>
+            <button class="btn-small btn-secondary edit-annotation-btn" data-annotation-id="${annotationId}">編輯</button>
+            <button class="btn-small btn-danger delete-annotation-btn" data-annotation-id="${annotationId}">刪除</button>
           </div>
         </div>
       </div>
@@ -347,6 +364,17 @@ class AnnotationManager {
     // 綁定關閉事件
     popup.querySelector('.annotation-close').addEventListener('click', () => {
       this.hideAnnotationPopup();
+    });
+    
+    // 綁定編輯和刪除按鈕事件
+    popup.querySelector('.edit-annotation-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.editAnnotation(annotationId);
+    });
+    
+    popup.querySelector('.delete-annotation-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.deleteAnnotation(annotationId);
     });
     
     // 點擊外部關閉
@@ -560,9 +588,9 @@ class AnnotationManager {
     this.hideSelectionHint();
     
     // 移除事件監聽器
-    document.removeEventListener('mouseup', this.handleTextSelection);
-    document.removeEventListener('keyup', this.handleTextSelection);
-    document.removeEventListener('click', this.handleAnnotationClick);
+    document.removeEventListener('mouseup', this.boundHandleTextSelection);
+    document.removeEventListener('keyup', this.boundHandleTextSelection);
+    document.removeEventListener('click', this.boundHandleAnnotationClick);
   }
 }
 
