@@ -476,20 +476,32 @@ class GradingUI {
    * 初始化批注系統（自動開啟）
    */
   async initializeAnnotationSystem() {
+    console.log('🚀 開始初始化批注系統');
+    
     if (!this.annotationManager) {
+      console.log('📝 創建批注管理器');
       // 初始化批注管理器
       this.annotationManager = new AnnotationManager(this.supabase);
       
       // 為每個段落初始化批注
       const paragraphs = this.currentEssay.paragraphs || [];
+      console.log('📄 段落數量:', paragraphs.length);
+      
       if (paragraphs.length > 0) {
         // 使用第一個段落作為示例
+        console.log('🎯 使用第一個段落初始化:', paragraphs[0].id);
         await this.annotationManager.init(this.currentEssay.id, paragraphs[0].id);
+      } else {
+        console.log('❌ 沒有找到段落');
       }
       
       // 自動啟用批注模式
       this.annotationManager.enableSelectionMode();
       this.updateAnnotationModeButton(true);
+      
+      console.log('✅ 批注系統初始化完成');
+    } else {
+      console.log('ℹ️ 批注管理器已存在');
     }
   }
 

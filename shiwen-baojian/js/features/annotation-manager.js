@@ -26,6 +26,8 @@ class AnnotationManager {
    * 初始化批注系統
    */
   async init(essayId, paragraphId) {
+    console.log('🚀 初始化批注系統:', { essayId, paragraphId });
+    
     this.currentEssayId = essayId;
     this.currentParagraphId = paragraphId;
     
@@ -37,18 +39,24 @@ class AnnotationManager {
     
     // 設置 Realtime 監聽
     this.setupRealtimeListener();
+    
+    console.log('✅ 批注系統初始化完成');
   }
 
   /**
    * 綁定事件監聽器
    */
   bindEvents() {
+    console.log('🔗 綁定批注系統事件監聽器');
+    
     // 文本選擇事件
     document.addEventListener('mouseup', this.boundHandleTextSelection);
     document.addEventListener('keyup', this.boundHandleTextSelection);
     
     // 批注彈出框事件
     document.addEventListener('click', this.boundHandleAnnotationClick);
+    
+    console.log('✅ 事件監聽器已綁定');
   }
 
   /**
@@ -67,11 +75,14 @@ class AnnotationManager {
    * 啟用文本選擇模式
    */
   enableSelectionMode() {
+    console.log('🎯 啟用文本選擇模式');
     this.isSelectionMode = true;
     document.body.classList.add('annotation-selection-mode');
     
     // 添加選擇提示
     this.showSelectionHint();
+    
+    console.log('✅ 文本選擇模式已啟用');
   }
 
   /**
@@ -89,10 +100,21 @@ class AnnotationManager {
    * 處理文本選擇
    */
   handleTextSelection(event) {
-    if (!this.isSelectionMode) return;
+    console.log('🔍 處理文本選擇:', {
+      isSelectionMode: this.isSelectionMode,
+      event: event.type,
+      target: event.target
+    });
+    
+    if (!this.isSelectionMode) {
+      console.log('❌ 批注模式未啟用');
+      return;
+    }
     
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
+    
+    console.log('📝 選擇的文本:', selectedText);
     
     if (selectedText.length > 0) {
       this.selectedText = {
@@ -102,9 +124,11 @@ class AnnotationManager {
         endOffset: selection.focusOffset
       };
       
+      console.log('✅ 文本選擇完成，顯示批注按鈕');
       // 顯示批注按鈕
       this.showAnnotationButton(event);
     } else {
+      console.log('❌ 沒有選擇文本，隱藏批注按鈕');
       this.hideAnnotationButton();
     }
   }
@@ -113,6 +137,8 @@ class AnnotationManager {
    * 顯示批注按鈕
    */
   showAnnotationButton(event) {
+    console.log('🎯 顯示批注按鈕:', event);
+    
     // 移除現有按鈕
     this.hideAnnotationButton();
     
@@ -136,12 +162,15 @@ class AnnotationManager {
     `;
     
     button.addEventListener('click', (e) => {
+      console.log('🖱️ 批注按鈕被點擊');
       e.stopPropagation();
       this.createAnnotation();
     });
     
     document.body.appendChild(button);
     this.annotationButton = button;
+    
+    console.log('✅ 批注按鈕已添加到頁面');
   }
 
   /**
@@ -158,11 +187,21 @@ class AnnotationManager {
    * 創建批注
    */
   async createAnnotation() {
-    if (!this.selectedText) return;
+    console.log('📝 開始創建批注:', this.selectedText);
+    
+    if (!this.selectedText) {
+      console.log('❌ 沒有選擇的文本');
+      return;
+    }
     
     // 顯示批注創建對話框
     const content = await this.showAnnotationDialog();
-    if (!content) return;
+    if (!content) {
+      console.log('❌ 用戶取消了批注創建');
+      return;
+    }
+    
+    console.log('✅ 批注內容:', content);
     
     try {
       // 調用 RPC 函數創建批注
@@ -211,6 +250,8 @@ class AnnotationManager {
    * 顯示批注對話框
    */
   async showAnnotationDialog(defaultContent = '') {
+    console.log('💬 顯示批注對話框:', defaultContent);
+    
     return new Promise((resolve) => {
       // 創建對話框
       const dialog = document.createElement('div');
@@ -256,12 +297,14 @@ class AnnotationManager {
       
       // 綁定事件
       dialog.querySelector('#annotation-cancel').addEventListener('click', () => {
+        console.log('❌ 用戶取消批注');
         dialog.remove();
         resolve(null);
       });
       
       dialog.querySelector('#annotation-save').addEventListener('click', () => {
         const content = dialog.querySelector('#annotation-content').value.trim();
+        console.log('💾 用戶保存批注:', content);
         dialog.remove();
         resolve(content);
       });
@@ -465,12 +508,19 @@ class AnnotationManager {
    * 加載現有批注
    */
   async loadAnnotations() {
+    console.log('📥 加載現有批注:', this.currentParagraphId);
+    
     try {
       const { data, error } = await this.supabase.rpc('get_paragraph_annotations', {
         p_paragraph_id: this.currentParagraphId
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ RPC 調用失敗:', error);
+        throw error;
+      }
+      
+      console.log('📊 批注數據:', data);
       
       // 存儲批注
       data.forEach(annotation => {
