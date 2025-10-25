@@ -1917,17 +1917,69 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   color: #3b82f6;
 }
 
-/* 批注 active 狀態 */
+/* 批注 active 狀態 - 增強效果 */
 .floating-annotation.active {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  border: 3px solid var(--primary-500);
+  background-color: var(--primary-100);
+  box-shadow: 0 4px 12px var(--primary-300);
+  animation: annotation-pulse 2s infinite;
+  transform: scale(1.02);
+  transition: all 0.3s ease;
 }
 
 .floating-annotation.active .annotation-header {
-  background: #f0f9ff;
+  background: var(--primary-200);
   border-radius: 6px;
   padding: 4px 8px;
   margin: -4px -8px 8px -8px;
+}
+
+/* 原文高亮增強效果 */
+.annotation-highlight {
+  background-color: var(--warning-200);
+  border-bottom: 3px solid var(--warning-600);
+  box-shadow: 0 0 8px var(--warning-400);
+  transition: all 0.3s ease;
+  animation: annotation-pulse 2s infinite;
+}
+
+.annotation-highlight:hover {
+  background-color: var(--warning-300);
+  box-shadow: 0 0 12px var(--warning-500);
+}
+
+/* 脈衝動畫效果 */
+@keyframes annotation-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 8px var(--warning-400), 0 4px 12px var(--primary-300);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 16px var(--warning-500), 0 6px 16px var(--primary-400);
+    transform: scale(1.02);
+  }
+}
+
+/* 連接線樣式 */
+.annotation-connection {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(45deg, var(--primary-500), var(--warning-500));
+  z-index: 10;
+  animation: connection-pulse 2s infinite;
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+@keyframes connection-pulse {
+  0%, 100% { 
+    opacity: 0.6; 
+    transform: scaleY(1);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scaleY(1.05);
+  }
 }
 
 /* 浮動批注輸入框樣式 - 直接浮動在右側 */

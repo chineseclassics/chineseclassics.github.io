@@ -637,6 +637,95 @@ class AnnotationManager {
   }
 
   /**
+   * 創建連接線
+   */
+  createConnectionLine(annotationId) {
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    const annotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
+    
+    if (!highlight || !annotation) return;
+    
+    const wrapper = document.querySelector('.grading-content-wrapper');
+    if (!wrapper) return;
+    
+    // 清理現有連接線
+    this.clearConnectionLines();
+    
+    // 計算位置
+    const highlightRect = highlight.getBoundingClientRect();
+    const annotationRect = annotation.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    const startX = highlightRect.right - wrapperRect.left;
+    const startY = highlightRect.top + highlightRect.height / 2 - wrapperRect.top + wrapper.scrollTop;
+    const endX = annotationRect.left - wrapperRect.left;
+    const endY = annotationRect.top + annotationRect.height / 2 - wrapperRect.top + wrapper.scrollTop;
+    
+    // 創建連接線元素
+    const connection = document.createElement('div');
+    connection.className = 'annotation-connection';
+    connection.dataset.annotationId = annotationId;
+    
+    // 計算連接線的長度和角度
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+    
+    // 設置連接線樣式
+    connection.style.left = startX + 'px';
+    connection.style.top = startY + 'px';
+    connection.style.width = length + 'px';
+    connection.style.transform = `rotate(${angle}deg)`;
+    connection.style.transformOrigin = '0 50%';
+    
+    // 添加到滾動容器
+    wrapper.appendChild(connection);
+    
+    // 監聽滾動事件，更新連接線位置
+    const updateConnection = () => {
+      const newHighlightRect = highlight.getBoundingClientRect();
+      const newAnnotationRect = annotation.getBoundingClientRect();
+      const newWrapperRect = wrapper.getBoundingClientRect();
+      
+      const newStartX = newHighlightRect.right - newWrapperRect.left;
+      const newStartY = newHighlightRect.top + newHighlightRect.height / 2 - newWrapperRect.top + wrapper.scrollTop;
+      const newEndX = newAnnotationRect.left - newWrapperRect.left;
+      const newEndY = newAnnotationRect.top + newAnnotationRect.height / 2 - newWrapperRect.top + wrapper.scrollTop;
+      
+      const newDeltaX = newEndX - newStartX;
+      const newDeltaY = newEndY - newStartY;
+      const newLength = Math.sqrt(newDeltaX * newDeltaX + newDeltaY * newDeltaY);
+      const newAngle = Math.atan2(newDeltaY, newDeltaX) * 180 / Math.PI;
+      
+      connection.style.left = newStartX + 'px';
+      connection.style.top = newStartY + 'px';
+      connection.style.width = newLength + 'px';
+      connection.style.transform = `rotate(${newAngle}deg)`;
+    };
+    
+    // 綁定滾動事件
+    connection._updateHandler = updateConnection;
+    wrapper.addEventListener('scroll', updateConnection);
+    window.addEventListener('resize', updateConnection);
+  }
+
+  /**
+   * 清理連接線
+   */
+  clearConnectionLines() {
+    const connections = document.querySelectorAll('.annotation-connection');
+    connections.forEach(connection => {
+      const wrapper = document.querySelector('.grading-content-wrapper');
+      if (wrapper && connection._updateHandler) {
+        wrapper.removeEventListener('scroll', connection._updateHandler);
+        window.removeEventListener('resize', connection._updateHandler);
+      }
+      connection.remove();
+    });
+  }
+
+  /**
    * 滾動到高亮的原文位置
    */
   scrollToHighlight() {
@@ -699,7 +788,7 @@ class AnnotationManager {
       console.log('❌ 找不到對應的高亮元素');
       return;
     }
-
+    
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
     floatingAnnotation.className = 'floating-annotation';
@@ -772,6 +861,10 @@ class AnnotationManager {
         block: AnnotationManager.CONSTANTS.SCROLL_BLOCK 
       });
       highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_TEMP;
+      
+      // 創建連接線
+      this.createConnectionLine(annotationId);
+      
       setTimeout(() => {
         highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
       }, AnnotationManager.CONSTANTS.TEMP_HIGHLIGHT_DURATION);
@@ -782,6 +875,9 @@ class AnnotationManager {
    * 高亮批注（統一方法）
    */
   highlightAnnotation(annotationId) {
+    // 清理現有連接線
+    this.clearConnectionLines();
+    
     // 確保所有批注都顯示
     document.querySelectorAll('.floating-annotation').forEach(ann => {
       ann.style.display = 'block';
@@ -799,6 +895,9 @@ class AnnotationManager {
       
       // 滾動到原文位置
       this.scrollToAnnotationHighlight(annotationId);
+      
+      // 創建連接線
+      this.createConnectionLine(annotationId);
     }
 
     // 臨時高亮原文文本
@@ -1001,26 +1100,26 @@ class AnnotationManager {
       title: '刪除批注',
       message: '確定要刪除這個批注嗎？<br><br>此操作無法撤銷。',
       onConfirm: async () => {
-        try {
-          const { error } = await this.supabase.rpc('delete_annotation', {
-            p_annotation_id: annotationId
-          });
-          
-          if (error) throw error;
-          
-          // 從本地存儲移除
-          this.annotations.delete(annotationId);
-          
-          // 移除高亮和標記
-          const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
-          markers.forEach(marker => marker.remove());
-          
-          toast.success('批注已刪除');
-          
-        } catch (error) {
-          console.error('❌ 刪除批注失敗:', error);
-          toast.error('刪除批注失敗: ' + error.message);
-        }
+    try {
+      const { error } = await this.supabase.rpc('delete_annotation', {
+        p_annotation_id: annotationId
+      });
+      
+      if (error) throw error;
+      
+      // 從本地存儲移除
+      this.annotations.delete(annotationId);
+      
+      // 移除高亮和標記
+      const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
+      markers.forEach(marker => marker.remove());
+      
+      toast.success('批注已刪除');
+      
+    } catch (error) {
+      console.error('❌ 刪除批注失敗:', error);
+      toast.error('刪除批注失敗: ' + error.message);
+    }
       }
     });
   }
@@ -1184,6 +1283,9 @@ class AnnotationManager {
     this.disableSelectionMode();
     this.hideAnnotationButton();
     this.hideSelectionHint();
+    
+    // 清理連接線
+    this.clearConnectionLines();
     
     // 移除事件監聽器
     document.removeEventListener('mouseup', this.boundHandleTextSelection);
