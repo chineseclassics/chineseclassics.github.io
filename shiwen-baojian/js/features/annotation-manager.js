@@ -147,6 +147,12 @@ class AnnotationManager {
       return;
     }
     
+    // 如果正在創建批注，忽略新的選擇事件
+    if (this.isCreatingAnnotation) {
+      console.log('⏳ 正在創建批注，忽略新的選擇事件');
+      return;
+    }
+    
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
     
@@ -249,8 +255,6 @@ class AnnotationManager {
         border-radius: 2px;
         position: relative;
         z-index: 1;
-        opacity: 0.8;
-        animation: pulse 1.5s ease-in-out infinite;
       `;
       
       // 用高亮元素包圍選中的文字
@@ -290,6 +294,9 @@ class AnnotationManager {
       return;
     }
     
+    // 設置創建狀態，防止重複觸發
+    this.isCreatingAnnotation = true;
+    
     // 隱藏批注按鈕
     this.hideAnnotationButton();
     
@@ -302,6 +309,8 @@ class AnnotationManager {
       console.log('❌ 用戶取消了批注創建');
       // 如果用戶取消，移除臨時高亮
       this.removeTemporaryHighlight();
+      // 重置創建狀態
+      this.isCreatingAnnotation = false;
       return;
     }
     
@@ -351,6 +360,9 @@ class AnnotationManager {
       this.selectedText = null;
       this.hideAnnotationButton();
       
+      // 重置創建狀態
+      this.isCreatingAnnotation = false;
+      
       console.log('✅ 批注創建成功，ID:', data);
       
       // 顯示成功提示
@@ -360,6 +372,10 @@ class AnnotationManager {
       
     } catch (error) {
       console.error('❌ 創建批注失敗:', error);
+      // 重置創建狀態
+      this.isCreatingAnnotation = false;
+      // 移除臨時高亮
+      this.removeTemporaryHighlight();
       if (typeof toast !== 'undefined') {
         toast.error('創建批注失敗: ' + error.message);
       }
