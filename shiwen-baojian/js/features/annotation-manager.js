@@ -11,7 +11,6 @@ class AnnotationManager {
     this.annotations = new Map(); // 存儲當前批注
     this.selectedText = null;
     this.isSelectionMode = false;
-    this.isCreatingAnnotation = false; // 添加創建狀態標記
     this.currentEssayId = null;
     this.currentParagraphId = null;
     
@@ -148,12 +147,6 @@ class AnnotationManager {
       return;
     }
     
-    // 如果正在創建批注，忽略新的選擇事件
-    if (this.isCreatingAnnotation) {
-      console.log('⏳ 正在創建批注，忽略新的選擇事件');
-      return;
-    }
-    
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
     
@@ -239,34 +232,30 @@ class AnnotationManager {
   }
 
   /**
-   * 創建高亮元素（統一方法）
+   * 立即高亮選中的文字
    */
-  createHighlight(isTemporary = false) {
-    if (!this.selectedText || !this.selectedRange) return null;
+  highlightSelectedText() {
+    if (!this.selectedText || !this.selectedRange) return;
     
     try {
+      // 創建高亮元素
       const highlight = document.createElement('span');
       highlight.className = 'annotation-highlight';
-      if (isTemporary) {
-        highlight.classList.add('annotation-highlight-temp');
-        highlight.setAttribute('data-temp-highlight', 'true');
-      }
+      highlight.style.cssText = `
+        background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
+        border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
+        padding: 1px 2px;
+        border-radius: 2px;
+        position: relative;
+        z-index: 1;
+      `;
       
+      // 用高亮元素包圍選中的文字
       this.selectedRange.surroundContents(highlight);
-      return highlight;
+      
+      console.log('✅ 文字已立即高亮');
     } catch (error) {
-      console.log('⚠️ 無法創建高亮:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 移除高亮元素
-   */
-  removeHighlight(highlight) {
-    if (highlight && highlight.parentNode) {
-      const textNode = document.createTextNode(highlight.textContent);
-      highlight.parentNode.replaceChild(textNode, highlight);
+      console.log('⚠️ 無法立即高亮文字:', error);
     }
   }
 
@@ -274,19 +263,23 @@ class AnnotationManager {
    * 創建批注
    */
   async createAnnotation() {
-    if (!this.selectedText) return;
+    console.log('📝 開始創建批注:', this.selectedText);
     
-    this.isCreatingAnnotation = true;
+    if (!this.selectedText) {
+      console.log('❌ 沒有選擇的文本');
+      return;
+    }
+    
+    // 隱藏批注按鈕
     this.hideAnnotationButton();
     
-    // 創建臨時高亮
-    const tempHighlight = this.createHighlight(true);
+    // 立即高亮選中的文字
+    this.highlightSelectedText();
     
-    // 顯示批注對話框
+    // 顯示批注創建對話框
     const content = await this.showAnnotationDialog();
     if (!content) {
-      this.removeHighlight(tempHighlight);
-      this.isCreatingAnnotation = false;
+      console.log('❌ 用戶取消了批注創建');
       return;
     }
     
@@ -319,22 +312,13 @@ class AnnotationManager {
         created_at: new Date().toISOString()
       });
       
-      // 轉換臨時高亮為持久高亮
-      if (tempHighlight) {
-        tempHighlight.setAttribute('data-annotation-id', data);
-        tempHighlight.removeAttribute('data-temp-highlight');
-        tempHighlight.classList.remove('annotation-highlight-temp');
-      }
+      // 渲染批注
+      this.renderAnnotation(data.id);
       
-      // 創建右側浮動批注
-      setTimeout(() => {
-        this.createFloatingAnnotation(data, this.annotations.get(data));
-      }, 100);
-      
-      // 清理狀態
+      // 清除選擇
       window.getSelection().removeAllRanges();
       this.selectedText = null;
-      this.isCreatingAnnotation = false;
+      this.hideAnnotationButton();
       
       console.log('✅ 批注創建成功，ID:', data);
       
@@ -345,8 +329,6 @@ class AnnotationManager {
       
     } catch (error) {
       console.error('❌ 創建批注失敗:', error);
-      this.removeHighlight(tempHighlight);
-      this.isCreatingAnnotation = false;
       if (typeof toast !== 'undefined') {
         toast.error('創建批注失敗: ' + error.message);
       }
