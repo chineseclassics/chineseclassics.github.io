@@ -46,6 +46,9 @@ const AppState = {
     currentFormatSpec: null
 };
 
+// 將狀態掛載到全域，供需要直接讀取的模組存取
+window.AppState = AppState;
+
 // ================================
 // 初始化應用
 // ================================
@@ -1622,4 +1625,3 @@ if (document.readyState === 'loading') {
 
 // 導出供其他模組使用
 export { AppState };
-
