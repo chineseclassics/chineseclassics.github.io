@@ -860,13 +860,15 @@ class AnnotationManager {
         behavior: AnnotationManager.CONSTANTS.SCROLL_BEHAVIOR, 
         block: AnnotationManager.CONSTANTS.SCROLL_BLOCK 
       });
-      highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_TEMP;
+      
+      // 添加 active 類以啟用增強效果
+      highlight.classList.add('active');
       
       // 創建連接線
       this.createConnectionLine(annotationId);
       
       setTimeout(() => {
-        highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
+        highlight.classList.remove('active');
       }, AnnotationManager.CONSTANTS.TEMP_HIGHLIGHT_DURATION);
     }
   }
@@ -877,6 +879,11 @@ class AnnotationManager {
   highlightAnnotation(annotationId) {
     // 清理現有連接線
     this.clearConnectionLines();
+    
+    // 移除所有原文高亮的 active 狀態
+    document.querySelectorAll('.annotation-highlight').forEach(highlight => {
+      highlight.classList.remove('active');
+    });
     
     // 確保所有批注都顯示
     document.querySelectorAll('.floating-annotation').forEach(ann => {
@@ -889,6 +896,12 @@ class AnnotationManager {
     if (floatingAnnotation) {
       floatingAnnotation.classList.add('active');
       floatingAnnotation.style.display = 'block';
+      
+      // 為對應的原文高亮添加 active 狀態
+      const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+      if (highlight) {
+        highlight.classList.add('active');
+      }
       
       // 調整批註位置，讓該批註對齊原文
       this.adjustAnnotationsForActive(floatingAnnotation);

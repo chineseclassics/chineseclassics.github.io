@@ -1934,8 +1934,24 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   margin: -4px -8px 8px -8px;
 }
 
-/* 原文高亮增強效果 */
+/* 原文高亮基礎樣式 */
 .annotation-highlight {
+  background-color: var(--warning-100);
+  border-bottom: 2px solid var(--warning-600);
+  padding: 1px 2px;
+  border-radius: 2px;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.annotation-highlight:hover {
+  background-color: var(--warning-200);
+}
+
+/* 原文高亮增強效果 - 只有被點中時才使用 */
+.annotation-highlight.active {
   background-color: var(--warning-200);
   border-bottom: 3px solid var(--warning-600);
   box-shadow: 0 0 8px var(--warning-400);
@@ -1943,7 +1959,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   animation: annotation-pulse 2s infinite;
 }
 
-.annotation-highlight:hover {
+.annotation-highlight.active:hover {
   background-color: var(--warning-300);
   box-shadow: 0 0 12px var(--warning-500);
 }
