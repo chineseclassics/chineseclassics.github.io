@@ -544,48 +544,6 @@ input:focus-visible {
     background: transparent;
 }
 
-/* 學生編輯頁布局調整 */
-.google-docs-layout.student-edit-mode {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-.google-docs-layout.student-edit-mode .student-editor-column {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    width: 100%;
-}
-
-.google-docs-layout.student-edit-mode .main-content-area {
-    max-width: 100%;
-}
-
-.google-docs-layout.student-edit-mode #assignment-info-panel {
-    margin-bottom: 0;
-}
-
-.google-docs-layout.student-edit-mode aside {
-    width: 100%;
-}
-
-@media (min-width: 1024px) {
-    .google-docs-layout.student-edit-mode {
-        flex-direction: row;
-        align-items: flex-start;
-    }
-
-    .google-docs-layout.student-edit-mode .student-editor-column {
-        flex: 1;
-    }
-
-    .google-docs-layout.student-edit-mode aside {
-        width: 320px;
-        flex-shrink: 0;
-    }
-}
-
 @media print {
     .ql-toolbar {
         display: none;

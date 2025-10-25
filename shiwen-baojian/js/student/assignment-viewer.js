@@ -2,7 +2,7 @@
  * 學生端任務列表查看器（精简版）
  */
 
-import { AppState } from '../app-state.js';
+import { AppState } from '../app.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 import { getClassColorClass } from '../utils/class-color-utils.js';
@@ -228,10 +228,11 @@ class StudentAssignmentViewer {
     const essay = assignment.studentEssay;
     const status = this.getStatus(essay, isOverdue);
     
-    // 判断是否可以撤回（截止日期前，允許在老師批注後撤回）
+    // 判断是否可以撤回（截止日期前 + 未批改）
     const canWithdraw = essay && 
                        essay.status === 'submitted' && 
-                       !isOverdue;
+                       !isOverdue && 
+                       (!essay.graded_at);
 
     const classColorClass = assignment.classes ? getClassColorClass(assignment.classes.id) : 'class-1';
     
@@ -739,7 +740,7 @@ class StudentAssignmentViewer {
       toast.success('作業提交成功！<br>老師收到後會開始批改', 3000);
       
       // 8. 清除緩存並強制刷新列表
-      const { AppState } = await import('../app-state.js');
+      const { AppState } = await import('../app.js');
       AppState.cache.assignmentsList = [];
       AppState.cache.lastRefreshTime = null;
       console.log('🗑️ 已清除任務列表緩存');
@@ -778,7 +779,7 @@ class StudentAssignmentViewer {
           toast.success('作業已撤回，可以繼續編輯了！');
           
           // 清除緩存並強制刷新列表
-          const { AppState } = await import('../app-state.js');
+          const { AppState } = await import('../app.js');
           AppState.cache.assignmentsList = [];
           AppState.cache.lastRefreshTime = null;
           console.log('🗑️ 已清除任務列表緩存');
@@ -857,3 +858,4 @@ class StudentAssignmentViewer {
 }
 
 export default StudentAssignmentViewer;
+

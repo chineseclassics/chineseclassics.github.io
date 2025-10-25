@@ -9,7 +9,7 @@
  * - 誠信報告生成
  */
 
-import { AppState } from '../app-state.js';
+import { AppState } from '../app.js';
 
 // ================================
 // 防作弊狀態管理
@@ -475,3 +475,4 @@ export function generateIntegrityReport() {
 // ================================
 
 export { AntiCheatState };
+

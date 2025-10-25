@@ -7,7 +7,7 @@
  * - 離線/在線同步
  */
 
-import { AppState } from '../app-state.js';
+import { AppState } from '../app.js';
 
 // ================================
 // 存儲狀態
@@ -533,3 +533,4 @@ export async function submitEssay(essayId) {
 // ================================
 
 // StorageState 已在文件開頭導出（第 16 行），無需重複導出
+

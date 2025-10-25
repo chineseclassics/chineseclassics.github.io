@@ -8,7 +8,6 @@
  */
 
 import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
-import { AppState } from './app-state.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
 import toast from './ui/toast.js';
@@ -17,6 +16,35 @@ import toast from './ui/toast.js';
 // 全局狀態管理
 // ================================
 
+const AppState = {
+    supabase: null,
+    currentUser: null,
+    userRole: null, // 'teacher' | 'student' | 'anonymous'
+    currentScreen: null,
+    initialized: false,
+    
+    // ✅ 數據緩存
+    cache: {
+        // 靜態數據
+        formatTemplates: {},           // { templateName: templateData }
+        
+        // 半靜態數據（可刷新）
+        assignmentsList: [],           // 任務列表
+        practiceEssaysList: [],        // 練筆列表
+        classList: [],                 // 班級列表
+        lastRefreshTime: null,         // 上次刷新時間
+        
+        // AI 反饋緩存（智能緩存）
+        aiFeedbackCache: {},           // { paragraphId: { contentHash: xxx, feedback: {...} } }
+    },
+    
+    // 當前編輯狀態
+    currentAssignmentId: null,
+    currentPracticeEssayId: null,
+    currentEssayContent: null,
+    currentPracticeContent: null,
+    currentFormatSpec: null
+};
 
 // ================================
 // 初始化應用
@@ -881,10 +909,125 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             submissionSection.classList.add('hidden');
         }
 
+        // ✅ 初始化學生端批注系統（如果是任務模式且已提交）
+        if (mode === 'assignment' && !editable) {
+            await initializeStudentAnnotationSystem(assignmentId);
+        }
+        
+        // ✅ 初始化批注重新定位系統（如果是編輯模式）
+        if (mode === 'assignment' && editable) {
+            await initializeAnnotationRepositioningSystem(assignmentId);
+        }
+
         console.log('✅ 論文編輯器顯示完成');
     } catch (error) {
         console.error('❌ 顯示論文編輯器失敗:', error);
         showError('無法加載論文編輯器: ' + error.message);
+    }
+}
+
+/**
+ * 初始化學生端批注系統
+ */
+async function initializeStudentAnnotationSystem(assignmentId) {
+    try {
+        console.log('🚀 初始化學生端批注系統:', assignmentId);
+        
+        // 動態導入學生端批注查看器
+        const { default: StudentAnnotationViewer } = await import('./student/student-annotation-viewer.js');
+        
+        // 獲取當前作業的段落信息
+        const { data: essay, error: essayError } = await AppState.supabase
+            .from('essays')
+            .select(`
+                id,
+                paragraphs (
+                    id,
+                    order_index
+                )
+            `)
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', AppState.currentUser.id)
+            .single();
+            
+        if (essayError) {
+            console.error('❌ 獲取作業信息失敗:', essayError);
+            return;
+        }
+        
+        if (!essay || !essay.paragraphs || essay.paragraphs.length === 0) {
+            console.log('ℹ️ 沒有找到段落，跳過批注系統初始化');
+            return;
+        }
+        
+        // 顯示批注區域，隱藏 AI 反饋區域
+        const annotationsArea = document.getElementById('annotations-display-area');
+        const feedbackArea = document.getElementById('sidebar-feedback-content');
+        
+        if (annotationsArea) {
+            annotationsArea.classList.remove('hidden');
+        }
+        if (feedbackArea) {
+            feedbackArea.classList.add('hidden');
+        }
+        
+        // 創建批注查看器
+        const annotationViewer = new StudentAnnotationViewer(AppState.supabase);
+        
+        // 為每個段落初始化批注系統
+        for (const paragraph of essay.paragraphs) {
+            await annotationViewer.init(essay.id, paragraph.id, true); // 只讀模式
+        }
+        
+        // 將批注查看器保存到全局狀態
+        window.studentAnnotationViewer = annotationViewer;
+        
+        console.log('✅ 學生端批注系統初始化完成');
+        
+    } catch (error) {
+        console.error('❌ 初始化學生端批注系統失敗:', error);
+    }
+}
+
+/**
+ * 初始化批注重新定位系統
+ */
+async function initializeAnnotationRepositioningSystem(assignmentId) {
+    try {
+        console.log('🚀 初始化批注重新定位系統:', assignmentId);
+        
+        // 動態導入批注重新定位管理器
+        const { default: AnnotationRepositioningManager } = await import('./features/annotation-repositioning.js');
+        
+        // 獲取當前作業信息
+        const { data: essay, error: essayError } = await AppState.supabase
+            .from('essays')
+            .select('id')
+            .eq('assignment_id', assignmentId)
+            .eq('student_id', AppState.currentUser.id)
+            .single();
+            
+        if (essayError) {
+            console.error('❌ 獲取作業信息失敗:', essayError);
+            return;
+        }
+        
+        if (!essay) {
+            console.log('ℹ️ 沒有找到作業，跳過批注重新定位系統初始化');
+            return;
+        }
+        
+        // 創建批注重新定位管理器
+        const repositioningManager = new AnnotationRepositioningManager(AppState.supabase);
+        await repositioningManager.init(essay.id);
+        
+        // 將管理器保存到全局狀態
+        window.annotationRepositioningManager = repositioningManager;
+        
+        console.log('✅ 批注重新定位系統初始化完成');
+        
+    } catch (error) {
+        console.error('❌ 初始化批注重新定位系統失敗:', error);
     }
 }
 
@@ -1242,15 +1385,21 @@ async function restoreEssayContent(contentData) {
             console.log(`🔄 開始恢復 ${contentData.arguments.length} 個分論點...`);
             
             // 動態導入分論點管理函數
-            const { addArgument, addParagraph } = await import('./student/essay-writer.js');
+            const { addArgument, addParagraph, EditorState } = await import('./student/essay-writer.js');
             
             // 為每個分論點創建結構並填充內容
             for (let i = 0; i < contentData.arguments.length; i++) {
                 const argData = contentData.arguments[i];
-
-                // 1. 創建新的分論點並取得引用
-                const currentArg = addArgument();
-
+                
+                // 1. 創建新的分論點
+                addArgument();
+                
+                // 等待 DOM 更新
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // 2. 獲取剛創建的分論點
+                const currentArg = EditorState.arguments[EditorState.arguments.length - 1];
+                
                 if (!currentArg) {
                     console.error(`❌ 無法獲取第 ${i + 1} 個分論點`);
                     continue;
@@ -1281,10 +1430,13 @@ async function restoreEssayContent(contentData) {
                         const paraData = argData.paragraphs[j];
                         
                         // 添加新段落
-                        const newParagraph = addParagraph(currentArg.id);
+                        addParagraph(currentArg.id);
+                        
+                        // 等待 DOM 更新
+                        await new Promise(resolve => setTimeout(resolve, 100));
                         
                         // 填充段落內容
-                        const para = newParagraph || currentArg.paragraphs[j];
+                        const para = currentArg.paragraphs[j];
                         if (para && para.editor && paraData.content) {
                             para.editor.setHTML(paraData.content);
                             console.log(`✅ 已恢復分論點 ${i + 1} 的第 ${j + 1} 個段落`);
@@ -1467,3 +1619,7 @@ if (document.readyState === 'loading') {
 } else {
     initializeApp();
 }
+
+// 導出供其他模組使用
+export { AppState };
+

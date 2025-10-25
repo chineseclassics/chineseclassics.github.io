@@ -4,8 +4,6 @@
 
 import toast from '../ui/toast.js';
 import AnnotationManager from '../features/annotation-manager.js';
-import { renderEssayHtml } from '../shared/essay-renderer.js';
-import { AppState } from '../app-state.js';
 
 class GradingUI {
   constructor(supabaseClient) {
@@ -148,7 +146,7 @@ class GradingUI {
                   </div>
                 </div>
                 <div class="essay-viewer" id="essayViewer">
-                  ${renderEssayHtml(essay)}
+                  ${this.renderEssayContent(essay)}
                 </div>
               </div>
             </div>
@@ -280,6 +278,114 @@ class GradingUI {
   }
 
   /**
+   * 渲染作業內容
+   */
+  renderEssayContent(essay) {
+    console.log('📄 渲染作業內容...');
+    console.log('  - content_json 存在?', !!essay.content_json);
+    console.log('  - paragraphs 數量:', essay.paragraphs?.length || 0);
+    
+    // 優先從 content_json 獲取完整結構化內容
+    if (essay.content_json) {
+      try {
+        const content = typeof essay.content_json === 'string' 
+          ? JSON.parse(essay.content_json) 
+          : essay.content_json;
+        
+        console.log('✅ 從 content_json 渲染');
+        console.log('  - 引言:', !!content.introduction);
+        console.log('  - 分論點:', content.arguments?.length || 0);
+        console.log('  - 結論:', !!content.conclusion);
+        
+        let html = '';
+        
+        // 引言
+        if (content.introduction) {
+          html += `
+            <div class="paragraph-block">
+              <h4 class="text-lg font-semibold text-gray-800 mb-2">
+                <i class="fas fa-quote-left mr-2" style="color: var(--primary-500);"></i>引言
+              </h4>
+              <div class="paragraph-content">${content.introduction}</div>
+            </div>
+          `;
+        }
+        
+        // 分論點
+        if (content.arguments && content.arguments.length > 0) {
+          content.arguments.forEach((arg, index) => {
+            html += `
+              <div class="paragraph-block argument-section">
+                <h4 class="text-lg font-semibold text-gray-800 mb-2">
+                  <i class="fas fa-lightbulb mr-2" style="color: var(--warning-500);"></i>
+                  分論點 ${index + 1}${arg.title ? `：${arg.title}` : ''}
+                </h4>
+            `;
+            
+            if (arg.paragraphs && arg.paragraphs.length > 0) {
+              arg.paragraphs.forEach((para, pIndex) => {
+                html += `
+                  <div class="paragraph-content sub-paragraph">
+                    <div class="paragraph-label">段落 ${pIndex + 1}</div>
+                    ${para.content || ''}
+                  </div>
+                `;
+              });
+            }
+            
+            html += `</div>`;
+          });
+        }
+        
+        // 結論
+        if (content.conclusion) {
+          html += `
+            <div class="paragraph-block">
+              <h4 class="text-lg font-semibold text-gray-800 mb-2">
+                <i class="fas fa-flag-checkered mr-2" style="color: var(--success-500);"></i>結論
+              </h4>
+              <div class="paragraph-content">${content.conclusion}</div>
+            </div>
+          `;
+        }
+        
+        return html || '<p class="text-gray-500">作業內容為空</p>';
+        
+      } catch (e) {
+        console.error('❌ 解析作業內容失敗:', e);
+      }
+    }
+    
+    // 備用：從 paragraphs 表渲染（舊格式）
+    if (essay.paragraphs && essay.paragraphs.length > 0) {
+      console.log('⚠️ 從 paragraphs 表渲染（備用方案）');
+      console.log('  - 第一個段落的 content 類型:', typeof essay.paragraphs[0].content);
+      console.log('  - 第一個段落的 content:', essay.paragraphs[0].content);
+      
+      return essay.paragraphs
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(p => {
+          // 提取 HTML 內容
+          let htmlContent = '';
+          if (p.content && typeof p.content === 'object') {
+            htmlContent = p.content.html || JSON.stringify(p.content);
+          } else {
+            htmlContent = p.content || '';
+          }
+          
+          return `
+            <div class="paragraph-block">
+              <h4>${p.paragraph_type === 'introduction' ? '引言' : p.paragraph_type === 'conclusion' ? '結論' : '正文段落'}</h4>
+              <div class="paragraph-content">${htmlContent}</div>
+            </div>
+          `;
+        }).join('');
+    }
+    
+    return '<p class="text-gray-500">作業內容為空</p>';
+  }
+
+  /**
    * 渲染評分標準表單
    */
   renderCriterionForm(criterion, existingScore = null) {
@@ -376,20 +482,16 @@ class GradingUI {
     if (!this.annotationManager) {
       console.log('📝 創建批注管理器');
       // 初始化批注管理器
-      this.annotationManager = new AnnotationManager(this.supabase, {
-        userRole: 'teacher',
-        currentUser: AppState.currentUser || null
-      });
+      this.annotationManager = new AnnotationManager(this.supabase);
       
       // 為每個段落初始化批注
       const paragraphs = this.currentEssay.paragraphs || [];
       console.log('📄 段落數量:', paragraphs.length);
       
       if (paragraphs.length > 0) {
-        await this.annotationManager.init({
-          essayId: this.currentEssay.id,
-          paragraphs
-        });
+        // 使用第一個段落作為示例
+        console.log('🎯 使用第一個段落初始化:', paragraphs[0].id);
+        await this.annotationManager.init(this.currentEssay.id, paragraphs[0].id);
       } else {
         console.log('❌ 沒有找到段落');
       }
@@ -874,3 +976,4 @@ ${overallComment.improvements || ''}
 }
 
 export default GradingUI;
+
