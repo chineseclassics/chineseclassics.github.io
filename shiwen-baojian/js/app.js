@@ -51,6 +51,12 @@ const AppState = {
 // ================================
 
 async function initializeApp() {
+    // ✅ 防止重複初始化
+    if (AppState.initialized) {
+        console.log('⏸️ 應用已初始化，跳過重複初始化');
+        return;
+    }
+    
     console.log('🚀 時文寶鑑初始化開始...');
     console.log(`📍 運行模式: ${RUN_MODE}`);
     
@@ -948,14 +954,19 @@ async function initializeStudentAnnotationSystem(assignmentId) {
             `)
             .eq('assignment_id', assignmentId)
             .eq('student_id', AppState.currentUser.id)
-            .single();
+            .maybeSingle();
             
         if (essayError) {
             console.error('❌ 獲取作業信息失敗:', essayError);
             return;
         }
         
-        if (!essay || !essay.paragraphs || essay.paragraphs.length === 0) {
+        if (!essay) {
+            console.log('ℹ️ 尚未建立作業記錄，跳過學生端批注系統初始化');
+            return;
+        }
+        
+        if (!essay.paragraphs || essay.paragraphs.length === 0) {
             console.log('ℹ️ 沒有找到段落，跳過批注系統初始化');
             return;
         }
@@ -1001,16 +1012,13 @@ async function initializeAnnotationRepositioningSystem(assignmentId) {
     try {
         console.log('🚀 初始化批注重新定位系統:', assignmentId);
         
-        // 動態導入批注重新定位管理器
-        const { default: AnnotationRepositioningManager } = await import('./features/annotation-repositioning.js');
-        
-        // 獲取當前作業信息
+        // ✅ 使用 maybeSingle() 而非 single()，避免查詢不到數據時報錯
         const { data: essay, error: essayError } = await AppState.supabase
             .from('essays')
             .select('id')
             .eq('assignment_id', assignmentId)
             .eq('student_id', AppState.currentUser.id)
-            .single();
+            .maybeSingle();
             
         if (essayError) {
             console.error('❌ 獲取作業信息失敗:', essayError);
@@ -1021,6 +1029,9 @@ async function initializeAnnotationRepositioningSystem(assignmentId) {
             console.log('ℹ️ 沒有找到作業，跳過批注重新定位系統初始化');
             return;
         }
+        
+        // 動態導入批注重新定位管理器（只在有作業時才導入）
+        const { default: AnnotationRepositioningManager } = await import('./features/annotation-repositioning.js');
         
         // 創建批注重新定位管理器
         const repositioningManager = new AnnotationRepositioningManager(AppState.supabase);
@@ -1713,4 +1724,3 @@ window.adjustSidebarSpace = function() {
 
 // 導出供其他模組使用
 export { AppState };
-
