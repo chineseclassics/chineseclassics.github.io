@@ -232,15 +232,16 @@ class AnnotationManager {
   }
 
   /**
-   * 立即高亮選中的文字
+   * 立即高亮選中的文字（臨時高亮）
    */
   highlightSelectedText() {
     if (!this.selectedText || !this.selectedRange) return;
     
     try {
-      // 創建高亮元素
+      // 創建臨時高亮元素
       const highlight = document.createElement('span');
-      highlight.className = 'annotation-highlight';
+      highlight.className = 'annotation-highlight annotation-highlight-temp';
+      highlight.setAttribute('data-temp-highlight', 'true');
       highlight.style.cssText = `
         background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
         border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
@@ -248,14 +249,33 @@ class AnnotationManager {
         border-radius: 2px;
         position: relative;
         z-index: 1;
+        opacity: 0.8;
+        animation: pulse 1.5s ease-in-out infinite;
       `;
       
       // 用高亮元素包圍選中的文字
       this.selectedRange.surroundContents(highlight);
       
-      console.log('✅ 文字已立即高亮');
+      // 保存臨時高亮引用
+      this.tempHighlight = highlight;
+      
+      console.log('✅ 文字已立即高亮（臨時）');
     } catch (error) {
       console.log('⚠️ 無法立即高亮文字:', error);
+    }
+  }
+
+  /**
+   * 移除臨時高亮
+   */
+  removeTemporaryHighlight() {
+    if (this.tempHighlight && this.tempHighlight.parentNode) {
+      // 將高亮元素替換為純文本
+      const parent = this.tempHighlight.parentNode;
+      const textNode = document.createTextNode(this.tempHighlight.textContent);
+      parent.replaceChild(textNode, this.tempHighlight);
+      this.tempHighlight = null;
+      console.log('🗑️ 臨時高亮已移除');
     }
   }
 
@@ -273,13 +293,15 @@ class AnnotationManager {
     // 隱藏批注按鈕
     this.hideAnnotationButton();
     
-    // 立即高亮選中的文字
+    // 立即高亮選中的文字（持久高亮）
     this.highlightSelectedText();
     
     // 顯示批注創建對話框
     const content = await this.showAnnotationDialog();
     if (!content) {
       console.log('❌ 用戶取消了批注創建');
+      // 如果用戶取消，移除臨時高亮
+      this.removeTemporaryHighlight();
       return;
     }
     
@@ -312,7 +334,16 @@ class AnnotationManager {
         created_at: new Date().toISOString()
       });
       
-      // 渲染批注
+      // 將臨時高亮轉換為持久高亮
+      if (this.tempHighlight) {
+        this.tempHighlight.setAttribute('data-annotation-id', data);
+        this.tempHighlight.classList.remove('annotation-highlight-temp');
+        this.tempHighlight.style.opacity = '1';
+        this.tempHighlight.style.animation = 'none';
+        this.tempHighlight = null;
+      }
+      
+      // 渲染批注（創建右側浮動批注）
       this.renderAnnotation(data.id);
       
       // 清除選擇
@@ -452,8 +483,11 @@ class AnnotationManager {
       return;
     }
     
-    // 1. 在原文中高亮文本
-    this.highlightTextInEssay(annotationId, annotation);
+    // 1. 在原文中高亮文本（如果沒有臨時高亮才創建新的）
+    const tempHighlight = document.querySelector('[data-temp-highlight="true"]');
+    if (!tempHighlight) {
+      this.highlightTextInEssay(annotationId, annotation);
+    }
     
     // 2. 在右側創建浮動批注
     setTimeout(() => {
