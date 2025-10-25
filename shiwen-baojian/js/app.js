@@ -743,11 +743,12 @@ function setupStudentNavigation() {
  * @param {string} essayId - 作業 ID（繼續編輯現有練筆時使用）
  */
 async function showEssayEditor(assignmentId = null, mode = null, formatTemplate = null, essayId = null, editable = true) {
-    // ✅ 根據參數自動判斷模式
-    if (!mode) {
-        mode = assignmentId ? 'assignment' : 'free-writing';
-    }
     try {
+        // ✅ 根據參數自動判斷模式
+        if (!mode) {
+            mode = assignmentId ? 'assignment' : 'free-writing';
+        }
+        
         const container = document.getElementById('student-dashboard-content');
         if (!container) {
             console.error('❌ 找不到學生儀表板容器');
@@ -1659,7 +1660,7 @@ async function displayTeacherGrading(essayId) {
     }
 }
 
-// 等待 DOM 加載完成後初始化應用
+// 等待 DOM 加載完成後初始化應用（只執行一次）
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         if (!AppState.initialized) {
@@ -1667,6 +1668,7 @@ if (document.readyState === 'loading') {
         }
     });
 } else {
+    // DOM 已經加載完成，直接初始化
     if (!AppState.initialized) {
         initializeApp();
     }

@@ -1257,7 +1257,6 @@ class AnnotationManager {
         .from('annotations')
         .select('*')
         .eq('paragraph_id', this.currentParagraphId)
-        .is('deleted_at', null)  // 只加載未刪除的批注
         .order('highlight_start', { ascending: true });  // 按原文位置排序
       
       if (error) {
