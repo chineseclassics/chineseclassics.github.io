@@ -8,7 +8,7 @@
  * - 智能緩存（基於內容哈希，內容變化時重新請求）
  */
 
-import { AppState } from '../app.js';
+import { AppState } from '../app-state.js';
 import { renderFeedback } from './feedback-renderer.js';
 import { loadHonglouFormatSpec } from '../data/format-spec-loader.js';
 
@@ -344,4 +344,3 @@ function showErrorState(paragraphId, errorMessage) {
 // ================================
 
 export { showLoadingState, hideLoadingState, showErrorState };
-

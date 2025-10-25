@@ -9,7 +9,7 @@
  */
 
 import { RichTextEditor } from '../editor/rich-text-editor.js';
-import { AppState } from '../app.js';
+import { AppState } from '../app-state.js';
 import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
@@ -228,6 +228,8 @@ export function addArgument() {
     addParagraph(argumentId);
     
     console.log(`✅ 已添加分論點 ${argumentIndex}`);
+
+    return argument;
 }
 
 /**
@@ -375,6 +377,8 @@ export function addParagraph(argumentId) {
     }
     
     console.log(`✅ 已添加段落到分論點 ${argument.index}`);
+
+    return paragraph;
 }
 
 /**
@@ -638,4 +642,3 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
 // ================================
 
 export { EditorState, requestParagraphFeedback };
-

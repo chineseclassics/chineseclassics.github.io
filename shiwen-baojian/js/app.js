@@ -8,6 +8,7 @@
  */
 
 import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
+import { AppState } from './app-state.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
 import toast from './ui/toast.js';
@@ -16,35 +17,6 @@ import toast from './ui/toast.js';
 // 全局狀態管理
 // ================================
 
-const AppState = {
-    supabase: null,
-    currentUser: null,
-    userRole: null, // 'teacher' | 'student' | 'anonymous'
-    currentScreen: null,
-    initialized: false,
-    
-    // ✅ 數據緩存
-    cache: {
-        // 靜態數據
-        formatTemplates: {},           // { templateName: templateData }
-        
-        // 半靜態數據（可刷新）
-        assignmentsList: [],           // 任務列表
-        practiceEssaysList: [],        // 練筆列表
-        classList: [],                 // 班級列表
-        lastRefreshTime: null,         // 上次刷新時間
-        
-        // AI 反饋緩存（智能緩存）
-        aiFeedbackCache: {},           // { paragraphId: { contentHash: xxx, feedback: {...} } }
-    },
-    
-    // 當前編輯狀態
-    currentAssignmentId: null,
-    currentPracticeEssayId: null,
-    currentEssayContent: null,
-    currentPracticeContent: null,
-    currentFormatSpec: null
-};
 
 // ================================
 // 初始化應用
@@ -1270,21 +1242,15 @@ async function restoreEssayContent(contentData) {
             console.log(`🔄 開始恢復 ${contentData.arguments.length} 個分論點...`);
             
             // 動態導入分論點管理函數
-            const { addArgument, addParagraph, EditorState } = await import('./student/essay-writer.js');
+            const { addArgument, addParagraph } = await import('./student/essay-writer.js');
             
             // 為每個分論點創建結構並填充內容
             for (let i = 0; i < contentData.arguments.length; i++) {
                 const argData = contentData.arguments[i];
-                
-                // 1. 創建新的分論點
-                addArgument();
-                
-                // 等待 DOM 更新
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                // 2. 獲取剛創建的分論點
-                const currentArg = EditorState.arguments[EditorState.arguments.length - 1];
-                
+
+                // 1. 創建新的分論點並取得引用
+                const currentArg = addArgument();
+
                 if (!currentArg) {
                     console.error(`❌ 無法獲取第 ${i + 1} 個分論點`);
                     continue;
@@ -1315,13 +1281,10 @@ async function restoreEssayContent(contentData) {
                         const paraData = argData.paragraphs[j];
                         
                         // 添加新段落
-                        addParagraph(currentArg.id);
-                        
-                        // 等待 DOM 更新
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        const newParagraph = addParagraph(currentArg.id);
                         
                         // 填充段落內容
-                        const para = currentArg.paragraphs[j];
+                        const para = newParagraph || currentArg.paragraphs[j];
                         if (para && para.editor && paraData.content) {
                             para.editor.setHTML(paraData.content);
                             console.log(`✅ 已恢復分論點 ${i + 1} 的第 ${j + 1} 個段落`);
@@ -1504,7 +1467,3 @@ if (document.readyState === 'loading') {
 } else {
     initializeApp();
 }
-
-// 導出供其他模組使用
-export { AppState };
-

@@ -5,6 +5,7 @@
 import toast from '../ui/toast.js';
 import AnnotationManager from '../features/annotation-manager.js';
 import { renderEssayHtml } from '../shared/essay-renderer.js';
+import { AppState } from '../app-state.js';
 
 class GradingUI {
   constructor(supabaseClient) {
@@ -377,7 +378,7 @@ class GradingUI {
       // 初始化批注管理器
       this.annotationManager = new AnnotationManager(this.supabase, {
         userRole: 'teacher',
-        currentUser: window.AppState?.currentUser || null
+        currentUser: AppState.currentUser || null
       });
       
       // 為每個段落初始化批注

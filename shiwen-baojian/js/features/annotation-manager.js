@@ -5,6 +5,7 @@
 
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
+import { AppState } from '../app-state.js';
 
 class AnnotationManager {
   constructor(supabaseClient) {
@@ -434,9 +435,9 @@ class AnnotationManager {
    */
   getCurrentUser() {
     // 從全局狀態獲取用戶信息
-    if (window.AppState?.currentUser) {
-      console.log('✅ 從 AppState 獲取用戶信息:', window.AppState.currentUser.email);
-      return window.AppState.currentUser;
+    if (AppState.currentUser) {
+      console.log('✅ 從 AppState 獲取用戶信息:', AppState.currentUser.email);
+      return AppState.currentUser;
     }
     
     // 備用：從 Supabase 會話獲取
