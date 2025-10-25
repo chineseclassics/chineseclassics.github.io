@@ -771,6 +771,36 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             AppState.currentPracticeEssayId = null;
         }
 
+        // ✅ 學生可編輯模式下調整模板結構
+        const layoutRoot = container.querySelector('.google-docs-layout');
+        if (layoutRoot && editable) {
+            layoutRoot.classList.add('student-edit-mode');
+
+            // 移除僅供老師查看的舊「作業內容」查看區
+            const viewerWrapper = layoutRoot.querySelector('.grading-content-wrapper');
+            if (viewerWrapper) {
+                viewerWrapper.remove();
+            }
+
+            // 建立單欄容器，將任務資訊與編輯器集中在左側
+            const assignmentInfoPanel = layoutRoot.querySelector('#assignment-info-panel');
+            const editorShell = layoutRoot.querySelector('[data-editor-root="true"]');
+            const sidebar = layoutRoot.querySelector('aside');
+
+            if (assignmentInfoPanel && editorShell) {
+                const editorColumn = document.createElement('div');
+                editorColumn.classList.add('student-editor-column');
+                editorColumn.appendChild(assignmentInfoPanel);
+                editorColumn.appendChild(editorShell);
+
+                if (sidebar) {
+                    layoutRoot.insertBefore(editorColumn, sidebar);
+                } else {
+                    layoutRoot.appendChild(editorColumn);
+                }
+            }
+        }
+
         // 綁定返回按鈕
         const backBtn = container.querySelector('#back-to-list-btn');
         if (backBtn) {
