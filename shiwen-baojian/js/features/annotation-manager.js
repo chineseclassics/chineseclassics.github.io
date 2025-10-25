@@ -11,6 +11,7 @@ class AnnotationManager {
     this.annotations = new Map(); // 存儲當前批注
     this.selectedText = null;
     this.isSelectionMode = false;
+    this.isCreatingAnnotation = false; // 添加創建狀態標記
     this.currentEssayId = null;
     this.currentParagraphId = null;
     
@@ -248,14 +249,6 @@ class AnnotationManager {
       const highlight = document.createElement('span');
       highlight.className = 'annotation-highlight annotation-highlight-temp';
       highlight.setAttribute('data-temp-highlight', 'true');
-      highlight.style.cssText = `
-        background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
-        border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
-        padding: 1px 2px;
-        border-radius: 2px;
-        position: relative;
-        z-index: 1;
-      `;
       
       // 用高亮元素包圍選中的文字
       this.selectedRange.surroundContents(highlight);
@@ -346,14 +339,17 @@ class AnnotationManager {
       // 將臨時高亮轉換為持久高亮
       if (this.tempHighlight) {
         this.tempHighlight.setAttribute('data-annotation-id', data);
+        this.tempHighlight.removeAttribute('data-temp-highlight');
         this.tempHighlight.classList.remove('annotation-highlight-temp');
         this.tempHighlight.style.opacity = '1';
         this.tempHighlight.style.animation = 'none';
         this.tempHighlight = null;
       }
       
-      // 渲染批注（創建右側浮動批注）
-      this.renderAnnotation(data.id);
+      // 直接創建右側浮動批注（不需要調用 renderAnnotation）
+      setTimeout(() => {
+        this.createFloatingAnnotation(data.id, this.annotations.get(data.id));
+      }, 100);
       
       // 清除選擇
       window.getSelection().removeAllRanges();
@@ -499,11 +495,8 @@ class AnnotationManager {
       return;
     }
     
-    // 1. 在原文中高亮文本（如果沒有臨時高亮才創建新的）
-    const tempHighlight = document.querySelector('[data-temp-highlight="true"]');
-    if (!tempHighlight) {
-      this.highlightTextInEssay(annotationId, annotation);
-    }
+    // 1. 在原文中高亮文本
+    this.highlightTextInEssay(annotationId, annotation);
     
     // 2. 在右側創建浮動批注
     setTimeout(() => {

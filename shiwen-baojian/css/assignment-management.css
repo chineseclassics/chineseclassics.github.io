@@ -1855,6 +1855,18 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   opacity: 0.8 !important;
 }
 
+/* 持久高亮樣式 */
+.annotation-highlight {
+  background-color: var(--warning-100) !important;
+  border-bottom: 2px solid var(--warning-600) !important;
+  padding: 1px 2px !important;
+  border-radius: 2px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  opacity: 1 !important;
+  animation: none !important;
+}
+
 /* 浮動批注樣式 - 直接浮動在右側 */
 .floating-annotation {
   position: absolute;
