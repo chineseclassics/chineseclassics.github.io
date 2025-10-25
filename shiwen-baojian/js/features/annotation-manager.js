@@ -355,24 +355,9 @@ class AnnotationManager {
         return;
       }
 
-      // 計算輸入框位置
-      let inputTop = 0;
-      if (this.selectedText && this.selectedText.range) {
-        const rect = this.selectedText.range.getBoundingClientRect();
-        const essayViewer = document.getElementById('essayViewer');
-        const essayRect = essayViewer.getBoundingClientRect();
-        
-        // 計算相對於滾動容器的位置
-        inputTop = rect.top - essayRect.top;
-      }
-
-      // 防重疊調整
-      const finalTop = this.adjustPositionToAvoidOverlap(inputTop, 'input');
-
       // 創建浮動輸入框
       const inputBox = document.createElement('div');
       inputBox.className = 'floating-annotation-input';
-      inputBox.style.top = finalTop + 'px';
 
       inputBox.innerHTML = `
         <div class="annotation-input-header">
@@ -392,6 +377,12 @@ class AnnotationManager {
       
       // 直接添加到滾動容器
       wrapper.appendChild(inputBox);
+      
+      // 調整所有批註位置
+      this.adjustAnnotationsForActive(inputBox);
+      
+      // 滾動到原文位置
+      this.scrollToHighlight();
       
       // 綁定事件
       const cancelBtn = inputBox.querySelector('.cancel');
@@ -520,28 +511,107 @@ class AnnotationManager {
     }, 100);
   }
 
+  /**
+   * 獲取批註的理想位置（對齊原文高亮）
+   */
+  getIdealTop(annotation) {
+    const essayViewer = document.getElementById('essayViewer');
+    if (!essayViewer) return 0;
+    
+    const essayViewerOffset = essayViewer.offsetTop;
+    
+    // 對於輸入框
+    if (annotation.classList && annotation.classList.contains('floating-annotation-input')) {
+      if (!this.tempHighlight) return 0;
+      return this.tempHighlight.offsetTop + essayViewerOffset;
+    }
+    
+    // 對於已存在的批註
+    const annotationId = annotation.dataset?.annotationId;
+    if (annotationId) {
+      const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+      
+      if (highlight) {
+        return highlight.offsetTop + essayViewerOffset;
+      }
+    }
+    
+    return parseInt(annotation.style.top) || 0;
+  }
 
   /**
-   * 防重疊調整方法
+   * 調整批註位置，確保活動批註對齊原文，其他批註避免重疊
    */
-  adjustPositionToAvoidOverlap(idealTop, currentId) {
-    const existingAnnotations = document.querySelectorAll('.floating-annotation, .floating-annotation-input');
-    let adjustedTop = idealTop;
+  adjustAnnotationsForActive(activeElement) {
+    const activeIdealTop = this.getIdealTop(activeElement);
+    activeElement.style.top = activeIdealTop + 'px';
     
-    existingAnnotations.forEach(ann => {
-      if (ann.dataset.annotationId === currentId || ann.classList.contains('floating-annotation-input')) return;
+    // 獲取所有其他批註並調整位置
+    const otherAnnotations = Array.from(
+      document.querySelectorAll('.floating-annotation, .floating-annotation-input')
+    ).filter(ann => ann !== activeElement);
+    
+    // 簡單的避讓邏輯：如果重疊就向下移動
+    otherAnnotations.forEach(ann => {
+      const annIdealTop = this.getIdealTop(ann);
+      const annHeight = ann.offsetHeight || 100;
+      const activeBottom = activeIdealTop + (activeElement.offsetHeight || 100);
       
-      const annTop = parseInt(ann.style.top) || 0;
-      const annHeight = ann.offsetHeight || 100; // 預設高度
-      
-      // 如果重疊，向下移動
-      if (Math.abs(adjustedTop - annTop) < annHeight + 12) {
-        adjustedTop = Math.max(adjustedTop, annTop + annHeight + 12);
+      // 如果理想位置與活動批註重疊，就放在活動批註下方
+      if (annIdealTop < activeBottom + 12) {
+        ann.style.top = (activeBottom + 12) + 'px';
+      } else {
+        ann.style.top = annIdealTop + 'px';
       }
     });
-    
-    return adjustedTop;
   }
+
+
+  /**
+   * 滾動到高亮的原文位置
+   */
+  scrollToHighlight() {
+    const wrapper = document.querySelector('.grading-content-wrapper');
+    const highlight = this.tempHighlight;
+    
+    if (!wrapper || !highlight) return;
+    
+    const highlightRect = highlight.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const currentScrollTop = wrapper.scrollTop;
+    
+    const highlightTop = highlightRect.top - wrapperRect.top + currentScrollTop;
+    const scrollTo = highlightTop - (wrapper.clientHeight / 2) + (highlight.offsetHeight / 2);
+    
+    wrapper.scrollTo({
+      top: Math.max(0, scrollTo),
+      behavior: 'smooth'
+    });
+  }
+
+  /**
+   * 滾動到指定批註的原文位置
+   */
+  scrollToAnnotationHighlight(annotationId) {
+    const wrapper = document.querySelector('.grading-content-wrapper');
+    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    
+    if (!wrapper || !highlight) return;
+    
+    const highlightRect = highlight.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const currentScrollTop = wrapper.scrollTop;
+    
+    const highlightTop = highlightRect.top - wrapperRect.top + currentScrollTop;
+    const scrollTo = highlightTop - (wrapper.clientHeight / 2) + (highlight.offsetHeight / 2);
+    
+    wrapper.scrollTo({
+      top: Math.max(0, scrollTo),
+      behavior: 'smooth'
+    });
+  }
+
+
 
   /**
    * 創建浮動批注（Google Docs 風格 - 直接浮動在右側）
@@ -561,17 +631,10 @@ class AnnotationManager {
       return;
     }
 
-    // 計算批註位置（相對於滾動容器頂部）
-    const highlightTop = highlight.offsetTop;
-    
-    // 防重疊調整
-    const finalTop = this.adjustPositionToAvoidOverlap(highlightTop, annotationId);
-    
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
     floatingAnnotation.className = 'floating-annotation';
     floatingAnnotation.dataset.annotationId = annotationId;
-    floatingAnnotation.style.top = finalTop + 'px';
 
     // 批注內容
     floatingAnnotation.innerHTML = `
@@ -589,13 +652,17 @@ class AnnotationManager {
 
     // 直接添加到滾動容器中
     wrapper.appendChild(floatingAnnotation);
+    
+    // 計算批註位置（使用新的 getIdealTop 方法）
+    const idealTop = this.getIdealTop(floatingAnnotation);
+    floatingAnnotation.style.top = idealTop + 'px';
+    
     console.log('✅ 批注元素已添加到滾動容器中');
-    console.log('📍 批注位置:', finalTop, 'px');
 
     // 綁定事件
     floatingAnnotation.addEventListener('click', (e) => {
       if (e.target.classList.contains('annotation-action-btn')) return;
-      this.highlightAnnotationInText(annotationId);
+      this.highlightAnnotation(annotationId);
     });
 
     // 編輯按鈕
@@ -655,21 +722,11 @@ class AnnotationManager {
       floatingAnnotation.classList.add('active');
       floatingAnnotation.style.display = 'block';
       
-      // 滾動批註到視窗中央
-      const wrapper = document.querySelector('.grading-content-wrapper');
-      if (wrapper) {
-        const annotationRect = floatingAnnotation.getBoundingClientRect();
-        const wrapperRect = wrapper.getBoundingClientRect();
-        const currentScrollTop = wrapper.scrollTop;
-        const annotationTop = annotationRect.top - wrapperRect.top + currentScrollTop;
-        const wrapperHeight = wrapper.clientHeight;
-        const scrollTo = annotationTop - (wrapperHeight / 2) + (floatingAnnotation.offsetHeight / 2);
-        
-        wrapper.scrollTo({
-          top: scrollTo,
-          behavior: 'smooth'
-        });
-      }
+      // 調整批註位置，讓該批註對齊原文
+      this.adjustAnnotationsForActive(floatingAnnotation);
+      
+      // 滾動到原文位置
+      this.scrollToAnnotationHighlight(annotationId);
     }
 
     // 臨時高亮原文文本
@@ -706,43 +763,6 @@ class AnnotationManager {
     }
   }
 
-  /**
-   * 高亮側邊欄中的批注
-   */
-  highlightAnnotationInText(annotationId) {
-    // 移除所有高亮
-    document.querySelectorAll('.annotation-item.active').forEach(item => {
-      item.classList.remove('active');
-    });
-
-    // 高亮當前批注
-    const annotationItem = document.querySelector(`[data-annotation-id="${annotationId}"]`);
-    if (annotationItem) {
-      annotationItem.classList.add('active');
-    }
-
-    // 滾動原文到視窗中央
-    const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (highlight) {
-      const wrapper = document.querySelector('.grading-content-wrapper');
-      if (wrapper) {
-        const highlightRect = highlight.getBoundingClientRect();
-        const wrapperRect = wrapper.getBoundingClientRect();
-        const currentScrollTop = wrapper.scrollTop;
-        const highlightTop = highlightRect.top - wrapperRect.top + currentScrollTop;
-        const wrapperHeight = wrapper.clientHeight;
-        const scrollTo = highlightTop - (wrapperHeight / 2) + (highlight.offsetHeight / 2);
-        
-        wrapper.scrollTo({
-          top: scrollTo,
-          behavior: 'smooth'
-        });
-      }
-    }
-
-    // 臨時高亮原文文本
-    this.highlightTextTemporarily(annotationId);
-  }
 
   /**
    * 在論文中高亮文本
@@ -880,10 +900,16 @@ class AnnotationManager {
       // 更新浮動批注內容
       const floatingAnnotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
       if (floatingAnnotation) {
-        const contentElement = floatingAnnotation.querySelector('.annotation-content p');
+        const contentElement = floatingAnnotation.querySelector('.annotation-content');
         if (contentElement) {
           contentElement.textContent = newContent;
         }
+        
+        // 調整批註位置，讓該批註對齊原文
+        this.adjustAnnotationsForActive(floatingAnnotation);
+        
+        // 滾動到原文位置
+        this.scrollToAnnotationHighlight(annotationId);
       }
       
       toast.success('批注已更新');
@@ -945,8 +971,15 @@ class AnnotationManager {
       
       console.log('📊 批注數據:', data);
       
-      // 存儲批注
-      data.forEach(annotation => {
+      // 按照 highlight_start 排序（從小到大，確保批註按原文順序顯示）
+      const sortedAnnotations = data.sort((a, b) => {
+        return (a.highlight_start || 0) - (b.highlight_start || 0);
+      });
+      
+      console.log('✅ 批注已按原文位置排序');
+      
+      // 存儲並渲染批注
+      sortedAnnotations.forEach(annotation => {
         const annotationId = annotation.id || annotation.annotation_id;
         if (annotationId) {
           this.annotations.set(annotationId, annotation);
@@ -956,7 +989,7 @@ class AnnotationManager {
         }
       });
       
-      console.log(`✅ 已加載 ${data.length} 個批注`);
+      console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
       
     } catch (error) {
       console.error('❌ 加載批注失敗:', error);
