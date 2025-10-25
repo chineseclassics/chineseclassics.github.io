@@ -1,6 +1,7 @@
 ---
 description: 太虛幻境雙模式架構規範 - 應用獨立性與平台協作
 alwaysApply: false
+manual: true
 ---
 
 # 太虛幻境雙模式架構規範

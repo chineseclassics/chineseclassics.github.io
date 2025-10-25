@@ -1812,6 +1812,17 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: relative;
+  padding-top: 0;
+}
+
+/* 固定頂部欄（任務信息區） */
+#assignment-info-panel {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 統一滾動容器 */
@@ -1820,16 +1831,45 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   overflow-y: auto;
   max-height: calc(100vh - 250px);
   padding: 16px;
+  display: flex;
+  gap: 24px;
 }
 
+/* 主要內容區域 - 調整為使用 flex 布局 */
 .main-content-area {
   max-width: 65%;  /* 留出右側 35% 空間給批註 */
   position: relative;
   overflow: visible;
+  flex: 0 0 65%;  /* 固定寬度 */
 }
 
+/* 右側批註區域 */
+.grading-sidebar {
+  flex: 0 0 35%;  /* 固定寬度，佔 35% */
+  position: sticky;
+  top: 120px;  /* 根據固定頂部欄的高度調整 */
+  height: fit-content;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+/* 論文內容區域 - 只讀模式下隱藏 */
 .essay-content-section {
   position: relative;
+}
+
+.essay-content-section.hidden {
+  display: none;
+}
+
+/* 只讀模式：編輯器容器直接顯示 */
+.read-only-mode .grading-content-wrapper {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.read-only-mode .main-content-area {
+  /* 內容直接在 main-content-area 中顯示 */
 }
 
 /* 浮動批注樣式 - 直接浮動在右側 */

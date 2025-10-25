@@ -51,6 +51,12 @@ const AppState = {
 // ================================
 
 async function initializeApp() {
+    // 防止重複初始化
+    if (AppState.initialized) {
+        console.log('⚠️ 應用已經初始化，跳過重複初始化');
+        return;
+    }
+    
     console.log('🚀 時文寶鑑初始化開始...');
     console.log(`📍 運行模式: ${RUN_MODE}`);
     
@@ -117,26 +123,40 @@ async function initializeApp() {
 /**
  * 處理已認證用戶
  */
+let isHandlingUser = false;  // 防止重複處理
+
 async function handleAuthenticatedUser(user) {
     console.log('👤 處理已認證用戶:', user.email || '匿名用戶');
     
-    AppState.currentUser = user;
+    // 防止重複處理
+    if (isHandlingUser) {
+        console.log('⚠️ 正在處理用戶，跳過重複請求');
+        return;
+    }
     
-    // 確保 users 表中有記錄
-    await ensureUserRecord(user);
+    isHandlingUser = true;
     
-    // 識別用戶角色
-    AppState.userRole = detectUserRole(user);
-    console.log('🎭 用戶角色:', AppState.userRole);
-    
-    // 根據角色顯示對應儀表板
-    if (AppState.userRole === 'teacher') {
-        await showTeacherDashboard();
-    } else if (AppState.userRole === 'student') {
-        await showStudentDashboard();
-    } else {
-        // 匿名用戶默認顯示學生界面（測試用）
-        await showStudentDashboard();
+    try {
+        AppState.currentUser = user;
+        
+        // 確保 users 表中有記錄
+        await ensureUserRecord(user);
+        
+        // 識別用戶角色
+        AppState.userRole = detectUserRole(user);
+        console.log('🎭 用戶角色:', AppState.userRole);
+        
+        // 根據角色顯示對應儀表板
+        if (AppState.userRole === 'teacher') {
+            await showTeacherDashboard();
+        } else if (AppState.userRole === 'student') {
+            await showStudentDashboard();
+        } else {
+            // 匿名用戶默認顯示學生界面（測試用）
+            await showStudentDashboard();
+        }
+    } finally {
+        isHandlingUser = false;
     }
 }
 
@@ -901,6 +921,14 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         // ✅ 設置狀態顯示（只在任務模式）
         if (mode === 'assignment') {
             await setupEssayStatus(assignmentId, editable);
+            
+            // 只讀模式：添加特殊的布局類名
+            if (!editable) {
+                const layout = container.querySelector('.google-docs-layout');
+                if (layout) {
+                    layout.classList.add('read-only-mode');
+                }
+            }
         }
         
         // ✅ 隱藏右側的提交區域（提交功能在列表卡片上）
@@ -909,14 +937,29 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             submissionSection.classList.add('hidden');
         }
 
-        // ✅ 初始化學生端批注系統（如果是任務模式且已提交）
-        if (mode === 'assignment' && !editable) {
-            await initializeStudentAnnotationSystem(assignmentId);
-        }
-        
-        // ✅ 初始化批注重新定位系統（如果是編輯模式）
-        if (mode === 'assignment' && editable) {
-            await initializeAnnotationRepositioningSystem(assignmentId);
+        // ✅ 初始化學生端批注系統（所有已提交的作業都可以看到批注）
+        if (mode === 'assignment') {
+            // 查詢作業狀態
+            const { StorageState } = await import('./student/essay-storage.js');
+            const essayId = StorageState.currentEssayId;
+            
+            if (essayId) {
+                const { data: essay } = await AppState.supabase
+                    .from('essays')
+                    .select('status')
+                    .eq('id', essayId)
+                    .single();
+                
+                // 已提交或已批改的作業都可以看到批注
+                if (essay && (essay.status === 'submitted' || essay.status === 'graded')) {
+                    await initializeStudentAnnotationSystem(assignmentId);
+                }
+            }
+            
+            // 可編輯模式下初始化批注重新定位系統
+            if (editable) {
+                await initializeAnnotationRepositioningSystem(assignmentId);
+            }
         }
 
         console.log('✅ 論文編輯器顯示完成');
@@ -1255,32 +1298,30 @@ async function setupEssayStatus(assignmentId, editable = true) {
         // 更新狀態顯示
         if (essay.status === 'submitted') {
             if (statusText) {
-                statusText.textContent = '已提交';
-                statusText.classList.add('text-emerald-600', 'font-semibold');
+                statusText.textContent = '已提交（可繼續編輯）';
+                statusText.classList.add('text-blue-600', 'font-semibold');
             }
             if (statusDisplay) {
                 const icon = statusDisplay.querySelector('i');
                 if (icon) {
-                    icon.className = 'fas fa-check-circle text-emerald-600 text-xs';
+                    icon.className = 'fas fa-check-circle text-blue-600 text-xs';
                 }
             }
         } else if (essay.status === 'graded') {
             if (statusText) {
-                statusText.textContent = '已批改';
+                statusText.textContent = '已批改（只讀）';
                 statusText.classList.add('text-amber-700', 'font-semibold');
             }
             
             // ✅ 如果已批改，顯示老師的評分和評語（替換「賈雨村說」）
             await displayTeacherGrading(essayId);
+            
+            // 只有已批改狀態才設為只讀
+            console.log('📖 已批改狀態：禁用編輯功能');
+            disableEditing();
         } else {
             // 草稿狀態
             if (statusText) statusText.textContent = '草稿';
-        }
-        
-        // 只讀模式：禁用所有編輯功能
-        if (!editable) {
-            console.log('📖 只讀模式：禁用編輯功能');
-            disableEditing();
         }
         
     } catch (error) {
@@ -1324,8 +1365,8 @@ function disableEditing() {
         notice.className = 'bg-amber-50 border-l-4 border-amber-500 p-4 mb-4';
         notice.innerHTML = `
             <div class="flex items-center gap-2">
-                <i class="fas fa-eye text-amber-700"></i>
-                <span class="text-amber-800 font-medium">只讀模式：此作業已提交，無法編輯</span>
+                <i class="fas fa-lock text-amber-700"></i>
+                <span class="text-amber-800 font-medium">只讀模式：此作業已被老師批改並評分，無法再編輯</span>
             </div>
         `;
         const assignmentInfo = container.querySelector('#assignment-info-panel');
@@ -1620,9 +1661,15 @@ async function displayTeacherGrading(essayId) {
 
 // 等待 DOM 加載完成後初始化應用
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!AppState.initialized) {
+            initializeApp();
+        }
+    });
 } else {
-    initializeApp();
+    if (!AppState.initialized) {
+        initializeApp();
+    }
 }
 
 /**

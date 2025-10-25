@@ -1,6 +1,7 @@
 ---
 description: 太虛幻境巢狀規則架構 - 兩層規則系統最佳實踐
 alwaysApply: false
+manual: true
 ---
 
 # 太虛幻境巢狀規則架構

@@ -1,10 +1,7 @@
 ---
 description: Supabase 客戶端初始化最佳實踐 - 跨平台兼容性與認證穩定性
-globs:
-  - "**/*.html"
-  - "**/*auth*.js"
-  - "**/*supabase*.js"
 alwaysApply: false
+manual: true
 ---
 
 # Supabase 客戶端初始化最佳實踐

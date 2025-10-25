@@ -1252,27 +1252,24 @@ class AnnotationManager {
     console.log('📥 加載現有批注:', this.currentParagraphId);
     
     try {
-      const { data, error } = await this.supabase.rpc('get_paragraph_annotations', {
-        p_paragraph_id: this.currentParagraphId
-      });
+      // 使用直接查詢而非 RPC，確保學生端和老師端都能正確加載批注數據
+      const { data, error } = await this.supabase
+        .from('annotations')
+        .select('*')
+        .eq('paragraph_id', this.currentParagraphId)
+        .is('deleted_at', null)  // 只加載未刪除的批注
+        .order('highlight_start', { ascending: true });  // 按原文位置排序
       
       if (error) {
-        console.error('❌ RPC 調用失敗:', error);
+        console.error('❌ 加載批注失敗:', error);
         throw error;
       }
       
       console.log('📊 批注數據:', data);
       
-      // 按照 highlight_start 排序（從小到大，確保批註按原文順序顯示）
-      const sortedAnnotations = data.sort((a, b) => {
-        return (a.highlight_start || 0) - (b.highlight_start || 0);
-      });
-      
-      console.log('✅ 批注已按原文位置排序');
-      
       // 存儲並渲染批注
-      for (const annotation of sortedAnnotations) {
-        const annotationId = annotation.id || annotation.annotation_id;
+      for (const annotation of data) {
+        const annotationId = annotation.id;
         if (annotationId) {
           this.annotations.set(annotationId, annotation);
           this.renderAnnotation(annotationId);
@@ -1292,7 +1289,7 @@ class AnnotationManager {
         }
       }, 100);
       
-      console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
+      console.log(`✅ 已加載 ${data.length} 個批注`);
       
       // 調整所有批註位置，確保不重疊
       setTimeout(() => {

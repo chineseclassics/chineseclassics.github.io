@@ -8,11 +8,8 @@
 
 | 規則文件 | 描述 | 狀態 |
 |---------|------|------|
-| `language.mdc` | 語言規範 - 始終使用繁體中文 | ✅ Always |
-| `file-organization.mdc` | 文件組織規範 - 兩層架構原則 | ✅ Always |
-| `coding-standards.mdc` | 代碼規範 | ✅ Always |
+| `development-standards.mdc` | 開發標準 - 語言、代碼、文件組織、應用開發規範（合併版） | ✅ Always |
 | `documentation-standards.mdc` | 文檔創建規範 - 少而精，避免過度記錄 | ✅ Always |
-| `app-development.mdc` | 應用開發規範 - 應用切換器、URL 路徑規範 | ✅ Always |
 | `problem-solving-principles.mdc` | 問題解決原則 - 避免過度複雜化，追求簡單有效 | ✅ Always |
 
 ### Auto Attached Rules（自動附加）
@@ -20,7 +17,6 @@
 | 規則文件 | 描述 | 觸發條件 | 狀態 |
 |---------|------|---------|------|
 | `supabase-architecture.mdc` | Supabase 架構管理 - 子項目獨立部署 | `**/supabase/**`, `**/*deploy*.md` | 🔄 Auto |
-| `supabase-client-init.mdc` | Supabase 客戶端初始化最佳實踐 | `**/*.html`, `**/*auth*.js`, `**/*supabase*.js` | 🔄 Auto |
 | `dual-mode-architecture.mdc` | 雙模式架構規範 | 應用開發時手動引用 | 🔄 Auto |
 
 ### Manual Rules（手動引用）
@@ -30,6 +26,12 @@
 | `git-workflow.mdc` | Git 工作流程規範 | `@git-workflow` | 📖 Manual |
 | `how-to-create-rules.mdc` | 如何創建規則 (Meta Rule) | `@how-to-create-rules` | 📖 Manual |
 | `nested-rules-architecture.mdc` | 巢狀規則架構指南 | `@nested-rules-architecture` | 📖 Manual |
+| `tailwind-ui-system.mdc` | Tailwind CSS 統一 UI 和配色系統規範 | `@tailwind-ui-system` | 📖 Manual |
+| `supabase-client-init.mdc` | Supabase 客戶端初始化最佳實踐 | `@supabase-client-init` | 📖 Manual |
+| `self-code-review.mdc` | 自我代碼審查規範 | `@self-code-review` | 📖 Manual |
+| `story-vocab-user-id.mdc` | Story-Vocab 用戶 ID 使用規範 | `@story-vocab-user-id` | 📖 Manual |
+| `dual-mode-architecture.mdc` | 雙模式架構規範 | `@dual-mode-architecture` | 📖 Manual |
+| `project-setup.mdc` | 項目初始化指南 - 新項目創建和設置規範 | `@project-setup` | 📖 Manual |
 
 ## 🎯 規則類型說明
 
@@ -64,6 +66,12 @@ Settings → Rules → Project Rules
 ```
 @git-workflow 請幫我創建一個 feature 分支
 @how-to-create-rules 我想創建一個新的規則
+@tailwind-ui-system 請幫我設計統一的 UI 配色方案
+@supabase-client-init 請幫我配置 Supabase 客戶端初始化
+@self-code-review 請幫我進行代碼審查
+@story-vocab-user-id 請幫我處理用戶 ID 問題
+@dual-mode-architecture 請幫我設計雙模式架構
+@project-setup 請幫我創建一個新的應用項目
 ```
 
 ### 創建新規則
@@ -114,11 +122,11 @@ alwaysApply: true    # 或 false
 ## 📊 規則統計
 
 ### 平台級規則（本目錄）
-- **總規則數**：10
-- **Always 規則**：5
-- **Auto Attached 規則**：3
-- **Manual 規則**：3
-- **Meta 規則**：2
+- **總規則數**：12
+- **Always 規則**：3
+- **Auto Attached 規則**：1
+- **Manual 規則**：9
+- **Meta 規則**：1
 
 ### 子項目規則
 - **Story-Vocab**：2 個規則（`auth.mdc`, `supabase-deployment.mdc`）
@@ -134,6 +142,15 @@ alwaysApply: true    # 或 false
 5. **描述性命名** - 文件名清晰描述規則內容
 
 ## 🔄 更新記錄
+
+- **2025-10-19**：深度優化規則結構，最大化減少上下文佔用
+  - **第一輪優化**：將大型規則改為手動引用（`tailwind-ui-system`、`supabase-client-init`、`nested-rules-architecture`）
+  - **第二輪優化**：將中型規則改為手動引用（`self-code-review`、`story-vocab-user-id`、`dual-mode-architecture`）
+  - **第三輪優化**：合併小型規則（`language` + `coding-standards` + `file-organization` → `development-standards`）
+  - **第四輪優化**：合併重疊規則（`app-development` → `development-standards`），創建項目初始化規則（`project-setup`）
+  - **最終結果**：上下文從 3,223 行減少到約 1,000 行，提升 68% 效率
+  - **Always 規則**：從 6 個減少到 3 個，只保留核心開發規範
+  - **Manual 規則**：從 3 個增加到 9 個，按需引用專業規範
 
 - **2025-10-15**：添加 Supabase 客戶端初始化最佳實踐
   - 新增 `supabase-client-init.mdc` - Supabase 客戶端初始化規範（Auto）

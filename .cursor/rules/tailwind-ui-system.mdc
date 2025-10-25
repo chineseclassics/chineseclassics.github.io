@@ -1,10 +1,7 @@
 ---
 description: Tailwind CSS 統一 UI 和配色系統規範 - 新項目開發最佳實踐
 alwaysApply: false
-globs:
-  - "**/tailwind.config.js"
-  - "**/*.css"
-  - "**/*.html"
+manual: true
 ---
 
 # Tailwind CSS 統一 UI 和配色系統規範

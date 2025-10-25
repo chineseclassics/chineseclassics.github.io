@@ -118,10 +118,11 @@
   - 保留對話框樣式（回覆對話框、創建對話框）
   - 保留孤立批注通知樣式
   - 學生端將直接使用 `css/assignment-management.css` 中的 Google Docs 風格樣式
-- [ ] 2.5.6 更新批注加載邏輯（統一數據查詢方式）
+- [x] 2.5.6 更新批注加載邏輯（統一數據查詢方式）✅
   - 修改 `loadAnnotations` 方法，使用直接查詢而非 RPC
   - 確保學生端和老師端都能正確加載批注數據
   - 統一查詢格式和錯誤處理
+  - **已完成**：改用 Supabase 直接查詢，查詢格式統一，學生端和老師端都能正確加載批注數據
 - [x] 2.5.7 刪除冗餘文件（student-annotation-viewer.js）
   - 完全刪除 `js/student/student-annotation-viewer.js` 文件
   - 功能已被 AnnotationManager 統一處理

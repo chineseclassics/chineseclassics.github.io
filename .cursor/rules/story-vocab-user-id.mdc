@@ -1,6 +1,7 @@
 ---
 description: Story-Vocab 用戶 ID 使用規範 - 多重身份系統最佳實踐
-globs: story-vocab/**/*.js,story-vocab/**/*.ts,story-vocab/supabase/migrations/*.sql
+alwaysApply: false
+manual: true
 ---
 
 # Story-Vocab 用戶 ID 使用規範
