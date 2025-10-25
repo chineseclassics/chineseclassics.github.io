@@ -444,19 +444,23 @@ class AnnotationManager {
   getCurrentUser() {
     // 從全局狀態獲取用戶信息
     if (window.AppState?.currentUser) {
+      console.log('✅ 從 AppState 獲取用戶信息:', window.AppState.currentUser.email);
       return window.AppState.currentUser;
     }
     
     // 備用：從 Supabase 會話獲取
-    if (this.supabase?.auth?.getUser) {
-      try {
-        const { data: { user } } = this.supabase.auth.getUser();
-        return user;
-      } catch (error) {
-        console.warn('⚠️ 無法獲取用戶信息:', error);
+    try {
+      // 使用同步方式獲取當前會話
+      const session = this.supabase.auth.session;
+      if (session?.user) {
+        console.log('✅ 從 Supabase 會話獲取用戶信息:', session.user.email);
+        return session.user;
       }
+    } catch (error) {
+      console.warn('⚠️ 無法獲取會話信息:', error);
     }
     
+    console.log('❌ 無法獲取用戶信息');
     return null;
   }
 
@@ -467,8 +471,10 @@ class AnnotationManager {
     const user = this.getCurrentUser();
     if (user) {
       const fullName = user.user_metadata?.full_name || user.email || 'User';
+      console.log('👤 獲取用戶首字母:', fullName.charAt(0).toUpperCase());
       return fullName.charAt(0).toUpperCase();
     }
+    console.log('⚠️ 無法獲取用戶信息，使用默認首字母');
     return 'U';
   }
 
@@ -478,8 +484,11 @@ class AnnotationManager {
   getCurrentUserName() {
     const user = this.getCurrentUser();
     if (user) {
-      return user.user_metadata?.full_name || user.email || 'Unknown User';
+      const userName = user.user_metadata?.full_name || user.email || 'Unknown User';
+      console.log('👤 獲取用戶姓名:', userName);
+      return userName;
     }
+    console.log('⚠️ 無法獲取用戶信息，使用默認姓名');
     return 'Unknown User';
   }
 
