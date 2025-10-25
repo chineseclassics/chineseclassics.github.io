@@ -897,7 +897,7 @@ class AnnotationManager {
       floatingAnnotation.classList.add('active');
       floatingAnnotation.style.display = 'block';
       
-      // 為對應的原文高亮添加 active 狀態
+      // 為對應的原文高亮添加 active 狀態（持續保持，不自動移除）
       const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
       if (highlight) {
         highlight.classList.add('active');
@@ -912,9 +912,6 @@ class AnnotationManager {
       // 創建連接線
       this.createConnectionLine(annotationId);
     }
-
-    // 臨時高亮原文文本
-    this.highlightTextTemporarily(annotationId);
   }
 
   /**

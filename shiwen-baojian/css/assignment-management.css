@@ -1952,27 +1952,27 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 /* 原文高亮增強效果 - 只有被點中時才使用 */
 .annotation-highlight.active {
-  background-color: var(--warning-200);
-  border-bottom: 3px solid var(--warning-600);
-  box-shadow: 0 0 8px var(--warning-400);
+  background-color: var(--primary-100);
+  border-bottom: 3px solid var(--primary-600);
+  box-shadow: 0 0 12px var(--primary-300);
   transition: all 0.3s ease;
   animation: annotation-pulse 2s infinite;
 }
 
 .annotation-highlight.active:hover {
-  background-color: var(--warning-300);
-  box-shadow: 0 0 12px var(--warning-500);
+  background-color: var(--primary-200);
+  box-shadow: 0 0 16px var(--primary-400);
 }
 
 /* 脈衝動畫效果 */
 @keyframes annotation-pulse {
   0%, 100% { 
-    box-shadow: 0 0 8px var(--warning-400), 0 4px 12px var(--primary-300);
+    box-shadow: 0 0 12px var(--primary-300), 0 4px 12px var(--primary-200);
     transform: scale(1);
   }
   50% { 
-    box-shadow: 0 0 16px var(--warning-500), 0 6px 16px var(--primary-400);
-    transform: scale(1.02);
+    box-shadow: 0 0 16px var(--primary-400), 0 6px 20px var(--primary-300);
+    transform: scale(1.01);
   }
 }
 
