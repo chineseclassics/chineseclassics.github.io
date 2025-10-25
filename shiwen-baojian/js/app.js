@@ -137,9 +137,13 @@ let isHandlingUser = false;  // 防止重複處理
 async function handleAuthenticatedUser(user) {
     console.log('👤 處理已認證用戶:', user.email || '匿名用戶');
     
-    // 防止重複處理
-    if (isHandlingUser) {
-        console.log('⚠️ 正在處理用戶，跳過重複請求');
+    // 防止重複處理：如果用戶已經是當前用戶，且正在處理中，則跳過
+    if (isHandlingUser || AppState.currentUser?.id === user.id) {
+        console.log('⚠️ 用戶已處理，跳過重複請求', {
+            isHandlingUser,
+            currentUserId: AppState.currentUser?.id,
+            newUserId: user.id
+        });
         return;
     }
     
