@@ -4,6 +4,7 @@
  */
 
 import toast from '../ui/toast.js';
+import dialog from '../ui/dialog.js';
 
 class AnnotationManager {
   constructor(supabaseClient) {
@@ -438,19 +439,48 @@ class AnnotationManager {
   }
 
   /**
+   * 獲取當前用戶信息（統一方法）
+   */
+  getCurrentUser() {
+    // 從全局狀態獲取用戶信息
+    if (window.AppState?.currentUser) {
+      return window.AppState.currentUser;
+    }
+    
+    // 備用：從 Supabase 會話獲取
+    if (this.supabase?.auth?.getUser) {
+      try {
+        const { data: { user } } = this.supabase.auth.getUser();
+        return user;
+      } catch (error) {
+        console.warn('⚠️ 無法獲取用戶信息:', error);
+      }
+    }
+    
+    return null;
+  }
+
+  /**
    * 獲取用戶姓名首字母
    */
   getUserInitials() {
-    // 這裡可以從用戶信息中獲取，暫時使用默認值
-    return 'Y';
+    const user = this.getCurrentUser();
+    if (user) {
+      const fullName = user.user_metadata?.full_name || user.email || 'User';
+      return fullName.charAt(0).toUpperCase();
+    }
+    return 'U';
   }
 
   /**
    * 獲取當前用戶姓名
    */
   getCurrentUserName() {
-    // 這裡可以從用戶信息中獲取，暫時使用默認值
-    return 'Yulong ZHANG';
+    const user = this.getCurrentUser();
+    if (user) {
+      return user.user_metadata?.full_name || user.email || 'Unknown User';
+    }
+    return 'Unknown User';
   }
 
   /**
@@ -859,29 +889,33 @@ class AnnotationManager {
    * 刪除批注
    */
   async deleteAnnotation(annotationId) {
-    if (!confirm('確定要刪除這個批注嗎？')) return;
-    
-    try {
-      const { error } = await this.supabase.rpc('delete_annotation', {
-        p_annotation_id: annotationId
-      });
-      
-      if (error) throw error;
-      
-      // 從本地存儲移除
-      this.annotations.delete(annotationId);
-      
-      // 移除高亮和標記
-      const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
-      markers.forEach(marker => marker.remove());
-      
-      
-      toast.success('批注已刪除');
-      
-    } catch (error) {
-      console.error('❌ 刪除批注失敗:', error);
-      toast.error('刪除批注失敗: ' + error.message);
-    }
+    // 使用統一的 Dialog 組件替代原生 confirm
+    dialog.confirmDelete({
+      title: '刪除批注',
+      message: '確定要刪除這個批注嗎？<br><br>此操作無法撤銷。',
+      onConfirm: async () => {
+        try {
+          const { error } = await this.supabase.rpc('delete_annotation', {
+            p_annotation_id: annotationId
+          });
+          
+          if (error) throw error;
+          
+          // 從本地存儲移除
+          this.annotations.delete(annotationId);
+          
+          // 移除高亮和標記
+          const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
+          markers.forEach(marker => marker.remove());
+          
+          toast.success('批注已刪除');
+          
+        } catch (error) {
+          console.error('❌ 刪除批注失敗:', error);
+          toast.error('刪除批注失敗: ' + error.message);
+        }
+      }
+    });
   }
 
   /**
