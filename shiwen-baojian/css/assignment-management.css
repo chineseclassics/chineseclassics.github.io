@@ -1849,28 +1849,20 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
-/* 臨時高亮樣式 - 優先級最高 */
-.annotation-highlight.annotation-highlight-temp {
-  animation: pulse 1.5s ease-in-out infinite !important;
-  opacity: 0.8 !important;
-  background-color: var(--warning-100) !important;
-  border-bottom: 2px solid var(--warning-600) !important;
-  padding: 1px 2px !important;
-  border-radius: 2px !important;
-  position: relative !important;
-  z-index: 1 !important;
+/* 高亮基礎樣式 */
+.annotation-highlight {
+  background-color: var(--warning-100);
+  border-bottom: 2px solid var(--warning-600);
+  padding: 1px 2px;
+  border-radius: 2px;
+  position: relative;
+  z-index: 1;
 }
 
-/* 持久高亮樣式 */
-.annotation-highlight:not(.annotation-highlight-temp) {
-  background-color: var(--warning-100) !important;
-  border-bottom: 2px solid var(--warning-600) !important;
-  padding: 1px 2px !important;
-  border-radius: 2px !important;
-  position: relative !important;
-  z-index: 1 !important;
-  opacity: 1 !important;
-  animation: none !important;
+/* 臨時高亮動畫 */
+.annotation-highlight-temp {
+  animation: pulse 1.5s ease-in-out infinite;
+  opacity: 0.8;
 }
 
 /* 浮動批注樣式 - 直接浮動在右側 */

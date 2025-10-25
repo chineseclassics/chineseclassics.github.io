@@ -239,40 +239,34 @@ class AnnotationManager {
   }
 
   /**
-   * 立即高亮選中的文字（臨時高亮）
+   * 創建高亮元素（統一方法）
    */
-  highlightSelectedText() {
-    if (!this.selectedText || !this.selectedRange) return;
+  createHighlight(isTemporary = false) {
+    if (!this.selectedText || !this.selectedRange) return null;
     
     try {
-      // 創建臨時高亮元素
       const highlight = document.createElement('span');
-      highlight.className = 'annotation-highlight annotation-highlight-temp';
-      highlight.setAttribute('data-temp-highlight', 'true');
+      highlight.className = 'annotation-highlight';
+      if (isTemporary) {
+        highlight.classList.add('annotation-highlight-temp');
+        highlight.setAttribute('data-temp-highlight', 'true');
+      }
       
-      // 用高亮元素包圍選中的文字
       this.selectedRange.surroundContents(highlight);
-      
-      // 保存臨時高亮引用
-      this.tempHighlight = highlight;
-      
-      console.log('✅ 文字已立即高亮（臨時）');
+      return highlight;
     } catch (error) {
-      console.log('⚠️ 無法立即高亮文字:', error);
+      console.log('⚠️ 無法創建高亮:', error);
+      return null;
     }
   }
 
   /**
-   * 移除臨時高亮
+   * 移除高亮元素
    */
-  removeTemporaryHighlight() {
-    if (this.tempHighlight && this.tempHighlight.parentNode) {
-      // 將高亮元素替換為純文本
-      const parent = this.tempHighlight.parentNode;
-      const textNode = document.createTextNode(this.tempHighlight.textContent);
-      parent.replaceChild(textNode, this.tempHighlight);
-      this.tempHighlight = null;
-      console.log('🗑️ 臨時高亮已移除');
+  removeHighlight(highlight) {
+    if (highlight && highlight.parentNode) {
+      const textNode = document.createTextNode(highlight.textContent);
+      highlight.parentNode.replaceChild(textNode, highlight);
     }
   }
 
@@ -280,29 +274,18 @@ class AnnotationManager {
    * 創建批注
    */
   async createAnnotation() {
-    console.log('📝 開始創建批注:', this.selectedText);
+    if (!this.selectedText) return;
     
-    if (!this.selectedText) {
-      console.log('❌ 沒有選擇的文本');
-      return;
-    }
-    
-    // 設置創建狀態，防止重複觸發
     this.isCreatingAnnotation = true;
-    
-    // 隱藏批注按鈕
     this.hideAnnotationButton();
     
-    // 立即高亮選中的文字（持久高亮）
-    this.highlightSelectedText();
+    // 創建臨時高亮
+    const tempHighlight = this.createHighlight(true);
     
-    // 顯示批注創建對話框
+    // 顯示批注對話框
     const content = await this.showAnnotationDialog();
     if (!content) {
-      console.log('❌ 用戶取消了批注創建');
-      // 如果用戶取消，移除臨時高亮
-      this.removeTemporaryHighlight();
-      // 重置創建狀態
+      this.removeHighlight(tempHighlight);
       this.isCreatingAnnotation = false;
       return;
     }
@@ -336,27 +319,21 @@ class AnnotationManager {
         created_at: new Date().toISOString()
       });
       
-      // 將臨時高亮轉換為持久高亮
-      if (this.tempHighlight) {
-        this.tempHighlight.setAttribute('data-annotation-id', data);
-        this.tempHighlight.removeAttribute('data-temp-highlight');
-        this.tempHighlight.classList.remove('annotation-highlight-temp');
-        this.tempHighlight.style.opacity = '1';
-        this.tempHighlight.style.animation = 'none';
-        this.tempHighlight = null;
+      // 轉換臨時高亮為持久高亮
+      if (tempHighlight) {
+        tempHighlight.setAttribute('data-annotation-id', data);
+        tempHighlight.removeAttribute('data-temp-highlight');
+        tempHighlight.classList.remove('annotation-highlight-temp');
       }
       
-      // 直接創建右側浮動批注（不需要調用 renderAnnotation）
+      // 創建右側浮動批注
       setTimeout(() => {
         this.createFloatingAnnotation(data, this.annotations.get(data));
       }, 100);
       
-      // 清除選擇
+      // 清理狀態
       window.getSelection().removeAllRanges();
       this.selectedText = null;
-      this.hideAnnotationButton();
-      
-      // 重置創建狀態
       this.isCreatingAnnotation = false;
       
       console.log('✅ 批注創建成功，ID:', data);
@@ -368,10 +345,8 @@ class AnnotationManager {
       
     } catch (error) {
       console.error('❌ 創建批注失敗:', error);
-      // 重置創建狀態
+      this.removeHighlight(tempHighlight);
       this.isCreatingAnnotation = false;
-      // 移除臨時高亮
-      this.removeTemporaryHighlight();
       if (typeof toast !== 'undefined') {
         toast.error('創建批注失敗: ' + error.message);
       }
