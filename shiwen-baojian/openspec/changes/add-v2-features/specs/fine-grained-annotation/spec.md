@@ -115,26 +115,6 @@ The system SHALL provide intuitive annotation display and navigation.
 - **AND** clicking on an annotation highlights the corresponding text
 - **AND** the sidebar shows annotation count and status
 
-#### Scenario: Smart annotation positioning ✅ **IMPLEMENTED**
-- **WHEN** annotations are displayed in the sidebar
-- **THEN** they are positioned to avoid overlap
-- **AND** they maintain order based on text position
-- **AND** active annotations align with their corresponding text
-- **AND** other annotations intelligently move up or down to avoid overlap
-
-#### Scenario: Dynamic visual connections ✅ **IMPLEMENTED**
-- **WHEN** a teacher clicks on an annotation
-- **THEN** a dynamic connection line appears between the annotation and the highlighted text
-- **AND** the connection line updates when scrolling
-- **AND** the connection line has a gradient color and pulse animation
-
-#### Scenario: Enhanced visual highlighting ✅ **IMPLEMENTED**
-- **WHEN** a teacher clicks on an annotation
-- **THEN** the corresponding text highlight becomes more prominent
-- **AND** the active annotation has enhanced visual effects
-- **AND** inactive annotations maintain subtle styling
-- **AND** the visual hierarchy clearly distinguishes active from inactive elements
-
 #### Scenario: Annotation filtering and search
 - **WHEN** a teacher views an essay with many annotations
 - **THEN** they can filter annotations by type (suggestion, error, praise)
