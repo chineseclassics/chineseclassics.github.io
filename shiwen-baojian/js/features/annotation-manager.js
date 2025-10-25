@@ -298,7 +298,8 @@ class AnnotationManager {
         p_highlight_end: this.selectedText.endOffset,
         p_annotation_type: 'comment',
         p_priority: 'normal',
-        p_is_private: false
+        p_is_private: false,
+        p_anchor_text: this.selectedText.text
       });
       
       if (error) throw error;
