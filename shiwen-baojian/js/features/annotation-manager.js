@@ -643,16 +643,10 @@ class AnnotationManager {
     const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
     const annotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
     
-    if (!highlight || !annotation) {
-      console.log('❌ 連接線創建失敗：找不到高亮或批註元素', { annotationId, highlight, annotation });
-      return;
-    }
+    if (!highlight || !annotation) return;
     
     const wrapper = document.querySelector('.grading-content-wrapper');
-    if (!wrapper) {
-      console.log('❌ 連接線創建失敗：找不到滾動容器');
-      return;
-    }
+    if (!wrapper) return;
     
     // 清理現有連接線
     this.clearConnectionLines();
@@ -667,53 +661,26 @@ class AnnotationManager {
     const endX = annotationRect.left - wrapperRect.left;
     const endY = annotationRect.top + annotationRect.height / 2 - wrapperRect.top + wrapper.scrollTop;
     
+    // 創建連接線元素
+    const connection = document.createElement('div');
+    connection.className = 'annotation-connection';
+    connection.dataset.annotationId = annotationId;
+    
     // 計算連接線的長度和角度
     const deltaX = endX - startX;
     const deltaY = endY - startY;
     const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
     
-    console.log('🔗 創建連接線', {
-      annotationId,
-      startX, startY, endX, endY,
-      length, angle,
-      highlightRect, annotationRect, wrapperRect
-    });
-    
-    // 創建連接線元素
-    const connection = document.createElement('div');
-    connection.className = 'annotation-connection';
-    connection.dataset.annotationId = annotationId;
-    
     // 設置連接線樣式
-    connection.style.position = 'absolute';
     connection.style.left = startX + 'px';
     connection.style.top = startY + 'px';
     connection.style.width = length + 'px';
-    connection.style.height = '4px'; // 增加高度以提高可見性
     connection.style.transform = `rotate(${angle}deg)`;
     connection.style.transformOrigin = '0 50%';
-    connection.style.backgroundColor = '#ef4444'; // 使用紅色以便更容易看到
-    connection.style.zIndex = '1000';
-    connection.style.borderRadius = '2px';
-    connection.style.boxShadow = '0 0 8px rgba(239, 68, 68, 0.8)';
-    connection.style.opacity = '0.9';
     
     // 添加到滾動容器
     wrapper.appendChild(connection);
-    
-    console.log('✅ 連接線已創建', connection);
-    
-    // 添加測試：確保連接線可見
-    setTimeout(() => {
-      const rect = connection.getBoundingClientRect();
-      console.log('🔍 連接線位置檢查', {
-        element: connection,
-        rect: rect,
-        visible: rect.width > 0 && rect.height > 0,
-        computedStyle: window.getComputedStyle(connection)
-      });
-    }, 100);
     
     // 監聽滾動事件，更新連接線位置
     const updateConnection = () => {
