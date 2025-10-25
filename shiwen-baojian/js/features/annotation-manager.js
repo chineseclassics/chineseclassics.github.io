@@ -348,7 +348,7 @@ class AnnotationManager {
       
       // 直接創建右側浮動批注（不需要調用 renderAnnotation）
       setTimeout(() => {
-        this.createFloatingAnnotation(data.id, this.annotations.get(data.id));
+        this.createFloatingAnnotation(data, this.annotations.get(data));
       }, 100);
       
       // 清除選擇
