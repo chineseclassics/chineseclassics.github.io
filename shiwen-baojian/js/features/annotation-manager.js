@@ -7,7 +7,7 @@ import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 
 class AnnotationManager {
-  constructor(supabaseClient) {
+  constructor(supabaseClient, options = {}) {
     this.supabase = supabaseClient;
     this.annotations = new Map(); // 存儲當前批注
     this.selectedText = null;
@@ -15,12 +15,71 @@ class AnnotationManager {
     this.currentEssayId = null;
     this.currentParagraphId = null;
     
+    // 角色和權限配置
+    this.userRole = options.userRole || 'teacher'; // 'teacher' | 'student'
+    this.currentUserId = options.currentUserId;
+    
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
     this.boundHandleAnnotationClick = this.handleAnnotationClick.bind(this);
     
     // 綁定事件
     this.bindEvents();
+  }
+
+  /**
+   * 權限判斷方法
+   */
+  canEditAnnotation(annotation) {
+    if (!annotation) return false;
+    if (this.userRole === 'teacher') return true;
+    if (this.userRole === 'student') {
+      // 學生只能編輯自己創建的批注（teacher_id 為 null 或等於自己的 ID）
+      return !annotation.teacher_id || annotation.teacher_id === this.currentUserId;
+    }
+    return false;
+  }
+
+  canDeleteAnnotation(annotation) {
+    return this.canEditAnnotation(annotation);
+  }
+
+  /**
+   * 智能容器檢測 - 支持多種 DOM 結構
+   */
+  findScrollContainer() {
+    // 多種容器選擇器，按優先級排序
+    const selectors = [
+      '.grading-content-wrapper',           // 老師端標準容器
+      '.w-full.lg\\:w-2\\/3',              // 學生端編輯器容器（Tailwind CSS 類）
+      '#essayViewer',                      // 學生端查看模式容器
+      '.essay-editor-container',           // 學生端編輯器容器（備用）
+      '.main-content-area',                // 主要內容區域
+      '.essay-content-section'             // 論文內容區域
+    ];
+    
+    for (const selector of selectors) {
+      const container = document.querySelector(selector);
+      if (container && this.isValidScrollContainer(container)) {
+        console.log(`✅ 找到滾動容器: ${selector}`);
+        return container;
+      }
+    }
+    
+    console.warn('⚠️ 未找到合適的滾動容器，嘗試使用 body');
+    return document.body;
+  }
+
+  /**
+   * 驗證容器是否適合作為滾動容器
+   */
+  isValidScrollContainer(container) {
+    // 檢查容器是否可見且可滾動
+    const style = window.getComputedStyle(container);
+    const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+    const hasScroll = container.scrollHeight > container.clientHeight;
+    
+    return isVisible && (hasScroll || container === document.body);
   }
 
   // 設計令牌常量配置
@@ -290,6 +349,9 @@ class AnnotationManager {
     console.log('✅ 批注內容:', content);
     
     try {
+      // 獲取錨定文本片段（用於重新定位）
+      const anchorText = this.selectedText.text.trim();
+      
       // 調用 RPC 函數創建批注
       const { data, error } = await this.supabase.rpc('create_annotation', {
         p_paragraph_id: this.currentParagraphId,
@@ -298,7 +360,8 @@ class AnnotationManager {
         p_highlight_end: this.selectedText.endOffset,
         p_annotation_type: 'comment',
         p_priority: 'normal',
-        p_is_private: false
+        p_is_private: false,
+        p_anchor_text: anchorText
       });
       
       if (error) throw error;
@@ -347,8 +410,8 @@ class AnnotationManager {
     console.log('💬 顯示批注對話框:', defaultContent);
     
     return new Promise((resolve) => {
-      // 獲取滾動容器
-      const wrapper = document.querySelector('.grading-content-wrapper');
+      // 智能容器檢測
+      const wrapper = this.findScrollContainer();
       if (!wrapper) {
         console.error('❌ 找不到滾動容器');
         resolve(null);
@@ -751,7 +814,8 @@ class AnnotationManager {
    * 滾動到指定批註的原文位置
    */
   scrollToAnnotationHighlight(annotationId) {
-    const wrapper = document.querySelector('.grading-content-wrapper');
+    // 使用智能容器檢測
+    const wrapper = this.findScrollContainer();
     const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
     
     if (!wrapper || !highlight) return;
@@ -775,8 +839,8 @@ class AnnotationManager {
    * 創建浮動批注（Google Docs 風格 - 直接浮動在右側）
    */
   createFloatingAnnotation(annotationId, annotation) {
-    // 獲取滾動容器
-    const wrapper = document.querySelector('.grading-content-wrapper');
+    // 智能容器檢測 - 支持多種容器結構
+    const wrapper = this.findScrollContainer();
     if (!wrapper) {
       console.log('❌ 找不到滾動容器');
       return;
@@ -794,6 +858,22 @@ class AnnotationManager {
     floatingAnnotation.className = 'floating-annotation';
     floatingAnnotation.dataset.annotationId = annotationId;
 
+    // 根據權限決定是否顯示編輯/刪除按鈕
+    const canEdit = this.canEditAnnotation(annotation);
+    const canDelete = this.canDeleteAnnotation(annotation);
+    
+    // 生成操作按鈕 HTML
+    let actionsHTML = '';
+    // 評論按鈕（所有用戶都可以評論）
+    actionsHTML += `<button class="annotation-action-btn comment" data-annotation-id="${annotationId}">評論</button>`;
+    
+    if (canEdit) {
+      actionsHTML += `<button class="annotation-action-btn edit" data-annotation-id="${annotationId}">編輯</button>`;
+    }
+    if (canDelete) {
+      actionsHTML += `<button class="annotation-action-btn delete" data-annotation-id="${annotationId}">刪除</button>`;
+    }
+
     // 批注內容
     floatingAnnotation.innerHTML = `
       <div class="annotation-header">
@@ -803,8 +883,7 @@ class AnnotationManager {
       </div>
       <div class="annotation-content">${annotation.content}</div>
       <div class="annotation-actions">
-        <button class="annotation-action-btn edit" data-annotation-id="${annotationId}">編輯</button>
-        <button class="annotation-action-btn delete" data-annotation-id="${annotationId}">刪除</button>
+        ${actionsHTML}
       </div>
     `;
 
@@ -823,19 +902,30 @@ class AnnotationManager {
       this.highlightAnnotation(annotationId);
     });
 
+    // 評論按鈕
+    const commentBtn = floatingAnnotation.querySelector('.comment');
+    commentBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showCommentDialog(annotationId);
+    });
+
     // 編輯按鈕
     const editBtn = floatingAnnotation.querySelector('.edit');
-    editBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.editAnnotation(annotationId);
-    });
+    if (editBtn) {
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editAnnotation(annotationId);
+      });
+    }
 
     // 刪除按鈕
     const deleteBtn = floatingAnnotation.querySelector('.delete');
-    deleteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.deleteAnnotation(annotationId);
-    });
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteAnnotation(annotationId);
+      });
+    }
 
     // 點擊高亮文本時高亮對應批注
     highlight.addEventListener('click', () => {
@@ -1060,8 +1150,17 @@ class AnnotationManager {
    * 編輯批注
    */
   async editAnnotation(annotationId) {
+    // 權限檢查
     const annotation = this.annotations.get(annotationId);
-    if (!annotation) return;
+    if (!annotation) {
+      toast.error('找不到批注');
+      return;
+    }
+    
+    if (!this.canEditAnnotation(annotation)) {
+      toast.error('您沒有權限編輯此批注');
+      return;
+    }
     
     const newContent = await this.showAnnotationDialog(annotation.content);
     if (!newContent || newContent === annotation.content) return;
@@ -1105,6 +1204,18 @@ class AnnotationManager {
    * 刪除批注
    */
   async deleteAnnotation(annotationId) {
+    // 權限檢查
+    const annotation = this.annotations.get(annotationId);
+    if (!annotation) {
+      toast.error('找不到批注');
+      return;
+    }
+    
+    if (!this.canDeleteAnnotation(annotation)) {
+      toast.error('您沒有權限刪除此批注');
+      return;
+    }
+    
     // 使用統一的 Dialog 組件替代原生 confirm
     dialog.confirmDelete({
       title: '刪除批注',
@@ -1160,7 +1271,7 @@ class AnnotationManager {
       console.log('✅ 批注已按原文位置排序');
       
       // 存儲並渲染批注
-      sortedAnnotations.forEach(annotation => {
+      for (const annotation of sortedAnnotations) {
         const annotationId = annotation.id || annotation.annotation_id;
         if (annotationId) {
           this.annotations.set(annotationId, annotation);
@@ -1168,7 +1279,18 @@ class AnnotationManager {
         } else {
           console.log('⚠️ 批注沒有有效的 ID:', annotation);
         }
-      });
+      }
+      
+      // 批量加載評論（避免阻塞渲染）
+      setTimeout(async () => {
+        for (const annotationId of this.annotations.keys()) {
+          try {
+            await this.loadAnnotationComments(annotationId);
+          } catch (error) {
+            console.warn('⚠️ 加載批注評論失敗:', error);
+          }
+        }
+      }, 100);
       
       console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
       
@@ -1176,6 +1298,13 @@ class AnnotationManager {
       setTimeout(() => {
         this.adjustAllAnnotations();
       }, 200);
+      
+      // 觸發智能空間分配邏輯（學生端）
+      setTimeout(() => {
+        if (typeof window.adjustSidebarSpace === 'function') {
+          window.adjustSidebarSpace();
+        }
+      }, 300);
       
     } catch (error) {
       console.error('❌ 加載批注失敗:', error);
@@ -1283,6 +1412,123 @@ class AnnotationManager {
     if (this.selectionHint) {
       this.selectionHint.remove();
       this.selectionHint = null;
+    }
+  }
+
+  /**
+   * 添加批注評論
+   */
+  async addAnnotationComment(annotationId, content, commentType = 'reply') {
+    try {
+      console.log('💬 添加批注評論:', { annotationId, content, commentType });
+      
+      const { data, error } = await this.supabase.rpc('add_annotation_comment', {
+        p_annotation_id: annotationId,
+        p_content: content,
+        p_comment_type: commentType
+      });
+      
+      if (error) throw error;
+      
+      console.log('✅ 批注評論已添加:', data);
+      
+      // 重新加載評論
+      await this.loadAnnotationComments(annotationId);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ 添加批注評論失敗:', error);
+      toast.error('添加評論失敗: ' + error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * 加載批注評論
+   */
+  async loadAnnotationComments(annotationId) {
+    try {
+      console.log('📥 加載批注評論:', annotationId);
+      
+      const { data, error } = await this.supabase.rpc('get_annotation_comments', {
+        p_annotation_id: annotationId
+      });
+      
+      if (error) throw error;
+      
+      console.log('📊 評論數據:', data);
+      
+      // 更新批注的評論顯示
+      this.updateAnnotationCommentsDisplay(annotationId, data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ 加載批注評論失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新批注評論顯示
+   */
+  updateAnnotationCommentsDisplay(annotationId, comments) {
+    const annotationElement = document.querySelector(`[data-annotation-id="${annotationId}"]`);
+    if (!annotationElement) return;
+    
+    // 查找或創建評論區域
+    let commentsArea = annotationElement.querySelector('.annotation-comments');
+    if (!commentsArea) {
+      commentsArea = document.createElement('div');
+      commentsArea.className = 'annotation-comments';
+      commentsArea.style.cssText = 'margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;';
+      annotationElement.appendChild(commentsArea);
+    }
+    
+    // 簡化顯示邏輯
+    if (comments.length === 0) {
+      commentsArea.innerHTML = '<div class="text-gray-400 text-sm">暫無評論</div>';
+      return;
+    }
+    
+    // 使用模板字符串簡化評論渲染
+    commentsArea.innerHTML = comments.map(comment => `
+      <div class="annotation-comment" style="margin-bottom: 8px; padding: 8px; background: #f9fafb; border-radius: 4px; border-left: 3px solid #3b82f6;">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-2">
+            <span class="font-medium text-sm text-gray-900">${comment.user_name}</span>
+            <span class="text-xs text-gray-500">${comment.user_role === 'teacher' ? '老師' : '學生'}</span>
+            <span class="text-xs text-gray-400">${new Date(comment.created_at).toLocaleString()}</span>
+          </div>
+          ${comment.comment_type !== 'reply' ? `<span class="text-xs px-2 py-1 rounded ${comment.comment_type === 'question' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">${comment.comment_type === 'question' ? '問題' : '澄清'}</span>` : ''}
+        </div>
+        <div class="text-sm text-gray-700">${comment.content}</div>
+      </div>
+    `).join('');
+  }
+
+  /**
+   * 顯示批注評論對話框
+   */
+  async showCommentDialog(annotationId) {
+    const annotation = this.annotations.get(annotationId);
+    if (!annotation) {
+      console.error('❌ 找不到批注:', annotationId);
+      return;
+    }
+    
+    // 先加載現有評論
+    await this.loadAnnotationComments(annotationId);
+    
+    const content = await dialog.prompt({
+      title: '添加評論',
+      message: '請輸入您的評論：',
+      placeholder: '輸入您的評論...',
+      confirmText: '發送',
+      cancelText: '取消'
+    });
+    
+    if (content && content.trim()) {
+      await this.addAnnotationComment(annotationId, content.trim());
     }
   }
 

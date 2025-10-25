@@ -205,11 +205,29 @@
         
         <!-- 舊的編輯器 HTML（暫時保留為備用模板） -->
         <template id="essay-editor-template">
-            <div class="flex flex-col lg:flex-row gap-6">
-                <!-- 左側：論文編輯區 -->
-                        <div class="w-full lg:w-2/3 flex-shrink-0">
-                            <!-- 任務信息區 -->
-                            <div id="assignment-info-panel" class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+            <!-- Google Docs 風格佈局 -->
+            <div class="google-docs-layout">
+                <!-- 統一滾動容器 -->
+                <div class="grading-content-wrapper">
+                    <!-- 主要內容區域 -->
+                    <div class="main-content-area">
+                        <!-- 論文內容區域 -->
+                        <div class="essay-content-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-book-open mr-2"></i>作業內容
+                                </h3>
+                            </div>
+                            <div class="essay-viewer" id="essayViewer">
+                                <!-- 論文內容將在這裡渲染 -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 批註直接浮動在右側，無容器 -->
+                </div>
+                
+                <!-- 任務信息區（移到頂部） -->
+                <div id="assignment-info-panel" class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
                                 <!-- 任務標題欄 -->
                                 <div class="premium-blue-gradient px-4 py-3 flex items-center justify-between">
                                     <div class="flex items-center gap-3">
@@ -380,29 +398,49 @@
                                         </p>
                                     </div>
                                     
-                                    <!-- 批注顯示區域（只讀模式） -->
-                                    <div id="annotations-display-area" class="hidden">
-                                        <div class="sidebar-header">
-                                            <h4 class="sidebar-title">
-                                                <i class="fas fa-comments mr-2"></i>批注
-                                            </h4>
-                                            <span class="annotation-count">0 個批注</span>
-                                        </div>
-                                        <div id="annotationsContainer" class="annotations-container">
-                                            <!-- 批注將在這裡動態添加 -->
-                                        </div>
-                                    </div>
+                                    <!-- 批注顯示區域已移除，改為 Google Docs 風格浮動批注 -->
                                     
-                                    <!-- 反饋內容區 -->
-                                    <div id="sidebar-feedback-content" class="p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-                                        <!-- 初始提示 -->
-                                        <div class="text-center text-gray-400 py-12">
-                                            <i class="fas fa-robot text-5xl mb-3 opacity-50"></i>
-                                            <p class="text-sm">點擊段落的</p>
-                                            <p class="text-sm font-semibold mt-1">
-                                                <i class="fas fa-pen-fancy mr-1"></i>雨村評點
-                                            </p>
-                                            <p class="text-sm mt-1">按鈕查看評點</p>
+                                    <!-- 分層顯示模式：雨村評點 + 老師批注 -->
+                                    <div class="flex flex-col h-full">
+                                        <!-- 雨村評點區域（可收合） -->
+                                        <div id="feedback-section" class="border-b border-gray-200">
+                                            <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 cursor-pointer" 
+                                                 id="feedback-header" onclick="toggleFeedbackSection()">
+                                                <div class="flex items-center justify-between">
+                                                    <h4 class="font-semibold text-blue-800 flex items-center">
+                                                        <i class="fas fa-robot mr-2"></i>雨村評點
+                                                    </h4>
+                                                    <i id="feedback-arrow" class="fas fa-chevron-down text-blue-600 transition-transform"></i>
+                                                </div>
+                                            </div>
+                                            <div id="feedback-content" class="p-4 max-h-64 overflow-y-auto hidden">
+                                                <!-- AI 反饋內容 -->
+                                                <div class="text-center text-gray-400 py-8">
+                                                    <i class="fas fa-robot text-3xl mb-2 opacity-50"></i>
+                                                    <p class="text-sm">點擊段落的</p>
+                                                    <p class="text-sm font-semibold mt-1">
+                                                        <i class="fas fa-pen-fancy mr-1"></i>雨村評點
+                                                    </p>
+                                                    <p class="text-sm mt-1">按鈕查看評點</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 老師批注區域（主要顯示） -->
+                                        <div id="annotations-section" class="flex-1">
+                                            <div class="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-200">
+                                                <h4 class="font-semibold text-amber-800 flex items-center">
+                                                    <i class="fas fa-comments mr-2"></i>老師批注
+                                                    <span id="annotation-count" class="ml-2 text-xs bg-amber-200 text-amber-800 px-2 py-1 rounded-full">0</span>
+                                                </h4>
+                                            </div>
+                                            <div id="annotations-content" class="p-4 max-h-96 overflow-y-auto">
+                                                <!-- Google Docs 風格批注列表 -->
+                                                <div class="text-center text-gray-400 py-8">
+                                                    <i class="fas fa-comments text-3xl mb-2 opacity-50"></i>
+                                                    <p class="text-sm">老師的批注將在這裡顯示</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -444,6 +482,29 @@
     
     <!-- 應用 JavaScript 模組（ES6 Modules） -->
     <script type="module" src="js/app.js?v=20250120i"></script>
-</body>
+    <script>
+        // 雨村評點收合/展開功能
+        function toggleFeedbackSection() {
+            const feedbackContent = document.getElementById('feedback-content');
+            const feedbackArrow = document.getElementById('feedback-arrow');
+            
+            // 錯誤處理：檢查元素是否存在
+            if (!feedbackContent || !feedbackArrow) {
+                console.error('❌ 找不到雨村評點元素');
+                return;
+            }
+            
+            if (feedbackContent.classList.contains('hidden')) {
+                // 展開
+                feedbackContent.classList.remove('hidden');
+                feedbackArrow.style.transform = 'rotate(180deg)';
+            } else {
+                // 收合
+                feedbackContent.classList.add('hidden');
+                feedbackArrow.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+    </body>
 </html>
 

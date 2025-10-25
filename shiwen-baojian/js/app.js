@@ -933,8 +933,8 @@ async function initializeStudentAnnotationSystem(assignmentId) {
     try {
         console.log('🚀 初始化學生端批注系統:', assignmentId);
         
-        // 動態導入學生端批注查看器
-        const { default: StudentAnnotationViewer } = await import('./student/student-annotation-viewer.js');
+        // 動態導入統一的批注管理器
+        const { default: AnnotationManager } = await import('./features/annotation-manager.js');
         
         // 獲取當前作業的段落信息
         const { data: essay, error: essayError } = await AppState.supabase
@@ -960,32 +960,37 @@ async function initializeStudentAnnotationSystem(assignmentId) {
             return;
         }
         
-        // 顯示批注區域，隱藏 AI 反饋區域
-        const annotationsArea = document.getElementById('annotations-display-area');
-        const feedbackArea = document.getElementById('sidebar-feedback-content');
-        
-        if (annotationsArea) {
-            annotationsArea.classList.remove('hidden');
-        }
-        if (feedbackArea) {
-            feedbackArea.classList.add('hidden');
+        // 清理舊的批注管理器（如果存在）
+        if (window.studentAnnotationManager) {
+            window.studentAnnotationManager.destroy();
+            window.studentAnnotationManager = null;
         }
         
-        // 創建批注查看器
-        const annotationViewer = new StudentAnnotationViewer(AppState.supabase);
+        // 創建統一的批注管理器（學生角色）
+        const annotationManager = new AnnotationManager(AppState.supabase, {
+            userRole: 'student',
+            currentUserId: AppState.currentUser.id
+        });
         
-        // 為每個段落初始化批注系統
-        for (const paragraph of essay.paragraphs) {
-            await annotationViewer.init(essay.id, paragraph.id, true); // 只讀模式
+        // 初始化批注系統（使用第一個段落作為主要段落）
+        if (essay.paragraphs.length > 0) {
+            await annotationManager.init(essay.id, essay.paragraphs[0].id);
+            console.log('✅ 批注系統已初始化，段落數量:', essay.paragraphs.length);
         }
         
-        // 將批注查看器保存到全局狀態
-        window.studentAnnotationViewer = annotationViewer;
+        // 將批注管理器保存到全局狀態
+        window.studentAnnotationManager = annotationManager;
         
-        console.log('✅ 學生端批注系統初始化完成');
+        console.log('✅ 學生端批注系統初始化完成（使用統一 AnnotationManager）');
         
     } catch (error) {
         console.error('❌ 初始化學生端批注系統失敗:', error);
+        
+        // 清理全局狀態，避免留下無效的引用
+        if (window.studentAnnotationManager) {
+            window.studentAnnotationManager.destroy();
+            window.studentAnnotationManager = null;
+        }
     }
 }
 
@@ -1618,6 +1623,92 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
     initializeApp();
+}
+
+/**
+ * 切換雨村評點區域的展開/收合狀態
+ */
+window.toggleFeedbackSection = function() {
+    try {
+        const feedbackContent = document.getElementById('feedback-content');
+        const feedbackArrow = document.getElementById('feedback-arrow');
+        
+        if (!feedbackContent || !feedbackArrow) {
+            console.warn('⚠️ 找不到雨村評點相關元素');
+            return;
+        }
+        
+        const isHidden = feedbackContent.classList.contains('hidden');
+        
+        if (isHidden) {
+            // 展開
+            feedbackContent.classList.remove('hidden');
+            feedbackArrow.classList.remove('fa-chevron-down');
+            feedbackArrow.classList.add('fa-chevron-up');
+            console.log('📖 雨村評點區域已展開');
+        } else {
+            // 收合
+            feedbackContent.classList.add('hidden');
+            feedbackArrow.classList.remove('fa-chevron-up');
+            feedbackArrow.classList.add('fa-chevron-down');
+            console.log('📚 雨村評點區域已收合');
+        }
+        
+        // 觸發智能空間分配邏輯
+        if (typeof window.adjustSidebarSpace === 'function') {
+            window.adjustSidebarSpace();
+        }
+    } catch (error) {
+        console.error('❌ 切換雨村評點失敗:', error);
+    }
+}
+
+/**
+ * 智能空間分配邏輯
+ * 根據批注和雨村評點的內容動態調整顯示空間
+ */
+window.adjustSidebarSpace = function() {
+    try {
+        const feedbackContent = document.getElementById('feedback-content');
+        const annotationsContent = document.getElementById('annotations-content');
+        const feedbackSection = document.getElementById('feedback-section');
+        const annotationsSection = document.getElementById('annotations-section');
+        
+        if (!feedbackContent || !annotationsContent || !feedbackSection || !annotationsSection) {
+            console.warn('⚠️ 找不到側邊欄元素，跳過空間分配');
+            return;
+        }
+        
+        // 檢查是否有批注
+        const hasAnnotations = annotationsContent.children.length > 1; // 除了默認的提示元素
+        const isFeedbackExpanded = !feedbackContent.classList.contains('hidden');
+        
+        console.log('🔍 智能空間分配檢查:', { hasAnnotations, isFeedbackExpanded });
+        
+        if (hasAnnotations && isFeedbackExpanded) {
+            // 有批注且雨村評點展開：動態調整高度比例
+            feedbackSection.style.flex = '0 0 40%';
+            annotationsSection.style.flex = '1';
+            console.log('📊 動態調整：批注優先，雨村評點收縮');
+        } else if (hasAnnotations && !isFeedbackExpanded) {
+            // 有批注且雨村評點收合：批注佔滿空間
+            feedbackSection.style.flex = '0 0 auto';
+            annotationsSection.style.flex = '1';
+            console.log('📊 批注優先：雨村評點收合，批注佔滿空間');
+        } else if (!hasAnnotations && isFeedbackExpanded) {
+            // 無批注且雨村評點展開：雨村評點佔滿空間
+            feedbackSection.style.flex = '1';
+            annotationsSection.style.flex = '0 0 auto';
+            console.log('📊 雨村評點優先：無批注時佔滿空間');
+        } else {
+            // 無批注且雨村評點收合：恢復默認
+            feedbackSection.style.flex = '0 0 auto';
+            annotationsSection.style.flex = '1';
+            console.log('📊 默認狀態：恢復正常比例');
+        }
+    } catch (error) {
+        console.error('❌ 智能空間分配失敗:', error);
+    }
 }
 
 // 導出供其他模組使用

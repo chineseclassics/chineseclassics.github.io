@@ -228,11 +228,10 @@ class StudentAssignmentViewer {
     const essay = assignment.studentEssay;
     const status = this.getStatus(essay, isOverdue);
     
-    // 判断是否可以撤回（截止日期前 + 未批改）
+    // 判断是否可以撤回（截止日期前，允許在老師批注後撤回）
     const canWithdraw = essay && 
                        essay.status === 'submitted' && 
-                       !isOverdue && 
-                       (!essay.graded_at);
+                       !isOverdue;
 
     const classColorClass = assignment.classes ? getClassColorClass(assignment.classes.id) : 'class-1';
     
