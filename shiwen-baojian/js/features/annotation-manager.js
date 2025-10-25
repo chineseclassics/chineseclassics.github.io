@@ -14,10 +14,12 @@ class AnnotationManager {
     this.isSelectionMode = false;
     this.currentEssayId = null;
     this.currentParagraphId = null;
+    this.userCache = new Map();
     
     // 角色和權限配置
     this.userRole = options.userRole || 'teacher'; // 'teacher' | 'student'
-    this.currentUserId = options.currentUserId;
+    this.currentUser = options.currentUser || window.AppState?.currentUser || null;
+    this.currentUserId = options.currentUserId || this.currentUser?.id || null;
     
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
@@ -34,8 +36,7 @@ class AnnotationManager {
     if (!annotation) return false;
     if (this.userRole === 'teacher') return true;
     if (this.userRole === 'student') {
-      // 學生只能編輯自己創建的批注（teacher_id 為 null 或等於自己的 ID）
-      return !annotation.teacher_id || annotation.teacher_id === this.currentUserId;
+      return annotation.ownerRole === 'student' && annotation.ownerId === this.currentUserId;
     }
     return false;
   }
@@ -50,7 +51,9 @@ class AnnotationManager {
   findScrollContainer() {
     // 多種容器選擇器，按優先級排序
     const selectors = [
+      '.essay-workspace-scroll',        // 新共用工作區
       '.grading-content-wrapper',           // 老師端標準容器
+      '.student-editor-column',         // 學生端左側編輯欄
       '.w-full.lg\\:w-2\\/3',              // 學生端編輯器容器（Tailwind CSS 類）
       '#essayViewer',                      // 學生端查看模式容器
       '.essay-editor-container',           // 學生端編輯器容器（備用）
@@ -365,22 +368,15 @@ class AnnotationManager {
       });
       
       if (error) throw error;
-      
-      // 添加批注到本地存儲
-      this.annotations.set(data, {
-        id: data,
-        paragraph_id: this.currentParagraphId,
-        content: content,
-        highlight_start: this.selectedText.startOffset,
-        highlight_end: this.selectedText.endOffset,
-        annotation_type: 'comment',
-        priority: 'normal',
-        is_private: false,
-        created_at: new Date().toISOString()
-      });
-      
-      // 渲染批注
-      this.renderAnnotation(data.id);
+
+      const annotationId = typeof data === 'string' ? data : data?.id || data;
+      const normalized = await this.fetchAnnotationById(annotationId);
+      if (!normalized) {
+        console.warn('⚠️ 無法取得新批注詳情');
+      } else {
+        this.annotations.set(annotationId, normalized);
+        this.renderAnnotation(annotationId);
+      }
       
       // 清除選擇和臨時高亮引用
       window.getSelection().removeAllRanges();
@@ -496,25 +492,15 @@ class AnnotationManager {
    * 獲取當前用戶信息（統一方法）
    */
   getCurrentUser() {
-    // 從全局狀態獲取用戶信息
+    if (this.currentUser) {
+      return this.currentUser;
+    }
+
     if (window.AppState?.currentUser) {
-      console.log('✅ 從 AppState 獲取用戶信息:', window.AppState.currentUser.email);
-      return window.AppState.currentUser;
+      this.currentUser = window.AppState.currentUser;
+      return this.currentUser;
     }
-    
-    // 備用：從 Supabase 會話獲取
-    try {
-      // 使用同步方式獲取當前會話
-      const session = this.supabase.auth.session;
-      if (session?.user) {
-        console.log('✅ 從 Supabase 會話獲取用戶信息:', session.user.email);
-        return session.user;
-      }
-    } catch (error) {
-      console.warn('⚠️ 無法獲取會話信息:', error);
-    }
-    
-    console.log('❌ 無法獲取用戶信息');
+
     return null;
   }
 
@@ -877,8 +863,8 @@ class AnnotationManager {
     // 批注內容
     floatingAnnotation.innerHTML = `
       <div class="annotation-header">
-        <div class="annotation-avatar">${this.getUserInitials()}</div>
-        <div class="annotation-author">${this.getCurrentUserName()}</div>
+        <div class="annotation-avatar">${annotation.authorInitials || this.getUserInitials()}</div>
+        <div class="annotation-author">${annotation.authorName || this.getCurrentUserName()}</div>
         <div class="annotation-time">${this.formatTime(annotation.created_at)}</div>
       </div>
       <div class="annotation-content">${annotation.content}</div>
@@ -1252,33 +1238,27 @@ class AnnotationManager {
     console.log('📥 加載現有批注:', this.currentParagraphId);
     
     try {
-      const { data, error } = await this.supabase.rpc('get_paragraph_annotations', {
-        p_paragraph_id: this.currentParagraphId
-      });
-      
+      const { data, error } = await this.supabase
+        .from('annotations')
+        .select('*')
+        .eq('paragraph_id', this.currentParagraphId)
+        .order('highlight_start', { ascending: true });
+
       if (error) {
-        console.error('❌ RPC 調用失敗:', error);
+        console.error('❌ 批注查詢失敗:', error);
         throw error;
       }
-      
-      console.log('📊 批注數據:', data);
-      
-      // 按照 highlight_start 排序（從小到大，確保批註按原文順序顯示）
-      const sortedAnnotations = data.sort((a, b) => {
-        return (a.highlight_start || 0) - (b.highlight_start || 0);
-      });
-      
-      console.log('✅ 批注已按原文位置排序');
-      
-      // 存儲並渲染批注
-      for (const annotation of sortedAnnotations) {
-        const annotationId = annotation.id || annotation.annotation_id;
-        if (annotationId) {
-          this.annotations.set(annotationId, annotation);
-          this.renderAnnotation(annotationId);
-        } else {
-          console.log('⚠️ 批注沒有有效的 ID:', annotation);
-        }
+
+      console.log('📊 批注數據筆數:', data?.length || 0);
+
+      this.annotations.clear();
+      document.querySelectorAll('.floating-annotation, .annotation-highlight').forEach(el => el.remove());
+
+      for (const row of data || []) {
+        const normalized = await this.normalizeAnnotationRecord(row);
+        if (!normalized) continue;
+        this.annotations.set(normalized.id, normalized);
+        this.renderAnnotation(normalized.id);
       }
       
       // 批量加載評論（避免阻塞渲染）
@@ -1292,7 +1272,7 @@ class AnnotationManager {
         }
       }, 100);
       
-      console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
+      console.log(`✅ 已加載 ${data?.length || 0} 個批注`);
       
       // 調整所有批註位置，確保不重疊
       setTimeout(() => {
@@ -1313,6 +1293,95 @@ class AnnotationManager {
   }
 
   /**
+   * 將資料庫批注記錄標準化
+   */
+  async normalizeAnnotationRecord(row) {
+    if (!row) return null;
+
+    const ownerId = row.teacher_id || row.student_id || null;
+    const ownerRole = row.teacher_id ? 'teacher' : (row.student_id ? 'student' : 'unknown');
+    const ownerProfile = await this.getUserProfile(ownerId);
+
+    const authorName = ownerProfile?.display_name || ownerProfile?.email || '未命名用戶';
+    const authorInitial = authorName.trim().charAt(0).toUpperCase() || '匿名';
+
+    return {
+      id: row.id,
+      paragraph_id: row.paragraph_id,
+      essay_id: this.currentEssayId,
+      content: row.content,
+      highlight_start: typeof row.highlight_start === 'number' ? row.highlight_start : 0,
+      highlight_end: typeof row.highlight_end === 'number'
+        ? row.highlight_end
+        : (typeof row.highlight_start === 'number' ? row.highlight_start : 0),
+      annotation_type: row.annotation_type || 'comment',
+      priority: row.priority || 'normal',
+      is_private: !!row.is_private,
+      anchor_text: row.anchor_text || '',
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      ownerId,
+      ownerRole,
+      authorName,
+      authorInitials: authorInitial,
+      raw: row
+    };
+  }
+
+  /**
+   * 快取並取得使用者資訊
+   */
+  async getUserProfile(userId) {
+    if (!userId) return null;
+    if (this.userCache.has(userId)) {
+      return this.userCache.get(userId);
+    }
+
+    try {
+      const { data, error } = await this.supabase
+        .from('users')
+        .select('id, display_name, email, role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('⚠️ 無法取得使用者資料:', error.message);
+        return null;
+      }
+
+      this.userCache.set(userId, data);
+      return data;
+    } catch (error) {
+      console.warn('⚠️ 讀取使用者資料時發生錯誤:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 依 ID 取得批注記錄
+   */
+  async fetchAnnotationById(annotationId) {
+    try {
+      const { data, error } = await this.supabase
+        .from('annotations')
+        .select('*')
+        .eq('id', annotationId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ 查詢批注失敗:', error);
+        return null;
+      }
+
+      if (!data) return null;
+      return this.normalizeAnnotationRecord(data);
+    } catch (error) {
+      console.error('❌ 讀取批注資料時發生錯誤:', error);
+      return null;
+    }
+  }
+
+  /**
    * 設置 Realtime 監聽
    */
   setupRealtimeListener() {
@@ -1324,7 +1393,7 @@ class AnnotationManager {
         schema: 'public',
         table: 'annotations',
         filter: `paragraph_id=eq.${this.currentParagraphId}`
-      }, (payload) => {
+      }, async (payload) => {
         console.log('🔄 收到新批注:', payload.new);
         
         // 檢查是否已經存在這個批注（避免重複處理）
@@ -1333,11 +1402,14 @@ class AnnotationManager {
           return;
         }
         
-        this.annotations.set(payload.new.id, payload.new);
-        this.renderAnnotation(payload.new.id);
+        const normalized = await this.fetchAnnotationById(payload.new.id);
+        if (!normalized) return;
+
+        this.annotations.set(normalized.id, normalized);
+        this.renderAnnotation(normalized.id);
         
         // 只在不是當前用戶創建的批注時顯示通知
-        if (typeof toast !== 'undefined') {
+        if (typeof toast !== 'undefined' && normalized.ownerId !== this.currentUserId) {
           toast.info('收到新批注');
         }
       })
@@ -1346,11 +1418,15 @@ class AnnotationManager {
         schema: 'public',
         table: 'annotations',
         filter: `paragraph_id=eq.${this.currentParagraphId}`
-      }, (payload) => {
+      }, async (payload) => {
         console.log('🔄 批注已更新:', payload.new);
-        this.annotations.set(payload.new.id, payload.new);
+
+        const normalized = await this.normalizeAnnotationRecord(payload.new);
+        if (!normalized) return;
+
+        this.annotations.set(normalized.id, normalized);
         // 更新現有高亮
-        this.updateAnnotationHighlight(payload.new.id);
+        this.updateAnnotationHighlight(normalized.id);
       })
       .on('postgres_changes', {
         event: 'DELETE',
@@ -1363,6 +1439,7 @@ class AnnotationManager {
         // 移除高亮
         const markers = document.querySelectorAll(`[data-annotation-id="${payload.old.id}"]`);
         markers.forEach(marker => marker.remove());
+        this.adjustAllAnnotations();
       })
       .subscribe();
   }

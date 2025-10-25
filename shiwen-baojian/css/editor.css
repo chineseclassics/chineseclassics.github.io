@@ -558,6 +558,10 @@ input:focus-visible {
     width: 100%;
 }
 
+.google-docs-layout.student-edit-mode .main-content-area {
+    max-width: 100%;
+}
+
 .google-docs-layout.student-edit-mode #assignment-info-panel {
     margin-bottom: 0;
 }

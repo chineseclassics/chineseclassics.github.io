@@ -11,6 +11,7 @@ import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
 import toast from './ui/toast.js';
+import { renderEssayHtml } from './shared/essay-renderer.js';
 
 // ================================
 // 全局狀態管理
@@ -45,6 +46,23 @@ const AppState = {
     currentPracticeContent: null,
     currentFormatSpec: null
 };
+
+// 將狀態掛載到全域，供批注等模組使用
+window.AppState = AppState;
+
+/**
+ * 重新渲染論文預覽區域
+ * @param {Object|null} essayLike - 具備 content_json 或 paragraphs 的物件
+ */
+function renderEssayViewer(essayLike = null) {
+    const viewer = document.getElementById('essayViewer');
+    if (!viewer) {
+        console.warn('⚠️ 找不到 essayViewer 容器，略過渲染');
+        return;
+    }
+
+    viewer.innerHTML = renderEssayHtml(essayLike);
+}
 
 // ================================
 // 初始化應用
@@ -752,6 +770,9 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         const editorContent = template.content.cloneNode(true);
         container.appendChild(editorContent);
 
+        // 初始化論文預覽（預設顯示空狀態）
+        renderEssayViewer();
+
         console.log('📝 準備初始化論文編輯器', { assignmentId, mode, formatTemplate, essayId });
 
         // 保存當前任務 ID 到 AppState（用於區分任務寫作和練筆）
@@ -771,33 +792,37 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             AppState.currentPracticeEssayId = null;
         }
 
-        // ✅ 學生可編輯模式下調整模板結構
+        // ✅ 學生可編輯模式下調整模板結構（保留共用工作區）
         const layoutRoot = container.querySelector('.google-docs-layout');
         if (layoutRoot && editable) {
             layoutRoot.classList.add('student-edit-mode');
 
-            // 移除僅供老師查看的舊「作業內容」查看區
             const viewerWrapper = layoutRoot.querySelector('.grading-content-wrapper');
-            if (viewerWrapper) {
-                viewerWrapper.remove();
-            }
-
-            // 建立單欄容器，將任務資訊與編輯器集中在左側
             const assignmentInfoPanel = layoutRoot.querySelector('#assignment-info-panel');
             const editorShell = layoutRoot.querySelector('[data-editor-root="true"]');
             const sidebar = layoutRoot.querySelector('aside');
 
-            if (assignmentInfoPanel && editorShell) {
-                const editorColumn = document.createElement('div');
+            let editorColumn = layoutRoot.querySelector('.student-editor-column');
+            if (!editorColumn) {
+                editorColumn = document.createElement('div');
                 editorColumn.classList.add('student-editor-column');
-                editorColumn.appendChild(assignmentInfoPanel);
-                editorColumn.appendChild(editorShell);
-
                 if (sidebar) {
                     layoutRoot.insertBefore(editorColumn, sidebar);
                 } else {
                     layoutRoot.appendChild(editorColumn);
                 }
+            }
+
+            if (viewerWrapper && !editorColumn.contains(viewerWrapper)) {
+                editorColumn.appendChild(viewerWrapper);
+            }
+
+            if (assignmentInfoPanel && !editorColumn.contains(assignmentInfoPanel)) {
+                editorColumn.appendChild(assignmentInfoPanel);
+            }
+
+            if (editorShell && !editorColumn.contains(editorShell)) {
+                editorColumn.appendChild(editorShell);
             }
         }
 
@@ -926,12 +951,15 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         if (mode === 'assignment' && AppState.currentEssayContent) {
             console.log('📂 恢復任務作業內容...');
             await restoreEssayContent(AppState.currentEssayContent);
+            renderEssayViewer({ content_json: AppState.currentEssayContent });
         } else if (mode === 'free-writing' && AppState.currentPracticeContent) {
             console.log('📂 恢復練筆內容...');
             await restoreEssayContent(AppState.currentPracticeContent);
+            renderEssayViewer({ content_json: AppState.currentPracticeContent });
         } else if (mode === 'free-writing' && !essayId) {
             console.log('✨ 新練筆模式，內容為空');
             // 新練筆，不恢復任何內容
+            renderEssayViewer(null);
         }
         
         // ✅ 設置狀態顯示（只在任務模式）
@@ -1010,7 +1038,8 @@ async function initializeStudentAnnotationSystem(assignmentId) {
         // 創建統一的批注管理器（學生角色）
         const annotationManager = new AnnotationManager(AppState.supabase, {
             userRole: 'student',
-            currentUserId: AppState.currentUser.id
+            currentUserId: AppState.currentUser.id,
+            currentUser: AppState.currentUser
         });
         
         // 初始化批注系統（使用第一個段落作為主要段落）
@@ -1217,6 +1246,12 @@ async function loadPracticeEssayContent(essayId) {
         // 這需要在 essay-writer.js 中實現內容恢復功能
         AppState.currentPracticeContent = essay.content_json ? JSON.parse(essay.content_json) : null;
 
+        renderEssayViewer({
+            content_json: essay.content_json,
+            paragraphs: essay.paragraphs,
+            title: essay.title
+        });
+
         console.log('✅ 練筆作品數據加載完成');
     } catch (error) {
         console.error('❌ 加載練筆作品失敗:', error);
@@ -1251,11 +1286,20 @@ async function loadStudentEssayForAssignment(assignmentId) {
             // 解析並保存作業內容
             AppState.currentEssayContent = essay.content_json ? JSON.parse(essay.content_json) : null;
             console.log('📋 已加載作業內容，字數:', essay.total_word_count);
+
+            // 更新論文預覽
+            renderEssayViewer({
+                content_json: essay.content_json,
+                paragraphs: essay.paragraphs,
+                title: essay.title
+            });
         } else {
             console.log('ℹ️ 這是新的任務作業，將創建新記錄');
             const { StorageState } = await import('./student/essay-storage.js');
             StorageState.currentEssayId = null;
             AppState.currentEssayContent = null;
+
+            renderEssayViewer(null);
         }
     } catch (error) {
         console.error('❌ 加載任務作業失敗:', error);
