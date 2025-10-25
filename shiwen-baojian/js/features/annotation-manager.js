@@ -235,7 +235,7 @@ class AnnotationManager {
    * 立即高亮選中的文字
    */
   highlightSelectedText() {
-    if (!this.selectedText || !this.selectedRange) return;
+    if (!this.selectedText || !this.selectedText.range) return;
     
     try {
       // 創建高亮元素
@@ -251,7 +251,10 @@ class AnnotationManager {
       `;
       
       // 用高亮元素包圍選中的文字
-      this.selectedRange.surroundContents(highlight);
+      this.selectedText.range.surroundContents(highlight);
+      
+      // 保存高亮元素引用，以便取消時移除
+      this.tempHighlight = highlight;
       
       console.log('✅ 文字已立即高亮');
     } catch (error) {
@@ -315,9 +318,10 @@ class AnnotationManager {
       // 渲染批注
       this.renderAnnotation(data.id);
       
-      // 清除選擇
+      // 清除選擇和臨時高亮引用
       window.getSelection().removeAllRanges();
       this.selectedText = null;
+      this.tempHighlight = null; // 清除臨時高亮引用，因為已成為永久批註
       this.hideAnnotationButton();
       
       console.log('✅ 批注創建成功，ID:', data);
@@ -401,6 +405,22 @@ class AnnotationManager {
       
       cancelBtn.addEventListener('click', () => {
         console.log('❌ 用戶取消批注');
+        
+        // 移除已創建的高亮元素
+        if (this.tempHighlight) {
+          try {
+            const parent = this.tempHighlight.parentNode;
+            while (this.tempHighlight.firstChild) {
+              parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
+            }
+            parent.removeChild(this.tempHighlight);
+            this.tempHighlight = null;
+            console.log('✅ 已移除臨時高亮');
+          } catch (error) {
+            console.log('⚠️ 移除高亮失敗:', error);
+          }
+        }
+        
         cleanup();
         resolve(null);
       });
