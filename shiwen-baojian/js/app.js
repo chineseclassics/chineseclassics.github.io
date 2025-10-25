@@ -51,12 +51,6 @@ const AppState = {
 // ================================
 
 async function initializeApp() {
-    // 防止重複初始化
-    if (AppState.initialized) {
-        console.log('⚠️ 應用已經初始化，跳過重複初始化');
-        return;
-    }
-    
     console.log('🚀 時文寶鑑初始化開始...');
     console.log(`📍 運行模式: ${RUN_MODE}`);
     
@@ -68,7 +62,7 @@ async function initializeApp() {
         );
         console.log('✅ Supabase 客戶端初始化成功');
         
-        // 2. 檢查現有會話（不處理，讓 onAuthStateChange 處理）
+        // 2. 檢查現有會話
         const { data: { session }, error } = await AppState.supabase.auth.getSession();
         
         if (error) {
@@ -77,10 +71,9 @@ async function initializeApp() {
             return;
         }
         
-        // 不立即處理會話，而是等待 onAuthStateChange 觸發 INITIAL_SESSION 事件
-        // 這樣可以避免重複處理
         if (session) {
-            console.log('✅ 發現現有會話，等待 INITIAL_SESSION 事件處理');
+            console.log('✅ 發現現有會話');
+            await handleAuthenticatedUser(session.user);
         } else {
             console.log('ℹ️ 無現有會話，顯示登錄頁面');
             showLoginScreen();
@@ -96,17 +89,9 @@ async function initializeApp() {
                 handleAuthenticatedUser(session.user);
             } else if (event === 'SIGNED_OUT') {
                 handleSignOut();
-            } else if (event === 'TOKEN_REFRESHED') {
-                // Token 刷新不需要重新初始化界面
-                console.log('ℹ️ Token 刷新，無需重新初始化');
-            } else if (event === 'INITIAL_SESSION' && session) {
-                // 初始會話：只在有會話且用戶未設置時處理
-                if (!AppState.currentUser) {
-                    console.log('🔔 處理初始會話');
-                    handleAuthenticatedUser(session.user);
-                } else {
-                    console.log('ℹ️ 初始會話已處理過，跳過');
-                }
+            } else if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+                // Token 刷新和初始會話不需要重新初始化界面
+                console.log('ℹ️ Token 刷新或初始會話，無需重新初始化');
             }
         });
         
@@ -132,44 +117,26 @@ async function initializeApp() {
 /**
  * 處理已認證用戶
  */
-let isHandlingUser = false;  // 防止重複處理
-
 async function handleAuthenticatedUser(user) {
     console.log('👤 處理已認證用戶:', user.email || '匿名用戶');
     
-    // 防止重複處理：如果用戶已經是當前用戶，且正在處理中，則跳過
-    if (isHandlingUser || AppState.currentUser?.id === user.id) {
-        console.log('⚠️ 用戶已處理，跳過重複請求', {
-            isHandlingUser,
-            currentUserId: AppState.currentUser?.id,
-            newUserId: user.id
-        });
-        return;
-    }
+    AppState.currentUser = user;
     
-    isHandlingUser = true;
+    // 確保 users 表中有記錄
+    await ensureUserRecord(user);
     
-    try {
-        AppState.currentUser = user;
-        
-        // 確保 users 表中有記錄
-        await ensureUserRecord(user);
-        
-        // 識別用戶角色
-        AppState.userRole = detectUserRole(user);
-        console.log('🎭 用戶角色:', AppState.userRole);
-        
-        // 根據角色顯示對應儀表板
-        if (AppState.userRole === 'teacher') {
-            await showTeacherDashboard();
-        } else if (AppState.userRole === 'student') {
-            await showStudentDashboard();
-        } else {
-            // 匿名用戶默認顯示學生界面（測試用）
-            await showStudentDashboard();
-        }
-    } finally {
-        isHandlingUser = false;
+    // 識別用戶角色
+    AppState.userRole = detectUserRole(user);
+    console.log('🎭 用戶角色:', AppState.userRole);
+    
+    // 根據角色顯示對應儀表板
+    if (AppState.userRole === 'teacher') {
+        await showTeacherDashboard();
+    } else if (AppState.userRole === 'student') {
+        await showStudentDashboard();
+    } else {
+        // 匿名用戶默認顯示學生界面（測試用）
+        await showStudentDashboard();
     }
 }
 
@@ -756,12 +723,11 @@ function setupStudentNavigation() {
  * @param {string} essayId - 作業 ID（繼續編輯現有練筆時使用）
  */
 async function showEssayEditor(assignmentId = null, mode = null, formatTemplate = null, essayId = null, editable = true) {
+    // ✅ 根據參數自動判斷模式
+    if (!mode) {
+        mode = assignmentId ? 'assignment' : 'free-writing';
+    }
     try {
-        // ✅ 根據參數自動判斷模式
-        if (!mode) {
-            mode = assignmentId ? 'assignment' : 'free-writing';
-        }
-        
         const container = document.getElementById('student-dashboard-content');
         if (!container) {
             console.error('❌ 找不到學生儀表板容器');
@@ -935,14 +901,6 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         // ✅ 設置狀態顯示（只在任務模式）
         if (mode === 'assignment') {
             await setupEssayStatus(assignmentId, editable);
-            
-            // 只讀模式：添加特殊的布局類名
-            if (!editable) {
-                const layout = container.querySelector('.google-docs-layout');
-                if (layout) {
-                    layout.classList.add('read-only-mode');
-                }
-            }
         }
         
         // ✅ 隱藏右側的提交區域（提交功能在列表卡片上）
@@ -951,29 +909,14 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             submissionSection.classList.add('hidden');
         }
 
-        // ✅ 初始化學生端批注系統（所有已提交的作業都可以看到批注）
-        if (mode === 'assignment') {
-            // 查詢作業狀態
-            const { StorageState } = await import('./student/essay-storage.js');
-            const essayId = StorageState.currentEssayId;
-            
-            if (essayId) {
-                const { data: essay } = await AppState.supabase
-                    .from('essays')
-                    .select('status')
-                    .eq('id', essayId)
-                    .single();
-                
-                // 已提交或已批改的作業都可以看到批注
-                if (essay && (essay.status === 'submitted' || essay.status === 'graded')) {
-                    await initializeStudentAnnotationSystem(assignmentId);
-                }
-            }
-            
-            // 可編輯模式下初始化批注重新定位系統
-            if (editable) {
-                await initializeAnnotationRepositioningSystem(assignmentId);
-            }
+        // ✅ 初始化學生端批注系統（如果是任務模式且已提交）
+        if (mode === 'assignment' && !editable) {
+            await initializeStudentAnnotationSystem(assignmentId);
+        }
+        
+        // ✅ 初始化批注重新定位系統（如果是編輯模式）
+        if (mode === 'assignment' && editable) {
+            await initializeAnnotationRepositioningSystem(assignmentId);
         }
 
         console.log('✅ 論文編輯器顯示完成');
@@ -1312,30 +1255,32 @@ async function setupEssayStatus(assignmentId, editable = true) {
         // 更新狀態顯示
         if (essay.status === 'submitted') {
             if (statusText) {
-                statusText.textContent = '已提交（可繼續編輯）';
-                statusText.classList.add('text-blue-600', 'font-semibold');
+                statusText.textContent = '已提交';
+                statusText.classList.add('text-emerald-600', 'font-semibold');
             }
             if (statusDisplay) {
                 const icon = statusDisplay.querySelector('i');
                 if (icon) {
-                    icon.className = 'fas fa-check-circle text-blue-600 text-xs';
+                    icon.className = 'fas fa-check-circle text-emerald-600 text-xs';
                 }
             }
         } else if (essay.status === 'graded') {
             if (statusText) {
-                statusText.textContent = '已批改（只讀）';
+                statusText.textContent = '已批改';
                 statusText.classList.add('text-amber-700', 'font-semibold');
             }
             
             // ✅ 如果已批改，顯示老師的評分和評語（替換「賈雨村說」）
             await displayTeacherGrading(essayId);
-            
-            // 只有已批改狀態才設為只讀
-            console.log('📖 已批改狀態：禁用編輯功能');
-            disableEditing();
         } else {
             // 草稿狀態
             if (statusText) statusText.textContent = '草稿';
+        }
+        
+        // 只讀模式：禁用所有編輯功能
+        if (!editable) {
+            console.log('📖 只讀模式：禁用編輯功能');
+            disableEditing();
         }
         
     } catch (error) {
@@ -1379,8 +1324,8 @@ function disableEditing() {
         notice.className = 'bg-amber-50 border-l-4 border-amber-500 p-4 mb-4';
         notice.innerHTML = `
             <div class="flex items-center gap-2">
-                <i class="fas fa-lock text-amber-700"></i>
-                <span class="text-amber-800 font-medium">只讀模式：此作業已被老師批改並評分，無法再編輯</span>
+                <i class="fas fa-eye text-amber-700"></i>
+                <span class="text-amber-800 font-medium">只讀模式：此作業已提交，無法編輯</span>
             </div>
         `;
         const assignmentInfo = container.querySelector('#assignment-info-panel');
@@ -1674,19 +1619,10 @@ async function displayTeacherGrading(essayId) {
 }
 
 // 等待 DOM 加載完成後初始化應用
-// 問題：這裡的代碼邏輯本身是正確的，但 AppState.initialized 可能在執行過程中才被設置
-// 如果腳本被執行兩次（例如模塊被重新加載），就會導致重複初始化
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!AppState.initialized) {
-            initializeApp();
-        }
-    });
+    document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-    // DOM 已經加載完成，直接初始化
-    if (!AppState.initialized) {
-        initializeApp();
-    }
+    initializeApp();
 }
 
 /**

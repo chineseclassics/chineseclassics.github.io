@@ -207,7 +207,26 @@
         <template id="essay-editor-template">
             <!-- Google Docs 風格佈局 -->
             <div class="google-docs-layout">
-                <!-- 任務信息區（固定頂部） -->
+                <!-- 統一滾動容器 -->
+                <div class="grading-content-wrapper">
+                    <!-- 主要內容區域 -->
+                    <div class="main-content-area">
+                        <!-- 論文內容區域 -->
+                        <div class="essay-content-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-book-open mr-2"></i>作業內容
+                                </h3>
+                            </div>
+                            <div class="essay-viewer" id="essayViewer">
+                                <!-- 論文內容將在這裡渲染 -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 批註直接浮動在右側，無容器 -->
+                </div>
+                
+                <!-- 任務信息區（移到頂部） -->
                 <div id="assignment-info-panel" class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
                                 <!-- 任務標題欄 -->
                                 <div class="premium-blue-gradient px-4 py-3 flex items-center justify-between">

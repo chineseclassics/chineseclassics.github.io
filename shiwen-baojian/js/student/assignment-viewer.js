@@ -546,31 +546,17 @@ class StudentAssignmentViewer {
       });
     });
     
-    // 查看作業按鈕（根據狀態判斷是否可編輯）
+    // 查看作業按鈕（只讀模式）
     this.container.querySelectorAll('.student-assignment-card .view-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', (e) => {
         const assignmentId = e.currentTarget.getAttribute('data-id');
         console.log('👁️ 查看作業:', assignmentId);
-        
-        // 查詢作業狀態，判斷是否可編輯
-        const { data: user } = await this.supabase.auth.getUser();
-        const { data: essay } = await this.supabase
-          .from('essays')
-          .select('status')
-          .eq('assignment_id', assignmentId)
-          .eq('student_id', user.id)
-          .maybeSingle();
-        
-        // 只有已批改(graded)狀態才是只讀，其他狀態都可以編輯
-        const editable = essay?.status !== 'graded';
-        console.log(`📝 作業狀態: ${essay?.status}, 可編輯: ${editable}`);
-        
         window.dispatchEvent(new CustomEvent('navigate', {
           detail: { 
             page: 'essay-writer', 
             assignmentId: assignmentId,
             mode: 'assignment',
-            editable: editable  // 根據狀態動態判斷
+            editable: false  // 只讀模式
           }
         }));
       });
