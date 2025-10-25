@@ -540,32 +540,101 @@ class AnnotationManager {
   }
 
   /**
-   * 調整批註位置，確保活動批註對齊原文，其他批註避免重疊
+   * 調整批註位置，確保活動批註對齊原文，其他批註智能避讓
    */
   adjustAnnotationsForActive(activeElement) {
+    const allAnnotations = Array.from(
+      document.querySelectorAll('.floating-annotation, .floating-annotation-input')
+    );
+    
+    // 按 highlight_start 排序
+    const sortedAnnotations = allAnnotations.sort((a, b) => {
+      if (a === activeElement) return 0;
+      if (b === activeElement) return 0;
+      
+      const aId = a.dataset.annotationId;
+      const bId = b.dataset.annotationId;
+      if (!aId) return -1;
+      if (!bId) return 1;
+      
+      const aData = this.annotations.get(aId);
+      const bData = this.annotations.get(bId);
+      return (aData?.highlight_start || 0) - (bData?.highlight_start || 0);
+    });
+    
+    // 找到活動批註的索引
+    const activeIndex = sortedAnnotations.indexOf(activeElement);
     const activeIdealTop = this.getIdealTop(activeElement);
     activeElement.style.top = activeIdealTop + 'px';
+    const activeBottom = activeIdealTop + (activeElement.offsetHeight || 100);
     
-    // 獲取所有其他批註並調整位置
-    const otherAnnotations = Array.from(
-      document.querySelectorAll('.floating-annotation, .floating-annotation-input')
-    ).filter(ann => ann !== activeElement);
-    
-    // 簡單的避讓邏輯：如果重疊就向下移動
-    otherAnnotations.forEach(ann => {
-      const annIdealTop = this.getIdealTop(ann);
+    // 調整上方的批註（向上避讓）
+    let currentBottom = activeIdealTop;
+    for (let i = activeIndex - 1; i >= 0; i--) {
+      const ann = sortedAnnotations[i];
       const annHeight = ann.offsetHeight || 100;
-      const activeBottom = activeIdealTop + (activeElement.offsetHeight || 100);
+      const annIdealTop = this.getIdealTop(ann);
       
-      // 如果理想位置與活動批註重疊，就放在活動批註下方
-      if (annIdealTop < activeBottom + 12) {
-        ann.style.top = (activeBottom + 12) + 'px';
+      // 如果理想位置會重疊，向上移動
+      if (annIdealTop + annHeight + 12 > currentBottom) {
+        ann.style.top = Math.max(0, currentBottom - annHeight - 12) + 'px';
+        currentBottom = Math.max(0, currentBottom - annHeight - 12);
       } else {
         ann.style.top = annIdealTop + 'px';
+        currentBottom = annIdealTop;
       }
-    });
+    }
+    
+    // 調整下方的批註（向下避讓）
+    let currentTop = activeBottom;
+    for (let i = activeIndex + 1; i < sortedAnnotations.length; i++) {
+      const ann = sortedAnnotations[i];
+      const annIdealTop = this.getIdealTop(ann);
+      
+      // 如果理想位置會重疊，向下移動
+      if (annIdealTop < currentTop + 12) {
+        ann.style.top = (currentTop + 12) + 'px';
+        currentTop = currentTop + 12 + (ann.offsetHeight || 100);
+      } else {
+        ann.style.top = annIdealTop + 'px';
+        currentTop = annIdealTop + (ann.offsetHeight || 100);
+      }
+    }
   }
 
+  /**
+   * 調整所有批註位置，確保按原文順序排列且不重疊
+   */
+  adjustAllAnnotations() {
+    const allAnnotations = Array.from(
+      document.querySelectorAll('.floating-annotation, .floating-annotation-input')
+    );
+    
+    if (allAnnotations.length === 0) return;
+    
+    // 按 highlight_start 排序
+    const sortedAnnotations = allAnnotations.sort((a, b) => {
+      const aId = a.dataset.annotationId;
+      const bId = b.dataset.annotationId;
+      
+      // 處理輸入框（沒有 annotationId）
+      if (!aId) return -1;
+      if (!bId) return 1;
+      
+      const aData = this.annotations.get(aId);
+      const bData = this.annotations.get(bId);
+      return (aData?.highlight_start || 0) - (bData?.highlight_start || 0);
+    });
+    
+    // 從上到下依次放置，避免重疊
+    let lastBottom = 0;
+    sortedAnnotations.forEach(ann => {
+      const idealTop = this.getIdealTop(ann);
+      const actualTop = Math.max(idealTop, lastBottom + 12);
+      ann.style.top = actualTop + 'px';
+      lastBottom = actualTop + (ann.offsetHeight || 100);
+    });
+  }
 
   /**
    * 滾動到高亮的原文位置
@@ -687,6 +756,9 @@ class AnnotationManager {
     // 初始狀態顯示
     floatingAnnotation.style.display = 'block';
     console.log('✅ 批注已設置為顯示狀態');
+    
+    // 調整所有批註位置，避免重疊
+    this.adjustAllAnnotations();
   }
 
   /**
@@ -990,6 +1062,11 @@ class AnnotationManager {
       });
       
       console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
+      
+      // 調整所有批註位置，確保不重疊
+      setTimeout(() => {
+        this.adjustAllAnnotations();
+      }, 200);
       
     } catch (error) {
       console.error('❌ 加載批注失敗:', error);
