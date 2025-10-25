@@ -7,19 +7,13 @@ import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 
 class AnnotationManager {
-  constructor(supabaseClient, options = {}) {
+  constructor(supabaseClient) {
     this.supabase = supabaseClient;
     this.annotations = new Map(); // 存儲當前批注
     this.selectedText = null;
     this.isSelectionMode = false;
     this.currentEssayId = null;
     this.currentParagraphId = null;
-    this.userCache = new Map();
-    
-    // 角色和權限配置
-    this.userRole = options.userRole || 'teacher'; // 'teacher' | 'student'
-    this.currentUser = options.currentUser || window.AppState?.currentUser || null;
-    this.currentUserId = options.currentUserId || this.currentUser?.id || null;
     
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
@@ -27,62 +21,6 @@ class AnnotationManager {
     
     // 綁定事件
     this.bindEvents();
-  }
-
-  /**
-   * 權限判斷方法
-   */
-  canEditAnnotation(annotation) {
-    if (!annotation) return false;
-    if (this.userRole === 'teacher') return true;
-    if (this.userRole === 'student') {
-      return annotation.ownerRole === 'student' && annotation.ownerId === this.currentUserId;
-    }
-    return false;
-  }
-
-  canDeleteAnnotation(annotation) {
-    return this.canEditAnnotation(annotation);
-  }
-
-  /**
-   * 智能容器檢測 - 支持多種 DOM 結構
-   */
-  findScrollContainer() {
-    // 多種容器選擇器，按優先級排序
-    const selectors = [
-      '.essay-workspace-scroll',        // 新共用工作區
-      '.grading-content-wrapper',           // 老師端標準容器
-      '.student-editor-column',         // 學生端左側編輯欄
-      '.w-full.lg\\:w-2\\/3',              // 學生端編輯器容器（Tailwind CSS 類）
-      '#essayViewer',                      // 學生端查看模式容器
-      '.essay-editor-container',           // 學生端編輯器容器（備用）
-      '.main-content-area',                // 主要內容區域
-      '.essay-content-section'             // 論文內容區域
-    ];
-    
-    for (const selector of selectors) {
-      const container = document.querySelector(selector);
-      if (container && this.isValidScrollContainer(container)) {
-        console.log(`✅ 找到滾動容器: ${selector}`);
-        return container;
-      }
-    }
-    
-    console.warn('⚠️ 未找到合適的滾動容器，嘗試使用 body');
-    return document.body;
-  }
-
-  /**
-   * 驗證容器是否適合作為滾動容器
-   */
-  isValidScrollContainer(container) {
-    // 檢查容器是否可見且可滾動
-    const style = window.getComputedStyle(container);
-    const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
-    const hasScroll = container.scrollHeight > container.clientHeight;
-    
-    return isVisible && (hasScroll || container === document.body);
   }
 
   // 設計令牌常量配置
@@ -352,9 +290,6 @@ class AnnotationManager {
     console.log('✅ 批注內容:', content);
     
     try {
-      // 獲取錨定文本片段（用於重新定位）
-      const anchorText = this.selectedText.text.trim();
-      
       // 調用 RPC 函數創建批注
       const { data, error } = await this.supabase.rpc('create_annotation', {
         p_paragraph_id: this.currentParagraphId,
@@ -363,20 +298,26 @@ class AnnotationManager {
         p_highlight_end: this.selectedText.endOffset,
         p_annotation_type: 'comment',
         p_priority: 'normal',
-        p_is_private: false,
-        p_anchor_text: anchorText
+        p_is_private: false
       });
       
       if (error) throw error;
-
-      const annotationId = typeof data === 'string' ? data : data?.id || data;
-      const normalized = await this.fetchAnnotationById(annotationId);
-      if (!normalized) {
-        console.warn('⚠️ 無法取得新批注詳情');
-      } else {
-        this.annotations.set(annotationId, normalized);
-        this.renderAnnotation(annotationId);
-      }
+      
+      // 添加批注到本地存儲
+      this.annotations.set(data, {
+        id: data,
+        paragraph_id: this.currentParagraphId,
+        content: content,
+        highlight_start: this.selectedText.startOffset,
+        highlight_end: this.selectedText.endOffset,
+        annotation_type: 'comment',
+        priority: 'normal',
+        is_private: false,
+        created_at: new Date().toISOString()
+      });
+      
+      // 渲染批注
+      this.renderAnnotation(data.id);
       
       // 清除選擇和臨時高亮引用
       window.getSelection().removeAllRanges();
@@ -406,8 +347,8 @@ class AnnotationManager {
     console.log('💬 顯示批注對話框:', defaultContent);
     
     return new Promise((resolve) => {
-      // 智能容器檢測
-      const wrapper = this.findScrollContainer();
+      // 獲取滾動容器
+      const wrapper = document.querySelector('.grading-content-wrapper');
       if (!wrapper) {
         console.error('❌ 找不到滾動容器');
         resolve(null);
@@ -492,15 +433,25 @@ class AnnotationManager {
    * 獲取當前用戶信息（統一方法）
    */
   getCurrentUser() {
-    if (this.currentUser) {
-      return this.currentUser;
-    }
-
+    // 從全局狀態獲取用戶信息
     if (window.AppState?.currentUser) {
-      this.currentUser = window.AppState.currentUser;
-      return this.currentUser;
+      console.log('✅ 從 AppState 獲取用戶信息:', window.AppState.currentUser.email);
+      return window.AppState.currentUser;
     }
-
+    
+    // 備用：從 Supabase 會話獲取
+    try {
+      // 使用同步方式獲取當前會話
+      const session = this.supabase.auth.session;
+      if (session?.user) {
+        console.log('✅ 從 Supabase 會話獲取用戶信息:', session.user.email);
+        return session.user;
+      }
+    } catch (error) {
+      console.warn('⚠️ 無法獲取會話信息:', error);
+    }
+    
+    console.log('❌ 無法獲取用戶信息');
     return null;
   }
 
@@ -800,8 +751,7 @@ class AnnotationManager {
    * 滾動到指定批註的原文位置
    */
   scrollToAnnotationHighlight(annotationId) {
-    // 使用智能容器檢測
-    const wrapper = this.findScrollContainer();
+    const wrapper = document.querySelector('.grading-content-wrapper');
     const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
     
     if (!wrapper || !highlight) return;
@@ -825,8 +775,8 @@ class AnnotationManager {
    * 創建浮動批注（Google Docs 風格 - 直接浮動在右側）
    */
   createFloatingAnnotation(annotationId, annotation) {
-    // 智能容器檢測 - 支持多種容器結構
-    const wrapper = this.findScrollContainer();
+    // 獲取滾動容器
+    const wrapper = document.querySelector('.grading-content-wrapper');
     if (!wrapper) {
       console.log('❌ 找不到滾動容器');
       return;
@@ -844,32 +794,17 @@ class AnnotationManager {
     floatingAnnotation.className = 'floating-annotation';
     floatingAnnotation.dataset.annotationId = annotationId;
 
-    // 根據權限決定是否顯示編輯/刪除按鈕
-    const canEdit = this.canEditAnnotation(annotation);
-    const canDelete = this.canDeleteAnnotation(annotation);
-    
-    // 生成操作按鈕 HTML
-    let actionsHTML = '';
-    // 評論按鈕（所有用戶都可以評論）
-    actionsHTML += `<button class="annotation-action-btn comment" data-annotation-id="${annotationId}">評論</button>`;
-    
-    if (canEdit) {
-      actionsHTML += `<button class="annotation-action-btn edit" data-annotation-id="${annotationId}">編輯</button>`;
-    }
-    if (canDelete) {
-      actionsHTML += `<button class="annotation-action-btn delete" data-annotation-id="${annotationId}">刪除</button>`;
-    }
-
     // 批注內容
     floatingAnnotation.innerHTML = `
       <div class="annotation-header">
-        <div class="annotation-avatar">${annotation.authorInitials || this.getUserInitials()}</div>
-        <div class="annotation-author">${annotation.authorName || this.getCurrentUserName()}</div>
+        <div class="annotation-avatar">${this.getUserInitials()}</div>
+        <div class="annotation-author">${this.getCurrentUserName()}</div>
         <div class="annotation-time">${this.formatTime(annotation.created_at)}</div>
       </div>
       <div class="annotation-content">${annotation.content}</div>
       <div class="annotation-actions">
-        ${actionsHTML}
+        <button class="annotation-action-btn edit" data-annotation-id="${annotationId}">編輯</button>
+        <button class="annotation-action-btn delete" data-annotation-id="${annotationId}">刪除</button>
       </div>
     `;
 
@@ -888,30 +823,19 @@ class AnnotationManager {
       this.highlightAnnotation(annotationId);
     });
 
-    // 評論按鈕
-    const commentBtn = floatingAnnotation.querySelector('.comment');
-    commentBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.showCommentDialog(annotationId);
-    });
-
     // 編輯按鈕
     const editBtn = floatingAnnotation.querySelector('.edit');
-    if (editBtn) {
-      editBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.editAnnotation(annotationId);
-      });
-    }
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.editAnnotation(annotationId);
+    });
 
     // 刪除按鈕
     const deleteBtn = floatingAnnotation.querySelector('.delete');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.deleteAnnotation(annotationId);
-      });
-    }
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.deleteAnnotation(annotationId);
+    });
 
     // 點擊高亮文本時高亮對應批注
     highlight.addEventListener('click', () => {
@@ -1136,17 +1060,8 @@ class AnnotationManager {
    * 編輯批注
    */
   async editAnnotation(annotationId) {
-    // 權限檢查
     const annotation = this.annotations.get(annotationId);
-    if (!annotation) {
-      toast.error('找不到批注');
-      return;
-    }
-    
-    if (!this.canEditAnnotation(annotation)) {
-      toast.error('您沒有權限編輯此批注');
-      return;
-    }
+    if (!annotation) return;
     
     const newContent = await this.showAnnotationDialog(annotation.content);
     if (!newContent || newContent === annotation.content) return;
@@ -1190,18 +1105,6 @@ class AnnotationManager {
    * 刪除批注
    */
   async deleteAnnotation(annotationId) {
-    // 權限檢查
-    const annotation = this.annotations.get(annotationId);
-    if (!annotation) {
-      toast.error('找不到批注');
-      return;
-    }
-    
-    if (!this.canDeleteAnnotation(annotation)) {
-      toast.error('您沒有權限刪除此批注');
-      return;
-    }
-    
     // 使用統一的 Dialog 組件替代原生 confirm
     dialog.confirmDelete({
       title: '刪除批注',
@@ -1238,146 +1141,45 @@ class AnnotationManager {
     console.log('📥 加載現有批注:', this.currentParagraphId);
     
     try {
-      const { data, error } = await this.supabase
-        .from('annotations')
-        .select('*')
-        .eq('paragraph_id', this.currentParagraphId)
-        .order('highlight_start', { ascending: true });
-
+      const { data, error } = await this.supabase.rpc('get_paragraph_annotations', {
+        p_paragraph_id: this.currentParagraphId
+      });
+      
       if (error) {
-        console.error('❌ 批注查詢失敗:', error);
+        console.error('❌ RPC 調用失敗:', error);
         throw error;
       }
-
-      console.log('📊 批注數據筆數:', data?.length || 0);
-
-      this.annotations.clear();
-      document.querySelectorAll('.floating-annotation, .annotation-highlight').forEach(el => el.remove());
-
-      for (const row of data || []) {
-        const normalized = await this.normalizeAnnotationRecord(row);
-        if (!normalized) continue;
-        this.annotations.set(normalized.id, normalized);
-        this.renderAnnotation(normalized.id);
-      }
       
-      // 批量加載評論（避免阻塞渲染）
-      setTimeout(async () => {
-        for (const annotationId of this.annotations.keys()) {
-          try {
-            await this.loadAnnotationComments(annotationId);
-          } catch (error) {
-            console.warn('⚠️ 加載批注評論失敗:', error);
-          }
+      console.log('📊 批注數據:', data);
+      
+      // 按照 highlight_start 排序（從小到大，確保批註按原文順序顯示）
+      const sortedAnnotations = data.sort((a, b) => {
+        return (a.highlight_start || 0) - (b.highlight_start || 0);
+      });
+      
+      console.log('✅ 批注已按原文位置排序');
+      
+      // 存儲並渲染批注
+      sortedAnnotations.forEach(annotation => {
+        const annotationId = annotation.id || annotation.annotation_id;
+        if (annotationId) {
+          this.annotations.set(annotationId, annotation);
+          this.renderAnnotation(annotationId);
+        } else {
+          console.log('⚠️ 批注沒有有效的 ID:', annotation);
         }
-      }, 100);
+      });
       
-      console.log(`✅ 已加載 ${data?.length || 0} 個批注`);
+      console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
       
       // 調整所有批註位置，確保不重疊
       setTimeout(() => {
         this.adjustAllAnnotations();
       }, 200);
       
-      // 觸發智能空間分配邏輯（學生端）
-      setTimeout(() => {
-        if (typeof window.adjustSidebarSpace === 'function') {
-          window.adjustSidebarSpace();
-        }
-      }, 300);
-      
     } catch (error) {
       console.error('❌ 加載批注失敗:', error);
       toast.error('加載批注失敗: ' + error.message);
-    }
-  }
-
-  /**
-   * 將資料庫批注記錄標準化
-   */
-  async normalizeAnnotationRecord(row) {
-    if (!row) return null;
-
-    const ownerId = row.teacher_id || row.student_id || null;
-    const ownerRole = row.teacher_id ? 'teacher' : (row.student_id ? 'student' : 'unknown');
-    const ownerProfile = await this.getUserProfile(ownerId);
-
-    const authorName = ownerProfile?.display_name || ownerProfile?.email || '未命名用戶';
-    const authorInitial = authorName.trim().charAt(0).toUpperCase() || '匿名';
-
-    return {
-      id: row.id,
-      paragraph_id: row.paragraph_id,
-      essay_id: this.currentEssayId,
-      content: row.content,
-      highlight_start: typeof row.highlight_start === 'number' ? row.highlight_start : 0,
-      highlight_end: typeof row.highlight_end === 'number'
-        ? row.highlight_end
-        : (typeof row.highlight_start === 'number' ? row.highlight_start : 0),
-      annotation_type: row.annotation_type || 'comment',
-      priority: row.priority || 'normal',
-      is_private: !!row.is_private,
-      anchor_text: row.anchor_text || '',
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      ownerId,
-      ownerRole,
-      authorName,
-      authorInitials: authorInitial,
-      raw: row
-    };
-  }
-
-  /**
-   * 快取並取得使用者資訊
-   */
-  async getUserProfile(userId) {
-    if (!userId) return null;
-    if (this.userCache.has(userId)) {
-      return this.userCache.get(userId);
-    }
-
-    try {
-      const { data, error } = await this.supabase
-        .from('users')
-        .select('id, display_name, email, role')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.warn('⚠️ 無法取得使用者資料:', error.message);
-        return null;
-      }
-
-      this.userCache.set(userId, data);
-      return data;
-    } catch (error) {
-      console.warn('⚠️ 讀取使用者資料時發生錯誤:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 依 ID 取得批注記錄
-   */
-  async fetchAnnotationById(annotationId) {
-    try {
-      const { data, error } = await this.supabase
-        .from('annotations')
-        .select('*')
-        .eq('id', annotationId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('❌ 查詢批注失敗:', error);
-        return null;
-      }
-
-      if (!data) return null;
-      return this.normalizeAnnotationRecord(data);
-    } catch (error) {
-      console.error('❌ 讀取批注資料時發生錯誤:', error);
-      return null;
     }
   }
 
@@ -1393,7 +1195,7 @@ class AnnotationManager {
         schema: 'public',
         table: 'annotations',
         filter: `paragraph_id=eq.${this.currentParagraphId}`
-      }, async (payload) => {
+      }, (payload) => {
         console.log('🔄 收到新批注:', payload.new);
         
         // 檢查是否已經存在這個批注（避免重複處理）
@@ -1402,14 +1204,11 @@ class AnnotationManager {
           return;
         }
         
-        const normalized = await this.fetchAnnotationById(payload.new.id);
-        if (!normalized) return;
-
-        this.annotations.set(normalized.id, normalized);
-        this.renderAnnotation(normalized.id);
+        this.annotations.set(payload.new.id, payload.new);
+        this.renderAnnotation(payload.new.id);
         
         // 只在不是當前用戶創建的批注時顯示通知
-        if (typeof toast !== 'undefined' && normalized.ownerId !== this.currentUserId) {
+        if (typeof toast !== 'undefined') {
           toast.info('收到新批注');
         }
       })
@@ -1418,15 +1217,11 @@ class AnnotationManager {
         schema: 'public',
         table: 'annotations',
         filter: `paragraph_id=eq.${this.currentParagraphId}`
-      }, async (payload) => {
+      }, (payload) => {
         console.log('🔄 批注已更新:', payload.new);
-
-        const normalized = await this.normalizeAnnotationRecord(payload.new);
-        if (!normalized) return;
-
-        this.annotations.set(normalized.id, normalized);
+        this.annotations.set(payload.new.id, payload.new);
         // 更新現有高亮
-        this.updateAnnotationHighlight(normalized.id);
+        this.updateAnnotationHighlight(payload.new.id);
       })
       .on('postgres_changes', {
         event: 'DELETE',
@@ -1439,7 +1234,6 @@ class AnnotationManager {
         // 移除高亮
         const markers = document.querySelectorAll(`[data-annotation-id="${payload.old.id}"]`);
         markers.forEach(marker => marker.remove());
-        this.adjustAllAnnotations();
       })
       .subscribe();
   }
@@ -1489,123 +1283,6 @@ class AnnotationManager {
     if (this.selectionHint) {
       this.selectionHint.remove();
       this.selectionHint = null;
-    }
-  }
-
-  /**
-   * 添加批注評論
-   */
-  async addAnnotationComment(annotationId, content, commentType = 'reply') {
-    try {
-      console.log('💬 添加批注評論:', { annotationId, content, commentType });
-      
-      const { data, error } = await this.supabase.rpc('add_annotation_comment', {
-        p_annotation_id: annotationId,
-        p_content: content,
-        p_comment_type: commentType
-      });
-      
-      if (error) throw error;
-      
-      console.log('✅ 批注評論已添加:', data);
-      
-      // 重新加載評論
-      await this.loadAnnotationComments(annotationId);
-      
-      return data;
-    } catch (error) {
-      console.error('❌ 添加批注評論失敗:', error);
-      toast.error('添加評論失敗: ' + error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * 加載批注評論
-   */
-  async loadAnnotationComments(annotationId) {
-    try {
-      console.log('📥 加載批注評論:', annotationId);
-      
-      const { data, error } = await this.supabase.rpc('get_annotation_comments', {
-        p_annotation_id: annotationId
-      });
-      
-      if (error) throw error;
-      
-      console.log('📊 評論數據:', data);
-      
-      // 更新批注的評論顯示
-      this.updateAnnotationCommentsDisplay(annotationId, data);
-      
-      return data;
-    } catch (error) {
-      console.error('❌ 加載批注評論失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 更新批注評論顯示
-   */
-  updateAnnotationCommentsDisplay(annotationId, comments) {
-    const annotationElement = document.querySelector(`[data-annotation-id="${annotationId}"]`);
-    if (!annotationElement) return;
-    
-    // 查找或創建評論區域
-    let commentsArea = annotationElement.querySelector('.annotation-comments');
-    if (!commentsArea) {
-      commentsArea = document.createElement('div');
-      commentsArea.className = 'annotation-comments';
-      commentsArea.style.cssText = 'margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;';
-      annotationElement.appendChild(commentsArea);
-    }
-    
-    // 簡化顯示邏輯
-    if (comments.length === 0) {
-      commentsArea.innerHTML = '<div class="text-gray-400 text-sm">暫無評論</div>';
-      return;
-    }
-    
-    // 使用模板字符串簡化評論渲染
-    commentsArea.innerHTML = comments.map(comment => `
-      <div class="annotation-comment" style="margin-bottom: 8px; padding: 8px; background: #f9fafb; border-radius: 4px; border-left: 3px solid #3b82f6;">
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center space-x-2">
-            <span class="font-medium text-sm text-gray-900">${comment.user_name}</span>
-            <span class="text-xs text-gray-500">${comment.user_role === 'teacher' ? '老師' : '學生'}</span>
-            <span class="text-xs text-gray-400">${new Date(comment.created_at).toLocaleString()}</span>
-          </div>
-          ${comment.comment_type !== 'reply' ? `<span class="text-xs px-2 py-1 rounded ${comment.comment_type === 'question' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">${comment.comment_type === 'question' ? '問題' : '澄清'}</span>` : ''}
-        </div>
-        <div class="text-sm text-gray-700">${comment.content}</div>
-      </div>
-    `).join('');
-  }
-
-  /**
-   * 顯示批注評論對話框
-   */
-  async showCommentDialog(annotationId) {
-    const annotation = this.annotations.get(annotationId);
-    if (!annotation) {
-      console.error('❌ 找不到批注:', annotationId);
-      return;
-    }
-    
-    // 先加載現有評論
-    await this.loadAnnotationComments(annotationId);
-    
-    const content = await dialog.prompt({
-      title: '添加評論',
-      message: '請輸入您的評論：',
-      placeholder: '輸入您的評論...',
-      confirmText: '發送',
-      cancelText: '取消'
-    });
-    
-    if (content && content.trim()) {
-      await this.addAnnotationComment(annotationId, content.trim());
     }
   }
 

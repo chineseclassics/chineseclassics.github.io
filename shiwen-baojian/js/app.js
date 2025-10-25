@@ -11,7 +11,6 @@ import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
 import toast from './ui/toast.js';
-import { renderEssayHtml } from './shared/essay-renderer.js';
 
 // ================================
 // 全局狀態管理
@@ -47,34 +46,11 @@ const AppState = {
     currentFormatSpec: null
 };
 
-// 將狀態掛載到全域，供批注等模組使用
-window.AppState = AppState;
-
-/**
- * 重新渲染論文預覽區域
- * @param {Object|null} essayLike - 具備 content_json 或 paragraphs 的物件
- */
-function renderEssayViewer(essayLike = null) {
-    const viewer = document.getElementById('essayViewer');
-    if (!viewer) {
-        console.warn('⚠️ 找不到 essayViewer 容器，略過渲染');
-        return;
-    }
-
-    viewer.innerHTML = renderEssayHtml(essayLike);
-}
-
 // ================================
 // 初始化應用
 // ================================
 
 async function initializeApp() {
-    // ✅ 防止重複初始化
-    if (AppState.initialized) {
-        console.log('⏸️ 應用已初始化，跳過重複初始化');
-        return;
-    }
-    
     console.log('🚀 時文寶鑑初始化開始...');
     console.log(`📍 運行模式: ${RUN_MODE}`);
     
@@ -770,9 +746,6 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         const editorContent = template.content.cloneNode(true);
         container.appendChild(editorContent);
 
-        // 初始化論文預覽（預設顯示空狀態）
-        renderEssayViewer();
-
         console.log('📝 準備初始化論文編輯器', { assignmentId, mode, formatTemplate, essayId });
 
         // 保存當前任務 ID 到 AppState（用於區分任務寫作和練筆）
@@ -790,40 +763,6 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             // 兜底：清除所有 ID
             AppState.currentAssignmentId = null;
             AppState.currentPracticeEssayId = null;
-        }
-
-        // ✅ 學生可編輯模式下調整模板結構（保留共用工作區）
-        const layoutRoot = container.querySelector('.google-docs-layout');
-        if (layoutRoot && editable) {
-            layoutRoot.classList.add('student-edit-mode');
-
-            const viewerWrapper = layoutRoot.querySelector('.grading-content-wrapper');
-            const assignmentInfoPanel = layoutRoot.querySelector('#assignment-info-panel');
-            const editorShell = layoutRoot.querySelector('[data-editor-root="true"]');
-            const sidebar = layoutRoot.querySelector('aside');
-
-            let editorColumn = layoutRoot.querySelector('.student-editor-column');
-            if (!editorColumn) {
-                editorColumn = document.createElement('div');
-                editorColumn.classList.add('student-editor-column');
-                if (sidebar) {
-                    layoutRoot.insertBefore(editorColumn, sidebar);
-                } else {
-                    layoutRoot.appendChild(editorColumn);
-                }
-            }
-
-            if (viewerWrapper && !editorColumn.contains(viewerWrapper)) {
-                editorColumn.appendChild(viewerWrapper);
-            }
-
-            if (assignmentInfoPanel && !editorColumn.contains(assignmentInfoPanel)) {
-                editorColumn.appendChild(assignmentInfoPanel);
-            }
-
-            if (editorShell && !editorColumn.contains(editorShell)) {
-                editorColumn.appendChild(editorShell);
-            }
         }
 
         // 綁定返回按鈕
@@ -951,15 +890,12 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         if (mode === 'assignment' && AppState.currentEssayContent) {
             console.log('📂 恢復任務作業內容...');
             await restoreEssayContent(AppState.currentEssayContent);
-            renderEssayViewer({ content_json: AppState.currentEssayContent });
         } else if (mode === 'free-writing' && AppState.currentPracticeContent) {
             console.log('📂 恢復練筆內容...');
             await restoreEssayContent(AppState.currentPracticeContent);
-            renderEssayViewer({ content_json: AppState.currentPracticeContent });
         } else if (mode === 'free-writing' && !essayId) {
             console.log('✨ 新練筆模式，內容為空');
             // 新練筆，不恢復任何內容
-            renderEssayViewer(null);
         }
         
         // ✅ 設置狀態顯示（只在任務模式）
@@ -997,8 +933,8 @@ async function initializeStudentAnnotationSystem(assignmentId) {
     try {
         console.log('🚀 初始化學生端批注系統:', assignmentId);
         
-        // 動態導入統一的批注管理器
-        const { default: AnnotationManager } = await import('./features/annotation-manager.js');
+        // 動態導入學生端批注查看器
+        const { default: StudentAnnotationViewer } = await import('./student/student-annotation-viewer.js');
         
         // 獲取當前作業的段落信息
         const { data: essay, error: essayError } = await AppState.supabase
@@ -1012,55 +948,44 @@ async function initializeStudentAnnotationSystem(assignmentId) {
             `)
             .eq('assignment_id', assignmentId)
             .eq('student_id', AppState.currentUser.id)
-            .maybeSingle();
+            .single();
             
         if (essayError) {
             console.error('❌ 獲取作業信息失敗:', essayError);
             return;
         }
         
-        if (!essay) {
-            console.log('ℹ️ 尚未建立作業記錄，跳過學生端批注系統初始化');
-            return;
-        }
-        
-        if (!essay.paragraphs || essay.paragraphs.length === 0) {
+        if (!essay || !essay.paragraphs || essay.paragraphs.length === 0) {
             console.log('ℹ️ 沒有找到段落，跳過批注系統初始化');
             return;
         }
         
-        // 清理舊的批注管理器（如果存在）
-        if (window.studentAnnotationManager) {
-            window.studentAnnotationManager.destroy();
-            window.studentAnnotationManager = null;
+        // 顯示批注區域，隱藏 AI 反饋區域
+        const annotationsArea = document.getElementById('annotations-display-area');
+        const feedbackArea = document.getElementById('sidebar-feedback-content');
+        
+        if (annotationsArea) {
+            annotationsArea.classList.remove('hidden');
+        }
+        if (feedbackArea) {
+            feedbackArea.classList.add('hidden');
         }
         
-        // 創建統一的批注管理器（學生角色）
-        const annotationManager = new AnnotationManager(AppState.supabase, {
-            userRole: 'student',
-            currentUserId: AppState.currentUser.id,
-            currentUser: AppState.currentUser
-        });
+        // 創建批注查看器
+        const annotationViewer = new StudentAnnotationViewer(AppState.supabase);
         
-        // 初始化批注系統（使用第一個段落作為主要段落）
-        if (essay.paragraphs.length > 0) {
-            await annotationManager.init(essay.id, essay.paragraphs[0].id);
-            console.log('✅ 批注系統已初始化，段落數量:', essay.paragraphs.length);
+        // 為每個段落初始化批注系統
+        for (const paragraph of essay.paragraphs) {
+            await annotationViewer.init(essay.id, paragraph.id, true); // 只讀模式
         }
         
-        // 將批注管理器保存到全局狀態
-        window.studentAnnotationManager = annotationManager;
+        // 將批注查看器保存到全局狀態
+        window.studentAnnotationViewer = annotationViewer;
         
-        console.log('✅ 學生端批注系統初始化完成（使用統一 AnnotationManager）');
+        console.log('✅ 學生端批注系統初始化完成');
         
     } catch (error) {
         console.error('❌ 初始化學生端批注系統失敗:', error);
-        
-        // 清理全局狀態，避免留下無效的引用
-        if (window.studentAnnotationManager) {
-            window.studentAnnotationManager.destroy();
-            window.studentAnnotationManager = null;
-        }
     }
 }
 
@@ -1071,13 +996,16 @@ async function initializeAnnotationRepositioningSystem(assignmentId) {
     try {
         console.log('🚀 初始化批注重新定位系統:', assignmentId);
         
-        // ✅ 使用 maybeSingle() 而非 single()，避免查詢不到數據時報錯
+        // 動態導入批注重新定位管理器
+        const { default: AnnotationRepositioningManager } = await import('./features/annotation-repositioning.js');
+        
+        // 獲取當前作業信息
         const { data: essay, error: essayError } = await AppState.supabase
             .from('essays')
             .select('id')
             .eq('assignment_id', assignmentId)
             .eq('student_id', AppState.currentUser.id)
-            .maybeSingle();
+            .single();
             
         if (essayError) {
             console.error('❌ 獲取作業信息失敗:', essayError);
@@ -1088,9 +1016,6 @@ async function initializeAnnotationRepositioningSystem(assignmentId) {
             console.log('ℹ️ 沒有找到作業，跳過批注重新定位系統初始化');
             return;
         }
-        
-        // 動態導入批注重新定位管理器（只在有作業時才導入）
-        const { default: AnnotationRepositioningManager } = await import('./features/annotation-repositioning.js');
         
         // 創建批注重新定位管理器
         const repositioningManager = new AnnotationRepositioningManager(AppState.supabase);
@@ -1246,12 +1171,6 @@ async function loadPracticeEssayContent(essayId) {
         // 這需要在 essay-writer.js 中實現內容恢復功能
         AppState.currentPracticeContent = essay.content_json ? JSON.parse(essay.content_json) : null;
 
-        renderEssayViewer({
-            content_json: essay.content_json,
-            paragraphs: essay.paragraphs,
-            title: essay.title
-        });
-
         console.log('✅ 練筆作品數據加載完成');
     } catch (error) {
         console.error('❌ 加載練筆作品失敗:', error);
@@ -1286,20 +1205,11 @@ async function loadStudentEssayForAssignment(assignmentId) {
             // 解析並保存作業內容
             AppState.currentEssayContent = essay.content_json ? JSON.parse(essay.content_json) : null;
             console.log('📋 已加載作業內容，字數:', essay.total_word_count);
-
-            // 更新論文預覽
-            renderEssayViewer({
-                content_json: essay.content_json,
-                paragraphs: essay.paragraphs,
-                title: essay.title
-            });
         } else {
             console.log('ℹ️ 這是新的任務作業，將創建新記錄');
             const { StorageState } = await import('./student/essay-storage.js');
             StorageState.currentEssayId = null;
             AppState.currentEssayContent = null;
-
-            renderEssayViewer(null);
         }
     } catch (error) {
         console.error('❌ 加載任務作業失敗:', error);
@@ -1710,91 +1620,6 @@ if (document.readyState === 'loading') {
     initializeApp();
 }
 
-/**
- * 切換雨村評點區域的展開/收合狀態
- */
-window.toggleFeedbackSection = function() {
-    try {
-        const feedbackContent = document.getElementById('feedback-content');
-        const feedbackArrow = document.getElementById('feedback-arrow');
-        
-        if (!feedbackContent || !feedbackArrow) {
-            console.warn('⚠️ 找不到雨村評點相關元素');
-            return;
-        }
-        
-        const isHidden = feedbackContent.classList.contains('hidden');
-        
-        if (isHidden) {
-            // 展開
-            feedbackContent.classList.remove('hidden');
-            feedbackArrow.classList.remove('fa-chevron-down');
-            feedbackArrow.classList.add('fa-chevron-up');
-            console.log('📖 雨村評點區域已展開');
-        } else {
-            // 收合
-            feedbackContent.classList.add('hidden');
-            feedbackArrow.classList.remove('fa-chevron-up');
-            feedbackArrow.classList.add('fa-chevron-down');
-            console.log('📚 雨村評點區域已收合');
-        }
-        
-        // 觸發智能空間分配邏輯
-        if (typeof window.adjustSidebarSpace === 'function') {
-            window.adjustSidebarSpace();
-        }
-    } catch (error) {
-        console.error('❌ 切換雨村評點失敗:', error);
-    }
-}
-
-/**
- * 智能空間分配邏輯
- * 根據批注和雨村評點的內容動態調整顯示空間
- */
-window.adjustSidebarSpace = function() {
-    try {
-        const feedbackContent = document.getElementById('feedback-content');
-        const annotationsContent = document.getElementById('annotations-content');
-        const feedbackSection = document.getElementById('feedback-section');
-        const annotationsSection = document.getElementById('annotations-section');
-        
-        if (!feedbackContent || !annotationsContent || !feedbackSection || !annotationsSection) {
-            console.warn('⚠️ 找不到側邊欄元素，跳過空間分配');
-            return;
-        }
-        
-        // 檢查是否有批注
-        const hasAnnotations = annotationsContent.children.length > 1; // 除了默認的提示元素
-        const isFeedbackExpanded = !feedbackContent.classList.contains('hidden');
-        
-        console.log('🔍 智能空間分配檢查:', { hasAnnotations, isFeedbackExpanded });
-        
-        if (hasAnnotations && isFeedbackExpanded) {
-            // 有批注且雨村評點展開：動態調整高度比例
-            feedbackSection.style.flex = '0 0 40%';
-            annotationsSection.style.flex = '1';
-            console.log('📊 動態調整：批注優先，雨村評點收縮');
-        } else if (hasAnnotations && !isFeedbackExpanded) {
-            // 有批注且雨村評點收合：批注佔滿空間
-            feedbackSection.style.flex = '0 0 auto';
-            annotationsSection.style.flex = '1';
-            console.log('📊 批注優先：雨村評點收合，批注佔滿空間');
-        } else if (!hasAnnotations && isFeedbackExpanded) {
-            // 無批注且雨村評點展開：雨村評點佔滿空間
-            feedbackSection.style.flex = '1';
-            annotationsSection.style.flex = '0 0 auto';
-            console.log('📊 雨村評點優先：無批注時佔滿空間');
-        } else {
-            // 無批注且雨村評點收合：恢復默認
-            feedbackSection.style.flex = '0 0 auto';
-            annotationsSection.style.flex = '1';
-            console.log('📊 默認狀態：恢復正常比例');
-        }
-    } catch (error) {
-        console.error('❌ 智能空間分配失敗:', error);
-    }
-}
-
 // 導出供其他模組使用
 export { AppState };
+

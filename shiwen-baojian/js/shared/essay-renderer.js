@@ -16,9 +16,10 @@ export function renderEssayHtml(essay) {
     return placeholderHtml();
   }
 
+  const context = createParagraphContext(essay);
   const contentBlock = normalizeEssayContent(essay);
   if (contentBlock) {
-    return buildHtmlFromStructuredContent(contentBlock);
+    return buildHtmlFromStructuredContent(contentBlock, context);
   }
 
   if (Array.isArray(essay.paragraphs) && essay.paragraphs.length > 0) {
@@ -49,16 +50,17 @@ function normalizeEssayContent(essay) {
 /**
  * 依據結構化內容組裝 HTML
  */
-function buildHtmlFromStructuredContent(content) {
+function buildHtmlFromStructuredContent(content, context) {
   let html = '';
 
   if (content.introduction) {
+    const introRecord = context.takeByType('introduction');
     html += `
       <section class="paragraph-block">
         <h4 class="text-lg font-semibold text-gray-800 mb-2">
           <i class="fas fa-quote-left mr-2" style="color: var(--primary-500);"></i>引言
         </h4>
-        <div class="paragraph-content">${content.introduction}</div>
+        <div class="paragraph-content"${dataParagraphAttr(introRecord)}>${content.introduction}</div>
       </section>
     `;
   }
@@ -72,19 +74,20 @@ function buildHtmlFromStructuredContent(content) {
             <i class="fas fa-lightbulb mr-2" style="color: var(--warning-500);"></i>
             分論點 ${index + 1}${titleSuffix}
           </h4>
-          ${renderArgumentParagraphs(arg.paragraphs)}
+          ${renderArgumentParagraphs(arg.paragraphs, context)}
         </section>
       `;
     });
   }
 
   if (content.conclusion) {
+    const conclusionRecord = context.takeByType('conclusion');
     html += `
       <section class="paragraph-block">
         <h4 class="text-lg font-semibold text-gray-800 mb-2">
           <i class="fas fa-flag-checkered mr-2" style="color: var(--success-500);"></i>結論
         </h4>
-        <div class="paragraph-content">${content.conclusion}</div>
+        <div class="paragraph-content"${dataParagraphAttr(conclusionRecord)}>${content.conclusion}</div>
       </section>
     `;
   }
@@ -101,11 +104,12 @@ function buildHtmlFromLegacyParagraphs(paragraphs) {
   const html = sorted.map((paragraph, index) => {
     const typeLabel = resolveParagraphLabel(paragraph, index);
     const contentHtml = extractParagraphContent(paragraph);
+    const attr = paragraph.id ? ` data-paragraph-id="${paragraph.id}"` : '';
 
     return `
       <section class="paragraph-block">
         <h4 class="text-lg font-semibold text-gray-800 mb-2">${typeLabel}</h4>
-        <div class="paragraph-content">${contentHtml}</div>
+        <div class="paragraph-content"${attr}>${contentHtml}</div>
       </section>
     `;
   }).join('');
@@ -116,7 +120,7 @@ function buildHtmlFromLegacyParagraphs(paragraphs) {
 /**
  * 渲染 argument 內的子段落
  */
-function renderArgumentParagraphs(paragraphs = []) {
+function renderArgumentParagraphs(paragraphs = [], context) {
   if (!Array.isArray(paragraphs) || paragraphs.length === 0) {
     return `
       <div class="paragraph-content sub-paragraph empty">
@@ -126,7 +130,7 @@ function renderArgumentParagraphs(paragraphs = []) {
   }
 
   return paragraphs.map((para, idx) => `
-    <div class="paragraph-content sub-paragraph">
+    <div class="paragraph-content sub-paragraph"${dataParagraphAttr(context ? context.takeBody() : null)}>
       <div class="paragraph-label">段落 ${idx + 1}</div>
       ${para.content || ''}
     </div>
@@ -158,6 +162,48 @@ function resolveParagraphLabel(paragraph, index) {
   if (type === 'conclusion') return '結論';
   if (type === 'body') return `正文段落 ${index + 1}`;
   return paragraph.title || `段落 ${index + 1}`;
+}
+
+/**
+ * 建立段落匹配上下文
+ */
+function createParagraphContext(essay) {
+  const records = Array.isArray(essay?.paragraphs)
+    ? essay.paragraphs
+        .map((record, index) => ({
+          ...record,
+          order_index: record.order_index ?? index,
+          __used: false
+        }))
+        .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+    : [];
+
+  function take(predicate) {
+    let record = records.find(r => !r.__used && predicate(r));
+    if (!record) {
+      record = records.find(r => !r.__used);
+    }
+    if (record) {
+      record.__used = true;
+    }
+    return record;
+  }
+
+  return {
+    takeByType(type) {
+      return take(r => r.paragraph_type === type);
+    },
+    takeBody() {
+      return take(r => r.paragraph_type === 'body');
+    }
+  };
+}
+
+function dataParagraphAttr(record) {
+  if (record && record.id) {
+    return ` data-paragraph-id="${record.id}"`;
+  }
+  return '';
 }
 
 /**

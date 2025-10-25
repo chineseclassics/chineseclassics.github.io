@@ -385,9 +385,10 @@ class GradingUI {
       console.log('📄 段落數量:', paragraphs.length);
       
       if (paragraphs.length > 0) {
-        // 使用第一個段落作為示例
-        console.log('🎯 使用第一個段落初始化:', paragraphs[0].id);
-        await this.annotationManager.init(this.currentEssay.id, paragraphs[0].id);
+        await this.annotationManager.init({
+          essayId: this.currentEssay.id,
+          paragraphs
+        });
       } else {
         console.log('❌ 沒有找到段落');
       }
