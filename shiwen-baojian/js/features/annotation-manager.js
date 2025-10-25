@@ -15,6 +15,7 @@ class AnnotationManager {
     this.isSelectionMode = false;
     this.currentEssayId = null;
     this.currentParagraphId = null;
+    this.paragraphMap = new Map(); // paragraph_id -> paragraph record
     
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
@@ -52,20 +53,53 @@ class AnnotationManager {
   /**
    * 初始化批注系統
    */
-  async init(essayId, paragraphId) {
+  async init(essayContext, maybeParagraphId) {
     // 防止重複初始化
     if (this.isInitialized) {
       console.log('ℹ️ 批注系統已初始化，跳過重複初始化');
       return;
     }
     
-    console.log('🚀 初始化批注系統:', { essayId, paragraphId });
+    let essayId = essayContext;
+    let paragraphId = maybeParagraphId;
+    let paragraphRecords = [];
+    
+    // 支援以物件傳入的初始化參數
+    if (essayContext && typeof essayContext === 'object') {
+      essayId = essayContext.essayId || essayContext.id || null;
+      paragraphRecords = Array.isArray(essayContext.paragraphs) ? essayContext.paragraphs : [];
+      paragraphId = essayContext.paragraphId || maybeParagraphId || (paragraphRecords[0]?.id ?? null);
+    }
+    
+    if (!essayId) {
+      console.error('❌ 無法初始化批注系統：缺少 essayId');
+      return;
+    }
+    
+    console.log('🚀 初始化批注系統:', { essayId, paragraphId, paragraphCount: paragraphRecords.length });
     
     this.currentEssayId = essayId;
-    this.currentParagraphId = paragraphId;
+    this.currentParagraphId = paragraphId || null;
+    this.paragraphMap = new Map(
+      paragraphRecords
+        .filter(record => record && record.id)
+        .map(record => [record.id, record])
+    );
     
-    // 加載現有批注
-    await this.loadAnnotations();
+    // 先清空既有批註
+    this.annotations.clear();
+    
+    // 加載現有批注（逐一處理每個段落）
+    if (paragraphId) {
+      await this.loadAnnotationsForParagraph(paragraphId);
+    } else if (this.paragraphMap.size > 0) {
+      for (const [pid] of this.paragraphMap) {
+        await this.loadAnnotationsForParagraph(pid);
+      }
+    } else {
+      // 沒有段落資訊時至少嘗試一次，避免整個系統未初始化
+      await this.loadAnnotationsForParagraph(null);
+    }
     
     // 啟用文本選擇模式
     this.enableSelectionMode();
@@ -1138,12 +1172,20 @@ class AnnotationManager {
   /**
    * 加載現有批注
    */
-  async loadAnnotations() {
-    console.log('📥 加載現有批注:', this.currentParagraphId);
+  async loadAnnotationsForParagraph(paragraphId) {
+    if (!paragraphId) {
+      console.log('ℹ️ 當前段落 ID 為空，跳過批註加載');
+      return;
+    }
+    
+    console.log('📥 加載現有批注:', paragraphId);
+    
+    // 為最後一次查詢更新 currentParagraphId，便於後續行為使用
+    this.currentParagraphId = paragraphId;
     
     try {
       const { data, error } = await this.supabase.rpc('get_paragraph_annotations', {
-        p_paragraph_id: this.currentParagraphId
+        p_paragraph_id: paragraphId
       });
       
       if (error) {
@@ -1171,7 +1213,8 @@ class AnnotationManager {
         }
       });
       
-      console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
+      console.log(`✅ 段落 ${paragraphId} 已加載 ${sortedAnnotations.length} 個批注`);
+      this.updateAnnotationCount();
       
       // 調整所有批註位置，確保不重疊
       setTimeout(() => {
