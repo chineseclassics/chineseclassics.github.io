@@ -68,7 +68,7 @@ async function initializeApp() {
         );
         console.log('✅ Supabase 客戶端初始化成功');
         
-        // 2. 檢查現有會話
+        // 2. 檢查現有會話（不處理，讓 onAuthStateChange 處理）
         const { data: { session }, error } = await AppState.supabase.auth.getSession();
         
         if (error) {
@@ -77,9 +77,10 @@ async function initializeApp() {
             return;
         }
         
+        // 不立即處理會話，而是等待 onAuthStateChange 觸發 INITIAL_SESSION 事件
+        // 這樣可以避免重複處理
         if (session) {
-            console.log('✅ 發現現有會話');
-            await handleAuthenticatedUser(session.user);
+            console.log('✅ 發現現有會話，等待 INITIAL_SESSION 事件處理');
         } else {
             console.log('ℹ️ 無現有會話，顯示登錄頁面');
             showLoginScreen();
@@ -95,9 +96,17 @@ async function initializeApp() {
                 handleAuthenticatedUser(session.user);
             } else if (event === 'SIGNED_OUT') {
                 handleSignOut();
-            } else if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-                // Token 刷新和初始會話不需要重新初始化界面
-                console.log('ℹ️ Token 刷新或初始會話，無需重新初始化');
+            } else if (event === 'TOKEN_REFRESHED') {
+                // Token 刷新不需要重新初始化界面
+                console.log('ℹ️ Token 刷新，無需重新初始化');
+            } else if (event === 'INITIAL_SESSION' && session) {
+                // 初始會話：只在有會話且用戶未設置時處理
+                if (!AppState.currentUser) {
+                    console.log('🔔 處理初始會話');
+                    handleAuthenticatedUser(session.user);
+                } else {
+                    console.log('ℹ️ 初始會話已處理過，跳過');
+                }
             }
         });
         
@@ -1660,7 +1669,9 @@ async function displayTeacherGrading(essayId) {
     }
 }
 
-// 等待 DOM 加載完成後初始化應用（只執行一次）
+// 等待 DOM 加載完成後初始化應用
+// 問題：這裡的代碼邏輯本身是正確的，但 AppState.initialized 可能在執行過程中才被設置
+// 如果腳本被執行兩次（例如模塊被重新加載），就會導致重複初始化
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         if (!AppState.initialized) {
