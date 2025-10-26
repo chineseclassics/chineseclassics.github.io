@@ -1253,36 +1253,110 @@ async function setupEssayStatus(assignmentId, editable = true) {
         // 更新狀態顯示
         if (essay.status === 'submitted') {
             if (statusText) {
-                statusText.textContent = '已提交';
-                statusText.classList.add('text-emerald-600', 'font-semibold');
+                statusText.textContent = '已提交（可修改）';
+                statusText.classList.add('text-blue-600', 'font-semibold');
             }
             if (statusDisplay) {
                 const icon = statusDisplay.querySelector('i');
                 if (icon) {
-                    icon.className = 'fas fa-check-circle text-emerald-600 text-xs';
+                    icon.className = 'fas fa-edit text-blue-600 text-xs';
                 }
+            }
+            
+            // 檢查是否有批注並顯示提示
+            const hasAnnotations = await checkHasAnnotations(essayId);
+            if (hasAnnotations) {
+                showAnnotationNotice();
             }
         } else if (essay.status === 'graded') {
             if (statusText) {
-                statusText.textContent = '已批改';
+                statusText.textContent = '已批改（只讀）';
                 statusText.classList.add('text-amber-700', 'font-semibold');
+            }
+            if (statusDisplay) {
+                const icon = statusDisplay.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-check-circle text-amber-700 text-xs';
+                }
             }
             
             // ✅ 如果已批改，顯示老師的評分和評語（替換「賈雨村說」）
             await displayTeacherGrading(essayId);
+            
+            // 只讀模式：只有 graded 狀態才禁用編輯功能
+            console.log('📖 已批改狀態：禁用編輯功能');
+            disableEditing();
         } else {
             // 草稿狀態
-            if (statusText) statusText.textContent = '草稿';
-        }
-        
-        // 只讀模式：禁用所有編輯功能
-        if (!editable) {
-            console.log('📖 只讀模式：禁用編輯功能');
-            disableEditing();
+            if (statusText) {
+                statusText.textContent = '草稿';
+                statusText.classList.remove('text-blue-600', 'text-amber-700', 'font-semibold');
+            }
+            if (statusDisplay) {
+                const icon = statusDisplay.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-file-alt text-gray-600 text-xs';
+                }
+            }
         }
         
     } catch (error) {
         console.error('❌ 設置狀態顯示失敗:', error);
+    }
+}
+
+/**
+ * 檢查論文是否有老師批注
+ */
+async function checkHasAnnotations(essayId) {
+    try {
+        // 查詢該論文的所有段落
+        const { data: paragraphs } = await AppState.supabase
+            .from('paragraphs')
+            .select('id')
+            .eq('essay_id', essayId);
+        
+        if (!paragraphs || paragraphs.length === 0) return false;
+        
+        const paragraphIds = paragraphs.map(p => p.id);
+        const { data: annotations } = await AppState.supabase
+            .from('annotations')
+            .select('id')
+            .in('paragraph_id', paragraphIds)
+            .limit(1);
+        
+        return annotations && annotations.length > 0;
+    } catch (error) {
+        console.error('❌ 檢查批注失敗:', error);
+        return false;
+    }
+}
+
+/**
+ * 顯示批注提示
+ */
+function showAnnotationNotice() {
+    const container = document.getElementById('student-dashboard-content');
+    if (!container) return;
+    
+    // 檢查是否已存在
+    if (container.querySelector('.annotation-notice')) {
+        console.log('⏸️ 批注提示已存在，跳過創建');
+        return;
+    }
+    
+    const notice = document.createElement('div');
+    notice.className = 'annotation-notice bg-blue-50 border-l-4 border-blue-500 p-4 mb-4';
+    notice.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas fa-comment-dots text-blue-700"></i>
+            <span class="text-blue-800 font-medium">老師已添加批注，您可以根據批注修改論文後重新提交</span>
+        </div>
+    `;
+    
+    const assignmentInfo = container.querySelector('#assignment-info-panel');
+    if (assignmentInfo) {
+        assignmentInfo.after(notice);
     }
 }
 
@@ -1315,15 +1389,22 @@ function disableEditing() {
         });
     }, 500);
     
-    // 顯示只讀提示
+    // 顯示只讀提示（避免重複創建）
     const container = document.getElementById('student-dashboard-content');
     if (container) {
+        // 檢查是否已存在只讀提示
+        const existingNotice = container.querySelector('.readonly-notice');
+        if (existingNotice) {
+            console.log('⏸️ 只讀提示已存在，跳過創建');
+            return;
+        }
+        
         const notice = document.createElement('div');
-        notice.className = 'bg-amber-50 border-l-4 border-amber-500 p-4 mb-4';
+        notice.className = 'readonly-notice bg-amber-50 border-l-4 border-amber-500 p-4 mb-4';
         notice.innerHTML = `
             <div class="flex items-center gap-2">
                 <i class="fas fa-eye text-amber-700"></i>
-                <span class="text-amber-800 font-medium">只讀模式：此作業已提交，無法編輯</span>
+                <span class="text-amber-800 font-medium">只讀模式：此作業已批改，無法編輯</span>
             </div>
         `;
         const assignmentInfo = container.querySelector('#assignment-info-panel');

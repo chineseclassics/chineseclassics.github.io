@@ -442,6 +442,9 @@ function handleEditorChange(data) {
     // 更新字數統計
     updateWordCount();
     
+    // 檢查是否需要自動降級狀態（從 submitted 到 draft）
+    checkAndDowngradeStatus();
+    
     // 觸發自動保存（3秒防抖）
     if (EditorState.saveTimer) {
         clearTimeout(EditorState.saveTimer);
@@ -450,6 +453,86 @@ function handleEditorChange(data) {
     EditorState.saveTimer = setTimeout(() => {
         autoSave();
     }, 3000);
+}
+
+/**
+ * 檢查並自動降級論文狀態（從 submitted 到 draft）
+ */
+async function checkAndDowngradeStatus() {
+    try {
+        // 獲取當前論文 ID
+        const { StorageState } = await import('./essay-storage.js');
+        const essayId = StorageState.currentEssayId;
+        
+        if (!essayId) return;
+        
+        // 檢查當前論文狀態
+        const { data: essay } = await AppState.supabase
+            .from('essays')
+            .select('status')
+            .eq('id', essayId)
+            .single();
+            
+        if (!essay || essay.status !== 'submitted') {
+            return; // 不是 submitted 狀態，不需要降級
+        }
+        
+        // 更新狀態為 draft
+        const { error } = await AppState.supabase
+            .from('essays')
+            .update({ 
+                status: 'draft',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', essayId);
+            
+        if (error) {
+            console.error('❌ 更新論文狀態失敗:', error);
+            return;
+        }
+        
+        // 更新 UI 狀態顯示
+        const statusText = document.getElementById('essay-status-text');
+        if (statusText) {
+            statusText.textContent = '草稿';
+            statusText.classList.remove('text-blue-600', 'font-semibold');
+        }
+        
+        // 顯示修改提示
+        showModificationNotice();
+        
+        console.log('✅ 論文狀態已自動降級為草稿');
+        
+    } catch (error) {
+        console.error('❌ 檢查狀態降級失敗:', error);
+    }
+}
+
+/**
+ * 顯示論文修改提示
+ */
+function showModificationNotice() {
+    const container = document.getElementById('student-dashboard-content');
+    if (!container) return;
+    
+    // 檢查是否已存在修改提示
+    if (container.querySelector('.modification-notice')) {
+        return;
+    }
+    
+    const notice = document.createElement('div');
+    notice.className = 'modification-notice bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4';
+    notice.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas fa-edit text-yellow-700"></i>
+            <span class="text-yellow-800 font-medium">論文已修改，請重新提交</span>
+        </div>
+    `;
+    
+    const assignmentInfo = container.querySelector('#assignment-info-panel');
+    if (assignmentInfo) {
+        assignmentInfo.after(notice);
+    }
 }
 
 /**

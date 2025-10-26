@@ -150,7 +150,7 @@ class StudentAssignmentViewer {
         return { ...essay, actualWordCount: wordCount };
       });
 
-      this.renderAssignmentList();
+      await this.renderAssignmentList();
     } catch (error) {
       console.error('加載任務失敗:', error);
       this.container.innerHTML = `<div class="error">加載失敗：${error.message}</div>`;
@@ -160,9 +160,14 @@ class StudentAssignmentViewer {
   /**
    * 渲染任務列表
    */
-  renderAssignmentList() {
+  async renderAssignmentList() {
     const hasAssignments = this.assignments.length > 0;
     const hasPractices = this.practiceEssays.length > 0;
+
+    // 渲染所有卡片（支持 async）
+    const assignmentCards = await Promise.all(
+      this.assignments.map(a => this.renderAssignmentCard(a))
+    );
 
     // ✅ 添加刷新按鈕
     this.container.innerHTML = `
@@ -184,7 +189,7 @@ class StudentAssignmentViewer {
               </div>
             </div>
             <div class="student-assignments-grid">
-              ${this.assignments.map(a => this.renderAssignmentCard(a)).join('')}
+              ${assignmentCards.join('')}
             </div>
           </div>
         ` : ''}
@@ -220,7 +225,7 @@ class StudentAssignmentViewer {
   /**
    * 渲染任務卡片
    */
-  renderAssignmentCard(assignment) {
+  async renderAssignmentCard(assignment) {
     const dueDate = new Date(assignment.due_date);
     const now = new Date();
     const isOverdue = dueDate < now;
@@ -233,6 +238,9 @@ class StudentAssignmentViewer {
                        essay.status === 'submitted' && 
                        !isOverdue && 
                        (!essay.graded_at);
+    
+    // 檢查是否有老師批注
+    const hasAnnotations = essay ? await this.checkHasAnnotations(essay.id) : false;
 
     const classColorClass = assignment.classes ? getClassColorClass(assignment.classes.id) : 'class-1';
     
@@ -292,25 +300,91 @@ class StudentAssignmentViewer {
           ` : ''}
         </div>
         
-        ${essay && essay.status === 'submitted' ? `
-          <!-- 已提交狀態的提示 -->
-          <div class="submission-notice">
-            <i class="fas fa-info-circle"></i>
-            <span>${essay.graded_at ? '老師已批改，可查看評語' : '等待老師批改中...'}</span>
-          </div>
-        ` : ''}
+        ${this.renderStatusNotice(essay, hasAnnotations)}
 
         <div class="card-actions">
-          ${this.renderActionButtons(assignment, essay, canWithdraw)}
+          ${this.renderActionButtons(assignment, essay, canWithdraw, hasAnnotations)}
         </div>
       </div>
     `;
   }
   
   /**
+   * 檢查論文是否有老師批注
+   */
+  async checkHasAnnotations(essayId) {
+    try {
+      // 查詢該論文的所有段落
+      const { data: paragraphs } = await this.supabase
+        .from('paragraphs')
+        .select('id')
+        .eq('essay_id', essayId);
+      
+      if (!paragraphs || paragraphs.length === 0) return false;
+      
+      const paragraphIds = paragraphs.map(p => p.id);
+      const { data: annotations } = await this.supabase
+        .from('annotations')
+        .select('id')
+        .in('paragraph_id', paragraphIds)
+        .limit(1);
+      
+      return annotations && annotations.length > 0;
+    } catch (error) {
+      console.error('❌ 檢查批注失敗:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 渲染狀態提示
+   */
+  renderStatusNotice(essay, hasAnnotations) {
+    if (!essay) return '';
+    
+    if (essay.status === 'submitted') {
+      if (hasAnnotations) {
+        return `
+          <div class="submission-notice annotation-notice">
+            <i class="fas fa-comment-dots text-blue-600"></i>
+            <span>老師已添加批注，您可以根據批注修改論文</span>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="submission-notice">
+            <i class="fas fa-info-circle"></i>
+            <span>已提交，等待老師批改中...</span>
+          </div>
+        `;
+      }
+    }
+    
+    if (essay.status === 'draft' && hasAnnotations) {
+      return `
+        <div class="submission-notice draft-notice">
+          <i class="fas fa-edit text-yellow-600"></i>
+          <span>論文已修改，請重新提交</span>
+        </div>
+      `;
+    }
+    
+    if (essay.status === 'graded') {
+      return `
+        <div class="submission-notice graded-notice">
+          <i class="fas fa-star text-amber-600"></i>
+          <span>老師已批改，可查看評分和批注</span>
+        </div>
+      `;
+    }
+    
+    return '';
+  }
+
+  /**
    * 渲染操作按鈕
    */
-  renderActionButtons(assignment, essay, canWithdraw) {
+  renderActionButtons(assignment, essay, canWithdraw, hasAnnotations = false) {
     // 未開始
     if (!essay || !assignment.actualWordCount) {
       return `
@@ -330,12 +404,12 @@ class StudentAssignmentViewer {
       return `
         <button class="btn-action continue-btn edit" data-id="${assignment.id}">
           <i class="fas fa-edit"></i>
-          繼續寫作
+          ${hasAnnotations ? '繼續編輯' : '繼續寫作'}
         </button>
         ${canSubmit ? `
           <button class="btn-action submit-btn" data-id="${assignment.id}" data-essay-id="${essay.id}">
             <i class="fas fa-paper-plane"></i>
-            提交作業
+            ${hasAnnotations ? '重新提交' : '提交作業'}
           </button>
         ` : ''}
       `;
@@ -343,18 +417,25 @@ class StudentAssignmentViewer {
     
     // 已提交
     if (essay && essay.status === 'submitted') {
-      return `
-        <button class="btn-action view-btn" data-id="${assignment.id}">
-          <i class="fas fa-eye"></i>
-          查看作業
-        </button>
-        ${canWithdraw ? `
-          <button class="btn-action withdraw-btn" data-id="${assignment.id}" data-essay-id="${essay.id}">
-            <i class="fas fa-undo"></i>
-            撤回並編輯
+      if (hasAnnotations) {
+        return `
+          <button class="btn-action view-btn edit" data-id="${assignment.id}">
+            <i class="fas fa-comment-dots"></i>
+            查看批注並修改
           </button>
-        ` : ''}
-      `;
+          <button class="btn-action submit-btn" data-id="${assignment.id}" data-essay-id="${essay.id}">
+            <i class="fas fa-paper-plane"></i>
+            重新提交
+          </button>
+        `;
+      } else {
+        return `
+          <button class="btn-action view-btn" data-id="${assignment.id}">
+            <i class="fas fa-eye"></i>
+            查看論文
+          </button>
+        `;
+      }
     }
     
     // 已批改
@@ -362,7 +443,7 @@ class StudentAssignmentViewer {
       return `
         <button class="btn-action view-btn graded" data-id="${assignment.id}">
           <i class="fas fa-star"></i>
-          查看批改結果
+          查看評分和批注
         </button>
       `;
     }

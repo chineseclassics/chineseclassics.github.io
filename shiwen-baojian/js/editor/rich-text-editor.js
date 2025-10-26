@@ -65,6 +65,9 @@ export class RichTextEditor {
      * 初始化編輯器
      */
     _initialize() {
+        // 清空容器內容，避免重複渲染
+        this.container.innerHTML = '';
+        
         // 配置 Quill
         const config = {
             theme: this.options.theme,
