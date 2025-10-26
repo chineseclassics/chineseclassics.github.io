@@ -369,6 +369,21 @@ class AnnotationManager {
     }
   }
 
+  removeTempHighlight() {
+    if (this.tempHighlight && this.tempHighlight.parentNode) {
+      try {
+        const parent = this.tempHighlight.parentNode;
+        while (this.tempHighlight.firstChild) {
+          parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
+        }
+        parent.removeChild(this.tempHighlight);
+      } catch (cleanupError) {
+        console.log('⚠️ 清理臨時高亮失敗:', cleanupError);
+      }
+    }
+    this.tempHighlight = null;
+  }
+
   /**
    * 取得批注對應的根容器（此處為論文呈現區塊）
    */
@@ -531,24 +546,11 @@ class AnnotationManager {
         throw new Error('無法取得新批注的識別碼');
       }
       
-      // 若已有臨時高亮，直接轉為最終高亮
-      let reusedHighlight = false;
-      if (this.tempHighlight) {
-        try {
-          this.tempHighlight.dataset.annotationId = annotationId;
-          if (this.selectedText?.paragraphId) {
-            this.tempHighlight.dataset.paragraphId = this.selectedText.paragraphId;
-          }
-          this.tempHighlight.removeAttribute('data-temp-annotation');
-          this.bindHighlightInteractions(this.tempHighlight, annotationId);
-          reusedHighlight = true;
-        } catch (conversionError) {
-          console.log('⚠️ 臨時高亮轉換失敗:', conversionError);
-        }
-      }
-
       // 添加批注到本地存儲
       this.annotations.set(annotationId, annotationRecord);
+
+      // 先移除臨時高亮，避免干擾正式渲染
+      this.removeTempHighlight();
 
       // 渲染批注
       this.renderAnnotation(annotationId);
@@ -557,18 +559,7 @@ class AnnotationManager {
       // 清除選擇與臨時高亮引用
       window.getSelection().removeAllRanges();
       this.selectedText = null;
-      if (!reusedHighlight && this.tempHighlight && this.tempHighlight.parentNode) {
-        try {
-          const parent = this.tempHighlight.parentNode;
-          while (this.tempHighlight.firstChild) {
-            parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
-          }
-          parent.removeChild(this.tempHighlight);
-        } catch (cleanupError) {
-          console.log('⚠️ 清理臨時高亮失敗:', cleanupError);
-        }
-      }
-      this.tempHighlight = null;
+      this.removeTempHighlight();
       this.hideAnnotationButton();
       
       console.log('✅ 批注創建成功，ID:', annotationId);
@@ -645,19 +636,7 @@ class AnnotationManager {
         console.log('❌ 用戶取消批注');
         
         // 移除已創建的高亮元素
-        if (this.tempHighlight) {
-          try {
-            const parent = this.tempHighlight.parentNode;
-            while (this.tempHighlight.firstChild) {
-              parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
-            }
-            parent.removeChild(this.tempHighlight);
-            this.tempHighlight = null;
-            console.log('✅ 已移除臨時高亮');
-          } catch (error) {
-            console.log('⚠️ 移除高亮失敗:', error);
-          }
-        }
+        this.removeTempHighlight();
         
         cleanup();
         resolve(null);
@@ -800,15 +779,9 @@ class AnnotationManager {
     }
 
     this.refreshParagraphElements();
+    this.removeExistingHighlights(annotationId);
     
     console.log('🎨 渲染批注:', annotation);
-    
-    // 檢查是否已經渲染過這個批注
-    const existingHighlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (existingHighlight) {
-      console.log('ℹ️ 批注已存在，跳過重複渲染');
-      return;
-    }
     
     // 1. 在原文中高亮文本
     this.highlightTextInEssay(annotationId, annotation);
@@ -1350,6 +1323,24 @@ class AnnotationManager {
       console.log('🖱️ 點擊高亮文本:', annotationId);
       this.highlightAnnotation(annotationId);
     });
+  }
+
+  removeExistingHighlights(annotationId) {
+    const nodes = document.querySelectorAll(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    nodes.forEach(node => this.unwrapHighlight(node));
+  }
+
+  unwrapHighlight(node) {
+    if (!node || !node.parentNode) return;
+    try {
+      const parent = node.parentNode;
+      while (node.firstChild) {
+        parent.insertBefore(node.firstChild, node);
+      }
+      parent.removeChild(node);
+    } catch (error) {
+      console.log('⚠️ 無法移除高亮:', error);
+    }
   }
 
   /**
