@@ -9,7 +9,8 @@ import dialog from '../ui/dialog.js';
 class AnnotationManager {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
-    this.annotations = new Map(); // 存儲當前批注
+    this.annotations = new Map(); // annotationId -> annotation
+    this.annotationsByParagraph = new Map(); // paragraphId -> Map(annotationId -> annotation)
     this.selectedText = null;
     this.isSelectionMode = false;
     this.currentEssayId = null;
@@ -18,6 +19,7 @@ class AnnotationManager {
     this.paragraphElements = new Map();
     this.realtimeChannels = [];
     this.supportsAnchoring = true;
+    this.tempHighlight = null;
     
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
@@ -119,6 +121,34 @@ class AnnotationManager {
       return node;
     }
     return null;
+  }
+
+  getParagraphAnnotations(paragraphId) {
+    if (!paragraphId) return new Map();
+    if (!this.annotationsByParagraph.has(paragraphId)) {
+      this.annotationsByParagraph.set(paragraphId, new Map());
+    }
+    return this.annotationsByParagraph.get(paragraphId);
+  }
+
+  registerAnnotation(annotation) {
+    if (!annotation?.id) return;
+    this.annotations.set(annotation.id, annotation);
+    const paragraphMap = this.getParagraphAnnotations(annotation.paragraph_id);
+    paragraphMap.set(annotation.id, annotation);
+  }
+
+  removeAnnotation(annotationId) {
+    const annotation = this.annotations.get(annotationId);
+    if (!annotation) return;
+    this.annotations.delete(annotationId);
+    const paragraphMap = this.annotationsByParagraph.get(annotation.paragraph_id);
+    if (paragraphMap) {
+      paragraphMap.delete(annotationId);
+      if (paragraphMap.size === 0) {
+        this.annotationsByParagraph.delete(annotation.paragraph_id);
+      }
+    }
   }
 
   /**
@@ -333,54 +363,7 @@ class AnnotationManager {
     }
   }
 
-  /**
-   * 立即高亮選中的文字
-   */
-  highlightSelectedText() {
-    if (!this.selectedText || !this.selectedText.range) return;
-    
-    try {
-      const range = this.selectedText.range.cloneRange();
-      // 創建高亮元素
-      const highlight = document.createElement('span');
-      highlight.className = 'annotation-highlight';
-      if (this.selectedText?.paragraphId) {
-        highlight.dataset.paragraphId = this.selectedText.paragraphId;
-      }
-      highlight.dataset.tempAnnotation = 'true';
-      highlight.style.cssText = `
-        background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
-        border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
-        padding: 1px 2px;
-        border-radius: 2px;
-        position: relative;
-        z-index: 1;
-      `;
-      
-      // 用高亮元素包圍選中的文字
-      range.surroundContents(highlight);
-      
-      // 保存高亮元素引用，以便取消時移除
-      this.tempHighlight = highlight;
-      
-      console.log('✅ 文字已立即高亮');
-    } catch (error) {
-      console.log('⚠️ 無法立即高亮文字:', error);
-    }
-  }
-
   removeTempHighlight() {
-    if (this.tempHighlight && this.tempHighlight.parentNode) {
-      try {
-        const parent = this.tempHighlight.parentNode;
-        while (this.tempHighlight.firstChild) {
-          parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
-        }
-        parent.removeChild(this.tempHighlight);
-      } catch (cleanupError) {
-        console.log('⚠️ 清理臨時高亮失敗:', cleanupError);
-      }
-    }
     this.tempHighlight = null;
   }
 
@@ -510,9 +493,6 @@ class AnnotationManager {
     // 隱藏批注按鈕
     this.hideAnnotationButton();
     
-    // 立即高亮選中的文字
-    this.highlightSelectedText();
-    
     // 顯示批注創建對話框
     const content = await this.showAnnotationDialog();
     if (!content) {
@@ -547,13 +527,13 @@ class AnnotationManager {
       }
       
       // 添加批注到本地存儲
-      this.annotations.set(annotationId, annotationRecord);
+      this.registerAnnotation(annotationRecord);
 
       // 先移除臨時高亮，避免干擾正式渲染
       this.removeTempHighlight();
 
-      // 渲染批注
-      this.renderAnnotation(annotationId);
+      // 渲染所在段落
+      this.renderParagraph(annotationRecord.paragraph_id);
       this.updateAnnotationCount();
 
       // 清除選擇與臨時高亮引用
@@ -779,17 +759,9 @@ class AnnotationManager {
     }
 
     this.refreshParagraphElements();
-    this.removeExistingHighlights(annotationId);
-    
     console.log('🎨 渲染批注:', annotation);
-    
-    // 1. 在原文中高亮文本
-    this.highlightTextInEssay(annotationId, annotation);
-    
-    // 2. 在右側創建浮動批注
-    setTimeout(() => {
-      this.createFloatingAnnotation(annotationId, annotation);
-    }, 100);
+
+    this.renderParagraph(annotation.paragraph_id);
   }
 
   /**
@@ -803,8 +775,14 @@ class AnnotationManager {
     
     // 對於輸入框
     if (annotation.classList && annotation.classList.contains('floating-annotation-input')) {
-      if (!this.tempHighlight) return 0;
-      return this.tempHighlight.offsetTop + essayViewerOffset;
+      if (this.selectedText?.range) {
+        const rect = this.selectedText.range.getBoundingClientRect();
+        const viewerRect = essayViewer.getBoundingClientRect();
+        const wrapper = document.querySelector('.grading-content-wrapper');
+        const scrollTop = wrapper ? wrapper.scrollTop : window.pageYOffset;
+        return rect.top - viewerRect.top + scrollTop + essayViewerOffset;
+      }
+      return essayViewerOffset;
     }
     
     // 對於已存在的批註
@@ -1011,17 +989,16 @@ class AnnotationManager {
    */
   scrollToHighlight() {
     const wrapper = document.querySelector('.grading-content-wrapper');
-    const highlight = this.tempHighlight;
-    
-    if (!wrapper || !highlight) return;
-    
-    const highlightRect = highlight.getBoundingClientRect();
+    const range = this.selectedText?.range;
+    if (!wrapper || !range) return;
+
+    const rect = range.getBoundingClientRect();
     const wrapperRect = wrapper.getBoundingClientRect();
     const currentScrollTop = wrapper.scrollTop;
-    
-    const highlightTop = highlightRect.top - wrapperRect.top + currentScrollTop;
-    const scrollTo = highlightTop - (wrapper.clientHeight / 2) + (highlight.offsetHeight / 2);
-    
+
+    const highlightTop = rect.top - wrapperRect.top + currentScrollTop;
+    const scrollTo = highlightTop - (wrapper.clientHeight / 2) + (rect.height / 2);
+
     wrapper.scrollTo({
       top: Math.max(0, scrollTo),
       behavior: 'smooth'
@@ -1076,10 +1053,17 @@ class AnnotationManager {
     const safeContent = this.escapeHtml(annotation.content).replace(/\n/g, '<br>');
     const isOrphan = !!annotation.is_orphaned;
 
+    // 先移除現有浮動批注
+    const existingFloating = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
+    if (existingFloating) {
+      existingFloating.remove();
+    }
+
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
     floatingAnnotation.className = `floating-annotation${isOrphan ? ' orphan' : ''}`;
     floatingAnnotation.dataset.annotationId = annotationId;
+    floatingAnnotation.dataset.paragraphId = annotation.paragraph_id || '';
 
     // 批注內容
     floatingAnnotation.innerHTML = `
@@ -1329,6 +1313,47 @@ class AnnotationManager {
     nodes.forEach(node => this.unwrapHighlight(node));
   }
 
+  removeParagraphHighlights(paragraphId) {
+    const paragraphElement = this.getParagraphElement(paragraphId);
+    if (!paragraphElement) return;
+    const nodes = paragraphElement.querySelectorAll('.annotation-highlight');
+    nodes.forEach(node => this.unwrapHighlight(node));
+  }
+
+  removeFloatingAnnotations(paragraphId) {
+    const selector = paragraphId
+      ? `.floating-annotation[data-paragraph-id="${paragraphId}"]`
+      : '.floating-annotation';
+    document.querySelectorAll(selector).forEach(node => node.remove());
+  }
+
+  renderParagraph(paragraphId) {
+    const paragraphElement = this.getParagraphElement(paragraphId);
+    if (!paragraphElement) return;
+
+    const annotationsMap = this.getParagraphAnnotations(paragraphId);
+    const annotationsList = Array.from(annotationsMap.values()).sort((a, b) => {
+      const startA = a?.highlight_start ?? 0;
+      const startB = b?.highlight_start ?? 0;
+      return startA - startB;
+    });
+
+    this.removeParagraphHighlights(paragraphId);
+    this.removeFloatingAnnotations(paragraphId);
+
+    annotationsList.forEach(annotation => {
+      this.highlightTextInEssay(annotation.id, annotation);
+    });
+
+    annotationsList.forEach(annotation => {
+      this.createFloatingAnnotation(annotation.id, annotation);
+    });
+
+    setTimeout(() => {
+      this.adjustAllAnnotations();
+    }, 0);
+  }
+
   unwrapHighlight(node) {
     if (!node || !node.parentNode) return;
     try {
@@ -1443,21 +1468,9 @@ class AnnotationManager {
       // 更新本地存儲
       annotation.content = newContent;
       annotation.updated_at = new Date().toISOString();
-      
-      // 更新浮動批注內容
-      const floatingAnnotation = document.querySelector(`.floating-annotation[data-annotation-id="${annotationId}"]`);
-      if (floatingAnnotation) {
-        const contentElement = floatingAnnotation.querySelector('.annotation-content');
-        if (contentElement) {
-          contentElement.textContent = newContent;
-        }
-        
-        // 調整批註位置，讓該批註對齊原文
-        this.adjustAnnotationsForActive(floatingAnnotation);
-        
-        // 滾動到原文位置
-        this.scrollToAnnotationHighlight(annotationId);
-      }
+      this.registerAnnotation(annotation);
+      this.renderParagraph(annotation.paragraph_id);
+      this.scrollToAnnotationHighlight(annotationId);
       
       toast.success('批注已更新');
       
@@ -1483,12 +1496,15 @@ class AnnotationManager {
       
       if (error) throw error;
       
-      // 從本地存儲移除
-      this.annotations.delete(annotationId);
-      
-      // 移除高亮和標記
-      const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
-      markers.forEach(marker => marker.remove());
+      const annotation = this.annotations.get(annotationId);
+      const paragraphId = annotation?.paragraph_id;
+      this.removeAnnotation(annotationId);
+      if (paragraphId) {
+        this.renderParagraph(paragraphId);
+      } else {
+        const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
+        markers.forEach(marker => marker.remove());
+      }
       this.updateAnnotationCount();
       
       toast.success('批注已刪除');
@@ -1507,6 +1523,7 @@ class AnnotationManager {
   async loadAllAnnotations() {
     console.log('📥 加載全部批注:', this.paragraphIds);
     this.annotations.clear();
+    this.annotationsByParagraph.clear();
 
     // 清理現有標記與浮動批注
     document.querySelectorAll('.annotation-highlight, .floating-annotation').forEach(node => node.remove());
@@ -1548,15 +1565,22 @@ class AnnotationManager {
         throw error;
       }
 
+      const paragraphMap = this.getParagraphAnnotations(paragraphId);
+      Array.from(paragraphMap.keys()).forEach(id => this.annotations.delete(id));
+      paragraphMap.clear();
+
+      this.removeParagraphHighlights(paragraphId);
+      this.removeFloatingAnnotations(paragraphId);
+
       (data || []).forEach(annotation => {
-        const annotationId = annotation.id;
-        if (!annotationId) {
+        if (!annotation?.id) {
           console.log('⚠️ 批注沒有有效的 ID:', annotation);
           return;
         }
-        this.annotations.set(annotationId, annotation);
-        this.renderAnnotation(annotationId);
+        this.registerAnnotation(annotation);
       });
+
+      this.renderParagraph(paragraphId);
 
       console.log(`✅ 段落 ${paragraphId} 已加載 ${(data || []).length} 個批注`);
     } catch (error) {
@@ -1671,8 +1695,8 @@ class AnnotationManager {
           const annotation = await this.fetchAnnotationById(annotationId);
           if (!annotation) return;
 
-          this.annotations.set(annotationId, annotation);
-          this.renderAnnotation(annotationId);
+          this.registerAnnotation(annotation);
+          this.renderParagraph(annotation.paragraph_id);
           this.updateAnnotationCount();
 
           const currentUserId = this.getCurrentUser()?.id;
@@ -1693,8 +1717,8 @@ class AnnotationManager {
           const annotation = await this.fetchAnnotationById(annotationId);
           if (!annotation) return;
 
-          this.annotations.set(annotationId, annotation);
-          this.updateAnnotationHighlight(annotationId);
+          this.registerAnnotation(annotation);
+          this.renderParagraph(annotation.paragraph_id);
         })
         .on('postgres_changes', {
           event: 'DELETE',
@@ -1706,9 +1730,14 @@ class AnnotationManager {
           const annotationId = payload.old?.id;
           if (!annotationId) return;
 
-          this.annotations.delete(annotationId);
-          const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
-          markers.forEach(marker => marker.remove());
+          const paragraphId = this.annotations.get(annotationId)?.paragraph_id || payload.old?.paragraph_id;
+          this.removeAnnotation(annotationId);
+          if (paragraphId) {
+            this.renderParagraph(paragraphId);
+          } else {
+            const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
+            markers.forEach(marker => marker.remove());
+          }
           this.updateAnnotationCount();
         })
         .subscribe();
@@ -1721,10 +1750,9 @@ class AnnotationManager {
    * 更新批注高亮
    */
   updateAnnotationHighlight(annotationId) {
-    // 重新渲染高亮
-    const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
-    markers.forEach(marker => marker.remove());
-    this.renderAnnotation(annotationId);
+    const annotation = this.annotations.get(annotationId);
+    if (!annotation) return;
+    this.renderParagraph(annotation.paragraph_id);
   }
 
   /**
