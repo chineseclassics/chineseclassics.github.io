@@ -836,7 +836,12 @@ class AnnotationSelectionManager {
     this.clearSelection();
   }
 
-  handleMouseUp() {
+  handleMouseUp(event) {
+    if (!this.enabled) return;
+    const target = event?.target;
+    if (target?.closest?.('.annotation-button') || target?.closest?.('.floating-annotation-input')) {
+      return;
+    }
     this.processSelection();
   }
 
