@@ -199,14 +199,24 @@ class AnnotationManager {
       console.log('🖱️ 批注按鈕被點擊');
       e.preventDefault();
       
-      // 從選中文本的 DOM 元素中獲取段落 ID
-      const paragraphElement = this.selectedText.range.commonAncestorContainer.closest('[data-paragraph-id]');
+      // 從選中文本的 DOM 節點獲取段落 ID
+      // 注意：Range.commonAncestorContainer 可能是 Text 節點（沒有 closest 方法）
+      // 因此需先取得對應的 Element 再調用 closest
+      const commonNode = this.selectedText?.range?.commonAncestorContainer;
+      const baseElement = commonNode
+        ? (commonNode.nodeType === Node.ELEMENT_NODE
+            ? commonNode
+            : (commonNode.parentElement || null))
+        : null;
+      const paragraphElement = baseElement ? baseElement.closest('[data-paragraph-id]') : null;
       if (paragraphElement) {
         const paragraphId = paragraphElement.dataset.paragraphId;
         console.log('📝 找到段落 ID:', paragraphId);
         if (paragraphId) {
           this.currentParagraphId = paragraphId;
         }
+      } else {
+        console.log('⚠️ 未能從選區定位到段落容器，將使用當前已知的段落 ID（若有）');
       }
       e.stopPropagation();
       e.stopImmediatePropagation();
