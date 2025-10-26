@@ -913,7 +913,7 @@ class AnnotationManager {
       document.querySelectorAll('.floating-annotation, .floating-annotation-input')
     );
 
-    const sortedAnnotations = allAnnotations.sort((a, b) => {
+    const sortedAnnotations = [...allAnnotations].sort((a, b) => {
       if (a === activeElement) return -1;
       if (b === activeElement) return 1;
       const aKey = this.getAnnotationSortKey(a);
@@ -979,7 +979,7 @@ class AnnotationManager {
     if (allAnnotations.length === 0) return;
     
     // 全局排序
-    const sortedAnnotations = allAnnotations.sort((a, b) => {
+    const sortedAnnotations = [...allAnnotations].sort((a, b) => {
       const aKey = this.getAnnotationSortKey(a);
       const bKey = this.getAnnotationSortKey(b);
       if (aKey.paragraphIndex !== bKey.paragraphIndex) {
