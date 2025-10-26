@@ -362,16 +362,13 @@ class AnnotationRenderer {
     button.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      console.log('🖱️ 批註按鈕被點擊');
       if (typeof onClick === 'function') {
-        console.log('調用 onClick callback');
         onClick();
       } else {
         console.warn('⚠️ onClick 不是函數:', typeof onClick);
       }
     });
 
-    console.log('顯示批註按鈕，位置:', button.style.left, button.style.top);
     document.body.appendChild(button);
     this.annotationButton = button;
   }
@@ -409,12 +406,15 @@ class AnnotationRenderer {
         : this.wrapper.scrollTop + 20;
       container.style.position = 'absolute';
       container.style.top = `${Math.max(0, offsetTop)}px`;
-      container.style.right = '0';
+      container.style.right = '20px';
       container.style.zIndex = String(CONSTANTS.CARD_Z_INDEX + 1);
 
+      this.layoutAnnotations(this.activeAnnotationId);
       this.wrapper.appendChild(container);
+      this.reserveSpaceForInput(container);
 
       const cleanup = () => {
+        this.releaseSpaceForInput(container);
         container.remove();
       };
 
@@ -806,6 +806,36 @@ class AnnotationRenderer {
     });
     this.cards.clear();
   }
+
+  reserveSpaceForInput(input) {
+    if (!input) return;
+    const inputTop = parseFloat(input.style.top);
+    if (!Number.isFinite(inputTop)) return;
+    const delta = (input.offsetHeight || 140) + CONSTANTS.CARD_GAP;
+    input.dataset.offsetApplied = String(delta);
+
+    this.cards.forEach(card => {
+      const currentTop = parseFloat(card.style.top) || 0;
+      if (currentTop >= inputTop) {
+        if (!card.dataset.originalTop) {
+          card.dataset.originalTop = card.style.top || '0';
+        }
+        card.style.top = `${currentTop + delta}px`;
+      }
+    });
+  }
+
+  releaseSpaceForInput(input) {
+    if (!input?.dataset?.offsetApplied) return;
+    this.cards.forEach(card => {
+      if (card.dataset.originalTop) {
+        card.style.top = card.dataset.originalTop;
+        delete card.dataset.originalTop;
+      }
+    });
+    delete input.dataset.offsetApplied;
+    this.layoutAnnotations(this.activeAnnotationId);
+  }
 }
 
 class AnnotationSelectionManager {
@@ -1058,6 +1088,8 @@ class AnnotationManager {
       return;
     }
 
+    const highlightRange = selection.range?.cloneRange?.() || null;
+
     this.renderer.hideAnnotationButton();
     const content = await this.renderer.openAnnotationEditor({
       mode: 'create',
@@ -1080,14 +1112,23 @@ class AnnotationManager {
       return;
     }
 
+    if (!this.currentUser || !this.currentUser.id) {
+      this.currentUser = await this.getCurrentUser();
+    }
+    if (!this.currentUser?.id) {
+      toast.error('未能識別當前教師，請重新登入後重試');
+      this.renderer.hideSelectionPreview();
+      return;
+    }
+
     const pendingAnnotation = this.store.createPendingAnnotation(selection, content, this.currentUser);
     this.store.add(pendingAnnotation);
+    this.renderer.hideSelectionPreview();
     this.renderer.renderAnnotation(pendingAnnotation, {
-      range: selection.range,
+      range: highlightRange,
       isPending: true
     });
 
-    this.renderer.hideSelectionPreview();
     window.getSelection()?.removeAllRanges?.();
 
     try {
