@@ -438,33 +438,89 @@ class AnnotationRenderer {
 
   layoutAnnotations(anchorId = null) {
     const sorted = this.store.getAllSorted();
+    if (!sorted.length) return;
+
     const wrapperRect = this.wrapper.getBoundingClientRect();
-    let lastBottom = 0;
+    const metadata = [];
 
     sorted.forEach(annotation => {
       const card = this.cards.get(annotation.id);
       if (!card) return;
-
       const highlight = this.highlights.get(annotation.id);
-      let idealTop = this.computeHighlightTop(highlight, wrapperRect);
+      const ideal = this.computeHighlightTop(highlight, wrapperRect);
+      metadata.push({
+        annotation,
+        card,
+        highlight,
+        idealTop: Number.isFinite(ideal) ? ideal : null,
+        top: 0,
+        height: card.offsetHeight || 140
+      });
+    });
 
-      if (annotation.id === anchorId && idealTop !== null) {
-        card.style.top = `${idealTop}px`;
-        lastBottom = idealTop + card.offsetHeight;
-        return;
+    if (!metadata.length) return;
+
+    let lastBottom = null;
+    metadata.forEach(meta => {
+      const fallbackTop = lastBottom === null ? this.wrapper.scrollTop : lastBottom + CONSTANTS.CARD_GAP;
+      const desired = meta.idealTop !== null ? meta.idealTop : fallbackTop;
+      const minTop = lastBottom === null ? desired : lastBottom + CONSTANTS.CARD_GAP;
+      const resolved = Math.max(desired, minTop);
+      meta.top = resolved;
+      lastBottom = resolved + meta.height;
+    });
+
+    const anchorIndex = anchorId
+      ? metadata.findIndex(meta => meta.annotation.id === anchorId)
+      : -1;
+
+    if (anchorIndex >= 0) {
+      const anchorMeta = metadata[anchorIndex];
+      if (anchorMeta.idealTop !== null) {
+        anchorMeta.top = anchorMeta.idealTop;
       }
 
-      if (idealTop === null) {
-        idealTop = lastBottom === 0 ? this.wrapper.scrollTop : lastBottom + CONSTANTS.CARD_GAP;
+      let prevBottom = anchorMeta.top + anchorMeta.height;
+      for (let i = anchorIndex + 1; i < metadata.length; i++) {
+        const meta = metadata[i];
+        const desired = meta.idealTop !== null ? meta.idealTop : prevBottom + CONSTANTS.CARD_GAP;
+        const minTop = prevBottom + CONSTANTS.CARD_GAP;
+        const top = Math.max(desired, minTop);
+        meta.top = top;
+        prevBottom = top + meta.height;
       }
 
-      let actualTop = idealTop;
-      const minTop = lastBottom === 0 ? 0 : lastBottom + CONSTANTS.CARD_GAP;
-      if (actualTop < minTop) {
-        actualTop = minTop;
+      let nextTop = anchorMeta.top - CONSTANTS.CARD_GAP;
+      for (let i = anchorIndex - 1; i >= 0; i--) {
+        const meta = metadata[i];
+        const maxTop = nextTop - meta.height;
+        const desired = meta.idealTop !== null ? meta.idealTop : Math.max(0, maxTop);
+        let top = Math.min(desired, maxTop);
+        if (!Number.isFinite(top) || Number.isNaN(top)) {
+          top = Math.max(0, maxTop);
+        }
+        if (top < 0) top = 0;
+        meta.top = top;
+        nextTop = top - CONSTANTS.CARD_GAP;
       }
-      card.style.top = `${actualTop}px`;
-      lastBottom = actualTop + card.offsetHeight;
+
+      // final forward pass to guarantee spacing after adjustments
+      let forwardBottom = null;
+      metadata.forEach(meta => {
+        if (forwardBottom === null) {
+          forwardBottom = meta.top + meta.height;
+          return;
+        }
+        const minTop = forwardBottom + CONSTANTS.CARD_GAP;
+        if (meta.top < minTop) {
+          meta.top = minTop;
+        }
+        forwardBottom = meta.top + meta.height;
+      });
+    }
+
+    metadata.forEach(meta => {
+      meta.card.style.top = `${meta.top}px`;
     });
   }
 
@@ -556,11 +612,17 @@ class AnnotationRenderer {
       </div>
     `;
 
-    card.querySelector('.annotation-content').addEventListener('click', () => {
-      if (this.handlers.onAnnotationFocus) {
-        this.handlers.onAnnotationFocus(annotation.id);
-      }
-    });
+    if (!card._annotationClickBound) {
+      card.addEventListener('click', (event) => {
+        if (event.target.closest('.annotation-action-btn')) {
+          return;
+        }
+        if (this.handlers.onAnnotationFocus) {
+          this.handlers.onAnnotationFocus(annotation.id);
+        }
+      });
+      card._annotationClickBound = true;
+    }
 
     card.querySelector('.edit').addEventListener('click', (event) => {
       event.stopPropagation();
@@ -934,6 +996,7 @@ class AnnotationManager {
       if (this.renderer) {
         this.renderer.clearAll();
       }
+      this.updateAnnotationCount();
       return;
     }
     try {
@@ -967,6 +1030,9 @@ class AnnotationManager {
   }
 
   async handleCreateAnnotation(selection) {
+    if (!this.currentUser || !this.currentUser.id) {
+      this.currentUser = this.getCurrentUser();
+    }
     if (!this.currentUser?.id) {
       toast.error('未能識別當前教師，請重新登入後重試');
       this.renderer.hideSelectionPreview();
