@@ -24,6 +24,14 @@ const createTempId = () => {
 
 const toInternalAnnotation = (record) => {
   if (!record) return null;
+  let anchorContext = record.anchor_context || null;
+  if (typeof anchorContext === 'string') {
+    try {
+      anchorContext = JSON.parse(anchorContext);
+    } catch (error) {
+      anchorContext = null;
+    }
+  }
   return {
     id: record.id,
     paragraphId: record.paragraph_id,
@@ -33,7 +41,7 @@ const toInternalAnnotation = (record) => {
     highlightStart: record.highlight_start,
     highlightEnd: record.highlight_end,
     anchorText: record.anchor_text || null,
-    anchorContext: record.anchor_context || null,
+    anchorContext,
     annotationType: record.annotation_type || 'comment',
     createdAt: record.created_at,
     updatedAt: record.updated_at,
@@ -56,7 +64,7 @@ const toDatabasePayload = (annotation) => {
     highlight_start: annotation.highlightStart,
     highlight_end: annotation.highlightEnd,
     anchor_text: annotation.anchorText || null,
-    anchor_context: annotation.anchorContext ? (typeof annotation.anchorContext === 'string' ? annotation.anchorContext : JSON.stringify(annotation.anchorContext)) : null,
+    anchor_context: annotation.anchorContext || null,
     is_resolved: annotation.isResolved || false,
     is_orphaned: annotation.isOrphaned || false,
     priority: annotation.priority || 'normal',
@@ -455,6 +463,29 @@ class AnnotationRenderer {
     this.layoutAnnotations(annotationId);
   }
 
+  flashAnnotation(annotationId, duration = 1000) {
+    this.setActive(annotationId);
+    setTimeout(() => {
+      this.clearActive(annotationId);
+    }, duration);
+  }
+
+  clearActive(annotationId = null) {
+    const targetId = annotationId || this.activeAnnotationId;
+    if (!targetId) return;
+    const highlight = this.highlights.get(targetId);
+    if (highlight) {
+      highlight.classList.remove(CONSTANTS.HIGHLIGHT_ACTIVE_CLASS);
+    }
+    const card = this.cards.get(targetId);
+    if (card) {
+      card.classList.remove('active');
+    }
+    if (this.activeAnnotationId === targetId) {
+      this.activeAnnotationId = null;
+    }
+  }
+
   layoutAnnotations(anchorId = null) {
     const sorted = this.store.getAllSorted();
     if (!sorted.length) return;
@@ -550,14 +581,20 @@ class AnnotationRenderer {
     this.removeHighlightNode(this.highlights.get(annotation.id));
 
     let range = null;
-    if (context.range) {
-      range = context.range.cloneRange();
-    } else if (Number.isFinite(annotation.highlightStart) && Number.isFinite(annotation.highlightEnd)) {
+    if (Number.isFinite(annotation.highlightStart) && Number.isFinite(annotation.highlightEnd)) {
       range = this.buildRangeFromOffsets(paragraphEl, annotation.highlightStart, annotation.highlightEnd);
     }
 
     if (!range && annotation.anchorText) {
       range = this.buildRangeFromAnchorText(paragraphEl, annotation.anchorText);
+    }
+
+    if (!range && context.range) {
+      try {
+        range = context.range.cloneRange();
+      } catch (error) {
+        range = null;
+      }
     }
 
     if (!range) {
@@ -1161,7 +1198,7 @@ class AnnotationManager {
       }
       this.store.replace(pendingAnnotation.id, savedAnnotation);
       this.renderer.renderAnnotation(savedAnnotation);
-      this.focusAnnotation(savedAnnotation.id);
+      this.renderer.flashAnnotation(savedAnnotation.id, 1000);
       toast.success('批注已添加');
       this.updateAnnotationCount();
     } catch (error) {
