@@ -251,13 +251,15 @@ function recordTypingBurst() {
     if (!currentTypingBurst.start_time) return;
     
     const duration = Date.now() - currentTypingBurst.start_time;
-    const speed = (currentTypingBurst.char_count / duration) * 60000; // 字符/分鐘
+    // 避免除零或產生 NaN
+    const speed = duration > 0 ? (currentTypingBurst.char_count / duration) * 60000 : 0;
+    const speedCpm = Math.round(speed) || 0; // 確保不為 NaN 或 null
     
     const typingPattern = {
         timestamp: new Date(currentTypingBurst.start_time).toISOString(),
-        char_count: currentTypingBurst.char_count,
-        duration_ms: duration,
-        speed_cpm: Math.round(speed), // 字符/分鐘
+        char_count: currentTypingBurst.char_count || 0,
+        duration_ms: duration || 0,
+        speed_cpm: speedCpm, // 字符/分鐘
         session_id: AntiCheatState.currentSession.session_id
     };
     
@@ -321,14 +323,16 @@ async function saveMonitoringData() {
             const { error: typingError } = await AppState.supabase
                 .from('typing_patterns')
                 .insert(
-                    AntiCheatState.typingPatterns.map(pattern => ({
-                        user_id: AppState.currentUser.id,
-                        session_id: pattern.session_id,
-                        timestamp: pattern.timestamp,
-                        char_count: pattern.char_count,
-                        duration_ms: pattern.duration_ms,
-                        speed_cpm: pattern.speed_cpm
-                    }))
+                    AntiCheatState.typingPatterns
+                        .filter(pattern => pattern.speed_cpm != null && !isNaN(pattern.speed_cpm)) // 過濾掉無效數據
+                        .map(pattern => ({
+                            user_id: AppState.currentUser.id,
+                            session_id: pattern.session_id,
+                            timestamp: pattern.timestamp,
+                            char_count: pattern.char_count || 0,
+                            duration_ms: pattern.duration_ms || 0,
+                            speed_cpm: pattern.speed_cpm || 0
+                        }))
                 );
             
             if (typingError) {

@@ -195,9 +195,19 @@ class AnnotationManager {
       top: ${event.pageY - 40}px;
     `;
     
-    button.addEventListener('click', (e) => {
+          button.addEventListener('click', async (e) => {
       console.log('🖱️ 批注按鈕被點擊');
       e.preventDefault();
+      
+      // 從選中文本的 DOM 元素中獲取段落 ID
+      const paragraphElement = this.selectedText.range.commonAncestorContainer.closest('[data-paragraph-id]');
+      if (paragraphElement) {
+        const paragraphId = paragraphElement.dataset.paragraphId;
+        console.log('📝 找到段落 ID:', paragraphId);
+        if (paragraphId) {
+          this.currentParagraphId = paragraphId;
+        }
+      }
       e.stopPropagation();
       e.stopImmediatePropagation();
       this.createAnnotation();

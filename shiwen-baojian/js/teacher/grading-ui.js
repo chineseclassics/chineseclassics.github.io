@@ -301,8 +301,12 @@ class GradingUI {
         
         // 引言
         if (content.introduction) {
+          // 找到引言段落 ID
+          const introParagraph = essay.paragraphs?.find(p => p.paragraph_type === 'introduction');
+          const introParaId = introParagraph?.id || '';
+          
           html += `
-            <div class="paragraph-block">
+            <div class="paragraph-block" data-paragraph-id="${introParaId}">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
                 <i class="fas fa-quote-left mr-2" style="color: var(--primary-500);"></i>引言
               </h4>
@@ -324,8 +328,12 @@ class GradingUI {
             
             if (arg.paragraphs && arg.paragraphs.length > 0) {
               arg.paragraphs.forEach((para, pIndex) => {
+                // 找到對應的段落 ID
+                const bodyParagraphs = essay.paragraphs?.filter(p => p.paragraph_type === 'body');
+                const paraId = bodyParagraphs && bodyParagraphs[index + pIndex]?.id || '';
+                
                 html += `
-                  <div class="paragraph-content sub-paragraph">
+                  <div class="paragraph-content sub-paragraph" data-paragraph-id="${paraId}">
                     <div class="paragraph-label">段落 ${pIndex + 1}</div>
                     ${para.content || ''}
                   </div>
@@ -339,8 +347,12 @@ class GradingUI {
         
         // 結論
         if (content.conclusion) {
+          // 找到結論段落 ID
+          const conclParagraph = essay.paragraphs?.find(p => p.paragraph_type === 'conclusion');
+          const conclParaId = conclParagraph?.id || '';
+          
           html += `
-            <div class="paragraph-block">
+            <div class="paragraph-block" data-paragraph-id="${conclParaId}">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
                 <i class="fas fa-flag-checkered mr-2" style="color: var(--success-500);"></i>結論
               </h4>
@@ -374,7 +386,7 @@ class GradingUI {
           }
           
           return `
-            <div class="paragraph-block">
+            <div class="paragraph-block" data-paragraph-id="${p.id}">
               <h4>${p.paragraph_type === 'introduction' ? '引言' : p.paragraph_type === 'conclusion' ? '結論' : '正文段落'}</h4>
               <div class="paragraph-content">${htmlContent}</div>
             </div>
