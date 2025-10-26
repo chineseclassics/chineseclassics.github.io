@@ -160,6 +160,7 @@ class AnnotationManager {
     const dataset = element.dataset || {};
     let paragraphId = dataset.paragraphId || null;
     let start = Number.POSITIVE_INFINITY;
+    let sortToken = dataset.sortToken || '';
 
     if (dataset.annotationId) {
       const data = this.annotations.get(dataset.annotationId);
@@ -168,7 +169,7 @@ class AnnotationManager {
         if (data.highlight_start !== undefined && data.highlight_start !== null) {
           start = data.highlight_start;
         }
-        sortToken = data.created_at || sortToken;
+        sortToken = sortToken || data.created_at || '';
       }
     }
 
@@ -687,18 +688,19 @@ class AnnotationManager {
       // 直接添加到滾動容器
       wrapper.appendChild(inputBox);
 
-      const selectionRect = this.getSelectionRect();
-      const wrapperRect = wrapper.getBoundingClientRect();
-      const offsetTop = selectionRect
-        ? selectionRect.top - wrapperRect.top + wrapper.scrollTop - 20
-        : wrapper.scrollTop + 20;
-      inputBox.style.top = Math.max(0, offsetTop) + 'px';
-      if (this.selectedText?.paragraphId) {
-        inputBox.dataset.paragraphId = this.selectedText.paragraphId;
-      }
-      if (this.selectedText?.startOffset !== undefined) {
-        inputBox.dataset.startOffset = String(this.selectedText.startOffset);
-      }
+    const selectionRect = this.getSelectionRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const offsetTop = selectionRect
+      ? selectionRect.top - wrapperRect.top + wrapper.scrollTop - 20
+      : wrapper.scrollTop + 20;
+    inputBox.style.top = Math.max(0, offsetTop) + 'px';
+    if (this.selectedText?.paragraphId) {
+      inputBox.dataset.paragraphId = this.selectedText.paragraphId;
+    }
+    if (this.selectedText?.startOffset !== undefined) {
+      inputBox.dataset.startOffset = String(this.selectedText.startOffset);
+    }
+    inputBox.dataset.sortToken = `input-${Date.now()}`;
 
       // 調整所有批註位置
       this.adjustAnnotationsForActive(inputBox);
@@ -1172,6 +1174,9 @@ class AnnotationManager {
     }
     if (annotation.highlight_start !== undefined && annotation.highlight_start !== null) {
       floatingAnnotation.dataset.startOffset = String(annotation.highlight_start);
+    }
+    if (annotation.created_at) {
+      floatingAnnotation.dataset.sortToken = annotation.created_at;
     }
     floatingAnnotation.dataset.paragraphId = annotation.paragraph_id || '';
 
