@@ -138,17 +138,48 @@ class AssignmentManager {
 
       if (error) throw error;
 
-      // 為每個任務計算额外統計信息
-      const enrichedAssignments = await Promise.all(
-        data.map(async assignment => {
-          const stats = await this.getAssignmentStats(assignment.id);
-          return {
-            ...assignment,
-            stats
-          };
-        })
-      );
+      console.time('⏱️ 載入作業列表');
 
+      // 如果沒有作業，直接返回
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      // 一次性獲取所有作業的提交統計
+      const assignmentIds = data.map(a => a.id);
+      const classIds = [...new Set(data.map(a => a.class_id))];
+
+      // 批量查詢：班級學生數
+      const { data: classMemberData } = await this.supabase
+        .from('class_members')
+        .select('class_id')
+        .in('class_id', classIds);
+
+      // 批量查詢：提交和批改數
+      const { data: essayStats } = await this.supabase
+        .from('essays')
+        .select('assignment_id, status')
+        .in('assignment_id', assignmentIds)
+        .in('status', ['submitted', 'graded']);
+
+      // 在內存中聚合統計數據
+      const enrichedAssignments = data.map(assignment => {
+        const classStudents = classMemberData?.filter(m => m.class_id === assignment.class_id).length || 0;
+        const essays = essayStats?.filter(e => e.assignment_id === assignment.id) || [];
+        const submitted = essays.filter(e => e.status === 'submitted').length;
+        const graded = essays.filter(e => e.status === 'graded').length;
+        
+        return {
+          ...assignment,
+          stats: {
+            totalStudents: classStudents,
+            submitted,
+            graded
+          }
+        };
+      });
+
+      console.timeEnd('⏱️ 載入作業列表');
       return enrichedAssignments;
     } catch (error) {
       console.error('獲取任務列表失敗:', error);
@@ -342,87 +373,54 @@ class AssignmentManager {
   }
 
   /**
-   * 獲取任務統計數據
+   * 獲取任務統計數據（簡化版，只用於單個作業詳情頁）
    * @param {string} assignmentId - 任務 ID
    * @returns {Object} 統計數據
    */
   async getAssignmentStats(assignmentId) {
     try {
-      // 獲取班級學生總數（只計算已激活的學生）
+      // 獲取作業信息（包含 class_id）
+      const { data: assignment } = await this.supabase
+        .from('assignments')
+        .select('class_id')
+        .eq('id', assignmentId)
+        .single();
+
+      if (!assignment) {
+        throw new Error('作業不存在');
+      }
+
+      // 獲取班級學生總數
       const { count: totalStudents } = await this.supabase
         .from('class_members')
         .select('id', { count: 'exact', head: true })
-        .eq('class_id', this.currentClass.id);
+        .eq('class_id', assignment.class_id);
 
-      // 獲取已提交的作業数
+      // 獲取已提交的作業數
       const { count: submitted } = await this.supabase
         .from('essays')
         .select('id', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
         .eq('status', 'submitted');
 
-      // 獲取已批改的作業数
+      // 獲取已批改的作業數
       const { count: graded } = await this.supabase
         .from('essays')
         .select('id', { count: 'exact', head: true })
         .eq('assignment_id', assignmentId)
         .eq('status', 'graded');
 
-      // 獲取平均字数（從已提交的作業中計算）
-      const { data: essays } = await this.supabase
-        .from('essays')
-        .select('total_word_count')
-        .eq('assignment_id', assignmentId)
-        .eq('status', 'submitted');
-
-      const avgWordCount = essays && essays.length > 0
-        ? Math.round(essays.reduce((sum, e) => sum + (e.total_word_count || 0), 0) / essays.length)
-        : 0;
-
-      // 獲取平均 AI 反馈次数
-      // 由於 ai_feedback 關聯 paragraphs 而非 essays，需要先獲取 essays 再查詢 feedback
-      const { data: submittedEssays } = await this.supabase
-        .from('essays')
-        .select('id')
-        .eq('assignment_id', assignmentId)
-        .eq('status', 'submitted');
-
-      let avgFeedbackCount = 0;
-      if (submittedEssays && submittedEssays.length > 0) {
-        const essayIds = submittedEssays.map(e => e.id);
-        
-        // 查詢這些 essays 的所有 paragraphs 的 feedback 數量
-        const { count: totalFeedback } = await this.supabase
-          .from('ai_feedback')
-          .select('id', { count: 'exact', head: true })
-          .in('paragraph_id', 
-            (await this.supabase
-              .from('paragraphs')
-              .select('id')
-              .in('essay_id', essayIds)
-            ).data?.map(p => p.id) || []
-          );
-        
-        avgFeedbackCount = totalFeedback && submittedEssays.length > 0
-          ? (totalFeedback / submittedEssays.length).toFixed(1)
-          : 0;
-      }
-
       return {
         totalStudents: totalStudents || 0,
         submitted: submitted || 0,
-        graded: graded || 0,
-        avgWordCount,
-        avgFeedbackCount
+        graded: graded || 0
       };
     } catch (error) {
       console.error('獲取任務統計失敗:', error);
       return {
         totalStudents: 0,
         submitted: 0,
-        graded: 0,
-        avgWordCount: 0,
-        avgFeedbackCount: 0
+        graded: 0
       };
     }
   }

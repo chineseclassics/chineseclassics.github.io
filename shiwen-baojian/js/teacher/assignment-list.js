@@ -27,8 +27,7 @@ class AssignmentList {
    */
   async loadAndRenderAssignments() {
     try {
-      this.assignments = await this.assignmentManager.getAssignments();
-
+      // 顯示骨架屏
       this.container.innerHTML = `
         <div class="assignment-list-container">
           <!-- 頂部操作欄：統一樣式 -->
@@ -42,14 +41,22 @@ class AssignmentList {
           </div>
 
           <div class="assignments-grid">
-            ${this.assignments.length > 0
-              ? this.assignments.map(a => this.renderAssignmentCard(a)).join('')
-              : this.renderEmptyState()
-            }
+            ${this.renderSkeletonCards(3)}
           </div>
         </div>
       `;
-
+      
+      // 載入數據
+      this.assignments = await this.assignmentManager.getAssignments();
+      
+      // 渲染實際內容
+      const grid = this.container.querySelector('.assignments-grid');
+      if (grid) {
+        grid.innerHTML = this.assignments.length > 0
+          ? this.assignments.map(a => this.renderAssignmentCard(a)).join('')
+          : this.renderEmptyState();
+      }
+      
       this.bindEvents();
     } catch (error) {
       console.error('加載任務列表失敗:', error);
@@ -60,6 +67,24 @@ class AssignmentList {
         </div>
       `;
     }
+  }
+
+  /**
+   * 渲染骨架屏卡片
+   */
+  renderSkeletonCards(count) {
+    return Array(count).fill(0).map(() => `
+      <div class="assignment-card card animate-pulse">
+        <div class="card-header">
+          <div class="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div class="h-5 bg-gray-200 rounded w-16"></div>
+        </div>
+        <div class="card-content">
+          <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+          <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      </div>
+    `).join('');
   }
 
   /**

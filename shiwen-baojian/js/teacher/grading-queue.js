@@ -66,66 +66,62 @@ class GradingQueue {
         return;
       }
       
-      // 2. 為每個任務獲取提交統計
+      // 2. 批量獲取所有任務的提交統計
       console.log('📊 開始加載任務提交統計，共', assignments.length, '個任務');
+      console.time('⏱️ 載入批改隊列');
       
-      this.assignmentsWithSubmissions = await Promise.all(
-        assignments.map(async (assignment) => {
-          console.log('📝 加載任務提交:', assignment.title);
-          
-          // 獲取已提交和已批改的論文（老師端不應該看到草稿）
-          const { data: allEssays, error: essaysError } = await this.supabase
-            .from('essays')
-            .select(`
-              id,
-              student_id,
-              title,
-              status,
-              total_word_count,
-              submitted_at,
-              users!student_id (
-                id,
-                display_name,
-                email
-              )
-            `)
-            .eq('assignment_id', assignment.id)
-            .in('status', ['submitted', 'graded']);
-          
-          if (essaysError) {
-            console.error('❌ 獲取任務提交失敗:', assignment.title, essaysError);
-            return {
-              ...assignment,
-              submissions: {
-                pending: [],
-                graded: [],
-                total: 0,
-                totalStudents: 0
-              }
-            };
+      // 一次性獲取所有作業的essays
+      const assignmentIds = assignments.map(a => a.id);
+      const { data: allEssays, error: essaysError } = await this.supabase
+        .from('essays')
+        .select(`
+          id,
+          assignment_id,
+          student_id,
+          title,
+          status,
+          total_word_count,
+          submitted_at,
+          users!student_id (
+            id,
+            display_name,
+            email
+          )
+        `)
+        .in('assignment_id', assignmentIds)
+        .in('status', ['submitted', 'graded']);
+      
+      if (essaysError) {
+        console.error('❌ 獲取提交失敗:', essaysError);
+        throw essaysError;
+      }
+      
+      // 一次性獲取所有班級的學生數
+      const classIds = [...new Set(assignments.map(a => a.class_id))];
+      const { data: classMemberData } = await this.supabase
+        .from('class_members')
+        .select('class_id')
+        .in('class_id', classIds);
+      
+      // 在內存中分組和聚合
+      this.assignmentsWithSubmissions = assignments.map(assignment => {
+        const essays = allEssays?.filter(e => e.assignment_id === assignment.id) || [];
+        const submitted = essays.filter(e => e.status === 'submitted');
+        const graded = essays.filter(e => e.status === 'graded');
+        const totalStudents = classMemberData?.filter(m => m.class_id === assignment.class_id).length || 0;
+        
+        return {
+          ...assignment,
+          submissions: {
+            pending: submitted,
+            graded: graded,
+            total: essays.length,
+            totalStudents
           }
-          
-          // 分類提交狀態
-          const submitted = allEssays?.filter(e => e.status === 'submitted') || [];
-          const graded = allEssays?.filter(e => e.status === 'graded') || [];
-          
-          // 獲取班級學生總數
-          const { count: totalStudents } = await this.supabase
-            .from('class_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('class_id', assignment.class_id);
-          
-          return {
-            ...assignment,
-            submissions: {
-              pending: submitted,                   // 待批改（只包含已提交）
-              graded: graded,                      // 已批改
-              total: (submitted.length + graded.length),
-              totalStudents: totalStudents || 0
-            }
-          };
-        })
-      );
+        };
+      });
+      
+      console.timeEnd('⏱️ 載入批改隊列');
       
       // 計算總待批改數
       this.totalPending = this.assignmentsWithSubmissions

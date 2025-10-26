@@ -51,20 +51,20 @@ class AnnotationManager {
   /**
    * 初始化批注系統
    */
-  async init(essayId, paragraphId) {
+  async init(essayId, paragraphs) {
     // 防止重複初始化
     if (this.isInitialized) {
       console.log('ℹ️ 批注系統已初始化，跳過重複初始化');
       return;
     }
     
-    console.log('🚀 初始化批注系統:', { essayId, paragraphId });
+    console.log('🚀 初始化批注系統:', { essayId, paragraphCount: paragraphs.length });
     
     this.currentEssayId = essayId;
-    this.currentParagraphId = paragraphId;
+    this.paragraphs = paragraphs; // 保存所有段落
     
-    // 加載現有批注
-    await this.loadAnnotations();
+    // 加載所有段落的批注
+    await this.loadAllAnnotations();
     
     // 啟用文本選擇模式
     this.enableSelectionMode();
@@ -200,8 +200,6 @@ class AnnotationManager {
       e.preventDefault();
       
       // 從選中文本的 DOM 節點獲取段落 ID
-      // 注意：Range.commonAncestorContainer 可能是 Text 節點（沒有 closest 方法）
-      // 因此需先取得對應的 Element 再調用 closest
       const commonNode = this.selectedText?.range?.commonAncestorContainer;
       const baseElement = commonNode
         ? (commonNode.nodeType === Node.ELEMENT_NODE
@@ -209,6 +207,7 @@ class AnnotationManager {
             : (commonNode.parentElement || null))
         : null;
       const paragraphElement = baseElement ? baseElement.closest('[data-paragraph-id]') : null;
+      
       if (paragraphElement) {
         const paragraphId = paragraphElement.dataset.paragraphId;
         console.log('📝 找到段落 ID:', paragraphId);
@@ -216,8 +215,11 @@ class AnnotationManager {
           this.currentParagraphId = paragraphId;
         }
       } else {
-        console.log('⚠️ 未能從選區定位到段落容器，將使用當前已知的段落 ID（若有）');
+        console.warn('⚠️ 未能從選區定位到段落容器');
+        toast.error('無法定位段落，請重新選擇文本');
+        return;
       }
+      
       e.stopPropagation();
       e.stopImmediatePropagation();
       this.createAnnotation();
@@ -331,6 +333,15 @@ class AnnotationManager {
     
     try {
       // 調用 RPC 函數創建批注
+      console.log('📤 準備調用 create_annotation RPC');
+      console.log('參數:', {
+        p_paragraph_id: this.currentParagraphId,
+        p_content: content,
+        p_highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
+        p_highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
+        p_anchor_text: this.selectedText.text
+      });
+      
       const { data, error } = await this.supabase.rpc('create_annotation', {
         p_paragraph_id: this.currentParagraphId,
         p_content: content,
@@ -394,8 +405,15 @@ class AnnotationManager {
       
     } catch (error) {
       console.error('❌ 創建批注失敗:', error);
+      console.error('錯誤詳情:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       if (typeof toast !== 'undefined') {
-        toast.error('創建批注失敗: ' + error.message);
+        const errorMsg = error.message || '網絡連接錯誤';
+        toast.error('創建批注失敗: ' + errorMsg);
       }
     }
   }
@@ -1245,6 +1263,17 @@ class AnnotationManager {
     }
     
     try {
+      // 調試：檢查 Range 的內容
+      console.log('🔍 Range 調試信息:', {
+        startContainer: range.startContainer,
+        endContainer: range.endContainer,
+        startOffset: range.startOffset,
+        endOffset: range.endOffset,
+        collapsed: range.collapsed,
+        commonAncestorContainer: range.commonAncestorContainer,
+        toString: range.toString()
+      });
+      
       const highlight = document.createElement('span');
       highlight.className = 'annotation-highlight';
       highlight.dataset.annotationId = annotationId;
@@ -1257,9 +1286,61 @@ class AnnotationManager {
         border-radius: 2px;
       `;
 
-      const frag = range.extractContents();
-      highlight.appendChild(frag);
-      range.insertNode(highlight);
+      // 方法 1：嘗試使用 surroundContents（更簡單，避免額外的 DOM 結構）
+      try {
+        range.surroundContents(highlight);
+        console.log('✅ 使用 surroundContents 高亮成功');
+      } catch (surroundErr) {
+        // 方法 2：如果 surroundContents 失敗（跨節點情況），使用 extractContents
+        console.log('⚠️ surroundContents 失敗，使用 extractContents:', surroundErr);
+        
+        // 先收集所有文本節點，確保 Range 正確
+        const clonedRange = range.cloneRange();
+        const frag = clonedRange.extractContents();
+        
+        // 清理空的文本節點和純空白節點，同時移除可能包裹空白的 block 元素
+        const cleanNodes = Array.from(frag.childNodes).filter(node => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            return node.textContent.trim().length > 0;
+          }
+          // 如果是元素節點，檢查是否只包含空白
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const tagName = node.tagName?.toLowerCase();
+            // 移除可能導致空行的 block 元素
+            if (['p', 'div', 'br'].includes(tagName)) {
+              // 只保留有實際內容的節點
+              return node.textContent.trim().length > 0;
+            }
+          }
+          return true;
+        });
+        
+        // 如果清理後沒有節點，嘗試用 surroundContents
+        if (cleanNodes.length === 0) {
+          console.log('⚠️ 提取的內容為空，嘗試調整 Range');
+          // 重新設置 Range 到連續的文本
+          const textNodes = this.getTextNodes(range.commonAncestorContainer.parentElement || range.commonAncestorContainer);
+          const startNode = textNodes.find(n => n.contains(range.startContainer) || n === range.startContainer);
+          const endNode = textNodes.find(n => n.contains(range.endContainer) || n === range.endContainer);
+          
+          if (startNode && endNode) {
+            const newRange = document.createRange();
+            newRange.setStart(startNode, range.startOffset);
+            newRange.setEnd(endNode, range.endOffset);
+            newRange.surroundContents(highlight);
+          } else {
+            throw new Error('無法找到有效的文本節點');
+          }
+        } else {
+          // 重新組裝 fragment
+          while (frag.firstChild) frag.removeChild(frag.firstChild);
+          cleanNodes.forEach(node => frag.appendChild(node));
+          highlight.appendChild(frag);
+          range.insertNode(highlight);
+        }
+        
+        console.log('✅ 使用 extractContents 高亮成功');
+      }
 
       // 綁定點擊與懸浮效果
       highlight.addEventListener('click', (e) => {
@@ -1274,7 +1355,6 @@ class AnnotationManager {
         highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
       });
 
-      console.log('✅ 使用錨定文本高亮成功');
     } catch (err) {
       console.log('⚠️ 高亮失敗:', err);
     }
@@ -1391,6 +1471,61 @@ class AnnotationManager {
   }
 
   /**
+   * 加載整篇文章的所有批注
+   */
+  async loadAllAnnotations() {
+    console.log('📥 加載整篇文章的批注');
+    
+    try {
+      const { data, error } = await this.supabase.rpc('get_essay_annotations', {
+        p_essay_id: this.currentEssayId
+      });
+      
+      if (error) {
+        console.error('❌ RPC 調用失敗:', error);
+        throw error;
+      }
+      
+      console.log('📊 批注數據:', data);
+      
+      // 檢查數據有效性
+      if (!data || !Array.isArray(data)) {
+        console.log('⚠️ 沒有批注數據或數據格式不正確');
+        return;
+      }
+      
+      // 按照 paragraph_order_index 和 highlight_start 排序
+      const sortedAnnotations = data.sort((a, b) => {
+        const orderDiff = (a.paragraph_order_index || 0) - (b.paragraph_order_index || 0);
+        if (orderDiff !== 0) return orderDiff;
+        return (a.highlight_start || 0) - (b.highlight_start || 0);
+      });
+      
+      console.log('✅ 批注已按段落和位置排序');
+      
+      // 存儲並渲染批注
+      sortedAnnotations.forEach(annotation => {
+        const annotationId = annotation.id || annotation.annotation_id;
+        if (annotationId) {
+          this.annotations.set(annotationId, annotation);
+          this.renderAnnotation(annotationId);
+        }
+      });
+      
+      console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
+      
+      // 調整所有批註位置
+      setTimeout(() => {
+        this.adjustAllAnnotations();
+      }, 200);
+      
+    } catch (error) {
+      console.error('❌ 加載批注失敗:', error);
+      toast.error('加載批注失敗: ' + error.message);
+    }
+  }
+
+  /**
    * 加載現有批注
    */
   async loadAnnotations() {
@@ -1452,14 +1587,31 @@ class AnnotationManager {
    * 設置 Realtime 監聽
    */
   setupRealtimeListener() {
+    // 清理現有的監聽器
+    this.cleanupRealtimeListener();
+    
+    // 獲取所有段落的 ID
+    const paragraphIds = this.paragraphs?.map(p => p.id) || [];
+    console.log('🔗 設置 Realtime 監聽，段落數量:', paragraphIds.length);
+    
+    if (paragraphIds.length === 0) {
+      console.log('⚠️ 沒有段落，跳過 Realtime 監聽設置');
+      return;
+    }
+    
     // 監聽批注變化
-    this.supabase
+    // 如果段落太多，使用更寬泛的過濾器
+    const filter = paragraphIds.length > 50 
+      ? `essay_id=eq.${this.currentEssayId}` 
+      : `paragraph_id=in.(${paragraphIds.join(',')})`;
+    
+    this.realtimeChannel = this.supabase
       .channel('annotations')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'annotations',
-        filter: `paragraph_id=eq.${this.currentParagraphId}`
+        filter: filter
       }, (payload) => {
         console.log('🔄 收到新批注:', payload.new);
         
@@ -1469,7 +1621,23 @@ class AnnotationManager {
           return;
         }
         
-        this.annotations.set(payload.new.id, payload.new);
+        // 如果使用 essay_id 過濾器，需要驗證段落是否屬於當前文章
+        if (paragraphIds.length > 50) {
+          const paragraph = this.paragraphs?.find(p => p.id === payload.new.paragraph_id);
+          if (!paragraph) {
+            console.log('⚠️ 批注不屬於當前文章，跳過處理');
+            return;
+          }
+        }
+        
+        // 獲取段落的 order_index
+        const paragraph = this.paragraphs?.find(p => p.id === payload.new.paragraph_id);
+        const paragraphOrderIndex = paragraph?.order_index || 0;
+        
+        this.annotations.set(payload.new.id, {
+          ...payload.new,
+          paragraph_order_index: paragraphOrderIndex
+        });
         this.renderAnnotation(payload.new.id);
         
         // 只在不是當前用戶創建的批注時顯示通知
@@ -1481,7 +1649,7 @@ class AnnotationManager {
         event: 'UPDATE',
         schema: 'public',
         table: 'annotations',
-        filter: `paragraph_id=eq.${this.currentParagraphId}`
+        filter: filter
       }, (payload) => {
         console.log('🔄 批注已更新:', payload.new);
         this.annotations.set(payload.new.id, payload.new);
@@ -1492,7 +1660,7 @@ class AnnotationManager {
         event: 'DELETE',
         schema: 'public',
         table: 'annotations',
-        filter: `paragraph_id=eq.${this.currentParagraphId}`
+        filter: filter
       }, (payload) => {
         console.log('🔄 批注已刪除:', payload.old);
         this.annotations.delete(payload.old.id);
@@ -1501,6 +1669,17 @@ class AnnotationManager {
         markers.forEach(marker => marker.remove());
       })
       .subscribe();
+  }
+
+  /**
+   * 清理 Realtime 監聽器
+   */
+  cleanupRealtimeListener() {
+    if (this.realtimeChannel) {
+      console.log('🧹 清理 Realtime 監聽器');
+      this.supabase.removeChannel(this.realtimeChannel);
+      this.realtimeChannel = null;
+    }
   }
 
   /**
@@ -1562,10 +1741,20 @@ class AnnotationManager {
     // 清理連接線
     this.clearConnectionLines();
     
+    // 清理 Realtime 監聽器
+    this.cleanupRealtimeListener();
+    
     // 移除事件監聽器
     document.removeEventListener('mouseup', this.boundHandleTextSelection);
     document.removeEventListener('keyup', this.boundHandleTextSelection);
     document.removeEventListener('click', this.boundHandleAnnotationClick);
+    
+    // 重置狀態
+    this.isInitialized = false;
+    this.annotations.clear();
+    this.paragraphs = null;
+    this.currentEssayId = null;
+    this.currentParagraphId = null;
   }
 }
 
