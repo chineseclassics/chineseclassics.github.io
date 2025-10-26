@@ -56,7 +56,7 @@ const toDatabasePayload = (annotation) => {
     highlight_start: annotation.highlightStart,
     highlight_end: annotation.highlightEnd,
     anchor_text: annotation.anchorText || null,
-    anchor_context: annotation.anchorContext || null,
+    anchor_context: annotation.anchorContext ? (typeof annotation.anchorContext === 'string' ? annotation.anchorContext : JSON.stringify(annotation.anchorContext)) : null,
     is_resolved: annotation.isResolved || false,
     is_orphaned: annotation.isOrphaned || false,
     priority: annotation.priority || 'normal',
@@ -239,16 +239,27 @@ class AnnotationRenderer {
   renderAnnotation(annotation, context = {}) {
     const annotationId = annotation.id;
 
-    if (!annotationId) return;
+    if (!annotationId) {
+      console.warn('⚠️ renderAnnotation: annotation.id is missing', annotation);
+      return;
+    }
 
     let highlight = this.highlights.get(annotationId);
     if (!highlight) {
       highlight = this.ensureHighlight(annotation, context);
+      if (!highlight) {
+        console.warn('⚠️ renderAnnotation: ensureHighlight returned null', annotation);
+      }
     } else {
       highlight.dataset.annotationId = annotationId;
     }
 
     const card = this.ensureCard(annotation);
+
+    if (!card) {
+      console.error('❌ renderAnnotation: ensureCard returned null', annotation);
+      return;
+    }
 
     if (context.isPending) {
       card.classList.add('pending');
@@ -317,7 +328,10 @@ class AnnotationRenderer {
 
   showAnnotationButton(selection, onClick) {
     this.hideAnnotationButton();
-    if (!selection?.rect) return;
+    if (!selection?.rect) {
+      console.warn('⚠️ showAnnotationButton: selection.rect 為空');
+      return;
+    }
 
     const button = document.createElement('button');
     button.className = 'annotation-button';
@@ -348,11 +362,16 @@ class AnnotationRenderer {
     button.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
+      console.log('🖱️ 批註按鈕被點擊');
       if (typeof onClick === 'function') {
+        console.log('調用 onClick callback');
         onClick();
+      } else {
+        console.warn('⚠️ onClick 不是函數:', typeof onClick);
       }
     });
 
+    console.log('顯示批註按鈕，位置:', button.style.left, button.style.top);
     document.body.appendChild(button);
     this.annotationButton = button;
   }
@@ -1030,18 +1049,26 @@ class AnnotationManager {
   }
 
   async handleCreateAnnotation(selection) {
+    console.log('📝 handleCreateAnnotation 被調用', { selection, currentUser: this.currentUser });
+    
     if (!this.currentUser || !this.currentUser.id) {
       this.currentUser = await this.getCurrentUser();
     }
     if (!this.currentUser?.id) {
+      console.error('❌ 無法識別用戶', this.currentUser);
       toast.error('未能識別當前教師，請重新登入後重試');
       this.renderer.hideSelectionPreview();
       return;
     }
     if (!selection) {
+      console.warn('⚠️ selection 為空');
       return;
     }
+    
+    console.log('隱藏 annotation button...');
     this.renderer.hideAnnotationButton();
+    
+    console.log('打開編輯器...');
     const content = await this.renderer.openAnnotationEditor({
       mode: 'create',
       defaultContent: '',
@@ -1049,7 +1076,10 @@ class AnnotationManager {
       currentUser: this.currentUser
     });
 
+    console.log('編輯器返回內容:', content);
+    
     if (!content) {
+      console.log('用戶取消或內容為空');
       this.renderer.hideSelectionPreview();
       return;
     }
