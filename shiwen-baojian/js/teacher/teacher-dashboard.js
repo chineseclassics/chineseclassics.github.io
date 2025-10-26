@@ -61,10 +61,13 @@ class TeacherDashboard {
       // 設置導航監聽
       this.setupNavigation();
       
-      // 更新待批改徽章
-      await this.updatePendingGradingBadge();
+      // 🚨 優化：徽章更新改為非阻塞異步執行
+      // 不等待徽章更新完成，讓頁面立即開始渲染
+      this.updatePendingGradingBadge().catch(error => {
+        console.error('徽章更新失敗（非致命錯誤）:', error);
+      });
       
-      // 渲染初始頁面（作業管理）
+      // 立即渲染初始頁面（作業管理）
       // 2025-10-20 更新：默認頁面從「班級管理」改為「作業管理」
       await this.navigate('assignments');
     } catch (error) {

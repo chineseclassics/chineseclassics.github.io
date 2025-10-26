@@ -138,8 +138,6 @@ class AssignmentManager {
 
       if (error) throw error;
 
-      console.time('⏱️ 載入作業列表');
-
       // 如果沒有作業，直接返回
       if (!data || data.length === 0) {
         return [];
@@ -149,18 +147,24 @@ class AssignmentManager {
       const assignmentIds = data.map(a => a.id);
       const classIds = [...new Set(data.map(a => a.class_id))];
 
-      // 批量查詢：班級學生數
-      const { data: classMemberData } = await this.supabase
-        .from('class_members')
-        .select('class_id')
-        .in('class_id', classIds);
+      // 🚨 優化：並行執行兩個查詢
+      const [classMemberResult, essayStatsResult] = await Promise.all([
+        // 批量查詢：班級學生數
+        this.supabase
+          .from('class_members')
+          .select('class_id')
+          .in('class_id', classIds),
+        
+        // 批量查詢：提交和批改數
+        this.supabase
+          .from('essays')
+          .select('assignment_id, status')
+          .in('assignment_id', assignmentIds)
+          .in('status', ['submitted', 'graded'])
+      ]);
 
-      // 批量查詢：提交和批改數
-      const { data: essayStats } = await this.supabase
-        .from('essays')
-        .select('assignment_id, status')
-        .in('assignment_id', assignmentIds)
-        .in('status', ['submitted', 'graded']);
+      const classMemberData = classMemberResult.data;
+      const essayStats = essayStatsResult.data;
 
       // 在內存中聚合統計數據
       const enrichedAssignments = data.map(assignment => {
@@ -179,7 +183,6 @@ class AssignmentManager {
         };
       });
 
-      console.timeEnd('⏱️ 載入作業列表');
       return enrichedAssignments;
     } catch (error) {
       console.error('獲取任務列表失敗:', error);
