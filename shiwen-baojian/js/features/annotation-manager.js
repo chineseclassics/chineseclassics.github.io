@@ -45,6 +45,7 @@ class AnnotationManager {
     // 尺寸
     ANNOTATION_WIDTH: '280px',
     BUTTON_PADDING: '8px 12px',
+    ANNOTATION_GAP: 16,
     
     // Z-index
     BUTTON_Z_INDEX: '1000',
@@ -940,7 +941,7 @@ class AnnotationManager {
       return;
     }
 
-    const gap = 12;
+    const gap = AnnotationManager.CONSTANTS.ANNOTATION_GAP || 12;
     const metadata = sortedAnnotations.map(element => ({
       element,
       idealTop: this.getIdealTop(element),
@@ -1002,7 +1003,7 @@ class AnnotationManager {
     });
     
     // 從上到下依次放置，避免重疊
-    const gap = 12;
+    const gap = AnnotationManager.CONSTANTS.ANNOTATION_GAP || 12;
     let lastBottom = 0;
     sortedAnnotations.forEach(ann => {
       const idealTop = this.getIdealTop(ann);
