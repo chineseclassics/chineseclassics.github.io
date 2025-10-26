@@ -61,7 +61,7 @@ class AnnotationManager {
       return;
     }
     
-    console.log('🚀 初始化批注系統:', { essayId, paragraphId });
+    console.log('🚀 初始化批注系統:', { essayId, paragraphInfo });
     this.currentEssayId = essayId;
     this.paragraphIds = Array.isArray(paragraphInfo)
       ? paragraphInfo.filter(p => p && p.id).map(p => p.id)
