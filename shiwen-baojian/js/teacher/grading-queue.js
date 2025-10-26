@@ -97,11 +97,11 @@ class GradingQueue {
       }
       
       // 一次性獲取所有班級的學生數
-      const classIds = [...new Set(assignments.map(a => a.class_id))];
+      const assignmentClassIds = [...new Set(assignments.map(a => a.class_id))];
       const { data: classMemberData } = await this.supabase
         .from('class_members')
         .select('class_id')
-        .in('class_id', classIds);
+        .in('class_id', assignmentClassIds);
       
       // 在內存中分組和聚合
       this.assignmentsWithSubmissions = assignments.map(assignment => {
