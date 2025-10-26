@@ -284,21 +284,6 @@ class GradingUI {
     console.log('📄 渲染作業內容...');
     console.log('  - content_json 存在?', !!essay.content_json);
     console.log('  - paragraphs 數量:', essay.paragraphs?.length || 0);
-
-    const paragraphQueue = Array.isArray(essay.paragraphs)
-      ? [...essay.paragraphs].sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
-      : [];
-
-    const getNextParagraphAttr = () => {
-      if (!paragraphQueue.length) {
-        return { attr: '', record: null };
-      }
-      const next = paragraphQueue.shift();
-      if (next && next.id) {
-        return { attr: ` data-paragraph-id="${next.id}"`, record: next };
-      }
-      return { attr: '', record: next };
-    };
     
     // 優先從 content_json 獲取完整結構化內容
     if (essay.content_json) {
@@ -316,13 +301,12 @@ class GradingUI {
         
         // 引言
         if (content.introduction) {
-          const { attr: introAttr } = getNextParagraphAttr();
           html += `
             <div class="paragraph-block">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
                 <i class="fas fa-quote-left mr-2" style="color: var(--primary-500);"></i>引言
               </h4>
-              <div class="paragraph-content"${introAttr}>${content.introduction}</div>
+              <div class="paragraph-content">${content.introduction}</div>
             </div>
           `;
         }
@@ -340,9 +324,8 @@ class GradingUI {
             
             if (arg.paragraphs && arg.paragraphs.length > 0) {
               arg.paragraphs.forEach((para, pIndex) => {
-                const { attr: paraAttr } = getNextParagraphAttr();
                 html += `
-                  <div class="paragraph-content sub-paragraph"${paraAttr}>
+                  <div class="paragraph-content sub-paragraph">
                     <div class="paragraph-label">段落 ${pIndex + 1}</div>
                     ${para.content || ''}
                   </div>
@@ -356,13 +339,12 @@ class GradingUI {
         
         // 結論
         if (content.conclusion) {
-          const { attr: conclusionAttr } = getNextParagraphAttr();
           html += `
             <div class="paragraph-block">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
                 <i class="fas fa-flag-checkered mr-2" style="color: var(--success-500);"></i>結論
               </h4>
-              <div class="paragraph-content"${conclusionAttr}>${content.conclusion}</div>
+              <div class="paragraph-content">${content.conclusion}</div>
             </div>
           `;
         }
@@ -394,7 +376,7 @@ class GradingUI {
           return `
             <div class="paragraph-block">
               <h4>${p.paragraph_type === 'introduction' ? '引言' : p.paragraph_type === 'conclusion' ? '結論' : '正文段落'}</h4>
-              <div class="paragraph-content" data-paragraph-id="${p.id || ''}">${htmlContent}</div>
+              <div class="paragraph-content">${htmlContent}</div>
             </div>
           `;
         }).join('');
@@ -503,10 +485,16 @@ class GradingUI {
       this.annotationManager = new AnnotationManager(this.supabase);
       
       // 為每個段落初始化批注
-      const paragraphs = (this.currentEssay.paragraphs || []).slice().sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+      const paragraphs = this.currentEssay.paragraphs || [];
       console.log('📄 段落數量:', paragraphs.length);
       
-      await this.annotationManager.init(this.currentEssay.id, paragraphs);
+      if (paragraphs.length > 0) {
+        // 使用第一個段落作為示例
+        console.log('🎯 使用第一個段落初始化:', paragraphs[0].id);
+        await this.annotationManager.init(this.currentEssay.id, paragraphs[0].id);
+      } else {
+        console.log('❌ 沒有找到段落');
+      }
       
       // 自動啟用批注模式
       this.annotationManager.enableSelectionMode();
@@ -988,3 +976,4 @@ ${overallComment.improvements || ''}
 }
 
 export default GradingUI;
+

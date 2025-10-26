@@ -48,22 +48,6 @@
   border-bottom-color: #d97706;
 }
 
-.annotation-highlight-preview {
-  opacity: 0.9;
-}
-
-.annotation-highlight.annotation-highlight-orphan {
-  background-color: #f3f4f6;
-  border-bottom: 1px dashed #94a3b8;
-  color: #6b7280;
-  opacity: 0.9;
-}
-
-.annotation-highlight.annotation-highlight-orphan:hover {
-  background-color: #e5e7eb;
-  border-bottom-color: #94a3b8;
-}
-
 /* 批注標記 */
 .annotation-marker {
   color: #f59e0b;
