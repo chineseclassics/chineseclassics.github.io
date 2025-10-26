@@ -137,11 +137,53 @@ class AnnotationManager {
     return this.annotationsByParagraph.get(paragraphId);
   }
 
-  registerAnnotation(annotation) {
+  registerAnnotation(annotation, fallback = null) {
     if (!annotation?.id) return;
-    this.annotations.set(annotation.id, annotation);
-    const paragraphMap = this.getParagraphAnnotations(annotation.paragraph_id);
-    paragraphMap.set(annotation.id, annotation);
+
+    const normalized = this.normalizeAnnotation(annotation, fallback);
+    this.annotations.set(normalized.id, normalized);
+    const paragraphMap = this.getParagraphAnnotations(normalized.paragraph_id);
+    paragraphMap.set(normalized.id, normalized);
+  }
+
+  normalizeAnnotation(annotation, fallback = null) {
+    const normalized = { ...annotation };
+
+    const hasFallback = fallback && typeof fallback === 'object';
+
+    const ensureNumber = (value, fallbackValue) => {
+      if (value === null || value === undefined || value === '') {
+        return fallbackValue;
+      }
+      const num = Number(value);
+      return Number.isFinite(num) ? num : fallbackValue;
+    };
+
+    normalized.paragraph_id = normalized.paragraph_id
+      || (hasFallback ? fallback.paragraph_id : null);
+
+    normalized.highlight_start = ensureNumber(
+      normalized.highlight_start,
+      hasFallback ? fallback.highlight_start : undefined
+    );
+    normalized.highlight_end = ensureNumber(
+      normalized.highlight_end,
+      hasFallback ? fallback.highlight_end : undefined
+    );
+
+    if (!normalized.anchor_text && hasFallback) {
+      normalized.anchor_text = fallback.anchor_text || null;
+    }
+
+    if (!normalized.anchor_context && hasFallback && fallback.anchor_context) {
+      normalized.anchor_context = fallback.anchor_context;
+    }
+
+    if (normalized.is_orphaned === undefined || normalized.is_orphaned === null) {
+      normalized.is_orphaned = false;
+    }
+
+    return normalized;
   }
 
   removeAnnotation(annotationId) {
@@ -621,8 +663,16 @@ class AnnotationManager {
         throw new Error('無法取得新批注的識別碼');
       }
       
+      const fallbackContext = {
+        paragraph_id: this.selectedText.paragraphId,
+        highlight_start: this.selectedText.startOffset,
+        highlight_end: this.selectedText.endOffset,
+        anchor_text: this.selectedText.text,
+        anchor_context: anchorContext
+      };
+
       // 添加批注到本地存儲
-      this.registerAnnotation(annotationRecord);
+      this.registerAnnotation(annotationRecord, fallbackContext);
 
       // 先移除臨時高亮，避免干擾正式渲染
       this.removeSelectionPreview();
