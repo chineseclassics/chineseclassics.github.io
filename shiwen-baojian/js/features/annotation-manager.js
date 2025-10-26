@@ -1249,8 +1249,7 @@ class AnnotationManager {
 
     const existingMarker = paragraphElement.querySelector(`[data-annotation-id="${annotationId}"]`);
     if (existingMarker) {
-      console.log('ℹ️ 高亮或占位符已存在，跳過重新建立');
-      return;
+      existingMarker.remove();
     }
 
     const hasValidOffsets = typeof annotation.highlight_start === 'number'
