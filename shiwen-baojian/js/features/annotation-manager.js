@@ -649,6 +649,14 @@ class AnnotationManager {
       if (typeof toast !== 'undefined') {
         toast.error('創建批注失敗: ' + (error?.message || '未知錯誤'));
       }
+      this.removeSelectionPreview();
+      this.hideAnnotationButton();
+      this.selectedText = null;
+      try {
+        window.getSelection().removeAllRanges();
+      } catch (selectionError) {
+        console.log('⚠️ 無法清除選取:', selectionError);
+      }
     }
   }
 
@@ -681,7 +689,7 @@ class AnnotationManager {
           class="annotation-input-content"
           placeholder="添加批注..."
           rows="3"
-        >${defaultContent}</textarea>
+        ></textarea>
         <div class="annotation-input-actions">
           <button class="annotation-input-btn cancel">取消</button>
           <button class="annotation-input-btn submit">留言</button>
@@ -738,6 +746,7 @@ class AnnotationManager {
       const cancelBtn = inputBox.querySelector('.cancel');
       const submitBtn = inputBox.querySelector('.submit');
       const textarea = inputBox.querySelector('.annotation-input-content');
+      textarea.value = defaultContent || '';
       
       const cleanup = () => {
         if (inputBox.parentNode) {
@@ -1382,10 +1391,7 @@ class AnnotationManager {
       return;
     }
 
-    const existingMarker = paragraphElement.querySelector(`[data-annotation-id="${annotationId}"]`);
-    if (existingMarker) {
-      existingMarker.remove();
-    }
+    this.removeExistingHighlights(annotationId);
 
     const hasValidOffsets = typeof annotation.highlight_start === 'number'
       && typeof annotation.highlight_end === 'number'
