@@ -52,7 +52,8 @@ class MultiClassManager {
     try {
       const { data: { user } } = await this.supabase.auth.getUser();
       
-      // 獲取老師的所有班級
+      // 🚨 優化：簡化查詢，避免複雜的 JOIN 操作
+      // 先獲取基本班級信息
       const { data: classes, error } = await this.supabase
         .from('classes')
         .select(`
@@ -60,9 +61,7 @@ class MultiClassManager {
           class_name,
           description,
           is_active,
-          created_at,
-          class_members!inner(count),
-          assignments!inner(count)
+          created_at
         `)
         .eq('teacher_id', user.id)
         .eq('is_active', true)
@@ -70,11 +69,44 @@ class MultiClassManager {
 
       if (error) throw error;
 
+      if (!classes || classes.length === 0) {
+        this.classes = [];
+        return this.classes;
+      }
+
+      // 並行獲取統計數據
+      const classIds = classes.map(c => c.id);
+      const [studentCountsResult, assignmentCountsResult] = await Promise.all([
+        // 獲取每個班級的學生數
+        this.supabase
+          .from('class_members')
+          .select('class_id')
+          .in('class_id', classIds),
+        
+        // 獲取每個班級的作業數
+        this.supabase
+          .from('assignments')
+          .select('class_id')
+          .in('class_id', classIds)
+      ]);
+
+      // 在內存中聚合統計數據
+      const studentCounts = {};
+      const assignmentCounts = {};
+      
+      studentCountsResult.data?.forEach(member => {
+        studentCounts[member.class_id] = (studentCounts[member.class_id] || 0) + 1;
+      });
+      
+      assignmentCountsResult.data?.forEach(assignment => {
+        assignmentCounts[assignment.class_id] = (assignmentCounts[assignment.class_id] || 0) + 1;
+      });
+
       // 處理統計數據
       this.classes = classes.map(cls => ({
         ...cls,
-        student_count: cls.class_members?.[0]?.count || 0,
-        assignment_count: cls.assignments?.[0]?.count || 0
+        student_count: studentCounts[cls.id] || 0,
+        assignment_count: assignmentCounts[cls.id] || 0
       }));
 
       console.log('📚 已加載班級:', this.classes.length);

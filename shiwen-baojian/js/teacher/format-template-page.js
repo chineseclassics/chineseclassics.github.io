@@ -71,6 +71,59 @@ class FormatTemplatePage {
    */
   async renderListMode(container) {
     this.container = container;  // 保存 container 引用
+    
+    // 🚨 優化：先顯示骨架屏，改善用戶體驗
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto">
+        <!-- 頂部操作欄：按鈕 + 搜索框 -->
+        <div class="mb-8 flex items-center justify-between gap-4">
+          <!-- 左側：創建按鈕 -->
+          <div class="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          
+          <!-- 右側：搜索與篩選 -->
+          <div class="flex items-center gap-3">
+            <div class="h-10 bg-gray-200 rounded w-64 animate-pulse"></div>
+            <div class="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div class="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          </div>
+        </div>
+        
+        <!-- 骨架屏：模板網格 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+            <div class="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+            <div class="flex space-x-2">
+              <div class="h-8 bg-gray-200 rounded w-16"></div>
+              <div class="h-8 bg-gray-200 rounded w-16"></div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+            <div class="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+            <div class="flex space-x-2">
+              <div class="h-8 bg-gray-200 rounded w-16"></div>
+              <div class="h-8 bg-gray-200 rounded w-16"></div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+            <div class="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+            <div class="flex space-x-2">
+              <div class="h-8 bg-gray-200 rounded w-16"></div>
+              <div class="h-8 bg-gray-200 rounded w-16"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // 然後渲染實際內容
     container.innerHTML = `
       <div class="max-w-7xl mx-auto">
         <!-- 頂部操作欄：按鈕 + 搜索框 -->

@@ -27,11 +27,48 @@ class GradingQueue {
    */
   async loadAndRender() {
     try {
-      // 顯示加載狀態
+      // 🚨 優化：顯示骨架屏，改善用戶體驗
       this.container.innerHTML = `
-        <div class="text-center py-12">
-          <i class="fas fa-spinner fa-spin text-4xl text-stone-600"></i>
-          <p class="mt-4 text-gray-600">正在加載待批改作業...</p>
+        <div class="grading-queue-container">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">
+              <i class="fas fa-clipboard-check text-stone-600 mr-2"></i>
+              批改作業
+            </h2>
+          </div>
+          
+          <!-- 骨架屏 -->
+          <div class="space-y-4">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+              <div class="flex items-center justify-between mb-4">
+                <div class="h-6 bg-gray-200 rounded w-1/3"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+              </div>
+              <div class="space-y-3">
+                <div class="h-4 bg-gray-200 rounded w-full"></div>
+                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="flex space-x-4 mt-4">
+                  <div class="h-8 bg-gray-200 rounded w-20"></div>
+                  <div class="h-8 bg-gray-200 rounded w-20"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+              <div class="flex items-center justify-between mb-4">
+                <div class="h-6 bg-gray-200 rounded w-1/3"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+              </div>
+              <div class="space-y-3">
+                <div class="h-4 bg-gray-200 rounded w-full"></div>
+                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="flex space-x-4 mt-4">
+                  <div class="h-8 bg-gray-200 rounded w-20"></div>
+                  <div class="h-8 bg-gray-200 rounded w-20"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       `;
 
@@ -66,42 +103,48 @@ class GradingQueue {
         return;
       }
       
-      // 2. 批量獲取所有任務的提交統計
+      // 2. 🚨 優化：並行執行查詢，減少等待時間
       console.log('📊 開始加載任務提交統計，共', assignments.length, '個任務');
-      console.time('⏱️ 載入批改隊列');
       
-      // 一次性獲取所有作業的essays
       const assignmentIds = assignments.map(a => a.id);
-      const { data: allEssays, error: essaysError } = await this.supabase
-        .from('essays')
-        .select(`
-          id,
-          assignment_id,
-          student_id,
-          title,
-          status,
-          total_word_count,
-          submitted_at,
-          users!student_id (
-            id,
-            display_name,
-            email
-          )
-        `)
-        .in('assignment_id', assignmentIds)
-        .in('status', ['submitted', 'graded']);
+      const assignmentClassIds = [...new Set(assignments.map(a => a.class_id))];
       
-      if (essaysError) {
-        console.error('❌ 獲取提交失敗:', essaysError);
-        throw essaysError;
+      // 並行執行兩個查詢
+      const [essaysResult, classMemberResult] = await Promise.all([
+        // 一次性獲取所有作業的essays
+        this.supabase
+          .from('essays')
+          .select(`
+            id,
+            assignment_id,
+            student_id,
+            title,
+            status,
+            total_word_count,
+            submitted_at,
+            users!student_id (
+              id,
+              display_name,
+              email
+            )
+          `)
+          .in('assignment_id', assignmentIds)
+          .in('status', ['submitted', 'graded']),
+        
+        // 一次性獲取所有班級的學生數
+        this.supabase
+          .from('class_members')
+          .select('class_id')
+          .in('class_id', assignmentClassIds)
+      ]);
+      
+      if (essaysResult.error) {
+        console.error('❌ 獲取提交失敗:', essaysResult.error);
+        throw essaysResult.error;
       }
       
-      // 一次性獲取所有班級的學生數
-      const assignmentClassIds = [...new Set(assignments.map(a => a.class_id))];
-      const { data: classMemberData } = await this.supabase
-        .from('class_members')
-        .select('class_id')
-        .in('class_id', assignmentClassIds);
+      const allEssays = essaysResult.data;
+      const classMemberData = classMemberResult.data;
       
       // 在內存中分組和聚合
       this.assignmentsWithSubmissions = assignments.map(assignment => {
@@ -121,7 +164,7 @@ class GradingQueue {
         };
       });
       
-      console.timeEnd('⏱️ 載入批改隊列');
+      // console.timeEnd('⏱️ 載入批改隊列'); // 已優化為並行查詢
       
       // 計算總待批改數
       this.totalPending = this.assignmentsWithSubmissions

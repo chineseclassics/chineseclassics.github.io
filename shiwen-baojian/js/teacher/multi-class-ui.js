@@ -55,6 +55,40 @@ class MultiClassUI {
         return;
       }
 
+      // 🚨 優化：顯示骨架屏，改善用戶體驗
+      this.container.innerHTML = `
+        <div class="multi-class-dashboard">
+          <div class="class-switcher">
+            <div class="switcher-header">
+              <h3><i class="fas fa-graduation-cap"></i> 班級管理</h3>
+              <div class="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            </div>
+            
+            <div class="class-tabs">
+              <div class="class-tab animate-pulse">
+                <div class="h-6 bg-gray-200 rounded w-24 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded w-16"></div>
+              </div>
+              <div class="class-tab animate-pulse">
+                <div class="h-6 bg-gray-200 rounded w-24 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded w-16"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="class-details">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+              <div class="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+              <div class="space-y-3">
+                <div class="h-4 bg-gray-200 rounded w-full"></div>
+                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
       const classes = this.multiClassManager.getAllClasses();
       console.log('📚 班級數量:', classes.length);
 
