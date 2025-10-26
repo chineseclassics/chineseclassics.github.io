@@ -822,8 +822,8 @@ class AnnotationManager {
     
     // 對於輸入框
     if (annotation.classList && annotation.classList.contains('floating-annotation-input')) {
-      if (this.selectedText?.range) {
-        const rect = this.selectedText.range.getBoundingClientRect();
+      const rect = this.selectedText?.range?.getBoundingClientRect();
+      if (rect) {
         const viewerRect = essayViewer.getBoundingClientRect();
         const wrapper = document.querySelector('.grading-content-wrapper');
         const scrollTop = wrapper ? wrapper.scrollTop : window.pageYOffset;
@@ -855,8 +855,8 @@ class AnnotationManager {
     
     // 按 highlight_start 排序
     const sortedAnnotations = allAnnotations.sort((a, b) => {
-      if (a === activeElement) return 0;
-      if (b === activeElement) return 0;
+      if (a === activeElement) return -1;
+      if (b === activeElement) return 1;
       
       const aId = a.dataset.annotationId;
       const bId = b.dataset.annotationId;
@@ -1110,6 +1110,9 @@ class AnnotationManager {
     const floatingAnnotation = document.createElement('div');
     floatingAnnotation.className = `floating-annotation${isOrphan ? ' orphan' : ''}`;
     floatingAnnotation.dataset.annotationId = annotationId;
+    if (annotation.paragraph_id) {
+      floatingAnnotation.dataset.paragraphId = annotation.paragraph_id;
+    }
     floatingAnnotation.dataset.paragraphId = annotation.paragraph_id || '';
 
     // 批注內容
