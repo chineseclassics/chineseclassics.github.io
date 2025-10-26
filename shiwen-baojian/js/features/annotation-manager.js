@@ -655,7 +655,7 @@ class AnnotationManager {
   /**
    * 顯示批注對話框
    */
-  async showAnnotationDialog(defaultContent = '') {
+  async showAnnotationDialog(defaultContent = '', options = {}) {
     console.log('💬 顯示批注對話框:', defaultContent);
     
     return new Promise((resolve) => {
@@ -667,6 +667,7 @@ class AnnotationManager {
         return;
       }
 
+      const { annotation } = options || {};
       // 創建浮動輸入框
       const inputBox = document.createElement('div');
       inputBox.className = 'floating-annotation-input';
@@ -690,25 +691,48 @@ class AnnotationManager {
       // 直接添加到滾動容器
       wrapper.appendChild(inputBox);
 
-    const selectionRect = this.getSelectionRect();
-    const wrapperRect = wrapper.getBoundingClientRect();
-    const offsetTop = selectionRect
-      ? selectionRect.top - wrapperRect.top + wrapper.scrollTop - 20
-      : wrapper.scrollTop + 20;
-    inputBox.style.top = Math.max(0, offsetTop) + 'px';
-    if (this.selectedText?.paragraphId) {
-      inputBox.dataset.paragraphId = this.selectedText.paragraphId;
-    }
-    if (this.selectedText?.startOffset !== undefined) {
-      inputBox.dataset.startOffset = String(this.selectedText.startOffset);
-    }
-    inputBox.dataset.sortToken = `input-${Date.now()}`;
+      const selectionRect = annotation ? null : this.getSelectionRect();
+      const floatingAnchor = annotation
+        ? document.querySelector(`.floating-annotation[data-annotation-id="${annotation.id}"]`)
+        : null;
+      const highlightAnchor = annotation
+        ? document.querySelector(`.annotation-highlight[data-annotation-id="${annotation.id}"]`)
+        : null;
+      const anchorRect = floatingAnchor?.getBoundingClientRect() || highlightAnchor?.getBoundingClientRect() || null;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      let offsetTop;
+      if (anchorRect) {
+        offsetTop = anchorRect.top - wrapperRect.top + wrapper.scrollTop;
+      } else if (selectionRect) {
+        offsetTop = selectionRect.top - wrapperRect.top + wrapper.scrollTop - 20;
+      } else {
+        offsetTop = wrapper.scrollTop + 20;
+      }
+      inputBox.style.top = Math.max(0, offsetTop) + 'px';
+      if (annotation?.id) {
+        inputBox.dataset.annotationId = annotation.id;
+      }
+      if (annotation?.paragraph_id) {
+        inputBox.dataset.paragraphId = annotation.paragraph_id;
+      } else if (this.selectedText?.paragraphId) {
+        inputBox.dataset.paragraphId = this.selectedText.paragraphId;
+      }
+      if (typeof annotation?.highlight_start === 'number') {
+        inputBox.dataset.startOffset = String(annotation.highlight_start);
+      } else if (this.selectedText?.startOffset !== undefined) {
+        inputBox.dataset.startOffset = String(this.selectedText.startOffset);
+      }
+      inputBox.dataset.sortToken = annotation?.created_at || annotation?.updated_at || `input-${Date.now()}`;
 
       // 調整所有批註位置
       this.adjustAnnotationsForActive(inputBox);
 
       // 滾動到原文位置
-      this.scrollToHighlight();
+      if (annotation?.id) {
+        this.scrollToAnnotationHighlight(annotation.id);
+      } else {
+        this.scrollToHighlight();
+      }
       
       // 綁定事件
       const cancelBtn = inputBox.querySelector('.cancel');
@@ -1588,7 +1612,7 @@ class AnnotationManager {
     const annotation = this.annotations.get(annotationId);
     if (!annotation) return;
     
-    const newContent = await this.showAnnotationDialog(annotation.content);
+    const newContent = await this.showAnnotationDialog(annotation.content, { annotation });
     if (!newContent || newContent === annotation.content) return;
     
     try {
@@ -1934,14 +1958,43 @@ class AnnotationManager {
     this.disableSelectionMode();
     this.hideAnnotationButton();
     this.hideSelectionHint();
+    this.removeSelectionPreview();
     
     // 清理連接線
     this.clearConnectionLines();
+
+    // 移除浮動批註與高亮
+    document.querySelectorAll('.floating-annotation, .floating-annotation-input, .annotation-highlight').forEach(node => node.remove());
     
     // 移除事件監聽器
     document.removeEventListener('mouseup', this.boundHandleTextSelection);
     document.removeEventListener('keyup', this.boundHandleTextSelection);
     document.removeEventListener('click', this.boundHandleAnnotationClick);
+
+    // 移除 Realtime 頻道
+    if (Array.isArray(this.realtimeChannels)) {
+      this.realtimeChannels.forEach(channel => {
+        if (channel) {
+          try {
+            this.supabase.removeChannel(channel);
+          } catch (error) {
+            console.log('⚠️ 無法移除 Realtime 頻道:', error);
+          }
+        }
+      });
+    }
+    this.realtimeChannels = [];
+
+    // 重置內部狀態
+    this.annotations.clear();
+    this.annotationsByParagraph.clear();
+    this.paragraphElements.clear();
+    this.paragraphIndex.clear();
+    this.paragraphIds = [];
+    this.selectedText = null;
+    this.currentEssayId = null;
+    this.currentParagraphId = null;
+    this.isInitialized = false;
   }
 }
 
