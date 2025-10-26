@@ -160,7 +160,7 @@ class AnnotationManager {
     const dataset = element.dataset || {};
     let paragraphId = dataset.paragraphId || null;
     let start = Number.POSITIVE_INFINITY;
-    let sortToken = dataset.sortToken || '';
+    let sortKeyToken = dataset.sortToken || '';
 
     if (dataset.annotationId) {
       const data = this.annotations.get(dataset.annotationId);
@@ -169,7 +169,7 @@ class AnnotationManager {
         if (data.highlight_start !== undefined && data.highlight_start !== null) {
           start = data.highlight_start;
         }
-        sortToken = sortToken || data.created_at || '';
+        sortKeyToken = sortKeyToken || data.created_at || '';
       }
     }
 
@@ -191,7 +191,8 @@ class AnnotationManager {
       start = 0;
     }
 
-    return { paragraphId, paragraphIndex, start, sortToken };
+    const normalizedToken = String(sortKeyToken || '');
+    return { paragraphId, paragraphIndex, start, sortToken: normalizedToken };
   }
 
   getAnnotationSortKeyFromData(annotation) {
@@ -200,7 +201,7 @@ class AnnotationManager {
       ? this.paragraphIndex.get(paragraphId)
       : Number.POSITIVE_INFINITY;
     const start = annotation?.highlight_start ?? Number.POSITIVE_INFINITY;
-    const sortToken = annotation?.created_at || '';
+    const sortToken = String(annotation?.created_at || '');
     return { paragraphId, paragraphIndex, start, sortToken };
   }
 
@@ -908,14 +909,16 @@ class AnnotationManager {
    * 調整批註位置，確保活動批註對齊原文，其他批註智能避讓
    */
   adjustAnnotationsForActive(activeElement) {
+    if (!activeElement) return;
+
     this.refreshParagraphElements();
     const allAnnotations = Array.from(
       document.querySelectorAll('.floating-annotation, .floating-annotation-input')
     );
 
-    const sortedAnnotations = [...allAnnotations].sort((a, b) => {
-      if (a === activeElement) return -1;
-      if (b === activeElement) return 1;
+    if (allAnnotations.length === 0) return;
+
+    const comparator = (a, b) => {
       const aKey = this.getAnnotationSortKey(a);
       const bKey = this.getAnnotationSortKey(b);
       if (aKey.paragraphIndex !== bKey.paragraphIndex) {
@@ -924,47 +927,52 @@ class AnnotationManager {
       if (aKey.start !== bKey.start) {
         return aKey.start - bKey.start;
       }
-      return aKey.sortToken.localeCompare(bKey.sortToken);
-    });
-    
-    // 找到活動批註的索引
+      const aToken = String(aKey.sortToken || '');
+      const bToken = String(bKey.sortToken || '');
+      return aToken.localeCompare(bToken);
+    };
+
+    const sortedAnnotations = [...allAnnotations].sort(comparator);
     const activeIndex = sortedAnnotations.indexOf(activeElement);
-    const activeIdealTop = this.getIdealTop(activeElement);
-    activeElement.style.top = activeIdealTop + 'px';
-    const activeBottom = activeIdealTop + (activeElement.offsetHeight || 100);
-    
-    // 調整上方的批註（向上避讓）
-    let currentBottom = activeIdealTop;
+
+    if (activeIndex === -1) {
+      this.adjustAllAnnotations();
+      return;
+    }
+
+    const gap = 12;
+    const metadata = sortedAnnotations.map(element => ({
+      element,
+      idealTop: this.getIdealTop(element),
+      height: element.offsetHeight || 100
+    }));
+
+    const activeMeta = metadata[activeIndex];
+    const positions = new Map();
+
+    const activeTop = activeMeta.idealTop;
+    positions.set(activeMeta.element, activeTop);
+
+    let runningBottom = activeTop + activeMeta.height;
+    for (let i = activeIndex + 1; i < metadata.length; i++) {
+      const { element, idealTop, height } = metadata[i];
+      const desiredTop = Math.max(idealTop, runningBottom + gap);
+      positions.set(element, desiredTop);
+      runningBottom = desiredTop + height;
+    }
+
+    let runningTop = activeTop;
     for (let i = activeIndex - 1; i >= 0; i--) {
-      const ann = sortedAnnotations[i];
-      const annHeight = ann.offsetHeight || 100;
-      const annIdealTop = this.getIdealTop(ann);
-      
-      // 如果理想位置會重疊，向上移動
-      if (annIdealTop + annHeight + 12 > currentBottom) {
-        ann.style.top = Math.max(0, currentBottom - annHeight - 12) + 'px';
-        currentBottom = Math.max(0, currentBottom - annHeight - 12);
-      } else {
-        ann.style.top = annIdealTop + 'px';
-        currentBottom = annIdealTop;
-      }
+      const { element, idealTop, height } = metadata[i];
+      const desiredTop = Math.min(idealTop, runningTop - gap - height);
+      const clampedTop = Math.max(0, desiredTop);
+      positions.set(element, clampedTop);
+      runningTop = clampedTop;
     }
-    
-    // 調整下方的批註（向下避讓）
-    let currentTop = activeBottom;
-    for (let i = activeIndex + 1; i < sortedAnnotations.length; i++) {
-      const ann = sortedAnnotations[i];
-      const annIdealTop = this.getIdealTop(ann);
-      
-      // 如果理想位置會重疊，向下移動
-      if (annIdealTop < currentTop + 12) {
-        ann.style.top = (currentTop + 12) + 'px';
-        currentTop = currentTop + 12 + (ann.offsetHeight || 100);
-      } else {
-        ann.style.top = annIdealTop + 'px';
-        currentTop = annIdealTop + (ann.offsetHeight || 100);
-      }
-    }
+
+    positions.forEach((topValue, element) => {
+      element.style.top = `${topValue}px`;
+    });
   }
 
   /**
@@ -988,14 +996,17 @@ class AnnotationManager {
       if (aKey.start !== bKey.start) {
         return aKey.start - bKey.start;
       }
-      return aKey.sortToken.localeCompare(bKey.sortToken);
+      const aToken = String(aKey.sortToken || '');
+      const bToken = String(bKey.sortToken || '');
+      return aToken.localeCompare(bToken);
     });
     
     // 從上到下依次放置，避免重疊
+    const gap = 12;
     let lastBottom = 0;
     sortedAnnotations.forEach(ann => {
       const idealTop = this.getIdealTop(ann);
-      const actualTop = Math.max(idealTop, lastBottom + 12);
+      const actualTop = Math.max(idealTop, lastBottom + gap);
       ann.style.top = actualTop + 'px';
       lastBottom = actualTop + (ann.offsetHeight || 100);
     });
