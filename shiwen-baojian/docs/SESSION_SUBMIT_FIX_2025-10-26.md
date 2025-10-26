@@ -363,3 +363,120 @@ ORDER BY created_at DESC;
 - 教師端批注創建功能
 - 段落 ID 識別功能
 - 批注與段落關聯功能
+
+---
+
+## 批注定位系統優化
+
+### 問題描述
+
+批注創建後定位錯誤的問題雖有段落級全域偏移改善，但仍存在以下問題：
+- 僅依賴字符偏移，學生修改內容後定位失效
+- 缺少文本錨定機製
+- 無法處理孤立批注
+
+### 實施方案 A：文本錨定機制
+
+**實施日期**: 2025-10-26
+
+#### 1. 創建批注時保存錨定文本
+
+**文件**: `shiwen-baojian/js/features/annotation-manager.js` (330行)
+
+```javascript
+const { data, error } = await this.supabase.rpc('create_annotation', {
+  p_paragraph_id: this.currentParagraphId,
+  p_content: content,
+  p_highlight_start: paraStart,
+  p_highlight_end: paraEnd,
+  p_anchor_text: this.selectedText.text, // ✅ 新增：保存選中文字
+  // ...
+});
+```
+
+**改進**：
+- 同時保存字符偏移和錨定文本
+- 即使學生修改內容，也能通過文本搜索重新定位
+
+#### 2. 加載時優先使用錨定文本定位
+
+**文件**: `shiwen-baojian/js/features/annotation-manager.js` (1095-1140行)
+
+```javascript
+// 策略 1：優先使用錨定文本定位
+if (annotation.anchor_text && !annotation.is_orphaned) {
+  const found = this.findTextByAnchor(paragraphElement, annotation.anchor_text);
+  if (found) {
+    this.highlightWithRange(annotationId, found);
+    return;
+  }
+}
+
+// 策略 2：回退到偏移定位
+// ...
+```
+
+**新增函數**：
+- `findTextByAnchor()`: 使用文本搜索在段落中查找位置
+- `highlightWithRange()`: 統一的高亮方法
+
+**改進**：
+- 雙重保險：優先文本錨定，回退到偏移定位
+- 更強的容錯能力
+
+#### 3. 孤立批注的視覺提示
+
+**文件**: `shiwen-baojian/js/features/annotation-manager.js` (1330-1340行)
+
+```javascript
+const orphanedWarning = annotation.is_orphaned 
+  ? '<div class="annotation-orphaned-warning">⚠️ 此批注可能無法定位原文</div>' 
+  : '';
+```
+
+**改進**：
+- 當學生完全刪除被批注的文字時，顯示警告
+- 教師可以選擇刪除或保留該批注
+
+### 技術優勢
+
+1. **容錯性**：即使文本被修改，仍能嘗試定位
+2. **兼容性**：完全向後兼容現有批注
+3. **自動化**：數據庫觸發器自動處理文本變更
+4. **用戶體驗**：教師可以看到哪些批注無法定位
+
+### 數據庫支持
+
+系統已具備完整的數據庫支持：
+- `anchor_text` 字段：存儲錨定文本
+- `is_orphaned` 字段：標記孤立批注
+- `reposition_annotation()` RPC：重新定位批注
+- 觸發器：自動處理段落內容變更
+
+### 測試建議
+
+1. **創建新批注**
+   - 教師選擇文字並創建批注
+   - 確認 `anchor_text` 被正確保存
+
+2. **修改內容測試**
+   - 學生修改被批注的文字
+   - 確認批注仍能正確顯示
+
+3. **刪除文字測試**
+   - 學生刪除被批注的文字
+   - 確認批注顯示孤立警告
+
+4. **混合測試**
+   - 同一段落多個批注
+   - 確認都能正確定位
+
+### 性能考慮
+
+- 文本搜索使用 `indexOf()`，性能良好
+- 備用偏移定位提供快速回退
+- 不需要額外的數據庫查詢
+
+### 完成時間
+
+2025-10-26

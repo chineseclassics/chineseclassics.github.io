@@ -337,6 +337,7 @@ class AnnotationManager {
         // 儲存為「段落內全域偏移」；若計算失敗回退到原本（較不準確）的偏移
         p_highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
         p_highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
+        p_anchor_text: this.selectedText.text, // 保存選中的文字作為錨定文本
         p_annotation_type: 'comment',
         p_priority: 'normal',
         p_is_private: false
@@ -351,6 +352,7 @@ class AnnotationManager {
         content: content,
         highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
         highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
+        anchor_text: this.selectedText.text, // 保存錨定文本
         annotation_type: 'comment',
         priority: 'normal',
         is_private: false,
@@ -896,7 +898,11 @@ class AnnotationManager {
 
     // 找到對應的高亮元素
     const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (!highlight) {
+    
+    // 如果批注是孤立的（找不到對應的文本），顯示警告標記
+    if (!highlight && annotation.is_orphaned) {
+      console.log('⚠️ 批注是孤立的，無法定位原文');
+    } else if (!highlight) {
       console.log('❌ 找不到對應的高亮元素');
       return;
     }
@@ -907,12 +913,17 @@ class AnnotationManager {
     floatingAnnotation.dataset.annotationId = annotationId;
 
     // 批注內容
+    const orphanedWarning = annotation.is_orphaned 
+      ? '<div class="annotation-orphaned-warning"><i class="fas fa-exclamation-triangle"></i> 此批注可能無法定位原文</div>' 
+      : '';
+    
     floatingAnnotation.innerHTML = `
       <div class="annotation-header">
         <div class="annotation-avatar">${this.getUserInitials()}</div>
         <div class="annotation-author">${this.getCurrentUserName()}</div>
         <div class="annotation-time">${this.formatTime(annotation.created_at)}</div>
       </div>
+      ${orphanedWarning}
       <div class="annotation-content">${annotation.content}</div>
       <div class="annotation-actions">
         <button class="annotation-action-btn edit" data-annotation-id="${annotationId}">編輯</button>
@@ -1071,13 +1082,27 @@ class AnnotationManager {
       return;
     }
 
+    // 策略 1：優先使用錨定文本定位（如果可用且批注未被標記為孤立）
+    if (annotation.anchor_text && !annotation.is_orphaned) {
+      console.log('🔍 使用錨定文本定位:', annotation.anchor_text);
+      const found = this.findTextByAnchor(paragraphElement, annotation.anchor_text);
+      if (found) {
+        console.log('✅ 使用錨定文本成功定位');
+        this.highlightWithRange(annotationId, found);
+        return;
+      } else {
+        console.log('⚠️ 錨定文本未找到，回退到偏移定位');
+      }
+    }
+
     const textNodes = this.getTextNodes(paragraphElement);
     if (!textNodes.length) {
       console.log('⚠️ 段落內無文本節點');
       return;
     }
 
-    // 準備將段落全域偏移映射回具體節點與偏移
+    // 策略 2：回退到使用段落全域偏移定位
+    console.log('🔍 使用偏移定位:', annotation.highlight_start, annotation.highlight_end);
     const totalLength = textNodes.reduce((sum, n) => sum + n.textContent.length, 0);
     const startIndex = Math.max(0, Math.min(annotation.highlight_start || 0, totalLength));
     const endIndex = Math.max(0, Math.min(annotation.highlight_end || startIndex, totalLength));
@@ -1104,7 +1129,81 @@ class AnnotationManager {
       range.setStart(startPos.node, startPos.offset);
       range.setEnd(endPos.node, endPos.offset);
 
-      // 以 extractContents + insertNode 的方式包裹，支援跨節點
+      // 使用統一的 highlightWithRange 方法
+      this.highlightWithRange(annotationId, range);
+      console.log('✅ 使用偏移定位高亮成功');
+    } catch (err) {
+      console.log('⚠️ 跨節點高亮失敗，使用備用方案:', err);
+      this.addFallbackMarker(annotationId, annotation);
+    }
+  }
+
+  /**
+   * 使用錨定文本在段落中查找文本位置
+   * @param {HTMLElement} paragraphElement - 段落元素
+   * @param {string} anchorText - 要查找的錨定文本
+   * @returns {Range|null} 找到的文本範圍，如果沒找到返回 null
+   */
+  findTextByAnchor(paragraphElement, anchorText) {
+    if (!paragraphElement || !anchorText) return null;
+    
+    const textNodes = this.getTextNodes(paragraphElement);
+    if (!textNodes.length) return null;
+    
+    // 將所有文本節點組合成完整文本
+    const fullText = textNodes.map(n => n.textContent).join('');
+    
+    // 在完整文本中搜索錨定文本
+    const searchIndex = fullText.indexOf(anchorText);
+    if (searchIndex === -1) {
+      console.log('⚠️ 錨定文本未在段落中找到:', anchorText);
+      return null;
+    }
+    
+    // 找到的起始和結束位置
+    const startPos = searchIndex;
+    const endPos = searchIndex + anchorText.length;
+    
+    // 將全局位置映射回具體的節點和偏移
+    const locate = (charIndex) => {
+      let acc = 0;
+      for (let i = 0; i < textNodes.length; i++) {
+        const len = textNodes[i].textContent.length;
+        if (acc + len >= charIndex) {
+          return { node: textNodes[i], offset: charIndex - acc };
+        }
+        acc += len;
+      }
+      const last = textNodes[textNodes.length - 1];
+      return { node: last, offset: last.textContent.length };
+    };
+    
+    const startNode = locate(startPos);
+    const endNode = locate(endPos);
+    
+    try {
+      const range = document.createRange();
+      range.setStart(startNode.node, startNode.offset);
+      range.setEnd(endNode.node, endNode.offset);
+      return range;
+    } catch (err) {
+      console.log('⚠️ 創建 Range 失敗:', err);
+      return null;
+    }
+  }
+
+  /**
+   * 使用 Range 高亮文本
+   * @param {string} annotationId - 批注 ID
+   * @param {Range} range - 文本範圍
+   */
+  highlightWithRange(annotationId, range) {
+    if (!range) {
+      console.log('⚠️ 無效的 Range');
+      return;
+    }
+    
+    try {
       const highlight = document.createElement('span');
       highlight.className = 'annotation-highlight';
       highlight.dataset.annotationId = annotationId;
@@ -1134,10 +1233,9 @@ class AnnotationManager {
         highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
       });
 
-      console.log('✅ 文本高亮已添加 (段落內)');
+      console.log('✅ 使用錨定文本高亮成功');
     } catch (err) {
-      console.log('⚠️ 跨節點高亮失敗，使用備用方案:', err);
-      this.addFallbackMarker(annotationId, annotation);
+      console.log('⚠️ 高亮失敗:', err);
     }
   }
 
