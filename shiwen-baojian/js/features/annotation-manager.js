@@ -14,6 +14,9 @@ class AnnotationManager {
     this.isSelectionMode = false;
     this.currentEssayId = null;
     this.currentParagraphId = null;
+    this.paragraphIds = [];
+    this.paragraphElements = new Map();
+    this.realtimeChannels = [];
     
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
@@ -51,7 +54,7 @@ class AnnotationManager {
   /**
    * 初始化批注系統
    */
-  async init(essayId, paragraphId) {
+  async init(essayId, paragraphInfo) {
     // 防止重複初始化
     if (this.isInitialized) {
       console.log('ℹ️ 批注系統已初始化，跳過重複初始化');
@@ -59,12 +62,23 @@ class AnnotationManager {
     }
     
     console.log('🚀 初始化批注系統:', { essayId, paragraphId });
-    
     this.currentEssayId = essayId;
-    this.currentParagraphId = paragraphId;
+    this.paragraphIds = Array.isArray(paragraphInfo)
+      ? paragraphInfo.filter(p => p && p.id).map(p => p.id)
+      : paragraphInfo
+        ? [typeof paragraphInfo === 'string' ? paragraphInfo : paragraphInfo.id]
+        : [];
+    this.paragraphIds = Array.from(new Set(this.paragraphIds.filter(Boolean)));
+    if (this.paragraphIds.length === 0) {
+      this.refreshParagraphElements();
+      this.paragraphIds = Array.from(this.paragraphElements.keys());
+    }
+    this.currentParagraphId = this.paragraphIds[0] || null;
+    
+    this.refreshParagraphElements();
     
     // 加載現有批注
-    await this.loadAnnotations();
+    await this.loadAllAnnotations();
     
     // 啟用文本選擇模式
     this.enableSelectionMode();
@@ -74,6 +88,36 @@ class AnnotationManager {
     
     this.isInitialized = true;
     console.log('✅ 批注系統初始化完成');
+  }
+
+  /**
+   * 重新整理段落元素映射
+   */
+  refreshParagraphElements() {
+    this.paragraphElements.clear();
+    const nodes = document.querySelectorAll('#essayViewer [data-paragraph-id]');
+    nodes.forEach(node => {
+      const paragraphId = node.dataset.paragraphId;
+      if (paragraphId) {
+        this.paragraphElements.set(paragraphId, node);
+      }
+    });
+  }
+
+  /**
+   * 取得段落元素
+   */
+  getParagraphElement(paragraphId) {
+    if (!paragraphId) return null;
+    if (this.paragraphElements.has(paragraphId)) {
+      return this.paragraphElements.get(paragraphId);
+    }
+    const node = document.querySelector(`#essayViewer [data-paragraph-id="${paragraphId}"]`);
+    if (node) {
+      this.paragraphElements.set(paragraphId, node);
+      return node;
+    }
+    return null;
   }
 
   /**
@@ -160,13 +204,33 @@ class AnnotationManager {
       return;
     }
 
-    const root = this.getAnnotationRoot();
-    if (!root || !root.contains(range.startContainer) || !root.contains(range.endContainer)) {
+    const startElement = (range.startContainer.nodeType === Node.ELEMENT_NODE
+      ? range.startContainer
+      : range.startContainer.parentElement);
+    const endElement = (range.endContainer.nodeType === Node.ELEMENT_NODE
+      ? range.endContainer
+      : range.endContainer.parentElement);
+
+    const paragraphElement = startElement?.closest?.('[data-paragraph-id]');
+    const endParagraphElement = endElement?.closest?.('[data-paragraph-id]');
+
+    if (!paragraphElement || !endParagraphElement || paragraphElement !== endParagraphElement) {
       this.hideAnnotationButton();
       return;
     }
 
-    const offsets = this.calculateOffsets(range, root);
+    const paragraphId = paragraphElement.dataset.paragraphId;
+    if (!paragraphId) {
+      this.hideAnnotationButton();
+      return;
+    }
+
+    this.currentParagraphId = paragraphId;
+    if (!this.paragraphIds.includes(paragraphId)) {
+      this.paragraphIds.push(paragraphId);
+    }
+
+    const offsets = this.calculateOffsets(range, paragraphElement);
     if (!offsets || offsets.end <= offsets.start) {
       this.hideAnnotationButton();
       return;
@@ -181,8 +245,11 @@ class AnnotationManager {
     this.selectedText = {
       text: selectedText,
       range,
+      paragraphId,
+      paragraphElement,
       startOffset: offsets.start,
-      endOffset: offsets.end
+      endOffset: offsets.end,
+      offsets
     };
     
     console.log('✅ 文本選擇完成，顯示批注按鈕');
@@ -214,9 +281,19 @@ class AnnotationManager {
       font-size: 12px;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      left: ${event.pageX + 10}px;
-      top: ${event.pageY - 40}px;
     `;
+
+    const selectionRect = this.selectedText?.range?.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const fallbackLeft = event?.pageX ? event.pageX + 10 : 0;
+    const fallbackTop = event?.pageY ? event.pageY - 40 : 0;
+
+    const positionLeft = selectionRect ? selectionRect.right + scrollX + 10 : fallbackLeft;
+    const positionTop = selectionRect ? selectionRect.top + scrollY - 40 : fallbackTop;
+
+    button.style.left = `${Math.max(0, positionLeft)}px`;
+    button.style.top = `${Math.max(0, positionTop)}px`;
     
     button.addEventListener('click', (e) => {
       console.log('🖱️ 批注按鈕被點擊');
@@ -266,6 +343,10 @@ class AnnotationManager {
       // 創建高亮元素
       const highlight = document.createElement('span');
       highlight.className = 'annotation-highlight';
+      if (this.selectedText?.paragraphId) {
+        highlight.dataset.paragraphId = this.selectedText.paragraphId;
+      }
+      highlight.dataset.tempAnnotation = 'true';
       highlight.style.cssText = `
         background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
         border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
@@ -290,7 +371,13 @@ class AnnotationManager {
   /**
    * 取得批注對應的根容器（此處為論文呈現區塊）
    */
-  getAnnotationRoot() {
+  getAnnotationRoot(paragraphId = null) {
+    if (paragraphId) {
+      const paragraphElement = this.getParagraphElement(paragraphId);
+      if (paragraphElement) {
+        return paragraphElement;
+      }
+    }
     return document.getElementById('essayViewer');
   }
 
@@ -313,6 +400,28 @@ class AnnotationManager {
       };
     } catch (error) {
       console.log('⚠️ 無法計算選取偏移量:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 建立錨定上下文
+   */
+  buildAnchorContext(range, root, offsets) {
+    if (!root || !offsets) return null;
+    try {
+      const textContent = root.textContent || '';
+      const before = textContent.slice(Math.max(0, offsets.start - 50), offsets.start);
+      const after = textContent.slice(offsets.end, Math.min(textContent.length, offsets.end + 50));
+      return {
+        before,
+        after,
+        paragraph_id: root.dataset?.paragraphId || null,
+        start_offset: offsets.start,
+        end_offset: offsets.end
+      };
+    } catch (error) {
+      console.log('⚠️ 建立錨定上下文失敗:', error);
       return null;
     }
   }
@@ -364,6 +473,23 @@ class AnnotationManager {
       console.log('❌ 沒有選擇的文本');
       return;
     }
+
+    if (!this.selectedText.paragraphId) {
+      console.log('❌ 無法識別段落，取消批注');
+      if (toast?.error) {
+        toast.error('找不到對應段落，無法添加批註');
+      }
+      return;
+    }
+
+    const currentUser = this.getCurrentUser();
+    if (!currentUser?.id) {
+      console.log('❌ 無法取得當前用戶資訊');
+      if (toast?.error) {
+        toast.error('未能識別當前教師，請重新登入後重試');
+      }
+      return;
+    }
     
     // 隱藏批注按鈕
     this.hideAnnotationButton();
@@ -381,45 +507,58 @@ class AnnotationManager {
     console.log('✅ 批注內容:', content);
     
     try {
-      // 調用 RPC 函數創建批注
-      const { data, error } = await this.supabase.rpc('create_annotation', {
-        p_paragraph_id: this.currentParagraphId,
-        p_content: content,
-        p_highlight_start: this.selectedText.startOffset,
-        p_highlight_end: this.selectedText.endOffset,
-        p_annotation_type: 'comment',
-        p_priority: 'normal',
-        p_is_private: false
-      });
+      const anchorContext = this.buildAnchorContext(
+        this.selectedText.range,
+        this.selectedText.paragraphElement,
+        this.selectedText.offsets
+      );
+
+      const insertPayload = {
+        paragraph_id: this.selectedText.paragraphId,
+        teacher_id: currentUser.id,
+        content,
+        annotation_type: 'comment',
+        highlight_start: this.selectedText.startOffset,
+        highlight_end: this.selectedText.endOffset,
+        anchor_text: this.selectedText.text,
+        anchor_context: anchorContext
+      };
+
+      const { data, error } = await this.supabase
+        .from('annotations')
+        .insert(insertPayload)
+        .select('*, teacher:users!annotations_teacher_id_fkey(display_name, email)')
+        .single();
       
       if (error) throw error;
 
-      const annotationId = typeof data === 'object' ? data?.id : data;
+      const annotationRecord = data;
+      const annotationId = annotationRecord.id;
       if (!annotationId) {
         throw new Error('無法取得新批注的識別碼');
       }
-
-      const annotationRecord = typeof data === 'object' && data?.id ? data : {
-        id: annotationId,
-        paragraph_id: this.currentParagraphId,
-        content,
-        highlight_start: this.selectedText.startOffset,
-        highlight_end: this.selectedText.endOffset,
-        annotation_type: 'comment',
-        priority: 'normal',
-        is_private: false,
-        created_at: new Date().toISOString()
-      };
       
       // 添加批注到本地存儲
       this.annotations.set(annotationId, annotationRecord);
       
       // 渲染批注
       this.renderAnnotation(annotationId);
+      this.updateAnnotationCount();
       
       // 清除選擇和臨時高亮引用
       window.getSelection().removeAllRanges();
       this.selectedText = null;
+      if (this.tempHighlight && this.tempHighlight.parentNode) {
+        try {
+          const parent = this.tempHighlight.parentNode;
+          while (this.tempHighlight.firstChild) {
+            parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
+          }
+          parent.removeChild(this.tempHighlight);
+        } catch (cleanupError) {
+          console.log('⚠️ 清理臨時高亮失敗:', cleanupError);
+        }
+      }
       this.tempHighlight = null; // 清除臨時高亮引用，因為已成為永久批註
       this.hideAnnotationButton();
       
@@ -582,6 +721,66 @@ class AnnotationManager {
   }
 
   /**
+   * 取得批註作者資訊（姓名與首字母）
+   */
+  getAnnotationAuthorInfo(annotation) {
+    const teacherProfile = annotation?.teacher;
+    if (teacherProfile?.display_name) {
+      const name = teacherProfile.display_name;
+      return {
+        name,
+        initials: this.computeInitials(name)
+      };
+    }
+
+    const currentUser = this.getCurrentUser();
+    if (annotation?.teacher_id && currentUser?.id === annotation.teacher_id) {
+      const name = this.getCurrentUserName();
+      return {
+        name,
+        initials: this.computeInitials(name)
+      };
+    }
+
+    if (teacherProfile?.email) {
+      const emailName = teacherProfile.email.split('@')[0];
+      return {
+        name: emailName,
+        initials: this.computeInitials(emailName)
+      };
+    }
+
+    const fallbackName = '老師';
+    return {
+      name: fallbackName,
+      initials: this.computeInitials(fallbackName)
+    };
+  }
+
+  /**
+   * 根據名字計算首字母
+   */
+  computeInitials(name) {
+    if (!name) return 'T';
+    const trimmed = String(name).trim();
+    if (!trimmed) return 'T';
+    return trimmed.charAt(0).toUpperCase();
+  }
+
+  /**
+   * 簡易轉義 HTML 字符
+   */
+  escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  /**
    * 渲染批注（統一入口）
    */
   renderAnnotation(annotationId) {
@@ -590,6 +789,8 @@ class AnnotationManager {
       console.log('❌ 批注不存在:', annotationId);
       return;
     }
+
+    this.refreshParagraphElements();
     
     console.log('🎨 渲染批注:', annotation);
     
@@ -887,19 +1088,30 @@ class AnnotationManager {
       return;
     }
     
+    const authorInfo = this.getAnnotationAuthorInfo(annotation);
+    const authorName = this.escapeHtml(authorInfo.name);
+    const authorInitials = this.escapeHtml(authorInfo.initials);
+    const safeContent = this.escapeHtml(annotation.content).replace(/\n/g, '<br>');
+    const isOrphan = !!annotation.is_orphaned;
+
     // 創建浮動批注容器
     const floatingAnnotation = document.createElement('div');
-    floatingAnnotation.className = 'floating-annotation';
+    floatingAnnotation.className = `floating-annotation${isOrphan ? ' orphan' : ''}`;
     floatingAnnotation.dataset.annotationId = annotationId;
 
     // 批注內容
     floatingAnnotation.innerHTML = `
       <div class="annotation-header">
-        <div class="annotation-avatar">${this.getUserInitials()}</div>
-        <div class="annotation-author">${this.getCurrentUserName()}</div>
+        <div class="annotation-avatar">${authorInitials}</div>
+        <div class="annotation-author">${authorName}</div>
         <div class="annotation-time">${this.formatTime(annotation.created_at)}</div>
       </div>
-      <div class="annotation-content">${annotation.content}</div>
+      <div class="annotation-content">${safeContent}</div>
+      ${isOrphan ? `
+        <div class="annotation-status orphan">
+          <i class="fas fa-circle-notch mr-1"></i>原文已修改
+        </div>
+      ` : ''}
       <div class="annotation-actions">
         <button class="annotation-action-btn edit" data-annotation-id="${annotationId}">編輯</button>
         <button class="annotation-action-btn delete" data-annotation-id="${annotationId}">刪除</button>
@@ -1047,36 +1259,47 @@ class AnnotationManager {
    * 在論文中高亮文本
    */
   highlightTextInEssay(annotationId, annotation) {
-    const essayViewer = this.getAnnotationRoot();
-    if (!essayViewer) {
-      console.log('❌ 找不到論文內容區域');
+    const paragraphElement = this.getAnnotationRoot(annotation.paragraph_id);
+    if (!paragraphElement) {
+      console.log('❌ 找不到段落元素，paragraph_id:', annotation.paragraph_id);
       return;
     }
 
-    if (typeof annotation.highlight_start !== 'number' || typeof annotation.highlight_end !== 'number') {
-      console.log('⚠️ 批注缺少高亮偏移量');
-      this.addFallbackMarker(annotationId, annotation);
+    const existingMarker = paragraphElement.querySelector(`[data-annotation-id="${annotationId}"]`);
+    if (existingMarker) {
+      console.log('ℹ️ 高亮或占位符已存在，跳過重新建立');
       return;
     }
 
-    if (annotation.highlight_end <= annotation.highlight_start) {
-      console.log('⚠️ 批注偏移量異常，使用備用方案');
-      this.addFallbackMarker(annotationId, annotation);
+    const hasValidOffsets = typeof annotation.highlight_start === 'number'
+      && typeof annotation.highlight_end === 'number'
+      && annotation.highlight_end > annotation.highlight_start;
+
+    if (annotation.is_orphaned) {
+      console.log('ℹ️ 批注為孤立狀態，產生灰色占位符');
+      this.renderOrphanPlaceholder(paragraphElement, annotationId, annotation, annotation.highlight_start);
       return;
     }
 
-    const existingHighlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (existingHighlight) {
-      console.log('ℹ️ 高亮已存在，跳過重新建立');
-      return;
-    }
+    let startInfo = hasValidOffsets
+      ? this.findNodeForOffset(paragraphElement, annotation.highlight_start)
+      : null;
+    let endInfo = hasValidOffsets
+      ? this.findNodeForOffset(paragraphElement, annotation.highlight_end)
+      : null;
 
-    const startInfo = this.findNodeForOffset(essayViewer, annotation.highlight_start);
-    const endInfo = this.findNodeForOffset(essayViewer, annotation.highlight_end);
+    if ((!startInfo || !endInfo) && annotation.anchor_text) {
+      const paragraphText = paragraphElement.textContent || '';
+      const anchorIndex = paragraphText.indexOf(annotation.anchor_text);
+      if (anchorIndex >= 0) {
+        startInfo = this.findNodeForOffset(paragraphElement, anchorIndex);
+        endInfo = this.findNodeForOffset(paragraphElement, anchorIndex + annotation.anchor_text.length);
+      }
+    }
 
     if (!startInfo || !endInfo) {
-      console.log('⚠️ 無法找到對應的文字節點，使用備用方案');
-      this.addFallbackMarker(annotationId, annotation);
+      console.log('⚠️ 無法定位批注，使用灰色占位符');
+      this.renderOrphanPlaceholder(paragraphElement, annotationId, annotation, annotation.highlight_start);
       return;
     }
 
@@ -1088,15 +1311,9 @@ class AnnotationManager {
       const highlight = document.createElement('span');
       highlight.className = 'annotation-highlight';
       highlight.dataset.annotationId = annotationId;
-      console.log('🎨 創建高亮元素，annotationId:', annotationId);
-      highlight.style.cssText = `
-        background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
-        border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
-        cursor: pointer;
-        position: relative;
-        padding: 1px 2px;
-        border-radius: 2px;
-      `;
+      if (annotation.paragraph_id) {
+        highlight.dataset.paragraphId = annotation.paragraph_id;
+      }
 
       try {
         range.surroundContents(highlight);
@@ -1106,27 +1323,68 @@ class AnnotationManager {
         highlight.appendChild(fragment);
         range.insertNode(highlight);
       }
-      console.log('✅ 高亮元素已包圍文本');
-
-      highlight.addEventListener('click', (e) => {
-        e.stopPropagation();
-        console.log('🖱️ 點擊高亮文本:', annotationId);
-        this.highlightAnnotation(annotationId);
-      });
-
-      // 添加懸停效果
-      highlight.addEventListener('mouseenter', () => {
-        highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_TEMP;
-      });
-
-      highlight.addEventListener('mouseleave', () => {
-        highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
-      });
-
       console.log('✅ 文本高亮已添加');
+
+      this.bindHighlightInteractions(highlight, annotationId);
     } catch (error) {
-      console.log('⚠️ 高亮文本失敗，使用備用方案:', error);
-      this.addFallbackMarker(annotationId, annotation);
+      console.log('⚠️ 高亮文本失敗，使用灰色占位符:', error);
+      this.renderOrphanPlaceholder(paragraphElement, annotationId, annotation, annotation.highlight_start);
+    }
+  }
+
+  /**
+   * 綁定高亮交互行為
+   */
+  bindHighlightInteractions(element, annotationId) {
+    element.addEventListener('click', (e) => {
+      e.stopPropagation();
+      console.log('🖱️ 點擊高亮文本:', annotationId);
+      this.highlightAnnotation(annotationId);
+    });
+  }
+
+  /**
+   * 渲染孤立批註占位符
+   */
+  renderOrphanPlaceholder(root, annotationId, annotation, fallbackOffset = null) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'annotation-highlight annotation-highlight-orphan';
+    placeholder.dataset.annotationId = annotationId;
+    if (annotation.paragraph_id) {
+      placeholder.dataset.paragraphId = annotation.paragraph_id;
+    }
+    placeholder.dataset.orphan = 'true';
+    placeholder.textContent = '原文已修改';
+    if (annotation.anchor_text) {
+      const preview = annotation.anchor_text.length > 60
+        ? `${annotation.anchor_text.slice(0, 60)}…`
+        : annotation.anchor_text;
+      placeholder.title = `原文字句：「${preview}」`;
+    } else {
+      placeholder.title = '原文已修改';
+    }
+
+    this.insertNodeAtOffset(root, placeholder, fallbackOffset);
+    this.bindHighlightInteractions(placeholder, annotationId);
+  }
+
+  /**
+   * 依照偏移量插入節點
+   */
+  insertNodeAtOffset(root, node, targetOffset) {
+    if (!root) return;
+    if (typeof targetOffset !== 'number' || targetOffset < 0) {
+      root.appendChild(node);
+      return;
+    }
+    const positionInfo = this.findNodeForOffset(root, targetOffset);
+    if (positionInfo && positionInfo.node) {
+      const range = document.createRange();
+      range.setStart(positionInfo.node, positionInfo.offset);
+      range.collapse(true);
+      range.insertNode(node);
+    } else {
+      root.appendChild(node);
     }
   }
 
@@ -1157,7 +1415,10 @@ class AnnotationManager {
    */
   addFallbackMarker(annotationId, annotation) {
     console.log('⚠️ 無法精確定位文本，直接創建浮動批注');
-    // 直接創建浮動批注，不添加標記
+    const paragraphElement = this.getAnnotationRoot(annotation.paragraph_id);
+    if (paragraphElement) {
+      this.renderOrphanPlaceholder(paragraphElement, annotationId, annotation, annotation.highlight_start);
+    }
     this.createFloatingAnnotation(annotationId, annotation);
   }
 
@@ -1229,6 +1490,7 @@ class AnnotationManager {
       // 移除高亮和標記
       const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
       markers.forEach(marker => marker.remove());
+      this.updateAnnotationCount();
       
       toast.success('批注已刪除');
       
@@ -1243,49 +1505,88 @@ class AnnotationManager {
   /**
    * 加載現有批注
    */
-  async loadAnnotations() {
-    console.log('📥 加載現有批注:', this.currentParagraphId);
-    
+  async loadAllAnnotations() {
+    console.log('📥 加載全部批注:', this.paragraphIds);
+    this.annotations.clear();
+
+    // 清理現有標記與浮動批注
+    document.querySelectorAll('.annotation-highlight, .floating-annotation').forEach(node => node.remove());
+
+    if (!this.paragraphIds || this.paragraphIds.length === 0) {
+      console.log('ℹ️ 沒有段落可載入批注');
+      this.updateAnnotationCount();
+      return;
+    }
+
+    for (const paragraphId of this.paragraphIds) {
+      await this.loadAnnotationsForParagraph(paragraphId);
+    }
+
+    this.updateAnnotationCount();
+
+    // 調整所有批註位置，確保不重疊
+    setTimeout(() => {
+      this.adjustAllAnnotations();
+    }, 200);
+  }
+
+  /**
+   * 加載指定段落的批注
+   */
+  async loadAnnotationsForParagraph(paragraphId) {
+    if (!paragraphId) return;
+    console.log('📥 加載段落批注:', paragraphId);
+
     try {
-      const { data, error } = await this.supabase.rpc('get_paragraph_annotations', {
-        p_paragraph_id: this.currentParagraphId
-      });
-      
+      const { data, error } = await this.supabase
+        .from('annotations')
+        .select('*, teacher:users!annotations_teacher_id_fkey(display_name, email)')
+        .eq('paragraph_id', paragraphId)
+        .order('created_at', { ascending: true });
+
       if (error) {
-        console.error('❌ RPC 調用失敗:', error);
+        console.error('❌ 加載段落批注失敗:', error);
         throw error;
       }
-      
-      console.log('📊 批注數據:', data);
-      
-      // 按照 highlight_start 排序（從小到大，確保批註按原文順序顯示）
-      const sortedAnnotations = data.sort((a, b) => {
-        return (a.highlight_start || 0) - (b.highlight_start || 0);
-      });
-      
-      console.log('✅ 批注已按原文位置排序');
-      
-      // 存儲並渲染批注
-      sortedAnnotations.forEach(annotation => {
-        const annotationId = annotation.id || annotation.annotation_id;
-        if (annotationId) {
-          this.annotations.set(annotationId, annotation);
-          this.renderAnnotation(annotationId);
-        } else {
+
+      (data || []).forEach(annotation => {
+        const annotationId = annotation.id;
+        if (!annotationId) {
           console.log('⚠️ 批注沒有有效的 ID:', annotation);
+          return;
         }
+        this.annotations.set(annotationId, annotation);
+        this.renderAnnotation(annotationId);
       });
-      
-      console.log(`✅ 已加載 ${sortedAnnotations.length} 個批注`);
-      
-      // 調整所有批註位置，確保不重疊
-      setTimeout(() => {
-        this.adjustAllAnnotations();
-      }, 200);
-      
+
+      console.log(`✅ 段落 ${paragraphId} 已加載 ${(data || []).length} 個批注`);
     } catch (error) {
       console.error('❌ 加載批注失敗:', error);
-      toast.error('加載批注失敗: ' + error.message);
+      if (toast?.error) {
+        toast.error('加載批注失敗: ' + error.message);
+      }
+    }
+  }
+
+  /**
+   * 取得單筆批注詳細資料
+   */
+  async fetchAnnotationById(annotationId) {
+    try {
+      const { data, error } = await this.supabase
+        .from('annotations')
+        .select('*, teacher:users!annotations_teacher_id_fkey(display_name, email)')
+        .eq('id', annotationId)
+        .single();
+
+      if (error) {
+        console.error('❌ 無法獲取批注資料:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('❌ 擷取批注資料失敗:', error);
+      return null;
     }
   }
 
@@ -1293,55 +1594,82 @@ class AnnotationManager {
    * 設置 Realtime 監聽
    */
   setupRealtimeListener() {
-    // 監聽批注變化
-    this.supabase
-      .channel('annotations')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'annotations',
-        filter: `paragraph_id=eq.${this.currentParagraphId}`
-      }, (payload) => {
-        console.log('🔄 收到新批注:', payload.new);
-        
-        // 檢查是否已經存在這個批注（避免重複處理）
-        if (this.annotations.has(payload.new.id)) {
-          console.log('ℹ️ 批注已存在，跳過重複處理');
-          return;
-        }
-        
-        this.annotations.set(payload.new.id, payload.new);
-        this.renderAnnotation(payload.new.id);
-        
-        // 只在不是當前用戶創建的批注時顯示通知
-        if (typeof toast !== 'undefined') {
-          toast.info('收到新批注');
-        }
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'annotations',
-        filter: `paragraph_id=eq.${this.currentParagraphId}`
-      }, (payload) => {
-        console.log('🔄 批注已更新:', payload.new);
-        this.annotations.set(payload.new.id, payload.new);
-        // 更新現有高亮
-        this.updateAnnotationHighlight(payload.new.id);
-      })
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'annotations',
-        filter: `paragraph_id=eq.${this.currentParagraphId}`
-      }, (payload) => {
-        console.log('🔄 批注已刪除:', payload.old);
-        this.annotations.delete(payload.old.id);
-        // 移除高亮
-        const markers = document.querySelectorAll(`[data-annotation-id="${payload.old.id}"]`);
-        markers.forEach(marker => marker.remove());
-      })
-      .subscribe();
+    if (!this.paragraphIds || this.paragraphIds.length === 0) return;
+
+    // 移除既有頻道
+    this.realtimeChannels.forEach(channel => {
+      try {
+        this.supabase.removeChannel(channel);
+      } catch (error) {
+        console.log('⚠️ 移除舊頻道失敗:', error);
+      }
+    });
+    this.realtimeChannels = [];
+
+    this.paragraphIds.forEach(paragraphId => {
+      const channel = this.supabase
+        .channel(`annotations-${paragraphId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'annotations',
+          filter: `paragraph_id=eq.${paragraphId}`
+        }, async (payload) => {
+          console.log('🔄 收到新批注:', payload.new);
+          
+          const annotationId = payload.new?.id;
+          if (!annotationId || this.annotations.has(annotationId)) {
+            console.log('ℹ️ 批注已存在或缺少 ID，跳過');
+            return;
+          }
+
+          const annotation = await this.fetchAnnotationById(annotationId);
+          if (!annotation) return;
+
+          this.annotations.set(annotationId, annotation);
+          this.renderAnnotation(annotationId);
+          this.updateAnnotationCount();
+
+          const currentUserId = this.getCurrentUser()?.id;
+          if (toast?.info && annotation.teacher_id !== currentUserId) {
+            toast.info('收到新批注');
+          }
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'annotations',
+          filter: `paragraph_id=eq.${paragraphId}`
+        }, async (payload) => {
+          console.log('🔄 批注已更新:', payload.new);
+          const annotationId = payload.new?.id;
+          if (!annotationId) return;
+
+          const annotation = await this.fetchAnnotationById(annotationId);
+          if (!annotation) return;
+
+          this.annotations.set(annotationId, annotation);
+          this.updateAnnotationHighlight(annotationId);
+        })
+        .on('postgres_changes', {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'annotations',
+          filter: `paragraph_id=eq.${paragraphId}`
+        }, (payload) => {
+          console.log('🔄 批注已刪除:', payload.old);
+          const annotationId = payload.old?.id;
+          if (!annotationId) return;
+
+          this.annotations.delete(annotationId);
+          const markers = document.querySelectorAll(`[data-annotation-id="${annotationId}"]`);
+          markers.forEach(marker => marker.remove());
+          this.updateAnnotationCount();
+        })
+        .subscribe();
+
+      this.realtimeChannels.push(channel);
+    });
   }
 
   /**
