@@ -531,17 +531,33 @@ class AnnotationManager {
         throw new Error('無法取得新批注的識別碼');
       }
       
+      // 若已有臨時高亮，直接轉為最終高亮
+      let reusedHighlight = false;
+      if (this.tempHighlight) {
+        try {
+          this.tempHighlight.dataset.annotationId = annotationId;
+          if (this.selectedText?.paragraphId) {
+            this.tempHighlight.dataset.paragraphId = this.selectedText.paragraphId;
+          }
+          this.tempHighlight.removeAttribute('data-temp-annotation');
+          this.bindHighlightInteractions(this.tempHighlight, annotationId);
+          reusedHighlight = true;
+        } catch (conversionError) {
+          console.log('⚠️ 臨時高亮轉換失敗:', conversionError);
+        }
+      }
+
       // 添加批注到本地存儲
       this.annotations.set(annotationId, annotationRecord);
-      
+
       // 渲染批注
       this.renderAnnotation(annotationId);
       this.updateAnnotationCount();
-      
-      // 清除選擇和臨時高亮引用
+
+      // 清除選擇與臨時高亮引用
       window.getSelection().removeAllRanges();
       this.selectedText = null;
-      if (this.tempHighlight && this.tempHighlight.parentNode) {
+      if (!reusedHighlight && this.tempHighlight && this.tempHighlight.parentNode) {
         try {
           const parent = this.tempHighlight.parentNode;
           while (this.tempHighlight.firstChild) {
@@ -552,7 +568,7 @@ class AnnotationManager {
           console.log('⚠️ 清理臨時高亮失敗:', cleanupError);
         }
       }
-      this.tempHighlight = null; // 清除臨時高亮引用，因為已成為永久批註
+      this.tempHighlight = null;
       this.hideAnnotationButton();
       
       console.log('✅ 批注創建成功，ID:', annotationId);
