@@ -638,17 +638,6 @@ class AnnotationManager {
       return window.AppState.currentUser;
     }
     
-    // 備用：從 Supabase 會話獲取
-    try {
-      // 使用同步方式獲取當前會話
-      const session = this.supabase.auth.session;
-      if (session?.user) {
-        console.log('✅ 從 Supabase 會話獲取用戶信息:', session.user.email);
-        return session.user;
-      }
-    } catch (error) {
-      console.warn('⚠️ 無法獲取會話信息:', error);
-    }
     
     console.log('❌ 無法獲取用戶信息');
     return null;

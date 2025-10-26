@@ -46,6 +46,9 @@ const AppState = {
     currentFormatSpec: null
 };
 
+// 暴露到 window 對象，供其他模組使用
+window.AppState = AppState;
+
 // ================================
 // 初始化應用
 // ================================
