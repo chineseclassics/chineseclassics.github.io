@@ -373,6 +373,15 @@ class AnnotationManager {
     // 🚨 立即渲染批註（使用臨時 ID）
     this.renderAnnotation(tempId);
     
+    // 🚨 保存同步所需的數據，然後清除選擇
+    const syncData = {
+      paragraphId: this.currentParagraphId,
+      content: content,
+      highlightStart: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
+      highlightEnd: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
+      anchorText: this.selectedText.text
+    };
+    
     // 清除選擇
     window.getSelection().removeAllRanges();
     this.selectedText = null;
@@ -386,11 +395,11 @@ class AnnotationManager {
       console.log('📤 後台同步到 Supabase...');
       
       const { data, error } = await this.supabase.rpc('create_annotation', {
-        p_paragraph_id: this.currentParagraphId,
-        p_content: content,
-        p_highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
-        p_highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
-        p_anchor_text: this.selectedText.text,
+        p_paragraph_id: syncData.paragraphId,
+        p_content: syncData.content,
+        p_highlight_start: syncData.highlightStart,
+        p_highlight_end: syncData.highlightEnd,
+        p_anchor_text: syncData.anchorText,
         p_annotation_type: 'comment',
         p_priority: 'normal',
         p_is_private: false
