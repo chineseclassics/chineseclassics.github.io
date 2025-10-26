@@ -294,6 +294,26 @@ class AnnotationManager {
       return;
     }
     
+    // 先基於段落計算全域偏移（在任何 DOM 改動之前）
+    let paraStart = null;
+    let paraEnd = null;
+    try {
+      const paragraphElement = this.getCurrentParagraphElement();
+      if (!paragraphElement) {
+        console.warn('⚠️ 無法獲取段落容器，偏移計算可能不準確');
+      } else {
+        const offsets = this.computeParagraphOffsets(paragraphElement, this.selectedText.range);
+        if (offsets) {
+          // 規範化起迄
+          paraStart = Math.min(offsets.start, offsets.end);
+          paraEnd = Math.max(offsets.start, offsets.end);
+          console.log('✅ 取得段落全域偏移:', { paraStart, paraEnd });
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ 計算段落偏移失敗，將回退到臨時方案:', err);
+    }
+    
     // 隱藏批注按鈕
     this.hideAnnotationButton();
     
@@ -314,8 +334,9 @@ class AnnotationManager {
       const { data, error } = await this.supabase.rpc('create_annotation', {
         p_paragraph_id: this.currentParagraphId,
         p_content: content,
-        p_highlight_start: this.selectedText.startOffset,
-        p_highlight_end: this.selectedText.endOffset,
+        // 儲存為「段落內全域偏移」；若計算失敗回退到原本（較不準確）的偏移
+        p_highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
+        p_highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
         p_annotation_type: 'comment',
         p_priority: 'normal',
         p_is_private: false
@@ -328,16 +349,31 @@ class AnnotationManager {
         id: data,
         paragraph_id: this.currentParagraphId,
         content: content,
-        highlight_start: this.selectedText.startOffset,
-        highlight_end: this.selectedText.endOffset,
+        highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
+        highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
         annotation_type: 'comment',
         priority: 'normal',
         is_private: false,
         created_at: new Date().toISOString()
       });
       
-      // 渲染批注
-      this.renderAnnotation(data.id);
+      // 若存在臨時高亮，先移除，避免與永久高亮重疊
+      if (this.tempHighlight) {
+        try {
+          const parent = this.tempHighlight.parentNode;
+          while (this.tempHighlight.firstChild) {
+            parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
+          }
+          parent.removeChild(this.tempHighlight);
+          this.tempHighlight = null;
+          console.log('🧹 已移除臨時高亮，準備渲染永久高亮');
+        } catch (cleanupErr) {
+          console.log('⚠️ 清理臨時高亮失敗:', cleanupErr);
+        }
+      }
+
+      // 渲染批注（注意：此處 data 已是新建的批註 ID）
+      this.renderAnnotation(data);
       
       // 清除選擇和臨時高亮引用
       window.getSelection().removeAllRanges();
@@ -358,6 +394,62 @@ class AnnotationManager {
         toast.error('創建批注失敗: ' + error.message);
       }
     }
+  }
+
+  /**
+   * 取得當前段落容器 Element
+   * 若找不到，返回 null
+   */
+  getCurrentParagraphElement() {
+    if (!this.currentParagraphId) return null;
+    return document.querySelector(`[data-paragraph-id="${this.currentParagraphId}"]`);
+  }
+
+  /**
+   * 計算 Range 對應於段落內的全域偏移（支援跨節點）
+   * 返回 { start, end }（皆為段落內字元索引）
+   */
+  computeParagraphOffsets(paragraphElement, range) {
+    if (!paragraphElement || !range) return null;
+    const textNodes = this.getTextNodes(paragraphElement);
+    const totalLength = textNodes.reduce((sum, n) => sum + n.textContent.length, 0);
+
+    const posOf = (container, offset) => {
+      // 僅處理 Text 節點；若為 Element，嘗試向內找到第一個 Text 節點
+      let node = container;
+      if (node.nodeType !== Node.TEXT_NODE) {
+        // 嘗試定位到一個合理的文本節點
+        // 簡化策略：使用 TreeWalker 從 container 起點向後尋找第一個文本節點
+        const walker = document.createTreeWalker(paragraphElement, NodeFilter.SHOW_TEXT, null, false);
+        let found = null;
+        while (walker.nextNode()) {
+          if (walker.currentNode === container || container.contains(walker.currentNode)) {
+            found = walker.currentNode;
+            break;
+          }
+        }
+        node = found || textNodes[0] || null;
+        // 若仍不可得，回傳邊界
+        if (!node) return 0;
+        // Element 情況下 offset 很難準確映射，選擇落在該文字節點開頭
+        offset = 0;
+      }
+
+      let acc = 0;
+      for (let i = 0; i < textNodes.length; i++) {
+        const n = textNodes[i];
+        if (n === node) {
+          return Math.max(0, Math.min(acc + offset, totalLength));
+        }
+        acc += n.textContent.length;
+      }
+      // 若選區節點不在段落內，採用邊界策略
+      return (paragraphElement.contains(container)) ? totalLength : 0;
+    };
+
+    const start = posOf(range.startContainer, range.startOffset);
+    const end = posOf(range.endContainer, range.endOffset);
+    return { start, end };
   }
 
   /**
@@ -969,77 +1061,82 @@ class AnnotationManager {
    * 在論文中高亮文本
    */
   highlightTextInEssay(annotationId, annotation) {
-    const essayViewer = document.getElementById('essayViewer');
-    if (!essayViewer) {
-      console.log('❌ 找不到論文內容區域');
+    // 只在對應段落內尋找並重建跨節點選區
+    const paragraphId = annotation.paragraph_id || this.currentParagraphId;
+    const paragraphElement = paragraphId
+      ? document.querySelector(`[data-paragraph-id="${paragraphId}"]`)
+      : null;
+    if (!paragraphElement) {
+      console.log('❌ 找不到對應段落內容，放棄高亮');
       return;
     }
 
-    // 獲取論文內容的文本節點
-    const textNodes = this.getTextNodes(essayViewer);
-    console.log('📄 找到文本節點數量:', textNodes.length);
-
-    // 嘗試在文本中找到對應的位置並高亮
-    let found = false;
-    for (let i = 0; i < textNodes.length; i++) {
-      const node = textNodes[i];
-      const text = node.textContent;
-      
-      // 檢查這個節點是否包含我們要標記的文本
-      if (text.length > annotation.highlight_start) {
-        try {
-          // 創建高亮範圍
-          const range = document.createRange();
-          range.setStart(node, annotation.highlight_start);
-          range.setEnd(node, Math.min(annotation.highlight_end, text.length));
-          
-          // 創建高亮元素
-          const highlight = document.createElement('span');
-          highlight.className = 'annotation-highlight';
-          highlight.dataset.annotationId = annotationId;
-          console.log('🎨 創建高亮元素，annotationId:', annotationId);
-          highlight.style.cssText = `
-            background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
-            border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
-            cursor: pointer;
-            position: relative;
-            padding: 1px 2px;
-            border-radius: 2px;
-          `;
-          
-          // 用高亮元素包圍選中的文本
-          range.surroundContents(highlight);
-          console.log('✅ 高亮元素已包圍文本');
-          
-          
-          // 綁定點擊事件
-          highlight.addEventListener('click', (e) => {
-            e.stopPropagation();
-            console.log('🖱️ 點擊高亮文本:', annotationId);
-            this.highlightAnnotation(annotationId);
-          });
-          
-          // 添加懸停效果
-          highlight.addEventListener('mouseenter', () => {
-            highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_TEMP;
-          });
-          
-          highlight.addEventListener('mouseleave', () => {
-            highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
-          });
-          
-          found = true;
-          console.log('✅ 文本高亮已添加');
-          break;
-        } catch (error) {
-          console.log('⚠️ 高亮文本失敗:', error);
-          continue;
-        }
-      }
+    const textNodes = this.getTextNodes(paragraphElement);
+    if (!textNodes.length) {
+      console.log('⚠️ 段落內無文本節點');
+      return;
     }
-    
-    if (!found) {
-      console.log('⚠️ 無法在文本中找到對應位置，使用備用方案');
+
+    // 準備將段落全域偏移映射回具體節點與偏移
+    const totalLength = textNodes.reduce((sum, n) => sum + n.textContent.length, 0);
+    const startIndex = Math.max(0, Math.min(annotation.highlight_start || 0, totalLength));
+    const endIndex = Math.max(0, Math.min(annotation.highlight_end || startIndex, totalLength));
+
+    const locate = (charIndex) => {
+      let acc = 0;
+      for (let i = 0; i < textNodes.length; i++) {
+        const len = textNodes[i].textContent.length;
+        if (acc + len >= charIndex) {
+          return { node: textNodes[i], offset: charIndex - acc };
+        }
+        acc += len;
+      }
+      // 邊界：落在最後一個節點尾端
+      const last = textNodes[textNodes.length - 1];
+      return { node: last, offset: last.textContent.length };
+    };
+
+    const startPos = locate(startIndex);
+    const endPos = locate(endIndex);
+
+    try {
+      const range = document.createRange();
+      range.setStart(startPos.node, startPos.offset);
+      range.setEnd(endPos.node, endPos.offset);
+
+      // 以 extractContents + insertNode 的方式包裹，支援跨節點
+      const highlight = document.createElement('span');
+      highlight.className = 'annotation-highlight';
+      highlight.dataset.annotationId = annotationId;
+      highlight.style.cssText = `
+        background-color: ${AnnotationManager.CONSTANTS.HIGHLIGHT_BG};
+        border-bottom: 2px solid ${AnnotationManager.CONSTANTS.HIGHLIGHT_BORDER};
+        cursor: pointer;
+        position: relative;
+        padding: 1px 2px;
+        border-radius: 2px;
+      `;
+
+      const frag = range.extractContents();
+      highlight.appendChild(frag);
+      range.insertNode(highlight);
+
+      // 綁定點擊與懸浮效果
+      highlight.addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('🖱️ 點擊高亮文本:', annotationId);
+        this.highlightAnnotation(annotationId);
+      });
+      highlight.addEventListener('mouseenter', () => {
+        highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_TEMP;
+      });
+      highlight.addEventListener('mouseleave', () => {
+        highlight.style.background = AnnotationManager.CONSTANTS.HIGHLIGHT_BG;
+      });
+
+      console.log('✅ 文本高亮已添加 (段落內)');
+    } catch (err) {
+      console.log('⚠️ 跨節點高亮失敗，使用備用方案:', err);
       this.addFallbackMarker(annotationId, annotation);
     }
   }
