@@ -346,9 +346,11 @@ class AnnotationManager {
       if (error) throw error;
       
       // 添加批注到本地存儲
+      const paragraphOrderIndex = this.getCurrentParagraphOrderIndex();
       this.annotations.set(data, {
         id: data,
         paragraph_id: this.currentParagraphId,
+        paragraph_order_index: paragraphOrderIndex, // 保存段落在文章中的順序
         content: content,
         highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
         highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
@@ -405,6 +407,33 @@ class AnnotationManager {
   getCurrentParagraphElement() {
     if (!this.currentParagraphId) return null;
     return document.querySelector(`[data-paragraph-id="${this.currentParagraphId}"]`);
+  }
+
+  /**
+   * 獲取當前段落的 order_index
+   * 從 DOM 元素的 data-order-index 屬性讀取
+   */
+  getCurrentParagraphOrderIndex() {
+    const paragraphElement = this.getCurrentParagraphElement();
+    if (!paragraphElement) {
+      console.warn('⚠️ 無法獲取段落元素，返回默認 order_index 0');
+      return 0;
+    }
+    
+    const orderIndex = paragraphElement.dataset.orderIndex;
+    if (orderIndex === undefined || orderIndex === null) {
+      console.warn('⚠️ 段落元素沒有 data-order-index 屬性，返回默認值 0');
+      return 0;
+    }
+    
+    const parsed = parseInt(orderIndex, 10);
+    if (isNaN(parsed)) {
+      console.warn('⚠️ 無法解析 order_index:', orderIndex);
+      return 0;
+    }
+    
+    console.log('✅ 獲取段落 order_index:', parsed);
+    return parsed;
   }
 
   /**
@@ -661,7 +690,7 @@ class AnnotationManager {
       document.querySelectorAll('.floating-annotation, .floating-annotation-input')
     );
     
-    // 按 highlight_start 排序
+    // 按段落順序和 highlight_start 排序
     const sortedAnnotations = allAnnotations.sort((a, b) => {
       if (a === activeElement) return 0;
       if (b === activeElement) return 0;
@@ -673,6 +702,12 @@ class AnnotationManager {
       
       const aData = this.annotations.get(aId);
       const bData = this.annotations.get(bId);
+      
+      // 先按段落順序排序
+      const orderDiff = (aData?.paragraph_order_index || 0) - (bData?.paragraph_order_index || 0);
+      if (orderDiff !== 0) return orderDiff;
+      
+      // 同一段落內按 highlight_start 排序
       return (aData?.highlight_start || 0) - (bData?.highlight_start || 0);
     });
     
@@ -726,7 +761,7 @@ class AnnotationManager {
     
     if (allAnnotations.length === 0) return;
     
-    // 按 highlight_start 排序
+    // 按段落順序和 highlight_start 排序
     const sortedAnnotations = allAnnotations.sort((a, b) => {
       const aId = a.dataset.annotationId;
       const bId = b.dataset.annotationId;
@@ -737,6 +772,12 @@ class AnnotationManager {
       
       const aData = this.annotations.get(aId);
       const bData = this.annotations.get(bId);
+      
+      // 先按段落順序排序
+      const orderDiff = (aData?.paragraph_order_index || 0) - (bData?.paragraph_order_index || 0);
+      if (orderDiff !== 0) return orderDiff;
+      
+      // 同一段落內按 highlight_start 排序
       return (aData?.highlight_start || 0) - (bData?.highlight_start || 0);
     });
     
@@ -1378,7 +1419,16 @@ class AnnotationManager {
       sortedAnnotations.forEach(annotation => {
         const annotationId = annotation.id || annotation.annotation_id;
         if (annotationId) {
-          this.annotations.set(annotationId, annotation);
+          // 從 DOM 獲取段落的 order_index
+          const paragraphElement = document.querySelector(`[data-paragraph-id="${this.currentParagraphId}"]`);
+          const paragraphOrderIndex = paragraphElement?.dataset.orderIndex 
+            ? parseInt(paragraphElement.dataset.orderIndex, 10) 
+            : 0;
+          
+          this.annotations.set(annotationId, {
+            ...annotation,
+            paragraph_order_index: paragraphOrderIndex
+          });
           this.renderAnnotation(annotationId);
         } else {
           console.log('⚠️ 批注沒有有效的 ID:', annotation);

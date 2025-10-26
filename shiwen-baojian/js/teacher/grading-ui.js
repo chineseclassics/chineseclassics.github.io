@@ -304,9 +304,10 @@ class GradingUI {
           // 找到引言段落 ID
           const introParagraph = essay.paragraphs?.find(p => p.paragraph_type === 'introduction');
           const introParaId = introParagraph?.id || '';
+          const introOrderIndex = introParagraph?.order_index ?? 0;
           
           html += `
-            <div class="paragraph-block" data-paragraph-id="${introParaId}">
+            <div class="paragraph-block" data-paragraph-id="${introParaId}" data-order-index="${introOrderIndex}">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
                 <i class="fas fa-quote-left mr-2" style="color: var(--primary-500);"></i>引言
               </h4>
@@ -330,11 +331,13 @@ class GradingUI {
               arg.paragraphs.forEach((para, pIndex) => {
                 // 找到對應的段落 ID
                 const bodyParagraphs = essay.paragraphs?.filter(p => p.paragraph_type === 'body');
-                const paraId = bodyParagraphs && bodyParagraphs[index + pIndex]?.id || '';
+                const matchedParagraph = bodyParagraphs && bodyParagraphs[index + pIndex];
+                const paraId = matchedParagraph?.id || '';
+                const globalIndex = matchedParagraph?.order_index ?? 0;
                 
                 html += `
-                  <div class="paragraph-content sub-paragraph" data-paragraph-id="${paraId}">
-                    <div class="paragraph-label">段落 ${pIndex + 1}</div>
+                  <div class="paragraph-content sub-paragraph" data-paragraph-id="${paraId}" data-order-index="${globalIndex}">
+                    <div class="paragraph-label">段落 ${globalIndex}</div>
                     ${para.content || ''}
                   </div>
                 `;
@@ -350,9 +353,10 @@ class GradingUI {
           // 找到結論段落 ID
           const conclParagraph = essay.paragraphs?.find(p => p.paragraph_type === 'conclusion');
           const conclParaId = conclParagraph?.id || '';
+          const conclOrderIndex = conclParagraph?.order_index ?? 0;
           
           html += `
-            <div class="paragraph-block" data-paragraph-id="${conclParaId}">
+            <div class="paragraph-block" data-paragraph-id="${conclParaId}" data-order-index="${conclOrderIndex}">
               <h4 class="text-lg font-semibold text-gray-800 mb-2">
                 <i class="fas fa-flag-checkered mr-2" style="color: var(--success-500);"></i>結論
               </h4>
@@ -386,7 +390,7 @@ class GradingUI {
           }
           
           return `
-            <div class="paragraph-block" data-paragraph-id="${p.id}">
+            <div class="paragraph-block" data-paragraph-id="${p.id}" data-order-index="${p.order_index || 0}">
               <h4>${p.paragraph_type === 'introduction' ? '引言' : p.paragraph_type === 'conclusion' ? '結論' : '正文段落'}</h4>
               <div class="paragraph-content">${htmlContent}</div>
             </div>
