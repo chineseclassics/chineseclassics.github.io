@@ -19,7 +19,7 @@ class AnnotationManager {
     this.paragraphElements = new Map();
     this.realtimeChannels = [];
     this.supportsAnchoring = true;
-    this.tempHighlight = null;
+    this.selectionPreview = null;
     
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
@@ -363,8 +363,45 @@ class AnnotationManager {
     }
   }
 
-  removeTempHighlight() {
-    this.tempHighlight = null;
+  applySelectionPreview() {
+    this.removeSelectionPreview();
+    const range = this.selectedText?.range?.cloneRange();
+    if (!range) return;
+    try {
+      const preview = document.createElement('span');
+      preview.className = 'annotation-highlight annotation-highlight-preview';
+      if (this.selectedText?.paragraphId) {
+        preview.dataset.paragraphId = this.selectedText.paragraphId;
+      }
+      preview.dataset.preview = 'true';
+      range.surroundContents(preview);
+      this.selectionPreview = preview;
+    } catch (error) {
+      console.log('⚠️ 建立預覽高亮失敗:', error);
+      this.selectionPreview = null;
+    }
+  }
+
+  removeSelectionPreview() {
+    if (this.selectionPreview && this.selectionPreview.parentNode) {
+      try {
+        const parent = this.selectionPreview.parentNode;
+        while (this.selectionPreview.firstChild) {
+          parent.insertBefore(this.selectionPreview.firstChild, this.selectionPreview);
+        }
+        parent.removeChild(this.selectionPreview);
+      } catch (error) {
+        console.log('⚠️ 移除預覽高亮失敗:', error);
+      }
+    }
+    this.selectionPreview = null;
+  }
+
+  getSelectionRect() {
+    if (this.selectionPreview) {
+      return this.selectionPreview.getBoundingClientRect();
+    }
+    return this.selectedText?.range?.getBoundingClientRect() || null;
   }
 
   /**
@@ -493,6 +530,9 @@ class AnnotationManager {
     // 隱藏批注按鈕
     this.hideAnnotationButton();
     
+    // 建立預覽高亮
+    this.applySelectionPreview();
+    
     // 顯示批注創建對話框
     const content = await this.showAnnotationDialog();
     if (!content) {
@@ -530,7 +570,7 @@ class AnnotationManager {
       this.registerAnnotation(annotationRecord);
 
       // 先移除臨時高亮，避免干擾正式渲染
-      this.removeTempHighlight();
+      this.removeSelectionPreview();
 
       // 渲染所在段落
       this.renderParagraph(annotationRecord.paragraph_id);
@@ -539,7 +579,7 @@ class AnnotationManager {
       // 清除選擇與臨時高亮引用
       window.getSelection().removeAllRanges();
       this.selectedText = null;
-      this.removeTempHighlight();
+      this.removeSelectionPreview();
       this.hideAnnotationButton();
       
       console.log('✅ 批注創建成功，ID:', annotationId);
@@ -594,10 +634,17 @@ class AnnotationManager {
       
       // 直接添加到滾動容器
       wrapper.appendChild(inputBox);
-      
+
+      const selectionRect = this.getSelectionRect();
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const offsetTop = selectionRect
+        ? selectionRect.top - wrapperRect.top + wrapper.scrollTop - 20
+        : wrapper.scrollTop + 20;
+      inputBox.style.top = Math.max(0, offsetTop) + 'px';
+
       // 調整所有批註位置
       this.adjustAnnotationsForActive(inputBox);
-      
+
       // 滾動到原文位置
       this.scrollToHighlight();
       
@@ -616,7 +663,7 @@ class AnnotationManager {
         console.log('❌ 用戶取消批注');
         
         // 移除已創建的高亮元素
-        this.removeTempHighlight();
+        this.removeSelectionPreview();
         
         cleanup();
         resolve(null);

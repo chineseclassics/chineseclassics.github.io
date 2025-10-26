@@ -48,6 +48,10 @@
   border-bottom-color: #d97706;
 }
 
+.annotation-highlight-preview {
+  opacity: 0.9;
+}
+
 .annotation-highlight.annotation-highlight-orphan {
   background-color: #f3f4f6;
   border-bottom: 1px dashed #94a3b8;

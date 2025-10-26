@@ -1968,6 +1968,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   background-color: var(--warning-200);
 }
 
+.annotation-highlight-preview {
+  opacity: 0.9;
+}
+
 .annotation-highlight.annotation-highlight-orphan {
   background-color: #f3f4f6;
   border-bottom: 1px dashed #94a3b8;
