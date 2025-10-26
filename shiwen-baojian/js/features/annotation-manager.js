@@ -565,7 +565,7 @@ class AnnotationManager {
     } catch (error) {
       console.error('❌ 創建批注失敗:', error);
       if (typeof toast !== 'undefined') {
-        toast.error('創建批注失敗: ' + error.message);
+        toast.error('創建批注失敗: ' + (error?.message || '未知錯誤'));
       }
     }
   }
