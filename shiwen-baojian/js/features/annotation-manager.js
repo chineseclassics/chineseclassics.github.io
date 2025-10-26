@@ -168,6 +168,7 @@ class AnnotationManager {
         if (data.highlight_start !== undefined && data.highlight_start !== null) {
           start = data.highlight_start;
         }
+        sortToken = data.created_at || sortToken;
       }
     }
 
@@ -189,7 +190,7 @@ class AnnotationManager {
       start = 0;
     }
 
-    return { paragraphId, paragraphIndex, start };
+    return { paragraphId, paragraphIndex, start, sortToken };
   }
 
   getAnnotationSortKeyFromData(annotation) {
@@ -197,8 +198,9 @@ class AnnotationManager {
     const paragraphIndex = (paragraphId !== null && this.paragraphIndex.has(paragraphId))
       ? this.paragraphIndex.get(paragraphId)
       : Number.POSITIVE_INFINITY;
-    const start = annotation?.highlight_start ?? 0;
-    return { paragraphId, paragraphIndex, start };
+    const start = annotation?.highlight_start ?? Number.POSITIVE_INFINITY;
+    const sortToken = annotation?.created_at || '';
+    return { paragraphId, paragraphIndex, start, sortToken };
   }
 
   /**
@@ -871,21 +873,18 @@ class AnnotationManager {
    * 獲取批註的理想位置（對齊原文高亮）
    */
   getIdealTop(annotation) {
+    const wrapper = document.querySelector('.grading-content-wrapper');
     const essayViewer = document.getElementById('essayViewer');
-    if (!essayViewer) return 0;
-    
-    const essayViewerOffset = essayViewer.offsetTop;
+    if (!wrapper || !essayViewer) return 0;
     
     // 對於輸入框
     if (annotation.classList && annotation.classList.contains('floating-annotation-input')) {
       const rect = this.selectedText?.range?.getBoundingClientRect();
       if (rect) {
-        const viewerRect = essayViewer.getBoundingClientRect();
-        const wrapper = document.querySelector('.grading-content-wrapper');
-        const scrollTop = wrapper ? wrapper.scrollTop : window.pageYOffset;
-        return rect.top - viewerRect.top + scrollTop + essayViewerOffset;
+        const wrapperRect = wrapper.getBoundingClientRect();
+        return rect.top - wrapperRect.top + wrapper.scrollTop;
       }
-      return essayViewerOffset;
+      return wrapper.scrollTop;
     }
     
     // 對於已存在的批註
@@ -894,7 +893,9 @@ class AnnotationManager {
       const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
       
       if (highlight) {
-        return highlight.offsetTop + essayViewerOffset;
+        const highlightRect = highlight.getBoundingClientRect();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        return highlightRect.top - wrapperRect.top + wrapper.scrollTop;
       }
     }
     
@@ -918,7 +919,10 @@ class AnnotationManager {
       if (aKey.paragraphIndex !== bKey.paragraphIndex) {
         return aKey.paragraphIndex - bKey.paragraphIndex;
       }
-      return aKey.start - bKey.start;
+      if (aKey.start !== bKey.start) {
+        return aKey.start - bKey.start;
+      }
+      return aKey.sortToken.localeCompare(bKey.sortToken);
     });
     
     // 找到活動批註的索引
@@ -979,7 +983,10 @@ class AnnotationManager {
       if (aKey.paragraphIndex !== bKey.paragraphIndex) {
         return aKey.paragraphIndex - bKey.paragraphIndex;
       }
-      return aKey.start - bKey.start;
+      if (aKey.start !== bKey.start) {
+        return aKey.start - bKey.start;
+      }
+      return aKey.sortToken.localeCompare(bKey.sortToken);
     });
     
     // 從上到下依次放置，避免重疊
@@ -1439,8 +1446,13 @@ class AnnotationManager {
     const annotationsList = Array.from(annotationsMap.values()).sort((a, b) => {
       const keyA = this.getAnnotationSortKeyFromData(a);
       const keyB = this.getAnnotationSortKeyFromData(b);
-      if (keyA.start === keyB.start) return keyA.paragraphIndex - keyB.paragraphIndex;
-      return keyA.start - keyB.start;
+      if (keyA.paragraphIndex !== keyB.paragraphIndex) {
+        return keyA.paragraphIndex - keyB.paragraphIndex;
+      }
+      if (keyA.start !== keyB.start) {
+        return keyA.start - keyB.start;
+      }
+      return keyA.sortToken.localeCompare(keyB.sortToken);
     });
 
     this.removeParagraphHighlights(paragraphId);
