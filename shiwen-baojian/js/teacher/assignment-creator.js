@@ -438,7 +438,7 @@ class AssignmentCreator {
       this.originalContent = '';
       this.cachedFormatJSON = null;
       
-      this.expandInlineEditor();
+      await this.expandInlineEditor();
       
       if (this.inlineQuill) {
         this.inlineQuill.setText('');
@@ -462,30 +462,28 @@ class AssignmentCreator {
       
       this.selectedTemplateId = formatId;
       
-      // 展開編輯器
-      this.expandInlineEditor();
-      
-      // 顯示內容
+      // 準備內容
       let humanReadable = format.human_input || '';
       if (!humanReadable && format.spec_json) {
         humanReadable = FormatEditorCore.formatJSONToHumanReadable(format.spec_json);
       }
       
-      // 🚨 優化：加載模板時標記狀態，避免觸發草稿保存
+      // 🚨 修復：先展開編輯器並等待完全初始化
+      await this.expandInlineEditor();
+      
+      // 🚨 修復：確保 Quill 完全準備好後再設置內容
       if (this.inlineQuill && humanReadable) {
-        this.isLoadingTemplate = true;  // 設置標記
+        this.isLoadingTemplate = true;
         
-        // 等待 Quill 編輯器完全準備好
-        setTimeout(() => {
-          try {
-            this.inlineQuill.setText(humanReadable);
-            this.originalContent = humanReadable;
-          } catch (error) {
-            console.warn('[AssignmentCreator] 設置編輯器內容失敗:', error);
-          } finally {
-            this.isLoadingTemplate = false;  // 重置標記
-          }
-        }, 150);
+        // 使用更可靠的方式設置內容
+        try {
+          this.inlineQuill.setText(humanReadable);
+          this.originalContent = humanReadable;
+        } catch (error) {
+          console.warn('[AssignmentCreator] 設置編輯器內容失敗:', error);
+        } finally {
+          this.isLoadingTemplate = false;
+        }
       }
       
       // 設置狀態
@@ -508,7 +506,7 @@ class AssignmentCreator {
       window.currentFormatSpecId = formatId;
       window.formatSpecData = format;
       
-      console.log('[AssignmentCreator] 格式已加載:', format.name, '模式:', this.currentMode, 'is_system:', format.is_system, 'is_template:', format.is_template);
+      console.log('[AssignmentCreator] 格式已加載:', format.name);
     } catch (error) {
       console.error('[AssignmentCreator] 加載格式失敗:', error);
       toast.error('加載格式失敗：' + error.message);
@@ -551,22 +549,24 @@ class AssignmentCreator {
   /**
    * 展开内联编辑器
    */
-  expandInlineEditor() {
+  async expandInlineEditor() {
     const editorContainer = this.container.querySelector('#inlineEditorContainer');
     
     if (!editorContainer) return;
-    
-    // 🚨 修復：下拉菜單保持可用，讓用戶可以隨時切換
-    // 不禁用 formatSelector
     
     // 显示编辑器
     editorContainer.classList.remove('hidden');
     this.isInlineEditorExpanded = true;
     
+    // 如果 Quill 已經初始化，直接返回
+    if (this.inlineQuill) {
+      console.log('[AssignmentCreator] Quill 已初始化，直接使用');
+      return;
+    }
+    
     // 等待 DOM 更新完成後再初始化 Quill
-    setTimeout(() => {
-      this.initializeQuillEditor();
-    }, 200);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await this.initializeQuillEditor();
   }
   
   /**
@@ -607,34 +607,36 @@ class AssignmentCreator {
         // 設置全局變量，供其他模組使用
         window.quill = this.inlineQuill;
         
-        // 等待 Quill 完全初始化後再設置事件監聽
-        setTimeout(() => {
-          try {
-            // 檢查 Quill 實例是否完全準備好
-            if (this.inlineQuill && this.inlineQuill.root) {
-              // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）
-              this.draftCleanup = FormatEditorCore.setupDraftAutoSave(
-                this.inlineQuill,
-                'format-editor-draft-inline',  // 任务创建专用 key
-                () => !this.isLoadingTemplate  // 🆕 只在非加載模板時保存草稿
-              );
-              
-              // 🚨 優化：只在"從零開始新建"時詢問恢復草稿
-              if (!this.selectedTemplateId && this.currentMode === 'custom') {
-                FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
-              }
-              
-              // 🚨 階段 3.5.1.7：綁定內容變化監聽
-              this.inlineQuill.on('text-change', () => {
-                this.handleContentChange();
-              });
-            } else {
-              console.warn('[AssignmentCreator] Quill 實例未完全準備好，跳過事件綁定');
+        // 🚨 修復：等待 Quill 完全初始化後再設置事件監聽
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        try {
+          // 檢查 Quill 實例是否完全準備好
+          if (this.inlineQuill && this.inlineQuill.root) {
+            // 🚨 優化：設置智能草稿自動保存（檢查 isLoadingTemplate 標記）
+            this.draftCleanup = FormatEditorCore.setupDraftAutoSave(
+              this.inlineQuill,
+              'format-editor-draft-inline',  // 任务创建专用 key
+              () => !this.isLoadingTemplate  // 🆕 只在非加載模板時保存草稿
+            );
+            
+            // 🚨 優化：只在"從零開始新建"時詢問恢復草稿
+            if (!this.selectedTemplateId && this.currentMode === 'custom') {
+              FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
             }
-          } catch (error) {
-            console.error('[AssignmentCreator] 事件綁定失敗:', error);
+            
+            // 🚨 階段 3.5.1.7：綁定內容變化監聽
+            this.inlineQuill.on('text-change', () => {
+              this.handleContentChange();
+            });
+            
+            console.log('[AssignmentCreator] Quill 編輯器初始化完成');
+          } else {
+            console.warn('[AssignmentCreator] Quill 實例未完全準備好，跳過事件綁定');
           }
-        }, 200);
+        } catch (error) {
+          console.error('[AssignmentCreator] 事件綁定失敗:', error);
+        }
         
         console.log('[AssignmentCreator] 内联编辑器已初始化');
       } catch (error) {
