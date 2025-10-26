@@ -49,6 +49,7 @@ class TeacherDashboard {
     
     this.currentPage = 'overview';
     this.container = null;
+    this.isInitialized = false;  // 添加初始化狀態標記
   }
 
   /**
@@ -60,6 +61,16 @@ class TeacherDashboard {
     try {
       // 設置導航監聽
       this.setupNavigation();
+      
+      // 🚨 優化：預先初始化 AssignmentManager，避免在導航時重複初始化
+      if (!this.isInitialized) {
+        try {
+          await this.assignmentManager.initialize();
+          this.isInitialized = true;
+        } catch (error) {
+          console.warn('AssignmentManager 初始化失敗，將在導航時處理:', error.message);
+        }
+      }
       
       // 🚨 優化：徽章更新改為非阻塞異步執行
       // 不等待徽章更新完成，讓頁面立即開始渲染
@@ -183,9 +194,10 @@ class TeacherDashboard {
     try {
       // 對于任務相關頁面，需要先确保 AssignmentManager 已初始化
       const needsAssignmentManager = ['assignments', 'assignment-create', 'assignment-edit'];
-      if (needsAssignmentManager.includes(page)) {
+      if (needsAssignmentManager.includes(page) && !this.isInitialized) {
         try {
           await this.assignmentManager.initialize();
+          this.isInitialized = true;
         } catch (error) {
           // 如果没有班級，重定向到班級管理
           console.warn('需要先創建班級:', error.message);
