@@ -1517,14 +1517,27 @@ class AnnotationManager {
 
   removeExistingHighlights(annotationId) {
     const nodes = document.querySelectorAll(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    nodes.forEach(node => this.unwrapHighlight(node));
+    nodes.forEach(node => this.removeHighlightNode(node));
   }
 
   removeParagraphHighlights(paragraphId) {
     const paragraphElement = this.getParagraphElement(paragraphId);
     if (!paragraphElement) return;
     const nodes = paragraphElement.querySelectorAll('.annotation-highlight');
-    nodes.forEach(node => this.unwrapHighlight(node));
+    nodes.forEach(node => this.removeHighlightNode(node));
+  }
+
+  removeHighlightNode(node) {
+    if (!node) return;
+    const isOrphan = node.dataset?.orphan === 'true' || node.classList.contains('annotation-highlight-orphan');
+    const isPreview = node.dataset?.preview === 'true' || node.classList.contains('annotation-highlight-preview');
+
+    if (isOrphan || isPreview) {
+      node.remove();
+      return;
+    }
+
+    this.unwrapHighlight(node);
   }
 
   removeFloatingAnnotations(paragraphId) {
