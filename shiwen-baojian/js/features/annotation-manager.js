@@ -112,6 +112,13 @@ class AnnotationStore {
     return [...this.paragraphIds];
   }
 
+  getParagraphIndex(paragraphId) {
+    if (paragraphId && this.paragraphIndex.has(paragraphId)) {
+      return this.paragraphIndex.get(paragraphId);
+    }
+    return Number.POSITIVE_INFINITY;
+  }
+
   add(annotation) {
     if (!annotation?.id) return;
     this.annotations.set(annotation.id, annotation);
@@ -234,6 +241,11 @@ class AnnotationRenderer {
     this.selectionPreview = null;
     this.annotationButton = null;
     this.activeAnnotationId = null;
+    this.inputElement = null;
+    this.inputMeta = null;
+    this.boundAutoLayout = () => this.layoutAnnotations(this.activeAnnotationId);
+    this.wrapper.addEventListener('scroll', this.boundAutoLayout);
+    window.addEventListener('resize', this.boundAutoLayout);
   }
 
   renderInitial(annotations) {
@@ -389,7 +401,7 @@ class AnnotationRenderer {
   }
 
   async openAnnotationEditor(options) {
-    const { mode, defaultContent = '', anchorRect } = options;
+    const { mode, defaultContent = '', anchorRect, selection } = options;
     return new Promise((resolve) => {
       const container = document.createElement('div');
       container.className = 'floating-annotation-input';
@@ -417,12 +429,25 @@ class AnnotationRenderer {
       container.style.right = '20px';
       container.style.zIndex = String(CONSTANTS.CARD_Z_INDEX + 1);
 
-      this.layoutAnnotations(this.activeAnnotationId);
+      this.inputElement = container;
+      this.inputMeta = {
+        paragraphId: selection?.paragraphId || null,
+        paragraphIndex: this.store.getParagraphIndex(selection?.paragraphId) ?? Number.POSITIVE_INFINITY,
+        startOffset: selection?.startOffset ?? Number.POSITIVE_INFINITY,
+        rect: anchorRect || null,
+        previewElement: this.selectionPreview || null,
+        linkedAnnotationId: null
+      };
+
       this.wrapper.appendChild(container);
-      this.reserveSpaceForInput(container);
+      this.layoutAnnotations(this.activeAnnotationId);
 
       const cleanup = () => {
-        this.releaseSpaceForInput(container);
+        if (this.inputElement === container) {
+          this.inputElement = null;
+          this.inputMeta = null;
+        }
+        this.layoutAnnotations(this.activeAnnotationId);
         container.remove();
       };
 
@@ -487,90 +512,125 @@ class AnnotationRenderer {
   }
 
   layoutAnnotations(anchorId = null) {
-    const sorted = this.store.getAllSorted();
-    if (!sorted.length) return;
-
     const wrapperRect = this.wrapper.getBoundingClientRect();
-    const metadata = [];
+    const items = [];
 
-    sorted.forEach(annotation => {
+    const annotations = this.store.getAllSorted();
+    annotations.forEach(annotation => {
       const card = this.cards.get(annotation.id);
       if (!card) return;
-      const highlight = this.highlights.get(annotation.id);
-      const ideal = this.computeHighlightTop(highlight, wrapperRect);
-      metadata.push({
+      items.push({
+        type: 'card',
+        id: annotation.id,
         annotation,
-        card,
-        highlight,
-        idealTop: Number.isFinite(ideal) ? ideal : null,
-        top: 0,
+        element: card,
+        highlight: this.highlights.get(annotation.id),
+        paragraphIndex: this.store.getParagraphIndex(annotation.paragraphId),
+        startOffset: Number.isFinite(annotation.highlightStart) ? annotation.highlightStart : Number.POSITIVE_INFINITY,
         height: card.offsetHeight || 140
       });
     });
 
-    if (!metadata.length) return;
-
-    let lastBottom = null;
-    metadata.forEach(meta => {
-      const fallbackTop = lastBottom === null ? this.wrapper.scrollTop : lastBottom + CONSTANTS.CARD_GAP;
-      const desired = meta.idealTop !== null ? meta.idealTop : fallbackTop;
-      const minTop = lastBottom === null ? desired : lastBottom + CONSTANTS.CARD_GAP;
-      const resolved = Math.max(desired, minTop);
-      meta.top = resolved;
-      lastBottom = resolved + meta.height;
-    });
-
-    const anchorIndex = anchorId
-      ? metadata.findIndex(meta => meta.annotation.id === anchorId)
-      : -1;
-
-    if (anchorIndex >= 0) {
-      const anchorMeta = metadata[anchorIndex];
-      if (anchorMeta.idealTop !== null) {
-        anchorMeta.top = anchorMeta.idealTop;
-      }
-
-      let prevBottom = anchorMeta.top + anchorMeta.height;
-      for (let i = anchorIndex + 1; i < metadata.length; i++) {
-        const meta = metadata[i];
-        const desired = meta.idealTop !== null ? meta.idealTop : prevBottom + CONSTANTS.CARD_GAP;
-        const minTop = prevBottom + CONSTANTS.CARD_GAP;
-        const top = Math.max(desired, minTop);
-        meta.top = top;
-        prevBottom = top + meta.height;
-      }
-
-      let nextTop = anchorMeta.top - CONSTANTS.CARD_GAP;
-      for (let i = anchorIndex - 1; i >= 0; i--) {
-        const meta = metadata[i];
-        const maxTop = nextTop - meta.height;
-        const desired = meta.idealTop !== null ? meta.idealTop : Math.max(0, maxTop);
-        let top = Math.min(desired, maxTop);
-        if (!Number.isFinite(top) || Number.isNaN(top)) {
-          top = Math.max(0, maxTop);
-        }
-        if (top < 0) top = 0;
-        meta.top = top;
-        nextTop = top - CONSTANTS.CARD_GAP;
-      }
-
-      // final forward pass to guarantee spacing after adjustments
-      let forwardBottom = null;
-      metadata.forEach(meta => {
-        if (forwardBottom === null) {
-          forwardBottom = meta.top + meta.height;
-          return;
-        }
-        const minTop = forwardBottom + CONSTANTS.CARD_GAP;
-        if (meta.top < minTop) {
-          meta.top = minTop;
-        }
-        forwardBottom = meta.top + meta.height;
+    if (this.inputElement && this.inputMeta) {
+      const linkedHighlight = this.inputMeta.linkedAnnotationId
+        ? this.highlights.get(this.inputMeta.linkedAnnotationId)
+        : null;
+      items.push({
+        type: 'input',
+        id: 'input',
+        annotation: null,
+        element: this.inputElement,
+        highlight: linkedHighlight,
+        paragraphIndex: this.inputMeta.paragraphIndex,
+        startOffset: this.inputMeta.startOffset,
+        rect: this.inputMeta.rect || null,
+        previewElement: this.inputMeta.previewElement || this.selectionPreview || null,
+        height: this.inputElement.offsetHeight || 140
       });
     }
 
-    metadata.forEach(meta => {
-      meta.card.style.top = `${meta.top}px`;
+    if (!items.length) return;
+
+    items.sort((a, b) => {
+      if (a.paragraphIndex !== b.paragraphIndex) {
+        return a.paragraphIndex - b.paragraphIndex;
+      }
+      if (a.startOffset !== b.startOffset) {
+        return a.startOffset - b.startOffset;
+      }
+      if (a.type === 'input' && b.type !== 'input') return -1;
+      if (a.type !== 'input' && b.type === 'input') return 1;
+      return 0;
+    });
+
+    const calcIdealTop = (item) => {
+      if (item.type === 'input') {
+        if (item.highlight) {
+          const rect = item.highlight.getBoundingClientRect();
+          if (rect) {
+            return rect.top - wrapperRect.top + this.wrapper.scrollTop - item.height / 2;
+          }
+        }
+        if (item.previewElement) {
+          const rect = item.previewElement.getBoundingClientRect();
+          if (rect) {
+            return rect.top - wrapperRect.top + this.wrapper.scrollTop - item.height / 2;
+          }
+        }
+        if (item.rect) {
+          return item.rect.top - wrapperRect.top + this.wrapper.scrollTop;
+        }
+      }
+      if (item.highlight) {
+        const rect = item.highlight.getBoundingClientRect();
+        if (rect) {
+          return rect.top - wrapperRect.top + this.wrapper.scrollTop - item.height / 2;
+        }
+      }
+      return null;
+    };
+
+    const gap = CONSTANTS.CARD_GAP;
+    let lastBottom = null;
+
+    items.forEach(item => {
+      const ideal = calcIdealTop(item);
+      const fallback = lastBottom === null ? this.wrapper.scrollTop : lastBottom + gap;
+      const minTop = lastBottom === null ? fallback : lastBottom + gap;
+      const desired = ideal !== null ? ideal : fallback;
+      item.top = Math.max(desired, minTop);
+      if (item.top < 0) item.top = 0;
+      lastBottom = item.top + item.height;
+    });
+
+    if (anchorId) {
+      const anchor = items.find(item => item.id === anchorId);
+      if (anchor) {
+        const ideal = calcIdealTop(anchor);
+        if (ideal !== null) {
+          anchor.top = Math.max(0, ideal);
+        }
+        let prevBottom = anchor.top + anchor.height;
+        for (const item of items) {
+          if (item === anchor) continue;
+          if (item.top < prevBottom + gap) {
+            item.top = prevBottom + gap;
+          }
+          prevBottom = item.top + item.height;
+        }
+      }
+    }
+
+    let currentBottom = null;
+    items.forEach(item => {
+      if (currentBottom !== null && item.top < currentBottom + gap) {
+        item.top = currentBottom + gap;
+      }
+      currentBottom = item.top + item.height;
+    });
+
+    items.forEach(item => {
+      item.element.style.top = `${item.top}px`;
     });
   }
 
@@ -595,6 +655,10 @@ class AnnotationRenderer {
       } catch (error) {
         range = null;
       }
+    }
+
+    if (range && range.toString && range.toString().length === 0 && annotation.anchorText) {
+      range = this.buildRangeFromAnchorText(paragraphEl, annotation.anchorText);
     }
 
     if (!range) {
@@ -842,36 +906,28 @@ class AnnotationRenderer {
       }
     });
     this.cards.clear();
+    if (this.inputElement) {
+      this.inputElement.remove();
+    }
+    this.inputElement = null;
+    this.inputMeta = null;
   }
 
-  reserveSpaceForInput(input) {
-    if (!input) return;
-    const inputTop = parseFloat(input.style.top);
-    if (!Number.isFinite(inputTop)) return;
-    const delta = (input.offsetHeight || 140) + CONSTANTS.CARD_GAP;
-    input.dataset.offsetApplied = String(delta);
-
-    this.cards.forEach(card => {
-      const currentTop = parseFloat(card.style.top) || 0;
-      if (currentTop >= inputTop) {
-        if (!card.dataset.originalTop) {
-          card.dataset.originalTop = card.style.top || '0';
-        }
-        card.style.top = `${currentTop + delta}px`;
-      }
-    });
+  linkInputToAnnotation(annotationId) {
+    if (this.inputMeta) {
+      this.inputMeta.linkedAnnotationId = annotationId;
+      this.inputMeta.rect = null;
+      this.inputMeta.previewElement = null;
+    }
+    this.layoutAnnotations(annotationId);
   }
 
-  releaseSpaceForInput(input) {
-    if (!input?.dataset?.offsetApplied) return;
-    this.cards.forEach(card => {
-      if (card.dataset.originalTop) {
-        card.style.top = card.dataset.originalTop;
-        delete card.dataset.originalTop;
-      }
-    });
-    delete input.dataset.offsetApplied;
-    this.layoutAnnotations(this.activeAnnotationId);
+  dispose() {
+    this.wrapper.removeEventListener('scroll', this.boundAutoLayout);
+    window.removeEventListener('resize', this.boundAutoLayout);
+    this.hideAnnotationButton();
+    this.hideSelectionPreview();
+    this.clearAll();
   }
 }
 
@@ -1132,19 +1188,11 @@ class AnnotationManager {
       mode: 'create',
       defaultContent: '',
       anchorRect: selection.rect,
+      selection,
       currentUser: this.currentUser
     });
 
     if (!content) {
-      this.renderer.hideSelectionPreview();
-      return;
-    }
-
-    if (!this.currentUser || !this.currentUser.id) {
-      this.currentUser = await this.getCurrentUser();
-    }
-    if (!this.currentUser?.id) {
-      toast.error('未能識別當前教師，請重新登入後重試');
       this.renderer.hideSelectionPreview();
       return;
     }
@@ -1165,6 +1213,7 @@ class AnnotationManager {
       range: highlightRange,
       isPending: true
     });
+    this.renderer.linkInputToAnnotation(pendingAnnotation.id);
 
     window.getSelection()?.removeAllRanges?.();
 
@@ -1314,9 +1363,7 @@ class AnnotationManager {
   destroy() {
     this.disableSelectionMode();
     if (this.renderer) {
-      this.renderer.clearAll();
-      this.renderer.hideAnnotationButton();
-      this.renderer.hideSelectionPreview();
+      this.renderer.dispose();
     }
     if (this.selectionManager) {
       this.selectionManager.destroy();
