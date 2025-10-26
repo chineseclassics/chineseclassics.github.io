@@ -1049,26 +1049,11 @@ class AnnotationManager {
   }
 
   async handleCreateAnnotation(selection) {
-    console.log('📝 handleCreateAnnotation 被調用', { selection, currentUser: this.currentUser });
-    
-    if (!this.currentUser || !this.currentUser.id) {
-      this.currentUser = await this.getCurrentUser();
-    }
-    if (!this.currentUser?.id) {
-      console.error('❌ 無法識別用戶', this.currentUser);
-      toast.error('未能識別當前教師，請重新登入後重試');
-      this.renderer.hideSelectionPreview();
-      return;
-    }
     if (!selection) {
-      console.warn('⚠️ selection 為空');
       return;
     }
-    
-    console.log('隱藏 annotation button...');
+
     this.renderer.hideAnnotationButton();
-    
-    console.log('打開編輯器...');
     const content = await this.renderer.openAnnotationEditor({
       mode: 'create',
       defaultContent: '',
@@ -1076,10 +1061,16 @@ class AnnotationManager {
       currentUser: this.currentUser
     });
 
-    console.log('編輯器返回內容:', content);
-    
     if (!content) {
-      console.log('用戶取消或內容為空');
+      this.renderer.hideSelectionPreview();
+      return;
+    }
+
+    if (!this.currentUser || !this.currentUser.id) {
+      this.currentUser = await this.getCurrentUser();
+    }
+    if (!this.currentUser?.id) {
+      toast.error('未能識別當前教師，請重新登入後重試');
       this.renderer.hideSelectionPreview();
       return;
     }
