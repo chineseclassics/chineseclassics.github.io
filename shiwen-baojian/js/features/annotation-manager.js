@@ -472,7 +472,7 @@ class AnnotationRenderer {
     const paragraphEl = this.getParagraphElement(annotation.paragraphId);
     if (!paragraphEl) return this.renderOrphanPlaceholder(annotation);
 
-    this.removeExistingHighlights(annotation.id);
+    this.removeHighlightNode(this.highlights.get(annotation.id));
 
     let range = null;
     if (context.range) {
@@ -917,6 +917,9 @@ class AnnotationManager {
     const targetIds = paragraphIds && paragraphIds.length ? paragraphIds : this.store.getParagraphIds();
     if (!targetIds || targetIds.length === 0) {
       this.store.reset([]);
+      if (this.renderer) {
+        this.renderer.clearAll();
+      }
       return;
     }
     try {
