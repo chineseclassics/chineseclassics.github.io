@@ -17,6 +17,7 @@ class AnnotationManager {
     this.paragraphIds = [];
     this.paragraphElements = new Map();
     this.realtimeChannels = [];
+    this.supportsAnchoring = true;
     
     // 保存事件處理器引用
     this.boundHandleTextSelection = this.handleTextSelection.bind(this);
@@ -524,15 +525,7 @@ class AnnotationManager {
         anchor_context: anchorContext
       };
 
-      const { data, error } = await this.supabase
-        .from('annotations')
-        .insert(insertPayload)
-        .select('*, teacher:users!annotations_teacher_id_fkey(display_name, email)')
-        .single();
-      
-      if (error) throw error;
-
-      const annotationRecord = data;
+      const annotationRecord = await this.insertAnnotationRecord(insertPayload);
       const annotationId = annotationRecord.id;
       if (!annotationId) {
         throw new Error('無法取得新批注的識別碼');
@@ -1588,6 +1581,52 @@ class AnnotationManager {
       console.error('❌ 擷取批注資料失敗:', error);
       return null;
     }
+  }
+
+  async insertAnnotationRecord(basePayload) {
+    const payload = { ...basePayload };
+    if (!this.supportsAnchoring) {
+      delete payload.anchor_text;
+      delete payload.anchor_context;
+    } else if (!payload.anchor_context) {
+      delete payload.anchor_context;
+    }
+
+    try {
+      const { data, error } = await this.supabase
+        .from('annotations')
+        .insert(payload)
+        .select('*, teacher:users!annotations_teacher_id_fkey(display_name, email)')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      if (this.supportsAnchoring && this.isAnchoringColumnError(error)) {
+        console.warn('⚠️ 資料庫缺少錨定欄位，退回簡化模式');
+        this.supportsAnchoring = false;
+        const fallbackPayload = { ...basePayload };
+        delete fallbackPayload.anchor_text;
+        delete fallbackPayload.anchor_context;
+        const { data, error: retryError } = await this.supabase
+          .from('annotations')
+          .insert(fallbackPayload)
+          .select('*, teacher:users!annotations_teacher_id_fkey(display_name, email)')
+          .single();
+        if (retryError) throw retryError;
+        return data;
+      }
+      throw error;
+    }
+  }
+
+  isAnchoringColumnError(error) {
+    if (!error) return false;
+    const code = error.code;
+    const message = String(error.message || '').toLowerCase();
+    if (code === 'PGRST204' || code === '42703') return true;
+    if (message.includes('anchor_context') || message.includes('anchor_text')) return true;
+    return false;
   }
 
   /**
