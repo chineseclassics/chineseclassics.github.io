@@ -48,6 +48,22 @@
   border-bottom-color: #d97706;
 }
 
+/* 同步錯誤狀態 */
+.floating-annotation.sync-error {
+  border-left: 3px solid #ef4444;
+  opacity: 0.8;
+  position: relative;
+}
+
+.floating-annotation.sync-error::after {
+  content: '⚠️';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 14px;
+  z-index: 10;
+}
+
 /* 批注標記 */
 .annotation-marker {
   color: #f59e0b;

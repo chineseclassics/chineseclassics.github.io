@@ -323,32 +323,74 @@ class AnnotationManager {
     this.highlightSelectedText();
     
     // 顯示批注創建對話框
-    const content = await this.showAnnotationDialog();
-    if (!content) {
+    const dialogResult = await this.showAnnotationDialog();
+    if (!dialogResult) {
       console.log('❌ 用戶取消了批注創建');
       return;
     }
     
+    const { content, inputBox, cleanup } = dialogResult;
     console.log('✅ 批注內容:', content);
     
+    // 🚨 樂觀更新：立即生成臨時 ID 並轉換為批註顯示
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const paragraphOrderIndex = this.getCurrentParagraphOrderIndex();
+    
+    // 添加到本地存儲（使用臨時 ID）
+    this.annotations.set(tempId, {
+      id: tempId,
+      paragraph_id: this.currentParagraphId,
+      paragraph_order_index: paragraphOrderIndex,
+      content: content,
+      highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
+      highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
+      anchor_text: this.selectedText.text,
+      annotation_type: 'comment',
+      priority: 'normal',
+      is_private: false,
+      created_at: new Date().toISOString(),
+      _isOptimistic: true // 標記為樂觀更新
+    });
+    
+    // 移除輸入框
+    cleanup();
+    
+    // 若存在臨時高亮，先移除
+    if (this.tempHighlight) {
+      try {
+        const parent = this.tempHighlight.parentNode;
+        while (this.tempHighlight.firstChild) {
+          parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
+        }
+        parent.removeChild(this.tempHighlight);
+        this.tempHighlight = null;
+        console.log('🧹 已移除臨時高亮，準備渲染永久高亮');
+      } catch (cleanupErr) {
+        console.log('⚠️ 清理臨時高亮失敗:', cleanupErr);
+      }
+    }
+    
+    // 🚨 立即渲染批註（使用臨時 ID）
+    this.renderAnnotation(tempId);
+    
+    // 清除選擇
+    window.getSelection().removeAllRanges();
+    this.selectedText = null;
+    this.tempHighlight = null;
+    this.hideAnnotationButton();
+    
+    console.log('✅ 批注已樂觀顯示，臨時 ID:', tempId);
+    
+    // 🚨 後台異步同步到 Supabase
     try {
-      // 調用 RPC 函數創建批注
-      console.log('📤 準備調用 create_annotation RPC');
-      console.log('參數:', {
-        p_paragraph_id: this.currentParagraphId,
-        p_content: content,
-        p_highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
-        p_highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
-        p_anchor_text: this.selectedText.text
-      });
+      console.log('📤 後台同步到 Supabase...');
       
       const { data, error } = await this.supabase.rpc('create_annotation', {
         p_paragraph_id: this.currentParagraphId,
         p_content: content,
-        // 儲存為「段落內全域偏移」；若計算失敗回退到原本（較不準確）的偏移
         p_highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
         p_highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
-        p_anchor_text: this.selectedText.text, // 保存選中的文字作為錨定文本
+        p_anchor_text: this.selectedText.text,
         p_annotation_type: 'comment',
         p_priority: 'normal',
         p_is_private: false
@@ -356,47 +398,26 @@ class AnnotationManager {
       
       if (error) throw error;
       
-      // 添加批注到本地存儲
-      const paragraphOrderIndex = this.getCurrentParagraphOrderIndex();
-      this.annotations.set(data, {
-        id: data,
-        paragraph_id: this.currentParagraphId,
-        paragraph_order_index: paragraphOrderIndex, // 保存段落在文章中的順序
-        content: content,
-        highlight_start: (paraStart != null ? paraStart : Math.min(this.selectedText.startOffset, this.selectedText.endOffset)),
-        highlight_end: (paraEnd != null ? paraEnd : Math.max(this.selectedText.startOffset, this.selectedText.endOffset)),
-        anchor_text: this.selectedText.text, // 保存錨定文本
-        annotation_type: 'comment',
-        priority: 'normal',
-        is_private: false,
-        created_at: new Date().toISOString()
-      });
+      // 🚨 同步成功：用真實 ID 替換臨時 ID
+      const annotationData = this.annotations.get(tempId);
+      this.annotations.delete(tempId);
       
-      // 若存在臨時高亮，先移除，避免與永久高亮重疊
-      if (this.tempHighlight) {
-        try {
-          const parent = this.tempHighlight.parentNode;
-          while (this.tempHighlight.firstChild) {
-            parent.insertBefore(this.tempHighlight.firstChild, this.tempHighlight);
-          }
-          parent.removeChild(this.tempHighlight);
-          this.tempHighlight = null;
-          console.log('🧹 已移除臨時高亮，準備渲染永久高亮');
-        } catch (cleanupErr) {
-          console.log('⚠️ 清理臨時高亮失敗:', cleanupErr);
-        }
+      annotationData.id = data;
+      delete annotationData._isOptimistic;
+      this.annotations.set(data, annotationData);
+      
+      // 更新 DOM 元素的 data-annotation-id
+      const annotationElement = document.querySelector(`.floating-annotation[data-annotation-id="${tempId}"]`);
+      const highlightElement = document.querySelector(`.annotation-highlight[data-annotation-id="${tempId}"]`);
+      
+      if (annotationElement) {
+        annotationElement.dataset.annotationId = data;
       }
-
-      // 渲染批注（注意：此處 data 已是新建的批註 ID）
-      this.renderAnnotation(data);
+      if (highlightElement) {
+        highlightElement.dataset.annotationId = data;
+      }
       
-      // 清除選擇和臨時高亮引用
-      window.getSelection().removeAllRanges();
-      this.selectedText = null;
-      this.tempHighlight = null; // 清除臨時高亮引用，因為已成為永久批註
-      this.hideAnnotationButton();
-      
-      console.log('✅ 批注創建成功，ID:', data);
+      console.log('✅ 批注同步成功，真實 ID:', data);
       
       // 顯示成功提示
       if (typeof toast !== 'undefined') {
@@ -404,16 +425,31 @@ class AnnotationManager {
       }
       
     } catch (error) {
-      console.error('❌ 創建批注失敗:', error);
+      console.error('❌ 同步批注失敗:', error);
+      
+      // 🚨 同步失敗：標記批註為錯誤狀態
+      const annotationData = this.annotations.get(tempId);
+      if (annotationData) {
+        annotationData._syncError = true;
+      }
+      
+      // 在批註上顯示錯誤標記
+      const annotationElement = document.querySelector(`.floating-annotation[data-annotation-id="${tempId}"]`);
+      if (annotationElement) {
+        annotationElement.classList.add('sync-error');
+        annotationElement.title = '同步失敗，點擊重試';
+      }
+      
       console.error('錯誤詳情:', {
         message: error.message,
         code: error.code,
         details: error.details,
         hint: error.hint
       });
+      
       if (typeof toast !== 'undefined') {
         const errorMsg = error.message || '網絡連接錯誤';
-        toast.error('創建批注失敗: ' + errorMsg);
+        toast.error('批注同步失敗: ' + errorMsg);
       }
     }
   }
@@ -581,8 +617,10 @@ class AnnotationManager {
       submitBtn.addEventListener('click', () => {
         const content = textarea.value.trim();
         console.log('💾 用戶保存批注:', content);
-        cleanup();
-        resolve(content);
+        
+        // 🚨 修改：不立即清理，返回內容和輸入框元素
+        // 讓 createAnnotation 方法處理樂觀更新
+        resolve({ content, inputBox, cleanup });
       });
       
       // 自動聚焦到文本框
