@@ -17,6 +17,7 @@ class AnnotationManager {
     this.currentParagraphId = null;
     this.paragraphIds = [];
     this.paragraphElements = new Map();
+    this.paragraphIndex = new Map();
     this.realtimeChannels = [];
     this.supportsAnchoring = true;
     this.selectionPreview = null;
@@ -98,13 +99,17 @@ class AnnotationManager {
    */
   refreshParagraphElements() {
     this.paragraphElements.clear();
+    this.paragraphIndex.clear();
     const nodes = document.querySelectorAll('#essayViewer [data-paragraph-id]');
+    let index = 0;
     nodes.forEach(node => {
       const paragraphId = node.dataset.paragraphId;
       if (paragraphId) {
         this.paragraphElements.set(paragraphId, node);
+        this.paragraphIndex.set(paragraphId, index++);
       }
     });
+    this.paragraphIds = Array.from(this.paragraphElements.keys());
   }
 
   /**
@@ -149,6 +154,51 @@ class AnnotationManager {
         this.annotationsByParagraph.delete(annotation.paragraph_id);
       }
     }
+  }
+
+  getAnnotationSortKey(element) {
+    const dataset = element.dataset || {};
+    let paragraphId = dataset.paragraphId || null;
+    let start = Number.POSITIVE_INFINITY;
+
+    if (dataset.annotationId) {
+      const data = this.annotations.get(dataset.annotationId);
+      if (data) {
+        paragraphId = paragraphId || data.paragraph_id || null;
+        if (data.highlight_start !== undefined && data.highlight_start !== null) {
+          start = data.highlight_start;
+        }
+      }
+    }
+
+    if (!paragraphId && element.classList.contains('floating-annotation-input') && this.selectedText?.paragraphId) {
+      paragraphId = this.selectedText.paragraphId;
+    }
+
+    if (dataset.startOffset !== undefined) {
+      start = Number(dataset.startOffset);
+    } else if (element.classList.contains('floating-annotation-input') && this.selectedText?.startOffset !== undefined) {
+      start = this.selectedText.startOffset;
+    }
+
+    const paragraphIndex = (paragraphId !== null && this.paragraphIndex.has(paragraphId))
+      ? this.paragraphIndex.get(paragraphId)
+      : Number.POSITIVE_INFINITY;
+
+    if (!isFinite(start)) {
+      start = 0;
+    }
+
+    return { paragraphId, paragraphIndex, start };
+  }
+
+  getAnnotationSortKeyFromData(annotation) {
+    const paragraphId = annotation?.paragraph_id || null;
+    const paragraphIndex = (paragraphId !== null && this.paragraphIndex.has(paragraphId))
+      ? this.paragraphIndex.get(paragraphId)
+      : Number.POSITIVE_INFINITY;
+    const start = annotation?.highlight_start ?? 0;
+    return { paragraphId, paragraphIndex, start };
   }
 
   /**
@@ -641,6 +691,12 @@ class AnnotationManager {
         ? selectionRect.top - wrapperRect.top + wrapper.scrollTop - 20
         : wrapper.scrollTop + 20;
       inputBox.style.top = Math.max(0, offsetTop) + 'px';
+      if (this.selectedText?.paragraphId) {
+        inputBox.dataset.paragraphId = this.selectedText.paragraphId;
+      }
+      if (this.selectedText?.startOffset !== undefined) {
+        inputBox.dataset.startOffset = String(this.selectedText.startOffset);
+      }
 
       // 調整所有批註位置
       this.adjustAnnotationsForActive(inputBox);
@@ -849,23 +905,20 @@ class AnnotationManager {
    * 調整批註位置，確保活動批註對齊原文，其他批註智能避讓
    */
   adjustAnnotationsForActive(activeElement) {
+    this.refreshParagraphElements();
     const allAnnotations = Array.from(
       document.querySelectorAll('.floating-annotation, .floating-annotation-input')
     );
-    
-    // 按 highlight_start 排序
+
     const sortedAnnotations = allAnnotations.sort((a, b) => {
       if (a === activeElement) return -1;
       if (b === activeElement) return 1;
-      
-      const aId = a.dataset.annotationId;
-      const bId = b.dataset.annotationId;
-      if (!aId) return -1;
-      if (!bId) return 1;
-      
-      const aData = this.annotations.get(aId);
-      const bData = this.annotations.get(bId);
-      return (aData?.highlight_start || 0) - (bData?.highlight_start || 0);
+      const aKey = this.getAnnotationSortKey(a);
+      const bKey = this.getAnnotationSortKey(b);
+      if (aKey.paragraphIndex !== bKey.paragraphIndex) {
+        return aKey.paragraphIndex - bKey.paragraphIndex;
+      }
+      return aKey.start - bKey.start;
     });
     
     // 找到活動批註的索引
@@ -912,24 +965,21 @@ class AnnotationManager {
    * 調整所有批註位置，確保按原文順序排列且不重疊
    */
   adjustAllAnnotations() {
+    this.refreshParagraphElements();
     const allAnnotations = Array.from(
       document.querySelectorAll('.floating-annotation, .floating-annotation-input')
     );
     
     if (allAnnotations.length === 0) return;
     
-    // 按 highlight_start 排序
+    // 全局排序
     const sortedAnnotations = allAnnotations.sort((a, b) => {
-      const aId = a.dataset.annotationId;
-      const bId = b.dataset.annotationId;
-      
-      // 處理輸入框（沒有 annotationId）
-      if (!aId) return -1;
-      if (!bId) return 1;
-      
-      const aData = this.annotations.get(aId);
-      const bData = this.annotations.get(bId);
-      return (aData?.highlight_start || 0) - (bData?.highlight_start || 0);
+      const aKey = this.getAnnotationSortKey(a);
+      const bKey = this.getAnnotationSortKey(b);
+      if (aKey.paragraphIndex !== bKey.paragraphIndex) {
+        return aKey.paragraphIndex - bKey.paragraphIndex;
+      }
+      return aKey.start - bKey.start;
     });
     
     // 從上到下依次放置，避免重疊
@@ -1112,6 +1162,9 @@ class AnnotationManager {
     floatingAnnotation.dataset.annotationId = annotationId;
     if (annotation.paragraph_id) {
       floatingAnnotation.dataset.paragraphId = annotation.paragraph_id;
+    }
+    if (annotation.highlight_start !== undefined && annotation.highlight_start !== null) {
+      floatingAnnotation.dataset.startOffset = String(annotation.highlight_start);
     }
     floatingAnnotation.dataset.paragraphId = annotation.paragraph_id || '';
 
@@ -1378,14 +1431,16 @@ class AnnotationManager {
   }
 
   renderParagraph(paragraphId) {
+    this.refreshParagraphElements();
     const paragraphElement = this.getParagraphElement(paragraphId);
     if (!paragraphElement) return;
 
     const annotationsMap = this.getParagraphAnnotations(paragraphId);
     const annotationsList = Array.from(annotationsMap.values()).sort((a, b) => {
-      const startA = a?.highlight_start ?? 0;
-      const startB = b?.highlight_start ?? 0;
-      return startA - startB;
+      const keyA = this.getAnnotationSortKeyFromData(a);
+      const keyB = this.getAnnotationSortKeyFromData(b);
+      if (keyA.start === keyB.start) return keyA.paragraphIndex - keyB.paragraphIndex;
+      return keyA.start - keyB.start;
     });
 
     this.removeParagraphHighlights(paragraphId);
