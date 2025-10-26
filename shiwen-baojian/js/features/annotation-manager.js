@@ -963,7 +963,7 @@ class AnnotationManager {
       onSelectionChange: (selection) => this.handleSelectionChange(selection)
     });
 
-    this.currentUser = this.getCurrentUser();
+    this.currentUser = await this.getCurrentUser();
 
     await this.loadAnnotations(paragraphIds);
     this.initialized = true;
@@ -1031,7 +1031,7 @@ class AnnotationManager {
 
   async handleCreateAnnotation(selection) {
     if (!this.currentUser || !this.currentUser.id) {
-      this.currentUser = this.getCurrentUser();
+      this.currentUser = await this.getCurrentUser();
     }
     if (!this.currentUser?.id) {
       toast.error('未能識別當前教師，請重新登入後重試');
@@ -1065,6 +1065,13 @@ class AnnotationManager {
     window.getSelection()?.removeAllRanges?.();
 
     try {
+      if (!this.currentUser || !this.currentUser.id) {
+        this.currentUser = await this.getCurrentUser();
+      }
+      if (!this.currentUser?.id) {
+        throw new Error('無法確認教師身份');
+      }
+
       const payload = toDatabasePayload(pendingAnnotation);
       const { data, error } = await this.supabase
         .from('annotations')
@@ -1182,14 +1189,17 @@ class AnnotationManager {
     this.renderer.setActive(annotationId);
   }
 
-  getCurrentUser() {
+  async getCurrentUser() {
     if (window.AppState?.currentUser) {
       return window.AppState.currentUser;
     }
-    const session = this.supabase?.auth?.session;
-    if (typeof session === 'function') {
+    if (this.supabase?.auth?.getUser) {
       try {
-        return session()?.user || null;
+        const { data, error } = await this.supabase.auth.getUser();
+        if (error) {
+          return null;
+        }
+        return data?.user || null;
       } catch (error) {
         return null;
       }
