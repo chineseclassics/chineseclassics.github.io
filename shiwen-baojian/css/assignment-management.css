@@ -1917,6 +1917,24 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   color: #3b82f6;
 }
 
+.floating-annotation.orphan {
+  border: 1px dashed #cbd5f5;
+  background: #f8fafc;
+  opacity: 0.9;
+}
+
+.floating-annotation .annotation-status.orphan {
+  font-size: 11px;
+  color: #475569;
+  background: #e2e8f0;
+  border-radius: 4px;
+  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
 /* 批注 active 狀態 - 增強效果 */
 .floating-annotation.active {
   border: 3px solid var(--primary-500);
@@ -1950,6 +1968,22 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   background-color: var(--warning-200);
 }
 
+.annotation-highlight-preview {
+  opacity: 0.9;
+}
+
+.annotation-highlight.annotation-highlight-orphan {
+  background-color: #f3f4f6;
+  border-bottom: 1px dashed #94a3b8;
+  color: #6b7280;
+  opacity: 0.9;
+}
+
+.annotation-highlight.annotation-highlight-orphan:hover {
+  background-color: #e5e7eb;
+  border-bottom-color: #94a3b8;
+}
+
 /* 原文高亮增強效果 - 只有被點中時才使用 */
 .annotation-highlight.active {
   background-color: var(--primary-100);
@@ -1980,13 +2014,11 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 .annotation-connection {
   position: absolute;
   width: 2px;
-  height: 2px;
   background: linear-gradient(45deg, var(--primary-500), var(--warning-500));
   z-index: 10;
   animation: connection-pulse 2s infinite;
   border-radius: 1px;
   pointer-events: none;
-  box-shadow: 0 0 4px var(--primary-400);
 }
 
 @keyframes connection-pulse {

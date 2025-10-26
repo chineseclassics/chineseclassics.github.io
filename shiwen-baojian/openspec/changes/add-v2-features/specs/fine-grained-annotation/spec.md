@@ -24,6 +24,12 @@ The system SHALL provide comprehensive annotation management capabilities.
 - **AND** the annotation history is preserved
 - **AND** the student sees the updated annotation
 
+#### Scenario: Teacher identity shown on annotation ✅ **IMPLEMENTED**
+- **WHEN** a teacher creates or views an annotation
+- **THEN** the annotation sidebar displays the teacher's name and initials
+- **AND** the information comes from the authenticated Supabase session
+- **AND** the identity persists after page reload
+
 #### Scenario: Teacher deletes annotation ✅ **IMPLEMENTED**
 - **WHEN** a teacher deletes an annotation
 - **THEN** the annotation is marked as deleted
