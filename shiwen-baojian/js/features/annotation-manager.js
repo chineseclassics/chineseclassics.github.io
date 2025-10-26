@@ -89,6 +89,9 @@ class AnnotationManager {
     // 批注彈出框事件
     document.addEventListener('click', this.boundHandleAnnotationClick);
     
+    // 全局點擊移除聚焦效果
+    document.addEventListener('click', this.handleGlobalClick.bind(this));
+    
     console.log('✅ 事件監聽器已綁定');
   }
 
@@ -165,6 +168,44 @@ class AnnotationManager {
     } else {
       this.hideAnnotationButton();
     }
+  }
+
+  /**
+   * 處理全局點擊事件 - 移除聚焦效果
+   */
+  handleGlobalClick(event) {
+    // 如果點擊的是批註標記、批註卡片或輸入框，不處理
+    if (event.target.closest('[data-annotation-id]') || 
+        event.target.closest('.floating-annotation') ||
+        event.target.closest('.floating-annotation-input')) {
+      return;
+    }
+    
+    // 移除所有聚焦效果
+    this.clearAllFocusEffects();
+  }
+
+  /**
+   * 清除所有聚焦效果
+   */
+  clearAllFocusEffects() {
+    // 清理連接線
+    this.clearConnectionLines();
+    
+    // 移除所有原文高亮的 active 狀態
+    document.querySelectorAll('.annotation-highlight').forEach(highlight => {
+      highlight.classList.remove('active');
+    });
+    
+    // 移除所有批註的 active 狀態
+    document.querySelectorAll('.floating-annotation').forEach(ann => {
+      ann.classList.remove('active');
+    });
+    
+    // 移除所有輸入框的 active 狀態
+    document.querySelectorAll('.floating-annotation-input').forEach(input => {
+      input.classList.remove('active');
+    });
   }
 
   /**
@@ -563,7 +604,7 @@ class AnnotationManager {
 
       // 創建浮動輸入框
       const inputBox = document.createElement('div');
-      inputBox.className = 'floating-annotation-input';
+      inputBox.className = 'floating-annotation-input active';
 
       inputBox.innerHTML = `
         <div class="annotation-input-header">
@@ -583,6 +624,14 @@ class AnnotationManager {
       
       // 直接添加到滾動容器
       wrapper.appendChild(inputBox);
+      
+      // 清除所有現有聚焦效果
+      this.clearAllFocusEffects();
+      
+      // 為新批註輸入框添加聚焦效果
+      if (this.tempHighlight) {
+        this.tempHighlight.classList.add('active');
+      }
       
       // 調整所有批註位置
       this.adjustAnnotationsForActive(inputBox);
@@ -1124,18 +1173,12 @@ class AnnotationManager {
    * 高亮批注（統一方法）
    */
   highlightAnnotation(annotationId) {
-    // 清理現有連接線
-    this.clearConnectionLines();
-    
-    // 移除所有原文高亮的 active 狀態
-    document.querySelectorAll('.annotation-highlight').forEach(highlight => {
-      highlight.classList.remove('active');
-    });
+    // 清除所有聚焦效果
+    this.clearAllFocusEffects();
     
     // 確保所有批注都顯示
     document.querySelectorAll('.floating-annotation').forEach(ann => {
       ann.style.display = 'block';
-      ann.classList.remove('active');
     });
 
     // 為當前批注添加 active 狀態

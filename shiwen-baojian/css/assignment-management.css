@@ -2013,6 +2013,15 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   /* top 由 JavaScript 動態設置 */
 }
 
+.floating-annotation-input.active {
+  border: 3px solid var(--primary-500);
+  background-color: var(--primary-100);
+  box-shadow: 0 4px 12px var(--primary-300);
+  animation: annotation-pulse 2s infinite;
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+}
+
 .floating-annotation-input .annotation-input-header {
   display: flex;
   align-items: center;
