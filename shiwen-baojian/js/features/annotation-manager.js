@@ -708,25 +708,54 @@ class AnnotationManager {
       document.querySelectorAll('.floating-annotation, .floating-annotation-input')
     );
     
+    // 輔助函數：獲取元素的段落順序和段內位置
+    const getAnnotationPosition = (element) => {
+      const annotationId = element.dataset.annotationId;
+      
+      // 情況1：已保存的批註，從 this.annotations 獲取
+      if (annotationId) {
+        const data = this.annotations.get(annotationId);
+        return {
+          paragraphOrderIndex: data?.paragraph_order_index || 0,
+          highlightStart: data?.highlight_start || 0
+        };
+      }
+      
+      // 情況2：新批註輸入框，從 tempHighlight 計算
+      if (element.classList.contains('floating-annotation-input') && this.tempHighlight) {
+        // 獲取段落元素和段落順序
+        const paragraphElement = this.tempHighlight.closest('[data-paragraph-id]');
+        const paragraphOrderIndex = paragraphElement?.dataset.orderIndex 
+          ? parseInt(paragraphElement.dataset.orderIndex, 10) 
+          : 0;
+        
+        // 計算段內字符偏移
+        const range = document.createRange();
+        range.setStart(paragraphElement, 0);
+        range.setEnd(this.tempHighlight, 0);
+        const highlightStart = range.toString().length;
+        
+        return {
+          paragraphOrderIndex,
+          highlightStart
+        };
+      }
+      
+      // 默認情況（不應該發生）
+      return { paragraphOrderIndex: 0, highlightStart: 0 };
+    };
+    
     // 按段落順序和 highlight_start 排序
     const sortedAnnotations = allAnnotations.sort((a, b) => {
-      if (a === activeElement) return 0;
-      if (b === activeElement) return 0;
-      
-      const aId = a.dataset.annotationId;
-      const bId = b.dataset.annotationId;
-      if (!aId) return -1;
-      if (!bId) return 1;
-      
-      const aData = this.annotations.get(aId);
-      const bData = this.annotations.get(bId);
+      const aPos = getAnnotationPosition(a);
+      const bPos = getAnnotationPosition(b);
       
       // 先按段落順序排序
-      const orderDiff = (aData?.paragraph_order_index || 0) - (bData?.paragraph_order_index || 0);
+      const orderDiff = aPos.paragraphOrderIndex - bPos.paragraphOrderIndex;
       if (orderDiff !== 0) return orderDiff;
       
       // 同一段落內按 highlight_start 排序
-      return (aData?.highlight_start || 0) - (bData?.highlight_start || 0);
+      return aPos.highlightStart - bPos.highlightStart;
     });
     
     // 找到活動批註的索引
