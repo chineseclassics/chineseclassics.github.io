@@ -237,8 +237,10 @@ CREATE POLICY "Teachers can view their students' revision history" ON essay_revi
         EXISTS (
             SELECT 1 FROM essays e
             JOIN assignments a ON e.assignment_id = a.id
+            JOIN class_memberships cm ON a.class_id = cm.class_id
             WHERE e.id = essay_revision_history.essay_id
-            AND a.teacher_id = auth.uid()
+            AND cm.user_id = auth.uid()
+            AND cm.role = 'teacher'
         )
     );
 
