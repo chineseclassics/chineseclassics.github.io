@@ -619,6 +619,20 @@ class AnnotationRenderer {
     }
   }
 
+  removeHighlightNode(node) {
+    if (!node) return;
+    const dataset = node.dataset || {};
+    const isOrphan = dataset.orphan === 'true' || node.classList?.contains?.('annotation-highlight-orphan');
+    const isPreview = dataset.preview === 'true' || node.classList?.contains?.('annotation-highlight-preview');
+
+    if (isOrphan || isPreview) {
+      node.remove();
+      return;
+    }
+
+    this.unwrapHighlight(node);
+  }
+
   unwrapHighlight(node) {
     if (!node || !node.parentNode) return;
     const parent = node.parentNode;
