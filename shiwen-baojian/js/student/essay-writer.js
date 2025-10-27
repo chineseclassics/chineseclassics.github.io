@@ -9,7 +9,8 @@
  */
 
 import { RichTextEditor } from '../editor/rich-text-editor.js';
-import { AppState } from '../app.js';
+// 移除循環導入，改用動態導入
+// import { AppState } from '../app.js';
 import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
@@ -466,6 +467,9 @@ async function checkAndDowngradeStatus() {
         
         if (!essayId) return;
         
+        // 動態導入 AppState
+        const { AppState } = await import('../app.js');
+        
         // 檢查當前論文狀態
         const { data: essay } = await AppState.supabase
             .from('essays')
@@ -588,6 +592,9 @@ function updateWordCount() {
  * 自動保存論文內容
  */
 async function autoSave() {
+    // 動態導入 AppState
+    const { AppState } = await import('../app.js');
+    
     if (!AppState.supabase || !AppState.currentUser) {
         console.log('⏸️ 跳過自動保存（未登錄）');
         return;
@@ -706,6 +713,9 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
             toast.warning('段落內容為空，請先撰寫內容再請求反饋');
             return;
         }
+        
+        // 動態導入 AppState
+        const { AppState } = await import('../app.js');
         
         // 調用 AI 反饋 API（傳遞格式規範）
         await requestAIFeedback(paragraphId, content, type, AppState.currentFormatSpec);

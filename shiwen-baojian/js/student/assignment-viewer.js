@@ -2,7 +2,8 @@
  * 學生端任務列表查看器（精简版）
  */
 
-import { AppState } from '../app.js';
+// 移除循環導入，改用動態導入
+// import { AppState } from '../app.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 import { getClassColorClass } from '../utils/class-color-utils.js';

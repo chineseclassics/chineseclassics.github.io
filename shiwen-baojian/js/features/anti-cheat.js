@@ -9,7 +9,8 @@
  * - 誠信報告生成
  */
 
-import { AppState } from '../app.js';
+// 移除循環導入，改用動態導入
+// import { AppState } from '../app.js';
 
 // ================================
 // 防作弊狀態管理

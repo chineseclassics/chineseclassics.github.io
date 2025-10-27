@@ -7,7 +7,8 @@
  * - 離線/在線同步
  */
 
-import { AppState } from '../app.js';
+// 移除循環導入，改用動態導入
+// import { AppState } from '../app.js';
 
 // ================================
 // 存儲狀態

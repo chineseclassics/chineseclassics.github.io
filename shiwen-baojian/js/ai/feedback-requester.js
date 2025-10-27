@@ -8,7 +8,8 @@
  * - 智能緩存（基於內容哈希，內容變化時重新請求）
  */
 
-import { AppState } from '../app.js';
+// 移除循環導入，改用動態導入
+// import { AppState } from '../app.js';
 import { renderFeedback } from './feedback-renderer.js';
 import { loadHonglouFormatSpec } from '../data/format-spec-loader.js';
 

@@ -17,10 +17,12 @@ manual: true
 - 所有數據存儲在應用自己的數據庫
 
 ### 模式 B：平台集成模式
-- 應用在太虛幻境 iframe 內運行
-- 通過 postMessage 接收平台用戶信息
+- 應用從太虛幻境主頁跳轉打開（直接頁面跳轉，非 iframe）
+- 通過 localStorage 或其他機制接收平台用戶信息
 - 數據存儲在應用自己的數據庫
 - 可選擇性同步聚合數據到平台用戶中心
+
+**注意**：2025-10-14 架構變更後，太虛幻境不再使用 iframe 加載應用，改為直接頁面跳轉。
 
 ## 關鍵設計原則
 
@@ -76,80 +78,89 @@ function detectRunMode() {
   }
   
   // 檢查平台標識（這是唯一標準）
-  const hasPlatformFlag = window.TAIXU_PLATFORM_MODE === true;
+  const hasPlatformFlag = localStorage.getItem('TAIXU_PLATFORM_MODE') === 'true';
   
   if (hasPlatformFlag) {
     return 'platform';
   }
   
-  // 默認：獨立模式（即使在 iframe 中）
+  // 默認：獨立模式
   return 'standalone';
 }
 ```
 
 **設計理由**：
-- 即使應用在太虛幻境的 iframe 中運行，只要主站沒有設置 `window.TAIXU_PLATFORM_MODE = true`，就使用獨立模式
+- 默認使用獨立模式，應用自己管理認證
 - 這確保了向後兼容：在主站實現統一登入之前，應用始終可以正常使用自己的登入系統
-- 未來當主站實現統一登入後，只需在加載 iframe 前設置標誌位即可啟用平台模式
+- 未來當主站實現統一登入後，主站在跳轉前設置 `localStorage.setItem('TAIXU_PLATFORM_MODE', 'true')` 即可啟用平台模式
+
+**架構變更說明**（2025-10-14）：
+- 太虛幻境已從 iframe 架構改為直接頁面跳轉
+- 不再使用 `window.TAIXU_PLATFORM_MODE` 和 postMessage
+- 改用 localStorage 在頁面間傳遞平台狀態標誌
 
 ### 平台模式啟用方法
 
 未來當太虛幻境實現統一登入後，在主站的 `index.html` 中設置：
 
-```html
-<!-- 在加載應用 iframe 之前設置平台標誌 -->
-<script>
-  window.TAIXU_PLATFORM_MODE = true;
-</script>
-
-<!-- 然後加載應用 -->
-<iframe id="story-vocab-frame" src="story-vocab/index.html"></iframe>
-
-<script>
-  // 等待應用加載完成後傳遞用戶信息
-  window.addEventListener('message', (event) => {
-    if (event.data.type === 'TAIXU_APP_READY') {
-      // 傳遞當前登入用戶信息
-      const iframe = document.getElementById('story-vocab-frame');
-      iframe.contentWindow.postMessage({
-        type: 'TAIXU_AUTH',
-        user: {
-          google_id: currentUser.google_id,
-          email: currentUser.email,
-          display_name: currentUser.display_name
-        }
-      }, '*');
-    }
-  });
-</script>
+```javascript
+// 在跳轉到應用前設置平台標誌和用戶信息
+function openAppInPlatformMode(appUrl, currentUser) {
+  // 設置平台模式標誌
+  localStorage.setItem('TAIXU_PLATFORM_MODE', 'true');
+  
+  // 存儲用戶信息（應用會讀取）
+  localStorage.setItem('TAIXU_PLATFORM_USER', JSON.stringify({
+    google_id: currentUser.google_id,
+    email: currentUser.email,
+    display_name: currentUser.display_name,
+    timestamp: Date.now()
+  }));
+  
+  // 跳轉到應用
+  window.location.href = appUrl;
+}
 ```
 
 ### 平台與應用通信協議
 
+**通過 localStorage 傳遞信息**：
+
 ```javascript
-// 平台 → 應用（傳遞用戶信息）
-iframe.contentWindow.postMessage({
-  type: 'TAIXU_AUTH',
-  user: {
-    google_id: '...',
-    email: '...',
-    display_name: '...'
+// 應用檢測平台模式並讀取用戶信息
+function checkPlatformAuth() {
+  const isPlatformMode = localStorage.getItem('TAIXU_PLATFORM_MODE') === 'true';
+  
+  if (isPlatformMode) {
+    const userDataStr = localStorage.getItem('TAIXU_PLATFORM_USER');
+    if (userDataStr) {
+      try {
+        const userData = JSON.parse(userDataStr);
+        
+        // 檢查時間戳，確保不是過期數據（如 5 分鐘內）
+        const isRecent = (Date.now() - userData.timestamp) < 5 * 60 * 1000;
+        
+        if (isRecent) {
+          // 使用平台用戶信息
+          return userData;
+        }
+      } catch (e) {
+        console.error('解析平台用戶信息失敗', e);
+      }
+    }
   }
-}, '*');
+  
+  return null;
+}
 
-// 應用 → 平台（請求登入）
-window.parent.postMessage({
-  type: 'TAIXU_REQUEST_LOGIN',
-  app: 'story-vocab'
-}, '*');
-
-// 應用 → 平台（同步學習數據）
-window.parent.postMessage({
-  type: 'TAIXU_SYNC_LEARNING_DATA',
-  app: 'story-vocab',
-  data: { /* 聚合指標 */ }
-}, '*');
+// 應用完成後清理平台標誌（可選）
+function cleanupPlatformMode() {
+  localStorage.removeItem('TAIXU_PLATFORM_MODE');
+  localStorage.removeItem('TAIXU_PLATFORM_USER');
+}
 ```
+
+**注意**：由於改用直接頁面跳轉，不再使用 postMessage。localStorage 在同域名下的所有頁面間共享。
 
 ### 用戶體驗流程
 
