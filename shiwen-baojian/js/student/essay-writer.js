@@ -313,7 +313,7 @@ export function addParagraph(argumentId) {
                 <span class="text-sm font-medium text-gray-600">段落 ${paragraphIndex}</span>
                 <div class="flex items-center space-x-2">
                     <!-- 雨村評點按鈕 -->
-                    <button class="request-feedback-btn text-stone-600 hover:text-stone-800 hover:bg-stone-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
+                    <button class="request-feedback-btn premium-blue-text hover:premium-blue-text-dark hover:premium-blue-hover px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
                             data-paragraph-id="${paragraphId}"
                             title="請雨村評點">
                         <i class="fas fa-pen-fancy mr-2 text-base"></i>

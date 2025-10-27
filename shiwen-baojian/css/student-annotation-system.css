@@ -428,7 +428,7 @@
 
 /* 學生端：主要內容區域留出右側空間供批註浮動（對齊老師端） */
 #student-dashboard .main-content-area {
-  max-width: 72%;
+  max-width: 78%;
   position: relative;
   overflow: visible;
 }
@@ -437,6 +437,12 @@
 #student-dashboard .grading-content-wrapper {
   overflow: visible;
   max-height: none;
+}
+
+/* 學生端：縮窄批註卡片以讓中部更寬 */
+#student-dashboard .floating-annotation {
+  width: 260px !important;
+  right: 16px !important;
 }
 
 @keyframes slideInRight {

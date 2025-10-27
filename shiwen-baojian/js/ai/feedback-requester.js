@@ -196,6 +196,9 @@ function showLoadingState(paragraphId) {
     const isMobile = window.innerWidth < 1024;
     
     const loadingHTML = `
+        <style>
+          @keyframes dotBlink { 0%, 20% { opacity: 0.2 } 50% { opacity: 1 } 100% { opacity: 0.2 } }
+        </style>
         <!-- 當前段落標識 -->
         <div class="bg-stone-50 border border-stone-300 rounded-lg p-3 mb-4">
             <div class="flex items-center space-x-2 text-stone-800">
@@ -204,15 +207,19 @@ function showLoadingState(paragraphId) {
             </div>
         </div>
         
-        <!-- 加載動畫 -->
-        <div class="flex flex-col items-center justify-center py-12 space-y-4">
+        <!-- 加載動畫：雨村先生正在仔細閱讀... -->
+        <div class="flex flex-col items-center justify-center py-10 space-y-4">
             <div class="relative">
                 <div class="w-16 h-16 border-4 border-stone-300 rounded-full"></div>
                 <div class="absolute top-0 left-0 w-16 h-16 border-4 border-stone-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <div class="text-center">
-                <p class="text-lg font-medium text-gray-700">AI 正在分析您的段落...</p>
-                <p class="text-sm text-gray-500 mt-1">這可能需要幾秒鐘</p>
+            <div class="text-center leading-relaxed">
+                <p class="text-lg font-semibold text-gray-800">
+                  雨村先生正在仔細閱讀你的文章
+                </p>
+                <p class="text-sm text-gray-500 mt-1">
+                  請稍候<span style="animation: dotBlink 1.4s infinite">.</span><span style="animation: dotBlink 1.4s infinite 0.2s">.</span><span style="animation: dotBlink 1.4s infinite 0.4s">.</span>
+                </p>
             </div>
         </div>
     `;
@@ -224,6 +231,7 @@ function showLoadingState(paragraphId) {
         // 桌面端：在側邊欄顯示
         const sidebarContent = document.getElementById('sidebar-feedback-content');
         if (sidebarContent) {
+            sidebarContent.classList.remove('hidden');
             sidebarContent.innerHTML = loadingHTML;
             sidebarContent.scrollTop = 0;
         }
@@ -346,4 +354,3 @@ function showErrorState(paragraphId, errorMessage) {
 // ================================
 
 export { showLoadingState, hideLoadingState, showErrorState };
-
