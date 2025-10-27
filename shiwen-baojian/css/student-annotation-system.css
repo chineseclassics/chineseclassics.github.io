@@ -428,9 +428,15 @@
 
 /* 學生端：主要內容區域留出右側空間供批註浮動（對齊老師端） */
 #student-dashboard .main-content-area {
-  max-width: 65%;
+  max-width: 72%;
   position: relative;
   overflow: visible;
+}
+
+/* 學生端：中部容器使用頁面全局滾動（避免內部滾動條） */
+#student-dashboard .grading-content-wrapper {
+  overflow: visible;
+  max-height: none;
 }
 
 @keyframes slideInRight {
