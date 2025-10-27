@@ -56,76 +56,96 @@ window.AppState = AppState;
 // 防止重複初始化的全局標誌
 let appInitialized = false;
 let appInitializing = false;
+let initializationPromise = null;
 
 async function initializeApp() {
-    // 防止重複初始化
-    if (appInitialized || appInitializing) {
-        console.warn('⚠️ 應用已初始化或正在初始化中，跳過重複調用');
-        console.trace('調用堆棧：');
+    // 如果已經初始化，直接返回
+    if (appInitialized) {
+        console.warn('⚠️ 應用已初始化，跳過重複調用');
         return;
     }
     
-    appInitializing = true;
-    console.log('🚀 時文寶鑑初始化開始...');
-    console.log(`📍 運行模式: ${RUN_MODE}`);
-    
-    try {
-        // 1. 初始化 Supabase 客戶端
-        AppState.supabase = window.supabase.createClient(
-            SUPABASE_CONFIG.url,
-            SUPABASE_CONFIG.anonKey
-        );
-        console.log('✅ Supabase 客戶端初始化成功');
-        
-        // 2. 檢查現有會話
-        const { data: { session }, error } = await AppState.supabase.auth.getSession();
-        
-        if (error) {
-            console.error('❌ 獲取會話失敗:', error);
-            showLoginScreen();
-            return;
-        }
-        
-        if (session) {
-            console.log('✅ 發現現有會話');
-            await handleAuthenticatedUser(session.user);
-        } else {
-            console.log('ℹ️ 無現有會話，顯示登錄頁面');
-            showLoginScreen();
-        }
-        
-        // 3. 設置認證狀態監聽器
-        AppState.supabase.auth.onAuthStateChange((event, session) => {
-            console.log('🔔 認證狀態變化:', event);
-            
-            // 只在真正登入或登出時處理，忽略 token 刷新和初始會話事件
-            if (event === 'SIGNED_IN' && session && !AppState.currentUser) {
-                // 只有在沒有當前用戶時才處理（避免重複處理）
-                handleAuthenticatedUser(session.user);
-            } else if (event === 'SIGNED_OUT') {
-                handleSignOut();
-            } else if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-                // Token 刷新和初始會話不需要重新初始化界面
-                console.log('ℹ️ Token 刷新或初始會話，無需重新初始化');
-            }
-        });
-        
-        // 4. 綁定登錄按鈕事件
-        setupLoginHandlers();
-        
-        // 5. 綁定登出按鈕事件
-        setupLogoutHandlers();
-        
-        AppState.initialized = true;
-        appInitialized = true;  // 標記為已初始化
-        console.log('✅ 應用初始化完成');
-        
-    } catch (error) {
-        console.error('❌ 應用初始化失敗:', error);
-        showError('應用初始化失敗，請重新整理頁面');
-    } finally {
-        appInitializing = false;  // 無論成功失敗都重置標誌
+    // 如果正在初始化，等待完成
+    if (appInitializing && initializationPromise) {
+        console.warn('⚠️ 應用正在初始化中，等待完成...');
+        return await initializationPromise;
     }
+    
+    // 如果已經有初始化 Promise，直接返回它
+    if (initializationPromise) {
+        console.warn('⚠️ 檢測到重複的初始化調用，返回現有 Promise');
+        return await initializationPromise;
+    }
+    
+    appInitializing = true;
+    
+    // 創建初始化 Promise
+    initializationPromise = (async () => {
+        console.log('🚀 時文寶鑑初始化開始...');
+        console.log(`📍 運行模式: ${RUN_MODE}`);
+        
+        try {
+            // 1. 初始化 Supabase 客戶端
+            AppState.supabase = window.supabase.createClient(
+                SUPABASE_CONFIG.url,
+                SUPABASE_CONFIG.anonKey
+            );
+            console.log('✅ Supabase 客戶端初始化成功');
+            
+            // 2. 檢查現有會話
+            const { data: { session }, error } = await AppState.supabase.auth.getSession();
+            
+            if (error) {
+                console.error('❌ 獲取會話失敗:', error);
+                showLoginScreen();
+                return;
+            }
+            
+            if (session) {
+                console.log('✅ 發現現有會話');
+                await handleAuthenticatedUser(session.user);
+            } else {
+                console.log('ℹ️ 無現有會話，顯示登錄頁面');
+                showLoginScreen();
+            }
+            
+            // 3. 設置認證狀態監聽器
+            AppState.supabase.auth.onAuthStateChange((event, session) => {
+                console.log('🔔 認證狀態變化:', event);
+                
+                // 只在真正登入或登出時處理，忽略 token 刷新和初始會話事件
+                if (event === 'SIGNED_IN' && session && !AppState.currentUser) {
+                    // 只有在沒有當前用戶時才處理（避免重複處理）
+                    handleAuthenticatedUser(session.user);
+                } else if (event === 'SIGNED_OUT') {
+                    handleSignOut();
+                } else if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+                    // Token 刷新和初始會話不需要重新初始化界面
+                    console.log('ℹ️ Token 刷新或初始會話，無需重新初始化');
+                }
+            });
+            
+            // 4. 綁定登錄按鈕事件
+            setupLoginHandlers();
+            
+            // 5. 綁定登出按鈕事件
+            setupLogoutHandlers();
+            
+            AppState.initialized = true;
+            appInitialized = true;  // 標記為已初始化
+            console.log('✅ 應用初始化完成');
+            
+        } catch (error) {
+            console.error('❌ 應用初始化失敗:', error);
+            showError('應用初始化失敗，請重新整理頁面');
+            throw error;  // 重新拋出錯誤
+        } finally {
+            appInitializing = false;  // 無論成功失敗都重置標誌
+            initializationPromise = null;  // 清除 Promise
+        }
+    })();
+    
+    return await initializationPromise;
 }
 
 // ================================
