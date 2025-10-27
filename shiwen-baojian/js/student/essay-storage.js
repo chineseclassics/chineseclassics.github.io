@@ -341,6 +341,24 @@ async function saveParagraphs(essayId, essayData) {
         }
         
         console.log(`✅ 保存了 ${paragraphsToInsert.length} 個段落`);
+
+        // 重新查詢段落以獲取最終的 DB ID 與順序，並錨定到當前 DOM
+        try {
+            const { data: paragraphs, error: qerr } = await AppState.supabase
+                .from('paragraphs')
+                .select('id, order_index, paragraph_type')
+                .eq('essay_id', essayId)
+                .order('order_index');
+            if (qerr) throw qerr;
+
+            if (Array.isArray(paragraphs) && paragraphs.length > 0) {
+                const { applyParagraphAnchors } = await import('../features/paragraph-anchors.js');
+                await applyParagraphAnchors(paragraphs);
+                console.log('🔗 已將段落 ID/順序錨定到 DOM');
+            }
+        } catch (anchorErr) {
+            console.warn('⚠️ 段落錨定失敗（保存後）:', anchorErr?.message);
+        }
     }
 }
 
@@ -540,4 +558,3 @@ export async function submitEssay(essayId) {
 // ================================
 
 // StorageState 已在文件開頭導出（第 16 行），無需重複導出
-

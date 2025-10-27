@@ -306,7 +306,7 @@ export function addParagraph(argumentId) {
     
     // 創建段落 HTML
     const paragraphHTML = `
-        <div id="${paragraphId}" class="bg-white rounded-lg border border-gray-200 p-4">
+        <div id="${paragraphId}" class="paragraph-block bg-white rounded-lg border border-gray-200 p-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium text-gray-600">段落 ${paragraphIndex}</span>
                 <div class="flex items-center space-x-2">
@@ -741,4 +741,3 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
 // ================================
 
 export { EditorState, requestParagraphFeedback };
-

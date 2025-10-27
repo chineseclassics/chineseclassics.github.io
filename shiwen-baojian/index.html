@@ -208,6 +208,9 @@
             <div class="flex flex-col lg:flex-row gap-6">
                 <!-- 左側：論文編輯區 -->
                         <div class="w-full lg:w-2/3 flex-shrink-0">
+                            <!-- 學生端統一滾動容器（供浮動批註定位） -->
+                            <div class="grading-content-wrapper">
+                              <div class="main-content-area">
                             <!-- 任務信息區 -->
                             <div id="assignment-info-panel" class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
                                 <!-- 任務標題欄 -->
@@ -274,7 +277,7 @@
                         </div>
                         
                         <!-- 引言區 -->
-                        <div id="intro" class="border-b border-gray-200 p-6 transition-all">
+                        <div id="intro" class="paragraph-block border-b border-gray-200 p-6 transition-all">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-gray-900">引言</h3>
                                 <div class="flex items-center space-x-3">
@@ -309,7 +312,7 @@
                         </div>
                         
                         <!-- 結論區 -->
-                        <div id="conclusion" class="p-6 transition-all">
+                        <div id="conclusion" class="paragraph-block p-6 transition-all">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-gray-900">結論</h3>
                                 <div class="flex items-center space-x-3">
@@ -410,6 +413,8 @@
                         </aside>
                         <!-- 右側側邊欄結束 -->
                     </div>
+                              </div> <!-- .main-content-area -->
+                            </div> <!-- .grading-content-wrapper -->
                     <!-- flex 容器結束 -->
         </template>
         <!-- 編輯器模板結束 -->
@@ -446,4 +451,3 @@
     <script type="module" src="js/app.js?v=20250120i"></script>
 </body>
 </html>
-

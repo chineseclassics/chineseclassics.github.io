@@ -136,9 +136,29 @@ class AnnotationRepositioningManager {
       // 檢查孤立批注
       await this.checkOrphanedAnnotations(paragraphId);
 
+      // 避免頻繁觸發，請求學生端批註視圖重新渲染（主要調整浮動卡片位置）
+      this.requestViewerRerender();
+
     } catch (error) {
       console.error('❌ 重新定位批注失敗:', error);
     }
+  }
+
+  /**
+   * 請求學生端批註視圖重新渲染（節流）
+   */
+  requestViewerRerender() {
+    clearTimeout(this._rerenderTimer);
+    this._rerenderTimer = setTimeout(() => {
+      try {
+        const viewer = window.studentAnnotationViewer;
+        if (viewer && typeof viewer.renderAll === 'function') {
+          viewer.renderAll();
+        }
+      } catch (e) {
+        // 忽略錯誤
+      }
+    }, 300);
   }
 
   /**

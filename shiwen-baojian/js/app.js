@@ -9,6 +9,7 @@
 
 import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
+import { applyParagraphAnchors } from './features/paragraph-anchors.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
 import toast from './ui/toast.js';
 
@@ -916,6 +917,25 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             // 新練筆，不恢復任何內容
         }
         
+        // ✅ 嘗試錨定段落（若 DB 已有 paragraphs），讓編輯/檢視模式都具備精準容器
+        try {
+            const { StorageState } = await import('./student/essay-storage.js');
+            const eid = StorageState.currentEssayId;
+            if (eid) {
+                const { data: paras } = await AppState.supabase
+                    .from('paragraphs')
+                    .select('id, order_index, paragraph_type')
+                    .eq('essay_id', eid)
+                    .order('order_index');
+                if (Array.isArray(paras) && paras.length > 0) {
+                    const { applyParagraphAnchors } = await import('./features/paragraph-anchors.js');
+                    await applyParagraphAnchors(paras);
+                }
+            }
+        } catch (anchorErr) {
+            console.warn('⚠️ 還原後段落錨定失敗（可忽略）:', anchorErr?.message);
+        }
+        
         // ✅ 設置狀態顯示（只在任務模式）
         if (mode === 'assignment') {
             await setupEssayStatus(assignmentId, editable);
@@ -951,8 +971,8 @@ async function initializeStudentAnnotationSystem(assignmentId) {
     try {
         console.log('🚀 初始化學生端批注系統:', assignmentId);
         
-        // 動態導入學生端批注查看器
-        const { default: StudentAnnotationViewer } = await import('./student/student-annotation-viewer.js');
+        // 動態導入學生端批注查看器（V2）
+        const { default: StudentAnnotationViewer } = await import('./student/student-annotation-viewer.v2.js');
         
         // 獲取當前作業的段落信息
         const { data: essay, error: essayError } = await AppState.supabase
@@ -961,7 +981,8 @@ async function initializeStudentAnnotationSystem(assignmentId) {
                 id,
                 paragraphs (
                     id,
-                    order_index
+                    order_index,
+                    paragraph_type
                 )
             `)
             .eq('assignment_id', assignmentId)
@@ -978,24 +999,19 @@ async function initializeStudentAnnotationSystem(assignmentId) {
             return;
         }
         
-        // 顯示批注區域，隱藏 AI 反饋區域
-        const annotationsArea = document.getElementById('annotations-display-area');
-        const feedbackArea = document.getElementById('sidebar-feedback-content');
-        
-        if (annotationsArea) {
-            annotationsArea.classList.remove('hidden');
+        // 在初始化批註前，先將段落 ID/順序錨定到 DOM
+        try {
+            await applyParagraphAnchors(essay.paragraphs || []);
+        } catch (anchorErr) {
+            console.warn('⚠️ 段落錨定失敗，將回退使用全篇容器對齊：', anchorErr?.message);
         }
-        if (feedbackArea) {
-            feedbackArea.classList.add('hidden');
-        }
-        
-        // 創建批注查看器
+
+        // 創建批注查看器（單一實例）
         const annotationViewer = new StudentAnnotationViewer(AppState.supabase);
-        
-        // 為每個段落初始化批注系統
-        for (const paragraph of essay.paragraphs) {
-            await annotationViewer.init(essay.id, paragraph.id, true); // 只讀模式
-        }
+
+        // 解析模式（submitted/view, draft/edit, graded/readonly）
+        const mode = await resolveStudentAnnotationMode(essay.id);
+        await annotationViewer.init(essay.id, essay.paragraphs, mode);
         
         // 將批注查看器保存到全局狀態
         window.studentAnnotationViewer = annotationViewer;
@@ -1006,6 +1022,33 @@ async function initializeStudentAnnotationSystem(assignmentId) {
         console.error('❌ 初始化學生端批注系統失敗:', error);
     }
 }
+
+/**
+ * 解析學生端批註模式
+ * - submitted 未評分：view
+ * - draft：edit
+ * - graded：readonly
+ */
+async function resolveStudentAnnotationMode(essayId) {
+    try {
+        const { data: essay, error } = await AppState.supabase
+            .from('essays')
+            .select('status')
+            .eq('id', essayId)
+            .single();
+        if (error) throw error;
+        const status = (essay?.status || 'draft').toLowerCase();
+        if (status === 'graded') return 'readonly';
+        if (status === 'draft') return 'edit';
+        // submitted（未評分）
+        return 'view';
+    } catch (e) {
+        console.warn('⚠️ 解析批註模式失敗，預設為 view:', e?.message);
+        return 'view';
+    }
+}
+
+// applyParagraphAnchors 已抽取至 features/paragraph-anchors.js
 
 /**
  * 初始化批注重新定位系統
@@ -1723,4 +1766,3 @@ if (document.readyState === 'loading') {
 
 // 導出供其他模組使用
 export { AppState };
-
