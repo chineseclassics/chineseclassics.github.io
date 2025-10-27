@@ -426,15 +426,11 @@
   animation: slideInRight 0.3s ease-out;
 }
 
-/* 學生端覆蓋：避免內部滾動條，讓頁面使用右側全局滾動 */
-#student-dashboard .grading-content-wrapper {
-  overflow: visible !important;
-  max-height: none !important;
-}
-
-/* 學生端：主要內容區域使用全寬 */
+/* 學生端：主要內容區域留出右側空間供批註浮動（對齊老師端） */
 #student-dashboard .main-content-area {
-  max-width: 100% !important;
+  max-width: 65%;
+  position: relative;
+  overflow: visible;
 }
 
 @keyframes slideInRight {

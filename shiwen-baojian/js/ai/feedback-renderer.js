@@ -84,9 +84,30 @@ function renderDesktopFeedbackSidebar(paragraphId, paragraphTitle, feedback) {
     // 構建反饋 HTML
     const feedbackHTML = buildFeedbackHTML(paragraphId, paragraphTitle, feedback);
     
-    // 渲染到側邊欄
-    sidebarContent.innerHTML = feedbackHTML;
-    
+    // 渲染到側邊欄並顯示（若初始隱藏）
+    sidebarContent.classList.remove('hidden');
+    sidebarContent.innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm text-gray-600">
+          <i class="fas fa-robot mr-1 text-stone-600"></i>
+          針對段落：${paragraphTitle}
+        </div>
+        <button id="collapse-feedback-panel" class="text-gray-600 hover:text-stone-900 hover:bg-stone-100 rounded px-2 py-1 text-xs">
+          <i class="fas fa-chevron-up mr-1"></i>收合
+        </button>
+      </div>
+      ${feedbackHTML}
+    `;
+
+    // 收合事件
+    const collapseBtn = document.getElementById('collapse-feedback-panel');
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', () => {
+        sidebarContent.classList.add('hidden');
+        sidebarContent.innerHTML = '';
+      });
+    }
+
     // 滾動到側邊欄頂部
     sidebarContent.scrollTop = 0;
     
@@ -798,4 +819,3 @@ function renderContentAnalysisSimple(contentAnalysis) {
 // ================================
 
 export { highlightSentenceIssues, highlightCurrentParagraph };
-
