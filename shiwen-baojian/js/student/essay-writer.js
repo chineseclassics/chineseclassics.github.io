@@ -58,15 +58,6 @@ export async function initializeEssayEditor(forceReinit = false) {
         console.log('🔄 強制重新初始化編輯器...');
         EditorState.initialized = false;
         EditorState.isInitializing = false;
-        
-        // 🔧 修復：銷毀舊的編輯器實例
-        if (EditorState.introEditor && EditorState.introEditor.destroy) {
-            EditorState.introEditor.destroy();
-        }
-        if (EditorState.conclusionEditor && EditorState.conclusionEditor.destroy) {
-            EditorState.conclusionEditor.destroy();
-        }
-        
         EditorState.introEditor = null;
         EditorState.conclusionEditor = null;
         EditorState.arguments = [];

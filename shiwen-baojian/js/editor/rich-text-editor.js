@@ -65,13 +65,6 @@ export class RichTextEditor {
      * 初始化編輯器
      */
     _initialize() {
-        // 🔧 修復：檢查容器中是否已有 Quill 實例
-        const existingQuill = this.container.querySelector('.ql-container');
-        if (existingQuill) {
-            console.warn('⚠️ 檢測到容器中已有 Quill 實例，先清理');
-            this.container.innerHTML = '';
-        }
-        
         // 清空容器內容，避免重複渲染
         this.container.innerHTML = '';
         

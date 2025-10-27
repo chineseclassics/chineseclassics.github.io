@@ -53,7 +53,19 @@ window.AppState = AppState;
 // 初始化應用
 // ================================
 
+// 防止重複初始化的全局標誌
+let appInitialized = false;
+let appInitializing = false;
+
 async function initializeApp() {
+    // 防止重複初始化
+    if (appInitialized || appInitializing) {
+        console.warn('⚠️ 應用已初始化或正在初始化中，跳過重複調用');
+        console.trace('調用堆棧：');
+        return;
+    }
+    
+    appInitializing = true;
     console.log('🚀 時文寶鑑初始化開始...');
     console.log(`📍 運行模式: ${RUN_MODE}`);
     
@@ -105,11 +117,14 @@ async function initializeApp() {
         setupLogoutHandlers();
         
         AppState.initialized = true;
+        appInitialized = true;  // 標記為已初始化
         console.log('✅ 應用初始化完成');
         
     } catch (error) {
         console.error('❌ 應用初始化失敗:', error);
         showError('應用初始化失敗，請重新整理頁面');
+    } finally {
+        appInitializing = false;  // 無論成功失敗都重置標誌
     }
 }
 
@@ -1698,10 +1713,12 @@ async function displayTeacherGrading(essayId) {
 }
 
 // 等待 DOM 加載完成後初始化應用
+// 使用 { once: true } 確保只執行一次
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
+    document.addEventListener('DOMContentLoaded', initializeApp, { once: true });
 } else {
-    initializeApp();
+    // 使用 setTimeout 確保在下一個事件循環執行，避免時序問題
+    setTimeout(initializeApp, 0);
 }
 
 // 導出供其他模組使用
