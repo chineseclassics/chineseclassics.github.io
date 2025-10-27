@@ -6,6 +6,14 @@
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 
+// 使用全局 AppState，避免循環導入
+const AppState = window.AppState;
+
+// 防禦性檢查
+if (!AppState) {
+    console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
+}
+
 class AnnotationManager {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
@@ -691,9 +699,9 @@ class AnnotationManager {
    */
   getCurrentUser() {
     // 從全局狀態獲取用戶信息
-    if (window.AppState?.currentUser) {
-      console.log('✅ 從 AppState 獲取用戶信息:', window.AppState.currentUser.email);
-      return window.AppState.currentUser;
+    if (AppState?.currentUser) {
+      console.log('✅ 從 AppState 獲取用戶信息:', AppState.currentUser.email);
+      return AppState.currentUser;
     }
     
     
