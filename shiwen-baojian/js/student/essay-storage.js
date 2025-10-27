@@ -7,8 +7,8 @@
  * - 離線/在線同步
  */
 
-// 移除循環導入，改用動態導入
-// import { AppState } from '../app.js';
+// 使用全局 AppState，避免循環導入
+const AppState = window.AppState;
 
 // ================================
 // 存儲狀態

@@ -8,10 +8,11 @@
  * - 智能緩存（基於內容哈希，內容變化時重新請求）
  */
 
-// 移除循環導入，改用動態導入
-// import { AppState } from '../app.js';
 import { renderFeedback } from './feedback-renderer.js';
 import { loadHonglouFormatSpec } from '../data/format-spec-loader.js';
+
+// 使用全局 AppState，避免循環導入
+const AppState = window.AppState;
 
 // ================================
 // 工具函數
