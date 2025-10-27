@@ -13,8 +13,10 @@ import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-st
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 
-// 使用全局 AppState，避免循環導入
-const AppState = window.AppState;
+// 動態獲取全局 AppState（避免 ES 模組載入時機問題）
+function getAppState() {
+    return window.AppState;
+}
 
 // ================================
 // 編輯器狀態管理
@@ -469,6 +471,7 @@ async function checkAndDowngradeStatus() {
         if (!essayId) return;
         
         // 防禦性檢查 - 在使用時檢查
+        const AppState = getAppState();
         if (!AppState) {
             console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
             return;
@@ -597,6 +600,7 @@ function updateWordCount() {
  */
 async function autoSave() {
     // 防禦性檢查 - 在使用時檢查
+    const AppState = getAppState();
     if (!AppState) {
         console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
         return;
@@ -722,6 +726,7 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
         }
         
         // 防禦性檢查 - 在使用時檢查
+        const AppState = getAppState();
         if (!AppState) {
             console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
             return;

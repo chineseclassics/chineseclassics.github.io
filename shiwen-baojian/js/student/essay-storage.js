@@ -7,8 +7,20 @@
  * - 離線/在線同步
  */
 
-// 使用全局 AppState，避免循環導入
-const AppState = window.AppState;
+// 使用全局 AppState（在使用時動態獲取，避免載入時機問題）
+function getAppState() { return window.AppState; }
+// 提供動態代理，避免模組載入早於 AppState 初始化
+const AppState = new Proxy({}, {
+    get(_, prop) {
+        const s = window.AppState || {};
+        return s[prop];
+    },
+    set(_, prop, value) {
+        if (!window.AppState) window.AppState = {};
+        window.AppState[prop] = value;
+        return true;
+    }
+});
 
 // ================================
 // 存儲狀態
@@ -32,8 +44,9 @@ export function initializeStorage() {
     console.log('💾 初始化存儲模組...');
     
     // 防禦性檢查 - 在使用時檢查
+    const AppState = getAppState();
     if (!AppState) {
-        console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
+        console.warn('⏳ AppState 尚未就緒，暫不初始化存儲');
         return;
     }
     

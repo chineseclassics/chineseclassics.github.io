@@ -1066,15 +1066,15 @@ async function initializeAnnotationRepositioningSystem(assignmentId) {
             .select('id')
             .eq('assignment_id', assignmentId)
             .eq('student_id', AppState.currentUser.id)
-            .single();
+            .maybeSingle();
             
         if (essayError) {
-            console.error('❌ 獲取作業信息失敗:', essayError);
-            return;
+            console.warn('⚠️ 獲取作業信息失敗或無資料（可能尚未創建作業記錄）:', essayError?.message || essayError);
+            return; // 安全跳過
         }
         
         if (!essay) {
-            console.log('ℹ️ 沒有找到作業，跳過批注重新定位系統初始化');
+            console.log('ℹ️ 尚無作業記錄（新寫作），跳過批注重新定位系統初始化');
             return;
         }
         
