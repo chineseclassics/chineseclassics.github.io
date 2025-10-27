@@ -16,11 +16,6 @@ import dialog from '../ui/dialog.js';
 // 使用全局 AppState，避免循環導入
 const AppState = window.AppState;
 
-// 防禦性檢查
-if (!AppState) {
-    console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
-}
-
 // ================================
 // 編輯器狀態管理
 // ================================
@@ -473,6 +468,12 @@ async function checkAndDowngradeStatus() {
         
         if (!essayId) return;
         
+        // 防禦性檢查 - 在使用時檢查
+        if (!AppState) {
+            console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
+            return;
+        }
+        
         // 檢查當前論文狀態
         const { data: essay } = await AppState.supabase
             .from('essays')
@@ -595,7 +596,13 @@ function updateWordCount() {
  * 自動保存論文內容
  */
 async function autoSave() {
-    if (!AppState || !AppState.supabase || !AppState.currentUser) {
+    // 防禦性檢查 - 在使用時檢查
+    if (!AppState) {
+        console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
+        return;
+    }
+    
+    if (!AppState.supabase || !AppState.currentUser) {
         console.log('⏸️ 跳過自動保存（未登錄）');
         return;
     }
@@ -711,6 +718,12 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
         
         if (!content || content.trim() === '') {
             toast.warning('段落內容為空，請先撰寫內容再請求反饋');
+            return;
+        }
+        
+        // 防禦性檢查 - 在使用時檢查
+        if (!AppState) {
+            console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
             return;
         }
         

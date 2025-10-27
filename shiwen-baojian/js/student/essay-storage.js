@@ -10,11 +10,6 @@
 // 使用全局 AppState，避免循環導入
 const AppState = window.AppState;
 
-// 防禦性檢查
-if (!AppState) {
-    console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
-}
-
 // ================================
 // 存儲狀態
 // ================================
@@ -35,6 +30,12 @@ export const StorageState = {
  */
 export function initializeStorage() {
     console.log('💾 初始化存儲模組...');
+    
+    // 防禦性檢查 - 在使用時檢查
+    if (!AppState) {
+        console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
+        return;
+    }
     
     // 監聽網絡狀態
     window.addEventListener('online', handleOnline);

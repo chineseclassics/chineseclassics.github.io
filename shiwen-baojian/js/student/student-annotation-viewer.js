@@ -8,11 +8,6 @@ import toast from '../ui/toast.js';
 // 使用全局 AppState，避免循環導入
 const AppState = window.AppState;
 
-// 防禦性檢查
-if (!AppState) {
-    console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
-}
-
 class StudentAnnotationViewer {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
