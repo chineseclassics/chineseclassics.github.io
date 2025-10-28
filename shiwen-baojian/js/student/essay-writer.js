@@ -9,6 +9,7 @@
  */
 
 import { RichTextEditor } from '../editor/rich-text-editor.js';
+import { PMEditor } from '../editor/tiptap-editor.js';
 import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
@@ -38,6 +39,41 @@ function generateClientUid() {
     if (window.crypto?.randomUUID) return window.crypto.randomUUID();
     const s = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
     return `${s()}${s()}-${s()}-${s()}-${s()}-${s()}${s()}${s()}`;
+}
+
+// =============== PM JSON 讀寫輔助（TipTap 路徑） ===============
+async function loadInitialPMJSON() {
+  try {
+    const AppState = getAppState();
+    const essayId = StorageState.currentEssayId;
+    if (!AppState?.supabase || !essayId) return null;
+    const { data } = await AppState.supabase
+      .from('essays')
+      .select('content_json')
+      .eq('id', essayId)
+      .single();
+    if (!data?.content_json) return null;
+    const json = typeof data.content_json === 'string' ? JSON.parse(data.content_json) : data.content_json;
+    return json && json.type ? json : null;
+  } catch (_) { return null; }
+}
+
+const debounce = (fn, wait = 1000) => {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+};
+
+async function autoSavePMJSON() {
+  try {
+    const AppState = getAppState();
+    const essayId = StorageState.currentEssayId;
+    if (!AppState?.supabase || !essayId) return;
+    const json = EditorState.introEditor?.getJSON?.();
+    if (!json) return;
+    await AppState.supabase
+      .from('essays')
+      .update({ content_json: json, updated_at: new Date().toISOString(), status: 'editing' })
+      .eq('id', essayId);
+  } catch (e) { console.warn('autosave PM JSON 失敗:', e); }
 }
 
 /**
@@ -90,10 +126,40 @@ export async function initializeEssayEditor(forceReinit = false) {
     console.log('📝 初始化論文編輯器...');
     
     try {
-        // 0. 初始化存儲模組
+    // 0. 初始化存儲模組
         initializeStorage();
         
-        // 1. 初始化引言編輯器
+    // TIPTAP 路徑：單一文檔編輯器（ProseMirror JSON）
+    const container = document.getElementById('intro-editor') || document.getElementById('essay-editor');
+    if (!container) {
+        console.error('❌ 找不到編輯器容器（essay-editor）');
+        return;
+    }
+
+    // 清空舊結構（多輸入框模式）
+    try {
+        const legacy = document.getElementById('arguments-container');
+        if (legacy) legacy.innerHTML = '';
+        const concl = document.getElementById('conclusion-editor');
+        if (concl) concl.innerHTML = '';
+    } catch (_) {}
+
+    // 建立單一 PM 編輯器
+    EditorState.introEditor = new PMEditor(container, {
+        readOnly: false,
+        initialJSON: await loadInitialPMJSON(),
+        onUpdate: debounce(async () => {
+            await autoSavePMJSON();
+        }, 1500)
+    });
+
+    // 完成初始化
+    EditorState.initialized = true;
+    EditorState.isInitializing = false;
+    console.log('✅ PM 編輯器初始化完成（TipTap/PM 路徑）');
+    return;
+
+    // 1. 初始化引言編輯器（舊 Quill 路徑）
         const introContainer = document.getElementById('intro-editor');
         if (!introContainer) {
             console.error('❌ 找不到引言編輯器容器');

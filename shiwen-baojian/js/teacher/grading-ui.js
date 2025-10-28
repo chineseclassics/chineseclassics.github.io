@@ -4,6 +4,8 @@
 
 import toast from '../ui/toast.js';
 import AnnotationManager from '../features/annotation-manager.js';
+import { PMEditor } from '../editor/tiptap-editor.js';
+import { createAnnotationPlugin } from '../features/pm-annotation-plugin.js';
 
 class GradingUI {
   constructor(supabaseClient) {
@@ -255,9 +257,9 @@ class GradingUI {
                       </button>
                     </div>
                   </div>
-                  <div class="essay-viewer" id="essayViewer">
-                    ${this.renderEssayContent(essay)}
-                  </div>
+                <div class="essay-viewer" id="essayViewer">
+                  <div id="pm-viewer" class="pm-viewer"></div>
+                </div>
                 </div>
               </div>
               <!-- 批註直接浮動在右側，無容器 -->
@@ -274,7 +276,32 @@ class GradingUI {
       console.log('🔗 開始綁定事件...');
       this.bindEvents();
       
-      // 自動初始化批注系統
+      // 渲染只讀 PM viewer
+      try {
+        const viewer = document.getElementById('pm-viewer');
+        if (viewer) {
+          const AppState = window.AppState;
+          const { data } = await AppState.supabase
+            .from('essays')
+            .select('content_json')
+            .eq('id', this.currentEssay.id)
+            .single();
+          const raw = data?.content_json;
+          const json = typeof raw === 'string' ? safeParseJSON(raw) : raw;
+          if (json && json.type) {
+            const plugin = createAnnotationPlugin({
+              getAnnotations: () => [],
+              onClick: (id) => this.highlightAnnotation?.(id)
+            });
+            this._pmViewer = new PMEditor(viewer, { readOnly: true, initialJSON: json, extraPlugins: [plugin] });
+          } else {
+            // 後備：使用舊渲染（HTML）避免空白
+            viewer.innerHTML = this.renderEssayContent(this.currentEssay);
+          }
+        }
+      } catch (e) { console.warn('PM viewer 載入失敗:', e); }
+      
+      // 自動初始化批注系統（沿用側欄與 decorations 聯動，後續切到 PM 插件）
       await this.initializeAnnotationSystem();
       
       // 自動加載已保存的 AI 評分建議（如果存在）
