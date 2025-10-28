@@ -344,6 +344,8 @@
 .grading-container-wrapper {
   width: 100%;
   min-height: 100vh;
+  max-width: 1800px;
+  margin: 0 auto;
 }
 
 /* 頂部標題欄 - 改為非固定顯示 */
@@ -370,7 +372,6 @@
   display: flex;
   gap: 2rem;
   padding: 2rem;
-  max-width: 1800px;
   margin: 0 auto;
 }
 
@@ -642,7 +643,7 @@
 
 /* 舊版批改容器（保留兼容） */
 .grading-container {
-  max-width: 1000px;
+  max-width: 1800px;
   margin: 0 auto;
 }
 
@@ -1804,10 +1805,273 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* ================================
+   老師端左側評分邊欄樣式（對齊學生端）
+   ================================ */
+
+/* 評分區域容器 */
+.grading-sidebar-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 區域標題 */
+.grading-sidebar-section .section-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grading-sidebar-section .section-header .section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.grading-sidebar-section .section-header .btn-ai-suggest {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.grading-sidebar-section .section-header .btn-ai-suggest:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 區域內容 */
+.grading-sidebar-section .section-content {
+  padding: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* 側邊欄中的評分表單樣式 */
+.grading-sidebar-section .grading-form-panel {
+  padding: 0;
+}
+
+.grading-sidebar-section .criterion-group {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+}
+
+.grading-sidebar-section .criterion-group h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+}
+
+.grading-sidebar-section .criterion-group .criterion-details {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+/* 分數輸入框適應窄寬度 */
+.grading-sidebar-section input[type="number"] {
+  width: 100%;
+  max-width: 80px;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.grading-sidebar-section .form-group {
+  margin-bottom: 1rem;
+}
+
+.grading-sidebar-section .form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.grading-sidebar-section textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.grading-sidebar-section .form-actions {
+  margin-top: 1rem;
+}
+
+.grading-sidebar-section .btn-submit-grading {
+  width: 100%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.grading-sidebar-section .btn-submit-grading:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.grading-sidebar-section .grading-info {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.375rem;
+}
+
+.grading-sidebar-section .grading-info p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #0369a1;
+}
+
+/* AI 建議區域樣式 */
+.grading-sidebar-section .ai-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+  border-left: 3px solid #3b82f6;
+}
+
+.grading-sidebar-section .ai-loading {
+  text-align: center;
+  padding: 1rem;
+}
+
+.grading-sidebar-section .spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.grading-sidebar-section .loading-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin: 0 0 0.25rem 0;
+}
+
+.grading-sidebar-section .loading-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ================================
+   響應式設計
+   ================================ */
+
+@media (max-width: 1024px) {
+  /* 在小屏幕上，左側邊欄改為頂部 */
+  .grading-container-wrapper .flex {
+    flex-direction: column;
+  }
+  
+  .grading-container-wrapper aside {
+    position: relative !important;
+    width: 100% !important;
+    max-height: none !important;
+    margin-bottom: 1rem;
+  }
+  
+  .grading-container-wrapper .main-content-area {
+    max-width: 100%;
+  }
+  
+  /* 調整側邊欄區域間距 */
+  .grading-sidebar-section {
+    margin-bottom: 0.75rem;
+  }
+  
+  .grading-sidebar-section .section-content {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 手機端進一步優化 */
+  .grading-container-wrapper {
+    padding: 0.5rem;
+  }
+  
+  .grading-top-bar {
+    padding: 1rem;
+  }
+  
+  .grading-top-bar .grading-title-info h2 {
+    font-size: 1.125rem;
+  }
+  
+  .grading-top-bar .grading-title-info .text-sm {
+    font-size: 0.75rem;
+  }
+  
+  .grading-sidebar-section .section-content {
+    padding: 0.75rem;
+    max-height: 250px;
+  }
+  
+  .grading-sidebar-section .criterion-group {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .grading-sidebar-section .btn-submit-grading {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* ================================
    Google Docs 風格批注系統
    ================================ */
 
-/* Google Docs 風格佈局 */
+/* Google Docs 風格佈局（已棄用，改為三欄佈局） */
 .google-docs-layout {
   display: flex;
   flex-direction: column;
@@ -1817,8 +2081,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 /* 統一滾動容器 */
 .grading-content-wrapper {
   position: relative;
-  overflow-y: auto;
-  max-height: calc(100vh - 250px);
+  overflow: visible;
+  max-height: none;
   padding: 16px;
 }
 
@@ -1832,7 +2096,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   position: relative;
 }
 
-/* 浮動批注樣式 - 直接浮動在右側 */
+/* 浮動批注樣式 - 直接浮動在右側（與學生端一致） */
 .floating-annotation {
   position: absolute;
   right: 4px;  /* 更靠近右邊緣，適應78%寬度 */
@@ -2298,7 +2562,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   background: #2563eb;
 }
 
-/* 評分區域樣式 */
+/* 評分區域樣式（已棄用，改為左側邊欄佈局） */
+/*
 .grading-sections {
   display: flex;
   flex-direction: column;
@@ -2312,6 +2577,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   border-radius: 8px;
   padding: 20px;
 }
+*/
 
 /* 按鈕樣式已遷移到 components.css 統一管理 */
 /* 按鈕樣式已遷移到 components.css 統一管理 */

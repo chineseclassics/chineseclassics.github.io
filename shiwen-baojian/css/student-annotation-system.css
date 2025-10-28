@@ -433,6 +433,12 @@
   overflow: visible;
 }
 
+/* 學生端：統一外層容器寬度限制（與老師端一致） */
+#student-dashboard {
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
 /* 學生端：中部容器使用頁面全局滾動（避免內部滾動條） */
 #student-dashboard .grading-content-wrapper {
   overflow: visible;
@@ -583,6 +589,24 @@
 }
 
 /* 響應式設計 */
+@media (max-width: 1024px) {
+  /* 在小屏幕上，左側邊欄改為頂部 */
+  #student-dashboard .flex {
+    flex-direction: column;
+  }
+  
+  #student-dashboard aside {
+    position: relative !important;
+    width: 100% !important;
+    max-height: none !important;
+    margin-bottom: 1rem;
+  }
+  
+  #student-dashboard .main-content-area {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   /* 在小屏幕上，批註卡片改為全寬度，避免覆蓋問題 */
   #student-dashboard .main-content-area {
