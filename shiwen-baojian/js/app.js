@@ -908,10 +908,20 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         // ✅ 只在對應模式下恢復內容
         if (mode === 'assignment' && AppState.currentEssayContent) {
             console.log('📂 恢復任務作業內容...');
-            await restoreEssayContent(AppState.currentEssayContent);
+            window.__RESTORING_ESSAY_CONTENT = true;
+            try {
+                await restoreEssayContent(AppState.currentEssayContent);
+            } finally {
+                window.__RESTORING_ESSAY_CONTENT = false;
+            }
         } else if (mode === 'free-writing' && AppState.currentPracticeContent) {
             console.log('📂 恢復練筆內容...');
-            await restoreEssayContent(AppState.currentPracticeContent);
+            window.__RESTORING_ESSAY_CONTENT = true;
+            try {
+                await restoreEssayContent(AppState.currentPracticeContent);
+            } finally {
+                window.__RESTORING_ESSAY_CONTENT = false;
+            }
         } else if (mode === 'free-writing' && !essayId) {
             console.log('✨ 新練筆模式，內容為空');
             // 新練筆，不恢復任何內容

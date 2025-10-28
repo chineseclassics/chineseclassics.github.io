@@ -444,6 +444,10 @@ function renumberParagraphs(argumentId) {
  * 處理編輯器內容變化
  */
 function handleEditorChange(data) {
+    // 在內容恢復期間暫停變更處理，避免觸發自動保存與狀態降級
+    if (window.__RESTORING_ESSAY_CONTENT) {
+        return;
+    }
     // 更新字數統計
     updateWordCount();
     

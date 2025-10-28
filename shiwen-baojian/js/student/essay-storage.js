@@ -199,18 +199,8 @@ async function upsertEssay(essayData) {
             .single();
             
         if (error) {
-            // 可能是論文被刪除了或 ID 無效，創建新的
-            console.warn('⚠️ 更新作業失敗（可能已被刪除），創建新作業:', error.code);
-            const newEssay = await createNewEssay(essayRecord);
-            // 更新所有相關的 ID
-            StorageState.currentEssayId = newEssay.id;
-            localStorage.setItem('current-essay-id', newEssay.id);
-            if (!AppState.currentAssignmentId) {
-                // 只有練筆才設置 currentPracticeEssayId
-                AppState.currentPracticeEssayId = newEssay.id;
-            }
-            console.log(`✅ 已創建新作業替代: ${newEssay.id}`);
-            return newEssay;
+            // 不再自動創建新作業，避免 essay id 變動
+            throw new Error(`更新作業失敗：${error.message}`);
         }
         
         console.log(`✅ 作業更新成功，assignment_id = ${data.assignment_id || 'NULL（練筆）'}`);
@@ -256,53 +246,84 @@ async function saveSubArguments(essayId, argumentsData) {
         return;
     }
     
-    // 先刪除舊的分論點（簡化處理，實際可以優化為增量更新）
-    await AppState.supabase
+    // 讀取現有分論點（保持 ID 穩定，避免刪除導致段落連帶刪除）
+    const { data: existing, error: qerr } = await AppState.supabase
         .from('sub_arguments')
-        .delete()
-        .eq('essay_id', essayId);
-    
-    // 插入新的分論點
-    const subArgumentsRecords = argumentsData.map((arg, index) => ({
-        essay_id: essayId,
-        title: arg.title || `分論點 ${index + 1}`,
-        order_index: index
-    }));
-    
-    const { error } = await AppState.supabase
-        .from('sub_arguments')
-        .insert(subArgumentsRecords);
-        
-    if (error) {
-        throw new Error(`保存分論點失敗: ${error.message}`);
+        .select('id, order_index, title')
+        .eq('essay_id', essayId)
+        .order('order_index');
+    if (qerr) {
+        throw new Error(`查詢分論點失敗: ${qerr.message}`);
     }
-    
-    console.log(`✅ 保存了 ${argumentsData.length} 個分論點`);
+
+    const existingList = existing || [];
+    const updates = [];
+    const inserts = [];
+
+    (argumentsData || []).forEach((arg, index) => {
+        const title = arg.title || `分論點 ${index + 1}`;
+        const match = existingList[index];
+        if (match) {
+            // 僅更新標題與順序
+            updates.push({ id: match.id, title, order_index: index });
+        } else {
+            inserts.push({ essay_id: essayId, title, order_index: index });
+        }
+    });
+
+    // 批量更新（逐筆）
+    for (const u of updates) {
+        const { error: uerr } = await AppState.supabase
+            .from('sub_arguments')
+            .update({ title: u.title, order_index: u.order_index })
+            .eq('id', u.id);
+        if (uerr) throw new Error(`更新分論點失敗: ${uerr.message}`);
+    }
+
+    // 批量插入
+    if (inserts.length > 0) {
+        const { error: ierr } = await AppState.supabase
+            .from('sub_arguments')
+            .insert(inserts);
+        if (ierr) throw new Error(`插入分論點失敗: ${ierr.message}`);
+    }
+
+    console.log(`✅ 分論點已同步：更新 ${updates.length}，新增 ${inserts.length}`);
 }
 
 /**
  * 保存段落
  */
 async function saveParagraphs(essayId, essayData) {
-    // 先刪除舊的段落
-    await AppState.supabase
+    // 改為差異更新：查現有段落，按順序與類型對齊更新，必要時插入/刪除
+    const { data: existingParas } = await AppState.supabase
         .from('paragraphs')
-        .delete()
-        .eq('essay_id', essayId);
-    
+        .select('id, order_index, paragraph_type, sub_argument_id')
+        .eq('essay_id', essayId)
+        .order('order_index');
+
     const paragraphsToInsert = [];
+    const paragraphsToUpdate = [];
+    const toDeleteIds = new Set((existingParas || []).map(p => p.id));
     let orderIndex = 0;
     
     // 1. 引言段落
     if (essayData.introduction) {
-        paragraphsToInsert.push({
+        const match = (existingParas || []).find(p => p.paragraph_type === 'introduction' && p.order_index === orderIndex);
+        if (match) {
+            toDeleteIds.delete(match.id);
+            paragraphsToUpdate.push({ id: match.id, content: { html: essayData.introduction }, order_index: orderIndex, word_count: countWords(essayData.introduction) });
+        } else {
+            paragraphsToInsert.push({
             essay_id: essayId,
             sub_argument_id: null,
             paragraph_type: 'introduction',
             content: { html: essayData.introduction },
             order_index: orderIndex++,
             word_count: countWords(essayData.introduction)
-        });
+            });
+        }
+        if (match) orderIndex++;
     }
     
     // 2. 正文段落（分論點下的段落）
@@ -319,14 +340,21 @@ async function saveParagraphs(essayId, essayData) {
             
             if (arg.paragraphs && arg.paragraphs.length > 0) {
                 arg.paragraphs.forEach((para) => {
-                    paragraphsToInsert.push({
-                        essay_id: essayId,
-                        sub_argument_id: subArgument?.id || null,
-                        paragraph_type: 'body',
-                        content: { html: para.content },
-                        order_index: orderIndex++,
-                        word_count: countWords(para.content)
-                    });
+                    const match = (existingParas || []).find(p => p.paragraph_type === 'body' && p.order_index === orderIndex);
+                    if (match) {
+                        toDeleteIds.delete(match.id);
+                        paragraphsToUpdate.push({ id: match.id, content: { html: para.content }, order_index: orderIndex, word_count: countWords(para.content), sub_argument_id: subArgument?.id || null });
+                    } else {
+                        paragraphsToInsert.push({
+                            essay_id: essayId,
+                            sub_argument_id: subArgument?.id || null,
+                            paragraph_type: 'body',
+                            content: { html: para.content },
+                            order_index: orderIndex,
+                            word_count: countWords(para.content)
+                        });
+                    }
+                    orderIndex++;
                 });
             }
         });
@@ -334,26 +362,47 @@ async function saveParagraphs(essayId, essayData) {
     
     // 3. 結論段落
     if (essayData.conclusion) {
-        paragraphsToInsert.push({
+        const match = (existingParas || []).find(p => p.paragraph_type === 'conclusion' && p.order_index === orderIndex);
+        if (match) {
+            toDeleteIds.delete(match.id);
+            paragraphsToUpdate.push({ id: match.id, content: { html: essayData.conclusion }, order_index: orderIndex, word_count: countWords(essayData.conclusion) });
+        } else {
+            paragraphsToInsert.push({
             essay_id: essayId,
             sub_argument_id: null,
             paragraph_type: 'conclusion',
             content: { html: essayData.conclusion },
             order_index: orderIndex++,
             word_count: countWords(essayData.conclusion)
-        });
+            });
+        }
+        if (match) orderIndex++;
     }
     
+    // 批量更新
+    if (paragraphsToUpdate.length > 0) {
+        const updates = await Promise.all(paragraphsToUpdate.map(async u => {
+            const { error } = await AppState.supabase
+                .from('paragraphs')
+                .update({ content: u.content, order_index: u.order_index, word_count: u.word_count, sub_argument_id: u.sub_argument_id ?? null })
+                .eq('id', u.id);
+            if (error) throw new Error(error.message);
+            return true;
+        }));
+        console.log(`✅ 更新了 ${updates.length} 個段落`);
+    }
+
+    // 插入新增段落
     if (paragraphsToInsert.length > 0) {
         const { error } = await AppState.supabase
             .from('paragraphs')
             .insert(paragraphsToInsert);
-            
-        if (error) {
-            throw new Error(`保存段落失敗: ${error.message}`);
-        }
-        
-        console.log(`✅ 保存了 ${paragraphsToInsert.length} 個段落`);
+        if (error) throw new Error(`保存段落失敗: ${error.message}`);
+        console.log(`✅ 新增了 ${paragraphsToInsert.length} 個段落`);
+    }
+
+    // 僅刪除末尾冗餘（為安全，避免刪除導致批註連帶丟失，這裡先不進行刪除；若必需，可僅刪除 order_index>=當前長度 的尾段）
+    // 若將來需要精準刪除，可引入穩定段落 UUID 再執行。
 
         // 重新查詢段落以獲取最終的 DB ID 與順序，並錨定到當前 DOM
         try {
@@ -372,7 +421,6 @@ async function saveParagraphs(essayId, essayData) {
         } catch (anchorErr) {
             console.warn('⚠️ 段落錨定失敗（保存後）:', anchorErr?.message);
         }
-    }
 }
 
 /**
