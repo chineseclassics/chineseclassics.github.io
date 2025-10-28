@@ -318,6 +318,16 @@ class GradingUI {
         
         // 分論點
         if (content.arguments && content.arguments.length > 0) {
+          // ⚠️ 先過濾並排序所有正文段落
+          const bodyParagraphs = essay.paragraphs
+            ?.filter(p => p.paragraph_type === 'body')
+            .sort((a, b) => a.order_index - b.order_index) || [];
+          
+          console.log('📋 正文段落總數:', bodyParagraphs.length);
+          
+          // ⚠️ 累計已處理的段落數
+          let processedBodyCount = 0;
+          
           content.arguments.forEach((arg, index) => {
             html += `
               <div class="paragraph-block argument-section">
@@ -329,11 +339,18 @@ class GradingUI {
             
             if (arg.paragraphs && arg.paragraphs.length > 0) {
               arg.paragraphs.forEach((para, pIndex) => {
-                // 找到對應的段落 ID
-                const bodyParagraphs = essay.paragraphs?.filter(p => p.paragraph_type === 'body');
-                const matchedParagraph = bodyParagraphs && bodyParagraphs[index + pIndex];
+                // ⚠️ 使用累計的全局索引
+                const matchedParagraph = bodyParagraphs[processedBodyCount];
                 const paraId = matchedParagraph?.id || '';
                 const globalIndex = matchedParagraph?.order_index ?? 0;
+                
+                console.log('📋 映射段落:', {
+                  argument: index + 1,
+                  paragraph: pIndex + 1,
+                  globalBodyIndex: processedBodyCount,
+                  paragraphId: paraId,
+                  orderIndex: globalIndex
+                });
                 
                 html += `
                   <div class="paragraph-content sub-paragraph" data-paragraph-id="${paraId}" data-order-index="${globalIndex}">
@@ -341,6 +358,9 @@ class GradingUI {
                     ${para.content || ''}
                   </div>
                 `;
+                
+                // ⚠️ 處理完一個段落後遞增
+                processedBodyCount++;
               });
             }
             
