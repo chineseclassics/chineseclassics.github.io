@@ -437,25 +437,12 @@
 #student-dashboard .grading-content-wrapper {
   overflow: visible;
   max-height: none;
-  padding-right: 300px; /* 為右側批註預留空間，避免遮擋正文 */
 }
 
 /* 學生端：縮窄批註卡片以讓中部更寬 */
 #student-dashboard .floating-annotation {
   width: 260px !important;
   right: 16px !important;
-}
-
-/* 分論點「雨村評點」按鈕懸停樣式與引言/結論一致 */
-#student-dashboard .request-feedback-btn {
-  color: var(--primary-600);
-  transition: all .2s ease;
-}
-
-#student-dashboard .request-feedback-btn:hover {
-  background-color: var(--primary-50);
-  color: var(--primary-700);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 @keyframes slideInRight {

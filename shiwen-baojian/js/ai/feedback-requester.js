@@ -197,7 +197,6 @@ function showLoadingState(paragraphId) {
     
     const loadingHTML = `
         <style>
-          @keyframes pageFlip { 0% { transform: rotateY(0deg); opacity: .9 } 50% { opacity: .7 } 100% { transform: rotateY(-180deg); opacity: 0 } }
           @keyframes dotBlink { 0%, 20% { opacity: 0.2 } 50% { opacity: 1 } 100% { opacity: 0.2 } }
         </style>
         <!-- 當前段落標識 -->
@@ -208,20 +207,20 @@ function showLoadingState(paragraphId) {
             </div>
         </div>
         
-        <!-- 加載動畫：雨村先生正在仔細閱讀...（翻頁效果） -->
+        <!-- 加載動畫：雨村先生正在仔細閱讀... -->
         <div class="flex flex-col items-center justify-center py-10 space-y-4">
-          <div class="relative" style="width:72px;height:56px;perspective:600px">
-            <div style="position:absolute;inset:0;background:#f8f5ee;border:1px solid #d6d3ce;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.08)"></div>
-            <div style="position:absolute;inset:0;background:#fff;border:1px solid #e7e5e4;border-radius:6px;transform-origin:left center;animation: pageFlip 1.2s cubic-bezier(.5,.2,.2,1) infinite;box-shadow:0 2px 6px rgba(0,0,0,.08)"></div>
-          </div>
-          <div class="text-center leading-relaxed">
-            <p class="text-lg font-semibold text-gray-800">雨村先生正在仔細閱讀你的文章</p>
-            <p class="text-sm text-gray-500 mt-1">請稍候
-              <span style="animation: dotBlink 1.2s infinite">.</span>
-              <span style="animation: dotBlink 1.2s infinite .2s">.</span>
-              <span style="animation: dotBlink 1.2s infinite .4s">.</span>
-            </p>
-          </div>
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-stone-300 rounded-full"></div>
+                <div class="absolute top-0 left-0 w-16 h-16 border-4 border-stone-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <div class="text-center leading-relaxed">
+                <p class="text-lg font-semibold text-gray-800">
+                  雨村先生正在仔細閱讀你的文章
+                </p>
+                <p class="text-sm text-gray-500 mt-1">
+                  請稍候<span style="animation: dotBlink 1.4s infinite">.</span><span style="animation: dotBlink 1.4s infinite 0.2s">.</span><span style="animation: dotBlink 1.4s infinite 0.4s">.</span>
+                </p>
+            </div>
         </div>
     `;
     
