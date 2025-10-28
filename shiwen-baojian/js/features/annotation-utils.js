@@ -162,11 +162,19 @@ export function highlightWithRange(annotationId, range) {
  */
 export function getIdealTop(floating, container) {
   if (!container) return 0;
-  // 已存在批註：透過 data-annotation-id 找到原文高亮
+  // 以 container 為坐標參照，透過 DOMRect + scrollTop 計算更穩定
   const annotationId = floating.dataset?.annotationId;
   if (annotationId) {
     const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-    if (highlight) return highlight.offsetTop + container.offsetTop;
+    // 編輯模式可能只有 overlay 區塊
+    const overlay = document.querySelector(`.annotation-overlay-block[data-annotation-id="${annotationId}"]`);
+    const target = highlight || overlay;
+    if (target) {
+      const wrapperRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const top = (targetRect.top - wrapperRect.top) + container.scrollTop;
+      return Math.max(0, top);
+    }
   }
   return parseInt(floating.style.top) || 0;
 }

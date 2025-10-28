@@ -32,6 +32,14 @@ const EditorState = {
     isInitializing: false  // 防止重复初始化
 };
 
+// 生成穩定段落 UUID（客戶端）
+function generateClientUid() {
+    // 簡單 UUID v4 生成器（瀏覽器環境）
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    const s = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    return `${s()}${s()}-${s()}-${s()}-${s()}-${s()}${s()}${s()}`;
+}
+
 /**
  * 獲取編輯器實例（供外部模組使用）
  */
@@ -99,6 +107,12 @@ export async function initializeEssayEditor(forceReinit = false) {
         });
         
         console.log('✅ 引言編輯器初始化完成');
+
+        // 為引言段落容器補充穩定 client uid
+        const introBlock = document.getElementById('intro');
+        if (introBlock && !introBlock.dataset.clientUid) {
+            introBlock.dataset.clientUid = generateClientUid();
+        }
         
         // 2. 初始化結論編輯器
         const conclusionContainer = document.getElementById('conclusion-editor');
@@ -114,6 +128,12 @@ export async function initializeEssayEditor(forceReinit = false) {
         });
         
         console.log('✅ 結論編輯器初始化完成');
+
+        // 為結論段落容器補充穩定 client uid
+        const conclusionBlock = document.getElementById('conclusion');
+        if (conclusionBlock && !conclusionBlock.dataset.clientUid) {
+            conclusionBlock.dataset.clientUid = generateClientUid();
+        }
         
         // 3. 綁定添加分論點按鈕
         const addArgumentBtn = document.getElementById('add-argument-btn');
@@ -304,6 +324,7 @@ export function addParagraph(argumentId) {
     }
     
     const paragraphId = `${argumentId}-para-${Date.now()}`;
+    const clientUid = generateClientUid();
     const paragraphIndex = argument.paragraphs.length + 1;
     
     // 創建段落 HTML
@@ -339,6 +360,9 @@ export function addParagraph(argumentId) {
     // 插入到段落容器
     const container = document.getElementById(`${argumentId}-paragraphs`);
     container.insertAdjacentHTML('beforeend', paragraphHTML);
+    // 設置穩定 client uid 到 DOM
+    const blockEl = document.getElementById(paragraphId);
+    if (blockEl) blockEl.dataset.clientUid = clientUid;
     
     // 創建編輯器
     const editorContainer = document.getElementById(`${paragraphId}-editor`);
@@ -362,7 +386,8 @@ export function addParagraph(argumentId) {
         id: paragraphId,
         index: paragraphIndex,
         editor: editor,
-        type: 'body' // 正文段落
+        type: 'body', // 正文段落
+        clientUid: clientUid
     };
     
     argument.paragraphs.push(paragraph);
@@ -385,37 +410,88 @@ export function addParagraph(argumentId) {
 /**
  * 刪除段落
  */
-function deleteParagraph(argumentId, paragraphId) {
+async function deleteParagraph(argumentId, paragraphId) {
     const argument = EditorState.arguments.find(arg => arg.id === argumentId);
     if (!argument) {
         console.error('❌ 找不到分論點:', argumentId);
         return;
     }
-    
-    // 從 DOM 中移除
-    const element = document.getElementById(paragraphId);
-    if (element) {
-        element.remove();
+
+    const blockEl = document.getElementById(paragraphId);
+    const sourcePid = blockEl?.dataset?.paragraphId || null; // DB paragraph id（可能尚未存在）
+
+    // 若該段已有 DB id，檢查是否存在老師批註
+    let hasAnnotations = false;
+    if (sourcePid) {
+        try {
+            const AppState = getAppState();
+            const { data: ann } = await AppState.supabase
+                .from('annotations')
+                .select('id')
+                .eq('paragraph_id', sourcePid)
+                .limit(1);
+            hasAnnotations = Array.isArray(ann) && ann.length > 0;
+        } catch (_) {}
     }
-    
+
+    if (hasAnnotations) {
+        // 提示：阻止刪除 / 遷移到相鄰段 / 保留為孤立（將在保存時自動處理）
+        const neighborPrev = blockEl?.previousElementSibling?.classList?.contains('paragraph-block') ? blockEl.previousElementSibling : null;
+        const neighborNext = blockEl?.nextElementSibling?.classList?.contains('paragraph-block') ? blockEl.nextElementSibling : null;
+        const prevPid = neighborPrev?.dataset?.paragraphId || null;
+        const nextPid = neighborNext?.dataset?.paragraphId || null;
+
+        const options = [];
+        if (prevPid) options.push({ key: 'toPrev', label: '遷移批註到上一段' });
+        if (nextPid) options.push({ key: 'toNext', label: '遷移批註到下一段' });
+        options.push({ key: 'keepOrphan', label: '保留批註（段落移至文末）' });
+        options.push({ key: 'cancel', label: '取消' });
+
+        const choice = await new Promise(resolve => {
+            dialog.select({
+                title: '此段落含有老師批註',
+                message: '請選擇處理方式：',
+                options: options.map(o => ({ value: o.key, label: o.label })),
+                onSelect: (v) => resolve(v)
+            });
+        });
+
+        if (choice === 'cancel') return;
+
+        if ((choice === 'toPrev' && prevPid) || (choice === 'toNext' && nextPid)) {
+            // 遷移批註到相鄰段
+            try {
+                const target = choice === 'toPrev' ? prevPid : nextPid;
+                const AppState = getAppState();
+                const { error: merr } = await AppState.supabase
+                    .from('annotations')
+                    .update({ paragraph_id: target, is_orphaned: false })
+                    .eq('paragraph_id', sourcePid);
+                if (merr) throw merr;
+                toast.success('批註已遷移');
+            } catch (e) {
+                toast.error('批註遷移失敗：' + (e?.message || '未知錯誤'));
+                return;
+            }
+            // 後續按普通刪除處理
+        }
+        // keepOrphan：不需額外操作，保存時會自動將未使用段落標記為孤立
+    }
+
+    // 從 DOM 中移除
+    if (blockEl) blockEl.remove();
+
     // 從狀態中移除
     const index = argument.paragraphs.findIndex(para => para.id === paragraphId);
     if (index !== -1) {
-        // 銷毀編輯器
         const paragraph = argument.paragraphs[index];
-        if (paragraph.editor) {
-            paragraph.editor.destroy();
-        }
-        
+        if (paragraph.editor) paragraph.editor.destroy();
         argument.paragraphs.splice(index, 1);
     }
-    
-    // 重新編號段落
+
+    // 重新編號段落並更新字數
     renumberParagraphs(argumentId);
-    
-    // 更新字數
     updateWordCount();
-    
     console.log(`✅ 已刪除段落: ${paragraphId}`);
 }
 
@@ -629,11 +705,20 @@ async function autoSave() {
             introduction: EditorState.introEditor ? EditorState.introEditor.getHTML() : '',
             arguments: EditorState.arguments.map(arg => ({
                 title: document.getElementById(`${arg.id}-title`)?.value || '',
-                paragraphs: arg.paragraphs.map(para => ({
-                    content: para.editor ? para.editor.getHTML() : ''
-                }))
+                paragraphs: arg.paragraphs.map(para => {
+                    const el = document.getElementById(para.id);
+                    const uid = el?.dataset?.clientUid || para.clientUid || generateClientUid();
+                    if (el && !el.dataset.clientUid) el.dataset.clientUid = uid;
+                    return {
+                        uid,
+                        content: para.editor ? para.editor.getHTML() : ''
+                    };
+                })
             })),
             conclusion: EditorState.conclusionEditor ? EditorState.conclusionEditor.getHTML() : '',
+            // 為引言/結論補上 client uid，便於還原
+            intro_uid: document.getElementById('intro')?.dataset?.clientUid || null,
+            conclusion_uid: document.getElementById('conclusion')?.dataset?.clientUid || null,
             word_count: EditorState.totalWordCount,
             last_saved_at: new Date().toISOString()
         };

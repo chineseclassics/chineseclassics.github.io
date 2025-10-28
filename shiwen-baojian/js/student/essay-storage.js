@@ -295,88 +295,73 @@ async function saveSubArguments(essayId, argumentsData) {
  * 保存段落
  */
 async function saveParagraphs(essayId, essayData) {
-    // 改為差異更新：查現有段落，按順序與類型對齊更新，必要時插入/刪除
-    const { data: existingParas } = await AppState.supabase
-        .from('paragraphs')
-        .select('id, order_index, paragraph_type, sub_argument_id')
+    // 以 DOM 錨點為準進行穩定對位，避免因插入/移動導致錯位
+    const { data: subArguments } = await AppState.supabase
+        .from('sub_arguments')
+        .select('id, order_index')
         .eq('essay_id', essayId)
         .order('order_index');
 
     const paragraphsToInsert = [];
     const paragraphsToUpdate = [];
-    const toDeleteIds = new Set((existingParas || []).map(p => p.id));
+    const usedParagraphIds = new Set();
     let orderIndex = 0;
-    
-    // 1. 引言段落
+
+    // 1) 引言（若有 DOM data-paragraph-id 則更新，否則插入）
     if (essayData.introduction) {
-        const match = (existingParas || []).find(p => p.paragraph_type === 'introduction' && p.order_index === orderIndex);
-        if (match) {
-            toDeleteIds.delete(match.id);
-            paragraphsToUpdate.push({ id: match.id, content: { html: essayData.introduction }, order_index: orderIndex, word_count: countWords(essayData.introduction) });
+        const introEl = document.getElementById('intro');
+        const introPid = introEl?.dataset?.paragraphId;
+        const introUid = introEl?.dataset?.clientUid || essayData.intro_uid || null;
+        if (introPid) {
+            paragraphsToUpdate.push({ id: introPid, content: { html: essayData.introduction }, order_index: orderIndex, word_count: countWords(essayData.introduction), sub_argument_id: null });
+            usedParagraphIds.add(introPid);
         } else {
-            paragraphsToInsert.push({
-            essay_id: essayId,
-            sub_argument_id: null,
-            paragraph_type: 'introduction',
-            content: { html: essayData.introduction },
-            order_index: orderIndex++,
-            word_count: countWords(essayData.introduction)
-            });
+            // 帶上 client uid 以便後端或將來遷移時使用（目前存到 content.meta）
+            paragraphsToInsert.push({ essay_id: essayId, sub_argument_id: null, paragraph_type: 'introduction', content: { html: essayData.introduction, meta: { uid: introUid } }, order_index: orderIndex, word_count: countWords(essayData.introduction) });
         }
-        if (match) orderIndex++;
+        orderIndex++;
     }
-    
-    // 2. 正文段落（分論點下的段落）
-    if (essayData.arguments && essayData.arguments.length > 0) {
-        // 先獲取剛保存的分論點 ID
-        const { data: subArguments } = await AppState.supabase
-            .from('sub_arguments')
-            .select('id, order_index')
-            .eq('essay_id', essayId)
-            .order('order_index');
-        
+
+    // 預先扁平化正文段落（保留 argIndex）
+    const flatBodies = [];
+    if (Array.isArray(essayData.arguments)) {
         essayData.arguments.forEach((arg, argIndex) => {
-            const subArgument = subArguments?.find(sa => sa.order_index === argIndex);
-            
-            if (arg.paragraphs && arg.paragraphs.length > 0) {
-                arg.paragraphs.forEach((para) => {
-                    const match = (existingParas || []).find(p => p.paragraph_type === 'body' && p.order_index === orderIndex);
-                    if (match) {
-                        toDeleteIds.delete(match.id);
-                        paragraphsToUpdate.push({ id: match.id, content: { html: para.content }, order_index: orderIndex, word_count: countWords(para.content), sub_argument_id: subArgument?.id || null });
-                    } else {
-                        paragraphsToInsert.push({
-                            essay_id: essayId,
-                            sub_argument_id: subArgument?.id || null,
-                            paragraph_type: 'body',
-                            content: { html: para.content },
-                            order_index: orderIndex,
-                            word_count: countWords(para.content)
-                        });
-                    }
-                    orderIndex++;
-                });
-            }
+            (arg.paragraphs || []).forEach(para => flatBodies.push({ argIndex, content: para.content || '' }));
         });
     }
-    
-    // 3. 結論段落
-    if (essayData.conclusion) {
-        const match = (existingParas || []).find(p => p.paragraph_type === 'conclusion' && p.order_index === orderIndex);
-        if (match) {
-            toDeleteIds.delete(match.id);
-            paragraphsToUpdate.push({ id: match.id, content: { html: essayData.conclusion }, order_index: orderIndex, word_count: countWords(essayData.conclusion) });
+
+    // 2) 正文：按 DOM 現有順序對應內容
+    const bodyEls = Array.from(document.querySelectorAll('#arguments-container .paragraph-block'));
+    for (let i = 0; i < flatBodies.length; i++) {
+        const bodyEl = bodyEls[i];
+        const meta = flatBodies[i];
+        if (!meta) continue;
+        const pid = bodyEl?.dataset?.paragraphId;
+        const uid = bodyEl?.dataset?.clientUid || meta.uid || null;
+        const subArg = subArguments?.find(sa => sa.order_index === meta.argIndex);
+        const subArgId = subArg?.id || null;
+        const html = meta.content;
+        if (pid) {
+            paragraphsToUpdate.push({ id: pid, content: { html }, order_index: orderIndex, word_count: countWords(html), sub_argument_id: subArgId });
+            usedParagraphIds.add(pid);
         } else {
-            paragraphsToInsert.push({
-            essay_id: essayId,
-            sub_argument_id: null,
-            paragraph_type: 'conclusion',
-            content: { html: essayData.conclusion },
-            order_index: orderIndex++,
-            word_count: countWords(essayData.conclusion)
-            });
+            paragraphsToInsert.push({ essay_id: essayId, sub_argument_id: subArgId, paragraph_type: 'body', content: { html, meta: { uid } }, order_index: orderIndex, word_count: countWords(html) });
         }
-        if (match) orderIndex++;
+        orderIndex++;
+    }
+
+    // 3) 結論
+    if (essayData.conclusion) {
+        const conclEl = document.getElementById('conclusion');
+        const conclPid = conclEl?.dataset?.paragraphId;
+        const conclUid = conclEl?.dataset?.clientUid || essayData.conclusion_uid || null;
+        if (conclPid) {
+            paragraphsToUpdate.push({ id: conclPid, content: { html: essayData.conclusion }, order_index: orderIndex, word_count: countWords(essayData.conclusion), sub_argument_id: null });
+            usedParagraphIds.add(conclPid);
+        } else {
+            paragraphsToInsert.push({ essay_id: essayId, sub_argument_id: null, paragraph_type: 'conclusion', content: { html: essayData.conclusion, meta: { uid: conclUid } }, order_index: orderIndex, word_count: countWords(essayData.conclusion) });
+        }
+        orderIndex++;
     }
     
     // 批量更新
@@ -401,26 +386,81 @@ async function saveParagraphs(essayId, essayData) {
         console.log(`✅ 新增了 ${paragraphsToInsert.length} 個段落`);
     }
 
-    // 僅刪除末尾冗餘（為安全，避免刪除導致批註連帶丟失，這裡先不進行刪除；若必需，可僅刪除 order_index>=當前長度 的尾段）
-    // 若將來需要精準刪除，可引入穩定段落 UUID 再執行。
+    // 安全處理未使用段落：
+    // 1) 有批註 → 不刪除，將其移至尾部（order_index 置於可視段落之後）並標記其批註為孤立（is_orphaned=true）
+    // 2) 無批註 → 可刪除
+    try {
+        const { data: allParas } = await AppState.supabase
+            .from('paragraphs')
+            .select('id')
+            .eq('essay_id', essayId);
+        const candidateIds = (allParas || []).map(p => p.id).filter(id => !usedParagraphIds.has(id));
+        if (candidateIds.length > 0) {
+            const { data: annRows } = await AppState.supabase
+                .from('annotations')
+                .select('id, paragraph_id')
+                .in('paragraph_id', candidateIds);
+            const hasAnno = new Set((annRows || []).map(a => a.paragraph_id));
+            const deletable = candidateIds.filter(id => !hasAnno.has(id));
+            const orphanIds = candidateIds.filter(id => hasAnno.has(id));
 
-        // 重新查詢段落以獲取最終的 DB ID 與順序，並錨定到當前 DOM
-        try {
-            const { data: paragraphs, error: qerr } = await AppState.supabase
-                .from('paragraphs')
-                .select('id, order_index, paragraph_type')
-                .eq('essay_id', essayId)
-                .order('order_index');
-            if (qerr) throw qerr;
-
-            if (Array.isArray(paragraphs) && paragraphs.length > 0) {
-                const { applyParagraphAnchors } = await import('../features/paragraph-anchors.js');
-                await applyParagraphAnchors(paragraphs);
-                console.log('🔗 已將段落 ID/順序錨定到 DOM');
+            // 處理孤立段落（有批註）：移至尾部並將其批註標記為孤立
+            if (orphanIds.length > 0) {
+                let orphanOrder = orderIndex;
+                for (const pid of orphanIds) {
+                    const { error: uerr } = await AppState.supabase
+                        .from('paragraphs')
+                        .update({ order_index: orphanOrder++ })
+                        .eq('id', pid);
+                    if (uerr) {
+                        console.warn('⚠️ 調整孤立段落順序失敗（已忽略）：', uerr.message);
+                    }
+                }
+                const { error: aerr } = await AppState.supabase
+                    .from('annotations')
+                    .update({ is_orphaned: true })
+                    .in('paragraph_id', orphanIds);
+                if (aerr) {
+                    console.warn('⚠️ 標記孤立批註失敗（已忽略）：', aerr.message);
+                } else {
+                    console.log(`🧩 已標記孤立批註 ${orphanIds.length} 段（is_orphaned=true）`);
+                }
             }
-        } catch (anchorErr) {
-            console.warn('⚠️ 段落錨定失敗（保存後）:', anchorErr?.message);
+
+            // 刪除無批註的冗餘段落
+            if (deletable.length > 0) {
+                const { error: derr } = await AppState.supabase
+                    .from('paragraphs')
+                    .delete()
+                    .in('id', deletable);
+                if (derr) {
+                    console.warn('⚠️ 刪除冗餘段落失敗（已忽略）：', derr.message);
+                } else {
+                    console.log(`🧹 已刪除冗餘段落 ${deletable.length} 個（無批註）`);
+                }
+            }
         }
+    } catch (pruneErr) {
+        console.warn('⚠️ 清理冗餘段落時出錯（已忽略）：', pruneErr?.message);
+    }
+    
+    // 重新查詢段落以獲取最終的 DB ID 與順序，並錨定到當前 DOM
+    try {
+        const { data: paragraphs, error: qerr } = await AppState.supabase
+            .from('paragraphs')
+            .select('id, order_index, paragraph_type')
+            .eq('essay_id', essayId)
+            .order('order_index');
+        if (qerr) throw qerr;
+
+        if (Array.isArray(paragraphs) && paragraphs.length > 0) {
+            const { applyParagraphAnchors } = await import('../features/paragraph-anchors.js');
+            await applyParagraphAnchors(paragraphs);
+            console.log('🔗 已將段落 ID/順序錨定到 DOM');
+        }
+    } catch (anchorErr) {
+        console.warn('⚠️ 段落錨定失敗（保存後）:', anchorErr?.message);
+    }
 }
 
 /**

@@ -622,6 +622,15 @@ class AnnotationManager {
       
       // 直接添加到滾動容器
       wrapper.appendChild(inputBox);
+      // 初次定位：讓輸入框與臨時高亮對齊同一水平位置
+      try {
+        const wRect = wrapper.getBoundingClientRect();
+        const tRect = this.tempHighlight?.getBoundingClientRect();
+        if (tRect) {
+          const top = (tRect.top - wRect.top) + wrapper.scrollTop;
+          inputBox.style.top = Math.max(0, top) + 'px';
+        }
+      } catch (_) {}
       
       // 清除所有現有聚焦效果
       this.clearAllFocusEffects();
@@ -759,27 +768,29 @@ class AnnotationManager {
    * 獲取批註的理想位置（對齊原文高亮）
    */
   getIdealTop(annotation) {
-    const essayViewer = document.getElementById('essayViewer');
-    if (!essayViewer) return 0;
-    
-    const essayViewerOffset = essayViewer.offsetTop;
-    
-    // 對於輸入框
+    const wrapper = document.querySelector('.grading-content-wrapper');
+    if (!wrapper) return 0;
+    const wrapperRect = wrapper.getBoundingClientRect();
+
+    // 輸入框：對齊臨時高亮（使用 DOMRect + scrollTop）
     if (annotation.classList && annotation.classList.contains('floating-annotation-input')) {
       if (!this.tempHighlight) return 0;
-      return this.tempHighlight.offsetTop + essayViewerOffset;
+      const rect = this.tempHighlight.getBoundingClientRect();
+      const top = (rect.top - wrapperRect.top) + wrapper.scrollTop;
+      return Math.max(0, top);
     }
-    
-    // 對於已存在的批註
+
+    // 已存在的批註：對齊對應原文高亮
     const annotationId = annotation.dataset?.annotationId;
     if (annotationId) {
       const highlight = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
-      
       if (highlight) {
-        return highlight.offsetTop + essayViewerOffset;
+        const rect = highlight.getBoundingClientRect();
+        const top = (rect.top - wrapperRect.top) + wrapper.scrollTop;
+        return Math.max(0, top);
       }
     }
-    
+
     return parseInt(annotation.style.top) || 0;
   }
 
@@ -915,7 +926,7 @@ class AnnotationManager {
     let lastBottom = 0;
     sortedAnnotations.forEach(ann => {
       const idealTop = this.getIdealTop(ann);
-      const actualTop = Math.max(idealTop, lastBottom + 12);
+      const actualTop = Math.max(idealTop, lastBottom + 16);
       ann.style.top = actualTop + 'px';
       lastBottom = actualTop + (ann.offsetHeight || 100);
     });
@@ -1194,8 +1205,16 @@ class AnnotationManager {
       // 調整批註位置，讓該批註對齊原文
       this.adjustAnnotationsForActive(floatingAnnotation);
       
-      // 滾動到原文位置
-      this.scrollToAnnotationHighlight(annotationId);
+      // 滾動到原文位置（以 wrapper 為參照，更平滑）
+      const wrapper = document.querySelector('.grading-content-wrapper');
+      if (wrapper && highlight) {
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const rect = highlight.getBoundingClientRect();
+        const top = (rect.top - wrapperRect.top) + wrapper.scrollTop - (wrapper.clientHeight/2) + (rect.height/2);
+        wrapper.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      } else {
+        this.scrollToAnnotationHighlight(annotationId);
+      }
       
       // 創建連接線
       this.createConnectionLine(annotationId);

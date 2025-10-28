@@ -93,7 +93,13 @@ class StudentAnnotationViewerV2 {
         if (this.mode === 'edit') {
           this.addOverlayForRange(ann.id, range, wrapper);
         } else {
-          highlightWithRange(ann.id, range);
+          const el = highlightWithRange(ann.id, range);
+          if (el) {
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              this.handleHighlightClick(ann.id);
+            });
+          }
         }
       }
 
@@ -102,7 +108,7 @@ class StudentAnnotationViewerV2 {
       // 反向同步：卡片 hover → 高亮 overlay；點擊 → 高亮自身
       card.addEventListener('mouseenter', () => this.highlightOverlayBlocks(ann.id, true));
       card.addEventListener('mouseleave', () => this.highlightOverlayBlocks(ann.id, false));
-      card.addEventListener('click', () => this.focusFloatingAnnotation(ann.id));
+      card.addEventListener('click', () => this.handleCardClick(ann.id));
       wrapper.appendChild(card);
     }
 
@@ -119,6 +125,51 @@ class StudentAnnotationViewerV2 {
       this.ensureOverlayToggle(wrapper);
       this.applyOverlayVisibility();
     }
+  }
+
+  /** 清除雙方 active 狀態 */
+  clearActiveStates() {
+    document.querySelectorAll('.floating-annotation.active').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.annotation-highlight.active').forEach(el => el.classList.remove('active'));
+    // 清除 overlay 樣式
+    this.highlightOverlayBlocks('__clear__', false);
+  }
+
+  /** 點擊原文高亮 → 聚焦對應卡片並滾動到視口，同時脈衝對應高亮 */
+  handleHighlightClick(annotationId) {
+    this.clearActiveStates();
+    this.focusFloatingAnnotation(annotationId);
+    this.focusHighlight(annotationId);
+  }
+
+  /** 點擊卡片 → 脈衝對應原文、滾動原文到視口 */
+  handleCardClick(annotationId) {
+    this.clearActiveStates();
+    this.focusFloatingAnnotation(annotationId);
+    this.focusHighlight(annotationId);
+    this.scrollOriginalToAnnotation(annotationId);
+  }
+
+  /** 使原文（overlay 或文字高亮）進入 active 狀態 */
+  focusHighlight(annotationId) {
+    if (this._overlayRoot) {
+      this.highlightOverlayBlocks(annotationId, true);
+    }
+    const hl = document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (hl) hl.classList.add('active');
+  }
+
+  /** 滾動原文（overlay 或文字高亮）到視口中央 */
+  scrollOriginalToAnnotation(annotationId) {
+    const wrapper = document.querySelector('.grading-content-wrapper');
+    if (!wrapper) return;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const target = this._overlayRoot?.querySelector(`.annotation-overlay-block[data-annotation-id="${annotationId}"]`) 
+      || document.querySelector(`.annotation-highlight[data-annotation-id="${annotationId}"]`);
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const top = (rect.top - wrapperRect.top) + wrapper.scrollTop - (wrapper.clientHeight/2) + (rect.height/2);
+    wrapper.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }
 
   /**
@@ -189,7 +240,7 @@ class StudentAnnotationViewerV2 {
       // 點擊同步右側卡片高亮與定位
       block.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.focusFloatingAnnotation(annotationId);
+        this.handleHighlightClick(annotationId);
       });
     });
   }
