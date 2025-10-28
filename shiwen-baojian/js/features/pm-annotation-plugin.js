@@ -7,8 +7,7 @@
  *   - re-anchor：text_start→quote→context
  */
 
-import { Plugin, PluginKey } from 'https://esm.sh/prosemirror-state@1.4.3';
-import { Decoration, DecorationSet } from 'https://esm.sh/prosemirror-view@1.30.2';
+import { Plugin, PluginKey, Decoration, DecorationSet } from '../editor/pm-vendor.js';
 
 export const annotationPluginKey = new PluginKey('pm-annotations');
 

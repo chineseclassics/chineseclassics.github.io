@@ -143,6 +143,20 @@
   display: block;
 }
 
+/* ProseMirror 基礎樣式（最小必要） */
+.ProseMirror {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  outline: none;
+  min-height: 240px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+.ProseMirror p { margin: 0 0 0.75rem 0; }
+.ProseMirror-focused { outline: none; }
+
 /* 回覆對話框 */
 .annotation-reply-dialog {
   position: fixed;

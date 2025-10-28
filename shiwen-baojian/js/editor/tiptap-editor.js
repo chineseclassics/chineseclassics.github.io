@@ -6,12 +6,7 @@
  * - 後續可替換為 TipTap，但此封裝可先落地文檔級存取與裝飾
  */
 
-import { EditorState, Plugin, PluginKey } from 'https://esm.sh/prosemirror-state@1.4.3';
-import { EditorView } from 'https://esm.sh/prosemirror-view@1.30.2';
-import { Schema, DOMParser as PMDOMParser } from 'https://esm.sh/prosemirror-model@1.19.3';
-import { keymap } from 'https://esm.sh/prosemirror-keymap@1.2.0';
-import { baseKeymap } from 'https://esm.sh/prosemirror-commands@1.5.0';
-import { history } from 'https://esm.sh/prosemirror-history@1.3.0';
+import { EditorState, Plugin, PluginKey, EditorView, Schema, PMDOMParser, keymap, baseKeymap, history } from './pm-vendor.js';
 
 const baseNodes = {
   doc: { content: 'block+' },
