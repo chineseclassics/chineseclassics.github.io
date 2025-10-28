@@ -451,24 +451,23 @@ class AnnotationManager {
       
       if (error) throw error;
       
+      // 若樂觀批註已被 Realtime 採納（臨時 ID 不在 map 中），則無需再次替換 DOM/渲染
+      if (!this.annotations.has(tempId)) {
+        console.log('ℹ️ 樂觀批註已被 Realtime 採納，跳過手動替換');
+        return;
+      }
+      
       // 🚨 同步成功：用真實 ID 替換臨時 ID
       const annotationData = this.annotations.get(tempId);
       this.annotations.delete(tempId);
-      
       annotationData.id = data;
       delete annotationData._isOptimistic;
       this.annotations.set(data, annotationData);
       
       // 更新 DOM 元素的 data-annotation-id
-      const annotationElement = document.querySelector(`.floating-annotation[data-annotation-id="${tempId}"]`);
-      const highlightElement = document.querySelector(`.annotation-highlight[data-annotation-id="${tempId}"]`);
-      
-      if (annotationElement) {
-        annotationElement.dataset.annotationId = data;
-      }
-      if (highlightElement) {
-        highlightElement.dataset.annotationId = data;
-      }
+      document.querySelectorAll(`[data-annotation-id="${tempId}"]`).forEach(el => {
+        el.dataset.annotationId = data;
+      });
       
       console.log('✅ 批注同步成功，真實 ID:', data);
       
@@ -1272,6 +1271,8 @@ class AnnotationManager {
       const found = this.findTextByAnchor(paragraphElement, annotation.anchor_text);
       if (found) {
         console.log('✅ 使用錨定文本成功定位');
+        // 先嘗試採納已存在的臨時高亮，避免重複渲染/嵌套
+        if (this.adoptExistingHighlightIfOverlap(paragraphElement, found, annotationId, annotation)) return;
         this.highlightWithRange(annotationId, found);
         return;
       } else {
@@ -1313,6 +1314,9 @@ class AnnotationManager {
       range.setStart(startPos.node, startPos.offset);
       range.setEnd(endPos.node, endPos.offset);
 
+      // 先嘗試採納已存在的臨時高亮，避免重複渲染/嵌套
+      if (this.adoptExistingHighlightIfOverlap(paragraphElement, range, annotationId, annotation)) return;
+
       // 使用統一的 highlightWithRange 方法
       this.highlightWithRange(annotationId, range);
       console.log('✅ 使用偏移定位高亮成功');
@@ -1320,6 +1324,37 @@ class AnnotationManager {
       console.log('⚠️ 跨節點高亮失敗，使用備用方案:', err);
       this.addFallbackMarker(annotationId, annotation);
     }
+  }
+
+  /**
+   * 若 range 與現有臨時高亮相交，直接採納並改寫其 ID，避免二次渲染
+   */
+  adoptExistingHighlightIfOverlap(paragraphElement, range, realId, newAnnotation) {
+    try {
+      const existing = paragraphElement.querySelectorAll('.annotation-highlight');
+      for (const hl of existing) {
+        if (typeof range.intersectsNode === 'function' && range.intersectsNode(hl)) {
+          const tempId = hl.dataset?.annotationId;
+          if (!tempId || tempId === realId) continue;
+          const tempAnn = this.annotations.get(tempId);
+          // 僅採納樂觀批註，且內容與錨定/偏移一致
+          if (tempAnn && tempAnn._isOptimistic) {
+            const sameAnchor = !!tempAnn.anchor_text && !!newAnnotation.anchor_text && (tempAnn.anchor_text === newAnnotation.anchor_text);
+            const sameOffsets = (tempAnn.highlight_start === newAnnotation.highlight_start) && (tempAnn.highlight_end === newAnnotation.highlight_end);
+            if (sameAnchor || sameOffsets) {
+              // 更新映射與 DOM 上的 data-annotation-id
+              this.annotations.delete(tempId);
+              const adopted = { ...tempAnn, id: realId, _isOptimistic: false, created_at: newAnnotation.created_at || tempAnn.created_at };
+              this.annotations.set(realId, adopted);
+              document.querySelectorAll(`[data-annotation-id="${tempId}"]`).forEach(el => { el.dataset.annotationId = realId; });
+              console.log('✅ 已在高亮階段採納臨時標記為真實 ID（避免 surroundContents 二次包裹）');
+              return true;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    return false;
   }
 
   /**
@@ -1740,35 +1775,67 @@ class AnnotationManager {
       }, (payload) => {
         console.log('🔄 收到新批注:', payload.new);
         
-        // 檢查是否已經存在這個批注（避免重複處理）
-        if (this.annotations.has(payload.new.id)) {
+        const newAnn = payload.new;
+        // 已存在則跳過
+        if (this.annotations.has(newAnn.id)) {
           console.log('ℹ️ 批注已存在，跳過重複處理');
           return;
         }
         
-        // 如果使用 essay_id 過濾器，需要驗證段落是否屬於當前文章
+        // essay_id 過濾時驗證是否屬於當前文章
         if (paragraphIds.length > 50) {
-          const paragraph = this.paragraphs?.find(p => p.id === payload.new.paragraph_id);
+          const paragraph = this.paragraphs?.find(p => p.id === newAnn.paragraph_id);
           if (!paragraph) {
             console.log('⚠️ 批注不屬於當前文章，跳過處理');
             return;
           }
         }
         
-        // 獲取段落的 order_index
-        const paragraph = this.paragraphs?.find(p => p.id === payload.new.paragraph_id);
-        const paragraphOrderIndex = paragraph?.order_index || 0;
-        
-        this.annotations.set(payload.new.id, {
-          ...payload.new,
-          paragraph_order_index: paragraphOrderIndex
-        });
-        this.renderAnnotation(payload.new.id);
-        
-        // 只在不是當前用戶創建的批注時顯示通知
-        if (typeof toast !== 'undefined') {
-          toast.info('收到新批注');
+        // 嘗試將 Realtime 新增與樂觀批註對應起來，避免二次渲染
+        let adopted = false;
+        for (const [tempId, a] of this.annotations.entries()) {
+          if (a && a._isOptimistic && a.paragraph_id === newAnn.paragraph_id) {
+            const sameOffsets = (a.highlight_start === newAnn.highlight_start) && (a.highlight_end === newAnn.highlight_end);
+            const sameAnchor = !!a.anchor_text && !!newAnn.anchor_text && (a.anchor_text === newAnn.anchor_text);
+            const sameContent = (a.content || '') === (newAnn.content || '');
+            if ((sameOffsets || sameAnchor) && sameContent) {
+              // 採納：以真實 ID 取代臨時 ID，且不重新渲染
+              const adoptedAnn = { ...a, id: newAnn.id, _isOptimistic: false, created_at: newAnn.created_at };
+              this.annotations.delete(tempId);
+              this.annotations.set(newAnn.id, adoptedAnn);
+              
+              // 更新 DOM 上的 data-annotation-id
+              document.querySelectorAll(`[data-annotation-id="${tempId}"]`).forEach(el => {
+                el.dataset.annotationId = newAnn.id;
+              });
+              
+              // 調整一次位置即可
+              setTimeout(() => {
+                this.adjustAllAnnotations();
+              }, 0);
+              adopted = true;
+              console.log('✅ 已採納樂觀批註為真實 ID，避免重複渲染');
+              break;
+            }
+          }
         }
+        
+        if (!adopted) {
+          // 常規處理：寫入並渲染
+          const paragraph = this.paragraphs?.find(p => p.id === newAnn.paragraph_id);
+          const paragraphOrderIndex = paragraph?.order_index || 0;
+          this.annotations.set(newAnn.id, { ...newAnn, paragraph_order_index: paragraphOrderIndex });
+          this.renderAnnotation(newAnn.id);
+        }
+        
+        // 僅在非當前用戶創建時提示
+        try {
+          const appState = getAppState();
+          const myId = appState?.currentUser?.id;
+          if (typeof toast !== 'undefined' && newAnn.teacher_id && myId && newAnn.teacher_id !== myId) {
+            toast.info('收到新批注');
+          }
+        } catch (_) {}
       })
       .on('postgres_changes', {
         event: 'UPDATE',
