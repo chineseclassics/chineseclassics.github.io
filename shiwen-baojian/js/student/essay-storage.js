@@ -284,18 +284,30 @@ async function saveSubArguments(essayId, argumentsData) {
  * 保存段落
  */
 async function saveParagraphs(essayId, essayData) {
-    // 先刪除舊的段落
-    await AppState.supabase
+    // 1. 獲取現有段落（建立映射）
+    const { data: existingParagraphs } = await AppState.supabase
         .from('paragraphs')
-        .delete()
-        .eq('essay_id', essayId);
+        .select('id, order_index, paragraph_type')
+        .eq('essay_id', essayId)
+        .order('order_index');
     
-    const paragraphsToInsert = [];
+    const existingMap = new Map();
+    (existingParagraphs || []).forEach(p => {
+        const key = `${p.order_index}-${p.paragraph_type}`;
+        existingMap.set(key, p.id);
+    });
+    
+    console.log('📋 現有段落:', existingMap.size, '個');
+    
+    // 2. 準備段落數據（復用現有 ID）
+    const paragraphsToUpsert = [];
     let orderIndex = 0;
     
-    // 1. 引言段落
+    // 引言段落
     if (essayData.introduction) {
-        paragraphsToInsert.push({
+        const existingId = existingMap.get(`${orderIndex}-introduction`);
+        paragraphsToUpsert.push({
+            ...(existingId && { id: existingId }),  // 如果有現有 ID 則復用
             essay_id: essayId,
             sub_argument_id: null,
             paragraph_type: 'introduction',
@@ -319,7 +331,9 @@ async function saveParagraphs(essayId, essayData) {
             
             if (arg.paragraphs && arg.paragraphs.length > 0) {
                 arg.paragraphs.forEach((para) => {
-                    paragraphsToInsert.push({
+                    const existingId = existingMap.get(`${orderIndex}-body`);
+                    paragraphsToUpsert.push({
+                        ...(existingId && { id: existingId }),  // 復用現有 ID
                         essay_id: essayId,
                         sub_argument_id: subArgument?.id || null,
                         paragraph_type: 'body',
@@ -332,9 +346,11 @@ async function saveParagraphs(essayId, essayData) {
         });
     }
     
-    // 3. 結論段落
+    // 結論段落
     if (essayData.conclusion) {
-        paragraphsToInsert.push({
+        const existingId = existingMap.get(`${orderIndex}-conclusion`);
+        paragraphsToUpsert.push({
+            ...(existingId && { id: existingId }),  // 復用現有 ID
             essay_id: essayId,
             sub_argument_id: null,
             paragraph_type: 'conclusion',
@@ -344,16 +360,38 @@ async function saveParagraphs(essayId, essayData) {
         });
     }
     
-    if (paragraphsToInsert.length > 0) {
+    console.log('💾 準備 UPSERT:', paragraphsToUpsert.length, '個段落');
+    
+    // 3. 使用 UPSERT（有 ID 則更新，無 ID 則插入）
+    if (paragraphsToUpsert.length > 0) {
         const { error } = await AppState.supabase
             .from('paragraphs')
-            .insert(paragraphsToInsert);
+            .upsert(paragraphsToUpsert, {
+                onConflict: 'id',
+                ignoreDuplicates: false
+            });
             
         if (error) {
-            throw new Error(`保存段落失敗: ${error.message}`);
+            throw new Error(`UPSERT 段落失敗: ${error.message}`);
         }
         
-        console.log(`✅ 保存了 ${paragraphsToInsert.length} 個段落`);
+        console.log(`✅ UPSERT 完成: ${paragraphsToUpsert.length} 個段落`);
+        
+        // 4. 清理多餘的段落（例如學生刪除了某些段落）
+        const upsertedIds = paragraphsToUpsert.map(p => p.id).filter(Boolean);
+        if (upsertedIds.length > 0) {
+            const { error: deleteError } = await AppState.supabase
+                .from('paragraphs')
+                .delete()
+                .eq('essay_id', essayId)
+                .not('id', 'in', `(${upsertedIds.join(',')})`);
+                
+            if (deleteError) {
+                console.warn('⚠️ 清理多餘段落失敗:', deleteError.message);
+            } else {
+                console.log('✅ 已清理多餘段落');
+            }
+        }
 
         // 重新查詢段落以獲取最終的 DB ID 與順序，並錨定到當前 DOM
         try {

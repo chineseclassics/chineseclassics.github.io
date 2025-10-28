@@ -92,6 +92,12 @@ export async function initializeEssayEditor(forceReinit = false) {
             return;
         }
         
+        // 為引言容器添加 data-paragraph-id 屬性（如果還沒有）
+        const introEl = document.getElementById('intro');
+        if (introEl && !introEl.dataset.paragraphId) {
+            introEl.dataset.paragraphId = 'intro';
+        }
+        
         EditorState.introEditor = new RichTextEditor(introContainer, {
             placeholder: '在此撰寫引言...\n\n提示：引言應包含 Hook、定義、研究缺口、論文主張、結構預告',
             toolbarType: 'simple',
@@ -105,6 +111,12 @@ export async function initializeEssayEditor(forceReinit = false) {
         if (!conclusionContainer) {
             console.error('❌ 找不到結論編輯器容器');
             return;
+        }
+        
+        // 為結論容器添加 data-paragraph-id 屬性（如果還沒有）
+        const conclusionEl = document.getElementById('conclusion');
+        if (conclusionEl && !conclusionEl.dataset.paragraphId) {
+            conclusionEl.dataset.paragraphId = 'conclusion';
         }
         
         EditorState.conclusionEditor = new RichTextEditor(conclusionContainer, {
@@ -296,41 +308,44 @@ function renumberArguments() {
 /**
  * 添加段落到分論點
  */
-export function addParagraph(argumentId) {
+export function addParagraph(argumentId, paragraphId = null) {
     const argument = EditorState.arguments.find(arg => arg.id === argumentId);
     if (!argument) {
         console.error('❌ 找不到分論點:', argumentId);
         return;
     }
     
-    const paragraphId = `${argumentId}-para-${Date.now()}`;
+    // ⚠️ 使用傳入的數據庫 ID 或生成臨時 ID
+    const id = paragraphId || `${argumentId}-para-${Date.now()}`;
     const paragraphIndex = argument.paragraphs.length + 1;
     
-    // 創建段落 HTML
+    // 創建段落 HTML（使用傳入的 ID）
     const paragraphHTML = `
-        <div id="${paragraphId}" class="paragraph-block bg-white rounded-lg border border-gray-200 p-4">
+        <div id="${id}" 
+             class="paragraph-block bg-white rounded-lg border border-gray-200 p-4"
+             data-paragraph-id="${id}">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium text-gray-600">段落 ${paragraphIndex}</span>
                 <div class="flex items-center space-x-2">
                     <!-- 雨村評點按鈕 -->
-                    <button id="${paragraphId}-feedback-btn" 
+                    <button id="${id}-feedback-btn" 
                             class="premium-blue-text hover:premium-blue-text-dark hover:premium-blue-hover px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
-                            data-paragraph-id="${paragraphId}"
+                            data-paragraph-id="${id}"
                             title="請雨村評點">
                         <i class="fas fa-pen-fancy mr-2 text-base"></i>
                         雨村評點
                     </button>
                     <!-- 刪除按鈕 -->
                     <button class="delete-paragraph-btn text-gray-400 hover:text-rose-600 p-1 rounded hover:bg-rose-100 transition-all"
-                            data-paragraph-id="${paragraphId}"
+                            data-paragraph-id="${id}"
                             data-argument-id="${argumentId}">
                         <i class="fas fa-times text-sm"></i>
                     </button>
                 </div>
             </div>
-            <div id="${paragraphId}-editor" class="min-h-[150px]"></div>
+            <div id="${id}-editor" class="min-h-[150px]"></div>
             <div class="mt-2 flex items-center justify-between">
-                <span id="${paragraphId}-word-count" class="text-xs text-gray-500">0 字</span>
+                <span id="${id}-word-count" class="text-xs text-gray-500">0 字</span>
             </div>
             <!-- 移動端 AI 反饋容器（內聯展開） -->
         </div>
@@ -341,13 +356,13 @@ export function addParagraph(argumentId) {
     container.insertAdjacentHTML('beforeend', paragraphHTML);
     
     // 創建編輯器
-    const editorContainer = document.getElementById(`${paragraphId}-editor`);
+    const editorContainer = document.getElementById(`${id}-editor`);
     const editor = new RichTextEditor(editorContainer, {
         placeholder: '在此撰寫段落內容...\n\n提示：主題句、文本證據、細讀分析、總結',
         toolbarType: 'simple',
         onChange: (data) => {
             // 更新段落字數
-            const wordCountEl = document.getElementById(`${paragraphId}-word-count`);
+            const wordCountEl = document.getElementById(`${id}-word-count`);
             if (wordCountEl) {
                 wordCountEl.textContent = `${data.wordCount.total} 字`;
             }
@@ -359,7 +374,8 @@ export function addParagraph(argumentId) {
     
     // 保存段落對象
     const paragraph = {
-        id: paragraphId,
+        id: id,
+        dbId: paragraphId,  // 記錄原始數據庫 ID
         index: paragraphIndex,
         editor: editor,
         type: 'body' // 正文段落
@@ -368,18 +384,18 @@ export function addParagraph(argumentId) {
     argument.paragraphs.push(paragraph);
     
     // 綁定刪除按鈕
-    const deleteBtn = document.querySelector(`[data-paragraph-id="${paragraphId}"].delete-paragraph-btn`);
+    const deleteBtn = document.querySelector(`[data-paragraph-id="${id}"].delete-paragraph-btn`);
     if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => deleteParagraph(argumentId, paragraphId));
+        deleteBtn.addEventListener('click', () => deleteParagraph(argumentId, id));
     }
     
     // 綁定 AI 反饋按鈕
-    const feedbackBtn = document.getElementById(`${paragraphId}-feedback-btn`);
+    const feedbackBtn = document.getElementById(`${id}-feedback-btn`);
     if (feedbackBtn) {
-        feedbackBtn.addEventListener('click', () => requestParagraphFeedback(paragraphId, 'body'));
+        feedbackBtn.addEventListener('click', () => requestParagraphFeedback(id, 'body'));
     }
     
-    console.log(`✅ 已添加段落到分論點 ${argument.index}`);
+    console.log(`✅ 已添加段落${paragraphId ? '（使用數據庫 ID）' : '（臨時 ID）'}到分論點 ${argument.index}: ${id}`);
 }
 
 /**
@@ -464,6 +480,12 @@ function handleEditorChange(data) {
  * 檢查並自動降級論文狀態（從 submitted 到 draft）
  */
 async function checkAndDowngradeStatus() {
+    // ⚠️ 如果正在恢復內容，不檢查狀態
+    if (window.isRestoringContent) {
+        console.log('⏸️ 正在恢復內容，跳過狀態檢查');
+        return;
+    }
+    
     try {
         // 獲取當前論文 ID
         const { StorageState } = await import('./essay-storage.js');

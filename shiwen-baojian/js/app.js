@@ -883,6 +883,9 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             expandDescription();
         }
 
+        // ⚠️ 在加載任務數據之前，先嘗試加載段落記錄
+        let existingParagraphs = [];
+
         // 加載任務數據或格式模板
         if (mode === 'free-writing') {
             // 自主練筆模式：加載格式模板
@@ -891,13 +894,32 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             // 如果是繼續編輯現有練筆，加載內容
             if (essayId) {
                 await loadPracticeEssayContent(essayId);
+                // 加載練筆的段落記錄
+                const { data: paras } = await AppState.supabase
+                    .from('paragraphs')
+                    .select('id, order_index, paragraph_type')
+                    .eq('essay_id', essayId)
+                    .order('order_index');
+                existingParagraphs = paras || [];
             }
         } else if (assignmentId) {
             // 任務模式：加載任務數據和學生已有的作業（如果存在）
             console.log('📂 加載任務數據:', assignmentId);
             await loadAssignmentData(assignmentId);
             await loadStudentEssayForAssignment(assignmentId);
+            // 加載作業的段落記錄
+            const { StorageState } = await import('./student/essay-storage.js');
+            if (StorageState.currentEssayId) {
+                const { data: paras } = await AppState.supabase
+                    .from('paragraphs')
+                    .select('id, order_index, paragraph_type')
+                    .eq('essay_id', StorageState.currentEssayId)
+                    .order('order_index');
+                existingParagraphs = paras || [];
+            }
         }
+
+        console.log('📋 已加載段落記錄:', existingParagraphs.length, '個');
 
         // 初始化論文編輯器（強制重新初始化）
         await initializeEssayEditor(true);
@@ -908,10 +930,10 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
         // ✅ 只在對應模式下恢復內容
         if (mode === 'assignment' && AppState.currentEssayContent) {
             console.log('📂 恢復任務作業內容...');
-            await restoreEssayContent(AppState.currentEssayContent);
+            await restoreEssayContent(AppState.currentEssayContent, existingParagraphs);
         } else if (mode === 'free-writing' && AppState.currentPracticeContent) {
             console.log('📂 恢復練筆內容...');
-            await restoreEssayContent(AppState.currentPracticeContent);
+            await restoreEssayContent(AppState.currentPracticeContent, existingParagraphs);
         } else if (mode === 'free-writing' && !essayId) {
             console.log('✨ 新練筆模式，內容為空');
             // 新練筆，不恢復任何內容
@@ -1475,17 +1497,65 @@ function disableEditing() {
 /**
  * 恢復作業內容到編輯器
  */
-async function restoreEssayContent(contentData) {
+async function restoreEssayContent(contentData, existingParagraphs = []) {
+    // 設置標誌，防止觸發狀態變化
+    window.isRestoringContent = true;
+    
     try {
         if (!contentData) {
             console.log('ℹ️ 沒有內容需要恢復');
             return;
         }
         
-        console.log('🔄 開始恢復內容到編輯器...', contentData);
+        console.log('🔄 開始恢復內容到編輯器...', {
+            contentData,
+            paragraphsCount: existingParagraphs.length
+        });
         
         // 動態導入 essay-writer 模組獲取編輯器實例
         const { getEditorByParagraphId } = await import('./student/essay-writer.js');
+        
+        // 建立段落映射
+        const paragraphMap = new Map();
+        let orderIndex = 0;
+        
+        // 引言段落（order_index = 0）
+        if (contentData.introduction) {
+            const introPara = existingParagraphs.find(
+                p => p.order_index === 0 && p.paragraph_type === 'introduction'
+            );
+            if (introPara) {
+                paragraphMap.set('intro', introPara.id);
+            }
+            orderIndex = 1;
+        }
+        
+        // 正文段落（按順序映射）
+        if (contentData.arguments) {
+            contentData.arguments.forEach((arg, argIndex) => {
+                if (arg.paragraphs) {
+                    arg.paragraphs.forEach((para, paraIndex) => {
+                        const bodyPara = existingParagraphs.find(
+                            p => p.order_index === orderIndex && p.paragraph_type === 'body'
+                        );
+                        if (bodyPara) {
+                            paragraphMap.set(`arg${argIndex}-para${paraIndex}`, bodyPara.id);
+                        }
+                        orderIndex++;
+                    });
+                }
+            });
+        }
+        
+        // 結論段落
+        const conclusionPara = existingParagraphs.find(
+            p => p.paragraph_type === 'conclusion'
+        );
+        if (conclusionPara) {
+            paragraphMap.set('conclusion', conclusionPara.id);
+        }
+        
+        console.log('🗺️ 段落映射完成:', paragraphMap.size, '個');
         
         // 1. 恢復標題和副標題
         const titleInput = document.getElementById('essay-title');
@@ -1505,6 +1575,13 @@ async function restoreEssayContent(contentData) {
             const introEditor = getEditorByParagraphId('intro');
             if (introEditor) {
                 introEditor.setHTML(contentData.introduction);
+                // 設置 data-paragraph-id
+                const introEl = document.getElementById('intro');
+                const dbId = paragraphMap.get('intro');
+                if (introEl && dbId) {
+                    introEl.dataset.paragraphId = dbId;
+                    console.log('✅ 引言已錨定到數據庫 ID:', dbId);
+                }
                 console.log('✅ 已恢復引言內容');
             } else {
                 console.warn('⚠️ 找不到引言編輯器');
@@ -1516,6 +1593,13 @@ async function restoreEssayContent(contentData) {
             const conclusionEditor = getEditorByParagraphId('conclusion');
             if (conclusionEditor) {
                 conclusionEditor.setHTML(contentData.conclusion);
+                // 設置 data-paragraph-id
+                const conclusionEl = document.getElementById('conclusion');
+                const dbId = paragraphMap.get('conclusion');
+                if (conclusionEl && dbId) {
+                    conclusionEl.dataset.paragraphId = dbId;
+                    console.log('✅ 結論已錨定到數據庫 ID:', dbId);
+                }
                 console.log('✅ 已恢復結論內容');
             } else {
                 console.warn('⚠️ 找不到結論編輯器');
@@ -1561,8 +1645,17 @@ async function restoreEssayContent(contentData) {
                     // 填充第一個段落
                     if (currentArg.paragraphs.length > 0) {
                         const firstPara = currentArg.paragraphs[0];
+                        const dbId = paragraphMap.get(`arg${i}-para0`);
                         if (firstPara.editor && argData.paragraphs[0].content) {
                             firstPara.editor.setHTML(argData.paragraphs[0].content);
+                            // 設置數據庫 ID
+                            if (dbId) {
+                                const paraEl = document.getElementById(firstPara.id);
+                                if (paraEl) {
+                                    paraEl.dataset.paragraphId = dbId;
+                                    console.log(`✅ 段落已錨定: arg${i}-para0 → ${dbId}`);
+                                }
+                            }
                             console.log(`✅ 已恢復分論點 ${i + 1} 的第 1 個段落`);
                         }
                     }
@@ -1570,9 +1663,10 @@ async function restoreEssayContent(contentData) {
                     // 創建並填充其他段落
                     for (let j = 1; j < argData.paragraphs.length; j++) {
                         const paraData = argData.paragraphs[j];
+                        const dbId = paragraphMap.get(`arg${i}-para${j}`);
                         
-                        // 添加新段落
-                        addParagraph(currentArg.id);
+                        // 添加新段落（傳入數據庫 ID）
+                        addParagraph(currentArg.id, dbId);
                         
                         // 等待 DOM 更新
                         await new Promise(resolve => setTimeout(resolve, 100));
@@ -1593,6 +1687,9 @@ async function restoreEssayContent(contentData) {
         console.log('✅ 內容恢復完成');
     } catch (error) {
         console.error('❌ 恢復內容失敗:', error);
+    } finally {
+        // 清除標誌
+        window.isRestoringContent = false;
     }
 }
 
