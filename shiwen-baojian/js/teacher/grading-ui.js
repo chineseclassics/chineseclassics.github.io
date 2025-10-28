@@ -348,12 +348,20 @@ class GradingUI {
                   argument: index + 1,
                   paragraph: pIndex + 1,
                   globalBodyIndex: processedBodyCount,
+                  totalBodyParagraphs: bodyParagraphs.length,
+                  matchedParagraph: matchedParagraph,
                   paragraphId: paraId,
                   orderIndex: globalIndex
                 });
                 
+                // ⚠️ 如果沒有找到對應的段落，生成臨時 ID 並警告
+                const finalParaId = paraId || `temp-body-${processedBodyCount}`;
+                if (!paraId) {
+                  console.warn('⚠️ 段落映射失敗，使用臨時 ID:', finalParaId);
+                }
+                
                 html += `
-                  <div class="paragraph-content sub-paragraph" data-paragraph-id="${paraId}" data-order-index="${globalIndex}">
+                  <div class="paragraph-content sub-paragraph" data-paragraph-id="${finalParaId}" data-order-index="${globalIndex}">
                     <div class="paragraph-label">段落 ${globalIndex}</div>
                     ${para.content || ''}
                   </div>
