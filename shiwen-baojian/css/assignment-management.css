@@ -1823,7 +1823,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .main-content-area {
-  max-width: 65%;  /* 留出右側 35% 空間給批註 */
+  max-width: 78%;  /* 保持78%寬度，留出右側22%空間給批註 */
   position: relative;
   overflow: visible;
 }
@@ -1835,8 +1835,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 /* 浮動批注樣式 - 直接浮動在右側 */
 .floating-annotation {
   position: absolute;
-  right: 20px;
-  width: 280px;
+  right: 4px;  /* 更靠近右邊緣，適應78%寬度 */
+  width: 200px;  /* 進一步縮窄寬度 */
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -1846,6 +1846,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   line-height: 1.4;
   max-height: 300px;
   overflow-y: auto;
+  z-index: 1000;  /* 確保在內容之上 */
   /* top 由 JavaScript 動態設置 */
 }
 

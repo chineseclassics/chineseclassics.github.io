@@ -428,7 +428,7 @@
 
 /* 學生端：主要內容區域留出右側空間供批註浮動（對齊老師端） */
 #student-dashboard .main-content-area {
-  max-width: 78%;
+  max-width: 78%;  /* 保持78%寬度 */
   position: relative;
   overflow: visible;
 }
@@ -441,8 +441,9 @@
 
 /* 學生端：縮窄批註卡片以讓中部更寬 */
 #student-dashboard .floating-annotation {
-  width: 260px !important;
-  right: 16px !important;
+  width: 200px !important;  /* 進一步縮窄批註卡片，適應78%寬度 */
+  right: 4px !important;    /* 更靠近右邊緣 */
+  z-index: 1000;            /* 確保在內容之上 */
 }
 
 @keyframes slideInRight {
@@ -522,8 +523,80 @@
   margin-top: 4px;
 }
 
+/* 確保批註卡片不會覆蓋論文內容 */
+#student-dashboard .floating-annotation {
+  /* 確保批註卡片在右側空間內，不覆蓋論文 */
+  max-width: 200px;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/* 為批註卡片添加更好的視覺分隔 */
+#student-dashboard .floating-annotation::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+  border-radius: 1px;
+}
+
+/* 批註卡片懸停效果 */
+#student-dashboard .floating-annotation:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* 批註卡片激活狀態 */
+#student-dashboard .floating-annotation.active {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* 確保批註卡片內容不會溢出 */
+#student-dashboard .floating-annotation .annotation-content {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* 批註卡片內容滾動條樣式 */
+#student-dashboard .floating-annotation .annotation-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+#student-dashboard .floating-annotation .annotation-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 2px;
+}
+
+#student-dashboard .floating-annotation .annotation-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+#student-dashboard .floating-annotation .annotation-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
+  /* 在小屏幕上，批註卡片改為全寬度，避免覆蓋問題 */
+  #student-dashboard .main-content-area {
+    max-width: 100%;
+  }
+  
+  #student-dashboard .floating-annotation {
+    position: relative;
+    right: auto;
+    width: 100%;
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+  
   .annotation-reply-dialog,
   .annotation-create-dialog {
     padding: 10px;

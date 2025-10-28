@@ -472,11 +472,6 @@ class AnnotationManager {
       
       console.log('✅ 批注同步成功，真實 ID:', data);
       
-      // 顯示成功提示
-      if (typeof toast !== 'undefined') {
-        toast.success('批注已添加');
-      }
-      
     } catch (error) {
       console.error('❌ 同步批注失敗:', error);
       

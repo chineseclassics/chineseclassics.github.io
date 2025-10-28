@@ -192,7 +192,7 @@ export function adjustAllAnnotations(elements, getPosition, container) {
   let lastBottom = 0;
   sorted.forEach(el => {
     const idealTop = getIdealTop(el, container);
-    const actualTop = Math.max(idealTop, lastBottom + 12);
+    const actualTop = Math.max(idealTop, lastBottom + 16); // 增加間距到16px
     el.style.top = actualTop + 'px';
     lastBottom = actualTop + (el.offsetHeight || 100);
   });
