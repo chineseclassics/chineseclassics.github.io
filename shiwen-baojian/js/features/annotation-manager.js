@@ -6,8 +6,8 @@
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 
-// 使用全局 AppState，避免循環導入
-const AppState = window.AppState;
+// 使用 getter 動態獲取 AppState，避免模塊加載時序問題
+const getAppState = () => window.AppState;
 
 class AnnotationManager {
   constructor(supabaseClient) {
@@ -694,11 +694,11 @@ class AnnotationManager {
    */
   getCurrentUser() {
     // 從全局狀態獲取用戶信息
-    if (AppState?.currentUser) {
-      console.log('✅ 從 AppState 獲取用戶信息:', AppState.currentUser.email);
-      return AppState.currentUser;
+    const appState = getAppState();
+    if (appState?.currentUser) {
+      console.log('✅ 從 AppState 獲取用戶信息:', appState.currentUser.email);
+      return appState.currentUser;
     }
-    
     
     console.log('❌ 無法獲取用戶信息');
     return null;
