@@ -287,7 +287,8 @@ class GradingUI {
             .eq('id', this.currentEssay.id)
             .single();
           const raw = data?.content_json;
-          const json = typeof raw === 'string' ? safeParseJSON(raw) : raw;
+          let json = null;
+          try { json = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (_) { json = null; }
           if (json && json.type) {
             const plugin = createAnnotationPlugin({
               getAnnotations: () => [],

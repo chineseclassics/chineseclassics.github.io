@@ -104,6 +104,8 @@ export async function initializeEssayEditor(forceReinit = false) {
     // 如果強制重新初始化，先重置狀態
     if (forceReinit) {
         console.log('🔄 強制重新初始化編輯器...');
+        try { EditorState.introEditor?.destroy?.(); } catch (_) {}
+        try { EditorState.conclusionEditor?.destroy?.(); } catch (_) {}
         EditorState.initialized = false;
         EditorState.isInitializing = false;
         EditorState.introEditor = null;

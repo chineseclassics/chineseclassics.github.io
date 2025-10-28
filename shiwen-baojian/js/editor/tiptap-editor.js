@@ -6,7 +6,7 @@
  * - 後續可替換為 TipTap，但此封裝可先落地文檔級存取與裝飾
  */
 
-import { EditorState, Plugin } from 'https://esm.sh/prosemirror-state@1.4.3';
+import { EditorState, Plugin, PluginKey } from 'https://esm.sh/prosemirror-state@1.4.3';
 import { EditorView } from 'https://esm.sh/prosemirror-view@1.30.2';
 import { Schema, DOMParser as PMDOMParser } from 'https://esm.sh/prosemirror-model@1.19.3';
 import { keymap } from 'https://esm.sh/prosemirror-keymap@1.2.0';
@@ -64,6 +64,7 @@ export class PMEditor {
     }
 
     const updatePlugin = new Plugin({
+      key: new PluginKey('pm-update'),
       view: () => ({
         update: (view, prevState) => {
           if (this.onUpdate && prevState.doc !== view.state.doc) {
