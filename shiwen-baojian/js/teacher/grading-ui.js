@@ -12,6 +12,8 @@ class GradingUI {
     this.supabase = supabaseClient;
     this.currentEssay = null;
     this.annotationManager = null;
+    this._annChannel = null;
+    this._annPoll = null;
   }
 
   /**
@@ -290,11 +292,23 @@ class GradingUI {
           let json = null;
           try { json = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (_) { json = null; }
           if (json && json.type) {
+            this._annStore = [];
             const plugin = createAnnotationPlugin({
-              getAnnotations: () => [],
+              getAnnotations: () => this._annStore,
               onClick: (id) => this.highlightAnnotation?.(id)
             });
             this._pmViewer = new PMEditor(viewer, { readOnly: true, initialJSON: json, extraPlugins: [plugin] });
+            await this.refreshPMAnnotations();
+            this._annPoll = setInterval(() => this.refreshPMAnnotations(), 5000);
+            // Realtime：收到變更則刷新一次
+            try {
+              this._annChannel = this.supabase
+                .channel('pm-ann-teacher')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'annotations' }, () => {
+                  this.refreshPMAnnotations();
+                })
+                .subscribe();
+            } catch (e) { console.warn('教師端 Realtime 初始化失敗:', e); }
           } else {
             // 後備：使用舊渲染（HTML）避免空白
             viewer.innerHTML = this.renderEssayContent(this.currentEssay);
@@ -308,6 +322,29 @@ class GradingUI {
       // 自動加載已保存的 AI 評分建議（如果存在）
       this.loadSavedAISuggestion();
     }, 100);
+  }
+
+  async refreshPMAnnotations() {
+    try {
+      const { data, error } = await this.supabase
+        .rpc('get_essay_annotations', { p_essay_id: this.currentEssay.id });
+      if (error) throw error;
+      this._annStore = (data || []).map(a => ({
+        id: a.id || a.annotation_id,
+        text_start: a.text_start ?? null,
+        text_end: a.text_end ?? null,
+        text_quote: a.text_quote || a.anchor_text || null,
+        text_prefix: a.text_prefix || a.anchor_context?.before || null,
+        text_suffix: a.text_suffix || a.anchor_context?.after || null
+      }));
+      const view = this._pmViewer?.view;
+      if (view) {
+        const tr = view.state.tr.setMeta('annotations:update', true);
+        view.dispatch(tr);
+      }
+    } catch (e) {
+      console.warn('刷新批註失敗:', e);
+    }
   }
 
   /**

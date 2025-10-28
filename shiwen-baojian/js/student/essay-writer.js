@@ -10,6 +10,7 @@
 
 import { RichTextEditor } from '../editor/rich-text-editor.js';
 import { PMEditor } from '../editor/tiptap-editor.js';
+import { createAnnotationPlugin } from '../features/pm-annotation-plugin.js';
 import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
@@ -65,8 +66,12 @@ const debounce = (fn, wait = 1000) => {
 async function autoSavePMJSON() {
   try {
     const AppState = getAppState();
+    if (!AppState?.supabase) return;
+    if (!StorageState.currentEssayId) {
+      await ensureEssayRecord();
+    }
     const essayId = StorageState.currentEssayId;
-    if (!AppState?.supabase || !essayId) return;
+    if (!essayId) return;
     const json = EditorState.introEditor?.getJSON?.();
     if (!json) return;
     await AppState.supabase
@@ -74,6 +79,71 @@ async function autoSavePMJSON() {
       .update({ content_json: json, updated_at: new Date().toISOString(), status: 'editing' })
       .eq('id', essayId);
   } catch (e) { console.warn('autosave PM JSON 失敗:', e); }
+}
+
+async function ensureEssayRecord() {
+  const AppState = getAppState();
+  if (!AppState?.supabase || StorageState.currentEssayId) return;
+  try {
+    const userId = AppState?.currentUser?.id;
+    const assignmentId = AppState?.currentAssignmentId || null;
+    const titleInput = document.getElementById('essay-title');
+    const title = (titleInput?.value || '論文草稿').trim();
+    const json = EditorState.introEditor?.getJSON?.() || { type: 'doc', content: [{ type: 'paragraph' }] };
+    const wordCount = (EditorState.introEditor?.getText?.() || '').length;
+    const payload = {
+      student_id: userId,
+      assignment_id: assignmentId,
+      title,
+      content_json: json,
+      status: 'editing',
+      total_word_count: wordCount
+    };
+    const { data, error } = await AppState.supabase
+      .from('essays')
+      .insert(payload)
+      .select('id')
+      .single();
+    if (error) throw error;
+    StorageState.currentEssayId = data.id;
+    try { localStorage.setItem('current-essay-id', data.id); } catch (_) {}
+    console.log('🆕 已建立新 essay 記錄:', data.id);
+  } catch (e) {
+    console.warn('ensureEssayRecord 失敗:', e);
+  }
+}
+
+async function refreshPMAnnotationsStudent() {
+  try {
+    const AppState = getAppState();
+    if (!AppState?.supabase || !StorageState.currentEssayId) return;
+    const { data, error } = await AppState.supabase
+      .rpc('get_essay_annotations', { p_essay_id: StorageState.currentEssayId });
+    if (error) throw error;
+    window.__pmAnnStore = (data || []).map(a => ({
+      id: a.id || a.annotation_id,
+      text_start: a.text_start ?? null,
+      text_end: a.text_end ?? null,
+      text_quote: a.text_quote || a.anchor_text || null,
+      text_prefix: a.text_prefix || a.anchor_context?.before || null,
+      text_suffix: a.text_suffix || a.anchor_context?.after || null
+    }));
+    const view = EditorState.introEditor?.view;
+    if (view) view.dispatch(view.state.tr.setMeta('annotations:update', true));
+    // Realtime：建立一次性監聽
+    try {
+      if (!window.__pmAnnChannel) {
+        window.__pmAnnChannel = AppState.supabase
+          .channel('pm-ann-student')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'annotations' }, () => {
+            refreshPMAnnotationsStudent();
+          })
+          .subscribe();
+      }
+    } catch (_) {}
+  } catch (e) {
+    console.warn('學生端刷新批註失敗:', e);
+  }
 }
 
 /**
@@ -154,6 +224,24 @@ export async function initializeEssayEditor(forceReinit = false) {
             await autoSavePMJSON();
         }, 1500)
     });
+
+    // 確保有 essay 記錄（新作業會沒有 ID）並立即保存一次
+    await ensureEssayRecord();
+    await autoSavePMJSON();
+
+    // 掛載批註裝飾（顯示老師批註）
+    try {
+      window.__pmAnnStore = [];
+      const plugin = createAnnotationPlugin({
+        getAnnotations: () => window.__pmAnnStore,
+        onClick: (id) => {
+          // TODO: 學生端點原文裝飾 → 側欄高亮（之後接入）
+        }
+      });
+      EditorState.introEditor.addPlugins([plugin]);
+      await refreshPMAnnotationsStudent();
+      window.__pmAnnTimer = setInterval(refreshPMAnnotationsStudent, 5000);
+    } catch (e) { console.warn('學生端批註插件掛載失敗:', e); }
 
     // 完成初始化
     EditorState.initialized = true;

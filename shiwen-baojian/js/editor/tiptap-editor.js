@@ -99,6 +99,25 @@ export class PMEditor {
     return this.view.state.doc.textContent || '';
   }
 
+  getWordCount() {
+    const text = this.getText();
+    return { total: (text || '').length };
+  }
+
+  addPlugins(pluginsToAdd = []) {
+    try {
+      const state = this.view.state;
+      const next = EditorState.create({
+        schema: state.schema,
+        doc: state.doc,
+        plugins: [...state.plugins, ...(Array.isArray(pluginsToAdd) ? pluginsToAdd : [])]
+      });
+      this.view.updateState(next);
+    } catch (e) {
+      console.warn('addPlugins 失敗:', e);
+    }
+  }
+
   destroy() {
     try { this.view.destroy(); } catch (_) {}
   }
