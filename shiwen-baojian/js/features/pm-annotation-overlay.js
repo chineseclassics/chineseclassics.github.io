@@ -4,11 +4,12 @@
  */
 
 export class PMAnnotationOverlay {
-  constructor({ root, view, getAnnotations, onClick }) {
+  constructor({ root, view, getAnnotations, onClick, onContextMenu }) {
     this.root = root;           // 應是包含 PM viewer 的容器，需 position: relative
     this.view = view;           // ProseMirror view
     this.getAnnotations = getAnnotations || (() => []);
     this.onClick = onClick || (() => {});
+    this.onContextMenu = onContextMenu || (() => {});
     this._mounted = false;
     this._overlay = null;
     this._cards = new Map();
@@ -97,6 +98,11 @@ export class PMAnnotationOverlay {
       try { this._cards.forEach(n => n.classList.remove('active')); } catch (_) {}
       card.classList.add('active');
       this.onClick?.(a.id);
+    });
+    card.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.onContextMenu?.(a, card, e);
     });
     this._overlay.appendChild(card);
     this._cards.set(a.id, card);

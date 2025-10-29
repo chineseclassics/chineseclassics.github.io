@@ -180,7 +180,9 @@ async function refreshPMAnnotationsStudent() {
       text_end: a.text_end ?? null,
       text_quote: a.text_quote || null,
       text_prefix: a.text_prefix || null,
-      text_suffix: a.text_suffix || null
+      text_suffix: a.text_suffix || null,
+      content: a.content || null,
+      created_at: a.created_at || null
     }));
     const map = new Map();
     for (const x of list) if (x?.id) map.set(x.id, x);

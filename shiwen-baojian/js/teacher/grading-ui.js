@@ -301,7 +301,8 @@ class GradingUI {
                 root: essaySection,
                 view: this._pmViewer.view,
                 getAnnotations: () => this._annStoreWithContent || this._annStore || [],
-                onClick: (id) => this.highlightAnnotation?.(id)
+                onClick: (id) => this.highlightAnnotation?.(id),
+                onContextMenu: (a, card, ev) => this._handleOverlayContextMenu?.(a, card, ev)
               });
               this._overlay.mount();
             }
@@ -483,6 +484,40 @@ class GradingUI {
       }
     } catch (e) {
       console.warn('highlightAnnotation 失敗:', e);
+    }
+  }
+
+  /**
+   * 老師端：右鍵卡片 → 編輯/刪除（簡版）
+   */
+  async _handleOverlayContextMenu(a, card, ev) {
+    try {
+      const action = window.prompt('輸入操作：edit 或 delete', 'edit');
+      if (!action) return;
+      if (action.toLowerCase() === 'delete') {
+        if (!window.confirm('確定刪除此批註？')) return;
+        const res = await this.supabase.rpc('delete_annotation_pm', { p_annotation_id: a.id });
+        if (res.error) throw res.error;
+        await this.refreshPMAnnotations();
+        toast.success('批註已刪除');
+      } else if (action.toLowerCase() === 'edit') {
+        // 讀取現有內容
+        const { data, error } = await this.supabase
+          .from('annotations')
+          .select('content')
+          .eq('id', a.id)
+          .single();
+        if (error) throw error;
+        const next = window.prompt('修改批註內容：', data?.content || '');
+        if (next === null) return;
+        const res = await this.supabase.rpc('update_annotation_pm', { p_annotation_id: a.id, p_content: String(next) });
+        if (res.error) throw res.error;
+        await this.refreshPMAnnotations();
+        toast.success('批註已更新');
+      }
+    } catch (e) {
+      console.error('右鍵操作失敗:', e);
+      toast.error('操作失敗：' + (e.message || '未知錯誤'));
     }
   }
 
