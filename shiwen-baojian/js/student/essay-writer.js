@@ -1570,12 +1570,11 @@ async function autoSave() {
  * 更新保存狀態指示器
  */
 function updateSaveStatus(status) {
-    const statusEl = document.getElementById('save-status');
+  const statusEl = document.getElementById('save-status');
   const topbarEl = document.getElementById('topbar-save-status');
-    if (!statusEl) return;
     
-    const icon = statusEl.querySelector('i');
-    const text = statusEl.querySelector('span');
+  const icon = statusEl ? statusEl.querySelector('i') : null;
+  const text = statusEl ? statusEl.querySelector('span') : null;
   const setTopbar = (cls, txt, textCls) => {
     if (!topbarEl) return;
     const ti = topbarEl.querySelector('i');
@@ -1586,23 +1585,20 @@ function updateSaveStatus(status) {
     
     switch (status) {
         case 'saving':
-            icon.className = 'fas fa-spinner fa-spin text-stone-500';
-            text.textContent = '保存中...';
-            text.className = 'text-gray-600';
+      if (icon) icon.className = 'fas fa-spinner fa-spin text-stone-500';
+      if (text) { text.textContent = '保存中...'; text.className = 'text-gray-600'; }
       setTopbar('fas fa-spinner fa-spin text-stone-500', '保存中...', 'text-gray-600');
             break;
             
         case 'saved':
-            icon.className = 'fas fa-check-circle text-emerald-600';
-            text.textContent = '已保存';
-            text.className = 'text-gray-600';
+      if (icon) icon.className = 'fas fa-check-circle text-emerald-600';
+      if (text) { text.textContent = '已保存'; text.className = 'text-gray-600'; }
       setTopbar('fas fa-check-circle text-emerald-600', '已保存', 'text-gray-600');
             break;
             
         case 'error':
-            icon.className = 'fas fa-exclamation-circle text-rose-600';
-            text.textContent = '保存失敗';
-            text.className = 'text-rose-700';
+      if (icon) icon.className = 'fas fa-exclamation-circle text-rose-600';
+      if (text) { text.textContent = '保存失敗'; text.className = 'text-rose-700'; }
       setTopbar('fas fa-exclamation-circle text-rose-600', '保存失敗', 'text-rose-700');
             break;
     }
