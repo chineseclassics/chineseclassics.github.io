@@ -8,6 +8,7 @@
  */
 
 import { PMEditor } from '../editor/tiptap-editor.js';
+import { toggleMark } from '../editor/pm-vendor.js';
 import { createAnnotationPlugin, createAnnotationFromSelection } from '../features/pm-annotation-plugin.js';
 import { PMAnnotationOverlay } from '../features/pm-annotation-overlay.js';
 import { initializeStorage, StorageState } from './essay-storage.js';
@@ -361,6 +362,9 @@ export async function initializeEssayEditor(forceReinit = false) {
     });
     const host = document.getElementById('essay-editor')||container;
     try { host.classList.add('pm-essay'); } catch (_) {}
+
+  // 顯示簡易格式工具列（B/I/U）
+  try { ensureFormatToolbar(EditorState.introEditor); } catch (_) {}
 
     // 套用模式樣式
     const writingMode = await loadAssignmentMode();
@@ -883,6 +887,86 @@ function ensureGlobalToolbar() {
   const host = document.getElementById('essay-editor') || document.getElementById('intro-editor');
   if (host && host.parentElement) host.parentElement.insertBefore(bar, host);
   return bar;
+}
+
+// ================================
+// 簡易格式工具列（B/I/U）
+// ================================
+
+function ensureFormatToolbar(pm) {
+  let bar = document.getElementById('pm-format-toolbar');
+  const host = document.getElementById('essay-editor') || document.getElementById('intro-editor');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'pm-format-toolbar';
+    bar.className = 'pm-format-toolbar';
+    bar.innerHTML = `
+      <button type="button" class="fmt-btn" title="加粗" data-mark="bold"><i class="fas fa-bold"></i></button>
+      <button type="button" class="fmt-btn" title="斜體" data-mark="italic"><i class="fas fa-italic"></i></button>
+      <button type="button" class="fmt-btn" title="底線" data-mark="underline"><i class="fas fa-underline"></i></button>
+    `;
+    if (host && host.parentElement) host.parentElement.insertBefore(bar, host);
+  }
+
+  if (bar.dataset.bound === '1') return; // 避免重複綁定
+
+  const btnBold = bar.querySelector('[data-mark="bold"]');
+  const btnItalic = bar.querySelector('[data-mark="italic"]');
+  const btnUnderline = bar.querySelector('[data-mark="underline"]');
+
+  const getType = (mark) => {
+    const schema = pm?.view?.state?.schema;
+    if (!schema) return null;
+    if (mark === 'bold') return schema.marks.strong;
+    if (mark === 'italic') return schema.marks.em;
+    if (mark === 'underline') return schema.marks.underline;
+    return null;
+  };
+
+  const apply = (mark) => {
+    try {
+      const type = getType(mark);
+      if (!type) return;
+      const { state, dispatch } = pm.view;
+      toggleMark(type)(state, dispatch);
+      pm.view.focus();
+      updateActive();
+    } catch (_) {}
+  };
+
+  const isActive = (type) => {
+    try {
+      const { state } = pm.view;
+      const { from, to, empty } = state.selection;
+      if (empty) {
+        const stored = state.storedMarks || state.selection.$from.marks();
+        return !!type.isInSet(stored);
+      }
+      return state.doc.rangeHasMark(from, to, type);
+    } catch (_) { return false; }
+  };
+
+  const updateActive = () => {
+    try {
+      const marks = pm.view.state.schema.marks;
+      btnBold?.classList.toggle('active', isActive(marks.strong));
+      btnItalic?.classList.toggle('active', isActive(marks.em));
+      btnUnderline?.classList.toggle('active', isActive(marks.underline));
+    } catch (_) {}
+  };
+
+  btnBold?.addEventListener('click', () => apply('bold'));
+  btnItalic?.addEventListener('click', () => apply('italic'));
+  btnUnderline?.addEventListener('click', () => apply('underline'));
+
+  // 依編輯行為更新按鈕 active 狀態
+  try {
+    pm.view.dom.addEventListener('keyup', updateActive);
+    pm.view.dom.addEventListener('mouseup', updateActive);
+  } catch (_) {}
+  updateActive();
+
+  bar.dataset.bound = '1';
 }
 
 function ensureInlineToolbar() {

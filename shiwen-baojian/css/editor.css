@@ -606,3 +606,54 @@ input:focus-visible {
 .mobile-wc-panel { border-top: 1px solid var(--border-secondary); background: #fff; }
 .mobile-wc-content { padding: 10px 12px; font-size: 13px; color: var(--gray-700); }
 .rotate-180 { transform: rotate(180deg); transition: transform .15s ease; }
+
+/* ================================
+   PM 簡易格式工具列（B/I/U）
+   ================================ */
+.pm-format-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-1) var(--spacing-2);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-md);
+    background: var(--bg-toolbar);
+    margin-bottom: var(--spacing-2);
+}
+.pm-format-toolbar .fmt-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 28px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    background: transparent;
+    transition: background-color var(--duration-instant) var(--ease-out), color var(--duration-instant) var(--ease-out), border-color var(--duration-instant) var(--ease-out);
+}
+.pm-format-toolbar .fmt-btn:hover {
+    background: var(--gray-50, #f9fafb);
+}
+.pm-format-toolbar .fmt-btn.active {
+    background: var(--primary-50);
+    color: var(--primary-700);
+    border-color: var(--primary-100);
+}
+
+/* 無障礙：鍵盤焦點可見性 */
+.pm-format-toolbar .fmt-btn:focus-visible {
+    outline: 2px solid var(--primary-600);
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .pm-format-toolbar {
+        gap: 4px;
+        padding: 4px 6px;
+    }
+    .pm-format-toolbar .fmt-btn {
+        width: 28px;
+        height: 26px;
+    }
+}
