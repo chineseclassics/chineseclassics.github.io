@@ -132,7 +132,7 @@ class GradingUI {
           <aside class="hidden lg:block w-72 flex-shrink-0 sticky top-20 self-start">
             <div>
               <!-- AI 評分建議區域 -->
-              <div class="grading-sidebar-section">
+              <div class="grading-sidebar-section ai-section">
                 <div class="section-header">
                   <h3 class="section-title">
                     <i class="fas fa-robot mr-2"></i>AI 評分建議
@@ -164,7 +164,7 @@ class GradingUI {
               </div>
 
               <!-- 老師評分區域 -->
-              <div class="grading-sidebar-section">
+              <div class="grading-sidebar-section teacher-section">
                 <div class="section-header">
                   <h3 class="section-title">
                     <i class="fas fa-clipboard-check mr-2"></i>老師最終評分
@@ -197,8 +197,9 @@ class GradingUI {
                     })()}
 
                     <div class="form-group">
-                      <label>總體評語</label>
+                      <label class="form-label">總體評語</label>
                       <textarea
+                        class="input textarea"  
                         name="comments"
                         rows="4"
                         placeholder="請填寫對學生作業的總體評價和改進建議..."
