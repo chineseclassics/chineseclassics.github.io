@@ -90,6 +90,18 @@ async function loadAssignmentMode() {
       .single();
     const mode = data?.writing_mode || 'essay-structured';
     try { AppState.currentWritingMode = mode; } catch (_) {}
+    // 解析字數區間目標（若有）
+    try {
+      const layout = data?.editor_layout_json || null;
+      const json = typeof layout === 'string' ? JSON.parse(layout) : layout;
+      const targets = json?.targets || null;
+      const primaryMetric = json?.primaryMetric || null;
+      if (targets && (targets.zh_chars || targets.en_words)) {
+        window.__wordTargets = { targets, primaryMetric };
+      } else {
+        window.__wordTargets = null;
+      }
+    } catch (_) { window.__wordTargets = null; }
     return mode;
   } catch (_) { return 'essay-structured'; }
 }
@@ -125,13 +137,8 @@ async function autoSavePMJSON() {
       .from('essays')
       .update(updatePayload)
       .eq('id', essayId);
-    // 更新字數（不含標點）
-    try {
-      const text = EditorState.introEditor?.getText?.() || '';
-      const count = countWithoutPunct(text);
-      const wordCountDisplay = document.getElementById('word-count-display');
-      if (wordCountDisplay) wordCountDisplay.textContent = `${count} 字`;
-    } catch (_) {}
+    // 更新字數統計與提示
+    try { renderCountersAndTargets(); } catch (_) {}
     try { updateSaveStatus('saved'); } catch (_) {}
   } catch (e) { console.warn('autosave PM JSON 失敗:', e); }
 }
@@ -1324,11 +1331,53 @@ function handleEditorChange(data) {
  * 更新總字數統計
  */
 function updateWordCount() {
-    const text = EditorState.introEditor?.getText?.() || '';
-    const count = countWithoutPunct(text);
-    EditorState.totalWordCount = count;
-    const wordCountDisplay = document.getElementById('word-count-display');
-    if (wordCountDisplay) wordCountDisplay.textContent = `${count} 字`;
+    try { renderCountersAndTargets(); } catch (_) {}
+}
+
+// ================================
+// 統計與建議區間渲染
+// ================================
+
+function computeCounters() {
+  const editor = EditorState.introEditor;
+  const text = editor?.getText?.() || '';
+  const zhChars = (text.match(/[\u4E00-\u9FFF]/g) || []).length; // 只計漢字
+  const enWords = (text.match(/[A-Za-z]+(?:['’\-][A-Za-z]+)*/g) || []).length; // 單詞（含'與-連字）
+  let paragraphs = 0;
+  try { paragraphs = editor?.getParagraphCount?.() || 0; } catch (_) {}
+  return { zh_chars: zhChars, en_words: enWords, paragraphs };
+}
+
+function renderCountersAndTargets() {
+  const counters = computeCounters();
+  EditorState.totalWordCount = counters.zh_chars; // 保持舊語義：中文字數
+  const el = document.getElementById('word-count-display');
+  if (!el) return;
+
+  // 顯示三項統計
+  let base = `中 ${counters.zh_chars}｜英 ${counters.en_words}｜段落 ${counters.paragraphs}`;
+
+  // 顯示建議區間（若 assignment 有設定）
+  const cfg = window.__wordTargets;
+  if (cfg && cfg.primaryMetric && cfg.targets && cfg.targets[cfg.primaryMetric]) {
+    const t = cfg.targets[cfg.primaryMetric] || {};
+    const cur = counters[cfg.primaryMetric] || 0;
+    const hasMin = typeof t.min === 'number';
+    const hasMax = typeof t.max === 'number';
+    let rangeText = '';
+    if (hasMin && hasMax) rangeText = `${t.min}–${t.max}`;
+    else if (hasMin) rangeText = `≥ ${t.min}`;
+    else if (hasMax) rangeText = `≤ ${t.max}`;
+
+    let status = '';
+    if (hasMin && cur < t.min) status = '（未達）';
+    else if (hasMax && cur > t.max) status = '（超出）';
+    else if (hasMin || hasMax) status = '（達標）';
+
+    base += `｜建議 ${rangeText} ${status}`;
+  }
+
+  el.textContent = base;
 }
 
 // ================================

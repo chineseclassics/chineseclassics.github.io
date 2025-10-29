@@ -147,6 +147,30 @@ class AssignmentCreator {
             </div>
           </section>
 
+          <!-- 字數要求（可選，顯示在寫作指引之前） -->
+          <section class="form-section">
+            <h3><i class="fas fa-font" style="color: var(--primary-600); margin-right: 0.5rem;"></i>字數要求（可選）</h3>
+            <div class="form-grid" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+              <div class="form-group" style="min-width:180px;">
+                <label>度量類型</label>
+                <select name="wordMetric" class="select">
+                  <option value="zh_chars">中文（漢字數）</option>
+                  <option value="en_words">英文（單詞數）</option>
+                </select>
+                <p class="help-text">預設依中文作文；英文作文可改為單詞數</p>
+              </div>
+              <div class="form-group" style="min-width:140px;">
+                <label>最低值</label>
+                <input type="number" name="wordMin" min="0" placeholder="可留空" />
+              </div>
+              <div class="form-group" style="min-width:140px;">
+                <label>最高值</label>
+                <input type="number" name="wordMax" min="0" placeholder="可留空" />
+              </div>
+            </div>
+            <p class="help-text">若兩者皆空，則無字數要求；不做「合理上限」驗證</p>
+          </section>
+
           <!-- 寫作指引 -->
           <section class="form-section">
             <h3><i class="fas fa-file-alt" style="color: var(--primary-600); margin-right: 0.5rem;"></i>寫作指引</h3>
@@ -1300,13 +1324,41 @@ class AssignmentCreator {
         )
       };
 
+      // 讀取字數區間（可選）
+      const metric = formData.get('wordMetric') || 'zh_chars';
+      const minStr = (formData.get('wordMin') || '').trim();
+      const maxStr = (formData.get('wordMax') || '').trim();
+      const minVal = minStr === '' ? null : Math.max(0, parseInt(minStr, 10));
+      const maxVal = maxStr === '' ? null : Math.max(0, parseInt(maxStr, 10));
+
+      // 驗證：若同時提供則需 min <= max；不做合理上限
+      if (minVal !== null && maxVal !== null && minVal > maxVal) {
+        toast.warning('最低值不可大於最高值');
+        return;
+      }
+
+      let editorLayoutJson = null;
+      if (minVal !== null || maxVal !== null) {
+        editorLayoutJson = {
+          primaryMetric: metric,
+          targets: {
+            [metric]: {
+              ...(minVal !== null ? { min: minVal } : {}),
+              ...(maxVal !== null ? { max: maxVal } : {}),
+            }
+          },
+          showCounter: true
+        };
+      }
+
       const assignmentData = {
         title: formData.get('title'),
         dueDate: formData.get('dueDate'),
         classId: formData.get('classId'),  // 新增：班級ID
         formatSpecId: this.selectedTemplateId,  // 引用模式：保存格式ID
         gradingRubricJson: filteredRubric,  // 只包含選中的標準
-        isDraft
+        isDraft,
+        ...(editorLayoutJson ? { editorLayoutJson } : {})
       };
 
       // 禁用提交按鈕

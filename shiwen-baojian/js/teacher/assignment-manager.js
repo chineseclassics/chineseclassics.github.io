@@ -57,7 +57,8 @@ class AssignmentManager {
         formatSpecId,  // 引用模式：格式ID
         gradingRubricJson,
         classId,  // 新增：班級ID
-        isDraft = true
+        isDraft = true,
+        editorLayoutJson
       } = assignmentData;
 
       // 驗證必需字段
@@ -91,6 +92,7 @@ class AssignmentManager {
             due_date: dueDate,
             format_spec_id: formatSpecId,  // 引用模式：保存格式ID
             grading_rubric_json: gradingRubricJson,
+            ...(editorLayoutJson ? { editor_layout_json: editorLayoutJson } : {}),
             is_published: !isDraft,
             created_at: new Date().toISOString()
           }
@@ -251,6 +253,7 @@ class AssignmentManager {
         formatSpecId,
         gradingRubricJson,
         isDraft,
+        editorLayoutJson,
         ...otherUpdates
       } = updates;
 
@@ -264,6 +267,7 @@ class AssignmentManager {
       if (formatSpecId !== undefined) dataToUpdate.format_spec_id = formatSpecId;
       if (gradingRubricJson !== undefined) dataToUpdate.grading_rubric_json = gradingRubricJson;
       if (isDraft !== undefined) dataToUpdate.is_published = !isDraft;
+  if (editorLayoutJson !== undefined) dataToUpdate.editor_layout_json = editorLayoutJson;
 
       const { data, error } = await this.supabase
         .from('assignments')

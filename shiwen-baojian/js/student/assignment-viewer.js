@@ -129,10 +129,27 @@ class StudentAssignmentViewer {
             }
           }
 
+          // 解析字數建議（若老師有設定）
+          let wordTarget = null;
+          try {
+            const layout = assignment.editor_layout_json;
+            const json = typeof layout === 'string' ? JSON.parse(layout) : layout;
+            const primaryMetric = json?.primaryMetric || null;
+            const targetCfg = primaryMetric ? (json?.targets?.[primaryMetric] || null) : null;
+            if (primaryMetric && targetCfg && (typeof targetCfg.min === 'number' || typeof targetCfg.max === 'number')) {
+              wordTarget = {
+                metric: primaryMetric,
+                min: typeof targetCfg.min === 'number' ? targetCfg.min : null,
+                max: typeof targetCfg.max === 'number' ? targetCfg.max : null
+              };
+            }
+          } catch (_) { /* ignore parse errors */ }
+
           return {
             ...assignment,
             studentEssay: essay,
-            actualWordCount: actualWordCount
+            actualWordCount: actualWordCount,
+            wordTarget
           };
         })
       );
@@ -249,6 +266,25 @@ class StudentAssignmentViewer {
 
     const classColorClass = assignment.classes ? getClassColorClass(assignment.classes.id) : 'class-1';
     
+    // 構造建議區間顯示（若有）
+    let targetMetaHtml = '';
+    if (assignment.wordTarget) {
+      const t = assignment.wordTarget;
+      const label = t.metric === 'en_words' ? '英文詞數' : '中字數';
+      let rangeText = '';
+      if (typeof t.min === 'number' && typeof t.max === 'number') rangeText = `${t.min}–${t.max}`;
+      else if (typeof t.min === 'number') rangeText = `≥ ${t.min}`;
+      else if (typeof t.max === 'number') rangeText = `≤ ${t.max}`;
+      if (rangeText) {
+        targetMetaHtml = `
+          <div class="meta-item">
+            <i class="fas fa-bullseye"></i>
+            <span>建議：${label} ${rangeText}</span>
+          </div>
+        `;
+      }
+    }
+    
     return `
       <div class="student-assignment-card ${status.class} ${classColorClass}">
         <div class="card-header">
@@ -292,6 +328,7 @@ class StudentAssignmentViewer {
               <span>已寫 ${assignment.actualWordCount} 字</span>
             </div>
           ` : ''}
+          ${targetMetaHtml}
           ${essay && essay.submitted_at ? `
             <div class="meta-item">
               <i class="fas fa-check-circle text-emerald-600"></i>
