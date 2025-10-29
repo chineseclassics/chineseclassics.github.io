@@ -120,10 +120,20 @@ async function autoSavePMJSON() {
     if (subEl) {
       updatePayload.subtitle = (subEl.value || '').trim(); // 允許清空
     }
+    // 保存中狀態
+    try { updateSaveStatus('saving'); } catch (_) {}
     await AppState.supabase
       .from('essays')
       .update(updatePayload)
       .eq('id', essayId);
+    // 更新字數（不含標點）
+    try {
+      const text = EditorState.introEditor?.getText?.() || '';
+      const count = countWithoutPunct(text);
+      const wordCountDisplay = document.getElementById('word-count-display');
+      if (wordCountDisplay) wordCountDisplay.textContent = `${count} 字`;
+    } catch (_) {}
+    try { updateSaveStatus('saved'); } catch (_) {}
   } catch (e) { console.warn('autosave PM JSON 失敗:', e); }
 }
 
@@ -298,6 +308,14 @@ export async function initializeEssayEditor(forceReinit = false) {
           await runYucunForCurrentParagraph();
         });
       }
+    } catch (_) {}
+
+    // 綁定標題/副標題輸入 → 即時保存
+    try {
+      const titleInput = document.getElementById('essay-title');
+      const subtitleInput = document.getElementById('essay-subtitle');
+      titleInput?.addEventListener('input', saveTitleDebounced);
+      subtitleInput?.addEventListener('input', saveTitleDebounced);
     } catch (_) {}
 
     // 確保有 essay 記錄（新作業會沒有 ID）並立即保存一次
@@ -568,6 +586,31 @@ function pulse(el) {
 }
 
 function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m])); }
+
+// 計算字數（不含標點與空白）：採用中日韓統一表意文字統計
+function countWithoutPunct(text) {
+  if (!text) return 0;
+  const matches = text.match(/[\u4E00-\u9FFF]/g); // 只計算中日韓漢字
+  return matches ? matches.length : 0;
+}
+
+// 標題/副標題即時保存（即使正文未變化）
+const saveTitleDebounced = debounce(async () => {
+  try {
+    const AppState = getAppState();
+    const essayId = (await import('./essay-storage.js')).StorageState.currentEssayId;
+    if (!AppState?.supabase || !essayId) return;
+    const title = (document.getElementById('essay-title')?.value || '').trim();
+    const subtitle = (document.getElementById('essay-subtitle')?.value || '').trim();
+    if (!title && !subtitle) return; // 無變更
+    try { updateSaveStatus('saving'); } catch (_) {}
+    await AppState.supabase
+      .from('essays')
+      .update({ title: title || undefined, subtitle, updated_at: new Date().toISOString() })
+      .eq('id', essayId);
+    try { updateSaveStatus('saved'); } catch (_) {}
+  } catch (_) {}
+}, 800);
 
 function ensureGlobalToolbar() {
   let bar = document.getElementById('essay-structured-toolbar');
@@ -1035,45 +1078,11 @@ function handleEditorChange(data) {
  * 更新總字數統計
  */
 function updateWordCount() {
-    let totalWords = 0;
-    
-    // 引言字數
-    if (EditorState.introEditor) {
-        const introCount = EditorState.introEditor.getWordCount().total;
-        totalWords += introCount;
-        
-        const introCountEl = document.getElementById('intro-word-count');
-        if (introCountEl) {
-            introCountEl.textContent = `${introCount} 字`;
-        }
-    }
-    
-    // 分論點和段落字數
-    EditorState.arguments.forEach(argument => {
-        argument.paragraphs.forEach(paragraph => {
-            if (paragraph.editor) {
-                totalWords += paragraph.editor.getWordCount().total;
-            }
-        });
-    });
-    
-    // 結論字數
-    if (EditorState.conclusionEditor) {
-        const conclusionCount = EditorState.conclusionEditor.getWordCount().total;
-        totalWords += conclusionCount;
-        
-        const conclusionCountEl = document.getElementById('conclusion-word-count');
-        if (conclusionCountEl) {
-            conclusionCountEl.textContent = `${conclusionCount} 字`;
-        }
-    }
-    
-    // 更新總字數顯示
-    EditorState.totalWordCount = totalWords;
+    const text = EditorState.introEditor?.getText?.() || '';
+    const count = countWithoutPunct(text);
+    EditorState.totalWordCount = count;
     const wordCountDisplay = document.getElementById('word-count-display');
-    if (wordCountDisplay) {
-        wordCountDisplay.textContent = `${totalWords} 字`;
-    }
+    if (wordCountDisplay) wordCountDisplay.textContent = `${count} 字`;
 }
 
 // ================================
