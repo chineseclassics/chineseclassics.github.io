@@ -3,15 +3,14 @@
  */
 
 import toast from '../ui/toast.js';
-import AnnotationManager from '../features/annotation-manager.js';
 import { PMEditor } from '../editor/tiptap-editor.js';
-import { createAnnotationPlugin } from '../features/pm-annotation-plugin.js';
+import { createAnnotationPlugin, createAnnotationFromSelection } from '../features/pm-annotation-plugin.js';
 
 class GradingUI {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
     this.currentEssay = null;
-    this.annotationManager = null;
+    this.annotationManager = null; // 將被移除：改用 PM 插件統一 CRUD
     this._annChannel = null;
     this._annPoll = null;
   }
@@ -249,9 +248,9 @@ class GradingUI {
                       <i class="fas fa-book-open mr-2"></i>作業內容
                     </h3>
                     <div class="annotation-controls">
-                      <button id="toggleAnnotationMode" class="btn-annotation-mode active">
-                        <i class="fas fa-comment-dots"></i>
-                        <span>關閉批注</span>
+                      <button id="addPmAnnotation" class="btn-annotation-add">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>新增批註</span>
                       </button>
                       <button id="showAnnotationStats" class="btn-annotation-stats">
                         <i class="fas fa-chart-bar"></i>
@@ -322,8 +321,7 @@ class GradingUI {
         }
       } catch (e) { console.warn('PM viewer 載入失敗:', e); }
       
-      // 自動初始化批注系統（沿用側欄與 decorations 聯動，後續切到 PM 插件）
-      await this.initializeAnnotationSystem();
+      // 已切換到 PM 插件統一處理，移除舊 DOM 高亮系統
       
       // 自動加載已保存的 AI 評分建議（如果存在）
       this.loadSavedAISuggestion();
@@ -332,20 +330,20 @@ class GradingUI {
 
   async refreshPMAnnotations() {
     try {
-      const { data, error } = await this.supabase
-        .rpc('get_essay_annotations', { p_essay_id: this.currentEssay.id });
-      if (error) throw error;
-      // 去重：以 id 為鍵，最後一次為準
-      const list = (data || []).map(a => ({
-        id: a.id || a.annotation_id,
+      const pmRes = await this.supabase.rpc('get_essay_annotations_pm', { p_essay_id: this.currentEssay.id });
+      if (pmRes.error) throw pmRes.error;
+      const list = (pmRes.data || []).map(a => ({
+        id: a.id,
         text_start: a.text_start ?? null,
         text_end: a.text_end ?? null,
-        text_quote: a.text_quote || a.anchor_text || null,
-        text_prefix: a.text_prefix || a.anchor_context?.before || null,
-        text_suffix: a.text_suffix || a.anchor_context?.after || null
+        text_quote: a.text_quote || null,
+        text_prefix: a.text_prefix || null,
+        text_suffix: a.text_suffix || null
       }));
+
+      // 去重：以 id 為鍵，最後一次為準
       const map = new Map();
-      for (const x of list) map.set(x.id, x);
+      for (const x of list) if (x?.id) map.set(x.id, x);
       this._annStore = Array.from(map.values());
       const view = this._pmViewer?.view;
       if (view) {
@@ -565,11 +563,28 @@ class GradingUI {
    * 綁定批注系統事件
    */
   bindAnnotationEvents() {
-    // 批注模式切換按鈕
-    const toggleBtn = document.getElementById('toggleAnnotationMode');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
-        this.toggleAnnotationMode();
+    // 新增批註（PM 選區）
+    const addBtn = document.getElementById('addPmAnnotation');
+    if (addBtn) {
+      addBtn.addEventListener('click', async () => {
+        try {
+          const view = this._pmViewer?.view;
+          if (!view) { toast.error('編輯器尚未就緒'); return; }
+          if (view.state.selection.empty) { toast.info('請先在右側選取要批註的文字'); return; }
+          const content = window.prompt('輸入批註內容：');
+          if (!content) return;
+          const id = await createAnnotationFromSelection({
+            view,
+            supabase: this.supabase,
+            essayId: this.currentEssay.id,
+            content
+          });
+          toast.success('批註已新增');
+          await this.refreshPMAnnotations();
+        } catch (e) {
+          console.error('新增批註失敗:', e);
+          toast.error('新增批註失敗：' + (e.message || '未知錯誤'));
+        }
       });
     }
 

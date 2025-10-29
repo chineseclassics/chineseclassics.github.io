@@ -179,4 +179,89 @@ function findWithContext(text, quote, prefix, suffix) {
 }
 
 
+/**
+ * 取得整份文檔的純文字與位置映射工具
+ */
+function getDocTextIndexTools(state) {
+  const segments = [];
+  let acc = 0;
+  state.doc.descendants((node, pos) => {
+    if (node.isText) {
+      const t = node.text || '';
+      segments.push({ text: t, start: acc, end: acc + t.length, pos });
+      acc += t.length;
+    }
+  });
+  const total = acc;
+  const docText = segments.map(s => s.text).join('');
+
+  const indexFromPos = (pmPos) => {
+    // 將 PM 位置對應到全局字符索引（近似）
+    // 掃描第一個 pos >= pmPos 的段
+    for (let i = 0; i < segments.length; i++) {
+      const s = segments[i];
+      const textStartPos = s.pos + 1; // 文本實際開始位置
+      const textEndPos = s.pos + (s.end - s.start) + 1;
+      if (pmPos <= textEndPos) {
+        const offset = Math.max(0, pmPos - textStartPos);
+        return s.start + offset;
+      }
+    }
+    return total;
+  };
+
+  return { docText, total, indexFromPos };
+}
+
+/**
+ * 自選區產生文字錨點（offset + quote + prefix/suffix）
+ */
+export function computeSelectionAnchor(view, ctxLen = 30) {
+  const { state } = view;
+  const sel = state.selection;
+  if (sel.empty) return null;
+
+  const { docText, indexFromPos, total } = getDocTextIndexTools(state);
+  const fromIndex = Math.max(0, Math.min(total, indexFromPos(sel.from)));
+  const toIndex = Math.max(0, Math.min(total, indexFromPos(sel.to)));
+  if (toIndex <= fromIndex) return null;
+
+  const text_quote = docText.slice(fromIndex, toIndex);
+  const preStart = Math.max(0, fromIndex - ctxLen);
+  const sufEnd = Math.min(total, toIndex + ctxLen);
+  const text_prefix = docText.slice(preStart, fromIndex);
+  const text_suffix = docText.slice(toIndex, sufEnd);
+
+  return {
+    text_start: fromIndex,
+    text_end: toIndex,
+    text_quote,
+    text_prefix,
+    text_suffix
+  };
+}
+
+/**
+ * 直接以當前選區創建批註（寫入 Supabase，返回新 ID）
+ */
+export async function createAnnotationFromSelection({ view, supabase, essayId, content, ctxLen = 30 }) {
+  const anchor = computeSelectionAnchor(view, ctxLen);
+  if (!anchor) throw new Error('請先選擇要批註的文字');
+
+  const payload = {
+    p_essay_id: essayId,
+    p_content: String(content || '').trim(),
+    p_text_start: anchor.text_start,
+    p_text_end: anchor.text_end,
+    p_text_quote: anchor.text_quote,
+    p_text_prefix: anchor.text_prefix,
+    p_text_suffix: anchor.text_suffix
+  };
+
+  const { data, error } = await supabase.rpc('create_annotation_pm', payload);
+  if (error) throw error;
+  return data; // 返回新 annotation id
+}
+
+
 

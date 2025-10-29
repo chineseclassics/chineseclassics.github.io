@@ -9,7 +9,6 @@
 
 import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
-import { applyParagraphAnchors } from './features/paragraph-anchors.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
 import toast from './ui/toast.js';
 
@@ -927,24 +926,7 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             // 新練筆，不恢復任何內容
         }
         
-        // ✅ 嘗試錨定段落（若 DB 已有 paragraphs），讓編輯/檢視模式都具備精準容器
-        try {
-            const { StorageState } = await import('./student/essay-storage.js');
-            const eid = StorageState.currentEssayId;
-            if (eid) {
-                const { data: paras } = await AppState.supabase
-                    .from('paragraphs')
-                    .select('id, order_index, paragraph_type')
-                    .eq('essay_id', eid)
-                    .order('order_index');
-                if (Array.isArray(paras) && paras.length > 0) {
-                    const { applyParagraphAnchors } = await import('./features/paragraph-anchors.js');
-                    await applyParagraphAnchors(paras);
-                }
-            }
-        } catch (anchorErr) {
-            console.warn('⚠️ 還原後段落錨定失敗（可忽略）:', anchorErr?.message);
-        }
+        // 段落 DOM 錨定已移除（PM 單文檔 + 文字錨點）
         
         // ✅ 設置狀態顯示（只在任務模式）
         if (mode === 'assignment') {
@@ -957,15 +939,7 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             submissionSection.classList.add('hidden');
         }
 
-        // ✅ 初始化學生端批注系統（如果是任務模式且已提交）
-        if (mode === 'assignment' && !editable) {
-            await initializeStudentAnnotationSystem(assignmentId);
-        }
-        
-        // ✅ 初始化批注重新定位系統（如果是編輯模式）
-        if (mode === 'assignment' && editable) {
-            await initializeAnnotationRepositioningSystem(assignmentId);
-        }
+        // 學生端批註系統統一改為 PM 插件（編輯器內處理），不再單獨初始化
 
         console.log('✅ 論文編輯器顯示完成');
     } catch (error) {
@@ -974,64 +948,7 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
     }
 }
 
-/**
- * 初始化學生端批注系統
- */
-async function initializeStudentAnnotationSystem(assignmentId) {
-    try {
-        console.log('🚀 初始化學生端批注系統:', assignmentId);
-        
-        // 動態導入學生端批注查看器（V2）
-        const { default: StudentAnnotationViewer } = await import('./student/student-annotation-viewer.v2.js');
-        
-        // 獲取當前作業的段落信息
-        const { data: essay, error: essayError } = await AppState.supabase
-            .from('essays')
-            .select(`
-                id,
-                paragraphs (
-                    id,
-                    order_index,
-                    paragraph_type
-                )
-            `)
-            .eq('assignment_id', assignmentId)
-            .eq('student_id', AppState.currentUser.id)
-            .single();
-            
-        if (essayError) {
-            console.error('❌ 獲取作業信息失敗:', essayError);
-            return;
-        }
-        
-        if (!essay || !essay.paragraphs || essay.paragraphs.length === 0) {
-            console.log('ℹ️ 沒有找到段落，跳過批注系統初始化');
-            return;
-        }
-        
-        // 在初始化批註前，先將段落 ID/順序錨定到 DOM
-        try {
-            await applyParagraphAnchors(essay.paragraphs || []);
-        } catch (anchorErr) {
-            console.warn('⚠️ 段落錨定失敗，將回退使用全篇容器對齊：', anchorErr?.message);
-        }
-
-        // 創建批注查看器（單一實例）
-        const annotationViewer = new StudentAnnotationViewer(AppState.supabase);
-
-        // 解析模式（submitted/view, draft/edit, graded/readonly）
-        const mode = await resolveStudentAnnotationMode(essay.id);
-        await annotationViewer.init(essay.id, essay.paragraphs, mode);
-        
-        // 將批注查看器保存到全局狀態
-        window.studentAnnotationViewer = annotationViewer;
-        
-        console.log('✅ 學生端批注系統初始化完成');
-        
-    } catch (error) {
-        console.error('❌ 初始化學生端批注系統失敗:', error);
-    }
-}
+// 學生端批註系統已整合進 PM 插件，無需額外初始化
 
 /**
  * 解析學生端批註模式
@@ -1039,68 +956,14 @@ async function initializeStudentAnnotationSystem(assignmentId) {
  * - draft：edit
  * - graded：readonly
  */
-async function resolveStudentAnnotationMode(essayId) {
-    try {
-        const { data: essay, error } = await AppState.supabase
-            .from('essays')
-            .select('status')
-            .eq('id', essayId)
-            .single();
-        if (error) throw error;
-        const status = (essay?.status || 'draft').toLowerCase();
-        if (status === 'graded') return 'readonly';
-        if (status === 'draft') return 'edit';
-        // submitted（未評分）
-        return 'view';
-    } catch (e) {
-        console.warn('⚠️ 解析批註模式失敗，預設為 view:', e?.message);
-        return 'view';
-    }
-}
+// 批註模式解析已移除（新模型：writing / graded）
 
 // applyParagraphAnchors 已抽取至 features/paragraph-anchors.js
 
 /**
  * 初始化批注重新定位系統
  */
-async function initializeAnnotationRepositioningSystem(assignmentId) {
-    try {
-        console.log('🚀 初始化批注重新定位系統:', assignmentId);
-        
-        // 動態導入批注重新定位管理器
-        const { default: AnnotationRepositioningManager } = await import('./features/annotation-repositioning.js');
-        
-        // 獲取當前作業信息
-        const { data: essay, error: essayError } = await AppState.supabase
-            .from('essays')
-            .select('id')
-            .eq('assignment_id', assignmentId)
-            .eq('student_id', AppState.currentUser.id)
-            .maybeSingle();
-            
-        if (essayError) {
-            console.warn('⚠️ 獲取作業信息失敗或無資料（可能尚未創建作業記錄）:', essayError?.message || essayError);
-            return; // 安全跳過
-        }
-        
-        if (!essay) {
-            console.log('ℹ️ 尚無作業記錄（新寫作），跳過批注重新定位系統初始化');
-            return;
-        }
-        
-        // 創建批注重新定位管理器
-        const repositioningManager = new AnnotationRepositioningManager(AppState.supabase);
-        await repositioningManager.init(essay.id);
-        
-        // 將管理器保存到全局狀態
-        window.annotationRepositioningManager = repositioningManager;
-        
-        console.log('✅ 批注重新定位系統初始化完成');
-        
-    } catch (error) {
-        console.error('❌ 初始化批注重新定位系統失敗:', error);
-    }
-}
+// 批註重新定位系統已移除（PM 文字錨點 + 裝飾映射）
 
 /**
  * 加載任務數據
@@ -1322,25 +1185,8 @@ async function setupEssayStatus(assignmentId, editable = true) {
             return;
         }
         
-        // 更新狀態顯示
-        if (essay.status === 'submitted') {
-            if (statusText) {
-                statusText.textContent = '已提交（可修改）';
-                statusText.classList.add('text-blue-600', 'font-semibold');
-            }
-            if (statusDisplay) {
-                const icon = statusDisplay.querySelector('i');
-                if (icon) {
-                    icon.className = 'fas fa-edit text-blue-600 text-xs';
-                }
-            }
-            
-            // 檢查是否有批注並顯示提示
-            const hasAnnotations = await checkHasAnnotations(essayId);
-            if (hasAnnotations) {
-                showAnnotationNotice();
-            }
-        } else if (essay.status === 'graded') {
+        // 更新狀態顯示（新模型：writing / graded）
+        if (essay.status === 'graded') {
             if (statusText) {
                 statusText.textContent = '已批改（只讀）';
                 statusText.classList.add('text-amber-700', 'font-semibold');
@@ -1359,9 +1205,9 @@ async function setupEssayStatus(assignmentId, editable = true) {
             console.log('📖 已批改狀態：禁用編輯功能');
             disableEditing();
         } else {
-            // 草稿狀態
+            // 寫作中
             if (statusText) {
-                statusText.textContent = '草稿';
+                statusText.textContent = '寫作中';
                 statusText.classList.remove('text-blue-600', 'text-amber-700', 'font-semibold');
             }
             if (statusDisplay) {
@@ -1495,116 +1341,28 @@ async function restoreEssayContent(contentData) {
             console.log('ℹ️ 沒有內容需要恢復');
             return;
         }
-        
-        console.log('🔄 開始恢復內容到編輯器...', contentData);
-        
-        // 動態導入 essay-writer 模組獲取編輯器實例
-        const { getEditorByParagraphId } = await import('./student/essay-writer.js');
-        
-        // 1. 恢復標題和副標題
+
+        console.log('🔄 開始恢復內容到編輯器（PM JSON 模式）...');
+
+        // 1) 恢復標題與副標題（若提供）
         const titleInput = document.getElementById('essay-title');
         const subtitleInput = document.getElementById('essay-subtitle');
-        
-        if (titleInput && contentData.title) {
-            titleInput.value = contentData.title;
-            console.log('✅ 已恢復標題:', contentData.title);
-        }
-        if (subtitleInput && contentData.subtitle) {
-            subtitleInput.value = contentData.subtitle;
-            console.log('✅ 已恢復副標題:', contentData.subtitle);
-        }
-        
-        // 2. 恢復引言
-        if (contentData.introduction) {
-            const introEditor = getEditorByParagraphId('intro');
-            if (introEditor) {
-                introEditor.setHTML(contentData.introduction);
-                console.log('✅ 已恢復引言內容');
+        if (titleInput && contentData.title) titleInput.value = contentData.title;
+        if (subtitleInput && contentData.subtitle) subtitleInput.value = contentData.subtitle;
+
+        // 2) 若為 ProseMirror JSON，直接設置到 PM 編輯器
+        if (contentData && contentData.type) {
+            const { getEditorByParagraphId } = await import('./student/essay-writer.js');
+            const pm = getEditorByParagraphId('intro');
+            if (pm && typeof pm.setJSON === 'function') {
+                pm.setJSON(contentData);
+                console.log('✅ 已恢復 PM JSON 內容');
             } else {
-                console.warn('⚠️ 找不到引言編輯器');
+                console.warn('⚠️ PM 編輯器尚未就緒，跳過內容恢復');
             }
+        } else {
+            console.log('ℹ️ 非 PM JSON，跳過內容恢復');
         }
-        
-        // 3. 恢復結論
-        if (contentData.conclusion) {
-            const conclusionEditor = getEditorByParagraphId('conclusion');
-            if (conclusionEditor) {
-                conclusionEditor.setHTML(contentData.conclusion);
-                console.log('✅ 已恢復結論內容');
-            } else {
-                console.warn('⚠️ 找不到結論編輯器');
-            }
-        }
-        
-        // 4. 恢復分論點
-        if (contentData.arguments && contentData.arguments.length > 0) {
-            console.log(`🔄 開始恢復 ${contentData.arguments.length} 個分論點...`);
-            
-            // 動態導入分論點管理函數
-            const { addArgument, addParagraph, EditorState } = await import('./student/essay-writer.js');
-            
-            // 為每個分論點創建結構並填充內容
-            for (let i = 0; i < contentData.arguments.length; i++) {
-                const argData = contentData.arguments[i];
-                
-                // 1. 創建新的分論點
-                addArgument();
-                
-                // 等待 DOM 更新
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                // 2. 獲取剛創建的分論點
-                const currentArg = EditorState.arguments[EditorState.arguments.length - 1];
-                
-                if (!currentArg) {
-                    console.error(`❌ 無法獲取第 ${i + 1} 個分論點`);
-                    continue;
-                }
-                
-                // 3. 填充分論點標題
-                if (argData.title) {
-                    const titleInput = document.getElementById(`${currentArg.id}-title`);
-                    if (titleInput) {
-                        titleInput.value = argData.title;
-                        console.log(`✅ 已恢復分論點 ${i + 1} 標題:`, argData.title);
-                    }
-                }
-                
-                // 4. 恢復段落（第一個段落已經自動創建）
-                if (argData.paragraphs && argData.paragraphs.length > 0) {
-                    // 填充第一個段落
-                    if (currentArg.paragraphs.length > 0) {
-                        const firstPara = currentArg.paragraphs[0];
-                        if (firstPara.editor && argData.paragraphs[0].content) {
-                            firstPara.editor.setHTML(argData.paragraphs[0].content);
-                            console.log(`✅ 已恢復分論點 ${i + 1} 的第 1 個段落`);
-                        }
-                    }
-                    
-                    // 創建並填充其他段落
-                    for (let j = 1; j < argData.paragraphs.length; j++) {
-                        const paraData = argData.paragraphs[j];
-                        
-                        // 添加新段落
-                        addParagraph(currentArg.id);
-                        
-                        // 等待 DOM 更新
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        
-                        // 填充段落內容
-                        const para = currentArg.paragraphs[j];
-                        if (para && para.editor && paraData.content) {
-                            para.editor.setHTML(paraData.content);
-                            console.log(`✅ 已恢復分論點 ${i + 1} 的第 ${j + 1} 個段落`);
-                        }
-                    }
-                }
-            }
-            
-            console.log(`✅ 已恢復 ${contentData.arguments.length} 個分論點`);
-        }
-        
-        console.log('✅ 內容恢復完成');
     } catch (error) {
         console.error('❌ 恢復內容失敗:', error);
     }

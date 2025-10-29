@@ -2,16 +2,14 @@
  * 時文寶鑑 - 學生論文編輯器
  * 
  * 功能：
- * - 管理分層段落結構（引言、分論點、結論）
- * - 集成 Quill.js 富文本編輯器
- * - 實時字數統計
- * - 自動保存
+ * - 單一 ProseMirror 編輯器（TipTap/PM）
+ * - 自動保存 + 字數統計（不含標點）
+ * - PM decorations 顯示批註
  */
 
-import { RichTextEditor } from '../editor/rich-text-editor.js';
 import { PMEditor } from '../editor/tiptap-editor.js';
 import { createAnnotationPlugin } from '../features/pm-annotation-plugin.js';
-import { initializeStorage, saveEssayToSupabase, StorageState } from './essay-storage.js';
+import { initializeStorage, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
 
@@ -173,19 +171,18 @@ async function refreshPMAnnotationsStudent() {
   try {
     const AppState = getAppState();
     if (!AppState?.supabase || !StorageState.currentEssayId) return;
-    const { data, error } = await AppState.supabase
-      .rpc('get_essay_annotations', { p_essay_id: StorageState.currentEssayId });
-    if (error) throw error;
-    const list = (data || []).map(a => ({
-      id: a.id || a.annotation_id,
+    const pmRes = await AppState.supabase.rpc('get_essay_annotations_pm', { p_essay_id: StorageState.currentEssayId });
+    if (pmRes.error) throw pmRes.error;
+    const list = (pmRes.data || []).map(a => ({
+      id: a.id,
       text_start: a.text_start ?? null,
       text_end: a.text_end ?? null,
-      text_quote: a.text_quote || a.anchor_text || null,
-      text_prefix: a.text_prefix || a.anchor_context?.before || null,
-      text_suffix: a.text_suffix || a.anchor_context?.after || null
+      text_quote: a.text_quote || null,
+      text_prefix: a.text_prefix || null,
+      text_suffix: a.text_suffix || null
     }));
     const map = new Map();
-    for (const x of list) map.set(x.id, x);
+    for (const x of list) if (x?.id) map.set(x.id, x);
     window.__pmAnnStore = Array.from(map.values());
     const view = EditorState.introEditor?.view;
     if (view) view.dispatch(view.state.tr.setMeta('annotations:update', true));
