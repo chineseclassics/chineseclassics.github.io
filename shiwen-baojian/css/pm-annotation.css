@@ -55,6 +55,13 @@
 #student-dashboard { max-width: 1800px; margin: 0 auto; }
 #student-dashboard .grading-content-wrapper { overflow: visible; max-height: none; }
 
+/* 老師端覆蓋：移除舊 78% 佈局與內邊距，讓中欄完全佔滿 grid 中列 */
+#teacher-dashboard .main-content-area { max-width: none; width: 100%; position: relative; overflow: visible; }
+
+/* 師生端統一：取消舊容器 padding，三欄間距僅由 column-gap 控制 */
+#teacher-dashboard .grading-content-wrapper,
+#student-dashboard .grading-content-wrapper { padding: 0; }
+
 @media (max-width: 1024px) {
   #student-dashboard .flex { flex-direction: column; }
   #student-dashboard aside { position: relative !important; width: 100% !important; max-height: none !important; margin-bottom: 1rem; }
