@@ -257,6 +257,8 @@ class GradingUI {
               <!-- 批註直接浮動在右側，無容器 -->
             </div>
           </div>
+          <!-- 右側：批註側欄（固定寬度，用於承載疊加層與編寫器） -->
+          <aside id="ann-sidebar" class="hidden lg:block w-[360px] relative"></aside>
         </div>
       </div>
     `;
@@ -295,7 +297,7 @@ class GradingUI {
             });
             this._pmViewer = new PMEditor(viewer, { readOnly: true, initialJSON: json, extraPlugins: [plugin] });
             // 右側疊加層（與 Google Docs 類似）
-            const essaySection = viewer.closest('.essay-viewer') || viewer.parentElement;
+            const essaySection = document.getElementById('ann-sidebar') || viewer.closest('.essay-viewer') || viewer.parentElement;
             if (essaySection) {
               this._overlay = new PMAnnotationOverlay({
                 root: essaySection,
@@ -384,7 +386,7 @@ class GradingUI {
     if (!view) return;
     if (this._composer) return; // 只建立一次
 
-    const essaySection = document.getElementById('pm-viewer')?.closest('.essay-viewer') || document.getElementById('pm-viewer')?.parentElement || document.body;
+    const essaySection = document.getElementById('ann-sidebar') || document.getElementById('pm-viewer')?.closest('.essay-viewer') || document.getElementById('pm-viewer')?.parentElement || document.body;
     const style = window.getComputedStyle(essaySection);
     if (style.position === 'static' || !style.position) essaySection.style.position = 'relative';
 
