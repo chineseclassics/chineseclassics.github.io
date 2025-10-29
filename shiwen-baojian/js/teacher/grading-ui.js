@@ -348,6 +348,19 @@ class GradingUI {
   }
 
   /**
+   * 由 PM 裝飾點擊觸發：聚焦對應浮動批註卡片並滾動對齊
+   */
+  highlightAnnotation(annotationId) {
+    try {
+      if (this.annotationManager && typeof this.annotationManager.highlightAnnotation === 'function') {
+        this.annotationManager.highlightAnnotation(annotationId);
+      }
+    } catch (e) {
+      console.warn('highlightAnnotation 失敗:', e);
+    }
+  }
+
+  /**
    * 渲染作業內容
    */
   renderEssayContent(essay) {

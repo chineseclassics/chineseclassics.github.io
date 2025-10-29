@@ -15,9 +15,9 @@ export function createAnnotationPlugin({ getAnnotations, onClick }) {
   return new Plugin({
     key: annotationPluginKey,
     state: {
-      init: (_, view) => {
+      init: (_, editorState) => {
         const ann = safeGet(getAnnotations);
-        return buildDecorationSet(view, ann);
+        return buildDecorationSet({ state: editorState }, ann);
       },
       apply: (tr, old, oldState, newState) => {
         let deco = old.map(tr.mapping, tr.doc);

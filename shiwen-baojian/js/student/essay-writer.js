@@ -76,7 +76,7 @@ async function autoSavePMJSON() {
     if (!json) return;
     await AppState.supabase
       .from('essays')
-      .update({ content_json: json, updated_at: new Date().toISOString(), status: 'editing' })
+      .update({ content_json: json, updated_at: new Date().toISOString() })
       .eq('id', essayId);
   } catch (e) { console.warn('autosave PM JSON 失敗:', e); }
 }
@@ -96,7 +96,7 @@ async function ensureEssayRecord() {
       assignment_id: assignmentId,
       title,
       content_json: json,
-      status: 'editing',
+      status: 'draft',
       total_word_count: wordCount
     };
     const { data, error } = await AppState.supabase
