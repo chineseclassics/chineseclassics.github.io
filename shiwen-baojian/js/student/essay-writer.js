@@ -374,16 +374,24 @@ export async function initializeEssayEditor(forceReinit = false) {
       try { host.classList.remove('pm-essay-structured'); } catch (_) {}
     }
 
-    // 永久移除舊的浮動工具（已不再使用）
-    try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
-    try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
+    // 工具列管理：若為 essay-structured，啟用「段落上方內聯工具列」與全局工具列；否則移除
+    if (writingMode === 'essay-structured') {
+      try { setupEssayStructuredUI(EditorState.introEditor); } catch (_) {}
+    } else {
+      try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
+      try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
+    }
 
-    // 綁定左側「雨村評點（當前段）」
+    // 綁定左側「雨村評點」：關閉舊的「依據光標所在段落」行為，改為提示使用內聯工具列（滑鼠懸停段落）
     try {
       const btn = document.getElementById('sidebar-yucun-btn');
       if (btn) {
-        btn.addEventListener('click', async () => {
-          await runYucunForCurrentParagraph();
+        btn.addEventListener('click', () => {
+          try {
+            toast.info('已改為：請將滑鼠懸停於目標段落，點擊段落上方的「雨村評點」。');
+            // 若內聯工具列尚未建立（如因模式切換），嘗試補建
+            try { if (!document.getElementById('pm-inline-toolbar')) setupEssayStructuredUI(EditorState.introEditor); } catch (_) {}
+          } catch (_) {}
         });
       }
     } catch (_) {}

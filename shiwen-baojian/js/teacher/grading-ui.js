@@ -143,7 +143,8 @@ class GradingUI {
                   </button>
                 </div>
                 
-                <div class="section-content">
+                <!-- 初始狀態下隱藏內容區域，點擊獲取建議後才展開 -->
+                <div id="aiSectionContent" class="section-content hidden">
                   <div class="panel-actions">
                     <p class="ai-hint">
                       <i class="fas fa-info-circle"></i>
@@ -1107,6 +1108,12 @@ class GradingUI {
       if (savedSuggestion && savedSuggestion.criteria_scores) {
         console.log('✅ 找到已保存的 AI 評分建議');
         
+        // 顯示內容區域
+        const aiSectionContent = document.getElementById('aiSectionContent');
+        if (aiSectionContent) {
+          aiSectionContent.classList.remove('hidden');
+        }
+        
         // 顯示已保存的建議
         this.renderAISuggestion(
           savedSuggestion.criteria_scores, 
@@ -1135,10 +1142,14 @@ class GradingUI {
    */
   async handleGetAISuggestion() {
     try {
+      const aiSectionContent = document.getElementById('aiSectionContent');
       const loadingState = document.getElementById('aiLoadingState');
       const resultsDiv = document.getElementById('aiSuggestionResults');
       const btn = document.getElementById('getAISuggestionBtn');
 
+      // 顯示內容區域（如果之前是隱藏的）
+      aiSectionContent.classList.remove('hidden');
+      
       // 顯示加載狀態
       loadingState.classList.remove('hidden');
       resultsDiv.classList.add('hidden');
