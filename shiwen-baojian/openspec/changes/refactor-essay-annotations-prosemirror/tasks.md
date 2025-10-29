@@ -53,7 +53,7 @@
 ## 7. QA / 回歸測試
 
 - [ ] 7.1 長文性能（>2500 字）輸入與滾動流暢度
-- [ ] 7.2 Annotations 裝飾佈局：不重疊、16px 間距、對齊原文
+- [x] 7.2 Annotations 裝飾佈局：不重疊、16px 間距、對齊原文（已驗證：`js/features/pm-annotation-overlay.js` 以 `_spacing=16` 並使用 occupied 區間避讓；定位基於 `.pm-annotation` 裝飾元素 `getBoundingClientRect()` 對齊）
 - [ ] 7.3 Realtime 雙端同步：新增/刪除/更新
 - [ ] 7.4 舊數據兼容：無 JSON 僅 paragraphs 時教師端可讀
 - [ ] 7.5 RLS：老師可見班級學生 essays（writing/graded 均可見）

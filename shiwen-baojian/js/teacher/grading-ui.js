@@ -299,12 +299,16 @@ class GradingUI {
             // 右側疊加層（與 Google Docs 類似）
             const essaySection = document.getElementById('ann-sidebar') || viewer.closest('.essay-viewer') || viewer.parentElement;
             if (essaySection) {
+              const { data: userData } = await this.supabase.auth.getUser();
               this._overlay = new PMAnnotationOverlay({
                 root: essaySection,
                 view: this._pmViewer.view,
                 getAnnotations: () => this._annStoreWithContent || this._annStore || [],
                 onClick: (id) => this.highlightAnnotation?.(id),
-                onContextMenu: (a, card, ev) => this._handleOverlayContextMenu?.(a, card, ev)
+                onContextMenu: (a, card, ev) => this._handleOverlayContextMenu?.(a, card, ev),
+                supabase: this.supabase,
+                currentUserId: userData?.user?.id || null,
+                onDataChanged: async () => { await this.refreshPMAnnotations(); }
               });
               this._overlay.mount();
               this._bindGlobalActiveReset();
@@ -316,12 +320,22 @@ class GradingUI {
             this._annPoll = setInterval(() => this.refreshPMAnnotations(), 5000);
             // Realtime：收到變更則刷新一次
             try {
-              this._annChannel = this.supabase
-                .channel('pm-ann-teacher')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'annotations' }, () => {
-                  this.refreshPMAnnotations();
-                })
-                .subscribe();
+              if (!this._annChannel) {
+                this._annChannel = this.supabase
+                  .channel('pm-ann-teacher')
+                  .on('postgres_changes', { event: '*', schema: 'public', table: 'annotations' }, () => {
+                    this.refreshPMAnnotations();
+                  })
+                  .subscribe();
+              }
+              if (!this._commentChannel) {
+                this._commentChannel = this.supabase
+                  .channel('pm-ann-comments-teacher')
+                  .on('postgres_changes', { event: '*', schema: 'public', table: 'annotation_comments' }, () => {
+                    this.refreshPMAnnotations();
+                  })
+                  .subscribe();
+              }
             } catch (e) { console.warn('教師端 Realtime 初始化失敗:', e); }
           } else {
             // 後備：使用舊渲染（HTML）避免空白
@@ -352,15 +366,56 @@ class GradingUI {
       // 讀取內容以渲染卡片
       const ids = anchors.map(a => a.id).filter(Boolean);
       let contents = [];
+      let authors = [];
+      let comments = [];
+      let userMap = new Map();
       if (ids.length > 0) {
         const { data: annRows } = await this.supabase
           .from('annotations')
-          .select('id, content, created_at')
+          .select('id, content, created_at, teacher_id, student_id')
           .in('id', ids);
         contents = annRows || [];
+
+        // 批量查詢回覆
+        const { data: commentRows } = await this.supabase
+          .from('annotation_comments')
+          .select('id, annotation_id, user_id, content, created_at')
+          .in('annotation_id', ids);
+        comments = commentRows || [];
+
+        // 準備用戶資訊映射（作者 + 回覆者）
+        const userIds = new Set();
+        annRows?.forEach(r => { if (r.teacher_id) userIds.add(r.teacher_id); if (r.student_id) userIds.add(r.student_id); });
+        commentRows?.forEach(r => { if (r.user_id) userIds.add(r.user_id); });
+        if (userIds.size > 0) {
+          const { data: users } = await this.supabase
+            .from('users')
+            .select('id, display_name, email, role')
+            .in('id', Array.from(userIds));
+          userMap = new Map((users || []).map(u => [u.id, u]));
+        }
+        authors = annRows || [];
       }
       const contentMap = new Map(contents.map(r => [r.id, r]));
-      const list = anchors.map(a => Object.assign({}, a, contentMap.get(a.id) || {}));
+      const list = anchors.map(a => {
+        const base = Object.assign({}, a, contentMap.get(a.id) || {});
+        const authorId = base.teacher_id || base.student_id || null;
+        const authorInfo = authorId ? userMap.get(authorId) : null;
+        const replies = (comments || []).filter(c => c.annotation_id === base.id).map(c => {
+          const u = c.user_id ? userMap.get(c.user_id) : null;
+          return Object.assign({}, c, {
+            userDisplayName: u?.display_name || null,
+            userRole: u?.role || null
+          });
+        });
+        return Object.assign(base, {
+          authorId,
+          authorDisplayName: authorInfo?.display_name || null,
+          authorRole: authorInfo?.role || null,
+          canDelete: !!(authorId && this.supabase?.auth && this._isCurrentUser(authorId)),
+          replies
+        });
+      });
 
       // 去重：以 id 為鍵，最後一次為準
       const map = new Map();
@@ -377,6 +432,10 @@ class GradingUI {
     } catch (e) {
       console.warn('刷新批註失敗:', e);
     }
+  }
+
+  _isCurrentUser(uid) {
+    try { return String(uid) === String(window?.AppState?.currentUser?.id); } catch (_) { return false; }
   }
 
   /**

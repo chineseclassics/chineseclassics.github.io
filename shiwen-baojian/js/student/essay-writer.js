@@ -174,29 +174,96 @@ async function refreshPMAnnotationsStudent() {
     if (!AppState?.supabase || !StorageState.currentEssayId) return;
     const pmRes = await AppState.supabase.rpc('get_essay_annotations_pm', { p_essay_id: StorageState.currentEssayId });
     if (pmRes.error) throw pmRes.error;
-    const list = (pmRes.data || []).map(a => ({
+
+    // 先取得錨點（按正文順序）
+    const anchors = (pmRes.data || []).map(a => ({
       id: a.id,
       text_start: a.text_start ?? null,
       text_end: a.text_end ?? null,
       text_quote: a.text_quote || null,
       text_prefix: a.text_prefix || null,
-      text_suffix: a.text_suffix || null,
-      content: a.content || null,
-      created_at: a.created_at || null
+      text_suffix: a.text_suffix || null
     }));
+    const ids = anchors.map(a => a.id).filter(Boolean);
+
+    let contents = [];
+    let comments = [];
+    let userMap = new Map();
+    if (ids.length > 0) {
+      // 讀取內容與作者 ID
+      const { data: annRows } = await AppState.supabase
+        .from('annotations')
+        .select('id, content, created_at, teacher_id, student_id')
+        .in('id', ids);
+      contents = annRows || [];
+
+      // 批量讀取回覆
+      const { data: commentRows } = await AppState.supabase
+        .from('annotation_comments')
+        .select('id, annotation_id, user_id, content, created_at')
+        .in('annotation_id', ids);
+      comments = commentRows || [];
+
+      // 準備用戶資訊映射（作者 + 回覆者）
+      const userIds = new Set();
+      annRows?.forEach(r => { if (r.teacher_id) userIds.add(r.teacher_id); if (r.student_id) userIds.add(r.student_id); });
+      commentRows?.forEach(r => { if (r.user_id) userIds.add(r.user_id); });
+      if (userIds.size > 0) {
+        const { data: users } = await AppState.supabase
+          .from('users')
+          .select('id, display_name, email, role')
+          .in('id', Array.from(userIds));
+        userMap = new Map((users || []).map(u => [u.id, u]));
+      }
+    }
+
+    const contentMap = new Map(contents.map(r => [r.id, r]));
+    const list = anchors.map(a => {
+      const base = Object.assign({}, a, contentMap.get(a.id) || {});
+      const authorId = base.teacher_id || base.student_id || null;
+      const authorInfo = authorId ? userMap.get(authorId) : null;
+      const replies = (comments || []).filter(c => c.annotation_id === base.id).map(c => {
+        const u = c.user_id ? userMap.get(c.user_id) : null;
+        return Object.assign({}, c, {
+          userDisplayName: u?.display_name || null,
+          userRole: u?.role || null
+        });
+      });
+      return Object.assign(base, {
+        authorId,
+        authorDisplayName: authorInfo?.display_name || null,
+        authorRole: authorInfo?.role || null,
+        // 學生或老師本人可以刪除自己的批註（由 RLS 再次保護）
+        canDelete: !!(authorId && String(authorId) === String(AppState?.currentUser?.id)),
+        replies
+      });
+    });
+
+    // 去重
     const map = new Map();
     for (const x of list) if (x?.id) map.set(x.id, x);
-    window.__pmAnnStore = Array.from(map.values());
+    window.__pmAnnStore = Array.from(map.values()); // 供 PM decorations 使用
+    window.__pmAnnStoreWithContent = window.__pmAnnStore; // 供疊加層取用
+
     const view = EditorState.introEditor?.view;
     if (view) view.dispatch(view.state.tr.setMeta('annotations:update', true));
-    // 更新右側疊加層（學生端不再顯示固定批註側欄，統一使用右欄疊加卡片）
+    // 更新右側疊加層
     try { window.__pmOverlay?.update?.(); } catch (_) {}
-    // Realtime：建立一次性監聽
+
+    // Realtime：建立一次性監聽（annotations + annotation_comments）
     try {
       if (!window.__pmAnnChannel) {
         window.__pmAnnChannel = AppState.supabase
           .channel('pm-ann-student')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'annotations' }, () => {
+            refreshPMAnnotationsStudent();
+          })
+          .subscribe();
+      }
+      if (!window.__pmAnnCommentChannel) {
+        window.__pmAnnCommentChannel = AppState.supabase
+          .channel('pm-ann-comments-student')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'annotation_comments' }, () => {
             refreshPMAnnotationsStudent();
           })
           .subscribe();
@@ -336,11 +403,15 @@ export async function initializeEssayEditor(forceReinit = false) {
         const root = document.getElementById('ann-sidebar') || document.getElementById('essay-editor')?.parentElement || document.querySelector('#student-dashboard .main-content-area') || document.body;
         const view = EditorState.introEditor?.view;
         if (root && view) {
+          const { data: userData } = await getAppState().supabase.auth.getUser();
           window.__pmOverlay = new PMAnnotationOverlay({
             root,
             view,
-            getAnnotations: () => Array.isArray(window.__pmAnnStore) ? window.__pmAnnStore : [],
-            onClick: (id) => focusStudentAnnDecoration(id)
+            getAnnotations: () => Array.isArray(window.__pmAnnStoreWithContent) ? window.__pmAnnStoreWithContent : (Array.isArray(window.__pmAnnStore) ? window.__pmAnnStore : []),
+            onClick: (id) => focusStudentAnnDecoration(id),
+            supabase: getAppState().supabase,
+            currentUserId: userData?.user?.id || getAppState()?.currentUser?.id || null,
+            onDataChanged: async () => { await refreshPMAnnotationsStudent(); }
           });
           window.__pmOverlay.mount();
         }
