@@ -1,3 +1,82 @@
+/* ============= 論文模式（PM 文檔）視覺優化 ============= */
+.pm-essay.pm-essay-structured {
+  counter-reset: pm-para;
+}
+.pm-essay.pm-essay-structured p {
+  position: relative;
+  padding-left: 2.25rem;
+  margin: 0.45rem 0 0.75rem;
+  line-height: 1.9;
+}
+.pm-essay.pm-essay-structured p::before {
+  content: '段落 ' counter(pm-para);
+  counter-increment: pm-para;
+  position: absolute;
+  top: -0.4rem;
+  left: 0;
+  color: #9ca3af; /* stone-400 */
+  font-size: 0.72rem;
+}
+.pm-essay.pm-essay-structured p:hover {
+  background: #fafaf9; /* stone-50 */
+}
+
+/* 內聯工具列（輕量浮層） */
+#pm-inline-toolbar button {
+  color: #444;
+}
+#pm-inline-toolbar button:hover {
+  color: #111;
+}
+
+/* 全局工具列（新增分論點） */
+#essay-structured-toolbar {
+  background: #ffffffcc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: inline-flex;
+  gap: 8px;
+}
+#essay-structured-toolbar button {
+  color: #374151;
+}
+#essay-structured-toolbar button:hover {
+  background: #f3f4f6;
+}
+
+/* PM 裝飾：批註高亮 */
+.pm-annotation {
+  background: rgba(251, 191, 36, 0.25); /* amber-300 with alpha */
+  box-shadow: inset 0 -2px 0 rgba(245, 158, 11, 0.5);
+  border-radius: 2px;
+  transition: background-color .15s ease;
+}
+.pm-annotation:hover {
+  background: rgba(251, 191, 36, 0.38);
+}
+
+/* 近似/孤兒錨點顯示（退化樣式） */
+.pm-annotation-approx {
+  background: rgba(253, 230, 138, 0.25);
+  box-shadow: inset 0 -2px 0 rgba(245, 158, 11, 0.35);
+}
+.pm-annotation-orphan {
+  background: rgba(156, 163, 175, 0.18); /* stone-400 */
+  box-shadow: inset 0 -2px 0 rgba(107, 114, 128, 0.4);
+  border-bottom: 1px dashed #9ca3af;
+}
+
+/* 學生端批註側欄 */
+#student-ann-sidebar .student-ann-header {
+  padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;
+}
+#student-ann-sidebar .student-ann-list { padding: 8px; }
+#student-ann-sidebar .student-ann-card {
+  border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; cursor: pointer; background: #fff;
+}
+#student-ann-sidebar .student-ann-card:hover { background: #f9fafb; }
+#student-ann-sidebar .student-ann-card.active { outline: 2px solid #60a5fa; outline-offset: 2px; }
 /**
  * 學生端批注系統樣式
  * 包含批注顯示、回覆、創建等樣式

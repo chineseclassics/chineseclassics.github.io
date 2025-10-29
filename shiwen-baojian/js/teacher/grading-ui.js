@@ -29,7 +29,7 @@ class GradingUI {
         .select(`
           *,
           student:users!student_id(display_name, email),
-          assignment:assignments!assignment_id(title, grading_rubric_json),
+          assignment:assignments!assignment_id(title, grading_rubric_json, writing_mode, editor_layout_json),
           paragraphs(*),
           grade:grades(*)
         `)
@@ -282,6 +282,12 @@ class GradingUI {
       try {
         const viewer = document.getElementById('pm-viewer');
         if (viewer) {
+          try {
+            viewer.classList.add('pm-essay');
+            const mode = this.currentEssay?.assignment?.writing_mode || 'essay-structured';
+            if (mode === 'essay-structured') viewer.classList.add('pm-essay-structured');
+            else viewer.classList.remove('pm-essay-structured');
+          } catch (_) {}
           const AppState = window.AppState;
           const { data } = await AppState.supabase
             .from('essays')
@@ -329,7 +335,8 @@ class GradingUI {
       const { data, error } = await this.supabase
         .rpc('get_essay_annotations', { p_essay_id: this.currentEssay.id });
       if (error) throw error;
-      this._annStore = (data || []).map(a => ({
+      // 去重：以 id 為鍵，最後一次為準
+      const list = (data || []).map(a => ({
         id: a.id || a.annotation_id,
         text_start: a.text_start ?? null,
         text_end: a.text_end ?? null,
@@ -337,6 +344,9 @@ class GradingUI {
         text_prefix: a.text_prefix || a.anchor_context?.before || null,
         text_suffix: a.text_suffix || a.anchor_context?.after || null
       }));
+      const map = new Map();
+      for (const x of list) map.set(x.id, x);
+      this._annStore = Array.from(map.values());
       const view = this._pmViewer?.view;
       if (view) {
         const tr = view.state.tr.setMeta('annotations:update', true);
@@ -773,9 +783,12 @@ class GradingUI {
 
       console.log('✅ 評分已保存到 grades 表');
 
-      // 觸發器會自動：
-      // 1. 設置 grades.graded_at = NOW()
-      // 2. 更新 essays.status = 'graded'
+      // 將論文狀態設為 graded（簡化流程，無提交門檻）
+      const { error: statusErr } = await this.supabase
+        .from('essays')
+        .update({ status: 'graded' })
+        .eq('id', this.currentEssay.id);
+      if (statusErr) throw statusErr;
 
       toast.success('批改已提交！正在返回批改列表...');
       

@@ -99,6 +99,26 @@ export class PMEditor {
     return this.view.state.doc.textContent || '';
   }
 
+  getHTML() {
+    try {
+      const { doc } = this.view.state;
+      const parts = [];
+      doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          const text = node.textContent || '';
+          const escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          parts.push(`<p>${escaped}</p>`);
+          return false;
+        }
+        return true;
+      });
+      return parts.join('');
+    } catch (_) { return ''; }
+  }
+
   getWordCount() {
     const text = this.getText();
     return { total: (text || '').length };

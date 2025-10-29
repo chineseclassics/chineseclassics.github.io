@@ -59,6 +59,23 @@ async function loadInitialPMJSON() {
   } catch (_) { return null; }
 }
 
+// 讀取作業的寫作模式（essay-structured | creative），預設 essay-structured
+async function loadAssignmentMode() {
+  try {
+    const AppState = getAppState();
+    const assignmentId = AppState?.currentAssignmentId;
+    if (!AppState?.supabase || !assignmentId) return 'essay-structured';
+    const { data } = await AppState.supabase
+      .from('assignments')
+      .select('writing_mode, editor_layout_json')
+      .eq('id', assignmentId)
+      .single();
+    const mode = data?.writing_mode || 'essay-structured';
+    try { AppState.currentWritingMode = mode; } catch (_) {}
+    return mode;
+  } catch (_) { return 'essay-structured'; }
+}
+
 const debounce = (fn, wait = 1000) => {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
 };
@@ -96,7 +113,7 @@ async function ensureEssayRecord() {
       assignment_id: assignmentId,
       title,
       content_json: json,
-      status: 'draft',
+    status: 'writing',
       total_word_count: wordCount
     };
     const { data, error } = await AppState.supabase
@@ -120,7 +137,7 @@ async function refreshPMAnnotationsStudent() {
     const { data, error } = await AppState.supabase
       .rpc('get_essay_annotations', { p_essay_id: StorageState.currentEssayId });
     if (error) throw error;
-    window.__pmAnnStore = (data || []).map(a => ({
+    const list = (data || []).map(a => ({
       id: a.id || a.annotation_id,
       text_start: a.text_start ?? null,
       text_end: a.text_end ?? null,
@@ -128,8 +145,13 @@ async function refreshPMAnnotationsStudent() {
       text_prefix: a.text_prefix || a.anchor_context?.before || null,
       text_suffix: a.text_suffix || a.anchor_context?.after || null
     }));
+    const map = new Map();
+    for (const x of list) map.set(x.id, x);
+    window.__pmAnnStore = Array.from(map.values());
     const view = EditorState.introEditor?.view;
     if (view) view.dispatch(view.state.tr.setMeta('annotations:update', true));
+    // 更新學生端側欄
+    try { renderStudentAnnSidebar(); } catch (_) {}
     // Realtime：建立一次性監聽
     try {
       if (!window.__pmAnnChannel) {
@@ -224,6 +246,20 @@ export async function initializeEssayEditor(forceReinit = false) {
             await autoSavePMJSON();
         }, 1500)
     });
+    const host = document.getElementById('essay-editor')||container;
+    try { host.classList.add('pm-essay'); } catch (_) {}
+
+    // 套用模式：僅在 essay-structured 時啟用段落覆蓋與工具
+    const writingMode = await loadAssignmentMode();
+    if (writingMode === 'essay-structured') {
+      try { host.classList.add('pm-essay-structured'); } catch (_) {}
+      try { setupEssayStructuredUI(EditorState.introEditor); } catch (e) { console.warn('essay-structured UI 掛載失敗:', e); }
+    } else {
+      try { host.classList.remove('pm-essay-structured'); } catch (_) {}
+      // 移除可能存在的工具列
+      try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
+      try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
+    }
 
     // 確保有 essay 記錄（新作業會沒有 ID）並立即保存一次
     await ensureEssayRecord();
@@ -234,9 +270,7 @@ export async function initializeEssayEditor(forceReinit = false) {
       window.__pmAnnStore = [];
       const plugin = createAnnotationPlugin({
         getAnnotations: () => window.__pmAnnStore,
-        onClick: (id) => {
-          // TODO: 學生端點原文裝飾 → 側欄高亮（之後接入）
-        }
+        onClick: (id) => focusStudentAnnCard(id)
       });
       EditorState.introEditor.addPlugins([plugin]);
       await refreshPMAnnotationsStudent();
@@ -330,6 +364,240 @@ export async function initializeEssayEditor(forceReinit = false) {
         console.error('❌ 編輯器初始化失敗:', error);
         EditorState.isInitializing = false;  // 發生錯誤時也要重置狀態
     }
+}
+
+// ================================
+// Essay-Structured 模式：段落工具與操作
+// ================================
+
+function setupEssayStructuredUI(pm) {
+  const view = pm?.view;
+  if (!view) return;
+
+  // 全局工具列（新增分論點 = 插入一個空段落並加粗提示）
+  ensureGlobalToolbar();
+
+  // 內聯工具列（當前段落：上方插入/下方插入/雨村評點）
+  const inline = ensureInlineToolbar();
+  let hoverPos = null;
+  let rafId = null;
+  const reposition = (pos) => {
+    try {
+      const { state } = view;
+      const $pos = state.doc.resolve(pos);
+      const blockStart = $pos.start($pos.depth);
+      const blockEnd = $pos.end($pos.depth);
+      // 僅在當前段落有實質內容時顯示
+      const paraText = state.doc.textBetween(blockStart, blockEnd, '\n');
+      if (!paraText || !paraText.trim()) { inline.style.display = 'none'; return; }
+      const coords = view.coordsAtPos(Math.min(blockEnd, Math.max(blockStart, pos)));
+      // 先顯示以便取得尺寸
+      inline.style.display = 'flex';
+      inline.style.position = 'absolute';
+      const ih = inline.offsetHeight || 28;
+      const iw = inline.offsetWidth || 220;
+      let top = window.scrollY + coords.top - ih - 6; // 優先顯示在段落上方
+      if (top < window.scrollY + 12) top = window.scrollY + coords.bottom + 6; // 貼頂時轉到下方
+      let left = window.scrollX + Math.max(12, coords.left - (iw + 8)); // 左側邊距，不遮擋正文
+      // 邊界保護
+      if (left + iw > window.scrollX + window.innerWidth - 12) {
+        left = window.scrollX + window.innerWidth - iw - 12;
+      }
+      inline.style.top = `${top}px`;
+      inline.style.left = `${left}px`;
+    } catch (_) { inline.style.display = 'none'; }
+  };
+
+  const onMouseMove = (e) => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      const posInfo = view.posAtCoords({ left: e.clientX, top: e.clientY });
+      if (!posInfo || typeof posInfo.pos !== 'number') return;
+      hoverPos = posInfo.pos;
+      reposition(hoverPos);
+    });
+  };
+
+  view.dom.addEventListener('mousemove', onMouseMove);
+  view.dom.addEventListener('mouseleave', () => { inline.style.display = 'none'; });
+  view.dom.addEventListener('click', () => { if (hoverPos) reposition(hoverPos); });
+  window.addEventListener('scroll', () => {
+    if (inline.style.display === 'flex' && hoverPos) reposition(hoverPos);
+  }, { passive: true });
+
+  // 綁定按鈕
+  inline.querySelector('[data-act="insert-above"]').addEventListener('click', () => insertParagraphRelative(view, 'above', hoverPos));
+  inline.querySelector('[data-act="insert-below"]').addEventListener('click', () => insertParagraphRelative(view, 'below', hoverPos));
+  inline.querySelector('[data-act="yucun"]').addEventListener('click', async () => {
+    try {
+      const html = getCurrentParagraphHTML(view, hoverPos) || '';
+      if (!html || !html.replace(/<[^>]*>/g,'').trim()) { toast.warning('當前段落為空'); return; }
+      const { requestAIFeedback } = await import('../ai/feedback-requester.js');
+      await requestAIFeedback('pm-current', html, 'body', getAppState().currentFormatSpec);
+    } catch (e) { toast.error('雨村評點失敗'); }
+  });
+
+  // 全局工具列事件
+  const globalBar = document.getElementById('essay-structured-toolbar');
+  if (globalBar) {
+    const addArgBtn = globalBar.querySelector('[data-act="add-argument"]');
+    addArgBtn?.addEventListener('click', () => {
+      // 用一個提示段落作為分論點標題（可後續升級為 heading node）
+      const { state, dispatch } = view;
+      const p = state.schema.node('paragraph', null, state.schema.text('【分論點標題】'));
+      dispatch(state.tr.insert(state.selection.$from.before(1), p));
+      view.focus();
+    });
+  }
+}
+
+// ================================
+// 學生端批註側欄（簡版）
+// ================================
+
+function ensureStudentAnnSidebar() {
+  let panel = document.getElementById('student-ann-sidebar');
+  if (panel) return panel;
+  panel = document.createElement('div');
+  panel.id = 'student-ann-sidebar';
+  panel.innerHTML = `
+    <div class="student-ann-header"><i class="fas fa-comment-dots"></i> 批註</div>
+    <div class="student-ann-list" id="student-ann-list"></div>
+  `;
+  panel.style.cssText = `
+    position: fixed; right: 16px; top: 140px; width: 280px; max-height: 60vh; overflow: auto;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.06);
+    z-index: 50; display: none;
+  `;
+  document.body.appendChild(panel);
+  return panel;
+}
+
+function renderStudentAnnSidebar() {
+  const panel = ensureStudentAnnSidebar();
+  const listEl = panel.querySelector('#student-ann-list');
+  const anns = Array.isArray(window.__pmAnnStore) ? window.__pmAnnStore : [];
+  if (!anns.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  listEl.innerHTML = anns.map(a => `
+    <div class="student-ann-card" data-id="${a.id}">
+      <div class="student-ann-text">${escapeHtml(a.text_quote || '(未提供節選)')}</div>
+    </div>
+  `).join('');
+  // 綁定點擊：點卡片 → 正文裝飾聯動
+  listEl.querySelectorAll('.student-ann-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.getAttribute('data-id');
+      focusStudentAnnDecoration(id);
+      focusStudentAnnCard(id);
+    });
+  });
+}
+
+function focusStudentAnnCard(id) {
+  try {
+    const listEl = document.getElementById('student-ann-list');
+    if (!listEl) return;
+    listEl.querySelectorAll('.student-ann-card').forEach(el => el.classList.remove('active'));
+    const card = listEl.querySelector(`.student-ann-card[data-id="${CSS.escape(id)}"]`);
+    if (card) {
+      card.classList.add('active');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      pulse(card);
+    }
+  } catch (_) {}
+}
+
+function focusStudentAnnDecoration(id) {
+  try {
+    const view = EditorState.introEditor?.view;
+    if (!view) return;
+    const target = view.dom.querySelector(`.pm-annotation[data-id="${CSS.escape(id)}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      pulse(target);
+    }
+  } catch (_) {}
+}
+
+function pulse(el) {
+  el.animate([
+    { boxShadow: '0 0 0 0 rgba(59,130,246,0.5)' },
+    { boxShadow: '0 0 0 8px rgba(59,130,246,0.0)' }
+  ], { duration: 600, easing: 'ease-out' });
+}
+
+function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m])); }
+
+function ensureGlobalToolbar() {
+  let bar = document.getElementById('essay-structured-toolbar');
+  if (bar) return bar;
+  bar = document.createElement('div');
+  bar.id = 'essay-structured-toolbar';
+  bar.style.display = 'flex';
+  bar.style.gap = '8px';
+  bar.style.margin = '8px 0';
+  bar.innerHTML = `
+    <button class="px-3 py-1 rounded border text-sm" data-act="add-argument">
+      <i class="fas fa-plus mr-1"></i>新增分論點
+    </button>
+  `;
+  const host = document.getElementById('essay-editor') || document.getElementById('intro-editor');
+  if (host && host.parentElement) host.parentElement.insertBefore(bar, host);
+  return bar;
+}
+
+function ensureInlineToolbar() {
+  let panel = document.getElementById('pm-inline-toolbar');
+  if (panel) return panel;
+  panel = document.createElement('div');
+  panel.id = 'pm-inline-toolbar';
+  panel.style.background = 'rgba(255,255,255,0.95)';
+  panel.style.border = '1px solid #e5e7eb';
+  panel.style.borderRadius = '8px';
+  panel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+  panel.style.padding = '4px 6px';
+  panel.style.gap = '6px';
+  panel.style.display = 'none';
+  panel.style.zIndex = '40';
+  panel.style.alignItems = 'center';
+  panel.innerHTML = `
+    <button class="text-xs px-2 py-1 hover:bg-stone-100 rounded" data-act="insert-above"><i class="fas fa-arrow-up mr-1"></i>上方插入段落</button>
+    <button class="text-xs px-2 py-1 hover:bg-stone-100 rounded" data-act="insert-below"><i class="fas fa-arrow-down mr-1"></i>下方插入段落</button>
+    <span class="text-stone-300">|</span>
+    <button class="text-xs px-2 py-1 hover:bg-stone-100 rounded" data-act="yucun"><i class="fas fa-pen-fancy mr-1"></i>雨村評點</button>
+  `;
+  document.body.appendChild(panel);
+  return panel;
+}
+
+function getCurrentParagraphHTML(view, posOverride = null) {
+  const { state } = view;
+  const $from = posOverride ? state.doc.resolve(posOverride) : state.selection.$from;
+  const blockStart = $from.start($from.depth);
+  const blockEnd = $from.end($from.depth);
+  const sliceText = state.doc.textBetween(blockStart, blockEnd, '\n');
+  const escaped = sliceText
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return `<p>${escaped}</p>`;
+}
+
+function insertParagraphRelative(view, where = 'below', basePos = null) {
+  try {
+    const { state, dispatch } = view;
+    const schema = state.schema;
+    const $from = basePos ? state.doc.resolve(basePos) : state.selection.$from;
+    const depth = $from.depth;
+    const before = $from.before(depth);
+    const after = $from.after(depth);
+    const pos = where === 'above' ? before : after;
+    const node = schema.node('paragraph');
+    const tr = state.tr.insert(pos, node);
+    dispatch(tr);
+    view.focus();
+  } catch (e) { console.warn('插入段落失敗:', e); }
 }
 
 // ================================
@@ -683,8 +951,7 @@ function handleEditorChange(data) {
     // 更新字數統計
     updateWordCount();
     
-    // 檢查是否需要自動降級狀態（從 submitted 到 draft）
-    checkAndDowngradeStatus();
+    // 已移除提交流程：不再自動降級狀態
     
     // 觸發自動保存（3秒防抖）
     if (EditorState.saveTimer) {
@@ -696,92 +963,7 @@ function handleEditorChange(data) {
     }, 3000);
 }
 
-/**
- * 檢查並自動降級論文狀態（從 submitted 到 draft）
- */
-async function checkAndDowngradeStatus() {
-    try {
-        // 獲取當前論文 ID
-        const { StorageState } = await import('./essay-storage.js');
-        const essayId = StorageState.currentEssayId;
-        
-        if (!essayId) return;
-        
-        // 防禦性檢查 - 在使用時檢查
-        const AppState = getAppState();
-        if (!AppState) {
-            console.error('❌ AppState 尚未初始化，請確保 app.js 已加載');
-            return;
-        }
-        
-        // 檢查當前論文狀態
-        const { data: essay } = await AppState.supabase
-            .from('essays')
-            .select('status')
-            .eq('id', essayId)
-            .single();
-            
-        if (!essay || essay.status !== 'submitted') {
-            return; // 不是 submitted 狀態，不需要降級
-        }
-        
-        // 更新狀態為 draft
-        const { error } = await AppState.supabase
-            .from('essays')
-            .update({ 
-                status: 'draft',
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', essayId);
-            
-        if (error) {
-            console.error('❌ 更新論文狀態失敗:', error);
-            return;
-        }
-        
-        // 更新 UI 狀態顯示
-        const statusText = document.getElementById('essay-status-text');
-        if (statusText) {
-            statusText.textContent = '草稿';
-            statusText.classList.remove('text-blue-600', 'font-semibold');
-        }
-        
-        // 顯示修改提示
-        showModificationNotice();
-        
-        console.log('✅ 論文狀態已自動降級為草稿');
-        
-    } catch (error) {
-        console.error('❌ 檢查狀態降級失敗:', error);
-    }
-}
-
-/**
- * 顯示論文修改提示
- */
-function showModificationNotice() {
-    const container = document.getElementById('student-dashboard-content');
-    if (!container) return;
-    
-    // 檢查是否已存在修改提示
-    if (container.querySelector('.modification-notice')) {
-        return;
-    }
-    
-    const notice = document.createElement('div');
-    notice.className = 'modification-notice bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4';
-    notice.innerHTML = `
-        <div class="flex items-center gap-2">
-            <i class="fas fa-edit text-yellow-700"></i>
-            <span class="text-yellow-800 font-medium">論文已修改，請重新提交</span>
-        </div>
-    `;
-    
-    const assignmentInfo = container.querySelector('#assignment-info-panel');
-    if (assignmentInfo) {
-        assignmentInfo.after(notice);
-    }
-}
+// 已移除：自動降級與重新提交提示相關邏輯
 
 /**
  * 更新總字數統計

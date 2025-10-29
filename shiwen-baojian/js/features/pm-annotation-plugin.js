@@ -48,7 +48,15 @@ export function createAnnotationPlugin({ getAnnotations, onClick }) {
 function buildDecorationSet(viewLike, annotations) {
   const { state } = viewLike;
   const { ranges } = resolveRanges(state.doc, annotations || []);
-  const decos = ranges.map(r => Decoration.inline(r.from, r.to, { class: 'pm-annotation', 'data-id': r.id }));
+  const decos = ranges.map(r => {
+    const cls = ['pm-annotation'];
+    if (r.approx) cls.push('pm-annotation-approx');
+    if (r.orphan) cls.push('pm-annotation-orphan');
+    const attrs = { class: cls.join(' '), 'data-id': r.id };
+    const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
+    const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
+    return Decoration.inline(from, to, attrs);
+  });
   return DecorationSet.create(state.doc, decos);
 }
 
@@ -91,7 +99,7 @@ function resolveRanges(doc, annotations) {
 
   const ranges = [];
   for (const a of annotations) {
-    let from = null, to = null;
+    let from = null, to = null, approx = false, orphan = false;
     if (Number.isInteger(a.text_start) && Number.isInteger(a.text_end) && a.text_end > a.text_start) {
       from = clamp(a.text_start, 0, total);
       to = clamp(a.text_end, 0, total);
@@ -112,6 +120,32 @@ function resolveRanges(doc, annotations) {
           from = idx;
           to = idx + quote.length;
         }
+      } else {
+        // 未找到完整 quote：嘗試上下文定位
+        const pre = String(a.text_prefix || '');
+        const suf = String(a.text_suffix || '');
+        let ctxIdx = -1;
+        if (pre) ctxIdx = docText.lastIndexOf(pre);
+        if (ctxIdx < 0 && suf) ctxIdx = docText.indexOf(suf);
+        if (ctxIdx >= 0) {
+          from = clamp(ctxIdx, 0, total);
+          to = clamp(from + Math.max(1, Math.min((a.text_quote || '').length, 6)), 0, total); // 以少量長度示意
+          approx = true;
+        } else {
+          // 模糊匹配：截取 quote 的一半長度去搜索
+          const q = (a.text_quote || '').trim();
+          const minLen = 6;
+          const half = Math.max(minLen, Math.floor(q.length / 2));
+          if (q && q.length >= minLen) {
+            const fragment = q.slice(0, half);
+            const fIdx = docText.indexOf(fragment);
+            if (fIdx >= 0) {
+              from = clamp(fIdx, 0, total);
+              to = clamp(fIdx + fragment.length, 0, total);
+              approx = true;
+            }
+          }
+        }
       }
     }
 
@@ -119,8 +153,13 @@ function resolveRanges(doc, annotations) {
       const pmFrom = posFromIndex(from);
       const pmTo = posFromIndex(to);
       if (pmTo > pmFrom) {
-        ranges.push({ id: a.id, from: pmFrom, to: pmTo });
+        ranges.push({ id: a.id, from: pmFrom, to: pmTo, approx, orphan: false });
       }
+    } else {
+      // 完全找不到：標記為 orphan，放置於文首最小範圍以提示
+      const pmFrom = 1;
+      const pmTo = Math.min(3, doc.content.size);
+      ranges.push({ id: a.id, from: pmFrom, to: pmTo, approx: false, orphan: true });
     }
   }
   return { ranges, total };

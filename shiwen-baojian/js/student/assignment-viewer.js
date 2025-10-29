@@ -119,8 +119,9 @@ class StudentAssignmentViewer {
           let actualWordCount = 0;
           if (essay && essay.content_json) {
             try {
-              const content = JSON.parse(essay.content_json);
-              // 計算所有段落的中文字數
+              const content = (typeof essay.content_json === 'string')
+                ? JSON.parse(essay.content_json)
+                : essay.content_json;
               actualWordCount = this.calculateWordCount(content);
             } catch (e) {
               console.warn('解析作業內容失敗:', e);
@@ -143,7 +144,9 @@ class StudentAssignmentViewer {
         let wordCount = 0;
         if (essay.content_json) {
           try {
-            const content = JSON.parse(essay.content_json);
+            const content = (typeof essay.content_json === 'string')
+              ? JSON.parse(essay.content_json)
+              : essay.content_json;
             wordCount = this.calculateWordCount(content);
           } catch (e) {
             wordCount = essay.total_word_count || 0;
@@ -344,29 +347,12 @@ class StudentAssignmentViewer {
   renderStatusNotice(essay, hasAnnotations) {
     if (!essay) return '';
     
-    if (essay.status === 'submitted') {
-      if (hasAnnotations) {
-        return `
-          <div class="submission-notice annotation-notice">
-            <i class="fas fa-comment-dots text-blue-600"></i>
-            <span>老師已添加批注，您可以根據批注修改論文</span>
-          </div>
-        `;
-      } else {
-        return `
-          <div class="submission-notice">
-            <i class="fas fa-info-circle"></i>
-            <span>已提交，等待老師批改中...</span>
-          </div>
-        `;
-      }
-    }
-    
-    if (essay.status === 'draft' && hasAnnotations) {
+    // 移除提交流程：僅在有批注時提示可依據批注繼續完善
+    if (hasAnnotations) {
       return `
-        <div class="submission-notice draft-notice">
-          <i class="fas fa-edit text-yellow-600"></i>
-          <span>論文已修改，請重新提交</span>
+        <div class="submission-notice annotation-notice">
+          <i class="fas fa-comment-dots text-blue-600"></i>
+          <span>老師已添加批注，請根據批注繼續完善</span>
         </div>
       `;
     }
@@ -406,38 +392,20 @@ class StudentAssignmentViewer {
       return `
         <button class="btn-action continue-btn edit" data-id="${assignment.id}">
           <i class="fas fa-edit"></i>
-          ${hasAnnotations ? '繼續編輯' : '繼續寫作'}
+          繼續寫作
         </button>
-        ${canSubmit ? `
-          <button class="btn-action submit-btn" data-id="${assignment.id}" data-essay-id="${essay.id}">
-            <i class="fas fa-paper-plane"></i>
-            ${hasAnnotations ? '重新提交' : '提交作業'}
-          </button>
-        ` : ''}
       `;
     }
     
     // 已提交
+    // 已提交（兼容舊數據）：一律提供繼續寫作
     if (essay && essay.status === 'submitted') {
-      if (hasAnnotations) {
-        return `
-          <button class="btn-action view-btn edit" data-id="${assignment.id}">
-            <i class="fas fa-comment-dots"></i>
-            查看批注並修改
-          </button>
-          <button class="btn-action submit-btn" data-id="${assignment.id}" data-essay-id="${essay.id}">
-            <i class="fas fa-paper-plane"></i>
-            重新提交
-          </button>
-        `;
-      } else {
-        return `
-          <button class="btn-action view-btn" data-id="${assignment.id}">
-            <i class="fas fa-eye"></i>
-            查看論文
-          </button>
-        `;
-      }
+      return `
+        <button class="btn-action continue-btn edit" data-id="${assignment.id}">
+          <i class="fas fa-edit"></i>
+          繼續寫作
+        </button>
+      `;
     }
     
     // 已批改
@@ -575,9 +543,7 @@ class StudentAssignmentViewer {
       return { text: '已批改', class: 'graded' };
     }
     
-    if (essay.status === 'submitted') {
-      return { text: '已提交', class: 'submitted' };
-    }
+    // 兼容舊數據：submitted 視為進行中
 
     return isOverdue
       ? { text: '進行中（已過期）', class: 'overdue' }
@@ -646,24 +612,7 @@ class StudentAssignmentViewer {
       });
     });
     
-    // 提交作業按鈕（在卡片上）
-    this.container.querySelectorAll('.student-assignment-card .submit-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const assignmentId = e.currentTarget.getAttribute('data-id');
-        const essayId = e.currentTarget.getAttribute('data-essay-id');
-        console.log('🖱️ 學生點擊提交按鈕:', { assignmentId, essayId });
-        await this.submitAssignment(assignmentId, essayId);
-      });
-    });
-    
-    // 撤回並編輯按鈕
-    this.container.querySelectorAll('.student-assignment-card .withdraw-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const assignmentId = e.currentTarget.getAttribute('data-id');
-        const essayId = e.currentTarget.getAttribute('data-essay-id');
-        await this.withdrawSubmission(assignmentId, essayId);
-      });
-    });
+    // 已移除提交/撤回流程：不再綁定 submit/withdraw 事件
 
     // 自主練筆按鈕（新建）
     const freeWritingBtn = this.container.querySelector('#free-writing-btn');

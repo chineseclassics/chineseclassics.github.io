@@ -122,6 +122,7 @@ class GradingQueue {
             status,
             total_word_count,
             submitted_at,
+            updated_at,
             users!student_id (
               id,
               display_name,
@@ -129,7 +130,7 @@ class GradingQueue {
             )
           `)
           .in('assignment_id', assignmentIds)
-          .in('status', ['submitted', 'graded']),
+          .in('status', ['writing', 'graded']),
         
         // 一次性獲取所有班級的學生數
         this.supabase
@@ -149,14 +150,14 @@ class GradingQueue {
       // 在內存中分組和聚合
       this.assignmentsWithSubmissions = assignments.map(assignment => {
         const essays = allEssays?.filter(e => e.assignment_id === assignment.id) || [];
-        const submitted = essays.filter(e => e.status === 'submitted');
+        const pendingList = essays.filter(e => e.status !== 'graded');
         const graded = essays.filter(e => e.status === 'graded');
         const totalStudents = classMemberData?.filter(m => m.class_id === assignment.class_id).length || 0;
         
         return {
           ...assignment,
           submissions: {
-            pending: submitted,
+            pending: pendingList,
             graded: graded,
             total: essays.length,
             totalStudents
@@ -336,9 +337,10 @@ class GradingQueue {
    * 渲染待批改提交卡片
    */
   renderSubmissionCard(essay, assignmentId) {
-    const submittedDate = new Date(essay.submitted_at);
+    const dateRef = essay.submitted_at || essay.updated_at;
+    const submittedDate = dateRef ? new Date(dateRef) : new Date();
     const student = essay.users;
-    const isDraft = essay.status === 'draft';
+    const isDraft = essay.status === 'writing';
 
     return `
       <div class="submission-card pending ${isDraft ? 'draft' : ''}">
