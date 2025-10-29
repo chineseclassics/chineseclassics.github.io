@@ -91,9 +91,9 @@
 .pm-ann-card .pm-ann-reply-count { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 6px; border-radius: 9px; background: #eef2ff; color: #374151; font-weight: 600; font-size: 12px; border: 1px solid #e5e7eb; }
 
 /* 卡片動作列：預留高度避免 hover 抖動，僅改變透明度與可點擊性 */
-.pm-ann-card .pm-ann-actions { display: flex; gap: 8px; margin-top: 8px; min-height: 28px; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.pm-ann-card .pm-ann-actions { display: flex; gap: 8px; overflow: hidden; max-height: 0; margin-top: 0; opacity: 0; pointer-events: none; transition: max-height .18s ease, margin-top .18s ease, opacity .15s ease; }
 .pm-ann-card:hover .pm-ann-actions,
-.pm-ann-card.active .pm-ann-actions { opacity: 1; pointer-events: auto; }
+.pm-ann-card.active .pm-ann-actions { max-height: 64px; margin-top: 8px; opacity: 1; pointer-events: auto; }
 .pm-ann-card .pm-ann-actions .pm-ann-btn-reply,
 .pm-ann-card .pm-ann-actions .pm-ann-btn-delete { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; border: 1px solid #e5e7eb; background: #f9fafb; color: #374151; cursor: pointer; font-size: 12px; }
 .pm-ann-card .pm-ann-actions .pm-ann-btn-reply:hover { background: #eef2ff; border-color: #c7d2fe; color: #1f2937; }

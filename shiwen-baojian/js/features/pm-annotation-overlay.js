@@ -4,7 +4,7 @@
  */
 
 export class PMAnnotationOverlay {
-  constructor({ root, view, getAnnotations, onClick, onContextMenu, supabase, currentUserId, onDataChanged }) {
+  constructor({ root, view, getAnnotations, onClick, onContextMenu, supabase, currentUserId, onDataChanged, reflowOnHover = false }) {
     this.root = root;           // 應是包含 PM viewer 的容器，需 position: relative
     this.view = view;           // ProseMirror view
     this.getAnnotations = getAnnotations || (() => []);
@@ -13,6 +13,7 @@ export class PMAnnotationOverlay {
     this.supabase = supabase || null;
     this.currentUserId = currentUserId || null;
     this.onDataChanged = onDataChanged || null; // 由外部觸發刷新資料（annotations+comments）
+    this.reflowOnHover = !!reflowOnHover; // 是否在 hover 展開/收起時重新排版（預設關閉）
     this._mounted = false;
     this._overlay = null;
     this._cards = new Map();
@@ -138,6 +139,19 @@ export class PMAnnotationOverlay {
     });
     this._overlay.appendChild(card);
     this._cards.set(a.id, card);
+    // 可選：懸停時觸發重排（預設關閉）
+    if (this.reflowOnHover) {
+      try {
+        const scheduleAfterTransition = () => {
+          const act = card.querySelector('.pm-ann-actions');
+          if (!act) { this._schedule(); return; }
+          const onEnd = () => { this._schedule(); act.removeEventListener('transitionend', onEnd); };
+          act.addEventListener('transitionend', onEnd);
+        };
+        card.addEventListener('mouseenter', () => { this._schedule(); scheduleAfterTransition(); });
+        card.addEventListener('mouseleave', () => { scheduleAfterTransition(); });
+      } catch (_) {}
+    }
     return card;
   }
 

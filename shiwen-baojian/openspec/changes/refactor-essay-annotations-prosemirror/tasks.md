@@ -55,7 +55,29 @@
 - [ ] 7.1 長文性能（>2500 字）輸入與滾動流暢度
 - [x] 7.2 Annotations 裝飾佈局：不重疊、16px 間距、對齊原文（已驗證：`js/features/pm-annotation-overlay.js` 以 `_spacing=16` 並使用 occupied 區間避讓；定位基於 `.pm-annotation` 裝飾元素 `getBoundingClientRect()` 對齊）
 - [ ] 7.3 Realtime 雙端同步：新增/刪除/更新
+- [x] 7.3 Realtime 雙端同步：新增/刪除/更新（已實作：學生端 `pm-ann-student` 監聽 annotations、`pm-ann-comments-student` 監聽 annotation_comments；老師端 `pm-ann-teacher` 與 `pm-ann-comments-teacher`；並保留 5 秒輪詢後備。檔案：`js/student/essay-writer.js`、`js/teacher/grading-ui.js`）
 - [ ] 7.4 舊數據兼容：無 JSON 僅 paragraphs 時教師端可讀
 - [ ] 7.5 RLS：老師可見班級學生 essays（writing/graded 均可見）
+
+
+## 8. 新增互動需求（2025-10-29 完成）
+
+- Overlay 互動能力：
+	- 顯示作者資訊（顯示名稱/角色），hover 動作列（回覆/刪除，僅作者可見刪除），回覆清單（預設顯示末 3 筆，支援展開/收起）
+	- 樂觀更新：回覆送出暫存、刪除卡片半透明避免重複操作
+- 樣式補強：
+	- 動作列以透明度切換避免 hover 抖動；回覆列表與折疊控制；回覆數量徽章顯示
+- 資料整合：
+	- 學生端與老師端皆以 essay 維度批次查詢 annotations + annotation_comments + users，整合 author/replies/canDelete 資訊
+- Realtime 擴充：
+	- 新增 annotation_comments 訂閱（師生端），與既有 annotations 訂閱共同作用
+- RLS 強化（已透過 Supabase 套用）：
+	- annotations：參與者可讀；參與者可新增（且必須為作者欄位）；作者可改/可刪
+	- annotation_comments：追加「參與者可讀」策略（保留既有本人 INSERT/UPDATE/DELETE）
+- 影響檔案：
+	- `shiwen-baojian/js/features/pm-annotation-overlay.js`
+	- `shiwen-baojian/js/student/essay-writer.js`
+	- `shiwen-baojian/js/teacher/grading-ui.js`
+	- `shiwen-baojian/css/pm-annotation.css`
 
 
