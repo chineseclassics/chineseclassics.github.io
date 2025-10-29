@@ -151,18 +151,26 @@ async function upsertEssay(essayData) {
     const targetEssayId = AppState.currentPracticeEssayId || StorageState.currentEssayId;
     
     // 如果是更新現有作業，先獲取當前狀態
-    let currentStatus = 'draft'; // 默認狀態
+    let currentStatus = 'writing'; // 新模型默認狀態
     if (targetEssayId) {
         try {
             const { data: existingEssay } = await AppState.supabase
                 .from('essays')
-                .select('status')
+                .select('status, title, subtitle')
                 .eq('id', targetEssayId)
                 .single();
             
             if (existingEssay) {
                 currentStatus = existingEssay.status;
                 console.log('📋 保持現有狀態:', currentStatus);
+                // 若此次未提供新標題，保留舊標題，避免被默認值覆蓋
+                if (!fullTitle && existingEssay.title) {
+                    fullTitle = existingEssay.title;
+                }
+                // 同理保留舊副標題
+                if (!essayData.subtitle && existingEssay.subtitle) {
+                    essayData.subtitle = existingEssay.subtitle;
+                }
             }
         } catch (error) {
             console.log('⚠️ 無法獲取現有狀態，使用默認狀態');
