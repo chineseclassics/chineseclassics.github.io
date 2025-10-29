@@ -1,10 +1,11 @@
 /**
- * 批改功能 UI（精简版）
+ * 批改功能 UI（精簡版）
  */
 
 import toast from '../ui/toast.js';
 import { PMEditor } from '../editor/tiptap-editor.js';
 import { createAnnotationPlugin, createAnnotationFromSelection, computeSelectionAnchor } from '../features/pm-annotation-plugin.js';
+import { PMAnnotationOverlay } from '../features/pm-annotation-overlay.js';
 
 class GradingUI {
   constructor(supabaseClient) {
@@ -247,24 +248,6 @@ class GradingUI {
                     <h3 class="section-title">
                       <i class="fas fa-book-open mr-2"></i>作業內容
                     </h3>
-                    <div class="annotation-controls">
-                      <button id="addPmAnnotation" class="btn-annotation-add">
-                        <i class="fas fa-plus-circle"></i>
-                        <span>新增批註</span>
-                      </button>
-                      <button id="editPmAnnotation" class="btn-annotation-stats">
-                        <i class="fas fa-edit"></i>
-                        <span>編輯選中批註</span>
-                      </button>
-                      <button id="deletePmAnnotation" class="btn-annotation-stats">
-                        <i class="fas fa-trash"></i>
-                        <span>刪除選中批註</span>
-                      </button>
-                      <button id="showAnnotationStats" class="btn-annotation-stats">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>批注統計</span>
-                      </button>
-                    </div>
                   </div>
                 <div class="essay-viewer" id="essayViewer">
                   <div id="pm-viewer" class="pm-viewer"></div>
@@ -311,6 +294,19 @@ class GradingUI {
               onClick: (id) => this.highlightAnnotation?.(id)
             });
             this._pmViewer = new PMEditor(viewer, { readOnly: true, initialJSON: json, extraPlugins: [plugin] });
+            // 右側疊加層（與 Google Docs 類似）
+            const essaySection = viewer.closest('.essay-viewer') || viewer.parentElement;
+            if (essaySection) {
+              this._overlay = new PMAnnotationOverlay({
+                root: essaySection,
+                view: this._pmViewer.view,
+                getAnnotations: () => this._annStoreWithContent || [],
+                onClick: (id) => this.highlightAnnotation?.(id)
+              });
+              this._overlay.mount();
+            }
+            // 啟用選區浮動「添加批註」按鈕
+            this.setupSelectionFab();
             await this.refreshPMAnnotations();
             this._annPoll = setInterval(() => this.refreshPMAnnotations(), 5000);
             // Realtime：收到變更則刷新一次
@@ -340,7 +336,7 @@ class GradingUI {
     try {
       const pmRes = await this.supabase.rpc('get_essay_annotations_pm', { p_essay_id: this.currentEssay.id });
       if (pmRes.error) throw pmRes.error;
-      const list = (pmRes.data || []).map(a => ({
+      const anchors = (pmRes.data || []).map(a => ({
         id: a.id,
         text_start: a.text_start ?? null,
         text_end: a.text_end ?? null,
@@ -348,19 +344,105 @@ class GradingUI {
         text_prefix: a.text_prefix || null,
         text_suffix: a.text_suffix || null
       }));
+      // 讀取內容以渲染卡片
+      const ids = anchors.map(a => a.id).filter(Boolean);
+      let contents = [];
+      if (ids.length > 0) {
+        const { data: annRows } = await this.supabase
+          .from('annotations')
+          .select('id, content, created_at')
+          .in('id', ids);
+        contents = annRows || [];
+      }
+      const contentMap = new Map(contents.map(r => [r.id, r]));
+      const list = anchors.map(a => Object.assign({}, a, contentMap.get(a.id) || {}));
 
       // 去重：以 id 為鍵，最後一次為準
       const map = new Map();
       for (const x of list) if (x?.id) map.set(x.id, x);
       this._annStore = Array.from(map.values());
+      this._annStoreWithContent = this._annStore; // 供疊加層使用
       const view = this._pmViewer?.view;
       if (view) {
         const tr = view.state.tr.setMeta('annotations:update', true);
         view.dispatch(tr);
       }
+      // 更新疊加層位置
+      try { this._overlay?.update(); } catch (_) {}
     } catch (e) {
       console.warn('刷新批註失敗:', e);
     }
+  }
+
+  /**
+   * 建立與管理選區浮動「添加批註」按鈕
+   */
+  setupSelectionFab() {
+    const view = this._pmViewer?.view;
+    if (!view) return;
+    if (this._annFab) return; // 只建立一次
+
+    const fab = document.createElement('button');
+    fab.id = 'pm-add-ann-fab';
+    fab.className = 'btn-annotation-add';
+    fab.innerHTML = '<i class="fas fa-comment-medical"></i><span>添加批註</span>';
+    fab.style.position = 'absolute';
+    fab.style.zIndex = '1100';
+    fab.style.display = 'none';
+    document.body.appendChild(fab);
+
+    const hide = () => { fab.style.display = 'none'; };
+    const showAt = (rect) => {
+      const top = window.scrollY + rect.top - 42; // 按鈕顯示在選區上方
+      const left = window.scrollX + rect.right + 8; // 選區右側偏移
+      fab.style.top = `${Math.max(8, top)}px`;
+      fab.style.left = `${Math.max(8, left)}px`;
+      fab.style.display = 'inline-flex';
+    };
+
+    const update = () => {
+      try {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { hide(); return; }
+        const range = sel.getRangeAt(0);
+        // 僅在 PM viewer 內選區時顯示
+        const container = view.dom;
+        const anchorNode = sel.anchorNode;
+        const focusNode = sel.focusNode;
+        if (!container.contains(anchorNode) || !container.contains(focusNode)) { hide(); return; }
+        const rect = range.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) { hide(); return; }
+        showAt(rect);
+      } catch (_) { hide(); }
+    };
+
+    // 綁定事件：滑鼠抬起、鍵盤選取、卷動時更新
+    const onMouseUp = () => setTimeout(update, 0);
+    const onKeyUp = () => setTimeout(update, 0);
+    const onScroll = () => { if (fab.style.display !== 'none') update(); };
+
+    view.dom.addEventListener('mouseup', onMouseUp);
+    view.dom.addEventListener('keyup', onKeyUp);
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    fab.addEventListener('click', async () => {
+      try {
+        if (!view || view.state.selection.empty) { hide(); return; }
+        const content = window.prompt('輸入批註內容：');
+        if (!content) return;
+        const id = await createAnnotationFromSelection({ view, supabase: this.supabase, essayId: this.currentEssay.id, content });
+        if (id) {
+          hide();
+          await this.refreshPMAnnotations();
+          toast.success('批註已新增');
+        }
+      } catch (e) {
+        console.error('新增批註失敗:', e);
+        toast.error('新增批註失敗：' + (e.message || '未知錯誤'));
+      }
+    });
+
+    this._annFab = fab;
   }
 
   /**
@@ -585,96 +667,7 @@ class GradingUI {
    * 綁定批注系統事件
    */
   bindAnnotationEvents() {
-    // 新增批註（PM 選區）
-    const addBtn = document.getElementById('addPmAnnotation');
-    if (addBtn) {
-      addBtn.addEventListener('click', async () => {
-        try {
-          const view = this._pmViewer?.view;
-          if (!view) { toast.error('編輯器尚未就緒'); return; }
-          if (view.state.selection.empty) { toast.info('請先在右側選取要批註的文字'); return; }
-          const content = window.prompt('輸入批註內容：');
-          if (!content) return;
-          const id = await createAnnotationFromSelection({
-            view,
-            supabase: this.supabase,
-            essayId: this.currentEssay.id,
-            content
-          });
-          toast.success('批註已新增');
-          await this.refreshPMAnnotations();
-        } catch (e) {
-          console.error('新增批註失敗:', e);
-          toast.error('新增批註失敗：' + (e.message || '未知錯誤'));
-        }
-      });
-    }
-
-    // 編輯選中批註
-    const editBtn = document.getElementById('editPmAnnotation');
-    if (editBtn) {
-      editBtn.addEventListener('click', async () => {
-        try {
-          const id = this._currentAnnId;
-          if (!id) { toast.info('請先點選一個批註（點擊正文高亮）'); return; }
-          const { data, error } = await this.supabase
-            .from('annotations')
-            .select('content')
-            .eq('id', id)
-            .single();
-          if (error) throw error;
-          const next = window.prompt('修改批註內容：', data?.content || '');
-          if (next === null) return;
-          const view = this._pmViewer?.view;
-          let anchor = null;
-          if (view && !view.state.selection.empty && window.confirm('是否將錨點更新為當前選區？')) {
-            anchor = computeSelectionAnchor(view);
-          }
-          const payload = Object.assign({ p_annotation_id: id, p_content: String(next) }, anchor ? {
-            p_text_start: anchor.text_start,
-            p_text_end: anchor.text_end,
-            p_text_quote: anchor.text_quote,
-            p_text_prefix: anchor.text_prefix,
-            p_text_suffix: anchor.text_suffix
-          } : {});
-          const res = await this.supabase.rpc('update_annotation_pm', payload);
-          if (res.error) throw res.error;
-          toast.success('批註已更新');
-          await this.refreshPMAnnotations();
-        } catch (e) {
-          console.error('更新批註失敗:', e);
-          toast.error('更新批註失敗：' + (e.message || '未知錯誤'));
-        }
-      });
-    }
-
-    // 刪除選中批註
-    const delBtn = document.getElementById('deletePmAnnotation');
-    if (delBtn) {
-      delBtn.addEventListener('click', async () => {
-        try {
-          const id = this._currentAnnId;
-          if (!id) { toast.info('請先點選一個批註（點擊正文高亮）'); return; }
-          if (!window.confirm('確定要刪除此批註嗎？')) return;
-          const res = await this.supabase.rpc('delete_annotation_pm', { p_annotation_id: id });
-          if (res.error) throw res.error;
-          toast.success('批註已刪除');
-          this._currentAnnId = null;
-          await this.refreshPMAnnotations();
-        } catch (e) {
-          console.error('刪除批註失敗:', e);
-          toast.error('刪除批註失敗：' + (e.message || '未知錯誤'));
-        }
-      });
-    }
-
-    // 批注統計按鈕
-    const statsBtn = document.getElementById('showAnnotationStats');
-    if (statsBtn) {
-      statsBtn.addEventListener('click', () => {
-        this.showAnnotationStats();
-      });
-    }
+    // 頂部按鈕已移除，批註新增改為選區浮動按鈕
   }
 
   /**

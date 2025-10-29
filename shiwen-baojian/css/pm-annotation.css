@@ -50,4 +50,22 @@
   #student-dashboard .main-content-area { max-width: 100%; }
 }
 
+/* ============= 右側批註疊加層（Google Docs 風格） ============= */
+.pm-ann-overlay { position: absolute; top: 0; right: 0; width: 280px; pointer-events: none; }
+.pm-ann-card { position: absolute; right: 0; width: 280px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.06); padding: 10px 12px; pointer-events: auto; }
+.pm-ann-card:hover { box-shadow: 0 10px 36px rgba(0,0,0,.08); }
+.pm-ann-card .pm-ann-meta { font-size: 12px; color: #6b7280; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.pm-ann-card .pm-ann-text { font-size: 14px; color: #374151; line-height: 1.5; }
+.pm-ann-card.active { outline: 2px solid #60a5fa; outline-offset: 2px; }
+
+/* 添加批註浮動輸入框（選區附近） */
+.pm-ann-composer { position: absolute; z-index: 1101; width: 320px; max-width: calc(100vw - 40px); background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 10px; }
+.pm-ann-composer textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px; resize: vertical; min-height: 72px; font-family: inherit; font-size: 14px; }
+.pm-ann-composer .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.pm-ann-composer .btn { border: none; border-radius: 6px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+.pm-ann-composer .btn-primary { background: var(--primary-600, #2563eb); color: #fff; }
+.pm-ann-composer .btn-primary:hover { background: var(--primary-700, #1d4ed8); }
+.pm-ann-composer .btn-ghost { background: #f3f4f6; color: #374151; }
+.pm-ann-composer .btn-ghost:hover { background: #e5e7eb; }
+
 
