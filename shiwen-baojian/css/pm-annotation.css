@@ -91,14 +91,19 @@
 .pm-ann-card .pm-ann-reply-count { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 6px; border-radius: 9px; background: #eef2ff; color: #374151; font-weight: 600; font-size: 12px; border: 1px solid #e5e7eb; }
 
 /* 卡片動作列：預留高度避免 hover 抖動，僅改變透明度與可點擊性 */
-.pm-ann-card .pm-ann-actions { display: flex; gap: 8px; overflow: hidden; max-height: 0; margin-top: 0; opacity: 0; pointer-events: none; transition: max-height .18s ease, margin-top .18s ease, opacity .15s ease; }
+.pm-ann-card { overflow: visible; }
+/* 動作列：以絕對定位覆蓋在卡片內部底部，不改變卡片高度 */
+.pm-ann-card .pm-ann-actions { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 8px; opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity var(--duration-fast, .2s) var(--ease-out, ease), transform var(--duration-fast, .2s) var(--ease-out, ease); }
 .pm-ann-card:hover .pm-ann-actions,
-.pm-ann-card.active .pm-ann-actions { max-height: 64px; margin-top: 8px; opacity: 1; pointer-events: auto; }
+.pm-ann-card.active .pm-ann-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .pm-ann-card .pm-ann-actions .pm-ann-btn-reply,
 .pm-ann-card .pm-ann-actions .pm-ann-btn-delete { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; border: 1px solid #e5e7eb; background: #f9fafb; color: #374151; cursor: pointer; font-size: 12px; }
 .pm-ann-card .pm-ann-actions .pm-ann-btn-reply:hover { background: #eef2ff; border-color: #c7d2fe; color: #1f2937; }
 .pm-ann-card .pm-ann-actions .pm-ann-btn-delete { color: #b91c1c; background: #fff1f2; border-color: #fecdd3; }
 .pm-ann-card .pm-ann-actions .pm-ann-btn-delete:hover { background: #ffe4e6; }
+
+/* 開啟回覆輸入框時，隱藏懸停動作列（避免與輸入狀態衝突） */
+.pm-ann-card.composing .pm-ann-actions { max-height: 0 !important; margin-top: 0 !important; opacity: 0 !important; pointer-events: none !important; }
 
 /* 回覆列表樣式 */
 .pm-ann-card .pm-ann-replies { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5e7eb; }
@@ -113,6 +118,15 @@
 
 /* 暫存回覆（樂觀更新） */
 .pm-ann-card .pm-ann-reply.is-pending { opacity: 0.7; font-style: italic; }
+
+/* 回覆輸入框（置於卡片內，尺寸與新增批註輸入框一致） */
+.pm-ann-card .pm-ann-reply-composer { margin-top: 8px; }
+.pm-ann-card .pm-ann-reply-composer .textarea { min-height: 72px; }
+.pm-ann-card .pm-ann-reply-composer .actions { display: flex; justify-content: flex-end; gap: var(--spacing-2, 8px); margin-top: 8px; }
+
+/* Hover 時提高卡片層級，確保動作列顯示於相鄰卡片之上 */
+.pm-ann-card:hover,
+.pm-ann-card.active { z-index: 3; }
 
 /* 添加批註浮動輸入框（選區附近） */
 .pm-ann-composer { position: absolute; z-index: 1101; width: 100%; max-width: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 10px; }

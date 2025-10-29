@@ -114,10 +114,10 @@ export class PMAnnotationOverlay {
         <button type="button" class="pm-ann-btn-delete" style="display:none"><i class="fas fa-trash"></i> 刪除</button>
       </div>
       <div class="pm-ann-reply-composer" style="display:none">
-        <textarea placeholder="輸入回覆..." rows="2"></textarea>
+        <textarea class="input textarea" placeholder="輸入回覆..." rows="3"></textarea>
         <div class="actions">
-          <button type="button" class="btn-cancel">取消</button>
-          <button type="button" class="btn-submit">送出</button>
+          <button type="button" class="btn btn-secondary btn-sm btn-cancel">取消</button>
+          <button type="button" class="btn btn-primary btn-sm btn-submit">送出</button>
         </div>
       </div>
     `;
@@ -139,19 +139,7 @@ export class PMAnnotationOverlay {
     });
     this._overlay.appendChild(card);
     this._cards.set(a.id, card);
-    // 可選：懸停時觸發重排（預設關閉）
-    if (this.reflowOnHover) {
-      try {
-        const scheduleAfterTransition = () => {
-          const act = card.querySelector('.pm-ann-actions');
-          if (!act) { this._schedule(); return; }
-          const onEnd = () => { this._schedule(); act.removeEventListener('transitionend', onEnd); };
-          act.addEventListener('transitionend', onEnd);
-        };
-        card.addEventListener('mouseenter', () => { this._schedule(); scheduleAfterTransition(); });
-        card.addEventListener('mouseleave', () => { scheduleAfterTransition(); });
-      } catch (_) {}
-    }
+    // 移除懸停重排功能：不再基於 hover 綁定任何 reflow 行為
     return card;
   }
 
@@ -187,8 +175,15 @@ export class PMAnnotationOverlay {
     btnReply?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!composer) return;
-      composer.style.display = composer.style.display === 'none' ? 'block' : 'none';
-      if (composer.style.display !== 'none') textarea?.focus();
+      const willOpen = composer.style.display === 'none';
+      composer.style.display = willOpen ? 'block' : 'none';
+      // 開啟輸入框時，隱藏懸停動作列
+      if (willOpen) {
+        card.classList.add('composing');
+        textarea?.focus();
+      } else {
+        card.classList.remove('composing');
+      }
       // 高度變化後重新定位
       this._schedule();
     });
@@ -196,6 +191,8 @@ export class PMAnnotationOverlay {
     btnCancel?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (composer) { composer.style.display = 'none'; if (textarea) textarea.value = ''; }
+      // 關閉輸入框後恢復動作列顯示
+      card.classList.remove('composing');
       // 高度變化後重新定位
       this._schedule();
     });
@@ -227,7 +224,8 @@ export class PMAnnotationOverlay {
         const payload = { annotation_id: a.id, user_id: this.currentUserId, content };
         const { error } = await this.supabase.from('annotation_comments').insert(payload);
         if (error) throw error;
-        if (composer) { composer.style.display = 'none'; if (textarea) textarea.value = ''; }
+  if (composer) { composer.style.display = 'none'; if (textarea) textarea.value = ''; }
+  card.classList.remove('composing');
         // 移除暫存回覆（真正的回覆會由刷新帶回）
         try { optimisticEl?.remove?.(); } catch (_) {}
         // 通知外部刷新
