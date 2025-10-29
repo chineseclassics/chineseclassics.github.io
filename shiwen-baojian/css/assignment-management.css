@@ -1822,7 +1822,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* 區域標題 */
-/* 標題區：不同區塊採用不同語義漸層（AI/老師） */
+/* 標題區：使用中等深度背景 + 白色文字，提升可讀性 */
 .grading-sidebar-section .section-header {
   padding: var(--spacing-4);
   color: var(--text-inverse);
@@ -1831,14 +1831,16 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   justify-content: space-between;
 }
 
-/* AI 區塊：使用 scholar（賈雨村）配色 */
+/* AI 區塊：使用 scholar（賈雨村）配色 - 中等深度背景 */
 .grading-sidebar-section.ai-section .section-header {
-  background: var(--btn-ai-bg);
+  background: var(--scholar-400);
+  color: var(--text-inverse);
 }
 
-/* 老師區塊：使用主色配色 */
+/* 老師區塊：使用主色配色 - 中等深度背景 */
 .grading-sidebar-section.teacher-section .section-header {
-  background: var(--btn-primary-bg);
+  background: var(--primary-400);
+  color: var(--text-inverse);
 }
 
 .grading-sidebar-section .section-header .section-title {
@@ -1847,6 +1849,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   margin: 0;
   display: flex;
   align-items: center;
+  color: inherit; /* 繼承父元素顏色 */
 }
 
 /* 提醒：.btn-ai-suggest 已於 components.css 以設計令牌定義，這裡不再覆蓋 */
