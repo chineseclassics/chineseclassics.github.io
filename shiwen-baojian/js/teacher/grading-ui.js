@@ -340,8 +340,11 @@ class GradingUI {
               }
             } catch (e) { console.warn('教師端 Realtime 初始化失敗:', e); }
           } else {
-            // 後備：使用舊渲染（HTML）避免空白
-            viewer.innerHTML = this.renderEssayContent(this.currentEssay);
+            // 嚴格模式：不再使用舊渲染後備
+            viewer.innerHTML = `<div class="error-state">
+              <i class="fas fa-exclamation-triangle text-rose-600 text-3xl"></i>
+              <p class="mt-2 text-gray-700">此作業缺少 TipTap 內容（content_json）。請確認學生端已使用新編輯器保存內容。</p>
+            </div>`;
           }
         }
       } catch (e) { console.warn('PM viewer 載入失敗:', e); }
@@ -670,129 +673,7 @@ class GradingUI {
     }
   }
 
-  /**
-   * 渲染作業內容
-   */
-  renderEssayContent(essay) {
-    console.log('📄 渲染作業內容...');
-    console.log('  - content_json 存在?', !!essay.content_json);
-    console.log('  - paragraphs 數量:', essay.paragraphs?.length || 0);
-    
-    // 優先從 content_json 獲取完整結構化內容
-    if (essay.content_json) {
-      try {
-        const content = typeof essay.content_json === 'string' 
-          ? JSON.parse(essay.content_json) 
-          : essay.content_json;
-        
-        console.log('✅ 從 content_json 渲染');
-        console.log('  - 引言:', !!content.introduction);
-        console.log('  - 分論點:', content.arguments?.length || 0);
-        console.log('  - 結論:', !!content.conclusion);
-        
-        let html = '';
-        
-        // 引言
-        if (content.introduction) {
-          // 找到引言段落 ID
-          const introParagraph = essay.paragraphs?.find(p => p.paragraph_type === 'introduction');
-          const introParaId = introParagraph?.id || '';
-          const introOrderIndex = introParagraph?.order_index ?? 0;
-          
-          html += `
-            <div class="paragraph-block" data-paragraph-id="${introParaId}" data-order-index="${introOrderIndex}">
-              <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                <i class="fas fa-quote-left mr-2" style="color: var(--primary-500);"></i>引言
-              </h4>
-              <div class="paragraph-content">${content.introduction}</div>
-            </div>
-          `;
-        }
-        
-        // 分論點
-        if (content.arguments && content.arguments.length > 0) {
-          content.arguments.forEach((arg, index) => {
-            html += `
-              <div class="paragraph-block argument-section">
-                <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                  <i class="fas fa-lightbulb mr-2" style="color: var(--warning-500);"></i>
-                  分論點 ${index + 1}${arg.title ? `：${arg.title}` : ''}
-                </h4>
-            `;
-            
-            if (arg.paragraphs && arg.paragraphs.length > 0) {
-              arg.paragraphs.forEach((para, pIndex) => {
-                // 找到對應的段落 ID
-                const bodyParagraphs = essay.paragraphs?.filter(p => p.paragraph_type === 'body');
-                const matchedParagraph = bodyParagraphs && bodyParagraphs[index + pIndex];
-                const paraId = matchedParagraph?.id || '';
-                const globalIndex = matchedParagraph?.order_index ?? 0;
-                
-                html += `
-                  <div class="paragraph-content sub-paragraph" data-paragraph-id="${paraId}" data-order-index="${globalIndex}">
-                    <div class="paragraph-label">段落 ${globalIndex}</div>
-                    ${para.content || ''}
-                  </div>
-                `;
-              });
-            }
-            
-            html += `</div>`;
-          });
-        }
-        
-        // 結論
-        if (content.conclusion) {
-          // 找到結論段落 ID
-          const conclParagraph = essay.paragraphs?.find(p => p.paragraph_type === 'conclusion');
-          const conclParaId = conclParagraph?.id || '';
-          const conclOrderIndex = conclParagraph?.order_index ?? 0;
-          
-          html += `
-            <div class="paragraph-block" data-paragraph-id="${conclParaId}" data-order-index="${conclOrderIndex}">
-              <h4 class="text-lg font-semibold text-gray-800 mb-2">
-                <i class="fas fa-flag-checkered mr-2" style="color: var(--success-500);"></i>結論
-              </h4>
-              <div class="paragraph-content">${content.conclusion}</div>
-            </div>
-          `;
-        }
-        
-        return html || '<p class="text-gray-500">作業內容為空</p>';
-        
-      } catch (e) {
-        console.error('❌ 解析作業內容失敗:', e);
-      }
-    }
-    
-    // 備用：從 paragraphs 表渲染（舊格式）
-    if (essay.paragraphs && essay.paragraphs.length > 0) {
-      console.log('⚠️ 從 paragraphs 表渲染（備用方案）');
-      console.log('  - 第一個段落的 content 類型:', typeof essay.paragraphs[0].content);
-      console.log('  - 第一個段落的 content:', essay.paragraphs[0].content);
-      
-      return essay.paragraphs
-        .sort((a, b) => a.order_index - b.order_index)
-        .map(p => {
-          // 提取 HTML 內容
-          let htmlContent = '';
-          if (p.content && typeof p.content === 'object') {
-            htmlContent = p.content.html || JSON.stringify(p.content);
-          } else {
-            htmlContent = p.content || '';
-          }
-          
-          return `
-            <div class="paragraph-block" data-paragraph-id="${p.id}" data-order-index="${p.order_index || 0}">
-              <h4>${p.paragraph_type === 'introduction' ? '引言' : p.paragraph_type === 'conclusion' ? '結論' : '正文段落'}</h4>
-              <div class="paragraph-content">${htmlContent}</div>
-            </div>
-          `;
-        }).join('');
-    }
-    
-    return '<p class="text-gray-500">作業內容為空</p>';
-  }
+  // 舊系統渲染已移除：僅支持 TipTap/PM viewer
 
   /**
    * 渲染評分標準表單
