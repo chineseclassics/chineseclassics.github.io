@@ -374,24 +374,16 @@ export async function initializeEssayEditor(forceReinit = false) {
       try { host.classList.remove('pm-essay-structured'); } catch (_) {}
     }
 
-    // 工具列管理：若為 essay-structured，啟用「段落上方內聯工具列」與全局工具列；否則移除
-    if (writingMode === 'essay-structured') {
-      try { setupEssayStructuredUI(EditorState.introEditor); } catch (_) {}
-    } else {
-      try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
-      try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
-    }
+    // 永久移除舊的浮動工具（已不再使用）
+    try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
+    try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
 
-    // 綁定左側「雨村評點」：關閉舊的「依據光標所在段落」行為，改為提示使用內聯工具列（滑鼠懸停段落）
+    // 綁定左側「雨村評點（當前段）」
     try {
       const btn = document.getElementById('sidebar-yucun-btn');
       if (btn) {
-        btn.addEventListener('click', () => {
-          try {
-            toast.info('已改為：請將滑鼠懸停於目標段落，點擊段落上方的「雨村評點」。');
-            // 若內聯工具列尚未建立（如因模式切換），嘗試補建
-            try { if (!document.getElementById('pm-inline-toolbar')) setupEssayStructuredUI(EditorState.introEditor); } catch (_) {}
-          } catch (_) {}
+        btn.addEventListener('click', async () => {
+          await runYucunForCurrentParagraph();
         });
       }
     } catch (_) {}
@@ -542,68 +534,9 @@ function setupEssayStructuredUI(pm) {
   const view = pm?.view;
   if (!view) return;
 
-  // 全局工具列（新增分論點 = 插入一個空段落並加粗提示）
+  // 全局工具列（新增分論點）
+  // 已撤回：段落懸停內聯工具列（上/下方插入、雨村評點）
   ensureGlobalToolbar();
-
-  // 內聯工具列（當前段落：上方插入/下方插入/雨村評點）
-  const inline = ensureInlineToolbar();
-  let hoverPos = null;
-  let rafId = null;
-  const reposition = (pos) => {
-    try {
-      const { state } = view;
-      const $pos = state.doc.resolve(pos);
-      const blockStart = $pos.start($pos.depth);
-      const blockEnd = $pos.end($pos.depth);
-      // 僅在當前段落有實質內容時顯示
-      const paraText = state.doc.textBetween(blockStart, blockEnd, '\n');
-      if (!paraText || !paraText.trim()) { inline.style.display = 'none'; return; }
-      const coords = view.coordsAtPos(Math.min(blockEnd, Math.max(blockStart, pos)));
-      // 先顯示以便取得尺寸
-      inline.style.display = 'flex';
-      inline.style.position = 'absolute';
-      const ih = inline.offsetHeight || 28;
-      const iw = inline.offsetWidth || 220;
-      let top = window.scrollY + coords.top - ih - 6; // 優先顯示在段落上方
-      if (top < window.scrollY + 12) top = window.scrollY + coords.bottom + 6; // 貼頂時轉到下方
-      let left = window.scrollX + Math.max(12, coords.left - (iw + 8)); // 左側邊距，不遮擋正文
-      // 邊界保護
-      if (left + iw > window.scrollX + window.innerWidth - 12) {
-        left = window.scrollX + window.innerWidth - iw - 12;
-      }
-      inline.style.top = `${top}px`;
-      inline.style.left = `${left}px`;
-    } catch (_) { inline.style.display = 'none'; }
-  };
-
-  const onMouseMove = (e) => {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(() => {
-      const posInfo = view.posAtCoords({ left: e.clientX, top: e.clientY });
-      if (!posInfo || typeof posInfo.pos !== 'number') return;
-      hoverPos = posInfo.pos;
-      reposition(hoverPos);
-    });
-  };
-
-  view.dom.addEventListener('mousemove', onMouseMove);
-  view.dom.addEventListener('mouseleave', () => { inline.style.display = 'none'; });
-  view.dom.addEventListener('click', () => { if (hoverPos) reposition(hoverPos); });
-  window.addEventListener('scroll', () => {
-    if (inline.style.display === 'flex' && hoverPos) reposition(hoverPos);
-  }, { passive: true });
-
-  // 綁定按鈕
-  inline.querySelector('[data-act="insert-above"]').addEventListener('click', () => insertParagraphRelative(view, 'above', hoverPos));
-  inline.querySelector('[data-act="insert-below"]').addEventListener('click', () => insertParagraphRelative(view, 'below', hoverPos));
-  inline.querySelector('[data-act="yucun"]').addEventListener('click', async () => {
-    try {
-      const html = getCurrentParagraphHTML(view, hoverPos) || '';
-      if (!html || !html.replace(/<[^>]*>/g,'').trim()) { toast.warning('當前段落為空'); return; }
-      const { requestAIFeedback } = await import('../ai/feedback-requester.js');
-      await requestAIFeedback('pm-current', html, 'body', getAppState().currentFormatSpec);
-    } catch (e) { toast.error('雨村評點失敗'); }
-  });
 
   // 全局工具列事件
   const globalBar = document.getElementById('essay-structured-toolbar');
@@ -988,29 +921,7 @@ function ensureFormatToolbar(pm) {
   bar.dataset.bound = '1';
 }
 
-function ensureInlineToolbar() {
-  let panel = document.getElementById('pm-inline-toolbar');
-  if (panel) return panel;
-  panel = document.createElement('div');
-  panel.id = 'pm-inline-toolbar';
-  panel.style.background = 'rgba(255,255,255,0.95)';
-  panel.style.border = '1px solid #e5e7eb';
-  panel.style.borderRadius = '8px';
-  panel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
-  panel.style.padding = '4px 6px';
-  panel.style.gap = '6px';
-  panel.style.display = 'none';
-  panel.style.zIndex = '40';
-  panel.style.alignItems = 'center';
-  panel.innerHTML = `
-    <button class="text-xs px-2 py-1 hover:bg-stone-100 rounded" data-act="insert-above"><i class="fas fa-arrow-up mr-1"></i>上方插入段落</button>
-    <button class="text-xs px-2 py-1 hover:bg-stone-100 rounded" data-act="insert-below"><i class="fas fa-arrow-down mr-1"></i>下方插入段落</button>
-    <span class="text-stone-300">|</span>
-    <button class="text-xs px-2 py-1 hover:bg-stone-100 rounded" data-act="yucun"><i class="fas fa-pen-fancy mr-1"></i>雨村評點</button>
-  `;
-  document.body.appendChild(panel);
-  return panel;
-}
+// 已撤回：段落懸停內聯工具列（上/下方插入段落、雨村評點）
 
 function getCurrentParagraphHTML(view, posOverride = null) {
   const { state } = view;
