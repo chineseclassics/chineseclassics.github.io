@@ -4,7 +4,7 @@
 
 import toast from '../ui/toast.js';
 import { PMEditor } from '../editor/tiptap-editor.js';
-import { createAnnotationPlugin, createAnnotationFromSelection } from '../features/pm-annotation-plugin.js';
+import { createAnnotationPlugin, createAnnotationFromSelection, computeSelectionAnchor } from '../features/pm-annotation-plugin.js';
 
 class GradingUI {
   constructor(supabaseClient) {
@@ -252,6 +252,14 @@ class GradingUI {
                         <i class="fas fa-plus-circle"></i>
                         <span>新增批註</span>
                       </button>
+                      <button id="editPmAnnotation" class="btn-annotation-stats">
+                        <i class="fas fa-edit"></i>
+                        <span>編輯選中批註</span>
+                      </button>
+                      <button id="deletePmAnnotation" class="btn-annotation-stats">
+                        <i class="fas fa-trash"></i>
+                        <span>刪除選中批註</span>
+                      </button>
                       <button id="showAnnotationStats" class="btn-annotation-stats">
                         <i class="fas fa-chart-bar"></i>
                         <span>批注統計</span>
@@ -362,6 +370,7 @@ class GradingUI {
     try {
       const view = this._pmViewer?.view;
       if (!view) return;
+      this._currentAnnId = annotationId;
       const target = view.dom.querySelector(`.pm-annotation[data-id="${CSS.escape(annotationId)}"]`);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -375,19 +384,6 @@ class GradingUI {
           target.classList.add('pm-annotation-pulse');
           setTimeout(() => target.classList.remove('pm-annotation-pulse'), 900);
         }
-      }
-    } catch (e) {
-      console.warn('highlightAnnotation 失敗:', e);
-    }
-  }
-
-  /**
-   * 由 PM 裝飾點擊觸發：聚焦對應浮動批註卡片並滾動對齊
-   */
-  highlightAnnotation(annotationId) {
-    try {
-      if (this.annotationManager && typeof this.annotationManager.highlightAnnotation === 'function') {
-        this.annotationManager.highlightAnnotation(annotationId);
       }
     } catch (e) {
       console.warn('highlightAnnotation 失敗:', e);
@@ -610,6 +606,64 @@ class GradingUI {
         } catch (e) {
           console.error('新增批註失敗:', e);
           toast.error('新增批註失敗：' + (e.message || '未知錯誤'));
+        }
+      });
+    }
+
+    // 編輯選中批註
+    const editBtn = document.getElementById('editPmAnnotation');
+    if (editBtn) {
+      editBtn.addEventListener('click', async () => {
+        try {
+          const id = this._currentAnnId;
+          if (!id) { toast.info('請先點選一個批註（點擊正文高亮）'); return; }
+          const { data, error } = await this.supabase
+            .from('annotations')
+            .select('content')
+            .eq('id', id)
+            .single();
+          if (error) throw error;
+          const next = window.prompt('修改批註內容：', data?.content || '');
+          if (next === null) return;
+          const view = this._pmViewer?.view;
+          let anchor = null;
+          if (view && !view.state.selection.empty && window.confirm('是否將錨點更新為當前選區？')) {
+            anchor = computeSelectionAnchor(view);
+          }
+          const payload = Object.assign({ p_annotation_id: id, p_content: String(next) }, anchor ? {
+            p_text_start: anchor.text_start,
+            p_text_end: anchor.text_end,
+            p_text_quote: anchor.text_quote,
+            p_text_prefix: anchor.text_prefix,
+            p_text_suffix: anchor.text_suffix
+          } : {});
+          const res = await this.supabase.rpc('update_annotation_pm', payload);
+          if (res.error) throw res.error;
+          toast.success('批註已更新');
+          await this.refreshPMAnnotations();
+        } catch (e) {
+          console.error('更新批註失敗:', e);
+          toast.error('更新批註失敗：' + (e.message || '未知錯誤'));
+        }
+      });
+    }
+
+    // 刪除選中批註
+    const delBtn = document.getElementById('deletePmAnnotation');
+    if (delBtn) {
+      delBtn.addEventListener('click', async () => {
+        try {
+          const id = this._currentAnnId;
+          if (!id) { toast.info('請先點選一個批註（點擊正文高亮）'); return; }
+          if (!window.confirm('確定要刪除此批註嗎？')) return;
+          const res = await this.supabase.rpc('delete_annotation_pm', { p_annotation_id: id });
+          if (res.error) throw res.error;
+          toast.success('批註已刪除');
+          this._currentAnnId = null;
+          await this.refreshPMAnnotations();
+        } catch (e) {
+          console.error('刪除批註失敗:', e);
+          toast.error('刪除批註失敗：' + (e.message || '未知錯誤'));
         }
       });
     }
