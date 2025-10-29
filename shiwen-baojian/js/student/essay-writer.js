@@ -435,6 +435,9 @@ export async function initializeEssayEditor(forceReinit = false) {
     try { setupStudentSelectionComposer(); } catch (_) {}
     try { setupStudentSelectionFab(); } catch (_) {}
 
+    // 段落左側「雨村」毛筆圖示（懸浮顯示，點擊針對該段落評點）
+    try { setupParagraphYucunBrush(EditorState.introEditor); } catch (_) {}
+
     // 完成初始化
     EditorState.initialized = true;
     EditorState.isInitializing = false;
@@ -948,6 +951,19 @@ function getParagraphTypeByCaret(view) {
   } catch (_) { return 'body'; }
 }
 
+// 依指定文檔位置推斷段落類型（首段=引言，末段=結論，其餘=正文）
+function getParagraphTypeByPos(view, pos) {
+  try {
+    const { state } = view;
+    const total = state.doc.content.childCount;
+    const $pos = state.doc.resolve(pos);
+    const index = $pos.index($pos.depth);
+    if (index <= 0) return 'introduction';
+    if (index >= total - 1) return 'conclusion';
+    return 'body';
+  } catch (_) { return 'body'; }
+}
+
 async function runYucunForCurrentParagraph() {
   try {
     const view = EditorState.introEditor?.view;
@@ -976,6 +992,162 @@ function insertParagraphRelative(view, where = 'below', basePos = null) {
     dispatch(tr);
     view.focus();
   } catch (e) { console.warn('插入段落失敗:', e); }
+}
+
+// ================================
+// 左側段落「雨村」毛筆圖示（學生端）
+// ================================
+
+function setupParagraphYucunBrush(pm) {
+  const view = pm?.view;
+  if (!view) return;
+  if (window.__pmYucunBtns) return; // 避免重複掛載
+
+  const btnMap = new WeakMap(); // Element<p> -> Button
+  window.__pmYucunBtns = btnMap;
+
+  const createBtn = () => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pm-yucun-btn';
+    b.setAttribute('aria-label', '賈雨村說：針對此段評點');
+    b.innerHTML = '<i class="fas fa-pen-fancy"></i>';
+    Object.assign(b.style, {
+      position: 'absolute',
+      width: '26px', height: '26px',
+      borderRadius: '9999px',
+      background: 'linear-gradient(135deg, #111827, #1f2937)',
+      color: '#fff',
+      display: 'inline-flex',
+      alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 6px 18px rgba(0,0,0,0.14)',
+      zIndex: '60',
+      transition: 'transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease',
+      opacity: '0.92',
+      border: '1px solid rgba(255,255,255,0.08)'
+    });
+    b.addEventListener('mouseenter', () => {
+      b.style.transform = 'scale(1.06)';
+      b.style.boxShadow = '0 10px 24px rgba(0,0,0,0.18)';
+    });
+    b.addEventListener('mouseleave', () => {
+      b.style.transform = 'scale(1)';
+      b.style.boxShadow = '0 6px 18px rgba(0,0,0,0.14)';
+    });
+    document.body.appendChild(b);
+    return b;
+  };
+
+  const getParagraphs = () => Array.from(view.dom.querySelectorAll('p'));
+
+  const getIndexInfo = (elList, el) => {
+    const nonEmpty = elList.filter(e => (e.textContent || '').trim().length > 0);
+    const idx = elList.indexOf(el);
+    const firstNonEmpty = nonEmpty.length ? elList.indexOf(nonEmpty[0]) : -1;
+    return { idx, firstNonEmpty };
+  };
+
+  const getTypeForElement = (el) => {
+    try {
+      const list = getParagraphs();
+      const { idx, firstNonEmpty } = getIndexInfo(list, el);
+      if (idx === firstNonEmpty) return 'introduction';
+      return 'body'; // 不再將末段自動視為結論，避免誤判
+    } catch (_) { return 'body'; }
+  };
+
+  const getPosForElement = (el) => {
+    try {
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + 2; // 避免位於邊界
+      const cy = rect.top + rect.height / 2;
+      const info = view.posAtCoords({ left: cx, top: cy });
+      return info?.pos ?? null;
+    } catch (_) { return null; }
+  };
+
+  const positionBtnAtElement = (btn, el) => {
+    try {
+      const rect = el.getBoundingClientRect();
+      const top = window.scrollY + rect.top + rect.height / 2 - 13; // 26/2
+      const left = Math.max(8, window.scrollX + rect.left - 34);
+      btn.style.top = `${Math.round(top)}px`;
+      btn.style.left = `${Math.round(left)}px`;
+    } catch (_) {}
+  };
+
+  const updateAllPositions = () => {
+    const list = getParagraphs();
+    for (const el of list) {
+      const btn = btnMap.get(el);
+      if (btn) positionBtnAtElement(btn, el);
+    }
+  };
+
+  const syncButtons = () => {
+    const list = getParagraphs();
+    const seen = new Set();
+    for (const el of list) {
+      let btn = btnMap.get(el);
+      if (!btn) {
+        btn = createBtn();
+        btn.addEventListener('click', async () => {
+          try {
+            const pos = getPosForElement(el);
+            const viewNow = pm?.view;
+            if (!viewNow || pos == null) return;
+            const html = getCurrentParagraphHTML(viewNow, pos) || '';
+            const plain = html.replace(/<[^>]*>/g, '').trim();
+            if (!plain) { toast.warning('當前段落為空'); return; }
+            const type = getTypeForElement(el);
+            const { requestAIFeedback } = await import('../ai/feedback-requester.js');
+            await requestAIFeedback('pm-current', html, type, getAppState().currentFormatSpec);
+            btn.animate([
+              { transform: 'scale(1.0)' },
+              { transform: 'scale(0.92)' },
+              { transform: 'scale(1.0)' }
+            ], { duration: 160, easing: 'ease-out' });
+          } catch (e) {
+            console.warn('雨村評點啟動失敗:', e);
+            try { toast.error('雨村評點失敗'); } catch (_) {}
+          }
+        });
+        btnMap.set(el, btn);
+      }
+      positionBtnAtElement(btn, el);
+      seen.add(btn);
+    }
+
+    // 清理已移除段落的按鈕
+    for (const [el, btn] of btnMap) {
+      if (!list.includes(el)) {
+        try { btn.remove(); } catch (_) {}
+        btnMap.delete(el);
+      }
+    }
+  };
+
+  // 首次同步
+  syncButtons();
+
+  // 監聽 DOM 變化以重新同步
+  try {
+    const mo = new MutationObserver(() => {
+      // 批次緩衝，避免過於頻繁
+      if (window.__pmYucunSyncRaf) cancelAnimationFrame(window.__pmYucunSyncRaf);
+      window.__pmYucunSyncRaf = requestAnimationFrame(syncButtons);
+    });
+    mo.observe(view.dom, { childList: true, subtree: true, characterData: true });
+    window.__pmYucunMO = mo;
+  } catch (_) {}
+
+  // 滾動/尺寸變更時重新定位
+  const onScrollOrResize = () => {
+    if (window.__pmYucunPosRaf) cancelAnimationFrame(window.__pmYucunPosRaf);
+    window.__pmYucunPosRaf = requestAnimationFrame(updateAllPositions);
+  };
+  window.addEventListener('scroll', onScrollOrResize, { passive: true });
+  window.addEventListener('resize', onScrollOrResize);
 }
 
 // ================================
