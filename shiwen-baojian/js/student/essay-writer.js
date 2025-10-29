@@ -59,6 +59,25 @@ async function loadInitialPMJSON() {
   } catch (_) { return null; }
 }
 
+async function loadEssayMeta() {
+  try {
+    const AppState = getAppState();
+    const essayId = StorageState.currentEssayId;
+    if (!AppState?.supabase || !essayId) return;
+    const { data } = await AppState.supabase
+      .from('essays')
+      .select('title, subtitle')
+      .eq('id', essayId)
+      .single();
+    if (data) {
+      const titleEl = document.getElementById('essay-title');
+      const subEl = document.getElementById('essay-subtitle');
+      if (titleEl && (titleEl.value || '') !== (data.title || '')) titleEl.value = data.title || '';
+      if (subEl && (subEl.value || '') !== (data.subtitle || '')) subEl.value = data.subtitle || '';
+    }
+  } catch (_) {}
+}
+
 // 讀取作業的寫作模式（essay-structured | creative），預設 essay-structured
 async function loadAssignmentMode() {
   try {
@@ -91,9 +110,11 @@ async function autoSavePMJSON() {
     if (!essayId) return;
     const json = EditorState.introEditor?.getJSON?.();
     if (!json) return;
+    const title = document.getElementById('essay-title')?.value?.trim() || null;
+    const subtitle = document.getElementById('essay-subtitle')?.value?.trim() || null;
     await AppState.supabase
       .from('essays')
-      .update({ content_json: json, updated_at: new Date().toISOString() })
+      .update({ content_json: json, title: title || '論文草稿', subtitle, updated_at: new Date().toISOString() })
       .eq('id', essayId);
   } catch (e) { console.warn('autosave PM JSON 失敗:', e); }
 }
@@ -273,6 +294,7 @@ export async function initializeEssayEditor(forceReinit = false) {
 
     // 確保有 essay 記錄（新作業會沒有 ID）並立即保存一次
     await ensureEssayRecord();
+    await loadEssayMeta();
     await autoSavePMJSON();
 
     // 掛載批註裝飾（顯示老師批註）
