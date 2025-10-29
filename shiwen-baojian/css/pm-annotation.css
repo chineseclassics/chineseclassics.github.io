@@ -7,6 +7,12 @@
 .pm-essay.pm-essay-structured p::before { content: '段落 ' counter(pm-para); counter-increment: pm-para; position: absolute; top: -0.4rem; left: 0; color: #9ca3af; font-size: 0.72rem; }
 .pm-essay.pm-essay-structured p:hover { background: #fafaf9; }
 
+/* 為右側批註卡片預留空間（老師端） */
+.essay-viewer { position: relative; padding-right: 300px; }
+
+/* 學生端：為編輯器右側預留空間 */
+#student-dashboard #essay-editor { padding-right: 300px; }
+
 /* PM 裝飾：批註高亮（設計令牌 + 後備色） */
 .pm-annotation { background: var(--warning-100, rgba(251,191,36,0.22)); box-shadow: inset 0 -2px 0 var(--warning-600, rgba(245,158,11,0.55)); border-radius: 2px; transition: background-color .15s ease, box-shadow .15s ease; cursor: pointer; }
 .pm-annotation:hover { background: var(--warning-200, rgba(251,191,36,0.32)); }

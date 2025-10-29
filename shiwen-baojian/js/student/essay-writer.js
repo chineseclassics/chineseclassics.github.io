@@ -335,7 +335,7 @@ export async function initializeEssayEditor(forceReinit = false) {
       EditorState.introEditor.addPlugins([plugin]);
       // 右側批註疊加層（學生端只讀卡片）
       try {
-        const root = document.querySelector('#student-dashboard .main-content-area') || document.getElementById('essay-editor')?.parentElement || document.body;
+        const root = document.getElementById('essay-editor')?.parentElement || document.querySelector('#student-dashboard .main-content-area') || document.body;
         const view = EditorState.introEditor?.view;
         if (root && view) {
           window.__pmOverlay = new PMAnnotationOverlay({
