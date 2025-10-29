@@ -105,7 +105,7 @@ export class PMAnnotationOverlay {
         <i class="fas fa-comment-dots"></i>
         <span class="pm-ann-author">${this._authorLabel(a) || ''}</span>
          <span class="pm-ann-time">${this._formatTime(a.created_at) || ''}</span>
-         <span class="pm-ann-reply-count">0</span>
+      <span class="pm-ann-reply-count" style="display:none"></span>
       </div>
       <div class="pm-ann-text"></div>
       <div class="pm-ann-replies"></div>
@@ -266,6 +266,20 @@ export class PMAnnotationOverlay {
     const listEl = card.querySelector('.pm-ann-replies');
     if (!listEl) return;
     const replies = Array.isArray(a.replies) ? a.replies.slice().sort((x,y)=> new Date(x.created_at) - new Date(y.created_at)) : [];
+    // 更新回覆數徽章（0 則不顯示）
+    try {
+      const countEl = card.querySelector('.pm-ann-reply-count');
+      if (countEl) {
+        const n = replies.length || 0;
+        if (n > 0) {
+          countEl.textContent = String(n);
+          countEl.style.display = 'inline-flex';
+        } else {
+          countEl.textContent = '';
+          countEl.style.display = 'none';
+        }
+      }
+    } catch (_) {}
     const MAX_VISIBLE = 3;
     const collapsed = replies.length > MAX_VISIBLE;
     const visible = collapsed ? replies.slice(-MAX_VISIBLE) : replies;
