@@ -894,17 +894,28 @@ function ensureGlobalToolbar() {
 // ================================
 
 function ensureFormatToolbar(pm) {
-  let bar = document.getElementById('pm-format-toolbar');
+  // 單行頂部工具列：左（B/I/U）｜中（字數統計）｜右（保存狀態 · 寫作中）
+  let bar = document.getElementById('pm-topbar');
   const host = document.getElementById('essay-editor') || document.getElementById('intro-editor');
   if (!bar) {
     bar = document.createElement('div');
-    bar.id = 'pm-format-toolbar';
-    bar.className = 'pm-format-toolbar';
+    bar.id = 'pm-topbar';
+    bar.className = 'pm-topbar';
     bar.innerHTML = `
-      <button type="button" class="fmt-btn" title="加粗" data-mark="bold"><i class="fas fa-bold"></i></button>
-      <button type="button" class="fmt-btn" title="斜體" data-mark="italic"><i class="fas fa-italic"></i></button>
-      <button type="button" class="fmt-btn" title="底線" data-mark="underline"><i class="fas fa-underline"></i></button>
-    `;
+      <div class="pm-topbar-left pm-format-toolbar" role="toolbar" aria-label="文字格式">
+        <button type="button" class="fmt-btn" title="加粗" data-mark="bold" aria-label="加粗"><i class="fas fa-bold"></i></button>
+        <button type="button" class="fmt-btn" title="斜體" data-mark="italic" aria-label="斜體"><i class="fas fa-italic"></i></button>
+        <button type="button" class="fmt-btn" title="底線" data-mark="underline" aria-label="底線"><i class="fas fa-underline"></i></button>
+      </div>
+      <div class="pm-topbar-center" id="topbar-word-count-display" aria-live="polite"></div>
+      <div class="pm-topbar-right">
+        <span id="topbar-save-status" class="save-status">
+          <i class="fas fa-check-circle text-emerald-600"></i>
+          <span class="text-gray-600">已保存</span>
+        </span>
+        <span class="pm-topbar-dot" aria-hidden="true">·</span>
+        <span id="topbar-essay-status-text" class="text-gray-600">寫作中</span>
+      </div>`;
     if (host && host.parentElement) host.parentElement.insertBefore(bar, host);
   }
 
@@ -1438,6 +1449,7 @@ function renderCountersAndTargets() {
   const counters = computeCounters();
   EditorState.totalWordCount = counters.zh_chars; // 保持舊語義：中文字數
   const el = document.getElementById('word-count-display');
+  const topbarEl = document.getElementById('topbar-word-count-display');
   // 組裝徽章 HTML（桌面 + 行動端共用）
   const chip = (label, value) => `<span class="wc-chip"><span class="wc-chip-label">${label}</span><span class="wc-chip-val">${value}</span></span>`;
   const parts = [
@@ -1474,6 +1486,7 @@ function renderCountersAndTargets() {
 
   const html = `${parts.join('｜')}${targetHtml}`;
   if (el) el.innerHTML = html;
+  if (topbarEl) topbarEl.innerHTML = html;
 
   // 行動端收合面板內容與摘要徽章
   ensureMobileWordWidget();
@@ -1558,28 +1571,39 @@ async function autoSave() {
  */
 function updateSaveStatus(status) {
     const statusEl = document.getElementById('save-status');
+  const topbarEl = document.getElementById('topbar-save-status');
     if (!statusEl) return;
     
     const icon = statusEl.querySelector('i');
     const text = statusEl.querySelector('span');
+  const setTopbar = (cls, txt, textCls) => {
+    if (!topbarEl) return;
+    const ti = topbarEl.querySelector('i');
+    const tt = topbarEl.querySelector('span');
+    if (ti) ti.className = cls;
+    if (tt) { tt.textContent = txt; tt.className = textCls; }
+  };
     
     switch (status) {
         case 'saving':
             icon.className = 'fas fa-spinner fa-spin text-stone-500';
             text.textContent = '保存中...';
             text.className = 'text-gray-600';
+      setTopbar('fas fa-spinner fa-spin text-stone-500', '保存中...', 'text-gray-600');
             break;
             
         case 'saved':
             icon.className = 'fas fa-check-circle text-emerald-600';
             text.textContent = '已保存';
             text.className = 'text-gray-600';
+      setTopbar('fas fa-check-circle text-emerald-600', '已保存', 'text-gray-600');
             break;
             
         case 'error':
             icon.className = 'fas fa-exclamation-circle text-rose-600';
             text.textContent = '保存失敗';
             text.className = 'text-rose-700';
+      setTopbar('fas fa-exclamation-circle text-rose-600', '保存失敗', 'text-rose-700');
             break;
     }
 }
