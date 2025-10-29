@@ -620,7 +620,7 @@ function setupStudentSelectionComposer() {
   if (!view) return;
   if (window.__pmComposer) return;
 
-  const root = document.querySelector('#student-dashboard .main-content-area') || document.getElementById('essay-editor')?.parentElement || document.body;
+  const root = document.getElementById('ann-sidebar') || document.getElementById('essay-editor')?.parentElement || document.querySelector('#student-dashboard .main-content-area') || document.body;
   const style = window.getComputedStyle(root);
   if (style.position === 'static' || !style.position) root.style.position = 'relative';
 
