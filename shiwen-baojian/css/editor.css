@@ -385,10 +385,7 @@ input:focus-visible {
 
 /* 移除淡入動畫，保持扁平 */
 
-/* 保存中動畫（僅保留必要的旋轉） */
-#save-status .fa-spinner {
-    /* 已由 Font Awesome 自带的 fa-spin 类处理 */
-}
+/* 保存中動畫（由 Font Awesome 的 fa-spin 處理，無需額外樣式） */
 
 /* ================================
    標題輸入區樣式
@@ -561,3 +558,51 @@ input:focus-visible {
         display: none;
     }
 }
+
+/* ================================
+   字數徽章與行動端收合面板
+   ================================ */
+
+.wc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--gray-700);
+}
+.wc-chip + .wc-chip { margin-left: 6px; }
+.wc-chip-label { color: var(--gray-500); }
+.wc-chip-val { font-weight: 600; color: var(--gray-900); }
+
+.wc-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    border: 1px solid transparent;
+}
+.wc-badge-ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.wc-badge-warn { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.wc-badge-danger { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.wc-badge-muted { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+
+.wc-target { color: var(--gray-700); }
+
+/* Mobile widget */
+.mobile-wc-box { border: 1px solid var(--border-secondary); border-radius: 10px; background: #fff; overflow: hidden; }
+.mobile-wc-toggle {
+    width: 100%; display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; background: #fff; color: var(--gray-800);
+}
+.mobile-wc-toggle:hover { background: #fafafa; }
+.mobile-wc-panel { border-top: 1px solid var(--border-secondary); background: #fff; }
+.mobile-wc-content { padding: 10px 12px; font-size: 13px; color: var(--gray-700); }
+.rotate-180 { transform: rotate(180deg); transition: transform .15s ease; }

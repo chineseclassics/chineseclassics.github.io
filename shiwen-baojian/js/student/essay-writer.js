@@ -434,6 +434,8 @@ export async function initializeEssayEditor(forceReinit = false) {
     // 完成初始化
     EditorState.initialized = true;
     EditorState.isInitializing = false;
+  // 初次渲染字數與建議區間（避免等待首次自動保存）
+  try { renderCountersAndTargets(); } catch (_) {}
     console.log('✅ PM 編輯器初始化完成（TipTap/PM 路徑）');
     return;
 
@@ -1352,12 +1354,17 @@ function renderCountersAndTargets() {
   const counters = computeCounters();
   EditorState.totalWordCount = counters.zh_chars; // 保持舊語義：中文字數
   const el = document.getElementById('word-count-display');
-  if (!el) return;
+  // 組裝徽章 HTML（桌面 + 行動端共用）
+  const chip = (label, value) => `<span class="wc-chip"><span class="wc-chip-label">${label}</span><span class="wc-chip-val">${value}</span></span>`;
+  const parts = [
+    chip('中', counters.zh_chars),
+    chip('英', counters.en_words),
+    chip('段', counters.paragraphs)
+  ];
 
-  // 顯示三項統計
-  let base = `中 ${counters.zh_chars}｜英 ${counters.en_words}｜段落 ${counters.paragraphs}`;
-
-  // 顯示建議區間（若 assignment 有設定）
+  // 建議區間與狀態徽章
+  let targetHtml = '';
+  let mobileSummary = '';
   const cfg = window.__wordTargets;
   if (cfg && cfg.primaryMetric && cfg.targets && cfg.targets[cfg.primaryMetric]) {
     const t = cfg.targets[cfg.primaryMetric] || {};
@@ -1369,15 +1376,27 @@ function renderCountersAndTargets() {
     else if (hasMin) rangeText = `≥ ${t.min}`;
     else if (hasMax) rangeText = `≤ ${t.max}`;
 
-    let status = '';
-    if (hasMin && cur < t.min) status = '（未達）';
-    else if (hasMax && cur > t.max) status = '（超出）';
-    else if (hasMin || hasMax) status = '（達標）';
+    let status = null;
+    let cls = 'wc-badge-ok';
+    if (hasMin && cur < t.min) { status = '未達'; cls = 'wc-badge-warn'; }
+    else if (hasMax && cur > t.max) { status = '超出'; cls = 'wc-badge-danger'; }
+    else if (hasMin || hasMax) { status = '達標'; cls = 'wc-badge-ok'; }
 
-    base += `｜建議 ${rangeText} ${status}`;
+    const metricLabel = cfg.primaryMetric === 'en_words' ? '英' : '中';
+    const badge = status ? `<span class="wc-badge ${cls}">${status}</span>` : '';
+    targetHtml = rangeText ? `｜<span class="wc-target">建議 ${metricLabel} ${rangeText}</span> ${badge}` : '';
+    mobileSummary = status ? `<span class="wc-badge ${cls}">${status}</span>` : '';
   }
 
-  el.textContent = base;
+  const html = `${parts.join('｜')}${targetHtml}`;
+  if (el) el.innerHTML = html;
+
+  // 行動端收合面板內容與摘要徽章
+  ensureMobileWordWidget();
+  const mPanel = document.getElementById('mobile-word-count-display');
+  if (mPanel) mPanel.innerHTML = html;
+  const mSummary = document.getElementById('mobile-wc-summary');
+  if (mSummary) mSummary.innerHTML = mobileSummary || `<span class="wc-badge wc-badge-muted">統計</span>`;
 }
 
 // ================================
@@ -1544,3 +1563,38 @@ async function requestParagraphFeedback(paragraphId, paragraphType) {
 // ================================
 
 export { EditorState, requestParagraphFeedback };
+
+// ================================
+// 行動裝置：字數統計收合元件
+// ================================
+
+function ensureMobileWordWidget() {
+  if (document.getElementById('mobile-word-widget')) return;
+  try {
+    const host = document.getElementById('essay-editor')?.closest('.bg-white');
+    if (!host) return;
+    const wrapper = document.createElement('div');
+    wrapper.id = 'mobile-word-widget';
+    wrapper.className = 'block lg:hidden px-4 pt-3';
+    wrapper.innerHTML = `
+      <div class="mobile-wc-box">
+        <button id="mobile-wc-toggle" class="mobile-wc-toggle">
+          <i class="fas fa-font"></i>
+          <span class="ml-2">字數</span>
+          <span id="mobile-wc-summary" class="ml-2"></span>
+          <i class="fas fa-chevron-down ml-auto"></i>
+        </button>
+        <div id="mobile-wc-panel" class="mobile-wc-panel hidden">
+          <div id="mobile-word-count-display" class="mobile-wc-content"></div>
+        </div>
+      </div>`;
+    host.parentElement?.insertBefore(wrapper, host.nextSibling);
+    const btn = wrapper.querySelector('#mobile-wc-toggle');
+    const panel = wrapper.querySelector('#mobile-wc-panel');
+    btn.addEventListener('click', () => {
+      const icon = btn.querySelector('.fa-chevron-down');
+      panel.classList.toggle('hidden');
+      icon?.classList.toggle('rotate-180');
+    });
+  } catch (_) {}
+}
