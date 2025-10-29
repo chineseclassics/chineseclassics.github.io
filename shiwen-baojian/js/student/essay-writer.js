@@ -110,11 +110,19 @@ async function autoSavePMJSON() {
     if (!essayId) return;
     const json = EditorState.introEditor?.getJSON?.();
     if (!json) return;
-    const title = document.getElementById('essay-title')?.value?.trim() || null;
-    const subtitle = document.getElementById('essay-subtitle')?.value?.trim() || null;
+    const titleEl = document.getElementById('essay-title');
+    const subEl = document.getElementById('essay-subtitle');
+    const updatePayload = { content_json: json, updated_at: new Date().toISOString() };
+    if (titleEl) {
+      const t = (titleEl.value || '').trim();
+      if (t) updatePayload.title = t; // 只有有值時才覆寫，避免誤設為預設
+    }
+    if (subEl) {
+      updatePayload.subtitle = (subEl.value || '').trim(); // 允許清空
+    }
     await AppState.supabase
       .from('essays')
-      .update({ content_json: json, title: title || '論文草稿', subtitle, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', essayId);
   } catch (e) { console.warn('autosave PM JSON 失敗:', e); }
 }

@@ -1240,7 +1240,9 @@ async function loadPracticeEssayContent(essayId) {
 
         // TODO: 加載練筆內容到編輯器
         // 這需要在 essay-writer.js 中實現內容恢復功能
-        AppState.currentPracticeContent = essay.content_json ? JSON.parse(essay.content_json) : null;
+        AppState.currentPracticeContent = essay.content_json
+            ? (typeof essay.content_json === 'string' ? JSON.parse(essay.content_json) : essay.content_json)
+            : null;
 
         console.log('✅ 練筆作品數據加載完成');
     } catch (error) {
@@ -1274,7 +1276,9 @@ async function loadStudentEssayForAssignment(assignmentId) {
             StorageState.currentEssayId = essay.id;
             
             // 解析並保存作業內容
-            AppState.currentEssayContent = essay.content_json ? JSON.parse(essay.content_json) : null;
+            AppState.currentEssayContent = essay.content_json
+                ? (typeof essay.content_json === 'string' ? JSON.parse(essay.content_json) : essay.content_json)
+                : null;
             console.log('📋 已加載作業內容，字數:', essay.total_word_count);
         } else {
             console.log('ℹ️ 這是新的任務作業，將創建新記錄');
