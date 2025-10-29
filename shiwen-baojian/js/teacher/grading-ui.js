@@ -306,8 +306,9 @@ class GradingUI {
               });
               this._overlay.mount();
             }
-            // 啟用「右側就地輸入」的批註編寫器
+            // 啟用「右側就地輸入」編寫器（僅初始化，不自動彈出）+ 浮動添加按鈕
             this.setupSelectionComposer();
+            this.setupSelectionFab();
             await this.refreshPMAnnotations();
             this._annPoll = setInterval(() => this.refreshPMAnnotations(), 5000);
             // Realtime：收到變更則刷新一次
@@ -431,13 +432,9 @@ class GradingUI {
       } catch (_) { hide(); }
     };
 
-    const onMouseUp = () => setTimeout(update, 0);
-    const onKeyUp = () => setTimeout(update, 0);
-    const onScroll = () => { if (composer.style.display !== 'none') update(); };
-
-    view.dom.addEventListener('mouseup', onMouseUp);
-    view.dom.addEventListener('keyup', onKeyUp);
-    window.addEventListener('scroll', onScroll, { passive: true });
+  // 僅在可見時跟隨滾動更新位置
+  const onScroll = () => { if (composer.style.display !== 'none') update(); };
+  window.addEventListener('scroll', onScroll, { passive: true });
 
     btnCancel.addEventListener('click', hide);
     btnAdd.addEventListener('click', async () => {
@@ -458,6 +455,75 @@ class GradingUI {
     });
 
     this._composer = composer;
+    // 對外暴露：以當前選區顯示編寫器
+    this._showComposerForSelection = () => {
+      try {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+        const rect = sel.getRangeAt(0).getBoundingClientRect();
+        if (!rect) return;
+        showAt(rect);
+      } catch (_) {}
+    };
+  }
+
+  /**
+   * 建立與管理選區浮動「添加批註」按鈕（點擊後才打開編寫器）
+   */
+  setupSelectionFab() {
+    const view = this._pmViewer?.view;
+    if (!view) return;
+    if (this._annFab) return; // 只建立一次
+
+    const fab = document.createElement('button');
+    fab.id = 'pm-add-ann-fab';
+    fab.className = 'btn-annotation-add';
+    fab.style.position = 'absolute';
+    fab.style.zIndex = '1100';
+    fab.style.display = 'none';
+    fab.style.padding = '6px 10px';
+    fab.style.borderRadius = '8px';
+    fab.innerHTML = '<i class="fas fa-comment-medical"></i><span style="margin-left:6px">添加批註</span>';
+    document.body.appendChild(fab);
+
+    const hide = () => { fab.style.display = 'none'; };
+    const showAt = (rect) => {
+      const top = window.scrollY + rect.top - 40; // 上方
+      const left = window.scrollX + rect.right + 8; // 右側
+      fab.style.top = `${Math.max(8, top)}px`;
+      fab.style.left = `${Math.max(8, left)}px`;
+      fab.style.display = 'inline-flex';
+    };
+
+    const update = () => {
+      try {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { hide(); return; }
+        const range = sel.getRangeAt(0);
+        const container = view.dom;
+        const anchorNode = sel.anchorNode;
+        const focusNode = sel.focusNode;
+        if (!container.contains(anchorNode) || !container.contains(focusNode)) { hide(); return; }
+        const rect = range.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) { hide(); return; }
+        showAt(rect);
+      } catch (_) { hide(); }
+    };
+
+    const onMouseUp = () => setTimeout(update, 0);
+    const onKeyUp = () => setTimeout(update, 0);
+    const onScroll = () => { if (fab.style.display !== 'none') update(); };
+
+    view.dom.addEventListener('mouseup', onMouseUp);
+    view.dom.addEventListener('keyup', onKeyUp);
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    fab.addEventListener('click', () => {
+      hide();
+      this._showComposerForSelection?.();
+    });
+
+    this._annFab = fab;
   }
 
   /**

@@ -353,6 +353,7 @@ export async function initializeEssayEditor(forceReinit = false) {
 
     // 學生端開放新增批註：就地輸入（與老師端一致）
     try { setupStudentSelectionComposer(); } catch (_) {}
+    try { setupStudentSelectionFab(); } catch (_) {}
 
     // 完成初始化
     EditorState.initialized = true;
@@ -667,12 +668,7 @@ function setupStudentSelectionComposer() {
     } catch (_) { hide(); }
   };
 
-  const onMouseUp = () => setTimeout(update, 0);
-  const onKeyUp = () => setTimeout(update, 0);
   const onScroll = () => { if (composer.style.display !== 'none') update(); };
-
-  view.dom.addEventListener('mouseup', onMouseUp);
-  view.dom.addEventListener('keyup', onKeyUp);
   window.addEventListener('scroll', onScroll, { passive: true });
 
   btnCancel.addEventListener('click', hide);
@@ -696,6 +692,72 @@ function setupStudentSelectionComposer() {
   });
 
   window.__pmComposer = composer;
+  window.__pmShowComposerForSelection = () => {
+    try {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      if (!rect) return;
+      showAt(rect);
+    } catch (_) {}
+  };
+}
+
+// 浮動「添加批註」按鈕（學生端）
+function setupStudentSelectionFab() {
+  const view = EditorState.introEditor?.view;
+  if (!view) return;
+  if (window.__pmAnnFab) return;
+
+  const fab = document.createElement('button');
+  fab.id = 'pm-add-ann-fab';
+  fab.className = 'btn-annotation-add';
+  fab.style.position = 'absolute';
+  fab.style.zIndex = '1100';
+  fab.style.display = 'none';
+  fab.style.padding = '6px 10px';
+  fab.style.borderRadius = '8px';
+  fab.innerHTML = '<i class="fas fa-comment-medical"></i><span style="margin-left:6px">添加批註</span>';
+  document.body.appendChild(fab);
+
+  const hide = () => { fab.style.display = 'none'; };
+  const showAt = (rect) => {
+    const top = window.scrollY + rect.top - 40;
+    const left = window.scrollX + rect.right + 8;
+    fab.style.top = `${Math.max(8, top)}px`;
+    fab.style.left = `${Math.max(8, left)}px`;
+    fab.style.display = 'inline-flex';
+  };
+
+  const update = () => {
+    try {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { hide(); return; }
+      const range = sel.getRangeAt(0);
+      const container = view.dom;
+      const anchorNode = sel.anchorNode;
+      const focusNode = sel.focusNode;
+      if (!container.contains(anchorNode) || !container.contains(focusNode)) { hide(); return; }
+      const rect = range.getBoundingClientRect();
+      if (!rect || (rect.width === 0 && rect.height === 0)) { hide(); return; }
+      showAt(rect);
+    } catch (_) { hide(); }
+  };
+
+  const onMouseUp = () => setTimeout(update, 0);
+  const onKeyUp = () => setTimeout(update, 0);
+  const onScroll = () => { if (fab.style.display !== 'none') update(); };
+
+  view.dom.addEventListener('mouseup', onMouseUp);
+  view.dom.addEventListener('keyup', onKeyUp);
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  fab.addEventListener('click', () => {
+    hide();
+    window.__pmShowComposerForSelection?.();
+  });
+
+  window.__pmAnnFab = fab;
 }
 
 // 標題/副標題即時保存（即使正文未變化）
