@@ -129,8 +129,8 @@ class GradingUI {
         <!-- 三欄佈局（與學生端一致） -->
         <div class="flex flex-col lg:flex-row gap-6 px-4 py-8 layout-3col">
           <!-- 左側：評分邊欄（對齊學生端賈雨村說） -->
-          <aside class="hidden lg:block w-72 flex-shrink-0">
-            <div class="sticky top-20">
+          <aside class="hidden lg:block w-72 flex-shrink-0 sticky top-20 self-start">
+            <div>
               <!-- AI 評分建議區域 -->
               <div class="grading-sidebar-section">
                 <div class="section-header">
