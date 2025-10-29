@@ -307,6 +307,7 @@ class GradingUI {
                 onContextMenu: (a, card, ev) => this._handleOverlayContextMenu?.(a, card, ev)
               });
               this._overlay.mount();
+              this._bindGlobalActiveReset();
             }
             // 啟用「右側就地輸入」編寫器（僅初始化，不自動彈出）+ 浮動添加按鈕
             this.setupSelectionComposer();
@@ -536,6 +537,7 @@ class GradingUI {
       const view = this._pmViewer?.view;
       if (!view) return;
       this._currentAnnId = annotationId;
+      try { view.dispatch(view.state.tr.setMeta('annotations:active', annotationId)); } catch (_) {}
       const target = view.dom.querySelector(`.pm-annotation[data-id="${CSS.escape(annotationId)}"]`);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -550,9 +552,27 @@ class GradingUI {
           setTimeout(() => target.classList.remove('pm-annotation-pulse'), 900);
         }
       }
+      try { this._overlay?.setActive?.(annotationId); } catch (_) {}
     } catch (e) {
       console.warn('highlightAnnotation 失敗:', e);
     }
+  }
+
+  _bindGlobalActiveReset() {
+    try {
+      if (this._activeResetBound) return;
+      this._activeResetBound = true;
+      window.addEventListener('click', (e) => {
+        const t = e.target;
+        if (!t.closest?.('.pm-annotation') && !t.closest?.('.pm-ann-card')) {
+          const view = this._pmViewer?.view;
+          if (view) {
+            try { view.dispatch(view.state.tr.setMeta('annotations:active', null)); } catch (_) {}
+          }
+          try { this._overlay?.setActive?.('__none__'); } catch (_) {}
+        }
+      }, true);
+    } catch (_) {}
   }
 
   /**

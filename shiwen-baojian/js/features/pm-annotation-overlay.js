@@ -76,6 +76,12 @@ export class PMAnnotationOverlay {
     }
   }
 
+  setActive(id) {
+    try { this._cards.forEach(n => n.classList.remove('active')); } catch (_) {}
+    const node = this._cards.get(String(id));
+    if (node) node.classList.add('active');
+  }
+
   // 內部：建立/更新卡片 DOM
   _ensureCard(a) {
     if (this._cards.has(a.id)) {

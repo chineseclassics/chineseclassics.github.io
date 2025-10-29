@@ -17,26 +17,34 @@ export function createAnnotationPlugin({ getAnnotations, onClick }) {
     state: {
       init: (_, editorState) => {
         const ann = safeGet(getAnnotations);
-        return buildDecorationSet({ state: editorState }, ann);
+        const activeId = null;
+        const deco = buildDecorationSet({ state: editorState }, ann, activeId);
+        return { deco, activeId };
       },
       apply: (tr, old, oldState, newState) => {
-        let deco = old.map(tr.mapping, tr.doc);
-        if (tr.docChanged || tr.getMeta('annotations:update')) {
+        const metaActive = tr.getMeta('annotations:active');
+        const needRebuild = tr.docChanged || tr.getMeta('annotations:update') || metaActive !== undefined;
+        const activeId = metaActive !== undefined ? metaActive : old.activeId;
+        let deco = old.deco.map(tr.mapping, tr.doc);
+        if (needRebuild) {
           const ann = safeGet(getAnnotations);
-          deco = buildDecorationSet({ state: newState }, ann);
+          deco = buildDecorationSet({ state: newState }, ann, activeId);
         }
-        return deco;
+        return { deco, activeId };
       }
     },
     props: {
       decorations(state) {
-        return this.getState(state);
+        return this.getState(state).deco;
       },
       handleClick(view, pos, event) {
         const target = event.target.closest?.('.pm-annotation');
         if (target && onClick) {
           const id = target.getAttribute('data-id');
-          if (id) onClick(id);
+          if (id) {
+            try { view.dispatch(view.state.tr.setMeta('annotations:active', id)); } catch (_) {}
+            onClick(id);
+          }
           return true;
         }
         return false;
@@ -45,13 +53,18 @@ export function createAnnotationPlugin({ getAnnotations, onClick }) {
   });
 }
 
-function buildDecorationSet(viewLike, annotations) {
+export function setActiveAnnotation(view, idOrNull) {
+  try { view.dispatch(view.state.tr.setMeta('annotations:active', idOrNull ?? null)); } catch (_) {}
+}
+
+function buildDecorationSet(viewLike, annotations, activeId) {
   const { state } = viewLike;
   const { ranges } = resolveRanges(state.doc, annotations || []);
   const decos = ranges.map(r => {
     const cls = ['pm-annotation'];
     if (r.approx) cls.push('pm-annotation-approx');
     if (r.orphan) cls.push('pm-annotation-orphan');
+    if (activeId && String(activeId) === String(r.id)) cls.push('pm-annotation-active');
     const attrs = { class: cls.join(' '), 'data-id': r.id };
     const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
     const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));

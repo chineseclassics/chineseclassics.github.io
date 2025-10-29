@@ -328,7 +328,7 @@ export async function initializeEssayEditor(forceReinit = false) {
       window.__pmAnnStore = [];
       const plugin = createAnnotationPlugin({
         getAnnotations: () => window.__pmAnnStore,
-        onClick: (id) => focusStudentAnnCard(id)
+        onClick: (id) => focusStudentAnnDecoration(id)
       });
       EditorState.introEditor.addPlugins([plugin]);
       // 右側批註疊加層（學生端只讀卡片）
@@ -590,9 +590,11 @@ function focusStudentAnnDecoration(id) {
     if (!view) return;
     const target = view.dom.querySelector(`.pm-annotation[data-id="${CSS.escape(id)}"]`);
     if (target) {
+      try { view.dispatch(view.state.tr.setMeta('annotations:active', id)); } catch (_) {}
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       pulse(target);
     }
+    try { window.__pmOverlay?.setActive?.(id); } catch (_) {}
   } catch (_) {}
 }
 
@@ -668,6 +670,15 @@ function setupStudentSelectionComposer() {
 
   const onScroll = () => { if (composer.style.display !== 'none') update(); };
   window.addEventListener('scroll', onScroll, { passive: true });
+
+  // 點擊非批註/非卡片區域時，清除 active 狀態
+  window.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t.closest?.('.pm-annotation') && !t.closest?.('.pm-ann-card')) {
+      try { view.dispatch(view.state.tr.setMeta('annotations:active', null)); } catch (_) {}
+      try { window.__pmOverlay?.setActive?.('__none__'); } catch (_) {}
+    }
+  }, true);
 
   btnCancel.addEventListener('click', hide);
   btnAdd.addEventListener('click', async () => {
