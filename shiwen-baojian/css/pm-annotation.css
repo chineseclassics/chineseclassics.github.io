@@ -1,7 +1,7 @@
 /* ============= PM 批註系統（師生端共用樣式） ============= */
 /* 擴寬頁面容器，減少右側無效留白 */
 #teacher-dashboard .max-w-7xl,
-#student-dashboard .max-w-7xl { max-width: 1600px; }
+#student-dashboard .max-w-7xl { max-width: 1280px; }
 
 /* 中欄最小寬度，避免正文被擠壓過小 */
 #teacher-dashboard .main-content-area { min-width: 640px; }
@@ -52,7 +52,7 @@
 
 /* 響應式調整（學生端容器寬度） */
 #student-dashboard .main-content-area { max-width: none; position: relative; overflow: visible; }
-#student-dashboard { max-width: 1800px; margin: 0 auto; }
+#student-dashboard { max-width: none; margin: 0 auto; }
 #student-dashboard .grading-content-wrapper { overflow: visible; max-height: none; }
 
 /* 老師端覆蓋：移除舊 78% 佈局與內邊距，讓中欄完全佔滿 grid 中列 */

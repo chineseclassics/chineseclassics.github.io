@@ -344,7 +344,7 @@
 .grading-container-wrapper {
   width: 100%;
   min-height: 100vh;
-  max-width: 1800px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -643,7 +643,7 @@
 
 /* 舊版批改容器（保留兼容） */
 .grading-container {
-  max-width: 1800px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
