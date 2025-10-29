@@ -8,7 +8,8 @@
  */
 
 import { PMEditor } from '../editor/tiptap-editor.js';
-import { createAnnotationPlugin } from '../features/pm-annotation-plugin.js';
+import { createAnnotationPlugin, createAnnotationFromSelection } from '../features/pm-annotation-plugin.js';
+import { PMAnnotationOverlay } from '../features/pm-annotation-overlay.js';
 import { initializeStorage, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
@@ -188,6 +189,8 @@ async function refreshPMAnnotationsStudent() {
     if (view) view.dispatch(view.state.tr.setMeta('annotations:update', true));
     // 更新學生端側欄
     try { renderStudentAnnSidebar(); } catch (_) {}
+    // 更新右側疊加層
+    try { window.__pmOverlay?.update?.(); } catch (_) {}
     // Realtime：建立一次性監聽
     try {
       if (!window.__pmAnnChannel) {
@@ -328,9 +331,26 @@ export async function initializeEssayEditor(forceReinit = false) {
         onClick: (id) => focusStudentAnnCard(id)
       });
       EditorState.introEditor.addPlugins([plugin]);
+      // 右側批註疊加層（學生端只讀卡片）
+      try {
+        const root = document.querySelector('#student-dashboard .main-content-area') || document.getElementById('essay-editor')?.parentElement || document.body;
+        const view = EditorState.introEditor?.view;
+        if (root && view) {
+          window.__pmOverlay = new PMAnnotationOverlay({
+            root,
+            view,
+            getAnnotations: () => Array.isArray(window.__pmAnnStore) ? window.__pmAnnStore : [],
+            onClick: (id) => focusStudentAnnDecoration(id)
+          });
+          window.__pmOverlay.mount();
+        }
+      } catch (_) {}
       await refreshPMAnnotationsStudent();
       window.__pmAnnTimer = setInterval(refreshPMAnnotationsStudent, 5000);
     } catch (e) { console.warn('學生端批註插件掛載失敗:', e); }
+
+    // 學生端開放新增批註：就地輸入（與老師端一致）
+    try { setupStudentSelectionComposer(); } catch (_) {}
 
     // 完成初始化
     EditorState.initialized = true;
@@ -589,6 +609,91 @@ function countWithoutPunct(text) {
   if (!text) return 0;
   const matches = text.match(/[\u4E00-\u9FFF]/g); // 只計算中日韓漢字
   return matches ? matches.length : 0;
+}
+
+// 學生端：右側就地「添加批註」編寫器
+function setupStudentSelectionComposer() {
+  const view = EditorState.introEditor?.view;
+  if (!view) return;
+  if (window.__pmComposer) return;
+
+  const root = document.querySelector('#student-dashboard .main-content-area') || document.getElementById('essay-editor')?.parentElement || document.body;
+  const style = window.getComputedStyle(root);
+  if (style.position === 'static' || !style.position) root.style.position = 'relative';
+
+  const composer = document.createElement('div');
+  composer.className = 'pm-ann-composer';
+  composer.style.display = 'none';
+  composer.innerHTML = `
+    <div>
+      <textarea placeholder="請輸入批註..."></textarea>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost">取消</button>
+        <button type="button" class="btn btn-primary">添加</button>
+      </div>
+    </div>
+  `;
+  root.appendChild(composer);
+
+  const textarea = composer.querySelector('textarea');
+  const btnCancel = composer.querySelector('.btn-ghost');
+  const btnAdd = composer.querySelector('.btn-primary');
+
+  const hide = () => { composer.style.display = 'none'; textarea.value = ''; };
+  const showAt = (rect) => {
+    const containerRect = root.getBoundingClientRect();
+    const mid = (rect.top + rect.bottom) / 2 - containerRect.top;
+    const top = Math.max(8, mid - composer.offsetHeight / 2);
+    composer.style.top = `${Math.round(top)}px`;
+    composer.style.right = `0px`;
+    composer.style.display = 'block';
+    textarea.focus();
+  };
+
+  const update = () => {
+    try {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { hide(); return; }
+      const range = sel.getRangeAt(0);
+      const container = view.dom;
+      const anchorNode = sel.anchorNode;
+      const focusNode = sel.focusNode;
+      if (!container.contains(anchorNode) || !container.contains(focusNode)) { hide(); return; }
+      const rect = range.getBoundingClientRect();
+      if (!rect || (rect.width === 0 && rect.height === 0)) { hide(); return; }
+      showAt(rect);
+    } catch (_) { hide(); }
+  };
+
+  const onMouseUp = () => setTimeout(update, 0);
+  const onKeyUp = () => setTimeout(update, 0);
+  const onScroll = () => { if (composer.style.display !== 'none') update(); };
+
+  view.dom.addEventListener('mouseup', onMouseUp);
+  view.dom.addEventListener('keyup', onKeyUp);
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  btnCancel.addEventListener('click', hide);
+  btnAdd.addEventListener('click', async () => {
+    try {
+      const AppState = getAppState();
+      const essayId = (await import('./essay-storage.js')).StorageState.currentEssayId;
+      if (!AppState?.supabase || !essayId || !view || view.state.selection.empty) { hide(); return; }
+      const content = (textarea.value || '').trim();
+      if (!content) { textarea.focus(); return; }
+      const id = await createAnnotationFromSelection({ view, supabase: AppState.supabase, essayId, content });
+      if (id) {
+        hide();
+        await refreshPMAnnotationsStudent();
+        try { toast.success('批註已新增'); } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('學生新增批註失敗:', e);
+      try { toast.error('新增批註失敗'); } catch (_) {}
+    }
+  });
+
+  window.__pmComposer = composer;
 }
 
 // 標題/副標題即時保存（即使正文未變化）

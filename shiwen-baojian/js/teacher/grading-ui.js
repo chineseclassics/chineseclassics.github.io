@@ -300,13 +300,13 @@ class GradingUI {
               this._overlay = new PMAnnotationOverlay({
                 root: essaySection,
                 view: this._pmViewer.view,
-                getAnnotations: () => this._annStoreWithContent || [],
+                getAnnotations: () => this._annStoreWithContent || this._annStore || [],
                 onClick: (id) => this.highlightAnnotation?.(id)
               });
               this._overlay.mount();
             }
-            // 啟用選區浮動「添加批註」按鈕
-            this.setupSelectionFab();
+            // 啟用「右側就地輸入」的批註編寫器
+            this.setupSelectionComposer();
             await this.refreshPMAnnotations();
             this._annPoll = setInterval(() => this.refreshPMAnnotations(), 5000);
             // Realtime：收到變更則刷新一次
@@ -375,29 +375,44 @@ class GradingUI {
   }
 
   /**
-   * 建立與管理選區浮動「添加批註」按鈕
+   * 建立與管理右側就地輸入的「批註編寫器」
    */
-  setupSelectionFab() {
+  setupSelectionComposer() {
     const view = this._pmViewer?.view;
     if (!view) return;
-    if (this._annFab) return; // 只建立一次
+    if (this._composer) return; // 只建立一次
 
-    const fab = document.createElement('button');
-    fab.id = 'pm-add-ann-fab';
-    fab.className = 'btn-annotation-add';
-    fab.innerHTML = '<i class="fas fa-comment-medical"></i><span>添加批註</span>';
-    fab.style.position = 'absolute';
-    fab.style.zIndex = '1100';
-    fab.style.display = 'none';
-    document.body.appendChild(fab);
+    const essaySection = document.getElementById('pm-viewer')?.closest('.essay-viewer') || document.getElementById('pm-viewer')?.parentElement || document.body;
+    const style = window.getComputedStyle(essaySection);
+    if (style.position === 'static' || !style.position) essaySection.style.position = 'relative';
 
-    const hide = () => { fab.style.display = 'none'; };
+    const composer = document.createElement('div');
+    composer.className = 'pm-ann-composer';
+    composer.style.display = 'none';
+    composer.innerHTML = `
+      <div>
+        <textarea placeholder="請輸入批註..."></textarea>
+        <div class="actions">
+          <button type="button" class="btn btn-ghost">取消</button>
+          <button type="button" class="btn btn-primary">添加</button>
+        </div>
+      </div>
+    `;
+    essaySection.appendChild(composer);
+
+    const textarea = composer.querySelector('textarea');
+    const btnCancel = composer.querySelector('.btn-ghost');
+    const btnAdd = composer.querySelector('.btn-primary');
+
+    const hide = () => { composer.style.display = 'none'; textarea.value = ''; };
     const showAt = (rect) => {
-      const top = window.scrollY + rect.top - 42; // 按鈕顯示在選區上方
-      const left = window.scrollX + rect.right + 8; // 選區右側偏移
-      fab.style.top = `${Math.max(8, top)}px`;
-      fab.style.left = `${Math.max(8, left)}px`;
-      fab.style.display = 'inline-flex';
+      const containerRect = essaySection.getBoundingClientRect();
+      const mid = (rect.top + rect.bottom) / 2 - containerRect.top;
+      const top = Math.max(8, mid - composer.offsetHeight / 2);
+      composer.style.top = `${Math.round(top)}px`;
+      composer.style.right = `0px`;
+      composer.style.display = 'block';
+      textarea.focus();
     };
 
     const update = () => {
@@ -405,7 +420,6 @@ class GradingUI {
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { hide(); return; }
         const range = sel.getRangeAt(0);
-        // 僅在 PM viewer 內選區時顯示
         const container = view.dom;
         const anchorNode = sel.anchorNode;
         const focusNode = sel.focusNode;
@@ -416,20 +430,20 @@ class GradingUI {
       } catch (_) { hide(); }
     };
 
-    // 綁定事件：滑鼠抬起、鍵盤選取、卷動時更新
     const onMouseUp = () => setTimeout(update, 0);
     const onKeyUp = () => setTimeout(update, 0);
-    const onScroll = () => { if (fab.style.display !== 'none') update(); };
+    const onScroll = () => { if (composer.style.display !== 'none') update(); };
 
     view.dom.addEventListener('mouseup', onMouseUp);
     view.dom.addEventListener('keyup', onKeyUp);
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    fab.addEventListener('click', async () => {
+    btnCancel.addEventListener('click', hide);
+    btnAdd.addEventListener('click', async () => {
       try {
         if (!view || view.state.selection.empty) { hide(); return; }
-        const content = window.prompt('輸入批註內容：');
-        if (!content) return;
+        const content = (textarea.value || '').trim();
+        if (!content) { textarea.focus(); return; }
         const id = await createAnnotationFromSelection({ view, supabase: this.supabase, essayId: this.currentEssay.id, content });
         if (id) {
           hide();
@@ -442,7 +456,7 @@ class GradingUI {
       }
     });
 
-    this._annFab = fab;
+    this._composer = composer;
   }
 
   /**
