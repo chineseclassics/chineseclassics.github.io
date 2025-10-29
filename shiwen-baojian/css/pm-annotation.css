@@ -83,4 +83,9 @@
 .pm-ann-composer .btn-ghost { background: #f3f4f6; color: #374151; }
 .pm-ann-composer .btn-ghost:hover { background: #e5e7eb; }
 
+/* 三欄固定佈局：左欄（w-72）+ 中欄（1fr）+ 右欄（w-72）且列距一致 */
+@media (min-width: 1024px) {
+  .layout-3col { display: grid !important; grid-template-columns: 18rem 1fr 18rem; column-gap: 1.5rem; align-items: start; }
+}
+
 
