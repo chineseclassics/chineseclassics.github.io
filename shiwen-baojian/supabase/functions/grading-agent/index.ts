@@ -174,7 +174,7 @@ ${formatSpec.metadata?.structure ? `- 结构要求：${formatSpec.metadata.struc
     }
 
     // 构建 System Prompt
-    const systemPrompt = `你是一位專業的文學教師，負責基於 IB MYP 評分標準為學生論文評分。
+  const systemPrompt = `你是一位專業的文學教師，負責基於 IB MYP 評分標準為學生論文評分。
 
 **🌏 語言要求：所有輸出必須使用繁體中文！**
 
@@ -213,7 +213,13 @@ ${formatGuidelines}
 - strengths：指出 2-3 個具體優點（如"引用原文恰當"、"結構清晰"等）
 - improvements：指出 2-3 個具體改進點（如"分論點數量不足"、"分析深度可加強"等）
 - 語氣客觀友善，重點是幫助學生進步
-- **必須使用繁體中文撰寫**`
+- **必須使用繁體中文撰寫**
+
+【關鍵輸出約束】
+- 僅輸出純 JSON，不要任何多餘的文字、說明或標點
+- 不要使用 Markdown 代碼塊（不要輸出 三個反引號json 或 三個反引號）
+- JSON 層級與鍵名必須與上方格式完全一致
+`
 
     // 构建 User Prompt
     const userPrompt = `請為以下論文評分（**必須使用繁體中文**）：
@@ -244,8 +250,10 @@ ${essayText}
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.3,  // 降低温度，使评分更一致
-        max_tokens: 2000
+        temperature: 0.1,  // 進一步降低隨機性，強化結構穩定性
+        max_tokens: 1800,
+        // 若 API 支援，強制 JSON 輸出格式；不支援則會被忽略
+        response_format: { type: 'json_object' }
       })
     })
 
@@ -261,7 +269,34 @@ ${essayText}
     const deepseekData = await deepseekResponse.json()
     const aiContent = deepseekData.choices[0].message.content
 
-    // 解析 AI 返回的 JSON
+    // 解析 AI 返回的 JSON（加強健壯性）
+    function extractJSONFromText(text: string): any {
+      const s = (text || '').trim()
+      // 1) 直解析
+      try { return JSON.parse(s) } catch (_) {}
+      // 2) 去除常見 code fence
+      let t = s.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim()
+      try { return JSON.parse(t) } catch (_) {}
+      // 3) 嘗試匹配多個 { ... } 片段，從長到短嘗試解析
+      const matches = t.match(/\{[\s\S]*?\}/g) || []
+      const sorted = matches.sort((a, b) => b.length - a.length)
+      for (const m of sorted) {
+        try {
+          const obj = JSON.parse(m)
+          if (obj && (obj.criteria || obj.overall_comment)) return obj
+        } catch(_){}
+      }
+      // 4) 退而求其次：從原文再掃一遍
+      const matches2 = s.match(/\{[\s\S]*?\}/g) || []
+      const sorted2 = matches2.sort((a, b) => b.length - a.length)
+      for (const m of sorted2) {
+        try {
+          const obj = JSON.parse(m)
+          if (obj && (obj.criteria || obj.overall_comment)) return obj
+        } catch(_){}
+      }
+      throw new Error('未找到有效 JSON')
+    }
     let aiResult: {
       criteria: Record<string, { score: number; reason: string }>;
       overall_comment: { strengths: string; improvements: string };
@@ -269,23 +304,9 @@ ${essayText}
     let cleanedContent = ''
     
     try {
-      // 清理 AI 返回的內容，移除 markdown 代碼塊包裝
-      cleanedContent = aiContent.trim()
-      
-      // 移除 ```json 和 ``` 包裝
-      if (cleanedContent.startsWith('```json')) {
-        cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-      } else if (cleanedContent.startsWith('```')) {
-        cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
-      }
-      
-      // 嘗試提取 JSON（AI 可能返回帶有說明的文本）
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        aiResult = JSON.parse(jsonMatch[0])
-      } else {
-        aiResult = JSON.parse(cleanedContent)
-      }
+      // 清理與抽取
+      cleanedContent = (aiContent || '').trim()
+      aiResult = extractJSONFromText(cleanedContent)
       
       // 驗證結構
       if (!aiResult.criteria || !aiResult.overall_comment) {
