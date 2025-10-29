@@ -356,6 +356,32 @@ class GradingUI {
   }
 
   /**
+   * 由 PM 裝飾點擊觸發或外部調用：視圖內高亮並滾動對齊
+   */
+  highlightAnnotation(annotationId) {
+    try {
+      const view = this._pmViewer?.view;
+      if (!view) return;
+      const target = view.dom.querySelector(`.pm-annotation[data-id="${CSS.escape(annotationId)}"]`);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Web Animations 脈衝
+        try {
+          target.animate([
+            { boxShadow: '0 0 0 0 rgba(59,130,246,0.45)' },
+            { boxShadow: '0 0 0 10px rgba(59,130,246,0.0)' }
+          ], { duration: 650, easing: 'ease-out' });
+        } catch (_) {
+          target.classList.add('pm-annotation-pulse');
+          setTimeout(() => target.classList.remove('pm-annotation-pulse'), 900);
+        }
+      }
+    } catch (e) {
+      console.warn('highlightAnnotation 失敗:', e);
+    }
+  }
+
+  /**
    * 由 PM 裝飾點擊觸發：聚焦對應浮動批註卡片並滾動對齊
    */
   highlightAnnotation(annotationId) {

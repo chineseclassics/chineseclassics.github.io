@@ -1,0 +1,53 @@
+/* ============= PM 批註系統（師生端共用樣式） ============= */
+/* 由 student-annotation-system.css 重命名整合為單一共用樣式 */
+
+/* 論文模式（PM 文檔）視覺優化 */
+.pm-essay.pm-essay-structured { counter-reset: pm-para; }
+.pm-essay.pm-essay-structured p { position: relative; padding-left: 2.25rem; margin: 0.45rem 0 0.75rem; line-height: 1.9; }
+.pm-essay.pm-essay-structured p::before { content: '段落 ' counter(pm-para); counter-increment: pm-para; position: absolute; top: -0.4rem; left: 0; color: #9ca3af; font-size: 0.72rem; }
+.pm-essay.pm-essay-structured p:hover { background: #fafaf9; }
+
+/* PM 裝飾：批註高亮（設計令牌 + 後備色） */
+.pm-annotation { background: var(--warning-100, rgba(251,191,36,0.22)); box-shadow: inset 0 -2px 0 var(--warning-600, rgba(245,158,11,0.55)); border-radius: 2px; transition: background-color .15s ease, box-shadow .15s ease; cursor: pointer; }
+.pm-annotation:hover { background: var(--warning-200, rgba(251,191,36,0.32)); }
+.pm-annotation:focus-visible { outline: 2px solid var(--primary-600, #2563eb); outline-offset: 1px; }
+.pm-annotation-pulse { animation: pmPulse 900ms ease-out 1; }
+@keyframes pmPulse { 0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.35), inset 0 -2px 0 var(--warning-600, rgba(245,158,11,0.55)); } 60% { box-shadow: 0 0 0 8px rgba(59,130,246,0.0), inset 0 -2px 0 var(--warning, rgba(245,158,11,0.55)); } 100% { box-shadow: inset 0 -2px 0 var(--warning-600, rgba(245,158,11,0.55)); } }
+.pm-annotation-approx { background: var(--warning-50, rgba(253,230,138,0.25)); box-shadow: inset 0 -2px 0 rgba(245, 158, 11, 0.35); }
+.pm-annotation-orphan { background: rgba(156,163,175,0.18); box-shadow: inset 0 -2px 0 rgba(107,114,128,0.4); border-bottom: 1px dashed #9ca3af; }
+
+/* 學生端批註側欄（通用卡片樣式） */
+#student-ann-sidebar .student-ann-header { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151; }
+#student-ann-sidebar .student-ann-list { padding: 8px; }
+#student-ann-sidebar .student-ann-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; cursor: pointer; background: #fff; }
+#student-ann-sidebar .student-ann-card:hover { background: #f9fafb; }
+#student-ann-sidebar .student-ann-card.active { outline: 2px solid #60a5fa; outline-offset: 2px; }
+
+/* ProseMirror 基礎樣式（必要） */
+.ProseMirror { white-space: pre-wrap; word-wrap: break-word; outline: none; min-height: 240px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; }
+.ProseMirror p { margin: 0 0 0.75rem 0; }
+.ProseMirror-focused { outline: none; }
+
+/* 老師端：批註工具列按鈕（與設計令牌對齊） */
+.btn-annotation-add { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-600, #2563eb); color: var(--text-inverse, #fff); border: none; border-radius: 8px; padding: 8px 12px; box-shadow: 0 2px 6px rgba(37,99,235,0.25); transition: transform .08s ease, box-shadow .15s ease, background .15s ease; }
+.btn-annotation-add:hover { background: var(--primary-700, #1d4ed8); box-shadow: 0 6px 12px rgba(29,78,216,0.25); }
+.btn-annotation-add:active { transform: translateY(1px); }
+.btn-annotation-stats { display: inline-flex; align-items: center; gap: 6px; background: var(--neutral-100, #f3f4f6); color: var(--neutral-700, #374151); border: 1px solid var(--neutral-200, #e5e7eb); border-radius: 8px; padding: 8px 12px; }
+.btn-annotation-stats:hover { background: var(--neutral-200, #e5e7eb); }
+
+/* 響應式調整（學生端容器寬度） */
+#student-dashboard .main-content-area { max-width: 78%; position: relative; overflow: visible; }
+#student-dashboard { max-width: 1800px; margin: 0 auto; }
+#student-dashboard .grading-content-wrapper { overflow: visible; max-height: none; }
+
+@media (max-width: 1024px) {
+  #student-dashboard .flex { flex-direction: column; }
+  #student-dashboard aside { position: relative !important; width: 100% !important; max-height: none !important; margin-bottom: 1rem; }
+  #student-dashboard .main-content-area { max-width: 100%; }
+}
+
+@media (max-width: 768px) {
+  #student-dashboard .main-content-area { max-width: 100%; }
+}
+
+
