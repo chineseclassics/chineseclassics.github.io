@@ -249,17 +249,27 @@ export async function initializeEssayEditor(forceReinit = false) {
     const host = document.getElementById('essay-editor')||container;
     try { host.classList.add('pm-essay'); } catch (_) {}
 
-    // 套用模式：僅在 essay-structured 時啟用段落覆蓋與工具
+    // 套用模式樣式
     const writingMode = await loadAssignmentMode();
     if (writingMode === 'essay-structured') {
       try { host.classList.add('pm-essay-structured'); } catch (_) {}
-      try { setupEssayStructuredUI(EditorState.introEditor); } catch (e) { console.warn('essay-structured UI 掛載失敗:', e); }
     } else {
       try { host.classList.remove('pm-essay-structured'); } catch (_) {}
-      // 移除可能存在的工具列
-      try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
-      try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
     }
+
+    // 永久移除舊的浮動工具（已不再使用）
+    try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
+    try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
+
+    // 綁定左側「雨村評點（當前段）」
+    try {
+      const btn = document.getElementById('sidebar-yucun-btn');
+      if (btn) {
+        btn.addEventListener('click', async () => {
+          await runYucunForCurrentParagraph();
+        });
+      }
+    } catch (_) {}
 
     // 確保有 essay 記錄（新作業會沒有 ID）並立即保存一次
     await ensureEssayRecord();
@@ -582,6 +592,32 @@ function getCurrentParagraphHTML(view, posOverride = null) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   return `<p>${escaped}</p>`;
+}
+
+function getParagraphTypeByCaret(view) {
+  try {
+    const { state } = view;
+    const total = state.doc.content.childCount;
+    const $from = state.selection.$from;
+    const index = $from.index($from.depth); // 當前 block 序號
+    if (index <= 0) return 'introduction';
+    if (index >= total - 1) return 'conclusion';
+    return 'body';
+  } catch (_) { return 'body'; }
+}
+
+async function runYucunForCurrentParagraph() {
+  try {
+    const view = EditorState.introEditor?.view;
+    if (!view) return;
+    const html = getCurrentParagraphHTML(view) || '';
+    const plain = html.replace(/<[^>]*>/g,'').trim();
+    if (!plain) { toast.warning('當前段落為空'); return; }
+    const type = getParagraphTypeByCaret(view);
+    const { requestAIFeedback } = await import('../ai/feedback-requester.js');
+    const AppState = getAppState();
+    await requestAIFeedback('pm-current', html, type, AppState.currentFormatSpec);
+  } catch (e) { console.warn('雨村評點失敗:', e); toast.error('雨村評點失敗'); }
 }
 
 function insertParagraphRelative(view, where = 'below', basePos = null) {

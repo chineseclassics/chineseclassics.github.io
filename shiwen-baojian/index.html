@@ -238,7 +238,14 @@
                                 </div>
                             </div>
                             
-                            <!-- AI 反饋內容（初始隱藏，點擊段落「雨村評點」後展開） -->
+                            <!-- 賈雨村說：全局雨村評點（當前段） -->
+                            <div class="px-4 py-3 border-t border-gray-200">
+                                <button id="sidebar-yucun-btn" class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-all">
+                                    <i class="fas fa-pen-fancy"></i>
+                                    <span>雨村評點（當前段）</span>
+                                </button>
+                            </div>
+                            <!-- AI 反饋內容（點擊上方按鈕後展開） -->
                             <div id="sidebar-feedback-content" class="p-4 max-h-[calc(100vh-260px)] overflow-y-auto hidden"></div>
                         </div>
                     </div>
@@ -314,60 +321,9 @@
                             </div>
                         </div>
                         
-                        <!-- 引言區 -->
-                        <div id="intro" class="paragraph-block border-b border-gray-200 p-6 transition-all">
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-lg font-semibold text-gray-900">引言</h3>
-                                <div class="flex items-center space-x-3">
-                                    <button id="intro-feedback-btn" 
-                                            class="premium-blue-text hover:premium-blue-text-dark hover:premium-blue-hover px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
-                                            title="請雨村評點">
-                                        <i class="fas fa-pen-fancy mr-2 text-base"></i>
-                                        雨村評點
-                                    </button>
-                                    <span class="text-xs text-gray-500">Introduction</span>
-                                </div>
-                            </div>
-                            <div id="intro-editor" class="min-h-[200px] bg-gray-50 rounded-lg p-4"></div>
-                            <div class="mt-3 flex items-center justify-between">
-                                <span id="intro-word-count" class="text-xs text-gray-500">0 字</span>
-                            </div>
-                            <!-- 移動端 AI 反饋容器（內聯展開） -->
-                        </div>
-                        
-                        <!-- 分論點區域 -->
-                        <div id="arguments-container" class="border-b border-gray-200">
-                            <!-- 分論點將動態添加到這裡 -->
-                        </div>
-                        
-                        <!-- 添加分論點按鈕 -->
-                        <div class="p-4 border-b border-gray-200">
-                            <button id="add-argument-btn" 
-                                    class="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 transition-all">
-                                <i class="fas fa-plus"></i>
-                                <span>添加分論點</span>
-                            </button>
-                        </div>
-                        
-                        <!-- 結論區 -->
-                        <div id="conclusion" class="paragraph-block p-6 transition-all">
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-lg font-semibold text-gray-900">結論</h3>
-                                <div class="flex items-center space-x-3">
-                                    <button id="conclusion-feedback-btn" 
-                                            class="premium-blue-text hover:premium-blue-text-dark hover:premium-blue-hover px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow"
-                                            title="請雨村評點">
-                                        <i class="fas fa-pen-fancy mr-2 text-base"></i>
-                                        雨村評點
-                                    </button>
-                                    <span class="text-xs text-gray-500">Conclusion</span>
-                                </div>
-                            </div>
-                            <div id="conclusion-editor" class="min-h-[200px] bg-gray-50 rounded-lg p-4"></div>
-                            <div class="mt-3 flex items-center justify-between">
-                                <span id="conclusion-word-count" class="text-xs text-gray-500">0 字</span>
-                            </div>
-                            <!-- 移動端 AI 反饋容器（內聯展開） -->
+                        <!-- 單一 PM 編輯器容器（自然分段） -->
+                        <div class="p-6">
+                            <div id="essay-editor" class="min-h-[420px]"></div>
                         </div>
                     </div>
                 </div>
