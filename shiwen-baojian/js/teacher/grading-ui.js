@@ -258,7 +258,7 @@ class GradingUI {
             </div>
           </div>
           <!-- 右側：批註側欄（固定寬度，用於承載疊加層與編寫器） -->
-          <aside id="ann-sidebar" class="hidden lg:block w-[360px] relative"></aside>
+          <aside id="ann-sidebar" class="hidden lg:block w-72 relative"></aside>
         </div>
       </div>
     `;
