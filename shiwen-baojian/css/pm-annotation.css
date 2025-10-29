@@ -2,6 +2,10 @@
 /* 擴寬頁面容器，減少右側無效留白 */
 #teacher-dashboard .max-w-7xl,
 #student-dashboard .max-w-7xl { max-width: 1600px; }
+
+/* 中欄最小寬度，避免正文被擠壓過小 */
+#teacher-dashboard .main-content-area { min-width: 640px; }
+#student-dashboard .main-content-area { min-width: 640px; }
 /* 由 student-annotation-system.css 重命名整合為單一共用樣式 */
 
 /* 論文模式（PM 文檔）視覺優化 */
@@ -10,11 +14,9 @@
 .pm-essay.pm-essay-structured p::before { content: '段落 ' counter(pm-para); counter-increment: pm-para; position: absolute; top: -0.4rem; left: 0; color: #9ca3af; font-size: 0.72rem; }
 .pm-essay.pm-essay-structured p:hover { background: #fafaf9; }
 
-/* 為右側批註卡片預留空間（老師端） */
-#teacher-dashboard .essay-viewer { position: relative; padding-right: 360px; }
-
-/* 學生端：為編輯器右側預留空間 */
-#student-dashboard #essay-editor { padding-right: 360px; }
+/* 右欄改為固定側欄（#ann-sidebar），不再使用 padding 預留空間 */
+/* #teacher-dashboard .essay-viewer { position: relative; } */
+/* #student-dashboard #essay-editor { } */
 
 /* PM 裝飾：批註高亮（設計令牌 + 後備色） */
 .pm-annotation { background: var(--warning-100, rgba(251,191,36,0.22)); box-shadow: inset 0 -2px 0 var(--warning-600, rgba(245,158,11,0.55)); border-radius: 2px; transition: background-color .15s ease, box-shadow .15s ease; cursor: pointer; }
@@ -38,8 +40,8 @@
 .ProseMirror-focused { outline: none; }
 
 /* 中欄（正文）建議寬度，避免行寬過長（師生一致） */
-.pm-viewer { max-width: 720px; }
-#essay-editor .ProseMirror { max-width: 720px; }
+.pm-viewer { width: 100%; max-width: 760px; }
+#essay-editor .ProseMirror { width: 100%; max-width: 760px; }
 
 /* 老師端：批註工具列按鈕（與設計令牌對齊） */
 .btn-annotation-add { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-600, #2563eb); color: var(--text-inverse, #fff); border: none; border-radius: 8px; padding: 8px 12px; box-shadow: 0 2px 6px rgba(37,99,235,0.25); transition: transform .08s ease, box-shadow .15s ease, background .15s ease; }
