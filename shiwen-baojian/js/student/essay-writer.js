@@ -189,9 +189,7 @@ async function refreshPMAnnotationsStudent() {
     window.__pmAnnStore = Array.from(map.values());
     const view = EditorState.introEditor?.view;
     if (view) view.dispatch(view.state.tr.setMeta('annotations:update', true));
-    // 更新學生端側欄
-    try { renderStudentAnnSidebar(); } catch (_) {}
-    // 更新右側疊加層
+    // 更新右側疊加層（學生端不再顯示固定批註側欄，統一使用右欄疊加卡片）
     try { window.__pmOverlay?.update?.(); } catch (_) {}
     // Realtime：建立一次性監聽
     try {
