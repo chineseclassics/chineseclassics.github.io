@@ -1,4 +1,7 @@
 /* ============= PM 批註系統（師生端共用樣式） ============= */
+/* 擴寬頁面容器，減少右側無效留白 */
+#teacher-dashboard .max-w-7xl,
+#student-dashboard .max-w-7xl { max-width: 1600px; }
 /* 由 student-annotation-system.css 重命名整合為單一共用樣式 */
 
 /* 論文模式（PM 文檔）視覺優化 */
@@ -33,6 +36,10 @@
 .ProseMirror { white-space: pre-wrap; word-wrap: break-word; outline: none; min-height: 240px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; }
 .ProseMirror p { margin: 0 0 0.75rem 0; }
 .ProseMirror-focused { outline: none; }
+
+/* 中欄（正文）建議寬度，避免行寬過長（師生一致） */
+.pm-viewer { max-width: 720px; }
+#essay-editor .ProseMirror { max-width: 720px; }
 
 /* 老師端：批註工具列按鈕（與設計令牌對齊） */
 .btn-annotation-add { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-600, #2563eb); color: var(--text-inverse, #fff); border: none; border-radius: 8px; padding: 8px 12px; box-shadow: 0 2px 6px rgba(37,99,235,0.25); transition: transform .08s ease, box-shadow .15s ease, background .15s ease; }
