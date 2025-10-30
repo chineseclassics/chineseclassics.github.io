@@ -145,12 +145,6 @@ class GradingUI {
                 
                 <!-- 初始狀態下隱藏內容區域，點擊獲取建議後才展開 -->
                 <div id="aiSectionContent" class="section-content hidden">
-                  <div class="panel-actions">
-                    <p class="ai-hint">
-                      <i class="fas fa-info-circle"></i>
-                      AI 建議僅供參考，老師可自由調整
-                    </p>
-                  </div>
                   
                   <div id="aiLoadingState" class="hidden ai-loading">
                     <div class="spinner"></div>

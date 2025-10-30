@@ -1830,6 +1830,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-2);
 }
 
 /* AI 區塊：使用 scholar（賈雨村）配色 - 中等深度背景 */
@@ -1851,9 +1852,22 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   display: flex;
   align-items: center;
   color: inherit; /* 繼承父元素顏色 */
+  flex: 1 1 auto;            /* 讓標題佔據剩餘空間 */
+  white-space: nowrap;       /* 標題不換行 */
+  overflow: hidden;
+  text-overflow: ellipsis;   /* 超出時以省略號顯示 */
 }
 
 /* 提醒：.btn-ai-suggest 已於 components.css 以設計令牌定義，這裡不再覆蓋 */
+/* AI 區標題欄的操作按鈕：保證不換行且不過寬擠壓標題 */
+.grading-sidebar-section.ai-section .section-header .btn-ai-suggest {
+  flex: none;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  line-height: 1.1;
+  padding: 0.4rem 0.6rem;
+  max-width: 55%;            /* 避免過寬導致標題擠壓換行 */
+}
 
 /* 區域內容 */
 .grading-sidebar-section .section-content {
@@ -1868,8 +1882,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .grading-sidebar-section .criterion-group {
-  padding: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
+  padding: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
   /* 使用設計令牌，並提供回退色值 */
   background: var(--bg-subtle, #f6f7f9);
   border-radius: var(--radius-sm);
@@ -1884,9 +1898,23 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .grading-sidebar-section .criterion-group .criterion-details {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
+}
+
+/* 讓評分標準群組內的元素更緊湊 */
+.grading-sidebar-section .criterion-group label {
+  font-size: var(--text-sm);
+  margin-bottom: var(--spacing-1);
+}
+.grading-sidebar-section .criterion-group select {
+  padding: var(--spacing-2);
+  min-height: 2rem;
+}
+.grading-sidebar-section .criterion-group details > summary {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
 
 /* 分數輸入框適應窄寬度 */
@@ -1927,7 +1955,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .grading-sidebar-section .btn-submit-grading {
   width: 100%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  /* 使用設計令牌完成色系 Token 化（並提供回退色值） */
+  background: linear-gradient(
+    135deg,
+    var(--success-500, #10b981) 0%,
+    var(--success-600, #059669) 100%
+  );
   color: white;
   border: none;
   padding: 0.75rem 1rem;
@@ -1942,8 +1975,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .grading-sidebar-section .btn-submit-grading:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(
+    135deg,
+    var(--success-600, #059669) 0%,
+    var(--success-700, #047857) 100%
+  );
   transform: translateY(-1px);
+  /* 若有自定義陰影令牌可替換；此處保留回退寫法 */
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
@@ -2008,11 +2046,16 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 /* ================================
    AI 建議卡片（統一令牌樣式）
    ================================ */
+.ai-results {
+  /* 內容字級略縮小，適配側欄寬度 */
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
 .ai-results .card {
   background: var(--bg-subtle, #f6f7f9);
   border: 1px solid var(--border-secondary);
   border-radius: var(--radius-sm);
-  padding: var(--spacing-3);
+  padding: var(--spacing-2);
 }
 
 .ai-results .ai-overall {
@@ -2020,12 +2063,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   border-left: 3px solid var(--warning-600, #d97706);
   background: var(--bg-card, #ffffff);
   border-radius: var(--radius-sm);
-  padding: var(--spacing-3);
+  padding: var(--spacing-2);
 }
 
 .ai-results .ai-overall .block {
   border-radius: var(--radius-sm);
-  padding: var(--spacing-3);
+  padding: var(--spacing-2);
 }
 
 .ai-results .ai-overall .block.good {
@@ -2044,6 +2087,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   padding-top: var(--spacing-3);
   border-top: 1px solid var(--border-divider, #e5e7eb);
 }
+
+/* 讓各標準卡片更緊湊 */
+.ai-results .ai-criterion-card { margin-bottom: var(--spacing-2) !important; }
+.ai-results .ai-criterion-card p { font-size: var(--text-sm); }
 
 /* ================================
    響應式設計
