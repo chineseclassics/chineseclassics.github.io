@@ -457,10 +457,10 @@ export async function initializeEssayEditor(forceReinit = false) {
             const html = getCurrentParagraphHTML(view, pos) || '';
             const plain = html.replace(/<[^>]*>/g, '').trim();
             if (!plain) { toast.warning('當前段落為空'); return; }
-            // 依當前段位置自動推斷段落類型：首=引言，末=結論，其餘=分論點（body）
-            const type = getParagraphTypeByPos(view, pos);
+            // 依當前段「徽章」為主、索引為輔推斷段落語義
+            const role = getParagraphRoleMeta(view, pos);
             const { requestAIFeedback } = await import('../ai/feedback-requester.js');
-            await requestAIFeedback('pm-current', html, type, getAppState().currentFormatSpec);
+            await requestAIFeedback('pm-current', html, role.kind, { formatSpec: getAppState().currentFormatSpec, roleMeta: role });
           } catch (e) { console.warn('雨村評點啟動失敗:', e); toast.error('雨村評點失敗'); }
         }
       });
@@ -992,6 +992,54 @@ function getParagraphTypeByPos(view, pos) {
   } catch (_) { return 'body'; }
 }
 
+// 阿拉伯數字轉中文小寫（1→一，2→二...）簡版（供徽章標籤拼接）
+function numToCN(n) {
+  const map = ['零','一','二','三','四','五','六','七','八','九'];
+  if (n >= 1 && n <= 9) return map[n];
+  return String(n);
+}
+
+// 以 DOM 徽章為主、索引為輔推斷段落語義，供 AI 上下文使用
+// 回傳：{ kind: 'introduction'|'body'|'conclusion', label: '引言'|'分論點一'|...|'結論', bodyIndex: number|null }
+function getParagraphRoleMeta(view, posOverride = null) {
+  try {
+    const { state } = view;
+    const $ref = posOverride ? state.doc.resolve(posOverride) : state.selection.$from;
+    let kindByBadge = null;
+    let labelByBadge = null;
+    try {
+      const domInfo = view.domAtPos($ref.pos);
+      const startNode = domInfo && domInfo.node ? domInfo.node : null;
+      const el = startNode && startNode.nodeType === 3 ? startNode.parentNode : startNode;
+      const p = el && typeof el.closest === 'function' ? el.closest('p') : null;
+      if (p && p.querySelector) {
+        if (p.querySelector('.pm-par-label.conclusion')) { kindByBadge = 'conclusion'; }
+        else if (p.querySelector('.pm-par-label.intro')) { kindByBadge = 'introduction'; }
+        else if (p.querySelector('.pm-par-label.body')) { kindByBadge = 'body'; }
+        const b = p.querySelector('.pm-par-label');
+        if (b) labelByBadge = (b.textContent || '').trim();
+      }
+    } catch (_) {}
+
+    // 索引邏輯（向後相容 + 補 body 序號）
+    let kindByIndex = 'body';
+    let bodyIndex = null;
+    try {
+      const total = state.doc.childCount || state.doc.content.childCount || 0;
+      const index = $ref.index(1);
+      if (index <= 0) kindByIndex = 'introduction';
+      else if (index >= total - 1) kindByIndex = 'conclusion';
+      else { kindByIndex = 'body'; bodyIndex = index; }
+    } catch (_) {}
+
+    const kind = kindByBadge || kindByIndex || 'body';
+    const label = labelByBadge || (kind === 'introduction' ? '引言' : (kind === 'conclusion' ? '結論' : (typeof bodyIndex === 'number' ? `分論點${numToCN(bodyIndex)}` : '分論點')));
+    return { kind, label, bodyIndex: typeof bodyIndex === 'number' ? bodyIndex : null };
+  } catch (_) {
+    return { kind: 'body', label: '分論點', bodyIndex: null };
+  }
+}
+
 async function runYucunForCurrentParagraph() {
   try {
     const view = EditorState.introEditor?.view;
@@ -999,10 +1047,10 @@ async function runYucunForCurrentParagraph() {
     const html = getCurrentParagraphHTML(view) || '';
     const plain = html.replace(/<[^>]*>/g,'').trim();
     if (!plain) { toast.warning('當前段落為空'); return; }
-    const type = getParagraphTypeByCaret(view);
+  const role = getParagraphRoleMeta(view, null);
     const { requestAIFeedback } = await import('../ai/feedback-requester.js');
     const AppState = getAppState();
-    await requestAIFeedback('pm-current', html, type, AppState.currentFormatSpec);
+  await requestAIFeedback('pm-current', html, role.kind, { formatSpec: AppState.currentFormatSpec, roleMeta: role });
   } catch (e) { console.warn('雨村評點失敗:', e); toast.error('雨村評點失敗'); }
 }
 

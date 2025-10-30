@@ -52,7 +52,7 @@ function simpleHash(content) {
  * @param {object} formatSpec - 格式規範（可選）
  * @returns {Promise<object>} - AI 反饋結果
  */
-export async function requestAIFeedback(paragraphId, paragraphContent, paragraphType, formatSpec = null) {
+export async function requestAIFeedback(paragraphId, paragraphContent, paragraphType, formatSpecOrOptions = null) {
     if (!AppState.supabase) {
         throw new Error('Supabase 未初始化');
     }
@@ -60,13 +60,33 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
     console.log('📤 請求 AI 反饋:', { paragraphId, paragraphType });
     
     try {
-        // 1. 計算內容哈希值
-        const contentHash = simpleHash(paragraphContent);
+    // 1. 計算內容哈希值
+    const contentHash = simpleHash(paragraphContent);
         console.log('🔑 內容哈希:', contentHash);
         
-        // 2. 檢查緩存
+        // 2. 解析參數：相容舊版（formatSpec），支援新版 options { formatSpec, roleMeta }
+        let formatSpec = null;
+        let roleMeta = null; // { kind, label, bodyIndex }
+        if (formatSpecOrOptions && typeof formatSpecOrOptions === 'object' && (formatSpecOrOptions.formatSpec || formatSpecOrOptions.roleMeta)) {
+            formatSpec = formatSpecOrOptions.formatSpec || null;
+            roleMeta = formatSpecOrOptions.roleMeta || null;
+        } else {
+            formatSpec = formatSpecOrOptions;
+        }
+
+        // 3. 建立段落角色簽名（供快取及後端識別）
+        const roleSignature = (() => {
+            if (roleMeta && roleMeta.kind) {
+                if (roleMeta.kind === 'body' && typeof roleMeta.bodyIndex === 'number') return `body-${roleMeta.bodyIndex}`;
+                return roleMeta.kind; // introduction | conclusion
+            }
+            // 回退：使用基礎 paragraphType
+            return paragraphType || 'body';
+        })();
+
+        // 4. 檢查緩存（內容哈希 + 角色簽名需一致）
         const cachedFeedback = AppState.cache.aiFeedbackCache[paragraphId];
-        if (cachedFeedback && cachedFeedback.contentHash === contentHash) {
+        if (cachedFeedback && cachedFeedback.contentHash === contentHash && cachedFeedback.roleSignature === roleSignature) {
             console.log('📦 使用緩存的 AI 反饋（內容未變化）');
             
             // 直接渲染緩存的反饋
@@ -79,29 +99,39 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
             };
         }
         
-        // 3. 內容已變化或無緩存，重新請求
+        // 5. 內容已變化或無緩存，重新請求
         if (cachedFeedback) {
             console.log('🔄 內容已變化，重新請求 AI 反饋');
         } else {
             console.log('🆕 首次請求 AI 反饋');
         }
         
-        // 4. 顯示加載狀態
+        // 6. 顯示加載狀態
         showLoadingState(paragraphId);
         
-        // 5. 加載格式規範（如果沒有傳入）
+        // 7. 加載格式規範（如果沒有傳入）
         if (!formatSpec) {
             console.log('📥 加載紅樓夢論文格式規範...');
             formatSpec = await loadHonglouFormatSpec();
         }
         
-        // 6. 調用 Edge Function
+        // 8. 詳細段落型別（body-1、body-2…），intro/conclusion 原樣
+        const paragraphTypeDetailed = roleSignature;
+
+        // 9. 調用 Edge Function（傳遞可選 roleMeta，供 AI 使用段落語義）
         const { data, error } = await AppState.supabase.functions.invoke('ai-feedback-agent', {
             body: {
                 paragraph_id: paragraphId,
                 paragraph_content: paragraphContent,
                 paragraph_type: paragraphType,
-                format_spec: formatSpec
+                paragraph_type_detailed: paragraphTypeDetailed,
+                format_spec: formatSpec,
+                // 新增：段落語義（向後相容，後端可選讀取）
+                paragraph_role: roleMeta ? {
+                    kind: roleMeta.kind || paragraphType,
+                    label: roleMeta.label || null,
+                    body_index: typeof roleMeta.bodyIndex === 'number' ? roleMeta.bodyIndex : null
+                } : null
             }
         });
         
@@ -115,21 +145,22 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         
         console.log('✅ AI 反饋獲取成功:', data);
         
-        // 7. 更新緩存
+        // 10. 更新緩存（納入角色簽名）
         AppState.cache.aiFeedbackCache[paragraphId] = {
             contentHash: contentHash,
+            roleSignature: roleSignature,
             feedback: data.feedback,
             timestamp: Date.now()
         };
         console.log('💾 AI 反饋已緩存');
         
-        // 8. 隱藏加載狀態
+        // 11. 隱藏加載狀態
         hideLoadingState(paragraphId);
         
-        // 9. 渲染反饋
+        // 12. 渲染反饋
         renderFeedback(paragraphId, data.feedback);
         
-        // 10. 返回結果
+        // 13. 返回結果
         return {
             success: true,
             feedback: data.feedback,
