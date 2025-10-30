@@ -1135,13 +1135,17 @@ function setupParagraphYucunBrush(pm) {
 
   // 首次同步
   syncButtons();
+  updateAllPositions();
 
   // 監聽 DOM 變化以重新同步
   try {
     const mo = new MutationObserver(() => {
       // 批次緩衝，避免過於頻繁
       if (window.__pmYucunSyncRaf) cancelAnimationFrame(window.__pmYucunSyncRaf);
-      window.__pmYucunSyncRaf = requestAnimationFrame(syncButtons);
+      window.__pmYucunSyncRaf = requestAnimationFrame(() => {
+        syncButtons();
+        updateAllPositions();
+      });
     });
     mo.observe(view.dom, { childList: true, subtree: true, characterData: true });
     window.__pmYucunMO = mo;
@@ -1154,6 +1158,37 @@ function setupParagraphYucunBrush(pm) {
   };
   window.addEventListener('scroll', onScrollOrResize, { passive: true });
   window.addEventListener('resize', onScrollOrResize);
+
+  // 觀察編輯器容器尺寸改變（內容撰寫會引發高度變動）
+  try {
+    const roEl = view.dom.querySelector('.ProseMirror') || view.dom;
+    const ro = new ResizeObserver(() => {
+      if (window.__pmYucunPosRaf) cancelAnimationFrame(window.__pmYucunPosRaf);
+      window.__pmYucunPosRaf = requestAnimationFrame(updateAllPositions);
+    });
+    ro.observe(roEl);
+    window.__pmYucunRO = ro;
+  } catch (_) {}
+
+  // 輸入/鍵盤事件後更新（兼容某些瀏覽器下 Mutation/Resize 未即時觸發的情況）
+  const onEdit = () => {
+    if (window.__pmYucunPosRaf) cancelAnimationFrame(window.__pmYucunPosRaf);
+    window.__pmYucunPosRaf = requestAnimationFrame(updateAllPositions);
+  };
+  view.dom.addEventListener('input', onEdit);
+  view.dom.addEventListener('keyup', onEdit);
+
+  // 最後兜底：在焦點期間以低頻率輪詢位置（性能安全）
+  try {
+    let pollId = null;
+    const startPoll = () => { if (!pollId) pollId = setInterval(updateAllPositions, 500); };
+    const stopPoll = () => { if (pollId) { clearInterval(pollId); pollId = null; } };
+    view.dom.addEventListener('focusin', startPoll);
+    view.dom.addEventListener('focusout', stopPoll);
+    // 若當前已聚焦則立即啟動
+    if (document.activeElement && view.dom.contains(document.activeElement)) startPoll();
+    window.__pmYucunPollStop = stopPoll;
+  } catch (_) {}
 }
 
 // ================================
