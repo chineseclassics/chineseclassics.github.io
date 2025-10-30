@@ -163,7 +163,75 @@ export class PMEditor {
       }
     });
 
-    const plugins = [history(), markKeymap, keymap(baseKeymap), updatePlugin, pastePlugin, conclusionGuardPlugin, ...(Array.isArray(extraPlugins) ? extraPlugins : [])];
+    // 段落標籤插件：首段顯示「引言」，末段顯示「結論」（使用醒目顏色），中間依序「分論點一、二、三…」
+    const paraLabelKey = new PluginKey('pm-paragraph-labels');
+    const createParaLabelEl = (label, kind) => {
+      const span = document.createElement('span');
+      span.className = 'pm-par-label' + (kind ? ` ${kind}` : '');
+      // 內聯樣式以避免依賴外部樣式
+      span.style.fontSize = '12px';
+      span.style.lineHeight = '1';
+      span.style.marginRight = '8px';
+      span.style.userSelect = 'none';
+      span.style.pointerEvents = 'none';
+      if (kind === 'conclusion') {
+        // 結論：醒目色
+        span.style.color = '#2563eb'; // tailwind blue-600
+        span.style.fontWeight = '600';
+      } else if (kind === 'intro') {
+        span.style.color = '#6b7280'; // gray-500
+      } else {
+        span.style.color = '#6b7280'; // gray-500
+      }
+      span.textContent = label;
+      return span;
+    };
+    const paraLabelPlugin = new Plugin({
+      key: paraLabelKey,
+      state: {
+        init: (_cfg, state) => {
+          const build = (doc) => {
+            const posList = [];
+            doc.descendants((node, pos) => { if (node.type.name === 'paragraph') posList.push(pos); });
+            const total = posList.length;
+            const decos = [];
+            posList.forEach((pos, idx) => {
+              let label = '';
+              let kind = '';
+              if (idx === 0) { label = '引言'; kind = 'intro'; }
+              else if (idx === total - 1) { label = '結論'; kind = 'conclusion'; }
+              else { label = `分論點${numToCN(idx)}`; kind = 'body'; }
+              decos.push(Decoration.widget(pos + 1, () => createParaLabelEl(label, kind), { side: -1, ignoreSelection: true }));
+            });
+            return DecorationSet.create(doc, decos);
+          };
+          return build(state.doc);
+        },
+        apply: (tr, set, _old, state) => {
+          if (!tr.docChanged && tr.getMeta(paraLabelKey) !== 'refresh') return set;
+          // 重新生成標籤
+          const doc = tr.doc;
+          const posList = [];
+          doc.descendants((node, pos) => { if (node.type.name === 'paragraph') posList.push(pos); });
+          const total = posList.length;
+          const decos = [];
+          posList.forEach((pos, idx) => {
+            let label = '';
+            let kind = '';
+            if (idx === 0) { label = '引言'; kind = 'intro'; }
+            else if (idx === total - 1) { label = '結論'; kind = 'conclusion'; }
+            else { label = `分論點${numToCN(idx)}`; kind = 'body'; }
+            decos.push(Decoration.widget(pos + 1, () => createParaLabelEl(label, kind), { side: -1, ignoreSelection: true }));
+          });
+          return DecorationSet.create(doc, decos);
+        }
+      },
+      props: {
+        decorations(state) { return this.getState(state); }
+      }
+    });
+
+    const plugins = [history(), markKeymap, keymap(baseKeymap), updatePlugin, pastePlugin, conclusionGuardPlugin, paraLabelPlugin, ...(Array.isArray(extraPlugins) ? extraPlugins : [])];
 
     this.view = new EditorView(this.container, {
       state: EditorState.create({
