@@ -378,13 +378,14 @@ export async function initializeEssayEditor(forceReinit = false) {
     try { document.getElementById('essay-structured-toolbar')?.remove(); } catch (_) {}
     try { document.getElementById('pm-inline-toolbar')?.remove(); } catch (_) {}
 
-    // 綁定左側「雨村評點（當前段）」
+    // 左側「賈雨村說」欄：移除舊的「雨村評點（當前段）」按鈕，改為提示資訊
     try {
       const btn = document.getElementById('sidebar-yucun-btn');
       if (btn) {
-        btn.addEventListener('click', async () => {
-          await runYucunForCurrentParagraph();
-        });
+        const tip = document.createElement('div');
+        tip.className = 'yucun-tip';
+        tip.innerHTML = '<i class="fas fa-lightbulb"></i> 提示：點擊段落左側的毛筆圓形按鈕，請「賈雨村說」為該段落提供反饋。';
+        btn.replaceWith(tip);
       }
     } catch (_) {}
 
@@ -1011,7 +1012,12 @@ function setupParagraphYucunBrush(pm) {
     b.type = 'button';
     b.className = 'pm-yucun-btn';
     b.setAttribute('aria-label', '賈雨村說：針對此段評點');
-    b.innerHTML = '<i class="fas fa-pen-fancy"></i>';
+    // 內嵌高品質毛筆 SVG（使用 currentColor 以繼承按鈕前景色）
+    b.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M2 22c2 0 4-1 5-3l7-7 3 3-7 7c-2 1-5 1-8 0z"/>
+        <path fill="currentColor" d="M20.3 3.7a3 3 0 0 1 0 4.2l-3.6 3.6-3.2-3.2 3.6-3.6a3 3 0 0 1 4.2 0z"/>
+      </svg>`;
     Object.assign(b.style, {
       position: 'absolute',
       width: '26px', height: '26px',
