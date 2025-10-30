@@ -18,6 +18,33 @@
 /* #teacher-dashboard .essay-viewer { position: relative; } */
 /* #student-dashboard #essay-editor { } */
 
+/* ================================
+   段落語義標籤（引言／分論點／結論）Badge 樣式
+   - 置於段落左側，與毛筆按鈕上下居中排列
+   - 三色對應設計令牌：primary｜warning｜success
+   ================================ */
+.pm-par-label {
+  position: absolute;
+  top: calc(50% + 18px);      /* 位於毛筆下方約 18px */
+  left: -12px;                /* 讓左側外框線穿過 Badge 的幾何中心 */
+  transform: translate(-50%, 0);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-inverse, #fff);
+  background: #6b7280; /* 後備：灰色 */
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.pm-par-label.intro { background: var(--primary-600, #2563eb); }
+.pm-par-label.body { background: var(--warning-600, #d97706); }
+.pm-par-label.conclusion { background: var(--success-600, #059669); }
+
 /* PM 裝飾：批註高亮（設計令牌 + 後備色） */
 .pm-annotation { background: var(--warning-100, rgba(251,191,36,0.22)); box-shadow: inset 0 -2px 0 var(--warning-600, rgba(245,158,11,0.55)); border-radius: 2px; transition: background-color .15s ease, box-shadow .15s ease; cursor: pointer; }
 .pm-annotation:hover { background: var(--warning-200, rgba(251,191,36,0.32)); }

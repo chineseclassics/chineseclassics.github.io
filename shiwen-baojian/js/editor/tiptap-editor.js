@@ -168,27 +168,7 @@ export class PMEditor {
     const createParaLabelEl = (label, kind) => {
       const span = document.createElement('span');
       span.className = 'pm-par-label' + (kind ? ` ${kind}` : '');
-      // 內聯樣式：絕對定位在段落左側毛筆按鈕下方，並隨段落垂直置中偏下
-      span.style.position = 'absolute';
-      span.style.top = 'calc(50% + 18px)'; // 位於毛筆按鈕（置中）下方約 18px
-      span.style.left = '-48px';           // 靠近毛筆（-34px）略偏左以保證文字居中
-      span.style.transform = 'translateX(0)';
-      span.style.zIndex = '1';
-      span.style.fontSize = '11px';
-      span.style.lineHeight = '1';
-      span.style.whiteSpace = 'nowrap';
-      span.style.textAlign = 'center';
-      span.style.userSelect = 'none';
-      span.style.pointerEvents = 'none';
-      // 顏色：結論更醒目；其餘為灰色
-      if (kind === 'conclusion') {
-        span.style.color = '#2563eb'; // tailwind blue-600
-        span.style.fontWeight = '600';
-      } else if (kind === 'intro') {
-        span.style.color = '#6b7280'; // gray-500
-      } else {
-        span.style.color = '#6b7280'; // gray-500
-      }
+      // 樣式全部交由 CSS 控制（定位、配色、字體等）；此處僅賦值文字
       span.textContent = label;
       return span;
     };

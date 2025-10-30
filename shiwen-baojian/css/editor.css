@@ -679,8 +679,8 @@ input:focus-visible {
     /* 以段落為定位容器，按鈕絕對定位並垂直置中 */
     position: absolute;
     top: 50%;
-    left: -34px; /* 靠近段落左側外緣 */
-    transform: translateY(-50%);
+    left: -12px; /* 以左側外框線穿過按鈕中心為準，與標籤對齊 */
+    transform: translate(-50%, -50%);
     z-index: 2;
     display: inline-flex;
     align-items: center;
@@ -700,11 +700,11 @@ input:focus-visible {
 .pm-yucun-btn i, .pm-yucun-btn svg { pointer-events: none; }
 .pm-yucun-btn svg { width: 14px; height: 14px; display: block; }
 .pm-yucun-btn:hover { 
-    transform: scale(1.08) rotate(-2deg); 
+    transform: translate(-50%, -50%) scale(1.08) rotate(-2deg); 
     background: var(--btn-success-hover);
     box-shadow: 0 12px 28px rgba(124, 152, 133, 0.28);
 }
-.pm-yucun-btn:active { transform: scale(0.98); box-shadow: 0 8px 20px rgba(124, 152, 133, 0.24); }
+.pm-yucun-btn:active { transform: translate(-50%, -50%) scale(0.98); box-shadow: 0 8px 20px rgba(124, 152, 133, 0.24); }
 .pm-yucun-btn:focus-visible { outline: 2px solid var(--success-600); outline-offset: 3px; }
 
 /* 微妙的環形光暈 */
@@ -727,8 +727,8 @@ input:focus-visible {
 }
 
 /* 漸隱顯示（若未來需要用於裝載時淡入） */
-.pm-yucun-btn.pm-enter { opacity: 0; transform: translateY(4px) scale(0.96); }
-.pm-yucun-btn.pm-enter-active { opacity: 1; transform: translateY(0) scale(1); transition: transform .18s ease, opacity .18s ease; }
+.pm-yucun-btn.pm-enter { opacity: 0; transform: translate(-50%, calc(-50% + 4px)) scale(0.96); }
+.pm-yucun-btn.pm-enter-active { opacity: 1; transform: translate(-50%, -50%) scale(1); transition: transform .18s ease, opacity .18s ease; }
 
 /* 讓 PM 段落成為定位容器，供毛筆按鈕絕對定位 */
 .ProseMirror p { position: relative; }
