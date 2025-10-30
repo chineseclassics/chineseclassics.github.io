@@ -8,7 +8,7 @@
  */
 
 import { PMEditor } from '../editor/tiptap-editor.js';
-import { toggleMark } from '../editor/pm-vendor.js';
+import { toggleMark, Plugin, PluginKey, Decoration, DecorationSet } from '../editor/pm-vendor.js';
 import { createAnnotationPlugin, createAnnotationFromSelection } from '../features/pm-annotation-plugin.js';
 import { PMAnnotationOverlay } from '../features/pm-annotation-overlay.js';
 import { initializeStorage, StorageState } from './essay-storage.js';
@@ -436,8 +436,24 @@ export async function initializeEssayEditor(forceReinit = false) {
     try { setupStudentSelectionComposer(); } catch (_) {}
     try { setupStudentSelectionFab(); } catch (_) {}
 
-    // 段落左側「雨村」毛筆圖示（懸浮顯示，點擊針對該段落評點）
-    try { setupParagraphYucunBrush(EditorState.introEditor); } catch (_) {}
+    // 段落左側「雨村」毛筆圖示（以 ProseMirror widget decorations 常駐在段落內，CSS 垂直置中）
+    try {
+      const brushPlugin = createYucunBrushPlugin({
+        onClick: async (pos) => {
+          try {
+            const view = EditorState.introEditor?.view;
+            if (!view || typeof pos !== 'number') return;
+            const html = getCurrentParagraphHTML(view, pos) || '';
+            const plain = html.replace(/<[^>]*>/g, '').trim();
+            if (!plain) { toast.warning('當前段落為空'); return; }
+            const type = 'body'; // 保守策略：不自動標記結論，避免誤判
+            const { requestAIFeedback } = await import('../ai/feedback-requester.js');
+            await requestAIFeedback('pm-current', html, type, getAppState().currentFormatSpec);
+          } catch (e) { console.warn('雨村評點啟動失敗:', e); toast.error('雨村評點失敗'); }
+        }
+      });
+      EditorState.introEditor.addPlugins([brushPlugin]);
+    } catch (_) {}
 
     // 完成初始化
     EditorState.initialized = true;
@@ -996,6 +1012,54 @@ function insertParagraphRelative(view, where = 'below', basePos = null) {
 }
 
 // ================================
+// PM 插件：段落內「賈雨村說」毛筆裝飾（widget）
+// 以 Decoration.widget 固定在 paragraph 開頭（pos+1），交由 CSS 絕對定位垂直置中
+// ================================
+
+function createYucunBrushPlugin(opts = {}) {
+  const { onClick } = opts;
+  const key = new PluginKey('yucun-brush');
+
+  const createBrushEl = (pos) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pm-yucun-btn';
+    btn.setAttribute('aria-label', '賈雨村說：針對此段評點');
+    btn.innerHTML = '<i class="fas fa-brush"></i>';
+    btn.addEventListener('mousedown', (e) => e.preventDefault());
+    btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); try { onClick?.(pos); } catch (_) {} });
+    return btn;
+  };
+
+  const buildDecos = (doc) => {
+    const decos = [];
+    doc.descendants((node, pos) => {
+      if (node.type && node.type.name === 'paragraph') {
+        // 將 widget 放在段落內容起始（pos+1）
+        decos.push(Decoration.widget(pos + 1, () => createBrushEl(pos + 1), { side: -1, ignoreSelection: true }));
+      }
+    });
+    return decos;
+  };
+
+  return new Plugin({
+    key,
+    state: {
+      init: (_cfg, state) => DecorationSet.create(state.doc, buildDecos(state.doc)),
+      apply: (tr, set) => {
+        if (tr.docChanged || tr.getMeta(key) === 'refresh') {
+          return DecorationSet.create(tr.doc, buildDecos(tr.doc));
+        }
+        return set.map(tr.mapping, tr.doc);
+      }
+    },
+    props: {
+      decorations(state) { return this.getState(state); }
+    }
+  });
+}
+
+// ================================
 // 左側段落「雨村」毛筆圖示（學生端）
 // ================================
 
@@ -1007,17 +1071,26 @@ function setupParagraphYucunBrush(pm) {
   const btnMap = new WeakMap(); // Element<p> -> Button
   window.__pmYucunBtns = btnMap;
 
+  // 觀察每個段落與 viewport 的交叉變化，以即時微調各自位置（避免整體位移）
+  let io = null;
+  try {
+    io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const el = entry.target;
+        const btn = btnMap.get(el);
+        if (btn) positionBtnAtElement(btn, el);
+      }
+    }, { root: null, rootMargin: '0px', threshold: [0, 0.5, 1] });
+    window.__pmYucunIO = io;
+  } catch (_) {}
+
   const createBtn = () => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'pm-yucun-btn';
     b.setAttribute('aria-label', '賈雨村說：針對此段評點');
-    // 內嵌高品質毛筆 SVG（使用 currentColor 以繼承按鈕前景色）
-    b.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M2 22c2 0 4-1 5-3l7-7 3 3-7 7c-2 1-5 1-8 0z"/>
-        <path fill="currentColor" d="M20.3 3.7a3 3 0 0 1 0 4.2l-3.6 3.6-3.2-3.2 3.6-3.6a3 3 0 0 1 4.2 0z"/>
-      </svg>`;
+    // 使用 Font Awesome 的毛筆圖示（更貼近中國毛筆語義）
+    b.innerHTML = '<i class="fas fa-brush"></i>';
     Object.assign(b.style, {
       position: 'absolute',
       width: '26px', height: '26px',
@@ -1090,6 +1163,24 @@ function setupParagraphYucunBrush(pm) {
     }
   };
 
+  // 在短時間內以 rAF 平滑持續重算，避免行高變動造成的延遲
+  let __rafTickerId = null;
+  let __rafUntil = 0;
+  const __tickReposition = (now) => {
+    if (now < __rafUntil) {
+      updateAllPositions();
+      __rafTickerId = requestAnimationFrame(__tickReposition);
+    } else {
+      __rafTickerId = null;
+    }
+  };
+  const scheduleSmoothReposition = (ms = 600) => {
+    try {
+      __rafUntil = performance.now() + ms;
+      if (!__rafTickerId) __rafTickerId = requestAnimationFrame(__tickReposition);
+    } catch (_) {}
+  };
+
   const syncButtons = () => {
     const list = getParagraphs();
     const seen = new Set();
@@ -1121,6 +1212,7 @@ function setupParagraphYucunBrush(pm) {
         btnMap.set(el, btn);
       }
       positionBtnAtElement(btn, el);
+      try { io?.observe?.(el); } catch (_) {}
       seen.add(btn);
     }
 
@@ -1129,6 +1221,7 @@ function setupParagraphYucunBrush(pm) {
       if (!list.includes(el)) {
         try { btn.remove(); } catch (_) {}
         btnMap.delete(el);
+        try { io?.unobserve?.(el); } catch (_) {}
       }
     }
   };
@@ -1145,6 +1238,7 @@ function setupParagraphYucunBrush(pm) {
       window.__pmYucunSyncRaf = requestAnimationFrame(() => {
         syncButtons();
         updateAllPositions();
+        scheduleSmoothReposition(800);
       });
     });
     mo.observe(view.dom, { childList: true, subtree: true, characterData: true });
@@ -1155,6 +1249,7 @@ function setupParagraphYucunBrush(pm) {
   const onScrollOrResize = () => {
     if (window.__pmYucunPosRaf) cancelAnimationFrame(window.__pmYucunPosRaf);
     window.__pmYucunPosRaf = requestAnimationFrame(updateAllPositions);
+    scheduleSmoothReposition(300);
   };
   window.addEventListener('scroll', onScrollOrResize, { passive: true });
   window.addEventListener('resize', onScrollOrResize);
@@ -1165,6 +1260,7 @@ function setupParagraphYucunBrush(pm) {
     const ro = new ResizeObserver(() => {
       if (window.__pmYucunPosRaf) cancelAnimationFrame(window.__pmYucunPosRaf);
       window.__pmYucunPosRaf = requestAnimationFrame(updateAllPositions);
+      scheduleSmoothReposition(800);
     });
     ro.observe(roEl);
     window.__pmYucunRO = ro;
@@ -1174,6 +1270,7 @@ function setupParagraphYucunBrush(pm) {
   const onEdit = () => {
     if (window.__pmYucunPosRaf) cancelAnimationFrame(window.__pmYucunPosRaf);
     window.__pmYucunPosRaf = requestAnimationFrame(updateAllPositions);
+    scheduleSmoothReposition(800);
   };
   view.dom.addEventListener('input', onEdit);
   view.dom.addEventListener('keyup', onEdit);

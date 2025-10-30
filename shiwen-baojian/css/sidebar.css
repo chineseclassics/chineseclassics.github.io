@@ -15,6 +15,17 @@
     transition: all var(--duration-normal) var(--ease-out);
 }
 
+/* 統一「賈雨村說」標題欄為淺綠配色（使用 success 設計令牌） */
+#ai-feedback-sidebar > .premium-blue-gradient,
+#ai-feedback-sidebar .premium-blue-gradient {
+    background: var(--btn-success-bg) !important;
+    color: var(--btn-success-text) !important;
+}
+#ai-feedback-sidebar .premium-blue-gradient h3,
+#ai-feedback-sidebar .premium-blue-gradient i {
+    color: var(--btn-success-text) !important;
+}
+
 /* 側邊欄內容區域滾動優化 */
 #sidebar-feedback-content {
     scrollbar-width: thin;
