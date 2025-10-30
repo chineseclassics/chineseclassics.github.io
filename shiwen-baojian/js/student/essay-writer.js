@@ -20,6 +20,15 @@ function getAppState() {
     return window.AppState;
 }
 
+// 取得界面語言（默認中文）
+function getUILang() {
+  try {
+    const app = getAppState();
+    const lang = app?.uiLang || document.documentElement.getAttribute('lang') || 'zh';
+    return (lang || 'zh').toLowerCase().startsWith('en') ? 'en' : 'zh';
+  } catch (_) { return 'zh'; }
+}
+
 // ================================
 // 編輯器狀態管理
 // ================================
@@ -96,7 +105,9 @@ async function loadAssignmentMode() {
       const layout = data?.editor_layout_json || null;
       const json = typeof layout === 'string' ? JSON.parse(layout) : layout;
       const targets = json?.targets || null;
-      const primaryMetric = json?.primaryMetric || null;
+      // 根據界面語言決定主度量（中文→zh_chars；英文→en_words）
+      const ui = getUILang();
+      const primaryMetric = ui === 'en' ? 'en_words' : 'zh_chars';
       if (targets && (targets.zh_chars || targets.en_words)) {
         window.__wordTargets = { targets, primaryMetric };
       } else {
@@ -875,8 +886,6 @@ function ensureFormatToolbar(pm) {
           <i class="fas fa-check-circle text-emerald-600"></i>
           <span class="text-gray-600">已保存</span>
         </span>
-        <span class="pm-topbar-dot" aria-hidden="true">·</span>
-        <span id="topbar-essay-status-text" class="text-gray-600">寫作中</span>
       </div>`;
     if (host && host.parentElement) host.parentElement.insertBefore(bar, host);
   }
@@ -1444,34 +1453,58 @@ function renderCountersAndTargets() {
   EditorState.totalWordCount = counters.zh_chars; // 保持舊語義：中文字數
   const el = document.getElementById('word-count-display');
   const topbarEl = document.getElementById('topbar-word-count-display');
-  // A) 舊 word-count 區（保留）：仍顯示字數/詞數（避免影響其它版面）
+  // A) 非置頂顯示：保留中/英雙統計（舊 UI 可能用得到）
   const chip = (label, value) => `<span class="wc-chip"><span class="wc-chip-label">${label}</span><span class="wc-chip-val">${value}</span></span>`;
-  const wcParts = [ chip('中', counters.zh_chars), chip('英', counters.en_words) ];
-  const wcHtml = wcParts.join('｜');
-  if (el) el.innerHTML = wcHtml;
+  const wcAllHtml = [ chip('中', counters.zh_chars), chip('英', counters.en_words) ].join('｜');
+  if (el) el.innerHTML = wcAllHtml;
 
-  // B) 置頂 sticky 功能區：改為『文章完整度』提示（引言 / 分論點一..N / 結論）
+  // B) 置頂 sticky：僅顯示當前語言的字數統計 + 目標上下限 + 完整度
+  const ui = getUILang();
+  const isZh = ui === 'zh';
+  const activeMetric = isZh ? 'zh_chars' : 'en_words';
+  const wcTopHtml = isZh ? chip('中', counters.zh_chars) : chip('英', counters.en_words);
+
+  // 目標區間與狀態徽章（為其留出空間）
+  let targetHtml = '';
+  const cfg = window.__wordTargets;
+  if (cfg && cfg.targets && cfg.targets[activeMetric]) {
+    const t = cfg.targets[activeMetric] || {};
+    const cur = counters[activeMetric] || 0;
+    const hasMin = typeof t.min === 'number';
+    const hasMax = typeof t.max === 'number';
+    let rangeText = '';
+    if (hasMin && hasMax) rangeText = `${t.min}–${t.max}`;
+    else if (hasMin) rangeText = `≥ ${t.min}`;
+    else if (hasMax) rangeText = `≤ ${t.max}`;
+    let status = null;
+    let cls = 'wc-badge-ok';
+    if (hasMin && cur < t.min) { status = '未達'; cls = 'wc-badge-warn'; }
+    else if (hasMax && cur > t.max) { status = '超出'; cls = 'wc-badge-danger'; }
+    else if (hasMin || hasMax) { status = '達標'; cls = 'wc-badge-ok'; }
+    const metricLabel = isZh ? '中' : '英';
+    const badge = status ? `<span class="wc-badge ${cls}">${status}</span>` : '';
+    targetHtml = rangeText ? `｜<span class="wc-target">建議 ${metricLabel} ${rangeText}</span> ${badge}` : '';
+  } else {
+    // 預留空間（無配置時佔位）
+    targetHtml = `｜<span class="wc-target wc-empty">　</span>`;
+  }
+
+  // 完整度（引言/分論點們/結論）
   const comp = EditorState.introEditor?.getCompleteness?.();
   let compHtml = '';
   if (comp) {
     const ok = (s) => s ? '<i class="fas fa-check-circle text-emerald-600"></i>' : '<i class="far fa-circle text-gray-400"></i>';
     const pill = (label, done) => `<span class="comp-pill ${done ? 'comp-ok' : 'comp-miss'}">${ok(done)}<span class="ml-1">${label}</span></span>`;
     const bodyPills = comp.bodies.map(b => pill(b.label, b.complete)).join('');
-    compHtml = `
-      <div class="pm-completeness" aria-label="文章完整度">
-        ${pill(comp.intro.label, comp.intro.complete)}
-        <span class="comp-sep">｜</span>
-        ${bodyPills || '<span class="comp-hint text-gray-400">添加分論點…</span>'}
-        <span class="comp-sep">｜</span>
-        ${pill(comp.conclusion.label, comp.conclusion.complete)}
-      </div>`;
+    compHtml = `｜<div class="pm-completeness inline-flex items-center" aria-label="文章完整度">${pill(comp.intro.label, comp.intro.complete)}<span class="comp-sep">｜</span>${bodyPills || '<span class="comp-hint text-gray-400">添加分論點…</span>'}<span class="comp-sep">｜</span>${pill(comp.conclusion.label, comp.conclusion.complete)}</div>`;
   }
-  if (topbarEl) topbarEl.innerHTML = compHtml;
+
+  if (topbarEl) topbarEl.innerHTML = `${wcTopHtml}${targetHtml}${compHtml}`;
 
   // C) 行動端收合面板：沿用舊字數統計（避免擠爆移動版工具列）
   ensureMobileWordWidget();
   const mPanel = document.getElementById('mobile-word-count-display');
-  if (mPanel) mPanel.innerHTML = wcHtml;
+  if (mPanel) mPanel.innerHTML = wcAllHtml;
   const mSummary = document.getElementById('mobile-wc-summary');
   if (mSummary) mSummary.innerHTML = `<span class="wc-badge wc-badge-muted">統計</span>`;
 }

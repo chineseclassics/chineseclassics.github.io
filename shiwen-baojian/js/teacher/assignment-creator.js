@@ -151,14 +151,6 @@ class AssignmentCreator {
           <section class="form-section">
             <h3><i class="fas fa-font" style="color: var(--primary-600); margin-right: 0.5rem;"></i>字數要求（可選）</h3>
             <div class="form-grid" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-start;">
-              <div class="form-group" style="min-width:180px;">
-                <label>度量類型</label>
-                <select name="wordMetric" class="select">
-                  <option value="zh_chars">中文（漢字數）</option>
-                  <option value="en_words">英文（單詞數）</option>
-                </select>
-                <p class="help-text">預設依中文作文；英文作文可改為單詞數</p>
-              </div>
               <div class="form-group" style="min-width:140px;">
                 <label>最低值</label>
                 <input type="number" name="wordMin" min="0" placeholder="可留空" />
@@ -1324,8 +1316,9 @@ class AssignmentCreator {
         )
       };
 
-      // 讀取字數區間（可選）
-      const metric = formData.get('wordMetric') || 'zh_chars';
+  // 讀取字數區間（可選）；度量由界面語言自動判斷
+  const uiLang = (window.AppState?.uiLang || document.documentElement.getAttribute('lang') || 'zh').toLowerCase();
+  const metric = uiLang.startsWith('en') ? 'en_words' : 'zh_chars';
       const minStr = (formData.get('wordMin') || '').trim();
       const maxStr = (formData.get('wordMax') || '').trim();
       const minVal = minStr === '' ? null : Math.max(0, parseInt(minStr, 10));
