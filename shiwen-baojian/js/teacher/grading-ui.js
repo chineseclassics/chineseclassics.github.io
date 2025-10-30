@@ -1073,16 +1073,7 @@ class GradingUI {
    */
   renderAISuggestion(criteriaScores, overallComment = null) {
     const resultsDiv = document.getElementById('aiSuggestionResults');
-    
-    // 計算總分
-    let totalScore = 0;
-    let criteriaCount = 0;
-    Object.values(criteriaScores).forEach(c => {
-      if (c && c.score !== null && c.score !== undefined) {
-        totalScore += c.score;
-        criteriaCount++;
-      }
-    });
+    // 此區域不再顯示總分，僅保留各標準分與總評
 
     // 生成評分卡片
     const cardsHTML = Object.entries(criteriaScores).map(([criterionId, data]) => {
@@ -1111,67 +1102,43 @@ class GradingUI {
       `;
     }).filter(html => html).join('');
 
-    // 生成总评卡片
+    // 生成總評卡片（基於樣式類，移除內聯邊距與過度裝飾）
     const overallCommentHTML = overallComment ? `
-      <div class="card" style="margin-bottom: 1.5rem; border: 2px solid var(--warning-500);">
-        <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1.1rem;">
-          <i class="fas fa-comment-dots" style="color: var(--warning-500);"></i> AI 總評
+      <div class="ai-overall card" style="margin-bottom: 1rem;">
+        <h4 class="ai-overall-title" style="margin: 0 0 .75rem 0; font-size: 1.05rem; color: var(--text-primary);">
+          <i class="fas fa-comment-dots" style="color: var(--warning-600);"></i> AI 總評
         </h4>
-        
-        <!-- 優點 -->
-        <div style="margin-bottom: 1rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <i class="fas fa-thumbs-up" style="color: var(--success-500);"></i>
-            <strong style="color: var(--success-500);">做得好的方面</strong>
+        <div class="block good" style="margin-bottom: .75rem;">
+          <div style="display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; color: var(--success-600);">
+            <i class="fas fa-thumbs-up"></i>
+            <strong>做得好的方面</strong>
           </div>
-          <div style="background: var(--success-100); padding: 0.875rem; border-radius: 6px; border-left: 3px solid var(--success-500);">
-            <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${overallComment.strengths || '暂无'}</p>
-          </div>
+          <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${overallComment.strengths || '暂无'}</p>
         </div>
-        
-        <!-- 改進建議 -->
-        <div>
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <i class="fas fa-arrow-up" style="color: var(--warning-600);"></i>
-            <strong style="color: var(--warning-600);">需要改進的方面</strong>
+        <div class="block improve">
+          <div style="display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; color: var(--warning-700);">
+            <i class="fas fa-arrow-up"></i>
+            <strong>需要改進的方面</strong>
           </div>
-          <div style="background: var(--warning-100); padding: 0.875rem; border-radius: 6px; border-left: 3px solid var(--warning-600);">
-            <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${overallComment.improvements || '暂无'}</p>
-          </div>
+          <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${overallComment.improvements || '暂无'}</p>
         </div>
-        
-        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-divider);">
-          <p style="margin: 0; color: var(--text-tertiary); font-size: 0.85rem;">
-            <i class="fas fa-lightbulb"></i> 老師可參考此總評撰寫評語，也可以自由修改或補充
-          </p>
+        <div style="margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--border-divider); color: var(--text-tertiary); font-size: .85rem;">
+          <i class="fas fa-lightbulb"></i> 老師可參考此總評撰寫評語，也可以自由修改或補充
         </div>
       </div>
     ` : '';
 
+    // 渲染結果（無外層 padding，避免多餘縮進）
     resultsDiv.innerHTML = `
-      <div style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 1.5rem;">
-        <!-- 總分顯示 -->
-        <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%); border-radius: 8px; margin-bottom: 1.5rem;">
-          <div style="color: white; font-size: 0.9rem; margin-bottom: 0.25rem;">AI 建議總分</div>
-          <div style="color: white; font-size: 3rem; font-weight: 700;">${totalScore}</div>
-          <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">/ ${criteriaCount * 8} 分（${criteriaCount} 個標準）</div>
-        </div>
-
-        <!-- AI 總評 -->
-        ${overallCommentHTML}
-
-        <!-- 各標準評分卡片 -->
-        ${cardsHTML}
-
-        <!-- 採用建議按鈕 -->
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid var(--border-divider);">
-          <button id="applyAISuggestionBtn" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1.05rem;">
-            <i class="fas fa-check-double"></i> 採用 AI 建議
-          </button>
-          <p style="margin-top: 0.75rem; color: var(--text-tertiary); font-size: 0.85rem;">
-            <i class="fas fa-info-circle"></i> 採用後分數會自動填入，總評可複製到評語欄參考
-          </p>
-        </div>
+      ${overallCommentHTML}
+      ${cardsHTML}
+      <div class="ai-actions">
+        <button id="applyAISuggestionBtn" class="btn btn-primary">
+          <i class="fas fa-check-double"></i> 採用 AI 建議
+        </button>
+        <p class="ai-actions-hint" style="margin-top: .75rem; color: var(--text-tertiary); font-size: .85rem;">
+          <i class="fas fa-info-circle"></i> 採用後分數會自動填入，總評可複製到評語欄參考
+        </p>
       </div>
     `;
 

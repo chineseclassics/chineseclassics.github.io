@@ -527,9 +527,10 @@
 
 /* AI 結果區域 */
 .ai-results {
-  padding: 1.5rem;
-  max-height: 400px;
-  overflow-y: auto;
+  /* 由外層 .section-content 控制滾動與內邊距，避免雙滾動條 */
+  padding: 0;
+  max-height: none;
+  overflow: visible;
 }
 
 /* 評分表單面板（在 AI 下方）*/
@@ -1869,7 +1870,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 .grading-sidebar-section .criterion-group {
   padding: var(--spacing-3);
   margin-bottom: var(--spacing-3);
-  background: var(--gray-100);
+  /* 使用設計令牌，並提供回退色值 */
+  background: var(--bg-subtle, #f6f7f9);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-secondary);
 }
@@ -2001,6 +2003,46 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   font-size: 0.75rem;
   color: #6b7280;
   margin: 0;
+}
+
+/* ================================
+   AI 建議卡片（統一令牌樣式）
+   ================================ */
+.ai-results .card {
+  background: var(--bg-subtle, #f6f7f9);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-3);
+}
+
+.ai-results .ai-overall {
+  border: 1px solid var(--border-warning, #f59e0b33);
+  border-left: 3px solid var(--warning-600, #d97706);
+  background: var(--bg-card, #ffffff);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-3);
+}
+
+.ai-results .ai-overall .block {
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-3);
+}
+
+.ai-results .ai-overall .block.good {
+  background: var(--success-100, #ecfdf5);
+  border-left: 3px solid var(--success-500, #10b981);
+}
+
+.ai-results .ai-overall .block.improve {
+  background: var(--warning-100, #fffbeb);
+  border-left: 3px solid var(--warning-600, #d97706);
+}
+
+.ai-results .ai-actions {
+  text-align: center;
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border-divider, #e5e7eb);
 }
 
 /* ================================
