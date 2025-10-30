@@ -140,10 +140,29 @@ export class PMEditor {
             const sel = state.selection;
             if (!sel || !sel.$from) return false;
             const $from = sel.$from;
-            // 取得頂層（depth=1）中的段落索引與總段數
-            const index = $from.index(1);
-            const total = state.doc.childCount || state.doc.content.childCount || 0;
-            const inConclusion = index === total - 1; // 僅當前為最後一段才視為結論
+            // A) 以 DOM 徽章為主的判斷：若當前段落含有 `.pm-par-label.conclusion`，視為結論
+            let inConclusionByBadge = false;
+            try {
+              const domInfo = view.domAtPos($from.pos);
+              const startNode = domInfo && domInfo.node ? domInfo.node : null;
+              const el = startNode && startNode.nodeType === 3 /* TEXT_NODE */ ? startNode.parentNode : startNode;
+              // 找到最近的段落元素
+              const p = el && typeof el.closest === 'function' ? el.closest('p') : null;
+              if (p && p.querySelector) {
+                const badge = p.querySelector('.pm-par-label.conclusion');
+                if (badge) inConclusionByBadge = true;
+              }
+            } catch (_) { /* 忽略 DOM 對映異常，改走索引邏輯 */ }
+
+            // B) 以頂層索引為輔的判斷（向後相容）
+            let inConclusionByIndex = false;
+            try {
+              const index = $from.index(1);
+              const total = state.doc.childCount || state.doc.content.childCount || 0;
+              inConclusionByIndex = index === total - 1;
+            } catch (_) { inConclusionByIndex = false; }
+
+            const inConclusion = inConclusionByBadge || inConclusionByIndex;
 
             // 在結論段：禁止 Enter 產生新段（仍允許 Shift+Enter = 換行）
             if (inConclusion && event.key === 'Enter' && !event.shiftKey) {
