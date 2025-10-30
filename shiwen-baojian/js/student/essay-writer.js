@@ -1011,7 +1011,11 @@ function createYucunBrushPlugin(opts = {}) {
     btn.type = 'button';
     btn.className = 'pm-yucun-btn';
     btn.setAttribute('aria-label', '賈雨村說：針對此段評點');
-    btn.innerHTML = '<i class="fas fa-brush"></i>';
+    // 內嵌 SVG：採用專案內圖示，path 使用 currentColor 以跟隨按鈕文字色
+    btn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 186.07" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M196.031,262.541a4.32,4.32,0,0,0-3.059,1.3l-97.678,99.29,18.012,17.593L210.921,281.5a4.333,4.333,0,0,0-.051-6.14L199.11,263.791A4.327,4.327,0,0,0,196.031,262.541ZM92.252,366.225,80.333,378.34a4.333,4.333,0,0,0,.049,6.14l11.76,11.568A4.333,4.333,0,0,0,98.28,396l11.982-12.18Zm-31.53,21.495c-14.364.035-28.192,11.328-31.594,22.651-4.949,16.471-1.2,28.5-16.957,36.907,10.637.828,43.148,3.921,58.624-3.6s26.556-30.751,8.919-47.978A26.531,26.531,0,0,0,60.722,387.719Z" transform="translate(-12.171 -262.541)"/>
+      </svg>`;
     btn.addEventListener('mousedown', (e) => e.preventDefault());
     btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); try { onClick?.(pos); } catch (_) {} });
     return btn;

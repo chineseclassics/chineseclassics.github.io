@@ -697,7 +697,8 @@ input:focus-visible {
     will-change: transform, box-shadow, opacity;
     overflow: visible;
 }
-.pm-yucun-btn i, .pm-yucun-btn svg { pointer-events: none; font-size: 12px; }
+.pm-yucun-btn i, .pm-yucun-btn svg { pointer-events: none; }
+.pm-yucun-btn svg { width: 14px; height: 14px; display: block; }
 .pm-yucun-btn:hover { 
     transform: scale(1.08) rotate(-2deg); 
     background: var(--btn-success-hover);
