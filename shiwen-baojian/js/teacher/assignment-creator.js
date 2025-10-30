@@ -150,7 +150,7 @@ class AssignmentCreator {
           <!-- 字數要求（可選，顯示在寫作指引之前） -->
           <section class="form-section">
             <h3><i class="fas fa-font" style="color: var(--primary-600); margin-right: 0.5rem;"></i>字數要求（可選）</h3>
-            <div class="form-grid" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+            <div class="form-grid" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-start;">
               <div class="form-group" style="min-width:180px;">
                 <label>度量類型</label>
                 <select name="wordMetric" class="select">
