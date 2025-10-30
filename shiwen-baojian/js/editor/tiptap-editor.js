@@ -137,21 +137,22 @@ export class PMEditor {
         handleKeyDown: (view, event) => {
           try {
             const { state } = view;
-            const { selection } = state;
-            if (!selection || !selection.$from) return false;
-            const $from = selection.$from;
-            const index = $from.index($from.depth);
-            const total = state.doc.content.childCount;
-            const inConclusion = index >= total - 1; // 末段視為結論
+            const sel = state.selection;
+            if (!sel || !sel.$from) return false;
+            const $from = sel.$from;
+            // 取得頂層（depth=1）中的段落索引與總段數
+            const index = $from.index(1);
+            const total = state.doc.childCount || state.doc.content.childCount || 0;
+            const inConclusion = index === total - 1; // 僅當前為最後一段才視為結論
 
-            // 在結論段：禁止 Enter 產生新段
+            // 在結論段：禁止 Enter 產生新段（仍允許 Shift+Enter = 換行）
             if (inConclusion && event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
               return true; // 攔截
             }
-            // 可選：在結論段段首，阻止 Backspace 與上一段合併
+            // 在結論段段首，阻止 Backspace 與上一段合併
             if (inConclusion && event.key === 'Backspace') {
-              const atStart = $from.parentOffset === 0 && selection.empty;
+              const atStart = $from.parentOffset === 0 && sel.empty;
               if (atStart && total > 1) {
                 event.preventDefault();
                 return true;
@@ -217,7 +218,17 @@ export class PMEditor {
       }
     });
 
-    const plugins = [history(), markKeymap, keymap(baseKeymap), updatePlugin, pastePlugin, conclusionGuardPlugin, paraLabelPlugin, ...(Array.isArray(extraPlugins) ? extraPlugins : [])];
+    // 注意：為了攔截 Enter，必須讓結論守護插件排在 keymap(baseKeymap) 之前
+    const plugins = [
+      conclusionGuardPlugin,
+      history(),
+      markKeymap,
+      keymap(baseKeymap),
+      updatePlugin,
+      pastePlugin,
+      paraLabelPlugin,
+      ...(Array.isArray(extraPlugins) ? extraPlugins : [])
+    ];
 
     this.view = new EditorView(this.container, {
       state: EditorState.create({
