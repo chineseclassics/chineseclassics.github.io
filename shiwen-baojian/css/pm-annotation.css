@@ -9,9 +9,9 @@
 /* 由 student-annotation-system.css 重命名整合為單一共用樣式 */
 
 /* 論文模式（PM 文檔）視覺優化 */
-.pm-essay.pm-essay-structured { counter-reset: pm-para; }
-.pm-essay.pm-essay-structured p { position: relative; padding-left: 2.25rem; margin: 0.45rem 0 0.75rem; line-height: 1.9; }
-.pm-essay.pm-essay-structured p::before { content: '段落 ' counter(pm-para); counter-increment: pm-para; position: absolute; top: -0.4rem; left: 0; color: #9ca3af; font-size: 0.72rem; }
+/* 取消舊的「段落編號」灰字標籤，改由 PM widget 呈現語義標籤（引言/分論點/結論） */
+.pm-essay.pm-essay-structured p { position: relative; padding-left: 1.75rem; margin: 0.45rem 0 0.75rem; line-height: 1.9; }
+.pm-essay.pm-essay-structured p::before { content: none; }
 .pm-essay.pm-essay-structured p:hover { background: #fafaf9; }
 
 /* 右欄改為固定側欄（#ann-sidebar），不再使用 padding 預留空間 */
