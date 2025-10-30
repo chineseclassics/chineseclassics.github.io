@@ -6,7 +6,7 @@
  * - 後續可替換為 TipTap，但此封裝可先落地文檔級存取與裝飾
  */
 
-import { EditorState, Plugin, PluginKey, EditorView, Schema, PMDOMParser, keymap, baseKeymap, history, toggleMark } from './pm-vendor.js';
+import { EditorState, Plugin, PluginKey, EditorView, Schema, PMDOMParser, keymap, baseKeymap, history, toggleMark, Decoration, DecorationSet } from './pm-vendor.js';
 
 const baseNodes = {
   doc: { content: 'block+' },
