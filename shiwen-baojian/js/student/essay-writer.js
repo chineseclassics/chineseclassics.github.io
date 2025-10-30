@@ -446,7 +446,8 @@ export async function initializeEssayEditor(forceReinit = false) {
             const html = getCurrentParagraphHTML(view, pos) || '';
             const plain = html.replace(/<[^>]*>/g, '').trim();
             if (!plain) { toast.warning('當前段落為空'); return; }
-            const type = 'body'; // 保守策略：不自動標記結論，避免誤判
+            // 依當前段位置自動推斷段落類型：首=引言，末=結論，其餘=分論點（body）
+            const type = getParagraphTypeByPos(view, pos);
             const { requestAIFeedback } = await import('../ai/feedback-requester.js');
             await requestAIFeedback('pm-current', html, type, getAppState().currentFormatSpec);
           } catch (e) { console.warn('雨村評點啟動失敗:', e); toast.error('雨村評點失敗'); }
@@ -933,8 +934,9 @@ function ensureFormatToolbar(pm) {
 
   // 依編輯行為更新按鈕 active 狀態
   try {
-    pm.view.dom.addEventListener('keyup', updateActive);
-    pm.view.dom.addEventListener('mouseup', updateActive);
+    const refreshUI = () => { try { updateActive(); renderCountersAndTargets(); } catch (_) {} };
+    pm.view.dom.addEventListener('keyup', refreshUI);
+    pm.view.dom.addEventListener('mouseup', refreshUI);
   } catch (_) {}
   updateActive();
 
@@ -1442,50 +1444,36 @@ function renderCountersAndTargets() {
   EditorState.totalWordCount = counters.zh_chars; // 保持舊語義：中文字數
   const el = document.getElementById('word-count-display');
   const topbarEl = document.getElementById('topbar-word-count-display');
-  // 組裝徽章 HTML（桌面 + 行動端共用）
+  // A) 舊 word-count 區（保留）：仍顯示字數/詞數（避免影響其它版面）
   const chip = (label, value) => `<span class="wc-chip"><span class="wc-chip-label">${label}</span><span class="wc-chip-val">${value}</span></span>`;
-  const parts = [
-    chip('中', counters.zh_chars),
-    chip('英', counters.en_words),
-    chip('段', counters.paragraphs)
-  ];
+  const wcParts = [ chip('中', counters.zh_chars), chip('英', counters.en_words) ];
+  const wcHtml = wcParts.join('｜');
+  if (el) el.innerHTML = wcHtml;
 
-  // 建議區間與狀態徽章
-  let targetHtml = '';
-  let mobileSummary = '';
-  const cfg = window.__wordTargets;
-  if (cfg && cfg.primaryMetric && cfg.targets && cfg.targets[cfg.primaryMetric]) {
-    const t = cfg.targets[cfg.primaryMetric] || {};
-    const cur = counters[cfg.primaryMetric] || 0;
-    const hasMin = typeof t.min === 'number';
-    const hasMax = typeof t.max === 'number';
-    let rangeText = '';
-    if (hasMin && hasMax) rangeText = `${t.min}–${t.max}`;
-    else if (hasMin) rangeText = `≥ ${t.min}`;
-    else if (hasMax) rangeText = `≤ ${t.max}`;
-
-    let status = null;
-    let cls = 'wc-badge-ok';
-    if (hasMin && cur < t.min) { status = '未達'; cls = 'wc-badge-warn'; }
-    else if (hasMax && cur > t.max) { status = '超出'; cls = 'wc-badge-danger'; }
-    else if (hasMin || hasMax) { status = '達標'; cls = 'wc-badge-ok'; }
-
-    const metricLabel = cfg.primaryMetric === 'en_words' ? '英' : '中';
-    const badge = status ? `<span class="wc-badge ${cls}">${status}</span>` : '';
-    targetHtml = rangeText ? `｜<span class="wc-target">建議 ${metricLabel} ${rangeText}</span> ${badge}` : '';
-    mobileSummary = status ? `<span class="wc-badge ${cls}">${status}</span>` : '';
+  // B) 置頂 sticky 功能區：改為『文章完整度』提示（引言 / 分論點一..N / 結論）
+  const comp = EditorState.introEditor?.getCompleteness?.();
+  let compHtml = '';
+  if (comp) {
+    const ok = (s) => s ? '<i class="fas fa-check-circle text-emerald-600"></i>' : '<i class="far fa-circle text-gray-400"></i>';
+    const pill = (label, done) => `<span class="comp-pill ${done ? 'comp-ok' : 'comp-miss'}">${ok(done)}<span class="ml-1">${label}</span></span>`;
+    const bodyPills = comp.bodies.map(b => pill(b.label, b.complete)).join('');
+    compHtml = `
+      <div class="pm-completeness" aria-label="文章完整度">
+        ${pill(comp.intro.label, comp.intro.complete)}
+        <span class="comp-sep">｜</span>
+        ${bodyPills || '<span class="comp-hint text-gray-400">添加分論點…</span>'}
+        <span class="comp-sep">｜</span>
+        ${pill(comp.conclusion.label, comp.conclusion.complete)}
+      </div>`;
   }
+  if (topbarEl) topbarEl.innerHTML = compHtml;
 
-  const html = `${parts.join('｜')}${targetHtml}`;
-  if (el) el.innerHTML = html;
-  if (topbarEl) topbarEl.innerHTML = html;
-
-  // 行動端收合面板內容與摘要徽章
+  // C) 行動端收合面板：沿用舊字數統計（避免擠爆移動版工具列）
   ensureMobileWordWidget();
   const mPanel = document.getElementById('mobile-word-count-display');
-  if (mPanel) mPanel.innerHTML = html;
+  if (mPanel) mPanel.innerHTML = wcHtml;
   const mSummary = document.getElementById('mobile-wc-summary');
-  if (mSummary) mSummary.innerHTML = mobileSummary || `<span class="wc-badge wc-badge-muted">統計</span>`;
+  if (mSummary) mSummary.innerHTML = `<span class="wc-badge wc-badge-muted">統計</span>`;
 }
 
 // ================================
