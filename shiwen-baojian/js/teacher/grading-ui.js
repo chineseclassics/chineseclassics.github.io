@@ -485,15 +485,13 @@ class GradingUI {
     const hide = () => { composer.style.display = 'none'; textarea.value = ''; clearComposeMark(); };
     const showAt = (rect) => {
       const containerRect = essaySection.getBoundingClientRect();
-      // 先顯示再量測高度，避免 offsetHeight=0 造成定位閃爍
-      composer.style.display = 'block';
-      const h = composer.offsetHeight || 0;
       const mid = (rect.top + rect.bottom) / 2 - containerRect.top;
-      const top = Math.max(8, mid - h / 2);
+      const top = Math.max(8, mid - composer.offsetHeight / 2);
       composer.style.top = `${Math.round(top)}px`;
       composer.style.right = `0px`;
+      composer.style.display = 'block';
       addComposeMarkIfNeeded();
-      try { textarea.focus({ preventScroll: true }); } catch (_) { textarea.focus(); }
+      textarea.focus();
     };
 
     const update = () => {

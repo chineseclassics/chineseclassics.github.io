@@ -4,7 +4,7 @@
  */
 
 export class PMAnnotationOverlay {
-  constructor({ root, view, getAnnotations, onClick, onContextMenu, supabase, currentUserId, onDataChanged, reflowOnHover = false, adjustHostHeight = true }) {
+  constructor({ root, view, getAnnotations, onClick, onContextMenu, supabase, currentUserId, onDataChanged, reflowOnHover = false }) {
     this.root = root;           // 應是包含 PM viewer 的容器，需 position: relative
     this.view = view;           // ProseMirror view
     this.getAnnotations = getAnnotations || (() => []);
@@ -14,7 +14,6 @@ export class PMAnnotationOverlay {
     this.currentUserId = currentUserId || null;
     this.onDataChanged = onDataChanged || null; // 由外部觸發刷新資料（annotations+comments）
     this.reflowOnHover = !!reflowOnHover; // 是否在 hover 展開/收起時重新排版（預設關閉）
-    this._adjustHostHeight = !!adjustHostHeight; // 是否自動撐高宿主容器（學生端可關閉以避免版面抖動）
     this._mounted = false;
     this._overlay = null;
     this._cards = new Map();
@@ -44,8 +43,8 @@ export class PMAnnotationOverlay {
 
   update() {
     if (!this._mounted) return;
-    // 第一步：可選地確保宿主容器至少有編輯器視圖高度（學生端可關閉以避免頁面抖動）
-    if (this._adjustHostHeight) this._syncHostHeight();
+    // 第一步：先確保宿主容器至少有編輯器視圖高度，避免高度為 0 直接裁切
+    this._syncHostHeight();
     const anns = this.getAnnotations() || [];
     // 依正文順序（已由來源排序），逐一定位
     const containerRect = this._containerRect();
@@ -98,13 +97,11 @@ export class PMAnnotationOverlay {
     }
 
     // 第二步：根據佈局結果計算所需的最小高度，讓容器可以向下無限延伸顯示最後一條卡片
-    if (this._adjustHostHeight) {
-      try {
-        const maxBottom = items.length ? Math.max(...items.map(it => it.top + it.h)) : 0;
-        // 預留一點底部間距
-        this._syncHostHeight(Math.ceil(maxBottom + this._spacing));
-      } catch (_) {}
-    }
+    try {
+      const maxBottom = items.length ? Math.max(...items.map(it => it.top + it.h)) : 0;
+      // 預留一點底部間距
+      this._syncHostHeight(Math.ceil(maxBottom + this._spacing));
+    } catch (_) {}
 
     // 寫回 DOM
     for (const it of items) {
