@@ -503,6 +503,8 @@ export function computeSelectionAnchor(view, ctxLen = 30) {
 
 /**
  * 直接以當前選區創建批註（寫入 Supabase，返回新 ID）
+ * 注意：此函式不再對正文 mark 做任何變更（不查找/替換/新增）。
+ * 樂觀路徑請在呼叫方先行加入 tmp-/compose- mark，成功後自行以 newId 取代。
  */
 export async function createAnnotationFromSelection({ view, supabase, essayId, content, ctxLen = 30 }) {
   const anchor = computeSelectionAnchor(view, ctxLen);
@@ -521,37 +523,6 @@ export async function createAnnotationFromSelection({ view, supabase, essayId, c
   const { data, error } = await supabase.rpc('create_annotation_pm', payload);
   if (error) throw error;
   const newId = data; // 新 annotation id
-
-  // 注意：在樂觀更新路徑中，呼叫方已預先用暫時 id 加上 mark。
-  // 這裡統一嘗試將暫時 id（若存在）替換為真實 id；
-  // 若不存在任何暫時 mark，則正常直接在選區加入最終 mark。
-  try {
-    // 嘗試從選區讀取是否已有暫時 mark（以 tmp- 前綴約定）
-    const tmp = (() => {
-      try {
-        const sel = view.state.selection;
-        let found = null;
-        view.state.doc.nodesBetween(sel.from, sel.to, (node, pos) => {
-          if (!node.isText) return true;
-          for (const m of node.marks || []) {
-            if (m.type === view.state.schema.marks.annotation && String(m.attrs?.id || '').startsWith('tmp-')) {
-              found = String(m.attrs.id);
-              return false;
-            }
-          }
-          return true;
-        });
-        return found;
-      } catch (_) { return null; }
-    })();
-    if (tmp) {
-      replaceAnnotationMarkId(view, tmp, String(newId));
-    } else {
-      // 常規路徑：補上最終 mark
-      addAnnotationMarkForSelection(view, String(newId));
-    }
-  } catch (_) {}
-
   return newId;
 }
 
