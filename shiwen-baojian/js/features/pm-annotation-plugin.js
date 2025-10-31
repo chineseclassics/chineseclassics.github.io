@@ -100,8 +100,8 @@ export function replaceAnnotationMarkId(view, oldId, newId) {
       if (size === 0) return true;
       for (const m of node.marks || []) {
         if (m.type === markType && String(m.attrs?.id || '') === oldStr) {
-          const from = pos + 1;
-          const to = pos + 1 + size;
+          const from = pos;
+          const to = pos + size;
           tr = tr.removeMark(from, to, m);
           tr = tr.addMark(from, to, markType.create({ id: String(newId) }));
           break;
@@ -134,8 +134,8 @@ export function removeAnnotationMarksById(view, targetId) {
       if (size === 0) return true;
       for (const m of node.marks || []) {
         if (m.type === markType && String(m.attrs?.id || '') === sId) {
-          const from = pos + 1;
-          const to = pos + 1 + size;
+          const from = pos;
+          const to = pos + size;
           tr = tr.removeMark(from, to, m);
           break;
         }
@@ -168,8 +168,9 @@ function buildDecorationSet(viewLike, annotations, activeId) {
         if (m.type === annoMarkType) {
           const id = String(m.attrs?.id || '');
           if (!id) continue;
-          const from = pos + 1;
-          const to = pos + 1 + size;
+          // ProseMirror 文本節點範圍：pos .. pos + size
+          const from = pos;
+          const to = pos + size;
           if (!markRanges.has(id)) markRanges.set(id, []);
           markRanges.get(id).push({ from, to });
         }
@@ -266,7 +267,7 @@ function resolveRanges(doc, annotations) {
       const s = segments[i];
       if (index <= s.end) {
         const offset = index - s.start;
-        return s.pos + offset + 1; // pos 是 text node 起點的前一位置
+        return s.pos + offset; // 文本節點內部位置 = pos + offset
       }
     }
     return doc.content.size;
@@ -406,15 +407,15 @@ function getTextIndexConverters(state) {
   const total = acc;
   const posFromIndexTools = (index) => {
     const i = clamp(index, 0, total);
-    if (i <= 0) return 1;
+    if (i <= 0) return 0;
     for (let k = 0; k < segments.length; k++) {
       const s = segments[k];
       if (i <= s.end) {
         const offset = i - s.start;
-        return s.pos + offset + 1;
+        return s.pos + offset;
       }
     }
-    return state.doc.content.size - 1;
+    return state.doc.content.size;
   };
   return { total, posFromIndexTools };
 }
@@ -454,8 +455,8 @@ function getDocTextIndexTools(state) {
     // 掃描第一個 pos >= pmPos 的段
     for (let i = 0; i < segments.length; i++) {
       const s = segments[i];
-      const textStartPos = s.pos + 1; // 文本實際開始位置
-      const textEndPos = s.pos + (s.end - s.start) + 1;
+      const textStartPos = s.pos; // 文本實際開始位置
+      const textEndPos = s.pos + (s.end - s.start);
       if (pmPos <= textEndPos) {
         const offset = Math.max(0, pmPos - textStartPos);
         return s.start + offset;
