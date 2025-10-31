@@ -563,6 +563,8 @@ class GradingUI {
           // 通知裝飾與疊加層
           try { view.dispatch(view.state.tr.setMeta('annotations:update', true)); } catch (_) {}
           try { requestAnimationFrame(() => this._overlay?.update?.()); } catch (_) {}
+          // 設定目前激活卡片為臨時 ID，便於右側卡片對齊高亮位置
+          try { window.__pmOverlay?.setActive?.(tmpId); } catch (_) {}
         } catch (_) {}
 
         // 2) 寫入後端，成功後將臨時 id 替換為真正 id；若失敗則回滾
@@ -575,6 +577,8 @@ class GradingUI {
             this._annStore = swapId(this._annStore);
             this._annStoreWithContent = this._annStore;
             try { requestAnimationFrame(() => this._overlay?.update?.()); } catch (_) {}
+            // 轉正後將激活卡片切換到最終 ID，確保對齊仍指向同一段高亮
+            try { window.__pmOverlay?.setActive?.(String(finalId)); } catch (_) {}
           }
         } catch (e) {
           removeAnnotationMarksById(view, tmpId);
@@ -584,6 +588,8 @@ class GradingUI {
             this._annStoreWithContent = this._annStore;
           } catch (_) {}
           try { requestAnimationFrame(() => this._overlay?.update?.()); } catch (_) {}
+          // 回滾時取消激活，避免殘留錯位
+          try { window.__pmOverlay?.setActive?.('__none__'); } catch (_) {}
           throw e;
         }
 

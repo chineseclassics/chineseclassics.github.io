@@ -19,6 +19,7 @@ export class PMAnnotationOverlay {
     this._cards = new Map();
     this._spacing = 16; // px
     this._throttleId = null;
+    this._activeId = null;
   }
 
   mount() {
@@ -45,31 +46,57 @@ export class PMAnnotationOverlay {
     const anns = this.getAnnotations() || [];
     // 依正文順序（已由來源排序），逐一定位
     const containerRect = this._containerRect();
-    const occupied = []; // 已佔用 top 範圍
-    const ensureNonOverlap = (idealTop, height) => {
-      let top = Math.max(0, idealTop);
-      for (let i = 0; i < occupied.length; i++) {
-        const { from, to } = occupied[i];
-        if (top < to && top + height > from) {
-          top = to + this._spacing;
-        }
-      }
-      occupied.push({ from: top, to: top + height });
-      return top;
-    };
-
     const seen = new Set();
+    const items = [];
     for (const a of anns) {
       seen.add(a.id);
       const el = this._ensureCard(a);
       const annEl = this._findDecorationEl(a.id);
+      const h = el.offsetHeight || 60;
       let idealTop = 0;
       if (annEl) {
         const r = annEl.getBoundingClientRect();
-        idealTop = (r.top + r.bottom) / 2 - containerRect.top - el.offsetHeight / 2;
+        idealTop = (r.top + r.bottom) / 2 - containerRect.top - h / 2;
       }
-      const top = ensureNonOverlap(idealTop, el.offsetHeight || 60);
-      el.style.top = `${Math.max(0, Math.round(top))}px`;
+      items.push({ id: a.id, el, h, idealTop, top: idealTop });
+    }
+
+    // 佈局策略：
+    // - 若有當前激活卡片（點擊/導覽），把它放在 idealTop；
+    // - 其上的卡片向上排列，避免重疊；其下的卡片向下排列，避免重疊；
+    // - 沒有激活卡片時，保留原本自上而下的避免重疊（偏簡單且穩定）。
+    const activeIdx = this._activeId ? items.findIndex(x => String(x.id) === String(this._activeId)) : -1;
+    if (activeIdx >= 0) {
+      // 先固定 active
+      items[activeIdx].top = items[activeIdx].idealTop;
+      // 往上：卡片 i 的 bottom 不能超過 i+1 的 top - spacing
+      for (let i = activeIdx - 1; i >= 0; i--) {
+        const next = items[i + 1];
+        const cur = items[i];
+        const maxTop = (next.top - this._spacing) - cur.h; // 讓 cur.bottom <= next.top - spacing
+        cur.top = Math.min(cur.idealTop, maxTop);
+      }
+      // 往下：卡片 i 的 top 不能早於 i-1 的 bottom + spacing
+      for (let i = activeIdx + 1; i < items.length; i++) {
+        const prev = items[i - 1];
+        const cur = items[i];
+        const minTop = (prev.top + prev.h) + this._spacing;
+        cur.top = Math.max(cur.idealTop, minTop);
+      }
+    } else {
+      // 無激活卡片：沿用原邏輯但允許負 top（不再夾到 0），避免頂部卡片被硬貼頂。
+      let lastBottom = -Infinity;
+      for (let i = 0; i < items.length; i++) {
+        const cur = items[i];
+        const minTop = lastBottom + this._spacing;
+        cur.top = Math.max(cur.idealTop, isFinite(lastBottom) ? minTop : cur.idealTop);
+        lastBottom = cur.top + cur.h;
+      }
+    }
+
+    // 寫回 DOM
+    for (const it of items) {
+      it.el.style.top = `${Math.round(it.top)}px`;
     }
     // 移除消失的
     for (const [id, node] of Array.from(this._cards.entries())) {
@@ -81,9 +108,11 @@ export class PMAnnotationOverlay {
   }
 
   setActive(id) {
+    this._activeId = id != null ? String(id) : null;
     try { this._cards.forEach(n => n.classList.remove('active')); } catch (_) {}
     const node = this._cards.get(String(id));
     if (node) node.classList.add('active');
+    this._schedule();
   }
 
   // 內部：建立/更新卡片 DOM
@@ -263,8 +292,8 @@ export class PMAnnotationOverlay {
               if (size === 0) return true;
               for (const m of node.marks || []) {
                 if (m.type === markType && String(m.attrs?.id || '') === String(a.id)) {
-                  const from = pos + 1;
-                  const to = pos + 1 + size;
+                  const from = pos;
+                  const to = pos + size;
                   tr = tr.removeMark(from, to, m);
                   break;
                 }

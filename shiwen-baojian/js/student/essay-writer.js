@@ -806,7 +806,12 @@ function setupStudentSelectionComposer() {
         window.__pmAnnStoreWithContent = window.__pmAnnStore;
         // 通知裝飾與疊加層
         try { view.dispatch(view.state.tr.setMeta('annotations:update', true)); } catch (_) {}
-        try { requestAnimationFrame(() => window.__pmOverlay?.update?.()); } catch (_) {}
+        try {
+          requestAnimationFrame(() => {
+            window.__pmOverlay?.setActive?.(tmpId);
+            window.__pmOverlay?.update?.();
+          });
+        } catch (_) {}
       } catch (_) {}
 
       // 2) 寫入後端，成功後將臨時 id 替換為真正 id；若失敗則回滾
@@ -821,6 +826,7 @@ function setupStudentSelectionComposer() {
             window.__pmAnnStore = swapId(window.__pmAnnStore);
             window.__pmAnnStoreWithContent = window.__pmAnnStore;
           } catch (_) {}
+          try { window.__pmOverlay?.setActive?.(String(finalId)); } catch (_) {}
         }
       } catch (e) {
         // 回滾：移除臨時 mark 與臨時卡片
