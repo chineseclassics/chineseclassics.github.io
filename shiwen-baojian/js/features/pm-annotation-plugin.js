@@ -220,16 +220,32 @@ function buildDecorationSet(viewLike, annotations, activeId) {
   const missing = annList.filter(a => a?.id != null && !haveMarkIds.has(String(a.id)));
   if (!hasPendingMarks && missing.length > 0) {
     const { ranges: resolved } = resolveRanges(state.doc, missing);
-    for (const r of resolved) {
-      const id = String(r.id);
-      const cls = ['pm-annotation'];
-      if (r.approx) cls.push('pm-annotation-approx');
-      if (r.orphan) cls.push('pm-annotation-orphan');
-      if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
-      const attrs = { class: cls.join(' '), 'data-id': id };
-      const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
-      const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
-      decos.push(Decoration.inline(from, to, attrs));
+    if (resolved && resolved.length > 0) {
+      for (const r of resolved) {
+        const id = String(r.id);
+        const cls = ['pm-annotation'];
+        if (r.approx) cls.push('pm-annotation-approx');
+        if (r.orphan) cls.push('pm-annotation-orphan');
+        if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
+        const attrs = { class: cls.join(' '), 'data-id': id };
+        const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
+        const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
+        decos.push(Decoration.inline(from, to, attrs));
+      }
+    } else {
+      // 防禦性後備：若重錨完全失敗，至少用 text_start 單字位置顯示孤兒，以確保學生端可見
+      const { posFromIndexTools } = getTextIndexConverters(state);
+      for (const a of missing) {
+        const id = String(a.id);
+        const s0 = Number.isInteger(a.text_start) ? a.text_start : 0;
+        const pmPos = posFromIndexTools(s0);
+        const from = Math.max(1, Math.min(pmPos, state.doc.content.size - 1));
+        const to = Math.max(from + 1, Math.min(from + 1, state.doc.content.size));
+        const cls = ['pm-annotation', 'pm-annotation-orphan'];
+        if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
+        const attrs = { class: cls.join(' '), 'data-id': id };
+        decos.push(Decoration.inline(from, to, attrs));
+      }
     }
   }
   // 2.5) 額外：對未在 annList 中、但存在於文檔中的暫存標記（compose-/tmp-）也建立裝飾，
