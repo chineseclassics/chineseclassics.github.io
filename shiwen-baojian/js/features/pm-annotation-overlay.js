@@ -250,6 +250,34 @@ export class PMAnnotationOverlay {
         // 優先使用後端 RPC（具備權限與重錨處理）
         const res = await this.supabase.rpc('delete_annotation_pm', { p_annotation_id: a.id });
         if (res.error) throw res.error;
+        // 成功後：同步移除正文中的 annotation mark（attrs.id === a.id），以立即消除高亮
+        try {
+          const view = this.view;
+          const markType = view?.state?.schema?.marks?.annotation;
+          if (view && markType) {
+            const { state } = view;
+            let tr = state.tr;
+            state.doc.descendants((node, pos) => {
+              if (!node.isText) return true;
+              const size = node.text ? node.text.length : 0;
+              if (size === 0) return true;
+              for (const m of node.marks || []) {
+                if (m.type === markType && String(m.attrs?.id || '') === String(a.id)) {
+                  const from = pos + 1;
+                  const to = pos + 1 + size;
+                  tr = tr.removeMark(from, to, m);
+                  break;
+                }
+              }
+              return true;
+            });
+            if (tr.steps && tr.steps.length > 0) {
+              view.dispatch(tr); // 觸發 docChanged → 重新建構裝飾
+            }
+          }
+        } catch (_) {}
+        // 即時移除卡片（外部刷新亦會再次校正）
+        try { this._cards.get(String(a.id))?.remove?.(); this._cards.delete(String(a.id)); } catch (_) {}
         try { this.onDataChanged?.('annotation:deleted', a.id); } catch (_) {}
       } catch (err) {
         console.warn('刪除批註失敗:', err);
