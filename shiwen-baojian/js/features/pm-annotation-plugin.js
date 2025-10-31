@@ -23,7 +23,10 @@ export function createAnnotationPlugin({ getAnnotations, onClick }) {
       },
       apply: (tr, old, oldState, newState) => {
         const metaActive = tr.getMeta('annotations:active');
-        const needRebuild = tr.docChanged || tr.getMeta('annotations:update') || metaActive !== undefined;
+        // 調整策略：
+        // - 不再因 docChanged 即重建（避免用舊 quote 重新解析導致跳位）
+        // - 僅在資料更新或需要更新 active 樣式時重建
+        const needRebuild = tr.getMeta('annotations:update') || metaActive !== undefined;
         const activeId = metaActive !== undefined ? metaActive : old.activeId;
         let deco = old.deco.map(tr.mapping, tr.doc);
         if (needRebuild) {
