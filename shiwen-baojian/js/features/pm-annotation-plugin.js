@@ -85,12 +85,14 @@ function clamp(n, min, max) {
  * 根據 doc 解析批註位置：優先使用 text_start/text_end，否則用 quote+context 匹配
  */
 function resolveRanges(doc, annotations) {
+  // 建立全文字串與位置映射（線性足矣；將來可升級為二分）
   const segments = [];
   let acc = 0;
   doc.descendants((node, pos) => {
     if (node.isText) {
-      segments.push({ text: node.text || '', start: acc, end: acc + (node.text || '').length, pos });
-      acc += (node.text || '').length;
+      const t = node.text || '';
+      segments.push({ text: t, start: acc, end: acc + t.length, pos });
+      acc += t.length;
     }
   });
   const total = acc;
@@ -99,7 +101,6 @@ function resolveRanges(doc, annotations) {
   const posFromIndex = (index) => {
     if (index <= 0) return 0;
     if (index >= total) return doc.content.size;
-    // 線性掃描足夠（文本量不大）；可改二分
     for (let i = 0; i < segments.length; i++) {
       const s = segments[i];
       if (index <= s.end) {
@@ -110,43 +111,94 @@ function resolveRanges(doc, annotations) {
     return doc.content.size;
   };
 
+  // 視窗內字串搜尋（避免全域掃描）：返回全域索引
+  const findInWindow = (needle, centerStart, centerEnd, padding = 200) => {
+    if (!needle) return -1;
+    const wStart = clamp(centerStart - padding, 0, total);
+    const wEnd = clamp(centerEnd + padding, 0, total);
+    if (wEnd <= wStart) return -1;
+    const slice = docText.slice(wStart, wEnd);
+    const localIdx = slice.indexOf(needle);
+    return localIdx >= 0 ? (wStart + localIdx) : -1;
+  };
+
+  // 視窗內用 prefix/suffix 近似定位
+  const findContextInWindow = (prefix, suffix, centerStart, centerEnd, padding = 200) => {
+    const wStart = clamp(centerStart - padding, 0, total);
+    const wEnd = clamp(centerEnd + padding, 0, total);
+    if (wEnd <= wStart) return -1;
+    const slice = docText.slice(wStart, wEnd);
+    if (prefix) {
+      const pIdx = slice.lastIndexOf(prefix);
+      if (pIdx >= 0) return wStart + pIdx + prefix.length; // 放在 prefix 後
+    }
+    if (suffix) {
+      const sIdx = slice.indexOf(suffix);
+      if (sIdx >= 0) return Math.max(wStart + sIdx - 1, wStart); // 放在 suffix 前一位
+    }
+    return -1;
+  };
+
   const ranges = [];
   for (const a of annotations) {
     let from = null, to = null, approx = false, orphan = false;
-    if (Number.isInteger(a.text_start) && Number.isInteger(a.text_end) && a.text_end > a.text_start) {
-      from = clamp(a.text_start, 0, total);
-      to = clamp(a.text_end, 0, total);
-    } else if (a.text_quote) {
-      const quote = String(a.text_quote);
-      let idx = docText.indexOf(quote);
-      if (idx >= 0) {
-        // 若提供上下文，嘗試校驗上下文
-        if (a.text_prefix) {
-          const pre = String(a.text_prefix);
-          const preStart = Math.max(0, idx - pre.length);
-          if (docText.slice(preStart, idx) !== pre) {
-            // 若上下文不匹配，嘗試尋找下一個匹配
-            idx = findWithContext(docText, quote, pre, String(a.text_suffix || ''));
+
+    const hasOffsets = Number.isInteger(a.text_start) && Number.isInteger(a.text_end) && a.text_end > a.text_start;
+    const quote = a.text_quote ? String(a.text_quote) : '';
+    const prefix = a.text_prefix ? String(a.text_prefix) : '';
+    const suffix = a.text_suffix ? String(a.text_suffix) : '';
+
+    if (hasOffsets) {
+      const s0 = clamp(a.text_start, 0, total);
+      const e0 = clamp(a.text_end, 0, total);
+      if (quote) {
+        const slice = docText.slice(s0, e0);
+        if (slice === quote) {
+          // 快速相等：直接使用舊偏移（exact）
+          from = s0; to = e0;
+        } else {
+          // 視窗內找 quote；找不到再用 prefix/suffix 近似；仍找不到 → orphan 但放在原偏移附近
+          let idx = findInWindow(quote, s0, e0, 220);
+          if (idx >= 0) {
+            from = idx; to = idx + quote.length; // 完整命中視為 exact
+          } else {
+            const ctxIdx = findContextInWindow(prefix, suffix, s0, e0, 220);
+            if (ctxIdx >= 0) {
+              from = clamp(ctxIdx, 0, total);
+              to = clamp(from + Math.max(1, Math.min(quote ? quote.length : 1, 6)), 0, total);
+              approx = true;
+            } else {
+              // 視為孤兒：保留在原偏移附近
+              const near = clamp(s0, 0, total);
+              from = near; to = clamp(near + 1, 0, total);
+              orphan = true;
+            }
           }
         }
-        if (idx >= 0) {
-          from = idx;
-          to = idx + quote.length;
-        }
       } else {
-        // 未找到完整 quote：嘗試上下文定位
-        const pre = String(a.text_prefix || '');
-        const suf = String(a.text_suffix || '');
+        // 沒有 quote 可校驗：保守使用舊偏移
+        from = s0; to = Math.max(s0 + 1, e0);
+      }
+    } else if (quote) {
+      // 沒有偏移：退回全文精確匹配，再退上下文/片段
+      let idx = docText.indexOf(quote);
+      if (idx >= 0) {
+        if (prefix || suffix) {
+          const checked = findWithContext(docText, quote, prefix, suffix);
+          if (checked >= 0) idx = checked;
+        }
+        from = idx; to = idx + quote.length;
+      } else {
+        // 上下文 → 片段（最小 6 字）
         let ctxIdx = -1;
-        if (pre) ctxIdx = docText.lastIndexOf(pre);
-        if (ctxIdx < 0 && suf) ctxIdx = docText.indexOf(suf);
+        if (prefix) ctxIdx = docText.lastIndexOf(prefix);
+        if (ctxIdx < 0 && suffix) ctxIdx = docText.indexOf(suffix);
         if (ctxIdx >= 0) {
           from = clamp(ctxIdx, 0, total);
-          to = clamp(from + Math.max(1, Math.min((a.text_quote || '').length, 6)), 0, total); // 以少量長度示意
+          to = clamp(from + Math.max(1, Math.min(quote.length || 1, 6)), 0, total);
           approx = true;
         } else {
-          // 模糊匹配：截取 quote 的一半長度去搜索
-          const q = (a.text_quote || '').trim();
+          const q = quote.trim();
           const minLen = 6;
           const half = Math.max(minLen, Math.floor(q.length / 2));
           if (q && q.length >= minLen) {
@@ -167,13 +219,14 @@ function resolveRanges(doc, annotations) {
       const pmTo = posFromIndex(to);
       if (pmTo > pmFrom) {
         ranges.push({ id: a.id, from: pmFrom, to: pmTo, approx, orphan: false });
+        continue;
       }
-    } else {
-      // 完全找不到：標記為 orphan，放置於文首最小範圍以提示
-      const pmFrom = 1;
-      const pmTo = Math.min(3, doc.content.size);
-      ranges.push({ id: a.id, from: pmFrom, to: pmTo, approx: false, orphan: true });
     }
+
+    // 完全找不到或位置映射無效：標記為 orphan，採用文首最小範圍作為兜底
+    const pmFrom = 1;
+    const pmTo = Math.min(3, doc.content.size);
+    ranges.push({ id: a.id, from: pmFrom, to: pmTo, approx: false, orphan: true });
   }
   return { ranges, total };
 }
