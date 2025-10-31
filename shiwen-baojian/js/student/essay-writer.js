@@ -9,7 +9,7 @@
 
 import { PMEditor } from '../editor/tiptap-editor.js';
 import { toggleMark, Plugin, PluginKey, Decoration, DecorationSet } from '../editor/pm-vendor.js';
-import { createAnnotationPlugin, createAnnotationFromSelection } from '../features/pm-annotation-plugin.js';
+import { createAnnotationPlugin, createAnnotationFromSelection, computeSelectionAnchor, addAnnotationMarkForSelection, replaceAnnotationMarkId, removeAnnotationMarksById } from '../features/pm-annotation-plugin.js';
 import { PMAnnotationOverlay } from '../features/pm-annotation-overlay.js';
 import { initializeStorage, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
@@ -745,8 +745,67 @@ function setupStudentSelectionComposer() {
       if (!AppState?.supabase || !essayId || !view || view.state.selection.empty) { hide(); return; }
       const content = (textarea.value || '').trim();
       if (!content) { textarea.focus(); return; }
-      const id = await createAnnotationFromSelection({ view, supabase: AppState.supabase, essayId, content });
-      if (id) {
+      // 1) 樂觀：加上臨時 mark 與臨時卡片
+      const tmpId = `tmp-${Math.random().toString(36).slice(2, 10)}`;
+      const anchor = computeSelectionAnchor(view, 30);
+      addAnnotationMarkForSelection(view, tmpId);
+      try {
+        // 臨時資料注入 store
+        const { data: userData } = await AppState.supabase.auth.getUser();
+        const currentUserId = userData?.user?.id || AppState?.currentUser?.id || null;
+        const optimistic = {
+          id: tmpId,
+          text_start: anchor?.text_start ?? null,
+          text_end: anchor?.text_end ?? null,
+          text_quote: anchor?.text_quote || null,
+          text_prefix: anchor?.text_prefix || null,
+          text_suffix: anchor?.text_suffix || null,
+          content,
+          authorId: currentUserId,
+          authorDisplayName: AppState?.currentUser?.display_name || '我',
+          authorRole: 'student',
+          canDelete: true,
+          replies: []
+        };
+        const pushStore = (arr, item) => {
+          const map = new Map((arr || []).map(x => [x.id, x]));
+          map.set(item.id, item);
+          return Array.from(map.values());
+        };
+        window.__pmAnnStore = pushStore(window.__pmAnnStore || [], optimistic);
+        window.__pmAnnStoreWithContent = window.__pmAnnStore;
+        // 通知裝飾與疊加層
+        try { view.dispatch(view.state.tr.setMeta('annotations:update', true)); } catch (_) {}
+        try { window.__pmOverlay?.update?.(); } catch (_) {}
+      } catch (_) {}
+
+      // 2) 寫入後端，成功後將臨時 id 替換為真正 id；若失敗則回滾
+      let finalId = null;
+      try {
+        finalId = await createAnnotationFromSelection({ view, supabase: AppState.supabase, essayId, content });
+        if (finalId) {
+          // 替換 store 與 mark 的 id
+          replaceAnnotationMarkId(view, tmpId, String(finalId));
+          try {
+            const swapId = (arr) => (arr || []).map(x => x.id === tmpId ? Object.assign({}, x, { id: String(finalId) }) : x);
+            window.__pmAnnStore = swapId(window.__pmAnnStore);
+            window.__pmAnnStoreWithContent = window.__pmAnnStore;
+          } catch (_) {}
+        }
+      } catch (e) {
+        // 回滾：移除臨時 mark 與臨時卡片
+        removeAnnotationMarksById(view, tmpId);
+        try {
+          const rm = (arr) => (arr || []).filter(x => x.id !== tmpId);
+          window.__pmAnnStore = rm(window.__pmAnnStore);
+          window.__pmAnnStoreWithContent = window.__pmAnnStore;
+        } catch (_) {}
+        try { window.__pmOverlay?.update?.(); } catch (_) {}
+        throw e;
+      }
+
+      // 3) 完成：關閉編寫器，刷新一次（以獲取完整的作者/時間/回覆計數等）
+      if (finalId) {
         hide();
         await refreshPMAnnotationsStudent();
         try { toast.success('批註已新增'); } catch (_) {}

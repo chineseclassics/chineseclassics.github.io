@@ -58,6 +58,91 @@ export function setActiveAnnotation(view, idOrNull) {
   try { view.dispatch(view.state.tr.setMeta('annotations:active', idOrNull ?? null)); } catch (_) {}
 }
 
+/**
+ * 工具：在當前選區加上 annotation mark（用於樂觀更新）
+ * 傳回實際 from/to，並觸發裝飾刷新
+ */
+export function addAnnotationMarkForSelection(view, id) {
+  try {
+    const { state } = view;
+    const markType = state.schema?.marks?.annotation;
+    if (!markType) return null;
+    const sel = state.selection;
+    if (sel.empty) return null;
+    const tr = state.tr.addMark(sel.from, sel.to, markType.create({ id: String(id) }));
+    tr.setMeta('annotations:update', true);
+    view.dispatch(tr);
+    return { from: sel.from, to: sel.to };
+  } catch (_) { return null; }
+}
+
+/**
+ * 工具：將文檔中所有 id=oldId 的 annotation mark 替換為 newId
+ */
+export function replaceAnnotationMarkId(view, oldId, newId) {
+  try {
+    const { state } = view;
+    const markType = state.schema?.marks?.annotation;
+    if (!markType) return false;
+    let tr = state.tr;
+    const oldStr = String(oldId);
+    state.doc.descendants((node, pos) => {
+      if (!node.isText) return true;
+      const size = node.text ? node.text.length : 0;
+      if (size === 0) return true;
+      for (const m of node.marks || []) {
+        if (m.type === markType && String(m.attrs?.id || '') === oldStr) {
+          const from = pos + 1;
+          const to = pos + 1 + size;
+          tr = tr.removeMark(from, to, m);
+          tr = tr.addMark(from, to, markType.create({ id: String(newId) }));
+          break;
+        }
+      }
+      return true;
+    });
+    if (tr.steps && tr.steps.length > 0) {
+      tr.setMeta('annotations:update', true);
+      view.dispatch(tr);
+      return true;
+    }
+    return false;
+  } catch (_) { return false; }
+}
+
+/**
+ * 工具：移除文檔中所有 id=targetId 的 annotation mark（失敗回滾或刪除用）
+ */
+export function removeAnnotationMarksById(view, targetId) {
+  try {
+    const { state } = view;
+    const markType = state.schema?.marks?.annotation;
+    if (!markType) return false;
+    let tr = state.tr;
+    const sId = String(targetId);
+    state.doc.descendants((node, pos) => {
+      if (!node.isText) return true;
+      const size = node.text ? node.text.length : 0;
+      if (size === 0) return true;
+      for (const m of node.marks || []) {
+        if (m.type === markType && String(m.attrs?.id || '') === sId) {
+          const from = pos + 1;
+          const to = pos + 1 + size;
+          tr = tr.removeMark(from, to, m);
+          break;
+        }
+      }
+      return true;
+    });
+    if (tr.steps && tr.steps.length > 0) {
+      tr.setMeta('annotations:update', true);
+      view.dispatch(tr);
+      return true;
+    }
+    return false;
+  } catch (_) { return false; }
+}
+
 function buildDecorationSet(viewLike, annotations, activeId) {
   const { state } = viewLike;
   const annList = Array.isArray(annotations) ? annotations : [];
@@ -408,15 +493,33 @@ export async function createAnnotationFromSelection({ view, supabase, essayId, c
   if (error) throw error;
   const newId = data; // 新 annotation id
 
-  // 以 PM 原生方式：用 mark 標註當前選區
+  // 注意：在樂觀更新路徑中，呼叫方已預先用暫時 id 加上 mark。
+  // 這裡統一嘗試將暫時 id（若存在）替換為真實 id；
+  // 若不存在任何暫時 mark，則正常直接在選區加入最終 mark。
   try {
-    const { state } = view;
-    const markType = state.schema?.marks?.annotation;
-    if (markType) {
-      const sel = state.selection;
-      const tr = state.tr.addMark(sel.from, sel.to, markType.create({ id: String(newId) }));
-      tr.setMeta('annotations:update', true); // 促使裝飾重建，立刻顯示高亮
-      view.dispatch(tr);
+    // 嘗試從選區讀取是否已有暫時 mark（以 tmp- 前綴約定）
+    const tmp = (() => {
+      try {
+        const sel = view.state.selection;
+        let found = null;
+        view.state.doc.nodesBetween(sel.from, sel.to, (node, pos) => {
+          if (!node.isText) return true;
+          for (const m of node.marks || []) {
+            if (m.type === view.state.schema.marks.annotation && String(m.attrs?.id || '').startsWith('tmp-')) {
+              found = String(m.attrs.id);
+              return false;
+            }
+          }
+          return true;
+        });
+        return found;
+      } catch (_) { return null; }
+    })();
+    if (tmp) {
+      replaceAnnotationMarkId(view, tmp, String(newId));
+    } else {
+      // 常規路徑：補上最終 mark
+      addAnnotationMarkForSelection(view, String(newId));
     }
   } catch (_) {}
 
