@@ -38,6 +38,13 @@ const baseMarks = {
   underline: {
     toDOM: () => ['u', 0],
     parseDOM: [{ tag: 'u' }]
+  },
+  // ProseMirror 原生批註標記：用於在文檔內持久化錨定（attrs.id 對應資料庫 annotation id）
+  annotation: {
+    attrs: { id: {} },
+    inclusive: true,
+    toDOM: (mark) => ['span', { 'data-annotation-id': String(mark.attrs.id || ''), class: 'pm-ann-mark' }, 0],
+    parseDOM: [{ tag: 'span[data-annotation-id]', getAttrs: (el) => ({ id: el.getAttribute('data-annotation-id') }) }]
   }
 };
 

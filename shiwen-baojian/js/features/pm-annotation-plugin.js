@@ -23,10 +23,8 @@ export function createAnnotationPlugin({ getAnnotations, onClick }) {
       },
       apply: (tr, old, oldState, newState) => {
         const metaActive = tr.getMeta('annotations:active');
-        // 調整策略：
-        // - 不再因 docChanged 即重建（避免用舊 quote 重新解析導致跳位）
-        // - 僅在資料更新或需要更新 active 樣式時重建
-        const needRebuild = tr.getMeta('annotations:update') || metaActive !== undefined;
+        // 使用 mark 作為主錨定：docChanged 時重建可即時反映 mark 的增刪
+        const needRebuild = tr.docChanged || tr.getMeta('annotations:update') || metaActive !== undefined;
         const activeId = metaActive !== undefined ? metaActive : old.activeId;
         let deco = old.deco.map(tr.mapping, tr.doc);
         if (needRebuild) {
@@ -62,17 +60,69 @@ export function setActiveAnnotation(view, idOrNull) {
 
 function buildDecorationSet(viewLike, annotations, activeId) {
   const { state } = viewLike;
-  const { ranges } = resolveRanges(state.doc, annotations || []);
-  const decos = ranges.map(r => {
-    const cls = ['pm-annotation'];
-    if (r.approx) cls.push('pm-annotation-approx');
-    if (r.orphan) cls.push('pm-annotation-orphan');
-    if (activeId && String(activeId) === String(r.id)) cls.push('pm-annotation-active');
-    const attrs = { class: cls.join(' '), 'data-id': r.id };
-    const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
-    const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
-    return Decoration.inline(from, to, attrs);
-  });
+  const annList = Array.isArray(annotations) ? annotations : [];
+
+  // 1) 從 doc 掃描 annotation mark，建立 id→連續範圍集合
+  const annoMarkType = state.schema.marks && state.schema.marks.annotation;
+  const markRanges = new Map(); // id -> [{from,to}]
+  if (annoMarkType) {
+    state.doc.descendants((node, pos) => {
+      if (!node.isText) return true;
+      const size = node.text ? node.text.length : 0;
+      if (size === 0) return true;
+      for (const m of node.marks || []) {
+        if (m.type === annoMarkType) {
+          const id = String(m.attrs?.id || '');
+          if (!id) continue;
+          const from = pos + 1;
+          const to = pos + 1 + size;
+          if (!markRanges.has(id)) markRanges.set(id, []);
+          markRanges.get(id).push({ from, to });
+        }
+      }
+      return true;
+    });
+    // 合併相鄰或重疊的範圍
+    for (const [id, arr] of markRanges) {
+      arr.sort((a, b) => a.from - b.from);
+      const merged = [];
+      for (const r of arr) {
+        const last = merged[merged.length - 1];
+        if (!last || r.from > last.to) merged.push({ from: r.from, to: r.to });
+        else last.to = Math.max(last.to, r.to);
+      }
+      markRanges.set(id, merged);
+    }
+  }
+
+  // 2) 針對每個 annotation：若存在 mark 範圍 → 用之；否則用 orphan（依據舊偏移）
+  const { posFromIndexTools } = getTextIndexConverters(state);
+  const decos = [];
+  for (const a of annList) {
+    const id = a?.id != null ? String(a.id) : null;
+    if (!id) continue;
+    const ranges = markRanges.get(id);
+    if (ranges && ranges.length) {
+      for (const r of ranges) {
+        const cls = ['pm-annotation'];
+        if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
+        const attrs = { class: cls.join(' '), 'data-id': id };
+        const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
+        const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
+        decos.push(Decoration.inline(from, to, attrs));
+      }
+    } else {
+      // orphan：依據 text_start 回到近似原位置
+      const s0 = Number.isInteger(a.text_start) ? a.text_start : 0;
+      const pmPos = posFromIndexTools(s0);
+      const from = Math.max(1, Math.min(pmPos, state.doc.content.size - 1));
+      const to = Math.min(from + 1, state.doc.content.size);
+      const cls = ['pm-annotation', 'pm-annotation-orphan'];
+      if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
+      const attrs = { class: cls.join(' '), 'data-id': id };
+      decos.push(Decoration.inline(from, to, attrs));
+    }
+  }
   return DecorationSet.create(state.doc, decos);
 }
 
@@ -234,6 +284,33 @@ function resolveRanges(doc, annotations) {
   return { ranges, total };
 }
 
+// 取得從「全局文字索引」轉到 PM 位置的函式
+function getTextIndexConverters(state) {
+  const segments = [];
+  let acc = 0;
+  state.doc.descendants((node, pos) => {
+    if (node.isText) {
+      const t = node.text || '';
+      segments.push({ start: acc, end: acc + t.length, pos });
+      acc += t.length;
+    }
+  });
+  const total = acc;
+  const posFromIndexTools = (index) => {
+    const i = clamp(index, 0, total);
+    if (i <= 0) return 1;
+    for (let k = 0; k < segments.length; k++) {
+      const s = segments[k];
+      if (i <= s.end) {
+        const offset = i - s.start;
+        return s.pos + offset + 1;
+      }
+    }
+    return state.doc.content.size - 1;
+  };
+  return { total, posFromIndexTools };
+}
+
 function findWithContext(text, quote, prefix, suffix) {
   let start = 0;
   while (true) {
@@ -329,7 +406,21 @@ export async function createAnnotationFromSelection({ view, supabase, essayId, c
 
   const { data, error } = await supabase.rpc('create_annotation_pm', payload);
   if (error) throw error;
-  return data; // 返回新 annotation id
+  const newId = data; // 新 annotation id
+
+  // 以 PM 原生方式：用 mark 標註當前選區
+  try {
+    const { state } = view;
+    const markType = state.schema?.marks?.annotation;
+    if (markType) {
+      const sel = state.selection;
+      const tr = state.tr.addMark(sel.from, sel.to, markType.create({ id: String(newId) }));
+      tr.setMeta('annotations:update', true); // 促使裝飾重建，立刻顯示高亮
+      view.dispatch(tr);
+    }
+  } catch (_) {}
+
+  return newId;
 }
 
 
