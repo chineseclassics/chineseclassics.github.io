@@ -1007,6 +1007,52 @@ function ensureFormatToolbar(pm) {
     if (host && host.parentElement) host.parentElement.insertBefore(bar, host);
   }
 
+  // 無論是否新建，統一套用穩定佈局樣式，避免內容變動導致高度撐大
+  try {
+    // 工具欄容器：單行、垂直置中、固定最小高度
+    bar.style.display = 'flex';
+    bar.style.alignItems = 'center';
+    bar.style.whiteSpace = 'nowrap';
+    bar.style.minHeight = '44px'; // 與按鈕高度匹配，避免抖動
+    bar.style.gap = '12px';
+
+    const left = bar.querySelector('.pm-topbar-left');
+    const center = bar.querySelector('.pm-topbar-center');
+    const right = bar.querySelector('.pm-topbar-right');
+    const save = bar.querySelector('#topbar-save-status');
+
+    if (left) {
+      left.style.flex = '0 0 auto';
+      left.style.display = 'inline-flex';
+      left.style.alignItems = 'center';
+      left.style.gap = '8px';
+    }
+    if (center) {
+      // 中央內容：單行、超出省略，避免換行撐高
+      center.style.flex = '1 1 auto';
+      center.style.overflow = 'hidden';
+      center.style.textOverflow = 'ellipsis';
+      center.style.whiteSpace = 'nowrap';
+      center.style.minWidth = '0'; // 允許收縮
+    }
+    if (right) {
+      // 右側固定寬度，防止保存狀態文案/圖示變化引起整欄位移
+      right.style.flex = '0 0 120px';
+      right.style.display = 'flex';
+      right.style.justifyContent = 'flex-end';
+      right.style.whiteSpace = 'nowrap';
+    }
+    if (save) {
+      // 讓保存狀態在固定寬度中居右顯示，圖示切換不改高度
+      save.style.display = 'inline-flex';
+      save.style.alignItems = 'center';
+      save.style.gap = '6px';
+      save.style.width = '100%';
+      save.style.justifyContent = 'flex-end';
+      save.style.lineHeight = '1.2';
+    }
+  } catch (_) {}
+
   if (bar.dataset.bound === '1') return; // 避免重複綁定
 
   const btnBold = bar.querySelector('[data-mark="bold"]');
@@ -1658,10 +1704,12 @@ function renderCountersAndTargets() {
   const comp = EditorState.introEditor?.getCompleteness?.();
   let compHtml = '';
   if (comp) {
+    // 簡化：不再逐一列出「分論點一、分論點二…」，統一顯示單一「分論點」狀態
+    // 規則：存在至少一個分論點 → 綠色對號；否則 → 空圈（與引言/結論樣式一致）
     const ok = (s) => s ? '<i class="fas fa-check-circle text-emerald-600"></i>' : '<i class="far fa-circle text-gray-400"></i>';
     const pill = (label, done) => `<span class="comp-pill ${done ? 'comp-ok' : 'comp-miss'}">${ok(done)}<span class="ml-1">${label}</span></span>`;
-    const bodyPills = comp.bodies.map(b => pill(b.label, b.complete)).join('');
-    compHtml = `｜<div class="pm-completeness inline-flex items-center" aria-label="文章完整度">${pill(comp.intro.label, comp.intro.complete)}<span class="comp-sep">｜</span>${bodyPills || '<span class="comp-hint text-gray-400">添加分論點…</span>'}<span class="comp-sep">｜</span>${pill(comp.conclusion.label, comp.conclusion.complete)}</div>`;
+    const hasBodies = Array.isArray(comp.bodies) && comp.bodies.length > 0;
+    compHtml = `｜<div class="pm-completeness inline-flex items-center" aria-label="文章完整度">${pill(comp.intro.label, comp.intro.complete)}<span class="comp-sep">｜</span>${pill('分論點', hasBodies)}<span class="comp-sep">｜</span>${pill(comp.conclusion.label, comp.conclusion.complete)}</div>`;
   }
 
   if (topbarEl) topbarEl.innerHTML = `${wcTopHtml}${targetHtml}${compHtml}`;
