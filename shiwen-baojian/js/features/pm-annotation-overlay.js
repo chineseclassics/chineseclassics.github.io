@@ -43,6 +43,9 @@ export class PMAnnotationOverlay {
 
   update() {
     if (!this._mounted) return;
+    // 確保宿主容器有合理高度，否則在 CSS 採用 bottom:0 + overflow:hidden 時
+    // 容器高度若為 0 會把卡片全部裁切掉（看起來像「消失」）。
+    this._syncHostHeight();
     const anns = this.getAnnotations() || [];
     // 依正文順序（已由來源排序），逐一定位
     const containerRect = this._containerRect();
@@ -105,6 +108,21 @@ export class PMAnnotationOverlay {
         this._cards.delete(id);
       }
     }
+  }
+
+  // 同步宿主容器高度：以編輯器視圖高度作為下限，避免宿主高度為 0 導致內容被裁切隱藏
+  _syncHostHeight() {
+    try {
+      const host = this._ensureHost();
+      const v = this.view?.dom;
+      const rect = v?.getBoundingClientRect?.();
+      const editorH = Math.max(1, Math.floor((rect?.height) || v?.scrollHeight || v?.clientHeight || 0));
+      // 僅在宿主高度偏小時設置 min-height，避免干擾本來就有高度的布局
+      const hostH = host?.clientHeight || 0;
+      if (editorH > hostH) {
+        host.style.minHeight = editorH + 'px';
+      }
+    } catch (_) {}
   }
 
   setActive(id) {
