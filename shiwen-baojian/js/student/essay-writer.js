@@ -434,7 +434,9 @@ export async function initializeEssayEditor(forceReinit = false) {
             onClick: (id) => focusStudentAnnDecoration(id),
             supabase: getAppState().supabase,
             currentUserId: userData?.user?.id || getAppState()?.currentUser?.id || null,
-            onDataChanged: async () => { await refreshPMAnnotationsStudent(); }
+            onDataChanged: async () => { await refreshPMAnnotationsStudent(); },
+            // 學生端：關閉宿主自動撐高，避免頁面高度閃變造成輕微抖動
+            adjustHostHeight: false
           });
           window.__pmOverlay.mount();
         }
@@ -719,13 +721,15 @@ function setupStudentSelectionComposer() {
   const hide = () => { composer.style.display = 'none'; textarea.value = ''; clearComposeMark(); };
   const showAt = (rect) => {
     const containerRect = root.getBoundingClientRect();
+    // 先顯示再量測高度，避免 offsetHeight=0 導致位置跳動
+    composer.style.display = 'block';
+    const h = composer.offsetHeight || 0;
     const mid = (rect.top + rect.bottom) / 2 - containerRect.top;
-    const top = Math.max(8, mid - composer.offsetHeight / 2);
+    const top = Math.max(8, mid - h / 2);
     composer.style.top = `${Math.round(top)}px`;
     composer.style.right = `0px`;
-    composer.style.display = 'block';
     addComposeMarkIfNeeded();
-    textarea.focus();
+    try { textarea.focus({ preventScroll: true }); } catch (_) { textarea.focus(); }
   };
 
   const update = () => {
