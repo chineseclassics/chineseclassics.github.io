@@ -96,9 +96,6 @@ class AssignmentList {
     const stats = assignment.stats || {};
     const classColorClass = assignment.class ? getClassColorClass(assignment.class.id) : 'class-1';
 
-    // 提取字數要求
-    const wordCountHtml = this.getWordCountHtml(assignment);
-
     return `
       <div class="assignment-card card ${classColorClass}${isOverdue ? ' overdue' : ''}" data-id="${assignment.id}">
         <div class="card-header">
@@ -122,7 +119,6 @@ class AssignmentList {
               <i class="fas fa-calendar"></i>
               <span>截止：${dueDate.toLocaleDateString('zh-CN')}</span>
             </div>
-            ${wordCountHtml}
             <div class="meta-item">
               <i class="fas fa-file-alt"></i>
               <span>提交：${stats.submitted || 0}/${stats.totalStudents || 0}</span>
@@ -147,33 +143,6 @@ class AssignmentList {
         </div>
       </div>
     `;
-  }
-
-  /**
-   * 獲取學生作業實際字數統計 HTML
-   */
-  getWordCountHtml(assignment) {
-    try {
-      const stats = assignment.stats || {};
-      const averageWordCount = stats.averageWordCount || 0;
-      const submitted = stats.submitted || 0;
-
-      // 如果沒有提交的作業，不顯示字數
-      if (submitted === 0) {
-        return '';
-      }
-
-      // 顯示已提交作業的平均字數
-      return `
-        <div class="meta-item">
-          <i class="fas fa-font"></i>
-          <span>${averageWordCount} 字</span>
-        </div>
-      `;
-    } catch (error) {
-      console.error('提取字數統計失敗:', error);
-      return ''; // 出錯時不顯示
-    }
   }
 
   /**

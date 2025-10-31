@@ -157,10 +157,10 @@ class AssignmentManager {
           .select('class_id')
           .in('class_id', classIds),
         
-        // 批量查詢：提交和批改數，包含字數統計
+        // 批量查詢：提交和批改數
         this.supabase
           .from('essays')
-          .select('assignment_id, status, total_word_count')
+          .select('assignment_id, status')
           .in('assignment_id', assignmentIds)
           .in('status', ['submitted', 'graded'])
       ]);
@@ -175,23 +175,12 @@ class AssignmentManager {
         const submitted = essays.filter(e => e.status === 'submitted').length;
         const graded = essays.filter(e => e.status === 'graded').length;
         
-        // 計算已提交作業的平均字數
-        const submittedEssays = essays.filter(e => e.status === 'submitted' || e.status === 'graded');
-        let averageWordCount = 0;
-        if (submittedEssays.length > 0) {
-          const totalWords = submittedEssays.reduce((sum, e) => {
-            return sum + (e.total_word_count || 0);
-          }, 0);
-          averageWordCount = Math.round(totalWords / submittedEssays.length);
-        }
-        
         return {
           ...assignment,
           stats: {
             totalStudents: classStudents,
             submitted,
-            graded,
-            averageWordCount // 平均字數
+            graded
           }
         };
       });
