@@ -221,7 +221,14 @@ class AssignmentList {
           await this.loadAndRenderAssignments();
         } catch (error) {
           console.error('刪除失敗:', error);
-          toast.error('刪除失敗：' + error.message);
+          // 友好錯誤提示（Postgres 代碼 23503：外鍵約束衝突）
+          if (error && (error.code === '23503' || /foreign key|外鍵|violates foreign key/i.test(error.message || ''))) {
+            toast.error('刪除失敗：存在關聯資料（例如批註或提交記錄）。已為您開啟自動清理機制，請稍後重試。');
+          } else if (error && error.message === 'REQUIRES_CONFIRMATION_WITH_ESSAYS') {
+            toast.error('此任務已有學生提交，請再確認刪除。');
+          } else {
+            toast.error('刪除失敗：' + (error?.message || '未知錯誤'));
+          }
         }
       }
     });
