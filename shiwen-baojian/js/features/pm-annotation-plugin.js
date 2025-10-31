@@ -190,6 +190,12 @@ function buildDecorationSet(viewLike, annotations, activeId) {
     }
   }
 
+  // 是否存在任何暫存（compose-/tmp-）標記：用於避免「先出現一個字的孤兒高亮」的閃爍
+  let hasPendingMarks = false;
+  for (const id of markRanges.keys()) {
+    if (/^compose-|^tmp-/.test(id)) { hasPendingMarks = true; break; }
+  }
+
   // 2) 針對每個 annotation：若存在 mark 範圍 → 用之；否則用 orphan（依據舊偏移）
   const { posFromIndexTools } = getTextIndexConverters(state);
   const decos = [];
@@ -208,9 +214,11 @@ function buildDecorationSet(viewLike, annotations, activeId) {
       }
     } else {
       // orphan：依據 text_start 回到近似原位置
+      // 為避免在新增流程中暫時產生「一個字」的誤導性高亮，若此時存在任何暫存標記，暫不渲染孤兒。
+      if (hasPendingMarks) continue;
       const s0 = Number.isInteger(a.text_start) ? a.text_start : 0;
       const pmPos = posFromIndexTools(s0);
-      const from = Math.max(1, Math.min(pmPos, state.doc.content.size - 1));
+      const from = Math.max(0, Math.min(pmPos, state.doc.content.size));
       const to = Math.min(from + 1, state.doc.content.size);
       const cls = ['pm-annotation', 'pm-annotation-orphan'];
       if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
