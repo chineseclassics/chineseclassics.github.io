@@ -109,7 +109,14 @@
 }
 
 /* ============= 右側批註疊加層（Google Docs 風格） ============= */
-.pm-ann-overlay { position: absolute; top: 0; left: 0; right: 0; width: 100%; pointer-events: none; }
+/*
+  注意：
+  - 將 bottom: 0 與 overflow: hidden 加上，
+    使疊加層高度覆蓋整個右側容器並裁切越界內容。
+  - 這樣當上方卡片被向上避讓時，超出容器頂部的部分會被「藏到容器下方」，
+    不會覆蓋到頁面頂部的標題橫幅/導航等區域。
+*/
+.pm-ann-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; pointer-events: none; overflow: hidden; }
 .pm-ann-card { position: absolute; right: 0; width: 100%; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.06); padding: 10px 12px; pointer-events: auto; }
 .pm-ann-card:hover { box-shadow: 0 10px 36px rgba(0,0,0,.08); }
 .pm-ann-card .pm-ann-meta { font-size: 12px; color: #6b7280; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
