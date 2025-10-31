@@ -699,7 +699,22 @@ function setupStudentSelectionComposer() {
   const btnCancel = composer.querySelector('.btn-ghost');
   const btnAdd = composer.querySelector('.btn-primary');
 
-  const hide = () => { composer.style.display = 'none'; textarea.value = ''; };
+  let composeId = null; // 當前編寫中的臨時標記 id（compose-xxxx）
+  const addComposeMarkIfNeeded = () => {
+    try {
+      if (!view || view.state.selection.empty) return;
+      if (composeId) return; // 已存在
+      composeId = `compose-${Math.random().toString(36).slice(2,10)}`;
+      addAnnotationMarkForSelection(view, composeId);
+    } catch (_) {}
+  };
+  const clearComposeMark = () => {
+    try {
+      if (composeId) removeAnnotationMarksById(view, composeId);
+    } catch (_) {}
+    composeId = null;
+  };
+  const hide = () => { composer.style.display = 'none'; textarea.value = ''; clearComposeMark(); };
   const showAt = (rect) => {
     const containerRect = root.getBoundingClientRect();
     const mid = (rect.top + rect.bottom) / 2 - containerRect.top;
@@ -707,6 +722,7 @@ function setupStudentSelectionComposer() {
     composer.style.top = `${Math.round(top)}px`;
     composer.style.right = `0px`;
     composer.style.display = 'block';
+    addComposeMarkIfNeeded();
     textarea.focus();
   };
 
@@ -745,10 +761,15 @@ function setupStudentSelectionComposer() {
       if (!AppState?.supabase || !essayId || !view || view.state.selection.empty) { hide(); return; }
       const content = (textarea.value || '').trim();
       if (!content) { textarea.focus(); return; }
-      // 1) 樂觀：加上臨時 mark 與臨時卡片
+      // 1) 樂觀：若已有 compose 標記，先替換為 tmp 標記；否則直接加 tmp 標記
       const tmpId = `tmp-${Math.random().toString(36).slice(2, 10)}`;
       const anchor = computeSelectionAnchor(view, 30);
-      addAnnotationMarkForSelection(view, tmpId);
+      if (composeId) {
+        replaceAnnotationMarkId(view, composeId, tmpId);
+        composeId = null;
+      } else {
+        addAnnotationMarkForSelection(view, tmpId);
+      }
       try {
         // 臨時資料注入 store
         const { data: userData } = await AppState.supabase.auth.getUser();
@@ -776,7 +797,7 @@ function setupStudentSelectionComposer() {
         window.__pmAnnStoreWithContent = window.__pmAnnStore;
         // 通知裝飾與疊加層
         try { view.dispatch(view.state.tr.setMeta('annotations:update', true)); } catch (_) {}
-        try { window.__pmOverlay?.update?.(); } catch (_) {}
+        try { requestAnimationFrame(() => window.__pmOverlay?.update?.()); } catch (_) {}
       } catch (_) {}
 
       // 2) 寫入後端，成功後將臨時 id 替換為真正 id；若失敗則回滾
@@ -800,7 +821,7 @@ function setupStudentSelectionComposer() {
           window.__pmAnnStore = rm(window.__pmAnnStore);
           window.__pmAnnStoreWithContent = window.__pmAnnStore;
         } catch (_) {}
-        try { window.__pmOverlay?.update?.(); } catch (_) {}
+        try { requestAnimationFrame(() => window.__pmOverlay?.update?.()); } catch (_) {}
         throw e;
       }
 

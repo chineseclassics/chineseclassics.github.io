@@ -74,6 +74,7 @@ export function addAnnotationMarkForSelection(view, id) {
     view.dispatch(tr);
     return { from: sel.from, to: sel.to };
   } catch (_) { return null; }
+      const idsFromList = new Set(annList.map(a => String(a?.id ?? '')));
 }
 
 /**
@@ -97,6 +98,21 @@ export function replaceAnnotationMarkId(view, oldId, newId) {
           tr = tr.removeMark(from, to, m);
           tr = tr.addMark(from, to, markType.create({ id: String(newId) }));
           break;
+        }
+      }
+
+      // 2.5) 額外：對未在 annList 中、但存在於文檔中的暫存標記（compose-/tmp-）也建立裝飾，
+      // 讓「編寫中/樂觀中」的選區能立刻高亮，且能成為疊加層的對齊依據。
+      for (const [id, ranges] of markRanges) {
+        if (idsFromList.has(id)) continue;
+        if (!/^compose-|^tmp-/.test(id)) continue;
+        for (const r of ranges) {
+          const cls = ['pm-annotation', 'pm-annotation-pending'];
+          if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
+          const attrs = { class: cls.join(' '), 'data-id': id };
+          const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
+          const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
+          decos.push(Decoration.inline(from, to, attrs));
         }
       }
       return true;

@@ -467,7 +467,20 @@ class GradingUI {
     const btnCancel = composer.querySelector('.btn-ghost');
     const btnAdd = composer.querySelector('.btn-primary');
 
-    const hide = () => { composer.style.display = 'none'; textarea.value = ''; };
+    let composeId = null; // 當前編寫中的臨時標記 id（compose-xxxx）
+    const addComposeMarkIfNeeded = () => {
+      try {
+        if (!view || view.state.selection.empty) return;
+        if (composeId) return;
+        composeId = `compose-${Math.random().toString(36).slice(2,10)}`;
+        addAnnotationMarkForSelection(view, composeId);
+      } catch (_) {}
+    };
+    const clearComposeMark = () => {
+      try { if (composeId) removeAnnotationMarksById(view, composeId); } catch (_) {}
+      composeId = null;
+    };
+    const hide = () => { composer.style.display = 'none'; textarea.value = ''; clearComposeMark(); };
     const showAt = (rect) => {
       const containerRect = essaySection.getBoundingClientRect();
       const mid = (rect.top + rect.bottom) / 2 - containerRect.top;
@@ -475,6 +488,7 @@ class GradingUI {
       composer.style.top = `${Math.round(top)}px`;
       composer.style.right = `0px`;
       composer.style.display = 'block';
+      addComposeMarkIfNeeded();
       textarea.focus();
     };
 
@@ -503,10 +517,15 @@ class GradingUI {
         if (!view || view.state.selection.empty) { hide(); return; }
         const content = (textarea.value || '').trim();
         if (!content) { textarea.focus(); return; }
-        // 1) 樂觀：加上臨時 mark 與臨時卡片
+        // 1) 樂觀：若已有 compose 標記，先替換為 tmp 標記；否則直接加 tmp 標記
         const tmpId = `tmp-${Math.random().toString(36).slice(2, 10)}`;
         const anchor = computeSelectionAnchor(view, 30);
-        addAnnotationMarkForSelection(view, tmpId);
+        if (composeId) {
+          replaceAnnotationMarkId(view, composeId, tmpId);
+          composeId = null;
+        } else {
+          addAnnotationMarkForSelection(view, tmpId);
+        }
         try {
           const { data: userData } = await this.supabase.auth.getUser();
           const currentUserId = userData?.user?.id || null;
@@ -534,7 +553,7 @@ class GradingUI {
           this._annStoreWithContent = this._annStore;
           // 通知裝飾與疊加層
           try { view.dispatch(view.state.tr.setMeta('annotations:update', true)); } catch (_) {}
-          try { this._overlay?.update?.(); } catch (_) {}
+          try { requestAnimationFrame(() => this._overlay?.update?.()); } catch (_) {}
         } catch (_) {}
 
         // 2) 寫入後端，成功後將臨時 id 替換為真正 id；若失敗則回滾
@@ -546,7 +565,7 @@ class GradingUI {
             const swapId = (arr) => (arr || []).map(x => x.id === tmpId ? Object.assign({}, x, { id: String(finalId) }) : x);
             this._annStore = swapId(this._annStore);
             this._annStoreWithContent = this._annStore;
-            try { this._overlay?.update?.(); } catch (_) {}
+            try { requestAnimationFrame(() => this._overlay?.update?.()); } catch (_) {}
           }
         } catch (e) {
           removeAnnotationMarksById(view, tmpId);
@@ -555,7 +574,7 @@ class GradingUI {
             this._annStore = rm(this._annStore);
             this._annStoreWithContent = this._annStore;
           } catch (_) {}
-          try { this._overlay?.update?.(); } catch (_) {}
+          try { requestAnimationFrame(() => this._overlay?.update?.()); } catch (_) {}
           throw e;
         }
 
