@@ -43,8 +43,7 @@ export class PMAnnotationOverlay {
 
   update() {
     if (!this._mounted) return;
-    // 確保宿主容器有合理高度，否則在 CSS 採用 bottom:0 + overflow:hidden 時
-    // 容器高度若為 0 會把卡片全部裁切掉（看起來像「消失」）。
+    // 第一步：先確保宿主容器至少有編輯器視圖高度，避免高度為 0 直接裁切
     this._syncHostHeight();
     const anns = this.getAnnotations() || [];
     // 依正文順序（已由來源排序），逐一定位
@@ -97,6 +96,13 @@ export class PMAnnotationOverlay {
       }
     }
 
+    // 第二步：根據佈局結果計算所需的最小高度，讓容器可以向下無限延伸顯示最後一條卡片
+    try {
+      const maxBottom = items.length ? Math.max(...items.map(it => it.top + it.h)) : 0;
+      // 預留一點底部間距
+      this._syncHostHeight(Math.ceil(maxBottom + this._spacing));
+    } catch (_) {}
+
     // 寫回 DOM
     for (const it of items) {
       it.el.style.top = `${Math.round(it.top)}px`;
@@ -111,16 +117,17 @@ export class PMAnnotationOverlay {
   }
 
   // 同步宿主容器高度：以編輯器視圖高度作為下限，避免宿主高度為 0 導致內容被裁切隱藏
-  _syncHostHeight() {
+  _syncHostHeight(desiredMinHeight) {
     try {
       const host = this._ensureHost();
       const v = this.view?.dom;
       const rect = v?.getBoundingClientRect?.();
       const editorH = Math.max(1, Math.floor((rect?.height) || v?.scrollHeight || v?.clientHeight || 0));
+      const target = Math.max(editorH, Number.isFinite(desiredMinHeight) ? desiredMinHeight : 0);
       // 僅在宿主高度偏小時設置 min-height，避免干擾本來就有高度的布局
       const hostH = host?.clientHeight || 0;
-      if (editorH > hostH) {
-        host.style.minHeight = editorH + 'px';
+      if (target > hostH) {
+        host.style.minHeight = target + 'px';
       }
     } catch (_) {}
   }
