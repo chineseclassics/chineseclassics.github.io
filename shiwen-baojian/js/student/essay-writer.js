@@ -62,9 +62,9 @@ async function loadInitialPMJSON() {
       .select('content_json')
       .eq('id', essayId)
       .single();
-    if (!data?.content_json) return null;
-    const json = typeof data.content_json === 'string' ? JSON.parse(data.content_json) : data.content_json;
-    return json && json.type ? json : null;
+    const raw = data?.content_json;
+    if (!raw) return null;
+    return (typeof raw === 'string') ? JSON.parse(raw) : raw;
   } catch (_) { return null; }
 }
 
@@ -702,7 +702,9 @@ function setupStudentSelectionComposer() {
   let composeId = null; // 當前編寫中的臨時標記 id（compose-xxxx）
   const addComposeMarkIfNeeded = () => {
     try {
-      if (!view || view.state.selection.empty) return;
+      if (!view) return;
+      const hasSel = (view.state && view.state.selection && !view.state.selection.empty) || !!window.__pmLastSelection;
+      if (!hasSel) return;
       if (composeId) return; // 已存在
       composeId = `compose-${Math.random().toString(36).slice(2,10)}`;
       addAnnotationMarkForSelection(view, composeId);
@@ -737,6 +739,13 @@ function setupStudentSelectionComposer() {
       if (!container.contains(anchorNode) || !container.contains(focusNode)) { hide(); return; }
       const rect = range.getBoundingClientRect();
       if (!rect || (rect.width === 0 && rect.height === 0)) { hide(); return; }
+      // 記錄最近一次有效的 PM 選區（供彈窗搶焦後回填使用）
+      try {
+        const pmSel = view.state.selection;
+        if (pmSel && !pmSel.empty) {
+          window.__pmLastSelection = { from: pmSel.from, to: pmSel.to };
+        }
+      } catch (_) {}
       showAt(rect);
     } catch (_) { hide(); }
   };
@@ -841,10 +850,25 @@ function setupStudentSelectionComposer() {
   window.__pmShowComposerForSelection = () => {
     try {
       const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
-      const rect = sel.getRangeAt(0).getBoundingClientRect();
-      if (!rect) return;
-      showAt(rect);
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        const rect = sel.getRangeAt(0).getBoundingClientRect();
+        if (rect) { showAt(rect); return; }
+      }
+      // 退回到最後一次有效 PM 選區，利用 coordsAtPos 合成矩形
+      const last = window.__pmLastSelection;
+      if (last && Number.isInteger(last.from) && Number.isInteger(last.to) && last.to > last.from) {
+        const a = view.coordsAtPos(last.from);
+        const b = view.coordsAtPos(last.to);
+        if (a && b) {
+          const rect = {
+            top: Math.min(a.top, b.top),
+            bottom: Math.max(a.bottom ?? a.top, b.bottom ?? b.top),
+            left: Math.min(a.left, b.left),
+            right: Math.max(a.right ?? a.left, b.right ?? b.left)
+          };
+          showAt(rect);
+        }
+      }
     } catch (_) {}
   };
 }
@@ -887,6 +911,13 @@ function setupStudentSelectionFab() {
       const rect = range.getBoundingClientRect();
       if (!rect || (rect.width === 0 && rect.height === 0)) { hide(); return; }
       showAt(rect);
+      // 同步記錄 PM 選區（供之後使用）
+      try {
+        const pmSel = view.state.selection;
+        if (pmSel && !pmSel.empty) {
+          window.__pmLastSelection = { from: pmSel.from, to: pmSel.to };
+        }
+      } catch (_) {}
     } catch (_) { hide(); }
   };
 

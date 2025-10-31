@@ -68,13 +68,20 @@ export function addAnnotationMarkForSelection(view, id) {
     const markType = state.schema?.marks?.annotation;
     if (!markType) return null;
     const sel = state.selection;
-    if (sel.empty) return null;
-    const tr = state.tr.addMark(sel.from, sel.to, markType.create({ id: String(id) }));
+    // 若當前選區因點擊彈窗而清空，退回最近一次有效選區
+    let from = sel.from, to = sel.to;
+    if (sel.empty) {
+      const last = (typeof window !== 'undefined' && window.__pmLastSelection) ? window.__pmLastSelection : null;
+      if (!last || !Number.isInteger(last.from) || !Number.isInteger(last.to) || last.to <= last.from) return null;
+      from = clamp(last.from, 1, state.doc.content.size - 1);
+      to = clamp(last.to, from + 1, state.doc.content.size);
+      if (to <= from) return null;
+    }
+    const tr = state.tr.addMark(from, to, markType.create({ id: String(id) }));
     tr.setMeta('annotations:update', true);
     view.dispatch(tr);
-    return { from: sel.from, to: sel.to };
+    return { from, to };
   } catch (_) { return null; }
-      const idsFromList = new Set(annList.map(a => String(a?.id ?? '')));
 }
 
 /**
@@ -98,21 +105,6 @@ export function replaceAnnotationMarkId(view, oldId, newId) {
           tr = tr.removeMark(from, to, m);
           tr = tr.addMark(from, to, markType.create({ id: String(newId) }));
           break;
-        }
-      }
-
-      // 2.5) 額外：對未在 annList 中、但存在於文檔中的暫存標記（compose-/tmp-）也建立裝飾，
-      // 讓「編寫中/樂觀中」的選區能立刻高亮，且能成為疊加層的對齊依據。
-      for (const [id, ranges] of markRanges) {
-        if (idsFromList.has(id)) continue;
-        if (!/^compose-|^tmp-/.test(id)) continue;
-        for (const r of ranges) {
-          const cls = ['pm-annotation', 'pm-annotation-pending'];
-          if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
-          const attrs = { class: cls.join(' '), 'data-id': id };
-          const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
-          const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
-          decos.push(Decoration.inline(from, to, attrs));
         }
       }
       return true;
@@ -162,6 +154,7 @@ export function removeAnnotationMarksById(view, targetId) {
 function buildDecorationSet(viewLike, annotations, activeId) {
   const { state } = viewLike;
   const annList = Array.isArray(annotations) ? annotations : [];
+  const idsFromList = new Set(annList.map(a => String(a?.id ?? '')));
 
   // 1) 從 doc 掃描 annotation mark，建立 id→連續範圍集合
   const annoMarkType = state.schema.marks && state.schema.marks.annotation;
@@ -221,6 +214,20 @@ function buildDecorationSet(viewLike, annotations, activeId) {
       const cls = ['pm-annotation', 'pm-annotation-orphan'];
       if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
       const attrs = { class: cls.join(' '), 'data-id': id };
+      decos.push(Decoration.inline(from, to, attrs));
+    }
+  }
+  // 2.5) 額外：對未在 annList 中、但存在於文檔中的暫存標記（compose-/tmp-）也建立裝飾，
+  // 讓「編寫中/樂觀中」的選區能立刻高亮，且能成為疊加層的對齊依據。
+  for (const [id, ranges] of markRanges) {
+    if (idsFromList.has(id)) continue;
+    if (!/^compose-|^tmp-/.test(id)) continue;
+    for (const r of ranges) {
+      const cls = ['pm-annotation', 'pm-annotation-pending'];
+      if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
+      const attrs = { class: cls.join(' '), 'data-id': id };
+      const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
+      const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
       decos.push(Decoration.inline(from, to, attrs));
     }
   }
@@ -465,8 +472,14 @@ function getDocTextIndexTools(state) {
  */
 export function computeSelectionAnchor(view, ctxLen = 30) {
   const { state } = view;
-  const sel = state.selection;
-  if (sel.empty) return null;
+  let sel = state.selection;
+  if (sel.empty && typeof window !== 'undefined' && window.__pmLastSelection) {
+    const last = window.__pmLastSelection;
+    if (Number.isInteger(last.from) && Number.isInteger(last.to) && last.to > last.from) {
+      sel = { from: last.from, to: last.to };
+    }
+  }
+  if (!sel || sel.to <= sel.from) return null;
 
   const { docText, indexFromPos, total } = getDocTextIndexTools(state);
   const fromIndex = Math.max(0, Math.min(total, indexFromPos(sel.from)));
