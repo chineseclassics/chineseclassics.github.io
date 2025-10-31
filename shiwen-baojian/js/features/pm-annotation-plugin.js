@@ -196,33 +196,39 @@ function buildDecorationSet(viewLike, annotations, activeId) {
     if (/^compose-|^tmp-/.test(id)) { hasPendingMarks = true; break; }
   }
 
-  // 2) 針對每個 annotation：若存在 mark 範圍 → 用之；否則用 orphan（依據舊偏移）
-  const { posFromIndexTools } = getTextIndexConverters(state);
+  // 2) 優先用 mark 範圍；對於沒有 mark 的批註，使用 quote+context/offset 進行還原定位
   const decos = [];
+  const haveMarkIds = new Set(markRanges.keys());
+
+  // 2.1) 先渲染已有 mark 的裝飾
   for (const a of annList) {
     const id = a?.id != null ? String(a.id) : null;
     if (!id) continue;
     const ranges = markRanges.get(id);
-    if (ranges && ranges.length) {
-      for (const r of ranges) {
-        const cls = ['pm-annotation'];
-        if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
-        const attrs = { class: cls.join(' '), 'data-id': id };
-        const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
-        const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
-        decos.push(Decoration.inline(from, to, attrs));
-      }
-    } else {
-      // orphan：依據 text_start 回到近似原位置
-      // 為避免在新增流程中暫時產生「一個字」的誤導性高亮，若此時存在任何暫存標記，暫不渲染孤兒。
-      if (hasPendingMarks) continue;
-      const s0 = Number.isInteger(a.text_start) ? a.text_start : 0;
-      const pmPos = posFromIndexTools(s0);
-      const from = Math.max(0, Math.min(pmPos, state.doc.content.size));
-      const to = Math.min(from + 1, state.doc.content.size);
-      const cls = ['pm-annotation', 'pm-annotation-orphan'];
+    if (!ranges || ranges.length === 0) continue;
+    for (const r of ranges) {
+      const cls = ['pm-annotation'];
       if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
       const attrs = { class: cls.join(' '), 'data-id': id };
+      const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
+      const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
+      decos.push(Decoration.inline(from, to, attrs));
+    }
+  }
+
+  // 2.2) 針對沒有 mark 的批註，批量解析其錨點（避免逐條退回單字 orphan）
+  const missing = annList.filter(a => a?.id != null && !haveMarkIds.has(String(a.id)));
+  if (!hasPendingMarks && missing.length > 0) {
+    const { ranges: resolved } = resolveRanges(state.doc, missing);
+    for (const r of resolved) {
+      const id = String(r.id);
+      const cls = ['pm-annotation'];
+      if (r.approx) cls.push('pm-annotation-approx');
+      if (r.orphan) cls.push('pm-annotation-orphan');
+      if (activeId && String(activeId) === id) cls.push('pm-annotation-active');
+      const attrs = { class: cls.join(' '), 'data-id': id };
+      const from = Math.max(1, Math.min(r.from, state.doc.content.size - 1));
+      const to = Math.max(from + 1, Math.min(r.to, state.doc.content.size));
       decos.push(Decoration.inline(from, to, attrs));
     }
   }
