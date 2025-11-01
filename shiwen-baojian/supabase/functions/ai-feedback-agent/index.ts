@@ -143,7 +143,7 @@ function buildDeepSeekPrompts(input: {
 }) {
   const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, rubric_id, rubric_mode, rubric_selection } = input
 
-  const systemPrompt = `你是該課老師的分身；使用繁體中文；僅輸出純 JSON（無 Markdown/額外文字）；不提供具體改寫句。\n\n【嚴格要求】\n- 僅使用指定鍵名；不得新增鍵。\n- 不發明老師未要求的硬性規則；形式建議放在 suggestions_form。\n- 依 paragraph_role.kind 調整重點：intro=主張定位；body=主題句→引用→細讀→回扣；conclusion=總結與提升。\n- 若提供 rubric：僅從最高等級抽 2–4 條轉為 [Rubric-*] 建議；不輸出 rubric_alignment 或分數；與老師文本衝突時以老師為準。\n- suggestions_form 必須為「純字串陣列」，每一項是一句可執行的建議；若來自 rubric 最高等級，需以 [Rubric-*] 為前綴。\n- 輸出收斂：overall_comment ≤120字；sentence_notes ≤3；guideline_alignment.checks ≤6。\n- confidence 僅在 status 為 not_met/partially_met 時輸出（0–1）。`
+  const systemPrompt = `你是該課老師的分身；使用繁體中文；僅輸出純 JSON（無 Markdown/額外文字）；不提供具體改寫句。\n\n【嚴格要求】\n- 僅使用指定鍵名；不得新增鍵。\n- 不發明老師未要求的硬性規則；形式建議放在 suggestions_form。\n- 依 paragraph_role.kind 調整重點：intro=主張定位；body=主題句→引用→細讀→回扣；conclusion=總結與提升。\n- 若提供 rubric：僅從最高等級抽 2–4 條轉為 [Rubric-*] 建議；不輸出 rubric_alignment 或分數；與老師文本衝突時以老師為準。\n- suggestions_form 必須為「純字串陣列」，每一項是一句可執行的建議；若來自 rubric 最高等級，需以 [Rubric-*] 為前綴。\n- sentence_notes 以句級可操作建議為主：每條≤28字；同一句最多 1 條；排序規則：severity=major 優先，同級按 sentence_number 由小到大。\n- 輸出收斂：overall_comment ≤120字；sentence_notes ≤6；guideline_alignment.checks ≤6。\n- confidence 僅在 status 為 not_met/partially_met 時輸出（0–1）。`
 
   const material = {
     paragraph_text,
@@ -247,19 +247,52 @@ function ensureFeedbackShape(fb: any) {
   // overall_comment
   if (typeof feedback.overall_comment !== 'string') {
     feedback.overall_comment = '（系統保底）本段反饋已生成，但缺少總評內容。'
+  } else {
+    try {
+      feedback.overall_comment = String(feedback.overall_comment).trim()
+      if (feedback.overall_comment.length > 120) {
+        feedback.overall_comment = feedback.overall_comment.slice(0, 120)
+      }
+    } catch (_) {}
   }
   // sentence_notes
   if (!Array.isArray(feedback.sentence_notes)) {
     feedback.sentence_notes = []
   } else {
-    feedback.sentence_notes = feedback.sentence_notes
+    // 1) 基本整形與字數限制（每條≤28字）
+    let notes = feedback.sentence_notes
       .filter((n: any) => n && typeof n === 'object')
-      .map((n: any) => ({
-        sentence_number: Number(n.sentence_number) || 1,
-        comment: typeof n.comment === 'string' ? sanitizeSentenceComment(n.comment) : '',
-        severity: n.severity === 'major' ? 'major' : (n.severity === 'minor' ? 'minor' : undefined)
-      }))
-      .slice(0, 3)
+      .map((n: any) => {
+        let comment = typeof n.comment === 'string' ? sanitizeSentenceComment(n.comment) : ''
+        try {
+          comment = String(comment).trim()
+          if (comment.length > 28) comment = comment.slice(0, 28)
+        } catch (_) {}
+        const severity = n.severity === 'major' ? 'major' : (n.severity === 'minor' ? 'minor' : undefined)
+        const sentence_number = Number(n.sentence_number) || 1
+        return { sentence_number, comment, severity }
+      })
+      .filter((n: any) => typeof n.comment === 'string' && n.comment.length > 0)
+
+    // 2) 排序：major 優先；同級按句序
+    const sevRank = (s: any) => (s === 'major' ? 0 : (s === 'minor' ? 1 : 2))
+    notes.sort((a: any, b: any) => {
+      const ra = sevRank(a.severity)
+      const rb = sevRank(b.severity)
+      if (ra !== rb) return ra - rb
+      return (a.sentence_number || 0) - (b.sentence_number || 0)
+    })
+
+    // 3) 同一句最多 1 條（保留排序後的第一個）
+    const seen = new Set<number>()
+    const dedup: any[] = []
+    for (const n of notes) {
+      const sn = Number(n.sentence_number) || 1
+      if (!seen.has(sn)) { seen.add(sn); dedup.push(n) }
+    }
+
+    // 4) 最多 6 條
+    feedback.sentence_notes = dedup.slice(0, 6)
   }
   // guideline_alignment
   if (typeof feedback.guideline_alignment !== 'object' || !feedback.guideline_alignment) {

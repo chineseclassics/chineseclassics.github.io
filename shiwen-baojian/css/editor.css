@@ -732,3 +732,22 @@ input:focus-visible {
 
 /* 讓 PM 段落成為定位容器，供毛筆按鈕絕對定位 */
 .ProseMirror p { position: relative; }
+
+/* ================================
+   PM 句子問題高亮（AI 反饋）
+   ================================ */
+.pm-sentence-issue {
+    background: rgba(245, 158, 11, 0.18); /* amber-500 @ 18% */
+    border-radius: 2px;
+    transition: background-color .2s ease;
+}
+.pm-sentence-issue.ai-issue--critical { background: rgba(220, 38, 38, 0.18); }  /* red-600 */
+.pm-sentence-issue.ai-issue--major { background: rgba(234, 88, 12, 0.18); }     /* orange-600 */
+.pm-sentence-issue.ai-issue--moderate { background: rgba(245, 158, 11, 0.18); }  /* amber-500 */
+.pm-sentence-issue.ai-issue--minor { background: rgba(59, 130, 246, 0.14); }     /* blue-500 */
+
+.pm-sentence-issue-icon { color: #9CA3AF; }                /* gray-400 */
+.pm-sentence-issue-icon.ai-issue--critical { color: #DC2626; }
+.pm-sentence-issue-icon.ai-issue--major { color: #EA580C; }
+.pm-sentence-issue-icon.ai-issue--moderate { color: #F59E0B; }
+.pm-sentence-issue-icon.ai-issue--minor { color: #3B82F6; }

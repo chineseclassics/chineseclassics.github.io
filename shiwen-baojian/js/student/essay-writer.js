@@ -1270,7 +1270,17 @@ async function runYucunForCurrentParagraph() {
   const role = getParagraphRoleMeta(view, null);
     const { requestAIFeedback } = await import('../ai/feedback-requester.js');
     const AppState = getAppState();
-  await requestAIFeedback('pm-current', html, role.kind, { formatSpec: AppState.currentFormatSpec, roleMeta: role });
+  // 以當前選區所在段落的內容起點作為絕對錨點（與毛筆按鈕一致）
+  try {
+    const $from = view.state.selection.$from;
+    const paraStart = $from.start($from.depth); // 段落內容起點（pos+1）
+    const paragraphId = `pm-pos-${paraStart}`;
+    const sentences = window.__pmGetSentencesAtPos ? window.__pmGetSentencesAtPos(paraStart) : [];
+    await requestAIFeedback(paragraphId, html, role.kind, { formatSpec: AppState.currentFormatSpec, roleMeta: role, sentences });
+  } catch (_) {
+    // 回退：若意外失敗，仍然發送請求（不含句子錨點，可能失去高亮能力）
+    await requestAIFeedback('pm-current', html, role.kind, { formatSpec: AppState.currentFormatSpec, roleMeta: role });
+  }
   } catch (e) { console.warn('雨村評點失敗:', e); toast.error('雨村評點失敗'); }
 }
 
