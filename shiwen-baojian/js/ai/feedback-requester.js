@@ -188,8 +188,9 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 12. 渲染反饋
         renderFeedback(paragraphId, data.feedback);
         try {
-            // 若為 PM 單文檔路徑，並且 paragraphId 採用 pm-pos-<pos>，則在編輯器內掛上句子裝飾
-            if (typeof paragraphId === 'string' && paragraphId.startsWith('pm-pos-')) {
+            // 可選：是否在編輯器內預先展示所有句子問題高亮（預設關閉）
+            // 若需恢復舊行為，在頁面中設置 window.__pmAIFeedbackDecorationsEnabled = true;
+            if (window.__pmAIFeedbackDecorationsEnabled === true && typeof paragraphId === 'string' && paragraphId.startsWith('pm-pos-')) {
                 const pos = Number(paragraphId.slice('pm-pos-'.length));
                 const notes = data.feedback?.sentence_notes || data.feedback?.sentence_level_issues || [];
                 if (Array.isArray(notes) && notes.length > 0 && typeof window.__pmSetSentenceNotes === 'function') {

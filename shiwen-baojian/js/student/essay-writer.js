@@ -483,13 +483,20 @@ export async function initializeEssayEditor(forceReinit = false) {
           if (!view) return;
           const range = getSentenceRange(view, Number(paraPos), Number(idx));
           if (!range) return;
-          view.dispatch(view.state.tr.setSelection(view.state.selection.constructor.near(view.state.doc.resolve(range.from))).scrollIntoView());
-          // 閃爍高亮效果
-          const dom = view.domAtPos(range.from).node;
-          const el = dom.nodeType === 3 ? dom.parentNode : dom;
-          if (el && el.animate) {
-            el.animate([{ boxShadow: '0 0 0 0 rgba(245,158,11,0.5)' }, { boxShadow: '0 0 0 8px rgba(245,158,11,0.0)' }], { duration: 600, easing: 'ease-out' });
-          }
+          // 將選區設為整個句子範圍，利用 ::selection 呈現臨時高亮
+          const Sel = view.state.selection.constructor;
+          view.dispatch(view.state.tr.setSelection(Sel.create(view.state.doc, range.from, Math.max(range.from + 1, range.to))).scrollIntoView());
+          // 仍保留輕微脈衝，但避免套在整段 <p> 上（偏向句首節點）
+          try {
+            const dom = view.domAtPos(range.from).node;
+            const el = dom && dom.nodeType === 3 ? dom.parentNode : dom;
+            if (el && el.animate) {
+              el.animate([
+                { boxShadow: '0 0 0 0 rgba(245,158,11,0.45)' },
+                { boxShadow: '0 0 0 8px rgba(245,158,11,0.0)' }
+              ], { duration: 500, easing: 'ease-out' });
+            }
+          } catch (_) {}
         } catch (_) {}
       };
       // 將 sentences 取用接口暴露（供 AI 請求）
