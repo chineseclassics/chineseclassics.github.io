@@ -78,7 +78,8 @@
 /* 桌面端：側邊欄固定在右側 */
 @media (min-width: 1024px) {
     #ai-feedback-sidebar {
-        max-height: calc(100vh - 120px);
+        /* 允許賈雨村說內容依實際高度自適應，取消視窗高度限制 */
+        max-height: none;
     }
     
     /* 確保側邊欄不會太窄 */
