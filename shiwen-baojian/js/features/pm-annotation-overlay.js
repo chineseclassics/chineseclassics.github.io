@@ -219,14 +219,19 @@ export class PMAnnotationOverlay {
         if (!badge) {
           badge = document.createElement('span');
           badge.className = 'pm-ann-badge pm-ann-badge-orphan';
-          badge.title = '此批註目前為孤兒，無法精準定位原文';
-          badge.textContent = '孤兒';
+          badge.title = '原文已改：此批註暫未對齊原文';
+          badge.textContent = '原文已改';
           // 插入在時間之後、回覆數之前（若有）
           const timeEl = meta.querySelector('.pm-ann-time');
           const replyCount = meta.querySelector('.pm-ann-reply-count');
           if (replyCount) meta.insertBefore(badge, replyCount);
           else if (timeEl && timeEl.nextSibling) meta.insertBefore(badge, timeEl.nextSibling);
           else meta.appendChild(badge);
+        }
+        else {
+          // 若已有徽章，確保最新文案
+          badge.title = '原文已改：此批註暫未對齊原文';
+          badge.textContent = '原文已改';
         }
       } else if (badge) {
         badge.remove();
