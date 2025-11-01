@@ -298,6 +298,13 @@ function renderSeverityBadge(severity) {
             bgColor: 'bg-emerald-100',
             textColor: 'text-emerald-800',
             borderColor: 'border-emerald-400'
+        },
+        ready: {
+            label: '基本達成',
+            icon: 'fas fa-check-circle',
+            bgColor: 'bg-emerald-100',
+            textColor: 'text-emerald-800',
+            borderColor: 'border-emerald-400'
         }
     };
     
@@ -345,8 +352,12 @@ function renderGuidelineAlignment(g) {
             ${missing.length > 0 ? `<div class="text-xs text-rose-700">缺少：${missing.join('、')}</div>` : ''}
         </div>`;
     }
-    const score = g.score || 0;
-    const checks = Array.isArray(g.checks) ? g.checks : [];
+        const hasScore = typeof g.score === 'number';
+        const checks = Array.isArray(g.checks) ? g.checks : [];
+        const teacherChecks = checks.filter(c => c && c.source === 'teacher');
+        const hasTeacherNotMet = teacherChecks.some(c => c.status === 'not_met');
+        const hasTeacherPartial = teacherChecks.some(c => c.status === 'partially_met');
+        const hasTeacherMet = teacherChecks.some(c => c.status === 'met');
     const snippets = Array.isArray(g.rationale_snippets) ? g.rationale_snippets : [];
     return `
         <div class="bg-white rounded-lg p-4 border border-gray-200">
@@ -355,8 +366,18 @@ function renderGuidelineAlignment(g) {
                     <i class="fas fa-check-square text-stone-600 mr-2"></i>
                     指引對齊度（guideline_alignment）
                 </h5>
-                <div class="text-2xl font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</div>
+                ${hasScore ? `<div class="text-2xl font-bold ${g.score >= 80 ? 'text-emerald-600' : g.score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${Math.round(g.score)}%</div>` : ''}
             </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-700 mb-2">
+                            <span class="text-gray-600">要點概覽：</span>
+                            ${teacherChecks.length === 0 ? `
+                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700">未設定要點</span>
+                            ` : `
+                                ${hasTeacherNotMet ? '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700">有未達</span>' : ''}
+                                ${hasTeacherPartial ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700">有部分</span>' : ''}
+                                ${hasTeacherMet ? '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">有達成</span>' : ''}
+                            `}
+                        </div>
             ${checks.length > 0 ? `
             <div class="space-y-2">
               ${checks.map(c => `
@@ -804,12 +825,27 @@ function renderGuidelineAlignmentSimple(g) {
             </div>
         </div>`;
     }
-    const score = g.score || 0;
+    const hasScore = typeof g.score === 'number';
+    const checks = Array.isArray(g.checks) ? g.checks : [];
+    const teacherChecks = checks.filter(c => c && c.source === 'teacher');
+    const hasTeacherNotMet = teacherChecks.some(c => c.status === 'not_met');
+    const hasTeacherPartial = teacherChecks.some(c => c.status === 'partially_met');
+    const hasTeacherMet = teacherChecks.some(c => c.status === 'met');
     return `
         <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
-                <span class="text-lg font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</span>
+                ${hasScore ? `<span class="text-lg font-bold ${g.score >= 80 ? 'text-emerald-600' : g.score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${Math.round(g.score)}%</span>` : ''}
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-700">
+              <span class="text-gray-600">要點概覽：</span>
+              ${teacherChecks.length === 0 ? `
+                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700">未設定要點</span>
+              ` : `
+                ${hasTeacherNotMet ? '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700">有未達</span>' : ''}
+                ${hasTeacherPartial ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700">有部分</span>' : ''}
+                ${hasTeacherMet ? '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">有達成</span>' : ''}
+              `}
             </div>
         </div>
     `;

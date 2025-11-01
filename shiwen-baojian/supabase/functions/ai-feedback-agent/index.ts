@@ -6,7 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY') || ''
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
-const ADVISORY_NOTE = '本分數僅作為建議，最終評分由 grading-agent 與教師決定'
+const ADVISORY_NOTE = '本工具僅提供寫作建議；最終評分由 grading-agent 與教師決定'
 
 // CORS headers
 const corsHeaders = {
@@ -89,8 +89,18 @@ serve(async (req: any) => {
       aiFeedback = adjustForbiddenChecksToAdvisory(aiFeedback, guideline_min_hints.forbidden_patterns)
     }
   } catch (_) {}
-  // 重計分（僅 teacher 來源）
-  aiFeedback.guideline_alignment.score = recomputeGuidelineScore(aiFeedback.guideline_alignment)
+  // 去除評分相關欄位：feedback 僅提供建議，不涉及分數
+  try { if (aiFeedback && aiFeedback.guideline_alignment) delete aiFeedback.guideline_alignment.score } catch (_) {}
+  try { if (aiFeedback && 'rubric_alignment' in aiFeedback) delete aiFeedback.rubric_alignment } catch (_) {}
+
+  // 依據「老師要點 + rubric 最高等級建議」推導修訂等級（非分數）
+  const revision = computeRevisionIndicator(aiFeedback)
+  if (revision) {
+    aiFeedback.revision_indicator = revision
+    // 映射到現有 severity_level 以供前端徽章顯示
+    const map: any = { major: 'major', moderate: 'moderate', minor: 'minor', ready: 'ready' }
+    aiFeedback.severity_level = map[revision.level] || 'minor'
+  }
 
     // 注入時間戳（若模型未返回）
     if (!aiFeedback.generated_at) aiFeedback.generated_at = new Date().toISOString()
@@ -155,7 +165,7 @@ function buildDeepSeekPrompts(input: {
 }) {
   const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, guideline_min_hints, traceability, rubric_id, rubric_definition, rubric_mode, rubric_selection } = input
 
-  const systemPrompt = `你是該課老師的分身，所有評議以老師指引為最高準則；使用繁體中文；不提供具體改寫句。\n\n【嚴格輸出要求】\n- 僅輸出 JSON；不要任何多餘文字或 Markdown；不要使用代碼塊。\n- 嚴禁發明老師未要求的硬性規則；如無明確形式規定，形式建議以 suggestions_form 提供並標註為建議。\n- 使用 sentences[] 的編號進行句子對位；若啟用 traceability，請引用 1–3 句老師指引片段支撐主要評議。\n- 若提供 rubric_selection 或 rubric，請以老師在作業中勾選的 selected_criteria 為主進行全面對齊（不限於結構），對 paragraph/essay 範圍分別給出 criteria.status 或 paragraph_contribution；按 rubric_mode 呈現建議性或可選計分的對齊結果；若與老師文本衝突，仍以老師文本優先並於 notes 中說明。\n- 對模糊判定（尤其來自老師指引的可適用要點）進行最小 tiebreaker：先用 yes/no 做判斷並給出 0–1 的 confidence。\n- 若 guideline_min_hints.forbidden_patterns 存在，僅作建議（source:"ai_default"），不納入計分；請避免將其視為老師明確規定。並在 guideline_alignment.notes 中提醒："本分數僅作為建議，最終評分由 grading-agent 與教師決定"。`
+    const systemPrompt = `你是該課老師的分身，所有評議以老師指引為最高準則；使用繁體中文；不提供具體改寫句。\n\n【嚴格輸出要求】\n- 僅輸出 JSON；不要任何多餘文字或 Markdown；不要使用代碼塊。\n- 嚴禁發明老師未要求的硬性規則；如無明確形式規定，形式建議以 suggestions_form 提供並標註為建議。\n- 使用 sentences[] 的編號進行句子對位；若啟用 traceability，請引用 1–3 句老師指引片段支撐主要評議。\n- 若提供 rubric（或 rubric_selection），僅作參考：請從 rubric 的「最高成績水平」描述中抽取 2–4 條與本段最相關的要點，轉為 suggestions_form 的 [Rubric-*] 建議項（例如 [Rubric-A]/[Rubric-B]/[Rubric-D]）；不要輸出任何 rubric_alignment 或分數；若與老師文本衝突，仍以老師文本優先，並於 guideline_alignment.notes 簡述衝突點。\n- 對模糊判定（尤其來自老師指引的可適用要點）進行最小 tiebreaker：先用 yes/no 做判斷並給出 0–1 的 confidence。\n- 若 guideline_min_hints.forbidden_patterns 存在，僅作建議（source:"ai_default"），不作硬性判斷或量化分數；請避免將其視為老師明確規定。並在 guideline_alignment.notes 中提醒：\"本工具僅提供寫作建議；最終評分由 grading-agent 與教師決定\"。`
 
   // 用戶材料與輸出契約（標明鍵名）
   const material = {
@@ -170,7 +180,7 @@ function buildDeepSeekPrompts(input: {
     rubric_selection: rubric_selection || undefined
   }
 
-  const userPrompt = `【材料】\n${JSON.stringify(material, null, 2)}\n\n【輸出契約（必須完全匹配鍵名）】\n{\n  "overall_comment": string,\n  "sentence_notes": Array<{ "sentence_number": number, "comment": string, "severity"?: "major"|"minor" }>,\n  "guideline_alignment": {\n    "score": number,\n    "checks": Array<{ "name": string, "status": "met"|"partially_met"|"not_met"|"not_applicable", "source": "teacher"|"ai_default", "confidence"?: number }>,\n    "rationale_snippets"?: string[],\n    "notes"?: string[]\n  },\n  "rubric_alignment"?: {\n    "score"?: number,\n    "criteria": Array<{\n      "id": string, "name": string, "dimension"?: string,\n      "status": "met"|"partially_met"|"not_met"|"not_applicable",\n      "scope"?: "paragraph"|"essay",\n      "paragraph_contribution"?: "positive"|"neutral"|"negative",\n      "required"?: boolean, "weight"?: number, "notes"?: string[]\n    }>,\n    "rationale_snippets"?: string[]\n  },\n  "suggestions_form"?: string[],\n  "assumptions"?: string[],\n  "severity_level"?: "critical"|"major"|"moderate"|"minor",\n  "generated_at": string\n}`
+  const userPrompt = `【材料】\n${JSON.stringify(material, null, 2)}\n\n【輸出契約（必須完全匹配鍵名）】\n{\n  "overall_comment": string,\n  "sentence_notes": Array<{ "sentence_number": number, "comment": string, "severity"?: "major"|"minor" }>,\n  "guideline_alignment": {\n    "checks": Array<{ "name": string, "status": "met"|"partially_met"|"not_met"|"not_applicable", "source": "teacher"|"ai_default", "confidence"?: number }>,\n    "rationale_snippets"?: string[],\n    "notes"?: string[]\n  },\n  "suggestions_form"?: string[],\n  "assumptions"?: string[],\n  "severity_level"?: "critical"|"major"|"moderate"|"minor",\n  "generated_at": string\n}`
 
   return { systemPrompt, userPrompt }
 }
@@ -240,7 +250,6 @@ function buildFallbackFeedback() {
     overall_comment: '系統暫時無法連線至 AI 服務。請稍後重試。',
     sentence_notes: [],
     guideline_alignment: {
-      score: 0,
       checks: [],
       rationale_snippets: [],
       notes: ['離線模式']
@@ -276,7 +285,7 @@ function ensureFeedbackShape(fb: any) {
   }
   // guideline_alignment
   if (typeof feedback.guideline_alignment !== 'object' || !feedback.guideline_alignment) {
-    feedback.guideline_alignment = { score: 0, checks: [], rationale_snippets: [], notes: [] }
+    feedback.guideline_alignment = { checks: [], rationale_snippets: [], notes: [] }
   } else {
     const ga = feedback.guideline_alignment
     if (!Array.isArray(ga.checks)) ga.checks = []
@@ -294,14 +303,13 @@ function ensureFeedbackShape(fb: any) {
     try {
       if (!ga.notes.includes(ADVISORY_NOTE)) ga.notes.push(ADVISORY_NOTE)
     } catch (_) {}
-    if (typeof ga.score !== 'number') ga.score = 0
+    // 刪除任何殘留的分數欄位
+    try { if ('score' in ga) delete ga.score } catch (_) {}
   }
   // rubric_alignment（可選）
   if (feedback.rubric_alignment && typeof feedback.rubric_alignment === 'object') {
-    const ra = feedback.rubric_alignment
-    if (!Array.isArray(ra.criteria)) ra.criteria = []
-    if (!Array.isArray(ra.rationale_snippets)) ra.rationale_snippets = []
-    if (ra.score != null && typeof ra.score !== 'number') delete ra.score
+    // 反饋系統不輸出任何 rubric 對齊；安全起見直接移除
+    try { delete feedback.rubric_alignment } catch (_) {}
   }
   // suggestions_form / assumptions
   if (feedback.suggestions_form && !Array.isArray(feedback.suggestions_form)) feedback.suggestions_form = []
@@ -335,21 +343,39 @@ function adjustForbiddenChecksToAdvisory(fb: any, patterns: string[]) {
   return fb
 }
 
+//（feedback 秉持「僅提供建議」：不做任何分數計算或輸出）
+
 /**
- * recomputeGuidelineScore：僅統計 source="teacher" 且 status ∈ {met, partially_met, not_met}
- * 分數：round( met / (met + partially + not) * 100 )；如分母為 0 → 0。
+ * computeRevisionIndicator：以「老師要點 + rubric 最高等級建議」推導修訂等級（類別，不涉分數）。
+ * 規則（teacher-first）：
+ * - 任一老師要點 not_met → level='major'
+ * - 否則任一老師要點 partially_met → level='moderate'
+ * - 否則若 rubric 衍生的建議（[Rubric-*] 前綴）數量 ≥ 2 → level='minor'
+ * - 否則 → level='ready'
  */
-function recomputeGuidelineScore(ga: any): number {
-  if (!ga || !Array.isArray(ga.checks)) return 0
-  let met = 0, part = 0, notm = 0
-  for (const c of ga.checks) {
-    if (!c || c.source !== 'teacher') continue
-    if (c.status === 'met') met++
-    else if (c.status === 'partially_met') part++
-    else if (c.status === 'not_met') notm++
+function computeRevisionIndicator(fb: any): { level: 'major'|'moderate'|'minor'|'ready', drivers: string[] } | null {
+  if (!fb || !fb.guideline_alignment) return null
+  try {
+    const checks = Array.isArray(fb.guideline_alignment.checks) ? fb.guideline_alignment.checks : []
+    const teacherChecks = checks.filter((c: any) => c && c.source === 'teacher')
+    const notMet = teacherChecks.filter((c: any) => c.status === 'not_met')
+    const partial = teacherChecks.filter((c: any) => c.status === 'partially_met')
+
+    const suggestions: string[] = Array.isArray(fb.suggestions_form) ? fb.suggestions_form : []
+    const rubricSuggests = suggestions.filter(s => typeof s === 'string' && /^\s*\[Rubric-[^\]]+\]/i.test(s))
+
+    if (notMet.length > 0) {
+      return { level: 'major', drivers: notMet.map((c: any) => `老師要點未達：${c.name || ''}`) }
+    }
+    if (partial.length > 0) {
+      return { level: 'moderate', drivers: partial.map((c: any) => `老師要點部分達成：${c.name || ''}`) }
+    }
+    if (rubricSuggests.length >= 2) {
+      return { level: 'minor', drivers: [`Rubric 最高等級建議可補強：${rubricSuggests.length} 項`] }
+    }
+    return { level: 'ready', drivers: ['老師要點皆已達成；僅需微調或可提交'] }
+  } catch (_) {
+    return null
   }
-  const denom = met + part + notm
-  if (denom === 0) return 0
-  return Math.round((met / denom) * 100)
 }
 

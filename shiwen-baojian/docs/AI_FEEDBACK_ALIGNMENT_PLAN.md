@@ -48,7 +48,6 @@
 - sentences: string[]（由系統分句後提供，避免模型自行分句帶來偏差）
 - teacher_guidelines_text: string（老師原文/條列化的指引文本，作為最高準則）
 - guideline_min_hints（可選）：{ required_elements?: Element[], forbidden_patterns?: string[], weights?: Record<string, number> }
-- strictness_hint（可選，預設 "adaptive"）: "adaptive" | "strict"（adaptive：重內容、形式僅在指引有明確規定時生效；strict：在老師明確規定形式時視為必達，否則仍僅作建議）
 - traceability（可選，預設 true）: boolean（是否在輸出中引用老師指引片段以佐證主要評議）
  - rubric_id（可選）: string（系統內建評分標準的標識）
  - rubric_definition（可選）: object（自定義評分標準 JSON；若提供則覆蓋 rubric_id）
@@ -62,6 +61,9 @@
        scope?: "paragraph"|"essay"  // 若為整篇層級，段落反饋中以「貢獻度」方式提示
      }>
    }
+
+說明：
+- 嚴格度系統已取消。即使前端傳入舊字段 strictness_hint，後端亦忽略；全局採「advisory-only（建議導向）」策略，老師文本優先。
 
 輸出（回傳前端並寫入 ai_feedback 表的 feedback_json）：
 - overall_comment: string（繁體；總體評價與改進方向，不提供具體改寫句）
@@ -151,13 +153,14 @@
 備註：
 - 若老師文本或 guideline_min_hints 提供權重，允許對個別 teacher 要點做加權；否則不使用權重、維持等權統計。
 
-### 3.3 Rubric 對齊（全面參考、可選計分）
-- 來源與優先序：teacher > rubric（已選細項） > ai_default。
-- 以老師在作業中選定的 rubric_selection.selected_criteria 為準：
-  - 當 scope="paragraph"：逐條對齊，產出 criteria.status 與具體段落建議。
-  - 當 scope="essay"：不做硬判，輸出 paragraph_contribution（positive/neutral/negative）以說明本段對整篇準則的貢獻。
-  - 若 required=true 且 rubric_mode=strict，允許在 rubric_alignment.score 中反映權重；若與老師文本衝突，仍以老師文本優先並在 notes 中說明。
-- A/B/D 維度：可於 criteria.dimension 標注，便於教師對齊課內常用評分語彙。
+### 3.3 Rubric 參考式對齊（不評分，只作建議）
+- 優先序：teacher > rubric（參考）> ai_default。
+- 用法：當提供 rubric（或 rubric_selection）時，僅抽取其「最高成績水平」的文字描述，轉化為可操作的建議，放入 suggestions_form。
+  - 建議格式：在每條建議前加標籤（例如：[Rubric-A]、[Rubric-B]），內容為「最高等級描述 → 本段可採取的具體動作」。
+  - 不生成 rubric_alignment.score；不將 rubric 參考項納入 guideline_alignment 計分。
+  - 若與老師文本衝突，仍以老師文本為準，並於 guideline_alignment.notes 補充說明衝突點。
+  - scope="essay" 的 rubric 條目可轉為「本段對整篇的建議性貢獻」提示（語氣溫和，不做硬判）。
+  - A/B/D 維度可作為建議的標籤顯示，便於教師/學生對齊課內語彙。
 
 ---
 
@@ -174,9 +177,9 @@
   1) 段落純文本
   2) 句子清單（1..N）
   3) 老師指引原文（teacher_guidelines_text）
-  4) paragraph_role + strictness_hint（預設 adaptive）+ traceability（預設 true）
-  5) rubric_selection（如有）或 rubric_id / rubric_definition + rubric_mode（預設 adaptive）
-  6) 輸出契約：overall_comment / sentence_notes / guideline_alignment（含 checks 與 snippets）/ rubric_alignment（若有 rubric）/ suggestions_form（可選）
+  4) paragraph_role + traceability（預設 true）
+  5) rubric_selection（如有）或 rubric_id / rubric_definition（僅作參考，不評分）
+  6) 輸出契約：overall_comment / sentence_notes / guideline_alignment（含 checks 與 snippets）/ suggestions_form（包含 [Rubric-*] 建議項）
 - 參數建議：
   - temperature: 0.2–0.3
   - max_tokens: 1200–1600（段落級足夠）
@@ -223,10 +226,10 @@
 - 對齊性（Guideline）：
   - 在基準集上，teacher 來源的可適用要點識別準確率 ≥ 0.9；
   - 主要評議具備 traceability（≥ 90% 的段落回覆包含 1–3 條老師文本片段）。
-- Rubric 對齊（若配置）：
-  - criteria 辨識與狀態標註（met/partially/not）準確率 ≥ 0.85；
+- Rubric 參考（若配置）：
+  - 能正確抽取「最高成績水平」的要點，並轉化為具體可操作建議（人工抽查一致）；
   - A/B/D 標籤對應正確率 ≥ 0.95；
-  - rubric_mode=adaptive 時不會將 rubric 要求誤判為硬性缺失。
+  - 不產生任何評分或硬性缺失結論。
 - 可用性（UX）：
   - 句子級點擊定位成功率 ≥ 0.98；
   - 過長段落仍能返回可讀總評（不報錯/不崩）。
@@ -247,9 +250,9 @@
     - 僅以老師來源要點計分；ai_default 僅作建議。
   - sentence_notes：依前端提供的 sentences 編號返回。
   - rubric 支援：
-    - 接收 rubric_id 或 rubric_definition 與 rubric_mode；
-    - 生成 rubric_alignment（criteria 與可選 score），並與 guideline_alignment 區分來源與優先序；
-    - 若 teacher 與 rubric 衝突，以 teacher 為準並在 notes 中說明。
+     - 接收 rubric_id 或 rubric_definition；
+     - 僅抽取最高成績水平描述，轉為 suggestions_form 的 [Rubric-*] 建議項；
+     - 若 teacher 與 rubric 衝突，以 teacher 為準並在 notes 中說明（rubric 僅建議）。
 - 老師指引優化：
   - 輕度整理文本輸出（可條列化，不強加模板）；
   - 可選 guideline_min_hints JSON（若可得）。
@@ -259,6 +262,8 @@
  - 將「結構完整度」改為「指引對齊度」；顯示來源標籤與 not_applicable。
  - 若提供 rubric，顯示 rubric_alignment 區塊與 A/B/D 標籤，並明示優先序 teacher > rubric。
  - 句子定位：以本地分句結果為準，對齊 sentence_number。
+ - 嚴格度系統：已取消嚴格/自適模式的前端設定與傳輸（全域採建議導向）。
+ - Rubric 呈現：將 [Rubric-*] 建議項一併展示於「改進建議（suggestions_form）」區塊，無分數、無硬性狀態判讀。
 
 數據/規範
 - 若老師選擇內建模板（如《紅樓夢》），則可直接提供較完整的 required_elements 與 weights；
@@ -336,9 +341,10 @@
 
 ## 10. 後續工作與里程碑（建議）
 
-- W1：完成兩個 Edge Functions 的提示詞更新草案；實作正規化/分句與元素偵測加強；接入 response_format/json_object。
+- W1：完成兩個 Edge Functions 的提示詞更新草案；實作正規化/分句與元素偵測加強；接入 response_format/json_object；移除嚴格度系統並完成文檔同步；明確 Rubric 僅作參考（輸出到 suggestions_form）。
 - W2：建立基準集（30 段），對完整度與缺失元素做標註與對比；調整權重與檢測閾值。
-- W3：前端渲染輕量調整（優先顯示總評/句子級；指引對齊度；content_analysis 摺疊）；釋出小班試用。
+- W2（續）：用基準集驗證「最高成績水平 → 建議」的抽取/表達一致性（採人工抽查與簡單標註集）。
+ - W3：前端渲染輕量調整（優先顯示總評/句子級；指引對齊度；content_analysis 摺疊）；釋出小班試用。
 - W4：彙總數據，評估準確性/穩定性；若教師需要，再提供 Detailed 視圖切換。
 
 ---
