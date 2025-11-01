@@ -12,6 +12,7 @@ const ADVISORY_NOTE = '本工具僅提供寫作建議；最終評分由 grading-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req: any) => {
@@ -34,11 +35,9 @@ serve(async (req: any) => {
 
     const teacher_guidelines_text: string = body.teacher_guidelines_text || '' // 單一路徑：不截斷
     const guideline_min_hints = body.guideline_min_hints || null
-    const strictness_hint: 'adaptive' | 'strict' = 'adaptive' // 廢棄，保留佔位
     const traceability: boolean = typeof body.traceability === 'boolean' ? body.traceability : true
 
-    const rubric_id: string | null = body.rubric_id || null
-    const rubric_definition: any = null // 提速：忽略大型 rubric 定義
+  const rubric_id: string | null = body.rubric_id || null
     const rubric_mode: 'adaptive' | 'strict' = body.rubric_mode || 'adaptive'
     const rubric_selection: any = body.rubric_selection || null
 
@@ -66,7 +65,6 @@ serve(async (req: any) => {
       guideline_min_hints,
       traceability,
       rubric_id,
-      rubric_definition,
       rubric_mode,
       rubric_selection
     })
@@ -143,11 +141,10 @@ function buildDeepSeekPrompts(input: {
   guideline_min_hints?: any,
   traceability: boolean,
   rubric_id?: string | null,
-  rubric_definition?: any,
   rubric_mode: 'adaptive' | 'strict',
   rubric_selection?: any
 }) {
-  const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, guideline_min_hints, traceability, rubric_id, rubric_definition, rubric_mode, rubric_selection } = input
+  const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, guideline_min_hints, traceability, rubric_id, rubric_mode, rubric_selection } = input
 
   const systemPrompt = `你是該課老師的分身，所有評議以老師指引為最高準則；使用繁體中文；不提供具體改寫句。\n\n【嚴格輸出要求】\n- 僅輸出 JSON；不要任何多餘文字或 Markdown；不要使用代碼塊。\n- 嚴禁發明老師未要求的硬性規則；如無明確形式規定，形式建議以 suggestions_form 提供並標註為建議。\n- 使用 sentences[] 的編號進行句子對位；若啟用 traceability，請引用 1–3 句老師指引片段支撐主要評議。\n- 根據 paragraph_role.kind（introduction/body/conclusion）與（若為 body）body_index 調整判斷重點：\n  • introduction：主題句/提出總主張、鋪陳背景或議題定位、避免過早細讀。\n  • body：段首主題句→引用原文→緊跟細讀→段尾回扣主張（本課標準流程）。\n  • conclusion：總結收束、提升/回扣總主張、避免引入全新論點。\n  若與老師文本衝突，仍以老師文本優先。\n- 若提供 rubric（或 rubric_selection），僅作參考：請從 rubric 的「最高成績水平」描述中抽取 2–4 條與本段最相關的要點，轉為 suggestions_form 的 [Rubric-*] 建議項；不要輸出任何 rubric_alignment 或分數；若與老師文本衝突，仍以老師文本優先。\n- 對模糊判定進行最小 tiebreaker：先用 yes/no 做判斷並給出 0–1 的 confidence。\n- 若 guideline_min_hints.forbidden_patterns 存在，僅作建議（source:\"ai_default\"），不作硬性判斷或量化分數；並附上固定提醒：\"本工具僅提供寫作建議；最終評分由 grading-agent 與教師決定\"。\n- 輸出收斂：overall_comment 不超過 120 字；sentence_notes 最多 3 條；guideline_alignment.checks 最多 6 條（優先教師要點）。`
 
