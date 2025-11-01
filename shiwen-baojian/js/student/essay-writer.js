@@ -514,9 +514,11 @@ export async function initializeEssayEditor(forceReinit = false) {
             // 依當前段「徽章」為主、索引為輔推斷段落語義
             const role = getParagraphRoleMeta(view, pos);
             const { requestAIFeedback } = await import('../ai/feedback-requester.js');
-            // 使用段落絕對位置作為臨時 ID，便於之後定位句子
-            const paragraphId = `pm-pos-${pos}`;
-            const sentences = window.__pmGetSentencesAtPos ? window.__pmGetSentencesAtPos(pos) : [];
+            // 將 widget 提供的「內容起點」pos 轉回段落節點位置（node pos）
+            const paraNodePos = Math.max(0, Number(pos) - 1);
+            // 使用段落節點絕對位置作為臨時 ID，便於之後定位句子（與 sentence-map 對齊）
+            const paragraphId = `pm-pos-${paraNodePos}`;
+            const sentences = window.__pmGetSentencesAtPos ? window.__pmGetSentencesAtPos(paraNodePos) : [];
             await requestAIFeedback(paragraphId, html, role.kind, { formatSpec: getAppState().currentFormatSpec, roleMeta: role, sentences });
           } catch (e) { console.warn('雨村評點啟動失敗:', e); toast.error('雨村評點失敗'); }
         }
@@ -1273,9 +1275,10 @@ async function runYucunForCurrentParagraph() {
   // 以當前選區所在段落的內容起點作為絕對錨點（與毛筆按鈕一致）
   try {
     const $from = view.state.selection.$from;
-    const paraStart = $from.start($from.depth); // 段落內容起點（pos+1）
-    const paragraphId = `pm-pos-${paraStart}`;
-    const sentences = window.__pmGetSentencesAtPos ? window.__pmGetSentencesAtPos(paraStart) : [];
+    const paraStart = $from.start($from.depth); // 段落內容起點（node pos + 1）
+    const paraNodePos = Math.max(0, Number(paraStart) - 1); // 段落節點位置（與 sentence-map 對齊）
+    const paragraphId = `pm-pos-${paraNodePos}`;
+    const sentences = window.__pmGetSentencesAtPos ? window.__pmGetSentencesAtPos(paraNodePos) : [];
     await requestAIFeedback(paragraphId, html, role.kind, { formatSpec: AppState.currentFormatSpec, roleMeta: role, sentences });
   } catch (_) {
     // 回退：若意外失敗，仍然發送請求（不含句子錨點，可能失去高亮能力）
