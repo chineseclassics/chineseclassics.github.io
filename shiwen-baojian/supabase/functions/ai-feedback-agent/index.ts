@@ -81,8 +81,10 @@ serve(async (req: any) => {
         aiFeedback = adjustForbiddenChecksToAdvisory(aiFeedback, guideline_min_hints.forbidden_patterns)
       }
     } catch (_) {}
-    try { if (aiFeedback && aiFeedback.guideline_alignment) delete aiFeedback.guideline_alignment.score } catch (_) {}
-    try { if (aiFeedback && 'rubric_alignment' in aiFeedback) delete aiFeedback.rubric_alignment } catch (_) {}
+  try { if (aiFeedback && aiFeedback.guideline_alignment) delete aiFeedback.guideline_alignment.score } catch (_) {}
+  try { if (aiFeedback && 'rubric_alignment' in aiFeedback) delete aiFeedback.rubric_alignment } catch (_) {}
+  // 兼容舊鍵名：若模型或歷史資料殘留 structure_check，後端直接移除
+  try { if (aiFeedback && 'structure_check' in aiFeedback) delete aiFeedback.structure_check } catch (_) {}
 
     // 修訂等級（類別）
     const revision = computeRevisionIndicator(aiFeedback)
@@ -247,7 +249,7 @@ function ensureFeedbackShape(fb: any) {
       .filter((n: any) => n && typeof n === 'object')
       .map((n: any) => ({
         sentence_number: Number(n.sentence_number) || 1,
-        comment: typeof n.comment === 'string' ? n.comment : '',
+        comment: typeof n.comment === 'string' ? sanitizeSentenceComment(n.comment) : '',
         severity: n.severity === 'major' ? 'major' : (n.severity === 'minor' ? 'minor' : undefined)
       }))
   }
@@ -344,6 +346,27 @@ function computeRevisionIndicator(fb: any): { level: 'major'|'moderate'|'minor'|
     return { level: 'ready', drivers: ['老師要點皆已達成；僅需微調或可提交'] }
   } catch (_) {
     return null
+  }
+}
+
+/**
+ * sanitizeSentenceComment：移除句子備註中的來源附註，例如：（source: ...）或 (source: ...)、（來源: ...）等。
+ */
+function sanitizeSentenceComment(text: string): string {
+  if (typeof text !== 'string') return ''
+  try {
+    let t = text
+    // 全形括號：移除包含 source: 或 來源:
+    t = t.replace(/（\s*source:[\s\S]*?）/gi, '')
+    t = t.replace(/（\s*來源:[\s\S]*?）/gi, '')
+    // 半形括號：移除包含 source: 或 來源:
+    t = t.replace(/\(\s*source:[\s\S]*?\)/gi, '')
+    t = t.replace(/\(\s*來源:[\s\S]*?\)/gi, '')
+    // 合併多餘空白
+    t = t.replace(/\s{2,}/g, ' ').trim()
+    return t
+  } catch (_) {
+    return text
   }
 }
 

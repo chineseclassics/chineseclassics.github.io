@@ -55,7 +55,7 @@ export function renderFeedback(paragraphId, feedback) {
             ${renderOverallComment(feedback.overall_comment)}
 
             <!-- 指引對齊度（guideline_alignment） -->
-            ${renderGuidelineAlignment(feedback.guideline_alignment || feedback.structure_check)}
+            ${renderGuidelineAlignment(feedback.guideline_alignment)}
 
             <!-- 評分標準對齊（rubric_alignment，可選） -->
             ${renderRubricAlignment(feedback.rubric_alignment)}
@@ -152,7 +152,7 @@ function buildFeedbackHTML(paragraphId, paragraphTitle, feedback) {
         ${renderOverallComment(feedback.overall_comment)}
 
         <!-- 指引對齊度（guideline_alignment） -->
-        ${renderGuidelineAlignment(feedback.guideline_alignment || feedback.structure_check)}
+    ${renderGuidelineAlignment(feedback.guideline_alignment)}
 
         <!-- 評分標準對齊（rubric_alignment，可選） -->
         ${renderRubricAlignment(feedback.rubric_alignment)}
@@ -182,7 +182,7 @@ function buildSimpleFeedbackHTML(feedback) {
         ${renderOverallComment(feedback.overall_comment)}
 
         <!-- 指引對齊度（簡化） -->
-        ${renderGuidelineAlignmentSimple(feedback.guideline_alignment || feedback.structure_check)}
+    ${renderGuidelineAlignmentSimple(feedback.guideline_alignment)}
 
         <!-- 句子級備註 -->
         ${renderSentenceIssuesSimple(feedback.sentence_notes || feedback.sentence_level_issues)}
@@ -290,10 +290,8 @@ function renderGuidelineAlignment(g) {
     // 抽象出整體評估：優先用數值；若無數值，依 checks 狀態推斷等級與條形寬度
     const computeOverall = (obj) => {
         if (!obj || typeof obj !== 'object') return { score: null, width: 0, tier: 'na', label: '資料不足' };
-        // 1) 直接數值（新版 score 或舊版 completeness）
-        const n = (typeof obj.score === 'number') ? obj.score
-                : (typeof obj.completeness === 'number') ? obj.completeness
-                : null;
+        // 1) 直接數值（新版 score）
+        const n = (typeof obj.score === 'number') ? obj.score : null;
         if (n !== null) {
             const score = Math.max(0, Math.min(100, Math.round(n)));
             let tier = 'low', label = '需要改進';
@@ -638,20 +636,31 @@ window.scrollToParagraph = function(paragraphId) {
  */
 window.handleSentenceClick = async function(paragraphId, sentenceNumber) {
     console.log('🖱️ 點擊句子問題:', { paragraphId, sentenceNumber });
-    
-    if (sentenceNumber === 0) {
-        // 整體問題，只滾動到段落
+
+    // 0 表示整段問題：直接滾動到段落
+    if (Number(sentenceNumber) === 0) {
         scrollToParagraph(paragraphId);
         return;
     }
-    
-    // 動態導入句子高亮器
+
+    // ProseMirror 單文檔路徑：pm-pos-<pos> → 直接調用 __pmRevealSentence
+    try {
+        if (typeof paragraphId === 'string' && paragraphId.startsWith('pm-pos-') && typeof window.__pmRevealSentence === 'function') {
+            const pos = Number(paragraphId.slice('pm-pos-'.length));
+            const idx = Number(sentenceNumber || 0);
+            if (idx > 0) {
+                window.__pmRevealSentence(pos, idx);
+                return;
+            }
+        }
+    } catch (_) {}
+
+    // 回退：使用通用句子高亮器（Quill/DOM 路徑）
     try {
         const { highlightSentence } = await import('./sentence-highlighter.js');
         highlightSentence(paragraphId, sentenceNumber);
     } catch (error) {
         console.error('❌ 加載句子高亮器失敗:', error);
-        // 備用方案：只滾動到段落
         scrollToParagraph(paragraphId);
     }
 }
@@ -761,8 +770,8 @@ function formatTimestamp(timestamp) {
 function renderGuidelineAlignmentSimple(g) {
     if (!g) return '';
         const overall = (() => {
-            if (typeof g.score === 'number' || typeof g.completeness === 'number') {
-                const v = Math.max(0, Math.min(100, Math.round((g.score ?? g.completeness) || 0)));
+            if (typeof g.score === 'number') {
+                const v = Math.max(0, Math.min(100, Math.round(g.score || 0)));
                 let label = '需要改進', bar='bg-rose-500', text='text-rose-700';
                 if (v >= 80) { label = '對齊良好'; bar='bg-emerald-500'; text='text-emerald-700'; }
                 else if (v >= 50) { label = '部分對齊'; bar='bg-amber-500'; text='text-amber-700'; }
