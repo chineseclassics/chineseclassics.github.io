@@ -475,7 +475,40 @@ export async function initializeEssayEditor(forceReinit = false) {
       const { createSentenceIssuesPlugin } = await import('../editor/sentence-issues-plugin.js');
       const mapPlugin = createSentenceMapPlugin();
       const issuesPlugin = createSentenceIssuesPlugin();
-      EditorState.introEditor.addPlugins([mapPlugin, issuesPlugin]);
+      // 句子閃光臨時裝飾插件：僅在點擊問題時臨時高亮該句
+      const flashKey = new PluginKey('pm-sentence-flash');
+      const createSentenceFlashPlugin = () => new Plugin({
+        key: flashKey,
+        state: {
+          init: (_cfg, _state) => DecorationSet.empty,
+          apply: (tr, set) => {
+            try {
+              let next = set.map(tr.mapping, tr.doc);
+              const meta = tr.getMeta(flashKey);
+              if (meta && meta.action === 'flash' && Number.isInteger(meta.from) && Number.isInteger(meta.to) && meta.to > meta.from) {
+                next = next.add(tr.doc, [Decoration.inline(meta.from, meta.to, { class: 'pm-sentence-flash' })]);
+              } else if (meta === 'clear') {
+                next = DecorationSet.empty;
+              }
+              return next;
+            } catch (_) { return set; }
+          }
+        },
+        props: { decorations(state) { return this.getState(state); } },
+        view: (view) => {
+          // 暴露範圍閃光 API（不改動文檔，僅臨時 Decoration）
+          window.__pmFlashRange = (from, to, duration = 650) => {
+            try {
+              if (!Number.isInteger(from) || !Number.isInteger(to) || to <= from) return;
+              view.dispatch(view.state.tr.setMeta(flashKey, { action: 'flash', from, to }));
+              setTimeout(() => { try { view.dispatch(view.state.tr.setMeta(flashKey, 'clear')); } catch (_) {} }, duration);
+            } catch (_) {}
+          };
+          return { destroy() { try { delete window.__pmFlashRange; } catch (_) {} } };
+        }
+      });
+      const flashPlugin = createSentenceFlashPlugin();
+      EditorState.introEditor.addPlugins([mapPlugin, issuesPlugin, flashPlugin]);
       // 句子顯示與跳轉 API（供側欄與問題列表調用）
       window.__pmRevealSentence = (paraPos, idx) => {
         try {
@@ -483,20 +516,10 @@ export async function initializeEssayEditor(forceReinit = false) {
           if (!view) return;
           const range = getSentenceRange(view, Number(paraPos), Number(idx));
           if (!range) return;
-          // 將選區設為整個句子範圍，利用 ::selection 呈現臨時高亮
+          // 將選區設為整句，並以臨時 Decoration 呈現句內高亮（避免整段脈衝）
           const Sel = view.state.selection.constructor;
           view.dispatch(view.state.tr.setSelection(Sel.create(view.state.doc, range.from, Math.max(range.from + 1, range.to))).scrollIntoView());
-          // 仍保留輕微脈衝，但避免套在整段 <p> 上（偏向句首節點）
-          try {
-            const dom = view.domAtPos(range.from).node;
-            const el = dom && dom.nodeType === 3 ? dom.parentNode : dom;
-            if (el && el.animate) {
-              el.animate([
-                { boxShadow: '0 0 0 0 rgba(245,158,11,0.45)' },
-                { boxShadow: '0 0 0 8px rgba(245,158,11,0.0)' }
-              ], { duration: 500, easing: 'ease-out' });
-            }
-          } catch (_) {}
+          try { window.__pmFlashRange?.(range.from, range.to, 700); } catch (_) {}
         } catch (_) {}
       };
       // 將 sentences 取用接口暴露（供 AI 請求）

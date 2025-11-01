@@ -751,3 +751,10 @@ input:focus-visible {
 .pm-sentence-issue-icon.ai-issue--major { color: #EA580C; }
 .pm-sentence-issue-icon.ai-issue--moderate { color: #F59E0B; }
 .pm-sentence-issue-icon.ai-issue--minor { color: #3B82F6; }
+
+/* 點擊單條問題時的臨時句子高亮（不預先全亮） */
+.pm-sentence-flash {
+    background: rgba(59, 130, 246, 0.28); /* blue-500 @ 28% */
+    border-radius: 2px;
+    transition: background-color .18s ease;
+}
