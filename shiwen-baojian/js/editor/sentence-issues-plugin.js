@@ -7,7 +7,7 @@
  *    - clearSentenceNotes(view, paragraphPos)
  */
 
-import { Plugin, PluginKey, Decoration, DecorationSet } from './pm-vendor.js';
+import { Plugin, PluginKey, Decoration, DecorationSet, Schema } from './pm-vendor.js';
 import { sentenceMapKey } from './sentence-map-plugin.js';
 
 export const sentenceIssuesKey = new PluginKey('pm-sentence-issues');
@@ -20,8 +20,17 @@ function severityClass(sev) {
   return 'ai-issue--minor';
 }
 
+// 構建最小備援 Schema（避免初始化早期 state 未就緒導致空引用）
+const fallbackSchema = new Schema({
+  nodes: {
+    doc: { content: 'block+' },
+    paragraph: { group: 'block', content: 'inline*' },
+    text: { group: 'inline' }
+  }
+});
+
 function buildDecos(state, store) {
-  const doc = state.doc;
+  const doc = state && state.doc ? state.doc : fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
   const map = sentenceMapKey.getState(state) || new Map();
   const decos = [];
   for (const [paraPos, notes] of store.entries()) {

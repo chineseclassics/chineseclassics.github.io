@@ -163,9 +163,11 @@ export class PMEditor {
 
             // B) 以頂層索引為輔的判斷（向後相容）
             let inConclusionByIndex = false;
+            // 提前準備 total，供後續 Backspace 分支使用
+            let total = 0;
             try {
               const index = $from.index(1);
-              const total = state.doc.childCount || state.doc.content.childCount || 0;
+              total = state.doc.childCount || state.doc.content.childCount || 0;
               inConclusionByIndex = index === total - 1;
             } catch (_) { inConclusionByIndex = false; }
 
@@ -203,7 +205,7 @@ export class PMEditor {
       key: paraLabelKey,
       state: {
         init: (_cfg, state) => {
-          const build = (doc) => {
+          const safeBuild = (doc) => {
             const posList = [];
             doc.descendants((node, pos) => { if (node.type.name === 'paragraph') posList.push(pos); });
             const total = posList.length;
@@ -218,7 +220,17 @@ export class PMEditor {
             });
             return DecorationSet.create(doc, decos);
           };
-          return build(state.doc);
+          try {
+            if (!state || !state.doc) {
+              // 極端情況下回退到最小文檔，避免初始化期的空引用
+              const fallbackDoc = baseSchema.node('doc', null, [baseSchema.node('paragraph')]);
+              return DecorationSet.create(fallbackDoc, []);
+            }
+            return safeBuild(state.doc);
+          } catch (_) {
+            const fallbackDoc = baseSchema.node('doc', null, [baseSchema.node('paragraph')]);
+            return DecorationSet.create(fallbackDoc, []);
+          }
         },
         apply: (tr, set, _old, state) => {
           if (!tr.docChanged && tr.getMeta(paraLabelKey) !== 'refresh') return set;

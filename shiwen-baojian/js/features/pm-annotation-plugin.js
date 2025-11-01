@@ -7,19 +7,32 @@
  *   - re-anchor：text_start→quote→context
  */
 
-import { Plugin, PluginKey, Decoration, DecorationSet } from '../editor/pm-vendor.js';
+import { Plugin, PluginKey, Decoration, DecorationSet, Schema } from '../editor/pm-vendor.js';
 
 export const annotationPluginKey = new PluginKey('pm-annotations');
 
 export function createAnnotationPlugin({ getAnnotations, onClick }) {
+  // 最小備援 Schema：極端情況下避免 state 未就緒
+  const fallbackSchema = new Schema({
+    nodes: {
+      doc: { content: 'block+' },
+      paragraph: { group: 'block', content: 'inline*' },
+      text: { group: 'inline' }
+    }
+  });
   return new Plugin({
     key: annotationPluginKey,
     state: {
       init: (_, editorState) => {
         const ann = safeGet(getAnnotations);
         const activeId = null;
-        const deco = buildDecorationSet({ state: editorState }, ann, activeId);
-        return { deco, activeId };
+        try {
+          const deco = buildDecorationSet({ state: editorState }, ann, activeId);
+          return { deco, activeId };
+        } catch (_) {
+          const doc = fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
+          return { deco: DecorationSet.create(doc, []), activeId };
+        }
       },
       apply: (tr, old, oldState, newState) => {
         const metaActive = tr.getMeta('annotations:active');
