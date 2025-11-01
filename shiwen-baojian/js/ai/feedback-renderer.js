@@ -352,50 +352,81 @@ function renderGuidelineAlignment(g) {
             ${missing.length > 0 ? `<div class="text-xs text-rose-700">缺少：${missing.join('、')}</div>` : ''}
         </div>`;
     }
-        const hasScore = typeof g.score === 'number';
-        const checks = Array.isArray(g.checks) ? g.checks : [];
-        const teacherChecks = checks.filter(c => c && c.source === 'teacher');
-        const hasTeacherNotMet = teacherChecks.some(c => c.status === 'not_met');
-        const hasTeacherPartial = teacherChecks.some(c => c.status === 'partially_met');
-        const hasTeacherMet = teacherChecks.some(c => c.status === 'met');
+                const hasScore = typeof g.score === 'number';
+                const checks = Array.isArray(g.checks) ? g.checks : [];
+                const teacherChecks = checks.filter(c => c && c.source === 'teacher');
+                const hasTeacherNotMet = teacherChecks.some(c => c.status === 'not_met');
+                const hasTeacherPartial = teacherChecks.some(c => c.status === 'partially_met');
+                const hasTeacherMet = teacherChecks.some(c => c.status === 'met');
     const snippets = Array.isArray(g.rationale_snippets) ? g.rationale_snippets : [];
+        const notes = Array.isArray(g.notes) ? g.notes : [];
+
+        const statusChip = (status) => {
+                const map = {
+                        met: { label: '達成', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+                        partially_met: { label: '部分', cls: 'bg-amber-50 text-amber-700 border border-amber-200' },
+                        not_met: { label: '未達', cls: 'bg-rose-50 text-rose-700 border border-rose-200' },
+                        not_applicable: { label: '不適用', cls: 'bg-gray-50 text-gray-600 border border-gray-200' }
+                };
+                const m = map[status] || map.not_applicable;
+                return `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${m.cls}">${m.label}</span>`;
+        };
+
+        const sourceChip = (source) => {
+                if (source === 'teacher') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">teacher</span>';
+                return '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-50 text-gray-700 border border-gray-200">ai</span>';
+        };
+
     return `
-        <div class="bg-white rounded-lg p-4 border border-gray-200">
-            <div class="flex items-center justify-between mb-3">
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-3">
                 <h5 class="font-semibold text-gray-800">
                     <i class="fas fa-check-square text-stone-600 mr-2"></i>
                     指引對齊度（guideline_alignment）
                 </h5>
                 ${hasScore ? `<div class="text-2xl font-bold ${g.score >= 80 ? 'text-emerald-600' : g.score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${Math.round(g.score)}%</div>` : ''}
             </div>
-                        <div class="flex items-center gap-2 text-xs text-gray-700 mb-2">
-                            <span class="text-gray-600">要點概覽：</span>
-                            ${teacherChecks.length === 0 ? `
-                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700">未設定要點</span>
-                            ` : `
-                                ${hasTeacherNotMet ? '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700">有未達</span>' : ''}
-                                ${hasTeacherPartial ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700">有部分</span>' : ''}
-                                ${hasTeacherMet ? '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">有達成</span>' : ''}
-                            `}
+                        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-700 mb-3">
+                                <span class="text-gray-600">要點概覽：</span>
+                                ${teacherChecks.length === 0 ? `
+                                        <span class="px-2.5 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200">未設定要點</span>
+                                ` : `
+                                        ${hasTeacherNotMet ? '<span class="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200"><i class=\'fas fa-times-circle mr-1\'></i>有未達</span>' : ''}
+                                        ${hasTeacherPartial ? '<span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><i class=\'fas fa-adjust mr-1\'></i>有部分</span>' : ''}
+                                        ${hasTeacherMet ? '<span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"><i class=\'fas fa-check-circle mr-1\'></i>有達成</span>' : ''}
+                                `}
                         </div>
-            ${checks.length > 0 ? `
-            <div class="space-y-2">
-              ${checks.map(c => `
-                <div class="flex items-start gap-2 text-sm">
-                  <span class="px-2 py-0.5 rounded text-xs ${c.source === 'teacher' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}">${c.source}</span>
-                  <span class="font-medium ${c.status === 'met' ? 'text-emerald-700' : c.status === 'partially_met' ? 'text-amber-700' : c.status === 'not_met' ? 'text-rose-700' : 'text-gray-700'}">${c.status}</span>
-                  <span class="text-gray-800">${c.name}</span>
-                </div>
-              `).join('')}
-            </div>` : ''}
-            ${snippets.length > 0 ? `
-              <div class="mt-3 text-xs text-gray-600">
-                <div class="font-semibold mb-1">依據片段：</div>
-                <ul class="list-disc list-inside space-y-1">
-                  ${snippets.map(s => `<li>${s}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
+
+                        ${checks.length > 0 ? `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            ${checks.map(c => `
+                                <div class="flex items-start gap-2 p-2 rounded-lg border ${c.status === 'met' ? 'border-emerald-200 bg-emerald-50/40' : c.status === 'partially_met' ? 'border-amber-200 bg-amber-50/40' : c.status === 'not_met' ? 'border-rose-200 bg-rose-50/40' : 'border-gray-200 bg-gray-50/40'}">
+                                    ${sourceChip(c.source)}
+                                    ${statusChip(c.status)}
+                                    <div class="text-gray-800 text-sm leading-snug break-words flex-1 min-w-0">${c.name}</div>
+                                </div>
+                            `).join('')}
+                        </div>` : ''}
+
+                        ${snippets.length > 0 ? `
+                            <div class="mt-4 text-xs text-gray-700">
+                                <div class="font-semibold mb-1 flex items-center"><i class="fas fa-quote-left mr-1 text-gray-500"></i>依據片段：</div>
+                                <div class="space-y-1">
+                                    ${snippets.map(s => `<blockquote class=\"border-l-2 border-gray-300 pl-2 text-gray-700\">${s}</blockquote>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${notes.length > 0 ? `
+                            <div class="mt-3 text-xs text-gray-500">
+                                <div class="flex items-start gap-2">
+                                    <i class="fas fa-info-circle mt-0.5"></i>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        ${notes.map(n => `<li>${n}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        ` : ''}
         </div>
     `;
 }
@@ -825,28 +856,50 @@ function renderGuidelineAlignmentSimple(g) {
             </div>
         </div>`;
     }
-    const hasScore = typeof g.score === 'number';
-    const checks = Array.isArray(g.checks) ? g.checks : [];
-    const teacherChecks = checks.filter(c => c && c.source === 'teacher');
-    const hasTeacherNotMet = teacherChecks.some(c => c.status === 'not_met');
-    const hasTeacherPartial = teacherChecks.some(c => c.status === 'partially_met');
-    const hasTeacherMet = teacherChecks.some(c => c.status === 'met');
+        const hasScore = typeof g.score === 'number';
+        const checks = Array.isArray(g.checks) ? g.checks : [];
+        const teacherChecks = checks.filter(c => c && c.source === 'teacher');
+        const hasTeacherNotMet = teacherChecks.some(c => c.status === 'not_met');
+        const hasTeacherPartial = teacherChecks.some(c => c.status === 'partially_met');
+        const hasTeacherMet = teacherChecks.some(c => c.status === 'met');
+
+        const statusChip = (status) => {
+                const map = {
+                        met: { label: '達成', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+                        partially_met: { label: '部分', cls: 'bg-amber-50 text-amber-700 border border-amber-200' },
+                        not_met: { label: '未達', cls: 'bg-rose-50 text-rose-700 border border-rose-200' },
+                        not_applicable: { label: '不適用', cls: 'bg-gray-50 text-gray-600 border border-gray-200' }
+                };
+                const m = map[status] || map.not_applicable;
+                return `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${m.cls}">${m.label}</span>`;
+        };
     return `
         <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
                 ${hasScore ? `<span class="text-lg font-bold ${g.score >= 80 ? 'text-emerald-600' : g.score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${Math.round(g.score)}%</span>` : ''}
             </div>
-            <div class="flex items-center gap-2 text-xs text-gray-700">
-              <span class="text-gray-600">要點概覽：</span>
-              ${teacherChecks.length === 0 ? `
-                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700">未設定要點</span>
-              ` : `
-                ${hasTeacherNotMet ? '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700">有未達</span>' : ''}
-                ${hasTeacherPartial ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700">有部分</span>' : ''}
-                ${hasTeacherMet ? '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">有達成</span>' : ''}
-              `}
-            </div>
+                        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-700">
+                            <span class="text-gray-600">要點概覽：</span>
+                            ${teacherChecks.length === 0 ? `
+                                <span class="px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200">未設定要點</span>
+                            ` : `
+                                ${hasTeacherNotMet ? '<span class="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200"><i class=\'fas fa-times-circle mr-1\'></i>有未達</span>' : ''}
+                                ${hasTeacherPartial ? '<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><i class=\'fas fa-adjust mr-1\'></i>有部分</span>' : ''}
+                                ${hasTeacherMet ? '<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"><i class=\'fas fa-check-circle mr-1\'></i>有達成</span>' : ''}
+                            `}
+                        </div>
+
+                        ${checks.length > 0 ? `
+                        <div class="mt-2 space-y-1">
+                            ${checks.map(c => `
+                                <div class="flex items-start gap-2 p-1.5 rounded border ${c.status === 'met' ? 'border-emerald-200 bg-emerald-50/40' : c.status === 'partially_met' ? 'border-amber-200 bg-amber-50/40' : c.status === 'not_met' ? 'border-rose-200 bg-rose-50/40' : 'border-gray-200 bg-gray-50/40'}">
+                                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${c.source === 'teacher' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-50 text-gray-700 border border-gray-200'}">${c.source}</span>
+                                    ${statusChip(c.status)}
+                                    <div class="text-gray-800 text-xs leading-snug break-words flex-1 min-w-0">${c.name}</div>
+                                </div>
+                            `).join('')}
+                        </div>` : ''}
         </div>
     `;
 }
