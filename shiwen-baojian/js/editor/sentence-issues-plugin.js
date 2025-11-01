@@ -30,8 +30,10 @@ const fallbackSchema = new Schema({
 });
 
 function buildDecos(state, store) {
-  const doc = state && state.doc ? state.doc : fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
-  const map = sentenceMapKey.getState(state) || new Map();
+  // 僅在確定是 EditorState 時才向其他插件取狀態，否則使用空映射
+  const isEditorState = !!(state && state.doc && state.config);
+  const doc = isEditorState ? state.doc : fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
+  const map = isEditorState ? (sentenceMapKey.getState(state) || new Map()) : new Map();
   const decos = [];
   for (const [paraPos, notes] of store.entries()) {
     if (!Array.isArray(notes) || notes.length === 0) continue;
