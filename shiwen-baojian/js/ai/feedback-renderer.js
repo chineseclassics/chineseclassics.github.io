@@ -39,7 +39,7 @@ export function renderFeedback(paragraphId, feedback) {
     // 更新段落問題徽章
     updateParagraphBadge(paragraphId, feedback);
     
-    // 構建反饋 HTML
+    // 構建反饋 HTML（新版：指引對齊 + rubric 對齊 + 句子級備註）
     const feedbackHTML = `
         <div class="bg-gradient-to-br from-stone-100 to-stone-200 border border-stone-300 rounded-lg p-6 space-y-4">
             <!-- 反饋標題和嚴重程度 -->
@@ -50,19 +50,22 @@ export function renderFeedback(paragraphId, feedback) {
                 </div>
                 ${renderSeverityBadge(feedback.severity_level)}
             </div>
-            
-            <!-- 結構檢查 -->
-            ${renderStructureCheck(feedback.structure_check)}
-            
-            <!-- 句子級問題 -->
-            ${renderSentenceIssues(feedback.sentence_level_issues)}
-            
-            <!-- 改進建議 -->
-            ${renderSuggestions(feedback.improvement_suggestions)}
-            
-            <!-- 內容分析（摺疊） -->
+
+            <!-- 總體評語 -->
+            ${renderOverallComment(feedback.overall_comment)}
+
+            <!-- 指引對齊度（guideline_alignment） -->
+            ${renderGuidelineAlignment(feedback.guideline_alignment || feedback.structure_check)}
+
+            <!-- 評分標準對齊（rubric_alignment，可選） -->
+            ${renderRubricAlignment(feedback.rubric_alignment)}
+
+            <!-- 句子級反饋 -->
+            ${renderSentenceNotes(feedback.sentence_notes || feedback.sentence_level_issues, paragraphId)}
+
+            <!-- 內容分析（保留舊版可選） -->
             ${renderContentAnalysis(feedback.content_analysis, paragraphId)}
-            
+
             <!-- 生成時間 -->
             <div class="text-xs text-gray-500 text-right mt-4">
                 生成時間：${formatTimestamp(feedback.generated_at)}
@@ -186,15 +189,21 @@ function buildFeedbackHTML(paragraphId, paragraphTitle, feedback) {
         <div class="mb-4">
             ${renderSeverityBadge(feedback.severity_level)}
         </div>
-        
-        <!-- 結構檢查 -->
-        ${renderStructureCheck(feedback.structure_check)}
-        
-        <!-- 句子級問題（可點擊定位） -->
-        ${renderSentenceIssues(feedback.sentence_level_issues, paragraphId)}
-        
-        <!-- 改進建議 -->
-        ${renderSuggestions(feedback.improvement_suggestions)}
+
+        <!-- 總體評語 -->
+        ${renderOverallComment(feedback.overall_comment)}
+
+        <!-- 指引對齊度（guideline_alignment） -->
+        ${renderGuidelineAlignment(feedback.guideline_alignment || feedback.structure_check)}
+
+        <!-- 評分標準對齊（rubric_alignment，可選） -->
+        ${renderRubricAlignment(feedback.rubric_alignment)}
+
+        <!-- 句子級反饋（可點擊定位） -->
+        ${renderSentenceNotes(feedback.sentence_notes || feedback.sentence_level_issues, paragraphId)}
+
+        <!-- 改進建議（舊版保留） -->
+        ${renderSuggestions(feedback.improvement_suggestions || feedback.suggestions_form)}
         
         <!-- 內容分析（摺疊） -->
         ${renderContentAnalysis(feedback.content_analysis, paragraphId)}
@@ -211,11 +220,14 @@ function buildFeedbackHTML(paragraphId, paragraphTitle, feedback) {
  */
 function buildSimpleFeedbackHTML(feedback) {
     return `
-        <!-- 結構檢查（簡化版） -->
-        ${renderStructureCheckSimple(feedback.structure_check)}
-        
-        <!-- 句子級問題 -->
-        ${renderSentenceIssuesSimple(feedback.sentence_level_issues)}
+        <!-- 總體評語（簡易） -->
+        ${renderOverallComment(feedback.overall_comment)}
+
+        <!-- 指引對齊度（簡化） -->
+        ${renderGuidelineAlignmentSimple(feedback.guideline_alignment || feedback.structure_check)}
+
+        <!-- 句子級備註 -->
+        ${renderSentenceIssuesSimple(feedback.sentence_notes || feedback.sentence_level_issues)}
         
         <!-- 詳細分析按鈕 -->
         <button onclick="this.nextElementSibling.classList.toggle('hidden')" 
@@ -302,65 +314,102 @@ function renderSeverityBadge(severity) {
 /**
  * 渲染結構檢查
  */
-function renderStructureCheck(structureCheck) {
-    if (!structureCheck) return '';
-    
-    const completeness = structureCheck.completeness || 0;
-    const missingElements = structureCheck.missing_elements || [];
-    const presentElements = structureCheck.present_elements || [];
-    
+function renderOverallComment(text) {
+    if (!text) return '';
+    return `
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+            <h5 class="font-semibold text-gray-800 mb-2">
+                <i class="fas fa-comment-dots text-stone-600 mr-2"></i>
+                總體反饋
+            </h5>
+            <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">${text}</p>
+        </div>
+    `;
+}
+
+function renderGuidelineAlignment(g) {
+    if (!g) return '';
+    // 向後相容：若是舊的 structure_check，轉為簡化顯示
+    if (g && typeof g === 'object' && 'completeness' in g) {
+        const completeness = g.completeness || 0;
+        const missing = g.missing_elements || [];
+        return `
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+                <h5 class="font-semibold text-gray-800">
+                    <i class="fas fa-check-square text-stone-600 mr-2"></i>
+                    指引對齊度（舊版資料映射）
+                </h5>
+                <div class="text-2xl font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">${completeness}%</div>
+            </div>
+            ${missing.length > 0 ? `<div class="text-xs text-rose-700">缺少：${missing.join('、')}</div>` : ''}
+        </div>`;
+    }
+    const score = g.score || 0;
+    const checks = Array.isArray(g.checks) ? g.checks : [];
+    const snippets = Array.isArray(g.rationale_snippets) ? g.rationale_snippets : [];
     return `
         <div class="bg-white rounded-lg p-4 border border-gray-200">
             <div class="flex items-center justify-between mb-3">
                 <h5 class="font-semibold text-gray-800">
                     <i class="fas fa-check-square text-stone-600 mr-2"></i>
-                    結構完整度
+                    指引對齊度（guideline_alignment）
                 </h5>
-                <div class="text-2xl font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">
-                    ${completeness}%
-                </div>
+                <div class="text-2xl font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</div>
             </div>
-            
-            <!-- 進度條 -->
-            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3">
-                <div class="h-2.5 rounded-full transition-all ${completeness >= 80 ? 'bg-emerald-600' : completeness >= 50 ? 'bg-amber-600' : 'bg-rose-600'}" 
-                     style="width: ${completeness}%"></div>
-            </div>
-            
-            ${missingElements.length > 0 ? `
-                <div class="bg-rose-50 border border-rose-200 rounded-lg p-3 mb-2">
-                    <p class="text-sm font-semibold text-rose-800 mb-1">
-                        <i class="fas fa-times-circle mr-1"></i>
-                        缺少的必需元素：
-                    </p>
-                    <ul class="list-disc list-inside text-sm text-rose-700 space-y-1">
-                        ${missingElements.map(el => `<li>${el}</li>`).join('')}
-                    </ul>
+            ${checks.length > 0 ? `
+            <div class="space-y-2">
+              ${checks.map(c => `
+                <div class="flex items-start gap-2 text-sm">
+                  <span class="px-2 py-0.5 rounded text-xs ${c.source === 'teacher' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}">${c.source}</span>
+                  <span class="font-medium ${c.status === 'met' ? 'text-emerald-700' : c.status === 'partially_met' ? 'text-amber-700' : c.status === 'not_met' ? 'text-rose-700' : 'text-gray-700'}">${c.status}</span>
+                  <span class="text-gray-800">${c.name}</span>
                 </div>
-            ` : ''}
-            
-            ${presentElements.length > 0 ? `
-                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-emerald-800 mb-1">
-                        <i class="fas fa-check-circle mr-1"></i>
-                        已包含的元素：
-                    </p>
-                    <div class="flex flex-wrap gap-2">
-                        ${presentElements.map(el => `
-                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded">${el}</span>
-                        `).join('')}
-                    </div>
-                </div>
+              `).join('')}
+            </div>` : ''}
+            ${snippets.length > 0 ? `
+              <div class="mt-3 text-xs text-gray-600">
+                <div class="font-semibold mb-1">依據片段：</div>
+                <ul class="list-disc list-inside space-y-1">
+                  ${snippets.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+              </div>
             ` : ''}
         </div>
+    `;
+}
+
+function renderRubricAlignment(r) {
+    if (!r || !Array.isArray(r.criteria)) return '';
+    const score = r.score;
+    return `
+      <div class="bg-white rounded-lg p-4 border border-gray-200">
+        <div class="flex items-center justify-between mb-3">
+          <h5 class="font-semibold text-gray-800">
+            <i class="fas fa-scale-balanced text-stone-600 mr-2"></i>
+            評分標準對齊（rubric_alignment）<span class="ml-2 text-xs text-gray-500">teacher > rubric</span>
+          </h5>
+          ${typeof score === 'number' ? `<div class="text-2xl font-bold text-stone-700">${Math.round(score)}%</div>` : ''}
+        </div>
+        <div class="space-y-2">
+          ${r.criteria.map(c => `
+            <div class="flex items-start gap-2 text-sm">
+              ${c.dimension ? `<span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-xs">${c.dimension}</span>` : ''}
+              <span class="font-medium ${c.status === 'met' ? 'text-emerald-700' : c.status === 'partially_met' ? 'text-amber-700' : c.status === 'not_met' ? 'text-rose-700' : 'text-gray-700'}">${c.status}</span>
+              <span class="text-gray-800">${c.name || c.id}</span>
+              ${c.scope === 'essay' ? `<span class="ml-auto text-xs text-gray-600">此段對整篇：${c.paragraph_contribution || 'neutral'}</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
     `;
 }
 
 /**
  * 渲染句子級問題（桌面端，可點擊定位）
  */
-function renderSentenceIssues(sentenceIssues, paragraphId) {
-    if (!sentenceIssues || sentenceIssues.length === 0) {
+function renderSentenceNotes(sentenceNotes, paragraphId) {
+    if (!sentenceNotes || sentenceNotes.length === 0) {
         return `
             <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                 <p class="text-emerald-800 flex items-center">
@@ -375,12 +424,12 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
         <div class="bg-white rounded-lg p-4 border border-gray-200">
             <h5 class="font-semibold text-gray-800 mb-3">
                 <i class="fas fa-list-ul text-stone-600 mr-2"></i>
-                具體問題 (${sentenceIssues.length})
+                具體問題 (${sentenceNotes.length})
                 <span class="text-xs text-gray-500 font-normal ml-2">點擊查看原句</span>
             </h5>
             
             <div class="space-y-2">
-                ${sentenceIssues.map((issue, index) => {
+                ${sentenceNotes.map((issue, index) => {
                     const sentenceNum = issue.sentence_number || 0;
                     
                     return `
@@ -392,7 +441,7 @@ function renderSentenceIssues(sentenceIssues, paragraphId) {
                             <span class="text-white text-xs font-bold">${sentenceNum || '!'}</span>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">${issue.message}</p>
+                            <p class="text-sm font-medium text-gray-800">${issue.comment || issue.message}</p>
                             ${issue.suggestion ? `
                                 <p class="text-xs text-gray-600 mt-1">
                                     <i class="fas fa-lightbulb mr-1"></i>
@@ -437,7 +486,7 @@ function renderSentenceIssuesSimple(sentenceIssues) {
                         <span class="text-white text-xs font-bold">${issue.sentence_number || '!'}</span>
                     </div>
                     <div class="flex-1">
-                        <p class="text-xs font-medium text-gray-800">${issue.message}</p>
+                        <p class="text-xs font-medium text-gray-800">${issue.comment || issue.message}</p>
                         ${issue.suggestion ? `
                             <p class="text-xs text-gray-600 mt-1">${issue.suggestion}</p>
                         ` : ''}
@@ -558,7 +607,7 @@ function highlightCurrentParagraph(paragraphId) {
  * 更新段落問題徽章
  */
 function updateParagraphBadge(paragraphId, feedback) {
-    const issueCount = feedback.sentence_level_issues?.length || 0;
+    const issueCount = (feedback.sentence_notes?.length || feedback.sentence_level_issues?.length || 0);
     
     // 獲取段落標題區域
     let badgeContainer;
@@ -743,32 +792,25 @@ function formatTimestamp(timestamp) {
 /**
  * 渲染結構檢查（簡化版）
  */
-function renderStructureCheckSimple(structureCheck) {
-    if (!structureCheck) return '';
-    
-    const completeness = structureCheck.completeness || 0;
-    const missingElements = structureCheck.missing_elements || [];
-    
+function renderGuidelineAlignmentSimple(g) {
+    if (!g) return '';
+    if (g && 'completeness' in g) {
+        const completeness = g.completeness || 0;
+        return `
+        <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
+                <span class="text-lg font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">${completeness}%</span>
+            </div>
+        </div>`;
+    }
+    const score = g.score || 0;
     return `
         <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-semibold text-gray-800">結構完整度</span>
-                <span class="text-lg font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">
-                    ${completeness}%
-                </span>
+                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
+                <span class="text-lg font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</span>
             </div>
-            
-            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                <div class="h-2 rounded-full ${completeness >= 80 ? 'bg-emerald-600' : completeness >= 50 ? 'bg-amber-600' : 'bg-rose-600'}" 
-                     style="width: ${completeness}%"></div>
-            </div>
-            
-            ${missingElements.length > 0 ? `
-                <div class="text-xs text-rose-700 mt-2">
-                    <span class="font-semibold">缺少：</span>
-                    ${missingElements.join('、')}
-                </div>
-            ` : ''}
         </div>
     `;
 }

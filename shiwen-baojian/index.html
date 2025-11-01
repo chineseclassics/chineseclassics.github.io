@@ -156,8 +156,7 @@
                     <!-- 老師端功能將動態加載到這裡 -->
                 </main>
             </div>
-        </div>
-        
+    </div>
         <!-- 學生儀表板 -->
         <div id="student-dashboard" class="hidden">
             <div class="min-h-screen">
@@ -264,6 +263,34 @@
                                                 <h3 class="font-semibold text-gray-700 mb-2">寫作指引</h3>
                                                 <div id="assignment-description" class="text-gray-600 text-sm leading-relaxed">
                                                     載入中...
+                                                </div>
+                                                <!-- AI 反饋設定（可選） -->
+                                                <div id="ai-settings-panel" class="mt-4 p-3 rounded-lg border border-stone-300 bg-gradient-to-br from-stone-50 to-stone-100">
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <i class="fas fa-sliders-h text-stone-700"></i>
+                                                        <h4 class="text-sm font-semibold text-stone-800">AI 反饋設定（本地偏好）</h4>
+                                                    </div>
+                                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                                                        <label class="flex items-center gap-2">
+                                                            <span class="text-stone-700 whitespace-nowrap">嚴格度</span>
+                                                            <select id="ai-strictness-hint" class="flex-1 border border-stone-300 rounded px-2 py-1">
+                                                                <option value="adaptive">建議（Adaptive）</option>
+                                                                <option value="strict">嚴格（Strict）</option>
+                                                            </select>
+                                                        </label>
+                                                        <label class="flex items-center gap-2">
+                                                            <span class="text-stone-700 whitespace-nowrap">Rubric 模式</span>
+                                                            <select id="ai-rubric-mode" class="flex-1 border border-stone-300 rounded px-2 py-1">
+                                                                <option value="adaptive">建議（Adaptive）</option>
+                                                                <option value="strict">嚴格（Strict）</option>
+                                                            </select>
+                                                        </label>
+                                                        <label class="flex items-center gap-2">
+                                                            <input id="ai-traceability" type="checkbox" class="w-4 h-4 text-stone-600" />
+                                                            <span class="text-stone-700">顯示依據片段（Traceability）</span>
+                                                        </label>
+                                                    </div>
+                                                    <p class="text-xs text-stone-500 mt-2">僅影響您本機的 AI 反饋偏好；默認遵循老師文本與所選評分標準（teacher > rubric > ai_default）。</p>
                                                 </div>
                                             </div>
                                         </div>

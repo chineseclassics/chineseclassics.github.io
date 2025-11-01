@@ -43,7 +43,23 @@ const AppState = {
     currentPracticeEssayId: null,
     currentEssayContent: null,
     currentPracticeContent: null,
-    currentFormatSpec: null
+    currentFormatSpec: null,
+
+    // ✅ 老師指引與評分規準（供 AI 反饋使用）
+    // - teacherGuidelinesText：老師提供的自然語言寫作指引（優先來源：format_specifications.human_input）
+    // - rubricSelection：老師在此作業使用的評分準則之「已選細項」
+    //    結構示例：{ rubric_id: string, selected_criteria: [{ id: string, required?: boolean, weight?: number|null, scope?: 'paragraph'|'essay' }] }
+    // - rubricMode：'adaptive' | 'strict'（AI 對 rubric 的使用方式；預設採用建議模式）
+    // - strictnessHint：'adaptive' | 'strict'（AI 對老師指引的嚴格度提示；預設建議）
+    // - traceability：是否要求 AI 產生可追溯的依據片段（預設 true）
+    teacherGuidelinesText: null,
+    rubricSelection: null,
+    rubricMode: 'adaptive',
+    strictnessHint: 'adaptive',
+    traceability: true,
+
+    // 可選：保留當前作業完整資料，方便其他模組使用
+    assignment: null
 };
 
 // 暴露到 window 對象，供其他模組使用
@@ -610,6 +626,29 @@ async function initializeStudentModules() {
         AppState.currentFormatSpec = null;
         AppState.currentEssayContent = null;  // ✅ 清除任務內容
         AppState.currentPracticeContent = null;  // ✅ 清除練筆內容
+        // ✅ 同步清理 AI 反饋的上游來源狀態（避免殘留影響新任務）
+        AppState.teacherGuidelinesText = null;
+        AppState.rubricSelection = null;
+        AppState.rubricMode = 'adaptive';
+        AppState.strictnessHint = 'adaptive';
+        AppState.traceability = true;
+        AppState.assignment = null;
+
+        // 🧩 載入本機偏好（AI 反饋設定）
+        try {
+            const savedStrictness = localStorage.getItem('shiwb.ai.strictnessHint');
+            if (savedStrictness === 'strict' || savedStrictness === 'adaptive') {
+                AppState.strictnessHint = savedStrictness;
+            }
+            const savedRubricMode = localStorage.getItem('shiwb.ai.rubricMode');
+            if (savedRubricMode === 'strict' || savedRubricMode === 'adaptive') {
+                AppState.rubricMode = savedRubricMode;
+            }
+            const savedTraceability = localStorage.getItem('shiwb.ai.traceability');
+            if (savedTraceability === 'false') {
+                AppState.traceability = false;
+            }
+        } catch (_) {}
         
         // ✅ 同時清理 essay-storage 的狀態和 localStorage
         const { StorageState } = await import('./student/essay-storage.js');
@@ -939,6 +978,36 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
             submissionSection.classList.add('hidden');
         }
 
+        // 🧩 綁定 AI 反饋設定面板（若存在）
+        try {
+            const strictSel = document.getElementById('ai-strictness-hint');
+            const rubricSel = document.getElementById('ai-rubric-mode');
+            const traceChk = document.getElementById('ai-traceability');
+            if (strictSel) {
+                strictSel.value = AppState.strictnessHint || 'adaptive';
+                strictSel.addEventListener('change', () => {
+                    const v = strictSel.value === 'strict' ? 'strict' : 'adaptive';
+                    AppState.strictnessHint = v;
+                    localStorage.setItem('shiwb.ai.strictnessHint', v);
+                });
+            }
+            if (rubricSel) {
+                rubricSel.value = AppState.rubricMode || 'adaptive';
+                rubricSel.addEventListener('change', () => {
+                    const v = rubricSel.value === 'strict' ? 'strict' : 'adaptive';
+                    AppState.rubricMode = v;
+                    localStorage.setItem('shiwb.ai.rubricMode', v);
+                });
+            }
+            if (traceChk) {
+                traceChk.checked = !!AppState.traceability;
+                traceChk.addEventListener('change', () => {
+                    AppState.traceability = !!traceChk.checked;
+                    localStorage.setItem('shiwb.ai.traceability', String(traceChk.checked));
+                });
+            }
+        } catch (_) {}
+
         // 學生端批註系統統一改為 PM 插件（編輯器內處理），不再單獨初始化
 
         console.log('✅ 論文編輯器顯示完成');
@@ -1001,14 +1070,44 @@ async function loadAssignmentData(assignmentId) {
             const humanInput = assignment.format_specifications.human_input || '老師未提供寫作指引。';
             descEl.textContent = humanInput;
             descEl.style.whiteSpace = 'pre-wrap';  // 保留換行和空白，但允許自動換行
-            
+
             // 保存 spec_json 到 AppState（供 AI 反饋使用）
             if (assignment.format_specifications.spec_json) {
                 AppState.currentFormatSpec = assignment.format_specifications.spec_json;
                 console.log('✅ 格式規範已加載（供 AI 反饋使用）');
             }
-        } else if (descEl) {
-            descEl.textContent = '老師未提供寫作指引。';
+
+            // ✅ 老師自然語言指引：作為 AI teacher_guidelines_text 的主要來源
+            AppState.teacherGuidelinesText = (humanInput || '').trim() || null;
+        } else {
+            if (descEl) descEl.textContent = '老師未提供寫作指引。';
+            AppState.teacherGuidelinesText = null;
+        }
+
+        // ✅ 保存 assignment 到 AppState，並派生 rubricSelection（若有）
+        AppState.assignment = assignment;
+        try {
+            const rubric = assignment?.grading_rubric_json || null;
+            if (rubric && Array.isArray(rubric.criteria) && rubric.criteria.length > 0) {
+                // 老師端已明確勾選：assignments.grading_rubric_json 只包含選中的標準
+                const selected = rubric.criteria.map((c, idx) => ({
+                    id: c.code || String(idx + 1),      // 使用 IB 代碼作為穩定 ID（A/B/C/D）
+                    name: c.name || null,                // 便於後端/日誌閱讀
+                    dimension: c.name || null,           // 盡量提供維度名稱（可選）
+                    required: true,
+                    weight: typeof c.weight === 'number' ? c.weight : null,
+                    scope: c.scope || null
+                }));
+                AppState.rubricSelection = {
+                    rubric_id: rubric.id || 'assignment-rubric',
+                    selected_criteria: selected
+                };
+            } else {
+                AppState.rubricSelection = null;
+            }
+        } catch (e) {
+            console.warn('⚠️ 解析評分標準失敗，將不提供 rubricSelection：', e);
+            AppState.rubricSelection = null;
         }
 
         console.log('✅ 任務數據加載完成:', assignment.title);
@@ -1059,7 +1158,6 @@ async function loadFormatTemplate(templateName) {
             console.warn('⚠️ 未知的格式模板:', templateName);
             return;
         }
-        
         const response = await fetch(templatePath);
         if (response.ok) {
             const formatSpec = await response.json();

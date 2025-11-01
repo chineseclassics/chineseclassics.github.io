@@ -67,9 +67,11 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 2. 解析參數：相容舊版（formatSpec），支援新版 options { formatSpec, roleMeta }
         let formatSpec = null;
         let roleMeta = null; // { kind, label, bodyIndex }
+        let sentences = null; // string[]（由 PM 分句插件計算）
         if (formatSpecOrOptions && typeof formatSpecOrOptions === 'object' && (formatSpecOrOptions.formatSpec || formatSpecOrOptions.roleMeta)) {
             formatSpec = formatSpecOrOptions.formatSpec || null;
             roleMeta = formatSpecOrOptions.roleMeta || null;
+            sentences = Array.isArray(formatSpecOrOptions.sentences) ? formatSpecOrOptions.sentences : null;
         } else {
             formatSpec = formatSpecOrOptions;
         }
@@ -109,29 +111,55 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 6. 顯示加載狀態
         showLoadingState(paragraphId);
         
-        // 7. 加載格式規範（如果沒有傳入）
+        // 7. 加載格式規範（如果沒有傳入）—向後相容（新後端不再強依賴）
         if (!formatSpec) {
-            console.log('📥 加載紅樓夢論文格式規範...');
-            formatSpec = await loadHonglouFormatSpec();
+            try {
+                console.log('📥（相容）加載紅樓夢論文格式規範...');
+                formatSpec = await loadHonglouFormatSpec();
+            } catch (_) { formatSpec = null; }
         }
         
         // 8. 詳細段落型別（body-1、body-2…），intro/conclusion 原樣
         const paragraphTypeDetailed = roleSignature;
 
-        // 9. 調用 Edge Function（傳遞可選 roleMeta，供 AI 使用段落語義）
+        // 8.1 構造 paragraph_text（純文字）
+        const paragraphText = (paragraphContent || '')
+          .replace(/<[^>]*>/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        // 8.2 嘗試獲取老師指引與評分勾選（若前端有配置）
+        const teacherGuidelinesText = (AppState?.teacherGuidelinesText || AppState?.assignment?.teacher_guidelines_text || '').trim() || null;
+        const rubricSelection = AppState?.rubricSelection || null; // { rubric_id, selected_criteria: [...] }
+        const rubricMode = AppState?.rubricMode || 'adaptive';
+        const strictnessHint = AppState?.strictnessHint || 'adaptive';
+        const traceability = (AppState?.traceability === false) ? false : true;
+
+        // 9. 調用 Edge Function（新版契約 + 相容字段）
         const { data, error } = await AppState.supabase.functions.invoke('ai-feedback-agent', {
             body: {
                 paragraph_id: paragraphId,
-                paragraph_content: paragraphContent,
+                // 新版字段
+                paragraph_content_html: paragraphContent,
+                paragraph_text: paragraphText,
                 paragraph_type: paragraphType,
                 paragraph_type_detailed: paragraphTypeDetailed,
-                format_spec: formatSpec,
-                // 新增：段落語義（向後相容，後端可選讀取）
+                // 段落語義（向後相容）
                 paragraph_role: roleMeta ? {
                     kind: roleMeta.kind || paragraphType,
                     label: roleMeta.label || null,
                     body_index: typeof roleMeta.bodyIndex === 'number' ? roleMeta.bodyIndex : null
-                } : null
+                } : null,
+                // 句子清單（若提供，供後端對齊）
+                sentences: sentences || null,
+                // 老師指引與 rubric（若有）
+                teacher_guidelines_text: teacherGuidelinesText,
+                strictness_hint: strictnessHint,
+                traceability: traceability,
+                rubric_selection: rubricSelection,
+                rubric_mode: rubricMode,
+                // 舊版相容字段（後端會忽略）
+                format_spec: formatSpec
             }
         });
         
@@ -159,6 +187,23 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         
         // 12. 渲染反饋
         renderFeedback(paragraphId, data.feedback);
+        try {
+            // 若為 PM 單文檔路徑，並且 paragraphId 採用 pm-pos-<pos>，則在編輯器內掛上句子裝飾
+            if (typeof paragraphId === 'string' && paragraphId.startsWith('pm-pos-')) {
+                const pos = Number(paragraphId.slice('pm-pos-'.length));
+                const notes = data.feedback?.sentence_notes || data.feedback?.sentence_level_issues || [];
+                if (Array.isArray(notes) && notes.length > 0 && typeof window.__pmSetSentenceNotes === 'function') {
+                    // 正規化字段名：確保有 sentence_number
+                    const norm = notes.map(n => ({
+                        sentence_number: n.sentence_number || n.sentence_index || n.idx || n.sentence || 0,
+                        severity: n.severity || 'minor',
+                        message: n.comment || n.message || '',
+                        suggestion: n.suggestion || ''
+                    })).filter(x => x.sentence_number > 0);
+                    window.__pmSetSentenceNotes(pos, norm);
+                }
+            }
+        } catch (_) {}
         
         // 13. 返回結果
         return {

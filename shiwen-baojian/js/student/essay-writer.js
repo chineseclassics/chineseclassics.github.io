@@ -413,7 +413,7 @@ export async function initializeEssayEditor(forceReinit = false) {
     await loadEssayMeta();
     await autoSavePMJSON();
 
-    // 掛載批註裝飾（顯示老師批註）
+  // 掛載批註裝飾（顯示老師批註）
     try {
       window.__pmAnnStore = [];
       const plugin = createAnnotationPlugin({
@@ -447,6 +447,60 @@ export async function initializeEssayEditor(forceReinit = false) {
     try { setupStudentSelectionComposer(); } catch (_) {}
     try { setupStudentSelectionFab(); } catch (_) {}
 
+    // 覆寫句子點擊處理（AI 反饋面板 → PM 句子定位）
+    try {
+      window.handleSentenceClick = (paragraphId, sentenceNumber) => {
+        try {
+          if (typeof paragraphId === 'string' && paragraphId.startsWith('pm-pos-') && typeof window.__pmRevealSentence === 'function') {
+            const pos = Number(paragraphId.slice('pm-pos-'.length));
+            const idx = Number(sentenceNumber || 0);
+            if (idx > 0) window.__pmRevealSentence(pos, idx); else { /* 整段問題：滾動到段落 */
+              const view = EditorState.introEditor?.view; if (!view) return;
+              const coords = view.coordsAtPos(pos);
+              window.scrollTo({ top: Math.max(0, (coords?.top || 0) - 120 + window.scrollY), behavior: 'smooth' });
+            }
+          } else {
+            // 回退至舊方案（若仍存在）
+            import('../ai/sentence-highlighter.js').then(({ highlightSentence }) => {
+              highlightSentence(paragraphId, sentenceNumber);
+            });
+          }
+        } catch (_) {}
+      };
+    } catch (_) {}
+
+    // 掛載句子級插件（分句映射 + 句子問題裝飾）
+    try {
+      const { createSentenceMapPlugin, getSentencesForPos, getSentenceRange } = await import('../editor/sentence-map-plugin.js');
+      const { createSentenceIssuesPlugin } = await import('../editor/sentence-issues-plugin.js');
+      const mapPlugin = createSentenceMapPlugin();
+      const issuesPlugin = createSentenceIssuesPlugin();
+      EditorState.introEditor.addPlugins([mapPlugin, issuesPlugin]);
+      // 句子顯示與跳轉 API（供側欄與問題列表調用）
+      window.__pmRevealSentence = (paraPos, idx) => {
+        try {
+          const view = EditorState.introEditor?.view;
+          if (!view) return;
+          const range = getSentenceRange(view, Number(paraPos), Number(idx));
+          if (!range) return;
+          view.dispatch(view.state.tr.setSelection(view.state.selection.constructor.near(view.state.doc.resolve(range.from))).scrollIntoView());
+          // 閃爍高亮效果
+          const dom = view.domAtPos(range.from).node;
+          const el = dom.nodeType === 3 ? dom.parentNode : dom;
+          if (el && el.animate) {
+            el.animate([{ boxShadow: '0 0 0 0 rgba(245,158,11,0.5)' }, { boxShadow: '0 0 0 8px rgba(245,158,11,0.0)' }], { duration: 600, easing: 'ease-out' });
+          }
+        } catch (_) {}
+      };
+      // 將 sentences 取用接口暴露（供 AI 請求）
+      window.__pmGetSentencesAtPos = (paraPos) => {
+        try {
+          const view = EditorState.introEditor?.view; if (!view) return [];
+          return getSentencesForPos(view, Number(paraPos));
+        } catch(_) { return []; }
+      };
+    } catch (e) { console.warn('句子級插件掛載失敗:', e); }
+
     // 段落左側「雨村」毛筆圖示（以 ProseMirror widget decorations 常駐在段落內，CSS 垂直置中）
     try {
       const brushPlugin = createYucunBrushPlugin({
@@ -460,7 +514,10 @@ export async function initializeEssayEditor(forceReinit = false) {
             // 依當前段「徽章」為主、索引為輔推斷段落語義
             const role = getParagraphRoleMeta(view, pos);
             const { requestAIFeedback } = await import('../ai/feedback-requester.js');
-            await requestAIFeedback('pm-current', html, role.kind, { formatSpec: getAppState().currentFormatSpec, roleMeta: role });
+            // 使用段落絕對位置作為臨時 ID，便於之後定位句子
+            const paragraphId = `pm-pos-${pos}`;
+            const sentences = window.__pmGetSentencesAtPos ? window.__pmGetSentencesAtPos(pos) : [];
+            await requestAIFeedback(paragraphId, html, role.kind, { formatSpec: getAppState().currentFormatSpec, roleMeta: role, sentences });
           } catch (e) { console.warn('雨村評點啟動失敗:', e); toast.error('雨村評點失敗'); }
         }
       });
