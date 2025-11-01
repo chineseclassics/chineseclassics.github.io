@@ -9,7 +9,7 @@
  */
 
 import { renderFeedback } from './feedback-renderer.js';
-import { loadHonglouFormatSpec } from '../data/format-spec-loader.js';
+// 已移除相容性格式規範載入以降低等待時間
 
 // 使用全局 AppState，避免循環導入
 const AppState = window.AppState;
@@ -64,7 +64,8 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
     const contentHash = simpleHash(paragraphContent);
         console.log('🔑 內容哈希:', contentHash);
         
-        // 2. 解析參數：相容舊版（formatSpec），支援新版 options { formatSpec, roleMeta }
+        // 2. 解析參數：相容舊版（formatSpec），支援新版 options { formatSpec, roleMeta, sentences }
+        //    注意：為提速，現已不再主動載入 formatSpec（後端也不再依賴）
         let formatSpec = null;
         let roleMeta = null; // { kind, label, bodyIndex }
         let sentences = null; // string[]（由 PM 分句插件計算）
@@ -111,15 +112,10 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 6. 顯示加載狀態
         showLoadingState(paragraphId);
         
-        // 7. 加載格式規範（如果沒有傳入）—向後相容（新後端不再強依賴）
-        if (!formatSpec) {
-            try {
-                console.log('📥（相容）加載紅樓夢論文格式規範...');
-                formatSpec = await loadHonglouFormatSpec();
-            } catch (_) { formatSpec = null; }
-        }
+        // 7. 提速：不再主動載入格式規範（後端已改為 teacher-first 且不依賴）
+        formatSpec = null;
         
-        // 8. 詳細段落型別（body-1、body-2…），intro/conclusion 原樣
+    // 8. 詳細段落型別（body-1、body-2…），intro/conclusion 原樣
         const paragraphTypeDetailed = roleSignature;
 
         // 8.1 構造 paragraph_text（純文字）
@@ -131,8 +127,12 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 8.2 嘗試獲取老師指引與評分勾選（若前端有配置）
         const teacherGuidelinesText = (AppState?.teacherGuidelinesText || AppState?.assignment?.teacher_guidelines_text || '').trim() || null;
         const rubricSelection = AppState?.rubricSelection || null; // { rubric_id, selected_criteria: [...] }
-    const rubricMode = AppState?.rubricMode || 'adaptive';
+        const rubricMode = AppState?.rubricMode || 'adaptive';
         const traceability = (AppState?.traceability === false) ? false : true;
+
+        // 8.3 單一路徑：不截斷老師文本，不裁句
+        const teacherGuidelinesCompact = teacherGuidelinesText;
+        const sentencesCompact = Array.isArray(sentences) ? sentences : null;
 
         // 9. 調用 Edge Function（新版契約 + 相容字段）
         const { data, error } = await AppState.supabase.functions.invoke('ai-feedback-agent', {
@@ -150,9 +150,10 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
                     body_index: typeof roleMeta.bodyIndex === 'number' ? roleMeta.bodyIndex : null
                 } : null,
                 // 句子清單（若提供，供後端對齊）
-                sentences: sentences || null,
+                sentences: sentencesCompact || sentences || null,
                 // 老師指引與 rubric（若有）
-                teacher_guidelines_text: teacherGuidelinesText,
+                teacher_guidelines_text: teacherGuidelinesCompact,
+                // 保留呼叫方的設置
                 traceability: traceability,
                 rubric_selection: rubricSelection,
                 rubric_mode: rubricMode,
