@@ -121,6 +121,7 @@ class GradingQueue {
             title,
             status,
             total_word_count,
+            content_json,
             submitted_at,
             updated_at,
             users!student_id (
@@ -341,6 +342,7 @@ class GradingQueue {
     const submittedDate = dateRef ? new Date(dateRef) : new Date();
     const student = essay.users;
     const isDraft = essay.status === 'writing';
+    const wordCount = this.computeDisplayWordCount(essay);
 
     return `
       <div class="submission-card pending ${isDraft ? 'draft' : ''}">
@@ -357,7 +359,7 @@ class GradingQueue {
         <div class="submission-meta">
           <span class="meta-item">
             <i class="fas fa-font"></i>
-            ${essay.total_word_count || 0} 字
+            ${wordCount} 字
           </span>
           <span class="meta-item">
             <i class="fas fa-clock"></i>
@@ -513,6 +515,48 @@ class GradingQueue {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  /**
+   * 根據數據計算展示用字數
+   * 優先使用 essays.total_word_count；若為 0 或缺失，則從 content_json 中提取文本計算
+   */
+  computeDisplayWordCount(essay) {
+    // 與學生端頂部工具列一致：僅統計中日韓漢字數（不含標點與空白）
+    try {
+      const text = this.extractTextFromPM(essay?.content_json) || '';
+      return this.countWithoutPunct(text);
+    } catch (_) { return 0; }
+  }
+
+  /**
+   * 從 PM JSON 中提取純文本
+   */
+  extractTextFromPM(raw) {
+    try {
+      const json = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!json || typeof json !== 'object') return '';
+      const parts = [];
+      const walk = (node) => {
+        if (!node) return;
+        const type = node.type;
+        if (type === 'text') { if (node.text) parts.push(node.text); return; }
+        if (Array.isArray(node.content)) node.content.forEach(child => walk(child));
+        if (type === 'paragraph') parts.push('\n');
+      };
+      walk(json);
+      const text = parts.join('').replace(/\n{3,}/g, '\n').trim();
+      return text;
+    } catch (_) { return ''; }
+  }
+
+  /**
+   * 與學生端一致的字數統計：只計算中日韓漢字
+   */
+  countWithoutPunct(text) {
+    if (!text) return 0;
+    const matches = text.match(/[\u4E00-\u9FFF]/g);
+    return matches ? matches.length : 0;
   }
 }
 

@@ -140,7 +140,7 @@ class GradingUI {
                 
                 <!-- 將獲取按鈕移至標題下方（內容區頂部） -->
                 <div id="aiSectionContent" class="section-content">
-                  <div id="aiGetSuggestionRow" class="ai-get-row">
+                  <div id="aiGetSuggestionRow" class="ai-get-row" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:8px 0;">
                     <button id="getAISuggestionBtn" class="btn-ai-suggest">
                       <i class="fas fa-magic"></i>
                       獲取建議
