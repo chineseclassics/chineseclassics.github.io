@@ -300,6 +300,11 @@ function showLoadingState(paragraphId) {
     } else {
         // 桌面端：在側邊欄顯示
         const sidebarContent = document.getElementById('sidebar-feedback-content');
+        // 確保側欄處於「精簡模式」（未延伸到底部）
+        try {
+            const card = document.getElementById('ai-feedback-sidebar');
+            card?.classList.remove('h-[calc(100vh-5rem)]','flex','flex-col','overflow-hidden');
+        } catch (_) {}
         if (sidebarContent) {
             sidebarContent.classList.remove('hidden');
             sidebarContent.innerHTML = loadingHTML;
@@ -408,6 +413,11 @@ function showErrorState(paragraphId, errorMessage) {
     } else {
         // 桌面端：顯示在側邊欄
         const sidebarContent = document.getElementById('sidebar-feedback-content');
+        // 錯誤狀態：保持精簡高度，避免擴展到底部
+        try {
+            const card = document.getElementById('ai-feedback-sidebar');
+            card?.classList.remove('h-[calc(100vh-5rem)]','flex','flex-col','overflow-hidden');
+        } catch (_) {}
         if (sidebarContent) {
             sidebarContent.innerHTML = errorHTML;
         }

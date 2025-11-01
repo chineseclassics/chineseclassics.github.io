@@ -87,6 +87,16 @@ function renderDesktopFeedbackSidebar(paragraphId, paragraphTitle, feedback) {
     // 顯示反饋時隱藏左側提示（yucun-tip）
     try { document.querySelector('.yucun-tip')?.classList.add('hidden'); } catch (_) {}
 
+    // 顯示 AI 反饋內容時：將左側卡片延伸到底部，並啟用內部滾動
+    try {
+        const card = document.getElementById('ai-feedback-sidebar');
+        if (card) {
+            card.classList.add('h-[calc(100vh-5rem)]','flex','flex-col','overflow-hidden');
+        }
+        // 內容區域本身應可滾動
+        sidebarContent.classList.add('flex-1','min-h-0','overflow-y-auto');
+    } catch (_) {}
+
     // 構建反饋 HTML
     const feedbackHTML = buildFeedbackHTML(paragraphId, paragraphTitle, feedback);
     
