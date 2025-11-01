@@ -466,14 +466,12 @@ function renderSentenceIssuesSimple(sentenceIssues) {
  */
 function renderSuggestions(suggestions) {
     if (!suggestions || suggestions.length === 0) return '';
-    
     return `
         <div class="bg-white rounded-lg p-4 border border-gray-200">
             <h5 class="font-semibold text-gray-800 mb-3">
                 <i class="fas fa-lightbulb text-amber-600 mr-2"></i>
                 改進建議
             </h5>
-            
             <ul class="space-y-2">
                 ${suggestions.map(suggestion => `
                     <li class="flex items-start space-x-2 text-sm text-gray-700">

@@ -6,7 +6,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY') || ''
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
-const ADVISORY_NOTE = '本工具僅提供寫作建議；最終評分由 grading-agent 與教師決定'
 
 // CORS
 const corsHeaders = {
@@ -29,29 +28,26 @@ serve(async (req: any) => {
       ? body.sentences
       : splitIntoSentences(paragraph_text)
 
-    const paragraph_type: string = body.paragraph_type || 'body'
-    const paragraph_type_detailed: string = body.paragraph_type_detailed || paragraph_type
-    const paragraph_role = normalizeParagraphRole(body.paragraph_role, paragraph_type_detailed)
+    const paragraph_role = normalizeParagraphRole(
+      body.paragraph_role,
+      body.paragraph_type_detailed || body.paragraph_type || 'body'
+    )
 
-    const teacher_guidelines_text: string = body.teacher_guidelines_text || '' // 單一路徑：不截斷
-    const guideline_min_hints = body.guideline_min_hints || null
-    const traceability: boolean = typeof body.traceability === 'boolean' ? body.traceability : true
+  const teacher_guidelines_text: string = compressWhitespace(body.teacher_guidelines_text || '') // 壓縮空白，減少 token
 
   const rubric_id: string | null = body.rubric_id || null
     const rubric_mode: 'adaptive' | 'strict' = body.rubric_mode || 'adaptive'
     const rubric_selection: any = body.rubric_selection || null
 
-    console.log('📝 收到 AI 反饋請求:', { paragraph_id, role: paragraph_role?.kind || paragraph_type })
-
-    // Supabase
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+  console.log('📝 收到 AI 反饋請求:', { paragraph_id, role: paragraph_role?.kind || 'body' })
 
     // 無 API key：降級
     if (!DEEPSEEK_API_KEY) {
       const fallback = buildFallbackFeedback()
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
       await saveFeedback(supabase, paragraph_id, fallback)
       return new Response(JSON.stringify({ success: true, feedback: fallback }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -61,9 +57,8 @@ serve(async (req: any) => {
       paragraph_text,
       sentences,
       paragraph_role,
-      teacher_guidelines_text,
-      guideline_min_hints,
-      traceability,
+  teacher_guidelines_text,
+      
       rubric_id,
       rubric_mode,
       rubric_selection
@@ -74,11 +69,7 @@ serve(async (req: any) => {
 
     // 修形與保底
     aiFeedback = ensureFeedbackShape(aiFeedback)
-    try {
-      if (guideline_min_hints && Array.isArray(guideline_min_hints.forbidden_patterns)) {
-        aiFeedback = adjustForbiddenChecksToAdvisory(aiFeedback, guideline_min_hints.forbidden_patterns)
-      }
-    } catch (_) {}
+    // 已移除 forbidden checks 相關優化（不再進行命中後降級處理）
   try { if (aiFeedback && aiFeedback.guideline_alignment) delete aiFeedback.guideline_alignment.score } catch (_) {}
   try { if (aiFeedback && 'rubric_alignment' in aiFeedback) delete aiFeedback.rubric_alignment } catch (_) {}
   // 兼容舊鍵名：若模型或歷史資料殘留 structure_check，後端直接移除
@@ -95,6 +86,10 @@ serve(async (req: any) => {
     if (!aiFeedback.generated_at) aiFeedback.generated_at = new Date().toISOString()
 
     // 寫入資料庫（無回讀）
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
     await saveFeedback(supabase, paragraph_id, aiFeedback)
 
     return new Response(JSON.stringify({ success: true, feedback: aiFeedback, feedback_id: null }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -109,6 +104,10 @@ serve(async (req: any) => {
 function stripHtml(html: string): string {
   if (!html) return ''
   try { return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() } catch { return html }
+}
+
+function compressWhitespace(text: string): string {
+  try { return (text || '').replace(/\s+/g, ' ').trim() } catch { return text || '' }
 }
 
 function splitIntoSentences(text: string): string[] {
@@ -138,59 +137,72 @@ function buildDeepSeekPrompts(input: {
   sentences: string[],
   paragraph_role: { kind: string, body_index?: number | null },
   teacher_guidelines_text: string,
-  guideline_min_hints?: any,
-  traceability: boolean,
   rubric_id?: string | null,
   rubric_mode: 'adaptive' | 'strict',
   rubric_selection?: any
 }) {
-  const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, guideline_min_hints, traceability, rubric_id, rubric_mode, rubric_selection } = input
+  const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, rubric_id, rubric_mode, rubric_selection } = input
 
-  const systemPrompt = `你是該課老師的分身，所有評議以老師指引為最高準則；使用繁體中文；不提供具體改寫句。\n\n【嚴格輸出要求】\n- 僅輸出 JSON；不要任何多餘文字或 Markdown；不要使用代碼塊。\n- 嚴禁發明老師未要求的硬性規則；如無明確形式規定，形式建議以 suggestions_form 提供並標註為建議。\n- 使用 sentences[] 的編號進行句子對位；若啟用 traceability，請引用 1–3 句老師指引片段支撐主要評議。\n- 根據 paragraph_role.kind（introduction/body/conclusion）與（若為 body）body_index 調整判斷重點：\n  • introduction：主題句/提出總主張、鋪陳背景或議題定位、避免過早細讀。\n  • body：段首主題句→引用原文→緊跟細讀→段尾回扣主張（本課標準流程）。\n  • conclusion：總結收束、提升/回扣總主張、避免引入全新論點。\n  若與老師文本衝突，仍以老師文本優先。\n- 若提供 rubric（或 rubric_selection），僅作參考：請從 rubric 的「最高成績水平」描述中抽取 2–4 條與本段最相關的要點，轉為 suggestions_form 的 [Rubric-*] 建議項；不要輸出任何 rubric_alignment 或分數；若與老師文本衝突，仍以老師文本優先。\n- 對模糊判定進行最小 tiebreaker：先用 yes/no 做判斷並給出 0–1 的 confidence。\n- 若 guideline_min_hints.forbidden_patterns 存在，僅作建議（source:\"ai_default\"），不作硬性判斷或量化分數；並附上固定提醒：\"本工具僅提供寫作建議；最終評分由 grading-agent 與教師決定\"。\n- 輸出收斂：overall_comment 不超過 120 字；sentence_notes 最多 3 條；guideline_alignment.checks 最多 6 條（優先教師要點）。`
+  const systemPrompt = `你是該課老師的分身；使用繁體中文；僅輸出純 JSON（無 Markdown/額外文字）；不提供具體改寫句。\n\n【嚴格要求】\n- 僅使用指定鍵名；不得新增鍵。\n- 不發明老師未要求的硬性規則；形式建議放在 suggestions_form。\n- 依 paragraph_role.kind 調整重點：intro=主張定位；body=主題句→引用→細讀→回扣；conclusion=總結與提升。\n- 若提供 rubric：僅從最高等級抽 2–4 條轉為 [Rubric-*] 建議；不輸出 rubric_alignment 或分數；與老師文本衝突時以老師為準。\n- suggestions_form 必須為「純字串陣列」，每一項是一句可執行的建議；若來自 rubric 最高等級，需以 [Rubric-*] 為前綴。\n- 輸出收斂：overall_comment ≤120字；sentence_notes ≤3；guideline_alignment.checks ≤6。\n- confidence 僅在 status 為 not_met/partially_met 時輸出（0–1）。`
 
   const material = {
     paragraph_text,
     sentences,
     paragraph_role,
     teacher_guidelines_text,
-    guideline_min_hints: guideline_min_hints || undefined,
-    traceability,
-    rubric: rubric_selection ? { selection: rubric_selection, mode: rubric_mode } : (rubric_id ? { rubric_id, mode: rubric_mode } : undefined),
-    rubric_mode,
-    rubric_selection: rubric_selection || undefined
+    rubric: rubric_selection ? { selection: rubric_selection, mode: rubric_mode } : (rubric_id ? { rubric_id, mode: rubric_mode } : undefined)
   }
 
-  const userPrompt = `【材料】\n${JSON.stringify(material, null, 2)}\n\n【輸出契約（必須完全匹配鍵名）】\n{\n  \"overall_comment\": string,\n  \"sentence_notes\": Array<{ \"sentence_number\": number, \"comment\": string, \"severity\"?: \"major\"|\"minor\" }>,\n  \"guideline_alignment\": {\n    \"checks\": Array<{ \"name\": string, \"status\": \"met\"|\"partially_met\"|\"not_met\"|\"not_applicable\", \"source\": \"teacher\"|\"ai_default\", \"confidence\"?: number }>\n  },\n  \"suggestions_form\"?: string[],\n  \"assumptions\"?: string[],\n  \"severity_level\"?: \"critical\"|\"major\"|\"moderate\"|\"minor\",\n  \"generated_at\": string\n}`
+  const userPrompt = `【材料】\n${JSON.stringify(material)}\n\n【輸出契約（鍵名固定，值僅示意）】\n{\n\"overall_comment\":\"\",\n\"sentence_notes\":[{\"sentence_number\":1,\"comment\":\"\",\"severity\":\"major\"}],\n\"guideline_alignment\":{\"checks\":[{\"name\":\"\",\"status\":\"met\",\"source\":\"teacher\"}]},\n\"suggestions_form\":[\"[Rubric-示例] 聚焦主題句清晰\", \"以動詞開頭，提出可執行的修改\"],\n\"severity_level\":\"minor\",\n\"generated_at\":\"\"\n}`
 
   return { systemPrompt, userPrompt }
 }
 
 async function callDeepSeekForFeedback(systemPrompt: string, userPrompt: string) {
-  const resp = await fetch(DEEPSEEK_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.2,
-      max_tokens: 1200,
-      response_format: { type: 'json_object' }
-    })
-  })
-
-  if (!resp.ok) {
-    const t = await resp.text()
-    throw new Error(`DeepSeek 調用失敗：${resp.status} ${t}`)
+  const attempt = async (maxTokens: number, timeoutMs: number) => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const resp = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.2,
+          max_tokens: maxTokens,
+          response_format: { type: 'json_object' }
+        }),
+        signal: controller.signal
+      })
+      if (!resp.ok) {
+        const t = await resp.text()
+        throw new Error(`DeepSeek 調用失敗：${resp.status} ${t}`)
+      }
+      const data = await resp.json()
+      const content = data?.choices?.[0]?.message?.content || ''
+      return extractJSONStrict(content)
+    } finally {
+      clearTimeout(timeout)
+    }
   }
-  const data = await resp.json()
-  const content = data?.choices?.[0]?.message?.content || ''
-  return extractJSONStrict(content)
+
+  try {
+    return await attempt(1200, 30000)
+  } catch (err: any) {
+    const msg = String(err?.message || err)
+    if (msg.includes('AbortError')) {
+      // 超時降級重試：減少 max_tokens 以縮短回應
+      return await attempt(900, 30000)
+    }
+    throw err
+  }
 }
 
 function extractJSONStrict(text: string): any {
@@ -217,9 +229,7 @@ function buildFallbackFeedback() {
     overall_comment: '系統暫時無法連線至 AI 服務。請稍後重試。',
     sentence_notes: [],
     guideline_alignment: {
-      checks: [],
-      rationale_snippets: [],
-      notes: ['離線模式']
+      checks: []
     },
     severity_level: 'minor',
     generated_at: new Date().toISOString()
@@ -249,6 +259,7 @@ function ensureFeedbackShape(fb: any) {
         comment: typeof n.comment === 'string' ? sanitizeSentenceComment(n.comment) : '',
         severity: n.severity === 'major' ? 'major' : (n.severity === 'minor' ? 'minor' : undefined)
       }))
+      .slice(0, 3)
   }
   // guideline_alignment
   if (typeof feedback.guideline_alignment !== 'object' || !feedback.guideline_alignment) {
@@ -258,20 +269,24 @@ function ensureFeedbackShape(fb: any) {
     if (!Array.isArray(ga.checks)) ga.checks = []
     ga.checks = ga.checks
       .filter((c: any) => c && typeof c === 'object')
-      .map((c: any) => ({
-        name: typeof c.name === 'string' ? c.name : '未命名要點',
-        status: ['met','partially_met','not_met','not_applicable'].includes(c.status) ? c.status : 'not_applicable',
-        source: c.source === 'teacher' ? 'teacher' : 'ai_default',
-        confidence: typeof c.confidence === 'number' ? Math.max(0, Math.min(1, c.confidence)) : undefined
-      }))
+      .map((c: any) => {
+        const status = ['met','partially_met','not_met','not_applicable'].includes(c.status) ? c.status : 'not_applicable'
+        const confRaw = typeof c.confidence === 'number' ? Math.max(0, Math.min(1, c.confidence)) : undefined
+        const confidence = (status === 'not_met' || status === 'partially_met') ? confRaw : undefined
+        return {
+          name: typeof c.name === 'string' ? c.name : '未命名要點',
+          status,
+          source: c.source === 'teacher' ? 'teacher' : 'ai_default',
+          confidence
+        }
+      })
     if (!Array.isArray(ga.rationale_snippets)) ga.rationale_snippets = []
     if (!Array.isArray(ga.notes)) ga.notes = []
-    // 附加「僅作建議」的固定說明
-    try {
-      if (!ga.notes.includes(ADVISORY_NOTE)) ga.notes.push(ADVISORY_NOTE)
-    } catch (_) {}
+    // 移除舊版固定免責說明邏輯（不再向 notes 自動附加提醒）。
     // 刪除任何殘留的分數欄位
     try { if ('score' in ga) delete ga.score } catch (_) {}
+    // 硬性裁切 checks 數量，與提示一致
+    if (Array.isArray(ga.checks)) ga.checks = ga.checks.slice(0, 6)
   }
   // rubric_alignment（可選）
   if (feedback.rubric_alignment && typeof feedback.rubric_alignment === 'object') {
@@ -279,36 +294,34 @@ function ensureFeedbackShape(fb: any) {
     try { delete feedback.rubric_alignment } catch (_) {}
   }
   // suggestions_form / assumptions
-  if (feedback.suggestions_form && !Array.isArray(feedback.suggestions_form)) feedback.suggestions_form = []
-  if (feedback.assumptions && !Array.isArray(feedback.assumptions)) feedback.assumptions = []
+  if (!Array.isArray(feedback.suggestions_form)) {
+    feedback.suggestions_form = []
+  } else {
+    feedback.suggestions_form = feedback.suggestions_form
+      .map((s: any) => {
+        if (typeof s === 'string') return s.trim()
+        if (s && typeof s === 'object') {
+          // 盡量提取人類可讀文字欄位
+          const cand = [s.description, s.text, s.title]
+            .find((v: any) => typeof v === 'string' && v.trim().length > 0)
+          return cand ? String(cand).trim() : ''
+        }
+        return ''
+      })
+      .filter((t: string) => t.length > 0)
+  }
+  // 前端不使用 assumptions：若存在則移除
+  try { if (feedback && 'assumptions' in feedback) delete feedback.assumptions } catch (_) {}
   // generated_at
   if (typeof feedback.generated_at !== 'string') feedback.generated_at = new Date().toISOString()
   // severity_level（可選）
-  if (feedback.severity_level && !['critical','major','moderate','minor'].includes(feedback.severity_level)) {
+  if (feedback.severity_level && !['critical','major','moderate','minor','ready'].includes(feedback.severity_level)) {
     delete feedback.severity_level
   }
   return feedback
 }
 
-/**
- * adjustForbiddenChecksToAdvisory：將命中 forbidden_patterns 的檢查強制標為 ai_default（建議，不計分）。
- */
-function adjustForbiddenChecksToAdvisory(fb: any, patterns: string[]) {
-  if (!fb || !fb.guideline_alignment || !Array.isArray(fb.guideline_alignment.checks)) return fb
-  const pats = (patterns || []).filter((p: any) => typeof p === 'string' && p.trim().length > 0)
-  if (pats.length === 0) return fb
-  try {
-    fb.guideline_alignment.checks = fb.guideline_alignment.checks.map((c: any) => {
-      const name = (c?.name ?? '').toString()
-      const hit = pats.some(p => name.includes(p))
-      if (hit) {
-        return { ...c, source: 'ai_default' }
-      }
-      return c
-    })
-  } catch (_) {}
-  return fb
-}
+// 已移除 adjustForbiddenChecksToAdvisory：不再進行 forbidden patterns 降級處理
 
 //（feedback 秉持「僅提供建議」：不做任何分數計算或輸出）
 
