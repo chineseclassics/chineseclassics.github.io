@@ -131,8 +131,7 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 8.2 嘗試獲取老師指引與評分勾選（若前端有配置）
         const teacherGuidelinesText = (AppState?.teacherGuidelinesText || AppState?.assignment?.teacher_guidelines_text || '').trim() || null;
         const rubricSelection = AppState?.rubricSelection || null; // { rubric_id, selected_criteria: [...] }
-        const rubricMode = AppState?.rubricMode || 'adaptive';
-        const strictnessHint = AppState?.strictnessHint || 'adaptive';
+    const rubricMode = AppState?.rubricMode || 'adaptive';
         const traceability = (AppState?.traceability === false) ? false : true;
 
         // 9. 調用 Edge Function（新版契約 + 相容字段）
@@ -154,7 +153,6 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
                 sentences: sentences || null,
                 // 老師指引與 rubric（若有）
                 teacher_guidelines_text: teacherGuidelinesText,
-                strictness_hint: strictnessHint,
                 traceability: traceability,
                 rubric_selection: rubricSelection,
                 rubric_mode: rubricMode,

@@ -6,6 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY') || ''
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
+const ADVISORY_NOTE = '本分數僅作為建議，最終評分由 grading-agent 與教師決定'
 
 // CORS headers
 const corsHeaders = {
@@ -36,7 +37,8 @@ serve(async (req: any) => {
 
     const teacher_guidelines_text: string = body.teacher_guidelines_text || ''
     const guideline_min_hints = body.guideline_min_hints || null
-    const strictness_hint: 'adaptive' | 'strict' = body.strictness_hint || 'adaptive'
+  // 嚴格度設置（已廢棄）：即使前端傳入也忽略，保持建議定位
+  const strictness_hint: 'adaptive' | 'strict' = 'adaptive'
     const traceability: boolean = typeof body.traceability === 'boolean' ? body.traceability : true
 
     const rubric_id: string | null = body.rubric_id || null
@@ -69,7 +71,6 @@ serve(async (req: any) => {
       paragraph_role,
       teacher_guidelines_text,
       guideline_min_hints,
-      strictness_hint,
       traceability,
       rubric_id,
       rubric_definition,
@@ -80,8 +81,15 @@ serve(async (req: any) => {
     // 調用 DeepSeek 取得 JSON 反饋
   let aiFeedback = await callDeepSeekForFeedback(systemPrompt, userPrompt)
 
-  // 保底：修正/補齊欄位並重計分（僅 teacher 來源）
+  // 保底：修正/補齊欄位
   aiFeedback = ensureFeedbackShape(aiFeedback)
+  // 額外收斂：任何 forbidden_patterns 僅作建議 → 強制標為 ai_default
+  try {
+    if (guideline_min_hints && Array.isArray(guideline_min_hints.forbidden_patterns)) {
+      aiFeedback = adjustForbiddenChecksToAdvisory(aiFeedback, guideline_min_hints.forbidden_patterns)
+    }
+  } catch (_) {}
+  // 重計分（僅 teacher 來源）
   aiFeedback.guideline_alignment.score = recomputeGuidelineScore(aiFeedback.guideline_alignment)
 
     // 注入時間戳（若模型未返回）
@@ -139,16 +147,15 @@ function buildDeepSeekPrompts(input: {
   paragraph_role: { kind: string, body_index?: number | null },
   teacher_guidelines_text: string,
   guideline_min_hints?: any,
-  strictness_hint: 'adaptive' | 'strict',
   traceability: boolean,
   rubric_id?: string | null,
   rubric_definition?: any,
   rubric_mode: 'adaptive' | 'strict',
   rubric_selection?: any
 }) {
-  const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, guideline_min_hints, strictness_hint, traceability, rubric_id, rubric_definition, rubric_mode, rubric_selection } = input
+  const { paragraph_text, sentences, paragraph_role, teacher_guidelines_text, guideline_min_hints, traceability, rubric_id, rubric_definition, rubric_mode, rubric_selection } = input
 
-  const systemPrompt = `你是該課老師的分身，所有評議以老師指引為最高準則；使用繁體中文；不提供具體改寫句。\n\n【嚴格輸出要求】\n- 僅輸出 JSON；不要任何多餘文字或 Markdown；不要使用代碼塊。\n- 嚴禁發明老師未要求的硬性規則；如無明確形式規定，形式建議以 suggestions_form 提供並標註為建議。\n- 使用 sentences[] 的編號進行句子對位；若啟用 traceability，請引用 1–3 句老師指引片段支撐主要評議。\n- 若提供 rubric_selection 或 rubric，請以老師在作業中勾選的 selected_criteria 為主進行全面對齊（不限於結構），對 paragraph/essay 範圍分別給出 criteria.status 或 paragraph_contribution；按 rubric_mode 呈現建議性或可選計分的對齊結果；若與老師文本衝突，仍以老師文本優先並於 notes 中說明。\n- 對模糊判定（尤其來自老師指引的可適用要點）進行最小 tiebreaker：先用 yes/no 做判斷並給出 0–1 的 confidence。`
+  const systemPrompt = `你是該課老師的分身，所有評議以老師指引為最高準則；使用繁體中文；不提供具體改寫句。\n\n【嚴格輸出要求】\n- 僅輸出 JSON；不要任何多餘文字或 Markdown；不要使用代碼塊。\n- 嚴禁發明老師未要求的硬性規則；如無明確形式規定，形式建議以 suggestions_form 提供並標註為建議。\n- 使用 sentences[] 的編號進行句子對位；若啟用 traceability，請引用 1–3 句老師指引片段支撐主要評議。\n- 若提供 rubric_selection 或 rubric，請以老師在作業中勾選的 selected_criteria 為主進行全面對齊（不限於結構），對 paragraph/essay 範圍分別給出 criteria.status 或 paragraph_contribution；按 rubric_mode 呈現建議性或可選計分的對齊結果；若與老師文本衝突，仍以老師文本優先並於 notes 中說明。\n- 對模糊判定（尤其來自老師指引的可適用要點）進行最小 tiebreaker：先用 yes/no 做判斷並給出 0–1 的 confidence。\n- 若 guideline_min_hints.forbidden_patterns 存在，僅作建議（source:"ai_default"），不納入計分；請避免將其視為老師明確規定。並在 guideline_alignment.notes 中提醒："本分數僅作為建議，最終評分由 grading-agent 與教師決定"。`
 
   // 用戶材料與輸出契約（標明鍵名）
   const material = {
@@ -157,7 +164,6 @@ function buildDeepSeekPrompts(input: {
     paragraph_role,
     teacher_guidelines_text,
     guideline_min_hints: guideline_min_hints || undefined,
-    strictness_hint,
     traceability,
     rubric: rubric_definition || rubric_id || undefined,
     rubric_mode,
@@ -169,7 +175,7 @@ function buildDeepSeekPrompts(input: {
   return { systemPrompt, userPrompt }
 }
 
-async function callDeepSeekForFeedback(systemPrompt: string, userPrompt: string): Promise<any> {
+async function callDeepSeekForFeedback(systemPrompt: string, userPrompt: string) {
   const resp = await fetch(DEEPSEEK_API_URL, {
     method: 'POST',
     headers: {
@@ -197,6 +203,7 @@ async function callDeepSeekForFeedback(systemPrompt: string, userPrompt: string)
 
   return extractJSONStrict(content)
 }
+ 
 
 function extractJSONStrict(text: string): any {
   const s = (text || '').trim()
@@ -283,6 +290,10 @@ function ensureFeedbackShape(fb: any) {
       }))
     if (!Array.isArray(ga.rationale_snippets)) ga.rationale_snippets = []
     if (!Array.isArray(ga.notes)) ga.notes = []
+    // 附加「僅作建議」的固定說明
+    try {
+      if (!ga.notes.includes(ADVISORY_NOTE)) ga.notes.push(ADVISORY_NOTE)
+    } catch (_) {}
     if (typeof ga.score !== 'number') ga.score = 0
   }
   // rubric_alignment（可選）
@@ -302,6 +313,26 @@ function ensureFeedbackShape(fb: any) {
     delete feedback.severity_level
   }
   return feedback
+}
+
+/**
+ * adjustForbiddenChecksToAdvisory：將命中 forbidden_patterns 的檢查強制標為 ai_default（建議，不計分）。
+ */
+function adjustForbiddenChecksToAdvisory(fb: any, patterns: string[]) {
+  if (!fb || !fb.guideline_alignment || !Array.isArray(fb.guideline_alignment.checks)) return fb
+  const pats = (patterns || []).filter((p: any) => typeof p === 'string' && p.trim().length > 0)
+  if (pats.length === 0) return fb
+  try {
+    fb.guideline_alignment.checks = fb.guideline_alignment.checks.map((c: any) => {
+      const name = (c?.name ?? '').toString()
+      const hit = pats.some(p => name.includes(p))
+      if (hit) {
+        return { ...c, source: 'ai_default' }
+      }
+      return c
+    })
+  } catch (_) {}
+  return fb
 }
 
 /**

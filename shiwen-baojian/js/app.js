@@ -50,12 +50,10 @@ const AppState = {
     // - rubricSelection：老師在此作業使用的評分準則之「已選細項」
     //    結構示例：{ rubric_id: string, selected_criteria: [{ id: string, required?: boolean, weight?: number|null, scope?: 'paragraph'|'essay' }] }
     // - rubricMode：'adaptive' | 'strict'（AI 對 rubric 的使用方式；預設採用建議模式）
-    // - strictnessHint：'adaptive' | 'strict'（AI 對老師指引的嚴格度提示；預設建議）
     // - traceability：是否要求 AI 產生可追溯的依據片段（預設 true）
     teacherGuidelinesText: null,
     rubricSelection: null,
     rubricMode: 'adaptive',
-    strictnessHint: 'adaptive',
     traceability: true,
 
     // 可選：保留當前作業完整資料，方便其他模組使用
@@ -629,17 +627,12 @@ async function initializeStudentModules() {
         // ✅ 同步清理 AI 反饋的上游來源狀態（避免殘留影響新任務）
         AppState.teacherGuidelinesText = null;
         AppState.rubricSelection = null;
-        AppState.rubricMode = 'adaptive';
-        AppState.strictnessHint = 'adaptive';
+    AppState.rubricMode = 'adaptive';
         AppState.traceability = true;
         AppState.assignment = null;
 
         // 🧩 載入本機偏好（AI 反饋設定）
         try {
-            const savedStrictness = localStorage.getItem('shiwb.ai.strictnessHint');
-            if (savedStrictness === 'strict' || savedStrictness === 'adaptive') {
-                AppState.strictnessHint = savedStrictness;
-            }
             const savedRubricMode = localStorage.getItem('shiwb.ai.rubricMode');
             if (savedRubricMode === 'strict' || savedRubricMode === 'adaptive') {
                 AppState.rubricMode = savedRubricMode;
@@ -980,17 +973,8 @@ async function showEssayEditor(assignmentId = null, mode = null, formatTemplate 
 
         // 🧩 綁定 AI 反饋設定面板（若存在）
         try {
-            const strictSel = document.getElementById('ai-strictness-hint');
             const rubricSel = document.getElementById('ai-rubric-mode');
             const traceChk = document.getElementById('ai-traceability');
-            if (strictSel) {
-                strictSel.value = AppState.strictnessHint || 'adaptive';
-                strictSel.addEventListener('change', () => {
-                    const v = strictSel.value === 'strict' ? 'strict' : 'adaptive';
-                    AppState.strictnessHint = v;
-                    localStorage.setItem('shiwb.ai.strictnessHint', v);
-                });
-            }
             if (rubricSel) {
                 rubricSel.value = AppState.rubricMode || 'adaptive';
                 rubricSel.addEventListener('change', () => {
