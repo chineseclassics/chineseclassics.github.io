@@ -287,54 +287,62 @@ function renderOverallComment(text) {
 
 function renderGuidelineAlignment(g) {
     if (!g) return '';
-    // 向後相容：若是舊的 structure_check，轉為簡化顯示
-    if (g && typeof g === 'object' && 'completeness' in g) {
-        const completeness = g.completeness || 0;
-        const missing = g.missing_elements || [];
+    // 抽象出整體評估：優先用數值；若無數值，依 checks 狀態推斷等級與條形寬度
+    const computeOverall = (obj) => {
+        if (!obj || typeof obj !== 'object') return { score: null, width: 0, tier: 'na', label: '資料不足' };
+        // 1) 直接數值（新版 score 或舊版 completeness）
+        const n = (typeof obj.score === 'number') ? obj.score
+                : (typeof obj.completeness === 'number') ? obj.completeness
+                : null;
+        if (n !== null) {
+            const score = Math.max(0, Math.min(100, Math.round(n)));
+            let tier = 'low', label = '需要改進';
+            if (score >= 80) { tier = 'high'; label = '對齊良好'; }
+            else if (score >= 50) { tier = 'mid'; label = '部分對齊'; }
+            return { score, width: score, tier, label };
+        }
+        // 2) 無數值：用 checks 估算
+        const checks = Array.isArray(obj.checks) ? obj.checks : [];
+        const valid = checks.filter(c => ['met','partially_met','not_met'].includes(c?.status));
+        const total = valid.length;
+        if (total === 0) return { score: null, width: 0, tier: 'na', label: '資料不足' };
+        const met = valid.filter(c => c.status === 'met').length;
+        const partial = valid.filter(c => c.status === 'partially_met').length;
+        const ratioMet = met / total;
+        const ratioMetOrPartial = (met + partial) / total;
+        let tier = 'low', label = '需要改進', width = 35;
+        if (ratioMet >= 0.7) { tier = 'high'; label = '對齊良好'; width = 85; }
+        else if (ratioMetOrPartial >= 0.5) { tier = 'mid'; label = '部分對齊'; width = 65; }
+        return { score: null, width, tier, label };
+    };
+
+    const ov = computeOverall(g);
+    const styleByTier = (tier) => tier === 'high'
+      ? { bar: 'bg-emerald-500', text: 'text-emerald-700', ring: 'ring-emerald-200' }
+      : tier === 'mid'
+      ? { bar: 'bg-amber-500', text: 'text-amber-700', ring: 'ring-amber-200' }
+      : tier === 'na'
+      ? { bar: 'bg-gray-300', text: 'text-gray-600', ring: 'ring-gray-200' }
+      : { bar: 'bg-rose-500', text: 'text-rose-700', ring: 'ring-rose-200' };
+    const S = { ...styleByTier(ov.tier), label: ov.label, score: ov.score, width: ov.width };
+
         return `
-        <div class="bg-white rounded-lg p-4 border border-gray-200">
-            <div class="flex items-center justify-between mb-3">
-                <h5 class="font-semibold text-gray-800">
-                    <i class="fas fa-check-square text-stone-600 mr-2"></i>
-                    指引對齊度（舊版資料映射）
-                </h5>
-                <div class="text-2xl font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">${completeness}%</div>
-            </div>
-            ${missing.length > 0 ? `<div class="text-xs text-rose-700">缺少：${missing.join('、')}</div>` : ''}
-        </div>`;
-    }
-    const score = g.score || 0;
-    const checks = Array.isArray(g.checks) ? g.checks : [];
-    const snippets = Array.isArray(g.rationale_snippets) ? g.rationale_snippets : [];
-    return `
-        <div class="bg-white rounded-lg p-4 border border-gray-200">
-            <div class="flex items-center justify-between mb-3">
-                <h5 class="font-semibold text-gray-800">
-                    <i class="fas fa-check-square text-stone-600 mr-2"></i>
-                    指引對齊度（guideline_alignment）
-                </h5>
-                <div class="text-2xl font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</div>
-            </div>
-            ${checks.length > 0 ? `
-            <div class="space-y-2">
-              ${checks.map(c => `
-                <div class="flex items-start gap-2 text-sm">
-                  <span class="px-2 py-0.5 rounded text-xs ${c.source === 'teacher' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}">${c.source}</span>
-                  <span class="font-medium ${c.status === 'met' ? 'text-emerald-700' : c.status === 'partially_met' ? 'text-amber-700' : c.status === 'not_met' ? 'text-rose-700' : 'text-gray-700'}">${c.status}</span>
-                  <span class="text-gray-800">${c.name}</span>
+            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                <div class="flex items-center justify-between mb-2">
+                    <h5 class="font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-check-square text-stone-600 mr-2"></i>
+                        指引對齊度
+                    </h5>
+                    <!-- 不顯示數字分數，只保留整體狀態與色條 -->
                 </div>
-              `).join('')}
-            </div>` : ''}
-            ${snippets.length > 0 ? `
-              <div class="mt-3 text-xs text-gray-600">
-                <div class="font-semibold mb-1">依據片段：</div>
-                <ul class="list-disc list-inside space-y-1">
-                  ${snippets.map(s => `<li>${s}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
-        </div>
-    `;
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium ${S.text} px-2 py-0.5 rounded-full ring-1 ${S.ring}">${S.label}</span>
+                    <div class="flex-1 ml-3 h-2 bg-gray-200 rounded-full overflow-hidden" aria-label="alignment-score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${S.width}">
+                        <div class="h-full ${S.bar} transition-all duration-500" style="width:${S.width}%"></div>
+                    </div>
+                </div>
+            </div>
+        `;
 }
 
 function renderRubricAlignment(r) {
@@ -752,25 +760,39 @@ function formatTimestamp(timestamp) {
  */
 function renderGuidelineAlignmentSimple(g) {
     if (!g) return '';
-    if (g && 'completeness' in g) {
-        const completeness = g.completeness || 0;
+        const overall = (() => {
+            if (typeof g.score === 'number' || typeof g.completeness === 'number') {
+                const v = Math.max(0, Math.min(100, Math.round((g.score ?? g.completeness) || 0)));
+                let label = '需要改進', bar='bg-rose-500', text='text-rose-700';
+                if (v >= 80) { label = '對齊良好'; bar='bg-emerald-500'; text='text-emerald-700'; }
+                else if (v >= 50) { label = '部分對齊'; bar='bg-amber-500'; text='text-amber-700'; }
+                return { score: null, width: v, label, bar, text };
+            }
+            const checks = Array.isArray(g.checks) ? g.checks : [];
+            const valid = checks.filter(c => ['met','partially_met','not_met'].includes(c?.status));
+            const total = valid.length;
+            if (total === 0) return { score: null, width: 0, label: '資料不足', bar:'bg-gray-300', text:'text-gray-600' };
+            const met = valid.filter(c => c.status==='met').length;
+            const partial = valid.filter(c => c.status==='partially_met').length;
+            const ratioMet = met/total, ratioMP = (met+partial)/total;
+            if (ratioMet >= 0.7) return { score: null, width: 85, label:'對齊良好', bar:'bg-emerald-500', text:'text-emerald-700' };
+            if (ratioMP >= 0.5) return { score: null, width: 65, label:'部分對齊', bar:'bg-amber-500', text:'text-amber-700' };
+            return { score: null, width: 35, label:'需要改進', bar:'bg-rose-500', text:'text-rose-700' };
+        })();
         return `
-        <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
-                <span class="text-lg font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">${completeness}%</span>
+            <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
+                    <!-- 移動端亦不顯示數字分數 -->
+                </div>
+                <div class="flex items-center">
+                    <span class="text-xs ${overall.text} mr-2">${overall.label}</span>
+                    <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full ${overall.bar} transition-all duration-500" style="width:${overall.width}%"></div>
+                    </div>
+                </div>
             </div>
-        </div>`;
-    }
-    const score = g.score || 0;
-    return `
-        <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
-                <span class="text-lg font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</span>
-            </div>
-        </div>
-    `;
+        `;
 }
 
 /**
