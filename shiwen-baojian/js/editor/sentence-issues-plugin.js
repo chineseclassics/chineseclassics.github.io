@@ -71,9 +71,9 @@ export function createSentenceIssuesPlugin() {
     key: sentenceIssuesKey,
     state: {
       init: (_cfg, state) => buildDecos(state, store),
-      apply: (tr, set) => {
+      apply: (tr, set, _oldState, newState) => {
         if (tr.docChanged || tr.getMeta(sentenceIssuesKey) === 'refresh') {
-          return buildDecos(tr.state, store);
+          return buildDecos(newState, store);
         }
         return set.map(tr.mapping, tr.doc);
       }
