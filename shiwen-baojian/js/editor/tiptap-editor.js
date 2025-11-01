@@ -220,17 +220,7 @@ export class PMEditor {
             });
             return DecorationSet.create(doc, decos);
           };
-          try {
-            if (!state || !state.doc) {
-              // 極端情況下回退到最小文檔，避免初始化期的空引用
-              const fallbackDoc = baseSchema.node('doc', null, [baseSchema.node('paragraph')]);
-              return DecorationSet.create(fallbackDoc, []);
-            }
-            return safeBuild(state.doc);
-          } catch (_) {
-            const fallbackDoc = baseSchema.node('doc', null, [baseSchema.node('paragraph')]);
-            return DecorationSet.create(fallbackDoc, []);
-          }
+          try { if (!state || !state.doc) return DecorationSet.empty; return safeBuild(state.doc); } catch (_) { return DecorationSet.empty; }
         },
         apply: (tr, set, _old, state) => {
           if (!tr.docChanged && tr.getMeta(paraLabelKey) !== 'refresh') return set;

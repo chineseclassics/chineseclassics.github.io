@@ -84,32 +84,16 @@ function renderDesktopFeedbackSidebar(paragraphId, paragraphTitle, feedback) {
         return;
     }
     
+    // 顯示反饋時隱藏左側提示（yucun-tip）
+    try { document.querySelector('.yucun-tip')?.classList.add('hidden'); } catch (_) {}
+
     // 構建反饋 HTML
     const feedbackHTML = buildFeedbackHTML(paragraphId, paragraphTitle, feedback);
     
     // 渲染到側邊欄並顯示（若初始隱藏）
     sidebarContent.classList.remove('hidden');
-    sidebarContent.innerHTML = `
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-sm text-gray-600">
-          <i class="fas fa-robot mr-1 text-stone-600"></i>
-          針對段落：${paragraphTitle}
-        </div>
-        <button id="collapse-feedback-panel" class="text-gray-600 hover:text-stone-900 hover:bg-stone-100 rounded px-2 py-1 text-xs">
-          <i class="fas fa-chevron-up mr-1"></i>收合
-        </button>
-      </div>
-      ${feedbackHTML}
-    `;
-
-    // 收合事件
-    const collapseBtn = document.getElementById('collapse-feedback-panel');
-    if (collapseBtn) {
-      collapseBtn.addEventListener('click', () => {
-        sidebarContent.classList.add('hidden');
-        sidebarContent.innerHTML = '';
-      });
-    }
+        // 精簡：移除「針對段落」與收合區塊，直接顯示從「總體反饋」開始的內容
+        sidebarContent.innerHTML = `${feedbackHTML}`;
 
     // 滾動到側邊欄頂部
     sidebarContent.scrollTop = 0;
@@ -128,6 +112,9 @@ function renderMobileInlineFeedback(paragraphId, paragraphTitle, feedback) {
         return;
     }
     
+    // 顯示反饋時隱藏左側提示（yucun-tip）
+    try { document.querySelector('.yucun-tip')?.classList.add('hidden'); } catch (_) {}
+
     // 查找或創建反饋容器
     let feedbackContainer = paragraphElement.querySelector('.inline-feedback-container');
     
@@ -137,30 +124,14 @@ function renderMobileInlineFeedback(paragraphId, paragraphTitle, feedback) {
         paragraphElement.appendChild(feedbackContainer);
     }
     
-    // 構建反饋 HTML（帶收起功能）
+    // 構建精簡反饋 HTML：移除標題欄，直接從「總體反饋」開始顯示
     const feedbackHTML = `
-        <div class="bg-gradient-to-r from-stone-100 to-stone-200 border-2 border-stone-400 rounded-lg p-1 mb-4 animate-slide-down">
-            <!-- 視覺連接線 -->
-            <div class="flex justify-center -mt-3">
-                <div class="w-0.5 h-3 bg-stone-400"></div>
-            </div>
-            
-            <!-- 反饋標題欄 -->
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-t flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-robot"></i>
-                    <span class="font-semibold text-sm">針對上方「${paragraphTitle}」的 AI 反饋</span>
-                </div>
-                <button onclick="this.closest('.inline-feedback-container').remove()" 
-                        class="text-white hover:bg-white hover:bg-opacity-20 p-1 rounded transition-colors">
-                    <i class="fas fa-times text-sm"></i>
-                </button>
-            </div>
-            
-            <!-- 反饋內容 -->
-            <div class="bg-white p-4 rounded-b">
-                ${buildSimpleFeedbackHTML(feedback)}
-            </div>
+        <div class="bg-white border border-stone-300 rounded-lg p-4 mb-4 animate-slide-down relative">
+            <button title="關閉" onclick="(function(btn){ const c=btn.closest('.inline-feedback-container'); if(c) c.remove(); const tip=document.querySelector('.yucun-tip'); if(tip) tip.classList.remove('hidden'); })(this)" 
+                    class="absolute right-2 top-2 text-stone-500 hover:text-stone-800 p-1 rounded">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+            ${buildSimpleFeedbackHTML(feedback)}
         </div>
     `;
     
@@ -177,19 +148,6 @@ function renderMobileInlineFeedback(paragraphId, paragraphTitle, feedback) {
  */
 function buildFeedbackHTML(paragraphId, paragraphTitle, feedback) {
     return `
-        <!-- 當前段落標識 -->
-        <div class="bg-stone-50 border border-stone-300 rounded-lg p-3 mb-4">
-            <div class="flex items-center space-x-2 text-stone-800">
-                <i class="fas fa-file-alt text-sm"></i>
-                <span class="text-sm font-semibold">${paragraphTitle}</span>
-            </div>
-        </div>
-        
-        <!-- 嚴重程度徽章 -->
-        <div class="mb-4">
-            ${renderSeverityBadge(feedback.severity_level)}
-        </div>
-
         <!-- 總體評語 -->
         ${renderOverallComment(feedback.overall_comment)}
 
@@ -298,13 +256,6 @@ function renderSeverityBadge(severity) {
             bgColor: 'bg-emerald-100',
             textColor: 'text-emerald-800',
             borderColor: 'border-emerald-400'
-        },
-        ready: {
-            label: '基本達成',
-            icon: 'fas fa-check-circle',
-            bgColor: 'bg-emerald-100',
-            textColor: 'text-emerald-800',
-            borderColor: 'border-emerald-400'
         }
     };
     
@@ -338,43 +289,52 @@ function renderGuidelineAlignment(g) {
     if (!g) return '';
     // 向後相容：若是舊的 structure_check，轉為簡化顯示
     if (g && typeof g === 'object' && 'completeness' in g) {
-                const completeness = g.completeness || 0;
-                const state = completeness >= 80 ? {label: '已達成', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200'}
-                                        : completeness >= 50 ? {label: '有部分', cls: 'bg-amber-50 text-amber-700 border-amber-200'}
-                                        : {label: '有未達', cls: 'bg-rose-50 text-rose-700 border-rose-200'};
-                return `
-                <div class="bg-white rounded-lg p-4 border border-gray-200">
-                        <div class="flex items-center justify-between">
-                                <h5 class="font-semibold text-gray-800">
-                                        <i class="fas fa-check-square text-stone-600 mr-2"></i>
-                                        指引對齊度
-                                </h5>
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold border ${state.cls}">${state.label}</span>
-                        </div>
-                </div>`;
+        const completeness = g.completeness || 0;
+        const missing = g.missing_elements || [];
+        return `
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+                <h5 class="font-semibold text-gray-800">
+                    <i class="fas fa-check-square text-stone-600 mr-2"></i>
+                    指引對齊度（舊版資料映射）
+                </h5>
+                <div class="text-2xl font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">${completeness}%</div>
+            </div>
+            ${missing.length > 0 ? `<div class="text-xs text-rose-700">缺少：${missing.join('、')}</div>` : ''}
+        </div>`;
     }
-                const checks = Array.isArray(g.checks) ? g.checks : [];
-                const teacherChecks = checks.filter(c => c && c.source === 'teacher');
-                const hasNotMet = teacherChecks.some(c => c.status === 'not_met');
-                const hasPartial = teacherChecks.some(c => c.status === 'partially_met');
-                const state = teacherChecks.length === 0
-                    ? {label: '未設定要點', cls: 'bg-gray-50 text-gray-700 border-gray-200'}
-                    : hasNotMet
-                        ? {label: '有未達', cls: 'bg-rose-50 text-rose-700 border-rose-200'}
-                        : hasPartial
-                            ? {label: '有部分', cls: 'bg-amber-50 text-amber-700 border-amber-200'}
-                            : {label: '已達成', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200'};
-
-                return `
-                <div class="bg-white rounded-lg p-4 border border-gray-200">
-                        <div class="flex items-center justify-between">
-                                <h5 class="font-semibold text-gray-800">
-                                        <i class="fas fa-check-square text-stone-600 mr-2"></i>
-                                        指引對齊度
-                                </h5>
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold border ${state.cls}">${state.label}</span>
-                        </div>
-                </div>`;
+    const score = g.score || 0;
+    const checks = Array.isArray(g.checks) ? g.checks : [];
+    const snippets = Array.isArray(g.rationale_snippets) ? g.rationale_snippets : [];
+    return `
+        <div class="bg-white rounded-lg p-4 border border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+                <h5 class="font-semibold text-gray-800">
+                    <i class="fas fa-check-square text-stone-600 mr-2"></i>
+                    指引對齊度（guideline_alignment）
+                </h5>
+                <div class="text-2xl font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</div>
+            </div>
+            ${checks.length > 0 ? `
+            <div class="space-y-2">
+              ${checks.map(c => `
+                <div class="flex items-start gap-2 text-sm">
+                  <span class="px-2 py-0.5 rounded text-xs ${c.source === 'teacher' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}">${c.source}</span>
+                  <span class="font-medium ${c.status === 'met' ? 'text-emerald-700' : c.status === 'partially_met' ? 'text-amber-700' : c.status === 'not_met' ? 'text-rose-700' : 'text-gray-700'}">${c.status}</span>
+                  <span class="text-gray-800">${c.name}</span>
+                </div>
+              `).join('')}
+            </div>` : ''}
+            ${snippets.length > 0 ? `
+              <div class="mt-3 text-xs text-gray-600">
+                <div class="font-semibold mb-1">依據片段：</div>
+                <ul class="list-disc list-inside space-y-1">
+                  ${snippets.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+        </div>
+    `;
 }
 
 function renderRubricAlignment(r) {
@@ -793,37 +753,24 @@ function formatTimestamp(timestamp) {
 function renderGuidelineAlignmentSimple(g) {
     if (!g) return '';
     if (g && 'completeness' in g) {
-                const completeness = g.completeness || 0;
-                const state = completeness >= 80 ? {label: '已達成', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200'}
-                                        : completeness >= 50 ? {label: '有部分', cls: 'bg-amber-50 text-amber-700 border-amber-200'}
-                                        : {label: '有未達', cls: 'bg-rose-50 text-rose-700 border-rose-200'};
-                return `
-                <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
-                        <div class="flex items-center justify-between">
-                                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
-                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${state.cls}">${state.label}</span>
-                        </div>
-                </div>`;
-    }
-        const checks = Array.isArray(g.checks) ? g.checks : [];
-        const teacherChecks = checks.filter(c => c && c.source === 'teacher');
-        const hasNotMet = teacherChecks.some(c => c.status === 'not_met');
-        const hasPartial = teacherChecks.some(c => c.status === 'partially_met');
-        const state = teacherChecks.length === 0
-            ? {label: '未設定要點', cls: 'bg-gray-50 text-gray-700 border-gray-200'}
-            : hasNotMet
-                ? {label: '有未達', cls: 'bg-rose-50 text-rose-700 border-rose-200'}
-                : hasPartial
-                    ? {label: '有部分', cls: 'bg-amber-50 text-amber-700 border-amber-200'}
-                    : {label: '已達成', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200'};
+        const completeness = g.completeness || 0;
         return `
-                <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
-                        <div class="flex items-center justify-between">
-                                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
-                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${state.cls}">${state.label}</span>
-                        </div>
-                </div>
-        `;
+        <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
+                <span class="text-lg font-bold ${completeness >= 80 ? 'text-emerald-600' : completeness >= 50 ? 'text-amber-600' : 'text-rose-600'}">${completeness}%</span>
+            </div>
+        </div>`;
+    }
+    const score = g.score || 0;
+    return `
+        <div class="bg-white rounded-lg p-3 border border-gray-200 mb-3">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-800">指引對齊度</span>
+                <span class="text-lg font-bold ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600'}">${score}%</span>
+            </div>
+        </div>
+    `;
 }
 
 /**

@@ -8,7 +8,7 @@
  */
 
 import { PMEditor } from '../editor/tiptap-editor.js';
-import { toggleMark, Plugin, PluginKey, Decoration, DecorationSet, Schema } from '../editor/pm-vendor.js';
+import { toggleMark, Plugin, PluginKey, Decoration, DecorationSet } from '../editor/pm-vendor.js';
 import { createAnnotationPlugin, createAnnotationFromSelection, computeSelectionAnchor, addAnnotationMarkForSelection, replaceAnnotationMarkId, removeAnnotationMarksById } from '../features/pm-annotation-plugin.js';
 import { PMAnnotationOverlay } from '../features/pm-annotation-overlay.js';
 import { initializeStorage, StorageState } from './essay-storage.js';
@@ -1285,15 +1285,6 @@ function createYucunBrushPlugin(opts = {}) {
   const { onClick } = opts;
   const key = new PluginKey('yucun-brush');
 
-  // 最小備援 Schema：在極端情況（初始化競態）下避免 state 未就緒導致崩潰
-  const fallbackSchema = new Schema({
-    nodes: {
-      doc: { content: 'block+' },
-      paragraph: { group: 'block', content: 'inline*' },
-      text: { group: 'inline' }
-    }
-  });
-
   const createBrushEl = (pos) => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -1325,24 +1316,15 @@ function createYucunBrushPlugin(opts = {}) {
     state: {
       init: (_cfg, state) => {
         try {
-          if (!state || !state.doc) {
-            const doc = fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
-            return DecorationSet.create(doc, []);
-          }
+          if (!state || !state.doc) return DecorationSet.empty;
           return DecorationSet.create(state.doc, buildDecos(state.doc));
-        } catch (_) {
-          const doc = fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
-          return DecorationSet.create(doc, []);
-        }
+        } catch (_) { return DecorationSet.empty; }
       },
       apply: (tr, set) => {
         if (tr.docChanged || tr.getMeta(key) === 'refresh') {
           return DecorationSet.create(tr.doc, buildDecos(tr.doc));
         }
-        try { return set.map(tr.mapping, tr.doc); } catch (_) {
-          const doc = fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
-          return DecorationSet.create(doc, []);
-        }
+        try { return set.map(tr.mapping, tr.doc); } catch (_) { return DecorationSet.empty; }
       }
     },
     props: {

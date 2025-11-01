@@ -10,18 +10,9 @@
  *   對一般篇幅足夠流暢；如需更高性能可後續改為增量重算。
  */
 
-import { Plugin, PluginKey, Schema } from './pm-vendor.js';
+import { Plugin, PluginKey } from './pm-vendor.js';
 
 export const sentenceMapKey = new PluginKey('pm-sentence-map');
-
-// 最小備援 Schema：避免初始化早期 state 未就緒
-const fallbackSchema = new Schema({
-  nodes: {
-    doc: { content: 'block+' },
-    paragraph: { group: 'block', content: 'inline*' },
-    text: { group: 'inline' }
-  }
-});
 
 function splitChineseSentences(text) {
   // 以終止符進行切分，保留結尾符號於前一子句
@@ -98,8 +89,7 @@ export function createSentenceMapPlugin() {
     state: {
       init: (_, state) => {
         const data = new Map();
-        const doc = state && state.doc ? state.doc : fallbackSchema.node('doc', null, [fallbackSchema.node('paragraph')]);
-        const paras = buildParagraphIndex(doc);
+        const paras = buildParagraphIndex(state.doc);
         paras.forEach(({ node, pos }) => {
           data.set(pos, computeSentencesForParagraph(node, pos));
         });
