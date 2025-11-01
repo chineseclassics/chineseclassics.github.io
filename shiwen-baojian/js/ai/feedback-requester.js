@@ -9,7 +9,7 @@
  */
 
 import { renderFeedback } from './feedback-renderer.js';
-// 已移除相容性格式規範載入以降低等待時間
+import { loadHonglouFormatSpec } from '../data/format-spec-loader.js';
 
 // 使用全局 AppState，避免循環導入
 const AppState = window.AppState;
@@ -64,8 +64,7 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
     const contentHash = simpleHash(paragraphContent);
         console.log('🔑 內容哈希:', contentHash);
         
-        // 2. 解析參數：相容舊版（formatSpec），支援新版 options { formatSpec, roleMeta, sentences }
-        //    注意：為提速，現已不再主動載入 formatSpec（後端也不再依賴）
+        // 2. 解析參數：相容舊版（formatSpec），支援新版 options { formatSpec, roleMeta }
         let formatSpec = null;
         let roleMeta = null; // { kind, label, bodyIndex }
         let sentences = null; // string[]（由 PM 分句插件計算）
@@ -112,10 +111,15 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         // 6. 顯示加載狀態
         showLoadingState(paragraphId);
         
-        // 7. 提速：不再主動載入格式規範（後端已改為 teacher-first 且不依賴）
-        formatSpec = null;
+        // 7. 加載格式規範（如果沒有傳入）—向後相容（新後端不再強依賴）
+        if (!formatSpec) {
+            try {
+                console.log('📥（相容）加載紅樓夢論文格式規範...');
+                formatSpec = await loadHonglouFormatSpec();
+            } catch (_) { formatSpec = null; }
+        }
         
-    // 8. 詳細段落型別（body-1、body-2…），intro/conclusion 原樣
+        // 8. 詳細段落型別（body-1、body-2…），intro/conclusion 原樣
         const paragraphTypeDetailed = roleSignature;
 
         // 8.1 構造 paragraph_text（純文字）
@@ -128,11 +132,8 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
         const teacherGuidelinesText = (AppState?.teacherGuidelinesText || AppState?.assignment?.teacher_guidelines_text || '').trim() || null;
         const rubricSelection = AppState?.rubricSelection || null; // { rubric_id, selected_criteria: [...] }
         const rubricMode = AppState?.rubricMode || 'adaptive';
+        const strictnessHint = AppState?.strictnessHint || 'adaptive';
         const traceability = (AppState?.traceability === false) ? false : true;
-
-        // 8.3 單一路徑：不截斷老師文本，不裁句
-        const teacherGuidelinesCompact = teacherGuidelinesText;
-        const sentencesCompact = Array.isArray(sentences) ? sentences : null;
 
         // 9. 調用 Edge Function（新版契約 + 相容字段）
         const { data, error } = await AppState.supabase.functions.invoke('ai-feedback-agent', {
@@ -150,10 +151,10 @@ export async function requestAIFeedback(paragraphId, paragraphContent, paragraph
                     body_index: typeof roleMeta.bodyIndex === 'number' ? roleMeta.bodyIndex : null
                 } : null,
                 // 句子清單（若提供，供後端對齊）
-                sentences: sentencesCompact || sentences || null,
+                sentences: sentences || null,
                 // 老師指引與 rubric（若有）
-                teacher_guidelines_text: teacherGuidelinesCompact,
-                // 保留呼叫方的設置
+                teacher_guidelines_text: teacherGuidelinesText,
+                strictness_hint: strictnessHint,
                 traceability: traceability,
                 rubric_selection: rubricSelection,
                 rubric_mode: rubricMode,
@@ -266,6 +267,8 @@ export async function getHistoricalFeedback(paragraphId) {
 function showLoadingState(paragraphId) {
     // 獲取段落標題
     const paragraphTitle = getParagraphTitle(paragraphId);
+    // 顯示加載時隱藏左側提示
+    try { document.querySelector('.yucun-tip')?.classList.add('hidden'); } catch (_) {}
     
     // 判斷是桌面端還是移動端
     const isMobile = window.innerWidth < 1024;
@@ -274,14 +277,6 @@ function showLoadingState(paragraphId) {
         <style>
           @keyframes dotBlink { 0%, 20% { opacity: 0.2 } 50% { opacity: 1 } 100% { opacity: 0.2 } }
         </style>
-        <!-- 當前段落標識 -->
-        <div class="bg-stone-50 border border-stone-300 rounded-lg p-3 mb-4">
-            <div class="flex items-center space-x-2 text-stone-800">
-                <i class="fas fa-file-alt text-sm"></i>
-                <span class="text-sm font-semibold">${paragraphTitle}</span>
-            </div>
-        </div>
-        
         <!-- 加載動畫：雨村先生正在仔細閱讀... -->
         <div class="flex flex-col items-center justify-center py-10 space-y-4">
             <div class="relative">
@@ -319,6 +314,8 @@ function showLoadingState(paragraphId) {
 function showMobileInlineLoading(paragraphId, paragraphTitle, loadingHTML) {
     const paragraphElement = document.getElementById(paragraphId);
     if (!paragraphElement) return;
+    // 顯示加載時隱藏左側提示
+    try { document.querySelector('.yucun-tip')?.classList.add('hidden'); } catch (_) {}
     
     // 查找或創建反饋容器
     let feedbackContainer = paragraphElement.querySelector('.inline-feedback-container');
@@ -329,17 +326,10 @@ function showMobileInlineLoading(paragraphId, paragraphTitle, loadingHTML) {
         paragraphElement.appendChild(feedbackContainer);
     }
     
-    // 顯示加載動畫（帶連接線）
+    // 顯示加載動畫（精簡樣式）
     feedbackContainer.innerHTML = `
-        <div class="bg-gradient-to-r from-stone-100 to-stone-200 border-2 border-stone-400 rounded-lg p-1 mb-4 animate-slide-down">
-            <!-- 視覺連接線 -->
-            <div class="flex justify-center -mt-3">
-                <div class="w-0.5 h-3 bg-stone-400"></div>
-            </div>
-            
-            <div class="bg-white p-4 rounded">
-                ${loadingHTML}
-            </div>
+        <div class="bg-white border border-stone-300 rounded-lg p-4 mb-4 animate-slide-down">
+            ${loadingHTML}
         </div>
     `;
     
