@@ -60,6 +60,11 @@ export class PMAnnotationOverlay {
         const r = annEl.getBoundingClientRect();
         idealTop = (r.top + r.bottom) / 2 - containerRect.top - h / 2;
       }
+      // 同步孤兒狀態到卡片（根據正文高亮的 class 判定）
+      try {
+        const isOrphan = !!annEl && annEl.classList.contains('pm-annotation-orphan');
+        this._applyOrphanState(el, isOrphan);
+      } catch (_) {}
       items.push({ id: a.id, el, h, idealTop, top: idealTop });
     }
 
@@ -201,6 +206,32 @@ export class PMAnnotationOverlay {
     const authorEl = card.querySelector('.pm-ann-author');
     if (!authorEl) return;
     authorEl.textContent = this._authorLabel(a) || '';
+  }
+
+  // 根據是否為孤兒批註，切換卡片狀態與徽章
+  _applyOrphanState(card, isOrphan) {
+    try {
+      card.classList.toggle('orphan', !!isOrphan);
+      const meta = card.querySelector('.pm-ann-meta');
+      if (!meta) return;
+      let badge = meta.querySelector('.pm-ann-badge.pm-ann-badge-orphan');
+      if (isOrphan) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'pm-ann-badge pm-ann-badge-orphan';
+          badge.title = '此批註目前為孤兒，無法精準定位原文';
+          badge.textContent = '孤兒';
+          // 插入在時間之後、回覆數之前（若有）
+          const timeEl = meta.querySelector('.pm-ann-time');
+          const replyCount = meta.querySelector('.pm-ann-reply-count');
+          if (replyCount) meta.insertBefore(badge, replyCount);
+          else if (timeEl && timeEl.nextSibling) meta.insertBefore(badge, timeEl.nextSibling);
+          else meta.appendChild(badge);
+        }
+      } else if (badge) {
+        badge.remove();
+      }
+    } catch (_) {}
   }
 
   _authorLabel(a) {

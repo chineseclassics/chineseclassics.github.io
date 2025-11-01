@@ -123,6 +123,11 @@
 .pm-ann-card .pm-ann-text { font-size: 14px; color: #374151; line-height: 1.5; }
 .pm-ann-card.active { outline: 2px solid #60a5fa; outline-offset: 2px; }
 
+/* 孤兒狀態徽章與卡片樣式 */
+.pm-ann-badge { display: inline-flex; align-items: center; padding: 0 6px; height: 18px; border-radius: 9999px; font-size: 11px; line-height: 1; margin-left: 6px; border: 1px solid #e5e7eb; }
+.pm-ann-badge-orphan { background: #f3f4f6; color: #4b5563; }
+.pm-ann-card.orphan { border-style: dashed; border-color: #d1d5db; }
+
 /* 回覆數徽章（置於卡片 meta 最右側） */
 .pm-ann-card .pm-ann-meta { position: relative; }
 .pm-ann-card .pm-ann-reply-count { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 6px; border-radius: 9px; background: #eef2ff; color: #374151; font-weight: 600; font-size: 12px; border: 1px solid #e5e7eb; }
