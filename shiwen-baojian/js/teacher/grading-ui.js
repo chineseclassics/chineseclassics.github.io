@@ -136,15 +136,17 @@ class GradingUI {
                   <h3 class="section-title">
                     <i class="fas fa-robot mr-2"></i>AI 評分建議
                   </h3>
-                  <button id="getAISuggestionBtn" class="btn-ai-suggest">
-                    <i class="fas fa-magic"></i>
-                    獲取建議
-                  </button>
                 </div>
                 
-                <!-- 初始狀態下隱藏內容區域，點擊獲取建議後才展開 -->
-                <div id="aiSectionContent" class="section-content hidden">
-                  
+                <!-- 將獲取按鈕移至標題下方（內容區頂部） -->
+                <div id="aiSectionContent" class="section-content">
+                  <div id="aiGetSuggestionRow" class="ai-get-row">
+                    <button id="getAISuggestionBtn" class="btn-ai-suggest">
+                      <i class="fas fa-magic"></i>
+                      獲取建議
+                    </button>
+                  </div>
+
                   <div id="aiLoadingState" class="hidden ai-loading">
                     <div class="spinner"></div>
                     <p class="loading-text">AI 正在分析論文...</p>
@@ -939,25 +941,52 @@ class GradingUI {
       if (savedSuggestion && savedSuggestion.criteria_scores) {
         console.log('✅ 找到已保存的 AI 評分建議');
         
-        // 顯示內容區域
+        // 顯示內容區域（確保可見）
         const aiSectionContent = document.getElementById('aiSectionContent');
         if (aiSectionContent) {
           aiSectionContent.classList.remove('hidden');
         }
         
+        // 判斷是否過期：若建議產生時間早於論文最近更新時間，視為過期
+        let isOutdated = false;
+        try {
+          const essayUpdatedAt = this.currentEssay?.updated_at ? new Date(this.currentEssay.updated_at) : null;
+          const suggestionCreatedAt = savedSuggestion?.created_at ? new Date(savedSuggestion.created_at) : null;
+          if (essayUpdatedAt && suggestionCreatedAt && suggestionCreatedAt < essayUpdatedAt) {
+            isOutdated = true;
+            console.warn('⚠️ 已保存的 AI 建議可能已過期：建議時間 < 論文更新時間');
+          }
+        } catch (_) {}
+
         // 顯示已保存的建議
         this.renderAISuggestion(
           savedSuggestion.criteria_scores, 
           savedSuggestion.overall_comment
         );
         
-        // 禁用「獲取 AI 建議」按鈕
         const btn = document.getElementById('getAISuggestionBtn');
-        if (btn) {
-          btn.disabled = true;
-          btn.innerHTML = '<i class="fas fa-check-circle"></i> 已獲取 AI 建議';
-          btn.style.opacity = '0.6';
-          btn.style.cursor = 'not-allowed';
+        const row = document.getElementById('aiGetSuggestionRow');
+        if (btn && row) {
+          if (isOutdated) {
+            // 顯示按鈕允許重新獲取，並調整文案
+            row.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> 重新獲取建議';
+            // 附加過期提示
+            const hintId = 'aiOutdatedHint';
+            if (!document.getElementById(hintId)) {
+              const hint = document.createElement('div');
+              hint.id = hintId;
+              hint.style.marginTop = '0.5rem';
+              hint.style.fontSize = '.85rem';
+              hint.style.color = 'var(--warning-700, #92400e)';
+              hint.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 學生在提交後對作業有更新，建議重新獲取 AI 建議';
+              row.appendChild(hint);
+            }
+          } else {
+            // 未過期則隱藏按鈕列
+            row.classList.add('hidden');
+          }
         }
       } else {
         console.log('ℹ️ 沒有已保存的 AI 評分建議');
@@ -981,10 +1010,15 @@ class GradingUI {
       // 顯示內容區域（如果之前是隱藏的）
       aiSectionContent.classList.remove('hidden');
       
-      // 顯示加載狀態
+      // 隱藏按鈕並顯示加載狀態
+      if (btn) {
+        // 隱藏整個按鈕行，達到「按鈕消失變為等待動畫」效果
+        const row = document.getElementById('aiGetSuggestionRow');
+        if (row) row.classList.add('hidden');
+        else btn.style.display = 'none';
+      }
       loadingState.classList.remove('hidden');
       resultsDiv.classList.add('hidden');
-      btn.disabled = true;
 
       // 動態導入 AI 評分請求模塊
       const { requestAIGradingSuggestion } = await import('./ai-grading-requester.js');
@@ -1001,18 +1035,20 @@ class GradingUI {
 
       // 顯示結果（包含总评）
       this.renderAISuggestion(result.criteria_scores, result.overall_comment);
-
-      // 禁用按鈕並更改文字（已生成，不需要再次點擊）
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-check-circle"></i> 已獲取 AI 建議';
-      btn.style.opacity = '0.6';
-      btn.style.cursor = 'not-allowed';
+      // 保持按鈕隱藏，不再顯示
     } catch (error) {
       console.error('獲取 AI 評分建議失敗:', error);
       
       // 隱藏加載狀態
       document.getElementById('aiLoadingState').classList.add('hidden');
-      document.getElementById('getAISuggestionBtn').disabled = false;
+      // 顯示按鈕讓用戶可重試
+      const btn = document.getElementById('getAISuggestionBtn');
+      if (btn) {
+        const row = document.getElementById('aiGetSuggestionRow');
+        if (row) row.classList.remove('hidden');
+        else btn.style.display = '';
+        btn.disabled = false;
+      }
 
       toast.error('獲取 AI 評分建議失敗：' + error.message);
     }
