@@ -220,7 +220,7 @@ export class PMAnnotationOverlay {
           badge = document.createElement('span');
           badge.className = 'pm-ann-badge pm-ann-badge-orphan';
           badge.title = '原文已改：此批註暫未對齊原文';
-          badge.textContent = '原文已改';
+          badge.textContent = '已改';
           // 插入在時間之後、回覆數之前（若有）
           const timeEl = meta.querySelector('.pm-ann-time');
           const replyCount = meta.querySelector('.pm-ann-reply-count');
@@ -231,7 +231,7 @@ export class PMAnnotationOverlay {
         else {
           // 若已有徽章，確保最新文案
           badge.title = '原文已改：此批註暫未對齊原文';
-          badge.textContent = '原文已改';
+          badge.textContent = '已改';
         }
       } else if (badge) {
         badge.remove();

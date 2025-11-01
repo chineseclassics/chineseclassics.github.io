@@ -124,7 +124,7 @@
 .pm-ann-card.active { outline: 2px solid #60a5fa; outline-offset: 2px; }
 
 /* 孤兒狀態徽章與卡片樣式 */
-.pm-ann-badge { display: inline-flex; align-items: center; padding: 0 6px; height: 18px; border-radius: 9999px; font-size: 11px; line-height: 1; margin-left: 6px; border: 1px solid #e5e7eb; }
+.pm-ann-badge { display: inline-flex; align-items: center; padding: 0 6px; height: 18px; border-radius: 9999px; font-size: 11px; line-height: 1; margin-left: 6px; border: 1px solid #e5e7eb; white-space: nowrap; }
 .pm-ann-badge-orphan { background: #f3f4f6; color: #4b5563; }
 .pm-ann-card.orphan { border-style: dashed; border-color: #d1d5db; }
 
