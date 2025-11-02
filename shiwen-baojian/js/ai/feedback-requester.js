@@ -40,6 +40,20 @@ function simpleHash(content) {
     return hash.toString(16);
 }
 
+/**
+ * 安全轉義 HTML 字符，避免插入 innerHTML 時觸發 XSS
+ */
+function escapeHtml(s) {
+    try {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    } catch (_) { return ''; }
+}
+
 // ================================
 // 反饋請求器
 // ================================
@@ -398,7 +412,7 @@ function showErrorState(paragraphId, errorMessage) {
                 <i class="fas fa-exclamation-circle text-rose-600 text-xl mt-0.5"></i>
                 <div class="flex-1">
                     <h4 class="text-rose-800 font-semibold mb-1">獲取 AI 反饋失敗</h4>
-                    <p class="text-rose-700 text-sm">${errorMessage}</p>
+                    <p class="text-rose-700 text-sm">${escapeHtml(errorMessage)}</p>
                     <button onclick="location.reload()" 
                             class="mt-3 text-sm text-rose-700 hover:text-rose-800 font-medium">
                         <i class="fas fa-redo mr-1"></i> 重新加載頁面

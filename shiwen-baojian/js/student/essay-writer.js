@@ -321,6 +321,10 @@ export async function initializeEssayEditor(forceReinit = false) {
     // 如果強制重新初始化，先重置狀態
     if (forceReinit) {
         console.log('🔄 強制重新初始化編輯器...');
+    // 清理計時器與 Realtime 通道，避免重複綁定與資源洩漏
+    try { if (window.__pmAnnTimer) { clearInterval(window.__pmAnnTimer); window.__pmAnnTimer = null; } } catch (_) {}
+    try { if (window.__pmAnnChannel?.unsubscribe) { window.__pmAnnChannel.unsubscribe(); } window.__pmAnnChannel = null; } catch (_) {}
+    try { if (window.__pmAnnCommentChannel?.unsubscribe) { window.__pmAnnCommentChannel.unsubscribe(); } window.__pmAnnCommentChannel = null; } catch (_) {}
         try { EditorState.introEditor?.destroy?.(); } catch (_) {}
         try { EditorState.conclusionEditor?.destroy?.(); } catch (_) {}
         EditorState.initialized = false;

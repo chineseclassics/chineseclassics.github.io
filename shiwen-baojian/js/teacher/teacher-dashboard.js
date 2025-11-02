@@ -254,7 +254,8 @@ class TeacherDashboard {
       this.replaceContent(mainContent);
     } catch (error) {
       console.error('導航失敗:', error);
-      mainContent.innerHTML = `<div class="error">加載失敗：${error.message}</div>`;
+      const safeMsg = this.escapeHtml(error.message || '未知錯誤');
+      mainContent.innerHTML = `<div class="error">加載失敗：${safeMsg}</div>`;
       this.replaceContent(mainContent);
     }
   }
@@ -290,13 +291,27 @@ class TeacherDashboard {
    * 渲染錯誤信息
    */
   renderError(message) {
+    const safeMsg = this.escapeHtml(message || '未知錯誤');
     this.container.innerHTML = `
       <div class="error-container">
         <i class="fas fa-exclamation-circle"></i>
         <h2>出错了</h2>
-        <p>${message}</p>
+        <p>${safeMsg}</p>
       </div>
     `;
+  }
+
+  /**
+   * 安全轉義字串，避免 XSS
+   */
+  escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 }
 

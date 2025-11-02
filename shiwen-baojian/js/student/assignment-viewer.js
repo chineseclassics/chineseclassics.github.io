@@ -175,7 +175,7 @@ class StudentAssignmentViewer {
       await this.renderAssignmentList();
     } catch (error) {
       console.error('加載任務失敗:', error);
-      this.container.innerHTML = `<div class="error">加載失敗：${error.message}</div>`;
+      this.container.innerHTML = `<div class="error">加載失敗：${this.escapeHtml(error.message || '未知錯誤')}</div>`;
     }
   }
 

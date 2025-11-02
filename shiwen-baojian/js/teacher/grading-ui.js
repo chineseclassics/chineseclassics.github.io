@@ -55,7 +55,7 @@ class GradingUI {
       this.renderGradingForm();
     } catch (error) {
       console.error('加載作業失敗:', error);
-      container.innerHTML = `<div class="error">加載失敗：${error.message}</div>`;
+      container.innerHTML = `<div class="error">加載失敗：${this.escapeHtml(error.message || '未知錯誤')}</div>`;
     }
   }
 
@@ -113,13 +113,13 @@ class GradingUI {
             </h2>
             <div class="text-sm text-gray-600 mt-1">
               <span class="mr-4">
-                <i class="fas fa-tasks mr-1"></i>任務：${essay.assignment.title}
+                <i class="fas fa-tasks mr-1"></i>任務：${this.escapeHtml(essay.assignment.title || '—')}
               </span>
               <span class="mr-4">
-                <i class="fas fa-user mr-1"></i>學生：${essay.student.display_name}
+                <i class="fas fa-user mr-1"></i>學生：${this.escapeHtml(essay.student.display_name || '—')}
               </span>
               <span>
-                <i class="fas fa-envelope mr-1"></i>${essay.student.email}
+                <i class="fas fa-envelope mr-1"></i>${this.escapeHtml(essay.student.email || '—')}
               </span>
             </div>
           </div>
@@ -1082,7 +1082,7 @@ class GradingUI {
             </div>
           </div>
           <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; border-left: 3px solid var(--primary-600);">
-            <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${data.reason}</p>
+            <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${this.escapeHtml(data.reason || '')}</p>
           </div>
         </div>
       `;
@@ -1099,14 +1099,14 @@ class GradingUI {
             <i class="fas fa-thumbs-up"></i>
             <strong>做得好的方面</strong>
           </div>
-          <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${overallComment.strengths || '暂无'}</p>
+          <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${this.escapeHtml(overallComment.strengths || '暂无')}</p>
         </div>
         <div class="block improve">
           <div style="display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; color: var(--warning-700);">
             <i class="fas fa-arrow-up"></i>
             <strong>需要改進的方面</strong>
           </div>
-          <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${overallComment.improvements || '暂无'}</p>
+          <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${this.escapeHtml(overallComment.improvements || '暂无')}</p>
         </div>
         <div style="margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--border-divider); color: var(--text-tertiary); font-size: .85rem;">
           <i class="fas fa-lightbulb"></i> 老師可參考此總評撰寫評語，也可以自由修改或補充
