@@ -207,6 +207,29 @@
                 <!-- 左側：賈雨村說（學生端固定側欄） -->
                 <aside class="hidden lg:block w-72 flex-shrink-0 sticky top-20 self-start">
                     <div>
+                        <!-- 文房之寶：實用小工具入口（置頂） -->
+                        <div id="wenfang-tools" class="bg-white shadow-sm border border-gray-200 rounded-lg mb-4">
+                            <!-- 標題欄：文房之寶 -->
+                            <div class="bg-gradient-to-r from-stone-700 to-stone-600 px-4 py-3">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-toolbox text-xl text-amber-100"></i>
+                                    <h3 class="font-bold text-xl text-amber-50" style="letter-spacing: 0.1em;">文房之寶</h3>
+                                </div>
+                            </div>
+                            <!-- 內容：工具清單（首發：哈佛引用格式） -->
+                            <div class="px-4 py-3 space-y-2">
+                                <button id="open-harvard-tool-btn" type="button"
+                                        class="w-full flex items-center justify-between bg-stone-50 hover:bg-stone-100 text-stone-800 border border-stone-200 rounded-lg px-3 py-2 transition-all">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-quote-right text-stone-600"></i>
+                                        <span class="text-sm font-medium">哈佛引用格式</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right text-stone-400"></i>
+                                </button>
+                                <!-- 預留更多工具入口（未來可擴展） -->
+                            </div>
+                        </div>
+
                         <div id="ai-feedback-sidebar" class="bg-white shadow-sm border border-gray-200 rounded-lg">
                             <!-- 標題 -->
                             <div class="premium-blue-gradient px-4 py-3">
@@ -348,6 +371,111 @@
     
     <!-- 移動端 AI 反饋模態框（動態創建） -->
     <div id="mobile-feedback-modal" class="hidden"></div>
+
+    <!-- 哈佛引用格式模態框（可重用：文房之寶工具彈窗） -->
+    <div id="harvard-citation-modal" class="fixed inset-0 z-[1000] hidden">
+        <!-- 遮罩層 -->
+        <div class="absolute inset-0 bg-black/50" data-modal-close="true"></div>
+        <!-- 內容框 -->
+        <div class="relative mx-auto my-10 w-[92%] max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden">
+            <!-- 標題列 -->
+            <div class="bg-gradient-to-r from-stone-700 to-stone-600 px-5 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-amber-50">
+                    <i class="fas fa-quote-right"></i>
+                    <h3 class="font-bold text-lg">哈佛引用格式工具</h3>
+                </div>
+                <button class="text-amber-100 hover:text-white" data-modal-close="true" aria-label="關閉">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <!-- 內容區 -->
+            <div class="p-5">
+                <!-- 使用說明 -->
+                <div class="mb-4 text-sm text-stone-600 bg-stone-50 border border-stone-200 rounded-md p-3">
+                    <p class="leading-6">
+                        填寫基本資訊，系統將即時生成哈佛格式引用。支援：期刊文章、書籍、網頁文章。可先複製引用文字貼入文末參考。
+                    </p>
+                </div>
+                <!-- 類型切換 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">來源類型</span>
+                        <select id="harv-type" class="border border-stone-300 rounded px-2 py-2">
+                            <option value="article">期刊文章</option>
+                            <option value="book">書籍</option>
+                            <option value="web">網頁文章</option>
+                        </select>
+                    </label>
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">作者（姓, 名首字母.；多位以分號分隔）</span>
+                        <input id="harv-author" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="Chen, L.; Wang, H.">
+                    </label>
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">年份</span>
+                        <input id="harv-year" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="2024">
+                    </label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">標題</span>
+                        <input id="harv-title" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="Article or Chapter Title">
+                    </label>
+                    <label class="flex flex-col text-sm" data-field="container">
+                        <span class="text-stone-700 mb-1"><span id="harv-container-label">期刊</span> / 書名 / 網站</span>
+                        <input id="harv-container" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="Journal / Book / Website">
+                    </label>
+                </div>
+                <!-- 期刊專屬欄位 -->
+                <div id="harv-article-fields" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">卷 Volume</span>
+                        <input id="harv-volume" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="12">
+                    </label>
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">期 Issue</span>
+                        <input id="harv-issue" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="3">
+                    </label>
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">頁碼 Pages</span>
+                        <input id="harv-pages" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="123-145">
+                    </label>
+                </div>
+                <!-- 書籍專屬欄位 -->
+                <div id="harv-book-fields" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 hidden">
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">出版社</span>
+                        <input id="harv-publisher" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="Oxford University Press">
+                    </label>
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">出版地（可選）</span>
+                        <input id="harv-pubplace" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="Oxford">
+                    </label>
+                </div>
+                <!-- 通用欄位 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <label class="flex flex-col text-sm">
+                        <span class="text-stone-700 mb-1">DOI / URL（可選）</span>
+                        <input id="harv-doi" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="https://doi.org/... 或 https://...">
+                    </label>
+                    <label class="flex items-center gap-2 text-sm select-none">
+                        <input id="harv-italics" type="checkbox" class="w-4 h-4 text-stone-600" checked>
+                        <span class="text-stone-700">將期刊/書名以斜體顯示</span>
+                    </label>
+                </div>
+                <!-- 預覽 -->
+                <div class="mb-4">
+                    <div class="text-xs text-stone-500 mb-1">預覽</div>
+                    <div id="harv-preview" class="border border-stone-200 rounded-md p-3 bg-white text-sm text-stone-800 min-h-[48px]"></div>
+                </div>
+                <!-- 動作列 -->
+                <div class="flex justify-end gap-3 border-t border-stone-200 pt-4">
+                    <button class="px-4 py-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-100" data-modal-close="true">關閉</button>
+                    <button id="harv-reset" class="px-4 py-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-100">重置</button>
+                    <button id="harv-copy" class="px-4 py-2 rounded-md bg-stone-700 text-white hover:bg-stone-800">複製引用</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- 太虛幻境應用切換器（必需） -->
     <script src="/assets/js/taixu-app-switcher.js"></script>
@@ -376,5 +504,7 @@
     
     <!-- 應用 JavaScript 模組（ES6 Modules） -->
     <script type="module" src="js/app.js?v=20250127a"></script>
+    <!-- 文房之寶（工具模組） -->
+    <script type="module" src="js/features/wenfang-tools.js?v=20251102"></script>
 </body>
 </html>
