@@ -235,6 +235,15 @@
                                     </span>
                                     <i class="fas fa-chevron-right text-stone-400"></i>
                                 </button>
+                                <!-- 新增：繁簡轉換工具（單一輸入/輸出） -->
+                                <button id="open-converter-tool-btn" type="button"
+                                        class="w-full flex items-center justify-between bg-stone-50 hover:bg-stone-100 text-stone-800 border border-stone-200 rounded-lg px-3 py-2 transition-all">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-language text-stone-600"></i>
+                                        <span class="text-sm font-medium">繁簡轉換</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right text-stone-400"></i>
+                                </button>
                                 <!-- 預留更多工具入口（未來可擴展） -->
                             </div>
                         </div>
@@ -551,6 +560,50 @@
             </div>
         </div>
     </div>
+
+    <!-- 繁簡轉換模態框（文房之寶） -->
+    <div id="converter-modal" class="fixed inset-0 z-[5000] hidden">
+        <!-- 遮罩層 -->
+        <div class="absolute inset-0 bg-black/50" data-modal-close="true"></div>
+        <!-- 內容框 -->
+        <div class="relative mx-auto my-10 w-[94%] max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden">
+            <!-- 標題列 -->
+            <div class="bg-gradient-to-r from-stone-700 to-stone-600 px-5 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-amber-50">
+                    <i class="fas fa-language"></i>
+                    <h3 class="font-bold text-lg">繁簡轉換</h3>
+                </div>
+                <button class="text-amber-100 hover:text-white" data-modal-close="true" aria-label="關閉">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <!-- 內容區 -->
+            <div class="p-5 space-y-4">
+                <!-- 使用說明 -->
+                <div class="text-sm text-stone-600 bg-stone-50 border border-stone-200 rounded-md p-3">
+                    <p class="leading-6">貼上文字，選擇轉為簡體或繁體。使用單一文字框，轉換後直接覆寫原文。可一鍵複製或還原原文。</p>
+                </div>
+
+                <!-- 單一輸入/輸出區 -->
+                <div>
+                    <textarea id="converter-textarea" class="w-full min-h-[220px] border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400" placeholder="請貼上要轉換的文字…"></textarea>
+                </div>
+
+                <!-- 動作列 -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="to-simplified-btn" class="px-3 py-2 rounded-md bg-stone-700 text-white hover:bg-stone-800">轉為簡體</button>
+                    <button id="to-traditional-btn" class="px-3 py-2 rounded-md bg-stone-700 text-white hover:bg-stone-800">轉為繁體</button>
+                    <div class="flex-1"></div>
+                    <button id="restore-original-btn" class="px-3 py-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-100" title="還原貼入前的原文">還原原文</button>
+                    <button id="copy-text-btn" class="px-3 py-2 rounded-md bg-emerald-700 text-white hover:bg-emerald-800">複製全文</button>
+                    <button class="px-3 py-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-100" data-modal-close="true">關閉</button>
+                </div>
+
+                <!-- 狀態列 -->
+                <div id="converter-status" class="text-xs text-stone-500"></div>
+            </div>
+        </div>
+    </div>
     
     <!-- 太虛幻境應用切換器（必需） -->
     <script src="/assets/js/taixu-app-switcher.js"></script>
@@ -583,5 +636,7 @@
     <script type="module" src="js/features/wenfang-tools.js?v=20251102"></script>
     <!-- 文房之寶：中英詞典模組 -->
     <script type="module" src="js/features/wenfang-dictionary.js?v=20251102"></script>
+    <!-- 文房之寶：繁簡轉換模組 -->
+    <script type="module" src="js/features/wenfang-converter.js?v=20251102"></script>
 </body>
 </html>
