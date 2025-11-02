@@ -48,21 +48,37 @@ const baseMarks = {
   }
 };
 
-const baseSchema = new Schema({ nodes: baseNodes, marks: baseMarks });
+function createSchema(extend = {}) {
+  try {
+    const extraNodes = extend?.nodes && typeof extend.nodes === 'object' ? extend.nodes : {};
+    const extraMarks = extend?.marks && typeof extend.marks === 'object' ? extend.marks : {};
+    // 合併：避免覆蓋既有節點/標記（同名則以擴展為準，允許重寫）
+    const nodes = Object.assign({}, baseNodes, extraNodes);
+    const marks = Object.assign({}, baseMarks, extraMarks);
+    return new Schema({ nodes, marks });
+  } catch (_) {
+    // 回退至基礎 Schema
+    return new Schema({ nodes: baseNodes, marks: baseMarks });
+  }
+}
 
 export class PMEditor {
-  constructor(container, { readOnly = false, initialJSON = null, onUpdate = null, extraPlugins = [] } = {}) {
+  constructor(container, { readOnly = false, initialJSON = null, onUpdate = null, extraPlugins = [], schemaExt = null } = {}) {
     this.container = container;
     this.onUpdate = typeof onUpdate === 'function' ? onUpdate : null;
+
+    // 構建 Schema（允許擴展節點/標記）
+    const schema = createSchema(schemaExt || undefined);
+    this.schema = schema;
 
     let doc;
     try {
       if (initialJSON) {
-        doc = baseSchema.nodeFromJSON(initialJSON);
+        doc = schema.nodeFromJSON(initialJSON);
       }
     } catch (_) {}
     if (!doc) {
-      doc = baseSchema.node('doc', null, [baseSchema.node('paragraph')]);
+      doc = schema.node('doc', null, [schema.node('paragraph')]);
     }
 
     const updatePlugin = new Plugin({
@@ -76,9 +92,9 @@ export class PMEditor {
       })
     });
 
-    const underlineType = baseSchema.marks.underline;
-    const strongType = baseSchema.marks.strong;
-    const emType = baseSchema.marks.em;
+  const underlineType = schema.marks.underline;
+  const strongType = schema.marks.strong;
+  const emType = schema.marks.em;
 
     // 自訂快捷鍵：加入 Cmd/Ctrl+U 切換底線；補強 B/I
     const markKeymap = keymap({
@@ -99,11 +115,11 @@ export class PMEditor {
             const nodes = [];
             paragraphs.forEach((p, idx) => {
               const cleaned = p.replace(/\u00A0/g, ' '); // nbsp → space
-              const paraNode = baseSchema.node('paragraph', null, cleaned ? baseSchema.text(cleaned) : null);
+              const paraNode = schema.node('paragraph', null, cleaned ? schema.text(cleaned) : null);
               nodes.push(paraNode);
             });
             if (!nodes.length) return true; // 吃掉事件但不插入
-            const tr = view.state.tr.replaceSelectionWith(baseSchema.node('doc', null, nodes).content);
+            const tr = view.state.tr.replaceSelectionWith(schema.node('doc', null, nodes).content);
             view.dispatch(tr.scrollIntoView());
             return true;
           } catch (e) {
@@ -260,7 +276,7 @@ export class PMEditor {
 
     this.view = new EditorView(this.container, {
       state: EditorState.create({
-        schema: baseSchema,
+        schema,
         doc,
         plugins
       }),
@@ -274,8 +290,8 @@ export class PMEditor {
 
   setJSON(json) {
     try {
-      const doc = baseSchema.nodeFromJSON(json);
-      const state = EditorState.create({ schema: baseSchema, doc, plugins: this.view.state.plugins });
+      const doc = this.schema.nodeFromJSON(json);
+      const state = EditorState.create({ schema: this.schema, doc, plugins: this.view.state.plugins });
       this.view.updateState(state);
     } catch (e) {
       console.warn('setJSON 失敗:', e);

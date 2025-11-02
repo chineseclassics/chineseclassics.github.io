@@ -14,6 +14,9 @@ import { PMAnnotationOverlay } from '../features/pm-annotation-overlay.js';
 import { initializeStorage, StorageState } from './essay-storage.js';
 import toast from '../ui/toast.js';
 import dialog from '../ui/dialog.js';
+// 引用插件與管理器
+import { getCitationSchemaExtensions, createCitationPlugin } from '../features/pm-citations.js';
+import citationManager from '../features/citation-manager.js';
 
 // 動態獲取全局 AppState（避免 ES 模組載入時機問題）
 function getAppState() {
@@ -368,12 +371,14 @@ export async function initializeEssayEditor(forceReinit = false) {
     } catch (_) {}
 
     // 建立單一 PM 編輯器
-    EditorState.introEditor = new PMEditor(container, {
+  EditorState.introEditor = new PMEditor(container, {
         readOnly: false,
         initialJSON: await loadInitialPMJSON(),
-        onUpdate: debounce(async () => {
+    onUpdate: debounce(async () => {
             await autoSavePMJSON();
-        }, 1500)
+    }, 1500),
+    // 擴展 Schema：citation、bibliography
+    schemaExt: getCitationSchemaExtensions()
     });
     const host = document.getElementById('essay-editor')||container;
     try { host.classList.add('pm-essay'); } catch (_) {}
@@ -416,6 +421,12 @@ export async function initializeEssayEditor(forceReinit = false) {
     await ensureEssayRecord();
     await loadEssayMeta();
     await autoSavePMJSON();
+
+  // 掛載引用插件（文內引註 + 徵引書目 API）
+    try {
+      const citePlugin = createCitationPlugin();
+      EditorState.introEditor.addPlugins([citePlugin]);
+    } catch (e) { console.warn('引用插件掛載失敗:', e); }
 
   // 掛載批註裝飾（顯示老師批註）
     try {

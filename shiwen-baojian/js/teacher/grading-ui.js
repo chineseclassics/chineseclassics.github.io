@@ -292,7 +292,10 @@ class GradingUI {
               getAnnotations: () => this._annStore,
               onClick: (id) => this.highlightAnnotation?.(id)
             });
-            this._pmViewer = new PMEditor(viewer, { readOnly: true, initialJSON: json, extraPlugins: [plugin] });
+            // 引用插件（教師端只讀查看）
+            const { getCitationSchemaExtensions, createCitationPlugin } = await import('../features/pm-citations.js');
+            const citePlugin = createCitationPlugin();
+            this._pmViewer = new PMEditor(viewer, { readOnly: true, initialJSON: json, extraPlugins: [plugin, citePlugin], schemaExt: getCitationSchemaExtensions() });
             // 右側疊加層（與 Google Docs 類似）
             const essaySection = document.getElementById('ann-sidebar') || viewer.closest('.essay-viewer') || viewer.parentElement;
             if (essaySection) {

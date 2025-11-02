@@ -468,16 +468,29 @@
                         <span class="text-stone-700">將期刊/書名以斜體顯示</span>
                     </label>
                 </div>
+                <!-- 文內引註輔助（可選） -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <label class="flex flex-col text-sm md:col-span-2">
+                        <span class="text-stone-700 mb-1">引文頁碼/段落（可選）</span>
+                        <input id="harv-loc" type="text" class="border border-stone-300 rounded px-2 py-2" placeholder="例如：12 或 12–14 或 §3">
+                    </label>
+                    <div class="flex flex-col text-xs text-stone-500 justify-end">
+                        <span>將以「, p. 12」形式附於文內引註後。</span>
+                    </div>
+                </div>
                 <!-- 預覽 -->
                 <div class="mb-4">
                     <div class="text-xs text-stone-500 mb-1">預覽</div>
                     <div id="harv-preview" class="border border-stone-200 rounded-md p-3 bg-white text-sm text-stone-800 min-h-[48px]"></div>
                 </div>
                 <!-- 動作列 -->
-                <div class="flex justify-end gap-3 border-t border-stone-200 pt-4">
+                <div class="flex flex-wrap justify-end gap-3 border-t border-stone-200 pt-4">
+                    <button id="harv-biblio-refresh" class="px-3 py-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-100">更新徵引書目</button>
+                    <div class="flex-1"></div>
                     <button class="px-4 py-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-100" data-modal-close="true">關閉</button>
                     <button id="harv-reset" class="px-4 py-2 rounded-md border border-stone-300 text-stone-700 hover:bg-stone-100">重置</button>
                     <button id="harv-copy" class="px-4 py-2 rounded-md bg-stone-700 text-white hover:bg-stone-800">複製引用</button>
+                    <button id="harv-insert" class="px-4 py-2 rounded-md bg-emerald-700 text-white hover:bg-emerald-800">插入文內引註</button>
                 </div>
             </div>
         </div>

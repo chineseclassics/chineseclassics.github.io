@@ -186,3 +186,24 @@
 }
 
 
+/* ================================
+   引用顯示（文內引註 + 徵引書目）
+   ================================ */
+.ProseMirror .pm-citation {
+  background: rgba(16, 185, 129, 0.08); /* emerald-500 @ 8% */
+  color: #065f46; /* emerald-800 */
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+.ProseMirror .pm-bibliography {
+  border-top: 1px dashed #d1d5db; /* gray-300 */
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.ProseMirror .pm-bibliography p:first-child {
+  font-weight: 600;
+  color: #374151; /* gray-700 */
+}
+
+

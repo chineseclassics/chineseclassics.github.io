@@ -8,6 +8,7 @@
  * - 無框架依賴；樣式使用 Tailwind + 現有設計系統
  * - 註釋使用繁體中文
  */
+import citationManager from './citation-manager.js';
 
 // ================================
 // 工具：哈佛引用格式生成
@@ -98,6 +99,7 @@ function readFormData() {
     pubplace: document.getElementById('harv-pubplace')?.value || '',
     doi: document.getElementById('harv-doi')?.value || '',
     italics: document.getElementById('harv-italics')?.checked ?? true,
+    loc: document.getElementById('harv-loc')?.value || ''
   };
 }
 
@@ -221,6 +223,40 @@ function bindEventsOnce() {
           window.toast.error('複製失敗，請手動選取');
         }
       }
+    }
+  });
+
+  // 插入文內引註（自動加入引用庫）
+  document.addEventListener('click', (e) => {
+    if (e.target && (e.target.id === 'harv-insert' || e.target.closest('#harv-insert'))) {
+      e.preventDefault();
+      try {
+        const raw = readFormData();
+        const ref = citationManager.upsert(raw);
+        const ok = typeof window.__insertCitationAtCaret === 'function' && window.__insertCitationAtCaret(ref.key, raw.loc || '');
+        if (!ok) {
+          window.toast?.error?.('無法插入：編輯器尚未就緒');
+          return;
+        }
+        window.toast?.success?.('已插入文內引註');
+        // 可選：關閉模態
+        closeModal();
+      } catch (err) {
+        console.error(err);
+        window.toast?.error?.('插入失敗');
+      }
+    }
+  });
+
+  // 更新徵引書目
+  document.addEventListener('click', (e) => {
+    if (e.target && (e.target.id === 'harv-biblio-refresh' || e.target.closest('#harv-biblio-refresh'))) {
+      e.preventDefault();
+      try {
+        const fn = window.__refreshBibliography;
+        if (typeof fn === 'function') { fn(); window.toast?.success?.('已更新徵引書目'); }
+        else { window.toast?.error?.('編輯器尚未就緒'); }
+      } catch (_) { window.toast?.error?.('更新失敗'); }
     }
   });
 
