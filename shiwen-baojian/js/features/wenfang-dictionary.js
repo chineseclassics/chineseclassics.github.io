@@ -41,6 +41,20 @@ function sanitize(s) {
 }
 
 // ---------- Moedict 相關 ----------
+function cleanMoedictText(text) {
+  if (!text) return '';
+  // 萌典常見特殊符號清理：` ~ 以及分隔符號
+  return String(text).replace(/[`~￹￻]/g, '').trim();
+}
+
+function extractChineseWords(text) {
+  if (!text) return [];
+  // 先清理，再擷取連續中日韓統一表意文字
+  const cleaned = cleanMoedictText(text);
+  const words = cleaned.match(/[\u4E00-\u9FFF]+/g) || [];
+  return words.filter(Boolean);
+}
+
 async function fetchMoedict(word) {
   // 試 a（詞）→ 若 404 再試 uni（單字）
   const tryUrls = [
@@ -69,15 +83,32 @@ async function fetchMoedictTaiwan(word) {
 function parseMoedictEntries(json) {
   if (!json) return [];
   const entries = [];
-  const hs = json.h || []; // 條目陣列
+  const hs = json.h || []; // 詞語（/a）條目陣列
   for (const h of hs) {
     const defs = h.d || []; // 釋義陣列
     const senses = defs.map(d => {
       // d.f 是釋義文字，可能含標記符號；做基本清理
       const raw = (d.f || '').replace(/[\[\]{}（）]/g, '').replace(/[｜]/g, '');
-      const clean = sanitize(raw);
-      // 近義詞（若有字段 s 或 a）
-      const syns = Array.isArray(d.s) ? d.s : (Array.isArray(d.a) ? d.a : []);
+      const clean = sanitize(cleanMoedictText(raw));
+      // 近義詞：僅從 d.s 擷取（不混入反義詞 a）
+      const synField = d.s;
+      const synArr = Array.isArray(synField) ? synField : (synField ? [synField] : []);
+      const syns = [...new Set(synArr.flatMap(extractChineseWords))];
+      return { def: clean, syns };
+    }).filter(x => x.def);
+    if (senses.length) entries.push({ senses });
+  }
+
+  // 兼容單字（/uni）結構：heteronyms[].definitions
+  const hets = json.heteronyms || [];
+  for (const het of hets) {
+    const defs = het.definitions || [];
+    const senses = defs.map(d => {
+      const raw = (d.def || '').replace(/[\[\]{}（）]/g, '').replace(/[｜]/g, '');
+      const clean = sanitize(cleanMoedictText(raw));
+      const synField = d.s;
+      const synArr = Array.isArray(synField) ? synField : (synField ? [synField] : []);
+      const syns = [...new Set(synArr.flatMap(extractChineseWords))];
       return { def: clean, syns };
     }).filter(x => x.def);
     if (senses.length) entries.push({ senses });
@@ -109,20 +140,29 @@ async function cedictFallback(en) {
 function renderMoedict(word, parsed, twJson) {
   const enFromTw = twJson?.translation?.English || [];
   const enList = Array.isArray(enFromTw) ? enFromTw : (enFromTw ? [enFromTw] : []);
-  const sensesHtml = parsed.map((e, idx) => {
-    const syn = e.senses.flatMap(s => s.syns || []).filter(Boolean);
-    const defs = e.senses.map((s, i) => `<li class="mb-1 leading-6">${escapeHtml(s.def)}</li>`).join('');
-    const synHtml = syn.length ? `<div class="text-xs text-stone-600 mt-1">近義：${escapeHtml(Array.from(new Set(syn)).join('、'))}</div>` : '';
-    return `<div class="border-b border-stone-100 py-2">
-      <div class="text-stone-700 font-medium">義項 ${idx+1}</div>
-      <ul class="list-disc pl-5 mt-1">${defs}</ul>
-      ${synHtml}
-    </div>`;
-  }).join('');
+
+  // 展平成單一義項清單（移除「義項 1」等標題）
+  const allSenses = parsed.flatMap(e => e.senses || []);
+  const defsHtml = allSenses.map(s => `<li class="mb-1 leading-6">${escapeHtml(s.def)}</li>`).join('');
+
+  // 彙總近義詞（依據詞游記做法拆分、去重）
+  const allSyns = [...new Set(allSenses.flatMap(s => s.syns || []).filter(Boolean))];
+  const synHtml = allSyns.length
+    ? `<div class="mt-2">
+         <div class="text-xs text-stone-500 mb-1">近義：</div>
+         <div class="flex flex-wrap gap-1">
+           ${allSyns.map(w => `
+             <button type="button" class="syn-tag inline-flex items-center px-2 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs border border-stone-200" data-word="${escapeHtml(w)}">${escapeHtml(w)}</button>
+           `).join('')}
+         </div>
+       </div>`
+    : '';
+
   const enHtml = enList.length ? `<div class="mt-3 text-sm"><span class="text-stone-600">英文：</span>${escapeHtml(enList.join(', '))}</div>` : '';
+
   return `<div class="p-4">
     <div class="text-lg font-bold text-stone-800 mb-2">${escapeHtml(word)}</div>
-    ${sensesHtml || '<div class="text-sm text-stone-500">（未找到詳細釋義）</div>'}
+    ${defsHtml ? `<ul class="list-disc pl-5">${defsHtml}</ul>${synHtml}` : '<div class="text-sm text-stone-500">（未找到詳細釋義）</div>'}
     ${enHtml}
   </div>`;
 }
@@ -243,6 +283,22 @@ function bindOnce() {
     const closer = e.target.closest('[data-modal-close="true"]');
     if (closer && document.getElementById('dictionary-modal') && !document.getElementById('dictionary-modal').classList.contains('hidden')) {
       e.preventDefault(); closeDictModal();
+    }
+  });
+
+  // 近義詞標籤點擊：填入查詢框並觸發查詢
+  document.addEventListener('click', (e) => {
+    const tag = e.target.closest('.syn-tag');
+    if (tag) {
+      e.preventDefault();
+      const w = tag.getAttribute('data-word') || '';
+      const input = document.getElementById('dict-query');
+      if (input) {
+        input.value = w;
+        // 若啟用自動語言偵測，runQuery 會自動將 zh→en
+        // 若未啟用，沿用當前方向（通常為中→英）
+        runQuery();
+      }
     }
   });
 
