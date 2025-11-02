@@ -92,7 +92,8 @@ let cedictLite = null; // { en: [zh1, zh2, ...] }
 async function ensureCedictLite() {
   if (cedictLite) return cedictLite;
   try {
-    const r = await fetch('./js/data/cedict-mini.json');
+    // 使用絕對路徑，避免在其他應用頁面載入時相對路徑錯誤（依平台規範）
+    const r = await fetch('/shiwen-baojian/js/data/cedict-mini.json');
     if (r.ok) cedictLite = await r.json();
   } catch (_) {}
   return cedictLite || {};
@@ -175,7 +176,8 @@ async function queryDictionary(q, fromLang, toLang) {
       // 英→中：CEDICT 分片
       const items = await cedictLookupEnToZh(q);
       if (items && items.length) {
-        const html = renderCedictEn(q, items);
+        const ranked = rankCedictResults(q, items);
+        const html = renderCedictEn(q, ranked);
         cache.set(key, html);
         return html;
       }
@@ -284,3 +286,73 @@ function bindOnce() {
     console.error('字典模組初始化錯誤', e);
   }
 })();
+
+// ---------- 排序強化（通用）：優先一般義項，降權專名/地名/人名/百科化長敘 ----------
+function rankCedictResults(query, items) {
+  const q = String(query || '').toLowerCase().trim();
+
+  // 去重（以漢字+拼音）
+  const seen = new Set();
+  const unique = [];
+  for (const e of items) {
+    const key = `${e.hanzi}#${e.pinyin||''}`;
+    if (!seen.has(key)) { seen.add(key); unique.push(e); }
+  }
+
+  const properLowerHints = [
+    'surname','given name','personal name','courtesy name','pen name','name of a person',
+    'place name','county','city','province','prefecture','township','district','village',
+    'river','lake','mountain','island','strait','bay','sea','ocean','gulf','cape','peninsula',
+    'king','queen','duke','earl','baron','lord','emperor','empress','dynasty','kingdom','republic',
+    'god','goddess','saint','bishop','minister','president','prime minister','actor','actress','poet','explorer'
+  ];
+
+  const negativeMeta = ['abbr.', 'variant of', 'also written'];
+
+  function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+  function scoreEntry(e) {
+    let s = 0;
+    const hanzi = String(e.hanzi||'');
+    const sensesArr = Array.isArray(e.senses) ? e.senses : [];
+    const sensesLower = sensesArr.map(x=>String(x).toLowerCase());
+    const sensesJoined = sensesArr.join(' \u0000 ');
+    const sensesLowerJoined = sensesLower.join(' \u0000 ');
+
+    // 1) 與查詢的語義相關度（整詞匹配）
+    if (q) {
+      const wb = new RegExp(`\\b${escapeRegExp(q)}\\b`);
+      if (wb.test(sensesLowerJoined)) s += 12;
+    }
+
+    // 2) 語言與一般概念加權（不針對特定詞）
+    if (/\blanguage\b|\bdialect\b|\bscript\b|\bwriting\b/.test(sensesLowerJoined)) s += 18;
+
+    // 3) 降權：專名/地名/頭銜 等常見指示詞
+    for (const kw of properLowerHints) { if (sensesLowerJoined.includes(kw)) { s -= 24; break; } }
+
+    // 4) 降權：元資訊或旁註
+    for (const m of negativeMeta) { if (sensesLowerJoined.includes(m)) s -= 6; }
+    if (sensesLowerJoined.includes('cl:')) s -= 4; // 量詞標記，非負但降低排序
+
+    // 5) 降權：英文義項中連續多個首字母大寫詞（常為專名）
+    if (/(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,})/.test(sensesJoined)) s -= 16;
+
+    // 6) 以詞形外觀判斷：含間隔點/非常長的中文詞條 → 專名傾向
+    if (hanzi.includes('·')) s -= 28;
+    const hanziLen = hanzi.length;
+    if (hanziLen <= 4) s += 5; else if (hanziLen >= 9) s -= 5;
+
+    // 7) 定義長度啟發：短定義通常更核心，極長則可能百科化
+    const firstLen = (sensesArr[0] ? String(sensesArr[0]).length : 0);
+    if (firstLen > 0 && firstLen < 40) s += 6; else if (firstLen > 140) s -= 8;
+
+    return s;
+  }
+
+  return unique
+    .map(e => ({ e, s: scoreEntry(e) }))
+    .sort((a,b) => b.s - a.s)
+    .map(x => x.e)
+    .slice(0, 50); // 供渲染層再取前 12
+}
