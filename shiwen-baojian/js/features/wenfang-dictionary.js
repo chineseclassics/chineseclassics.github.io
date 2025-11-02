@@ -123,7 +123,10 @@ async function msLookupEnToZh(word) {
     },
     body: JSON.stringify(payload)
   });
-  if (!r.ok) throw new Error(`MS Lookup 失敗：${r.status}`);
+  if (!r.ok) {
+    if (r.status === 401 || r.status === 403) throw new Error('no_auth');
+    throw new Error(`MS Lookup 失敗：${r.status}`);
+  }
   const json = await r.json();
   if (!json || !json.ok) throw new Error('MS 回應異常');
   cache.set(key, json.data);
@@ -143,7 +146,10 @@ async function msExamplesEnToZh(text, translation) {
     },
     body: JSON.stringify(payload)
   });
-  if (!r.ok) throw new Error(`MS Examples 失敗：${r.status}`);
+  if (!r.ok) {
+    if (r.status === 401 || r.status === 403) throw new Error('no_auth');
+    throw new Error(`MS Examples 失敗：${r.status}`);
+  }
   const json = await r.json();
   if (!json || !json.ok) throw new Error('MS 回應異常');
   return json.data;
@@ -247,12 +253,17 @@ async function queryDictionary(q, fromLang, toLang) {
         const html = renderMsLookup(q, ms);
         cache.set(key, html);
         return html;
-      } catch (e) {
+        } catch (e) {
         console.warn('MS 失敗，啟用 CEDICT 兜底：', e);
-        const pairs = await cedictFallback(q);
-        const html = renderCedictFallback(q, pairs);
-        cache.set(key, html);
-        return html;
+          // 若是未登入/未授權，不要覆蓋先前顯示的登入提示
+          if (String(e && e.message || e) === 'no_auth') {
+            setStatus('請登入以使用英→中詞典');
+            return '<div class="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded">請先登入後使用英→中詞典功能。</div>';
+          }
+          const pairs = await cedictFallback(q);
+          const html = renderCedictFallback(q, pairs);
+          cache.set(key, html);
+          return html;
       }
     }
   } finally {
