@@ -1,0 +1,12 @@
+{
+  "student": ["學生", "學子"],
+  "teacher": ["老師", "教師"],
+  "essay": ["文章", "短文", "論文"],
+  "argument": ["論點", "論據"],
+  "analysis": ["分析"],
+  "example": ["例子", "示例"],
+  "evaluate": ["評估", "評價"],
+  "revise": ["修改", "修訂"],
+  "introduction": ["引言", "導言"],
+  "conclusion": ["結論"]
+}

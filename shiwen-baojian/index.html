@@ -226,6 +226,15 @@
                                     </span>
                                     <i class="fas fa-chevron-right text-stone-400"></i>
                                 </button>
+                                <!-- 新增：中英詞典工具 -->
+                                <button id="open-dictionary-tool-btn" type="button"
+                                        class="w-full flex items-center justify-between bg-stone-50 hover:bg-stone-100 text-stone-800 border border-stone-200 rounded-lg px-3 py-2 transition-all">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-book-open text-stone-600"></i>
+                                        <span class="text-sm font-medium">中英詞典</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right text-stone-400"></i>
+                                </button>
                                 <!-- 預留更多工具入口（未來可擴展） -->
                             </div>
                         </div>
@@ -495,6 +504,54 @@
             </div>
         </div>
     </div>
+
+    <!-- 中英詞典模態框（文房之寶） -->
+    <div id="dictionary-modal" class="fixed inset-0 z-[5000] hidden">
+        <!-- 遮罩層 -->
+        <div class="absolute inset-0 bg-black/50" data-modal-close="true"></div>
+        <!-- 內容框 -->
+        <div class="relative mx-auto my-10 w-[94%] max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden">
+            <!-- 標題列 -->
+            <div class="bg-gradient-to-r from-stone-700 to-stone-600 px-5 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-amber-50">
+                    <i class="fas fa-book-open"></i>
+                    <h3 class="font-bold text-lg">中英詞典</h3>
+                </div>
+                <button class="text-amber-100 hover:text-white" data-modal-close="true" aria-label="關閉">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <!-- 查詢區 -->
+            <div class="p-5 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                    <div class="flex-1 relative">
+                        <input id="dict-query" type="text" placeholder="輸入中文或英文詞語…" class="w-full border border-stone-300 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-stone-400" />
+                        <i class="fas fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"></i>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm text-stone-700">
+                        <label class="flex items-center gap-2 select-none">
+                            <input id="dict-auto" type="checkbox" class="w-4 h-4 text-stone-600" checked />
+                            自動偵測語言
+                        </label>
+                        <div class="flex items-center gap-2 select-none">
+                            <span id="dict-from-label" class="px-2 py-1 rounded bg-stone-100 border border-stone-200">EN</span>
+                            <i class="fas fa-arrow-right text-stone-500"></i>
+                            <span id="dict-to-label" class="px-2 py-1 rounded bg-stone-100 border border-stone-200">中</span>
+                            <button id="dict-swap" class="ml-2 px-2 py-1 text-xs rounded border border-stone-300 hover:bg-stone-100" title="交換方向">交換</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 結果區 -->
+                <div id="dict-results" class="border border-stone-200 rounded-lg overflow-hidden">
+                    <div class="px-4 py-3 text-sm text-stone-500 bg-stone-50">請輸入要查詢的詞語</div>
+                </div>
+
+                <!-- 狀態列 -->
+                <div id="dict-status" class="text-xs text-stone-500"></div>
+            </div>
+        </div>
+    </div>
     
     <!-- 太虛幻境應用切換器（必需） -->
     <script src="/assets/js/taixu-app-switcher.js"></script>
@@ -525,5 +582,7 @@
     <script type="module" src="js/app.js?v=20250127a"></script>
     <!-- 文房之寶（工具模組） -->
     <script type="module" src="js/features/wenfang-tools.js?v=20251102"></script>
+    <!-- 文房之寶：中英詞典模組 -->
+    <script type="module" src="js/features/wenfang-dictionary.js?v=20251102"></script>
 </body>
 </html>
