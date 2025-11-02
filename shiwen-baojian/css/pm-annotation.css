@@ -198,12 +198,19 @@
 
 .ProseMirror .pm-bibliography {
   border-top: 1px dashed #d1d5db; /* gray-300 */
-  margin-top: 12px;
-  padding-top: 12px;
+  /* 與結論段落保持更明顯的視覺分隔 */
+  margin-top: 1.5rem;   /* 24px */
+  padding-top: 1rem;    /* 16px */
 }
 .ProseMirror .pm-bibliography p:first-child {
   font-weight: 600;
   color: #374151; /* gray-700 */
+  margin-bottom: 0.25rem;
 }
+/* 書目區塊內不需要段落左側縮排與 hover 背景（避免誤以為仍屬「結論」段） */
+.pm-essay.pm-essay-structured .pm-bibliography p {
+  padding-left: 0;
+}
+.pm-essay.pm-essay-structured .pm-bibliography p:hover { background: transparent; }
 
 
