@@ -1362,6 +1362,14 @@ function createYucunBrushPlugin(opts = {}) {
     const decos = [];
     doc.descendants((node, pos) => {
       if (node.type && node.type.name === 'paragraph') {
+        // 跳過 bibliography 內的段落（不顯示毛筆按鈕）
+        try {
+          const $pos = doc.resolve(pos);
+          for (let d = 1; d <= $pos.depth; d++) {
+            const anc = $pos.node(d);
+            if (anc && anc.type && anc.type.name === 'bibliography') return true;
+          }
+        } catch (_) {}
         // 將 widget 放在段落內容起始（pos+1）
         decos.push(Decoration.widget(pos + 1, () => createBrushEl(pos + 1), { side: -1, ignoreSelection: true }));
       }

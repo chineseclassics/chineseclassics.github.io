@@ -142,15 +142,14 @@ function setupCitationAPI(view) {
       });
 
       let tr = state.tr;
+      // 先刪除舊的 bibliography（若存在），避免位置錯亂
       if (foundPos != null) {
-        // 替換現有內容
-        const node = biblioType.create(null, paras);
-        tr = tr.replaceWith(foundPos, foundPos + state.doc.nodeAt(foundPos).nodeSize, node);
-      } else {
-        // 附加到文末
-        const node = biblioType.create(null, paras);
-        tr = tr.insert(state.doc.content.size, node);
+        const old = state.doc.nodeAt(foundPos);
+        if (old) tr = tr.delete(foundPos, foundPos + old.nodeSize);
       }
+      // 永遠附加到文末，確保位於結論之後
+      const node = biblioType.create(null, paras);
+      tr = tr.insert(tr.doc.content.size, node);
       dispatch(tr.scrollIntoView());
       return true;
     } catch (_) { return false; }

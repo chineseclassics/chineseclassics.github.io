@@ -177,14 +177,19 @@ export class PMEditor {
               }
             } catch (_) { /* 忽略 DOM 對映異常，改走索引邏輯 */ }
 
-            // B) 以頂層索引為輔的判斷（向後相容）
+            // B) 以頂層索引為輔的判斷（向後相容）——僅當頂層為段落，且為最後一個頂層段落
             let inConclusionByIndex = false;
-            // 提前準備 total，供後續 Backspace 分支使用
-            let total = 0;
+            // 準備最後一個頂層段落索引，供 Backspace 分支使用
+            let lastParaIndex = -1;
             try {
-              const index = $from.index(1);
-              total = state.doc.childCount || state.doc.content.childCount || 0;
-              inConclusionByIndex = index === total - 1;
+              const topIndex = $from.index(1);
+              const topCount = state.doc.childCount || state.doc.content.childCount || 0;
+              for (let i = topCount - 1; i >= 0; i--) {
+                const c = state.doc.child(i);
+                if (c && c.type && c.type.name === 'paragraph') { lastParaIndex = i; break; }
+              }
+              const topNode = state.doc.child(Math.max(0, Math.min(topIndex, topCount - 1)));
+              inConclusionByIndex = !!(topNode && topNode.type && topNode.type.name === 'paragraph' && topIndex === lastParaIndex);
             } catch (_) { inConclusionByIndex = false; }
 
             const inConclusion = inConclusionByBadge || inConclusionByIndex;
@@ -197,7 +202,8 @@ export class PMEditor {
             // 在結論段段首，阻止 Backspace 與上一段合併
             if (inConclusion && event.key === 'Backspace') {
               const atStart = $from.parentOffset === 0 && sel.empty;
-              if (atStart && total > 1) {
+              // 僅當存在上一個段落時阻止合併（忽略 bibliography 等非段落）
+              if (atStart && lastParaIndex > 0) {
                 event.preventDefault();
                 return true;
               }
@@ -223,7 +229,19 @@ export class PMEditor {
         init: (_cfg, state) => {
           const safeBuild = (doc) => {
             const posList = [];
-            doc.descendants((node, pos) => { if (node.type.name === 'paragraph') posList.push(pos); });
+            doc.descendants((node, pos) => {
+              if (node.type.name !== 'paragraph') return true;
+              // 忽略 bibliography 區塊內的段落
+              try {
+                const $pos = doc.resolve(pos);
+                for (let d = 1; d <= $pos.depth; d++) {
+                  const anc = $pos.node(d);
+                  if (anc && anc.type && anc.type.name === 'bibliography') return true; // 跳過此段
+                }
+              } catch (_) {}
+              posList.push(pos);
+              return true;
+            });
             const total = posList.length;
             const decos = [];
             posList.forEach((pos, idx) => {
@@ -243,7 +261,19 @@ export class PMEditor {
           // 重新生成標籤
           const doc = tr.doc;
           const posList = [];
-          doc.descendants((node, pos) => { if (node.type.name === 'paragraph') posList.push(pos); });
+          doc.descendants((node, pos) => {
+            if (node.type.name !== 'paragraph') return true;
+            // 忽略 bibliography 區塊內的段落
+            try {
+              const $pos = doc.resolve(pos);
+              for (let d = 1; d <= $pos.depth; d++) {
+                const anc = $pos.node(d);
+                if (anc && anc.type && anc.type.name === 'bibliography') return true; // 跳過此段
+              }
+            } catch (_) {}
+            posList.push(pos);
+            return true;
+          });
           const total = posList.length;
           const decos = [];
           posList.forEach((pos, idx) => {
