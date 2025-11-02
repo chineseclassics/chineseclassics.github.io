@@ -275,7 +275,11 @@ shiwen-baojian/
 - [Quill.js 文檔](https://quilljs.com/docs)
 - [DeepSeek API](https://platform.deepseek.com)
 
-## 📄 授權
+## � 字典資料與授權
+
+- 英→中查詢採用 CEDICT（CC BY-SA 3.0）。我們以英文字首分片的方式在前端動態載入，生成與部署流程見 `docs/cedict-sharding.md`。請在對外發佈時保留 CEDICT 來源與授權聲明。
+
+## �📄 授權
 
 MIT License - 詳見 [LICENSE](../LICENSE) 文件
 

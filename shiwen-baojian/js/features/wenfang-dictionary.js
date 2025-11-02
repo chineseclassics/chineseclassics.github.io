@@ -1,17 +1,17 @@
 /**
  * 文房之寶 - 中英詞典模組
  * 功能：
- * - 英→中：優先使用 Supabase Edge Function 代理 Microsoft Translator Dictionary Lookup/Examples
+ * - 英→中：改用 CEDICT 分片索引（不再依賴 Microsoft），動態載入對應字首分片
  * - 中→英：使用萌典 API（/a 與 /c），顯示釋義、英文翻譯、近義詞（若有）
- * - 兜底：英→中查詢失敗或配額不足時，使用輕量 CEDICT 本地索引（cedict-mini.json）
+ * - 兜底：若分片缺失或找不到詞條，可使用輕量 CEDICT 本地索引（cedict-mini.json）
  * - 介面：模態視窗、即時搜尋、防抖、快取、錯誤提示
  * 註釋採繁體中文
  */
 
-// ---------- 常量（本應用專用 Supabase 專案） ----------
-const SUPABASE_URL = 'https://fjvgfhdqrezutrmbidds.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqdmdmaGRxcmV6dXRybWJpZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDE3ODIsImV4cCI6MjA3NjM3Nzc4Mn0.eVX46FM_UfLBk9vJiCfA_zC9PIMTJxmG8QNZQWdG8T8';
-const FUNC_BASE = `${SUPABASE_URL}/functions/v1/translator-proxy`;
+// ---------- 常量 ----------
+// 取消 Microsoft 依賴，英→中改為 CEDICT 分片；保留萌典用於中→英
+// ---------- 引入 CEDICT 分片載入器（EN→ZH） ----------
+import { cedictLookupEnToZh } from './cedict-loader.js';
 
 // ---------- 輔助：防抖 / 偵測語言 / 內存快取 ----------
 const debounce = (fn, ms = 300) => {
@@ -85,75 +85,7 @@ function parseMoedictEntries(json) {
   return entries;
 }
 
-// ---------- Microsoft Dictionary 代理 ----------
-async function getSupabaseAccessToken() {
-  try {
-    // 優先使用全局 sb（若 app 已建立）
-    if (window.sb?.auth) {
-      const { data } = await window.sb.auth.getSession();
-      return data?.session?.access_token || null;
-    }
-    // 次選：若全局未建立，建立一個客戶端以讀取現有會話（同域 LocalStorage）
-    if (window.supabase && !window.__dictSb) {
-      window.__dictSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
-    }
-    if (window.__dictSb?.auth) {
-      const { data } = await window.__dictSb.auth.getSession();
-      return data?.session?.access_token || null;
-    }
-  } catch (_) {}
-  return null;
-}
-
-async function msLookupEnToZh(word) {
-  const key = `ms|${word}`;
-  if (cache.has(key)) return cache.get(key);
-  const accessToken = await getSupabaseAccessToken();
-  if (!accessToken) {
-    setResultsHtml('<div class="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded">請先登入後使用英→中詞典功能。</div>');
-    throw new Error('no_auth');
-  }
-  const payload = [{ text: word }];
-  const r = await fetch(`${FUNC_BASE}/dictionary/lookup?from=en&to=zh-Hant`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${accessToken}`
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!r.ok) {
-    if (r.status === 401 || r.status === 403) throw new Error('no_auth');
-    throw new Error(`MS Lookup 失敗：${r.status}`);
-  }
-  const json = await r.json();
-  if (!json || !json.ok) throw new Error('MS 回應異常');
-  cache.set(key, json.data);
-  return json.data;
-}
-
-async function msExamplesEnToZh(text, translation) {
-  const accessToken = await getSupabaseAccessToken();
-  if (!accessToken) throw new Error('no_auth');
-  const payload = [{ text, translation }];
-  const r = await fetch(`${FUNC_BASE}/dictionary/examples?from=en&to=zh-Hant`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${accessToken}`
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!r.ok) {
-    if (r.status === 401 || r.status === 403) throw new Error('no_auth');
-    throw new Error(`MS Examples 失敗：${r.status}`);
-  }
-  const json = await r.json();
-  if (!json || !json.ok) throw new Error('MS 回應異常');
-  return json.data;
-}
+// （移除 Microsoft 代理相關函式）
 
 // ---------- CEDICT 兜底 ----------
 let cedictLite = null; // { en: [zh1, zh2, ...] }
@@ -194,28 +126,21 @@ function renderMoedict(word, parsed, twJson) {
   </div>`;
 }
 
-function renderMsLookup(word, msData) {
-  // msData: [ { normalizedSource, displaySource, translations: [ { normalizedTarget, displayTarget, posTag, confidence, backTranslations } ] } ]
-  const item = Array.isArray(msData) ? msData[0] : null;
-  const translations = item?.translations || [];
-  if (!translations.length) return `<div class="p-4 text-sm text-stone-500">無結果</div>`;
-  const rows = translations.slice(0, 8).map(t => {
-    const backs = (t.backTranslations || []).slice(0, 4).map(b => `${escapeHtml(b.displayText || b.normalizedText || '')}${b.frequency ? `<span class="text-xs text-stone-400"> ×${b.frequency}</span>` : ''}`).join('、');
-    const pos = t.posTag ? `<span class="text-xs px-1.5 py-0.5 rounded bg-stone-100 border border-stone-200">${escapeHtml(t.posTag)}</span>` : '';
-    const conf = (t.confidence != null) ? `<span class="text-xs text-stone-400">(${(t.confidence*100).toFixed(0)}%)</span>` : '';
+function renderCedictEn(word, items) {
+  if (!Array.isArray(items) || !items.length) {
+    return `<div class="p-4 text-sm text-stone-500">無結果（CEDICT）</div>`;
+  }
+  const rows = items.slice(0, 12).map(e => {
+    const senses = (e.senses || []).slice(0, 4).map(s => `<li class="mb-0.5">${escapeHtml(s)}</li>`).join('');
+    const pinyin = e.pinyin ? `<span class="ml-2 text-xs text-stone-600">${escapeHtml(e.pinyin)}</span>` : '';
     return `<div class="py-2 border-b border-stone-100">
-      <div class="flex items-center gap-2">
-        <div class="text-stone-900 font-medium">${escapeHtml(t.displayTarget || t.normalizedTarget)}</div>
-        ${pos} ${conf}
-        <button class="ml-auto text-xs px-2 py-1 rounded border border-stone-300 hover:bg-stone-100" data-example="${encodeURIComponent(JSON.stringify({ s: item.displaySource || item.normalizedSource, t: t.displayTarget || t.normalizedTarget }))}">例句</button>
-      </div>
-      ${backs ? `<div class="text-xs text-stone-600 mt-1">反向常見：${backs}</div>` : ''}
+      <div class="text-stone-900 font-medium">${escapeHtml(e.hanzi)}${pinyin}</div>
+      ${senses ? `<ul class="list-disc pl-5 text-sm text-stone-700 mt-1">${senses}</ul>` : ''}
     </div>`;
   }).join('');
   return `<div class="p-2">
-    <div class="px-2 py-1 text-sm text-stone-600">查詢：<span class="font-medium">${escapeHtml(item.displaySource || item.normalizedSource || word)}</span></div>
+    <div class="px-2 py-1 text-sm text-stone-600">查詢：<span class="font-medium">${escapeHtml(word)}</span></div>
     <div class="divide-y">${rows}</div>
-    <div id="dict-examples" class="mt-3"></div>
   </div>`;
 }
 
@@ -247,24 +172,18 @@ async function queryDictionary(q, fromLang, toLang) {
       cache.set(key, html);
       return html;
     } else {
-      // 英→中
-      try {
-        const ms = await msLookupEnToZh(q);
-        const html = renderMsLookup(q, ms);
+      // 英→中：CEDICT 分片
+      const items = await cedictLookupEnToZh(q);
+      if (items && items.length) {
+        const html = renderCedictEn(q, items);
         cache.set(key, html);
         return html;
-        } catch (e) {
-        console.warn('MS 失敗，啟用 CEDICT 兜底：', e);
-          // 若是未登入/未授權，不要覆蓋先前顯示的登入提示
-          if (String(e && e.message || e) === 'no_auth') {
-            setStatus('請登入以使用英→中詞典');
-            return '<div class="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded">請先登入後使用英→中詞典功能。</div>';
-          }
-          const pairs = await cedictFallback(q);
-          const html = renderCedictFallback(q, pairs);
-          cache.set(key, html);
-          return html;
       }
+      // 分片缺失或查無 → 使用迷你兜底
+      const pairs = await cedictFallback(q);
+      const html = renderCedictFallback(q, pairs);
+      cache.set(key, html);
+      return html;
     }
   } finally {
     setStatus('');
@@ -346,21 +265,7 @@ function bindOnce() {
     }
   });
 
-  // 範例句觸發（動態委派）
-  document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-example]');
-    if (!btn) return;
-    try {
-      const payload = JSON.parse(decodeURIComponent(btn.getAttribute('data-example')));
-      const data = await msExamplesEnToZh(payload.s, payload.t);
-      const list = Array.isArray(data) ? data[0]?.examples || [] : [];
-      const html = list.slice(0, 5).map(ex => `<li class="mb-1"><span class="text-stone-900">${escapeHtml(ex.sourcePrefix||'')}${escapeHtml(ex.sourceTerm||'')}${escapeHtml(ex.sourceSuffix||'')}</span><span class="text-stone-500"> → ${escapeHtml(ex.targetPrefix||'')}${escapeHtml(ex.targetTerm||'')}${escapeHtml(ex.targetSuffix||'')}</span></li>`).join('');
-      const exEl = document.getElementById('dict-examples');
-      if (exEl) exEl.innerHTML = `<div class="mt-2 border-t border-stone-200 pt-2"><div class="text-sm text-stone-700 mb-1">例句：</div><ul class="list-disc pl-5 text-sm">${html || '<li class=\"text-stone-500\">暫無</li>'}</ul></div>`;
-    } catch (err) {
-      console.warn('例句獲取失敗', err);
-    }
-  });
+  // 移除「例句」按鈕邏輯（EN→ZH 改用 CEDICT，暫無例句 API）
 
   // ESC 關閉
   document.addEventListener('keydown', (e) => {
