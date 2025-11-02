@@ -220,12 +220,13 @@
                             
                             <!-- 賈雨村說：全局雨村評點（當前段） -->
                             <div class="px-4 py-3 border-t border-gray-200">
-                                <button id="sidebar-yucun-btn" class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-all">
-                                    <i class="fas fa-pen-fancy"></i>
-                                    <span>雨村評點（當前段）</span>
-                                </button>
+                                <!-- 根治閃爍：直接以提示內容作為模板初始狀態，移除舊的綠色按鈕 -->
+                                <div class="yucun-tip text-stone-700 text-sm leading-6">
+                                    <i class="fas fa-lightbulb text-amber-500 mr-2"></i>
+                                    提示：點擊段落左側的毛筆圓形按鈕，請「賈雨村說」為該段落提供反饋。
+                                </div>
                             </div>
-                            <!-- AI 反饋內容（點擊上方按鈕後展開） -->
+                            <!-- AI 反饋內容（舊流程保留占位；新流程由段落內毛筆按鈕觸發並在編輯器內顯示） -->
                             <div id="sidebar-feedback-content" class="p-4 hidden flex-1 min-h-0 overflow-y-auto"></div>
                         </div>
                     </div>
