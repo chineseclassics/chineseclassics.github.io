@@ -138,6 +138,19 @@ function openModal() {
   // 首次更新預覽
   applyTypeVisibility();
   updatePreview();
+
+  // 綁定作者說明 Tooltip（避免重複創建問題，採用 try/catch）
+  try {
+    const help = document.getElementById('harv-author-help');
+    if (help && window.tooltip && !help.__helpBound) {
+      window.tooltip.bind(
+        help,
+        '格式：姓, 名首字母.；多位以分號分隔。\n示例：Chen, L.; Wang, H.',
+        { type: 'info', position: 'top', trigger: 'both' }
+      );
+      help.__helpBound = true;
+    }
+  } catch (_) {}
 }
 
 function closeModal() {
