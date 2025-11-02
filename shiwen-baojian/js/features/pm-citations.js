@@ -42,6 +42,7 @@ export function getCitationSchemaExtensions() {
         group: 'block',
         content: 'paragraph*',
         defining: true,
+        isolating: true, // 與正文（含結論）隔離，避免選區/合併影響到此區
         toDOM: () => ['div', { class: 'pm-bibliography' }, 0],
         parseDOM: [{ tag: 'div.pm-bibliography' }]
       }
@@ -141,7 +142,11 @@ function setupCitationAPI(view) {
         return true;
       });
 
-      let tr = state.tr;
+  let tr = state.tr;
+  // 保存當前選區，避免重建書目時游標或高亮移動到書目區
+  const Sel = state.selection.constructor;
+  const curFrom = state.selection.from;
+  const curTo = state.selection.to;
       // 先刪除舊的 bibliography（若存在），避免位置錯亂
       if (foundPos != null) {
         const old = state.doc.nodeAt(foundPos);
@@ -150,7 +155,16 @@ function setupCitationAPI(view) {
       // 永遠附加到文末，確保位於結論之後
       const node = biblioType.create(null, paras);
       tr = tr.insert(tr.doc.content.size, node);
-      dispatch(tr.scrollIntoView());
+      // 恢復選區到原位置（映射至新文檔），避免誤入書目區域
+      try {
+        const mappedFrom = tr.mapping.map(curFrom, 1);
+        const mappedTo = tr.mapping.map(curTo, 1);
+        const safeFrom = Math.max(0, Math.min(mappedFrom, tr.doc.content.size - 1));
+        const safeTo = Math.max(safeFrom, Math.min(mappedTo, tr.doc.content.size - 1));
+        tr = tr.setSelection(Sel.create(tr.doc, safeFrom, safeTo));
+      } catch (_) {}
+      // 不自動滾動視圖，避免視覺焦點跑到書目區
+      dispatch(tr);
       return true;
     } catch (_) { return false; }
   };
