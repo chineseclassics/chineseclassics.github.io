@@ -42,6 +42,12 @@ async function proxyToMicrosoft(req: Request, path: "/dictionary/lookup" | "/dic
   const origin = req.headers.get("origin");
   const headers = corsHeaders(origin);
 
+  // 先處理預檢請求（避免因環境變數缺失而報錯 500）
+  if (req.method === "OPTIONS") {
+    return new Response("", { headers, status: 204 });
+  }
+
+  // 僅在非預檢時讀取環境變數
   const KEY = getEnvOrThrow("MICROSOFT_TRANSLATOR_KEY");
   const REGION = getEnvOrThrow("MICROSOFT_TRANSLATOR_REGION");
   const ENDPOINT = getEnvOrThrow("MICROSOFT_TRANSLATOR_ENDPOINT").replace(/\/$/, "");
@@ -49,10 +55,6 @@ async function proxyToMicrosoft(req: Request, path: "/dictionary/lookup" | "/dic
   // 解析查詢參數與預設
   const from = url.searchParams.get("from") || "en"; // 預設英→中
   const to = url.searchParams.get("to") || "zh-Hant";
-
-  if (req.method === "OPTIONS") {
-    return new Response("", { headers, status: 204 });
-  }
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "請使用 POST" }, { status: 405, headers });

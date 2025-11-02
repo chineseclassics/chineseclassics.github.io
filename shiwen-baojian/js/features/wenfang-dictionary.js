@@ -86,16 +86,40 @@ function parseMoedictEntries(json) {
 }
 
 // ---------- Microsoft Dictionary 代理 ----------
+async function getSupabaseAccessToken() {
+  try {
+    // 優先使用全局 sb（若 app 已建立）
+    if (window.sb?.auth) {
+      const { data } = await window.sb.auth.getSession();
+      return data?.session?.access_token || null;
+    }
+    // 次選：若全局未建立，建立一個客戶端以讀取現有會話（同域 LocalStorage）
+    if (window.supabase && !window.__dictSb) {
+      window.__dictSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+    }
+    if (window.__dictSb?.auth) {
+      const { data } = await window.__dictSb.auth.getSession();
+      return data?.session?.access_token || null;
+    }
+  } catch (_) {}
+  return null;
+}
+
 async function msLookupEnToZh(word) {
   const key = `ms|${word}`;
   if (cache.has(key)) return cache.get(key);
+  const accessToken = await getSupabaseAccessToken();
+  if (!accessToken) {
+    setResultsHtml('<div class="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded">請先登入後使用英→中詞典功能。</div>');
+    throw new Error('no_auth');
+  }
   const payload = [{ text: word }];
   const r = await fetch(`${FUNC_BASE}/dictionary/lookup?from=en&to=zh-Hant`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      'Authorization': `Bearer ${accessToken}`
     },
     body: JSON.stringify(payload)
   });
@@ -107,13 +131,15 @@ async function msLookupEnToZh(word) {
 }
 
 async function msExamplesEnToZh(text, translation) {
+  const accessToken = await getSupabaseAccessToken();
+  if (!accessToken) throw new Error('no_auth');
   const payload = [{ text, translation }];
   const r = await fetch(`${FUNC_BASE}/dictionary/examples?from=en&to=zh-Hant`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      'Authorization': `Bearer ${accessToken}`
     },
     body: JSON.stringify(payload)
   });
