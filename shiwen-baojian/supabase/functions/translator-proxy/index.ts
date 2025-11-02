@@ -17,7 +17,9 @@ function corsHeaders(origin: string | null) {
   return {
     "Access-Control-Allow-Origin": origin || "*",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-authorization, x-authorization, accept",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Max-Age": "86400",
   } as Record<string, string>;
 }
 
@@ -147,6 +149,23 @@ Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin");
   const headers = corsHeaders(origin);
 
+  // 全域預檢優先處理，避免任何路由或環境讀取造成 500
+  if (req.method === "OPTIONS") {
+    return new Response("", { status: 204, headers });
+  }
+
+  // 簡易來源白名單（即使關閉 JWT 也有限制）。如需擴展，調整此陣列。
+  const allowed = new Set([
+    "https://chineseclassics.github.io",
+    "http://localhost:5173",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:8080",
+  ]);
+  if (origin && !allowed.has(origin)) {
+    return jsonResponse({ error: "forbidden_origin" }, { status: 403, headers });
+  }
+
   // 健康檢查
   if (url.pathname === "/" || url.pathname === "") {
     if (req.method === "OPTIONS") return new Response("", { status: 204, headers });
@@ -160,6 +179,5 @@ Deno.serve(async (req: Request) => {
     return proxyToMicrosoft(req, "/dictionary/examples");
   }
 
-  if (req.method === "OPTIONS") return new Response("", { status: 204, headers });
   return jsonResponse({ error: "not_found" }, { status: 404, headers });
 });
