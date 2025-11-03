@@ -467,6 +467,11 @@ class AssignmentCreator {
     
     // 選擇已有格式（系統或自定義）
     try {
+      // 在整個載入流程期間，暫停草稿保存與內容變更處理，避免干擾
+      this.isLoadingTemplate = true;
+      // 若此前存在臨時草稿，為避免混淆，先清理（不再提示恢復）
+      FormatEditorCore.clearDraft('format-editor-draft-inline');
+
       const format = await FormatEditorCore.loadSystemFormat(
         formatId,
         this.assignmentManager.supabase
@@ -489,6 +494,7 @@ class AssignmentCreator {
       
       // 🚨 修復：確保 Quill 完全準備好後再設置內容
       if (this.inlineQuill && humanReadable) {
+        // 再次保險：載入期間保持暫停狀態
         this.isLoadingTemplate = true;
         
         // 使用更可靠的方式設置內容
@@ -497,8 +503,6 @@ class AssignmentCreator {
           this.originalContent = humanReadable;
         } catch (error) {
           console.warn('[AssignmentCreator] 設置編輯器內容失敗:', error);
-        } finally {
-          this.isLoadingTemplate = false;
         }
       }
       
@@ -526,6 +530,9 @@ class AssignmentCreator {
     } catch (error) {
       console.error('[AssignmentCreator] 加載格式失敗:', error);
       toast.error('加載格式失敗：' + error.message);
+    } finally {
+      // 載入流程結束，恢復草稿保存與內容監聽
+      this.isLoadingTemplate = false;
     }
   }
 
@@ -636,9 +643,16 @@ class AssignmentCreator {
               () => !this.isLoadingTemplate  // 🆕 只在非加載模板時保存草稿
             );
             
-            // 🚨 優化：只在"從零開始新建"時詢問恢復草稿
+            // 🚨 優化：只在「從零開始新建」且編輯器為空時詢問恢復草稿
             if (!this.selectedTemplateId && this.currentMode === 'custom') {
-              FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
+              try {
+                const currentText = (this.inlineQuill.getText() || '').trim();
+                if (currentText.length === 0) {
+                  FormatEditorCore.askRestoreDraft('format-editor-draft-inline', this.inlineQuill);
+                }
+              } catch (_) {
+                // 忽略讀取內容錯誤
+              }
             }
             
             // 🚨 階段 3.5.1.7：綁定內容變化監聽
@@ -671,6 +685,8 @@ class AssignmentCreator {
    */
   handleContentChange() {
     if (!this.inlineQuill) return;
+    // 在程式化載入模板內容時，跳過內容變更處理（避免誤判為用戶編輯）
+    if (this.isLoadingTemplate) return;
     
     // 安全地獲取內容，避免 Quill 實例未準備好的問題
     let content = '';
