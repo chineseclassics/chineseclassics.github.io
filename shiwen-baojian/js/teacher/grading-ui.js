@@ -311,6 +311,8 @@ class GradingUI {
                 onDataChanged: async () => { await this.refreshPMAnnotations(); }
               });
               this._overlay.mount();
+              // 與學生端對齊：設置全域引用，供其他模組（例如 composer）調用 setActive
+              try { window.__pmOverlay = this._overlay; } catch (_) {}
               this._bindGlobalActiveReset();
             }
             // 啟用「右側就地輸入」編寫器（僅初始化，不自動彈出）+ 浮動添加按鈕
@@ -690,10 +692,26 @@ class GradingUI {
     const onMouseUp = () => setTimeout(update, 0);
     const onKeyUp = () => setTimeout(update, 0);
     const onScroll = () => { if (fab.style.display !== 'none') update(); };
+    // 兼容部分瀏覽器/輸入法：監聽全域 selectionchange 以更穩定地偵測選區變化
+    const onSelectionChange = () => {
+      // 僅在目前選區屬於本編輯器時更新
+      try {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const anchorNode = sel.anchorNode;
+        const focusNode = sel.focusNode;
+        const container = view.dom;
+        if (container && container.contains(anchorNode) && container.contains(focusNode)) {
+          // 使用微延遲等待 DOM 佈局穩定
+          setTimeout(update, 0);
+        }
+      } catch (_) {}
+    };
 
     view.dom.addEventListener('mouseup', onMouseUp);
     view.dom.addEventListener('keyup', onKeyUp);
     window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('selectionchange', onSelectionChange);
 
     fab.addEventListener('click', () => {
       hide();
