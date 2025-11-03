@@ -96,11 +96,33 @@ export class PMEditor {
   const strongType = schema.marks.strong;
   const emType = schema.marks.em;
 
-    // 自訂快捷鍵：加入 Cmd/Ctrl+U 切換底線；補強 B/I
+    // 自訂快捷鍵：
+    // - Cmd/Ctrl+U 切換底線；補強 B/I
+    // - Shift+Enter（以及 Mod+Enter）插入硬換行（同段落內換行）
     const markKeymap = keymap({
       'Mod-b': strongType ? toggleMark(strongType) : undefined,
       'Mod-i': emType ? toggleMark(emType) : undefined,
       'Mod-u': underlineType ? toggleMark(underlineType) : undefined,
+    });
+
+    // 換行快捷鍵：插入 hard_break，避免產生新段落
+    const brKeymap = keymap({
+      'Shift-Enter': (state, dispatch) => {
+        try {
+          const br = state.schema.nodes.hard_break;
+          if (!br) return false;
+          if (dispatch) dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
+          return true;
+        } catch (_) { return false; }
+      },
+      'Mod-Enter': (state, dispatch) => {
+        try {
+          const br = state.schema.nodes.hard_break;
+          if (!br) return false;
+          if (dispatch) dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
+          return true;
+        } catch (_) { return false; }
+      }
     });
 
     // 貼上處理：偏好純文本，保留換行 → 轉為段落
@@ -292,11 +314,13 @@ export class PMEditor {
       }
     });
 
-    // 注意：為了攔截 Enter，必須讓結論守護插件排在 keymap(baseKeymap) 之前
+    // 注意：為了攔截 Enter，必須讓結論守護插件排在 keymap(baseKeymap) 之前；
+    // 並且讓 brKeymap 在 baseKeymap 之前，確保 Shift+Enter 先被處理為硬換行。
     const plugins = [
       conclusionGuardPlugin,
       history(),
       markKeymap,
+      brKeymap,
       keymap(baseKeymap),
       updatePlugin,
       pastePlugin,
