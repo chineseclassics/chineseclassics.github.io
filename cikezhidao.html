@@ -823,6 +823,16 @@
             </div>
         </div>
 
+                            {
+                                id: "yu-rang-6c",
+                                title: "直陳其志",
+                                text: "你被押至庭前，坦然答道：'我乃豫讓。士為知己者死。范氏、中行氏待我如常人，我以常人之禮報之；惟智伯待我如國士，我當以國士之節相報。今日之來，非為私怨，乃為報恩。'趙襄子沉吟良久，道：'忠義可敬，但殺戮於國不利。你欲何求？'",
+                                knowledge: "戰國士人重'名節'，所謂'名實相副'：所立之名須有可對應之實行。豫讓求的是完成道義上的承諾，而非徒逞一時之憤。",
+                                choices: [
+                                    { text: "請求擊打趙襄子的衣服以償夙願", next: "yu-rang-6a", hint: { type: "good", text: "名實兼顧" } },
+                                    { text: "寸步不讓，據理力爭其義", next: "yu-rang-7b", hint: { type: "neutral", text: "忠義辯難" } }
+                                ]
+                            },
         <!-- 主遊戲內容 -->
         <div id="game-container">
             <!-- 初始角色選擇介面 -->
@@ -2007,6 +2017,16 @@
                         ]
                     },
                     {
+                        id: "nie-zheng-6b",
+                        title: "請援風險",
+                        text: "你向嚴仲子請求支援，並挑選了數名可靠的勇士隨行。你深知人多口雜之害，叮囑眾人嚴守機密。然而風聲不知從何處走漏，韓國邊境的巡查忽然變得異常嚴密。嚴仲子神色凝重：'此行恐生波折。'",
+                        knowledge: "《史記》強調行刺之事須'密'。多人參與往往增加敗露風險，反而使主使者與至親陷入險境。",
+                        choices: [
+                            { text: "仍帶人行事，硬闖執行", next: "nie-zheng-end-2", hint: { type: "bad", text: "連累知己" } },
+                            { text: "立斷撤回支援，改為獨行", next: "nie-zheng-6a", hint: { type: "good", text: "避免外洩" } }
+                        ]
+                    },
+                    {
                         id: "nie-zheng-6c",
                         title: "細密調查",
                         text: "你決定先潛入韓國，暗中調查俠累的日常行蹤和護衛情況。經過數日觀察，你發現俠累每五日便會去郊外的別館休息，那裡的守衛相對較少。",
@@ -2014,6 +2034,17 @@
                         choices: [
                             { text: "在別館行刺", next: "nie-zheng-7b", hint: { type: "neutral", text: "趁虛而入" } },
                             { text: "仍選擇在朝堂行刺", next: "nie-zheng-7a", hint: { type: "good", text: "歷史選擇" } }
+                        ]
+                    },
+                    {
+                        id: "nie-zheng-7b",
+                        title: "別館突襲",
+                        text: "你夜色掩護下潛近郊外別館。院內守衛稀疏，俠累剛入寢室，侍從分散。你破窗而入，一劍刺向俠累，其人應聲而倒。驚呼四起，守衛自四方趕至，局勢驟變。",
+                        knowledge: "選擇守衛相對薄弱之處下手，可提高首擊成功率，但撤離風險仍然極高。",
+                        choices: [
+                            { text: "當場自毀容貌，斷絕牽連", next: "nie-zheng-end-3", hint: { type: "good", text: "毀貌報恩" } },
+                            { text: "固守別館迎戰以拖時", next: "nie-zheng-8a", hint: { type: "neutral", text: "背水一戰" } },
+                            { text: "趁亂突圍，伺機遠遁", next: "nie-zheng-8b", hint: { type: "neutral", text: "智取生路" } }
                         ]
                     },
                     {
