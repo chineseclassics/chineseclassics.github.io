@@ -69,9 +69,13 @@ export function createCitationPlugin() {
             const key = node.attrs.key;
             const loc = node.attrs.loc || '';
             // TODO: 支援同年歧義 a/b/c（簡版暫不區分，交由後續改進）
-            const label = citationStore.formatInText(key, { suffix: '', loc });
-            if (label && label !== node.attrs.label) {
-              tr.setNodeMarkup(pos, null, Object.assign({}, node.attrs, { label }));
+            const computed = citationStore.formatInText(key, { suffix: '', loc });
+            const existing = node.attrs.label || '';
+            // 若本機無引用庫資料，computed 會回傳形如 (@key) 的占位；此時保留既有 label（通常為學生端保存的正確文字）
+            const looksUnresolved = typeof computed === 'string' && /^\(@.+\)$/.test(computed.trim());
+            const nextLabel = looksUnresolved && existing ? existing : computed;
+            if (nextLabel && nextLabel !== existing) {
+              tr.setNodeMarkup(pos, null, Object.assign({}, node.attrs, { label: nextLabel }));
               changed = true;
             }
           }
