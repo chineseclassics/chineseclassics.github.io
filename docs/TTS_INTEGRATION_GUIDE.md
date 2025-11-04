@@ -125,7 +125,7 @@ async function taixuSpeak(text, opts = {}) {
   - A：預設使用 `zh-CN-XiaoxiaoNeural`。你可改傳 `voice=` 參數（例如 `zh-CN-YunxiNeural` 男聲、或台灣腔 `zh-TW-HsiaoChenNeural`）。實際可用清單請參考 Azure Speech 官方文件。
 
 - Q：語速/音高可調嗎？
-  - A：目前函式內以 SSML 設了預設 `rate="-20%"`、`pitch="+3st"`。如需頁面可調，可擴充函式支援 query 參數；或直接修改 `supabase/functions/tts-azure/index.ts` 的預設值。
+  - A：目前函式使用 Azure 預設的語速與音高（未調整 prosody）。若你想支持自訂語速/音高，可擴充函式加入對應的 query 參數並生成 SSML。
 
 - Q：如何提升體驗與效能？
   - A：
@@ -194,3 +194,25 @@ afplay out.mp3
 
 - 版本：v1（Azure 代理）
 - 若你需要頁面組件化（例如封裝為 `/assets/js/taixu-tts.js`），或要支援離線快取（Service Worker），可提出需求再行擴充。
+
+---
+
+## 十、共用工具檔（推薦）
+
+已提供封裝檔：`/assets/js/taixu-tts.js`
+
+用法：
+
+```html
+<!-- 先載入全站配置，後載入封裝函式（絕對路徑） -->
+<script src="/assets/js/taixu-config.js"></script>
+<script src="/assets/js/taixu-tts.js"></script>
+
+<!-- 任意按鈕直接呼叫 -->
+<button onclick="window.taixuSpeak('請找到 bo')">播放提示</button>
+```
+
+說明：
+- `taixuSpeak(text, opts)` 會優先使用在線 TTS（需在 `taixu-config.js` 中設定端點與 anon key），失敗時回退瀏覽器語音
+- 內建簡單快取，避免同一段語音重複請求
+- 可透過 `opts.voice` 指定 Azure 語音名稱，例如：`zh-CN-YunxiNeural`、`zh-TW-HsiaoChenNeural`

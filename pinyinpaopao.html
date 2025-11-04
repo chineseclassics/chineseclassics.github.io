@@ -127,15 +127,22 @@
         <!-- 遊戲主畫面 (預設隱藏) -->
         <div id="game-screen" class="hidden h-full">
             <!-- 頂部提示欄 -->
-            <div class="absolute top-0 left-0 right-0 z-10 p-4 bg-white/70 backdrop-blur-md shadow-md flex justify-center items-center">
-                <h2 class="text-3xl md:text-5xl font-bold text-gray-700 mr-4">請找到：</h2>
+            <div class="absolute top-0 left-0 right-0 z-10 p-4 bg-white/70 backdrop-blur-md shadow-md flex flex-wrap gap-4 justify-center items-center">
+                <h2 class="text-3xl md:text-5xl font-bold text-gray-700">請找到：</h2>
                 <div id="prompt-display" class="w-24 h-24 bg-blue-100 border-4 border-blue-300 rounded-2xl flex justify-center items-center">
                     <span id="prompt-text" class="text-6xl font-bold text-blue-700">...</span>
                 </div>
                 <!-- 重複播放按鈕 -->
-                <button id="repeat-button" class="ml-6 p-2 rounded-full hover:bg-blue-100 active:bg-blue-200">
+                <button id="repeat-button" class="p-2 rounded-full hover:bg-blue-100 active:bg-blue-200">
                     <svg class="speaker-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
                 </button>
+                <!-- 模式切換 -->
+                <label class="ml-2 text-sm text-gray-600">模式：</label>
+                <select id="mode-select" class="px-3 py-2 border border-blue-300 rounded-lg bg-white/80 text-sm">
+                    <option value="shengmu">聲母</option>
+                    <option value="yunmu">韻母</option>
+                    <option value="mix" selected>混合</option>
+                </select>
             </div>
 
             <!-- 泡泡出現的容器 -->
@@ -168,11 +175,28 @@
         const bubbleContainer = document.getElementById('bubble-container');
         const promptText = document.getElementById('prompt-text');
         const repeatButton = document.getElementById('repeat-button');
+        const modeSelect = document.getElementById('mode-select');
         const scoreDisplay = document.getElementById('score');
 
-        // 遊戲數據
-        // 這裡我們用聲母 b, p, m, f, d, t, n, l, g, k, h, j, q, x
-        const pinyinSet = ['b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x'];
+        // 模式切換：切換題庫並刷新一局
+        if (modeSelect) {
+            modeSelect.addEventListener('change', () => {
+                practiceMode = modeSelect.value;
+                if (gameActive) setTimeout(newRound, 100);
+            });
+        }
+
+        // 遊戲數據：完整聲母與常見韻母
+        const SHENGMU = ['b','p','m','f','d','t','n','l','g','k','h','j','q','x','zh','ch','sh','r','z','c','s','y','w'];
+        const YUNMU = [
+            'a','o','e','i','u','ü',
+            'ai','ei','ui','ao','ou','iu',
+            'ie','üe','er',
+            'an','en','in','un','ün',
+            'ang','eng','ing','ong',
+            'ia','ua','uo','uai','iao','ian','iang','iong','uan','uang'
+        ];
+        let practiceMode = 'mix'; // 'shengmu' | 'yunmu' | 'mix'
         
         // 拼音發音映射表，幫助語音引擎正確發音
         const pinyinPronunciationMap = {
@@ -189,7 +213,27 @@
             'h': 'he',
             'j': 'ji',
             'q': 'qi',
-            'x': 'xi'
+            'x': 'xi',
+            'zh': 'zhi',
+            'ch': 'chi',
+            'sh': 'shi',
+            'r': 'ri',
+            'z': 'zi',
+            'c': 'ci',
+            's': 'si',
+            'y': 'yi',
+            'w': 'wu'
+        };
+
+        // 韻母發音映射（讓在線/本地語音能讀成完整音節）
+        const finalPronunciationMap = {
+            'a':'a','o':'o','e':'e','i':'yi','u':'wu','ü':'yu',
+            'ai':'ai','ei':'ei','ui':'wei','ao':'ao','ou':'ou','iu':'you',
+            'ie':'ye','üe':'yue','er':'er',
+            'an':'an','en':'en','in':'yin','un':'wen','ün':'yun',
+            'ang':'ang','eng':'eng','ing':'ying','ong':'yong',
+            'ia':'ya','ua':'wa','uo':'wo','uai':'wai','iao':'yao',
+            'ian':'yan','iang':'yang','iong':'yong','uan':'wan','uang':'wang'
         };
 
         let currentTarget = '';
@@ -239,7 +283,8 @@
 
         // 播放 Pinyin 語音
         let externalAudio = null;
-        async function speakPinyin(text) {
+        // 新增可選的 pinyinHint，會交給在線 TTS 以 IPA 強制按拼音讀
+        async function speakPinyin(text, pinyinHint) {
             if (!gameActive) return;
 
             const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
@@ -251,7 +296,11 @@
                         externalAudio.pause();
                         externalAudio.src = '';
                     }
-                    const url = `${endpoint}?text=${encodeURIComponent(text)}&voice=zh-CN-XiaoxiaoNeural`;
+                    const params = new URLSearchParams();
+                    params.set('text', text);
+                    params.set('voice', 'zh-CN-XiaoxiaoNeural');
+                    if (pinyinHint) params.set('pinyin', pinyinHint);
+                    const url = `${endpoint}?${params.toString()}`;
                     const headers = {};
                     const anon = (window.SUPABASE_ANON_KEY || '').trim();
                     if (anon) {
@@ -272,7 +321,7 @@
 
             // 回退：瀏覽器內建語音
             if (synth.speaking) return; // 防止語音重疊
-            const utterance = new SpeechSynthesisUtterance(text);
+            const utterance = new SpeechSynthesisUtterance(text + (pinyinHint ? ' ' + pinyinHint : ''));
             const selectedVoice = selectMandarinVoice();
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
@@ -334,8 +383,11 @@
         // 重複播放按鈕
         repeatButton.addEventListener('click', () => {
             if (currentTarget) {
-                const pronunciation = pinyinPronunciationMap[currentTarget] || currentTarget;
-                speakPinyin(`請找到 ${pronunciation}`);
+                let pronunciation = pinyinPronunciationMap[currentTarget];
+                if (!pronunciation && finalPronunciationMap[currentTarget]) {
+                    pronunciation = finalPronunciationMap[currentTarget];
+                }
+                speakPinyin('請找到', pronunciation || currentTarget);
             }
         });
 
@@ -346,14 +398,15 @@
             // 1. 清除舊的泡泡
             bubbleContainer.innerHTML = '';
 
-            // 2. 隨機選一個目標 Pinyin
-            currentTarget = pinyinSet[Math.floor(Math.random() * pinyinSet.length)];
+            // 2. 決定題庫並隨機選一個目標（聲母/韻母/混合）
+            const pool = practiceMode === 'shengmu' ? SHENGMU : (practiceMode === 'yunmu' ? YUNMU : SHENGMU.concat(YUNMU));
+            currentTarget = pool[Math.floor(Math.random() * pool.length)];
             
             // 3. 創建一組選項 (包含正確答案)
             let options = [currentTarget];
             // 創建 3 個干擾項
             while (options.length < 4) {
-                const distractor = pinyinSet[Math.floor(Math.random() * pinyinSet.length)];
+                const distractor = pool[Math.floor(Math.random() * pool.length)];
                 if (!options.includes(distractor)) {
                     options.push(distractor);
                 }
@@ -371,8 +424,11 @@
             // 6. 更新提示並播放語音
             promptText.textContent = currentTarget;
             setTimeout(() => {
-                const pronunciation = pinyinPronunciationMap[currentTarget] || currentTarget;
-                speakPinyin(`請找到 ${pronunciation}`);
+                let pronunciation = pinyinPronunciationMap[currentTarget];
+                if (!pronunciation && finalPronunciationMap[currentTarget]) {
+                    pronunciation = finalPronunciationMap[currentTarget];
+                }
+                speakPinyin('請找到', pronunciation || currentTarget);
             }, 800); // 延遲播放語音，等泡泡出來一點
         }
 

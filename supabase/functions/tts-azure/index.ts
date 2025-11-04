@@ -23,20 +23,54 @@ const corsHeaders = {
 };
 
 const DEFAULT_VOICE = "zh-CN-XiaoxiaoNeural"; // 普通話（女）
-const DEFAULT_RATE = "-20%"; // 稍慢，配合教學
-const DEFAULT_PITCH = "+3st"; // 稍高，親和
 
-function buildSSML(text: string, voice: string = DEFAULT_VOICE, rate: string = DEFAULT_RATE, pitch: string = DEFAULT_PITCH) {
-  // 使用 SSML 控制語速與音高
+// 將簡單的拼音（僅限本專案教學用的子集）轉為 IPA，強制按拼音發音
+function pinyinToIPA(pinyin: string): string | null {
+  const p = (pinyin || '').trim().toLowerCase();
+  switch (p) {
+    case 'bo': return 'pwɔ';
+    case 'po': return 'pʰwɔ';
+    case 'mo': return 'mwɔ';
+    case 'fo': return 'fwɔ';
+    case 'de': return 'tɤ';
+    case 'te': return 'tʰɤ';
+    case 'ne': return 'nɤ';
+    case 'le': return 'lɤ';
+    case 'ge': return 'kɤ';
+    case 'ke': return 'kʰɤ';
+    case 'he': return 'xɤ';
+    case 'ji': return 'tɕi';
+    case 'qi': return 'tɕʰi';
+    case 'xi': return 'ɕi';
+    default: return null;
+  }
+}
+
+function buildSSML(
+  text: string,
+  voice: string = DEFAULT_VOICE,
+  pinyinIPA?: string | null,
+  pinyinText?: string | null
+) {
+  // 使用 Azure 默認語速與音高（不調整 prosody）。若提供 pinyinIPA，使用 <phoneme> 強制拼音發音。
+  const safeText = (text || '').trim();
+  const pText = (pinyinText || '').trim();
+  const hasPinyin = !!(pinyinIPA && pText);
+    let content = safeText;
+    if (pText) {
+      const tail = pinyinIPA
+        ? `<phoneme alphabet="ipa" ph="${pinyinIPA}">${pText}</phoneme>`
+        : pText; // 若無 IPA，直接輸出拼音文字，讓語音引擎以普通話規則讀取
+      content = `${safeText ? safeText + ' ' : ''}${tail}`;
+  }
+
   return `<?xml version="1.0" encoding="utf-8"?>
 <speak version="1.0" xml:lang="zh-CN">
-  <voice name="${voice}">
-    <prosody rate="${rate}" pitch="${pitch}">${text}</prosody>
-  </voice>
+  <voice name="${voice}">${content}</voice>
 </speak>`;
 }
 
-async function ttsWithAzure(text: string, voice?: string) {
+async function ttsWithAzure(text: string, voice?: string, pinyin?: string | null) {
   const key = Deno.env.get("AZURE_SPEECH_KEY");
   const region = Deno.env.get("AZURE_SPEECH_REGION");
   if (!key || !region) {
@@ -47,7 +81,8 @@ async function ttsWithAzure(text: string, voice?: string) {
   }
 
   const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-  const ssml = buildSSML(text, voice || DEFAULT_VOICE);
+  const ipa = pinyin ? pinyinToIPA(pinyin) : null;
+  const ssml = buildSSML(text, voice || DEFAULT_VOICE, ipa, pinyin || null);
 
   const resp = await fetch(endpoint, {
     method: "POST",
@@ -89,10 +124,11 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET") {
       const text = url.searchParams.get("text")?.trim();
       const voice = url.searchParams.get("voice")?.trim() || undefined;
+      const pinyin = url.searchParams.get("pinyin")?.trim() || null;
       if (!text) {
         return new Response(JSON.stringify({ error: "Missing 'text'" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
       }
-      return await ttsWithAzure(text, voice);
+      return await ttsWithAzure(text, voice, pinyin);
     }
 
     if (req.method === "POST") {
@@ -100,13 +136,14 @@ Deno.serve(async (req: Request) => {
       if (!contentType.includes("application/json")) {
         return new Response(JSON.stringify({ error: "Expected application/json" }), { status: 415, headers: { "Content-Type": "application/json", ...corsHeaders } });
       }
-      const body = (await req.json()) as { text?: string; voice?: string };
+      const body = (await req.json()) as { text?: string; voice?: string; pinyin?: string };
       const text = (body.text || "").trim();
       const voice = (body.voice || "").trim() || undefined;
+      const pinyin = (body.pinyin || "").trim() || null;
       if (!text) {
         return new Response(JSON.stringify({ error: "Missing 'text'" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
       }
-      return await ttsWithAzure(text, voice);
+      return await ttsWithAzure(text, voice, pinyin);
     }
 
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json", ...corsHeaders } });
