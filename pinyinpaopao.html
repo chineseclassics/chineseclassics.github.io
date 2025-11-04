@@ -6,6 +6,8 @@
     <title>拼音泡泡樂</title>
     <!-- 引入 Tailwind CSS 用於快速美化界面 -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome 圖標庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 引入 Tone.js 用於製作點擊音效 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
@@ -132,49 +134,91 @@
             90% { transform: translateX(-5px) rotate(-2deg); }
         }
 
-        /* 粒子效果 */
+        /* 增強的粒子效果 */
         .particle {
             position: absolute;
-            width: 8px;
-            height: 8px;
             border-radius: 50%;
             pointer-events: none;
-            animation: particle-burst 0.8s ease-out forwards;
+            animation: particle-burst 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            box-shadow: 0 0 10px currentColor;
         }
 
         @keyframes particle-burst {
             0% {
-                transform: translate(0, 0) scale(1);
+                transform: translate(0, 0) scale(1) rotate(0deg);
                 opacity: 1;
             }
             100% {
-                transform: translate(var(--tx), var(--ty)) scale(0);
+                transform: translate(var(--tx), var(--ty)) scale(0) rotate(var(--rotate, 360deg));
                 opacity: 0;
             }
         }
 
-        /* 星星效果 */
-        .star {
+        /* 衝擊波效果 */
+        .shockwave {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            border: 3px solid;
+            border-radius: 50%;
             pointer-events: none;
-            animation: star-pop 0.6s ease-out forwards;
-            font-size: 30px;
+            animation: shockwave-expand 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
 
-        @keyframes star-pop {
+        @keyframes shockwave-expand {
             0% {
-                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                width: 0;
+                height: 0;
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* 閃光效果 */
+        .flash {
+            position: absolute;
+            pointer-events: none;
+            animation: flash-fade 0.4s ease-out forwards;
+        }
+
+        @keyframes flash-fade {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
                 opacity: 1;
             }
             50% {
-                transform: translate(-50%, -50%) scale(1.5) rotate(180deg);
-                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
             }
             100% {
-                transform: translate(-50%, -50%) scale(0.5) rotate(360deg);
+                transform: translate(-50%, -50%) scale(1.5);
                 opacity: 0;
+            }
+        }
+
+        /* 星形閃光 */
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            pointer-events: none;
+            animation: sparkle-twinkle 0.8s ease-out forwards;
+            box-shadow: 0 0 6px 2px currentColor;
+        }
+
+        @keyframes sparkle-twinkle {
+            0%, 100% {
+                transform: translate(var(--sx), var(--sy)) scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(var(--sx), var(--sy)) scale(1) rotate(180deg);
+                opacity: 1;
             }
         }
 
@@ -581,11 +625,9 @@
             gameActive = true;
             score = 0;
             scoreDisplay.textContent = score;
-
-            ttsPlay('遊戲開始'); // 播放一個簡短語音以啟動語音引擎
             
-            // 延遲一點開始第一局，確保語音引擎準備好了
-            setTimeout(newRound, 500);
+            // 直接開始第一局
+            setTimeout(newRound, 300);
         });
 
         // 重複播放按鈕：先播提示，再播代表漢字
@@ -646,49 +688,131 @@
             'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)'       // 紅藍
         ];
 
-        // 創建粒子爆炸效果
+        // 創建增強的粒子爆炸效果
         function createParticles(x, y, color) {
-            const particleCount = 12;
+            const particleCount = 24; // 增加粒子數量
+            
+            // 從漸變中提取顏色
+            const colors = extractColorsFromGradient(color);
+            
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
                 particle.style.left = `${x}px`;
                 particle.style.top = `${y}px`;
-                particle.style.background = color;
                 
-                // 計算隨機方向
-                const angle = (Math.PI * 2 * i) / particleCount;
-                const velocity = 50 + Math.random() * 50;
+                // 隨機大小
+                const size = 6 + Math.random() * 8;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // 隨機顏色（從泡泡漸變中選擇）
+                const particleColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = particleColor;
+                particle.style.color = particleColor;
+                
+                // 計算方向（更隨機的角度和速度）
+                const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
+                const velocity = 60 + Math.random() * 80;
                 const tx = Math.cos(angle) * velocity;
-                const ty = Math.sin(angle) * velocity;
+                const ty = Math.sin(angle) * velocity - Math.random() * 30; // 稍微向上偏移
                 
                 particle.style.setProperty('--tx', `${tx}px`);
                 particle.style.setProperty('--ty', `${ty}px`);
+                particle.style.setProperty('--rotate', `${Math.random() * 720}deg`);
                 
                 bubbleContainer.appendChild(particle);
                 
                 // 動畫結束後移除
-                setTimeout(() => particle.remove(), 800);
+                setTimeout(() => particle.remove(), 1000);
             }
         }
 
-        // 創建星星效果
-        function createStars(x, y) {
-            const stars = ['⭐', '✨', '🌟', '💫'];
-            const starCount = 5;
+        // 創建衝擊波效果
+        function createShockwave(x, y, color) {
+            const colors = extractColorsFromGradient(color);
             
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.textContent = stars[Math.floor(Math.random() * stars.length)];
-                star.style.left = `${x + (Math.random() - 0.5) * 100}px`;
-                star.style.top = `${y + (Math.random() - 0.5) * 100}px`;
-                
-                bubbleContainer.appendChild(star);
-                
-                // 動畫結束後移除
-                setTimeout(() => star.remove(), 600);
+            // 創建兩個衝擊波，錯開時間
+            for (let i = 0; i < 2; i++) {
+                setTimeout(() => {
+                    const shockwave = document.createElement('div');
+                    shockwave.className = 'shockwave';
+                    shockwave.style.left = `${x}px`;
+                    shockwave.style.top = `${y}px`;
+                    shockwave.style.borderColor = colors[i % colors.length];
+                    
+                    bubbleContainer.appendChild(shockwave);
+                    
+                    setTimeout(() => shockwave.remove(), 600);
+                }, i * 100);
             }
+        }
+
+        // 創建閃光效果
+        function createFlash(x, y, color) {
+            const flash = document.createElement('div');
+            flash.className = 'flash';
+            flash.style.left = `${x}px`;
+            flash.style.top = `${y}px`;
+            flash.style.width = '100px';
+            flash.style.height = '100px';
+            flash.style.background = `radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%)`;
+            flash.style.boxShadow = `0 0 60px 30px rgba(255, 255, 255, 0.6)`;
+            
+            bubbleContainer.appendChild(flash);
+            
+            setTimeout(() => flash.remove(), 400);
+        }
+
+        // 創建閃爍星光效果
+        function createSparkles(x, y, color) {
+            const sparkleCount = 12;
+            const colors = extractColorsFromGradient(color);
+            
+            for (let i = 0; i < sparkleCount; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = `${x}px`;
+                sparkle.style.top = `${y}px`;
+                
+                // 隨機顏色
+                const sparkleColor = colors[Math.floor(Math.random() * colors.length)];
+                sparkle.style.background = sparkleColor;
+                sparkle.style.color = sparkleColor;
+                
+                // 隨機位置（圓形分布）
+                const angle = (Math.PI * 2 * i) / sparkleCount;
+                const distance = 40 + Math.random() * 40;
+                const sx = Math.cos(angle) * distance;
+                const sy = Math.sin(angle) * distance;
+                
+                sparkle.style.setProperty('--sx', `${sx}px`);
+                sparkle.style.setProperty('--sy', `${sy}px`);
+                
+                bubbleContainer.appendChild(sparkle);
+                
+                setTimeout(() => sparkle.remove(), 800);
+            }
+        }
+
+        // 從漸變字符串中提取顏色
+        function extractColorsFromGradient(gradientString) {
+            // 如果是純色，返回該顏色
+            if (!gradientString.includes('gradient')) {
+                return [gradientString];
+            }
+            
+            // 提取漸變中的顏色
+            const colors = [];
+            const colorMatches = gradientString.match(/#[0-9A-Fa-f]{6}/g) || 
+                                gradientString.match(/rgb\([^)]+\)/g);
+            
+            if (colorMatches && colorMatches.length > 0) {
+                return colorMatches;
+            }
+            
+            // 默認返回一組彩虹色
+            return ['#FF6B9D', '#C239B3', '#4158D0', '#00D4FF', '#43E97B'];
         }
 
         // 創建單個泡泡
@@ -755,12 +879,20 @@
                 const x = rect.left + rect.width / 2;
                 const y = rect.top + rect.height / 2;
                 
-                // 創建彩虹粒子爆炸效果
+                // 創建多層酷炫爆炸效果
                 const bubbleColor = bubble.dataset.color || bubbleColors[0];
+                
+                // 1. 閃光（最先出現）
+                createFlash(x, y, bubbleColor);
+                
+                // 2. 衝擊波
+                createShockwave(x, y, bubbleColor);
+                
+                // 3. 粒子爆炸
                 createParticles(x, y, bubbleColor);
                 
-                // 創建星星效果
-                createStars(x, y);
+                // 4. 閃爍星光
+                createSparkles(x, y, bubbleColor);
                 
                 // 泡泡破裂動畫
                 bubble.classList.add('pop');
