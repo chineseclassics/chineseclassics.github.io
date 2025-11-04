@@ -448,6 +448,9 @@
             });
         }
 
+        // TTS 音頻緩存（避免重複調用 API）
+        const ttsCache = new Map();
+        
         // 播放一段線上 TTS 音訊；失敗則回退至內建語音（用於播放「請找到」等提示語）
         function ttsPlay(text) {
             return new Promise(async (resolve) => {
@@ -467,16 +470,31 @@
                             try { externalAudio.pause(); } catch(_) {}
                             externalAudio.src = '';
                         }
-                        const params = new URLSearchParams();
-                        params.set('text', text);
-                        params.set('voice', 'zh-CN-XiaoxiaoNeural');
-                        const headers = {};
-                        if (anon) { headers['apikey'] = anon; headers['Authorization'] = `Bearer ${anon}`; }
-                        const resp = await fetch(`${endpoint}?${params.toString()}`, { method:'GET', headers });
-                        if (!resp.ok) throw new Error(`TTS ${resp.status}`);
-                        const blob = await resp.blob();
-                        const url = URL.createObjectURL(blob);
-                        externalAudio = new Audio(url);
+                        
+                        let audioUrl;
+                        
+                        // 檢查緩存
+                        if (ttsCache.has(text)) {
+                            audioUrl = ttsCache.get(text);
+                            console.log('✅ 使用緩存的 TTS 音頻:', text);
+                        } else {
+                            // 首次調用 API
+                            const params = new URLSearchParams();
+                            params.set('text', text);
+                            params.set('voice', 'zh-CN-XiaoxiaoNeural');
+                            const headers = {};
+                            if (anon) { headers['apikey'] = anon; headers['Authorization'] = `Bearer ${anon}`; }
+                            const resp = await fetch(`${endpoint}?${params.toString()}`, { method:'GET', headers });
+                            if (!resp.ok) throw new Error(`TTS ${resp.status}`);
+                            const blob = await resp.blob();
+                            audioUrl = URL.createObjectURL(blob);
+                            
+                            // 保存到緩存
+                            ttsCache.set(text, audioUrl);
+                            console.log('💾 緩存 TTS 音頻:', text);
+                        }
+                        
+                        externalAudio = new Audio(audioUrl);
                         externalAudio.addEventListener('ended', () => resolve());
                         await externalAudio.play();
                         return;
