@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 引入 Tone.js 用於製作點擊音效 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- 引入 Matter.js 2D 物理引擎 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         /* 使用 'Inter' 字體，更圓潤友好 */
         body {
@@ -33,7 +35,6 @@
         /* 彩虹泡泡的基礎樣式 - 使用多彩漸變 */
         .bubble {
             position: absolute;
-            bottom: -150px; /* 從屏幕外開始 */
             border-radius: 50%;
             display: flex;
             justify-content: center;
@@ -41,14 +42,12 @@
             color: white;
             font-weight: bold;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.5);
-            /* 應用 'float' 動畫 */
-            animation: float 10s linear infinite;
+            /* 物理引擎控制位置，不使用 CSS 動畫 */
             will-change: transform; /* 優化動畫性能 */
             -webkit-tap-highlight-color: transparent; /* 移除 iPad 點擊高亮 */
             cursor: pointer;
             /* 漂亮的 3D 效果 */
             transform-style: preserve-3d;
-            transition: transform 0.1s ease;
         }
 
         /* 泡泡內層 - 創建玻璃質感 */
@@ -76,30 +75,7 @@
             z-index: -1;
         }
 
-        /* 泡泡上浮動畫 - 添加輕微搖擺 */
-        @keyframes float {
-            0% {
-                transform: translateY(0) translateX(0) rotate(0deg);
-                opacity: 1;
-            }
-            25% {
-                transform: translateY(-30vh) translateX(10px) rotate(5deg);
-            }
-            50% {
-                transform: translateY(-60vh) translateX(-10px) rotate(-5deg);
-            }
-            75% {
-                transform: translateY(-90vh) translateX(5px) rotate(3deg);
-            }
-            99% {
-                transform: translateY(-120vh) translateX(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-120vh) translateX(0) rotate(0deg);
-                opacity: 0;
-            }
-        }
+        /* 泡泡動畫已由 Matter.js 物理引擎接管 */
 
         /* 泡泡破裂動畫 - 帶粒子效果 */
         .pop {
@@ -308,6 +284,65 @@
         const repeatButton = document.getElementById('repeat-button');
         const modeSelect = document.getElementById('mode-select');
         const scoreDisplay = document.getElementById('score');
+
+        // ========== Matter.js 物理引擎初始化 ==========
+        const { Engine, World, Bodies, Body, Events } = Matter;
+        
+        // 創建物理引擎（向上的浮力）
+        const engine = Engine.create({
+            gravity: {
+                x: 0,
+                y: -0.3  // 負值表示向上（模擬泡泡浮力）
+            }
+        });
+        
+        const world = engine.world;
+        
+        // 存儲泡泡的物理體和 DOM 元素的映射
+        const bubblePhysicsMap = new Map();
+        
+        // 物理更新循環
+        function updatePhysics() {
+            if (!gameActive) return;
+            
+            // 更新物理引擎
+            Engine.update(engine, 1000 / 60);
+            
+            // 同步物理位置到 DOM
+            bubblePhysicsMap.forEach((data, body) => {
+                const element = data.element;
+                if (!element || !element.parentNode) {
+                    // 元素已被移除，清理物理體
+                    World.remove(world, body);
+                    bubblePhysicsMap.delete(body);
+                    return;
+                }
+                
+                // 更新 DOM 位置和旋轉
+                const x = body.position.x;
+                const y = window.innerHeight - body.position.y; // 翻轉 Y 軸
+                const angle = body.angle;
+                
+                element.style.transform = `translate(${x - data.size/2}px, ${y - data.size/2}px) rotate(${angle}rad)`;
+                
+                // 檢查是否飄出屏幕頂部
+                if (body.position.y > window.innerHeight + 200) {
+                    element.remove();
+                    World.remove(world, body);
+                    bubblePhysicsMap.delete(body);
+                }
+            });
+            
+            // 應用隨機風力
+            if (Math.random() < 0.1) { // 10% 機率每幀
+                bubblePhysicsMap.forEach((data, body) => {
+                    const windForce = (Math.random() - 0.5) * 0.0002;
+                    Body.applyForce(body, body.position, { x: windForce, y: 0 });
+                });
+            }
+            
+            requestAnimationFrame(updatePhysics);
+        }
 
         // 模式切換：切換題庫並刷新一局
         if (modeSelect) {
@@ -626,6 +661,9 @@
             score = 0;
             scoreDisplay.textContent = score;
             
+            // 啟動物理引擎更新循環
+            updatePhysics();
+            
             // 直接開始第一局
             setTimeout(newRound, 300);
         });
@@ -641,8 +679,14 @@
         function newRound() {
             if (!gameActive) return;
 
-            // 1. 清除舊的泡泡
+            // 1. 清除舊的泡泡（DOM 和物理世界）
             bubbleContainer.innerHTML = '';
+            
+            // 清除所有物理體
+            bubblePhysicsMap.forEach((data, body) => {
+                World.remove(world, body);
+            });
+            bubblePhysicsMap.clear();
 
             // 2. 決定題庫並隨機選一個目標（聲母/韻母/混合）
             const pool = practiceMode === 'shengmu' ? SHENGMU : (practiceMode === 'yunmu' ? YUNMU : SHENGMU.concat(YUNMU));
@@ -815,10 +859,11 @@
             return ['#FF6B9D', '#C239B3', '#4158D0', '#00D4FF', '#43E97B'];
         }
 
-        // 創建單個泡泡
+        // 創建單個泡泡（使用物理引擎）
         function createBubble(pinyin) {
             if (!gameActive) return; // 如果遊戲結束了就不再創建
 
+            // === DOM 元素創建 ===
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
             
@@ -832,12 +877,6 @@
             bubble.style.background = randomColor;
             bubble.dataset.color = randomColor; // 保存顏色用於粒子效果
             
-            // 隨機水平位置
-            bubble.style.left = `${Math.random() * (window.innerWidth - size - 20) + 10}px`;
-            
-            // 隨機上浮速度
-            bubble.style.animationDuration = `${Math.random() * 5 + 8}s`; // 8到13秒
-            
             // 設置文字 - 更大更明顯
             bubble.textContent = pinyin;
             bubble.style.fontSize = `${size / 2.2}px`; // 字體大小隨泡泡大小變化
@@ -850,12 +889,39 @@
             // 同時兼容電腦鼠標點擊
             bubble.addEventListener('click', handleBubbleTap);
 
-            // 泡泡飄出屏幕後自動移除
-            bubble.addEventListener('animationend', () => {
-                bubble.remove();
-            });
-
             bubbleContainer.appendChild(bubble);
+            
+            // === Matter.js 物理體創建 ===
+            // 隨機水平位置（從屏幕下方開始）
+            const startX = Math.random() * (window.innerWidth - size) + size / 2;
+            const startY = window.innerHeight + size; // Y 軸從底部開始（物理引擎坐標系）
+            
+            // 創建圓形物理體
+            const physicsBody = Bodies.circle(startX, startY, size / 2, {
+                density: 0.001,        // 非常輕（像氣球）
+                restitution: 0.8,      // 彈性（碰撞時的反彈）
+                friction: 0.01,        // 低摩擦力
+                frictionAir: 0.02,     // 空氣阻力（越飄越慢）
+                angle: (Math.random() - 0.5) * 0.3,  // 隨機初始角度
+                angularVelocity: (Math.random() - 0.5) * 0.05  // 隨機旋轉速度
+            });
+            
+            // 添加隨機初始速度（向上 + 隨機橫向）
+            const initialVelocity = {
+                x: (Math.random() - 0.5) * 2,  // 橫向隨機
+                y: -(2 + Math.random() * 2)    // 向上（負值）
+            };
+            Body.setVelocity(physicsBody, initialVelocity);
+            
+            // 將物理體添加到世界
+            World.add(world, physicsBody);
+            
+            // 建立物理體和 DOM 元素的映射
+            bubblePhysicsMap.set(physicsBody, {
+                element: bubble,
+                size: size,
+                pinyin: pinyin
+            });
         }
 
         // 處理泡泡點擊
@@ -903,13 +969,18 @@
                 bubble.removeEventListener('touchstart', handleBubbleTap);
                 bubble.removeEventListener('click', handleBubbleTap);
 
-                // 停止所有泡泡的動畫並清除
+                // 讓所有其他泡泡也破掉（視覺效果）
                 document.querySelectorAll('.bubble').forEach(b => {
-                    b.style.animationPlayState = 'paused';
                     if (!b.classList.contains('pop')) {
-                        b.classList.add('pop'); // 讓其他泡泡也破掉
+                        b.classList.add('pop');
                     }
                 });
+                
+                // 從物理世界中移除所有泡泡
+                bubblePhysicsMap.forEach((data, body) => {
+                    World.remove(world, body);
+                });
+                bubblePhysicsMap.clear();
 
                 // 1.5秒後開始新一局
                 setTimeout(newRound, 1500);
