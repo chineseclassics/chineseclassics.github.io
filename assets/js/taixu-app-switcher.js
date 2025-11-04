@@ -272,11 +272,11 @@
         {
             id: 'yijingzhanbu',
             category: 'yunwai',
-            name: '詩易',
-            icon: '☯️',
+            name: '易卜',
+            icon: 'fas fa-yin-yang',
             gradient: 'from-amber-500 to-orange-500',
             url: '/yijingzhanbu.html',
-            description: '詩小篇的卜卦攤，通過三枚硬幣擲卦，體驗易經占卜的智慧，獲得AI解讀的卦象指引'
+            description: '空空道人的卜卦攤，通過三枚硬幣擲卦，體驗易經占卜的智慧，獲得AI解讀的卦象指引'
         },
     ];
     
