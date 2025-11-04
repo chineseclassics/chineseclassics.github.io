@@ -194,6 +194,15 @@
             description: '基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。'
         },
         {
+            id: 'honglou-xuantimu',
+            category: 'qiangu',
+            name: '《紅樓夢》論文選題',
+            icon: 'fas fa-project-diagram',
+            gradient: 'from-purple-600 to-pink-600',
+            url: '/honglou-xuantimu/index.html',
+            description: '互動式思維導圖展示論文選題的正確流程：從文本細讀出發，避免理念先行，幫助學生理解如何從具象的 primary sources 生發出獨特的研究觀點'
+        },
+        {
             id: 'shuyuanclassicchat',
             category: 'qiangu',
             name: '太虛幻聊',

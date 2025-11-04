@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《紅樓夢》論文選題思維導圖 - 太虛幻境</title>
+    
+    <link rel="stylesheet" href="/assets/tailwind.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <!-- 主容器 -->
+    <div id="app" class="min-h-screen p-4 md:p-8">
+        <!-- 標題區 -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                《紅樓夢》論文選題思維導圖
+            </h1>
+            <p class="text-gray-600 dark:text-gray-400 text-sm md:text-base lg:text-lg">
+                從文本細讀出發，避免理念先行
+            </p>
+            <div class="w-24 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto mt-4 rounded-full"></div>
+        </header>
+
+        <!-- 模式切換 -->
+        <div class="flex justify-center mb-8">
+            <div class="inline-flex bg-white dark:bg-gray-800 rounded-xl p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
+                <button id="btnCorrect" 
+                        class="mode-btn active px-8 py-3 rounded-lg font-semibold transition-all text-sm md:text-base"
+                        data-mode="correct">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    正確方法：從文本出發
+                </button>
+                <button id="btnWrong" 
+                        class="mode-btn px-8 py-3 rounded-lg font-semibold transition-all text-sm md:text-base"
+                        data-mode="wrong">
+                    <i class="fas fa-times-circle mr-2"></i>
+                    錯誤示範：理念先行
+                </button>
+            </div>
+        </div>
+
+        <!-- 思維導圖容器 -->
+        <div id="mindmapContainer" class="relative">
+            <!-- 思維導圖將在這裡動態生成 -->
+        </div>
+
+        <!-- 步驟詳情模態框 -->
+        <div id="stepModal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <button class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div id="modalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 應用切換器 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+    <script>
+        // 確保切換器初始化
+        if (window.initAppSwitcher) {
+            window.initAppSwitcher();
+        }
+    </script>
+
+    <!-- 應用腳本 -->
+    <script src="js/app.js"></script>
+</body>
+</html>

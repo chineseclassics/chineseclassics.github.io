@@ -1,0 +1,465 @@
+/* 模式按鈕樣式 */
+.mode-btn {
+    color: #6b7280;
+    background: transparent;
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+}
+
+.mode-btn:not(.active):hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.dark .mode-btn:not(.active):hover {
+    background: #374151;
+    color: #d1d5db;
+}
+
+/* 思維導圖節點 */
+.mindmap-node {
+    position: absolute;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.mindmap-node:hover {
+    transform: scale(1.08);
+    z-index: 10;
+}
+
+.mindmap-node:hover .mindmap-node-content {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.mindmap-node.correct {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.mindmap-node.wrong {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.mindmap-node-content {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    min-width: 220px;
+    max-width: 300px;
+    transition: box-shadow 0.3s ease;
+}
+
+.dark .mindmap-node-content {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+.mindmap-node-header {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+.dark .mindmap-node-header {
+    color: #f9fafb;
+}
+
+.mindmap-node-body {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.dark .mindmap-node-body {
+    color: #d1d5db;
+}
+
+.mindmap-node-number {
+    position: absolute;
+    top: -16px;
+    left: -16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    z-index: 2;
+    border: 3px solid white;
+}
+
+.dark .mindmap-node-number {
+    border-color: #1f2937;
+}
+
+/* 連接線 */
+.mindmap-connection {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.mindmap-connection.correct {
+    stroke: #10b981;
+    stroke-width: 3;
+    fill: none;
+    opacity: 0.8;
+}
+
+.mindmap-connection.wrong {
+    stroke: #ef4444;
+    stroke-width: 3;
+    fill: none;
+    stroke-dasharray: 8,6; /* 虛線表示錯誤流程 */
+    opacity: 0.7;
+}
+
+/* 回溯箭頭 */
+.mindmap-connection.backward {
+    stroke-dasharray: none;
+    stroke-width: 1.5;
+    opacity: 0.6;
+    stroke-dashoffset: 0;
+}
+
+.mindmap-connection.backward.correct {
+    stroke: #34d399;
+}
+
+.mindmap-connection.backward.wrong {
+    stroke: #f87171;
+}
+
+/* 模態框 */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    z-index: 1;
+}
+
+.dark .modal-content {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.dark .modal-close {
+    background: #374151;
+    color: #9ca3af;
+}
+
+.dark .modal-close:hover {
+    background: #4b5563;
+    color: #d1d5db;
+}
+
+/* 步驟詳情內容 */
+.step-detail-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #111827;
+}
+
+.dark .step-detail-title {
+    color: #f9fafb;
+}
+
+.step-detail-section {
+    margin-bottom: 24px;
+}
+
+.step-detail-section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #374151;
+}
+
+.dark .step-detail-section h3 {
+    color: #d1d5db;
+}
+
+.step-detail-section p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #6b7280;
+}
+
+.dark .step-detail-section p {
+    color: #9ca3af;
+}
+
+.step-detail-example {
+    background: #f9fafb;
+    border-left: 4px solid #667eea;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.dark .step-detail-example {
+    background: #374151;
+    border-left-color: #818cf8;
+}
+
+.step-detail-example-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+.dark .step-detail-example-title {
+    color: #f9fafb;
+}
+
+.step-detail-example-content {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.dark .step-detail-example-content {
+    color: #d1d5db;
+}
+
+/* 警告框 */
+.step-detail-warning {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.dark .step-detail-warning {
+    background: #78350f;
+    border-left-color: #fbbf24;
+}
+
+.step-detail-warning-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #92400e;
+}
+
+.dark .step-detail-warning-title {
+    color: #fbbf24;
+}
+
+.step-detail-warning-content {
+    color: #78350f;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.dark .step-detail-warning-content {
+    color: #fde68a;
+}
+
+/* 框架優化對比 */
+.framework-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.framework-box {
+    padding: 16px;
+    border-radius: 8px;
+    border: 2px solid;
+}
+
+.framework-box.bad {
+    background: #fee2e2;
+    border-color: #ef4444;
+}
+
+.dark .framework-box.bad {
+    background: #7f1d1d;
+    border-color: #f87171;
+}
+
+.framework-box.good {
+    background: #d1fae5;
+    border-color: #10b981;
+}
+
+.dark .framework-box.good {
+    background: #064e3b;
+    border-color: #34d399;
+}
+
+.framework-box-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.framework-box.bad .framework-box-title {
+    color: #991b1b;
+}
+
+.dark .framework-box.bad .framework-box-title {
+    color: #fca5a5;
+}
+
+.framework-box.good .framework-box-title {
+    color: #065f46;
+}
+
+.dark .framework-box.good .framework-box-title {
+    color: #6ee7b7;
+}
+
+.framework-box-content {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.framework-box.bad .framework-box-content {
+    color: #7f1d1d;
+}
+
+.dark .framework-box.bad .framework-box-content {
+    color: #fca5a5;
+}
+
+.framework-box.good .framework-box-content {
+    color: #064e3b;
+}
+
+.dark .framework-box.good .framework-box-content {
+    color: #6ee7b7;
+}
+
+/* 思維導圖容器 */
+#mindmapContainer {
+    position: relative;
+    width: 100%;
+    min-height: 700px;
+    height: 80vh;
+    max-height: 900px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    margin-bottom: 32px;
+    padding: 40px 20px;
+    box-sizing: border-box;
+}
+
+.dark #mindmapContainer {
+    background: #1f2937;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    #mindmapContainer {
+        min-height: 600px;
+        height: 70vh;
+        padding: 30px 15px;
+    }
+    
+    .mindmap-node-content {
+        min-width: 160px;
+        max-width: 200px;
+        padding: 12px 16px;
+    }
+    
+    .mindmap-node-header {
+        font-size: 14px;
+    }
+    
+    .mindmap-node-body {
+        font-size: 12px;
+    }
+    
+    .framework-comparison {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        padding: 24px;
+    }
+}
+
+/* 動畫 */
+@keyframes nodePulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+.mindmap-node.active {
+    animation: nodePulse 2s ease-in-out infinite;
+}
