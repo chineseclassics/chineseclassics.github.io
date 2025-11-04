@@ -397,58 +397,48 @@
             return pinyin;
         }
 
-        // 播放下載的拼音音頻文件
+        // 播放下載的拼音音頻文件（使用 WebAudio，並快取 AudioBuffer）
         function playPinyinAudio(pinyin) {
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve) => {
                 if (!gameActive) return resolve();
-                
+
                 // 確保 AudioContext 處於活躍狀態（iOS 修復）
                 if (silentAudio && silentAudio.audioContext.state === 'suspended') {
-                    silentAudio.audioContext.resume().catch(e => {
-                        console.warn('⚠️ AudioContext resume 失敗:', e);
-                    });
+                    try { await silentAudio.audioContext.resume(); } catch (e) { console.warn('⚠️ AudioContext resume 失敗:', e); }
                 }
-                
+
                 // 判斷是聲母還是韻母
                 const isShengmu = SHENGMU.includes(pinyin);
                 const isYunmu = YUNMU.includes(pinyin);
-                
                 if (!isShengmu && !isYunmu) {
                     console.warn('未知的拼音:', pinyin);
                     return resolve();
                 }
-                
-                // 獲取文件名
+
                 const fileName = getAudioFileName(pinyin);
-                const audioPath = isShengmu 
+                const audioPath = isShengmu
                     ? `/files/audio/pinyin/shengmu/${fileName}.mp3`
                     : `/files/audio/pinyin/yunmu/${fileName}.mp3`;
-                
-                // 停止上一段播放
-                if (externalAudio && !externalAudio.paused) {
-                    try { 
-                        externalAudio.pause(); 
-                        externalAudio.src = '';
-                    } catch(_) {}
-                }
-                
-                // 創建新的音頻對象
-                externalAudio = new Audio(audioPath);
-                
-                externalAudio.addEventListener('ended', () => resolve());
-                externalAudio.addEventListener('error', (e) => {
+
+                try {
+                    // 先查快取
+                    let buffer = audioBufferCache.get(audioPath);
+                    if (!buffer) {
+                        const resp = await fetch(audioPath);
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        const arr = await resp.arrayBuffer();
+                        buffer = await decodeToAudioBuffer(arr);
+                        audioBufferCache.set(audioPath, buffer);
+                    }
+                    await playAudioBuffer(buffer);
+                } catch (e) {
                     console.error('音頻播放失敗:', audioPath, e);
-                    resolve(); // 即使失敗也繼續
-                });
-                
-                externalAudio.play().catch(err => {
-                    console.error('無法播放音頻:', err);
-                    resolve();
-                });
+                }
+                resolve();
             });
         }
 
-        // TTS 音頻緩存（避免重複調用 API）
+        // TTS 音頻緩存（避免重複調用 API）：text -> AudioBuffer
         const ttsCache = new Map();
         
         // 播放一段線上 TTS 音訊；失敗則回退至內建語音（用於播放「請找到」等提示語）
@@ -456,29 +446,16 @@
             return new Promise(async (resolve) => {
                 // 確保 AudioContext 處於活躍狀態（iOS 修復）
                 if (silentAudio && silentAudio.audioContext.state === 'suspended') {
-                    silentAudio.audioContext.resume().catch(e => {
-                        console.warn('⚠️ AudioContext resume 失敗:', e);
-                    });
+                    try { await silentAudio.audioContext.resume(); } catch (e) { console.warn('⚠️ AudioContext resume 失敗:', e); }
                 }
                 
                 const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
                 const anon = (window.SUPABASE_ANON_KEY || '').trim();
                 try {
                     if (endpoint) {
-                        // 停止上一段播放
-                        if (externalAudio && !externalAudio.paused) {
-                            try { externalAudio.pause(); } catch(_) {}
-                            externalAudio.src = '';
-                        }
-                        
-                        let audioUrl;
-                        
-                        // 檢查緩存
-                        if (ttsCache.has(text)) {
-                            audioUrl = ttsCache.get(text);
-                            console.log('✅ 使用緩存的 TTS 音頻:', text);
-                        } else {
-                            // 首次調用 API
+                        // 取用或建立 AudioBuffer
+                        let buffer = ttsCache.get(text);
+                        if (!buffer) {
                             const params = new URLSearchParams();
                             params.set('text', text);
                             params.set('voice', 'zh-CN-XiaoxiaoNeural');
@@ -486,18 +463,15 @@
                             if (anon) { headers['apikey'] = anon; headers['Authorization'] = `Bearer ${anon}`; }
                             const resp = await fetch(`${endpoint}?${params.toString()}`, { method:'GET', headers });
                             if (!resp.ok) throw new Error(`TTS ${resp.status}`);
-                            const blob = await resp.blob();
-                            audioUrl = URL.createObjectURL(blob);
-                            
-                            // 保存到緩存
-                            ttsCache.set(text, audioUrl);
+                            const arr = await resp.arrayBuffer();
+                            buffer = await decodeToAudioBuffer(arr);
+                            ttsCache.set(text, buffer);
                             console.log('💾 緩存 TTS 音頻:', text);
+                        } else {
+                            console.log('✅ 使用緩存的 TTS 音頻:', text);
                         }
-                        
-                        externalAudio = new Audio(audioUrl);
-                        externalAudio.addEventListener('ended', () => resolve());
-                        await externalAudio.play();
-                        return;
+                        await playAudioBuffer(buffer);
+                        return resolve();
                     }
                 } catch (_) { /* 失敗回退 */ }
 
@@ -593,63 +567,58 @@
             }
         }
 
+        // WebAudio 助手與快取（使用 AudioContext 解碼與播放，避免 iOS 自動播放限制）
+        function getAudioContext() {
+            if (silentAudio && silentAudio.audioContext) return silentAudio.audioContext;
+            try {
+                return new (window.AudioContext || window.webkitAudioContext)();
+            } catch (_) {
+                return null;
+            }
+        }
+
+        // 將 ArrayBuffer 解碼為 AudioBuffer（兼容 Safari 回調與 Promise 兩種接口）
+        function decodeToAudioBuffer(arrayBuffer) {
+            return new Promise((resolve, reject) => {
+                const ctx = getAudioContext();
+                if (!ctx) return reject(new Error('AudioContext 不可用'));
+                // Safari 早期版本使用回調
+                if (ctx.decodeAudioData.length === 3) {
+                    ctx.decodeAudioData(arrayBuffer, resolve, reject);
+                } else {
+                    ctx.decodeAudioData(arrayBuffer).then(resolve).catch(reject);
+                }
+            });
+        }
+
+        // 播放 AudioBuffer
+        function playAudioBuffer(audioBuffer) {
+            return new Promise((resolve, reject) => {
+                const ctx = getAudioContext();
+                if (!ctx) return resolve();
+                const source = ctx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(ctx.destination);
+                source.onended = () => resolve();
+                try {
+                    source.start(0);
+                } catch (e) {
+                    console.warn('⚠️ 無法開始播放 AudioBuffer:', e);
+                    resolve();
+                }
+            });
+        }
+
+        // 通用音頻快取：URL -> AudioBuffer
+        const audioBufferCache = new Map();
+
         // 播放 Pinyin 語音
         let externalAudio = null;
-        // 新增可選的 pinyinHint，會交給在線 TTS 以 IPA 強制按拼音讀
+        // 新增可選的 pinyinHint，改為統一走 ttsPlay，確保使用 WebAudio 與緩存
         async function speakPinyin(text, pinyinHint) {
             if (!gameActive) return;
-            
-            // 確保 AudioContext 處於活躍狀態（iOS 修復）
-            if (silentAudio && silentAudio.audioContext.state === 'suspended') {
-                silentAudio.audioContext.resume().catch(e => {
-                    console.warn('⚠️ AudioContext resume 失敗:', e);
-                });
-            }
-
-            const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
-            // 優先使用在線 TTS（若有配置）
-            if (endpoint) {
-                try {
-                    // 停止上一段播放
-                    if (externalAudio && !externalAudio.paused) {
-                        externalAudio.pause();
-                        externalAudio.src = '';
-                    }
-                    const params = new URLSearchParams();
-                    params.set('text', text);
-                    params.set('voice', 'zh-CN-XiaoxiaoNeural');
-                    if (pinyinHint) params.set('pinyin', pinyinHint);
-                    const url = `${endpoint}?${params.toString()}`;
-                    const headers = {};
-                    const anon = (window.SUPABASE_ANON_KEY || '').trim();
-                    if (anon) {
-                        headers['apikey'] = anon;
-                        headers['Authorization'] = `Bearer ${anon}`;
-                    }
-                    const resp = await fetch(url, { method: 'GET', headers });
-                    if (!resp.ok) throw new Error(`TTS ${resp.status}`);
-                    const blob = await resp.blob();
-                    const objectUrl = URL.createObjectURL(blob);
-                    externalAudio = new Audio(objectUrl);
-                    await externalAudio.play();
-                    return; // 成功播放就不回退
-                } catch (e) {
-                    // 失敗則回退至瀏覽器內建語音
-                }
-            }
-
-            // 回退：瀏覽器內建語音
-            if (synth.speaking) return; // 防止語音重疊
-            const utterance = new SpeechSynthesisUtterance(text + (pinyinHint ? ' ' + pinyinHint : ''));
-            const selectedVoice = selectMandarinVoice();
-            if (selectedVoice) {
-                utterance.voice = selectedVoice;
-            } else {
-                utterance.lang = 'zh-CN';
-            }
-            utterance.pitch = 1.3;
-            utterance.rate = 0.8;
-            synth.speak(utterance);
+            const phrase = pinyinHint ? `${text} ${pinyinHint}` : text;
+            await ttsPlay(phrase);
         }
 
         // 音效 (使用 Tone.js)
