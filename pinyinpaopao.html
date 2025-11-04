@@ -255,20 +255,20 @@
         <!-- 遊戲主畫面 (預設隱藏) -->
         <div id="game-screen" class="hidden h-full">
             <!-- 頂部提示欄 -->
-            <div class="absolute top-0 left-0 right-0 z-10 p-6 flex flex-wrap gap-4 justify-center items-center" style="background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                <h2 class="text-4xl md:text-6xl font-bold" style="background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <div id="top-bar" class="absolute top-0 left-0 right-0 z-10 p-2 md:p-6 flex flex-wrap gap-2 md:gap-4 justify-center items-center" style="background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <h2 class="text-xl md:text-6xl font-bold" style="background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                     👂 請聽：
                 </h2>
-                <div id="prompt-display" class="w-28 h-28 rounded-3xl flex justify-center items-center animate-pulse" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);">
-                    <span id="prompt-text" class="text-7xl">🎵</span>
+                <div id="prompt-display" class="w-16 h-16 md:w-28 md:h-28 rounded-3xl flex justify-center items-center animate-pulse" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);">
+                    <span id="prompt-text" class="text-4xl md:text-7xl">🎵</span>
                 </div>
                 <!-- 重複播放按鈕 -->
-                <button id="repeat-button" class="p-4 rounded-full transform hover:scale-110 active:scale-95 transition-all" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);">
-                    <svg class="speaker-icon" style="fill: white; width: 48px; height: 48px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
+                <button id="repeat-button" class="p-2 md:p-4 rounded-full transform hover:scale-110 active:scale-95 transition-all" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);">
+                    <svg class="speaker-icon w-8 h-8 md:w-12 md:h-12" style="fill: white;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
                 </button>
                 <!-- 模式切換 -->
-                <label class="ml-2 text-xl font-bold" style="color: #667eea;">📚 模式：</label>
-                <select id="mode-select" class="px-4 py-3 border-2 border-purple-300 rounded-xl bg-white text-lg font-bold shadow-md" style="color: #667eea;">
+                <label class="ml-2 text-sm md:text-xl font-bold" style="color: #667eea;">📚 模式：</label>
+                <select id="mode-select" class="px-2 py-2 md:px-4 md:py-3 border-2 border-purple-300 rounded-xl bg-white text-sm md:text-lg font-bold shadow-md" style="color: #667eea;">
                     <option value="shengmu">🅰️ 聲母</option>
                     <option value="yunmu">🎶 韻母</option>
                     <option value="mix" selected>🌈 混合</option>
@@ -281,8 +281,8 @@
             </div>
 
             <!-- 分數 -->
-            <div class="absolute px-8 py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem); right: calc(env(safe-area-inset-right, 0px) + 1.5rem);">
-                <span class="text-4xl font-bold" style="background: linear-gradient(45deg, #f093fb, #f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <div class="absolute px-6 md:px-8 py-3 md:py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); right: calc(env(safe-area-inset-right, 0px) + 1rem);">
+                <span class="text-2xl md:text-4xl font-bold" style="background: linear-gradient(45deg, #f093fb, #f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                     ⭐ 分數：<span id="score">0</span>
                 </span>
             </div>
@@ -328,6 +328,11 @@
             'ang','eng','ing','ong'
         ];
         let practiceMode = 'mix'; // 'shengmu' | 'yunmu' | 'mix'
+        
+        // 行動裝置判斷（簡化）
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
         
         // 拼音發音映射表，幫助語音引擎正確發音
         const pinyinPronunciationMap = {
@@ -773,7 +778,7 @@
 
         // 創建增強的粒子爆炸效果
         function createParticles(x, y, color) {
-            const particleCount = 24; // 增加粒子數量
+            const particleCount = isMobile() ? 14 : 24; // 行動裝置減少粒子數量
             
             // 從漸變中提取顏色
             const colors = extractColorsFromGradient(color);
@@ -849,7 +854,7 @@
 
         // 創建閃爍星光效果
         function createSparkles(x, y, color) {
-            const sparkleCount = 12;
+            const sparkleCount = isMobile() ? 8 : 12;
             const colors = extractColorsFromGradient(color);
             
             for (let i = 0; i < sparkleCount; i++) {
@@ -905,8 +910,10 @@
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
             
-            // 隨機大小 (對 iPad 更友好，稍微大一點)
-            const size = Math.floor(Math.random() * 70) + 110; // 110px 到 180px
+            // 隨機大小（行動裝置整體縮小）
+            const size = isMobile()
+                ? Math.floor(Math.random() * 40) + 70   // 70px - 110px（手機）
+                : Math.floor(Math.random() * 70) + 110; // 110px - 180px（桌面）
             bubble.style.width = `${size}px`;
             bubble.style.height = `${size}px`;
             
@@ -923,7 +930,7 @@
             
             // 設置文字 - 更大更明顯
             bubble.textContent = pinyin;
-            bubble.style.fontSize = `${size / 2.2}px`; // 字體大小隨泡泡大小變化
+            bubble.style.fontSize = isMobile() ? `${size / 2.6}px` : `${size / 2.2}px`; // 手機字體更精緻
             
             // 存儲 pinyin 數據
             bubble.dataset.pinyin = pinyin;
