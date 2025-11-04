@@ -16,7 +16,8 @@
             user-select: none;
             cursor: default; /* 在電腦上顯示默認指針 */
             overflow: hidden; /* 隱藏滾動條 */
-            background-color: #f0f9ff; /* 淡藍色天空背景 */
+            /* 漂亮的天空漸變背景 */
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 50%, #FFF8DC 100%);
         }
 
         /* 遊戲容器，佔滿全屏 */
@@ -27,66 +28,154 @@
             overflow: hidden;
         }
 
-        /* 泡泡的基礎樣式 */
+        /* 彩虹泡泡的基礎樣式 - 使用多彩漸變 */
         .bubble {
             position: absolute;
             bottom: -150px; /* 從屏幕外開始 */
-            background: rgba(0, 150, 255, 0.6);
             border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1), inset 0 -5px 15px rgba(255, 255, 255, 0.3);
             display: flex;
             justify-content: center;
             align-items: center;
             color: white;
             font-weight: bold;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.5);
             /* 應用 'float' 動畫 */
             animation: float 10s linear infinite;
             will-change: transform; /* 優化動畫性能 */
             -webkit-tap-highlight-color: transparent; /* 移除 iPad 點擊高亮 */
+            cursor: pointer;
+            /* 漂亮的 3D 效果 */
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease;
         }
 
-        /* 泡泡上浮動畫 */
+        /* 泡泡內層 - 創建玻璃質感 */
+        .bubble::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent);
+            border-radius: 50%;
+            filter: blur(8px);
+        }
+
+        /* 泡泡外層光澤 */
+        .bubble::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: inherit;
+            filter: blur(10px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+
+        /* 泡泡上浮動畫 - 添加輕微搖擺 */
         @keyframes float {
             0% {
-                transform: translateY(0);
+                transform: translateY(0) translateX(0) rotate(0deg);
                 opacity: 1;
             }
+            25% {
+                transform: translateY(-30vh) translateX(10px) rotate(5deg);
+            }
+            50% {
+                transform: translateY(-60vh) translateX(-10px) rotate(-5deg);
+            }
+            75% {
+                transform: translateY(-90vh) translateX(5px) rotate(3deg);
+            }
             99% {
-                transform: translateY(-120vh); /* 飄出屏幕頂部 */
+                transform: translateY(-120vh) translateX(0) rotate(0deg);
                 opacity: 1;
             }
             100% {
-                transform: translateY(-120vh);
+                transform: translateY(-120vh) translateX(0) rotate(0deg);
                 opacity: 0;
             }
         }
 
-        /* 泡泡破裂動畫 */
+        /* 泡泡破裂動畫 - 帶粒子效果 */
         .pop {
-            animation: pop 0.3s ease-out forwards;
+            animation: pop 0.5s ease-out forwards;
         }
         @keyframes pop {
             0% {
                 transform: scale(1);
                 opacity: 1;
             }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
             100% {
-                transform: scale(1.3);
+                transform: scale(2);
+                opacity: 0;
+                filter: blur(20px);
+            }
+        }
+
+        /* 點錯時的晃動動畫 - 更生動 */
+        .wiggle {
+            animation: wiggle 0.5s ease;
+        }
+        @keyframes wiggle {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-15px) rotate(-8deg); }
+            30% { transform: translateX(15px) rotate(8deg); }
+            50% { transform: translateX(-10px) rotate(-5deg); }
+            70% { transform: translateX(10px) rotate(5deg); }
+            90% { transform: translateX(-5px) rotate(-2deg); }
+        }
+
+        /* 粒子效果 */
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-burst 0.8s ease-out forwards;
+        }
+
+        @keyframes particle-burst {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
                 opacity: 0;
             }
         }
 
-        /* 點錯時的晃動動畫 */
-        .wiggle {
-            animation: wiggle 0.4s ease;
+        /* 星星效果 */
+        .star {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            animation: star-pop 0.6s ease-out forwards;
+            font-size: 30px;
         }
-        @keyframes wiggle {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-10px); }
+
+        @keyframes star-pop {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.5) rotate(180deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(360deg);
+                opacity: 0;
+            }
         }
 
         /* 開始畫面的按鈕 */
@@ -98,17 +187,7 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        /* 喇叭圖標 */
-        .speaker-icon {
-            width: 40px;
-            height: 40px;
-            fill: #1d4ed8; /* 深藍色 */
-            cursor: pointer;
-            transition: transform 0.1s ease;
-        }
-        .speaker-icon:active {
-            transform: scale(0.9);
-        }
+        /* 喇叭圖標 - 移除（已在 HTML 中內聯） */
     </style>
 </head>
 <body class="bg-blue-50 text-gray-800">
@@ -116,32 +195,38 @@
     <div id="game-wrapper">
 
         <!-- 開始畫面 -->
-        <div id="start-screen" class="absolute inset-0 z-20 flex flex-col justify-center items-center bg-blue-100/80 backdrop-blur-sm">
-            <h1 class="text-5xl md:text-7xl font-bold text-blue-700 mb-8" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">拼音泡泡樂</h1>
-            <button id="start-button" class="px-12 py-6 bg-blue-600 text-white text-3xl font-bold rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300">
-                開始遊戲
+        <div id="start-screen" class="absolute inset-0 z-20 flex flex-col justify-center items-center bg-gradient-to-b from-blue-200/90 via-purple-200/90 to-pink-200/90 backdrop-blur-sm">
+            <h1 class="text-6xl md:text-8xl font-bold mb-8 animate-bounce" style="background: linear-gradient(45deg, #FF6B9D, #C239B3, #4158D0, #00D4FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 2px 2px 8px rgba(0,0,0,0.2);">
+                🎈 拼音泡泡樂 🎈
+            </h1>
+            <button id="start-button" class="px-16 py-8 text-4xl font-bold rounded-full shadow-2xl transform hover:scale-105 transition-all" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                🎮 開始遊戲
             </button>
-            <p class="mt-8 text-lg text-gray-600">請打開聲音，跟著提示點擊泡泡！</p>
+            <p class="mt-8 text-2xl font-bold" style="color: #667eea; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                🔊 請打開聲音，跟著提示點擊泡泡！
+            </p>
         </div>
 
         <!-- 遊戲主畫面 (預設隱藏) -->
         <div id="game-screen" class="hidden h-full">
             <!-- 頂部提示欄 -->
-            <div class="absolute top-0 left-0 right-0 z-10 p-4 bg-white/70 backdrop-blur-md shadow-md flex flex-wrap gap-4 justify-center items-center">
-                <h2 class="text-3xl md:text-5xl font-bold text-gray-700">請找到：</h2>
-                <div id="prompt-display" class="w-24 h-24 bg-blue-100 border-4 border-blue-300 rounded-2xl flex justify-center items-center">
-                    <span id="prompt-text" class="text-6xl font-bold text-blue-700">🎵</span>
+            <div class="absolute top-0 left-0 right-0 z-10 p-6 flex flex-wrap gap-4 justify-center items-center" style="background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <h2 class="text-4xl md:text-6xl font-bold" style="background: linear-gradient(45deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    👂 請聽：
+                </h2>
+                <div id="prompt-display" class="w-28 h-28 rounded-3xl flex justify-center items-center animate-pulse" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);">
+                    <span id="prompt-text" class="text-7xl">🎵</span>
                 </div>
                 <!-- 重複播放按鈕 -->
-                <button id="repeat-button" class="p-2 rounded-full hover:bg-blue-100 active:bg-blue-200">
-                    <svg class="speaker-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
+                <button id="repeat-button" class="p-4 rounded-full transform hover:scale-110 active:scale-95 transition-all" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);">
+                    <svg class="speaker-icon" style="fill: white; width: 48px; height: 48px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
                 </button>
                 <!-- 模式切換 -->
-                <label class="ml-2 text-sm text-gray-600">模式：</label>
-                <select id="mode-select" class="px-3 py-2 border border-blue-300 rounded-lg bg-white/80 text-sm">
-                    <option value="shengmu">聲母</option>
-                    <option value="yunmu">韻母</option>
-                    <option value="mix" selected>混合</option>
+                <label class="ml-2 text-xl font-bold" style="color: #667eea;">📚 模式：</label>
+                <select id="mode-select" class="px-4 py-3 border-2 border-purple-300 rounded-xl bg-white text-lg font-bold shadow-md" style="color: #667eea;">
+                    <option value="shengmu">🅰️ 聲母</option>
+                    <option value="yunmu">🎶 韻母</option>
+                    <option value="mix" selected>🌈 混合</option>
                 </select>
             </div>
 
@@ -151,8 +236,10 @@
             </div>
 
             <!-- 分數 -->
-            <div class="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg">
-                <span class="text-3xl font-bold text-green-600">分數：<span id="score">0</span></span>
+            <div class="absolute bottom-6 right-6 px-8 py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                <span class="text-4xl font-bold" style="background: linear-gradient(45deg, #f093fb, #f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    ⭐ 分數：<span id="score">0</span>
+                </span>
             </div>
         </div>
 
@@ -545,6 +632,65 @@
             }, 800); // 延遲播放語音，等泡泡出來一點
         }
 
+        // 彩虹泡泡顏色陣列
+        const bubbleColors = [
+            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',      // 紫色
+            'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',      // 粉紅
+            'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',      // 藍色
+            'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',      // 綠色
+            'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',      // 橙粉
+            'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',      // 藍紫
+            'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',      // 淡彩虹
+            'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',      // 粉色
+            'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',      // 橙色
+            'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)'       // 紅藍
+        ];
+
+        // 創建粒子爆炸效果
+        function createParticles(x, y, color) {
+            const particleCount = 12;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.background = color;
+                
+                // 計算隨機方向
+                const angle = (Math.PI * 2 * i) / particleCount;
+                const velocity = 50 + Math.random() * 50;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+                
+                particle.style.setProperty('--tx', `${tx}px`);
+                particle.style.setProperty('--ty', `${ty}px`);
+                
+                bubbleContainer.appendChild(particle);
+                
+                // 動畫結束後移除
+                setTimeout(() => particle.remove(), 800);
+            }
+        }
+
+        // 創建星星效果
+        function createStars(x, y) {
+            const stars = ['⭐', '✨', '🌟', '💫'];
+            const starCount = 5;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.textContent = stars[Math.floor(Math.random() * stars.length)];
+                star.style.left = `${x + (Math.random() - 0.5) * 100}px`;
+                star.style.top = `${y + (Math.random() - 0.5) * 100}px`;
+                
+                bubbleContainer.appendChild(star);
+                
+                // 動畫結束後移除
+                setTimeout(() => star.remove(), 600);
+            }
+        }
+
         // 創建單個泡泡
         function createBubble(pinyin) {
             if (!gameActive) return; // 如果遊戲結束了就不再創建
@@ -552,20 +698,25 @@
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
             
-            // 隨機大小 (對 iPad 更友好)
-            const size = Math.floor(Math.random() * 60) + 100; // 100px 到 160px
+            // 隨機大小 (對 iPad 更友好，稍微大一點)
+            const size = Math.floor(Math.random() * 70) + 110; // 110px 到 180px
             bubble.style.width = `${size}px`;
             bubble.style.height = `${size}px`;
             
+            // 隨機彩虹顏色
+            const randomColor = bubbleColors[Math.floor(Math.random() * bubbleColors.length)];
+            bubble.style.background = randomColor;
+            bubble.dataset.color = randomColor; // 保存顏色用於粒子效果
+            
             // 隨機水平位置
-            bubble.style.left = `${Math.random() * (window.innerWidth - size - 20) + 10}px`; // 減去泡泡寬度和邊距
+            bubble.style.left = `${Math.random() * (window.innerWidth - size - 20) + 10}px`;
             
             // 隨機上浮速度
             bubble.style.animationDuration = `${Math.random() * 5 + 8}s`; // 8到13秒
             
-            // 設置文字
+            // 設置文字 - 更大更明顯
             bubble.textContent = pinyin;
-            bubble.style.fontSize = `${size / 2}px`; // 字體大小隨泡泡大小變化
+            bubble.style.fontSize = `${size / 2.2}px`; // 字體大小隨泡泡大小變化
             
             // 存儲 pinyin 數據
             bubble.dataset.pinyin = pinyin;
@@ -596,8 +747,22 @@
             const tappedPinyin = bubble.dataset.pinyin;
 
             if (tappedPinyin === currentTarget) {
-                // 答對了
+                // 答對了！創建美麗的爆炸效果
                 playCorrectSound();
+                
+                // 獲取泡泡位置
+                const rect = bubble.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                
+                // 創建彩虹粒子爆炸效果
+                const bubbleColor = bubble.dataset.color || bubbleColors[0];
+                createParticles(x, y, bubbleColor);
+                
+                // 創建星星效果
+                createStars(x, y);
+                
+                // 泡泡破裂動畫
                 bubble.classList.add('pop');
                 score++;
                 scoreDisplay.textContent = score;
@@ -624,7 +789,7 @@
                 // 晃動動畫結束後移除 class，以便可以再次點擊
                 setTimeout(() => {
                     bubble.classList.remove('wiggle');
-                }, 400);
+                }, 500);
                 
                 // 語音提示
                 speakPinyin(`不對哦，再試試看`);
