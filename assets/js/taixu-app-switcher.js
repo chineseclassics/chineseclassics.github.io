@@ -64,6 +64,15 @@
             description: '在經典的貪吃蛇玩法中，操控呆萌龍寶收集漢字，組成詞語，挑戰你的詞彙量和反應速度。'
         },
         {
+            id: 'pinyinpaopao',
+            category: 'hanmo',
+            name: '拼音泡泡樂',
+            icon: '🎈',
+            gradient: 'from-pink-400 to-purple-500',
+            url: '/pinyinpaopao.html',
+            description: '跟著語音提示點擊飄浮的拼音泡泡！支援聲母、韻母和混合模式，在彩虹泡泡中輕鬆學習漢語拼音'
+        },
+        {
             id: 'story-vocab',
             category: 'hanmo',
             name: '詞遊記',
