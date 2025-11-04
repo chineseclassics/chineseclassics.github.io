@@ -252,7 +252,13 @@
                         externalAudio.src = '';
                     }
                     const url = `${endpoint}?text=${encodeURIComponent(text)}&voice=zh-CN-XiaoxiaoNeural`;
-                    const resp = await fetch(url, { method: 'GET' });
+                    const headers = {};
+                    const anon = (window.SUPABASE_ANON_KEY || '').trim();
+                    if (anon) {
+                        headers['apikey'] = anon;
+                        headers['Authorization'] = `Bearer ${anon}`;
+                    }
+                    const resp = await fetch(url, { method: 'GET', headers });
                     if (!resp.ok) throw new Error(`TTS ${resp.status}`);
                     const blob = await resp.blob();
                     const objectUrl = URL.createObjectURL(blob);
