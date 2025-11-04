@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>拼音泡泡樂</title>
+    <!-- 引入 Tailwind CSS 用於快速美化界面 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Tone.js 用於製作點擊音效 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* 使用 'Inter' 字體，更圓潤友好 */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-user-select: none; /* 防止 iPad 點擊時選中文本 */
+            user-select: none;
+            cursor: default; /* 在電腦上顯示默認指針 */
+            overflow: hidden; /* 隱藏滾動條 */
+            background-color: #f0f9ff; /* 淡藍色天空背景 */
+        }
+
+        /* 遊戲容器，佔滿全屏 */
+        #game-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 泡泡的基礎樣式 */
+        .bubble {
+            position: absolute;
+            bottom: -150px; /* 從屏幕外開始 */
+            background: rgba(0, 150, 255, 0.6);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1), inset 0 -5px 15px rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            /* 應用 'float' 動畫 */
+            animation: float 10s linear infinite;
+            will-change: transform; /* 優化動畫性能 */
+            -webkit-tap-highlight-color: transparent; /* 移除 iPad 點擊高亮 */
+        }
+
+        /* 泡泡上浮動畫 */
+        @keyframes float {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            99% {
+                transform: translateY(-120vh); /* 飄出屏幕頂部 */
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-120vh);
+                opacity: 0;
+            }
+        }
+
+        /* 泡泡破裂動畫 */
+        .pop {
+            animation: pop 0.3s ease-out forwards;
+        }
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        /* 點錯時的晃動動畫 */
+        .wiggle {
+            animation: wiggle 0.4s ease;
+        }
+        @keyframes wiggle {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+        }
+
+        /* 開始畫面的按鈕 */
+        #start-button {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        #start-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 喇叭圖標 */
+        .speaker-icon {
+            width: 40px;
+            height: 40px;
+            fill: #1d4ed8; /* 深藍色 */
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .speaker-icon:active {
+            transform: scale(0.9);
+        }
+    </style>
+</head>
+<body class="bg-blue-50 text-gray-800">
+
+    <div id="game-wrapper">
+
+        <!-- 開始畫面 -->
+        <div id="start-screen" class="absolute inset-0 z-20 flex flex-col justify-center items-center bg-blue-100/80 backdrop-blur-sm">
+            <h1 class="text-5xl md:text-7xl font-bold text-blue-700 mb-8" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">拼音泡泡樂</h1>
+            <button id="start-button" class="px-12 py-6 bg-blue-600 text-white text-3xl font-bold rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                開始遊戲
+            </button>
+            <p class="mt-8 text-lg text-gray-600">請打開聲音，跟著提示點擊泡泡！</p>
+        </div>
+
+        <!-- 遊戲主畫面 (預設隱藏) -->
+        <div id="game-screen" class="hidden h-full">
+            <!-- 頂部提示欄 -->
+            <div class="absolute top-0 left-0 right-0 z-10 p-4 bg-white/70 backdrop-blur-md shadow-md flex justify-center items-center">
+                <h2 class="text-3xl md:text-5xl font-bold text-gray-700 mr-4">請找到：</h2>
+                <div id="prompt-display" class="w-24 h-24 bg-blue-100 border-4 border-blue-300 rounded-2xl flex justify-center items-center">
+                    <span id="prompt-text" class="text-6xl font-bold text-blue-700">...</span>
+                </div>
+                <!-- 重複播放按鈕 -->
+                <button id="repeat-button" class="ml-6 p-2 rounded-full hover:bg-blue-100 active:bg-blue-200">
+                    <svg class="speaker-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
+                </button>
+            </div>
+
+            <!-- 泡泡出現的容器 -->
+            <div id="bubble-container" class="absolute inset-0 z-0">
+                <!-- 泡泡會由 JS 動態加入這裡 -->
+            </div>
+
+            <!-- 分數 -->
+            <div class="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg">
+                <span class="text-3xl font-bold text-green-600">分數：<span id="score">0</span></span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 可選：載入站級配置（若沒有也不影響執行）
+        // 注意：為符合架構規範，使用絕對路徑
+        try {
+            const s = document.createElement('script');
+            s.src = '/assets/js/taixu-config.js';
+            s.defer = false; // 需優先執行以提供端點
+            document.head.appendChild(s);
+        } catch (e) { /* 忽略配置檔缺失 */ }
+
+        // DOM 元素
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const startButton = document.getElementById('start-button');
+        const bubbleContainer = document.getElementById('bubble-container');
+        const promptText = document.getElementById('prompt-text');
+        const repeatButton = document.getElementById('repeat-button');
+        const scoreDisplay = document.getElementById('score');
+
+        // 遊戲數據
+        // 這裡我們用聲母 b, p, m, f, d, t, n, l, g, k, h, j, q, x
+        const pinyinSet = ['b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x'];
+        
+        // 拼音發音映射表，幫助語音引擎正確發音
+        const pinyinPronunciationMap = {
+            'b': 'bo',
+            'p': 'po',
+            'm': 'mo',
+            'f': 'fo',
+            'd': 'de',
+            't': 'te',
+            'n': 'ne',
+            'l': 'le',
+            'g': 'ge',
+            'k': 'ke',
+            'h': 'he',
+            'j': 'ji',
+            'q': 'qi',
+            'x': 'xi'
+        };
+
+        let currentTarget = '';
+        let score = 0;
+        let gameActive = false;
+
+        // 語音合成 API
+        const synth = window.speechSynthesis;
+        let voices = [];
+
+        // 取得並快取可用語音（放寬語言碼匹配，避免不同瀏覽器標記差異）
+        function loadVoices() {
+            const all = synth.getVoices();
+            // 不先過濾；保留全部，後續嚴格挑選普通話，排除粵語（zh-HK）
+            voices = all || [];
+        }
+        // 瀏覽器加載語音包需要時間；事件觸發後重新抓取
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices(); // 立即嘗試加載
+
+        // 根據可用清單挑選最接近「普通話（中國大陸）」的語音
+        function selectMandarinVoice() {
+            if (!voices || voices.length === 0) return null;
+
+            const isZhCN = v => /^(zh|cmn)[-_]?(CN|Hans)/i.test(v.lang || '') || /Mandarin|普通话|Putonghua|简体|PRC|Mainland/i.test(v.name || '');
+            const isZhTW = v => /^zh[-_]?TW/i.test(v.lang || '') || /Taiwan|台灣|臺灣/i.test(v.name || '');
+            const isZhHK = v => /^zh[-_]?HK/i.test(v.lang || '') || /Cantonese|粵語|粤语|Hong\s*Kong/i.test(v.name || '');
+            const isZhAny = v => /^zh/i.test(v.lang || '');
+
+            // 1) 強優先：中國大陸普通話（或名稱標註 Mandarin/PRC/Hans 等）
+            const zhCN = voices.filter(v => isZhCN(v));
+            if (zhCN.length) return zhCN[0];
+
+            // 2) 次優先：台灣普通話
+            const zhTW = voices.filter(v => isZhTW(v));
+            if (zhTW.length) return zhTW[0];
+
+            // 3) 泛中文語音中，排除粵語（HK）
+            const zhNotHK = voices.filter(v => isZhAny(v) && !isZhHK(v));
+            if (zhNotHK.length) return zhNotHK[0];
+
+            // 4) 仍找不到就回傳 null，改用語言碼回退
+            return null;
+        }
+
+        // 播放 Pinyin 語音
+        let externalAudio = null;
+        async function speakPinyin(text) {
+            if (!gameActive) return;
+
+            const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
+            // 優先使用在線 TTS（若有配置）
+            if (endpoint) {
+                try {
+                    // 停止上一段播放
+                    if (externalAudio && !externalAudio.paused) {
+                        externalAudio.pause();
+                        externalAudio.src = '';
+                    }
+                    const url = `${endpoint}?text=${encodeURIComponent(text)}&voice=zh-CN-XiaoxiaoNeural`;
+                    const resp = await fetch(url, { method: 'GET' });
+                    if (!resp.ok) throw new Error(`TTS ${resp.status}`);
+                    const blob = await resp.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    externalAudio = new Audio(objectUrl);
+                    await externalAudio.play();
+                    return; // 成功播放就不回退
+                } catch (e) {
+                    // 失敗則回退至瀏覽器內建語音
+                }
+            }
+
+            // 回退：瀏覽器內建語音
+            if (synth.speaking) return; // 防止語音重疊
+            const utterance = new SpeechSynthesisUtterance(text);
+            const selectedVoice = selectMandarinVoice();
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            } else {
+                utterance.lang = 'zh-CN';
+            }
+            utterance.pitch = 1.3;
+            utterance.rate = 0.8;
+            synth.speak(utterance);
+        }
+
+        // 音效 (使用 Tone.js)
+        // 答對的音效
+        const correctSynth = new Tone.Synth({
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.2 }
+        }).toDestination();
+
+        // 答錯的音效
+        const incorrectSynth = new Tone.Synth({
+            oscillator: { type: 'square' },
+            envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.2 }
+        }).toDestination();
+
+        function playCorrectSound() {
+            correctSynth.triggerAttackRelease('C5', '8n', Tone.now());
+            correctSynth.triggerAttackRelease('G5', '8n', Tone.now() + 0.1);
+        }
+
+        function playIncorrectSound() {
+            incorrectSynth.triggerAttackRelease('C3', '4n', Tone.now());
+        }
+
+        // --- 遊戲邏輯 ---
+
+        // 開始遊戲
+        startButton.addEventListener('click', async () => {
+            // Tone.js 和 語音 API 需要用戶手勢來啟動
+            await Tone.start();
+            
+            // 預熱語音引擎
+            if (synth.state === 'suspended') {
+                synth.resume();
+            }
+
+            // 先切換到遊戲畫面並標記為啟動，再觸發語音（避免因 gameActive=false 而被攔截）
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameActive = true;
+            score = 0;
+            scoreDisplay.textContent = score;
+
+            speakPinyin('遊戲開始'); // 播放一個簡短語音以啟動語音引擎
+            
+            // 延遲一點開始第一局，確保語音引擎準備好了
+            setTimeout(newRound, 500);
+        });
+
+        // 重複播放按鈕
+        repeatButton.addEventListener('click', () => {
+            if (currentTarget) {
+                const pronunciation = pinyinPronunciationMap[currentTarget] || currentTarget;
+                speakPinyin(`請找到 ${pronunciation}`);
+            }
+        });
+
+        // 開始新一局
+        function newRound() {
+            if (!gameActive) return;
+
+            // 1. 清除舊的泡泡
+            bubbleContainer.innerHTML = '';
+
+            // 2. 隨機選一個目標 Pinyin
+            currentTarget = pinyinSet[Math.floor(Math.random() * pinyinSet.length)];
+            
+            // 3. 創建一組選項 (包含正確答案)
+            let options = [currentTarget];
+            // 創建 3 個干擾項
+            while (options.length < 4) {
+                const distractor = pinyinSet[Math.floor(Math.random() * pinyinSet.length)];
+                if (!options.includes(distractor)) {
+                    options.push(distractor);
+                }
+            }
+            
+            // 4. 打亂選項順序
+            const shuffledOptions = options.sort(() => Math.random() - 0.5);
+
+            // 5. 創建泡泡
+            shuffledOptions.forEach((pinyin, index) => {
+                // 延遲創建泡泡，讓它們錯開
+                setTimeout(() => createBubble(pinyin), index * 500);
+            });
+
+            // 6. 更新提示並播放語音
+            promptText.textContent = currentTarget;
+            setTimeout(() => {
+                const pronunciation = pinyinPronunciationMap[currentTarget] || currentTarget;
+                speakPinyin(`請找到 ${pronunciation}`);
+            }, 800); // 延遲播放語音，等泡泡出來一點
+        }
+
+        // 創建單個泡泡
+        function createBubble(pinyin) {
+            if (!gameActive) return; // 如果遊戲結束了就不再創建
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            
+            // 隨機大小 (對 iPad 更友好)
+            const size = Math.floor(Math.random() * 60) + 100; // 100px 到 160px
+            bubble.style.width = `${size}px`;
+            bubble.style.height = `${size}px`;
+            
+            // 隨機水平位置
+            bubble.style.left = `${Math.random() * (window.innerWidth - size - 20) + 10}px`; // 減去泡泡寬度和邊距
+            
+            // 隨機上浮速度
+            bubble.style.animationDuration = `${Math.random() * 5 + 8}s`; // 8到13秒
+            
+            // 設置文字
+            bubble.textContent = pinyin;
+            bubble.style.fontSize = `${size / 2}px`; // 字體大小隨泡泡大小變化
+            
+            // 存儲 pinyin 數據
+            bubble.dataset.pinyin = pinyin;
+
+            // 添加觸摸事件 (使用 touchstart 反應更快)
+            bubble.addEventListener('touchstart', handleBubbleTap, { passive: true });
+            // 同時兼容電腦鼠標點擊
+            bubble.addEventListener('click', handleBubbleTap);
+
+            // 泡泡飄出屏幕後自動移除
+            bubble.addEventListener('animationend', () => {
+                bubble.remove();
+            });
+
+            bubbleContainer.appendChild(bubble);
+        }
+
+        // 處理泡泡點擊
+        function handleBubbleTap(event) {
+            if (!gameActive) return;
+
+            // 防止在動畫中重複點擊
+            const bubble = event.currentTarget;
+            if (bubble.classList.contains('pop') || bubble.classList.contains('wiggle')) {
+                return;
+            }
+
+            const tappedPinyin = bubble.dataset.pinyin;
+
+            if (tappedPinyin === currentTarget) {
+                // 答對了
+                playCorrectSound();
+                bubble.classList.add('pop');
+                score++;
+                scoreDisplay.textContent = score;
+
+                // 移除事件監聽器，防止已破裂的泡泡被再次點擊
+                bubble.removeEventListener('touchstart', handleBubbleTap);
+                bubble.removeEventListener('click', handleBubbleTap);
+
+                // 停止所有泡泡的動畫並清除
+                document.querySelectorAll('.bubble').forEach(b => {
+                    b.style.animationPlayState = 'paused';
+                    if (!b.classList.contains('pop')) {
+                        b.classList.add('pop'); // 讓其他泡泡也破掉
+                    }
+                });
+
+                // 1.5秒後開始新一局
+                setTimeout(newRound, 1500);
+
+            } else {
+                // 答錯了
+                playIncorrectSound();
+                bubble.classList.add('wiggle');
+                // 晃動動畫結束後移除 class，以便可以再次點擊
+                setTimeout(() => {
+                    bubble.classList.remove('wiggle');
+                }, 400);
+                
+                // 語音提示
+                speakPinyin(`不對哦，再試試看`);
+            }
+        }
+        
+        // 確保在調整窗口大小時泡泡仍在範圍內
+        window.addEventListener('resize', () => {
+            // 簡單處理：重新開始一局
+            if(gameActive) {
+                newRound();
+            }
+        });
+
+    </script>
+
+    <!-- 應用切換器（架構規範：於每個應用頁尾引入，且使用絕對路徑） -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+
+</body>
+</html>
+

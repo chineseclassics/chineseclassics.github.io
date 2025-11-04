@@ -1,0 +1,163 @@
+/* 觸控優化整體樣式（繁體中文註釋） */
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --card: #1f2937;
+  --muted: #94a3b8;
+  --accent: #22d3ee;
+  --accent-2: #34d399;
+  --danger: #f87171;
+  --text: #e5e7eb;
+  --text-strong: #ffffff;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans TC', 'PingFang TC', 'Heiti TC', sans-serif;
+}
+
+.app-header {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: var(--panel); border-bottom: 1px solid #1f2937;
+}
+.title { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+.mode-picker { display: flex; gap: 8px; }
+.mode-btn {
+  background: #0b1220; color: var(--text);
+  border: 1px solid #243041; border-radius: 999px;
+  padding: 8px 12px; font-size: 14px;
+}
+.mode-btn.active { border-color: var(--accent); color: var(--text-strong); }
+
+.app-root { padding: 12px; max-width: 1200px; margin: 0 auto; }
+
+/* 卡片與佈局 */
+.row { display: grid; gap: 12px; }
+@media (min-width: 900px) {
+  .row-2 { grid-template-columns: 1.2fr 1fr; }
+}
+.card {
+  background: var(--card);
+  border: 1px solid #263244;
+  border-radius: 12px;
+  padding: 12px;
+}
+.card h2 { margin: 0 0 8px; font-size: 16px; }
+
+/* 拼音工作台 */
+.workbench { display: grid; gap: 12px; }
+.slots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.slot {
+  background: #0b1220; border: 1px dashed #334155; border-radius: 12px;
+  height: 72px; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; color: var(--muted);
+  touch-action: none; /* 讓 PointerEvents 拖拽更穩定 */
+}
+.slot.filled { border-style: solid; color: var(--text-strong); font-weight: 700; }
+.slot[data-type="shengmu"]::after { content: '生母'; font-size: 12px; color: #64748b; position: absolute; transform: translateY(36px); }
+.slot[data-type="yunmu"]::after { content: '韻母'; font-size: 12px; color: #64748b; position: absolute; transform: translateY(36px); }
+
+.tone-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+.tone-btn {
+  background: #0b1220; border: 1px solid #334155; color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font-size: 16px;
+}
+.tone-btn.active { border-color: var(--accent-2); color: var(--text-strong); }
+
+/* 選擇區（傳送帶） */
+.selector { display: grid; gap: 12px; }
+.tabbar { display: flex; gap: 8px; }
+.tab {
+  background: #0b1220; border: 1px solid #334155; color: var(--text);
+  border-radius: 8px; padding: 6px 10px; font-size: 14px;
+}
+.tab.active { border-color: var(--accent); }
+
+.belt { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.token {
+  background: #0f172a; border: 1px solid #2b3a50; color: var(--text-strong);
+  border-radius: 10px; padding: 12px 14px; min-width: 56px; text-align: center;
+  font-size: 18px; font-weight: 700;
+  touch-action: none; user-select: none;
+}
+.token:active { transform: scale(0.98); }
+.token.disabled { opacity: 0.35; filter: grayscale(0.4); pointer-events: none; }
+
+/* 結果區 */
+.results { display: grid; gap: 8px; max-height: 60vh; overflow: auto; }
+.result-group h3 { margin: 6px 0; font-size: 14px; color: var(--muted); font-weight: 600; }
+.result-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { background: #0b1220; border: 1px solid #334155; border-radius: 999px; padding: 6px 10px; font-size: 14px; }
+
+/* 浮動拖拽影子 */
+.drag-ghost {
+  position: fixed; pointer-events: none; z-index: 1000;
+  background: rgba(34, 211, 238, 0.1);
+  border: 2px solid var(--accent);
+  color: var(--text-strong);
+  padding: 10px 12px; border-radius: 10px; font-size: 18px; font-weight: 700;
+  transform: translate(-50%, -50%);
+}
+
+/* 輔助 */
+.btn { background: #0b1220; border: 1px solid #334155; color: var(--text); border-radius: 8px; padding: 8px 10px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* --- K3 簡化介面專用樣式 --- */
+.k3-simple { display: grid; gap: 12px; }
+.k3-simple .belts-two { display: grid; gap: 12px; }
+@media (min-width: 900px) {
+  .k3-simple .belts-two { grid-template-columns: 1fr 1fr; }
+}
+.k3-simple .panel-sm h2,
+.k3-simple .panel-ym h2 { margin: 0 0 8px; font-size: 18px; }
+.k3-simple .belt { flex-wrap: wrap; row-gap: 10px; }
+.k3-simple .compose-simple { display: grid; gap: 10px; justify-items: center; }
+.k3-simple .pinyin-capsule {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 14px; border-radius: 999px;
+  background: linear-gradient(135deg, rgba(56,189,248,0.15), rgba(99,102,241,0.15));
+  border: 2px solid rgba(99,102,241,0.35);
+}
+.k3-simple .pinyin-capsule { margin: 0 auto; }
+.k3-simple .mini-slot {
+  min-width: 92px; height: 72px; border-radius: 14px;
+  background: #0b1220; border: 2px dashed #334155; color: var(--text-strong);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 800; position: relative;
+}
+.k3-simple .mini-slot.filled { border-style: solid; }
+.k3-simple .pinyin-preview { font-size: 18px; color: var(--muted); text-align: center; }
+.k3-simple .results { max-height: 50vh; overflow: auto; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-content: flex-start; }
+.k3-simple .char-tile {
+  background: linear-gradient(180deg, rgba(56,189,248,0.12), rgba(16,185,129,0.12));
+  border: 1px solid #2b3a50; border-radius: 16px; padding: 12px; text-align: center;
+  transition: transform .12s ease;
+}
+.k3-simple .char-tile { flex: 0 0 120px; }
+.k3-simple .char-tile:active { transform: scale(0.98); }
+.k3-simple .char-tile .char { font-size: 42px; line-height: 1; margin: 4px 0; }
+.k3-simple .char-tile .py { font-size: 14px; color: var(--muted); }
+
+/* 針對幼兒觸控：加大觸擊區域 */
+.k3-simple .token { min-width: 64px; padding: 14px 16px; font-size: 20px; }
+.k3-simple .tag { font-size: 16px; }
+
+/* 童趣配色：讓 token 更繽紛（使用 nth-child 變化） */
+.k3-simple .belt .token { background: #0f172a; border-color: #2b3a50; }
+.k3-simple .belt .token:nth-child(3n+1) { background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.45); }
+.k3-simple .belt .token:nth-child(3n+2) { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.45); }
+.k3-simple .belt .token:nth-child(3n) { background: rgba(244,114,182,0.15); border-color: rgba(244,114,182,0.45); }
+
+/* 簡單彈跳動畫 */
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.k3-simple .mini-slot.pop { animation: pop .18s ease-out; }

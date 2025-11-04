@@ -1,4 +1,6 @@
-拼音拼拼樂 - 軟件開發計劃書 (MVP V6)
+拼音拼拼樂 - 軟件開發計劃書 (MVP V6.1)
+
+更新日期：2025-11-04（V6 → V6.1 聚焦 K3 內建詞庫方案）
 
 1. 項目概述
 
@@ -11,37 +13,45 @@
 
 對教師： 提供一個高度靈活、零技術門檻的教學工具，支持離線使用、批量備課和完全自定義的拼音標註，完美貼合教學大綱。
 
-2. 核心架構 (V6 方案)
+2. 核心架構 (V6.1 方案)
 
-技術棧： 純前端應用 (Client-Only)。
+技術棧：純前端應用 (Client-Only)。
 
-數據庫： 瀏覽器 Local Storage。所有數據（系統數據、自定義數據）均存儲於本地。
+系統資料：
+- 內建 K3 詞庫（靜態檔）→ 記憶體索引（Map）秒查。
+- 路徑：`/pinyin-pinpinle/data/k3-pinyin-db.json`（繁體、帶調顯示 + 去調/數字調索引）。
+- 載入器：`/pinyin-pinpinle/js/k3-db-loader.js`（提供統一查詢 API）。
 
-優點： 零服務器成本，響應極快，100% 離線運行（學習模式）。
+自定義資料：
+- 儲存於瀏覽器本地（預設 localStorage；若規模變大可切換 IndexedDB，對上層 API 無感）。
+- 支援一鍵導出/導入（Excel/JSON），避免資料遺失。
 
-缺點： 數據隨設備，清理緩存可能導致數據丟失（通過「導出」功能規避）。
+優點：零服務器成本；首開小、響應快；離線可用；教師覆寫優先。
 
-未來擴展 (Deferred)： 本 MVP 方案不包含 Supabase 數據庫同步或 DeepSeek AI 功能。這些將作為 V2.0 版本的擴展點。
+缺點：資料隨設備；需教師定期匯出備份（導出功能保障）。
 
-3. 數據核心：離線優先混合模式
+未來擴展 (Deferred)：V2 可引入 IndexedDB + Web Worker（大詞庫）、PWA 完整殼、Supabase 同步或 AI 功能；但 V6.1 不依賴它們即可完成核心教學體驗。
 
-本方案的關鍵是不依賴實時 API 來實現核心拼音標註功能。
+3. 數據核心：離線優先（K3 內建詞庫 + 可覆寫）
 
-3.1. 內置離線詞庫 (Offline DB)：
+本方案的關鍵是不依賴實時 API 來實現核心拼音標註功能，且以「K3 適配規模」內建詞庫達成秒查與離線可用。
 
-App 將內置一個由 pinyin-pro-data (基於《現代漢語詞典》第7版) 處理生成的 our-app-pinyin-db.json 詞庫。
+3.1. 內建 K3 詞庫（Offline Built-in）
 
-此詞庫包含數萬條常用字詞及其標準拼音。
+- 文件：`/pinyin-pinpinle/data/k3-pinyin-db.json`
+- 規模：數百字 + 百餘至數千詞（可逐步擴展），覆蓋 K3 核心主題：家人、身體、學校、顏色、動物、食物、動作、天氣、形狀、場所、交通、時間、禮貌等。
+- 結構：同時保存 pinyinMarked（帶調顯示）與 pinyinNumber/normalized（索引用），便於 tone 精準或忽略查詢。
+- 載入：以 `k3-db-loader.js` 載入至記憶體 Map，O(1) 查詢；可配合瀏覽器快取/PWA CacheStorage。
 
-目的： 實現 99% 的拼音本地秒查，支持離線批量導入和手動添加。
+3.2. 在線備選（Online Fallback）
 
-3.2. 在線備選 (Online Fallback)：
+- 觸發：僅當內建詞庫查不到時（生僻字、自創詞）。
+- 行為：嘗試查詢「萌典 (MoeDict) API」取得建議；若離線或請求失敗則顯示「需手填」。
+- 緩存：未來可加簡易快取（鍵值：詞→拼音），降低重複請求。
 
-觸發： 僅當老師添加的字詞在內置詞庫中查詢不到時（例如生僻字、自創詞）。
+3.3. 教師覆寫（Override）優先
 
-行為： App 將嘗試調用「萌典 (MoeDict) API」獲取拼音建議。
-
-狀態： 此功能為輔助，非必需。在斷網狀態下，老師可手動為查詢失敗的詞語輸入拼音。
+- 所有自動結果（內建/萌典）都可在審核界面被教師改寫；最終以教師版本保存並優先顯示。
 
 4. 內容管理：內容包 (Content Pack)
 
@@ -73,7 +83,7 @@ App 啟動後（界面二），學生可選擇兩種模式：
 
 界面： 「拼音組合器」顯示所有的聲母、韻母、整體認讀音節。
 
-邏輯： 拼出 mā 時，系統會搜索所有包（系統+自定義）中的 媽。
+邏輯：拼出 mā 時，系統會搜索所有包（系統+自定義）中的「媽」。
 
 5.2. 專注模式 (Focus Mode)：
 
@@ -117,7 +127,13 @@ App 啟動後（界面二），學生可選擇兩種模式：
 
 出詞： 學生點擊 [ 爸 ]，彈出詞語 [ 爸爸 (bà ba) ]。
 
-錯誤反饋： 錯誤組合（如 b + m）或拖到錯誤卡槽，組件將「抖動」並播放錯誤音效，然後彈回原位。
+預防式過濾：以「合法聲母×韻母對照表」驅動 UI，選了聲母後只顯示可搭配的韻母；整體認讀音節獨立一類，減少錯誤嘗試。
+
+交互冗餘：拖拽與點擊皆可組合，卡槽支援點選自動吸附。
+
+錯誤反饋：對少數錯誤情境保留「抖動」與音效，主流程以正向引導為主。
+
+移動端兼容：用 PointerEvents 自訂拖拽（避免 iOS 原生 DnD 限制）；首次點擊解鎖 AudioContext 後音效即時播放。
 
 6.2. 界面二：內容包選擇器 (啟動頁)
 
@@ -153,13 +169,13 @@ App 啟動後（界面二），學生可選擇兩種模式：
 
 保存： 系統最終保存的是老師微調後的版本。
 
-7.2. 批量導入 (Batch Import) - (V6 流程)
+7.2. 批量導入 (Batch Import) - (V6.1 流程)
 
 模板 (極簡)： 老師在 Excel 中只需填寫 Pack_Info (包名稱, 類型), Characters (漢字), Words (詞語)。無需填寫拼音。
 
 導入 (Import)： 老師在 App 內點擊「導入」，選擇 Excel 文件。
 
-處理 (Process)： App 解析文件，首先查詢「內置離線詞庫」獲取拼音 (秒級)。
+處理 (Process)：App 解析文件，先查「內建 K3 詞庫」獲取拼音（秒級）。
 
 備選 (Fallback)： 對於內置詞庫查不到的詞，嘗試調用「萌典 API」獲取拼音。
 
@@ -167,50 +183,45 @@ App 啟動後（界面二），學生可選擇兩種模式：
 
 微調 (Override)： 老師在此界面手動修改任何不滿意的拼音（或為 API 失敗的詞手動填寫）。
 
-確認 (Confirm)： 老師點擊「確認導入」，App 將最終數據存入 Local Storage，並自動推導 scope。
+確認 (Confirm)：老師點擊「確認導入」，App 將最終數據存入本地（預設 localStorage），並自動推導 scope（從 normalized pinyin 拆解）。
 
 7.3. 批量導出 (Batch Export)
 
 目的： 備份數據，防止 Local Storage 數據丟失。
 
-功能： 在「編輯模式」下，老師可以將任意「內容包」導出為 Excel 文件。
+功能：在「編輯模式」下，老師可將任意「內容包」導出為 Excel 與 JSON 檔，便於備份/分享。
 
-8. 數據結構 (Local Storage 簡化 Schema)
+8. 數據結構（本地 Schema 與內建詞庫）
+
+8.1 內建詞庫（靜態檔，隨頁載入）
+
+- 路徑：`/pinyin-pinpinle/data/k3-pinyin-db.json`
+- 結構概要：
+  - meta：版本/地區設定/計數
+  - characters：[{ char, pinyinMarked[], pinyinNumber[], tags? }]
+  - words：[{ word, pinyinMarked, pinyinNumber, baseChars[], tags? }]
+
+8.2 自定義包（本地存儲）
 
 {
-  "system_data": {
-    "characters": [
-      { "pinyin": "bā", "char": "八" }
-    ],
-    "words": [
-      { "base_char": "八", "word": "八個", "pinyin": "bā gè" }
-    ]
-  },
   "custom_packs": [
     {
       "pack_id": "uuid-pack-1",
       "pack_name": "交通工具",
       "type": "unit",
-      "scope": {
-        "shengmu": ["b", "sh", "q", "ch", "h"],
-        "yunmu": ["a", "i", "e", "uo"],
-        "zhengti": ["shi"]
-      },
+      "scope": { "shengmu": ["b","q","ch"], "yunmu": ["a","e","i"], "zhengti": [] },
       "characters": [
-        { "id": "uuid-c1", "pinyin": "qì", "char": "汽" },
-        { "id": "uuid-c2", "pinyin": "chē", "char": "車" }
+        { "id": "uuid-c1", "char": "汽", "pinyinMarked": "qì", "pinyinNumber": "qi4", "source": "builtin|moedict|manual" }
       ],
       "words": [
-        { "id": "uuid-w1", "base_char": "汽", "word": "汽車", "pinyin": "qì chē" },
-        { "id": "uuid-w2", "base_char": "車", "word": "火車", "pinyin": "huǒ chē" },
-        { "id": "uuid-w3", "base_char": "車", "word": "巴士", "pinyin": "bā shì" }
+        { "id": "uuid-w1", "word": "汽車", "pinyinMarked": "qì chē", "pinyinNumber": "qi4 che1", "baseChars": ["汽","車"], "source": "builtin|moedict|manual" }
       ]
     }
   ]
 }
 
 
-9. Excel 導入模板 (極簡 V6)
+9. 導入/導出模板（V6.1）
 
 文件： template.xlsx
 
@@ -234,3 +245,49 @@ App 啟動後（界面二），學生可選擇兩種模式：
 | 汽 | 汽車 |
 | 車 | 火車 |
 | 巴 | 巴士 |
+
+導出：
+- Excel 與 JSON 皆可；JSON 另含 schemaVersion、導出時間、包範圍（scope）。
+
+備註：
+- 導入審核頁會標示來源（內建/萌典/手填），教師可逐條覆寫。
+
+10. 平台整合與導航規範（太虛幻境）
+
+- 每個應用頁面在 </body> 前引入：`<script src="/assets/js/taixu-app-switcher.js"></script>`
+- 所有連結使用絕對路徑（例如：`/pinyin-pinpinle/index.html`）。
+- 在根 `index.html` 的 apps 陣列及 `/assets/js/taixu-app-switcher.js` 註冊新應用（絕對路徑）。
+- 子專案自包含：所有資源位於 `pinyin-pinpinle/` 之下；不將資源上拷至根目錄。
+
+11. 輕量查詢 API（K3DbLoader）
+
+- 檔案：`/pinyin-pinpinle/js/k3-db-loader.js`
+- 方法：
+  - `await K3DbLoader.loadK3Db(url?)` → 回傳 `db`
+  - `db.searchWordsByPinyin(pinyin)` → 忽略聲調匹配詞（回傳 payload 陣列）
+  - `db.searchCharsByPinyin(pinyin)` → 忽略聲調匹配字
+  - `db.getWord(text)` / `db.getChar(ch)` → 直查
+  - `K3DbLoader.normalizeToKey(pinyin)` → 去調/去數字，生成索引鍵
+
+12. 非功能需求與品質
+
+- 首開：在一般網路環境下載詞庫 < 1s（數百 KB 級）；首次互動到回饋 < 100ms。
+- 兼容：iPad/Chrome/Edge/Safari；iOS 首次互動後音效連續播放。
+- 保存：資料本地可持久；提供一鍵導出以防瀏覽器清理。
+
+13. 下一步（2 週迭代建議）
+
+- 第 1 週：
+  - 接入 `k3-db-loader.js` 至 `pinyin-pinpinle/index.html` Demo（拼音 → 即時查字詞）。
+  - 合法組合規則驅動 UI 過濾；點擊/拖拽雙交互。
+  - 導入審核頁雛形（先支援 JSON，再接 Excel）。
+- 第 2 週：
+  - Excel 導入/導出（SheetJS）；教師覆寫優先。
+  - 音訊解鎖與短音效；可選 PWA 殼與快取策略。
+  - 多音字小選單與檢索對齊完善。
+
+完成判準：
+- 自由/專注模式可正常拼出、查到例字/詞；
+- 非法組合不出現在可選集合；
+- 能導入示例檔、審核後入庫並導出；
+- 重載後資料仍在，離線可啟動（若啟用 PWA）。
