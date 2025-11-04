@@ -41,8 +41,9 @@
             color: white;
             font-weight: bold;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.5);
-            /* 動畫會通過 JavaScript 動態設置 */
-            will-change: transform, opacity; /* 優化動畫性能 */
+            /* 應用 'float' 動畫 */
+            animation: float 10s linear infinite;
+            will-change: transform; /* 優化動畫性能 */
             -webkit-tap-highlight-color: transparent; /* 移除 iPad 點擊高亮 */
             cursor: pointer;
             /* 漂亮的 3D 效果 */
@@ -75,174 +76,27 @@
             z-index: -1;
         }
 
-        /* 自然的泡泡飄動動畫 - 變體1 */
-        @keyframes float-natural-1 {
+        /* 泡泡上浮動畫 - 添加輕微搖擺 */
+        @keyframes float {
             0% {
-                transform: translateY(0) translateX(0) scale(1) rotate(0deg);
-                opacity: 0;
-            }
-            5% {
+                transform: translateY(0) translateX(0) rotate(0deg);
                 opacity: 1;
-            }
-            10% {
-                transform: translateY(-10vh) translateX(8px) scale(1.02) rotate(3deg);
-            }
-            20% {
-                transform: translateY(-20vh) translateX(-5px) scale(0.98) rotate(-2deg);
-            }
-            30% {
-                transform: translateY(-30vh) translateX(15px) scale(1.01) rotate(5deg);
-            }
-            40% {
-                transform: translateY(-40vh) translateX(-10px) scale(0.99) rotate(-4deg);
-            }
-            50% {
-                transform: translateY(-50vh) translateX(12px) scale(1.02) rotate(2deg);
-            }
-            60% {
-                transform: translateY(-60vh) translateX(-8px) scale(0.98) rotate(-3deg);
-            }
-            70% {
-                transform: translateY(-70vh) translateX(18px) scale(1.01) rotate(6deg);
-            }
-            80% {
-                transform: translateY(-80vh) translateX(-6px) scale(0.99) rotate(-2deg);
-            }
-            90% {
-                transform: translateY(-90vh) translateX(10px) scale(1.01) rotate(4deg);
-            }
-            95% {
-                transform: translateY(-95vh) translateX(0) scale(1) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-105vh) translateX(0) scale(0.95) rotate(0deg);
-                opacity: 0;
-            }
-        }
-
-        /* 自然的泡泡飄動動畫 - 變體2 */
-        @keyframes float-natural-2 {
-            0% {
-                transform: translateY(0) translateX(0) scale(1) rotate(0deg);
-                opacity: 0;
-            }
-            5% {
-                opacity: 1;
-            }
-            12% {
-                transform: translateY(-12vh) translateX(-12px) scale(0.98) rotate(-4deg);
-            }
-            24% {
-                transform: translateY(-24vh) translateX(8px) scale(1.02) rotate(3deg);
-            }
-            36% {
-                transform: translateY(-36vh) translateX(-15px) scale(0.99) rotate(-6deg);
-            }
-            48% {
-                transform: translateY(-48vh) translateX(10px) scale(1.01) rotate(2deg);
-            }
-            60% {
-                transform: translateY(-60vh) translateX(-8px) scale(0.98) rotate(-3deg);
-            }
-            72% {
-                transform: translateY(-72vh) translateX(20px) scale(1.02) rotate(5deg);
-            }
-            84% {
-                transform: translateY(-84vh) translateX(-12px) scale(0.99) rotate(-4deg);
-            }
-            95% {
-                transform: translateY(-95vh) translateX(5px) scale(1) rotate(1deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-105vh) translateX(0) scale(0.95) rotate(0deg);
-                opacity: 0;
-            }
-        }
-
-        /* 自然的泡泡飄動動畫 - 變體3 */
-        @keyframes float-natural-3 {
-            0% {
-                transform: translateY(0) translateX(0) scale(1) rotate(0deg);
-                opacity: 0;
-            }
-            5% {
-                opacity: 1;
-            }
-            15% {
-                transform: translateY(-15vh) translateX(10px) scale(1.01) rotate(4deg);
             }
             25% {
-                transform: translateY(-25vh) translateX(-8px) scale(0.99) rotate(-3deg);
+                transform: translateY(-30vh) translateX(10px) rotate(5deg);
             }
-            35% {
-                transform: translateY(-35vh) translateX(16px) scale(1.02) rotate(6deg);
-            }
-            45% {
-                transform: translateY(-45vh) translateX(-12px) scale(0.98) rotate(-5deg);
-            }
-            55% {
-                transform: translateY(-55vh) translateX(14px) scale(1.01) rotate(3deg);
-            }
-            65% {
-                transform: translateY(-65vh) translateX(-10px) scale(0.99) rotate(-4deg);
+            50% {
+                transform: translateY(-60vh) translateX(-10px) rotate(-5deg);
             }
             75% {
-                transform: translateY(-75vh) translateX(12px) scale(1.02) rotate(5deg);
+                transform: translateY(-90vh) translateX(5px) rotate(3deg);
             }
-            85% {
-                transform: translateY(-85vh) translateX(-6px) scale(0.98) rotate(-2deg);
-            }
-            95% {
-                transform: translateY(-95vh) translateX(8px) scale(1) rotate(2deg);
+            99% {
+                transform: translateY(-120vh) translateX(0) rotate(0deg);
                 opacity: 1;
             }
             100% {
-                transform: translateY(-105vh) translateX(0) scale(0.95) rotate(0deg);
-                opacity: 0;
-            }
-        }
-
-        /* 自然的泡泡飄動動畫 - 變體4 */
-        @keyframes float-natural-4 {
-            0% {
-                transform: translateY(0) translateX(0) scale(1) rotate(0deg);
-                opacity: 0;
-            }
-            5% {
-                opacity: 1;
-            }
-            11% {
-                transform: translateY(-11vh) translateX(-10px) scale(0.99) rotate(-3deg);
-            }
-            22% {
-                transform: translateY(-22vh) translateX(14px) scale(1.01) rotate(5deg);
-            }
-            33% {
-                transform: translateY(-33vh) translateX(-8px) scale(0.98) rotate(-2deg);
-            }
-            44% {
-                transform: translateY(-44vh) translateX(18px) scale(1.02) rotate(6deg);
-            }
-            55% {
-                transform: translateY(-55vh) translateX(-14px) scale(0.99) rotate(-5deg);
-            }
-            66% {
-                transform: translateY(-66vh) translateX(10px) scale(1.01) rotate(3deg);
-            }
-            77% {
-                transform: translateY(-77vh) translateX(-12px) scale(0.98) rotate(-4deg);
-            }
-            88% {
-                transform: translateY(-88vh) translateX(8px) scale(1.01) rotate(2deg);
-            }
-            95% {
-                transform: translateY(-95vh) translateX(-5px) scale(1) rotate(-1deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-105vh) translateX(0) scale(0.95) rotate(0deg);
+                transform: translateY(-120vh) translateX(0) rotate(0deg);
                 opacity: 0;
             }
         }
@@ -981,15 +835,8 @@
             // 隨機水平位置
             bubble.style.left = `${Math.random() * (window.innerWidth - size - 20) + 10}px`;
             
-            // 隨機選擇飄動動畫變體（1-4）
-            const animationVariant = Math.floor(Math.random() * 4) + 1;
-            const animationName = `float-natural-${animationVariant}`;
-            
-            // 隨機上浮速度（8-15秒）
-            const duration = Math.random() * 7 + 8;
-            
-            // 設置動畫：使用 ease-in-out 讓速度變化更自然
-            bubble.style.animation = `${animationName} ${duration}s ease-in-out forwards`;
+            // 隨機上浮速度
+            bubble.style.animationDuration = `${Math.random() * 5 + 8}s`; // 8到13秒
             
             // 設置文字 - 更大更明顯
             bubble.textContent = pinyin;
