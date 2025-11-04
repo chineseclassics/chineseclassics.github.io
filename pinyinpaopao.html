@@ -130,7 +130,7 @@
             <div class="absolute top-0 left-0 right-0 z-10 p-4 bg-white/70 backdrop-blur-md shadow-md flex flex-wrap gap-4 justify-center items-center">
                 <h2 class="text-3xl md:text-5xl font-bold text-gray-700">請找到：</h2>
                 <div id="prompt-display" class="w-24 h-24 bg-blue-100 border-4 border-blue-300 rounded-2xl flex justify-center items-center">
-                    <span id="prompt-text" class="text-6xl font-bold text-blue-700">...</span>
+                    <span id="prompt-text" class="text-6xl font-bold text-blue-700">🎵</span>
                 </div>
                 <!-- 重複播放按鈕 -->
                 <button id="repeat-button" class="p-2 rounded-full hover:bg-blue-100 active:bg-blue-200">
@@ -186,15 +186,14 @@
             });
         }
 
-        // 遊戲數據：完整聲母與常見韻母
+        // 遊戲數據：完整聲母與常見韻母（只使用已下載音頻的韻母）
         const SHENGMU = ['b','p','m','f','d','t','n','l','g','k','h','j','q','x','zh','ch','sh','r','z','c','s','y','w'];
         const YUNMU = [
             'a','o','e','i','u','ü',
             'ai','ei','ui','ao','ou','iu',
             'ie','üe','er',
             'an','en','in','un','ün',
-            'ang','eng','ing','ong',
-            'ia','ua','uo','uai','iao','ian','iang','iong','uan','uang'
+            'ang','eng','ing','ong'
         ];
         let practiceMode = 'mix'; // 'shengmu' | 'yunmu' | 'mix'
         
@@ -235,6 +234,128 @@
             'ia':'ya','ua':'wa','uo':'wo','uai':'wai','iao':'yao',
             'ian':'yan','iang':'yang','iong':'yong','uan':'wan','uang':'wang'
         };
+
+        // 聲母 → 代表性漢字（讀出對應教學音節，如 bo/po/…、zhi/chi/…）
+        const initialToHanzi = {
+            'b':'波','p':'坡','m':'摸','f':'佛',
+            'd':'德','t':'特','n':'呢','l':'了',
+            'g':'哥','k':'科','h':'喝',
+            'j':'雞','q':'七','x':'西',
+            'zh':'知','ch':'吃','sh':'師','r':'日',
+            'z':'資','c':'次','s':'思',
+            'y':'一','w':'烏'
+        };
+
+        // 韻母 → 代表性漢字（用 y/w 作為載體以讀出純韻母音）
+        const finalToHanzi = {
+            'a':'啊','o':'喔','e':'呃','i':'衣','u':'烏','ü':'迂',
+            'ai':'哀','ei':'誒','ui':'威','ao':'凹','ou':'歐','iu':'優',
+            'ie':'耶','üe':'約','er':'兒',
+            'an':'安','en':'恩','in':'因','un':'溫','ün':'暈',
+            'ang':'骯','eng':'鞥','ing':'英','ong':'翁',
+            'ia':'呀','ua':'哇','uo':'窩','uai':'歪','iao':'腰',
+            'ian':'煙','iang':'央','iong':'雍','uan':'灣','uang':'汪'
+        };
+
+        // 拼音到音頻文件名的映射（處理 ü -> v 等特殊情況）
+        function getAudioFileName(pinyin) {
+            // 韻母特殊映射
+            if (pinyin === 'ü') return 'v';
+            if (pinyin === 'üe') return 've';
+            if (pinyin === 'ün') return 'vn';
+            return pinyin;
+        }
+
+        // 播放下載的拼音音頻文件
+        function playPinyinAudio(pinyin) {
+            return new Promise((resolve, reject) => {
+                if (!gameActive) return resolve();
+                
+                // 判斷是聲母還是韻母
+                const isShengmu = SHENGMU.includes(pinyin);
+                const isYunmu = YUNMU.includes(pinyin);
+                
+                if (!isShengmu && !isYunmu) {
+                    console.warn('未知的拼音:', pinyin);
+                    return resolve();
+                }
+                
+                // 獲取文件名
+                const fileName = getAudioFileName(pinyin);
+                const audioPath = isShengmu 
+                    ? `/files/audio/pinyin/shengmu/${fileName}.mp3`
+                    : `/files/audio/pinyin/yunmu/${fileName}.mp3`;
+                
+                // 停止上一段播放
+                if (externalAudio && !externalAudio.paused) {
+                    try { 
+                        externalAudio.pause(); 
+                        externalAudio.src = '';
+                    } catch(_) {}
+                }
+                
+                // 創建新的音頻對象
+                externalAudio = new Audio(audioPath);
+                
+                externalAudio.addEventListener('ended', () => resolve());
+                externalAudio.addEventListener('error', (e) => {
+                    console.error('音頻播放失敗:', audioPath, e);
+                    resolve(); // 即使失敗也繼續
+                });
+                
+                externalAudio.play().catch(err => {
+                    console.error('無法播放音頻:', err);
+                    resolve();
+                });
+            });
+        }
+
+        // 播放一段線上 TTS 音訊；失敗則回退至內建語音（用於播放「請找到」等提示語）
+        function ttsPlay(text) {
+            return new Promise(async (resolve) => {
+                const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
+                const anon = (window.SUPABASE_ANON_KEY || '').trim();
+                try {
+                    if (endpoint) {
+                        // 停止上一段播放
+                        if (externalAudio && !externalAudio.paused) {
+                            try { externalAudio.pause(); } catch(_) {}
+                            externalAudio.src = '';
+                        }
+                        const params = new URLSearchParams();
+                        params.set('text', text);
+                        params.set('voice', 'zh-CN-XiaoxiaoNeural');
+                        const headers = {};
+                        if (anon) { headers['apikey'] = anon; headers['Authorization'] = `Bearer ${anon}`; }
+                        const resp = await fetch(`${endpoint}?${params.toString()}`, { method:'GET', headers });
+                        if (!resp.ok) throw new Error(`TTS ${resp.status}`);
+                        const blob = await resp.blob();
+                        const url = URL.createObjectURL(blob);
+                        externalAudio = new Audio(url);
+                        externalAudio.addEventListener('ended', () => resolve());
+                        await externalAudio.play();
+                        return;
+                    }
+                } catch (_) { /* 失敗回退 */ }
+
+                // 回退：內建語音
+                const utter = new SpeechSynthesisUtterance(text);
+                const v = selectMandarinVoice();
+                if (v) utter.voice = v; else utter.lang = 'zh-CN';
+                utter.pitch = 1.0; utter.rate = 1.0;
+                utter.onend = () => resolve();
+                synth.speak(utter);
+            });
+        }
+
+        // 依目標（聲母/韻母）播放提示：先播「請找到」，再播拼音音頻
+        async function speakPromptForTarget(target) {
+            if (!gameActive) return;
+            // 先播放「請找到」提示語
+            await ttsPlay('請找到');
+            // 再播放對應的拼音音頻
+            await playPinyinAudio(target);
+        }
 
         let currentTarget = '';
         let score = 0;
@@ -380,14 +501,10 @@
             setTimeout(newRound, 500);
         });
 
-        // 重複播放按鈕
+        // 重複播放按鈕：先播提示，再播代表漢字
         repeatButton.addEventListener('click', () => {
             if (currentTarget) {
-                let pronunciation = pinyinPronunciationMap[currentTarget];
-                if (!pronunciation && finalPronunciationMap[currentTarget]) {
-                    pronunciation = finalPronunciationMap[currentTarget];
-                }
-                speakPinyin('請找到', pronunciation || currentTarget);
+                speakPromptForTarget(currentTarget);
             }
         });
 
@@ -421,14 +538,10 @@
                 setTimeout(() => createBubble(pinyin), index * 500);
             });
 
-            // 6. 更新提示並播放語音
-            promptText.textContent = currentTarget;
+            // 6. 更新提示（不顯示拼音，只顯示音樂符號）並播放語音
+            promptText.textContent = '🎵'; // 不顯示拼音字母，只顯示符號
             setTimeout(() => {
-                let pronunciation = pinyinPronunciationMap[currentTarget];
-                if (!pronunciation && finalPronunciationMap[currentTarget]) {
-                    pronunciation = finalPronunciationMap[currentTarget];
-                }
-                speakPinyin('請找到', pronunciation || currentTarget);
+                speakPromptForTarget(currentTarget);
             }, 800); // 延遲播放語音，等泡泡出來一點
         }
 
