@@ -292,7 +292,7 @@
         const engine = Engine.create({
             gravity: {
                 x: 0,
-                y: -0.3  // 負值表示向上（模擬泡泡浮力）
+                y: -0.5  // 負值表示向上（模擬泡泡浮力）
             }
         });
         
@@ -318,15 +318,15 @@
                     return;
                 }
                 
-                // 更新 DOM 位置和旋轉
+                // 更新 DOM 位置和旋轉（Matter.js 和 DOM 使用相同的坐標系）
                 const x = body.position.x;
-                const y = window.innerHeight - body.position.y; // 翻轉 Y 軸
+                const y = body.position.y;
                 const angle = body.angle;
                 
                 element.style.transform = `translate(${x - data.size/2}px, ${y - data.size/2}px) rotate(${angle}rad)`;
                 
-                // 檢查是否飄出屏幕頂部
-                if (body.position.y > window.innerHeight + 200) {
+                // 檢查是否飄出屏幕頂部（Y < 0 表示在屏幕上方）
+                if (y < -200) {
                     element.remove();
                     World.remove(world, body);
                     bubblePhysicsMap.delete(body);
@@ -334,9 +334,9 @@
             });
             
             // 應用隨機風力
-            if (Math.random() < 0.1) { // 10% 機率每幀
+            if (Math.random() < 0.15) { // 15% 機率每幀
                 bubblePhysicsMap.forEach((data, body) => {
-                    const windForce = (Math.random() - 0.5) * 0.0002;
+                    const windForce = (Math.random() - 0.5) * 0.0005;
                     Body.applyForce(body, body.position, { x: windForce, y: 0 });
                 });
             }
@@ -526,6 +526,14 @@
         let currentTarget = '';
         let score = 0;
         let gameActive = false;
+        
+        // 全局音頻上下文（確保 iPad 能持續播放）
+        let globalAudioContext = null;
+        try {
+            globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) {
+            console.log('無法創建音頻上下文');
+        }
 
         // 語音合成 API
         const synth = window.speechSynthesis;
@@ -649,6 +657,11 @@
             // Tone.js 和 語音 API 需要用戶手勢來啟動
             await Tone.start();
             
+            // 啟動全局音頻上下文（確保 iPad 能持續播放）
+            if (globalAudioContext && globalAudioContext.state === 'suspended') {
+                await globalAudioContext.resume();
+            }
+            
             // 預熱語音引擎
             if (synth.state === 'suspended') {
                 synth.resume();
@@ -664,8 +677,8 @@
             // 啟動物理引擎更新循環
             updatePhysics();
             
-            // 直接開始第一局
-            setTimeout(newRound, 300);
+            // 立即開始第一局（不使用 setTimeout 以確保 iPad 能播放語音）
+            newRound();
         });
 
         // 重複播放按鈕：先播提示，再播代表漢字
@@ -713,9 +726,9 @@
 
             // 6. 更新提示（不顯示拼音，只顯示音樂符號）並播放語音
             promptText.textContent = '🎵'; // 不顯示拼音字母，只顯示符號
-            setTimeout(() => {
-                speakPromptForTarget(currentTarget);
-            }, 800); // 延遲播放語音，等泡泡出來一點
+            
+            // 立即播放語音（iPad 需要在用戶交互的同步調用鏈中播放）
+            speakPromptForTarget(currentTarget);
         }
 
         // 彩虹泡泡顏色陣列
@@ -898,18 +911,18 @@
             
             // 創建圓形物理體
             const physicsBody = Bodies.circle(startX, startY, size / 2, {
-                density: 0.001,        // 非常輕（像氣球）
+                density: 0.0005,       // 非常輕（像氣球）
                 restitution: 0.8,      // 彈性（碰撞時的反彈）
                 friction: 0.01,        // 低摩擦力
-                frictionAir: 0.02,     // 空氣阻力（越飄越慢）
+                frictionAir: 0.008,    // 較小的空氣阻力（讓泡泡飄得更持久）
                 angle: (Math.random() - 0.5) * 0.3,  // 隨機初始角度
                 angularVelocity: (Math.random() - 0.5) * 0.05  // 隨機旋轉速度
             });
             
             // 添加隨機初始速度（向上 + 隨機橫向）
             const initialVelocity = {
-                x: (Math.random() - 0.5) * 2,  // 橫向隨機
-                y: -(2 + Math.random() * 2)    // 向上（負值）
+                x: (Math.random() - 0.5) * 3,  // 橫向隨機
+                y: -(3 + Math.random() * 3)    // 向上（負值），更強的初始速度
             };
             Body.setVelocity(physicsBody, initialVelocity);
             
@@ -982,8 +995,16 @@
                 });
                 bubblePhysicsMap.clear();
 
-                // 1.5秒後開始新一局
-                setTimeout(newRound, 1500);
+                // 保持音頻上下文活躍（確保 iPad 下一輪能播放）
+                if (globalAudioContext && globalAudioContext.state === 'suspended') {
+                    globalAudioContext.resume().catch(e => console.log('音頻上下文恢復失敗', e));
+                }
+                if (synth.state === 'suspended') {
+                    synth.resume();
+                }
+                
+                // 1秒後開始新一局（縮短延迟以维持用户交互上下文）
+                setTimeout(newRound, 1000);
 
             } else {
                 // 答錯了
