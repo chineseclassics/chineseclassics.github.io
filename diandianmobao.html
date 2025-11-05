@@ -649,7 +649,6 @@
             font-family: 'Noto Sans TC', sans-serif;
             font-weight: 600;
         }
-        
         .stroke-count {
             font-size: 14px;
             color: var(--light-text);
@@ -1296,7 +1295,6 @@
             background-color: rgba(180, 61, 61, 0.1);
             color: var(--danger);
         }
-        
         .quiz-result-message {
             font-size: 16px;
             font-weight: bold;
@@ -1939,7 +1937,6 @@
             overflow-wrap: break-word;
             overflow-x: hidden;
         }
-        
         .function-container {
             width: 100%;
             max-width: 100%;
@@ -2585,7 +2582,6 @@
             font-weight: bold;
             margin-right: 6px;
         }
-        
         .definition-header {
             font-size: 18px;
             font-weight: bold;
@@ -3236,7 +3232,6 @@
         .achievement-category:first-child {
             margin-top: 0;
         }
-
         .achievement-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -4233,7 +4228,7 @@
                         font-weight: bold;
                         font-family: 'Noto Serif TC', serif;
                         color: var(--ink-color);
-                        background: white;
+                        background-color: white;
                         border: 2px solid var(--border-color);
                         border-radius: 8px;
                         cursor: pointer;
@@ -4241,35 +4236,24 @@
                         position: relative;
                         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                         flex-shrink: 0;
-                        box-sizing: border-box;
-                        overflow: hidden;
-                    }
-                    
-                    /* 田字格網格線：柔和底層 */
-                    .wordlist-char-btn::before {
-                        content: '';
-                        position: absolute;
-                        inset: 0;
-                        border-radius: inherit;
-                        pointer-events: none;
                         background-image:
-                            linear-gradient(to right, rgba(255, 107, 157, 0.25) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(255, 107, 157, 0.25) 1px, transparent 1px);
-                        background-size: calc(50%) calc(50%);
-                        background-position: center;
-                    }
-                    
-                    /* 田字格網格線：中心十字 */
-                    .wordlist-char-btn::after {
-                        content: '';
-                        position: absolute;
-                        inset: 0;
-                        border-radius: inherit;
-                        pointer-events: none;
-                        background-image:
-                            linear-gradient(to right, transparent calc(50% - 0.5px), var(--border-color) calc(50% - 0.5px), var(--border-color) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
-                            linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--border-color) calc(50% - 0.5px), var(--border-color) calc(50% + 0.5px), transparent calc(50% + 0.5px));
-                        background-repeat: no-repeat;
+                            linear-gradient(
+                                to right,
+                                transparent calc(50% - 0.5px),
+                                rgba(255, 107, 157, 0.35) calc(50% - 0.5px),
+                                rgba(255, 107, 157, 0.35) calc(50% + 0.5px),
+                                transparent calc(50% + 0.5px)
+                            ),
+                            linear-gradient(
+                                to bottom,
+                                transparent calc(50% - 0.5px),
+                                rgba(255, 107, 157, 0.35) calc(50% - 0.5px),
+                                rgba(255, 107, 157, 0.35) calc(50% + 0.5px),
+                                transparent calc(50% + 0.5px)
+                            );
+                        background-repeat: no-repeat, no-repeat;
+                        background-position: center, center;
+                        background-size: 100% 100%, 100% 100%;
                     }
                     
                     /* 筆順模式：單字獨立點擊 */
@@ -5199,7 +5183,6 @@
                     container.appendChild(achievementGrid);
                 }
             }
-
             // 顯示積分通知
             function showPointNotification(message) {
                 const notification = document.createElement('div');
@@ -5810,7 +5793,6 @@
                     }
                 });
             }
-            
             // 查詢漢字
             function queryCharacter() {
                 const inputText = characterInput.value.trim();
@@ -6404,7 +6386,6 @@
                     }
                 }, 1000);
             }
-            
             // 隱藏字符並顯示選項
             function hideCharactersAndShowOptions() {
                 // 隱藏目標字符
@@ -7047,7 +7028,6 @@
                     });
                 }
             }
-            
             // 更新收藏按鈕狀態
             function updateFavoriteButtonState(type, text) {
                 const btn = type === 'character' ? 
@@ -8320,7 +8300,6 @@
                 
                 wordlistDisplay.style.display = 'block';
             }
-            
             // 在田字格中顯示字或詞
             function displayWordInTianzige(text, isWordMode) {
                 if (isWordMode) {
@@ -8968,7 +8947,6 @@
                     speakWord(currentWord);
                 }
             });
-            
             // 字詞拆字練習按鈕事件
             wordPracticeButton.addEventListener('click', function() {
                 if (currentWord) {
@@ -9077,7 +9055,7 @@
                 canvas.width = Math.floor(rect.width * dpr);
                 canvas.height = Math.floor(rect.height * dpr);
                 canvas.style.width = rect.width + 'px';
-                canvas.style.height = rect.height + 'px';
+                canvas.height = rect.height + 'px';
 
                 // 準備遮罩畫布
                 const maskCanvas = document.createElement('canvas');
@@ -9225,7 +9203,7 @@
                 canvas.width = Math.floor(rect.width * dpr);
                 canvas.height = Math.floor(rect.height * dpr);
                 canvas.style.width = rect.width + 'px';
-                canvas.style.height = rect.height + 'px';
+                canvas.height = rect.height + 'px';
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 // 使用簡潔垂直樹幹（去除分叉），對齊地面上方
