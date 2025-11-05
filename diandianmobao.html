@@ -4012,24 +4012,85 @@
                     </div>
                     
                     <div class="wordlist-selector-content">
-                        <!-- 下拉菜單 -->
-                        <div class="wordlist-dropdown-container">
-                            <select id="wordlist-select" class="wordlist-select">
-                                <option value="">選擇字詞表...</option>
-                                <option value="add-custom">➕ 添加自定義字詞表</option>
-                            </select>
+                        <!-- 層級選擇器區域 -->
+                        <div class="wordlist-level-selectors">
+                            <!-- 第1級：體系 -->
+                            <div class="wordlist-level" id="level-1" style="display: block;">
+                                <label class="level-label">
+                                    <span class="level-number">1</span>
+                                    <span class="level-name">選擇體系</span>
+                                </label>
+                                <div class="level-controls">
+                                    <select class="level-select" id="select-system">
+                                        <option value="">請選擇...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- 第2級：學段/冊次 -->
+                            <div class="wordlist-level" id="level-2" style="display: none;">
+                                <label class="level-label">
+                                    <span class="level-number">2</span>
+                                    <span class="level-name">學段/冊次</span>
+                                </label>
+                                <div class="level-controls">
+                                    <select class="level-select" id="select-grade">
+                                        <option value="">請選擇...</option>
+                                    </select>
+                                    <button class="level-confirm-btn" title="查看此級別所有字詞">✓</button>
+                                </div>
+                            </div>
+                            
+                            <!-- 第3級：單元 -->
+                            <div class="wordlist-level" id="level-3" style="display: none;">
+                                <label class="level-label">
+                                    <span class="level-number">3</span>
+                                    <span class="level-name">單元</span>
+                                </label>
+                                <div class="level-controls">
+                                    <select class="level-select" id="select-unit">
+                                        <option value="">請選擇...</option>
+                                    </select>
+                                    <button class="level-confirm-btn" title="查看此級別所有字詞">✓</button>
+                                </div>
+                            </div>
+                            
+                            <!-- 第4級：課 -->
+                            <div class="wordlist-level" id="level-4" style="display: none;">
+                                <label class="level-label">
+                                    <span class="level-number">4</span>
+                                    <span class="level-name">課</span>
+                                </label>
+                                <div class="level-controls">
+                                    <select class="level-select" id="select-lesson">
+                                        <option value="">請選擇...</option>
+                                    </select>
+                                    <button class="level-confirm-btn" title="查看此課字詞">✓</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 當前路徑顯示 -->
+                        <div class="wordlist-breadcrumb" id="wordlist-breadcrumb" style="display: none;">
+                            <div class="breadcrumb-path" id="breadcrumb-path"></div>
+                            <div class="breadcrumb-info" id="breadcrumb-info"></div>
+                        </div>
+                        
+                        <!-- 自定義字詞表快捷入口 -->
+                        <div class="custom-wordlist-section">
+                            <button id="show-custom-wordlists" class="btn-text">
+                                ✏️ 我的自定義字詞表
+                            </button>
+                            <button id="add-custom-wordlist-btn" class="btn-text">
+                                ➕ 添加字詞表
+                            </button>
                         </div>
                         
                         <!-- 字詞展開區域 -->
                         <div id="wordlist-display" class="wordlist-display" style="display: none;">
                             <div class="wordlist-header">
                                 <span id="wordlist-title" class="wordlist-title"></span>
-                                <button id="wordlist-clear" class="btn-icon-small" title="清除選擇">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
-                                </button>
+                                <button id="wordlist-clear" class="btn-icon-small" title="清除選擇">×</button>
                             </div>
                             <div id="wordlist-items" class="wordlist-items"></div>
                         </div>
@@ -4046,37 +4107,149 @@
                         padding: 0;
                     }
                     
-                    .wordlist-dropdown-container {
+                    /* 層級選擇器容器 */
+                    .wordlist-level-selectors {
                         padding: 15px;
-                        padding-bottom: 0;
+                        padding-bottom: 10px;
                     }
                     
-                    .wordlist-select {
-                        width: 100%;
-                        padding: 10px 12px;
+                    /* 單個層級 */
+                    .wordlist-level {
+                        margin-bottom: 16px;
+                        animation: slideInLevel 0.3s ease-out;
+                    }
+                    
+                    /* 層級標籤 */
+                    .level-label {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        margin-bottom: 6px;
+                        font-size: 13px;
+                        color: var(--light-text);
+                    }
+                    
+                    .level-number {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 20px;
+                        height: 20px;
+                        background: var(--primary);
+                        color: white;
+                        border-radius: 50%;
+                        font-size: 11px;
+                        font-weight: 600;
+                    }
+                    
+                    .level-name {
+                        font-weight: 500;
+                    }
+                    
+                    /* 層級控制區 */
+                    .level-controls {
+                        display: flex;
+                        gap: 6px;
+                        align-items: center;
+                    }
+                    
+                    .level-select {
+                        flex: 1;
+                        min-width: 0;
+                        padding: 8px 10px;
                         border: 2px solid var(--border-color);
-                        border-radius: 10px;
-                        background: white;
-                        color: var(--text);
+                        border-radius: 8px;
                         font-size: 14px;
                         font-family: 'Noto Sans TC', sans-serif;
+                        background: white;
+                        color: var(--text);
                         cursor: pointer;
-                        transition: all 0.3s ease;
+                        transition: all 0.2s ease;
                     }
                     
-                    .wordlist-select:hover {
+                    .level-select:hover {
                         border-color: var(--primary);
                     }
                     
-                    .wordlist-select:focus {
+                    .level-select:focus {
                         outline: none;
                         border-color: var(--primary);
-                        box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.2);
+                        box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.15);
                     }
                     
+                    .level-confirm-btn {
+                        width: 35px;
+                        height: 35px;
+                        padding: 0;
+                        background: linear-gradient(135deg, var(--primary), var(--secondary));
+                        border: none;
+                        border-radius: 8px;
+                        color: white;
+                        font-size: 18px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        flex-shrink: 0;
+                    }
+                    
+                    .level-confirm-btn:hover {
+                        transform: scale(1.05);
+                        box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+                    }
+                    
+                    .level-confirm-btn:active {
+                        transform: scale(0.98);
+                    }
+                    
+                    /* 當前路徑顯示 */
+                    .wordlist-breadcrumb {
+                        padding: 10px 15px;
+                        background: linear-gradient(135deg, rgba(255, 107, 157, 0.08), rgba(74, 171, 247, 0.08));
+                        border-top: 1px solid var(--border-color);
+                        border-bottom: 1px solid var(--border-color);
+                        margin-bottom: 10px;
+                    }
+                    
+                    .breadcrumb-path {
+                        font-size: 12px;
+                        color: var(--text);
+                        line-height: 1.5;
+                        word-break: break-all;
+                    }
+                    
+                    .breadcrumb-info {
+                        font-size: 11px;
+                        color: var(--light-text);
+                        margin-top: 4px;
+                    }
+                    
+                    /* 自定義字詞表區域 */
+                    .custom-wordlist-section {
+                        padding: 0 15px 12px;
+                        display: flex;
+                        gap: 8px;
+                        border-bottom: 1px solid var(--border-color);
+                        margin-bottom: 10px;
+                    }
+                    
+                    .btn-text {
+                        background: none;
+                        border: none;
+                        color: var(--primary);
+                        font-size: 13px;
+                        cursor: pointer;
+                        padding: 6px 8px;
+                        border-radius: 6px;
+                        transition: all 0.2s ease;
+                        font-family: 'Noto Sans TC', sans-serif;
+                    }
+                    
+                    .btn-text:hover {
+                        background: rgba(255, 107, 157, 0.1);
+                    }
+                    
+                    /* 字詞展開區域 */
                     .wordlist-display {
-                        padding: 15px;
-                        padding-top: 10px;
+                        padding: 0 15px 15px;
                     }
                     
                     .wordlist-header {
@@ -4102,6 +4275,8 @@
                         color: var(--light-text);
                         transition: all 0.2s ease;
                         border-radius: 6px;
+                        font-size: 20px;
+                        line-height: 1;
                     }
                     
                     .btn-icon-small:hover {
@@ -4109,67 +4284,137 @@
                         color: var(--primary);
                     }
                     
+                    /* 字詞表田字格展示區域 */
                     .wordlist-items {
                         display: flex;
                         flex-wrap: wrap;
-                        gap: 8px;
-                        max-height: 200px;
-                        overflow-y: auto;
+                        gap: 12px;
                         padding: 5px;
+                        max-height: 240px;
+                        overflow-y: auto;
+                        justify-content: flex-start;
+                        align-items: flex-start;
                     }
                     
-                    .wordlist-item {
+                    .wordlist-tianzige-display {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 12px;
+                        padding: 5px;
+                        max-height: 240px;
+                        overflow-y: auto;
+                        justify-content: flex-start;
+                        align-items: flex-start;
+                    }
+                    
+                    /* 詞語組容器（字詞查詢模式使用） */
+                    .wordlist-word-group {
                         display: inline-flex;
+                        gap: 2px;
+                        cursor: pointer;
+                        padding: 2px;
+                        border-radius: 10px;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .wordlist-word-group:hover {
+                        background: rgba(255, 107, 157, 0.08);
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba(255, 107, 157, 0.2);
+                    }
+                    
+                    /* 田字格按鈕（複用並調整） */
+                    .wordlist-char-btn {
+                        width: 45px;
+                        height: 45px;
+                        display: flex;
                         align-items: center;
                         justify-content: center;
-                        padding: 8px 12px;
-                        background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(74, 171, 247, 0.1));
+                        font-size: 22px;
+                        font-weight: bold;
+                        font-family: 'Noto Serif TC', serif;
+                        color: var(--ink-color);
+                        background: white;
                         border: 2px solid var(--border-color);
                         border-radius: 8px;
                         cursor: pointer;
-                        font-size: 16px;
-                        font-weight: 500;
-                        color: var(--text);
                         transition: all 0.2s ease;
-                        min-width: 40px;
-                        text-align: center;
+                        position: relative;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                        flex-shrink: 0;
+                        
+                        /* 田字格背景（複用現有樣式） */
+                        background-image: 
+                            linear-gradient(to right, var(--border-color) 1px, transparent 1px),
+                            linear-gradient(to bottom, var(--border-color) 1px, transparent 1px),
+                            linear-gradient(to right, rgba(255, 107, 157, 0.3) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(255, 107, 157, 0.3) 1px, transparent 1px);
+                        background-size: 22.5px 22.5px, 22.5px 22.5px, 45px 45px, 45px 45px;
+                        background-position: 0 0, 0 0, 0 0, 0 0;
                     }
                     
-                    .wordlist-item:hover {
-                        background: linear-gradient(135deg, var(--primary), var(--secondary));
-                        color: white;
+                    /* 筆順模式：單字獨立點擊 */
+                    .wordlist-char-btn.stroke-mode {
+                        cursor: pointer;
+                    }
+                    
+                    .wordlist-char-btn.stroke-mode:hover {
+                        transform: translateY(-2px) scale(1.08);
                         border-color: var(--primary);
-                        transform: translateY(-2px);
                         box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
                     }
                     
-                    .wordlist-item:active {
-                        transform: translateY(0);
+                    .wordlist-char-btn.stroke-mode:active {
+                        transform: translateY(0) scale(1.02);
                     }
                     
-                    /* 字詞本樣式（用於字詞查詢模式） */
-                    .wordlist-item.word-item {
-                        min-width: auto;
-                        padding: 8px 14px;
+                    /* 字詞模式：禁止單獨懸停效果（由詞組容器處理） */
+                    .wordlist-char-btn.word-mode {
+                        pointer-events: none;
+                    }
+                    
+                    /* 詞組內最後一個字和第一個字的特殊處理 */
+                    .wordlist-word-group .wordlist-char-btn:first-child {
+                        border-top-right-radius: 4px;
+                        border-bottom-right-radius: 4px;
+                    }
+                    
+                    .wordlist-word-group .wordlist-char-btn:last-child {
+                        border-top-left-radius: 4px;
+                        border-bottom-left-radius: 4px;
+                    }
+                    
+                    .wordlist-word-group .wordlist-char-btn:only-child {
+                        border-radius: 8px;
                     }
                     
                     /* 滾動條美化 */
-                    .wordlist-items::-webkit-scrollbar {
+                    .wordlist-items::-webkit-scrollbar,
+                    .wordlist-tianzige-display::-webkit-scrollbar {
                         width: 6px;
                     }
                     
-                    .wordlist-items::-webkit-scrollbar-track {
+                    .wordlist-items::-webkit-scrollbar-track,
+                    .wordlist-tianzige-display::-webkit-scrollbar-track {
                         background: rgba(0, 0, 0, 0.05);
                         border-radius: 3px;
                     }
                     
-                    .wordlist-items::-webkit-scrollbar-thumb {
+                    .wordlist-items::-webkit-scrollbar-thumb,
+                    .wordlist-tianzige-display::-webkit-scrollbar-thumb {
                         background: var(--primary);
                         border-radius: 3px;
                     }
                     
-                    .wordlist-items::-webkit-scrollbar-thumb:hover {
+                    .wordlist-items::-webkit-scrollbar-thumb:hover,
+                    .wordlist-tianzige-display::-webkit-scrollbar-thumb:hover {
                         background: var(--secondary);
+                    }
+                    
+                    /* 動畫 */
+                    @keyframes slideInLevel {
+                        from { opacity: 0; transform: translateY(-10px); }
+                        to { opacity: 1; transform: translateY(0); }
                     }
                 </style>
 
@@ -7742,21 +7987,46 @@
             
             // ===== 字詞表選擇功能 =====
             
-            // 系統內建字詞表（將來可以從這裡添加更多）
+            // 系統內建字詞表（層級結構）
             let systemWordlists = [];
             
-            // 用戶自定義字詞表
+            // 用戶自定義字詞表（簡單結構）
             let customWordlists = [];
             
-            // 當前選中的字詞表
+            // 當前選擇狀態
+            let currentSelection = {
+                system: null,      // 當前選擇的體系
+                systemIndex: -1,   // 當前體系索引
+                grade: null,       // 當前選擇的學段/冊次
+                gradeIndex: -1,    // 當前學段索引
+                unit: null,        // 當前選擇的單元
+                unitIndex: -1,     // 當前單元索引
+                lesson: null,      // 當前選擇的課
+                lessonIndex: -1,   // 當前課索引
+                level: 0           // 當前確認的層級 (1-4)
+            };
+            
+            // 當前選中的字詞表（用於顯示）
             let currentWordlist = null;
             
             // 獲取字詞表相關元素
-            const wordlistSelect = document.getElementById('wordlist-select');
+            const selectSystem = document.getElementById('select-system');
+            const selectGrade = document.getElementById('select-grade');
+            const selectUnit = document.getElementById('select-unit');
+            const selectLesson = document.getElementById('select-lesson');
+            const level1 = document.getElementById('level-1');
+            const level2 = document.getElementById('level-2');
+            const level3 = document.getElementById('level-3');
+            const level4 = document.getElementById('level-4');
+            const wordlistBreadcrumb = document.getElementById('wordlist-breadcrumb');
+            const breadcrumbPath = document.getElementById('breadcrumb-path');
+            const breadcrumbInfo = document.getElementById('breadcrumb-info');
             const wordlistDisplay = document.getElementById('wordlist-display');
             const wordlistTitle = document.getElementById('wordlist-title');
             const wordlistItems = document.getElementById('wordlist-items');
             const wordlistClear = document.getElementById('wordlist-clear');
+            const showCustomWordlists = document.getElementById('show-custom-wordlists');
+            const addCustomWordlistBtn = document.getElementById('add-custom-wordlist-btn');
             const addWordlistModal = document.getElementById('add-wordlist-modal');
             const addWordlistModalClose = document.getElementById('add-wordlist-modal-close');
             const customWordlistName = document.getElementById('custom-wordlist-name');
@@ -7764,13 +8034,16 @@
             const confirmAddWordlist = document.getElementById('confirm-add-wordlist');
             const cancelAddWordlist = document.getElementById('cancel-add-wordlist');
             
-            // 初始化字詞表選擇器
-            function initializeWordlistSelector() {
+            // 初始化多層級字詞表選擇器
+            function initializeMultiLevelSelector() {
                 // 加載保存的自定義字詞表
                 loadCustomWordlists();
                 
-                // 更新下拉菜單選項
-                updateWordlistOptions();
+                // 填充第一級選項（體系）
+                populateSystemOptions();
+                
+                // 綁定事件監聽器
+                bindLevelSelectors();
             }
             
             // 從 localStorage 加載自定義字詞表
@@ -7795,28 +8068,78 @@
                 }
             }
             
-            // 更新下拉菜單選項
-            function updateWordlistOptions() {
-                // 清空現有選項（保留第一個和最後一個）
-                while (wordlistSelect.options.length > 2) {
-                    wordlistSelect.remove(1);
-                }
+            // 填充第一級選項（體系）
+            function populateSystemOptions() {
+                // 清空現有選項（保留默認選項）
+                selectSystem.innerHTML = '<option value="">請選擇...</option>';
                 
                 // 添加系統內建字詞表
-                systemWordlists.forEach((wordlist, index) => {
+                systemWordlists.forEach((system, index) => {
                     const option = document.createElement('option');
-                    option.value = `system-${index}`;
-                    option.textContent = `📚 ${wordlist.name}`;
-                    wordlistSelect.insertBefore(option, wordlistSelect.options[wordlistSelect.options.length - 1]);
+                    option.value = index;
+                    option.textContent = `📚 ${system.name}`;
+                    selectSystem.appendChild(option);
                 });
-                
-                // 添加自定義字詞表
-                customWordlists.forEach((wordlist, index) => {
-                    const option = document.createElement('option');
-                    option.value = `custom-${index}`;
-                    option.textContent = `✏️ ${wordlist.name}`;
-                    wordlistSelect.insertBefore(option, wordlistSelect.options[wordlistSelect.options.length - 1]);
-                });
+            }
+            
+            // 填充第二級選項（學段/冊次）
+            function populateGradeOptions(grades) {
+                selectGrade.innerHTML = '<option value="">請選擇...</option>';
+                if (grades && grades.length > 0) {
+                    grades.forEach((grade, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = grade.name;
+                        selectGrade.appendChild(option);
+                    });
+                }
+            }
+            
+            // 填充第三級選項（單元）
+            function populateUnitOptions(units) {
+                selectUnit.innerHTML = '<option value="">請選擇...</option>';
+                if (units && units.length > 0) {
+                    units.forEach((unit, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = unit.name;
+                        selectUnit.appendChild(option);
+                    });
+                }
+            }
+            
+            // 填充第四級選項（課）
+            function populateLessonOptions(lessons) {
+                selectLesson.innerHTML = '<option value="">請選擇...</option>';
+                if (lessons && lessons.length > 0) {
+                    lessons.forEach((lesson, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = lesson.name;
+                        selectLesson.appendChild(option);
+                    });
+                }
+            }
+            
+            // 顯示指定層級
+            function showLevel(levelNum) {
+                const levelElement = document.getElementById(`level-${levelNum}`);
+                if (levelElement) {
+                    levelElement.style.display = 'block';
+                }
+            }
+            
+            // 從指定層級開始隱藏後續層級
+            function hideLevelsFrom(startLevel) {
+                for (let i = startLevel; i <= 4; i++) {
+                    const levelElement = document.getElementById(`level-${i}`);
+                    if (levelElement) {
+                        levelElement.style.display = 'none';
+                    }
+                }
+                // 同時清空字詞顯示
+                wordlistDisplay.style.display = 'none';
+                wordlistBreadcrumb.style.display = 'none';
             }
             
             // 解析字詞內容（支持逗號、空格、換行分隔）
@@ -7835,7 +8158,183 @@
                 return [...new Set(normalized)];
             }
             
-            // 顯示字詞表內容
+            // 層級選擇變化處理
+            function onSystemChange() {
+                const selectedIndex = selectSystem.value;
+                
+                if (!selectedIndex || selectedIndex === '') {
+                    hideLevelsFrom(2);
+                    currentSelection.system = null;
+                    currentSelection.systemIndex = -1;
+                    return;
+                }
+                
+                currentSelection.system = systemWordlists[selectedIndex];
+                currentSelection.systemIndex = parseInt(selectedIndex);
+                currentSelection.level = 0;
+                
+                // 重置後續選擇
+                currentSelection.grade = null;
+                currentSelection.gradeIndex = -1;
+                currentSelection.unit = null;
+                currentSelection.unitIndex = -1;
+                currentSelection.lesson = null;
+                currentSelection.lessonIndex = -1;
+                
+                // 顯示第2級並填充選項
+                showLevel(2);
+                populateGradeOptions(currentSelection.system.children);
+                
+                // 隱藏後續層級
+                hideLevelsFrom(3);
+            }
+            
+            function onGradeChange() {
+                const selectedIndex = selectGrade.value;
+                
+                if (!selectedIndex || selectedIndex === '') {
+                    hideLevelsFrom(3);
+                    currentSelection.grade = null;
+                    currentSelection.gradeIndex = -1;
+                    return;
+                }
+                
+                currentSelection.grade = currentSelection.system.children[selectedIndex];
+                currentSelection.gradeIndex = parseInt(selectedIndex);
+                currentSelection.level = 0;
+                
+                // 重置後續選擇
+                currentSelection.unit = null;
+                currentSelection.unitIndex = -1;
+                currentSelection.lesson = null;
+                currentSelection.lessonIndex = -1;
+                
+                // 顯示第3級
+                showLevel(3);
+                populateUnitOptions(currentSelection.grade.children);
+                
+                // 隱藏第4級
+                hideLevelsFrom(4);
+            }
+            
+            function onUnitChange() {
+                const selectedIndex = selectUnit.value;
+                
+                if (!selectedIndex || selectedIndex === '') {
+                    hideLevelsFrom(4);
+                    currentSelection.unit = null;
+                    currentSelection.unitIndex = -1;
+                    return;
+                }
+                
+                currentSelection.unit = currentSelection.grade.children[selectedIndex];
+                currentSelection.unitIndex = parseInt(selectedIndex);
+                currentSelection.level = 0;
+                
+                // 重置後續選擇
+                currentSelection.lesson = null;
+                currentSelection.lessonIndex = -1;
+                
+                // 顯示第4級
+                showLevel(4);
+                populateLessonOptions(currentSelection.unit.children);
+                
+                // 隱藏字詞顯示（等待確認）
+                wordlistDisplay.style.display = 'none';
+                wordlistBreadcrumb.style.display = 'none';
+            }
+            
+            function onLessonChange() {
+                const selectedIndex = selectLesson.value;
+                
+                if (!selectedIndex || selectedIndex === '') {
+                    currentSelection.lesson = null;
+                    currentSelection.lessonIndex = -1;
+                    wordlistDisplay.style.display = 'none';
+                    wordlistBreadcrumb.style.display = 'none';
+                    return;
+                }
+                
+                currentSelection.lesson = currentSelection.unit.children[selectedIndex];
+                currentSelection.lessonIndex = parseInt(selectedIndex);
+            }
+            
+            // 收集指定層級的所有字詞
+            function collectItemsAtLevel(level) {
+                let items = [];
+                let node;
+                
+                switch(level) {
+                    case 2: node = currentSelection.grade; break;
+                    case 3: node = currentSelection.unit; break;
+                    case 4: node = currentSelection.lesson; break;
+                }
+                
+                if (!node) return [];
+                
+                function collectRecursive(n) {
+                    if (n.items && Array.isArray(n.items)) {
+                        items.push(...n.items);
+                    }
+                    if (n.children && Array.isArray(n.children)) {
+                        n.children.forEach(child => collectRecursive(child));
+                    }
+                }
+                
+                collectRecursive(node);
+                return [...new Set(items)]; // 去重
+            }
+            
+            // 確認按鈕點擊處理
+            function onLevelConfirm(level) {
+                currentSelection.level = level;
+                
+                // 收集該級別的所有字詞
+                const allItems = collectItemsAtLevel(level);
+                
+                if (allItems.length === 0) {
+                    showToast('該級別尚無字詞數據');
+                    return;
+                }
+                
+                // 更新路徑顯示
+                updateBreadcrumb();
+                
+                // 顯示字詞列表
+                displayWordlist({
+                    name: getBreadcrumbText(),
+                    items: allItems
+                });
+            }
+            
+            // 獲取路徑文本
+            function getBreadcrumbText() {
+                let pathText = [];
+                if (currentSelection.system) pathText.push(currentSelection.system.name);
+                if (currentSelection.grade) pathText.push(currentSelection.grade.name);
+                if (currentSelection.unit) pathText.push(currentSelection.unit.name);
+                if (currentSelection.lesson) pathText.push(currentSelection.lesson.name);
+                return pathText.join(' > ');
+            }
+            
+            // 更新路徑顯示
+            function updateBreadcrumb() {
+                let pathText = [];
+                if (currentSelection.system) pathText.push(currentSelection.system.name);
+                if (currentSelection.grade) pathText.push(currentSelection.grade.name);
+                if (currentSelection.unit) pathText.push(currentSelection.unit.name);
+                if (currentSelection.lesson) pathText.push(currentSelection.lesson.name);
+                
+                breadcrumbPath.innerHTML = `當前：${pathText.join(' > ')}`;
+                
+                // 獲取字詞數量
+                const items = collectItemsAtLevel(currentSelection.level);
+                breadcrumbInfo.textContent = `📝 包含 ${items.length} 個字詞`;
+                
+                wordlistBreadcrumb.style.display = 'block';
+            }
+            
+            // 顯示字詞表內容（使用田字格）
             function displayWordlist(wordlist) {
                 if (!wordlist || !wordlist.items || wordlist.items.length === 0) {
                     wordlistDisplay.style.display = 'none';
@@ -7845,29 +8344,19 @@
                 currentWordlist = wordlist;
                 wordlistTitle.textContent = wordlist.name;
                 wordlistItems.innerHTML = '';
+                wordlistItems.className = 'wordlist-items wordlist-tianzige-display';
                 
                 // 檢查當前是否在字詞查詢界面
                 const isWordLookupMode = wordLookupContainer.style.display === 'flex';
                 
                 // 根據模式顯示不同的內容
                 if (isWordLookupMode) {
-                    // 字詞查詢模式：顯示原始詞語
+                    // 字詞查詢模式：保持原始詞語，按詞顯示
                     wordlist.items.forEach(item => {
-                        const itemEl = document.createElement('div');
-                        itemEl.className = 'wordlist-item word-item';
-                        itemEl.textContent = item;
-                        itemEl.addEventListener('click', () => {
-                            // 切換到字詞查詢
-                            const wordInput = document.getElementById('word-input');
-                            if (wordInput) {
-                                wordInput.value = item;
-                                fetchWordDefinition(item, 'wordlist');
-                            }
-                        });
-                        wordlistItems.appendChild(itemEl);
+                        displayWordInTianzige(item, true);
                     });
                 } else {
-                    // 筆順查詢模式：拆分為單字
+                    // 筆順查詢模式：拆分為單字，按字顯示
                     const chars = new Set();
                     wordlist.items.forEach(item => {
                         // 將詞語拆分為單個字
@@ -7880,70 +8369,137 @@
                     
                     // 顯示單字
                     [...chars].forEach(char => {
-                        const itemEl = document.createElement('div');
-                        itemEl.className = 'wordlist-item';
-                        itemEl.textContent = char;
-                        itemEl.addEventListener('click', () => {
-                            // 切換到筆順查詢
-                            const characterInput = document.getElementById('character-input');
-                            if (characterInput) {
-                                characterInput.value = char;
-                                hideCharacterSelector();
-                                switchToCharacter(char, 'wordlist');
-                            }
-                        });
-                        wordlistItems.appendChild(itemEl);
+                        displayWordInTianzige(char, false);
                     });
                 }
                 
                 wordlistDisplay.style.display = 'block';
             }
             
+            // 在田字格中顯示字或詞
+            function displayWordInTianzige(text, isWordMode) {
+                if (isWordMode) {
+                    // 字詞查詢模式：創建詞組容器
+                    const wordGroup = document.createElement('div');
+                    wordGroup.className = 'wordlist-word-group';
+                    wordGroup.dataset.word = text;
+                    
+                    // 為詞組中的每個字創建田字格
+                    for (let char of text) {
+                        if (/[\u4e00-\u9fa5]/.test(char)) {
+                            const charBtn = document.createElement('div');
+                            charBtn.className = 'wordlist-char-btn word-mode';
+                            charBtn.textContent = char;
+                            wordGroup.appendChild(charBtn);
+                        }
+                    }
+                    
+                    // 詞組點擊事件：查詢整個詞
+                    wordGroup.addEventListener('click', function() {
+                        const wordInput = document.getElementById('word-input');
+                        if (wordInput) {
+                            wordInput.value = text;
+                            fetchWordDefinition(text, 'wordlist');
+                            
+                            // 滾動到頂部顯示結果
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    });
+                    
+                    wordlistItems.appendChild(wordGroup);
+                    
+                } else {
+                    // 筆順查詢模式：單字獨立顯示
+                    const charBtn = document.createElement('button');
+                    charBtn.className = 'wordlist-char-btn stroke-mode';
+                    charBtn.textContent = text;
+                    charBtn.dataset.character = text;
+                    
+                    // 單字點擊事件：顯示筆順
+                    charBtn.addEventListener('click', function() {
+                        const characterInput = document.getElementById('character-input');
+                        if (characterInput) {
+                            characterInput.value = text;
+                            hideCharacterSelector();
+                            switchToCharacter(text, 'wordlist');
+                            
+                            // 滾動到頂部顯示結果
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    });
+                    
+                    wordlistItems.appendChild(charBtn);
+                }
+            }
+            
             // 清除字詞表選擇
             function clearWordlistSelection() {
                 currentWordlist = null;
-                wordlistSelect.value = '';
+                currentSelection = {
+                    system: null,
+                    systemIndex: -1,
+                    grade: null,
+                    gradeIndex: -1,
+                    unit: null,
+                    unitIndex: -1,
+                    lesson: null,
+                    lessonIndex: -1,
+                    level: 0
+                };
+                
+                // 重置所有選擇器
+                selectSystem.value = '';
+                selectGrade.value = '';
+                selectUnit.value = '';
+                selectLesson.value = '';
+                
+                // 隱藏所有層級（除了第一級）
+                hideLevelsFrom(2);
+                
                 wordlistDisplay.style.display = 'none';
+                wordlistBreadcrumb.style.display = 'none';
                 wordlistItems.innerHTML = '';
             }
             
-            // 字詞表選擇事件
-            wordlistSelect.addEventListener('change', function() {
-                const value = this.value;
+            // 綁定層級選擇器事件
+            function bindLevelSelectors() {
+                // 第1級：體系選擇
+                selectSystem.addEventListener('change', onSystemChange);
                 
-                if (!value) {
-                    clearWordlistSelection();
-                    return;
-                }
+                // 第2級：學段/冊次選擇
+                selectGrade.addEventListener('change', onGradeChange);
                 
-                if (value === 'add-custom') {
-                    // 顯示添加自定義字詞表模態窗口
+                // 第3級：單元選擇
+                selectUnit.addEventListener('change', onUnitChange);
+                
+                // 第4級：課選擇
+                selectLesson.addEventListener('change', onLessonChange);
+                
+                // 確認按鈕
+                const confirmBtns = document.querySelectorAll('.level-confirm-btn');
+                confirmBtns.forEach((btn, index) => {
+                    btn.addEventListener('click', function() {
+                        // index 0 對應 level 2, index 1 對應 level 3, index 2 對應 level 4
+                        onLevelConfirm(index + 2);
+                    });
+                });
+                
+                // 清除按鈕
+                wordlistClear.addEventListener('click', clearWordlistSelection);
+                
+                // 自定義字詞表按鈕
+                addCustomWordlistBtn.addEventListener('click', function() {
                     addWordlistModal.style.display = 'flex';
                     customWordlistName.value = '';
                     customWordlistContent.value = '';
                     customWordlistName.focus();
-                    // 重置下拉菜單
-                    this.value = '';
-                    return;
-                }
+                });
                 
-                // 解析選擇的字詞表
-                const [type, index] = value.split('-');
-                let wordlist;
-                
-                if (type === 'system') {
-                    wordlist = systemWordlists[parseInt(index)];
-                } else if (type === 'custom') {
-                    wordlist = customWordlists[parseInt(index)];
-                }
-                
-                if (wordlist) {
-                    displayWordlist(wordlist);
-                }
-            });
-            
-            // 清除按鈕事件
-            wordlistClear.addEventListener('click', clearWordlistSelection);
+                // 顯示自定義字詞表列表
+                showCustomWordlists.addEventListener('click', function() {
+                    showCustomWordlistsModal();
+                });
+            }
             
             // 關閉添加字詞表模態窗口
             function closeAddWordlistModal() {
@@ -7992,6 +8548,7 @@
                 const newWordlist = {
                     name: name,
                     items: items,
+                    type: 'custom',
                     createdAt: new Date().toISOString()
                 };
                 
@@ -8001,19 +8558,34 @@
                 // 保存到 localStorage
                 saveCustomWordlists();
                 
-                // 更新下拉菜單
-                updateWordlistOptions();
-                
                 // 關閉模態窗口
                 closeAddWordlistModal();
                 
-                // 自動選擇新添加的字詞表
-                wordlistSelect.value = `custom-${customWordlists.length - 1}`;
+                // 自動顯示新添加的字詞表
                 displayWordlist(newWordlist);
                 
                 // 顯示成功提示
                 showToast(`已添加字詞表「${name}」，包含 ${items.length} 個字詞`);
             });
+            
+            // 顯示自定義字詞表列表模態窗口
+            function showCustomWordlistsModal() {
+                if (customWordlists.length === 0) {
+                    showToast('尚無自定義字詞表，請先添加');
+                    return;
+                }
+                
+                // 簡單顯示列表（可以後續改為模態窗口）
+                const list = customWordlists.map((wl, index) => `${index + 1}. ${wl.name} (${wl.items.length}個字詞)`).join('\n');
+                const selected = prompt(`選擇字詞表（輸入序號）：\n\n${list}`);
+                
+                if (selected) {
+                    const index = parseInt(selected) - 1;
+                    if (index >= 0 && index < customWordlists.length) {
+                        displayWordlist(customWordlists[index]);
+                    }
+                }
+            }
             
             // 簡單的 Toast 提示函數
             function showToast(message, duration = 3000) {
@@ -8061,12 +8633,9 @@
             }
             
             // 添加系統內建字詞表的函數（供後續使用）
-            function addSystemWordlist(name, items) {
-                systemWordlists.push({
-                    name: name,
-                    items: items
-                });
-                updateWordlistOptions();
+            function addSystemWordlist(wordlistData) {
+                systemWordlists.push(wordlistData);
+                populateSystemOptions();
             }
             
             // 監聽導航切換，更新字詞表顯示
@@ -8082,8 +8651,37 @@
                 });
             });
             
-            // 初始化字詞表選擇器
-            initializeWordlistSelector();
+            // 初始化多層級字詞表選擇器
+            initializeMultiLevelSelector();
+            
+            // 添加弘立預備班漢字表
+            addSystemWordlist({
+                name: "弘立預備班漢字表",
+                children: [
+                    {
+                        name: "上冊",
+                        items: [
+                            "一", "二", "三", "十", "土", "上", "工", "牛", "生", "八",
+                            "人", "大", "天", "下", "太", "不", "六", "口", "中", "日",
+                            "田", "小", "少", "山", "牙", "刀", "力", "月", "用", "又",
+                            "友", "也", "地", "它", "你", "七", "四", "元", "巴", "九",
+                            "丸", "女", "她", "去", "台", "玩", "拍", "比", "叫", "心",
+                            "思", "我", "找"
+                        ]
+                    },
+                    {
+                        name: "下冊",
+                        items: [
+                            "耳", "目", "手", "足", "木", "禾", "米", "果", "火", "水",
+                            "羊", "馬", "車", "舟", "門", "戶", "毛", "巾", "子", "石",
+                            "林", "明", "分", "男", "古", "言", "舌", "五", "年", "左",
+                            "右", "來", "多", "立", "坐", "走", "吃", "唱", "有", "在",
+                            "是", "的", "和", "好", "他", "牠", "爸", "媽", "朋", "具",
+                            "早", "午", "青", "草", "花", "朵"
+                        ]
+                    }
+                ]
+            });
             
             // ===== 字詞查詢功能 =====
             
