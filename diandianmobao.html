@@ -4081,10 +4081,16 @@
                 <style>
                     #wordlist-selector-panel {
                         margin-bottom: 20px;
+                        max-height: 600px;  /* 設置整個面板的最大高度 */
+                        overflow-y: auto;   /* 當內容超過高度時，整個面板可以滾動 */
+                        display: flex;
+                        flex-direction: column;
                     }
                     
                     .wordlist-selector-content {
                         padding: 0;
+                        flex: 1;
+                        min-height: 0;  /* 確保可以正確收縮 */
                     }
                     
                     /* 層級選擇器容器 */
