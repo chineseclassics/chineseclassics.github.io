@@ -1351,6 +1351,37 @@
 
         // 注：返回主页按钮现在在标题栏中，不再需要单独渲染
 
+        // 獲取體驗標籤樣式（根據境地主題色）
+        function getExperienceBadgeStyle(realmId) {
+            const styles = {
+                'hanmo': {
+                    bg: 'bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30',
+                    border: 'border-blue-200 dark:border-blue-700',
+                    text: 'text-blue-700 dark:text-blue-300',
+                    shadow: 'shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30'
+                },
+                'qiangu': {
+                    bg: 'bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30',
+                    border: 'border-amber-200 dark:border-amber-700',
+                    text: 'text-amber-700 dark:text-amber-300',
+                    shadow: 'shadow-sm shadow-amber-200/50 dark:shadow-amber-900/30'
+                },
+                'jinxiu': {
+                    bg: 'bg-gradient-to-r from-rose-50 to-rose-100 dark:from-rose-900/30 dark:to-rose-800/30',
+                    border: 'border-rose-200 dark:border-rose-700',
+                    text: 'text-rose-700 dark:text-rose-300',
+                    shadow: 'shadow-sm shadow-rose-200/50 dark:shadow-rose-900/30'
+                },
+                'yunwai': {
+                    bg: 'bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-900/30 dark:to-cyan-800/30',
+                    border: 'border-cyan-200 dark:border-cyan-700',
+                    text: 'text-cyan-700 dark:text-cyan-300',
+                    shadow: 'shadow-sm shadow-cyan-200/50 dark:shadow-cyan-900/30'
+                }
+            };
+            return styles[realmId] || styles['hanmo'];
+        }
+
         // 渲染境地区块
         function renderRealmSection(realm) {
             const realmApps = apps.filter(app => app.category === realm.id);
@@ -1373,6 +1404,9 @@
                     break;
             }
             
+            // 獲取標籤樣式
+            const badgeStyle = getExperienceBadgeStyle(realm.id);
+            
             return `
                 <section class="mb-12">
                     <!-- 左侧色条 + 白色卡片 -->
@@ -1385,8 +1419,9 @@
                             <h2 class="text-xl font-bold ${realm.titleColor}">${realm.name}</h2>
                             <span class="text-sm text-gray-400">·</span>
                             <span class="text-sm text-gray-500 dark:text-gray-400">${realm.subtitle}</span>
-                            <span class="ml-auto px-2.5 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-xs text-gray-600 dark:text-gray-300">
-                                ${appCount} 個體驗
+                            <span class="ml-auto px-3 py-1.5 ${badgeStyle.bg} ${badgeStyle.border} border rounded-full text-xs font-medium ${badgeStyle.text} ${badgeStyle.shadow} transition-all duration-200 hover:scale-105 flex items-center gap-1.5">
+                                <i class="fas fa-sparkles text-[0.7rem]"></i>
+                                <span>${appCount} 個體驗</span>
                             </span>
                     </div>
                         
