@@ -115,6 +115,9 @@ class GradingUI {
               <span class="mr-4">
                 <i class="fas fa-tasks mr-1"></i>任務：${this.escapeHtml(essay.assignment.title || '—')}
               </span>
+              <span class="mr-4" id="grading-word-count">
+                <i class="fas fa-font mr-1"></i>字數：${this.computeDisplayWordCount(essay)} 字
+              </span>
               <span class="mr-4">
                 <i class="fas fa-user mr-1"></i>學生：${this.escapeHtml(essay.student.display_name || '—')}
               </span>
@@ -287,6 +290,13 @@ class GradingUI {
           let json = null;
           try { json = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (_) { json = null; }
           if (json && json.type) {
+            // 內容已載入後，更新頂部字數顯示（以 PM 內容為準）
+            try {
+              const text = this.extractTextFromPM(json) || '';
+              const wc = this.countWithoutPunct(text);
+              const wcEl = document.getElementById('grading-word-count');
+              if (wcEl) wcEl.innerHTML = `<i class="fas fa-font mr-1"></i>字數：${wc} 字`;
+            } catch (_) {}
             this._annStore = [];
             const plugin = createAnnotationPlugin({
               getAnnotations: () => this._annStore,
@@ -1222,6 +1232,38 @@ ${overallComment.improvements || ''}
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   
+  // 與批改隊列一致：從 PM JSON 提取文本並統計中文字數
+  computeDisplayWordCount(essay) {
+    try {
+      const text = this.extractTextFromPM(essay?.content_json) || '';
+      return this.countWithoutPunct(text);
+    } catch (_) { return 0; }
+  }
+
+  extractTextFromPM(raw) {
+    try {
+      const json = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!json || typeof json !== 'object') return '';
+      const parts = [];
+      const walk = (node) => {
+        if (!node) return;
+        const type = node.type;
+        if (type === 'text') { if (node.text) parts.push(node.text); return; }
+        if (Array.isArray(node.content)) node.content.forEach(child => walk(child));
+        if (type === 'paragraph') parts.push('\n');
+      };
+      walk(json);
+      const text = parts.join('').replace(/\n{3,}/g, '\n').trim();
+      return text;
+    } catch (_) { return ''; }
+  }
+
+  countWithoutPunct(text) {
+    if (!text) return 0;
+    const matches = text.match(/[\u4E00-\u9FFF]/g);
+    return matches ? matches.length : 0;
+  }
+
   /**
    * 轉義 HTML 特殊字符
    */
