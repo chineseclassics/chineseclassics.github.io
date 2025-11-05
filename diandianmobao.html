@@ -3806,6 +3806,10 @@
                             </div>
                     </div>
                     
+                        <!-- 可爱星星装饰 -->
+                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%23FF6B9D66'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%23FF6B9D' font-weight='bold'%3E棒棒%3C/text%3E%3C/svg%3E">
+                    </div>
+                    
                     <!-- 功能2: 字词查询模式 -->
                     <div id="word-lookup-container" class="word-lookup-container function-section">
                         <div class="word-search-section">
@@ -3863,6 +3867,9 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- 可爱星星装饰 -->
+                        <img class="seal-decoration" src="data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cstar cx='30' cy='30' r1='15' r2='8' fill='%234DABF766'/%3E%3Ccircle cx='30' cy='30' r='12' fill='%23FFE66D55'/%3E%3Ctext x='30' y='35' text-anchor='middle' font-size='8' font-family='serif' fill='%234DABF7' font-weight='bold'%3E詞典%3C/text%3E%3C/svg%3E">
                     </div>
                     
                     <!-- 功能3: 笔顺练习模式 -->
@@ -4075,25 +4082,15 @@
                     #wordlist-selector-panel {
                         margin-bottom: 20px;
                         max-height: 600px;  /* 設置整個面板的最大高度 */
+                        overflow-y: auto;   /* 當內容超過高度時，整個面板可以滾動 */
                         display: flex;
                         flex-direction: column;
-                        overflow: hidden;   /* 隱藏外層溢出，讓內部區域處理滾動 */
-                    }
-                    
-                    /* 標題欄固定在頂部 */
-                    #wordlist-selector-panel .side-panel-header {
-                        flex-shrink: 0;  /* 標題欄不縮小 */
-                        position: sticky;
-                        top: 0;
-                        background: white;  /* 確保滾動時不透明 */
-                        z-index: 10;
                     }
                     
                     .wordlist-selector-content {
                         padding: 0;
                         flex: 1;
-                        min-height: 0;
-                        overflow-y: auto;  /* 只有內容區域滾動 */
+                        min-height: 0;  /* 確保可以正確收縮 */
                     }
                     
                     /* 層級選擇器容器 */
