@@ -3629,6 +3629,10 @@
     <!-- Font Awesome 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- 太虛幻境 TTS 功能（在線 TTS + 瀏覽器語音回退） -->
+    <script src="/assets/js/taixu-config.js"></script>
+    <script src="/assets/js/taixu-tts.js"></script>
+    
     <!-- 太虛幻境應用切換器組件 -->
     <script src="/assets/js/taixu-app-switcher.js"></script>
 </head>
@@ -5507,108 +5511,23 @@
                 }
             }
             
-            // 朗讀當前漢字
-            function speakCharacter() {
+            // 朗讀當前漢字（使用太虛幻境 TTS 系統）
+            async function speakCharacter() {
                 const character = characterDisplay.textContent;
                 if (!character) return;
                 
-                if ('speechSynthesis' in window) {
-                    // 停止任何正在播放的語音
+                // 停止任何正在播放的語音
+                if (window.speechSynthesis) {
                     speechSynthesis.cancel();
-                    
-                    // 創建語音實例
-                    const utterance = new SpeechSynthesisUtterance(character);
-                    
-                    // 設置語言為普通話
-                    utterance.lang = 'zh-CN';
-                    
-                    // 獲取所有可用語音
-                    const voices = speechSynthesis.getVoices();
-                    
-                    // 已知的粤語語音黑名單（即使標記為 zh-CN 但實際是粤語）
-                    const cantoneseBlacklist = ['eddy', 'sinji'];
-                    
-                    // 過濾函數：排除粤語語音
-                    const isNotCantonese = (voice) => {
-                        const nameLower = voice.name.toLowerCase();
-                        // 檢查黑名單
-                        if (cantoneseBlacklist.some(blocked => nameLower.includes(blocked))) {
-                            return false;
-                        }
-                        // 檢查語音名稱和語言代碼
-                        return !nameLower.includes('cantonese') &&
-                               !nameLower.includes('yue') &&
-                               !nameLower.includes('粤') &&
-                               !nameLower.includes('hong kong') &&
-                               !voice.lang.includes('HK') &&
-                               !voice.lang.includes('yue');
-                    };
-                    
-                    // 優先級策略選擇普通話語音
-                    let mandarinVoice = null;
-                    
-                    // 第一優先：尋找明確標記為普通話的語音
-                    mandarinVoice = voices.find(voice => {
-                        const nameLower = voice.name.toLowerCase();
-                        return isNotCantonese(voice) && (
-                            nameLower.includes('mandarin') ||
-                            nameLower.includes('putonghua') ||
-                            voice.name.includes('普通话') ||
-                            voice.name.includes('国语')
-                        );
+                }
+                
+                // 使用太虛幻境 TTS（優先在線 TTS，失敗時回退瀏覽器語音）
+                if (window.taixuSpeak) {
+                    await window.taixuSpeak(character, {
+                        voice: 'zh-CN-XiaoxiaoNeural', // 普通話女聲
+                        rate: 0.8,
+                        pitch: 1.2  // 提高音調，更適合兒童
                     });
-                    
-                    // 第二優先：Google/Microsoft 的 zh-CN 語音（通常品質較好）
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice => 
-                            isNotCantonese(voice) &&
-                            (voice.lang === 'zh-CN' || voice.lang === 'cmn-CN') &&
-                            (voice.name.includes('Google') || 
-                             voice.name.includes('Microsoft') ||
-                             voice.name.includes('Ting-Ting') ||
-                             voice.name.includes('Huihui') ||
-                             voice.name.includes('Yaoyao'))
-                        );
-                    }
-                    
-                    // 第三優先：任何 zh-CN 語音（排除黑名單）
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice => 
-                            isNotCantonese(voice) &&
-                            (voice.lang === 'zh-CN' || voice.lang === 'cmn-CN')
-                        );
-                    }
-                    
-                    // 第四優先：包含 CN 的簡體中文語音
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice => 
-                            isNotCantonese(voice) &&
-                            (voice.lang.includes('zh-CN') || 
-                             voice.lang.includes('cmn-CN') || 
-                             voice.lang.includes('cmn-Hans-CN') ||
-                             voice.lang.includes('zh-Hans-CN'))
-                        );
-                    }
-                    
-                    // 第五優先：任何非粤語的中文語音
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice =>
-                            isNotCantonese(voice) && 
-                            voice.lang.startsWith('zh') && 
-                            !voice.lang.includes('TW')
-                        );
-                    }
-                    
-                    if (mandarinVoice) {
-                        utterance.voice = mandarinVoice;
-                    }
-                    
-                    // 朗讀速度調慢一點
-                    utterance.rate = 0.8;
-                    utterance.pitch = 1.2;  // 提高音調，更適合兒童
-                    
-                    // 播放語音
-                    speechSynthesis.speak(utterance);
                     
                     // 添加彈跳效果
                     characterDisplay.classList.add('bounce');
@@ -5616,7 +5535,7 @@
                         characterDisplay.classList.remove('bounce');
                     }, 1000);
                 } else {
-                    alert('抱歉，您的瀏覽器不支持語音功能');
+                    console.warn('TTS 功能未載入，請確認已引入 taixu-tts.js');
                 }
             }
             
@@ -7873,104 +7792,24 @@
                 wordLoader.style.display = 'none';
             }
             
-            // 朗讀字詞
-            function speakWord(word) {
+            // 朗讀字詞（使用太虛幻境 TTS 系統）
+            async function speakWord(word) {
                 if (!word) return;
                 
-                if ('speechSynthesis' in window) {
-                    // 停止當前語音
+                // 停止當前語音
+                if (window.speechSynthesis) {
                     speechSynthesis.cancel();
-                    
-                    const utterance = new SpeechSynthesisUtterance(word);
-                    utterance.lang = 'zh-CN';  // 設置為普通話
-                    
-                    // 獲取所有可用語音
-                    const voices = speechSynthesis.getVoices();
-                    
-                    // 已知的粤語語音黑名單（即使標記為 zh-CN 但實際是粤語）
-                    const cantoneseBlacklist = ['eddy', 'sinji'];
-                    
-                    // 過濾函數：排除粤語語音
-                    const isNotCantonese = (voice) => {
-                        const nameLower = voice.name.toLowerCase();
-                        // 檢查黑名單
-                        if (cantoneseBlacklist.some(blocked => nameLower.includes(blocked))) {
-                            return false;
-                        }
-                        // 檢查語音名稱和語言代碼
-                        return !nameLower.includes('cantonese') &&
-                               !nameLower.includes('yue') &&
-                               !nameLower.includes('粤') &&
-                               !nameLower.includes('hong kong') &&
-                               !voice.lang.includes('HK') &&
-                               !voice.lang.includes('yue');
-                    };
-                    
-                    // 優先級策略選擇普通話語音
-                    let mandarinVoice = null;
-                    
-                    // 第一優先：尋找明確標記為普通話的語音
-                    mandarinVoice = voices.find(voice => {
-                        const nameLower = voice.name.toLowerCase();
-                        return isNotCantonese(voice) && (
-                            nameLower.includes('mandarin') ||
-                            nameLower.includes('putonghua') ||
-                            voice.name.includes('普通话') ||
-                            voice.name.includes('国语')
-                        );
+                }
+                
+                // 使用太虛幻境 TTS（優先在線 TTS，失敗時回退瀏覽器語音）
+                if (window.taixuSpeak) {
+                    await window.taixuSpeak(word, {
+                        voice: 'zh-CN-XiaoxiaoNeural', // 普通話女聲
+                        rate: 0.8,
+                        pitch: 1.0
                     });
-                    
-                    // 第二優先：Google/Microsoft 的 zh-CN 語音（通常品質較好）
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice => 
-                            isNotCantonese(voice) &&
-                            (voice.lang === 'zh-CN' || voice.lang === 'cmn-CN') &&
-                            (voice.name.includes('Google') || 
-                             voice.name.includes('Microsoft') ||
-                             voice.name.includes('Ting-Ting') ||
-                             voice.name.includes('Huihui') ||
-                             voice.name.includes('Yaoyao'))
-                        );
-                    }
-                    
-                    // 第三優先：任何 zh-CN 語音（排除黑名單）
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice => 
-                            isNotCantonese(voice) &&
-                            (voice.lang === 'zh-CN' || voice.lang === 'cmn-CN')
-                        );
-                    }
-                    
-                    // 第四優先：包含 CN 的簡體中文語音
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice => 
-                            isNotCantonese(voice) &&
-                            (voice.lang.includes('zh-CN') || 
-                             voice.lang.includes('cmn-CN') || 
-                             voice.lang.includes('cmn-Hans-CN') ||
-                             voice.lang.includes('zh-Hans-CN'))
-                        );
-                    }
-                    
-                    // 第五優先：任何非粤語的中文語音
-                    if (!mandarinVoice) {
-                        mandarinVoice = voices.find(voice =>
-                            isNotCantonese(voice) && 
-                            voice.lang.startsWith('zh') && 
-                            !voice.lang.includes('TW')
-                        );
-                    }
-                    
-                    if (mandarinVoice) {
-                        utterance.voice = mandarinVoice;
-                    }
-                    
-                    utterance.rate = 0.8;
-                    utterance.pitch = 1;
-                    
-                    speechSynthesis.speak(utterance);
                 } else {
-                    alert('您的瀏覽器不支持語音合成功能');
+                    console.warn('TTS 功能未載入，請確認已引入 taixu-tts.js');
                 }
             }
             
