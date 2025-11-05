@@ -3998,6 +3998,263 @@
             <!-- 側邊面板區域 -->
             <div class="side-panel-container">
                 
+                <!-- 字詞表選擇面板 -->
+                <div class="panel panel-compact side-panel" id="wordlist-selector-panel">
+                    <div class="side-panel-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <line x1="10" y1="9" x2="8" y2="9"></line>
+                        </svg>
+                        <h2 class="chinese-text">字詞表</h2>
+                    </div>
+                    
+                    <div class="wordlist-selector-content">
+                        <!-- 下拉菜單 -->
+                        <div class="wordlist-dropdown-container">
+                            <select id="wordlist-select" class="wordlist-select">
+                                <option value="">選擇字詞表...</option>
+                                <option value="add-custom">➕ 添加自定義字詞表</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 字詞展開區域 -->
+                        <div id="wordlist-display" class="wordlist-display" style="display: none;">
+                            <div class="wordlist-header">
+                                <span id="wordlist-title" class="wordlist-title"></span>
+                                <button id="wordlist-clear" class="btn-icon-small" title="清除選擇">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="wordlist-items" class="wordlist-items"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 字詞表選擇面板樣式 -->
+                <style>
+                    #wordlist-selector-panel {
+                        margin-bottom: 20px;
+                    }
+                    
+                    .wordlist-selector-content {
+                        padding: 0;
+                    }
+                    
+                    .wordlist-dropdown-container {
+                        padding: 15px;
+                        padding-bottom: 0;
+                    }
+                    
+                    .wordlist-select {
+                        width: 100%;
+                        padding: 10px 12px;
+                        border: 2px solid var(--border-color);
+                        border-radius: 10px;
+                        background: white;
+                        color: var(--text);
+                        font-size: 14px;
+                        font-family: 'Noto Sans TC', sans-serif;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .wordlist-select:hover {
+                        border-color: var(--primary);
+                    }
+                    
+                    .wordlist-select:focus {
+                        outline: none;
+                        border-color: var(--primary);
+                        box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.2);
+                    }
+                    
+                    .wordlist-display {
+                        padding: 15px;
+                        padding-top: 10px;
+                    }
+                    
+                    .wordlist-header {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        margin-bottom: 10px;
+                        padding-bottom: 8px;
+                        border-bottom: 2px solid var(--border-color);
+                    }
+                    
+                    .wordlist-title {
+                        font-weight: 600;
+                        color: var(--primary);
+                        font-size: 15px;
+                    }
+                    
+                    .btn-icon-small {
+                        background: none;
+                        border: none;
+                        padding: 4px;
+                        cursor: pointer;
+                        color: var(--light-text);
+                        transition: all 0.2s ease;
+                        border-radius: 6px;
+                    }
+                    
+                    .btn-icon-small:hover {
+                        background: rgba(255, 107, 157, 0.1);
+                        color: var(--primary);
+                    }
+                    
+                    .wordlist-items {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        max-height: 200px;
+                        overflow-y: auto;
+                        padding: 5px;
+                    }
+                    
+                    .wordlist-item {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 8px 12px;
+                        background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(74, 171, 247, 0.1));
+                        border: 2px solid var(--border-color);
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 16px;
+                        font-weight: 500;
+                        color: var(--text);
+                        transition: all 0.2s ease;
+                        min-width: 40px;
+                        text-align: center;
+                    }
+                    
+                    .wordlist-item:hover {
+                        background: linear-gradient(135deg, var(--primary), var(--secondary));
+                        color: white;
+                        border-color: var(--primary);
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+                    }
+                    
+                    .wordlist-item:active {
+                        transform: translateY(0);
+                    }
+                    
+                    /* 字詞本樣式（用於字詞查詢模式） */
+                    .wordlist-item.word-item {
+                        min-width: auto;
+                        padding: 8px 14px;
+                    }
+                    
+                    /* 滾動條美化 */
+                    .wordlist-items::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    
+                    .wordlist-items::-webkit-scrollbar-track {
+                        background: rgba(0, 0, 0, 0.05);
+                        border-radius: 3px;
+                    }
+                    
+                    .wordlist-items::-webkit-scrollbar-thumb {
+                        background: var(--primary);
+                        border-radius: 3px;
+                    }
+                    
+                    .wordlist-items::-webkit-scrollbar-thumb:hover {
+                        background: var(--secondary);
+                    }
+                </style>
+
+                <!-- 添加自定義字詞表模態窗口 -->
+                <div class="vocabulary-modal" id="add-wordlist-modal" style="display: none;">
+                    <div class="vocabulary-modal-content" style="max-width: 500px;">
+                        <div class="vocabulary-modal-header">
+                            <h3>添加自定義字詞表</h3>
+                            <button class="vocabulary-modal-close" id="add-wordlist-modal-close">×</button>
+                        </div>
+                        <div class="vocabulary-modal-body">
+                            <div style="margin-bottom: 15px;">
+                                <label for="custom-wordlist-name" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text);">
+                                    字詞表名稱
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="custom-wordlist-name" 
+                                    class="wordlist-input"
+                                    placeholder="例如：三年級上冊生字"
+                                    maxlength="30"
+                                />
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label for="custom-wordlist-content" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text);">
+                                    字詞內容
+                                    <span style="font-size: 12px; color: var(--light-text); font-weight: 400;">
+                                        （用逗號、空格或換行分隔）
+                                    </span>
+                                </label>
+                                <textarea 
+                                    id="custom-wordlist-content" 
+                                    class="wordlist-textarea"
+                                    placeholder="例如：馬，汽車，放，蘋果&#10;或：馬 汽車 放 蘋果&#10;或每行一個字詞"
+                                    rows="8"
+                                ></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button id="cancel-add-wordlist" class="btn btn-secondary">取消</button>
+                                <button id="confirm-add-wordlist" class="btn btn-primary">添加</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 添加字詞表模態窗口樣式 -->
+                <style>
+                    .wordlist-input {
+                        width: 100%;
+                        padding: 10px 12px;
+                        border: 2px solid var(--border-color);
+                        border-radius: 10px;
+                        font-size: 14px;
+                        font-family: 'Noto Sans TC', sans-serif;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .wordlist-input:focus {
+                        outline: none;
+                        border-color: var(--primary);
+                        box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.2);
+                    }
+                    
+                    .wordlist-textarea {
+                        width: 100%;
+                        padding: 10px 12px;
+                        border: 2px solid var(--border-color);
+                        border-radius: 10px;
+                        font-size: 14px;
+                        font-family: 'Noto Sans TC', sans-serif;
+                        resize: vertical;
+                        min-height: 120px;
+                        line-height: 1.6;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .wordlist-textarea:focus {
+                        outline: none;
+                        border-color: var(--primary);
+                        box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.2);
+                    }
+                </style>
+                
                 <!-- 我的漢字樹（樹形文字雲） -->
                 <div class="panel panel-compact side-panel" id="hanzi-tree-panel">
                     <div class="side-panel-header">
@@ -7482,6 +7739,351 @@
             
             // 下一題按鈕
             document.getElementById('radical-next').addEventListener('click', startRadicalGame);
+            
+            // ===== 字詞表選擇功能 =====
+            
+            // 系統內建字詞表（將來可以從這裡添加更多）
+            let systemWordlists = [];
+            
+            // 用戶自定義字詞表
+            let customWordlists = [];
+            
+            // 當前選中的字詞表
+            let currentWordlist = null;
+            
+            // 獲取字詞表相關元素
+            const wordlistSelect = document.getElementById('wordlist-select');
+            const wordlistDisplay = document.getElementById('wordlist-display');
+            const wordlistTitle = document.getElementById('wordlist-title');
+            const wordlistItems = document.getElementById('wordlist-items');
+            const wordlistClear = document.getElementById('wordlist-clear');
+            const addWordlistModal = document.getElementById('add-wordlist-modal');
+            const addWordlistModalClose = document.getElementById('add-wordlist-modal-close');
+            const customWordlistName = document.getElementById('custom-wordlist-name');
+            const customWordlistContent = document.getElementById('custom-wordlist-content');
+            const confirmAddWordlist = document.getElementById('confirm-add-wordlist');
+            const cancelAddWordlist = document.getElementById('cancel-add-wordlist');
+            
+            // 初始化字詞表選擇器
+            function initializeWordlistSelector() {
+                // 加載保存的自定義字詞表
+                loadCustomWordlists();
+                
+                // 更新下拉菜單選項
+                updateWordlistOptions();
+            }
+            
+            // 從 localStorage 加載自定義字詞表
+            function loadCustomWordlists() {
+                try {
+                    const saved = localStorage.getItem('customWordlists');
+                    if (saved) {
+                        customWordlists = JSON.parse(saved);
+                    }
+                } catch (error) {
+                    console.error('加載自定義字詞表失敗:', error);
+                    customWordlists = [];
+                }
+            }
+            
+            // 保存自定義字詞表到 localStorage
+            function saveCustomWordlists() {
+                try {
+                    localStorage.setItem('customWordlists', JSON.stringify(customWordlists));
+                } catch (error) {
+                    console.error('保存自定義字詞表失敗:', error);
+                }
+            }
+            
+            // 更新下拉菜單選項
+            function updateWordlistOptions() {
+                // 清空現有選項（保留第一個和最後一個）
+                while (wordlistSelect.options.length > 2) {
+                    wordlistSelect.remove(1);
+                }
+                
+                // 添加系統內建字詞表
+                systemWordlists.forEach((wordlist, index) => {
+                    const option = document.createElement('option');
+                    option.value = `system-${index}`;
+                    option.textContent = `📚 ${wordlist.name}`;
+                    wordlistSelect.insertBefore(option, wordlistSelect.options[wordlistSelect.options.length - 1]);
+                });
+                
+                // 添加自定義字詞表
+                customWordlists.forEach((wordlist, index) => {
+                    const option = document.createElement('option');
+                    option.value = `custom-${index}`;
+                    option.textContent = `✏️ ${wordlist.name}`;
+                    wordlistSelect.insertBefore(option, wordlistSelect.options[wordlistSelect.options.length - 1]);
+                });
+            }
+            
+            // 解析字詞內容（支持逗號、空格、換行分隔）
+            function parseWordlistContent(content) {
+                if (!content) return [];
+                
+                // 替換所有可能的分隔符為統一的分隔符
+                let normalized = content
+                    .replace(/[，、；]/g, ',')  // 中文標點替換為逗號
+                    .replace(/[\s\n\r]+/g, ',')  // 空白字符替換為逗號
+                    .split(',')                   // 以逗號分割
+                    .map(item => item.trim())     // 去除首尾空白
+                    .filter(item => item.length > 0);  // 過濾空項
+                
+                // 去重
+                return [...new Set(normalized)];
+            }
+            
+            // 顯示字詞表內容
+            function displayWordlist(wordlist) {
+                if (!wordlist || !wordlist.items || wordlist.items.length === 0) {
+                    wordlistDisplay.style.display = 'none';
+                    return;
+                }
+                
+                currentWordlist = wordlist;
+                wordlistTitle.textContent = wordlist.name;
+                wordlistItems.innerHTML = '';
+                
+                // 檢查當前是否在字詞查詢界面
+                const isWordLookupMode = wordLookupContainer.style.display === 'flex';
+                
+                // 根據模式顯示不同的內容
+                if (isWordLookupMode) {
+                    // 字詞查詢模式：顯示原始詞語
+                    wordlist.items.forEach(item => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'wordlist-item word-item';
+                        itemEl.textContent = item;
+                        itemEl.addEventListener('click', () => {
+                            // 切換到字詞查詢
+                            const wordInput = document.getElementById('word-input');
+                            if (wordInput) {
+                                wordInput.value = item;
+                                fetchWordDefinition(item, 'wordlist');
+                            }
+                        });
+                        wordlistItems.appendChild(itemEl);
+                    });
+                } else {
+                    // 筆順查詢模式：拆分為單字
+                    const chars = new Set();
+                    wordlist.items.forEach(item => {
+                        // 將詞語拆分為單個字
+                        for (let char of item) {
+                            if (/[\u4e00-\u9fa5]/.test(char)) {  // 只保留中文字符
+                                chars.add(char);
+                            }
+                        }
+                    });
+                    
+                    // 顯示單字
+                    [...chars].forEach(char => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'wordlist-item';
+                        itemEl.textContent = char;
+                        itemEl.addEventListener('click', () => {
+                            // 切換到筆順查詢
+                            const characterInput = document.getElementById('character-input');
+                            if (characterInput) {
+                                characterInput.value = char;
+                                hideCharacterSelector();
+                                switchToCharacter(char, 'wordlist');
+                            }
+                        });
+                        wordlistItems.appendChild(itemEl);
+                    });
+                }
+                
+                wordlistDisplay.style.display = 'block';
+            }
+            
+            // 清除字詞表選擇
+            function clearWordlistSelection() {
+                currentWordlist = null;
+                wordlistSelect.value = '';
+                wordlistDisplay.style.display = 'none';
+                wordlistItems.innerHTML = '';
+            }
+            
+            // 字詞表選擇事件
+            wordlistSelect.addEventListener('change', function() {
+                const value = this.value;
+                
+                if (!value) {
+                    clearWordlistSelection();
+                    return;
+                }
+                
+                if (value === 'add-custom') {
+                    // 顯示添加自定義字詞表模態窗口
+                    addWordlistModal.style.display = 'flex';
+                    customWordlistName.value = '';
+                    customWordlistContent.value = '';
+                    customWordlistName.focus();
+                    // 重置下拉菜單
+                    this.value = '';
+                    return;
+                }
+                
+                // 解析選擇的字詞表
+                const [type, index] = value.split('-');
+                let wordlist;
+                
+                if (type === 'system') {
+                    wordlist = systemWordlists[parseInt(index)];
+                } else if (type === 'custom') {
+                    wordlist = customWordlists[parseInt(index)];
+                }
+                
+                if (wordlist) {
+                    displayWordlist(wordlist);
+                }
+            });
+            
+            // 清除按鈕事件
+            wordlistClear.addEventListener('click', clearWordlistSelection);
+            
+            // 關閉添加字詞表模態窗口
+            function closeAddWordlistModal() {
+                addWordlistModal.style.display = 'none';
+                customWordlistName.value = '';
+                customWordlistContent.value = '';
+            }
+            
+            addWordlistModalClose.addEventListener('click', closeAddWordlistModal);
+            cancelAddWordlist.addEventListener('click', closeAddWordlistModal);
+            
+            // 點擊模態窗口背景關閉
+            addWordlistModal.addEventListener('click', function(e) {
+                if (e.target === addWordlistModal) {
+                    closeAddWordlistModal();
+                }
+            });
+            
+            // 確認添加自定義字詞表
+            confirmAddWordlist.addEventListener('click', function() {
+                const name = customWordlistName.value.trim();
+                const content = customWordlistContent.value.trim();
+                
+                if (!name) {
+                    alert('請輸入字詞表名稱');
+                    customWordlistName.focus();
+                    return;
+                }
+                
+                if (!content) {
+                    alert('請輸入字詞內容');
+                    customWordlistContent.focus();
+                    return;
+                }
+                
+                // 解析字詞內容
+                const items = parseWordlistContent(content);
+                
+                if (items.length === 0) {
+                    alert('未能識別到有效的字詞，請檢查格式');
+                    customWordlistContent.focus();
+                    return;
+                }
+                
+                // 創建新的字詞表
+                const newWordlist = {
+                    name: name,
+                    items: items,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // 添加到自定義字詞表列表
+                customWordlists.push(newWordlist);
+                
+                // 保存到 localStorage
+                saveCustomWordlists();
+                
+                // 更新下拉菜單
+                updateWordlistOptions();
+                
+                // 關閉模態窗口
+                closeAddWordlistModal();
+                
+                // 自動選擇新添加的字詞表
+                wordlistSelect.value = `custom-${customWordlists.length - 1}`;
+                displayWordlist(newWordlist);
+                
+                // 顯示成功提示
+                showToast(`已添加字詞表「${name}」，包含 ${items.length} 個字詞`);
+            });
+            
+            // 簡單的 Toast 提示函數
+            function showToast(message, duration = 3000) {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    z-index: 10000;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    animation: slideUp 0.3s ease-out;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.animation = 'fadeOut 0.3s ease-out';
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, duration);
+            }
+            
+            // 添加動畫樣式
+            if (!document.getElementById('toast-animations')) {
+                const style = document.createElement('style');
+                style.id = 'toast-animations';
+                style.textContent = `
+                    @keyframes slideUp {
+                        from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+                        to { transform: translateX(-50%) translateY(0); opacity: 1; }
+                    }
+                    @keyframes fadeOut {
+                        from { opacity: 1; }
+                        to { opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // 添加系統內建字詞表的函數（供後續使用）
+            function addSystemWordlist(name, items) {
+                systemWordlists.push({
+                    name: name,
+                    items: items
+                });
+                updateWordlistOptions();
+            }
+            
+            // 監聽導航切換，更新字詞表顯示
+            [navLookup, navWordLookup].forEach(button => {
+                button.addEventListener('click', function() {
+                    // 如果有選中的字詞表，重新顯示以更新顯示模式
+                    if (currentWordlist) {
+                        // 延遲一點執行，確保界面已經切換
+                        setTimeout(() => {
+                            displayWordlist(currentWordlist);
+                        }, 100);
+                    }
+                });
+            });
+            
+            // 初始化字詞表選擇器
+            initializeWordlistSelector();
             
             // ===== 字詞查詢功能 =====
             
