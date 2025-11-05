@@ -8201,7 +8201,7 @@
                 
                 currentSelection.grade = currentSelection.system.children[selectedIndex];
                 currentSelection.gradeIndex = parseInt(selectedIndex);
-                currentSelection.level = 0;
+                currentSelection.level = 2;
                 
                 // 重置後續選擇
                 currentSelection.unit = null;
@@ -8209,12 +8209,24 @@
                 currentSelection.lesson = null;
                 currentSelection.lessonIndex = -1;
                 
-                // 顯示第3級
-                showLevel(3);
-                populateUnitOptions(currentSelection.grade.children);
-                
-                // 隱藏第4級
-                hideLevelsFrom(4);
+                // 檢查是否有下級（children）
+                if (currentSelection.grade.children && currentSelection.grade.children.length > 0) {
+                    // 有下級，顯示第3級
+                    showLevel(3);
+                    populateUnitOptions(currentSelection.grade.children);
+                    hideLevelsFrom(4);
+                } else if (currentSelection.grade.items && currentSelection.grade.items.length > 0) {
+                    // 沒有下級但有字詞，直接顯示字詞
+                    hideLevelsFrom(3);
+                    updateBreadcrumb();
+                    displayWordlist({
+                        name: getBreadcrumbText(),
+                        items: currentSelection.grade.items
+                    });
+                } else {
+                    // 既沒有下級也沒有字詞
+                    hideLevelsFrom(3);
+                }
             }
             
             function onUnitChange() {
@@ -8229,19 +8241,33 @@
                 
                 currentSelection.unit = currentSelection.grade.children[selectedIndex];
                 currentSelection.unitIndex = parseInt(selectedIndex);
-                currentSelection.level = 0;
+                currentSelection.level = 3;
                 
                 // 重置後續選擇
                 currentSelection.lesson = null;
                 currentSelection.lessonIndex = -1;
                 
-                // 顯示第4級
-                showLevel(4);
-                populateLessonOptions(currentSelection.unit.children);
-                
-                // 隱藏字詞顯示（等待確認）
-                wordlistDisplay.style.display = 'none';
-                wordlistBreadcrumb.style.display = 'none';
+                // 檢查是否有下級（children）
+                if (currentSelection.unit.children && currentSelection.unit.children.length > 0) {
+                    // 有下級，顯示第4級
+                    showLevel(4);
+                    populateLessonOptions(currentSelection.unit.children);
+                    wordlistDisplay.style.display = 'none';
+                    wordlistBreadcrumb.style.display = 'none';
+                } else if (currentSelection.unit.items && currentSelection.unit.items.length > 0) {
+                    // 沒有下級但有字詞，直接顯示字詞
+                    hideLevelsFrom(4);
+                    updateBreadcrumb();
+                    displayWordlist({
+                        name: getBreadcrumbText(),
+                        items: currentSelection.unit.items
+                    });
+                } else {
+                    // 既沒有下級也沒有字詞
+                    hideLevelsFrom(4);
+                    wordlistDisplay.style.display = 'none';
+                    wordlistBreadcrumb.style.display = 'none';
+                }
             }
             
             function onLessonChange() {
@@ -8257,6 +8283,19 @@
                 
                 currentSelection.lesson = currentSelection.unit.children[selectedIndex];
                 currentSelection.lessonIndex = parseInt(selectedIndex);
+                currentSelection.level = 4;
+                
+                // 檢查是否有字詞
+                if (currentSelection.lesson.items && currentSelection.lesson.items.length > 0) {
+                    updateBreadcrumb();
+                    displayWordlist({
+                        name: getBreadcrumbText(),
+                        items: currentSelection.lesson.items
+                    });
+                } else {
+                    wordlistDisplay.style.display = 'none';
+                    wordlistBreadcrumb.style.display = 'none';
+                }
             }
             
             // 收集指定層級的所有字詞
