@@ -794,7 +794,6 @@
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 12px;
         }
-        
         .tab-button {
             padding: 8px 15px;
             background: none;
@@ -1594,7 +1593,6 @@
             from { opacity: 1; transform: translateY(0); }
             to { opacity: 0; transform: translateY(-5px); }
         }
-        
         @keyframes bounce {
             0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
             40% { transform: translateY(-10px); }
@@ -2394,7 +2392,6 @@
             border-radius: var(--border-radius);
             border: 1px dashed var(--border-color);
         }
-        
         .radical-controls {
             display: flex;
             justify-content: center;
@@ -3193,7 +3190,6 @@
             font-size: 14px;
             color: var(--light-text);
         }
-
         .achievements-modal-close {
             background: none;
             border: none;
@@ -3994,7 +3990,6 @@
                     </div>
                 </div>
             </div>
-            
             <!-- 側邊面板區域 -->
             <div class="side-panel-container">
                 
@@ -4246,15 +4241,34 @@
                         position: relative;
                         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                         flex-shrink: 0;
-                        
-                        /* 田字格背景 - 十字居中 */
-                        background-image: 
-                            /* 橫線（垂直中線）：水平線，寬度 45px，高度 1px，垂直位置居中 */
-                            linear-gradient(to right, var(--border-color), var(--border-color)),
-                            /* 豎線（水平中線）：垂直線，寬度 1px，高度 45px，水平位置居中 */
-                            linear-gradient(to bottom, var(--border-color), var(--border-color));
-                        background-size: 45px 1px, 1px 45px;
-                        background-position: 0 22.5px, 22.5px 0;
+                        box-sizing: border-box;
+                        overflow: hidden;
+                    }
+                    
+                    /* 田字格網格線：柔和底層 */
+                    .wordlist-char-btn::before {
+                        content: '';
+                        position: absolute;
+                        inset: 0;
+                        border-radius: inherit;
+                        pointer-events: none;
+                        background-image:
+                            linear-gradient(to right, rgba(255, 107, 157, 0.25) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(255, 107, 157, 0.25) 1px, transparent 1px);
+                        background-size: calc(50%) calc(50%);
+                        background-position: center;
+                    }
+                    
+                    /* 田字格網格線：中心十字 */
+                    .wordlist-char-btn::after {
+                        content: '';
+                        position: absolute;
+                        inset: 0;
+                        border-radius: inherit;
+                        pointer-events: none;
+                        background-image:
+                            linear-gradient(to right, transparent calc(50% - 0.5px), var(--border-color) calc(50% - 0.5px), var(--border-color) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+                            linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--border-color) calc(50% - 0.5px), var(--border-color) calc(50% + 0.5px), transparent calc(50% + 0.5px));
                         background-repeat: no-repeat;
                     }
                     
@@ -4537,7 +4551,6 @@
             </div>
         </div>
     </div>
-    
     <script>
         // 檢測iframe環境並優化布局
         function optimizeForIframe() {
@@ -5332,7 +5345,6 @@
                 playerData.functionsUsed.add('word_lookup_page');
                 checkAchievement('explorer');
             });
-            
             navPractice.addEventListener('click', function() {
                 switchMainFunction(navPractice, quizContainer);
                 // 記錄功能使用
@@ -6108,7 +6120,6 @@
                     }
                 });
             }
-            
             // 显示笔画提示
             function showStrokeHint(strokeNumber) {
                 // 停止之前的提示定时器
@@ -6902,7 +6913,6 @@
                 // 觸發漢字樹重繪（節流）
                 try { if (typeof requestHanziTreeRerender === 'function') { requestHanziTreeRerender(); } } catch (e) {}
             }
-            
             // 打開模態窗口
             function openVocabularyModal() {
                 const modal = document.getElementById('vocabulary-modal');
@@ -7668,7 +7678,6 @@
                 // 添加到選中列表
                 selectedRadicals.push(radical);
             }
-            
             // 檢查組字結果
             function checkRadicalResult() {
                 // 檢查選擇的部首是否和目標字的部首相符
@@ -8430,7 +8439,6 @@
                     closeAddWordlistModal();
                 }
             });
-            
             // 確認添加自定義字詞表
             confirmAddWordlist.addEventListener('click', function() {
                 const name = customWordlistName.value.trim();
@@ -9208,7 +9216,6 @@
                     img.src = url;
                 });
             }
-
             function drawTreeTrunk(target) {
                 const canvas = target.trunkCanvas;
                 const container = target.container;
