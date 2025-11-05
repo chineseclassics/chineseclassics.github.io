@@ -8335,6 +8335,9 @@
                         if (wordInput) {
                             wordInput.value = text;
                             fetchWordDefinition(text, 'wordlist');
+                            
+                            // 滾動到頂部顯示結果
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                     });
                     
@@ -8354,6 +8357,9 @@
                             characterInput.value = text;
                             hideCharacterSelector();
                             switchToCharacter(text, 'wordlist');
+                            
+                            // 滾動到頂部顯示結果
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                     });
                     
