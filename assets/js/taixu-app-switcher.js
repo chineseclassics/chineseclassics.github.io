@@ -46,12 +46,12 @@
     const apps = [
         // 翰墨齋 - 現代中文體驗
         {
-            id: 'hanzishu',
+            id: 'diandianmobao',
             category: 'hanmo',
             name: '漢字樹：漢字學習',
             icon: 'fas fa-paint-brush',
             gradient: 'from-red-500 to-orange-500',
-            url: '/hanzishu/index.html',
+            url: '/diandianmobao.html',
             description: '通過筆順練習、記憶挑戰和部首組字等多元化遊戲，系統性學習漢字書寫與結構'
         },
         {
