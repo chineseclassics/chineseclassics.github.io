@@ -2906,7 +2906,7 @@ export function initializeApp() {
     // ===== 字詞表選擇功能 =====
 
     // 系統內建字詞表（層級結構）
-    let systemWordlists = [];
+    let systemWordlists = [...systemWordlistsData];
 
     // 用戶自定義字詞表（簡單結構）
     let customWordlists = [];
@@ -3580,9 +3580,6 @@ export function initializeApp() {
 
     // 初始化多層級字詞表選擇器
     initializeMultiLevelSelector();
-
-    // 載入系統內建字詞表資料
-    systemWordlistsData.forEach(addSystemWordlist);
 
     // ===== 字詞查詢功能 =====
 
