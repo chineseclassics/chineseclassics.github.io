@@ -583,22 +583,40 @@ export function initializeApp() {
                 characterDefinition.style.opacity = '1';
                 characterDefinition.style.transform = 'translateY(0)';
             }, 100);
+            // 如果沒有數據，清空拼音顯示
+            pinyinDisplay.textContent = '';
+            lastLookedUpCharacterPinyin = '';
             return;
         }
 
         let html = '';
 
+        // 從萌典 API 獲取拼音（優先使用第一個讀音的拼音）
+        let mainPinyin = '';
+        if (data.heteronyms && data.heteronyms.length > 0) {
+            // 遍歷所有讀音，找到第一個有拼音的
+            for (const heteronym of data.heteronyms) {
+                if (heteronym.pinyin && heteronym.pinyin.trim()) {
+                    mainPinyin = heteronym.pinyin.trim();
+                    break;
+                }
+            }
+        }
+        
+        // 更新拼音顯示（從萌典 API 獲取）
+        if (mainPinyin) {
+            pinyinDisplay.textContent = mainPinyin;
+            lastLookedUpCharacterPinyin = mainPinyin;
+        } else {
+            pinyinDisplay.textContent = '';
+            lastLookedUpCharacterPinyin = '';
+        }
+
         // 遍歷所有讀音和釋義
         data.heteronyms.forEach((heteronym, index) => {
             if (heteronym.definitions && heteronym.definitions.length > 0) {
-                // 顯示拼音（如果有的話）
+                // 使用從萌典 API 獲取的拼音
                 const pinyin = heteronym.pinyin || '';
-                if (pinyin && index === 0) {
-                    // 更新主要的拼音顯示
-                    pinyinDisplay.textContent = pinyin;
-                    // 保存到查詢歷史以供字詞本使用
-                    lastLookedUpCharacterPinyin = pinyin;
-                }
 
                 // 遍歷所有釋義
                 heteronym.definitions.forEach((def, defIndex) => {
@@ -3691,17 +3709,21 @@ export function initializeApp() {
         // 設置字詞標題
         wordTitle.textContent = character;
 
-        // 設置讀音
+        // 從萌典 API 獲取拼音
         let pronunciation = '';
         if (data && data.heteronyms && data.heteronyms.length > 0) {
-            const pronunciations = data.heteronyms.map(h => h.pinyin || '').filter(p => p);
+            // 從萌典 API 的 heteronyms 中提取所有拼音
+            const pronunciations = data.heteronyms
+                .map(h => h.pinyin || '')
+                .filter(p => p && p.trim())
+                .map(p => p.trim());
             if (pronunciations.length > 0) {
                 pronunciation = pronunciations.join('、');
             }
         }
         wordPronunciation.textContent = pronunciation ? `[${pronunciation}]` : '';
 
-        // 保存拼音到查詢歷史
+        // 保存拼音到查詢歷史（從萌典 API 獲取）
         lastLookedUpWordPinyin = pronunciation;
 
         // 顯示結果區域
@@ -3802,18 +3824,22 @@ export function initializeApp() {
         // 設置詞語標題
         wordTitle.textContent = word;
 
-        // 設置讀音（如果有的話）
+        // 從萌典 API 獲取拼音（詞語 API 使用 h[].p 字段）
         let pronunciation = '';
         if (data && data.h && data.h.length > 0) {
             const heteronyms = data.h;
-            const pronunciations = heteronyms.map(h => h.p || '').filter(p => p);
+            // 從萌典 API 的 h 數組中提取所有拼音（使用 p 字段）
+            const pronunciations = heteronyms
+                .map(h => h.p || '')
+                .filter(p => p && p.trim())
+                .map(p => p.trim());
             if (pronunciations.length > 0) {
                 pronunciation = pronunciations.join('、');
             }
         }
         wordPronunciation.textContent = pronunciation ? `[${pronunciation}]` : '';
 
-        // 保存拼音到查詢歷史
+        // 保存拼音到查詢歷史（從萌典 API 獲取）
         lastLookedUpWordPinyin = pronunciation;
 
         // 顯示結果區域
