@@ -2906,7 +2906,7 @@ export function initializeApp() {
     // ===== 字詞表選擇功能 =====
 
     // 系統內建字詞表（層級結構）
-    let systemWordlists = [...systemWordlistsData];
+    let systemWordlists = [];
 
     // 用戶自定義字詞表（簡單結構）
     let customWordlists = [];
@@ -3564,6 +3564,9 @@ export function initializeApp() {
         systemWordlists.push(wordlistData);
         populateSystemOptions();
     }
+
+    // 載入系統內建字詞表資料
+    systemWordlistsData.forEach(addSystemWordlist);
 
     // 監聽導航切換，更新字詞表顯示
     [navLookup, navWordLookup].forEach(button => {
