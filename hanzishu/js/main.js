@@ -3566,6 +3566,7 @@ export function initializeApp() {
     }
 
     // 載入系統內建字詞表資料
+    console.log('系統字詞表資料集', systemWordlistsData.map(w => w.name));
     systemWordlistsData.forEach(addSystemWordlist);
 
     // 監聽導航切換，更新字詞表顯示
