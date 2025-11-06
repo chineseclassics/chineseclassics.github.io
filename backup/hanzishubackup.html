@@ -1722,14 +1722,25 @@
             border: 3px solid #22c55e;
             transform: scale(1.1);
             box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
-            /* 田字格保持原始顏色，不使用綠色 */
-            background-image: 
-                linear-gradient(to right, var(--border-color) 1px, transparent 1px),
-                linear-gradient(to bottom, var(--border-color) 1px, transparent 1px),
-                linear-gradient(to right, rgba(255, 107, 157, 0.22) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 107, 157, 0.22) 1px, transparent 1px);
-            background-size: 25px 25px, 25px 25px, 50px 50px, 50px 50px;
-            background-position: 0 0, 0 0, 0 0, 0 0;
+            /* 田字格保持中心對齊，避免縮放時偏移 */
+            background-image:
+                linear-gradient(
+                    to right,
+                    transparent calc(50% - 0.5px),
+                    rgba(255, 107, 157, 0.25) calc(50% - 0.5px),
+                    rgba(255, 107, 157, 0.25) calc(50% + 0.5px),
+                    transparent calc(50% + 0.5px)
+                ),
+                linear-gradient(
+                    to bottom,
+                    transparent calc(50% - 0.5px),
+                    rgba(255, 107, 157, 0.25) calc(50% - 0.5px),
+                    rgba(255, 107, 157, 0.25) calc(50% + 0.5px),
+                    transparent calc(50% + 0.5px)
+                );
+            background-repeat: no-repeat, no-repeat;
+            background-size: 100% 100%, 100% 100%;
+            background-position: center, center;
 
         }
         
