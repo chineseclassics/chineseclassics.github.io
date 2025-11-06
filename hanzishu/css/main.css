@@ -34,29 +34,6 @@
             --rainbow-gradient: linear-gradient(135deg, #FF6B9D 0%, #4DABF7 25%, #FFE66D 50%, #51CF66 75%, #A29BFE 100%);
         }
         
-        /* iframe環境專用CSS覆蓋 */
-        .iframe-optimized {
-            height: auto !important;
-            max-height: none !important;
-            overflow: auto !important;
-            overflow-x: hidden !important;
-            -webkit-overflow-scrolling: touch !important;
-            scroll-behavior: smooth !important;
-        }
-        
-        .iframe-optimized .app-container {
-            height: auto !important;
-            max-height: none !important;
-            min-height: auto !important;
-        }
-        
-        /* 強制移除任何可能的高度限制 */
-        body.iframe-optimized,
-        body.iframe-optimized .app-container {
-            height: auto !important;
-            max-height: none !important;
-        }
-        
         body {
             font-family: 'Noto Serif TC', 'Source Han Serif', 'Georgia', serif;
             background: var(--background);  /* 使用純色背景 */
@@ -64,9 +41,8 @@
             padding: 10px;
             color: var(--text);
             position: relative;
-            /* iframe優化：移除固定高度限制，允許自然滾動 */
             min-height: 100vh;
-            height: auto !important; /* 強制覆蓋任何高度限制 */
+            height: auto;
             overflow: auto !important; /* 強制允許滾動 */
             overflow-x: hidden !important; /* 防止水平滾動 */
             display: flex;
@@ -159,9 +135,8 @@
             padding: 0;
             display: flex;
             flex-direction: column;
-            /* iframe優化：移除固定高度，允許自然延展 */
-            height: auto !important; /* 移除height: 100%限制 */
-            min-height: 100vh; /* 至少填滿視口 */
+            height: auto;
+            min-height: 100vh;
             flex: 1;
             width: 100%;
             box-sizing: border-box;
@@ -1614,21 +1589,6 @@
             overflow: visible !important;
         }
         
-        /* 可愛星星装饰 - 小學生友善 */
-        .seal-decoration {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 60px;
-            height: 60px;
-            opacity: 0.8;
-            z-index: 1;
-
-            filter: drop-shadow(0 2px 4px rgba(255, 107, 157, 0.3));
-        }
-        
-
-        
         /* 书法字体风格覆盖 */
         .chinese-text {
             font-family: 'Noto Serif TC', serif;
@@ -2034,13 +1994,6 @@
             
             h1 {
                 font-size: 2em;
-            }
-            
-            .seal-decoration {
-                width: 40px;
-                height: 40px;
-                bottom: 5px;
-                right: 5px;
             }
             
             .nav-container {
