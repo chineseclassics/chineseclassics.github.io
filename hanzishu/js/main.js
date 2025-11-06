@@ -1,5 +1,6 @@
 import { levelSystem, achievementCategories, pointRewards, meaningfulCharacters } from './core/config.js';
 import { STORAGE_KEYS, createInitialPlayerData, createInitialVocabularyBook } from './core/state.js';
+import { createPlayerManager } from './core/player.js';
 
 // 主應用初始化邏輯
 export function initializeApp() {
@@ -42,149 +43,16 @@ export function initializeApp() {
     // 本地存儲鍵名（新/舊）定義於 core/state.js 的 STORAGE_KEYS
     // ===== 墨寶積分系統核心功能 =====
 
-    // 載入玩家數據
-    function loadPlayerData() {
-        const savedNew = localStorage.getItem(STORAGE_KEYS.playerData);
-        const savedOld = localStorage.getItem(STORAGE_KEYS.playerDataLegacy);
-        const raw = savedNew || savedOld;
-        if (raw) {
-            const data = JSON.parse(raw);
-            // 轉換Set類型的數據
-            if (data.functionsUsed && Array.isArray(data.functionsUsed)) {
-                data.functionsUsed = new Set(data.functionsUsed);
-            }
-            if (data.firstTimeActions && Array.isArray(data.firstTimeActions)) {
-                data.firstTimeActions = new Set(data.firstTimeActions);
-            }
-            if (data.achievements && Array.isArray(data.achievements)) {
-                data.achievements = new Set(data.achievements);
-            }
-            Object.assign(playerData, data);
-
-            // 若來自舊鍵且新鍵尚未存在，執行遷移並刪除舊鍵
-            if (!savedNew && savedOld) {
-                const dataToSave = {
-                    ...playerData,
-                    functionsUsed: Array.from(playerData.functionsUsed),
-                    firstTimeActions: Array.from(playerData.firstTimeActions),
-                    achievements: Array.from(playerData.achievements)
-                };
-                localStorage.setItem(STORAGE_KEYS.playerData, JSON.stringify(dataToSave));
-                try { localStorage.removeItem(STORAGE_KEYS.playerDataLegacy); } catch (e) {}
-            } else if (savedNew && savedOld) {
-                // 新舊鍵同時存在時，刪除舊鍵確保只保留一份
-                try { localStorage.removeItem(STORAGE_KEYS.playerDataLegacy); } catch (e) {}
-            }
-        }
-
-        // 檢查每日重置
-        const today = new Date().toDateString();
-        if (playerData.statistics.lastResetDate !== today) {
-            playerData.statistics = {
-                charactersToday: 0,
-                wordsToday: 0,
-                practiceToday: 0,
-                gamesPlayedToday: 0,
-                lastResetDate: today
-            };
-        }
-
-        updateUI();
-        handleDailyLogin();
-    }
-
-    // 保存玩家數據
-    function savePlayerData() {
-        const dataToSave = {
-            ...playerData,
-            functionsUsed: Array.from(playerData.functionsUsed),
-            firstTimeActions: Array.from(playerData.firstTimeActions),
-            achievements: Array.from(playerData.achievements)
-        };
-        localStorage.setItem(STORAGE_KEYS.playerData, JSON.stringify(dataToSave));
-    }
-
-    // 處理每日登入
-    function handleDailyLogin() {
-        const today = new Date().toDateString();
-        const lastLogin = playerData.lastLoginDate;
-
-        if (lastLogin !== today) {
-            if (lastLogin) {
-                const lastDate = new Date(lastLogin);
-                const todayDate = new Date(today);
-                const daysDiff = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
-
-                if (daysDiff === 1) {
-                    // 連續登入
-                    playerData.dailyLoginStreak++;
-                } else {
-                    // 中斷連續登入
-                    playerData.dailyLoginStreak = 1;
-                }
-            } else {
-                // 首次登入
-                playerData.dailyLoginStreak = 1;
-                checkAchievement('first_login');
-            }
-
-            playerData.lastLoginDate = today;
-
-            // 每日登入獎勵
-            let dailyPoints = pointRewards.dailyLogin;
-            if (playerData.dailyLoginStreak > 1) {
-                dailyPoints += pointRewards.streakBonus * Math.min(playerData.dailyLoginStreak - 1, 10);
-            }
-
-            awardPoints(dailyPoints, `每日登入 +${dailyPoints} 🖌️`);
-
-            // 檢查連續登入成就
-            if (playerData.dailyLoginStreak >= 3) checkAchievement('streak_3');
-            if (playerData.dailyLoginStreak >= 7) checkAchievement('streak_7');
-            if (playerData.dailyLoginStreak >= 30) checkAchievement('streak_30');
-
-            savePlayerData();
-        }
-    }
-
-    // 獎勵積分
-    function awardPoints(points, message = '') {
-        playerData.points += points;
-        updatePlayerLevel();
-        updateUI();
-        savePlayerData();
-
-        if (message) {
-            showPointNotification(message);
-        }
-    }
-
-    // 更新玩家等級
-    function updatePlayerLevel() {
-        const currentLevel = levelSystem.find(level => 
-            playerData.points >= level.minPoints && playerData.points <= level.maxPoints
-        );
-
-        if (currentLevel && currentLevel.level !== playerData.level) {
-            const oldLevel = playerData.level;
-            playerData.level = currentLevel.level;
-            playerData.levelName = currentLevel.name;
-
-            if (currentLevel.level > oldLevel) {
-                showLevelUpNotification(currentLevel.level, currentLevel.name);
-            }
-        }
-    }
-
-    // 檢查成就
-    // 成就系統已移除
-    function checkAchievement() {
-        // 成就系統已移除：空實作以保持兼容
-    }
-
-    function updateAchievements() {
-        // 成就系統已移除：空實作以保持兼容
-    }
+    const { loadPlayerData, awardPoints, checkAchievement, updateAchievements } =
+        createPlayerManager({
+            playerData,
+            levelSystem,
+            pointRewards,
+            storageKeys: STORAGE_KEYS,
+            onUIUpdate: updateUI,
+            onPointNotification: showPointNotification,
+            onLevelUp: showLevelUpNotification
+        });
 
     // 更新UI顯示（成就相關已移除）
     function updateUI() {
