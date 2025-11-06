@@ -950,7 +950,7 @@ export function initializeApp() {
         if (window.taixuSpeak) {
             await window.taixuSpeak(character, {
                 voice: 'zh-CN-XiaoxiaoNeural', // 普通話女聲
-                rate: 0.6,  // 降低語速，更適合學習
+                rate: 0.3,  // 降低語速，更適合學習
                 pitch: 1.2  // 提高音調，更適合兒童
             });
 
@@ -3907,7 +3907,7 @@ export function initializeApp() {
         if (window.taixuSpeak) {
             await window.taixuSpeak(word, {
                 voice: 'zh-CN-XiaoxiaoNeural', // 普通話女聲
-                rate: 0.6,  // 降低語速，更適合學習
+                rate: 0.3,  // 降低語速，更適合學習
                 pitch: 1.0
             });
         } else {
