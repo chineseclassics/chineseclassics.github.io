@@ -1,6 +1,7 @@
 import { levelSystem, achievementCategories, pointRewards, meaningfulCharacters } from './core/config.js';
 import { STORAGE_KEYS, createInitialPlayerData, createInitialVocabularyBook } from './core/state.js';
 import { createPlayerManager } from './core/player.js';
+import { systemWordlistsData } from './data/wordlists/index.js';
 
 // 主應用初始化邏輯
 export function initializeApp() {
@@ -3580,34 +3581,8 @@ export function initializeApp() {
     // 初始化多層級字詞表選擇器
     initializeMultiLevelSelector();
 
-    // 添加弘立預備班漢字表
-    addSystemWordlist({
-        name: "弘立預備班漢字表",
-        children: [
-            {
-                name: "上冊",
-                items: [
-                    "一", "二", "三", "十", "土", "上", "工", "牛", "生", "八",
-                    "人", "大", "天", "下", "太", "不", "六", "口", "中", "日",
-                    "田", "小", "少", "山", "牙", "刀", "力", "月", "用", "又",
-                    "友", "也", "地", "它", "你", "七", "四", "元", "巴", "九",
-                    "丸", "女", "她", "去", "台", "玩", "拍", "比", "叫", "心",
-                    "思", "我", "找"
-                ]
-            },
-            {
-                name: "下冊",
-                items: [
-                    "耳", "目", "手", "足", "木", "禾", "米", "果", "火", "水",
-                    "羊", "馬", "車", "舟", "門", "戶", "毛", "巾", "子", "石",
-                    "林", "明", "分", "男", "古", "言", "舌", "五", "年", "左",
-                    "右", "來", "多", "立", "坐", "走", "吃", "唱", "有", "在",
-                    "是", "的", "和", "好", "他", "牠", "爸", "媽", "朋", "具",
-                    "早", "午", "青", "草", "花", "朵"
-                ]
-            }
-        ]
-    });
+    // 載入系統內建字詞表資料
+    systemWordlistsData.forEach(addSystemWordlist);
 
     // ===== 字詞查詢功能 =====
 
