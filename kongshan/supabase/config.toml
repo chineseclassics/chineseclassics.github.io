@@ -1,0 +1,39 @@
+# Supabase 配置文件
+# 用於 Supabase CLI 部署和管理
+
+project_id = ""
+# 注意：創建 Supabase 項目後，使用 `supabase link` 命令會自動填充此值
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "5MiB"
+# 音效文件大小限制：5MB
+
+[edge_runtime]
+enabled = true
+port = 54327
+
+[analytics]
+enabled = false
+

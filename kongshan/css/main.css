@@ -1,0 +1,176 @@
+/* ===== 主樣式 - 現代、極簡、冥想感 ===== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* 背景 Canvas */
+#background-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* 應用容器 */
+.app-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* 畫面容器 */
+.screen {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+/* 加載畫面 */
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--color-text-tertiary);
+  border-top-color: var(--color-text-primary);
+  border-radius: var(--radius-full);
+  animation: spin 1s linear infinite;
+  margin: 0 auto var(--spacing-sm);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.2em;
+}
+
+/* 應用標題 */
+.app-title {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 400;
+  text-align: center;
+  color: var(--color-text-primary);
+  letter-spacing: 0.3em;
+  margin-bottom: var(--spacing-xl);
+}
+
+/* 詩歌列表容器 */
+.poem-list-container {
+  max-width: 1200px;
+  width: 100%;
+  padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.poem-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* 占位文字 */
+.placeholder-text {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
+  padding: var(--spacing-lg);
+}
+
+/* 詩歌欣賞容器 */
+.poem-viewer-container {
+  max-width: 1400px;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  position: relative;
+}
+
+/* 音效控制面板 */
+.sound-controls {
+  position: fixed;
+  bottom: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* 聲色意境選擇器 */
+.atmosphere-selector {
+  position: fixed;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  /* TODO: 實現選擇器樣式 */
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .app-title {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .poem-list {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .sound-controls {
+    flex-direction: column;
+    width: calc(100% - var(--spacing-md) * 2);
+  }
+}
+

@@ -1,0 +1,41 @@
+/* ===== 響應式樣式 ===== */
+
+/* 移動端優化 */
+@media (max-width: 768px) {
+  .screen {
+    padding: var(--spacing-sm);
+  }
+  
+  .poem-viewer-container {
+    padding: var(--spacing-sm);
+  }
+  
+  /* 觸摸友好的按鈕 */
+  button, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* 平板優化 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .poem-list {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+/* 大屏幕優化 */
+@media (min-width: 1400px) {
+  .poem-list-container,
+  .poem-viewer-container {
+    max-width: 1600px;
+  }
+}
+
+/* 橫屏模式 */
+@media (orientation: landscape) and (max-height: 600px) {
+  .poem-content {
+    font-size: clamp(1.5rem, 4vh, 3rem);
+  }
+}
+

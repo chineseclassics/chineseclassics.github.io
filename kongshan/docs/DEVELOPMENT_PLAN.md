@@ -131,6 +131,17 @@
 
 ---
 
+### UI 设计原则
+
+- **现代极简**：借鉴冥想类、soundscape 类应用（如 Tide），界面元素克制、布局简洁
+- **轻量优雅**：字体使用优雅的衬线/无衬线组合，配色柔和，低对比度渐变
+- **沉浸专注**：单屏体验，避免干扰；保留足够留白；强调声色意境的展示
+- **动静结合**：背景动画保持缓慢、柔和；音效控制采用圆形或滑块，反馈细腻
+- **暗色友好**：设计浅色与深色主题，夜间浏览更舒适
+- **响应式一致**：桌面与移动端保持一致的沉浸体验，控件在移动端可触控
+
+---
+
 ## 技术架构
 
 ### 前端技术栈
@@ -531,6 +542,23 @@ CREATE TABLE user_poem_creations (
 - `kongshan/js/features/atmosphere-editor.js`
 - `kongshan/js/ui/atmosphere-editor.js`
 
+#### 1.8 UI 风格落地
+
+**任务**：
+- [ ] 设计现代、极简、冥想感的视觉风格（参考 Tide 等 soundscape 应用）
+- [ ] 定义全局色板（含中国传统色预设 + 暗色模式）
+- [ ] 选定字体组合（优雅衬线 + 现代无衬线）
+- [ ] 设计沉浸式布局（单屏、留白、无干扰控件）
+- [ ] 设计音效控制组件（圆形/滑块、柔和反馈）
+- [ ] 定义缓慢的背景动效规范
+- [ ] 在桌面与移动端验证响应式一致性
+
+**文件**：
+- `kongshan/css/main.css`
+- `kongshan/css/poem-display.css`
+- `kongshan/css/responsive.css`
+- `kongshan/js/ui/atmosphere-viewer.js`
+
 ### 阶段 2：AI 智能生成
 
 #### 2.1 DeepSeek Edge Function
@@ -754,10 +782,10 @@ kongshan/
 │       └── admin-panel.js   # 管理员面板
 │
 ├── css/
-│   ├── main.css              # 主样式
-│   ├── variables.css         # CSS 变量
+│   ├── main.css              # 主样式（现代、极简、冥想感主题）
+│   ├── variables.css         # CSS 变量（色板、字体、暗色模式）
 │   ├── poem-display.css      # 诗歌展示样式
-│   └── responsive.css        # 响应式样式
+│   └── responsive.css        # 响应式样式（桌面/移动一致的沉浸体验）
 │
 ├── assets/
 │   ├── fonts/                # 字体文件
