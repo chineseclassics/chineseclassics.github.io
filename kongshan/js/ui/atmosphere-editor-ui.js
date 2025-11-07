@@ -5,6 +5,14 @@
 import { normalizeSoundUrl } from '../utils/sound-url.js';
 
 const MAX_RECORDING_SECONDS = 120;
+const DEFAULT_RECORDING_MIME = 'audio/mp4';
+const MIME_CANDIDATES = [
+  'audio/mp4;codecs=mp4a.40.2',
+  'audio/aac',
+  'audio/mp4',
+  'audio/webm;codecs=opus',
+  'audio/webm'
+];
 
 let mediaRecorder = null;
 let recordingStream = null;
@@ -415,9 +423,14 @@ async function startRecording() {
     recordingRemainingSeconds = MAX_RECORDING_SECONDS;
     recordingStartTimestamp = Date.now();
 
-    const recorder = new MediaRecorder(stream);
+    const preferredMime = pickSupportedMimeType();
+    const recorderOptions = preferredMime ? { mimeType: preferredMime } : undefined;
+    const recorder = recorderOptions ? new MediaRecorder(stream, recorderOptions) : new MediaRecorder(stream);
     mediaRecorder = recorder;
-    currentRecordingMimeType = recorder.mimeType || 'audio/webm';
+    currentRecordingMimeType = recorder.mimeType || preferredMime || '';
+    if (!currentRecordingMimeType) {
+      currentRecordingMimeType = getFallbackMimeType();
+    }
     recorder.addEventListener('dataavailable', handleRecordingDataAvailable);
     recorder.addEventListener('stop', handleRecordingStop);
     recorder.start();
@@ -516,6 +529,9 @@ function stopRecording(manualStop) {
 function handleRecordingDataAvailable(event) {
   if (event.data && event.data.size > 0) {
     recordingChunks.push(event.data);
+    if (!currentRecordingMimeType && event.data.type) {
+      currentRecordingMimeType = event.data.type;
+    }
   }
 }
 
@@ -543,7 +559,10 @@ async function handleRecordingStop() {
 
   try {
     mediaRecorder = null;
-    const blob = new Blob(recordingChunks, { type: currentRecordingMimeType || 'audio/webm' });
+    const firstChunkType = recordingChunks[0]?.type;
+    const resolvedMime = currentRecordingMimeType || firstChunkType || getFallbackMimeType();
+    const blob = new Blob(recordingChunks, { type: resolvedMime });
+    currentRecordingMimeType = blob.type || resolvedMime;
     currentRecordingBlob = blob;
     if (currentRecordingUrl) {
       URL.revokeObjectURL(currentRecordingUrl);
@@ -566,6 +585,11 @@ async function handleRecordingStop() {
 
   if (audioEl) {
     audioEl.src = currentRecordingUrl;
+    try {
+      audioEl.load();
+    } catch (loadError) {
+      console.warn('重新載入錄音播放器失敗:', loadError);
+    }
   }
 
   if (previewEl) {
@@ -607,7 +631,7 @@ function sanitizeRecordingName(name) {
 
 function inferFileExtension(mimeType) {
   if (!mimeType) {
-    return 'webm';
+    return 'm4a';
   }
   if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
     return 'm4a';
@@ -621,7 +645,7 @@ function inferFileExtension(mimeType) {
   if (mimeType.includes('aac')) {
     return 'aac';
   }
-  return 'webm';
+  return 'm4a';
 }
 
 async function uploadRecording() {
@@ -678,8 +702,8 @@ async function uploadRecording() {
     const sanitizedBaseName = displayName.replace(/[^\u4e00-\u9fa5A-Za-z0-9\-\s_]/g, '').replace(/\s+/g, '_');
     const finalFileName = `${sanitizedBaseName || 'recording'}_${timestamp}.${extension}`;
     const storagePath = `${userId}/${finalFileName}`;
-
-    const file = new File([currentRecordingBlob], finalFileName, { type: currentRecordingBlob.type || currentRecordingMimeType || 'audio/webm' });
+    const fileType = currentRecordingBlob.type || currentRecordingMimeType || getFallbackMimeType();
+    const file = new File([currentRecordingBlob], finalFileName, { type: fileType });
 
     const { error: uploadError } = await supabaseClient
       .storage
@@ -1478,5 +1502,27 @@ function collectAtmosphereData(poem, status) {
     source: 'user',
     is_ai_generated: false
   };
+}
+
+function pickSupportedMimeType() {
+  if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+    return '';
+  }
+
+  for (const candidate of MIME_CANDIDATES) {
+    try {
+      if (MediaRecorder.isTypeSupported(candidate)) {
+        return candidate;
+      }
+    } catch (error) {
+      console.warn('檢查錄音格式支援時出現問題:', error);
+    }
+  }
+
+  return '';
+}
+
+function getFallbackMimeType() {
+  return DEFAULT_RECORDING_MIME;
 }
 
