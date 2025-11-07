@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="./css/sound-controls.css">
     <link rel="stylesheet" href="./css/atmosphere-editor.css">
     <link rel="stylesheet" href="./css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -38,12 +39,13 @@
             </div>
         </div>
 
-        <!-- 登入狀態列 -->
-        <div id="auth-status-bar" class="auth-status-bar" aria-live="polite">
-            <div class="auth-status-info" id="auth-user-info">正在連線 Supabase...</div>
-            <div class="auth-status-actions">
-                <button class="auth-btn" id="google-login-btn" type="button" disabled>使用 Google 登入</button>
-                <button class="auth-btn auth-btn-secondary" id="auth-signout-btn" type="button" hidden>登出</button>
+        <!-- 登入覆蓋層 -->
+        <div id="auth-overlay" class="auth-overlay" aria-live="polite">
+            <div class="auth-card">
+                <i class="fas fa-mountain-sun auth-icon" aria-hidden="true"></i>
+                <h1 class="auth-title">空山</h1>
+                <p class="auth-subtitle">以聲色意境，迎接每一位旅人</p>
+                <button class="auth-cta" id="google-login-btn" type="button">進入空山</button>
             </div>
         </div>
         
@@ -51,6 +53,10 @@
         <div id="poem-list-screen" class="screen" style="display: none;">
             <div class="poem-list-container">
                 <h1 class="app-title">空山</h1>
+                <p id="visitor-message" class="visitor-message" hidden>
+                    <span id="visitor-text"></span>
+                    <button id="sign-out-btn" class="visitor-signout" type="button">登出</button>
+                </p>
                 <div id="poem-list" class="poem-list">
                     <!-- 詩歌列表將動態生成 -->
                 </div>

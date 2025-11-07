@@ -27,7 +27,9 @@ const AppState = {
   authStatus: 'initializing',
   authUser: null,
   authMessage: '',
-  authSubscription: null
+  authSubscription: null,
+  visitorCount: null,
+  authSubtitleDefault: ''
 };
 
 /**
@@ -58,7 +60,7 @@ async function initializeApp() {
         AppState.authStatus = 'connecting';
         updateAuthUI();
         setupAuthListener();
-        await ensureAnonymousSession();
+        await initializeAuthSession();
       }
     } else {
       console.warn('⚠️ Supabase 未配置，將使用模擬數據');
@@ -91,7 +93,7 @@ async function initializeApp() {
   }
 }
 
-async function ensureAnonymousSession() {
+async function initializeAuthSession() {
   if (!AppState.supabase) {
     return;
   }
@@ -100,30 +102,22 @@ async function ensureAnonymousSession() {
     AppState.authStatus = 'connecting';
     updateAuthUI();
 
-    const { data: sessionData, error: sessionError } = await AppState.supabase.auth.getSession();
-    if (!sessionError && sessionData?.session?.user) {
-      syncUserState(sessionData.session.user);
+    const { data, error } = await AppState.supabase.auth.getSession();
+    if (error) {
+      throw error;
     }
 
-    if (!sessionData?.session) {
-      if (typeof AppState.supabase.auth.signInAnonymously !== 'function') {
-        console.warn('當前 Supabase 客戶端不支援匿名登入 API，請確認版本或改用其他登入方式。');
-        AppState.authStatus = 'signed_out';
-        updateAuthUI();
-        return;
-      }
+    const user = data?.session?.user || null;
+    syncUserState(user);
 
-      const { data, error } = await AppState.supabase.auth.signInAnonymously();
-      if (error) {
-        throw error;
-      }
-      if (data?.user) {
-        syncUserState(data.user);
-      }
+    if (!user) {
+      AppState.authStatus = 'signed_out';
+      AppState.authMessage = '';
+      updateAuthUI();
     }
   } catch (error) {
-    console.error('匿名登入初始化失敗:', error);
-    AppState.authMessage = `匿名登入失敗：${error.message || '請稍後再試'}`;
+    console.error('初始化登入狀態失敗:', error);
+    AppState.authMessage = `初始化登入狀態失敗：${error.message || '請稍後再試'}`;
     AppState.authStatus = 'error';
     updateAuthUI();
   }
@@ -158,13 +152,9 @@ function setupAuthListener() {
     return;
   }
 
-  const { data } = AppState.supabase.auth.onAuthStateChange(async (event, session) => {
+  const { data } = AppState.supabase.auth.onAuthStateChange((_event, session) => {
     const user = session?.user || null;
     syncUserState(user);
-
-    if (event === 'SIGNED_OUT') {
-      await ensureAnonymousSession();
-    }
   });
 
   if (data?.subscription) {
@@ -176,6 +166,7 @@ function syncUserState(user) {
   if (!user) {
     AppState.userId = null;
     AppState.authUser = null;
+    AppState.visitorCount = null;
     if (!AppState.supabase) {
       AppState.authStatus = 'initializing';
     } else if (AppState.authStatus !== 'connecting') {
@@ -201,10 +192,13 @@ function syncUserState(user) {
 
   if (provider === 'google') {
     AppState.authStatus = 'google';
-  } else if (provider === 'anonymous') {
-    AppState.authStatus = 'anonymous';
+    registerTraveler(user).catch(err => {
+      console.warn('旅人統計更新時發生錯誤:', err);
+    });
   } else {
     AppState.authStatus = 'other';
+    AppState.visitorCount = null;
+    updateVisitorMessage();
   }
 
   updateAuthUI();
@@ -212,91 +206,133 @@ function syncUserState(user) {
 
 function getAuthElements() {
   return {
-    bar: document.getElementById('auth-status-bar'),
-    info: document.getElementById('auth-user-info'),
+    overlay: document.getElementById('auth-overlay'),
+    subtitle: document.querySelector('#auth-overlay .auth-subtitle'),
     googleBtn: document.getElementById('google-login-btn'),
-    signOutBtn: document.getElementById('auth-signout-btn')
+    visitorMessage: document.getElementById('visitor-message'),
+    visitorText: document.getElementById('visitor-text'),
+    signOutBtn: document.getElementById('sign-out-btn')
   };
 }
 
 function updateAuthUI() {
-  const { bar, info, googleBtn, signOutBtn } = getAuthElements();
-  if (!bar || !info || !googleBtn || !signOutBtn) {
+  const { overlay, subtitle, googleBtn, signOutBtn } = getAuthElements();
+  if (!overlay || !googleBtn || !signOutBtn) {
     return;
   }
 
-  let baseText = '';
-  let googleLabel = '使用 Google 登入';
+  const isAuthenticated = AppState.authStatus === 'google' || AppState.authStatus === 'other';
+
+  overlay.classList.toggle('hidden', isAuthenticated ? true : false);
+
+  if (subtitle) {
+    if (AppState.authStatus === 'error' && AppState.authMessage) {
+      subtitle.textContent = AppState.authMessage;
+    } else {
+      subtitle.textContent = AppState.authSubtitleDefault || '以聲色意境，迎接每一位旅人';
+    }
+  }
+
   let googleDisabled = false;
-  let showSignOut = false;
 
   switch (AppState.authStatus) {
     case 'initializing':
-      baseText = '正在連線 Supabase...';
-      googleDisabled = true;
-      break;
     case 'connecting':
-      baseText = '正在初始化使用者身分...';
       googleDisabled = true;
       break;
-    case 'anonymous':
-      baseText = '目前以訪客模式（匿名登入）使用空山。';
-      googleLabel = '使用 Google 登入';
-      break;
-    case 'google': {
-      const name = AppState.authUser?.fullName || AppState.authUser?.email || 'Google 使用者';
-      baseText = `已使用 Google 登入：${name}`;
-      googleLabel = '切換 Google 帳號';
-      showSignOut = true;
-      break;
-    }
-    case 'other': {
-      const name = AppState.authUser?.email || AppState.authUser?.fullName || '已登入使用者';
-      baseText = `已登入：${name}`;
-      googleLabel = '切換 Google 帳號';
-      showSignOut = true;
-      break;
-    }
     case 'signed_out':
-      baseText = '尚未登入，請使用 Google 登入。';
-      break;
     case 'error':
-      baseText = '登入過程發生錯誤，請稍後再試。';
+      googleDisabled = false;
       break;
     default:
-      baseText = '正在更新登入狀態...';
-      googleDisabled = true;
+      googleDisabled = !AppState.supabase;
       break;
   }
 
-  if (AppState.authMessage) {
-    baseText = `${baseText}｜${AppState.authMessage}`;
-  }
-
-  info.textContent = baseText;
-  googleBtn.textContent = googleLabel;
   googleBtn.disabled = googleDisabled || !AppState.supabase;
   googleBtn.setAttribute('aria-disabled', googleBtn.disabled ? 'true' : 'false');
 
-  if (showSignOut) {
+  if (isAuthenticated) {
     signOutBtn.hidden = false;
     signOutBtn.disabled = false;
   } else {
     signOutBtn.hidden = true;
     signOutBtn.disabled = true;
   }
+
+  updateVisitorMessage();
 }
 
 function setupAuthUI() {
-  const { googleBtn, signOutBtn } = getAuthElements();
+  const { googleBtn, signOutBtn, subtitle } = getAuthElements();
   if (!googleBtn || !signOutBtn) {
     return;
+  }
+
+  if (!AppState.authSubtitleDefault && subtitle) {
+    AppState.authSubtitleDefault = subtitle.textContent || '';
   }
 
   googleBtn.addEventListener('click', handleGoogleLogin);
   signOutBtn.addEventListener('click', handleSignOut);
 
   updateAuthUI();
+}
+
+function updateVisitorMessage() {
+  const { visitorMessage, visitorText, signOutBtn } = getAuthElements();
+  if (!visitorMessage || !visitorText || !signOutBtn) {
+    return;
+  }
+
+  const isAuthenticated = AppState.authStatus === 'google' || AppState.authStatus === 'other';
+
+  if (!isAuthenticated || !AppState.authUser) {
+    visitorMessage.hidden = true;
+    return;
+  }
+
+  const name = AppState.authUser.fullName || AppState.authUser.email || '旅人';
+  const count = AppState.visitorCount;
+  const countText = count ? `你是第 ${count} 位進入空山的旅人` : '歡迎來到空山';
+
+  visitorText.textContent = `${name}，${countText}`;
+  visitorMessage.hidden = false;
+}
+
+async function registerTraveler(user) {
+  if (!AppState.supabase || !user) {
+    return;
+  }
+
+  const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email || '旅人';
+  const email = user.email || user.user_metadata?.email || null;
+
+  const payload = {
+    user_id: user.id,
+    display_name: displayName,
+    email
+  };
+
+  const { error } = await AppState.supabase
+    .from('travelers')
+    .upsert(payload, { onConflict: 'user_id' });
+
+  if (error) {
+    console.warn('旅人資料更新失敗:', error);
+  }
+
+  const { count, error: countError } = await AppState.supabase
+    .from('travelers')
+    .select('user_id', { count: 'exact', head: true });
+
+  if (!countError && typeof count === 'number') {
+    AppState.visitorCount = count;
+  } else {
+    AppState.visitorCount = null;
+  }
+
+  updateVisitorMessage();
 }
 
 function computeRedirectUrl() {
@@ -319,7 +355,7 @@ function handleGoogleLogin() {
     return;
   }
 
-  AppState.authMessage = '正在開啟 Google 登入視窗...';
+  AppState.authMessage = '';
   if (AppState.authStatus !== 'google') {
     AppState.authStatus = 'connecting';
   }
@@ -353,6 +389,7 @@ async function handleSignOut() {
 
   try {
     await AppState.supabase.auth.signOut();
+    AppState.authMessage = '';
   } catch (error) {
     console.error('登出失敗:', error);
     AppState.authMessage = `登出失敗：${error.message || '請稍後再試'}`;
