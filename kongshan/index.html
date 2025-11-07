@@ -37,6 +37,15 @@
                 <p class="loading-text">空山</p>
             </div>
         </div>
+
+        <!-- 登入狀態列 -->
+        <div id="auth-status-bar" class="auth-status-bar" aria-live="polite">
+            <div class="auth-status-info" id="auth-user-info">正在連線 Supabase...</div>
+            <div class="auth-status-actions">
+                <button class="auth-btn" id="google-login-btn" type="button" disabled>使用 Google 登入</button>
+                <button class="auth-btn auth-btn-secondary" id="auth-signout-btn" type="button" hidden>登出</button>
+            </div>
+        </div>
         
         <!-- 詩歌列表頁面 -->
         <div id="poem-list-screen" class="screen" style="display: none;">
