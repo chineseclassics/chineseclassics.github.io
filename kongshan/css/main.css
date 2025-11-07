@@ -256,6 +256,164 @@ body {
   }
 }
 
+/* 錄音區塊 */
+.recording-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.recording-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-text-primary);
+}
+
+.recording-subtext {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+}
+
+.recording-inline {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.recording-toggle {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: linear-gradient(135deg, #ff4d4d 0%, #c42424 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth);
+  box-shadow: 0 12px 24px rgba(196, 36, 36, 0.25);
+}
+
+.recording-toggle:hover {
+  transform: translateY(-1px) scale(1.02);
+}
+
+.recording-toggle:active {
+  transform: scale(0.98);
+}
+
+.recording-toggle.recording-active {
+  background: linear-gradient(135deg, #1f2937 0%, #0f172a 100%);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
+}
+
+.recording-toggle i {
+  font-size: 1.2rem;
+  pointer-events: none;
+}
+
+.recording-timer-text {
+  font-family: var(--font-mono, 'Menlo', 'SFMono-Regular', monospace);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+
+.recording-status {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  min-height: 1.2rem;
+}
+
+.recording-status-error {
+  color: #c42424;
+}
+
+.recording-status-success {
+  color: #1c7c7d;
+}
+
+.recording-name-panel {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.recording-name-panel audio {
+  width: 100%;
+}
+
+.recording-name-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.recording-name-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.recording-action-primary,
+.recording-action-secondary {
+  padding: 0.5rem 1.4rem;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.recording-action-primary {
+  background: linear-gradient(135deg, #1c7c7d 0%, #3ab5a7 100%);
+  color: #fff;
+}
+
+.recording-action-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(28, 124, 125, 0.25);
+}
+
+.recording-action-secondary {
+  background: rgba(44, 44, 44, 0.1);
+  color: var(--color-text-primary);
+}
+
+.recording-action-secondary:hover {
+  transform: translateY(-1px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .recording-inline {
+    color: rgba(232, 232, 232, 0.85);
+  }
+
+  .recording-status {
+    color: rgba(232, 232, 232, 0.65);
+  }
+
+  .recording-name-panel {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .recording-action-secondary {
+    background: rgba(232, 232, 232, 0.12);
+    color: rgba(232, 232, 232, 0.95);
+  }
+}
+
 /* 應用標題 */
 .app-title {
   font-family: var(--font-serif);

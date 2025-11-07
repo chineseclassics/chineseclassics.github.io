@@ -26,7 +26,6 @@ let currentRecordingUrl = null;
 let currentRecordingDuration = 0;
 let currentRecordingMimeType = '';
 let isUploadingRecording = false;
-let lastUploadedRecording = null;
 
 /**
  * 創建並顯示聲色意境編輯器
@@ -92,28 +91,25 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
 
       <!-- 錄音功能 -->
       <div class="editor-section" id="recording-section">
-        <label class="editor-label">
-          錄製自訂音效
-          <span class="editor-hint">單次最長 120 秒</span>
-        </label>
-        <div class="recording-controls">
-          <button class="record-btn" id="start-recording-btn">開始錄音</button>
-          <button class="record-btn record-btn-danger" id="stop-recording-btn" disabled>停止</button>
-          <div class="recording-timer" id="recording-timer" aria-live="polite">剩餘 120 秒</div>
+        <div class="recording-header">
+          <span class="recording-label">旅人錄音</span>
+          <span class="recording-subtext">單次最長 120 秒</span>
         </div>
-        <div class="recording-preview" id="recording-preview" hidden>
+        <div class="recording-inline">
+          <button class="recording-toggle" id="recording-toggle-btn" type="button" aria-label="開始錄音">
+            <i class="fas fa-circle"></i>
+          </button>
+          <div class="recording-timer-text" id="recording-timer">00:00 / 02:00</div>
+        </div>
+        <div class="recording-status" id="recording-status"></div>
+        <div class="recording-name-panel" id="recording-name-panel" hidden>
           <audio id="recording-audio" controls></audio>
-          <div class="recording-meta">
-            <div class="recording-name-field" id="recording-name-field" hidden>
-              <label for="recording-name-input">錄音名稱</label>
-              <input type="text" id="recording-name-input" class="editor-input" maxlength="50" placeholder="請輸入錄音名稱">
-            </div>
-            <div class="recording-actions">
-              <button class="editor-btn editor-btn-primary" id="upload-recording-btn" disabled>上傳錄音</button>
-              <button class="editor-btn editor-btn-secondary" id="use-recording-btn" hidden>加入已選音效</button>
-            </div>
+          <label class="recording-name-label" for="recording-name-input">為錄音命名</label>
+          <input type="text" id="recording-name-input" class="editor-input" maxlength="50" placeholder="例如：松風入夜">
+          <div class="recording-name-actions">
+            <button class="recording-action-primary" id="recording-save-btn" type="button">保存錄音</button>
+            <button class="recording-action-secondary" id="recording-cancel-btn" type="button">取消</button>
           </div>
-          <div class="recording-status" id="recording-status"></div>
         </div>
       </div>
 
@@ -218,6 +214,17 @@ function initializeSoundSelector() {
             sourceType: 'system'
           }));
         }
+
+        const travelerSounds = await loadPublishedRecordings();
+        if (travelerSounds.length > 0) {
+          const existingIds = new Set(sounds.map(sound => sound.id));
+          travelerSounds.forEach(sound => {
+            if (!existingIds.has(sound.id)) {
+              sounds.unshift(sound);
+              existingIds.add(sound.id);
+            }
+          });
+        }
       } catch (error) {
         console.warn('從數據庫加載音效失敗，使用默認列表:', error);
       }
@@ -243,32 +250,81 @@ function initializeSoundSelector() {
   });
 }
 
+async function loadPublishedRecordings() {
+  if (!window.AppState?.supabase) {
+    return [];
+  }
+
+  try {
+    const supabaseClient = window.AppState.supabase;
+    const { data, error } = await supabaseClient
+      .from('recordings')
+      .select('id, display_name, storage_path, created_at')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error || !Array.isArray(data)) {
+      return [];
+    }
+
+    const sounds = await Promise.all(data.map(async (record) => {
+      if (!record.storage_path) {
+        return null;
+      }
+
+      let signedUrl = '';
+      try {
+        const { data: signedData } = await supabaseClient
+          .storage
+          .from('kongshan_recordings')
+          .createSignedUrl(record.storage_path, 3600);
+        signedUrl = signedData?.signedUrl || '';
+      } catch (signedError) {
+        console.warn('生成錄音簽名網址失敗:', signedError);
+      }
+
+      return {
+        id: record.id,
+        name: record.display_name || '旅人錄音',
+        tags: ['旅人錄音'],
+        file_url: signedUrl,
+        sourceType: 'recording',
+        recordingPath: record.storage_path,
+        recordingId: record.id,
+        display_name: record.display_name || '旅人錄音'
+      };
+    }));
+
+    return sounds.filter(Boolean);
+  } catch (error) {
+    console.warn('載入旅人錄音失敗:', error);
+    return [];
+  }
+}
+
 function getRecordingElements() {
   return {
     section: document.getElementById('recording-section'),
-    startBtn: document.getElementById('start-recording-btn'),
-    stopBtn: document.getElementById('stop-recording-btn'),
+    toggleBtn: document.getElementById('recording-toggle-btn'),
     timerEl: document.getElementById('recording-timer'),
-    previewEl: document.getElementById('recording-preview'),
-    audioEl: document.getElementById('recording-audio'),
-    nameField: document.getElementById('recording-name-field'),
-    nameInput: document.getElementById('recording-name-input'),
-    uploadBtn: document.getElementById('upload-recording-btn'),
     statusEl: document.getElementById('recording-status'),
-    useBtn: document.getElementById('use-recording-btn')
+    panel: document.getElementById('recording-name-panel'),
+    audioEl: document.getElementById('recording-audio'),
+    nameInput: document.getElementById('recording-name-input'),
+    saveBtn: document.getElementById('recording-save-btn'),
+    cancelBtn: document.getElementById('recording-cancel-btn')
   };
 }
 
 function initializeRecordingSection() {
   const {
     section,
-    startBtn,
-    stopBtn,
-    timerEl,
+    toggleBtn,
+    saveBtn,
+    cancelBtn,
     nameInput,
-    uploadBtn,
-    statusEl,
-    useBtn
+    statusEl
   } = getRecordingElements();
 
   if (!section) {
@@ -280,115 +336,134 @@ function initializeRecordingSection() {
     && typeof MediaRecorder !== 'undefined';
 
   if (!recordingSupported) {
-    if (startBtn) {
-      startBtn.disabled = true;
-    }
-    if (stopBtn) {
-      stopBtn.disabled = true;
+    if (toggleBtn) {
+      toggleBtn.disabled = true;
     }
     if (statusEl) {
       statusEl.textContent = '此設備或瀏覽器不支援錄音功能，請改用支援 MediaRecorder 的瀏覽器。';
       statusEl.classList.add('recording-status-error');
     }
-    if (timerEl) {
-      timerEl.textContent = '錄音功能未啟用';
-    }
+    updateTimerDisplay(0);
     return;
   }
 
   resetRecordingUI();
 
-  if (startBtn) {
-    startBtn.addEventListener('click', startRecording);
-  }
-
-  if (stopBtn) {
-    stopBtn.addEventListener('click', () => stopRecording(true));
-  }
-
-  if (uploadBtn) {
-    uploadBtn.addEventListener('click', uploadRecording);
-  }
-
-  if (nameInput) {
-    nameInput.addEventListener('input', () => {
-      const value = nameInput.value.trim();
-      if (uploadBtn) {
-        uploadBtn.disabled = !value || !currentRecordingBlob || isUploadingRecording;
-      }
-      if (statusEl) {
-        statusEl.textContent = '';
-        statusEl.classList.remove('recording-status-error', 'recording-status-success');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', async () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        stopRecording(true);
+      } else {
+        await startRecording();
       }
     });
   }
 
-  if (useBtn) {
-    useBtn.addEventListener('click', () => {
-      if (!lastUploadedRecording) {
-        return;
+  if (saveBtn) {
+    saveBtn.addEventListener('click', handleRecordingSave);
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', handleRecordingCancel);
+  }
+
+  if (nameInput) {
+    nameInput.addEventListener('input', () => {
+      const trimmed = nameInput.value.trim();
+      const { saveBtn: latestSaveBtn, statusEl: latestStatus } = getRecordingElements();
+      if (latestSaveBtn) {
+        latestSaveBtn.disabled = !trimmed || isUploadingRecording;
       }
-      addUploadedRecordingToSelection(lastUploadedRecording);
+      if (latestStatus) {
+        latestStatus.textContent = '';
+        latestStatus.classList.remove('recording-status-error', 'recording-status-success');
+      }
     });
   }
 }
 
 function resetRecordingUI() {
   const {
-    startBtn,
-    stopBtn,
-    timerEl,
-    previewEl,
-    audioEl,
-    nameField,
-    nameInput,
-    uploadBtn,
+    toggleBtn,
     statusEl,
-    useBtn
+    panel,
+    audioEl,
+    nameInput,
+    saveBtn,
+    cancelBtn
   } = getRecordingElements();
 
-  recordingRemainingSeconds = MAX_RECORDING_SECONDS;
-
-  if (timerEl) {
-    timerEl.textContent = formatRemainingTime(recordingRemainingSeconds);
-  }
-
-  if (startBtn) {
-    startBtn.disabled = false;
-  }
-
-  if (stopBtn) {
-    stopBtn.disabled = true;
-  }
-
-  if (previewEl) {
-    previewEl.hidden = true;
-  }
-
-  if (audioEl) {
-    audioEl.src = '';
-  }
-
-  if (nameField) {
-    nameField.hidden = true;
-  }
-
-  if (nameInput) {
-    nameInput.value = '';
-  }
-
-  if (uploadBtn) {
-    uploadBtn.disabled = true;
-  }
+  setRecordingButtonState(false);
+  updateTimerDisplay(0);
 
   if (statusEl) {
     statusEl.textContent = '';
     statusEl.classList.remove('recording-status-error', 'recording-status-success');
   }
 
-  if (useBtn) {
-    useBtn.hidden = true;
+  if (panel) {
+    panel.hidden = true;
   }
+
+  if (audioEl) {
+    try {
+      audioEl.pause();
+    } catch (error) {
+      /* ignore */
+    }
+    audioEl.removeAttribute('src');
+    try {
+      audioEl.load();
+    } catch (error) {
+      /* ignore */
+    }
+  }
+
+  if (nameInput) {
+    nameInput.value = '';
+  }
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+  }
+
+  if (cancelBtn) {
+    cancelBtn.disabled = true;
+  }
+
+  recordingRemainingSeconds = MAX_RECORDING_SECONDS;
+}
+
+function setRecordingButtonState(isRecording) {
+  const { toggleBtn } = getRecordingElements();
+  if (!toggleBtn) {
+    return;
+  }
+
+  toggleBtn.classList.toggle('recording-active', !!isRecording);
+  const icon = toggleBtn.querySelector('i');
+  if (icon) {
+    icon.className = isRecording ? 'fas fa-stop' : 'fas fa-circle';
+  }
+  toggleBtn.setAttribute('aria-label', isRecording ? '停止錄音' : '開始錄音');
+}
+
+function updateTimerDisplay(elapsedSeconds = 0) {
+  const { timerEl } = getRecordingElements();
+  if (!timerEl) {
+    return;
+  }
+
+  const clamped = Math.max(0, Math.min(MAX_RECORDING_SECONDS, elapsedSeconds));
+  const elapsedText = formatTimerSegment(clamped);
+  const totalText = formatTimerSegment(MAX_RECORDING_SECONDS);
+  timerEl.textContent = `${elapsedText} / ${totalText}`;
+}
+
+function formatTimerSegment(seconds) {
+  const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
 }
 
 async function startRecording() {
@@ -397,14 +472,11 @@ async function startRecording() {
   }
 
   const {
-    startBtn,
-    stopBtn,
-    timerEl,
-    previewEl,
+    toggleBtn,
     statusEl,
-    nameField,
-    uploadBtn,
-    useBtn
+    panel,
+    saveBtn,
+    cancelBtn
   } = getRecordingElements();
 
   try {
@@ -427,51 +499,44 @@ async function startRecording() {
     const recorderOptions = preferredMime ? { mimeType: preferredMime } : undefined;
     const recorder = recorderOptions ? new MediaRecorder(stream, recorderOptions) : new MediaRecorder(stream);
     mediaRecorder = recorder;
-    currentRecordingMimeType = recorder.mimeType || preferredMime || '';
-    if (!currentRecordingMimeType) {
-      currentRecordingMimeType = getFallbackMimeType();
-    }
+    currentRecordingMimeType = recorder.mimeType || preferredMime || getFallbackMimeType();
+
     recorder.addEventListener('dataavailable', handleRecordingDataAvailable);
     recorder.addEventListener('stop', handleRecordingStop);
     recorder.start();
 
-    if (startBtn) {
-      startBtn.disabled = true;
+    setRecordingButtonState(true);
+    if (panel) {
+      panel.hidden = true;
     }
-    if (stopBtn) {
-      stopBtn.disabled = false;
+    if (saveBtn) {
+      saveBtn.disabled = true;
     }
-    if (uploadBtn) {
-      uploadBtn.disabled = true;
-    }
-    if (useBtn) {
-      useBtn.hidden = true;
-    }
-    if (previewEl) {
-      previewEl.hidden = false;
-    }
-    if (nameField) {
-      nameField.hidden = true;
+    if (cancelBtn) {
+      cancelBtn.disabled = true;
     }
     if (statusEl) {
       statusEl.textContent = '錄音中...';
       statusEl.classList.remove('recording-status-error', 'recording-status-success');
     }
 
-    if (timerEl) {
-      timerEl.textContent = formatRemainingTime(recordingRemainingSeconds);
-    }
+    updateTimerDisplay(0);
 
+    if (recordingTimerInterval) {
+      clearInterval(recordingTimerInterval);
+    }
     recordingTimerInterval = setInterval(() => {
-      recordingRemainingSeconds = Math.max(0, recordingRemainingSeconds - 1);
-      if (timerEl) {
-        timerEl.textContent = formatRemainingTime(recordingRemainingSeconds);
-      }
+      const elapsed = Math.max(0, Math.floor((Date.now() - recordingStartTimestamp) / 1000));
+      recordingRemainingSeconds = Math.max(0, MAX_RECORDING_SECONDS - elapsed);
+      updateTimerDisplay(elapsed);
       if (recordingRemainingSeconds <= 0) {
         stopRecording(false);
       }
     }, 1000);
 
+    if (recordingAutoStopTimeout) {
+      clearTimeout(recordingAutoStopTimeout);
+    }
     recordingAutoStopTimeout = setTimeout(() => {
       stopRecording(false);
     }, MAX_RECORDING_SECONDS * 1000);
@@ -481,12 +546,7 @@ async function startRecording() {
       statusEl.textContent = '無法啟動錄音，請確認已允許麥克風權限。';
       statusEl.classList.add('recording-status-error');
     }
-    if (startBtn) {
-      startBtn.disabled = false;
-    }
-    if (stopBtn) {
-      stopBtn.disabled = true;
-    }
+    setRecordingButtonState(false);
     cleanupRecordingState({ keepBlob: false, preserveUploaded: true });
     resetRecordingUI();
   }
@@ -507,22 +567,18 @@ function stopRecording(manualStop) {
     recordingAutoStopTimeout = null;
   }
 
+  setRecordingButtonState(false);
+
+  const { statusEl } = getRecordingElements();
+  if (statusEl && manualStop) {
+    statusEl.textContent = '正在處理錄音...';
+    statusEl.classList.remove('recording-status-error', 'recording-status-success');
+  }
+
   try {
     mediaRecorder.stop();
   } catch (error) {
     console.warn('停止錄音時發生錯誤:', error);
-  }
-
-  const { stopBtn, startBtn, statusEl } = getRecordingElements();
-  if (stopBtn) {
-    stopBtn.disabled = true;
-  }
-  if (startBtn) {
-    startBtn.disabled = false;
-  }
-  if (statusEl && manualStop) {
-    statusEl.textContent = '正在處理錄音...';
-    statusEl.classList.remove('recording-status-error', 'recording-status-success');
   }
 }
 
@@ -537,15 +593,12 @@ function handleRecordingDataAvailable(event) {
 
 async function handleRecordingStop() {
   const {
+    panel,
     audioEl,
-    nameField,
-    uploadBtn,
-    statusEl,
-    previewEl,
     nameInput,
-    timerEl,
-    startBtn,
-    useBtn
+    saveBtn,
+    cancelBtn,
+    statusEl
   } = getRecordingElements();
 
   if (recordingStream) {
@@ -554,8 +607,10 @@ async function handleRecordingStop() {
   }
 
   const recordingDurationMs = recordingStartTimestamp ? Date.now() - recordingStartTimestamp : 0;
-  currentRecordingDuration = Math.max(1, Math.min(MAX_RECORDING_SECONDS, Math.round(recordingDurationMs / 1000)));
+  const elapsedSeconds = Math.max(1, Math.round(recordingDurationMs / 1000));
+  currentRecordingDuration = Math.min(MAX_RECORDING_SECONDS, elapsedSeconds);
   recordingStartTimestamp = null;
+  updateTimerDisplay(currentRecordingDuration);
 
   try {
     mediaRecorder = null;
@@ -579,8 +634,8 @@ async function handleRecordingStop() {
     return;
   }
 
-  if (timerEl) {
-    timerEl.textContent = formatRemainingTime(MAX_RECORDING_SECONDS);
+  if (panel) {
+    panel.hidden = false;
   }
 
   if (audioEl) {
@@ -592,72 +647,31 @@ async function handleRecordingStop() {
     }
   }
 
-  if (previewEl) {
-    previewEl.hidden = false;
+  if (cancelBtn) {
+    cancelBtn.disabled = false;
   }
 
-  if (nameField) {
-    nameField.hidden = false;
+  if (saveBtn) {
+    saveBtn.disabled = !(nameInput && nameInput.value.trim());
   }
-
-  if (uploadBtn) {
-    const hasName = nameInput ? nameInput.value.trim().length > 0 : false;
-    uploadBtn.disabled = !hasName;
-  }
-
-  if (startBtn) {
-    startBtn.disabled = false;
-  }
-
-  if (useBtn) {
-    useBtn.hidden = true;
-  }
-
-  lastUploadedRecording = null;
 
   if (statusEl) {
-    statusEl.textContent = '錄音完成，請輸入名稱後上傳。';
+    statusEl.textContent = '錄音完成，請命名後保存。';
     statusEl.classList.remove('recording-status-error', 'recording-status-success');
   }
+
+  if (nameInput) {
+    nameInput.focus();
+    nameInput.select();
+  }
 }
 
-function formatRemainingTime(seconds) {
-  return `剩餘 ${seconds} 秒`;
-}
-
-function sanitizeRecordingName(name) {
-  return name.trim().replace(/\s+/g, ' ').slice(0, 50);
-}
-
-function inferFileExtension(mimeType) {
-  if (!mimeType) {
-    return 'm4a';
-  }
-  if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
-    return 'm4a';
-  }
-  if (mimeType.includes('ogg')) {
-    return 'ogg';
-  }
-  if (mimeType.includes('wav')) {
-    return 'wav';
-  }
-  if (mimeType.includes('aac')) {
-    return 'aac';
-  }
-  return 'm4a';
-}
-
-async function uploadRecording() {
-  if (!currentRecordingBlob || isUploadingRecording) {
-    return;
-  }
-
+async function handleRecordingSave() {
   const {
     nameInput,
-    uploadBtn,
-    statusEl,
-    useBtn
+    saveBtn,
+    cancelBtn,
+    statusEl
   } = getRecordingElements();
 
   if (!nameInput) {
@@ -667,117 +681,183 @@ async function uploadRecording() {
   const displayName = sanitizeRecordingName(nameInput.value);
   if (!displayName) {
     if (statusEl) {
-      statusEl.textContent = '請輸入錄音名稱後再上傳。';
+      statusEl.textContent = '請輸入錄音名稱後再保存。';
       statusEl.classList.add('recording-status-error');
     }
     return;
   }
 
-  if (!window.AppState || !window.AppState.supabase) {
+  if (!currentRecordingBlob) {
     if (statusEl) {
-      statusEl.textContent = '尚未連接 Supabase，無法上傳錄音。';
+      statusEl.textContent = '沒有可保存的錄音，請重新錄製。';
       statusEl.classList.add('recording-status-error');
     }
+    return;
+  }
+
+  if (isUploadingRecording) {
     return;
   }
 
   try {
     isUploadingRecording = true;
-    if (uploadBtn) {
-      uploadBtn.disabled = true;
+    if (saveBtn) {
+      saveBtn.disabled = true;
+    }
+    if (cancelBtn) {
+      cancelBtn.disabled = true;
     }
     if (statusEl) {
       statusEl.textContent = '錄音上傳中...';
       statusEl.classList.remove('recording-status-error', 'recording-status-success');
     }
 
-    const supabaseClient = window.AppState.supabase;
-    const userId = await ensureCurrentUserId();
-    if (!userId) {
-      throw new Error('未能獲取使用者身份，請重新整理頁面。');
+    const recording = await uploadRecording(displayName);
+
+    ensureRecordingCardExists(buildRecordingSound(recording));
+    addUploadedRecordingToSelection(recording);
+
+    cleanupRecordingState({ keepBlob: false, preserveUploaded: false });
+    resetRecordingUI();
+
+    const { statusEl: finalStatus } = getRecordingElements();
+    if (finalStatus) {
+      finalStatus.textContent = '錄音已保存並加入音效清單。';
+      finalStatus.classList.remove('recording-status-error');
+      finalStatus.classList.add('recording-status-success');
     }
 
-    const extension = inferFileExtension(currentRecordingMimeType || currentRecordingBlob.type);
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const sanitizedBaseName = displayName.replace(/[^\u4e00-\u9fa5A-Za-z0-9\-\s_]/g, '').replace(/\s+/g, '_');
-    const finalFileName = `${sanitizedBaseName || 'recording'}_${timestamp}.${extension}`;
-    const storagePath = `${userId}/${finalFileName}`;
-    const fileType = currentRecordingBlob.type || currentRecordingMimeType || getFallbackMimeType();
-    const file = new File([currentRecordingBlob], finalFileName, { type: fileType });
-
-    const { error: uploadError } = await supabaseClient
-      .storage
-      .from('kongshan_recordings')
-      .upload(storagePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data: insertData, error: insertError } = await supabaseClient
-      .from('recordings')
-      .insert({
-        owner_id: userId,
-        display_name: displayName,
-        storage_path: storagePath,
-        duration_seconds: currentRecordingDuration,
-        status: 'published'
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      throw insertError;
-    }
-
-    let signedUrl = '';
-    try {
-      const { data: signedData, error: signedError } = await supabaseClient
-        .storage
-        .from('kongshan_recordings')
-        .createSignedUrl(storagePath, 3600);
-      if (!signedError && signedData?.signedUrl) {
-        signedUrl = signedData.signedUrl;
-      }
-    } catch (signedError) {
-      console.warn('生成錄音簽名網址失敗:', signedError);
-    }
-
-    lastUploadedRecording = {
-      id: insertData.id,
-      display_name: insertData.display_name,
-      storage_path: insertData.storage_path,
-      duration_seconds: insertData.duration_seconds,
-      file_url: signedUrl
-    };
-
-    if (statusEl) {
-      statusEl.textContent = '錄音已上傳成功，可加入編輯或再次錄製。';
-      statusEl.classList.remove('recording-status-error');
-      statusEl.classList.add('recording-status-success');
-    }
-
-    if (useBtn) {
-      useBtn.hidden = false;
-    }
-
-    addUploadedRecordingToSelection(lastUploadedRecording);
   } catch (error) {
     console.error('錄音上傳失敗:', error);
     if (statusEl) {
       statusEl.textContent = `錄音上傳失敗：${error.message || '請稍後再試'}`;
       statusEl.classList.add('recording-status-error');
     }
+    const { saveBtn: latestSaveBtn, cancelBtn: latestCancelBtn } = getRecordingElements();
+    if (latestSaveBtn) {
+      latestSaveBtn.disabled = false;
+    }
+    if (latestCancelBtn) {
+      latestCancelBtn.disabled = false;
+    }
   } finally {
     isUploadingRecording = false;
-    const { uploadBtn: refreshedUploadBtn } = getRecordingElements();
-    if (refreshedUploadBtn) {
-      refreshedUploadBtn.disabled = !currentRecordingBlob || !nameInput || !nameInput.value.trim();
-    }
   }
+}
+
+function handleRecordingCancel() {
+  cleanupRecordingState({ keepBlob: false, preserveUploaded: true });
+  resetRecordingUI();
+  const { statusEl } = getRecordingElements();
+  if (statusEl) {
+    statusEl.textContent = '已取消本次錄音。';
+    statusEl.classList.remove('recording-status-error', 'recording-status-success');
+  }
+}
+
+async function uploadRecording(displayName) {
+  if (!currentRecordingBlob) {
+    throw new Error('尚未產生可上傳的錄音。');
+  }
+
+  if (!window.AppState || !window.AppState.supabase) {
+    throw new Error('尚未連接 Supabase，無法上傳錄音。');
+  }
+
+  const supabaseClient = window.AppState.supabase;
+  const userId = await ensureCurrentUserId();
+  if (!userId) {
+    throw new Error('未能取得使用者身份，請重新整理頁面。');
+  }
+
+  const extension = inferFileExtension(currentRecordingMimeType || currentRecordingBlob.type);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const sanitizedBaseName = displayName.replace(/[^\u4e00-\u9fa5A-Za-z0-9\-\s_]/g, '').replace(/\s+/g, '_');
+  const finalFileName = `${sanitizedBaseName || 'recording'}_${timestamp}.${extension}`;
+  const storagePath = `${userId}/${finalFileName}`;
+  const fileType = currentRecordingBlob.type || currentRecordingMimeType || getFallbackMimeType();
+  const file = new File([currentRecordingBlob], finalFileName, { type: fileType });
+
+  const { error: uploadError } = await supabaseClient
+    .storage
+    .from('kongshan_recordings')
+    .upload(storagePath, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data: insertData, error: insertError } = await supabaseClient
+    .from('recordings')
+    .insert({
+      owner_id: userId,
+      display_name: displayName,
+      storage_path: storagePath,
+      duration_seconds: currentRecordingDuration,
+      status: 'published'
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    throw insertError;
+  }
+
+  let signedUrl = '';
+  try {
+    const { data: signedData } = await supabaseClient
+      .storage
+      .from('kongshan_recordings')
+      .createSignedUrl(storagePath, 3600);
+    signedUrl = signedData?.signedUrl || '';
+  } catch (signedError) {
+    console.warn('生成錄音簽名網址失敗:', signedError);
+  }
+
+  return {
+    id: insertData.id,
+    display_name: insertData.display_name,
+    storage_path: insertData.storage_path,
+    duration_seconds: insertData.duration_seconds,
+    file_url: signedUrl
+  };
+}
+
+function buildRecordingSound(recording) {
+  return {
+    id: recording.id,
+    name: recording.display_name || '旅人錄音',
+    display_name: recording.display_name || '旅人錄音',
+    file_url: recording.file_url || '',
+    tags: ['旅人錄音'],
+    sourceType: 'recording',
+    recordingPath: recording.storage_path || '',
+    recordingId: recording.id
+  };
+}
+
+function ensureRecordingCardExists(sound) {
+  const selector = document.getElementById('sound-selector');
+  if (!selector) {
+    return null;
+  }
+
+  let card = selector.querySelector(`.sound-card[data-sound-id="${sound.id}"]`);
+  if (card) {
+    if (sound.file_url) {
+      card.dataset.fileUrl = sound.file_url;
+    }
+    card.dataset.sourceType = sound.sourceType || card.dataset.sourceType || 'recording';
+    card.dataset.recordingPath = sound.recordingPath || card.dataset.recordingPath || '';
+    return card;
+  }
+
+  card = createSoundCard(sound);
+  selector.insertBefore(card, selector.firstChild);
+  return card;
 }
 
 function addUploadedRecordingToSelection(recording) {
@@ -785,24 +865,27 @@ function addUploadedRecordingToSelection(recording) {
     return;
   }
 
+  const sound = buildRecordingSound(recording);
+  const card = ensureRecordingCardExists(sound);
+
   const selectedContainer = document.getElementById('selected-sounds');
   if (!selectedContainer) {
     return;
   }
 
-  const existingItem = selectedContainer.querySelector(`[data-sound-id="${recording.id}"]`);
+  const existingItem = selectedContainer.querySelector(`[data-sound-id="${sound.id}"]`);
   if (existingItem) {
-    if (recording.file_url) {
-      existingItem.dataset.fileUrl = recording.file_url;
+    if (sound.file_url) {
+      existingItem.dataset.fileUrl = sound.file_url;
     }
-    if (recording.storage_path) {
-      existingItem.dataset.recordingPath = recording.storage_path;
+    if (sound.recordingPath) {
+      existingItem.dataset.recordingPath = sound.recordingPath;
     }
-    if (recording.display_name) {
-      existingItem.dataset.displayName = recording.display_name;
+    if (sound.display_name) {
+      existingItem.dataset.displayName = sound.display_name;
       const nameEl = existingItem.querySelector('.sound-item-name');
       if (nameEl) {
-        nameEl.textContent = recording.display_name;
+        nameEl.textContent = sound.display_name;
       }
     }
     updateEmptyState();
@@ -810,20 +893,13 @@ function addUploadedRecordingToSelection(recording) {
     return;
   }
 
-  const sound = {
-    id: recording.id,
-    name: recording.display_name || '錄音',
-    display_name: recording.display_name || '錄音',
-    file_url: recording.file_url || '',
-    sourceType: 'recording',
-    recordingPath: recording.storage_path || '',
-    recordingId: recording.id
-  };
-
-  const item = createSelectedSoundItem(sound);
-  if (recording.file_url) {
-    item.dataset.fileUrl = recording.file_url;
+  if (card) {
+    card.classList.add('selected');
+    toggleSoundSelection(sound, card);
+    return;
   }
+ 
+  const item = createSelectedSoundItem(sound);
   selectedContainer.appendChild(item);
   updateEmptyState();
   scheduleAutoPreview();
@@ -849,7 +925,41 @@ function cleanupRecordingState({ keepBlob = false, preserveUploaded = true } = {
   recordingStartTimestamp = null;
   recordingChunks = [];
   recordingRemainingSeconds = MAX_RECORDING_SECONDS;
-  currentRecordingMimeType = '';
+
+  const {
+    panel,
+    audioEl,
+    saveBtn,
+    cancelBtn
+  } = getRecordingElements();
+
+  setRecordingButtonState(false);
+
+  if (panel) {
+    panel.hidden = true;
+  }
+
+  if (audioEl) {
+    try {
+      audioEl.pause();
+    } catch (error) {
+      /* ignore */
+    }
+    audioEl.removeAttribute('src');
+    try {
+      audioEl.load();
+    } catch (error) {
+      /* ignore */
+    }
+  }
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+  }
+
+  if (cancelBtn) {
+    cancelBtn.disabled = true;
+  }
 
   if (!keepBlob) {
     if (currentRecordingUrl) {
@@ -858,11 +968,35 @@ function cleanupRecordingState({ keepBlob = false, preserveUploaded = true } = {
     currentRecordingBlob = null;
     currentRecordingUrl = null;
     currentRecordingDuration = 0;
+    currentRecordingMimeType = '';
   }
 
   if (!preserveUploaded) {
-    lastUploadedRecording = null;
+    // no-op for現在的流程
   }
+}
+
+function sanitizeRecordingName(name) {
+  return name.trim().replace(/\s+/g, ' ').slice(0, 50);
+}
+
+function inferFileExtension(mimeType) {
+  if (!mimeType) {
+    return 'm4a';
+  }
+  if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+    return 'm4a';
+  }
+  if (mimeType.includes('ogg')) {
+    return 'ogg';
+  }
+  if (mimeType.includes('wav')) {
+    return 'wav';
+  }
+  if (mimeType.includes('aac')) {
+    return 'aac';
+  }
+  return 'm4a';
 }
 
 async function ensureCurrentUserId() {
@@ -1525,4 +1659,5 @@ function pickSupportedMimeType() {
 function getFallbackMimeType() {
   return DEFAULT_RECORDING_MIME;
 }
+
 
