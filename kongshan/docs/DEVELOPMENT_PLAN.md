@@ -32,9 +32,10 @@
 
 - 🎵 **声音意境**：多音效组合，营造诗歌氛围
 - 🎨 **抽象视觉**：现代色彩与抽象元素，不干扰文字阅读
+- 🎭 **声色意境**：用户可创作并发布自己的声音+视觉组合
 - 🤖 **AI 智能**：自动分析诗歌，生成音效和背景建议
 - 👥 **用户贡献**：用户可上传音效，管理员审核后加入系统
-- ✍️ **用户创作**：后期支持用户输入任意诗句，AI 自动生成声音意境
+- 🎤 **录音上传**：用户可录音上传，配合诗歌意境
 
 ### 目标用户
 
@@ -59,20 +60,29 @@
 - 支持多种古典字体
 - 文字大小可调节
 
-### 2. 声音意境系统
+### 2. 声色意境系统（核心功能）
 
 **功能描述**：
-- 多音效组合播放（同时播放，支持独立音量控制）
-- 音效与诗歌意境的关联
-- 循环播放支持
-- 播放/暂停控制
-- 音量独立调节
+- **用户创作**：用户可以选择、组合库里的不同声音素材
+- **背景自定义**：用户可以自定义背景色和动态效果
+- **发布分享**：用户组合出的"声色意境"可以发布，供其他人在观赏这首诗时看到
+- **多音效组合**：同时播放多个音效，支持独立音量控制
+- **循环播放**：支持音效循环播放
+- **播放控制**：播放/暂停、音量独立调节
+
+**"声色意境"概念**：
+- 一个"声色意境"包含：诗歌 + 音效组合 + 背景配置
+- 系统预设的声色意境（管理员创建，默认展示）
+- 用户创作的声色意境：
+  - **使用系统预设音效**：不需要审核，可直接发布
+  - **使用个人上传/录音音效**：需要审核后才能公开
 
 **技术要求**：
 - Web Audio API 实现混音
 - 支持多个音频源同时播放
 - 实时音量控制
 - 音频预加载和缓存
+- 声色意境编辑器界面
 
 ### 3. AI 智能生成
 
@@ -90,17 +100,21 @@
 ### 4. 用户贡献系统
 
 **功能描述**：
-- 用户上传音效文件（MP3、WAV 等格式）
-- 填写音效元数据（名称、描述、标签）
-- 管理员审核（试听、查看信息、批量操作）
-- 审核通过后加入系统音效库
-- 审核拒绝时提供反馈
+- **音效上传**：用户上传音效文件（MP3、WAV 等格式）
+- **录音上传**：用户可自己录音上传，配合诗歌意境
+- **元数据填写**：填写音效元数据（名称、描述、标签）
+- **私有使用**：用户自己录音上传的音效，暂时不能公开给其他人使用
+- **审核流程**：管理员审核后，用户制作的"声色意境"才可以公布
+- **音效入库**：审核通过后，用户上传的音效可以加入音效库供别人使用
+- **审核拒绝**：审核拒绝时提供反馈
 
 **技术要求**：
 - Supabase Storage 存储音效文件
+- 浏览器录音 API（MediaRecorder）
 - 文件上传进度显示
 - 音频预览功能
 - 管理员权限控制（RLS 策略）
+- 音效状态管理（私有/待审核/已公开）
 
 ### 5. 后期功能（第二阶段）
 
@@ -232,10 +246,19 @@ CREATE TABLE sound_effects (
   file_url TEXT NOT NULL,  -- Supabase Storage URL
   duration INTEGER,  -- 时长（秒）
   tags TEXT[],  -- 标签数组（如：['雨声', '自然', '宁静']）
-  source TEXT DEFAULT 'system',  -- 'system' 或 'user'
+  source TEXT DEFAULT 'system',  -- 'system'（系统预设）或 'user'（用户上传）
+  upload_type TEXT DEFAULT 'file',  -- 'file'（文件上传）或 'recording'（录音上传）
   uploaded_by UUID REFERENCES auth.users(id),
-  status TEXT DEFAULT 'approved',  -- 'pending', 'approved', 'rejected'
+  
+  -- 审核状态
+  status TEXT DEFAULT 'approved',  -- 'private'（私有，仅创建者可用）, 'pending'（待审核）, 'approved'（已批准，公开可用）, 'rejected'（已拒绝）
   rejected_reason TEXT,  -- 拒绝原因
+  reviewed_by UUID REFERENCES auth.users(id),  -- 审核者
+  reviewed_at TIMESTAMP,  -- 审核时间
+  
+  -- 统计
+  usage_count INTEGER DEFAULT 0,  -- 被使用的次数（在已发布的声色意境中）
+  
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -244,65 +267,125 @@ CREATE TABLE sound_effects (
 **字段说明**：
 - `file_url`: Supabase Storage 中的文件路径
 - `tags`: 用于搜索和分类
-- `status`: 审核状态（用户上传的需要审核）
+- `upload_type`: 区分文件上传和录音上传
+- `status`: 
+  - `private`: 用户上传但未审核，仅创建者可在自己的声色意境中使用
+  - `pending`: 已提交审核，等待管理员审核
+  - `approved`: 审核通过，公开可用，加入音效库
+  - `rejected`: 审核拒绝
+- `usage_count`: 统计该音效在已发布的声色意境中被使用的次数
 
-#### 3. `poem_sound_mappings`（诗歌-音效关联表）
+#### 3. `poem_atmospheres`（声色意境表 - 核心表）
 
-存储每首诗歌的音效组合配置。
+存储每首诗歌的"声色意境"配置。一个声色意境包含音效组合和背景配置。
 
 ```sql
-CREATE TABLE poem_sound_mappings (
+CREATE TABLE poem_atmospheres (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   poem_id UUID REFERENCES poems(id) ON DELETE CASCADE,
-  sound_effect_id UUID REFERENCES sound_effects(id) ON DELETE CASCADE,
-  volume DECIMAL DEFAULT 1.0,  -- 音量 0-1
-  loop BOOLEAN DEFAULT true,  -- 是否循环
-  order_index INTEGER DEFAULT 0,  -- 播放顺序
-  is_ai_generated BOOLEAN DEFAULT false,  -- 是否AI生成
-  created_by UUID REFERENCES auth.users(id),  -- 创建者（系统或用户）
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(poem_id, sound_effect_id, order_index)
-);
-```
-
-**字段说明**：
-- 一首诗歌可以有多个音效
-- `order_index` 用于排序（虽然同时播放，但用于界面显示顺序）
-- `is_ai_generated` 标记是否为 AI 建议
-
-#### 4. `poem_backgrounds`（诗歌背景配置表）
-
-存储每首诗歌的背景配置。
-
-```sql
-CREATE TABLE poem_backgrounds (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  poem_id UUID REFERENCES poems(id) ON DELETE CASCADE UNIQUE,
-  background_type TEXT DEFAULT 'preset',  -- 'preset' 或 'ai_generated'
-  color_scheme JSONB,  -- 色彩方案：{"colors": ["#hex1", "#hex2"], "direction": "diagonal"}
-  abstract_elements JSONB,  -- 抽象元素：{"type": "particles", "count": 50, "color": "#hex"}
-  ai_instructions TEXT,  -- AI 生成指令（如果使用AI）
+  name TEXT,  -- 意境名称（可选，用户可命名）
+  description TEXT,  -- 意境描述（可选）
+  
+  -- 音效组合配置（JSONB 数组）
+  sound_combination JSONB NOT NULL,  -- [{"sound_id": "uuid", "volume": 0.8, "loop": true}, ...]
+  
+  -- 背景配置
+  background_config JSONB NOT NULL,  -- {"color_scheme": {...}, "abstract_elements": [...]}
+  
+  -- 元数据
+  source TEXT DEFAULT 'system',  -- 'system'（系统预设）或 'user'（用户创作）
+  created_by UUID REFERENCES auth.users(id),  -- 创建者（系统预设为 NULL）
+  is_ai_generated BOOLEAN DEFAULT false,  -- 是否使用 AI 生成
+  is_default BOOLEAN DEFAULT false,  -- 是否为该诗歌的默认意境
+  
+  -- 审核状态（仅用户创作需要）
+  status TEXT DEFAULT 'approved',  -- 'draft'（草稿）, 'pending'（待审核）, 'approved'（已批准）, 'rejected'（已拒绝）
+  -- 注意：如果只使用系统预设音效，status 直接为 'approved'，不需要审核
+  admin_feedback TEXT,  -- 管理员反馈（拒绝时）
+  reviewed_by UUID REFERENCES auth.users(id),  -- 审核者
+  reviewed_at TIMESTAMP,  -- 审核时间
+  
+  -- 统计
+  view_count INTEGER DEFAULT 0,  -- 查看次数
+  like_count INTEGER DEFAULT 0,  -- 点赞次数
+  
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
 **字段说明**：
-- `color_scheme`: JSON 格式存储颜色配置
-- `abstract_elements`: JSON 格式存储抽象元素配置
-- 每首诗歌只有一个背景配置
+- `sound_combination`: JSON 数组，每个元素包含音效ID、音量、循环设置
+  ```json
+  [
+    {"sound_id": "uuid1", "volume": 0.8, "loop": true},
+    {"sound_id": "uuid2", "volume": 0.5, "loop": false}
+  ]
+  ```
+- `background_config`: JSON 对象，包含颜色方案和抽象元素
+  ```json
+  {
+    "color_scheme": {
+      "colors": ["#1a1a2e", "#16213e"],
+      "direction": "diagonal"
+    },
+    "abstract_elements": [
+      {"type": "particles", "count": 50, "color": "#ffffff", "opacity": 0.3}
+    ]
+  }
+  ```
+- `source`: 区分系统预设和用户创作
+- `status`: 
+  - 如果声色意境只使用系统预设音效，`status` 直接为 `approved`，不需要审核
+  - 如果声色意境使用了个人上传/录音音效，需要审核后才能公开
+- 一首诗歌可以有多个声色意境（系统预设 + 多个用户创作）
 
-#### 5. `user_poem_creations`（用户创作表 - 第二阶段）
+#### 4. `atmosphere_sounds`（声色意境-音效关联表）
 
-存储用户自己创作的诗句和音效组合。
+存储声色意境中使用的音效详情（用于查询和统计）。
+
+```sql
+CREATE TABLE atmosphere_sounds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  atmosphere_id UUID REFERENCES poem_atmospheres(id) ON DELETE CASCADE,
+  sound_effect_id UUID REFERENCES sound_effects(id) ON DELETE CASCADE,
+  volume DECIMAL DEFAULT 1.0,  -- 音量 0-1
+  loop BOOLEAN DEFAULT true,  -- 是否循环
+  order_index INTEGER DEFAULT 0,  -- 显示顺序
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(atmosphere_id, sound_effect_id, order_index)
+);
+```
+
+**说明**：这个表用于快速查询和统计，主要数据仍在 `poem_atmospheres.sound_combination` JSONB 中。
+
+#### 5. `atmosphere_likes`（声色意境点赞表）
+
+存储用户对声色意境的点赞记录。
+
+```sql
+CREATE TABLE atmosphere_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  atmosphere_id UUID REFERENCES poem_atmospheres(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(atmosphere_id, user_id)
+);
+```
+
+**说明**：用于统计点赞数和防止重复点赞。
+
+#### 6. `user_poem_creations`（用户创作诗句表 - 第二阶段）
+
+存储用户自己输入的诗句（非系统预设诗歌）。
 
 ```sql
 CREATE TABLE user_poem_creations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   poem_content TEXT NOT NULL,  -- 用户输入的诗句
-  sound_combination JSONB,  -- 音效组合配置
-  background_config JSONB,  -- 背景配置
+  title TEXT,  -- 标题（可选）
+  author TEXT,  -- 作者（可选，用户可标注）
   status TEXT DEFAULT 'draft',  -- 'draft', 'pending_approval', 'approved', 'rejected'
   admin_feedback TEXT,  -- 管理员反馈
   created_at TIMESTAMP DEFAULT NOW(),
@@ -310,24 +393,39 @@ CREATE TABLE user_poem_creations (
 );
 ```
 
-**字段说明**：
-- `sound_combination`: 存储音效ID和配置的 JSON
-- `status`: 创作状态（草稿、待审核、已批准、已拒绝）
+**说明**：用户输入的诗句审核通过后，可以创建对应的 `poems` 记录和 `poem_atmospheres` 记录。
 
 ### RLS 策略
 
 #### 公开读取
 - `poems`: 所有用户可读
-- `sound_effects`: 仅 `status = 'approved'` 的可读
-- `poem_sound_mappings`: 所有用户可读
-- `poem_backgrounds`: 所有用户可读
+- `sound_effects`: 
+  - `status = 'approved'` 的公开可读（已审核通过，加入音效库）
+  - 用户可读自己上传的所有音效（包括 `private` 状态）
+- `poem_atmospheres`: 
+  - `status = 'approved'` 的公开可读（已审核通过）
+  - 用户可读自己创建的所有声色意境（包括 `draft`、`pending` 和 `rejected` 状态）
+  - 注意：即使 `status = 'rejected'`，创建者仍可欣赏自己的创作
+- `atmosphere_likes`: 所有用户可读（用于统计）
 
 #### 用户权限
-- `sound_effects`: 用户可创建（上传），只能修改自己上传的
+- `sound_effects`: 
+  - 用户可创建（上传文件或录音）
+  - 用户只能修改自己上传的、状态为 `private` 或 `draft` 的音效
+  - 用户不能修改已提交审核或已审核的音效
+- `poem_atmospheres`: 
+  - 用户可创建自己的声色意境
+  - 用户只能修改自己创建的、状态为 `draft` 的声色意境
+  - 用户不能修改已提交审核或已审核的声色意境
+- `atmosphere_likes`: 用户可创建和删除自己的点赞
 - `user_poem_creations`: 用户可创建和修改自己的创作
 
 #### 管理员权限
 - 所有表的完整权限（通过 Service Role Key 或管理员角色）
+- 可以审核用户上传的音效和创作的声色意境
+- 可以修改音效状态（`private` → `pending` → `approved`）
+- 可以修改声色意境状态（`draft` → `pending` → `approved`）
+- **注意**：暂时只有创建者一人为管理员，在学校小范围试用
 
 ---
 
@@ -403,16 +501,35 @@ CREATE TABLE user_poem_creations (
 **文件**：
 - `kongshan/js/features/sound-mixer.js`
 
-#### 1.6 预设音效组合
+#### 1.6 预设声色意境
 
 **任务**：
-- [ ] 手动为初始诗歌配置音效组合
-- [ ] 音效组合保存到数据库
-- [ ] 加载和播放预设组合
+- [ ] 手动为初始诗歌创建系统预设的声色意境
+- [ ] 声色意境保存到数据库（包含音效组合和背景配置）
+- [ ] 加载和播放预设声色意境
 - [ ] 音效控制面板 UI
+- [ ] 背景预览功能
 
 **文件**：
 - `kongshan/js/ui/sound-controls.js`
+- `kongshan/js/ui/atmosphere-viewer.js`
+
+#### 1.7 用户创作声色意境
+
+**任务**：
+- [ ] 声色意境编辑器界面
+- [ ] 音效选择器（从音效库中选择）
+- [ ] 背景配置器（中国传统色预设 + 自定义调色）
+- [ ] 实时预览功能
+- [ ] 保存草稿功能
+- [ ] **审核判断逻辑**：检测是否使用了个人音效
+  - 如果只使用系统预设音效：直接发布（`status = 'approved'`）
+  - 如果使用了个人音效：提交审核（`status = 'pending'`）
+- [ ] 提交审核功能
+
+**文件**：
+- `kongshan/js/features/atmosphere-editor.js`
+- `kongshan/js/ui/atmosphere-editor.js`
 
 ### 阶段 2：AI 智能生成
 
@@ -452,7 +569,10 @@ Response: {
 **任务**：
 - [ ] Canvas 抽象背景渲染引擎
 - [ ] 根据 AI 指令生成渐变背景
+- [ ] **中国传统色预设**：预设中国传统色彩方案
+- [ ] **用户调色功能**：支持用户自定义调色
 - [ ] 抽象元素绘制（粒子、线条、形状等）
+  - 注意：动态特效的具体类型待后续补充
 - [ ] 预设背景风格库
 - [ ] 背景预览功能
 
@@ -489,26 +609,37 @@ Response: {
 
 **任务**：
 - [ ] 文件上传界面
+- [ ] **录音上传功能**（浏览器 MediaRecorder API）
+  - 录音时长限制：最长 120 秒
+  - 格式选择：优先使用手机最容易获得的格式（WebM/MP3）
+  - 降噪处理（如果实现不复杂）
 - [ ] Supabase Storage 上传
 - [ ] 音效元数据输入（名称、描述、标签）
 - [ ] 上传进度显示
 - [ ] 文件格式验证
 - [ ] 文件大小限制
+- [ ] 音效状态管理（私有/待审核/已公开）
 
 **文件**：
 - `kongshan/js/features/upload-manager.js`
+- `kongshan/js/features/audio-recorder.js`（新增）
 - `kongshan/js/ui/upload-form.js`
 
 #### 3.3 管理员审核界面
 
 **任务**：
 - [ ] 待审核音效列表
+- [ ] 待审核声色意境列表（仅显示使用了个人音效的）
 - [ ] 音效试听功能
-- [ ] 查看详细信息（上传者、标签、描述）
+- [ ] 声色意境预览功能（试听音效组合和查看背景）
+- [ ] 查看详细信息（上传者、标签、描述、使用情况）
 - [ ] 批准/拒绝操作
+- [ ] **审核逻辑**：
+  - 审核通过声色意境时，自动将其使用的 `private` 音效设为 `approved`
+  - 如果音效被拒绝，声色意境保持 `rejected` 状态，创建者仍可欣赏
 - [ ] 批量操作支持
 - [ ] 审核历史记录
-- [ ] 管理员权限检查
+- [ ] 管理员权限检查（暂时只有创建者一人）
 
 **文件**：
 - `kongshan/js/ui/admin-panel.js`
@@ -517,14 +648,32 @@ Response: {
 #### 3.4 音效库管理
 
 **任务**：
-- [ ] 系统音效库浏览
+- [ ] 系统音效库浏览（仅显示 `status = 'approved'` 的音效）
+- [ ] 用户个人音效库（显示自己上传的所有音效，包括私有状态）
 - [ ] 按标签筛选
 - [ ] 搜索功能
 - [ ] 音效详情页面
 - [ ] 音效预览播放
+- [ ] 音效使用统计（在哪些声色意境中被使用）
 
 **文件**：
 - `kongshan/js/ui/sound-library.js`
+
+#### 3.5 声色意境浏览和选择
+
+**任务**：
+- [ ] 诗歌详情页显示多个声色意境（系统预设 + 用户创作）
+- [ ] **默认显示逻辑**：
+  - 如有系统预设的，默认显示系统预设
+  - 同时列出最受欢迎的（按点赞数排序）
+  - 如果没有系统预设，默认使用最受欢迎的
+- [ ] 用户可以选择不同的声色意境来欣赏
+- [ ] 显示声色意境的基本信息（创建者、点赞数、查看数）
+- [ ] 点赞功能
+- [ ] 分享功能
+
+**文件**：
+- `kongshan/js/ui/atmosphere-selector.js`
 
 ### 阶段 4：声音库集成（可选）
 
@@ -540,38 +689,33 @@ Response: {
 **文件**：
 - `kongshan/supabase/functions/sound-search/index.ts`
 
-### 阶段 5：后期功能（用户创作）
+### 阶段 5：后期功能（用户输入诗句 - 暂不实施）
 
-#### 5.1 用户输入诗句
+**注意**：用户输入诗句功能暂时不做，先做系统预设一些诗句。
+
+#### 5.1 用户输入诗句（未来功能）
 
 **任务**：
 - [ ] 诗句输入界面
 - [ ] 输入验证和格式化
 - [ ] 保存草稿功能
+- [ ] 为输入的诗句创建声色意境
 
-#### 5.2 AI 自动生成声音意境
+#### 5.2 AI 自动生成声色意境（未来功能）
 
 **任务**：
-- [ ] 调用 AI 分析用户输入
+- [ ] 调用 AI 分析用户输入的诗句
 - [ ] 自动生成音效组合建议
 - [ ] 自动生成背景建议
-- [ ] 一键应用 AI 建议
+- [ ] 一键应用 AI 建议创建声色意境
 
-#### 5.3 手动编辑功能
-
-**任务**：
-- [ ] 音效组合编辑器
-- [ ] 添加/删除音效
-- [ ] 调整音量和循环设置
-- [ ] 背景配置编辑器
-- [ ] 实时预览
-
-#### 5.4 用户创作审核
+#### 5.3 用户创作诗句审核（未来功能）
 
 **任务**：
-- [ ] 用户提交创作
+- [ ] 用户提交创作的诗句
 - [ ] 管理员审核界面（查看、试听、批准）
-- [ ] 批准后加入系统诗歌库
+- [ ] 批准后创建对应的 `poems` 记录
+- [ ] 批准后创建对应的 `poem_atmospheres` 记录
 - [ ] 拒绝时提供反馈
 
 ---
@@ -590,18 +734,24 @@ kongshan/
 │   │   ├── poem-manager.js   # 诗歌管理
 │   │   ├── audio-engine.js   # 音频引擎（Web Audio API）
 │   │   ├── background-renderer.js  # 背景渲染引擎
-│   │   └── auth-manager.js   # 认证管理
+│   │   ├── auth-manager.js   # 认证管理
+│   │   └── atmosphere-manager.js  # 声色意境管理
 │   ├── features/
 │   │   ├── poem-display.js   # 诗歌展示（竖排）
 │   │   ├── sound-mixer.js    # 音效混音器
 │   │   ├── ai-generator.js   # AI 生成功能
-│   │   └── upload-manager.js # 音效上传管理
+│   │   ├── upload-manager.js # 音效上传管理
+│   │   ├── audio-recorder.js # 录音功能
+│   │   └── atmosphere-editor.js  # 声色意境编辑器
 │   └── ui/
 │       ├── screens.js        # 界面显示
 │       ├── poem-viewer.js    # 诗歌查看器
 │       ├── sound-controls.js # 音效控制面板
+│       ├── atmosphere-viewer.js  # 声色意境查看器
+│       ├── atmosphere-editor.js   # 声色意境编辑器 UI
+│       ├── atmosphere-selector.js  # 声色意境选择器
 │       ├── login-screen.js   # 登录界面
-│       └── admin-panel.js    # 管理员面板
+│       └── admin-panel.js   # 管理员面板
 │
 ├── css/
 │   ├── main.css              # 主样式
@@ -963,7 +1113,7 @@ serve(async (req) => {
 
 2. ⏳ **数据库设计**
    - 创建 Supabase 项目
-   - 编写迁移脚本
+   - 编写迁移脚本（包含 `poem_atmospheres` 表）
    - 配置 RLS 策略
 
 3. ⏳ **诗歌展示功能**
@@ -978,21 +1128,37 @@ serve(async (req) => {
    - 同时播放多个音效
    - 音量控制
 
-6. ⏳ **预设音效组合**
-   - 手动配置音效组合
+6. ⏳ **预设声色意境**
+   - 手动创建系统预设的声色意境
+   - 包含音效组合和背景配置
    - 保存和加载
 
 7. ⏳ **用户认证**
    - Supabase 认证集成
    - 登录界面
 
-8. ⏳ **音效上传**
-   - 文件上传功能
-   - 元数据输入
+8. ⏳ **用户创作声色意境**
+   - 声色意境编辑器
+   - 音效选择器
+   - 背景配置器
+   - 保存草稿和提交审核
 
-9. ⏳ **管理员审核（基础）**
-   - 审核列表
-   - 批准/拒绝操作
+9. ⏳ **音效上传**
+   - 文件上传功能
+   - **录音上传功能**
+   - 元数据输入
+   - 音效状态管理（私有/待审核）
+
+10. ⏳ **声色意境浏览和选择**
+    - 显示多个声色意境
+    - 用户选择功能
+    - 点赞功能
+
+11. ⏳ **管理员审核（基础）**
+    - 审核列表（音效 + 声色意境）
+    - 试听和预览功能
+    - 批准/拒绝操作
+    - 审核通过后自动公开
 
 ### 重要功能
 
@@ -1014,11 +1180,11 @@ serve(async (req) => {
     - API 集成
     - 音效搜索和下载
 
-14. ⏳ **用户创作功能**（第二阶段）
-    - 诗句输入
-    - AI 自动生成
-    - 手动编辑
-    - 创作审核
+14. ⏳ **用户创作功能**（暂不实施）
+    - 诗句输入（未来功能）
+    - AI 自动生成（未来功能）
+    - 手动编辑（未来功能）
+    - 创作审核（未来功能）
 
 ---
 
@@ -1030,7 +1196,18 @@ serve(async (req) => {
 - **解决方案**：
   - 使用音频压缩（MP3 128kbps）
   - 限制文件大小（如 5MB）
+  - 录音上传时设置合适的采样率
   - 考虑使用 CDN 加速
+
+### 1.5. 录音功能浏览器兼容性
+
+- **问题**：MediaRecorder API 在不同浏览器支持不同
+- **解决方案**：
+  - 检测浏览器支持情况
+  - 提供降级方案（提示用户使用文件上传）
+  - 支持多种音频格式（优先使用手机最容易获得的格式：WebM/MP3）
+  - 录音时长限制：最长 120 秒
+  - 降噪处理（如果实现不复杂）
 
 ### 2. 浏览器兼容性
 
@@ -1058,11 +1235,18 @@ serve(async (req) => {
 
 ### 5. 审核工作流
 
-- **问题**：用户上传可能积压，需要高效审核
+- **问题**：用户上传的音效和创作的声色意境可能积压，需要高效审核
+- **重要规则**：
+  - 如果用户只使用系统预设音效创建声色意境，**不需要审核**，直接发布
+  - 只有使用了个人上传/录音音效的声色意境，才需要审核
+  - 审核通过声色意境时，自动将其使用的 `private` 音效设为 `approved`
+  - 如果音效被拒绝，声色意境保持 `rejected` 状态，但创建者仍可欣赏
 - **解决方案**：
-  - 设计清晰的审核界面
+  - 设计清晰的审核界面（区分音效审核和声色意境审核）
   - 支持批量操作
   - 提供审核统计和提醒
+  - 审核通过后自动更新状态和权限
+  - 审核通过后自动将音效加入公共库
 
 ### 6. 用户体验
 
@@ -1071,6 +1255,17 @@ serve(async (req) => {
   - 实现加载进度显示
   - 音频文件懒加载
   - 优化资源加载顺序
+
+### 7. 声色意境数据一致性
+
+- **问题**：声色意境中的音效可能被删除或状态变更
+- **解决方案**：
+  - 审核时检查音效状态
+  - 显示音效状态（可用/不可用）
+  - **如果音效被拒绝，提示用户要想发布给别人欣赏必须替换掉该音效**
+  - 声色意境不失效，创建者仍可欣赏
+  - 提供音效替换功能（仅草稿状态可编辑）
+  - 定期清理无效的声色意境
 
 ---
 
