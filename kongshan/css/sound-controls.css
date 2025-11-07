@@ -1,0 +1,254 @@
+/* ===== 音效控制面板樣式 ===== */
+
+.sound-controls {
+  position: fixed;
+  bottom: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 320px;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-md);
+  z-index: 100;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+/* 主控制區域 */
+.main-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 控制按鈕 */
+.control-btn {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-text-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.control-btn:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.control-btn:active {
+  transform: scale(0.95);
+}
+
+.control-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* 音量控制 */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.volume-label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  min-width: 50px;
+}
+
+.volume-slider {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.1);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-primary);
+  cursor: pointer;
+  border: none;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.volume-value {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* 音效軌道列表 */
+.tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.tracks-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tracks-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tracks-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-full);
+}
+
+.tracks-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 單個音效軌道控制 */
+.track-control {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.track-name {
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  margin-bottom: var(--spacing-xs);
+}
+
+.track-control .volume-control {
+  margin-left: 0;
+}
+
+.track-control .volume-label {
+  font-size: 0.75rem;
+  min-width: 40px;
+}
+
+.track-control .volume-slider {
+  height: 4px;
+}
+
+.track-control .volume-slider::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.track-control .volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+/* 暗色模式 */
+@media (prefers-color-scheme: dark) {
+  .sound-controls {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .main-controls {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .control-btn {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--color-text-primary);
+  }
+
+  .volume-slider {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .volume-slider::-webkit-slider-thumb {
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .volume-slider::-moz-range-thumb {
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .track-control {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .tracks-list {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+
+  .tracks-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .tracks-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .sound-controls {
+    min-width: calc(100% - var(--spacing-md) * 2);
+    max-width: calc(100% - var(--spacing-md) * 2);
+  }
+
+  .main-controls {
+    flex-wrap: wrap;
+  }
+
+  .volume-control {
+    flex: 1 1 100%;
+  }
+
+  .tracks-list {
+    max-height: 200px;
+  }
+}
+

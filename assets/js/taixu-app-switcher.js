@@ -312,37 +312,31 @@
                 }
                 
                 #taixuFloatingLogo > div {
-                    backdrop-filter: blur(8px);
-                    -webkit-backdrop-filter: blur(8px);
-                    transition: all 0.3s ease;
-                    opacity: 0.6;
-                    transform: scale(0.9);
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: transform 0.3s ease, opacity 0.3s ease;
                     transform-origin: center;
                 }
                 
-                #taixuFloatingLogo:hover > div {
-                    opacity: 1;
-                    transform: scale(1);
+                #taixuFloatingLogo img {
+                    display: block;
+                    transition: transform 0.3s ease, opacity 0.3s ease;
                 }
                 
-                #taixuFloatingLogo:active > div {
+                #taixuFloatingLogo:hover img {
+                    transform: scale(1.08);
+                }
+                
+                #taixuFloatingLogo:active img {
                     transform: scale(0.95);
                 }
                 
                 /* 移动端优化 */
                 @media (max-width: 768px) {
-                    #taixuFloatingLogo > div {
-                        padding: 6px !important;
-                    }
-                    
                     #taixuFloatingLogo img {
                         width: 24px !important;
                         height: 24px !important;
-                    }
-                    
-                    #taixuFloatingLogo:hover > div {
-                        opacity: 0.6;
-                        transform: scale(0.9);
                     }
                 }
                 
@@ -351,10 +345,6 @@
                         right: 8px !important;
                         top: 50% !important;
                         margin-top: -20px !important;
-                    }
-                    
-                    #taixuFloatingLogo > div {
-                        padding: 4px !important;
                     }
                     
                     #taixuFloatingLogo img {
@@ -636,7 +626,7 @@
                  tabindex="0" 
                  role="button" 
                  aria-label="打開應用切換器">
-                <div style="background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(8px); border-radius: 9999px; padding: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);">
+                <div>
                     <img src="/assets/images/optimized/cclogo-32.png" 
                          alt="書院中文經典" 
                          style="height: 32px; width: 32px; object-fit: contain; cursor: pointer;">

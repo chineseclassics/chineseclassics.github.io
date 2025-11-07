@@ -156,6 +156,13 @@ export class BackgroundRenderer {
   }
   
   /**
+   * 設置並渲染背景配置（別名方法，用於兼容性）
+   */
+  setConfig(config) {
+    this.render(config);
+  }
+
+  /**
    * 清除背景
    */
   clear() {

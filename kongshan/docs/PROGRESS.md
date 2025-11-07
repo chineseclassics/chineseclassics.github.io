@@ -1,227 +1,127 @@
-# 空山应用开发进度
+# 空山開發進度
 
-> **最后更新**：2025-01-XX  
-> **当前阶段**：阶段 1 - 基础框架
+本文件記錄"空山"應用的開發進度。
 
----
+## 階段 1：基礎框架和詩歌展示（MVP）✅
 
-## ✅ 已完成任务
+### ✅ 已完成（2025-01-06）
 
-### 1.1 项目结构搭建 ✅
+**1.1 項目結構搭建** ✅
+- ✅ 創建完整的文件夾結構（`admin/`, `assets/`, `css/`, `docs/`, `js/`, `supabase/`）
+- ✅ 初始化 `index.html` 主頁面
+- ✅ 設置基礎 CSS 和 JS 模塊結構
+- ✅ 配置 Supabase 連接（`config.js`）
+- ✅ 集成太虛幻境應用切換器
 
-- [x] 创建 `kongshan/` 目录结构
-- [x] 初始化 `index.html` - 基础 HTML 结构，包含加载画面、诗歌列表、诗歌欣赏页面
-- [x] 创建基础 CSS 文件：
-  - `css/variables.css` - CSS 变量（现代极简设计系统）
-  - `css/main.css` - 主样式（冥想感布局）
-  - `css/poem-display.css` - 诗歌展示样式（竖排版 + 卡片）
-  - `css/responsive.css` - 响应式样式
-- [x] 创建基础 JS 模块结构：
-  - `js/config.js` - 配置文件（✅ 已配置 Supabase）
-  - `js/app.js` - 应用入口
-  - `js/core/poem-manager.js` - 诗歌管理
-  - `js/core/audio-engine.js` - 音频引擎
-  - `js/core/background-renderer.js` - 背景渲染引擎
-  - `js/features/poem-display.js` - 诗歌展示功能
-- [x] ✅ **配置 Supabase 客户端**（已通过 MCP 配置）
-- [x] 添加应用切换器组件引用
+**1.2 數據庫設計** ✅
+- ✅ 創建 Supabase 項目（Project ID: `hithpeekxopcipqhkhyu`）
+- ✅ 編寫並應用遷移腳本：
+  - `001_initial_schema.sql` - 6 個表的完整結構
+  - `002_rls_policies.sql` - Row Level Security 策略
+  - `003_storage_setup.sql` - Storage 配置說明
+  - `insert_sample_poems.sql` - 5 首示例詩歌
+  - `insert_sample_sound_effects_and_atmospheres.sql` - 音效和聲色意境數據
+- ✅ 配置 RLS 策略（公開讀、用戶寫、管理員全權限）
+- ✅ 設置 Storage bucket（`sound-effects`）
 
-### 1.2 数据库设计 ✅
+**1.3 詩歌展示功能** ✅
+- ✅ 實現豎排文字布局（`writing-mode: vertical-rl`）
+- ✅ 創建詩歌列表頁面（grid 布局，卡片式設計）
+- ✅ 創建詩歌詳情頁面（大字體豎排顯示）
+- ✅ 返回按鈕導航
+- ✅ `PoemManager` 類實現數據加載
+- ✅ 示例詩歌：靜夜思、春曉、鳥鳴澗、山居秋暝、楓橋夜泊
 
-- [x] 编写数据库迁移脚本：
-  - `001_initial_schema.sql` - 初始数据库架构（6 个表）
-  - `002_rls_policies.sql` - RLS 策略配置
-  - `003_storage_setup.sql` - Storage 设置说明
-- [x] 创建 Supabase 配置文件 `config.toml`
-- [x] ✅ **创建 Supabase 项目并配置**（通过 MCP）
-  - Project URL: `https://hithpeekxopcipqhkhyu.supabase.co`
-  - 已更新 `js/config.js` 中的配置
-- [x] ✅ **执行数据库迁移**（通过 MCP）
-  - 已创建 6 个数据表
-  - 已配置 RLS 策略
-  - 已修复函数安全警告
-- [x] ✅ **插入测试数据**
-  - 已插入 3 首测试诗歌（靜夜思、春曉、登鸛雀樓）
-- [ ] ⏳ 设置 Storage bucket（需要在 Dashboard 中手动创建）
+**1.4 基礎音效播放** ✅
+- ✅ `AudioEngine` 類 - Web Audio API 初始化
+- ✅ `SoundTrack` 類 - 單音效播放、音量控制、循環設置
+- ✅ 音頻文件加載和解碼
 
-### 1.3 诗歌展示功能 ✅
+**1.5 多音效混音** ✅
+- ✅ `SoundMixer` 類 - 管理多個音效軌道
+- ✅ 同時播放多個音效（獨立音源）
+- ✅ 獨立音量控制（每個軌道單獨調節）
+- ✅ 主音量控制
+- ✅ UI 控制面板（`sound-controls-ui.js`）
+  - 播放/暫停按鈕
+  - 主音量滑塊
+  - 軌道列表和音量控制
 
-- [x] 实现竖排文字布局（CSS writing-mode）
-- [x] 诗歌数据管理（PoemManager 类，支持模拟数据）
-- [x] 诗歌列表界面（renderPoemList 函数）
-- [x] 诗歌详情页面（renderVerticalPoem 函数）
-- [x] 响应式设计
-- [x] ✅ **连接真实数据库**（Supabase 已配置）
-  - 已插入 3 首测试诗歌
-  - 应用可以正常加载和显示诗歌列表
+**1.6 預設聲色意境** ✅
+- ✅ `AtmosphereManager` 類 - 聲色意境數據管理
+- ✅ 從數據庫加載默認聲色意境
+- ✅ 解析音效組合配置（JSONB）
+- ✅ 示例數據：
+  - 6 個系統預設音效（蟲鳴、風聲、雨聲、流水、鳥鳴、夜晚）
+  - 3 個聲色意境（靜夜思-寧靜夜晚、春曉-春日清晨、山居秋暝-山林秋雨）
+- ⚠️ **注意**：音效文件 URL 是佔位符，需要實際上傳音頻文件到 Supabase Storage
 
----
+**1.8 UI 風格落地** ✅
+- ✅ 引入 Google Fonts（Noto Serif TC、Noto Sans TC）
+- ✅ 現代極簡冥想感設計
+  - 柔和、低對比度配色
+  - 毛玻璃效果（`backdrop-filter: blur`）
+  - 極輕陰影
+- ✅ 進場動畫
+  - 詩歌卡片淡入上移（漸進式延遲）
+  - 詩歌內容淡入
+  - 音效控制面板淡入上移
+- ✅ 平滑過渡效果
+- ✅ 暗色模式支持
+- ✅ 響應式設計（移動端適配）
 
-## ⏳ 进行中任务
+### 📋 待完成（階段 2+）
 
-### 1.3 诗歌展示功能（完善中）
+**1.7 用戶創作聲色意境** 📅
+- [ ] 編輯器界面
+- [ ] 音效選擇器（從音效庫選擇）
+- [ ] 背景配置器（顏色、動態效果）
+- [ ] 發布/保存功能
 
-当前状态：基础功能已完成，等待数据库连接测试
+**註**：此功能為階段 2 內容，當前 MVP 已具備基本展示和播放功能。
 
----
+## 階段 2：AI 智能生成
 
-## 📋 待完成任务
+- [ ] DeepSeek AI 集成
+- [ ] 詩歌分析功能
+- [ ] 音效建議生成
+- [ ] 背景配置生成
 
-### 1.4 基础音效播放
-- [ ] Web Audio API 初始化（AudioEngine 类已创建，待测试）
-- [ ] 单音效播放功能（已实现，待测试）
-- [ ] 音频文件加载和缓存（已实现）
-- [ ] 播放/暂停控制（待实现 UI）
-- [ ] 错误处理（部分实现）
+## 階段 3：用戶上傳和審核
 
-### 1.5 多音效混音
-- [ ] 多音效同时播放实现（AudioEngine 已支持）
-- [ ] 独立音量控制（已实现，待 UI）
-- [ ] 循环播放支持（已实现）
-- [ ] 音效组合管理（待实现）
+- [ ] 用戶音效上傳
+- [ ] 用戶錄音上傳
+- [ ] 管理員審核界面
+- [ ] 用戶聲色意境發布審核
 
-### 1.6 预设声色意境
-- [ ] 手动为初始诗歌创建系统预设的声色意境
-- [ ] 声色意境保存到数据库
-- [ ] 加载和播放预设声色意境
-- [ ] 音效控制面板 UI
-- [ ] 背景预览功能
+## 階段 4：音效庫集成（可選）
 
-### 1.7 用户创作声色意境
-- [ ] 声色意境编辑器界面
-- [ ] 音效选择器
-- [ ] 背景配置器
-- [ ] 实时预览功能
-- [ ] 保存草稿功能
-- [ ] 审核判断逻辑
-- [ ] 提交审核功能
+- [ ] Pixabay API 集成
+- [ ] 音效搜索功能
 
-### 1.8 UI 风格落地
-- [x] 定义全局色板（CSS 变量已定义）
-- [x] 选定字体组合（已定义）
-- [x] 设计沉浸式布局（基础布局已完成）
-- [ ] 设计音效控制组件（圆形/滑块）
-- [ ] 定义缓慢的背景动效规范
-- [ ] 在桌面与移动端验证响应式一致性
+## 階段 5：後期功能（用戶輸入詩句）
 
----
-
-## 🎯 下一步行动
-
-### 立即需要做的：
-
-1. ✅ **创建 Supabase 项目** - **已完成**
-   - ✅ Project URL: `https://hithpeekxopcipqhkhyu.supabase.co`
-   - ✅ 已更新 `js/config.js` 中的 `SUPABASE_CONFIG`
-
-2. ✅ **执行数据库迁移** - **已完成**
-   - ✅ 已创建 6 个数据表
-   - ✅ 已配置 RLS 策略
-   - ✅ 已插入 3 首测试诗歌
-
-3. ⏳ **设置 Storage bucket** - **待完成**
-   - 需要在 Supabase Dashboard → Storage 中手动创建
-   - Bucket 名称：`sound-effects`
-   - 设置为私有（需要认证）
-
-4. **测试应用**
-   ```bash
-   cd kongshan
-   python3 -m http.server 8000
-   # 访问 http://localhost:8000/kongshan/index.html
-   ```
-   - ✅ 现在应该可以看到 3 首诗歌的列表
-   - ✅ 点击诗歌卡片可以查看详情（竖排版显示）
-
-### 后续开发：
-
-4. **实现音效控制 UI**
-   - 创建音效控制面板组件
-   - 实现音量滑块
-   - 实现播放/暂停按钮
-
-5. **实现背景渲染**
-   - 测试背景渲染引擎
-   - 实现背景配置界面
-
-6. **实现声色意境功能**
-   - 创建声色意境管理器
-   - 实现加载和播放功能
+- [ ] 用戶自定義詩歌輸入
+- [ ] 用戶詩歌審核
 
 ---
 
-## 📁 已创建文件清单
+## 📊 當前狀態
 
-### HTML
-- `kongshan/index.html` ✅
+- ✅ **階段 1 MVP 完成度**：87.5%（7/8 任務完成）
+- ⚠️ **待處理事項**：
+  1. 上傳實際的音效文件到 Supabase Storage
+  2. 完善用戶創作聲色意境編輯器（階段 2）
+  3. 測試音效播放功能（需要真實音效文件）
 
-### CSS
-- `kongshan/css/variables.css` ✅
-- `kongshan/css/main.css` ✅
-- `kongshan/css/poem-display.css` ✅
-- `kongshan/css/responsive.css` ✅
+## 🚀 下一步行動
 
-### JavaScript
-- `kongshan/js/config.js` ✅
-- `kongshan/js/app.js` ✅
-- `kongshan/js/core/poem-manager.js` ✅
-- `kongshan/js/core/audio-engine.js` ✅
-- `kongshan/js/core/background-renderer.js` ✅
-- `kongshan/js/features/poem-display.js` ✅
-
-### Supabase
-- `kongshan/supabase/config.toml` ✅
-- `kongshan/supabase/migrations/001_initial_schema.sql` ✅
-- `kongshan/supabase/migrations/002_rls_policies.sql` ✅
-- `kongshan/supabase/migrations/003_storage_setup.sql` ✅
-
-### 文档
-- `kongshan/README.md` ✅
-- `kongshan/docs/DEVELOPMENT_PLAN.md` ✅
-- `kongshan/docs/PLAN_REVIEW.md` ✅
-- `kongshan/docs/CLARIFICATIONS.md` ✅
-- `kongshan/docs/FEASIBILITY_ANALYSIS.md` ✅
+1. **準備音效文件**：從網上下載並上傳 6 個音效文件到 Supabase Storage
+2. **測試播放功能**：驗證音效加載和混音功能是否正常
+3. **用戶測試**：在學校小範圍內試用
+4. **開始階段 2**：AI 智能生成功能
 
 ---
 
-## 🧪 测试方法
-
-### 本地测试
-
-1. **启动本地服务器**
-   ```bash
-   cd kongshan
-   python3 -m http.server 8000
-   ```
-
-2. **访问应用**
-   ```
-   http://localhost:8000/kongshan/index.html
-   ```
-
-3. **预期结果**
-   - 看到加载画面
-   - 加载完成后显示诗歌列表（2 首模拟诗歌）
-   - 点击诗歌卡片可以查看详情
-   - 诗歌以竖排版显示
-
-### 当前限制
-
-- ⚠️ Supabase 未配置，使用模拟数据
-- ⚠️ 音效播放功能未测试（需要音效文件）
-- ⚠️ 背景渲染未测试（需要配置）
-- ⚠️ 用户认证功能未实现
-
----
-
-## 📝 注意事项
-
-1. **Supabase 配置**：创建项目后需要更新 `js/config.js`
-2. **模块导入**：使用 ES6 模块，需要服务器环境（不能直接打开 HTML 文件）
-3. **浏览器兼容性**：需要现代浏览器支持 Web Audio API
-4. **字体**：竖排文字使用楷体，如果系统没有，会降级到系统默认字体
-
----
-
-**下一步**：创建 Supabase 项目并配置，然后继续开发音效播放和背景渲染功能。
-
+**最後更新**：2025-01-06  
+**開發者**：太虛幻境開發團隊

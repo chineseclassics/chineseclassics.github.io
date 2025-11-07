@@ -1,54 +1,101 @@
 /* ===== 詩歌卡片樣式 ===== */
 
 .poem-card {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px) saturate(120%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-sm);
   cursor: pointer;
   transition: all var(--duration-normal) var(--ease-smooth);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  width: 100%;
+  max-width: 360px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
 }
 
 .poem-card:hover {
-  background: rgba(255, 255, 255, 0.8);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: var(--shadow-lg);
 }
 
-.poem-card-title {
+/* 詩句 - 突出顯示 */
+.poem-card-verse {
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: 1.35rem;
+  font-weight: 500;
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xs);
+  line-height: 2;
+  letter-spacing: 0.12em;
+  margin-bottom: 0;
+  overflow: visible;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-line; /* 保留換行 */
+  display: block;
 }
 
-.poem-card-author {
-  font-size: 0.9rem;
-  color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-sm);
-}
+/* ===== 詩歌內容顯示（豎排版） ===== */
 
-.poem-card-preview {
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-  color: var(--color-text-secondary);
-  line-height: 1.8;
+.poem-content {
+  flex-grow: 1;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 暗色模式 */
-@media (prefers-color-scheme: dark) {
-  .poem-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .poem-card:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
+/* 詩歌包裝容器 - 豎排版布局 */
+.poem-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+  height: 100vh;
+  width: 100vw;
+  padding: 0;
 }
+
+/* 詩歌正文 - 豎排版從右到左，完全居中 */
+.poem-text {
+  writing-mode: vertical-rl; /* 豎排版，從右到左 */
+  text-orientation: mixed; /* 文字方向，中文豎排 */
+  font-family: var(--font-serif);
+  font-size: 3rem; /* 更大的字體突出正文 */
+  line-height: 2.5; /* 行高，控制字與字之間的距離 */
+  letter-spacing: 0.4em; /* 字距 */
+  color: var(--color-text-primary);
+  font-weight: 400;
+  white-space: nowrap;
+  /* 完全居中，無需額外定位 */
+}
+
+/* 詩歌標題和作者容器 - 固定在左下角 */
+.poem-meta {
+  position: absolute;
+  bottom: var(--spacing-xl);
+  left: var(--spacing-xl);
+  font-family: var(--font-serif);
+  writing-mode: vertical-rl; /* 豎排版 */
+  text-orientation: mixed;
+  color: var(--color-text-tertiary);
+  font-size: 1.2rem; /* 較小字體 */
+  letter-spacing: 0.2em;
+  opacity: 0.7; /* 降低透明度，更加低調 */
+  white-space: nowrap;
+  z-index: 10; /* 確保在詩歌正文之上 */
+}
+
+/* 暗色模式 - 不需要額外樣式，保持純淨 */

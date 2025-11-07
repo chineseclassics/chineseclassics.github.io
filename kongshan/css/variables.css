@@ -22,8 +22,8 @@
   --gradient-cool: linear-gradient(135deg, #e8f4f8 0%, #d4e8f0 100%);
   
   /* 字體 */
-  --font-serif: '仓耳今楷', 'KaiTi', '楷體', serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: 'Noto Serif TC', '仓耳今楷', 'KaiTi', '楷體', serif;
+  --font-sans: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   
   /* 間距 */
   --spacing-xs: 0.5rem;

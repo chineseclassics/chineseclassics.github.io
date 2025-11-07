@@ -12,6 +12,7 @@ import { APP_CONFIG } from '../config.js';
 export class AudioEngine {
   constructor() {
     this.audioContext = null;
+    this.masterGainNode = null; // 主音量節點（供 SoundMixer 使用）
     this.sources = new Map(); // 存儲所有播放源 { soundId: { source, gainNode, buffer } }
     this.buffers = new Map(); // 音頻緩存 { url: AudioBuffer }
     this.isMuted = false;
@@ -175,6 +176,11 @@ export class AudioEngine {
   setMasterVolume(volume) {
     this.masterVolume = Math.max(0, Math.min(1, volume));
     
+    // 更新主音量節點
+    if (this.masterGainNode) {
+      this.masterGainNode.gain.value = this.masterVolume;
+    }
+    
     // 更新所有正在播放的音效音量
     this.sources.forEach((sound, soundId) => {
       sound.gainNode.gain.value = sound.volume * this.masterVolume;
@@ -224,6 +230,32 @@ export class AudioEngine {
    */
   isPlaying(soundId) {
     return this.sources.has(soundId);
+  }
+
+  /**
+   * 獲取 AudioContext 實例（供 SoundMixer 使用）
+   */
+  getAudioContext() {
+    if (!this.audioContext) {
+      // 如果還沒有初始化，創建一個新的 AudioContext
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.initialized = true;
+    }
+    return this.audioContext;
+  }
+
+  /**
+   * 獲取主音量節點（供 SoundMixer 使用）
+   */
+  getMasterGainNode() {
+    if (!this.masterGainNode) {
+      // 創建主音量節點
+      const ctx = this.getAudioContext();
+      this.masterGainNode = ctx.createGain();
+      this.masterGainNode.gain.value = this.masterVolume;
+      this.masterGainNode.connect(ctx.destination);
+    }
+    return this.masterGainNode;
   }
 }
 

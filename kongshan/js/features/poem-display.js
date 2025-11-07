@@ -8,36 +8,41 @@
 export function renderVerticalPoem(container, poem) {
   if (!container || !poem) return;
   
-  const lines = poem.content.split('\n').filter(line => line.trim());
-  
   container.innerHTML = '';
   
-  // 標題
+  // 創建一個包裝容器
+  const poemWrapper = document.createElement('div');
+  poemWrapper.className = 'poem-wrapper';
+  
+  // 創建標題和作者的容器（放在最前面，顯示在左下角）
+  const metaContainer = document.createElement('div');
+  metaContainer.className = 'poem-meta';
+  
+  // 組合標題和作者在同一個豎行
+  let metaText = '';
   if (poem.title) {
-    const titleEl = document.createElement('div');
-    titleEl.className = 'poem-title';
-    titleEl.textContent = poem.title;
-    container.appendChild(titleEl);
+    metaText = poem.title;
   }
-  
-  // 詩歌內容
-  lines.forEach((line, index) => {
-    const lineEl = document.createElement('div');
-    lineEl.className = 'poem-line';
-    lineEl.textContent = line;
-    container.appendChild(lineEl);
-  });
-  
-  // 作者信息
   if (poem.author || poem.dynasty) {
-    const authorEl = document.createElement('div');
-    authorEl.className = 'poem-author';
     const authorText = poem.dynasty && poem.author 
       ? `${poem.dynasty} · ${poem.author}`
       : poem.author || poem.dynasty;
-    authorEl.textContent = authorText;
-    container.appendChild(authorEl);
+    metaText += (metaText ? '　' : '') + authorText; // 使用全角空格分隔
   }
+  
+  if (metaText) {
+    metaContainer.textContent = metaText;
+    poemWrapper.appendChild(metaContainer);
+  }
+  
+  // 詩歌內容 - 放在最後（豎排版中會顯示在中間偏右）
+  const contentEl = document.createElement('div');
+  contentEl.className = 'poem-text';
+  // 將換行符替換為 <br> 標籤，保持詩句的分行
+  contentEl.innerHTML = poem.content.trim().split('\n').map(line => line.trim()).join('<br>');
+  poemWrapper.appendChild(contentEl);
+  
+  container.appendChild(poemWrapper);
 }
 
 /**
@@ -51,14 +56,41 @@ export function renderPoemList(container, poems) {
   
   container.innerHTML = '';
   
-  poems.forEach(poem => {
+  poems.forEach((poem, index) => {
     const poemCard = document.createElement('div');
     poemCard.className = 'poem-card';
-    poemCard.innerHTML = `
-      <div class="poem-card-title">${poem.title || '無題'}</div>
-      <div class="poem-card-author">${poem.dynasty || ''} ${poem.author || ''}</div>
-      <div class="poem-card-preview">${poem.content.split('\n')[0]}</div>
-    `;
+    
+    // 檢查並處理詩句內容
+    let verseText = '';
+    if (poem.content) {
+      const lines = poem.content
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line);
+      // 將每行詩句保持換行顯示
+      verseText = lines.join('\n');
+    } else {
+      console.warn(`詩歌 ${index} 沒有內容:`, poem);
+      verseText = '（無內容）';
+    }
+    
+    // 調試：檢查前幾個詩歌的內容
+    if (index < 3) {
+      console.log(`詩歌 ${index}:`, {
+        title: poem.title,
+        author: poem.author,
+        dynasty: poem.dynasty,
+        content: poem.content,
+        verseText: verseText
+      });
+    }
+    
+    // 使用 textContent 創建元素，避免 HTML 轉義問題
+    const verseEl = document.createElement('div');
+    verseEl.className = 'poem-card-verse';
+    verseEl.textContent = verseText;
+    
+    poemCard.appendChild(verseEl);
     
     poemCard.addEventListener('click', () => {
       // 觸發詩歌查看事件

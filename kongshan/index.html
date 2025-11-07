@@ -5,10 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>空山 - 詩歌聲音意境欣賞</title>
     
+    <!-- Google Fonts - 中文襯線字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+    
     <!-- CSS 樣式文件 -->
     <link rel="stylesheet" href="./css/variables.css">
     <link rel="stylesheet" href="./css/main.css">
     <link rel="stylesheet" href="./css/poem-display.css">
+    <link rel="stylesheet" href="./css/sound-controls.css">
+    <link rel="stylesheet" href="./css/atmosphere-editor.css">
     <link rel="stylesheet" href="./css/responsive.css">
     
     <!-- Supabase JS Client -->
@@ -41,25 +48,42 @@
             </div>
         </div>
         
-        <!-- 詩歌欣賞頁面 -->
-        <div id="poem-viewer-screen" class="screen" style="display: none;">
-            <div class="poem-viewer-container">
-                <!-- 詩歌內容 -->
-                <div id="poem-content" class="poem-content">
-                    <!-- 詩歌將動態渲染 -->
-                </div>
-                
-                <!-- 音效控制面板 -->
-                <div id="sound-controls" class="sound-controls">
-                    <!-- 音效控制將動態生成 -->
-                </div>
-                
-                <!-- 聲色意境選擇器 -->
-                <div id="atmosphere-selector" class="atmosphere-selector">
-                    <!-- 聲色意境選擇將動態生成 -->
-                </div>
-            </div>
+      <!-- 詩歌欣賞頁面 -->
+      <div id="poem-viewer-screen" class="screen" style="display: none;">
+        <div class="poem-viewer-container">
+          <!-- 返回按鈕 -->
+          <button id="back-to-list-btn" class="back-button" aria-label="返回詩歌列表">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span class="sr-only">返回</span>
+          </button>
+          
+          <!-- 編輯按鈕 -->
+          <button id="edit-atmosphere-btn" class="edit-atmosphere-button" aria-label="創作聲色意境" title="創作聲色意境">
+            <span class="sr-only">創作聲色意境</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          
+          <!-- 詩歌內容 -->
+          <div id="poem-content" class="poem-content">
+            <!-- 詩歌將動態渲染 -->
+          </div>
+          
+          <!-- 音效控制面板 -->
+          <div id="sound-controls" class="sound-controls">
+            <!-- 音效控制將動態生成 -->
+          </div>
+          
+          <!-- 聲色意境選擇器 -->
+          <div id="atmosphere-selector" class="atmosphere-selector">
+            <!-- 聲色意境選擇將動態生成 -->
+          </div>
         </div>
+      </div>
     </div>
     
     <!-- JavaScript 模塊 -->
