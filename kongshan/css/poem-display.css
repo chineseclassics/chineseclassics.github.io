@@ -98,4 +98,25 @@
   z-index: 10; /* 確保在詩歌正文之上 */
 }
 
+/* ===== 移動端細緻調整 ===== */
+@media (max-width: 768px) {
+  .poem-wrapper {
+    padding: clamp(2.5rem, 10vh, 4rem) clamp(1.5rem, 6vw, 2.75rem) clamp(6rem, 18vh, 8.5rem);
+  }
+
+  .poem-text {
+    font-size: clamp(1.8rem, 6.2vw, 2.35rem);
+    line-height: 2.05;
+    letter-spacing: 0.26em;
+  }
+
+  .poem-meta {
+    bottom: calc(var(--spacing-md) + 48px);
+    left: calc(var(--spacing-sm) + 52px);
+    font-size: 0.95rem;
+    letter-spacing: 0.18em;
+    opacity: 0.82;
+  }
+}
+
 /* 暗色模式 - 不需要額外樣式，保持純淨 */
