@@ -17,8 +17,7 @@ export function createPlayerManager({
         const dataToSave = {
             ...playerData,
             functionsUsed: Array.from(playerData.functionsUsed),
-            firstTimeActions: Array.from(playerData.firstTimeActions),
-            achievements: Array.from(playerData.achievements)
+            firstTimeActions: Array.from(playerData.firstTimeActions)
         };
         localStorage.setItem(storageKeys.playerData, JSON.stringify(dataToSave));
     }
@@ -50,14 +49,6 @@ export function createPlayerManager({
         }
     }
 
-    function checkAchievement() {
-        // 成就系統已移除：保留空實作以確保相容性
-    }
-
-    function updateAchievements() {
-        // 成就系統已移除：保留空實作以確保相容性
-    }
-
     function handleDailyLogin() {
         const today = new Date().toDateString();
         const lastLogin = playerData.lastLoginDate;
@@ -75,7 +66,6 @@ export function createPlayerManager({
                 }
             } else {
                 playerData.dailyLoginStreak = 1;
-                checkAchievement('first_login');
             }
 
             playerData.lastLoginDate = today;
@@ -86,10 +76,6 @@ export function createPlayerManager({
             }
 
             awardPoints(dailyPoints, `每日登入 +${dailyPoints} 🖌️`);
-
-            if (playerData.dailyLoginStreak >= 3) checkAchievement('streak_3');
-            if (playerData.dailyLoginStreak >= 7) checkAchievement('streak_7');
-            if (playerData.dailyLoginStreak >= 30) checkAchievement('streak_30');
 
             savePlayerData();
         }
@@ -108,10 +94,6 @@ export function createPlayerManager({
             if (data.firstTimeActions && Array.isArray(data.firstTimeActions)) {
                 data.firstTimeActions = new Set(data.firstTimeActions);
             }
-            if (data.achievements && Array.isArray(data.achievements)) {
-                data.achievements = new Set(data.achievements);
-            }
-
             Object.assign(playerData, data);
 
             if (!savedNew && savedOld) {
@@ -139,9 +121,7 @@ export function createPlayerManager({
 
     return {
         loadPlayerData,
-        awardPoints,
-        checkAchievement,
-        updateAchievements
+        awardPoints
     };
 }
 

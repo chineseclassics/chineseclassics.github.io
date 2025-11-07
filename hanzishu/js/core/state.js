@@ -24,7 +24,6 @@ export function createInitialPlayerData() {
         perfectRadicalGames: 0,
         functionsUsed: new Set(),
         firstTimeActions: new Set(),
-        achievements: new Set(),
         statistics: {
             charactersToday: 0,
             wordsToday: 0,

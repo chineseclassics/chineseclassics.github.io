@@ -1,4 +1,4 @@
-import { levelSystem, achievementCategories, pointRewards, meaningfulCharacters } from './core/config.js';
+import { levelSystem, pointRewards, meaningfulCharacters } from './core/config.js';
 import { STORAGE_KEYS, createInitialPlayerData, createInitialVocabularyBook } from './core/state.js';
 import { createPlayerManager } from './core/player.js';
 import { systemWordlistsData } from './data/wordlists/index.js';
@@ -44,7 +44,7 @@ export function initializeApp() {
     // 本地存儲鍵名（新/舊）定義於 core/state.js 的 STORAGE_KEYS
     // ===== 墨寶積分系統核心功能 =====
 
-    const { loadPlayerData, awardPoints, checkAchievement, updateAchievements } =
+    const { loadPlayerData, awardPoints } =
         createPlayerManager({
             playerData,
             levelSystem,
@@ -74,161 +74,6 @@ export function initializeApp() {
         }
     }
 
-    // 成就顯示已移除
-
-    // 更新最近獲得的成就
-    function updateRecentAchievements() {
-        const container = document.getElementById('recent-achievements');
-        container.innerHTML = '';
-
-        // 獲取最近解鎖的3個成就
-        const recentAchievements = [];
-        for (const [categoryKey, category] of Object.entries(achievementCategories)) {
-            for (const achievement of category.achievements) {
-                if (playerData.achievements.has(achievement.id)) {
-                    recentAchievements.push(achievement);
-                }
-            }
-        }
-
-        // 顯示最近的3個成就
-        const recent = recentAchievements.slice(-3);
-
-        if (recent.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; color: var(--light-text); font-size: 12px; padding: 10px;">
-                    開始學習來解鎖成就吧！
-                </div>
-            `;
-        } else {
-            recent.forEach(achievement => {
-                const achievementEl = document.createElement('div');
-                achievementEl.className = 'recent-achievement';
-                achievementEl.innerHTML = `
-                    <div class="recent-achievement-icon">${achievement.icon}</div>
-                    <div class="recent-achievement-info">
-                        <div class="recent-achievement-name">${achievement.name}</div>
-                        <div class="recent-achievement-desc">${achievement.desc}</div>
-                    </div>
-                    <div class="recent-achievement-points">+${achievement.points}</div>
-                `;
-                container.appendChild(achievementEl);
-            });
-        }
-    }
-
-    // 更新成就進度概覽
-    function updateAchievementProgress() {
-        const categories = {
-            'basic': { element: 'basic-progress', total: 4 },
-            'stroke': { element: 'stroke-progress', total: 4 },
-            'memory': { element: 'memory-progress', total: 4 }
-        };
-
-        for (const [categoryKey, categoryInfo] of Object.entries(categories)) {
-            const category = achievementCategories[categoryKey];
-            if (category) {
-                let unlocked = 0;
-                for (const achievement of category.achievements) {
-                    if (playerData.achievements.has(achievement.id)) {
-                        unlocked++;
-                    }
-                }
-                document.getElementById(categoryInfo.element).textContent = `${unlocked}/${categoryInfo.total}`;
-            }
-        }
-    }
-
-    // 更新成就計數
-    function updateAchievementCounts() {
-        const totalAchievements = Object.values(achievementCategories).reduce((total, category) => total + category.achievements.length, 0);
-        const unlockedAchievements = playerData.achievements.size;
-
-        document.getElementById('achievement-count').textContent = `(${unlockedAchievements}/${totalAchievements})`;
-        document.getElementById('achievements-modal-count').textContent = `(${unlockedAchievements}/${totalAchievements})`;
-    }
-
-    // 更新模態窗口中的全部成就
-    function updateFullAchievementsDisplay() {
-        const container = document.getElementById('achievements-modal-list');
-        container.innerHTML = '';
-
-        // 按類別顯示成就
-        for (const [categoryKey, category] of Object.entries(achievementCategories)) {
-            // 添加類別標題
-            const categoryTitle = document.createElement('div');
-            categoryTitle.className = 'achievement-category';
-            categoryTitle.textContent = category.name;
-            container.appendChild(categoryTitle);
-
-            // 創建該類別的成就網格容器
-            const achievementGrid = document.createElement('div');
-            achievementGrid.className = 'achievement-grid';
-
-            // 添加該類別的成就
-            for (const achievement of category.achievements) {
-                const achievementEl = document.createElement('div');
-                achievementEl.className = `achievement ${playerData.achievements.has(achievement.id) ? 'unlocked' : 'locked'}`;
-
-                // 計算進度
-                let progress = '';
-                if (achievement.requirement) {
-                    let current = 0;
-                    switch (achievement.id) {
-                        case 'stroke_beginner':
-                        case 'stroke_intermediate':
-                        case 'stroke_advanced':
-                        case 'stroke_master':
-                            current = playerData.totalStrokePractices;
-                            break;
-                        case 'memory_good':
-                        case 'memory_expert':
-                        case 'memory_legend':
-                            current = playerData.totalMemoryGames;
-                            break;
-                        case 'radical_builder':
-                        case 'radical_master':
-                            current = playerData.totalRadicalGames;
-                            break;
-                        case 'char_collector':
-                        case 'char_scholar':
-                        case 'char_master':
-                            current = playerData.totalCharactersLearned;
-                            break;
-                        case 'word_starter':
-                        case 'word_expert':
-                            current = playerData.totalWordsLearned;
-                            break;
-                        case 'collector':
-                        case 'treasure_hunter':
-                        case 'archive_keeper':
-                            current = playerData.totalCollections;
-                            break;
-                        case 'streak_3':
-                        case 'streak_7':
-                        case 'streak_30':
-                            current = playerData.dailyLoginStreak;
-                            break;
-                    }
-                    progress = `${Math.min(current, achievement.requirement)}/${achievement.requirement}`;
-                }
-
-                achievementEl.innerHTML = `
-                    <div class="achievement-icon">${achievement.icon}</div>
-                    <div class="achievement-details">
-                        <div class="achievement-name">${achievement.name}</div>
-                        <div class="achievement-description">${achievement.desc}</div>
-                        ${progress ? `<div class="achievement-progress">${progress}</div>` : ''}
-                    </div>
-                    <div class="achievement-points">+${achievement.points}</div>
-                `;
-
-                achievementGrid.appendChild(achievementEl);
-            }
-
-            container.appendChild(achievementGrid);
-        }
-    }
     // 顯示積分通知
     function showPointNotification(message) {
         const notification = document.createElement('div');
@@ -264,40 +109,6 @@ export function initializeApp() {
 
     // 初始化積分系統（成就相關已移除）
     loadPlayerData();
-
-    // 設置成就模態窗口事件監聽器
-    function setupAchievementsModal() {
-        const viewAllBtn = document.getElementById('view-all-achievements');
-        const modal = document.getElementById('achievements-modal');
-        const closeBtn = document.getElementById('achievements-modal-close');
-
-        // 打開模態窗口
-        viewAllBtn.addEventListener('click', () => {
-            updateFullAchievementsDisplay();
-            modal.style.display = 'flex';
-        });
-
-        // 關閉模態窗口
-        closeBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-
-        // 點擊背景關閉模態窗口
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-
-        // ESC鍵關閉模態窗口
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.style.display === 'flex') {
-                modal.style.display = 'none';
-            }
-        });
-    }
-
-    // 成就系統已移除：不再初始化成就模態窗口
 
     // 獲取所有DOM元素（必須在函數定義之前）
     const navLookup = document.getElementById('nav-lookup');
@@ -365,20 +176,17 @@ export function initializeApp() {
         switchMainFunction(navLookup, characterDisplaySection);
         // 記錄功能使用
         playerData.functionsUsed.add('stroke_lookup');
-        checkAchievement('explorer');
     });
 
     navWordLookup.addEventListener('click', function() {
         switchMainFunction(navWordLookup, wordLookupContainer);
         // 記錄功能使用
         playerData.functionsUsed.add('word_lookup_page');
-        checkAchievement('explorer');
     });
     navPractice.addEventListener('click', function() {
         switchMainFunction(navPractice, quizContainer);
         // 記錄功能使用
         playerData.functionsUsed.add('practice_page');
-        checkAchievement('explorer');
         // 只有在沒有設置防止自動啟動標記時才啟動隨機練習
         if (!preventAutoStart) {
             setTimeout(() => {
@@ -394,7 +202,6 @@ export function initializeApp() {
         switchMainFunction(navMemory, memoryGameContainer);
         // 記錄功能使用
         playerData.functionsUsed.add('memory_page');
-        checkAchievement('explorer');
     });
     // 獲取DOM元素
     const characterInput = document.getElementById('character-input');
@@ -558,9 +365,6 @@ export function initializeApp() {
             }
 
             const data = await response.json();
-
-            // 調試：打印完整數據結構
-            console.log('萌典API返回數據:', JSON.stringify(data, null, 2));
 
             displayCharacterDefinition(data);
         } catch (error) {
@@ -826,23 +630,13 @@ export function initializeApp() {
                     // 首次查詢獎勵
                     if (!playerData.firstTimeActions.has('first_character')) {
                         playerData.firstTimeActions.add('first_character');
-                        checkAchievement('first_character');
                     }
 
                     // 查詢積分獎勵
                     awardPoints(pointRewards.characterLookup, `查詢漢字 +${pointRewards.characterLookup} 🖌️`);
 
-                    // 檢查學習里程成就
-                    checkAchievement('char_collector');
-                    checkAchievement('char_scholar');
-                    checkAchievement('char_master');
-
-                    // 檢查時間相關成就
-                    checkAchievement('night_owl');
-                    checkAchievement('early_bird');
-
-                    // 更新成就
-                    updateAchievements();
+                // 檢查時間相關成就
+                // 成就功能已關閉，僅保留時間記錄邏輯
                 }
 
                 // 查詢字義解釋
@@ -1154,15 +948,8 @@ export function initializeApp() {
                 // 筆順練習積分獎勵
                 awardPoints(pointRewards.strokePractice, `筆順練習 +${pointRewards.strokePractice} 🖌️`);
 
-                // 檢查筆順練習成就
-                checkAchievement('stroke_beginner');
-                checkAchievement('stroke_intermediate');
-                checkAchievement('stroke_advanced');
-                checkAchievement('stroke_master');
-
-                // 更新成就
+                // 記錄學習字元
                 addToLearnedCharacters(currentCharacter);
-                updateAchievements();
             }
         });
     }
@@ -1647,7 +1434,6 @@ export function initializeApp() {
         // 首次遊戲獎勵
         if (!playerData.firstTimeActions.has('memory_first')) {
             playerData.firstTimeActions.add('memory_first');
-            checkAchievement('memory_first');
         }
 
         // 根據表現給予積分
@@ -1658,22 +1444,10 @@ export function initializeApp() {
             playerData.perfectMemoryGames++;
 
             // 檢查閃電記憶成就（5秒內完成）
-            if (memorySelectionDuration > 0 && memorySelectionDuration <= 5) {
-                checkAchievement('lightning_memory');
-            }
+            // 成就功能關閉，僅記錄完美表現
         }
 
         awardPoints(gamePoints, `記憶挑戰 +${gamePoints} 🖌️`);
-
-        // 檢查記憶遊戲成就
-        checkAchievement('memory_good');
-        checkAchievement('memory_expert');
-        checkAchievement('memory_legend');
-        checkAchievement('perfectionist');
-        checkAchievement('game_master');
-
-        // 更新成就
-        updateAchievements();
 
         // 顯示結果
         memoryResult.style.display = 'block';
@@ -1852,16 +1626,10 @@ export function initializeApp() {
         // 首次收藏獎勵
         if (!playerData.firstTimeActions.has('first_collection')) {
             playerData.firstTimeActions.add('first_collection');
-            checkAchievement('first_collection');
         }
 
         // 收藏積分獎勵
         awardPoints(pointRewards.collection, `收藏字詞 +${pointRewards.collection} 🖌️`);
-
-        // 檢查收藏成就
-        checkAchievement('collector');
-        checkAchievement('treasure_hunter');
-        checkAchievement('archive_keeper');
 
         return true; // 成功添加
     }
@@ -2374,7 +2142,6 @@ export function initializeApp() {
 
     // 載入學習記錄和預加載語音
     loadLearnedCharacters();
-    updateAchievements();
     preloadVoices();
 
     // 初始化記憶挑戰
@@ -2389,7 +2156,6 @@ export function initializeApp() {
         switchMainFunction(navRadical, radicalGameContainer);
         // 記錄功能使用
         playerData.functionsUsed.add('radical_game');
-        checkAchievement('explorer');
     });
 
     // 部首字典 - 常用部首及其可組成的字
@@ -2751,7 +2517,6 @@ export function initializeApp() {
             // 首次遊戲獎勵
             if (!playerData.firstTimeActions.has('radical_first')) {
                 playerData.firstTimeActions.add('radical_first');
-                checkAchievement('radical_first');
             }
 
             // 根據表現給予積分
@@ -2763,14 +2528,7 @@ export function initializeApp() {
             }
 
             awardPoints(gamePoints, `部首組字 +${gamePoints} 🖌️`);
-
-            // 檢查部首遊戲成就
-            checkAchievement('radical_builder');
-            checkAchievement('radical_master');
-            checkAchievement('perfectionist');
-            checkAchievement('game_master');
-
-            updateAchievements();
+            // 成就系統關閉，僅保留積分與統計
         } else {
             // 不匹配
             showRadicalResult(false);
@@ -3657,19 +3415,11 @@ export function initializeApp() {
                 // 首次查詢獎勵
                 if (!playerData.firstTimeActions.has('first_word')) {
                     playerData.firstTimeActions.add('first_word');
-                    checkAchievement('first_word');
                 }
 
                 // 查詢積分獎勵
                 awardPoints(pointRewards.wordLookup, `查詢詞語 +${pointRewards.wordLookup} 🖌️`);
-
-                // 檢查學習里程成就
-                checkAchievement('word_starter');
-                checkAchievement('word_expert');
-
-                // 檢查時間相關成就
-                checkAchievement('night_owl');
-                checkAchievement('early_bird');
+                // 成就功能關閉，僅保留積分與統計
             }
         }
     }
@@ -3683,7 +3433,6 @@ export function initializeApp() {
         }
 
         const data = await response.json();
-        console.log('萌典單字API返回數據:', JSON.stringify(data, null, 2));
 
         displaySingleCharacterDefinition(data, character);
     }
@@ -3697,7 +3446,6 @@ export function initializeApp() {
         }
 
         const data = await response.json();
-        console.log('萌典詞語API返回數據:', JSON.stringify(data, null, 2));
 
         displayMultiCharacterDefinition(data, word);
     }
