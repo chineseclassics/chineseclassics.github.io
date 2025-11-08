@@ -30,8 +30,35 @@ const AppState = {
   authSubscription: null,
   visitorCount: null,
   authSubtitleDefault: '',
-  activeScreen: 'loading'
+  activeScreen: 'loading',
+  isPreviewMode: false,
+  previewAtmosphereData: null,
+  baseBackgroundConfig: null
 };
+
+/**
+ * 將視覺與聲音狀態還原到基礎狀態
+ */
+function resetAtmosphereEnvironment() {
+  try {
+    if (AppState.soundMixer) {
+      AppState.soundMixer.clear();
+    }
+
+    if (AppState.backgroundRenderer) {
+      if (AppState.baseBackgroundConfig) {
+        AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
+      } else {
+        AppState.backgroundRenderer.clear();
+      }
+    }
+  } catch (resetError) {
+    console.warn('重置聲色環境時發生錯誤:', resetError);
+  }
+
+  AppState.currentAtmosphere = null;
+  AppState.isPreviewMode = false;
+}
 
 /**
  * 更新太虛幻境切換器可見性
@@ -186,6 +213,7 @@ function syncUserState(user) {
     } else if (AppState.authStatus !== 'connecting') {
       AppState.authStatus = 'signed_out';
     }
+    resetAtmosphereEnvironment();
     updateAuthUI();
     return;
   }
@@ -444,6 +472,7 @@ async function showPoemListScreen() {
   if (listScreen) listScreen.style.display = 'flex'; // 使用 flex 以匹配 CSS
   if (viewerScreen) viewerScreen.style.display = 'none';
   AppState.activeScreen = 'list';
+  resetAtmosphereEnvironment();
   updateAppSwitcherVisibility();
   
   // 加載詩歌列表
@@ -571,6 +600,7 @@ async function loadAtmosphere(poemId) {
 
   // 清空現有的音效
   AppState.soundMixer.clear();
+  AppState.isPreviewMode = false;
 
   try {
     // 從數據庫加載默認聲色意境
