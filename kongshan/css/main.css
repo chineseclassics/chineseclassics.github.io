@@ -352,6 +352,10 @@ body {
   padding: 1rem;
 }
 
+.recording-name-panel[hidden] {
+  display: none !important;
+}
+
 .recording-name-panel audio {
   width: 100%;
 }

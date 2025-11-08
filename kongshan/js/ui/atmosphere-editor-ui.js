@@ -770,20 +770,26 @@ async function uploadRecording(displayName) {
     throw new Error('未能取得使用者身份，請重新整理頁面。');
   }
 
-  const extension = inferFileExtension(currentRecordingMimeType || currentRecordingBlob.type);
+  const rawMimeType = currentRecordingMimeType || currentRecordingBlob.type || getFallbackMimeType();
+  const normalizedMimeType = normalizeRecordingMimeType(rawMimeType);
+  const extension = inferFileExtension(normalizedMimeType);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const sanitizedBaseName = displayName.replace(/[^\u4e00-\u9fa5A-Za-z0-9\-\s_]/g, '').replace(/\s+/g, '_');
   const finalFileName = `${sanitizedBaseName || 'recording'}_${timestamp}.${extension}`;
   const storagePath = `${userId}/${finalFileName}`;
-  const fileType = currentRecordingBlob.type || currentRecordingMimeType || getFallbackMimeType();
-  const file = new File([currentRecordingBlob], finalFileName, { type: fileType });
+  const uploadBlob = createUploadBlob(currentRecordingBlob, normalizedMimeType);
+
+  if (!uploadBlob || uploadBlob.size === 0) {
+    throw new Error('錄音資料為空，請重新錄製。');
+  }
 
   const { error: uploadError } = await supabaseClient
     .storage
     .from('kongshan_recordings')
-    .upload(storagePath, file, {
+    .upload(storagePath, uploadBlob, {
       cacheControl: '3600',
-      upsert: false
+      upsert: false,
+      contentType: normalizedMimeType
     });
 
   if (uploadError) {
@@ -984,19 +990,57 @@ function inferFileExtension(mimeType) {
   if (!mimeType) {
     return 'm4a';
   }
-  if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+  const normalized = mimeType.toLowerCase();
+  if (normalized.includes('mp4') || normalized.includes('m4a')) {
     return 'm4a';
   }
-  if (mimeType.includes('ogg')) {
+  if (normalized.includes('mpeg')) {
+    return 'mp3';
+  }
+  if (normalized.includes('ogg')) {
     return 'ogg';
   }
-  if (mimeType.includes('wav')) {
+  if (normalized.includes('wav')) {
     return 'wav';
   }
-  if (mimeType.includes('aac')) {
+  if (normalized.includes('aac')) {
     return 'aac';
   }
   return 'm4a';
+}
+
+function normalizeRecordingMimeType(mimeType) {
+  if (!mimeType || typeof mimeType !== 'string') {
+    return getFallbackMimeType();
+  }
+
+  const cleaned = mimeType.split(';')[0].trim().toLowerCase();
+  if (!cleaned) {
+    return getFallbackMimeType();
+  }
+
+  if (cleaned === 'audio/x-m4a') {
+    return 'audio/mp4';
+  }
+
+  return cleaned;
+}
+
+function createUploadBlob(blob, mimeType) {
+  if (!blob) {
+    return null;
+  }
+
+  if (blob.type && blob.type.toLowerCase() === mimeType) {
+    return blob;
+  }
+
+  try {
+    return new Blob([blob], { type: mimeType });
+  } catch (error) {
+    console.warn('重新封裝錄音資料時發生問題，改用原始 Blob：', error);
+    return blob;
+  }
 }
 
 async function ensureCurrentUserId() {
