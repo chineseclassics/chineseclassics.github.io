@@ -2,33 +2,6 @@
 // 管理後台全螢幕控制器
 // =====================================================
 
-const VIEW_META = {
-  'recording-review': {
-    title: '音效審核',
-    description: '審核旅人上傳的錄音素材，維持空山的聲色品質。'
-  },
-  'poem-management': {
-    title: '詩句管理',
-    description: '編輯與維護詩歌資料，確保旅人賞詩時有最佳體驗。'
-  },
-  'sound-management': {
-    title: '音效管理',
-    description: '整理系統音效與素材標籤，建構沉浸式的聲音場景。'
-  },
-  'user-management': {
-    title: '用戶管理',
-    description: '檢視旅人與管理者的權限狀態，維持社群秩序。'
-  },
-  'statistics': {
-    title: '數據統計',
-    description: '掌握空山的使用趨勢與旅人互動，作為營運決策依據。'
-  },
-  'logs': {
-    title: '操作日誌',
-    description: '追蹤管理操作與系統活動，方便稽核與問題排查。'
-  }
-};
-
 /**
  * 管理後台全螢幕畫面控制器
  */
@@ -39,8 +12,6 @@ export class AdminDrawer {
 
     this.screen = null;
     this.contentEl = null;
-    this.titleEl = null;
-    this.descriptionEl = null;
     this.navItems = [];
     this.isOpen = false;
     this.currentView = null;
@@ -57,8 +28,6 @@ export class AdminDrawer {
     }
 
     this.contentEl = this.screen.querySelector('#admin-dashboard-content');
-    this.titleEl = this.screen.querySelector('#admin-dashboard-title');
-    this.descriptionEl = this.screen.querySelector('#admin-dashboard-description');
     this.navItems = Array.from(this.screen.querySelectorAll('.admin-nav-item'));
 
     this.bindNavEvents();
@@ -146,7 +115,6 @@ export class AdminDrawer {
       }
     });
 
-    this.updateHeader(viewName);
     this.currentView = viewName;
     this.onContentChange(viewName);
   }
@@ -198,28 +166,7 @@ export class AdminDrawer {
     this.screen = null;
     this.contentEl = null;
     this.navItems = [];
-    this.titleEl = null;
-    this.descriptionEl = null;
     this.isOpen = false;
-  }
-
-  /**
-   * 更新標題與說明
-   * @param {string} viewName
-   */
-  updateHeader(viewName) {
-    const meta = VIEW_META[viewName] || {
-      title: '管理後台',
-      description: '管理空山的旅人體驗與內容。'
-    };
-
-    if (this.titleEl) {
-      this.titleEl.textContent = meta.title;
-    }
-
-    if (this.descriptionEl) {
-      this.descriptionEl.textContent = meta.description;
-    }
   }
 
   /**

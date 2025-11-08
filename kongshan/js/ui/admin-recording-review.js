@@ -18,24 +18,22 @@ export async function renderRecordingReview(container, { adminManager, supabase,
   }
 
   container.innerHTML = `
-    <div class="admin-section">
-      <div class="admin-section-header">
-        <div>
-          <h2 class="admin-section-title">音效審核</h2>
-          <p class="admin-description">請聆聽旅人上傳的音效，並給予審核結果。通過後音效會立即對所有旅人開放使用。</p>
-        </div>
-        <div class="admin-inline-actions">
-          <button class="admin-btn admin-btn-secondary" type="button" data-action="refresh">
-            <i class="fas fa-rotate-right" aria-hidden="true"></i>
-            重新整理
-          </button>
-        </div>
+    <div class="admin-section-header">
+      <div>
+        <h2 class="admin-section-title">音效審核</h2>
+        <p class="admin-description">請聆聽旅人上傳的音效，並給予審核結果。通過後音效會立即對所有旅人開放使用。</p>
       </div>
-      <div class="admin-card-list" id="admin-recording-review-list">
-        <div class="admin-empty-state" id="admin-recording-review-loading">
-          <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
-          <p>載入待審核音效中...</p>
-        </div>
+      <div class="admin-inline-actions">
+        <button class="admin-btn admin-btn-secondary" type="button" data-action="refresh">
+          <i class="fas fa-rotate-right" aria-hidden="true"></i>
+          重新整理
+        </button>
+      </div>
+    </div>
+    <div class="admin-card-list" id="admin-recording-review-list">
+      <div class="admin-empty-state" id="admin-recording-review-loading">
+        <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
+        <p>載入待審核音效中...</p>
       </div>
     </div>
   `;

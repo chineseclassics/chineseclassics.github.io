@@ -14,24 +14,23 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
   }
 
   container.innerHTML = `
-    <div class="admin-section">
-      <div class="admin-section-header">
-        <div>
-          <h2 class="admin-section-title">詩句庫管理</h2>
-          <p class="admin-description">管理系統中的詩歌。可以新增、編輯或刪除詩句，調整內容後將立即反映在旅人端。</p>
-        </div>
-        <div class="admin-inline-actions">
-          <button class="admin-btn admin-btn-secondary" type="button" data-action="refresh">
-            <i class="fas fa-rotate-right" aria-hidden="true"></i>
-            重新整理
-          </button>
-          <button class="admin-btn admin-btn-primary" type="button" data-action="create">
-            <i class="fas fa-plus" aria-hidden="true"></i>
-            新增詩句
-          </button>
-        </div>
+    <div class="admin-section-header">
+      <div>
+        <h2 class="admin-section-title">詩句庫管理</h2>
+        <p class="admin-description">管理系統中的詩歌。可以新增、編輯或刪除詩句，調整內容後將立即反映在旅人端。</p>
       </div>
-      <div class="admin-card admin-card-table-wrapper">
+      <div class="admin-inline-actions">
+        <button class="admin-btn admin-btn-secondary" type="button" data-action="refresh">
+          <i class="fas fa-rotate-right" aria-hidden="true"></i>
+          重新整理
+        </button>
+        <button class="admin-btn admin-btn-primary" type="button" data-action="create">
+          <i class="fas fa-plus" aria-hidden="true"></i>
+          新增詩句
+        </button>
+      </div>
+    </div>
+    <div class="admin-card admin-card-table-wrapper">
         <table class="admin-table" aria-describedby="poem-management-empty">
           <thead>
             <tr>
@@ -54,7 +53,6 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
           </tbody>
         </table>
       </div>
-    </div>
   `;
 
   const state = {

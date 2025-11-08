@@ -1350,10 +1350,8 @@ async function handleAdminViewChange(viewName) {
     // 根據視圖名稱載入對應的內容
     // 這裡先顯示一個佔位符，後續會實現具體的 UI 組件
     AppState.adminDrawer.setContent(`
-      <div class="admin-section">
-        <h2 class="admin-section-title">${getAdminViewTitle(viewName)}</h2>
-        <p class="admin-empty-state">功能開發中...</p>
-      </div>
+      <h2 class="admin-section-title">${getAdminViewTitle(viewName)}</h2>
+      <p class="admin-empty-state">功能開發中...</p>
     `);
   } catch (error) {
     console.error('載入管理視圖失敗:', error);
