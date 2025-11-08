@@ -1072,10 +1072,15 @@ function buildSafeStorageFileBase(name) {
     return 'recording';
   }
 
-  const allowedChars = [];
+  const safeSegments = [];
   for (const char of normalized) {
-    if (char === '-' || char === '_' || char === ' ') {
-      allowedChars.push(char);
+    if (/\s/.test(char)) {
+      safeSegments.push('_');
+      continue;
+    }
+
+    if (char === '-' || char === '_') {
+      safeSegments.push(char);
       continue;
     }
 
@@ -1083,28 +1088,24 @@ function buildSafeStorageFileBase(name) {
     const isAsciiDigit = codePoint >= 0x30 && codePoint <= 0x39;
     const isAsciiUpper = codePoint >= 0x41 && codePoint <= 0x5A;
     const isAsciiLower = codePoint >= 0x61 && codePoint <= 0x7A;
-    const isCjkUnified = (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
-      || (codePoint >= 0x3400 && codePoint <= 0x4DBF)
-      || (codePoint >= 0x20000 && codePoint <= 0x2A6DF)
-      || (codePoint >= 0x2A700 && codePoint <= 0x2B73F)
-      || (codePoint >= 0x2B740 && codePoint <= 0x2B81F)
-      || (codePoint >= 0x2B820 && codePoint <= 0x2CEAF)
-      || (codePoint >= 0xF900 && codePoint <= 0xFAFF);
 
-    if (isAsciiDigit || isAsciiUpper || isAsciiLower || isCjkUnified) {
-      allowedChars.push(char);
+    if (isAsciiDigit || isAsciiUpper || isAsciiLower) {
+      safeSegments.push(char.toLowerCase());
+    } else {
+      const hex = codePoint.toString(16).toLowerCase();
+      const paddedHex = codePoint <= 0xFFFF ? hex.padStart(4, '0') : hex;
+      safeSegments.push(`u${paddedHex}`);
     }
   }
 
-  let result = allowedChars.join('');
+  let result = safeSegments.join('');
   if (!result) {
     return 'recording';
   }
 
-  result = result.replace(/\s+/g, '_');
   result = result.replace(/_+/g, '_');
-  result = result.replace(/^-+|-+$/g, '');
-  result = result.replace(/^_+|_+$/g, '');
+  result = result.replace(/-+/g, '-');
+  result = result.replace(/^[_-]+|[_-]+$/g, '');
 
   if (!result) {
     return 'recording';
