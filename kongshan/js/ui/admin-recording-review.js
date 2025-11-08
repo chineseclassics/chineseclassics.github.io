@@ -17,6 +17,8 @@ export async function renderRecordingReview(container, { adminManager, supabase,
     return;
   }
 
+  container.classList.add('admin-view-shell');
+
   container.innerHTML = `
     <div class="admin-section-header">
       <div>
@@ -24,7 +26,7 @@ export async function renderRecordingReview(container, { adminManager, supabase,
         <p class="admin-description">請聆聽旅人上傳的音效，並給予審核結果。通過後音效會立即對所有旅人開放使用。</p>
       </div>
       <div class="admin-inline-actions">
-        <button class="admin-btn admin-btn-secondary" type="button" data-action="refresh">
+        <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="refresh">
           <i class="fas fa-rotate-right" aria-hidden="true"></i>
           重新整理
         </button>

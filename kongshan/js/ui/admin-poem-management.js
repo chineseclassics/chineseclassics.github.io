@@ -13,21 +13,29 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
     return;
   }
 
+  container.classList.add('admin-view-shell');
+
   container.innerHTML = `
-    <div class="admin-section-header">
-      <div class="admin-inline-actions">
-        <button class="admin-btn admin-btn-secondary" type="button" data-action="refresh">
-          <i class="fas fa-rotate-right" aria-hidden="true"></i>
-          重新整理
-        </button>
-        <button class="admin-btn admin-btn-primary" type="button" data-action="create">
-          <i class="fas fa-plus" aria-hidden="true"></i>
-          新增詩句
-        </button>
-      </div>
-    </div>
-    <div class="admin-card admin-card-table-wrapper">
-        <table class="admin-table" aria-describedby="poem-management-empty">
+    <section class="admin-section">
+      <header class="admin-section-header">
+        <div>
+          <h2 class="admin-section-title">詩句庫管理</h2>
+          <p class="admin-description">維護系統中的詩篇，新增或調整後會立即對旅人顯示。</p>
+        </div>
+        <div class="admin-inline-actions">
+          <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="refresh">
+            <i class="fas fa-rotate-right" aria-hidden="true"></i>
+            重新整理
+          </button>
+          <button class="admin-btn admin-btn-primary admin-btn-small" type="button" data-action="create">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            新增詩句
+          </button>
+        </div>
+      </header>
+
+      <div class="admin-card admin-card-table-wrapper">
+        <table class="admin-table admin-poem-table" aria-describedby="poem-management-empty">
           <thead>
             <tr>
               <th scope="col">詩句</th>
@@ -48,6 +56,7 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
           </tbody>
         </table>
       </div>
+    </section>
   `;
 
   const state = {
@@ -238,9 +247,9 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
             <textarea id="poem-content-input" class="admin-form-textarea" rows="6" required placeholder="請輸入完整詩文，每一句可另起一行。"></textarea>
           </div>
           <p class="admin-error-text admin-hidden" data-role="form-error"></p>
-          <div class="admin-modal-actions">
-            <button type="button" class="admin-btn admin-btn-secondary" data-action="cancel">取消</button>
-            <button type="submit" class="admin-btn admin-btn-primary">${isEdit ? '儲存變更' : '新增詩句'}</button>
+        <div class="admin-modal-actions">
+          <button type="button" class="admin-btn admin-btn-secondary admin-btn-small" data-action="cancel">取消</button>
+          <button type="submit" class="admin-btn admin-btn-primary admin-btn-small">${isEdit ? '儲存變更' : '新增詩句'}</button>
           </div>
         </form>
       </div>
@@ -332,8 +341,8 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
           詩句刪除後，相關聲色意境會保留，但詩句本身無法復原。
         </p>
         <div class="admin-confirm-dialog-actions">
-          <button class="admin-btn admin-btn-secondary" type="button" data-action="cancel">取消</button>
-          <button class="admin-btn admin-btn-danger" type="button" data-action="confirm">刪除</button>
+          <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="cancel">取消</button>
+          <button class="admin-btn admin-btn-danger admin-btn-small" type="button" data-action="confirm">刪除</button>
         </div>
       </div>
     `;

@@ -569,7 +569,7 @@ export class AdminManager {
           duration: soundData.duration || null,
           tags: soundData.tags || null,
           source: soundData.source || 'system',
-          status: 'approved'
+          status: soundData.status || 'approved'
         })
         .select()
         .single();
@@ -607,6 +607,8 @@ export class AdminManager {
       if (soundData.file_url !== undefined) updateData.file_url = soundData.file_url;
       if (soundData.duration !== undefined) updateData.duration = soundData.duration;
       if (soundData.tags !== undefined) updateData.tags = soundData.tags;
+      if (soundData.source !== undefined) updateData.source = soundData.source || 'system';
+      if (soundData.status !== undefined) updateData.status = soundData.status || 'approved';
 
       const { data, error } = await this.supabase
         .from('sound_effects')
