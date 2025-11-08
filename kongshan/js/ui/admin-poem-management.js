@@ -15,10 +15,6 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
 
   container.innerHTML = `
     <div class="admin-section-header">
-      <div>
-        <h2 class="admin-section-title">詩句庫管理</h2>
-        <p class="admin-description">管理系統中的詩歌。可以新增、編輯或刪除詩句，調整內容後將立即反映在旅人端。</p>
-      </div>
       <div class="admin-inline-actions">
         <button class="admin-btn admin-btn-secondary" type="button" data-action="refresh">
           <i class="fas fa-rotate-right" aria-hidden="true"></i>
@@ -34,16 +30,15 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
         <table class="admin-table" aria-describedby="poem-management-empty">
           <thead>
             <tr>
-              <th scope="col">題名</th>
+              <th scope="col">詩句</th>
               <th scope="col">作者</th>
-              <th scope="col">朝代</th>
-              <th scope="col">建立時間</th>
+              <th scope="col">題名</th>
               <th scope="col" class="admin-table-actions">操作</th>
             </tr>
           </thead>
           <tbody id="admin-poem-table-body">
             <tr>
-              <td colspan="5">
+              <td colspan="4">
                 <div class="admin-empty-state" id="admin-poem-loading">
                   <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
                   <p>載入詩句中...</p>
@@ -110,7 +105,7 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
     if (!state.poems || state.poems.length === 0) {
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td colspan="5">
+        <td colspan="4">
           <div class="admin-empty-state" id="poem-management-empty">
             <i class="fas fa-book-open" aria-hidden="true"></i>
             <p>目前沒有任何詩句，請點擊右上角的「新增詩句」。</p>
@@ -124,11 +119,19 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
     state.poems.forEach(poem => {
       const row = document.createElement('tr');
       row.dataset.poemId = poem.id;
+      
+      // 處理詩句內容，保留換行但限制顯示長度
+      let contentDisplay = poem.content || '（無內容）';
+      if (contentDisplay.length > 100) {
+        contentDisplay = contentDisplay.substring(0, 100) + '...';
+      }
+      // 將換行轉換為空格以便在表格中顯示
+      contentDisplay = contentDisplay.replace(/\n/g, ' ');
+      
       row.innerHTML = `
-        <td data-label="題名">${escapeHtml(poem.title || '未命名')}</td>
+        <td data-label="詩句" class="admin-poem-content-cell">${escapeHtml(contentDisplay)}</td>
         <td data-label="作者">${escapeHtml(poem.author || '佚名')}</td>
-        <td data-label="朝代">${escapeHtml(poem.dynasty || '未知')}</td>
-        <td data-label="建立時間">${formatDate(poem.created_at)}</td>
+        <td data-label="題名">${escapeHtml(poem.title || '未命名')}</td>
         <td class="admin-table-actions">
           <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="edit">
             <i class="fas fa-pen" aria-hidden="true"></i>
@@ -166,7 +169,7 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
     }
     tableBody.innerHTML = `
       <tr>
-        <td colspan="5">
+        <td colspan="4">
           <div class="admin-empty-state">
             <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
             <p>載入詩句中...</p>
@@ -182,7 +185,7 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
     }
     tableBody.innerHTML = `
       <tr>
-        <td colspan="5">
+        <td colspan="4">
           <div class="admin-error">
             <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
             <p>${message}</p>
