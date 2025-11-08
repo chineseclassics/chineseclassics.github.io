@@ -286,8 +286,9 @@ body {
 
 .recording-inline {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-sm);
 }
 
 .recording-toggle {
@@ -329,6 +330,7 @@ body {
   font-size: 0.95rem;
   letter-spacing: 0.08em;
   color: var(--color-text-secondary);
+  text-align: center;
 }
 
 .recording-status {
