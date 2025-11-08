@@ -1249,10 +1249,24 @@ body {
     line-height: 2;
     letter-spacing: 0.3em;
   }
-  
+
   .poem-title,
   .poem-author {
     font-size: 1rem;
+  }
+
+  .recording-toggle {
+    width: 104px;
+    height: 104px;
+    font-size: 2.8rem;
+  }
+
+  .recording-toggle i {
+    font-size: 2.4rem;
+  }
+
+  .recording-timer-text {
+    font-size: 1.1rem;
   }
   
   .sound-controls {
