@@ -888,6 +888,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 2rem;
   box-shadow: 0 18px 42px -30px rgba(60, 76, 58, 0.65);
   cursor: pointer;
   transition: transform var(--duration-normal) var(--ease-gentle), box-shadow var(--duration-normal) var(--ease-gentle), border-color var(--duration-fast) var(--ease-smooth);
@@ -982,11 +983,8 @@ body {
   outline: none;
 }
 
-.atmosphere-cycle-logo svg {
-  width: 32px;
-  height: 32px;
+.atmosphere-cycle-logo i {
   pointer-events: none;
-  stroke: currentColor;
 }
 
 @media (max-width: 768px) {
@@ -1007,12 +1005,8 @@ body {
     width: 60px;
     height: 60px;
     border-radius: var(--radius-full);
+    font-size: 1.6rem;
     margin: 0;
-  }
-
-  .atmosphere-cycle-logo svg {
-    width: 24px;
-    height: 24px;
   }
 
   .edit-atmosphere-button {
@@ -1255,7 +1249,7 @@ body {
     line-height: 2;
     letter-spacing: 0.3em;
   }
-
+  
   .poem-title,
   .poem-author {
     font-size: 1rem;
