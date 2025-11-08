@@ -14,6 +14,10 @@ export function renderVerticalPoem(container, poem) {
   const poemWrapper = document.createElement('div');
   poemWrapper.className = 'poem-wrapper';
   
+  // 創建內容區域容器，包裹文本和元數據
+  const contentArea = document.createElement('div');
+  contentArea.className = 'poem-content-area';
+  
   // 創建標題和作者的容器（放在最前面，顯示在左下角）
   const metaContainer = document.createElement('div');
   metaContainer.className = 'poem-meta';
@@ -32,7 +36,7 @@ export function renderVerticalPoem(container, poem) {
   
   if (metaText) {
     metaContainer.textContent = metaText;
-    poemWrapper.appendChild(metaContainer);
+    contentArea.appendChild(metaContainer);
   }
   
   // 詩歌內容 - 放在最後（豎排版中會顯示在中間偏右）
@@ -40,8 +44,9 @@ export function renderVerticalPoem(container, poem) {
   contentEl.className = 'poem-text';
   // 將換行符替換為 <br> 標籤，保持詩句的分行
   contentEl.innerHTML = poem.content.trim().split('\n').map(line => line.trim()).join('<br>');
-  poemWrapper.appendChild(contentEl);
+  contentArea.appendChild(contentEl);
   
+  poemWrapper.appendChild(contentArea);
   container.appendChild(poemWrapper);
 }
 

@@ -69,6 +69,18 @@
   padding: 0;
 }
 
+/* 詩歌內容區域 - 包裹文本和元數據 */
+.poem-content-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--spacing-xl);
+  box-sizing: border-box;
+}
+
 /* 詩歌正文 - 豎排版從右到左，完全居中 */
 .poem-text {
   writing-mode: vertical-rl; /* 豎排版，從右到左 */
@@ -83,7 +95,7 @@
   /* 完全居中，無需額外定位 */
 }
 
-/* 詩歌標題和作者容器 - 固定在左下角 */
+/* 詩歌標題和作者容器 - 相對於內容區域定位 */
 .poem-meta {
   position: absolute;
   bottom: var(--spacing-xl);
@@ -103,6 +115,10 @@
 @media (max-width: 768px) {
   .poem-wrapper {
     padding: clamp(2.5rem, 10vh, 4rem) clamp(1.5rem, 6vw, 2.75rem) clamp(6rem, 18vh, 8.5rem);
+  }
+
+  .poem-content-area {
+    padding: var(--spacing-md);
   }
 
   .poem-text {
