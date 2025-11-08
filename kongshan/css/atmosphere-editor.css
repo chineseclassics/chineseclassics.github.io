@@ -37,7 +37,7 @@
   transform: translateX(100%);
   transition: transform var(--duration-normal) var(--ease-smooth);
   overflow: hidden;
-  padding-bottom: calc(env(safe-area-inset-bottom) + var(--spacing-md));
+  padding-bottom: var(--spacing-md);
   box-sizing: border-box;
 }
 
@@ -502,7 +502,7 @@
     width: 100vw;
     max-width: 100vw;
     height: calc(100vh - env(safe-area-inset-bottom, 0px));
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--spacing-md) + 20px);
+    padding-bottom: calc(var(--spacing-md) + 20px);
   }
 
   .sound-selector {
@@ -538,7 +538,7 @@
   }
 
   .editor-sidebar {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--spacing-sm) + 20px);
+    padding-bottom: calc(var(--spacing-sm) + 20px);
   }
 
   .editor-footer {

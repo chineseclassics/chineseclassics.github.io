@@ -249,12 +249,12 @@ body {
   color: var(--color-text-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-}
+  }
 
 .user-panel-btn:active {
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
-}
+  }
 
 .user-panel-btn svg,
 .user-panel-btn i {
