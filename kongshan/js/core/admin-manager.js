@@ -170,33 +170,39 @@ export class AdminManager {
   // =====================================================
 
   /**
-   * 獲取待審核錄音列表
-   * @returns {Promise<Array>}
+   * 獲取待審核錄音列表（分頁）
+   * @param {number} page - 頁碼（從 1 開始）
+   * @param {number} limit - 每頁數量
+   * @returns {Promise<{data: Array, total: number}>}
    */
-  async getPendingRecordings() {
+  async getPendingRecordings(page = 1, limit = 50) {
     if (!this.supabase) {
-      return [];
+      return { data: [], total: 0 };
     }
 
     try {
-      const { data, error } = await this.supabase
+      const { data, error, count } = await this.supabase
         .from('recordings')
         .select(`
           *,
           owner:travelers!recordings_owner_id_fkey(display_name, email)
-        `)
+        `, { count: 'exact' })
         .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
       if (error) {
         console.error('獲取待審核錄音失敗:', error);
-        return [];
+        return { data: [], total: 0 };
       }
 
-      return data || [];
+      return {
+        data: data || [],
+        total: count || 0
+      };
     } catch (error) {
       console.error('獲取待審核錄音異常:', error);
-      return [];
+      return { data: [], total: 0 };
     }
   }
 
@@ -523,29 +529,35 @@ export class AdminManager {
   // =====================================================
 
   /**
-   * 獲取所有音效
-   * @returns {Promise<Array>}
+   * 獲取所有音效（分頁）
+   * @param {number} page - 頁碼（從 1 開始）
+   * @param {number} limit - 每頁數量
+   * @returns {Promise<{data: Array, total: number}>}
    */
-  async getAllSoundEffects() {
+  async getAllSoundEffects(page = 1, limit = 50) {
     if (!this.supabase) {
-      return [];
+      return { data: [], total: 0 };
     }
 
     try {
-      const { data, error } = await this.supabase
+      const { data, error, count } = await this.supabase
         .from('sound_effects')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
       if (error) {
         console.error('獲取音效列表失敗:', error);
-        return [];
+        return { data: [], total: 0 };
       }
 
-      return data || [];
+      return {
+        data: data || [],
+        total: count || 0
+      };
     } catch (error) {
       console.error('獲取音效列表異常:', error);
-      return [];
+      return { data: [], total: 0 };
     }
   }
 

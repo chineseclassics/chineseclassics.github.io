@@ -38,14 +38,19 @@ export async function renderRecordingReview(container, { adminManager, supabase,
         <p>載入待審核音效中...</p>
       </div>
     </div>
+    <div id="admin-recording-pagination" class="admin-pagination"></div>
   `;
 
   const listEl = container.querySelector('#admin-recording-review-list');
   const refreshBtn = container.querySelector('[data-action="refresh"]');
+  const paginationEl = container.querySelector('#admin-recording-pagination');
 
   const state = {
     isLoading: false,
-    records: []
+    records: [],
+    currentPage: 1,
+    pageSize: 50,
+    totalRecords: 0
   };
 
   if (refreshBtn) {
@@ -67,9 +72,21 @@ export async function renderRecordingReview(container, { adminManager, supabase,
     showLoadingState();
 
     try {
-      const records = await adminManager.getPendingRecordings();
-      state.records = Array.isArray(records) ? records : [];
+      const { data, total } = await adminManager.getPendingRecordings(state.currentPage, state.pageSize);
+      state.records = Array.isArray(data) ? data : [];
+      state.totalRecords = total || 0;
+      
+      // 如果當前頁沒有數據且不是第一頁，重置到第一頁
+      if (state.records.length === 0 && state.currentPage > 1 && state.totalRecords > 0) {
+        state.currentPage = 1;
+        // 重新載入第一頁
+        const { data: firstPageData, total: firstPageTotal } = await adminManager.getPendingRecordings(1, state.pageSize);
+        state.records = Array.isArray(firstPageData) ? firstPageData : [];
+        state.totalRecords = firstPageTotal || 0;
+      }
+      
       renderList();
+      renderPagination();
     } catch (error) {
       console.error('載入待審核錄音失敗:', error);
       showErrorState('載入待審核音效時發生錯誤，請稍後再試。');
@@ -124,6 +141,95 @@ export async function renderRecordingReview(container, { adminManager, supabase,
         <p>${message}</p>
       </div>
     `;
+  }
+
+  function renderPagination() {
+    if (!paginationEl) {
+      return;
+    }
+
+    const totalPages = Math.ceil(state.totalRecords / state.pageSize);
+    if (totalPages <= 1) {
+      paginationEl.innerHTML = state.totalRecords > 0 
+        ? `<div class="admin-pagination-info">共 ${state.totalRecords} 個待審核音效</div>`
+        : '';
+      return;
+    }
+
+    const pages = [];
+    const maxVisible = 5;
+    let startPage = Math.max(1, state.currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage < maxVisible - 1) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (startPage > 1) {
+      pages.push(`<button class="admin-pagination-btn" data-page="1">1</button>`);
+      if (startPage > 2) {
+        pages.push('<span class="admin-pagination-ellipsis">...</span>');
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(`
+        <button class="admin-pagination-btn ${i === state.currentPage ? 'active' : ''}" data-page="${i}">
+          ${i}
+        </button>
+      `);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push('<span class="admin-pagination-ellipsis">...</span>');
+      }
+      pages.push(`<button class="admin-pagination-btn" data-page="${totalPages}">${totalPages}</button>`);
+    }
+
+    paginationEl.innerHTML = `
+      <div class="admin-pagination-info">
+        共 ${state.totalRecords} 個待審核音效，第 ${state.currentPage} / ${totalPages} 頁
+      </div>
+      <div class="admin-pagination-controls">
+        <button class="admin-pagination-btn" data-action="prev" ${state.currentPage === 1 ? 'disabled' : ''}>
+          <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        ${pages.join('')}
+        <button class="admin-pagination-btn" data-action="next" ${state.currentPage === totalPages ? 'disabled' : ''}>
+          <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+    `;
+
+    // 綁定分頁事件
+    const prevBtn = paginationEl.querySelector('[data-action="prev"]');
+    const nextBtn = paginationEl.querySelector('[data-action="next"]');
+    const pageBtns = paginationEl.querySelectorAll('[data-page]');
+
+    prevBtn?.addEventListener('click', () => {
+      if (state.currentPage > 1) {
+        state.currentPage--;
+        loadRecords(true).catch(err => console.warn('載入待審核音效失敗:', err));
+      }
+    });
+
+    nextBtn?.addEventListener('click', () => {
+      if (state.currentPage < totalPages) {
+        state.currentPage++;
+        loadRecords(true).catch(err => console.warn('載入待審核音效失敗:', err));
+      }
+    });
+
+    pageBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const page = parseInt(btn.dataset.page, 10);
+        if (page && page !== state.currentPage) {
+          state.currentPage = page;
+          loadRecords(true).catch(err => console.warn('載入待審核音效失敗:', err));
+        }
+      });
+    });
   }
 
   function createRecordingCard(recording) {
@@ -296,8 +402,12 @@ export async function renderRecordingReview(container, { adminManager, supabase,
       setTimeout(() => {
         card.remove();
         state.records = state.records.filter(r => r.id !== recording.id);
+        state.totalRecords = Math.max(0, state.totalRecords - 1);
         if (state.records.length === 0) {
           renderList();
+          renderPagination();
+        } else {
+          renderPagination();
         }
       }, 800);
     } catch (error) {
