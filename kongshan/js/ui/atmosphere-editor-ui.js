@@ -59,6 +59,13 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
 
   // 編輯器內容
   sidebar.innerHTML = `
+    <div class="editor-header">
+      <h2 class="editor-title">聲色意境編輯器</h2>
+      <button class="editor-close-btn" type="button" aria-label="關閉編輯器">
+        <i class="fas fa-times" aria-hidden="true"></i>
+        <span class="sr-only">關閉</span>
+      </button>
+    </div>
     <div class="editor-content">
       <!-- 音效選擇 -->
       <div class="editor-section">
