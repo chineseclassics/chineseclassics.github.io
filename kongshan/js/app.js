@@ -15,6 +15,7 @@ import { renderSoundControls } from './ui/sound-controls-ui.js';
 import { showAtmosphereEditor } from './ui/atmosphere-editor-ui.js';
 import { AdminDrawer } from './ui/admin-drawer.js';
 import { renderRecordingReview } from './ui/admin-recording-review.js';
+import { renderPoemManagement } from './ui/admin-poem-management.js';
 
 // 全局狀態
 const AppState = {
@@ -1312,6 +1313,16 @@ async function handleAdminViewChange(viewName) {
       await renderRecordingReview(container, {
         adminManager: AppState.adminManager,
         supabase: AppState.supabase,
+        getCurrentUserId
+      });
+      return;
+    }
+
+    if (viewName === 'poem-management') {
+      const container = document.createElement('div');
+      AppState.adminDrawer.setContent(container);
+      await renderPoemManagement(container, {
+        adminManager: AppState.adminManager,
         getCurrentUserId
       });
       return;

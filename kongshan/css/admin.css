@@ -333,6 +333,12 @@
   font-size: 0.85rem;
 }
 
+.admin-inline-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
 /* 確認對話框 */
 .admin-confirm-dialog {
   position: fixed;
@@ -487,11 +493,113 @@
   transition: opacity var(--duration-normal) var(--ease-smooth);
 }
 
+.admin-card-table-wrapper {
+  padding: 0;
+}
+
+.admin-table-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
 .admin-empty-hint {
   text-align: center;
   color: var(--color-text-secondary);
   font-size: 0.9rem;
   padding: var(--spacing-lg);
+}
+
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-overlay-dim);
+  backdrop-filter: blur(12px);
+  animation: fadeIn var(--duration-normal) var(--ease-gentle);
+  opacity: 1;
+  transition: opacity var(--duration-normal) var(--ease-gentle);
+}
+
+.admin-modal {
+  width: min(680px, 95vw);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.admin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.admin-modal-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  color: var(--color-text-primary);
+  letter-spacing: 0.08em;
+}
+
+.admin-modal-close {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-full);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.admin-modal-close:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-text-primary);
+}
+
+.admin-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}
+
+.admin-form-dual {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.admin-form-dual > div {
+  flex: 1;
+}
+
+.admin-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: var(--color-overlay-dim);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity var(--duration-normal) var(--ease-gentle);
+}
+
+.admin-modal-overlay.closing,
+.admin-confirm-overlay.closing {
+  opacity: 0;
 }
 
 /* 空狀態 */
@@ -548,6 +656,15 @@
 
   .admin-card-actions {
     flex-direction: column;
+  }
+
+  .admin-form-dual {
+    flex-direction: column;
+  }
+
+  .admin-modal {
+    width: 95vw;
+    padding: var(--spacing-md);
   }
 }
 
