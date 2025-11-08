@@ -21,6 +21,7 @@
   --color-primary-contrast: #fbfef9;
   --color-secondary: #a0bf83;
   --color-secondary-soft: rgba(160, 191, 131, 0.18);
+  --color-secondary-contrast: #1f2a24;
   --color-accent: #ced88f;
   --color-accent-contrast: #1f2a24;
 
@@ -29,12 +30,14 @@
 
   --color-success: #5f8f6b;
   --color-critical: #b86a5a;
+  --color-critical-soft: rgba(184, 106, 90, 0.16);
   --color-critical-strong: #8c4636;
 
   /* 玻璃質感與陰影 */
   --shadow-sm: 0 6px 16px -14px rgba(26, 42, 30, 0.32);
   --shadow-md: 0 18px 36px -24px rgba(26, 42, 30, 0.36);
   --shadow-lg: 0 32px 64px -36px rgba(26, 42, 30, 0.42);
+  --shadow-xl: 0 48px 80px -40px rgba(26, 42, 30, 0.48);
 
   --gradient-subtle: linear-gradient(140deg, rgba(120, 146, 98, 0.08) 0%, rgba(242, 244, 239, 0.9) 100%);
   --gradient-soft-veil: linear-gradient(135deg, rgba(251, 253, 248, 0.94) 0%, rgba(232, 237, 228, 0.72) 100%);
@@ -42,6 +45,7 @@
   /* 字體 */
   --font-serif: 'Noto Serif TC', '仓耳今楷', 'KaiTi', '楷體', serif;
   --font-sans: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Menlo', 'SFMono-Regular', 'Monaco', 'Consolas', monospace;
   
   /* 間距 */
   --spacing-xs: 0.5rem;
@@ -54,6 +58,7 @@
   --radius-sm: 0.5rem;
   --radius-md: 1rem;
   --radius-lg: 2rem;
+  --radius-xl: 2.5rem;
   --radius-full: 9999px;
   
   /* 動畫時長 - 緩慢、優雅 */
@@ -90,6 +95,7 @@
     --shadow-sm: 0 8px 18px -14px rgba(4, 14, 8, 0.5);
     --shadow-md: 0 22px 44px -26px rgba(3, 12, 7, 0.55);
     --shadow-lg: 0 36px 72px -34px rgba(3, 12, 7, 0.6);
+    --shadow-xl: 0 52px 96px -38px rgba(3, 12, 7, 0.65);
 
     --gradient-subtle: linear-gradient(145deg, rgba(28, 40, 30, 0.92), rgba(18, 26, 20, 0.78));
     --gradient-soft-veil: linear-gradient(140deg, rgba(26, 36, 28, 0.92), rgba(12, 20, 14, 0.8));
