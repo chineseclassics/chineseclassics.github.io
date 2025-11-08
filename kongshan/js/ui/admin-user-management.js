@@ -131,15 +131,16 @@ export async function renderUserManagement(container, { adminManager, getCurrent
         return;
       }
 
+      // 使用 RPC 函數查詢管理員角色，避免 RLS 遞迴問題
       const { data, error } = await adminManager.supabase
-        .from('admins')
-        .select('user_id, role')
-        .in('user_id', userIds);
+        .rpc('get_admin_roles', { user_ids: userIds });
 
       if (!error && Array.isArray(data)) {
         data.forEach(admin => {
           state.adminRoles.set(admin.user_id, admin.role);
         });
+      } else if (error) {
+        console.warn('載入管理員角色失敗:', error);
       }
     } catch (error) {
       console.warn('載入管理員角色失敗:', error);

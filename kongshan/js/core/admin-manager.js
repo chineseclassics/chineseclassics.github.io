@@ -22,18 +22,16 @@ export class AdminManager {
     }
 
     try {
+      // 使用 RPC 函數避免 RLS 遞迴問題
       const { data, error } = await this.supabase
-        .from('admins')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .rpc('check_is_admin', { check_user_id: userId });
 
       if (error) {
         console.error('檢查管理員權限失敗:', error);
         return false;
       }
 
-      return !!data;
+      return data === true;
     } catch (error) {
       console.error('檢查管理員權限異常:', error);
       return false;
@@ -51,18 +49,16 @@ export class AdminManager {
     }
 
     try {
+      // 使用 RPC 函數避免 RLS 遞迴問題
       const { data, error } = await this.supabase
-        .from('admins')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .rpc('get_admin_role', { check_user_id: userId });
 
       if (error) {
         console.error('獲取管理員角色失敗:', error);
         return null;
       }
 
-      return data?.role || null;
+      return data || null;
     } catch (error) {
       console.error('獲取管理員角色異常:', error);
       return null;
