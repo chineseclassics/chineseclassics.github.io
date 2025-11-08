@@ -861,6 +861,143 @@
   font-size: 0.85rem;
 }
 
+/* 統計界面樣式 */
+.admin-statistics-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.admin-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-stat-card-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: 1.5rem;
+}
+
+.admin-stat-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-stat-card-value {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.admin-stat-card-label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.admin-stat-card-change {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+}
+
+.admin-statistics-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.admin-chart-card {
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+}
+
+.admin-chart-title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+}
+
+.admin-chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+.admin-popular-poems-table th:first-child,
+.admin-popular-poems-table td:first-child {
+  width: auto;
+  min-width: 60px;
+  text-align: center;
+}
+
+.admin-popular-poems-table th:nth-child(2),
+.admin-popular-poems-table td:nth-child(2) {
+  width: auto;
+  min-width: 200px;
+}
+
+.admin-popular-poems-table th:nth-child(3),
+.admin-popular-poems-table td:nth-child(3) {
+  width: auto;
+  min-width: 120px;
+}
+
+.admin-popular-poems-table th:nth-child(4),
+.admin-popular-poems-table td:nth-child(4) {
+  width: auto;
+  min-width: 150px;
+}
+
+.admin-popular-poems-table th:nth-child(5),
+.admin-popular-poems-table td:nth-child(5) {
+  width: auto;
+  min-width: 100px;
+  text-align: center;
+}
+
+.admin-month-select {
+  width: auto;
+  min-width: 160px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .admin-audio-preview {
   display: flex;
   flex-direction: column;
@@ -1069,6 +1206,22 @@
 
   .admin-table th {
     position: relative; /* 移動端取消 sticky */
+  }
+
+  .admin-statistics-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-statistics-charts {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-chart-container {
+    height: 250px;
+  }
+
+  .admin-month-select {
+    width: 100%;
   }
 
   .admin-modal {

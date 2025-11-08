@@ -18,6 +18,7 @@ import { renderRecordingReview } from './ui/admin-recording-review.js';
 import { renderPoemManagement } from './ui/admin-poem-management.js';
 import { renderSoundManagement } from './ui/admin-sound-management.js';
 import { renderUserManagement } from './ui/admin-user-management.js';
+import { renderStatistics } from './ui/admin-statistics.js';
 
 // 全局狀態
 const AppState = {
@@ -1367,6 +1368,16 @@ async function handleAdminViewChange(viewName) {
       await renderUserManagement(container, {
         adminManager: AppState.adminManager,
         getCurrentUserId
+      });
+      return;
+    }
+
+    if (viewName === 'statistics') {
+      const container = document.createElement('div');
+      container.className = 'admin-view-shell';
+      AppState.adminDrawer.setContent(container);
+      await renderStatistics(container, {
+        adminManager: AppState.adminManager
       });
       return;
     }
