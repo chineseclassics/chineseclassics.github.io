@@ -1290,10 +1290,8 @@ async function updateNotificationBadge() {
 
   const count = await AppState.notificationManager.checkNotifications(userId);
   if (count > 0) {
-    badge.textContent = count > 99 ? '99+' : count.toString();
     badge.hidden = false;
   } else {
-    badge.textContent = '';
     badge.hidden = true;
   }
 

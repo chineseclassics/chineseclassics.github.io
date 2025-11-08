@@ -520,18 +520,18 @@ body {
   position: absolute;
   top: -4px;
   right: -4px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
+  width: 10px;
+  height: 10px;
   background: var(--color-critical);
-  color: var(--color-text-contrast);
   border-radius: var(--radius-full);
-  font-size: 0.7rem;
-  font-weight: 600;
+  box-shadow: 0 0 0 2px var(--color-surface-raised), 0 2px 4px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.notification-badge[hidden] {
+  display: none !important;
 }
 
 /* 通知下拉列表 */
