@@ -56,6 +56,8 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
           </tbody>
         </table>
       </div>
+
+      <div id="admin-poem-pagination" class="admin-pagination"></div>
     </section>
   `;
 
@@ -63,12 +65,14 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
     poems: [],
     isLoading: false,
     currentPage: 1,
-    pageSize: 50
+    pageSize: 50,
+    totalPoems: 0
   };
 
   const tableBody = container.querySelector('#admin-poem-table-body');
   const refreshBtn = container.querySelector('[data-action="refresh"]');
   const createBtn = container.querySelector('[data-action="create"]');
+  const paginationEl = container.querySelector('#admin-poem-pagination');
 
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
@@ -93,9 +97,21 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
     showLoadingRow();
 
     try {
-      const { data } = await adminManager.getAllPoems(state.currentPage, state.pageSize);
+      const { data, total } = await adminManager.getAllPoems(state.currentPage, state.pageSize);
       state.poems = Array.isArray(data) ? data : [];
+      state.totalPoems = total || 0;
+      
+      // 如果當前頁沒有數據且不是第一頁，重置到第一頁
+      if (state.poems.length === 0 && state.currentPage > 1 && state.totalPoems > 0) {
+        state.currentPage = 1;
+        // 重新載入第一頁
+        const { data: firstPageData, total: firstPageTotal } = await adminManager.getAllPoems(1, state.pageSize);
+        state.poems = Array.isArray(firstPageData) ? firstPageData : [];
+        state.totalPoems = firstPageTotal || 0;
+      }
+      
       renderTable();
+      renderPagination();
     } catch (error) {
       console.error('載入詩句列表失敗:', error);
       showErrorRow('載入詩句失敗，請稍後再試。');
@@ -202,6 +218,95 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
         </td>
       </tr>
     `;
+  }
+
+  function renderPagination() {
+    if (!paginationEl) {
+      return;
+    }
+
+    const totalPages = Math.ceil(state.totalPoems / state.pageSize);
+    if (totalPages <= 1) {
+      paginationEl.innerHTML = state.totalPoems > 0 
+        ? `<div class="admin-pagination-info">共 ${state.totalPoems} 首詩句</div>`
+        : '';
+      return;
+    }
+
+    const pages = [];
+    const maxVisible = 5;
+    let startPage = Math.max(1, state.currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage < maxVisible - 1) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (startPage > 1) {
+      pages.push(`<button class="admin-pagination-btn" data-page="1">1</button>`);
+      if (startPage > 2) {
+        pages.push('<span class="admin-pagination-ellipsis">...</span>');
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(`
+        <button class="admin-pagination-btn ${i === state.currentPage ? 'active' : ''}" data-page="${i}">
+          ${i}
+        </button>
+      `);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push('<span class="admin-pagination-ellipsis">...</span>');
+      }
+      pages.push(`<button class="admin-pagination-btn" data-page="${totalPages}">${totalPages}</button>`);
+    }
+
+    paginationEl.innerHTML = `
+      <div class="admin-pagination-info">
+        共 ${state.totalPoems} 首詩句，第 ${state.currentPage} / ${totalPages} 頁
+      </div>
+      <div class="admin-pagination-controls">
+        <button class="admin-pagination-btn" data-action="prev" ${state.currentPage === 1 ? 'disabled' : ''}>
+          <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        ${pages.join('')}
+        <button class="admin-pagination-btn" data-action="next" ${state.currentPage === totalPages ? 'disabled' : ''}>
+          <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+    `;
+
+    // 綁定分頁事件
+    const prevBtn = paginationEl.querySelector('[data-action="prev"]');
+    const nextBtn = paginationEl.querySelector('[data-action="next"]');
+    const pageBtns = paginationEl.querySelectorAll('[data-page]');
+
+    prevBtn?.addEventListener('click', () => {
+      if (state.currentPage > 1) {
+        state.currentPage--;
+        loadPoems(true).catch(err => console.warn('載入詩句失敗:', err));
+      }
+    });
+
+    nextBtn?.addEventListener('click', () => {
+      if (state.currentPage < totalPages) {
+        state.currentPage++;
+        loadPoems(true).catch(err => console.warn('載入詩句失敗:', err));
+      }
+    });
+
+    pageBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const page = parseInt(btn.dataset.page, 10);
+        if (page && page !== state.currentPage) {
+          state.currentPage = page;
+          loadPoems(true).catch(err => console.warn('載入詩句失敗:', err));
+        }
+      });
+    });
   }
 
   // =====================================================
