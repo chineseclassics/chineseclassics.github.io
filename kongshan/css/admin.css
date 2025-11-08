@@ -514,6 +514,21 @@
   color: var(--color-text-contrast);
 }
 
+.admin-tag-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.admin-tag-secondary {
+  background: var(--color-secondary);
+  color: var(--color-secondary-contrast);
+}
+
+.admin-tag-neutral {
+  background: var(--color-border-soft);
+  color: var(--color-text-secondary);
+}
+
 .admin-audio-wrapper {
   display: flex;
   flex-direction: column;
@@ -656,6 +671,100 @@
   word-break: break-word;
   white-space: pre-wrap;
   line-height: 1.6;
+}
+
+/* 用戶管理表格 */
+.admin-user-table th:first-child,
+.admin-user-table td:first-child {
+  width: 25%;
+}
+
+.admin-user-table th:nth-child(2),
+.admin-user-table td:nth-child(2) {
+  width: 30%;
+}
+
+.admin-user-table th:nth-child(3),
+.admin-user-table td:nth-child(3) {
+  width: 20%;
+}
+
+.admin-user-table th:nth-child(4),
+.admin-user-table td:nth-child(4) {
+  width: 15%;
+}
+
+.admin-user-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.admin-text-muted {
+  color: var(--color-text-tertiary);
+  font-size: 0.85rem;
+}
+
+/* 分頁 */
+.admin-pagination {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.admin-pagination-info {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.admin-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.admin-pagination-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-pagination-btn:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+  color: var(--color-text-primary);
+  border-color: var(--color-primary);
+}
+
+.admin-pagination-btn.active {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border-color: var(--color-primary);
+}
+
+.admin-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-pagination-ellipsis {
+  padding: 0 0.4rem;
+  color: var(--color-text-tertiary);
+  font-size: 0.85rem;
 }
 
 .admin-audio-preview {

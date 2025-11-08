@@ -17,6 +17,7 @@ import { AdminDrawer } from './ui/admin-drawer.js';
 import { renderRecordingReview } from './ui/admin-recording-review.js';
 import { renderPoemManagement } from './ui/admin-poem-management.js';
 import { renderSoundManagement } from './ui/admin-sound-management.js';
+import { renderUserManagement } from './ui/admin-user-management.js';
 
 // 全局狀態
 const AppState = {
@@ -1353,6 +1354,17 @@ async function handleAdminViewChange(viewName) {
       container.className = 'admin-view-shell';
       AppState.adminDrawer.setContent(container);
       await renderSoundManagement(container, {
+        adminManager: AppState.adminManager,
+        getCurrentUserId
+      });
+      return;
+    }
+
+    if (viewName === 'user-management') {
+      const container = document.createElement('div');
+      container.className = 'admin-view-shell';
+      AppState.adminDrawer.setContent(container);
+      await renderUserManagement(container, {
         adminManager: AppState.adminManager,
         getCurrentUserId
       });
