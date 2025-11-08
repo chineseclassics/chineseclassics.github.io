@@ -533,9 +533,11 @@ function showError(message) {
 async function showPoemListScreen() {
   const listScreen = document.getElementById('poem-list-screen');
   const viewerScreen = document.getElementById('poem-viewer-screen');
+  const adminScreen = document.getElementById('admin-dashboard-screen');
   
   if (listScreen) listScreen.style.display = 'flex'; // 使用 flex 以匹配 CSS
   if (viewerScreen) viewerScreen.style.display = 'none';
+  if (adminScreen) adminScreen.style.display = 'none';
   AppState.activeScreen = 'list';
   resetAtmosphereEnvironment();
   updateAppSwitcherVisibility();
@@ -550,14 +552,26 @@ async function showPoemListScreen() {
 async function showPoemViewerScreen(poemId) {
   const listScreen = document.getElementById('poem-list-screen');
   const viewerScreen = document.getElementById('poem-viewer-screen');
+  const adminScreen = document.getElementById('admin-dashboard-screen');
   
   if (listScreen) listScreen.style.display = 'none';
   if (viewerScreen) viewerScreen.style.display = 'flex'; // 使用 flex 以匹配 CSS
+  if (adminScreen) adminScreen.style.display = 'none';
   AppState.activeScreen = 'viewer';
   updateAppSwitcherVisibility();
   
   // 加載詩歌內容和聲色意境
   await loadPoem(poemId);
+}
+
+/**
+ * 離開管理後台，返回詩歌列表畫面
+ */
+async function exitAdminDashboard() {
+  if (AppState.adminDrawer) {
+    AppState.adminDrawer.close();
+  }
+  await showPoemListScreen();
 }
 
 /**
@@ -1263,9 +1277,12 @@ async function setupAdminPanel() {
     adminBtn.hidden = false;
     if (!adminBtn.dataset.bound) {
       adminBtn.addEventListener('click', () => {
-        if (AppState.adminDrawer) {
-          AppState.adminDrawer.open();
+        if (!AppState.adminDrawer) {
+          return;
         }
+        AppState.activeScreen = 'admin';
+        updateAppSwitcherVisibility();
+        AppState.adminDrawer.open();
       });
       adminBtn.dataset.bound = 'true';
     }
@@ -1309,6 +1326,7 @@ async function handleAdminViewChange(viewName) {
   try {
     if (viewName === 'recording-review') {
       const container = document.createElement('div');
+      container.className = 'admin-view-shell';
       AppState.adminDrawer.setContent(container);
       await renderRecordingReview(container, {
         adminManager: AppState.adminManager,
@@ -1320,6 +1338,7 @@ async function handleAdminViewChange(viewName) {
 
     if (viewName === 'poem-management') {
       const container = document.createElement('div');
+      container.className = 'admin-view-shell';
       AppState.adminDrawer.setContent(container);
       await renderPoemManagement(container, {
         adminManager: AppState.adminManager,
@@ -1375,6 +1394,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (backButton) {
     backButton.addEventListener('click', () => {
       showPoemListScreen();
+    });
+  }
+
+  const adminBackBtn = document.getElementById('admin-back-btn');
+  if (adminBackBtn) {
+    adminBackBtn.addEventListener('click', () => {
+      exitAdminDashboard().catch(error => {
+        console.warn('返回詩歌列表時發生錯誤:', error);
+      });
     });
   }
 

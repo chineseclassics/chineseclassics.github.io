@@ -77,55 +77,116 @@
             </div>
         </div>
         
-      <!-- 詩歌欣賞頁面 -->
-      <div id="poem-viewer-screen" class="screen" style="display: none;">
-        <div class="poem-viewer-container">
-          <div class="poem-viewer-topbar">
-            <button id="back-to-list-btn" class="back-button" type="button" aria-label="返回詩歌列表">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-              <span class="sr-only">返回</span>
-            </button>
-            <button id="atmosphere-cycle-btn" class="atmosphere-cycle-logo" type="button" aria-label="切換聲色意境">
-              <i class="fas fa-mountain-sun" aria-hidden="true"></i>
-              <span class="sr-only">切換聲色意境</span>
-            </button>
-            <button id="edit-atmosphere-btn" class="edit-atmosphere-button" aria-label="創作聲色意境" title="創作聲色意境">
-              <span class="sr-only">創作聲色意境</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </button>
-          </div>
-
-          <div id="atmosphere-status" class="atmosphere-status" hidden>
-            <div class="atmosphere-status-inner">
-              <span id="atmosphere-status-text" class="atmosphere-status-text"></span>
-              <button id="atmosphere-like-btn" class="atmosphere-like-button" type="button" aria-label="點讚聲色意境" aria-pressed="false">
-                <i class="fas fa-heart" aria-hidden="true"></i>
-                <span id="atmosphere-like-count" class="atmosphere-like-count">0</span>
+        <!-- 詩歌欣賞頁面 -->
+        <div id="poem-viewer-screen" class="screen" style="display: none;">
+          <div class="poem-viewer-container">
+            <div class="poem-viewer-topbar">
+              <button id="back-to-list-btn" class="back-button" type="button" aria-label="返回詩歌列表">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span class="sr-only">返回</span>
+              </button>
+              <button id="atmosphere-cycle-btn" class="atmosphere-cycle-logo" type="button" aria-label="切換聲色意境">
+                <i class="fas fa-mountain-sun" aria-hidden="true"></i>
+                <span class="sr-only">切換聲色意境</span>
+              </button>
+              <button id="edit-atmosphere-btn" class="edit-atmosphere-button" aria-label="創作聲色意境" title="創作聲色意境">
+                <span class="sr-only">創作聲色意境</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
               </button>
             </div>
-          </div>
-          
-          <!-- 詩歌內容 -->
-          <div id="poem-content" class="poem-content">
-            <!-- 詩歌將動態渲染 -->
-          </div>
-          
-          <!-- 音效控制面板 -->
-          <div id="sound-controls" class="sound-controls">
-            <!-- 音效控制將動態生成 -->
-          </div>
-          
-          <!-- 聲色意境選擇器 -->
-          <div id="atmosphere-selector" class="atmosphere-selector">
-            <!-- 聲色意境選擇將動態生成 -->
+
+            <div id="atmosphere-status" class="atmosphere-status" hidden>
+              <div class="atmosphere-status-inner">
+                <span id="atmosphere-status-text" class="atmosphere-status-text"></span>
+                <button id="atmosphere-like-btn" class="atmosphere-like-button" type="button" aria-label="點讚聲色意境" aria-pressed="false">
+                  <i class="fas fa-heart" aria-hidden="true"></i>
+                  <span id="atmosphere-like-count" class="atmosphere-like-count">0</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- 詩歌內容 -->
+            <div id="poem-content" class="poem-content">
+              <!-- 詩歌將動態渲染 -->
+            </div>
+            
+            <!-- 音效控制面板 -->
+            <div id="sound-controls" class="sound-controls">
+              <!-- 音效控制將動態生成 -->
+            </div>
+            
+            <!-- 聲色意境選擇器 -->
+            <div id="atmosphere-selector" class="atmosphere-selector">
+              <!-- 聲色意境選擇將動態生成 -->
+            </div>
           </div>
         </div>
-      </div>
+
+        <!-- 管理後台頁面 -->
+        <div id="admin-dashboard-screen" class="screen admin-dashboard-screen" style="display: none;">
+          <div class="admin-dashboard">
+            <aside class="admin-sidebar" aria-label="管理後台導航">
+              <div class="admin-sidebar-header">
+                <button id="admin-back-btn" class="admin-back-btn" type="button" aria-label="返回空山首頁">
+                  <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                  <span class="sr-only">返回首頁</span>
+                </button>
+                <div class="admin-sidebar-title">
+                  <span class="admin-app-name">空山</span>
+                  <h2 class="admin-panel-title">管理後台</h2>
+                </div>
+              </div>
+
+              <nav class="admin-nav" role="tablist" aria-label="管理功能選單">
+                <button class="admin-nav-item" data-view="recording-review" type="button">
+                  <i class="fas fa-wave-square" aria-hidden="true"></i>
+                  <span>音效審核</span>
+                </button>
+                <button class="admin-nav-item" data-view="poem-management" type="button">
+                  <i class="fas fa-feather-pointed" aria-hidden="true"></i>
+                  <span>詩句管理</span>
+                </button>
+                <button class="admin-nav-item" data-view="sound-management" type="button">
+                  <i class="fas fa-music" aria-hidden="true"></i>
+                  <span>音效管理</span>
+                </button>
+                <button class="admin-nav-item" data-view="user-management" type="button">
+                  <i class="fas fa-user" aria-hidden="true"></i>
+                  <span>用戶管理</span>
+                </button>
+                <button class="admin-nav-item" data-view="statistics" type="button">
+                  <i class="fas fa-chart-line" aria-hidden="true"></i>
+                  <span>數據統計</span>
+                </button>
+                <button class="admin-nav-item" data-view="logs" type="button">
+                  <i class="fas fa-scroll" aria-hidden="true"></i>
+                  <span>操作日誌</span>
+                </button>
+              </nav>
+
+              <div class="admin-sidebar-footer">
+                <p class="admin-sidebar-hint">旅人創作的聲色與詩篇，都在此匯入空山。</p>
+              </div>
+            </aside>
+
+            <main class="admin-main" role="main">
+              <header class="admin-main-header">
+                <div>
+                  <h1 id="admin-dashboard-title" class="admin-main-title">音效審核</h1>
+                  <p id="admin-dashboard-description" class="admin-main-description">審核旅人錄音，維持空山聲色品質。</p>
+                </div>
+              </header>
+              <section id="admin-dashboard-content" class="admin-dashboard-content" aria-live="polite">
+                <!-- 管理內容將動態載入 -->
+              </section>
+            </main>
+          </div>
+        </div>
     </div>
     
     <!-- JavaScript 模塊 -->

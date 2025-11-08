@@ -1,110 +1,80 @@
 // =====================================================
-// 管理後台側邊抽屜組件
+// 管理後台全螢幕控制器
 // =====================================================
 
+const VIEW_META = {
+  'recording-review': {
+    title: '音效審核',
+    description: '審核旅人上傳的錄音素材，維持空山的聲色品質。'
+  },
+  'poem-management': {
+    title: '詩句管理',
+    description: '編輯與維護詩歌資料，確保旅人賞詩時有最佳體驗。'
+  },
+  'sound-management': {
+    title: '音效管理',
+    description: '整理系統音效與素材標籤，建構沉浸式的聲音場景。'
+  },
+  'user-management': {
+    title: '用戶管理',
+    description: '檢視旅人與管理者的權限狀態，維持社群秩序。'
+  },
+  'statistics': {
+    title: '數據統計',
+    description: '掌握空山的使用趨勢與旅人互動，作為營運決策依據。'
+  },
+  'logs': {
+    title: '操作日誌',
+    description: '追蹤管理操作與系統活動，方便稽核與問題排查。'
+  }
+};
+
 /**
- * 管理後台側邊抽屜管理器
+ * 管理後台全螢幕畫面控制器
  */
 export class AdminDrawer {
   constructor(adminManager, onContentChange) {
     this.adminManager = adminManager;
     this.onContentChange = onContentChange || (() => {});
-    this.drawer = null;
-    this.currentView = null;
+
+    this.screen = null;
+    this.contentEl = null;
+    this.titleEl = null;
+    this.descriptionEl = null;
+    this.navItems = [];
     this.isOpen = false;
+    this.currentView = null;
   }
 
   /**
-   * 初始化抽屜
+   * 初始化畫面節點與事件
    */
   init() {
-    this.createDrawer();
-    this.setupEventListeners();
+    this.screen = document.getElementById('admin-dashboard-screen');
+    if (!this.screen) {
+      console.warn('找不到管理後台畫面容器');
+      return;
+    }
+
+    this.contentEl = this.screen.querySelector('#admin-dashboard-content');
+    this.titleEl = this.screen.querySelector('#admin-dashboard-title');
+    this.descriptionEl = this.screen.querySelector('#admin-dashboard-description');
+    this.navItems = Array.from(this.screen.querySelectorAll('.admin-nav-item'));
+
+    this.bindNavEvents();
+
+    if (this.screen.dataset.initialized !== 'true') {
+      this.screen.dataset.initialized = 'true';
+      this.screen.setAttribute('aria-hidden', 'true');
+    }
   }
 
-  /**
-   * 創建抽屜 DOM 結構
-   */
-  createDrawer() {
-    // 創建遮罩層
-    const overlay = document.createElement('div');
-    overlay.className = 'admin-drawer-overlay';
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.setAttribute('tabindex', '-1');
+  bindNavEvents() {
+    if (!Array.isArray(this.navItems) || this.navItems.length === 0) {
+      return;
+    }
 
-    // 創建抽屜容器
-    const drawer = document.createElement('div');
-    drawer.className = 'admin-drawer';
-    drawer.setAttribute('role', 'dialog');
-    drawer.setAttribute('aria-modal', 'true');
-    drawer.setAttribute('aria-label', '管理後台');
-    drawer.setAttribute('tabindex', '-1');
-
-    drawer.innerHTML = `
-      <div class="admin-drawer-topbar">
-        <nav class="admin-drawer-tabs" role="tablist" aria-label="管理後台功能">
-          <button class="admin-nav-item" data-view="recording-review" type="button">
-            <span>音效審核</span>
-          </button>
-          <button class="admin-nav-item" data-view="poem-management" type="button">
-            <span>詩句管理</span>
-          </button>
-          <button class="admin-nav-item" data-view="sound-management" type="button">
-            <span>音效管理</span>
-          </button>
-          <button class="admin-nav-item" data-view="user-management" type="button">
-            <span>用戶管理</span>
-          </button>
-          <button class="admin-nav-item" data-view="statistics" type="button">
-            <span>數據統計</span>
-          </button>
-          <button class="admin-nav-item" data-view="logs" type="button">
-            <span>操作日誌</span>
-          </button>
-        </nav>
-        <button class="admin-drawer-close" type="button" aria-label="關閉管理後台">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      <div class="admin-drawer-content" id="admin-drawer-content">
-        <!-- 內容將動態載入 -->
-      </div>
-    `;
-
-    overlay.appendChild(drawer);
-    document.body.appendChild(overlay);
-
-    this.drawer = drawer;
-    this.overlay = overlay;
-  }
-
-  /**
-   * 設置事件監聽器
-   */
-  setupEventListeners() {
-    // 關閉按鈕
-    const closeBtn = this.drawer.querySelector('.admin-drawer-close');
-    closeBtn.addEventListener('click', () => this.close());
-
-    // 遮罩層點擊關閉
-    this.overlay.addEventListener('click', (e) => {
-      if (e.target === this.overlay) {
-        this.close();
-      }
-    });
-
-    // ESC 鍵關閉
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) {
-        this.close();
-      }
-    });
-
-    // 導航按鈕
-    const navItems = this.drawer.querySelectorAll('.admin-nav-item');
-    navItems.forEach(item => {
+    this.navItems.forEach(item => {
       item.addEventListener('click', () => {
         const view = item.dataset.view;
         this.showView(view);
@@ -113,64 +83,62 @@ export class AdminDrawer {
   }
 
   /**
-   * 打開抽屜
+   * 開啟管理後台
    */
   open(view = null) {
-    if (!this.drawer) {
+    if (!this.screen) {
       this.init();
     }
-
-    this.overlay.setAttribute('aria-hidden', 'false');
-    this.drawer.classList.add('open');
-    this.overlay.classList.add('open');
-    this.isOpen = true;
-
-    // 防止背景滾動
-    document.body.style.overflow = 'hidden';
-
-    // 顯示默認視圖或指定視圖
-    if (view) {
-      this.showView(view);
-    } else {
-      // 顯示第一個導航項
-      const firstNavItem = this.drawer.querySelector('.admin-nav-item');
-      if (firstNavItem) {
-        this.showView(firstNavItem.dataset.view);
-      }
+    if (!this.screen) {
+      return;
     }
 
-    // 聚焦到抽屜
-    this.drawer.focus();
+    const listScreen = document.getElementById('poem-list-screen');
+    const viewerScreen = document.getElementById('poem-viewer-screen');
+
+    if (listScreen) listScreen.style.display = 'none';
+    if (viewerScreen) viewerScreen.style.display = 'none';
+
+    this.screen.style.display = 'flex';
+    this.screen.setAttribute('aria-hidden', 'false');
+    this.isOpen = true;
+
+    const targetView = view || (this.currentView || this.getDefaultView());
+    this.showView(targetView);
+
+    if (this.contentEl) {
+      this.contentEl.scrollTop = 0;
+    }
   }
 
   /**
-   * 關閉抽屜
+   * 關閉管理後台
    */
   close() {
-    if (!this.drawer) return;
+    if (!this.screen) {
+      return;
+    }
 
-    this.drawer.classList.remove('open');
-    this.overlay.classList.remove('open');
-    this.overlay.setAttribute('aria-hidden', 'true');
+    this.screen.style.display = 'none';
+    this.screen.setAttribute('aria-hidden', 'true');
     this.isOpen = false;
-
-    // 恢復背景滾動
-    document.body.style.overflow = '';
-
-    // 通知內容變更
     this.onContentChange(null);
   }
 
   /**
-   * 顯示指定視圖
-   * @param {string} viewName - 視圖名稱
+   * 顯示指定的管理視圖
+   * @param {string} viewName 視圖代碼
    */
   showView(viewName) {
-    if (!viewName) return;
+    if (!viewName || !this.screen) {
+      return;
+    }
 
-    // 更新導航狀態
-    const navItems = this.drawer.querySelectorAll('.admin-nav-item');
-    navItems.forEach(item => {
+    if (!this.navItems || this.navItems.length === 0) {
+      this.navItems = Array.from(this.screen.querySelectorAll('.admin-nav-item'));
+    }
+
+    this.navItems.forEach(item => {
       if (item.dataset.view === viewName) {
         item.classList.add('active');
       } else {
@@ -178,28 +146,29 @@ export class AdminDrawer {
       }
     });
 
+    this.updateHeader(viewName);
     this.currentView = viewName;
     this.onContentChange(viewName);
   }
 
   /**
-   * 設置抽屜內容
-   * @param {string|HTMLElement} content - 內容 HTML 字符串或元素
+   * 設定主要內容區
    */
   setContent(content) {
-    const contentEl = this.drawer.querySelector('#admin-drawer-content');
-    if (!contentEl) return;
+    if (!this.contentEl) {
+      return;
+    }
 
     if (typeof content === 'string') {
-      contentEl.innerHTML = content;
+      this.contentEl.innerHTML = content;
     } else if (content instanceof HTMLElement) {
-      contentEl.innerHTML = '';
-      contentEl.appendChild(content);
+      this.contentEl.innerHTML = '';
+      this.contentEl.appendChild(content);
     }
   }
 
   /**
-   * 顯示加載狀態
+   * 顯示載入狀態
    */
   showLoading() {
     this.setContent(`
@@ -211,8 +180,7 @@ export class AdminDrawer {
   }
 
   /**
-   * 顯示錯誤信息
-   * @param {string} message - 錯誤信息
+   * 顯示錯誤狀態
    */
   showError(message) {
     this.setContent(`
@@ -224,15 +192,44 @@ export class AdminDrawer {
   }
 
   /**
-   * 銷毀抽屜
+   * 銷毀參考
    */
   destroy() {
-    if (this.overlay && this.overlay.parentNode) {
-      this.overlay.parentNode.removeChild(this.overlay);
-    }
-    this.drawer = null;
-    this.overlay = null;
+    this.screen = null;
+    this.contentEl = null;
+    this.navItems = [];
+    this.titleEl = null;
+    this.descriptionEl = null;
     this.isOpen = false;
+  }
+
+  /**
+   * 更新標題與說明
+   * @param {string} viewName
+   */
+  updateHeader(viewName) {
+    const meta = VIEW_META[viewName] || {
+      title: '管理後台',
+      description: '管理空山的旅人體驗與內容。'
+    };
+
+    if (this.titleEl) {
+      this.titleEl.textContent = meta.title;
+    }
+
+    if (this.descriptionEl) {
+      this.descriptionEl.textContent = meta.description;
+    }
+  }
+
+  /**
+   * 取得預設視圖
+   */
+  getDefaultView() {
+    if (this.navItems && this.navItems.length > 0) {
+      return this.navItems[0].dataset.view;
+    }
+    return 'recording-review';
   }
 }
 
