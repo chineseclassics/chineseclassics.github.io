@@ -21,6 +21,7 @@ import { renderUserManagement } from './ui/admin-user-management.js';
 import { renderStatistics } from './ui/admin-statistics.js';
 import { renderAdminLogs } from './ui/admin-logs.js';
 import { NotificationDropdown } from './ui/notification-dropdown.js';
+import { UserPanelModal } from './ui/user-panel-modal.js';
 
 // 全局狀態
 const AppState = {
@@ -35,7 +36,7 @@ const AppState = {
   adminManager: null,
   notificationManager: null,
   adminDrawer: null,
-  notificationDropdown: null,
+  userPanelModal: null,
   initialized: false,
   userId: null,
   authStatus: 'initializing',
@@ -151,13 +152,17 @@ async function initializeApp() {
       AppState.adminDrawer = new AdminDrawer(AppState.adminManager, handleAdminViewChange);
       AppState.adminDrawer.init();
 
-      // 初始化通知下拉列表
-      AppState.notificationDropdown = new NotificationDropdown(
+      // 初始化用戶面板模態窗口
+      AppState.userPanelModal = new UserPanelModal(
         AppState.notificationManager,
         getCurrentUserId,
-        updateNotificationBadge
+        updateNotificationBadge,
+        handleSignOut,
+        () => AppState.authUser,
+        () => AppState.visitorCount,
+        AppState.supabase
       );
-      AppState.notificationDropdown.init();
+      AppState.userPanelModal.init();
     
     // 4. 隱藏加載畫面
     hideLoadingScreen();
@@ -297,7 +302,6 @@ function syncUserState(user) {
   } else {
     AppState.authStatus = 'other';
     AppState.visitorCount = null;
-    updateVisitorMessage();
   }
 
   updateAuthUI();
@@ -318,10 +322,7 @@ function getAuthElements() {
   return {
     overlay: document.getElementById('auth-overlay'),
     subtitle: document.querySelector('#auth-overlay .auth-subtitle'),
-    googleBtn: document.getElementById('google-login-btn'),
-    visitorMessage: document.getElementById('visitor-message'),
-    visitorText: document.getElementById('visitor-text'),
-    signOutBtn: document.getElementById('sign-out-btn')
+    googleBtn: document.getElementById('google-login-btn')
   };
 }
 
@@ -337,8 +338,8 @@ function getAtmosphereUIElements() {
 }
 
 function updateAuthUI() {
-  const { overlay, subtitle, googleBtn, signOutBtn } = getAuthElements();
-  if (!overlay || !googleBtn || !signOutBtn) {
+  const { overlay, subtitle, googleBtn } = getAuthElements();
+  if (!overlay || !googleBtn) {
     return;
   }
 
@@ -373,21 +374,12 @@ function updateAuthUI() {
   googleBtn.disabled = googleDisabled || !AppState.supabase;
   googleBtn.setAttribute('aria-disabled', googleBtn.disabled ? 'true' : 'false');
 
-  if (isAuthenticated) {
-    signOutBtn.hidden = false;
-    signOutBtn.disabled = false;
-  } else {
-    signOutBtn.hidden = true;
-    signOutBtn.disabled = true;
-  }
-
-  updateVisitorMessage();
   updateAppSwitcherVisibility();
 }
 
 function setupAuthUI() {
-  const { googleBtn, signOutBtn, subtitle } = getAuthElements();
-  if (!googleBtn || !signOutBtn) {
+  const { googleBtn, subtitle } = getAuthElements();
+  if (!googleBtn || !subtitle) {
     return;
   }
 
@@ -396,30 +388,8 @@ function setupAuthUI() {
   }
 
   googleBtn.addEventListener('click', handleGoogleLogin);
-  signOutBtn.addEventListener('click', handleSignOut);
 
   updateAuthUI();
-}
-
-function updateVisitorMessage() {
-  const { visitorMessage, visitorText, signOutBtn } = getAuthElements();
-  if (!visitorMessage || !visitorText || !signOutBtn) {
-    return;
-  }
-
-  const isAuthenticated = AppState.authStatus === 'google' || AppState.authStatus === 'other';
-
-  if (!isAuthenticated || !AppState.authUser) {
-    visitorMessage.hidden = true;
-    return;
-  }
-
-  const name = AppState.authUser.fullName || AppState.authUser.email || '旅人';
-  const count = AppState.visitorCount;
-  const countText = count ? `你是第 ${count} 位進入空山的旅人` : '歡迎來到空山';
-
-  visitorText.textContent = `${name}，${countText}`;
-  visitorMessage.hidden = false;
 }
 
 async function registerTraveler(user) {
@@ -453,8 +423,6 @@ async function registerTraveler(user) {
   } else {
     AppState.visitorCount = null;
   }
-
-  updateVisitorMessage();
 }
 
 function computeRedirectUrl() {
@@ -1250,16 +1218,16 @@ AppState.handleSignOut = handleSignOut;
  */
 async function setupAdminPanel() {
   const adminBtn = document.getElementById('admin-panel-btn');
-  const notificationBtn = document.getElementById('notification-btn');
+  const userPanelBtn = document.getElementById('user-panel-btn');
   const badge = document.getElementById('notification-badge');
 
-  if (!adminBtn || !notificationBtn) {
+  if (!adminBtn || !userPanelBtn) {
     return;
   }
 
   // 預設隱藏，避免上一位使用者的狀態殘留
   adminBtn.hidden = true;
-  notificationBtn.hidden = true;
+  userPanelBtn.hidden = true;
   if (badge) {
     badge.hidden = true;
   }
@@ -1275,15 +1243,15 @@ async function setupAdminPanel() {
 
   const isAuthenticated = AppState.authStatus === 'google' || AppState.authStatus === 'other';
   if (isAuthenticated) {
-    notificationBtn.hidden = false;
-    if (!notificationBtn.dataset.bound) {
-      notificationBtn.addEventListener('click', async (e) => {
+    userPanelBtn.hidden = false;
+    if (!userPanelBtn.dataset.bound) {
+      userPanelBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (AppState.notificationDropdown) {
-          await AppState.notificationDropdown.toggle();
+        if (AppState.userPanelModal) {
+          await AppState.userPanelModal.toggle();
         }
       });
-      notificationBtn.dataset.bound = 'true';
+      userPanelBtn.dataset.bound = 'true';
     }
     await updateNotificationBadge();
   }
@@ -1325,6 +1293,11 @@ async function updateNotificationBadge() {
     badge.hidden = false;
   } else {
     badge.hidden = true;
+  }
+
+  // 同時更新用戶面板的消息徽章
+  if (AppState.userPanelModal) {
+    await AppState.userPanelModal.updateMessagesBadge();
   }
 }
 
