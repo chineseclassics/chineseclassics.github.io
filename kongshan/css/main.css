@@ -959,6 +959,17 @@ body {
     font-size: 2rem;
     margin-bottom: var(--spacing-md);
   }
+
+  .poem-list-header {
+    min-height: 0;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .poem-list-header-actions {
+    position: static;
+    align-self: flex-end;
+  }
   
   .poem-list-container {
     padding: var(--spacing-md);

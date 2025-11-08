@@ -368,6 +368,132 @@
   justify-content: flex-end;
 }
 
+/* 音效審核卡片 */
+.admin-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.admin-description {
+  margin-top: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+}
+
+.admin-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.admin-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-md);
+}
+
+.admin-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.admin-card-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+}
+
+.admin-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.admin-meta {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.admin-tag-info {
+  background: var(--color-secondary-soft);
+  color: var(--color-text-primary);
+}
+
+.admin-audio-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.admin-audio {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-primary);
+}
+
+.admin-audio-hint {
+  font-size: 0.8rem;
+}
+
+.admin-card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.admin-hidden {
+  display: none;
+}
+
+.admin-error-text {
+  color: var(--color-critical);
+  font-size: 0.85rem;
+}
+
+.admin-success-text {
+  color: var(--color-success);
+  font-size: 0.85rem;
+}
+
+.admin-card-completed {
+  opacity: 0.65;
+  transition: opacity var(--duration-normal) var(--ease-smooth);
+}
+
+.admin-empty-hint {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  padding: var(--spacing-lg);
+}
+
 /* 空狀態 */
 .admin-empty-state {
   text-align: center;
@@ -409,6 +535,19 @@
   .admin-confirm-dialog {
     width: 95%;
     padding: var(--spacing-md);
+  }
+
+  .admin-section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-card {
+    padding: var(--spacing-sm);
+  }
+
+  .admin-card-actions {
+    flex-direction: column;
   }
 }
 

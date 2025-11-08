@@ -14,6 +14,7 @@ import { renderPoemList, renderVerticalPoem } from './features/poem-display.js';
 import { renderSoundControls } from './ui/sound-controls-ui.js';
 import { showAtmosphereEditor } from './ui/atmosphere-editor-ui.js';
 import { AdminDrawer } from './ui/admin-drawer.js';
+import { renderRecordingReview } from './ui/admin-recording-review.js';
 
 // 全局狀態
 const AppState = {
@@ -1305,6 +1306,17 @@ async function handleAdminViewChange(viewName) {
   AppState.adminDrawer.showLoading();
 
   try {
+    if (viewName === 'recording-review') {
+      const container = document.createElement('div');
+      AppState.adminDrawer.setContent(container);
+      await renderRecordingReview(container, {
+        adminManager: AppState.adminManager,
+        supabase: AppState.supabase,
+        getCurrentUserId
+      });
+      return;
+    }
+
     // 根據視圖名稱載入對應的內容
     // 這裡先顯示一個佔位符，後續會實現具體的 UI 組件
     AppState.adminDrawer.setContent(`
