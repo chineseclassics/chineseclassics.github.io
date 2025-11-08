@@ -102,13 +102,6 @@ export async function renderStatistics(container, { adminManager }) {
             <canvas id="atmosphere-growth-chart"></canvas>
           </div>
         </div>
-
-        <div class="admin-chart-card">
-          <h3 class="admin-chart-title">音效分布</h3>
-          <div class="admin-chart-container">
-            <canvas id="sound-distribution-chart"></canvas>
-          </div>
-        </div>
       </div>
 
       <!-- 熱門詩句 -->
@@ -146,8 +139,7 @@ export async function renderStatistics(container, { adminManager }) {
     isLoading: false,
     charts: {
       userGrowth: null,
-      atmosphereGrowth: null,
-      soundDistribution: null
+      atmosphereGrowth: null
     }
   };
 
@@ -224,7 +216,6 @@ export async function renderStatistics(container, { adminManager }) {
   function renderCharts(stats) {
     renderUserGrowthChart(stats.trends.userGrowth);
     renderAtmosphereGrowthChart(stats.trends.atmosphereGrowth);
-    renderSoundDistributionChart(stats.sounds);
   }
 
   function renderUserGrowthChart(data) {
@@ -314,56 +305,6 @@ export async function renderStatistics(container, { adminManager }) {
             beginAtZero: true,
             ticks: {
               precision: 0
-            }
-          }
-        }
-      }
-    });
-  }
-
-  function renderSoundDistributionChart(sounds) {
-    const canvas = container.querySelector('#sound-distribution-chart');
-    if (!canvas) return;
-
-    // 銷毀舊圖表
-    if (state.charts.soundDistribution) {
-      state.charts.soundDistribution.destroy();
-    }
-
-    const ctx = canvas.getContext('2d');
-    state.charts.soundDistribution = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['系統音效', '用戶音效'],
-        datasets: [{
-          data: [sounds.system, sounds.user],
-          backgroundColor: [
-            'rgba(120, 146, 98, 0.8)',
-            'rgba(186, 144, 90, 0.8)'
-          ],
-          borderColor: [
-            'rgb(120, 146, 98)',
-            'rgb(186, 144, 90)'
-          ],
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom'
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const label = context.label || '';
-                const value = context.parsed || 0;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                return `${label}: ${value} (${percentage}%)`;
-              }
             }
           }
         }
