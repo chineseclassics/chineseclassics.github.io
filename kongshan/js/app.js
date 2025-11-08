@@ -29,8 +29,22 @@ const AppState = {
   authMessage: '',
   authSubscription: null,
   visitorCount: null,
-  authSubtitleDefault: ''
+  authSubtitleDefault: '',
+  activeScreen: 'loading'
 };
+
+/**
+ * 更新太虛幻境切換器可見性
+ */
+function updateAppSwitcherVisibility() {
+  const isAuthenticated = AppState.authStatus === 'google' || AppState.authStatus === 'other';
+  const shouldShow = isAuthenticated && AppState.activeScreen === 'list';
+  window.__taixuDesiredVisibility = shouldShow;
+
+  if (typeof window.setAppSwitcherVisibility === 'function') {
+    window.setAppSwitcherVisibility(shouldShow);
+  }
+}
 
 /**
  * 初始化應用
@@ -261,6 +275,7 @@ function updateAuthUI() {
   }
 
   updateVisitorMessage();
+  updateAppSwitcherVisibility();
 }
 
 function setupAuthUI() {
@@ -428,6 +443,8 @@ async function showPoemListScreen() {
   
   if (listScreen) listScreen.style.display = 'flex'; // 使用 flex 以匹配 CSS
   if (viewerScreen) viewerScreen.style.display = 'none';
+  AppState.activeScreen = 'list';
+  updateAppSwitcherVisibility();
   
   // 加載詩歌列表
   await loadPoemList();
@@ -442,6 +459,8 @@ async function showPoemViewerScreen(poemId) {
   
   if (listScreen) listScreen.style.display = 'none';
   if (viewerScreen) viewerScreen.style.display = 'flex'; // 使用 flex 以匹配 CSS
+  AppState.activeScreen = 'viewer';
+  updateAppSwitcherVisibility();
   
   // 加載詩歌內容和聲色意境
   await loadPoem(poemId);

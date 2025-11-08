@@ -289,6 +289,10 @@
         },
     ];
     
+    let desiredFloatingVisibility = typeof window.__taixuDesiredVisibility === 'boolean'
+        ? window.__taixuDesiredVisibility
+        : true;
+    
     // 檢測是否是移動設備
     function isMobile() {
         return window.innerWidth <= 768;
@@ -835,6 +839,26 @@
         });
     }
     
+    function applyFloatingLogoVisibility() {
+        const logo = document.getElementById('taixuFloatingLogo');
+        if (!logo) {
+            return;
+        }
+
+        if (desiredFloatingVisibility) {
+            logo.style.removeProperty('display');
+        } else {
+            hideAppSwitcher();
+            logo.style.display = 'none';
+        }
+    }
+
+    function setFloatingLogoVisibility(visible) {
+        desiredFloatingVisibility = !!visible;
+        window.__taixuDesiredVisibility = desiredFloatingVisibility;
+        applyFloatingLogoVisibility();
+    }
+    
     // 导航到应用
     function navigateToApp(appId) {
         const app = apps.find(a => a.id === appId);
@@ -916,6 +940,7 @@
             renderAppGrid();
             
             console.log('✅ 太虛幻境應用切換器初始化完成');
+            applyFloatingLogoVisibility();
         });
     }
     
@@ -923,6 +948,7 @@
     window.initAppSwitcher = initAppSwitcher;
     window.showFloatingAppSwitcher = showAppSwitcher;
     window.taixuNavigateToApp = navigateToApp;
+    window.setAppSwitcherVisibility = setFloatingLogoVisibility;
     
     // 如果页面已加载完成，自动初始化
     if (document.readyState === 'loading') {
