@@ -78,14 +78,6 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
         </div>
       </div>
 
-      <!-- 已選擇的音效 -->
-      <div class="editor-section">
-        <label class="editor-label">已選音效</label>
-        <div id="selected-sounds" class="selected-sounds">
-          <div class="empty-state">尚未選擇音效</div>
-        </div>
-      </div>
-
       <!-- 錄音功能 -->
       <div class="editor-section" id="recording-section">
         <div class="recording-header">
@@ -107,6 +99,14 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
             <button class="recording-action-primary" id="recording-save-btn" type="button">保存錄音</button>
             <button class="recording-action-secondary" id="recording-cancel-btn" type="button">取消</button>
           </div>
+        </div>
+      </div>
+
+      <!-- 已選擇的音效 -->
+      <div class="editor-section">
+        <label class="editor-label">已選音效</label>
+        <div id="selected-sounds" class="selected-sounds">
+          <div class="empty-state">尚未選擇音效</div>
         </div>
       </div>
 
