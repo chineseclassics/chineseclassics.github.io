@@ -7,7 +7,7 @@
   right: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--color-overlay-dim);
   backdrop-filter: blur(10px);
   z-index: 1000;
   opacity: 0;
@@ -29,8 +29,8 @@
   width: 360px;
   max-width: 85vw;
   height: 100vh;
-  background: var(--color-bg-secondary);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface-raised);
+  box-shadow: -24px 0 48px -32px rgba(26, 42, 30, 0.36);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
@@ -48,7 +48,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--color-border-soft);
   flex-shrink: 0;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .editor-close-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--color-primary-soft);
   color: var(--color-text-primary);
 }
 
@@ -91,7 +91,7 @@
   overflow-y: auto;
   padding: var(--spacing-md);
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  scrollbar-color: var(--color-border-soft) transparent;
 }
 
 .editor-content::-webkit-scrollbar {
@@ -103,12 +103,12 @@
 }
 
 .editor-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--color-border-soft);
   border-radius: var(--radius-full);
 }
 
 .editor-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(49, 64, 50, 0.28);
 }
 
 /* 編輯器區塊 */
@@ -141,21 +141,21 @@
 .editor-textarea {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
   font-size: 0.85rem;
   color: var(--color-text-primary);
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--color-surface-soft);
   transition: var(--transition-fast);
 }
 
 .editor-input:focus,
 .editor-textarea:focus {
   outline: none;
-  border-color: #4A90E2;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  border-color: var(--color-primary);
+  background: var(--color-surface-raised);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
 .editor-textarea {
@@ -172,7 +172,7 @@
 }
 
 .sound-card {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--color-surface-soft);
   border: 1.5px solid transparent;
   border-radius: var(--radius-sm);
   padding: 10px;
@@ -181,14 +181,14 @@
 }
 
 .sound-card:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 0, 0, 0.1);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-soft);
   transform: translateY(-1px);
 }
 
 .sound-card.selected {
-  background: rgba(74, 144, 226, 0.1);
-  border-color: #4A90E2;
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
 }
 
 .sound-card-name {
@@ -207,7 +207,7 @@
 .tag {
   font-size: 0.7rem;
   color: var(--color-text-tertiary);
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(120, 146, 98, 0.12);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
 }
@@ -215,7 +215,7 @@
 /* 已選音效列表 */
 .selected-sounds {
   min-height: 80px;
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(120, 146, 98, 0.08);
   border-radius: var(--radius-sm);
   padding: 8px;
 }
@@ -245,7 +245,7 @@
 }
 
 .selected-sound-item {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--color-surface-soft);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   margin-bottom: 6px;
@@ -287,7 +287,7 @@
   min-width: 60px;
   height: 3px;
   border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--color-border-soft);
   outline: none;
   -webkit-appearance: none;
   appearance: none;
@@ -299,7 +299,7 @@
   width: 10px;
   height: 10px;
   border-radius: var(--radius-full);
-  background: #4A90E2;
+  background: var(--color-primary);
   cursor: pointer;
 }
 
@@ -307,7 +307,7 @@
   width: 10px;
   height: 10px;
   border-radius: var(--radius-full);
-  background: #4A90E2;
+  background: var(--color-primary);
   cursor: pointer;
   border: none;
 }
@@ -316,8 +316,8 @@
   width: 20px;
   height: 20px;
   border: none;
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--color-text-tertiary);
+  background: var(--color-secondary-soft);
+  color: var(--color-text-secondary);
   border-radius: var(--radius-full);
   cursor: pointer;
   font-size: 1rem;
@@ -330,8 +330,8 @@
 }
 
 .remove-btn:hover {
-  background: rgba(255, 0, 0, 0.1);
-  color: #ff0000;
+  background: var(--color-critical);
+  color: var(--color-text-contrast);
 }
 
 /* 背景選擇器 */
@@ -350,13 +350,13 @@
 }
 
 .background-card:hover {
-  border-color: rgba(0, 0, 0, 0.1);
+  border-color: var(--color-border-soft);
   transform: translateY(-1px);
 }
 
 .background-card.selected {
-  border-color: #4A90E2;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
 .background-preview {
@@ -370,7 +370,7 @@
   color: var(--color-text-secondary);
   text-align: center;
   padding: 6px 4px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--color-surface-soft);
 }
 
 /* 編輯器底部 */
@@ -378,7 +378,7 @@
   display: flex;
   gap: var(--spacing-xs);
   padding: var(--spacing-md);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid var(--color-border-soft);
   flex-shrink: 0;
 }
 
@@ -395,67 +395,68 @@
 }
 
 .editor-btn-secondary {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--color-secondary-soft);
   color: var(--color-text-secondary);
 }
 
 .editor-btn-secondary:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(120, 146, 98, 0.22);
   color: var(--color-text-primary);
 }
 
 .editor-btn-primary {
-  background: #4A90E2;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  box-shadow: var(--shadow-sm);
 }
 
 .editor-btn-primary:hover {
-  background: #357ABD;
+  background: var(--color-secondary);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 /* 暗色模式 */
 @media (prefers-color-scheme: dark) {
   .editor-header {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: var(--color-border-soft);
   }
 
   .editor-input,
   .editor-textarea {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--color-surface-soft);
+    border-color: var(--color-border-soft);
     color: var(--color-text-primary);
   }
 
   .editor-input:focus,
   .editor-textarea:focus {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--color-surface-raised);
+    border-color: var(--color-primary);
   }
 
   .sound-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(70, 92, 76, 0.32);
   }
 
   .sound-card:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(92, 118, 97, 0.38);
   }
 
   .selected-sounds {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(68, 90, 74, 0.24);
   }
 
   .selected-sound-item {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(70, 96, 76, 0.34);
   }
 
   .editor-btn-secondary {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(92, 118, 97, 0.28);
   }
 
   .editor-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(116, 144, 111, 0.36);
   }
 }
 
@@ -465,9 +466,9 @@
   bottom: 100px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(31, 42, 36, 0.82);
   backdrop-filter: blur(10px);
-  color: white;
+  color: var(--color-text-contrast);
   padding: 12px 24px;
   border-radius: var(--radius-full);
   font-size: 0.85rem;
@@ -476,7 +477,7 @@
   pointer-events: none;
   transition: all var(--duration-normal) var(--ease-smooth);
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .preview-tip.visible {

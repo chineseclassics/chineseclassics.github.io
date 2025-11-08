@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>空山配色測試場</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #f5f7f4;
+      color: #1f2a24;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 24px 32px;
+      background: linear-gradient(135deg, rgba(120, 146, 98, 0.12), rgba(15, 66, 43, 0.16));
+      border-bottom: 1px solid rgba(31, 42, 36, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 28px;
+      letter-spacing: 0.05em;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      padding: 32px;
+    }
+
+    @media (max-width: 1080px) {
+      main {
+        grid-template-columns: 1fr;
+        padding: 20px;
+      }
+    }
+
+    .palette-list {
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid rgba(31, 42, 36, 0.08);
+      box-shadow: 0 24px 48px -32px rgba(23, 49, 38, 0.32);
+      padding: 24px;
+      overflow: auto;
+      max-height: calc(100vh - 160px);
+    }
+
+    .palette-card {
+      border: 1px solid rgba(31, 42, 36, 0.08);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      transition: border 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      background: #fdfdfc;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .palette-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px -24px rgba(18, 46, 34, 0.48);
+      border-color: rgba(31, 42, 36, 0.18);
+    }
+
+    .palette-card.active {
+      border: 1.4px solid rgba(31, 42, 36, 0.28);
+      background: linear-gradient(135deg, rgba(17, 51, 39, 0.06), rgba(97, 127, 110, 0.06));
+      box-shadow: 0 24px 48px -28px rgba(13, 45, 33, 0.48);
+    }
+
+    .palette-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .palette-name {
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+    }
+
+    .palette-description {
+      color: rgba(31, 42, 36, 0.62);
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(98px, 1fr));
+      gap: 10px;
+    }
+
+    .swatch {
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(31, 42, 36, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 88px;
+    }
+
+    .swatch-chip {
+      width: 100%;
+      height: 42px;
+      border-radius: 9px;
+      border: 1px solid rgba(31, 42, 36, 0.12);
+    }
+
+    .swatch-label {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: rgba(31, 42, 36, 0.68);
+      text-transform: uppercase;
+    }
+
+    .swatch-hex {
+      font-size: 12px;
+      color: rgba(31, 42, 36, 0.76);
+      letter-spacing: 0.02em;
+    }
+
+    .preview-area {
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(244, 247, 243, 1), rgba(233, 240, 234, 0.92));
+      border: 1px solid rgba(31, 42, 36, 0.08);
+      display: flex;
+      flex-direction: column;
+      padding: 28px;
+      gap: 24px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32), 0 32px 64px -36px rgba(10, 44, 33, 0.54);
+      min-height: calc(100vh - 192px);
+    }
+
+    .preview-statusbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 16px;
+      padding: 16px 22px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      background: rgba(255, 255, 255, 0.68);
+      backdrop-filter: blur(12px);
+    }
+
+    .status-title {
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .status-badges {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      border: 1px solid transparent;
+    }
+
+    .preview-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 960px) {
+      .preview-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .preview-card {
+      border-radius: 24px;
+      padding: 26px;
+      border: 1px solid rgba(31, 42, 36, 0.08);
+      background: rgba(255, 255, 255, 0.74);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 20px 40px -32px rgba(9, 33, 23, 0.6);
+    }
+
+    .preview-card h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .preview-card p {
+      margin: 0;
+      line-height: 1.8;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .preview-actions {
+      display: inline-flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      border-radius: 999px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px -22px rgba(0, 0, 0, 0.42);
+    }
+
+    .preview-panel {
+      border-radius: 20px;
+      padding: 24px;
+      border: 1px solid rgba(31, 42, 36, 0.08);
+      background: rgba(255, 255, 255, 0.62);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: 0.06em;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tag {
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      border: 1px solid transparent;
+    }
+
+    .divider {
+      height: 1px;
+      width: 100%;
+      background: rgba(31, 42, 36, 0.09);
+    }
+
+    .color-role-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .role-chip {
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(31, 42, 36, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 110px;
+    }
+
+    .role-title {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      color: rgba(31, 42, 36, 0.72);
+      text-transform: uppercase;
+    }
+
+    .role-chip span {
+      font-size: 12px;
+      color: rgba(31, 42, 36, 0.68);
+      letter-spacing: 0.04em;
+    }
+
+    footer {
+      padding: 16px 32px;
+      font-size: 12px;
+      color: rgba(31, 42, 36, 0.68);
+      letter-spacing: 0.06em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>空山配色試驗場</h1>
+    <p style="margin: 12px 0 0; max-width: 640px; line-height: 1.8; font-size: 14px; color: rgba(31, 42, 36, 0.72);">
+      選擇配色方案，預覽空山界面在不同色彩氛圍中的呈現。所有文字與介面說明皆為示意，可根據最終決策調整。
+    </p>
+  </header>
+
+  <main>
+    <section class="palette-list" id="paletteList"></section>
+
+    <section class="preview-area" id="previewArea">
+      <div class="preview-statusbar" id="statusBar">
+        <span class="status-title" id="statusTitle">空山 • 觀景模式</span>
+        <div class="status-badges" id="statusBadges">
+          <span class="badge">山林靈感</span>
+          <span class="badge">極簡界面</span>
+        </div>
+      </div>
+
+      <div class="preview-layout">
+        <article class="preview-card" id="mainCard">
+          <h2 id="cardTitle">清曉松風</h2>
+          <p id="cardText">
+            清晨霧氣尚未散去，山谷裡的松風帶著潮濕的香氣。空山的聲景與詩句，為旅人帶來沉靜的陪伴。
+          </p>
+          <div class="preview-actions">
+            <button class="button" id="primaryButton">啟動靜聽</button>
+            <button class="button" id="secondaryButton">切換詩境</button>
+          </div>
+        </article>
+
+        <aside class="preview-panel" id="sidePanel">
+          <h3 class="panel-title" id="panelTitle">今日詩境設定</h3>
+          <div class="divider"></div>
+          <div class="tag-list" id="tagList">
+            <span class="tag">松林</span>
+            <span class="tag">細雨</span>
+            <span class="tag">遠鐘</span>
+            <span class="tag">微風</span>
+          </div>
+          <div class="divider"></div>
+          <div class="color-role-grid" id="roleGrid"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    本頁面為設計測試用途，協助挑選符合空山美學的配色方案。
+  </footer>
+
+  <script>
+    /* 說明：定義候選配色方案。primary/secondary/accent 對應主要互動元素，surface/background 對應界面層次。 */
+    const palettes = [
+      {
+        id: "moss-forest",
+        name: "苔痕松影",
+        description: "以 #789262 為主色，帶出濕潤苔綠與松林陰影的平衡感，適合靜謐沉穩的界面。",
+        colors: {
+          background: "#F2F4EF",
+          surface: "#FFFFFF",
+          overlay: "rgba(120, 146, 98, 0.12)",
+          primary: "#789262",
+          primaryContrast: "#FBFEF9",
+          secondary: "#A0BF83",
+          accent: "#CED88F",
+          accentContrast: "#1F2A24",
+          neutral: "#324235",
+          neutralMuted: "#6C7B6C",
+          border: "rgba(49, 64, 50, 0.18)",
+          shadow: "rgba(26, 42, 30, 0.42)"
+        }
+      },
+      {
+        id: "emerald-stream",
+        name: "翠谷晨泉",
+        description: "以 #0AA344 為主色，呼應清亮山泉與嫩竹色調，帶來更為現代、清新的視覺。",
+        colors: {
+          background: "#EFF8F3",
+          surface: "#FFFFFF",
+          overlay: "rgba(10, 163, 68, 0.12)",
+          primary: "#0AA344",
+          primaryContrast: "#F9FFFC",
+          secondary: "#5BC98A",
+          accent: "#8BE2AF",
+          accentContrast: "#073B22",
+          neutral: "#0E3B26",
+          neutralMuted: "#5D7C70",
+          border: "rgba(12, 77, 43, 0.22)",
+          shadow: "rgba(4, 42, 26, 0.42)"
+        }
+      },
+      {
+        id: "cloud-ridge",
+        name: "雲岫青霧",
+        description: "柔和藍綠調與霧白背景，呈現高山晨霧與遠峰的空靈感，兼具現代感。",
+        colors: {
+          background: "#F3F6F6",
+          surface: "#FFFFFF",
+          overlay: "rgba(84, 131, 143, 0.12)",
+          primary: "#4A6D7C",
+          primaryContrast: "#F8FCFD",
+          secondary: "#7FA6AD",
+          accent: "#B6D3C9",
+          accentContrast: "#25373A",
+          neutral: "#2D4247",
+          neutralMuted: "#728D94",
+          border: "rgba(53, 83, 90, 0.2)",
+          shadow: "rgba(25, 51, 58, 0.38)"
+        }
+      },
+      {
+        id: "dawn-glow",
+        name: "曙霞山暉",
+        description: "暖光與深林交織，融入晨曦金色以呈現溫暖而不失極簡的層次。",
+        colors: {
+          background: "#F6F3EF",
+          surface: "#FFFFFF",
+          overlay: "rgba(182, 146, 92, 0.12)",
+          primary: "#826B4D",
+          primaryContrast: "#FFFDF7",
+          secondary: "#B8945C",
+          accent: "#E3C88C",
+          accentContrast: "#3C2E1E",
+          neutral: "#3A2F27",
+          neutralMuted: "#7D6C5C",
+          border: "rgba(83, 60, 38, 0.2)",
+          shadow: "rgba(44, 34, 24, 0.34)"
+        }
+      },
+      {
+        id: "rain-fern",
+        name: "雨徑蕨影",
+        description: "深翠與霧灰形成濕潤山徑的層次，適合夜間或沉浸式界面樣式。",
+        colors: {
+          background: "#E9F1ED",
+          surface: "#FDFDFC",
+          overlay: "rgba(42, 92, 74, 0.14)",
+          primary: "#2A5C4A",
+          primaryContrast: "#F4FBF7",
+          secondary: "#4F8F73",
+          accent: "#9FC7A6",
+          accentContrast: "#17362B",
+          neutral: "#223D33",
+          neutralMuted: "#5F756C",
+          border: "rgba(30, 61, 50, 0.22)",
+          shadow: "rgba(13, 36, 27, 0.46)"
+        }
+      }
+    ];
+
+    const roles = [
+      { key: "background", label: "背景" },
+      { key: "surface", label: "介面底層" },
+      { key: "overlay", label: "霧層光暈" },
+      { key: "primary", label: "主行動" },
+      { key: "secondary", label: "次要行動" },
+      { key: "accent", label: "提示強調" },
+      { key: "neutral", label: "正文文字" },
+      { key: "neutralMuted", label: "輔助文字" },
+      { key: "border", label: "邊框" },
+      { key: "shadow", label: "陰影" }
+    ];
+
+    const paletteList = document.getElementById("paletteList");
+    const previewArea = document.getElementById("previewArea");
+    const statusBar = document.getElementById("statusBar");
+    const statusTitle = document.getElementById("statusTitle");
+    const statusBadges = document.getElementById("statusBadges");
+    const mainCard = document.getElementById("mainCard");
+    const primaryButton = document.getElementById("primaryButton");
+    const secondaryButton = document.getElementById("secondaryButton");
+    const sidePanel = document.getElementById("sidePanel");
+    const panelTitle = document.getElementById("panelTitle");
+    const tagList = document.getElementById("tagList");
+    const roleGrid = document.getElementById("roleGrid");
+
+    let activePalette = palettes[0].id;
+
+    function renderPaletteList() {
+      paletteList.innerHTML = "";
+      palettes.forEach((palette) => {
+        const card = document.createElement("article");
+        card.className = `palette-card${palette.id === activePalette ? " active" : ""}`;
+        card.setAttribute("data-id", palette.id);
+
+        card.innerHTML = `
+          <div class="palette-header">
+            <span class="palette-name">${palette.name}</span>
+          </div>
+          <p class="palette-description">${palette.description}</p>
+          <div class="swatch-grid">
+            ${roles
+              .slice(0, 6)
+              .map((role) => {
+                const colorValue = palette.colors[role.key];
+                return `
+                  <div class="swatch">
+                    <div class="swatch-chip" style="background: ${colorValue};"></div>
+                    <span class="swatch-label">${role.label}</span>
+                    <span class="swatch-hex">${colorValue}</span>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          activePalette = palette.id;
+          applyPalette(palette);
+          renderPaletteList();
+        });
+
+        paletteList.appendChild(card);
+      });
+    }
+
+    function applyPalette(palette) {
+      const c = palette.colors;
+
+      // 背景與整體氛圍
+      previewArea.style.background = `linear-gradient(140deg, ${adjustAlpha(c.background, 0.98)}, ${adjustAlpha(c.background, 0.82)})`;
+      previewArea.style.borderColor = adjustAlpha(c.border, 0.8);
+      previewArea.style.boxShadow = `inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 32px 64px -32px ${adjustAlpha(c.shadow, 0.82)}`;
+
+      // 狀態列
+      statusBar.style.background = `linear-gradient(135deg, ${adjustAlpha(c.surface, 0.86)}, ${adjustAlpha(c.overlay, 0.52)})`;
+      statusBar.style.borderColor = adjustAlpha(c.border, 0.32);
+      statusTitle.style.color = c.neutral;
+      Array.from(statusBadges.children).forEach((badge, index) => {
+        badge.style.background = index === 0 ? c.primary : c.accent;
+        badge.style.color = index === 0 ? c.primaryContrast : c.accentContrast;
+        badge.style.borderColor = adjustAlpha(index === 0 ? c.primary : c.accentContrast, 0.22);
+      });
+
+      // 主卡片
+      mainCard.style.background = `linear-gradient(135deg, ${adjustAlpha(c.surface, 0.94)}, ${adjustAlpha(c.overlay, 0.42)})`;
+      mainCard.style.borderColor = adjustAlpha(c.border, 0.42);
+      mainCard.style.boxShadow = `0 26px 48px -28px ${adjustAlpha(c.shadow, 0.74)}`;
+      document.getElementById("cardTitle").style.color = c.neutral;
+      document.getElementById("cardText").style.color = adjustAlpha(c.neutralMuted, 0.92);
+
+      // 按鈕
+      primaryButton.style.background = c.primary;
+      primaryButton.style.color = c.primaryContrast;
+      primaryButton.style.borderColor = adjustAlpha(c.primary, 0.38);
+      primaryButton.style.boxShadow = `0 18px 36px -28px ${adjustAlpha(c.primary, 0.9)}`;
+
+      secondaryButton.style.background = adjustAlpha(c.secondary, 0.14);
+      secondaryButton.style.color = c.primary;
+      secondaryButton.style.borderColor = adjustAlpha(c.secondary, 0.36);
+      secondaryButton.style.boxShadow = `0 18px 32px -26px ${adjustAlpha(c.secondary, 0.64)}`;
+
+      // 側欄
+      sidePanel.style.background = `linear-gradient(155deg, ${adjustAlpha(c.surface, 0.84)}, ${adjustAlpha(c.overlay, 0.38)})`;
+      sidePanel.style.borderColor = adjustAlpha(c.border, 0.32);
+      panelTitle.style.color = c.neutral;
+
+      Array.from(tagList.children).forEach((tag, index) => {
+        const isAccent = index === 0;
+        tag.style.background = isAccent ? adjustAlpha(c.accent, 0.32) : adjustAlpha(c.secondary, 0.18);
+        tag.style.color = isAccent ? c.accentContrast : c.primary;
+        tag.style.borderColor = adjustAlpha(isAccent ? c.accent : c.secondary, 0.42);
+      });
+
+      // 色彩角色提示
+      roleGrid.innerHTML = roles
+        .map((role) => {
+          const value = c[role.key];
+          return `
+            <div class="role-chip">
+              <div class="swatch-chip" style="height: 52px; background: ${value}; border-color: ${adjustAlpha(c.border, 0.35)};"></div>
+              <span class="role-title">${role.label}</span>
+              <span>${value}</span>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function adjustAlpha(color, alpha) {
+      if (color.startsWith("rgba")) {
+        return color.replace(/rgba\(([^)]+)\)/, (match, inner) => {
+          const parts = inner.split(",").map((p) => p.trim());
+          return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
+        });
+      }
+      if (color.startsWith("#")) {
+        const { r, g, b } = hexToRgb(color);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+      return color;
+    }
+
+    function hexToRgb(hex) {
+      const cleaned = hex.replace("#", "");
+      const bigint = parseInt(cleaned, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return { r, g, b };
+    }
+
+    // 初始化呈現
+    renderPaletteList();
+    applyPalette(palettes[0]);
+  </script>
+</body>
+</html>
+
