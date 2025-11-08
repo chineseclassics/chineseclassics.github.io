@@ -489,7 +489,6 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-smooth);
-  position: relative;
   box-shadow: var(--shadow-sm);
   z-index: 100;
 }
