@@ -534,6 +534,250 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* 通知下拉列表 */
+.notification-dropdown {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(420px, 90vw);
+  max-height: min(600px, 80vh);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  animation: slideDown var(--duration-normal) var(--ease-gentle);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-soft);
+  background: var(--color-surface-primary);
+  flex-shrink: 0;
+}
+
+.notification-dropdown-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+}
+
+.notification-dropdown-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.notification-action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.notification-action-btn:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-text-primary);
+}
+
+.notification-dropdown-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-soft) transparent;
+}
+
+.notification-dropdown-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-dropdown-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notification-dropdown-content::-webkit-scrollbar-thumb {
+  background: var(--color-border-soft);
+  border-radius: var(--radius-full);
+}
+
+.notification-dropdown-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-item {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-soft);
+  transition: all var(--duration-fast) var(--ease-smooth);
+  position: relative;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  background: var(--color-surface-soft);
+}
+
+.notification-item.unread {
+  background: var(--color-primary-soft);
+}
+
+.notification-item.unread:hover {
+  background: var(--color-primary-soft);
+  opacity: 0.9;
+}
+
+.notification-item-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+}
+
+.notification-item.unread .notification-item-icon {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.notification-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.notification-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.notification-item-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.notification-item-time {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.notification-item-message {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.notification-item-unread-indicator {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 8px;
+  height: 8px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.notification-item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.notification-item-action-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  font-size: 0.85rem;
+}
+
+.notification-item-action-btn:hover {
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+}
+
+.notification-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  gap: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.notification-empty-state i {
+  font-size: 2rem;
+  color: var(--color-text-tertiary);
+}
+
+.notification-empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 .poem-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

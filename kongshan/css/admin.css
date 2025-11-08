@@ -998,6 +998,91 @@
   border-width: 0;
 }
 
+/* 操作日誌界面樣式 */
+.admin-filters-card {
+  margin-bottom: var(--spacing-lg);
+}
+
+.admin-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  align-items: flex-end;
+}
+
+.admin-form-group-inline {
+  flex: 1;
+  min-width: 180px;
+  margin: 0;
+}
+
+.admin-form-group-inline .admin-form-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-logs-table th:first-child,
+.admin-logs-table td:first-child {
+  width: auto;
+  min-width: 160px;
+}
+
+.admin-logs-table th:nth-child(2),
+.admin-logs-table td:nth-child(2) {
+  width: auto;
+  min-width: 120px;
+}
+
+.admin-logs-table th:nth-child(3),
+.admin-logs-table td:nth-child(3) {
+  width: auto;
+  min-width: 120px;
+}
+
+.admin-logs-table th:nth-child(4),
+.admin-logs-table td:nth-child(4) {
+  width: auto;
+  min-width: 100px;
+}
+
+.admin-logs-table th:nth-child(5),
+.admin-logs-table td:nth-child(5) {
+  width: auto;
+  min-width: 120px;
+}
+
+.admin-logs-table th:nth-child(6),
+.admin-logs-table td:nth-child(6) {
+  width: auto;
+  min-width: 200px;
+}
+
+.admin-logs-table th:nth-child(7),
+.admin-logs-table td:nth-child(7) {
+  width: auto;
+  min-width: 120px;
+}
+
+.admin-log-details {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  word-break: break-word;
+}
+
+.admin-detail-item {
+  display: inline-block;
+  margin-right: var(--spacing-sm);
+  margin-bottom: 0.25rem;
+}
+
+.admin-detail-item strong {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
 .admin-audio-preview {
   display: flex;
   flex-direction: column;
@@ -1222,6 +1307,15 @@
 
   .admin-month-select {
     width: 100%;
+  }
+
+  .admin-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-form-group-inline {
+    min-width: 100%;
   }
 
   .admin-modal {

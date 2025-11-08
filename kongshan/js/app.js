@@ -19,6 +19,8 @@ import { renderPoemManagement } from './ui/admin-poem-management.js';
 import { renderSoundManagement } from './ui/admin-sound-management.js';
 import { renderUserManagement } from './ui/admin-user-management.js';
 import { renderStatistics } from './ui/admin-statistics.js';
+import { renderAdminLogs } from './ui/admin-logs.js';
+import { NotificationDropdown } from './ui/notification-dropdown.js';
 
 // 全局狀態
 const AppState = {
@@ -33,6 +35,7 @@ const AppState = {
   adminManager: null,
   notificationManager: null,
   adminDrawer: null,
+  notificationDropdown: null,
   initialized: false,
   userId: null,
   authStatus: 'initializing',
@@ -147,6 +150,14 @@ async function initializeApp() {
       // 初始化管理後台抽屜
       AppState.adminDrawer = new AdminDrawer(AppState.adminManager, handleAdminViewChange);
       AppState.adminDrawer.init();
+
+      // 初始化通知下拉列表
+      AppState.notificationDropdown = new NotificationDropdown(
+        AppState.notificationManager,
+        getCurrentUserId,
+        updateNotificationBadge
+      );
+      AppState.notificationDropdown.init();
     
     // 4. 隱藏加載畫面
     hideLoadingScreen();
@@ -1266,9 +1277,11 @@ async function setupAdminPanel() {
   if (isAuthenticated) {
     notificationBtn.hidden = false;
     if (!notificationBtn.dataset.bound) {
-      notificationBtn.addEventListener('click', () => {
-        // TODO: 實現通知下拉列表
-        console.log('通知按鈕點擊');
+      notificationBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (AppState.notificationDropdown) {
+          await AppState.notificationDropdown.toggle();
+        }
       });
       notificationBtn.dataset.bound = 'true';
     }
@@ -1377,6 +1390,16 @@ async function handleAdminViewChange(viewName) {
       container.className = 'admin-view-shell';
       AppState.adminDrawer.setContent(container);
       await renderStatistics(container, {
+        adminManager: AppState.adminManager
+      });
+      return;
+    }
+
+    if (viewName === 'logs') {
+      const container = document.createElement('div');
+      container.className = 'admin-view-shell';
+      AppState.adminDrawer.setContent(container);
+      await renderAdminLogs(container, {
         adminManager: AppState.adminManager
       });
       return;
