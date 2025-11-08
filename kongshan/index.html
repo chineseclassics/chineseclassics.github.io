@@ -66,13 +66,28 @@
       <!-- 詩歌欣賞頁面 -->
       <div id="poem-viewer-screen" class="screen" style="display: none;">
         <div class="poem-viewer-container">
-          <!-- 返回按鈕 -->
-          <button id="back-to-list-btn" class="back-button" aria-label="返回詩歌列表">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            <span class="sr-only">返回</span>
-          </button>
+          <div class="poem-viewer-topbar">
+            <button id="back-to-list-btn" class="back-button" type="button" aria-label="返回詩歌列表">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              <span class="sr-only">返回</span>
+            </button>
+            <button id="atmosphere-cycle-btn" class="atmosphere-cycle-logo" type="button" aria-label="切換聲色意境">
+              <i class="fas fa-mountain-sun" aria-hidden="true"></i>
+              <span class="sr-only">切換聲色意境</span>
+            </button>
+          </div>
+
+          <div id="atmosphere-status" class="atmosphere-status" hidden>
+            <div class="atmosphere-status-inner">
+              <span id="atmosphere-status-text" class="atmosphere-status-text"></span>
+              <button id="atmosphere-like-btn" class="atmosphere-like-button" type="button" aria-label="點讚聲色意境" aria-pressed="false">
+                <i class="fas fa-heart" aria-hidden="true"></i>
+                <span id="atmosphere-like-count" class="atmosphere-like-count">0</span>
+              </button>
+            </div>
+          </div>
           
           <!-- 編輯按鈕 -->
           <button id="edit-atmosphere-btn" class="edit-atmosphere-button" aria-label="創作聲色意境" title="創作聲色意境">

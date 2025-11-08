@@ -59,16 +59,6 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
 
   // 編輯器內容
   sidebar.innerHTML = `
-    <div class="editor-header">
-      <h3 class="editor-title">創作聲色意境</h3>
-      <button class="editor-close-btn" aria-label="關閉編輯器">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
     <div class="editor-content">
       <!-- 音效選擇 -->
       <div class="editor-section">
@@ -138,7 +128,9 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
 
   // 綁定關閉按鈕
   const closeBtn = editor.querySelector('.editor-close-btn');
-  closeBtn.addEventListener('click', () => hideAtmosphereEditor());
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => hideAtmosphereEditor());
+  }
 
   // 點擊外部關閉
   editor.addEventListener('click', (e) => {

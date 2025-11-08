@@ -33,8 +33,20 @@ const AppState = {
   activeScreen: 'loading',
   isPreviewMode: false,
   previewAtmosphereData: null,
-  baseBackgroundConfig: null
+  baseBackgroundConfig: null,
+  atmosphereContext: {
+    poemId: null,
+    entries: [],
+    order: [],
+    index: -1,
+    userLikedAtmosphereId: null,
+    pendingToken: null
+  },
+  atmosphereStatusTimer: null
 };
+
+const ATMOSPHERE_STATUS_DURATION = 3000;
+const ATMOSPHERE_STATUS_HIDE_DELAY = 360;
 
 /**
  * 將視覺與聲音狀態還原到基礎狀態
@@ -214,6 +226,20 @@ function syncUserState(user) {
       AppState.authStatus = 'signed_out';
     }
     resetAtmosphereEnvironment();
+    if (AppState.atmosphereContext) {
+      AppState.atmosphereContext.userLikedAtmosphereId = null;
+      AppState.atmosphereContext.entries.forEach(entry => {
+        if (entry && entry.type !== 'placeholder') {
+          entry.likedByCurrent = false;
+        }
+      });
+      AppState.atmosphereContext.order.forEach(entry => {
+        if (entry && entry.type !== 'placeholder') {
+          entry.likedByCurrent = false;
+        }
+      });
+      updateLikeButtonUI(AppState.atmosphereContext.order[AppState.atmosphereContext.index] || null);
+    }
     updateAuthUI();
     return;
   }
@@ -244,6 +270,13 @@ function syncUserState(user) {
   }
 
   updateAuthUI();
+  if (AppState.currentPoem && AppState.supabase) {
+    loadAtmosphereSequence(AppState.currentPoem.id).catch(err => {
+      console.warn('重新載入聲色意境失敗:', err);
+    });
+  } else {
+    updateLikeButtonUI(AppState.atmosphereContext.order[AppState.atmosphereContext.index] || null);
+  }
 }
 
 function getAuthElements() {
@@ -254,6 +287,17 @@ function getAuthElements() {
     visitorMessage: document.getElementById('visitor-message'),
     visitorText: document.getElementById('visitor-text'),
     signOutBtn: document.getElementById('sign-out-btn')
+  };
+}
+
+function getAtmosphereUIElements() {
+  return {
+    topbar: document.querySelector('.poem-viewer-topbar'),
+    cycleBtn: document.getElementById('atmosphere-cycle-btn'),
+    statusEl: document.getElementById('atmosphere-status'),
+    statusText: document.getElementById('atmosphere-status-text'),
+    likeBtn: document.getElementById('atmosphere-like-btn'),
+    likeCount: document.getElementById('atmosphere-like-count')
   };
 }
 
@@ -533,7 +577,7 @@ async function loadPoem(poemId) {
       renderVerticalPoem(poemContent, poem);
       
       // 加載聲色意境
-      await loadAtmosphere(poemId);
+      await loadAtmosphereSequence(poemId);
     }
   } catch (error) {
     console.error('加載詩歌失敗:', error);
@@ -584,61 +628,540 @@ async function handleAtmosphereSave(atmosphereData) {
     console.log('保存成功:', data);
     
     // 重新加載當前詩歌的聲色意境
-    await loadAtmosphere(atmosphereData.poem_id);
+    await loadAtmosphereSequence(atmosphereData.poem_id);
   } catch (error) {
     console.error('保存聲色意境異常:', error);
     alert('保存失敗，請稍後重試');
   }
 }
 
-/**
- * 加載詩歌的聲色意境
- */
-async function loadAtmosphere(poemId) {
-  const soundControlsEl = document.getElementById('sound-controls');
-  if (!soundControlsEl) return;
+function buildPlaceholderEntry() {
+  return {
+    type: 'placeholder',
+    message: '目前還沒有聲色意境，歡迎率先創作。'
+  };
+}
 
-  // 清空現有的音效
-  AppState.soundMixer.clear();
-  AppState.isPreviewMode = false;
+function buildAtmosphereOrder(entries, userId) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return [buildPlaceholderEntry()];
+  }
 
-  try {
-    // 從數據庫加載默認聲色意境
-    const atmosphere = await AppState.atmosphereManager.loadDefaultAtmosphere(poemId);
-    
-    if (atmosphere) {
-      AppState.currentAtmosphere = atmosphere;
-      
-      // 獲取聲色意境的音效列表
-      const sounds = await AppState.atmosphereManager.getAtmosphereSounds(atmosphere);
-      
-      console.log(`📀 加載聲色意境: ${atmosphere.name}，包含 ${sounds.length} 個音效`);
-      
-      if (sounds.length > 0) {
-        // 添加音效到混音器
-        for (const sound of sounds) {
-          await AppState.soundMixer.addTrack(sound);
-        }
-        
-        // 不顯示音效控制面板（用戶要求隱藏）
-        soundControlsEl.style.display = 'none';
-        
-        // 應用背景配置
-        if (atmosphere.background_config && AppState.backgroundRenderer) {
-          AppState.backgroundRenderer.setConfig(atmosphere.background_config);
-        }
-      } else {
-        console.warn('聲色意境沒有音效');
-        soundControlsEl.style.display = 'none';
+  const added = new Set();
+  const sequence = [];
+  const userEntries = userId
+    ? entries.filter(entry => entry.authorId === userId)
+    : [];
+  userEntries.sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return aTime - bTime;
+  });
+
+  const others = entries
+    .filter(entry => !userId || entry.authorId !== userId)
+    .sort((a, b) => {
+      const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+      if (likeDiff !== 0) {
+        return likeDiff;
       }
-    } else {
-      console.log('沒有找到默認聲色意境');
-      soundControlsEl.style.display = 'none';
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      return aTime - bTime;
+    });
+
+  const pushEntry = (entry) => {
+    if (!entry || added.has(entry.id)) {
+      return;
     }
-  } catch (error) {
-    console.error('加載聲色意境失敗:', error);
+    sequence.push(entry);
+    added.add(entry.id);
+  };
+
+  userEntries.forEach(pushEntry);
+
+  const maxLikes = others.length > 0 ? Math.max(...others.map(entry => entry.likeCount || 0)) : 0;
+  if (maxLikes > 0) {
+    others.forEach(entry => {
+      if ((entry.likeCount || 0) === maxLikes) {
+        pushEntry(entry);
+      }
+    });
+  } else if (others.length > 0) {
+    const earliest = others.reduce((prev, current) => {
+      const prevTime = prev.createdAt ? new Date(prev.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      const currentTime = current.createdAt ? new Date(current.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      return currentTime < prevTime ? current : prev;
+    }, others[0]);
+    pushEntry(earliest);
+  }
+
+  others.forEach(pushEntry);
+  entries.forEach(pushEntry);
+
+  return sequence.length > 0 ? sequence : [buildPlaceholderEntry()];
+}
+
+function findAtmosphereEntryById(id) {
+  if (!id) {
+    return null;
+  }
+  return AppState.atmosphereContext.entries.find(entry => entry.id === id) || null;
+}
+
+function updateLikeButtonUI(entry) {
+  const { likeBtn, likeCount } = getAtmosphereUIElements();
+  if (!likeBtn || !likeCount) {
+    return;
+  }
+
+  if (!entry || entry.type === 'placeholder') {
+    likeBtn.classList.add('is-hidden');
+    likeBtn.setAttribute('aria-pressed', 'false');
+    likeBtn.disabled = true;
+    likeCount.textContent = '0';
+    return;
+  }
+
+  likeBtn.classList.remove('is-hidden');
+  likeBtn.setAttribute('aria-pressed', entry.likedByCurrent ? 'true' : 'false');
+  likeBtn.disabled = !AppState.userId;
+  likeCount.textContent = String(entry.likeCount || 0);
+}
+
+function showAtmosphereStatus({ text, showLikeButton }) {
+  const { statusEl, statusText, likeBtn } = getAtmosphereUIElements();
+  if (!statusEl || !statusText || !likeBtn) {
+    return;
+  }
+
+  statusText.textContent = text || '';
+
+  if (showLikeButton) {
+    likeBtn.classList.remove('is-hidden');
+  } else {
+    likeBtn.classList.add('is-hidden');
+  }
+
+  statusEl.hidden = false;
+  statusEl.classList.remove('visible');
+  void statusEl.offsetWidth;
+  statusEl.classList.add('visible');
+
+  if (AppState.atmosphereStatusTimer) {
+    clearTimeout(AppState.atmosphereStatusTimer);
+  }
+
+  AppState.atmosphereStatusTimer = setTimeout(() => {
+    statusEl.classList.remove('visible');
+    setTimeout(() => {
+      if (!statusEl.classList.contains('visible')) {
+        statusEl.hidden = true;
+      }
+    }, ATMOSPHERE_STATUS_HIDE_DELAY);
+    AppState.atmosphereStatusTimer = null;
+  }, ATMOSPHERE_STATUS_DURATION);
+}
+
+async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
+  const soundControlsEl = document.getElementById('sound-controls');
+  const context = AppState.atmosphereContext;
+  const token = Date.now();
+  context.pendingToken = token;
+
+  if (soundControlsEl) {
     soundControlsEl.style.display = 'none';
   }
+
+  if (!entry || entry.type === 'placeholder') {
+    if (AppState.soundMixer) {
+      AppState.soundMixer.clear();
+    }
+    if (AppState.backgroundRenderer && AppState.baseBackgroundConfig) {
+      AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
+    }
+    AppState.currentAtmosphere = null;
+    updateLikeButtonUI(null);
+    if (showStatus) {
+      const message = entry?.message || '目前還沒有聲色意境，歡迎率先創作。';
+      showAtmosphereStatus({ text: message, showLikeButton: false });
+    }
+    context.pendingToken = null;
+    return;
+  }
+
+  try {
+    const atmosphere = entry.data;
+    const sounds = await AppState.atmosphereManager.getAtmosphereSounds(atmosphere);
+    if (context.pendingToken !== token) {
+      return;
+    }
+
+    if (AppState.soundMixer) {
+      AppState.soundMixer.clear();
+      const loadedTracks = [];
+      for (const sound of sounds) {
+        const track = await AppState.soundMixer.addTrack({
+          ...sound,
+          volume: sound.volume !== undefined ? sound.volume : 0.7,
+          loop: sound.loop !== undefined ? sound.loop : true
+        });
+        if (track) {
+          loadedTracks.push(track);
+        }
+      }
+      if (loadedTracks.length > 0) {
+        await AppState.soundMixer.playAll();
+      }
+    }
+
+    if (AppState.backgroundRenderer) {
+      if (atmosphere.background_config) {
+        AppState.backgroundRenderer.setConfig(atmosphere.background_config);
+      } else if (AppState.baseBackgroundConfig) {
+        AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
+      }
+    }
+
+    AppState.currentAtmosphere = atmosphere;
+    AppState.isPreviewMode = false;
+    updateLikeButtonUI(entry);
+
+    if (showStatus) {
+      const displayName = entry.authorName || '旅人';
+      showAtmosphereStatus({
+        text: `${displayName} 的聲色意境`,
+        showLikeButton: true
+      });
+    }
+  } catch (error) {
+    console.error('套用聲色意境失敗:', error);
+    if (showStatus) {
+      showAtmosphereStatus({
+        text: '套用聲色意境時出現問題，請稍後再試。',
+        showLikeButton: false
+      });
+    }
+  } finally {
+    if (context.pendingToken === token) {
+      context.pendingToken = null;
+    }
+  }
+}
+
+async function loadAtmosphereSequence(poemId) {
+  const context = AppState.atmosphereContext;
+  context.poemId = poemId;
+  context.entries = [];
+  context.order = [];
+  context.index = -1;
+  context.userLikedAtmosphereId = null;
+  context.pendingToken = null;
+
+  if (AppState.soundMixer) {
+    AppState.soundMixer.clear();
+  }
+  AppState.currentAtmosphere = null;
+  AppState.isPreviewMode = false;
+
+  const soundControlsEl = document.getElementById('sound-controls');
+  if (soundControlsEl) {
+    soundControlsEl.style.display = 'none';
+  }
+
+  if (!AppState.atmosphereManager) {
+    const order = buildAtmosphereOrder([], AppState.userId);
+    context.order = order;
+    context.index = order.length > 0 ? 0 : -1;
+    await applyAtmosphereEntry(order[context.index] || null, { showStatus: true });
+    return;
+  }
+
+  try {
+    const atmospheres = await AppState.atmosphereManager.loadAtmospheres(poemId);
+    if (!Array.isArray(atmospheres) || atmospheres.length === 0) {
+      context.order = buildAtmosphereOrder([], AppState.userId);
+      context.index = context.order.length > 0 ? 0 : -1;
+      await applyAtmosphereEntry(context.order[context.index] || null, { showStatus: true });
+      return;
+    }
+
+    let entries = atmospheres.map(atmosphere => ({
+      id: atmosphere.id,
+      data: atmosphere,
+      authorId: atmosphere.created_by || null,
+      authorName: '旅人',
+      createdAt: atmosphere.created_at,
+      likeCount: typeof atmosphere.like_count === 'number' ? atmosphere.like_count : 0,
+      likedByCurrent: false
+    }));
+
+    if (AppState.supabase) {
+      const authorIds = [...new Set(entries.map(entry => entry.authorId).filter(Boolean))];
+      if (authorIds.length > 0) {
+        const { data: travelerRows, error: travelerError } = await AppState.supabase
+          .from('travelers')
+          .select('user_id, display_name')
+          .in('user_id', authorIds);
+        if (travelerError) {
+          console.warn('載入旅人名稱時發生錯誤:', travelerError);
+        } else if (Array.isArray(travelerRows)) {
+          const nameMap = new Map(
+            travelerRows.map(row => [row.user_id, (row.display_name || '').trim()])
+          );
+          entries = entries.map(entry => ({
+            ...entry,
+            authorName: nameMap.get(entry.authorId) || '旅人'
+          }));
+        }
+      }
+
+      const atmosphereIds = entries.map(entry => entry.id);
+      if (atmosphereIds.length > 0) {
+        const { data: likeRows, error: likeError } = await AppState.supabase
+          .from('atmosphere_likes')
+          .select('atmosphere_id, user_id')
+          .in('atmosphere_id', atmosphereIds);
+
+        if (likeError) {
+          console.warn('載入點讚資訊時發生錯誤:', likeError);
+        } else if (Array.isArray(likeRows)) {
+          const likeMap = new Map();
+          likeRows.forEach(row => {
+            const targetId = row.atmosphere_id;
+            if (!likeMap.has(targetId)) {
+              likeMap.set(targetId, { count: 0, likedByCurrent: false });
+            }
+            const info = likeMap.get(targetId);
+            info.count += 1;
+            if (AppState.userId && row.user_id === AppState.userId) {
+              info.likedByCurrent = true;
+            }
+          });
+
+          entries = entries.map(entry => {
+            const info = likeMap.get(entry.id);
+            if (!info) {
+              return entry;
+            }
+            if (info.likedByCurrent) {
+              context.userLikedAtmosphereId = entry.id;
+            }
+            return {
+              ...entry,
+              likeCount: info.count,
+              likedByCurrent: info.likedByCurrent
+            };
+          });
+        }
+      }
+    }
+
+    if (context.userLikedAtmosphereId) {
+      entries = entries.map(entry => ({
+        ...entry,
+        likedByCurrent: entry.id === context.userLikedAtmosphereId
+      }));
+    }
+
+    context.entries = entries;
+    context.order = buildAtmosphereOrder(entries, AppState.userId);
+    context.index = context.order.length > 0 ? 0 : -1;
+
+    await applyAtmosphereEntry(context.order[context.index] || null, { showStatus: true });
+  } catch (error) {
+    console.error('加載聲色意境列表失敗:', error);
+    context.entries = [];
+    context.order = buildAtmosphereOrder([], AppState.userId);
+    context.index = context.order.length > 0 ? 0 : -1;
+    await applyAtmosphereEntry(context.order[context.index] || null, { showStatus: true });
+  }
+}
+
+function rebuildAtmosphereOrder(preferredId) {
+  const context = AppState.atmosphereContext;
+  const currentEntry = context.order[context.index] || null;
+  const currentId = preferredId
+    || (currentEntry && currentEntry.type !== 'placeholder' ? currentEntry.id : null);
+
+  context.order = buildAtmosphereOrder(context.entries, AppState.userId);
+
+  if (context.order.length === 0) {
+    context.index = -1;
+    return;
+  }
+
+  if (currentId) {
+    const newIndex = context.order.findIndex(entry => entry.id === currentId);
+    context.index = newIndex !== -1 ? newIndex : 0;
+  } else {
+    context.index = 0;
+  }
+}
+
+async function handleAtmosphereCycle() {
+  const context = AppState.atmosphereContext;
+  if (!context.order || context.order.length === 0) {
+    showAtmosphereStatus({
+      text: '目前還沒有聲色意境，歡迎率先創作。',
+      showLikeButton: false
+    });
+    return;
+  }
+
+  if (context.order.length === 1 && context.order[0].type === 'placeholder') {
+    showAtmosphereStatus({
+      text: context.order[0].message || '目前還沒有聲色意境，歡迎率先創作。',
+      showLikeButton: false
+    });
+    return;
+  }
+
+  context.index = (context.index + 1) % context.order.length;
+  const entry = context.order[context.index];
+  await applyAtmosphereEntry(entry, { showStatus: true });
+}
+
+async function handleAtmosphereLike() {
+  if (!AppState.userId) {
+    return;
+  }
+
+  const context = AppState.atmosphereContext;
+  const entry = context.order[context.index];
+  if (!entry || entry.type === 'placeholder') {
+    return;
+  }
+
+  await toggleAtmosphereLike(entry);
+}
+
+async function toggleAtmosphereLike(entry) {
+  if (!entry || entry.type === 'placeholder' || !AppState.supabase || !AppState.userId) {
+    return;
+  }
+
+  const context = AppState.atmosphereContext;
+  const currentLikedId = context.userLikedAtmosphereId;
+  const targetId = entry.id;
+  const userId = AppState.userId;
+  const adjustments = [];
+
+  try {
+    if (currentLikedId && currentLikedId !== targetId) {
+      await removeAtmosphereLike(currentLikedId, userId);
+      const previousEntry = findAtmosphereEntryById(currentLikedId);
+      if (previousEntry) {
+        previousEntry.likeCount = Math.max(0, (previousEntry.likeCount || 0) - 1);
+        previousEntry.likedByCurrent = false;
+        adjustments.push({ id: currentLikedId, count: previousEntry.likeCount });
+      }
+    }
+
+    if (currentLikedId === targetId) {
+      await removeAtmosphereLike(targetId, userId);
+      const targetEntry = findAtmosphereEntryById(targetId);
+      if (targetEntry) {
+        targetEntry.likeCount = Math.max(0, (targetEntry.likeCount || 0) - 1);
+        targetEntry.likedByCurrent = false;
+        adjustments.push({ id: targetId, count: targetEntry.likeCount });
+      }
+      context.userLikedAtmosphereId = null;
+    } else {
+      await addAtmosphereLike(targetId, userId);
+      const targetEntry = findAtmosphereEntryById(targetId);
+      if (targetEntry) {
+        targetEntry.likeCount = (targetEntry.likeCount || 0) + 1;
+        targetEntry.likedByCurrent = true;
+        adjustments.push({ id: targetId, count: targetEntry.likeCount });
+      }
+      context.userLikedAtmosphereId = targetId;
+    }
+
+    rebuildAtmosphereOrder(entry.id);
+    updateLikeButtonUI(context.order[context.index] || null);
+    showAtmosphereStatus({
+      text: `${entry.authorName || '旅人'} 的聲色意境`,
+      showLikeButton: true
+    });
+
+    await syncAtmosphereLikeCountOnServer(adjustments);
+  } catch (error) {
+    console.error('更新點讚狀態失敗:', error);
+    showAtmosphereStatus({
+      text: '點讚操作失敗，請稍後再試。',
+      showLikeButton: true
+    });
+  }
+}
+
+async function addAtmosphereLike(atmosphereId, userId) {
+  const { error } = await AppState.supabase
+    .from('atmosphere_likes')
+    .insert({
+      atmosphere_id: atmosphereId,
+      user_id: userId
+    });
+
+  if (error && error.code !== '23505' && error.code !== '409') {
+    throw error;
+  }
+}
+
+async function removeAtmosphereLike(atmosphereId, userId) {
+  const { error } = await AppState.supabase
+    .from('atmosphere_likes')
+    .delete()
+    .eq('atmosphere_id', atmosphereId)
+    .eq('user_id', userId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function syncAtmosphereLikeCountOnServer(adjustments) {
+  if (!Array.isArray(adjustments) || adjustments.length === 0 || !AppState.supabase) {
+    return;
+  }
+
+  for (const adjustment of adjustments) {
+    if (!adjustment || typeof adjustment.count !== 'number') {
+      continue;
+    }
+    const { error } = await AppState.supabase
+      .from('poem_atmospheres')
+      .update({ like_count: adjustment.count })
+      .eq('id', adjustment.id);
+    if (error) {
+      console.warn('同步點讚數失敗:', error);
+    }
+  }
+}
+
+function setupPoemViewerControls() {
+  const { cycleBtn, likeBtn } = getAtmosphereUIElements();
+
+  if (cycleBtn && !cycleBtn.dataset.bound) {
+    cycleBtn.addEventListener('click', () => {
+      handleAtmosphereCycle().catch(error => {
+        console.warn('切換聲色意境失敗:', error);
+      });
+    });
+    cycleBtn.dataset.bound = 'true';
+  }
+
+  if (likeBtn && !likeBtn.dataset.bound) {
+    likeBtn.addEventListener('click', () => {
+      handleAtmosphereLike().catch(error => {
+        console.warn('點讚聲色意境失敗:', error);
+      });
+    });
+    likeBtn.dataset.bound = 'true';
+  }
+
+  const currentEntry = AppState.atmosphereContext.order[AppState.atmosphereContext.index] || null;
+  updateLikeButtonUI(currentEntry || null);
 }
 
 // 暴露函數到全局狀態（供其他模塊調用）
@@ -657,6 +1180,7 @@ if (document.readyState === 'loading') {
 // 設置返回按鈕和編輯按鈕事件監聽
 document.addEventListener('DOMContentLoaded', () => {
   setupAuthUI();
+  setupPoemViewerControls();
 
   const backButton = document.getElementById('back-to-list-btn');
   if (backButton) {

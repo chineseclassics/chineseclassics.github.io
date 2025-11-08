@@ -492,8 +492,7 @@ body {
   overflow: hidden;
 }
 
-/* 控制按鈕（底部懸浮，極簡風） */
-.back-button,
+/* 編輯按鈕（底部懸浮，極簡風） */
 .edit-atmosphere-button {
   position: fixed;
   bottom: var(--spacing-md);
@@ -513,9 +512,6 @@ body {
   opacity: 0.55;
   z-index: 20;
   padding: 0;
-}
-
-.back-button svg,
 .edit-atmosphere-button svg {
   width: 22px;
   height: 22px;
@@ -523,8 +519,6 @@ body {
   pointer-events: none;
 }
 
-.back-button:hover,
-.back-button:focus-visible,
 .edit-atmosphere-button:hover,
 .edit-atmosphere-button:focus-visible {
   background: var(--color-surface-raised);
@@ -535,13 +529,8 @@ body {
   transform: translateY(-4px);
 }
 
-.back-button:focus-visible,
 .edit-atmosphere-button:focus-visible {
   outline: none;
-}
-
-.back-button {
-  left: var(--spacing-md);
 }
 
 .edit-atmosphere-button {
@@ -549,18 +538,218 @@ body {
 }
 
 @media (max-width: 768px) {
-  .back-button,
   .edit-atmosphere-button {
     width: 42px;
     height: 42px;
     bottom: var(--spacing-sm);
     opacity: 0.65;
   }
-  .back-button {
-    left: var(--spacing-sm);
-  }
   .edit-atmosphere-button {
     right: var(--spacing-sm);
+  }
+}
+
+/* 頂部導覽與空山 Logo */
+.poem-viewer-topbar {
+  position: fixed;
+  top: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  z-index: 24;
+}
+
+.back-button {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(88, 101, 86, 0.75);
+  background: rgba(251, 253, 248, 0.45);
+  backdrop-filter: blur(18px) saturate(120%);
+  box-shadow: none;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-gentle);
+  opacity: 0.7;
+}
+
+.back-button svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  pointer-events: none;
+}
+
+.back-button:hover,
+.back-button:focus-visible {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-soft);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+  opacity: 1;
+  transform: translateY(-3px);
+}
+
+.back-button:focus-visible {
+  outline: none;
+}
+
+.atmosphere-cycle-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 28px;
+  border: 1px solid rgba(120, 146, 98, 0.25);
+  background: linear-gradient(140deg, rgba(251, 253, 248, 0.94), rgba(230, 238, 226, 0.72));
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 18px 42px -30px rgba(60, 76, 58, 0.65);
+  cursor: pointer;
+  transition: transform var(--duration-normal) var(--ease-gentle), box-shadow var(--duration-normal) var(--ease-gentle), border-color var(--duration-fast) var(--ease-smooth);
+}
+
+.atmosphere-cycle-logo:hover,
+.atmosphere-cycle-logo:focus-visible {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 24px 50px -26px rgba(60, 76, 58, 0.75);
+  border-color: rgba(120, 146, 98, 0.4);
+}
+
+.atmosphere-cycle-logo:focus-visible {
+  outline: none;
+}
+
+.atmosphere-cycle-logo i {
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .poem-viewer-topbar {
+    top: var(--spacing-md);
+    gap: var(--spacing-sm);
+    transform: translateX(-50%) scale(0.92);
+  }
+
+  .atmosphere-cycle-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 24px;
+    font-size: 1.6rem;
+  }
+}
+
+/* 作者資訊與愛心提示 */
+.atmosphere-status {
+  position: fixed;
+  top: calc(var(--spacing-lg) + 5.2rem);
+  left: 50%;
+  transform: translate3d(-50%, -10px, 0);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-gentle), transform var(--duration-normal) var(--ease-gentle);
+  z-index: 23;
+  max-width: min(90vw, 420px);
+}
+
+.atmosphere-status.visible {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
+  pointer-events: auto;
+}
+
+.atmosphere-status-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: rgba(251, 253, 248, 0.92);
+  border-radius: var(--radius-lg);
+  padding: 0.65rem 1.2rem;
+  border: 1px solid rgba(120, 146, 98, 0.18);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-sans);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+}
+
+.atmosphere-status-text {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 16rem;
+}
+
+.atmosphere-like-button {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: rgba(120, 146, 98, 0.12);
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), background var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+}
+
+.atmosphere-like-button i {
+  font-size: 0.95rem;
+}
+
+.atmosphere-like-button:hover,
+.atmosphere-like-button:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.atmosphere-like-button[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  box-shadow: var(--shadow-md);
+}
+
+.atmosphere-like-button[aria-pressed="true"] i {
+  transform: scale(1.08);
+}
+
+.atmosphere-like-button.is-hidden {
+  display: none;
+}
+
+.atmosphere-like-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+  box-shadow: none;
+  transform: none;
+}
+
+.atmosphere-like-count {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .atmosphere-status {
+    top: calc(var(--spacing-md) + 4.2rem);
+  }
+
+  .atmosphere-status-inner {
+    gap: 0.6rem;
+    padding: 0.55rem 0.9rem;
+  }
+
+  .atmosphere-status-text {
+    max-width: 12rem;
+    font-size: 0.85rem;
   }
 }
 
