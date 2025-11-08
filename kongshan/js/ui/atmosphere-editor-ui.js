@@ -249,12 +249,21 @@ async function loadPublishedRecordings() {
 
   try {
     const supabaseClient = window.AppState.supabase;
-    const { data, error } = await supabaseClient
+    const userId = window.AppState?.userId || null;
+
+    let query = supabaseClient
       .from('recordings')
-      .select('id, display_name, storage_path, created_at')
-      .eq('status', 'published')
+      .select('id, display_name, storage_path, created_at, owner_id, status')
       .order('created_at', { ascending: false })
       .limit(50);
+
+    if (userId) {
+      query = query.or(`status.eq.published,and(status.eq.pending,owner_id.eq.${userId})`);
+    } else {
+      query = query.eq('status', 'published');
+    }
+
+    const { data, error } = await query;
 
     if (error || !Array.isArray(data)) {
       return [];
@@ -276,15 +285,23 @@ async function loadPublishedRecordings() {
         console.warn('生成錄音簽名網址失敗:', signedError);
       }
 
+      const statusLabel = (record.status || '').toLowerCase();
+      const tags = ['旅人錄音'];
+      if (statusLabel && statusLabel !== 'published') {
+        tags.push('待審核');
+      }
+
       return {
         id: record.id,
         name: record.display_name || '旅人錄音',
-        tags: ['旅人錄音'],
+        tags,
         file_url: signedUrl,
         sourceType: 'recording',
         recordingPath: record.storage_path,
         recordingId: record.id,
-        display_name: record.display_name || '旅人錄音'
+        display_name: record.display_name || '旅人錄音',
+        ownerId: record.owner_id || null,
+        recordingStatus: record.status || 'published'
       };
     }));
 
@@ -795,7 +812,7 @@ async function uploadRecording(displayName) {
       display_name: displayName,
       storage_path: storagePath,
       duration_seconds: currentRecordingDuration,
-      status: 'published'
+      status: 'pending'
     })
     .select()
     .single();
@@ -820,7 +837,9 @@ async function uploadRecording(displayName) {
     display_name: insertData.display_name,
     storage_path: insertData.storage_path,
     duration_seconds: insertData.duration_seconds,
-    file_url: signedUrl
+    file_url: signedUrl,
+    owner_id: insertData.owner_id || userId,
+    status: insertData.status || 'pending'
   };
 }
 
@@ -833,7 +852,9 @@ function buildRecordingSound(recording) {
     tags: ['旅人錄音'],
     sourceType: 'recording',
     recordingPath: recording.storage_path || '',
-    recordingId: recording.id
+    recordingId: recording.id,
+    ownerId: recording.owner_id || recording.ownerId || null,
+    recordingStatus: recording.status || recording.recordingStatus || 'pending'
   };
 }
 
@@ -850,6 +871,12 @@ function ensureRecordingCardExists(sound) {
     }
     card.dataset.sourceType = sound.sourceType || card.dataset.sourceType || 'recording';
     card.dataset.recordingPath = sound.recordingPath || card.dataset.recordingPath || '';
+    if (sound.ownerId) {
+      card.dataset.recordingOwnerId = sound.ownerId;
+    }
+    if (sound.recordingStatus) {
+      card.dataset.recordingStatus = sound.recordingStatus;
+    }
     return card;
   }
 
@@ -1119,6 +1146,12 @@ function createSoundCard(sound) {
   card.dataset.fileUrl = sound.file_url || '';
   card.dataset.sourceType = sound.sourceType || 'system';
   card.dataset.recordingPath = sound.recordingPath || '';
+  if (sound.ownerId) {
+    card.dataset.recordingOwnerId = sound.ownerId;
+  }
+  if (sound.recordingStatus) {
+    card.dataset.recordingStatus = sound.recordingStatus;
+  }
 
   card.innerHTML = `
     <div class="sound-card-name">${sound.name}</div>
@@ -1248,7 +1281,9 @@ function toggleSoundSelection(sound, card) {
       file_url: sound.file_url || card.dataset.fileUrl || '',
       sourceType: sound.sourceType || card.dataset.sourceType || 'system',
       recordingPath: sound.recordingPath || card.dataset.recordingPath || '',
-      display_name: sound.name || card.dataset.soundName || '音效'
+      display_name: sound.name || card.dataset.soundName || '音效',
+      ownerId: sound.ownerId || card.dataset.recordingOwnerId || '',
+      recordingStatus: sound.recordingStatus || card.dataset.recordingStatus || ''
     };
 
     const item = createSelectedSoundItem(enrichedSound);
@@ -1276,6 +1311,8 @@ function createSelectedSoundItem(sound) {
   item.dataset.sourceType = sound.sourceType || 'system';
   item.dataset.recordingPath = sound.recordingPath || '';
   item.dataset.recordingId = sound.recordingId || '';
+  item.dataset.recordingOwnerId = sound.ownerId || sound.recordingOwnerId || '';
+  item.dataset.recordingStatus = sound.recordingStatus || '';
 
   item.innerHTML = `
     <div class="sound-item-name">${sound.name}</div>
@@ -1425,7 +1462,9 @@ async function loadAtmosphereData(atmosphere) {
           file_url: fileUrl || '',
           sourceType: 'recording',
           recordingPath,
-          recordingId
+          recordingId,
+          ownerId: config.recording_owner_id || '',
+          recordingStatus: config.recording_status || ''
         });
 
         if (item.dataset.fileUrl === '' && fileUrl) {
@@ -1635,13 +1674,10 @@ async function publishAtmosphere(poem, onSave) {
   const data = collectAtmosphereData(poem, 'pending');
   if (!data) return;
 
-  // 檢查是否使用了用戶上傳的音效
-  const hasUserSounds = false; // TODO: 實際檢查邏輯
-  
-  if (hasUserSounds) {
-    alert('你的聲色意境包含自己上傳的音效，需要管理員審核後才能發佈給其他用戶。');
+  if (data.status === 'approved') {
+    alert('你的聲色意境已直接發佈！');
   } else {
-    alert('你的聲色意境已發佈！');
+    alert('你的聲色意境包含個人錄音，已提交審核並可先由你自己預覽。');
   }
 
   console.log('發布意境:', data);
@@ -1672,6 +1708,8 @@ function collectAtmosphereData(poem, status) {
     const displayName = item.dataset.displayName || '音效';
     const fileUrl = item.dataset.fileUrl || '';
     const recordingId = item.dataset.recordingId || (sourceType === 'recording' ? soundId : '');
+    const recordingOwnerId = item.dataset.recordingOwnerId || '';
+    const recordingStatus = item.dataset.recordingStatus || '';
 
     selectedSounds.push({
       sound_id: soundId,
@@ -1681,7 +1719,9 @@ function collectAtmosphereData(poem, status) {
       display_name: displayName,
       file_url: fileUrl || null,
       recording_path: recordingPath || null,
-      recording_id: recordingId || null
+      recording_id: recordingId || null,
+      recording_owner_id: recordingOwnerId || null,
+      recording_status: recordingStatus || null
     });
   });
 
@@ -1706,6 +1746,28 @@ function collectAtmosphereData(poem, status) {
   
   const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
 
+  const currentUserId = window.AppState?.userId || null;
+
+  let finalStatus = status;
+  if (status === 'pending') {
+    const requiresReview = selectedSounds.some(soundConfig => {
+      if ((soundConfig.source_type || 'system') !== 'recording') {
+        return false;
+      }
+      const ownerId = soundConfig.recording_owner_id;
+      const recordingStatus = (soundConfig.recording_status || '').toLowerCase();
+      if (recordingStatus === 'published') {
+        return false;
+      }
+      if (!currentUserId) {
+        return true;
+      }
+      return ownerId ? ownerId === currentUserId : true;
+    });
+
+    finalStatus = requiresReview ? 'pending' : 'approved';
+  }
+
   return {
     poem_id: poem.id,
     name,
@@ -1719,7 +1781,7 @@ function collectAtmosphereData(poem, status) {
       },
       abstract_elements: [] // 暫時為空
     },
-    status,
+    status: finalStatus,
     source: 'user',
     is_ai_generated: false
   };

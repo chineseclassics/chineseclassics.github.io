@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="./css/poem-display.css">
     <link rel="stylesheet" href="./css/sound-controls.css">
     <link rel="stylesheet" href="./css/atmosphere-editor.css">
+    <link rel="stylesheet" href="./css/admin.css">
     <link rel="stylesheet" href="./css/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -52,7 +53,20 @@
         <!-- 詩歌列表頁面 -->
         <div id="poem-list-screen" class="screen" style="display: none;">
             <div class="poem-list-container">
-                <h1 class="app-title">空山</h1>
+                <div class="poem-list-header">
+                    <h1 class="app-title">空山</h1>
+                    <div class="poem-list-header-actions">
+                        <button id="admin-panel-btn" class="admin-panel-btn" type="button" aria-label="管理後台" hidden>
+                            <i class="fas fa-cog" aria-hidden="true"></i>
+                            <span class="sr-only">管理後台</span>
+                        </button>
+                        <button id="notification-btn" class="notification-btn" type="button" aria-label="通知" hidden>
+                            <i class="fas fa-bell" aria-hidden="true"></i>
+                            <span id="notification-badge" class="notification-badge" hidden>0</span>
+                            <span class="sr-only">通知</span>
+                        </button>
+                    </div>
+                </div>
                 <p id="visitor-message" class="visitor-message" hidden>
                     <span id="visitor-text"></span>
                     <button id="sign-out-btn" class="visitor-signout" type="button">登出</button>

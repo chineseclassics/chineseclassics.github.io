@@ -7,10 +7,13 @@ import { PoemManager } from './core/poem-manager.js';
 import { AudioEngine } from './core/audio-engine.js';
 import { BackgroundRenderer } from './core/background-renderer.js';
 import { AtmosphereManager } from './core/atmosphere-manager.js';
+import { AdminManager } from './core/admin-manager.js';
+import { NotificationManager } from './core/notification-manager.js';
 import { SoundMixer } from './features/sound-mixer.js';
 import { renderPoemList, renderVerticalPoem } from './features/poem-display.js';
 import { renderSoundControls } from './ui/sound-controls-ui.js';
 import { showAtmosphereEditor } from './ui/atmosphere-editor-ui.js';
+import { AdminDrawer } from './ui/admin-drawer.js';
 
 // 全局狀態
 const AppState = {
@@ -22,6 +25,9 @@ const AppState = {
   backgroundRenderer: null,
   poemManager: null,
   atmosphereManager: null,
+  adminManager: null,
+  notificationManager: null,
+  adminDrawer: null,
   initialized: false,
   userId: null,
   authStatus: 'initializing',
@@ -122,6 +128,8 @@ async function initializeApp() {
       // 3. 初始化核心模塊
       AppState.poemManager = new PoemManager(AppState.supabase);
       AppState.atmosphereManager = new AtmosphereManager(AppState.supabase);
+      AppState.adminManager = new AdminManager(AppState.supabase);
+      AppState.notificationManager = new NotificationManager(AppState.supabase);
       AppState.audioEngine = new AudioEngine();
       AppState.soundMixer = new SoundMixer(AppState.audioEngine);
       
@@ -130,12 +138,19 @@ async function initializeApp() {
       if (canvas) {
         AppState.backgroundRenderer = new BackgroundRenderer(canvas);
       }
+
+      // 初始化管理後台抽屜
+      AppState.adminDrawer = new AdminDrawer(AppState.adminManager, handleAdminViewChange);
+      AppState.adminDrawer.init();
     
     // 4. 隱藏加載畫面
     hideLoadingScreen();
     
     // 5. 顯示詩歌列表
     await showPoemListScreen();
+    
+    // 6. 設置管理後台和通知按鈕
+    await setupAdminPanel();
     
     AppState.initialized = true;
     console.log('✅ 應用初始化完成');
@@ -277,6 +292,10 @@ function syncUserState(user) {
   } else {
     updateLikeButtonUI(AppState.atmosphereContext.order[AppState.atmosphereContext.index] || null);
   }
+
+  setupAdminPanel().catch(err => {
+    console.warn('更新管理後台狀態失敗:', err);
+  });
 }
 
 function getAuthElements() {
@@ -723,6 +742,14 @@ function updateLikeButtonUI(entry) {
     return;
   }
 
+  if (entry.status && entry.status !== 'approved') {
+    likeBtn.classList.add('is-hidden');
+    likeBtn.setAttribute('aria-pressed', 'false');
+    likeBtn.disabled = true;
+    likeCount.textContent = String(entry.likeCount || 0);
+    return;
+  }
+
   likeBtn.classList.remove('is-hidden');
   likeBtn.setAttribute('aria-pressed', entry.likedByCurrent ? 'true' : 'false');
   likeBtn.disabled = !AppState.userId;
@@ -829,9 +856,19 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
 
     if (showStatus) {
       const displayName = entry.authorName || '旅人';
+      let statusNote = '';
+      if (entry.status && entry.status !== 'approved' && entry.authorId === AppState.userId) {
+        if (entry.status === 'pending') {
+          statusNote = '（待審核）';
+        } else if (entry.status === 'rejected') {
+          statusNote = '（未通過審核）';
+        } else {
+          statusNote = '（尚未公開）';
+        }
+      }
       showAtmosphereStatus({
-        text: `${displayName} 的聲色意境`,
-        showLikeButton: true
+        text: `${displayName} 的聲色意境${statusNote}`,
+        showLikeButton: entry.status === 'approved'
       });
     }
   } catch (error) {
@@ -878,7 +915,10 @@ async function loadAtmosphereSequence(poemId) {
   }
 
   try {
-    const atmospheres = await AppState.atmosphereManager.loadAtmospheres(poemId);
+    const includeUserId = AppState.userId || null;
+    const atmospheres = await AppState.atmosphereManager.loadAtmospheres(poemId, {
+      includeUserId
+    });
     if (!Array.isArray(atmospheres) || atmospheres.length === 0) {
       context.order = buildAtmosphereOrder([], AppState.userId);
       context.index = context.order.length > 0 ? 0 : -1;
@@ -893,7 +933,8 @@ async function loadAtmosphereSequence(poemId) {
       authorName: '旅人',
       createdAt: atmosphere.created_at,
       likeCount: typeof atmosphere.like_count === 'number' ? atmosphere.like_count : 0,
-      likedByCurrent: false
+      likedByCurrent: false,
+      status: atmosphere.status || 'approved'
     }));
 
     if (AppState.supabase) {
@@ -1041,6 +1082,10 @@ async function toggleAtmosphereLike(entry) {
     return;
   }
 
+  if (entry.status && entry.status !== 'approved') {
+    return;
+  }
+
   const context = AppState.atmosphereContext;
   const currentLikedId = context.userLikedAtmosphereId;
   const targetId = entry.id;
@@ -1170,6 +1215,127 @@ AppState.showPoemList = showPoemListScreen;
 AppState.handleGoogleLogin = handleGoogleLogin;
 AppState.handleSignOut = handleSignOut;
 
+/**
+ * 設置管理後台面板
+ */
+async function setupAdminPanel() {
+  const adminBtn = document.getElementById('admin-panel-btn');
+  const notificationBtn = document.getElementById('notification-btn');
+  const badge = document.getElementById('notification-badge');
+
+  if (!adminBtn || !notificationBtn) {
+    return;
+  }
+
+  // 預設隱藏，避免上一位使用者的狀態殘留
+  adminBtn.hidden = true;
+  notificationBtn.hidden = true;
+  if (badge) {
+    badge.hidden = true;
+  }
+
+  if (!AppState.adminManager || !AppState.notificationManager) {
+    return;
+  }
+
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return;
+  }
+
+  const isAuthenticated = AppState.authStatus === 'google' || AppState.authStatus === 'other';
+  if (isAuthenticated) {
+    notificationBtn.hidden = false;
+    if (!notificationBtn.dataset.bound) {
+      notificationBtn.addEventListener('click', () => {
+        // TODO: 實現通知下拉列表
+        console.log('通知按鈕點擊');
+      });
+      notificationBtn.dataset.bound = 'true';
+    }
+    await updateNotificationBadge();
+  }
+
+  const isAdmin = await AppState.adminManager.isAdmin(userId);
+  if (isAdmin) {
+    adminBtn.hidden = false;
+    if (!adminBtn.dataset.bound) {
+      adminBtn.addEventListener('click', () => {
+        if (AppState.adminDrawer) {
+          AppState.adminDrawer.open();
+        }
+      });
+      adminBtn.dataset.bound = 'true';
+    }
+  }
+}
+
+/**
+ * 更新通知徽章
+ */
+async function updateNotificationBadge() {
+  const badge = document.getElementById('notification-badge');
+  if (!badge || !AppState.notificationManager) {
+    return;
+  }
+
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return;
+  }
+
+  const count = await AppState.notificationManager.checkNotifications(userId);
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count.toString();
+    badge.hidden = false;
+  } else {
+    badge.hidden = true;
+  }
+}
+
+/**
+ * 處理管理後台視圖變更
+ * @param {string|null} viewName - 視圖名稱
+ */
+async function handleAdminViewChange(viewName) {
+  if (!viewName || !AppState.adminDrawer) {
+    return;
+  }
+
+  AppState.adminDrawer.showLoading();
+
+  try {
+    // 根據視圖名稱載入對應的內容
+    // 這裡先顯示一個佔位符，後續會實現具體的 UI 組件
+    AppState.adminDrawer.setContent(`
+      <div class="admin-section">
+        <h2 class="admin-section-title">${getAdminViewTitle(viewName)}</h2>
+        <p class="admin-empty-state">功能開發中...</p>
+      </div>
+    `);
+  } catch (error) {
+    console.error('載入管理視圖失敗:', error);
+    AppState.adminDrawer.showError('載入失敗，請稍後再試');
+  }
+}
+
+/**
+ * 獲取管理視圖標題
+ * @param {string} viewName - 視圖名稱
+ * @returns {string}
+ */
+function getAdminViewTitle(viewName) {
+  const titles = {
+    'recording-review': '音效審核',
+    'poem-management': '詩句管理',
+    'sound-management': '音效管理',
+    'user-management': '用戶管理',
+    'statistics': '數據統計',
+    'logs': '操作日誌'
+  };
+  return titles[viewName] || '管理後台';
+}
+
 // 頁面加載完成後初始化
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
@@ -1203,6 +1369,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
 });
 
 // 導出全局狀態（用於調試）

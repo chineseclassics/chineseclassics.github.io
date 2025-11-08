@@ -48,23 +48,34 @@ export class AtmosphereManager {
     }
   }
 
-  /**
-   * 加載詩歌的所有聲色意境
-   * @param {string} poemId - 詩歌 ID
-   */
-  async loadAtmospheres(poemId) {
+ /**
+  * 加載詩歌的所有聲色意境
+  * @param {string} poemId - 詩歌 ID
+  * @param {object} options - 額外選項
+  * @param {string|null} options.includeUserId - 如提供，包含該使用者自行創作的聲色意境（即便尚未審核）
+  */
+ async loadAtmospheres(poemId, options = {}) {
+    const { includeUserId = null } = options;
     try {
       if (!this.supabase) {
         console.warn('Supabase 未配置');
         return [];
       }
 
-      const { data, error } = await this.supabase
+      let query = this.supabase
         .from('poem_atmospheres')
         .select('*')
-        .eq('poem_id', poemId)
-        .eq('status', 'approved')
-        .order('like_count', { ascending: false });
+        .eq('poem_id', poemId);
+
+      if (includeUserId) {
+        query = query.or(`status.eq.approved,created_by.eq.${includeUserId}`);
+      } else {
+        query = query.eq('status', 'approved');
+      }
+
+      query = query.order('like_count', { ascending: false }).order('created_at', { ascending: true });
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('加載聲色意境列表失敗:', error);
