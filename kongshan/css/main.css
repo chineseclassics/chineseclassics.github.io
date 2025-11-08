@@ -437,12 +437,13 @@ body {
 
 /* 詩歌列表容器 */
 .poem-list-container {
+  position: relative;
   max-width: 1200px;
   width: 100%;
   height: 100%; /* 填滿父容器高度 */
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start; /* 從頂部開始 */
   padding: var(--spacing-lg) var(--spacing-md);
   overflow: hidden;
@@ -452,18 +453,25 @@ body {
 
 /* 詩歌列表標題欄 */
 .poem-list-header {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: var(--spacing-md);
+  min-height: 3.5rem;
 }
 
 .poem-list-header .app-title {
-  margin-bottom: 0;
+  margin: 0;
+  flex: 1;
+  text-align: center;
 }
 
 .poem-list-header-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
