@@ -37,44 +37,37 @@ export class AdminDrawer {
     drawer.className = 'admin-drawer';
     drawer.setAttribute('role', 'dialog');
     drawer.setAttribute('aria-modal', 'true');
-    drawer.setAttribute('aria-labelledby', 'admin-drawer-title');
+    drawer.setAttribute('aria-label', '管理後台');
     drawer.setAttribute('tabindex', '-1');
 
     drawer.innerHTML = `
-      <div class="admin-drawer-header">
-        <h2 id="admin-drawer-title" class="admin-drawer-title">管理後台</h2>
+      <div class="admin-drawer-topbar">
+        <nav class="admin-drawer-tabs" role="tablist" aria-label="管理後台功能">
+          <button class="admin-nav-item" data-view="recording-review" type="button">
+            <span>音效審核</span>
+          </button>
+          <button class="admin-nav-item" data-view="poem-management" type="button">
+            <span>詩句管理</span>
+          </button>
+          <button class="admin-nav-item" data-view="sound-management" type="button">
+            <span>音效管理</span>
+          </button>
+          <button class="admin-nav-item" data-view="user-management" type="button">
+            <span>用戶管理</span>
+          </button>
+          <button class="admin-nav-item" data-view="statistics" type="button">
+            <span>數據統計</span>
+          </button>
+          <button class="admin-nav-item" data-view="logs" type="button">
+            <span>操作日誌</span>
+          </button>
+        </nav>
         <button class="admin-drawer-close" type="button" aria-label="關閉管理後台">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
         </button>
       </div>
-      <nav class="admin-drawer-nav" role="navigation">
-        <button class="admin-nav-item" data-view="recording-review" type="button">
-          <i class="fas fa-headphones" aria-hidden="true"></i>
-          <span>音效審核</span>
-        </button>
-        <button class="admin-nav-item" data-view="poem-management" type="button">
-          <i class="fas fa-book" aria-hidden="true"></i>
-          <span>詩句管理</span>
-        </button>
-        <button class="admin-nav-item" data-view="sound-management" type="button">
-          <i class="fas fa-music" aria-hidden="true"></i>
-          <span>音效管理</span>
-        </button>
-        <button class="admin-nav-item" data-view="user-management" type="button">
-          <i class="fas fa-users" aria-hidden="true"></i>
-          <span>用戶管理</span>
-        </button>
-        <button class="admin-nav-item" data-view="statistics" type="button">
-          <i class="fas fa-chart-line" aria-hidden="true"></i>
-          <span>數據統計</span>
-        </button>
-        <button class="admin-nav-item" data-view="logs" type="button">
-          <i class="fas fa-list-alt" aria-hidden="true"></i>
-          <span>操作日誌</span>
-        </button>
-      </nav>
       <div class="admin-drawer-content" id="admin-drawer-content">
         <!-- 內容將動態載入 -->
       </div>
