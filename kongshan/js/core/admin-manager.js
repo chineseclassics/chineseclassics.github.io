@@ -181,23 +181,58 @@ export class AdminManager {
     }
 
     try {
-      const { data, error, count } = await this.supabase
+      // 先查詢 recordings
+      const { data: recordings, error: recordingsError, count } = await this.supabase
         .from('recordings')
-        .select(`
-          *,
-          owner:travelers!recordings_owner_id_fkey(display_name, email)
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
         .range((page - 1) * limit, page * limit - 1);
 
-      if (error) {
-        console.error('獲取待審核錄音失敗:', error);
+      if (recordingsError) {
+        console.error('獲取待審核錄音失敗:', recordingsError);
         return { data: [], total: 0 };
       }
 
+      if (!recordings || recordings.length === 0) {
+        return {
+          data: [],
+          total: count || 0
+        };
+      }
+
+      // 獲取所有 owner_id
+      const ownerIds = [...new Set(recordings.map(r => r.owner_id).filter(Boolean))];
+      
+      // 查詢對應的 travelers 信息
+      let ownersMap = new Map();
+      if (ownerIds.length > 0) {
+        const { data: travelers, error: travelersError } = await this.supabase
+          .from('travelers')
+          .select('user_id, display_name, email')
+          .in('user_id', ownerIds);
+
+        if (!travelersError && Array.isArray(travelers)) {
+          travelers.forEach(t => {
+            ownersMap.set(t.user_id, {
+              display_name: t.display_name,
+              email: t.email
+            });
+          });
+        }
+      }
+
+      // 合併數據
+      const data = recordings.map(recording => ({
+        ...recording,
+        owner: ownersMap.get(recording.owner_id) || {
+          display_name: null,
+          email: null
+        }
+      }));
+
       return {
-        data: data || [],
+        data,
         total: count || 0
       };
     } catch (error) {
