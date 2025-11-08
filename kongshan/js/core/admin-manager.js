@@ -256,11 +256,79 @@ export class AdminManager {
     }
 
     try {
-      // 更新錄音狀態
+      // 獲取錄音信息（包括 storage_path）
+      const { data: recording, error: fetchError } = await this.supabase
+        .from('recordings')
+        .select('storage_path, owner_id')
+        .eq('id', recordingId)
+        .single();
+
+      if (fetchError || !recording) {
+        console.error('獲取錄音信息失敗:', fetchError);
+        return { success: false, error: '無法找到錄音記錄' };
+      }
+
+      let newStoragePath = recording.storage_path;
+
+      // 如果審核通過，移動文件從 pending/ 到 approved/
+      if (status === 'approved' && recording.storage_path) {
+        const oldPath = recording.storage_path;
+        
+        // 檢查是否已經在 approved/ 路徑下
+        if (!oldPath.startsWith('approved/')) {
+          // 提取文件名（去掉 pending/{user_id}/ 前綴）
+          const pathParts = oldPath.split('/');
+          const fileName = pathParts[pathParts.length - 1];
+          newStoragePath = `approved/${fileName}`;
+
+          try {
+            // 複製文件到新路徑
+            const { data: fileData, error: downloadError } = await this.supabase
+              .storage
+              .from('kongshan_recordings')
+              .download(oldPath);
+
+            if (downloadError) {
+              console.error('下載原文件失敗:', downloadError);
+              return { success: false, error: '無法移動文件：下載失敗' };
+            }
+
+            // 上傳到新路徑
+            const { error: uploadError } = await this.supabase
+              .storage
+              .from('kongshan_recordings')
+              .upload(newStoragePath, fileData, {
+                cacheControl: '3600',
+                upsert: true
+              });
+
+            if (uploadError) {
+              console.error('上傳到新路徑失敗:', uploadError);
+              return { success: false, error: '無法移動文件：上傳失敗' };
+            }
+
+            // 刪除舊文件
+            const { error: deleteError } = await this.supabase
+              .storage
+              .from('kongshan_recordings')
+              .remove([oldPath]);
+
+            if (deleteError) {
+              console.warn('刪除舊文件失敗（可忽略）:', deleteError);
+            }
+          } catch (moveError) {
+            console.error('移動文件異常:', moveError);
+            return { success: false, error: '移動文件時發生錯誤' };
+          }
+        }
+      }
+
+      // 更新錄音狀態和 storage_path
       const updateData = {
         status: status,
         reviewed_by: reviewerId,
-        reviewed_at: new Date().toISOString()
+        reviewed_at: new Date().toISOString(),
+        storage_path: newStoragePath
       };
 
       if (rejectionReason) {
@@ -295,13 +363,7 @@ export class AdminManager {
         { status, rejection_reason: rejectionReason, review_notes: reviewNotes }
       );
 
-      // 獲取錄音所有者 ID 以發送通知
-      const { data: recording } = await this.supabase
-        .from('recordings')
-        .select('owner_id')
-        .eq('id', recordingId)
-        .single();
-
+      // 發送通知
       if (recording?.owner_id) {
         await this.notifyUserReviewResult(
           recording.owner_id,
@@ -684,6 +746,18 @@ export class AdminManager {
     }
 
     try {
+      // 先獲取音效信息（包括 file_url）
+      const { data: sound, error: fetchError } = await this.supabase
+        .from('sound_effects')
+        .select('file_url')
+        .eq('id', soundId)
+        .single();
+
+      if (fetchError) {
+        console.error('獲取音效信息失敗:', fetchError);
+        return { success: false, error: '無法找到音效記錄' };
+      }
+
       // 查找使用該音效的聲色意境
       const { data: atmospheres } = await this.supabase
         .from('poem_atmospheres')
@@ -709,7 +783,7 @@ export class AdminManager {
           .in('id', atmosphereIds);
       }
 
-      // 刪除音效
+      // 刪除音效記錄
       const { error } = await this.supabase
         .from('sound_effects')
         .delete()
@@ -718,6 +792,22 @@ export class AdminManager {
       if (error) {
         console.error('刪除音效失敗:', error);
         return { success: false, error: error.message };
+      }
+
+      // 如果 file_url 是 Supabase Storage 路徑（system/ 或 approved/），刪除文件
+      if (sound?.file_url && (sound.file_url.startsWith('system/') || sound.file_url.startsWith('approved/'))) {
+        try {
+          const { error: storageError } = await this.supabase
+            .storage
+            .from('kongshan_recordings')
+            .remove([sound.file_url]);
+
+          if (storageError) {
+            console.warn('刪除 Storage 文件失敗（可忽略）:', storageError);
+          }
+        } catch (storageError) {
+          console.warn('刪除 Storage 文件異常（可忽略）:', storageError);
+        }
       }
 
       // 記錄操作日誌

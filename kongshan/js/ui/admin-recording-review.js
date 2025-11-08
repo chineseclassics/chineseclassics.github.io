@@ -440,6 +440,16 @@ export async function renderRecordingReview(container, { adminManager, supabase,
     if (!supabase || !path) {
       return '';
     }
+    
+    // 根據路徑判斷是否需要簽名 URL
+    // approved/ 和 system/ 路徑可以直接訪問，pending/ 路徑需要簽名 URL
+    if (path.startsWith('approved/') || path.startsWith('system/')) {
+      // 公開路徑，直接構建 URL
+      const projectUrl = supabase.supabaseUrl.replace('/rest/v1', '');
+      return `${projectUrl}/storage/v1/object/public/kongshan_recordings/${path}`;
+    }
+    
+    // pending/ 路徑，需要簽名 URL
     try {
       const { data, error } = await supabase
         .storage

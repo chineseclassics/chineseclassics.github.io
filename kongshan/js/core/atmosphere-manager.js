@@ -176,16 +176,25 @@ export class AtmosphereManager {
           let fileUrl = config.file_url || '';
 
           if ((!fileUrl || fileUrl === '') && recordingPath) {
-            try {
-              const { data: signedData, error: signedError } = await this.supabase
-                .storage
-                .from('kongshan_recordings')
-                .createSignedUrl(recordingPath, 3600);
-              if (!signedError && signedData?.signedUrl) {
-                fileUrl = signedData.signedUrl;
+            // 根據路徑判斷是否需要簽名 URL
+            // approved/ 和 system/ 路徑可以直接訪問，pending/ 路徑需要簽名 URL
+            if (recordingPath.startsWith('approved/') || recordingPath.startsWith('system/')) {
+              // 公開路徑，直接構建 URL
+              const projectUrl = this.supabase.supabaseUrl.replace('/rest/v1', '');
+              fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${recordingPath}`;
+            } else {
+              // pending/ 路徑，需要簽名 URL
+              try {
+                const { data: signedData, error: signedError } = await this.supabase
+                  .storage
+                  .from('kongshan_recordings')
+                  .createSignedUrl(recordingPath, 3600);
+                if (!signedError && signedData?.signedUrl) {
+                  fileUrl = signedData.signedUrl;
+                }
+              } catch (signedError) {
+                console.warn('生成錄音簽名網址失敗:', signedError);
               }
-            } catch (signedError) {
-              console.warn('生成錄音簽名網址失敗:', signedError);
             }
           }
 

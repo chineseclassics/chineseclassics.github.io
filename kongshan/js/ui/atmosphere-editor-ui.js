@@ -198,13 +198,22 @@ function initializeSoundSelector() {
           .order('name');
         
         if (!error && data && data.length > 0) {
-          sounds = data.map(effect => ({
-            id: effect.id,
-            name: effect.name,
-            tags: effect.tags || [],
-            file_url: effect.file_url,
-            sourceType: 'system'
-          }));
+          sounds = data.map(effect => {
+            // 如果 file_url 是 Supabase Storage 路徑（system/），構建完整 URL
+            let fileUrl = effect.file_url || '';
+            if (fileUrl.startsWith('system/')) {
+              const projectUrl = window.AppState.supabase.supabaseUrl.replace('/rest/v1', '');
+              fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${fileUrl}`;
+            }
+            
+            return {
+              id: effect.id,
+              name: effect.name,
+              tags: effect.tags || [],
+              file_url: fileUrl,
+              sourceType: 'system'
+            };
+          });
         }
 
         const travelerSounds = await loadPublishedRecordings();
@@ -258,9 +267,9 @@ async function loadPublishedRecordings() {
       .limit(50);
 
     if (userId) {
-      query = query.or(`status.eq.published,and(status.eq.pending,owner_id.eq.${userId})`);
+      query = query.or(`status.eq.approved,and(status.eq.pending,owner_id.eq.${userId})`);
     } else {
-      query = query.eq('status', 'published');
+      query = query.eq('status', 'approved');
     }
 
     const { data, error } = await query;
@@ -274,20 +283,31 @@ async function loadPublishedRecordings() {
         return null;
       }
 
-      let signedUrl = '';
-      try {
-        const { data: signedData } = await supabaseClient
-          .storage
-          .from('kongshan_recordings')
-          .createSignedUrl(record.storage_path, 3600);
-        signedUrl = signedData?.signedUrl || '';
-      } catch (signedError) {
-        console.warn('生成錄音簽名網址失敗:', signedError);
+      // 根據路徑判斷是否需要簽名 URL
+      // approved/ 和 system/ 路徑可以直接訪問，pending/ 路徑需要簽名 URL
+      let fileUrl = '';
+      const storagePath = record.storage_path || '';
+      
+      if (storagePath.startsWith('approved/') || storagePath.startsWith('system/')) {
+        // 公開路徑，直接構建 URL
+        const projectUrl = supabaseClient.supabaseUrl.replace('/rest/v1', '');
+        fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${storagePath}`;
+      } else {
+        // pending/ 路徑，需要簽名 URL
+        try {
+          const { data: signedData } = await supabaseClient
+            .storage
+            .from('kongshan_recordings')
+            .createSignedUrl(storagePath, 3600);
+          fileUrl = signedData?.signedUrl || '';
+        } catch (signedError) {
+          console.warn('生成錄音簽名網址失敗:', signedError);
+        }
       }
 
       const statusLabel = (record.status || '').toLowerCase();
       const tags = ['旅人錄音'];
-      if (statusLabel && statusLabel !== 'published') {
+      if (statusLabel && statusLabel !== 'approved') {
         tags.push('待審核');
       }
 
@@ -295,13 +315,13 @@ async function loadPublishedRecordings() {
         id: record.id,
         name: record.display_name || '旅人錄音',
         tags,
-        file_url: signedUrl,
+        file_url: fileUrl,
         sourceType: 'recording',
         recordingPath: record.storage_path,
         recordingId: record.id,
         display_name: record.display_name || '旅人錄音',
         ownerId: record.owner_id || null,
-        recordingStatus: record.status || 'published'
+        recordingStatus: record.status || 'approved'
       };
     }));
 
@@ -785,7 +805,7 @@ async function uploadRecording(displayName) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const safeBaseName = buildSafeStorageFileBase(displayName);
   const finalFileName = `${safeBaseName}_${timestamp}.${extension}`;
-  const storagePath = `${userId}/${finalFileName}`;
+  const storagePath = `pending/${userId}/${finalFileName}`;
   const uploadBlob = createUploadBlob(currentRecordingBlob, normalizedMimeType);
 
   if (!uploadBlob || uploadBlob.size === 0) {
@@ -1219,17 +1239,27 @@ async function autoPreviewSelectedSounds() {
     if ((!fileUrl || fileUrl === '') && sourceType === 'recording' && window.AppState?.supabase) {
       const recordingPath = item.dataset.recordingPath;
       if (recordingPath) {
-        try {
-          const { data: signedData, error: signedError } = await window.AppState.supabase
-            .storage
-            .from('kongshan_recordings')
-            .createSignedUrl(recordingPath, 3600);
-          if (!signedError && signedData?.signedUrl) {
-            fileUrl = signedData.signedUrl;
-            item.dataset.fileUrl = fileUrl;
+        // 根據路徑判斷是否需要簽名 URL
+        // approved/ 和 system/ 路徑可以直接訪問，pending/ 路徑需要簽名 URL
+        if (recordingPath.startsWith('approved/') || recordingPath.startsWith('system/')) {
+          // 公開路徑，直接構建 URL
+          const projectUrl = window.AppState.supabase.supabaseUrl.replace('/rest/v1', '');
+          fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${recordingPath}`;
+          item.dataset.fileUrl = fileUrl;
+        } else {
+          // pending/ 路徑，需要簽名 URL
+          try {
+            const { data: signedData, error: signedError } = await window.AppState.supabase
+              .storage
+              .from('kongshan_recordings')
+              .createSignedUrl(recordingPath, 3600);
+            if (!signedError && signedData?.signedUrl) {
+              fileUrl = signedData.signedUrl;
+              item.dataset.fileUrl = fileUrl;
+            }
+          } catch (signedUrlError) {
+            console.warn('取得錄音播放鏈接失敗:', signedUrlError);
           }
-        } catch (signedUrlError) {
-          console.warn('取得錄音播放鏈接失敗:', signedUrlError);
         }
       }
     }

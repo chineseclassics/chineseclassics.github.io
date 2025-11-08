@@ -353,7 +353,13 @@ export async function renderSoundManagement(container, { adminManager, getCurren
           </div>
           <div class="admin-form-group">
             <label class="admin-form-label" for="sound-url-input">音效網址 / Supabase 公開網址</label>
-            <input type="url" id="sound-url-input" class="admin-form-input" required placeholder="https://...">
+            <input type="url" id="sound-url-input" class="admin-form-input" placeholder="https://... 或上傳文件">
+            <div class="admin-form-hint">或直接上傳音效文件到 Supabase Storage</div>
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label" for="sound-file-input">上傳音效文件（選填）</label>
+            <input type="file" id="sound-file-input" class="admin-form-input" accept="audio/*">
+            <div class="admin-form-hint">支持 MP3、WAV、OGG 等音頻格式。上傳後將自動保存到 system/ 路徑。</div>
           </div>
           <div class="admin-form-group admin-form-dual">
             <div>
@@ -400,6 +406,7 @@ export async function renderSoundManagement(container, { adminManager, getCurren
   const nameInput = overlay.querySelector('#sound-name-input');
   const descriptionInput = overlay.querySelector('#sound-description-input');
   const urlInput = overlay.querySelector('#sound-url-input');
+  const fileInput = overlay.querySelector('#sound-file-input');
   const durationInput = overlay.querySelector('#sound-duration-input');
   const tagsInput = overlay.querySelector('#sound-tags-input');
   const sourceSelect = overlay.querySelector('#sound-source-input');
@@ -418,6 +425,15 @@ export async function renderSoundManagement(container, { adminManager, getCurren
     statusSelect.value = 'approved';
   }
 
+  // 文件上傳時，清空 URL 輸入框
+  fileInput?.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files.length > 0) {
+      urlInput.required = false;
+    } else {
+      urlInput.required = true;
+    }
+  });
+
   function closeModal() {
     overlay.classList.add('closing');
     setTimeout(() => overlay.remove(), 150);
@@ -435,18 +451,62 @@ export async function renderSoundManagement(container, { adminManager, getCurren
     event.preventDefault();
     hideMessage(errorEl);
 
+    let fileUrl = urlInput.value.trim();
+    let uploadedFilePath = null;
+
+    // 如果有上傳文件，先上傳到 Supabase Storage
+    if (fileInput?.files && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `system/${fileName}`;
+
+      try {
+        // 檢查是否為管理員
+        const adminId = await getCurrentUserId();
+        if (!adminId) {
+          throw new Error('未能取得管理員身份，請重新登入。');
+        }
+
+        // 上傳文件
+        const { error: uploadError } = await adminManager.supabase
+          .storage
+          .from('kongshan_recordings')
+          .upload(storagePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (uploadError) {
+          throw new Error(`上傳文件失敗：${uploadError.message}`);
+        }
+
+        // 設置 file_url 為相對路徑
+        fileUrl = storagePath;
+        uploadedFilePath = storagePath;
+      } catch (uploadError) {
+        console.error('上傳文件失敗:', uploadError);
+        showMessage(errorEl, uploadError.message || '上傳文件時發生錯誤，請稍後再試。');
+        return;
+      }
+    }
+
+    if (!fileUrl) {
+      showMessage(errorEl, '請提供音效網址或上傳音效文件。');
+      return;
+    }
+
     const payload = {
       name: nameInput.value.trim(),
       description: descriptionInput.value.trim() || null,
-      file_url: urlInput.value.trim(),
+      file_url: fileUrl,
       duration: parseDuration(durationInput.value),
       tags: parseTags(tagsInput.value),
       source: sourceSelect.value || 'system',
       status: statusSelect.value || 'approved'
     };
 
-    if (!payload.name || !payload.file_url) {
-      showMessage(errorEl, '名稱與音效網址為必填項目。');
+    if (!payload.name) {
+      showMessage(errorEl, '音效名稱為必填項目。');
       return;
     }
 
@@ -468,6 +528,18 @@ export async function renderSoundManagement(container, { adminManager, getCurren
     } catch (error) {
       console.error('儲存音效失敗:', error);
       showMessage(errorEl, error.message || '儲存音效時發生錯誤，請稍後再試。');
+      
+      // 如果上傳了文件但保存失敗，嘗試刪除已上傳的文件
+      if (uploadedFilePath) {
+        try {
+          await adminManager.supabase
+            .storage
+            .from('kongshan_recordings')
+            .remove([uploadedFilePath]);
+        } catch (cleanupError) {
+          console.warn('清理已上傳文件失敗:', cleanupError);
+        }
+      }
     }
   });
 
@@ -538,6 +610,16 @@ export async function renderSoundManagement(container, { adminManager, getCurren
   function openSoundPreview(sound) {
     closeOverlays();
 
+    // 構建音效 URL
+    let soundUrl = sound.file_url || '';
+    if (soundUrl.startsWith('system/') || soundUrl.startsWith('approved/')) {
+      // Supabase Storage 路徑，構建完整 URL
+      const projectUrl = adminManager.supabase?.supabaseUrl?.replace('/rest/v1', '') || '';
+      if (projectUrl) {
+        soundUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${soundUrl}`;
+      }
+    }
+
     const overlay = document.createElement('div');
     overlay.className = 'admin-modal-overlay';
     overlay.innerHTML = `
@@ -552,12 +634,12 @@ export async function renderSoundManagement(container, { adminManager, getCurren
           <p class="admin-sound-name">${escapeHtml(sound.name || '未命名音效')}</p>
           ${sound.description ? `<p class="admin-sound-description">${escapeHtml(sound.description)}</p>` : ''}
           <audio controls preload="auto" class="admin-audio">
-            <source src="${escapeAttribute(sound.file_url || '')}" />
+            <source src="${escapeAttribute(soundUrl)}" />
             您的瀏覽器無法播放此音效。
           </audio>
           <p class="admin-meta">
             <i class="fas fa-link" aria-hidden="true"></i>
-            <a href="${escapeAttribute(sound.file_url || '#')}" target="_blank" rel="noopener noreferrer">在新視窗開啟音效連結</a>
+            <a href="${escapeAttribute(soundUrl || '#')}" target="_blank" rel="noopener noreferrer">在新視窗開啟音效連結</a>
           </p>
         </div>
       </div>
