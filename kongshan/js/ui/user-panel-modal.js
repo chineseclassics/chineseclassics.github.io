@@ -747,6 +747,7 @@ export class UserPanelModal {
     try {
       const userId = await this.getCurrentUserId();
       if (!userId) {
+        badge.hidden = true;
         return;
       }
 
@@ -755,10 +756,12 @@ export class UserPanelModal {
         badge.textContent = count > 99 ? '99+' : count.toString();
         badge.hidden = false;
       } else {
+        badge.textContent = '';
         badge.hidden = true;
       }
     } catch (error) {
       console.error('更新消息徽章失敗:', error);
+      badge.hidden = true;
     }
   }
 

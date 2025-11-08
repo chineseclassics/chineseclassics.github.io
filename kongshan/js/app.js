@@ -1284,6 +1284,7 @@ async function updateNotificationBadge() {
 
   const userId = await getCurrentUserId();
   if (!userId) {
+    badge.hidden = true;
     return;
   }
 
@@ -1292,6 +1293,7 @@ async function updateNotificationBadge() {
     badge.textContent = count > 99 ? '99+' : count.toString();
     badge.hidden = false;
   } else {
+    badge.textContent = '';
     badge.hidden = true;
   }
 
