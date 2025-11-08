@@ -90,7 +90,10 @@ export class NotificationDropdown {
     // 關閉按鈕
     const closeBtn = this.dropdown.querySelector('[data-action="close"]');
     if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.close());
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.close();
+      });
     }
   }
 

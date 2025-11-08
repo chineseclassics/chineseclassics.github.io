@@ -553,6 +553,11 @@ body {
   animation: slideDown var(--duration-normal) var(--ease-gentle);
 }
 
+/* 確保 hidden 屬性生效 */
+.notification-dropdown[hidden] {
+  display: none !important;
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;
