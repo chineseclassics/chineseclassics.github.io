@@ -774,8 +774,8 @@ async function uploadRecording(displayName) {
   const normalizedMimeType = normalizeRecordingMimeType(rawMimeType);
   const extension = inferFileExtension(normalizedMimeType);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const sanitizedBaseName = displayName.replace(/[^\u4e00-\u9fa5A-Za-z0-9\-\s_]/g, '').replace(/\s+/g, '_');
-  const finalFileName = `${sanitizedBaseName || 'recording'}_${timestamp}.${extension}`;
+  const safeBaseName = buildSafeStorageFileBase(displayName);
+  const finalFileName = `${safeBaseName}_${timestamp}.${extension}`;
   const storagePath = `${userId}/${finalFileName}`;
   const uploadBlob = createUploadBlob(currentRecordingBlob, normalizedMimeType);
 
@@ -1041,6 +1041,57 @@ function createUploadBlob(blob, mimeType) {
     console.warn('重新封裝錄音資料時發生問題，改用原始 Blob：', error);
     return blob;
   }
+}
+
+function buildSafeStorageFileBase(name) {
+  if (!name || typeof name !== 'string') {
+    return 'recording';
+  }
+
+  const normalized = name.normalize('NFKC').trim();
+  if (!normalized) {
+    return 'recording';
+  }
+
+  const allowedChars = [];
+  for (const char of normalized) {
+    if (char === '-' || char === '_' || char === ' ') {
+      allowedChars.push(char);
+      continue;
+    }
+
+    const codePoint = char.codePointAt(0);
+    const isAsciiDigit = codePoint >= 0x30 && codePoint <= 0x39;
+    const isAsciiUpper = codePoint >= 0x41 && codePoint <= 0x5A;
+    const isAsciiLower = codePoint >= 0x61 && codePoint <= 0x7A;
+    const isCjkUnified = (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+      || (codePoint >= 0x3400 && codePoint <= 0x4DBF)
+      || (codePoint >= 0x20000 && codePoint <= 0x2A6DF)
+      || (codePoint >= 0x2A700 && codePoint <= 0x2B73F)
+      || (codePoint >= 0x2B740 && codePoint <= 0x2B81F)
+      || (codePoint >= 0x2B820 && codePoint <= 0x2CEAF)
+      || (codePoint >= 0xF900 && codePoint <= 0xFAFF);
+
+    if (isAsciiDigit || isAsciiUpper || isAsciiLower || isCjkUnified) {
+      allowedChars.push(char);
+    }
+  }
+
+  let result = allowedChars.join('');
+  if (!result) {
+    return 'recording';
+  }
+
+  result = result.replace(/\s+/g, '_');
+  result = result.replace(/_+/g, '_');
+  result = result.replace(/^-+|-+$/g, '');
+  result = result.replace(/^_+|_+$/g, '');
+
+  if (!result) {
+    return 'recording';
+  }
+
+  return result.slice(0, 60);
 }
 
 async function ensureCurrentUserId() {
