@@ -492,10 +492,74 @@ body {
   overflow: hidden;
 }
 
-/* 編輯按鈕（底部懸浮，極簡風） */
-.edit-atmosphere-button {
+/* 底部控制欄 */
+.poem-viewer-topbar {
   position: fixed;
   bottom: var(--spacing-md);
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 var(--spacing-md);
+  z-index: 24;
+  pointer-events: none;
+}
+
+.poem-viewer-topbar > * {
+  pointer-events: auto;
+}
+
+.poem-viewer-topbar > .back-button {
+  justify-self: start;
+}
+
+.poem-viewer-topbar > .atmosphere-cycle-logo {
+  justify-self: center;
+}
+
+.poem-viewer-topbar > .edit-atmosphere-button {
+  justify-self: end;
+}
+
+.back-button {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(88, 101, 86, 0.75);
+  background: rgba(251, 253, 248, 0.45);
+  backdrop-filter: blur(18px) saturate(120%);
+  box-shadow: none;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-gentle);
+  opacity: 0.7;
+}
+
+.atmosphere-cycle-logo {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 28px;
+  border: 1px solid rgba(120, 146, 98, 0.25);
+  background: linear-gradient(140deg, rgba(251, 253, 248, 0.94), rgba(230, 238, 226, 0.72));
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 18px 42px -30px rgba(60, 76, 58, 0.65);
+  cursor: pointer;
+  transition: transform var(--duration-normal) var(--ease-gentle), box-shadow var(--duration-normal) var(--ease-gentle), border-color var(--duration-fast) var(--ease-smooth);
+}
+
+/* 編輯按鈕（底部懸浮，極簡風） */
+.edit-atmosphere-button {
+  position: relative;
   width: 48px;
   height: 48px;
   border-radius: var(--radius-full);
@@ -510,7 +574,6 @@ body {
   cursor: pointer;
   transition: all var(--duration-normal) var(--ease-gentle);
   opacity: 0.55;
-  z-index: 20;
   padding: 0;
 }
 
@@ -533,51 +596,6 @@ body {
 
 .edit-atmosphere-button:focus-visible {
   outline: none;
-}
-
-.edit-atmosphere-button {
-  right: var(--spacing-md);
-}
-
-@media (max-width: 768px) {
-  .edit-atmosphere-button {
-    width: 42px;
-    height: 42px;
-    bottom: var(--spacing-sm);
-    opacity: 0.65;
-  }
-  .edit-atmosphere-button {
-    right: var(--spacing-sm);
-  }
-}
-
-/* 頂部導覽與空山 Logo */
-.poem-viewer-topbar {
-  position: fixed;
-  top: var(--spacing-lg);
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  z-index: 24;
-}
-
-.back-button {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
-  border: 1px solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(88, 101, 86, 0.75);
-  background: rgba(251, 253, 248, 0.45);
-  backdrop-filter: blur(18px) saturate(120%);
-  box-shadow: none;
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-gentle);
-  opacity: 0.7;
 }
 
 .back-button svg {
@@ -634,9 +652,14 @@ body {
 
 @media (max-width: 768px) {
   .poem-viewer-topbar {
-    top: var(--spacing-md);
-    gap: var(--spacing-sm);
-    transform: translateX(-50%) scale(0.92);
+    bottom: var(--spacing-sm);
+    padding: 0 var(--spacing-sm);
+  }
+
+  .back-button {
+    width: 42px;
+    height: 42px;
+    opacity: 0.65;
   }
 
   .atmosphere-cycle-logo {
@@ -645,12 +668,22 @@ body {
     border-radius: 24px;
     font-size: 1.6rem;
   }
+
+  .edit-atmosphere-button {
+    width: 42px;
+    height: 42px;
+    opacity: 0.65;
+  }
+
+  .atmosphere-status {
+    bottom: calc(var(--spacing-sm) + 4.5rem);
+  }
 }
 
 /* 作者資訊與愛心提示 */
 .atmosphere-status {
   position: fixed;
-  top: calc(var(--spacing-lg) + 5.2rem);
+  bottom: calc(var(--spacing-md) + 5.2rem);
   left: 50%;
   transform: translate3d(-50%, -10px, 0);
   opacity: 0;
