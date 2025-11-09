@@ -101,22 +101,6 @@
   }
 }
 
-/* iOS 設備專用：簡化動畫，移除 text-shadow 以提升性能 */
-@keyframes breathe-ios {
-  0% {
-    opacity: 0.92;
-    transform: scale(0.985);
-  }
-  33% {
-    opacity: 1;
-    transform: scale(1.008);
-  }
-  100% {
-    opacity: 0.92;
-    transform: scale(0.985);
-  }
-}
-
 /* 詩歌正文 - 豎排版從右到左，完全居中 */
 .poem-text {
   writing-mode: vertical-rl; /* 豎排版，從右到左 */
@@ -133,25 +117,11 @@
   /* 呼吸效果動畫 - 優雅微妙的冥想效果 */
   animation: breathe 8s ease-in-out infinite;
   animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95); /* 平滑自然的緩動曲線 */
-  will-change: opacity, transform; /* 性能優化 - iOS 上不包含 text-shadow */
+  will-change: opacity, transform; /* 性能優化 - 只優化 GPU 加速的屬性，不包含 text-shadow */
   transform-origin: center center; /* 確保縮放以中心為基準 */
   
   /* 文字顏色平滑過渡 */
   transition: color 0.4s ease;
-  
-  /* iOS 設備：使用簡化動畫，移除 text-shadow 以提升性能 */
-  /* 靜態發光效果（不隨動畫變化） */
-  text-shadow: var(--poem-glow-shadow-static, none);
-}
-
-/* iOS 設備專用樣式 */
-.ios-device .poem-text {
-  /* 使用簡化的動畫，只包含 opacity 和 transform */
-  animation: breathe-ios 8s ease-in-out infinite;
-  /* 移除 will-change 中的 text-shadow，iOS 上可能起反作用 */
-  will-change: opacity, transform;
-  /* 使用靜態的單層發光效果（性能更好） */
-  text-shadow: var(--poem-glow-shadow-static-ios, none);
 }
 
 /* 詩歌標題和作者容器 - 相對於內容區域定位 */
@@ -189,11 +159,6 @@
     /* 保持呼吸動畫效果 */
     animation: breathe 8s ease-in-out infinite;
     animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
-  }
-  
-  /* iOS 設備在移動端也使用簡化動畫 */
-  .ios-device .poem-text {
-    animation: breathe-ios 8s ease-in-out infinite;
   }
 
   .poem-meta {

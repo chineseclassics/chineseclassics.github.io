@@ -1534,23 +1534,13 @@ function updatePoemTextGlow(glowColor) {
   
   const rgb = hexToRgb(glowColor);
   
-  // 檢測是否為 iOS 設備
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // 生成動態發光陰影（iOS 和桌面版使用相同的效果）
+  const glowShadowMin = `0 0 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 0 12px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
+  const glowShadowMax = `0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8), 0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.48)`;
   
   const root = document.documentElement;
-  
-  if (isIOS) {
-    // iOS 設備：使用靜態的單層發光效果（性能更好）
-    const glowShadowStatic = `0 0 15px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
-    root.style.setProperty('--poem-glow-shadow-static-ios', glowShadowStatic);
-  } else {
-    // 桌面設備：使用動態的多層發光效果
-    const glowShadowMin = `0 0 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 0 12px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
-    const glowShadowMax = `0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8), 0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.48)`;
-    root.style.setProperty('--poem-glow-shadow-min', glowShadowMin);
-    root.style.setProperty('--poem-glow-shadow-max', glowShadowMax);
-  }
+  root.style.setProperty('--poem-glow-shadow-min', glowShadowMin);
+  root.style.setProperty('--poem-glow-shadow-max', glowShadowMax);
 }
 
 /**
