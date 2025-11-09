@@ -9,9 +9,9 @@
  * 2. 審核通過的錄音：Storage 路徑（approved/）
  * 3. 待審核錄音：Storage 路徑（pending/，需要簽名 URL，簽名邏輯在上層處理）
  * 
- * @param {string} fileUrl - 原始文件 URL
- * @param {object} supabaseClient - Supabase 客戶端（可選，用於構建公開 URL）
- * @returns {string} 規範化後的 URL
+ * @param {string} fileUrl - 原始文件 URL 或路徑
+ * @param {object} supabaseClient - Supabase 客戶端（必需，用於構建公開 URL）
+ * @returns {string} 規範化後的 URL，如果無法構建則返回空字符串
  */
 export function normalizeSoundUrl(fileUrl, supabaseClient = null) {
   if (!fileUrl) return '';
@@ -27,8 +27,9 @@ export function normalizeSoundUrl(fileUrl, supabaseClient = null) {
       const projectUrl = supabaseClient.supabaseUrl.replace('/rest/v1', '');
       return `${projectUrl}/storage/v1/object/public/kongshan_recordings/${fileUrl}`;
     }
-    // 如果沒有 supabaseClient，返回原路徑（由上層補全或避免直接請求）
-    return fileUrl;
+    // 如果沒有 supabaseClient，無法構建 URL，返回空字符串
+    console.warn('無法構建音效 URL：缺少 supabaseClient', fileUrl);
+    return '';
   }
   
   // pending/ 路徑需簽名，上層負責生成簽名 URL，這裡直接返回原值以便上層識別
@@ -36,8 +37,9 @@ export function normalizeSoundUrl(fileUrl, supabaseClient = null) {
     return fileUrl;
   }
 
-  // 其他情況：不再提供 GitHub Pages 後備邏輯，直接返回（由上層決定是否處理）
-  return fileUrl;
+  // 其他情況：不支持的格式，返回空字符串
+  console.warn('不支持的音效 URL 格式:', fileUrl);
+  return '';
 }
 
 /**
@@ -95,7 +97,7 @@ export function needsSignedUrl(fileUrl) {
     return false;
   }
   
-  // 其他情況（不支援 GitHub Pages 路徑）默認不需要簽名
+  // 其他情況默認不需要簽名
   return false;
 }
 

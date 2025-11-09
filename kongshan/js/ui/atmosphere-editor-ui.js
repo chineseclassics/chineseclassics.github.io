@@ -228,18 +228,15 @@ function initializeSoundSelector() {
           });
         }
       } catch (error) {
-        console.warn('從數據庫加載音效失敗，使用默認列表:', error);
+        console.warn('從數據庫加載音效失敗:', error);
       }
     }
     
-    // 如果數據庫中沒有音效，使用默認列表（基於實際文件）
+    // 如果數據庫中沒有音效，顯示空列表（系統音效必須從 Supabase Storage 上傳）
     if (sounds.length === 0) {
-      sounds = [
-        { id: 'wind', name: '風聲', tags: ['自然', '寧靜'], file_url: 'system/wind.mp3', sourceType: 'system' },
-        { id: 'stream', name: '流水', tags: ['自然', '放鬆'], file_url: 'system/stream.mp3', sourceType: 'system' },
-        { id: 'birds', name: '鳥鳴', tags: ['自然', '早晨'], file_url: 'system/birds.mp3', sourceType: 'system' },
-        { id: 'night', name: '夜晚', tags: ['自然', '寧靜'], file_url: 'system/night.mp3', sourceType: 'system' }
-      ];
+      container.innerHTML = '<div class="loading-text">暫無系統音效，請管理員上傳</div>';
+      resolve();
+      return;
     }
 
     container.innerHTML = '';

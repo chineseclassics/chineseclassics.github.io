@@ -3,8 +3,6 @@
 // 負責管理多個音效的同時播放、音量控制、循環等
 // =====================================================
 
-import { normalizeSoundUrl } from '../utils/sound-url.js';
-
 /**
  * 單個音效軌道
  */
@@ -22,6 +20,7 @@ class SoundTrack {
 
   /**
    * 加載音頻文件
+   * 注意：file_url 應該已經是完整的 URL（由上層 normalizeSoundUrl 處理）
    */
   async load() {
     try {
@@ -30,10 +29,13 @@ class SoundTrack {
         await this.audioEngine.init();
       }
       
-      // 規範化 URL（支持相對路徑和 Supabase Storage URL）
-      const normalizedUrl = normalizeSoundUrl(this.soundEffect.file_url);
+      // file_url 應該已經是完整的 URL（由上層處理）
+      const fileUrl = this.soundEffect.file_url;
+      if (!fileUrl) {
+        throw new Error('音效 URL 為空');
+      }
       
-      const response = await fetch(normalizedUrl);
+      const response = await fetch(fileUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -43,11 +45,11 @@ class SoundTrack {
       const audioContext = this.audioEngine.getAudioContext();
       this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       
-      console.log(`✅ 音效加載成功: ${this.soundEffect.name} (${normalizedUrl})`);
+      console.log(`✅ 音效加載成功: ${this.soundEffect.name} (${fileUrl})`);
       return true;
     } catch (error) {
       console.error(`❌ 音效加載失敗: ${this.soundEffect.name}`, error);
-      console.error(`   嘗試的 URL: ${normalizeSoundUrl(this.soundEffect.file_url)}`);
+      console.error(`   嘗試的 URL: ${this.soundEffect.file_url}`);
       return false;
     }
   }
