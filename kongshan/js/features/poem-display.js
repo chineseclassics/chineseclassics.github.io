@@ -110,6 +110,27 @@ export function renderPoemList(container, poems) {
     
     poemCard.appendChild(verseEl);
     
+    // 如果有聲色意境，添加 badge
+    if (poem.hasAtmosphere) {
+      const badge = document.createElement('div');
+      badge.className = 'poem-card-badge';
+      badge.setAttribute('aria-label', '此詩句有聲色意境');
+      badge.setAttribute('title', '此詩句有聲色意境');
+      
+      // 創建默認圓點
+      const dot = document.createElement('span');
+      dot.className = 'poem-card-badge-dot';
+      
+      // 創建 hover 時顯示的圖標
+      const icon = document.createElement('i');
+      icon.className = 'fas fa-mountain-sun poem-card-badge-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      
+      badge.appendChild(dot);
+      badge.appendChild(icon);
+      poemCard.appendChild(badge);
+    }
+    
     poemCard.addEventListener('click', () => {
       // 觸發詩歌查看事件
       if (window.AppState && window.AppState.showPoemViewer) {

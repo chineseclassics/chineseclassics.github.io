@@ -15,6 +15,9 @@ export class PoemManager {
   
   /**
    * 加載所有詩歌列表
+   * 排序規則：
+   * 1. 有聲色意境的詩句，按最新聲色意境的創建時間降序排列
+   * 2. 沒有聲色意境的詩句，隨機排序（每次刷新順序不同）
    */
   async loadPoems() {
     try {
@@ -24,30 +27,103 @@ export class PoemManager {
       }
       
       console.log('從 Supabase 加載詩歌...');
-      const { data, error } = await this.supabase
-        .from('poems')
-        .select('*')
-        .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('Supabase 查詢錯誤:', error);
-        throw error;
+      // 並行查詢：同時獲取所有詩句和所有已審核通過的聲色意境
+      const [poemsResult, atmospheresResult] = await Promise.all([
+        this.supabase.from('poems').select('*'),
+        this.supabase
+          .from('poem_atmospheres')
+          .select('poem_id, created_at')
+          .eq('status', 'approved')
+      ]);
+      
+      // 處理詩句查詢結果
+      if (poemsResult.error) {
+        console.error('Supabase 查詢錯誤:', poemsResult.error);
+        throw poemsResult.error;
       }
       
-      console.log('從 Supabase 加載到的數據:', data);
-      this.poems = data || [];
-      
-      if (this.poems.length === 0) {
+      const allPoems = poemsResult.data || [];
+      if (allPoems.length === 0) {
         console.warn('數據庫中沒有詩歌，使用模擬數據');
         return this.getMockPoems();
       }
       
-      return this.poems;
+      // 處理聲色意境查詢結果（即使失敗也不影響，只是沒有排序）
+      const atmospheres = atmospheresResult.data || [];
+      
+      // 計算每個詩句的最新聲色意境時間
+      const poemLatestAtmosphere = new Map();
+      atmospheres.forEach(atm => {
+        const poemId = atm.poem_id;
+        const createdAt = new Date(atm.created_at).getTime();
+        const existing = poemLatestAtmosphere.get(poemId);
+        if (!existing || createdAt > existing) {
+          poemLatestAtmosphere.set(poemId, createdAt);
+        }
+      });
+      
+      // 分組：有聲色意境的 vs 沒有聲色意境的
+      const poemsWithAtmosphere = [];
+      const poemsWithoutAtmosphere = [];
+      
+      allPoems.forEach(poem => {
+        const latestAtmosphereTime = poemLatestAtmosphere.get(poem.id);
+        if (latestAtmosphereTime) {
+          poemsWithAtmosphere.push({
+            ...poem,
+            latest_atmosphere_time: latestAtmosphereTime
+          });
+        } else {
+          poemsWithoutAtmosphere.push(poem);
+        }
+      });
+      
+      // 有聲色意境的詩句，按最新聲色意境時間降序排序
+      poemsWithAtmosphere.sort((a, b) => 
+        b.latest_atmosphere_time - a.latest_atmosphere_time
+      );
+      
+      // 沒有聲色意境的詩句，隨機排序
+      const shuffledWithoutAtmosphere = this.shuffleArray(poemsWithoutAtmosphere);
+      
+      // 合併：有聲色意境的在前，沒有聲色意境的在後
+      // 為有聲色意境的詩句添加標記
+      const sortedPoems = [
+        ...poemsWithAtmosphere.map(({ latest_atmosphere_time, ...poem }) => ({
+          ...poem,
+          hasAtmosphere: true
+        })),
+        ...shuffledWithoutAtmosphere.map(poem => ({
+          ...poem,
+          hasAtmosphere: false
+        }))
+      ];
+      
+      console.log('詩句排序完成:', {
+        有聲色意境: poemsWithAtmosphere.length,
+        無聲色意境: poemsWithoutAtmosphere.length
+      });
+      
+      this.poems = sortedPoems;
+      return sortedPoems;
     } catch (error) {
       console.error('加載詩歌列表失敗:', error);
       console.log('使用模擬數據作為降級方案');
       return this.getMockPoems();
     }
+  }
+  
+  /**
+   * 隨機打亂數組順序（Fisher-Yates 洗牌算法）
+   */
+  shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
   
   /**
