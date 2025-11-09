@@ -696,7 +696,7 @@
 .admin-sound-table th:first-child,
 .admin-sound-table td:first-child {
   width: auto;
-  min-width: 250px;
+  min-width: 180px;
   max-width: none;
 }
 
@@ -715,7 +715,8 @@
 .admin-sound-table th:nth-child(4),
 .admin-sound-table td:nth-child(4) {
   width: auto;
-  min-width: 80px;
+  min-width: 120px;
+  white-space: nowrap;
 }
 
 .admin-sound-table th:nth-child(5),

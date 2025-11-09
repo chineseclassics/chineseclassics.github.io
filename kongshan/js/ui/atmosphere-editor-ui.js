@@ -176,16 +176,18 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
 
 /**
  * 隱藏編輯器
+ * @param {boolean} shouldStopSounds - 是否停止正在播放的音效，默認為 true
  */
-export function hideAtmosphereEditor() {
+export function hideAtmosphereEditor(shouldStopSounds = true) {
   const editor = document.getElementById('atmosphere-editor');
   if (editor) {
     cancelAutoPreview();
     stopRecording(true);
     cleanupRecordingState();
     
-    // 停止所有正在播放的音效
-    if (window.AppState && window.AppState.soundMixer) {
+    // 只有在非預覽模式下才停止音效
+    // 預覽模式下應該保留音效播放
+    if (shouldStopSounds && window.AppState && window.AppState.soundMixer) {
       window.AppState.soundMixer.stopAll();
     }
     
@@ -1806,8 +1808,8 @@ async function previewAtmosphere(poem) {
     window.AppState.isPreviewMode = true; // 標記為預覽模式
   }
 
-  // 關閉編輯器
-  hideAtmosphereEditor();
+  // 關閉編輯器，但不停止音效（因為預覽需要播放音效）
+  hideAtmosphereEditor(false);
 
   // 顯示提示
   const previewTip = document.createElement('div');
