@@ -1797,11 +1797,18 @@ async function previewAtmosphere(poem) {
     }
 
     // 應用背景配置
-    if (backgroundRenderer && data.background_config && typeof backgroundRenderer.setConfig === 'function') {
-      try {
-        backgroundRenderer.setConfig(data.background_config);
-      } catch (bgError) {
-        console.warn('應用背景配置失敗:', bgError);
+    if (backgroundRenderer) {
+      if (data.background_config && typeof backgroundRenderer.setConfig === 'function') {
+        try {
+          backgroundRenderer.setConfig(data.background_config);
+        } catch (bgError) {
+          console.warn('應用背景配置失敗:', bgError);
+        }
+      } else {
+        // 如果沒有背景配置，清除背景
+        if (typeof backgroundRenderer.clear === 'function') {
+          backgroundRenderer.clear();
+        }
       }
     }
 
@@ -1893,21 +1900,34 @@ function collectAtmosphereData(poem, status) {
     return null;
   }
 
-  // 收集背景配置
+  // 收集背景配置（只有當用戶選中背景時才創建配置）
   const selectedBg = document.querySelector('.background-card.selected');
-  const bgId = selectedBg ? selectedBg.dataset.bgId : 'night';
+  let backgroundConfig = null;
   
-  // 背景配色方案映射
-  const backgroundSchemes = {
-    'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
-    'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
-    'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
-    'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
-    'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
-    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
-  };
-  
-  const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
+  if (selectedBg) {
+    const bgId = selectedBg.dataset.bgId;
+    
+    // 背景配色方案映射
+    const backgroundSchemes = {
+      'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
+      'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
+      'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
+      'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
+      'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
+      'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
+    };
+    
+    const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
+    
+    backgroundConfig = {
+      color_scheme: {
+        id: bgId,
+        colors: bgScheme.colors,
+        direction: bgScheme.direction
+      },
+      abstract_elements: [] // 暫時為空
+    };
+  }
 
   const currentUserId = window.AppState?.userId || null;
 
@@ -1936,14 +1956,7 @@ function collectAtmosphereData(poem, status) {
     name,
     description,
     sound_combination: selectedSounds,
-    background_config: {
-      color_scheme: {
-        id: bgId,
-        colors: bgScheme.colors,
-        direction: bgScheme.direction
-      },
-      abstract_elements: [] // 暫時為空
-    },
+    background_config: backgroundConfig,
     status: finalStatus,
     source: 'user',
     is_ai_generated: false
