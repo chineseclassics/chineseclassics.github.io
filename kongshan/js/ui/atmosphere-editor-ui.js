@@ -1731,8 +1731,10 @@ function applyBackgroundTextColor(backgroundConfig) {
   
   if (!backgroundConfig || !backgroundConfig.color_scheme || !backgroundConfig.color_scheme.colors) {
     // 沒有背景配置，使用系統默認
-    root.style.setProperty('--poem-text-color', 'var(--color-text-primary, #2C3E50)');
-    root.style.setProperty('--poem-glow-color', 'var(--color-text-primary, #2C3E50)');
+    const defaultColor = 'var(--color-text-primary, #2C3E50)';
+    root.style.setProperty('--poem-text-color', defaultColor);
+    root.style.setProperty('--poem-glow-color', defaultColor);
+    root.style.setProperty('--poem-meta-color', defaultColor);
     updatePoemTextGlow('var(--color-text-primary, #2C3E50)');
     return;
   }
@@ -1752,11 +1754,14 @@ function applyBackgroundTextColor(backgroundConfig) {
   if (textColor) {
     root.style.setProperty('--poem-text-color', textColor);
     root.style.setProperty('--poem-glow-color', textColor);
+    root.style.setProperty('--poem-meta-color', textColor); // Meta 信息使用相同顏色
     updatePoemTextGlow(textColor);
   } else {
     // 未知的背景 ID，使用系統默認
-    root.style.setProperty('--poem-text-color', 'var(--color-text-primary, #2C3E50)');
-    root.style.setProperty('--poem-glow-color', 'var(--color-text-primary, #2C3E50)');
+    const defaultColor = 'var(--color-text-primary, #2C3E50)';
+    root.style.setProperty('--poem-text-color', defaultColor);
+    root.style.setProperty('--poem-glow-color', defaultColor);
+    root.style.setProperty('--poem-meta-color', defaultColor);
     updatePoemTextGlow('var(--color-text-primary, #2C3E50)');
   }
 }
@@ -1824,7 +1829,7 @@ function initializeBackgroundSelector() {
 
   // 初始化顏色選擇器事件
   initializeCustomColorPicker();
-  
+
   // 不設置默認選擇，讓用戶自己選擇
 }
 
@@ -1935,7 +1940,7 @@ function createBackgroundCard(background) {
     card.dataset.customColors = JSON.stringify(background.colors);
     card.dataset.customDirection = background.direction || 'diagonal';
   } else {
-    card.dataset.bgId = background.id;
+  card.dataset.bgId = background.id;
   }
 
   card.innerHTML = `
@@ -1957,7 +1962,7 @@ function createBackgroundCard(background) {
     if (background.isCustom) {
       applyCustomBackgroundPreview(background.colors, background.direction || 'diagonal');
     } else {
-      applyBackgroundPreview(background.id);
+    applyBackgroundPreview(background.id);
     }
   });
 
@@ -2160,6 +2165,7 @@ function applyCustomBackgroundTextColor(colors) {
   
   root.style.setProperty('--poem-text-color', textColor);
   root.style.setProperty('--poem-glow-color', textColor);
+  root.style.setProperty('--poem-meta-color', textColor); // Meta 信息使用相同顏色，通過 opacity 降低顯示
   updatePoemTextGlow(textColor);
 }
 
@@ -2311,12 +2317,12 @@ async function loadAtmosphereData(atmosphere) {
     
     // 如果有預設 ID，查找對應的預設卡片
     if (bgId && !bgId.startsWith('custom-')) {
-      const bgCard = document.querySelector(`.background-card[data-bg-id="${bgId}"]`);
-      if (bgCard) {
-        document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
-        bgCard.classList.add('selected');
-        // 立即應用背景預覽
-        applyBackgroundPreview(bgId);
+    const bgCard = document.querySelector(`.background-card[data-bg-id="${bgId}"]`);
+    if (bgCard) {
+      document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
+      bgCard.classList.add('selected');
+      // 立即應用背景預覽
+      applyBackgroundPreview(bgId);
       }
     } else {
       // 自定義配色：創建卡片並選中
@@ -2670,25 +2676,25 @@ function collectAtmosphereData(poem, status) {
       }
     } else {
       // 預設配色：使用映射表
-      const backgroundSchemes = {
-        'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
-        'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
-        'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
-        'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
-        'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
-        'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
-      };
-      
-      const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
-      
-      backgroundConfig = {
-        color_scheme: {
-          id: bgId,
-          colors: bgScheme.colors,
-          direction: bgScheme.direction
-        },
+  const backgroundSchemes = {
+    'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
+    'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
+    'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
+    'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
+    'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
+    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
+  };
+  
+  const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
+    
+    backgroundConfig = {
+      color_scheme: {
+        id: bgId,
+        colors: bgScheme.colors,
+        direction: bgScheme.direction
+      },
         abstract_elements: []
-      };
+    };
     }
   }
 

@@ -132,7 +132,7 @@
   font-family: var(--font-serif);
   writing-mode: vertical-rl; /* 豎排版 */
   text-orientation: mixed;
-  color: var(--color-text-tertiary);
+  color: var(--poem-meta-color, var(--color-text-tertiary)); /* 使用動態顏色，與詩句文字一致但更低調 */
   font-size: 1.2rem; /* 較小字體 */
   letter-spacing: 0.2em;
   opacity: 0.7; /* 降低透明度，更加低調 */
@@ -140,6 +140,7 @@
   z-index: 10; /* 確保在詩歌正文之上 */
   max-height: calc(100vh - var(--spacing-xl) * 2);
   overflow: hidden;
+  transition: color 0.4s ease; /* 顏色平滑過渡，與詩句文字同步 */
 }
 
 /* ===== 移動端細緻調整 ===== */
