@@ -347,13 +347,13 @@ export async function renderSoundManagement(container, { adminManager, getCurren
             <input type="text" id="sound-name-input" class="admin-form-input" maxlength="120" required placeholder="例如：夜雨松風">
           </div>
           <div class="admin-form-group">
+            <label class="admin-form-label" for="sound-tags-input">標籤（以逗號分隔，可留空）</label>
+            <input type="text" id="sound-tags-input" class="admin-form-input" placeholder="雨聲, 森林, 夜晚">
+          </div>
+          <div class="admin-form-group">
             <label class="admin-form-label" for="sound-file-input">${isEdit ? '上傳音效文件（選填，留空則保留原文件）' : '上傳音效文件（必填）'}</label>
             <input type="file" id="sound-file-input" class="admin-form-input" accept="audio/*" ${isEdit ? '' : 'required'}>
             <div class="admin-form-hint">支持 MP3、WAV、OGG 等音頻格式。上傳後將自動保存到 system/ 路徑，時長會自動解析。</div>
-          </div>
-          <div class="admin-form-group">
-            <label class="admin-form-label" for="sound-tags-input">標籤（以逗號分隔，可留空）</label>
-            <input type="text" id="sound-tags-input" class="admin-form-input" placeholder="雨聲, 森林, 夜晚">
           </div>
           <p class="admin-error-text admin-hidden" data-role="form-error"></p>
           <div id="sound-duration-info" class="admin-form-hint admin-hidden" style="color: #666; margin-top: -10px; margin-bottom: 10px;">

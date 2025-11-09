@@ -84,6 +84,10 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
           <span class="recording-label">旅人錄音</span>
           <span class="recording-subtext">單次最長 120 秒</span>
         </div>
+        <!-- 已發布的旅人錄音列表 -->
+        <div id="traveler-recordings-selector" class="sound-selector" style="margin-bottom: 12px;">
+          <!-- 旅人錄音卡片將動態生成 -->
+        </div>
         <div class="recording-inline">
           <button class="recording-toggle" id="recording-toggle-btn" type="button" aria-label="開始錄音">
             <i class="fas fa-circle"></i>
@@ -148,6 +152,7 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
 
   // 初始化內容（異步）
   initializeSoundSelector().then(() => {
+    initializeTravelerRecordings(); // 初始化旅人錄音選擇器
     initializeRecordingSection();
     initializeBackgroundSelector();
     
@@ -184,14 +189,14 @@ export function hideAtmosphereEditor() {
 }
 
 /**
- * 初始化音效選擇器
+ * 初始化音效選擇器（只加載系統音效）
  */
 function initializeSoundSelector() {
   const container = document.getElementById('sound-selector');
   container.innerHTML = '<div class="loading-text">加載音效庫...</div>';
 
   return new Promise(async (resolve) => {
-    // 從數據庫加載音效列表
+    // 從數據庫加載系統音效列表
     let sounds = [];
     
     if (window.AppState && window.AppState.supabase && window.AppState.atmosphereManager) {
@@ -220,17 +225,6 @@ function initializeSoundSelector() {
               file_url: fileUrl,
               sourceType: 'system'
             };
-          });
-        }
-
-        const travelerSounds = await loadPublishedRecordings();
-        if (travelerSounds.length > 0) {
-          const existingIds = new Set(sounds.map(sound => sound.id));
-          travelerSounds.forEach(sound => {
-            if (!existingIds.has(sound.id)) {
-              sounds.unshift(sound);
-              existingIds.add(sound.id);
-            }
           });
         }
       } catch (error) {
@@ -337,6 +331,36 @@ async function loadPublishedRecordings() {
     console.warn('載入旅人錄音失敗:', error);
     return [];
   }
+}
+
+/**
+ * 初始化旅人錄音選擇器（顯示在旅人錄音區域）
+ */
+function initializeTravelerRecordings() {
+  const container = document.getElementById('traveler-recordings-selector');
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = '<div class="loading-text">加載旅人錄音...</div>';
+
+  loadPublishedRecordings().then(travelerSounds => {
+    container.innerHTML = '';
+    
+    if (travelerSounds.length === 0) {
+      // 如果沒有旅人錄音，顯示空狀態（可選）
+      return;
+    }
+
+    // 按時間排序（最新的在前）- loadPublishedRecordings 已經按 created_at DESC 排序
+    travelerSounds.forEach(sound => {
+      const soundCard = createSoundCard(sound);
+      container.appendChild(soundCard);
+    });
+  }).catch(error => {
+    console.warn('初始化旅人錄音選擇器失敗:', error);
+    container.innerHTML = '';
+  });
 }
 
 function getRecordingElements() {
@@ -753,6 +777,9 @@ async function handleRecordingSave() {
     ensureRecordingCardExists(buildRecordingSound(recording));
     addUploadedRecordingToSelection(recording);
 
+    // 刷新旅人錄音列表，顯示新上傳的錄音
+    initializeTravelerRecordings();
+
     cleanupRecordingState({ keepBlob: false, preserveUploaded: false });
     resetRecordingUI();
 
@@ -886,7 +913,9 @@ function buildRecordingSound(recording) {
 }
 
 function ensureRecordingCardExists(sound) {
-  const selector = document.getElementById('sound-selector');
+  // 根據 sourceType 決定添加到哪個容器
+  const isRecording = sound.sourceType === 'recording';
+  const selector = document.getElementById(isRecording ? 'traveler-recordings-selector' : 'sound-selector');
   if (!selector) {
     return null;
   }
@@ -908,6 +937,7 @@ function ensureRecordingCardExists(sound) {
   }
 
   card = createSoundCard(sound);
+  // 旅人錄音添加到開頭（最新的在前），系統音效也添加到開頭
   selector.insertBefore(card, selector.firstChild);
   return card;
 }
@@ -1519,10 +1549,16 @@ async function loadAtmosphereData(atmosphere) {
           }
         }
 
+        // 標記對應的旅人錄音卡片為選中狀態
+        const recordingCard = document.querySelector(`#traveler-recordings-selector .sound-card[data-sound-id="${recordingId}"]`);
+        if (recordingCard) {
+          recordingCard.classList.add('selected');
+        }
+
         continue;
       }
 
-      // 從音效選擇器中找到對應的音效卡片
+      // 從音效選擇器中找到對應的音效卡片（系統音效或旅人錄音）
       const soundCard = document.querySelector(`.sound-card[data-sound-id="${config.sound_id}"]`);
       if (soundCard) {
         soundCard.classList.add('selected');
