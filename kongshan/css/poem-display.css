@@ -82,20 +82,20 @@
 }
 
 /* 呼吸動畫關鍵幀 - 模擬自然呼吸節奏 */
-/* 4秒一個週期，每分鐘15次，符合自然呼吸頻率 */
-/* 吸氣約1.3秒（33%），呼氣約2.7秒（67%） */
+/* 5.5秒一個週期，每分鐘約11次，更慢更放鬆的呼吸頻率 */
+/* 吸氣約1.8秒（33%），呼氣約3.7秒（67%） */
 @keyframes breathe {
   0% {
-    opacity: 0.95;
-    transform: scale(0.996);
+    opacity: 0.92;
+    transform: scale(0.992);
   }
   33% {
     opacity: 1;
     transform: scale(1);
   }
   100% {
-    opacity: 0.95;
-    transform: scale(0.996);
+    opacity: 0.92;
+    transform: scale(0.992);
   }
 }
 
@@ -113,7 +113,7 @@
   /* 完全居中，無需額外定位 */
   
   /* 呼吸效果動畫 - 優雅微妙的冥想效果 */
-  animation: breathe 4s ease-in-out infinite;
+  animation: breathe 5.5s ease-in-out infinite;
   animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95); /* 平滑自然的緩動曲線 */
   will-change: opacity, transform; /* 性能優化 */
   transform-origin: center center; /* 確保縮放以中心為基準 */
@@ -152,7 +152,7 @@
     line-height: 2.05;
     letter-spacing: 0.26em;
     /* 保持呼吸動畫效果 */
-    animation: breathe 4s ease-in-out infinite;
+    animation: breathe 5.5s ease-in-out infinite;
     animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
   }
 
