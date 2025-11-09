@@ -240,12 +240,14 @@ export class SoundMixer {
    * 停止所有音效
    */
   stopAll() {
-    this.tracks.forEach(track => {
-      track.stop();
-    });
+    if (this.tracks.size > 0) {
+      this.tracks.forEach(track => {
+        track.stop();
+      });
+      console.log('⏹️ 停止所有音效');
+    }
 
     this.isPlaying = false;
-    console.log('⏹️ 停止所有音效');
   }
 
   /**
@@ -279,10 +281,12 @@ export class SoundMixer {
    * 清空所有音效軌道
    */
   clear() {
-    this.stopAll();
-    this.tracks.forEach(track => track.destroy());
-    this.tracks.clear();
-    console.log('🗑️ 清空所有音效軌道');
+    if (this.tracks.size > 0) {
+      this.stopAll();
+      this.tracks.forEach(track => track.destroy());
+      this.tracks.clear();
+      console.log('🗑️ 清空所有音效軌道');
+    }
   }
 
   /**

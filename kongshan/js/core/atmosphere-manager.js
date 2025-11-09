@@ -170,9 +170,37 @@ export class AtmosphereManager {
       }
 
       if (recordingConfigs.length > 0 && this.supabase) {
+        // 收集所有錄音 ID，批量查詢最新的 storage_path
+        const recordingIds = recordingConfigs.map(config => config.recording_id || config.sound_id);
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const validRecordingIds = recordingIds.filter(id => uuidRegex.test(id));
+        
+        let recordingsMap = new Map();
+        if (validRecordingIds.length > 0) {
+          try {
+            const { data: recordingsData, error: recordingsError } = await this.supabase
+              .from('recordings')
+              .select('id, storage_path, status')
+              .in('id', validRecordingIds);
+            
+            if (!recordingsError && recordingsData) {
+              recordingsData.forEach(rec => {
+                recordingsMap.set(rec.id, {
+                  storage_path: rec.storage_path,
+                  status: rec.status
+                });
+              });
+            }
+          } catch (queryError) {
+            console.warn('查詢錄音信息失敗:', queryError);
+          }
+        }
+
         for (const config of recordingConfigs) {
           const recordingId = config.recording_id || config.sound_id;
-          const recordingPath = config.recording_path || '';
+          // 優先使用數據庫中的最新 storage_path，如果沒有則使用配置中的 recording_path
+          const recordingInfo = recordingsMap.get(recordingId);
+          const recordingPath = recordingInfo?.storage_path || config.recording_path || '';
           let fileUrl = config.file_url || '';
 
           if ((!fileUrl || fileUrl === '') && recordingPath) {
@@ -182,7 +210,7 @@ export class AtmosphereManager {
               // 公開路徑，直接構建 URL
               const projectUrl = this.supabase.supabaseUrl.replace('/rest/v1', '');
               fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${recordingPath}`;
-            } else {
+            } else if (recordingPath.startsWith('pending/')) {
               // pending/ 路徑，需要簽名 URL
               try {
                 const { data: signedData, error: signedError } = await this.supabase
@@ -191,6 +219,9 @@ export class AtmosphereManager {
                   .createSignedUrl(recordingPath, 3600);
                 if (!signedError && signedData?.signedUrl) {
                   fileUrl = signedData.signedUrl;
+                } else {
+                  // 如果簽名 URL 失敗，可能是文件已移動，嘗試使用數據庫中的路徑
+                  console.warn(`簽名 URL 生成失敗，錄音可能已移動: ${recordingId}`, signedError);
                 }
               } catch (signedError) {
                 console.warn('生成錄音簽名網址失敗:', signedError);

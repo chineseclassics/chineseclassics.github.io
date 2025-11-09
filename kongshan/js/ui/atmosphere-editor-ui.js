@@ -70,7 +70,7 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
       <!-- 音效選擇 -->
       <div class="editor-section">
         <label class="editor-label">
-          選擇音效
+          空山音效
           <span class="editor-hint">最多選擇 5 個</span>
         </label>
         <div id="sound-selector" class="sound-selector">
@@ -296,14 +296,28 @@ async function loadPublishedRecordings() {
       } else {
         // pending/ 路徑，需要簽名 URL
         try {
-          const { data: signedData } = await supabaseClient
+          const { data: signedData, error: signedError } = await supabaseClient
             .storage
             .from('kongshan_recordings')
             .createSignedUrl(storagePath, 3600);
-          fileUrl = signedData?.signedUrl || '';
+          
+          if (signedError || !signedData?.signedUrl) {
+            // 如果獲取簽名 URL 失敗，說明文件可能已被刪除，跳過此記錄
+            console.warn(`錄音文件不存在或無法訪問: ${record.display_name} (${storagePath})`, signedError);
+            return null;
+          }
+          
+          fileUrl = signedData.signedUrl;
         } catch (signedError) {
-          console.warn('生成錄音簽名網址失敗:', signedError);
+          // 如果獲取簽名 URL 異常，說明文件可能已被刪除，跳過此記錄
+          console.warn(`錄音文件不存在或無法訪問: ${record.display_name} (${storagePath})`, signedError);
+          return null;
         }
+      }
+
+      // 如果 fileUrl 為空，跳過此記錄
+      if (!fileUrl) {
+        return null;
       }
 
       const statusLabel = (record.status || '').toLowerCase();
@@ -1661,15 +1675,61 @@ async function previewAtmosphere(poem) {
         
         // 如果無法從數據庫加載或使用模擬數據，使用編輯器中的音效信息
         if (soundEffects.length === 0) {
-          soundEffects = data.sound_combination.map(config => {
-            const soundCard = document.querySelector(`.sound-card[data-sound-id="${config.sound_id}"]`);
-            const name = soundCard ? soundCard.querySelector('.sound-card-name').textContent : '音效';
+          soundEffects = await Promise.all(data.sound_combination.map(async (config) => {
+            // 優先從已選項目獲取信息（包含完整的錄音信息）
+            const selectedItem = document.querySelector(`.selected-sound-item[data-sound-id="${config.sound_id}"]`);
+            const soundCard = selectedItem || document.querySelector(`.sound-card[data-sound-id="${config.sound_id}"]`);
+            
+            if (!soundCard) {
+              return {
+                id: config.sound_id,
+                name: '音效',
+                file_url: ''
+              };
+            }
+
+            const name = soundCard.querySelector('.sound-card-name')?.textContent || 
+                        soundCard.dataset.displayName || 
+                        soundCard.dataset.soundName || 
+                        '音效';
+            
+            let fileUrl = soundCard.dataset.fileUrl || '';
+            const sourceType = soundCard.dataset.sourceType || 'system';
+            const recordingPath = soundCard.dataset.recordingPath || '';
+
+            // 如果是錄音文件且 file_url 為空，嘗試生成簽名 URL
+            if ((!fileUrl || fileUrl === '') && sourceType === 'recording' && recordingPath && window.AppState?.supabase) {
+              try {
+                if (recordingPath.startsWith('approved/') || recordingPath.startsWith('system/')) {
+                  // 公開路徑，直接構建 URL
+                  const projectUrl = window.AppState.supabase.supabaseUrl.replace('/rest/v1', '');
+                  fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${recordingPath}`;
+                } else if (recordingPath.startsWith('pending/')) {
+                  // pending/ 路徑，需要簽名 URL
+                  const { data: signedData, error: signedError } = await window.AppState.supabase
+                    .storage
+                    .from('kongshan_recordings')
+                    .createSignedUrl(recordingPath, 3600);
+                  if (!signedError && signedData?.signedUrl) {
+                    fileUrl = signedData.signedUrl;
+                  }
+                }
+              } catch (signedError) {
+                console.warn('生成錄音簽名網址失敗:', signedError);
+              }
+            }
+
+            // 如果仍然沒有 file_url，且不是錄音文件，使用後備路徑（僅限系統音效）
+            if ((!fileUrl || fileUrl === '') && sourceType === 'system') {
+              fileUrl = `/kongshan/assets/sounds/${name}.mp3`;
+            }
+
             return {
               id: config.sound_id,
               name: name,
-              file_url: '' // 預覽時可能沒有實際文件
+              file_url: fileUrl
             };
-          });
+          }));
         }
 
         // 合併音效信息和配置
@@ -1678,7 +1738,7 @@ async function previewAtmosphere(poem) {
           return {
             id: effect.id,
             name: effect.name,
-            file_url: normalizeSoundUrl(effect.file_url || `/kongshan/assets/sounds/${effect.name}.mp3`),
+            file_url: normalizeSoundUrl(effect.file_url || '', window.AppState?.supabase),
             volume: config ? config.volume : 1.0,
             loop: config ? config.loop : true
           };
