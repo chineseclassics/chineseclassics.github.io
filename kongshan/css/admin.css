@@ -150,6 +150,9 @@
   flex-direction: column;
   gap: var(--spacing-lg);
   min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(var(--spacing-lg) * 1.5);
   /* 優化滾動條樣式 */
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-soft) transparent;
@@ -1227,12 +1230,15 @@
   .admin-main {
     height: auto;
     min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .admin-dashboard-content {
     height: auto;
     padding: var(--spacing-md);
     gap: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-xl) + var(--spacing-md));
   }
 
   .admin-sidebar {
@@ -1266,9 +1272,14 @@
     padding: var(--spacing-md);
   }
 
+  .admin-form-textarea {
+    min-height: 72px;
+  }
+
   .admin-card-actions {
     flex-direction: column;
     align-items: stretch;
+    gap: var(--spacing-sm);
   }
 
   .admin-form-dual {
