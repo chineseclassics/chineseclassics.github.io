@@ -508,6 +508,7 @@
   align-items: center;
   gap: 8px;
   flex: 1;
+  min-width: 0; /* 允許 flex 項目縮小 */
 }
 
 .custom-color-input {
@@ -518,10 +519,13 @@
   cursor: pointer;
   padding: 0;
   background: transparent;
+  flex-shrink: 0; /* 顏色選擇器不縮小 */
 }
 
 .custom-color-hex {
   flex: 1;
+  min-width: 0; /* 允許縮小 */
+  max-width: 100%; /* 不超過容器 */
   padding: 8px 12px;
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-sm);
@@ -530,6 +534,8 @@
   background: var(--color-surface-raised);
   color: var(--color-text-primary);
   transition: var(--transition-fast);
+  box-sizing: border-box; /* 包含 padding 和 border 在寬度內 */
+  width: 100%; /* 確保不超出 */
 }
 
 .custom-color-hex:focus {
