@@ -1534,13 +1534,23 @@ function updatePoemTextGlow(glowColor) {
   
   const rgb = hexToRgb(glowColor);
   
-  // 生成發光陰影
-  const glowShadowMin = `0 0 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 0 12px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
-  const glowShadowMax = `0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8), 0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.48)`;
+  // 檢測是否為 iOS 設備
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   
   const root = document.documentElement;
-  root.style.setProperty('--poem-glow-shadow-min', glowShadowMin);
-  root.style.setProperty('--poem-glow-shadow-max', glowShadowMax);
+  
+  if (isIOS) {
+    // iOS 設備：使用靜態的單層發光效果（性能更好）
+    const glowShadowStatic = `0 0 15px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
+    root.style.setProperty('--poem-glow-shadow-static-ios', glowShadowStatic);
+  } else {
+    // 桌面設備：使用動態的多層發光效果
+    const glowShadowMin = `0 0 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 0 12px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
+    const glowShadowMax = `0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8), 0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.48)`;
+    root.style.setProperty('--poem-glow-shadow-min', glowShadowMin);
+    root.style.setProperty('--poem-glow-shadow-max', glowShadowMax);
+  }
 }
 
 /**
@@ -1904,12 +1914,12 @@ async function previewAtmosphere(poem) {
     if (editor && editor.classList.contains('visible')) {
       if (backgroundRenderer) {
         if (data.background_config && typeof backgroundRenderer.setConfig === 'function') {
-          try {
-            backgroundRenderer.setConfig(data.background_config);
+      try {
+        backgroundRenderer.setConfig(data.background_config);
             // 應用對應的文字顏色
             applyBackgroundTextColor(data.background_config);
-          } catch (bgError) {
-            console.warn('應用背景配置失敗:', bgError);
+      } catch (bgError) {
+        console.warn('應用背景配置失敗:', bgError);
           }
         } else {
           // 如果沒有背景配置，清除背景並恢復默認文字顏色
@@ -1917,12 +1927,12 @@ async function previewAtmosphere(poem) {
             backgroundRenderer.clear();
           }
           applyBackgroundTextColor(null);
-        }
       }
+    }
 
-      // 保存當前編輯狀態，以便返回編輯
-      window.AppState.previewAtmosphereData = data;
-      window.AppState.isPreviewMode = true; // 標記為預覽模式
+    // 保存當前編輯狀態，以便返回編輯
+    window.AppState.previewAtmosphereData = data;
+    window.AppState.isPreviewMode = true; // 標記為預覽模式
     } else {
       // 編輯器已關閉，清除音效和背景
       if (soundMixer) {
@@ -2024,18 +2034,18 @@ function collectAtmosphereData(poem, status) {
   
   if (selectedBg) {
     const bgId = selectedBg.dataset.bgId;
-    
-    // 背景配色方案映射
-    const backgroundSchemes = {
-      'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
-      'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
-      'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
-      'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
-      'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
-      'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
-    };
-    
-    const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
+  
+  // 背景配色方案映射
+  const backgroundSchemes = {
+    'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
+    'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
+    'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
+    'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
+    'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
+    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
+  };
+  
+  const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
     
     backgroundConfig = {
       color_scheme: {
