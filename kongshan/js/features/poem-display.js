@@ -42,8 +42,21 @@ export function renderVerticalPoem(container, poem) {
   // 詩歌內容 - 放在最後（豎排版中會顯示在中間偏右）
   const contentEl = document.createElement('div');
   contentEl.className = 'poem-text';
-  // 將換行符替換為 <br> 標籤，保持詩句的分行
-  contentEl.innerHTML = poem.content.trim().split('\n').map(line => line.trim()).join('<br>');
+  // 將詩句拆分為行，保留原始文字供發光層使用
+  if (poem.content) {
+    const contentLines = poem.content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    const originalContent = contentLines.join('\n');
+    // 以 <br> 呈現行距，同時為發光層提供 data-text 原文
+    contentEl.innerHTML = contentLines.join('<br>');
+    contentEl.dataset.text = originalContent;
+  } else {
+    contentEl.textContent = '';
+    contentEl.dataset.text = '';
+  }
   contentArea.appendChild(contentEl);
   
   poemWrapper.appendChild(contentArea);
