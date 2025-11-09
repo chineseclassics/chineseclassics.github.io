@@ -132,6 +132,41 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
         <div id="background-selector" class="background-selector">
           <!-- 背景選項將動態生成 -->
         </div>
+        <!-- 自定義配色展開區域 -->
+        <div id="custom-color-picker" class="custom-color-picker" hidden>
+          <div class="custom-color-row">
+            <label class="custom-color-label">顏色 1</label>
+            <div class="custom-color-input-group">
+              <input type="color" id="custom-color-1" class="custom-color-input" value="#1A1A2E">
+              <input type="text" id="custom-color-1-hex" class="custom-color-hex" value="#1A1A2E" maxlength="7" placeholder="#000000">
+            </div>
+          </div>
+          <div class="custom-color-row">
+            <label class="custom-color-label">顏色 2</label>
+            <div class="custom-color-input-group">
+              <input type="color" id="custom-color-2" class="custom-color-input" value="#16213E">
+              <input type="text" id="custom-color-2-hex" class="custom-color-hex" value="#16213E" maxlength="7" placeholder="#000000">
+            </div>
+          </div>
+          <div class="custom-color-row">
+            <label class="custom-color-label">方向</label>
+            <div class="custom-color-direction">
+              <label class="custom-radio">
+                <input type="radio" name="custom-direction" value="diagonal" checked>
+                <span>對角</span>
+              </label>
+              <label class="custom-radio">
+                <input type="radio" name="custom-direction" value="vertical">
+                <span>垂直</span>
+              </label>
+            </div>
+          </div>
+          <div class="custom-color-preview" id="custom-color-preview"></div>
+          <div class="custom-color-actions">
+            <button type="button" class="editor-btn editor-btn-primary" id="custom-color-save">保存配色</button>
+            <button type="button" class="editor-btn editor-btn-secondary" id="custom-color-cancel">取消</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1694,7 +1729,7 @@ const backgroundTextColorMap = {
 function applyBackgroundTextColor(backgroundConfig) {
   const root = document.documentElement;
   
-  if (!backgroundConfig || !backgroundConfig.color_scheme || !backgroundConfig.color_scheme.id) {
+  if (!backgroundConfig || !backgroundConfig.color_scheme || !backgroundConfig.color_scheme.colors) {
     // 沒有背景配置，使用系統默認
     root.style.setProperty('--poem-text-color', 'var(--color-text-primary, #2C3E50)');
     root.style.setProperty('--poem-glow-color', 'var(--color-text-primary, #2C3E50)');
@@ -1703,6 +1738,15 @@ function applyBackgroundTextColor(backgroundConfig) {
   }
 
   const bgId = backgroundConfig.color_scheme.id;
+  const colors = backgroundConfig.color_scheme.colors;
+  
+  // 如果是自定義配色（沒有 id 或 id 以 custom- 開頭），根據亮度自動判斷
+  if (!bgId || bgId.startsWith('custom-')) {
+    applyCustomBackgroundTextColor(colors);
+    return;
+  }
+  
+  // 預設配色：使用映射表
   const textColor = backgroundTextColorMap[bgId];
   
   if (textColor) {
@@ -1767,11 +1811,20 @@ function initializeBackgroundSelector() {
   ];
 
   container.innerHTML = '';
+  
+  // 首先添加「+ 自定義」卡片
+  const customCard = createCustomColorCard();
+  container.appendChild(customCard);
+  
+  // 然後添加預設配色
   backgrounds.forEach(bg => {
     const bgCard = createBackgroundCard(bg);
     container.appendChild(bgCard);
   });
 
+  // 初始化顏色選擇器事件
+  initializeCustomColorPicker();
+  
   // 不設置默認選擇，讓用戶自己選擇
 }
 
@@ -1841,12 +1894,49 @@ function clearBackgroundPreview() {
 }
 
 /**
+ * 創建「+ 自定義」卡片
+ */
+function createCustomColorCard() {
+  const card = document.createElement('div');
+  card.className = 'background-card background-card-custom';
+  card.dataset.bgId = 'custom';
+
+  card.innerHTML = `
+    <div class="background-preview" style="background: linear-gradient(135deg, var(--color-surface-soft) 0%, var(--color-surface-raised) 100%); border: 2px dashed var(--color-border-soft); display: flex; align-items: center; justify-content: center;">
+      <span style="font-size: 1.5rem; color: var(--color-text-secondary);">+</span>
+    </div>
+    <div class="background-name">自定義</div>
+  `;
+
+  card.addEventListener('click', () => {
+    // 顯示顏色選擇器
+    const picker = document.getElementById('custom-color-picker');
+    if (picker) {
+      picker.hidden = false;
+      picker.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      updateCustomColorPreview();
+    }
+  });
+
+  return card;
+}
+
+/**
  * 創建背景卡片
  */
 function createBackgroundCard(background) {
   const card = document.createElement('div');
   card.className = 'background-card';
-  card.dataset.bgId = background.id;
+  
+  // 自定義配色使用臨時 ID，格式：custom-{timestamp}
+  if (background.isCustom) {
+    card.dataset.bgId = background.id || `custom-${Date.now()}`;
+    card.dataset.isCustom = 'true';
+    card.dataset.customColors = JSON.stringify(background.colors);
+    card.dataset.customDirection = background.direction || 'diagonal';
+  } else {
+    card.dataset.bgId = background.id;
+  }
 
   card.innerHTML = `
     <div class="background-preview" style="background: linear-gradient(135deg, ${background.colors[0]} 0%, ${background.colors[1]} 100%);"></div>
@@ -1854,13 +1944,223 @@ function createBackgroundCard(background) {
   `;
 
   card.addEventListener('click', () => {
+    // 隱藏顏色選擇器
+    const picker = document.getElementById('custom-color-picker');
+    if (picker) {
+      picker.hidden = true;
+    }
+    
     document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
+    
     // 立即應用背景預覽
-    applyBackgroundPreview(background.id);
+    if (background.isCustom) {
+      applyCustomBackgroundPreview(background.colors, background.direction || 'diagonal');
+    } else {
+      applyBackgroundPreview(background.id);
+    }
   });
 
   return card;
+}
+
+/**
+ * 初始化自定義顏色選擇器
+ */
+function initializeCustomColorPicker() {
+  const color1Input = document.getElementById('custom-color-1');
+  const color1Hex = document.getElementById('custom-color-1-hex');
+  const color2Input = document.getElementById('custom-color-2');
+  const color2Hex = document.getElementById('custom-color-2-hex');
+  const saveBtn = document.getElementById('custom-color-save');
+  const cancelBtn = document.getElementById('custom-color-cancel');
+  const picker = document.getElementById('custom-color-picker');
+
+  if (!color1Input || !color1Hex || !color2Input || !color2Hex || !saveBtn || !cancelBtn) {
+    return;
+  }
+
+  // 顏色選擇器與 HEX 輸入框雙向同步
+  function syncColor1() {
+    const value = color1Input.value.toUpperCase();
+    color1Hex.value = value;
+    updateCustomColorPreview();
+  }
+
+  function syncColor1FromHex() {
+    const hexValue = color1Hex.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+      color1Input.value = hexValue.toUpperCase();
+      updateCustomColorPreview();
+    }
+  }
+
+  function syncColor2() {
+    const value = color2Input.value.toUpperCase();
+    color2Hex.value = value;
+    updateCustomColorPreview();
+  }
+
+  function syncColor2FromHex() {
+    const hexValue = color2Hex.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+      color2Input.value = hexValue.toUpperCase();
+      updateCustomColorPreview();
+    }
+  }
+
+  color1Input.addEventListener('input', syncColor1);
+  color1Hex.addEventListener('input', syncColor1FromHex);
+  color1Hex.addEventListener('blur', syncColor1FromHex);
+  
+  color2Input.addEventListener('input', syncColor2);
+  color2Hex.addEventListener('input', syncColor2FromHex);
+  color2Hex.addEventListener('blur', syncColor2FromHex);
+
+  // 方向選擇器變化時更新預覽
+  document.querySelectorAll('input[name="custom-direction"]').forEach(radio => {
+    radio.addEventListener('change', updateCustomColorPreview);
+  });
+
+  // 保存按鈕
+  saveBtn.addEventListener('click', () => {
+    const color1 = color1Input.value.toUpperCase();
+    const color2 = color2Input.value.toUpperCase();
+    const direction = document.querySelector('input[name="custom-direction"]:checked')?.value || 'diagonal';
+
+    // 驗證顏色格式
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color1) || !/^#[0-9A-Fa-f]{6}$/.test(color2)) {
+      alert('請輸入有效的顏色代碼（格式：#RRGGBB）');
+      return;
+    }
+
+    // 創建自定義配色卡片
+    const customBg = {
+      id: `custom-${Date.now()}`,
+      name: '自定義',
+      colors: [color1, color2],
+      direction: direction,
+      isCustom: true
+    };
+
+    // 添加到選擇器（在「+ 自定義」卡片後面）
+    const container = document.getElementById('background-selector');
+    const customCard = container.querySelector('.background-card-custom');
+    const newCard = createBackgroundCard(customBg);
+    
+    // 插入到自定義卡片後面
+    if (customCard && customCard.nextSibling) {
+      container.insertBefore(newCard, customCard.nextSibling);
+    } else {
+      container.appendChild(newCard);
+    }
+
+    // 選中新創建的卡片
+    document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
+    newCard.classList.add('selected');
+
+    // 應用預覽
+    applyCustomBackgroundPreview([color1, color2], direction);
+
+    // 隱藏顏色選擇器
+    if (picker) {
+      picker.hidden = true;
+    }
+  });
+
+  // 取消按鈕
+  cancelBtn.addEventListener('click', () => {
+    if (picker) {
+      picker.hidden = true;
+    }
+  });
+}
+
+/**
+ * 更新自定義顏色預覽
+ */
+function updateCustomColorPreview() {
+  const color1Input = document.getElementById('custom-color-1');
+  const color2Input = document.getElementById('custom-color-2');
+  const preview = document.getElementById('custom-color-preview');
+  const directionRadio = document.querySelector('input[name="custom-direction"]:checked');
+  
+  if (!color1Input || !color2Input || !preview) {
+    return;
+  }
+
+  const color1 = color1Input.value;
+  const color2 = color2Input.value;
+  const direction = directionRadio?.value || 'diagonal';
+
+  // 計算漸變角度
+  let gradientAngle = '135deg';
+  if (direction === 'vertical') {
+    gradientAngle = '180deg';
+  } else if (direction === 'horizontal') {
+    gradientAngle = '90deg';
+  }
+
+  preview.style.background = `linear-gradient(${gradientAngle}, ${color1} 0%, ${color2} 100%)`;
+}
+
+/**
+ * 應用自定義背景預覽
+ */
+function applyCustomBackgroundPreview(colors, direction) {
+  if (!window.AppState || !window.AppState.backgroundRenderer) {
+    return;
+  }
+
+  const backgroundConfig = {
+    color_scheme: {
+      colors: colors,
+      direction: direction || 'diagonal'
+    },
+    abstract_elements: []
+  };
+
+  try {
+    const { backgroundRenderer } = window.AppState;
+    if (typeof backgroundRenderer.setConfig === 'function') {
+      backgroundRenderer.setConfig(backgroundConfig);
+      // 應用對應的文字顏色（根據亮度自動判斷）
+      applyCustomBackgroundTextColor(colors);
+    }
+  } catch (error) {
+    console.warn('應用自定義背景預覽失敗:', error);
+  }
+}
+
+/**
+ * 根據自定義配色自動判斷文字顏色
+ */
+function applyCustomBackgroundTextColor(colors) {
+  const root = document.documentElement;
+  
+  // 計算平均亮度
+  function getLuminance(hex) {
+    const rgb = hex.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (!rgb) return 0;
+    
+    const r = parseInt(rgb[1], 16) / 255;
+    const g = parseInt(rgb[2], 16) / 255;
+    const b = parseInt(rgb[3], 16) / 255;
+    
+    // 使用相對亮度公式
+    const rLinear = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+    const gLinear = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+    const bLinear = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+    
+    return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+  }
+
+  const avgLuminance = colors.reduce((sum, color) => sum + getLuminance(color), 0) / colors.length;
+  const textColor = avgLuminance > 0.5 ? '#2C3E50' : '#FFFFFF';
+  
+  root.style.setProperty('--poem-text-color', textColor);
+  root.style.setProperty('--poem-glow-color', textColor);
+  updatePoemTextGlow(textColor);
 }
 
 /**
@@ -2006,13 +2306,62 @@ async function loadAtmosphereData(atmosphere) {
 
   // 載入背景配置
   if (atmosphere.background_config && atmosphere.background_config.color_scheme) {
-    const bgId = atmosphere.background_config.color_scheme.id;
-    const bgCard = document.querySelector(`.background-card[data-bg-id="${bgId}"]`);
-    if (bgCard) {
-      document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
-      bgCard.classList.add('selected');
-      // 立即應用背景預覽
-      applyBackgroundPreview(bgId);
+    const colorScheme = atmosphere.background_config.color_scheme;
+    const bgId = colorScheme.id;
+    
+    // 如果有預設 ID，查找對應的預設卡片
+    if (bgId && !bgId.startsWith('custom-')) {
+      const bgCard = document.querySelector(`.background-card[data-bg-id="${bgId}"]`);
+      if (bgCard) {
+        document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
+        bgCard.classList.add('selected');
+        // 立即應用背景預覽
+        applyBackgroundPreview(bgId);
+      }
+    } else {
+      // 自定義配色：創建卡片並選中
+      const colors = colorScheme.colors || [];
+      const direction = colorScheme.direction || 'diagonal';
+      
+      if (colors.length >= 2) {
+        const customBg = {
+          id: bgId || `custom-${Date.now()}`,
+          name: '自定義',
+          colors: colors,
+          direction: direction,
+          isCustom: true
+        };
+        
+        // 檢查是否已存在相同的自定義配色卡片
+        const container = document.getElementById('background-selector');
+        const existingCard = Array.from(container.querySelectorAll('.background-card[data-is-custom="true"]'))
+          .find(card => {
+            const cardColors = JSON.parse(card.dataset.customColors || '[]');
+            return cardColors[0] === colors[0] && cardColors[1] === colors[1] && 
+                   card.dataset.customDirection === direction;
+          });
+        
+        if (existingCard) {
+          // 使用現有卡片
+          document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
+          existingCard.classList.add('selected');
+          applyCustomBackgroundPreview(colors, direction);
+        } else {
+          // 創建新卡片
+          const customCard = container.querySelector('.background-card-custom');
+          const newCard = createBackgroundCard(customBg);
+          
+          if (customCard && customCard.nextSibling) {
+            container.insertBefore(newCard, customCard.nextSibling);
+          } else {
+            container.appendChild(newCard);
+          }
+          
+          document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
+          newCard.classList.add('selected');
+          applyCustomBackgroundPreview(colors, direction);
+        }
+      }
     }
   } else {
     // 如果沒有背景配置，清除所有選中狀態和背景預覽
@@ -2302,27 +2651,45 @@ function collectAtmosphereData(poem, status) {
   
   if (selectedBg) {
     const bgId = selectedBg.dataset.bgId;
-  
-  // 背景配色方案映射
-  const backgroundSchemes = {
-    'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
-    'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
-    'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
-    'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
-    'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
-    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
-  };
-  
-  const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
+    const isCustom = selectedBg.dataset.isCustom === 'true';
     
-    backgroundConfig = {
-      color_scheme: {
-        id: bgId,
-        colors: bgScheme.colors,
-        direction: bgScheme.direction
-      },
-      abstract_elements: [] // 暫時為空
-    };
+    if (isCustom) {
+      // 自定義配色：從 data 屬性讀取
+      const customColors = JSON.parse(selectedBg.dataset.customColors || '[]');
+      const customDirection = selectedBg.dataset.customDirection || 'diagonal';
+      
+      if (customColors.length >= 2) {
+        backgroundConfig = {
+          color_scheme: {
+            colors: customColors,
+            direction: customDirection
+            // 注意：自定義配色不包含 id，這樣其他用戶也能正確顯示
+          },
+          abstract_elements: []
+        };
+      }
+    } else {
+      // 預設配色：使用映射表
+      const backgroundSchemes = {
+        'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
+        'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
+        'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
+        'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
+        'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
+        'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
+      };
+      
+      const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
+      
+      backgroundConfig = {
+        color_scheme: {
+          id: bgId,
+          colors: bgScheme.colors,
+          direction: bgScheme.direction
+        },
+        abstract_elements: []
+      };
+    }
   }
 
   const currentUserId = window.AppState?.userId || null;
