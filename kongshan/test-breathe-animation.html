@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>呼吸動畫效果測試</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            flex: 1;
+        }
+
+        .preview-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .controls-panel h2 {
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .control-group .value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .code-output {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .code-output h3 {
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .code-output pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 呼吸動畫 */
+        @keyframes breathe {
+            0% {
+                opacity: var(--opacity-min);
+                transform: scale(var(--scale-min));
+                text-shadow: var(--glow-shadow-min);
+            }
+            33% {
+                opacity: var(--opacity-max);
+                transform: scale(var(--scale-max));
+                text-shadow: var(--glow-shadow-max);
+            }
+            100% {
+                opacity: var(--opacity-min);
+                transform: scale(var(--scale-min));
+                text-shadow: var(--glow-shadow-min);
+            }
+        }
+
+        .poem-text {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 3rem;
+            line-height: 2.5;
+            letter-spacing: 0.4em;
+            color: #fff;
+            font-weight: 400;
+            white-space: nowrap;
+            animation: breathe var(--duration) ease-in-out infinite;
+            animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            will-change: opacity, transform, text-shadow;
+            transform-origin: center center;
+        }
+
+        .info-text {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="preview-area">
+            <div class="info-text">
+                預覽區域 - 觀察呼吸動畫效果
+            </div>
+            <div class="poem-text" id="poem-text">
+                今夕何夕<br>見此良人
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <h2>動畫參數調整</h2>
+
+            <div class="control-group">
+                <label>動畫週期（秒）</label>
+                <input type="range" id="duration-slider" min="3" max="8" step="0.1" value="5.5">
+                <div class="value-display">
+                    <span>3秒</span>
+                    <span id="duration-value">5.5秒</span>
+                    <span>8秒</span>
+                </div>
+                <input type="number" id="duration-input" min="3" max="8" step="0.1" value="5.5">
+            </div>
+
+            <div class="control-group">
+                <label>透明度最小值</label>
+                <input type="range" id="opacity-min-slider" min="0.8" max="0.98" step="0.01" value="0.92">
+                <div class="value-display">
+                    <span>0.8</span>
+                    <span id="opacity-min-value">0.92</span>
+                    <span>0.98</span>
+                </div>
+                <input type="number" id="opacity-min-input" min="0.8" max="0.98" step="0.01" value="0.92">
+            </div>
+
+            <div class="control-group">
+                <label>透明度最大值</label>
+                <input type="range" id="opacity-max-slider" min="0.95" max="1" step="0.01" value="1">
+                <div class="value-display">
+                    <span>0.95</span>
+                    <span id="opacity-max-value">1</span>
+                    <span>1</span>
+                </div>
+                <input type="number" id="opacity-max-input" min="0.95" max="1" step="0.01" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>縮放最小值</label>
+                <input type="range" id="scale-min-slider" min="0.98" max="0.999" step="0.001" value="0.992">
+                <div class="value-display">
+                    <span>0.98</span>
+                    <span id="scale-min-value">0.992</span>
+                    <span>0.999</span>
+                </div>
+                <input type="number" id="scale-min-input" min="0.98" max="0.999" step="0.001" value="0.992">
+            </div>
+
+            <div class="control-group">
+                <label>縮放最大值</label>
+                <input type="range" id="scale-max-slider" min="1" max="1.01" step="0.001" value="1">
+                <div class="value-display">
+                    <span>1</span>
+                    <span id="scale-max-value">1</span>
+                    <span>1.01</span>
+                </div>
+                <input type="number" id="scale-max-input" min="1" max="1.01" step="0.001" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>緩動曲線 X1</label>
+                <input type="range" id="ease-x1-slider" min="0" max="1" step="0.01" value="0.45">
+                <div class="value-display">
+                    <span>0</span>
+                    <span id="ease-x1-value">0.45</span>
+                    <span>1</span>
+                </div>
+                <input type="number" id="ease-x1-input" min="0" max="1" step="0.01" value="0.45">
+            </div>
+
+            <div class="control-group">
+                <label>緩動曲線 Y1</label>
+                <input type="range" id="ease-y1-slider" min="0" max="1" step="0.01" value="0.05">
+                <div class="value-display">
+                    <span>0</span>
+                    <span id="ease-y1-value">0.05</span>
+                    <span>1</span>
+                </div>
+                <input type="number" id="ease-y1-input" min="0" max="1" step="0.01" value="0.05">
+            </div>
+
+            <div class="control-group">
+                <label>緩動曲線 X2</label>
+                <input type="range" id="ease-x2-slider" min="0" max="1" step="0.01" value="0.55">
+                <div class="value-display">
+                    <span>0</span>
+                    <span id="ease-x2-value">0.55</span>
+                    <span>1</span>
+                </div>
+                <input type="number" id="ease-x2-input" min="0" max="1" step="0.01" value="0.55">
+            </div>
+
+            <div class="control-group">
+                <label>緩動曲線 Y2</label>
+                <input type="range" id="ease-y2-slider" min="0" max="1" step="0.01" value="0.95">
+                <div class="value-display">
+                    <span>0</span>
+                    <span id="ease-y2-value">0.95</span>
+                    <span>1</span>
+                </div>
+                <input type="number" id="ease-y2-input" min="0" max="1" step="0.01" value="0.95">
+            </div>
+
+            <h2 style="margin-top: 30px; margin-bottom: 25px; border-top: 2px solid rgba(255, 255, 255, 0.2); padding-top: 20px;">發光效果調整</h2>
+
+            <div class="control-group">
+                <label>發光顏色</label>
+                <input type="color" id="glow-color-input" value="#ffffff" style="width: 100%; height: 40px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer;">
+            </div>
+
+            <div class="control-group">
+                <label>發光模糊度（最小值）</label>
+                <input type="range" id="glow-blur-min-slider" min="0" max="30" step="1" value="8">
+                <div class="value-display">
+                    <span>0px</span>
+                    <span id="glow-blur-min-value">8px</span>
+                    <span>30px</span>
+                </div>
+                <input type="number" id="glow-blur-min-input" min="0" max="30" step="1" value="8">
+            </div>
+
+            <div class="control-group">
+                <label>發光模糊度（最大值）</label>
+                <input type="range" id="glow-blur-max-slider" min="0" max="50" step="1" value="20">
+                <div class="value-display">
+                    <span>0px</span>
+                    <span id="glow-blur-max-value">20px</span>
+                    <span>50px</span>
+                </div>
+                <input type="number" id="glow-blur-max-input" min="0" max="50" step="1" value="20">
+            </div>
+
+            <div class="control-group">
+                <label>發光強度（最小值）</label>
+                <input type="range" id="glow-opacity-min-slider" min="0" max="1" step="0.05" value="0.3">
+                <div class="value-display">
+                    <span>0</span>
+                    <span id="glow-opacity-min-value">0.3</span>
+                    <span>1</span>
+                </div>
+                <input type="number" id="glow-opacity-min-input" min="0" max="1" step="0.05" value="0.3">
+            </div>
+
+            <div class="control-group">
+                <label>發光強度（最大值）</label>
+                <input type="range" id="glow-opacity-max-slider" min="0" max="1" step="0.05" value="0.8">
+                <div class="value-display">
+                    <span>0</span>
+                    <span id="glow-opacity-max-value">0.8</span>
+                    <span>1</span>
+                </div>
+                <input type="number" id="glow-opacity-max-input" min="0" max="1" step="0.05" value="0.8">
+            </div>
+
+            <button id="reset-btn">重置為默認值</button>
+
+            <div class="code-output">
+                <h3>生成的 CSS 代碼：</h3>
+                <pre id="css-code"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 獲取所有控制元素
+        const durationSlider = document.getElementById('duration-slider');
+        const durationInput = document.getElementById('duration-input');
+        const durationValue = document.getElementById('duration-value');
+
+        const opacityMinSlider = document.getElementById('opacity-min-slider');
+        const opacityMinInput = document.getElementById('opacity-min-input');
+        const opacityMinValue = document.getElementById('opacity-min-value');
+
+        const opacityMaxSlider = document.getElementById('opacity-max-slider');
+        const opacityMaxInput = document.getElementById('opacity-max-input');
+        const opacityMaxValue = document.getElementById('opacity-max-value');
+
+        const scaleMinSlider = document.getElementById('scale-min-slider');
+        const scaleMinInput = document.getElementById('scale-min-input');
+        const scaleMinValue = document.getElementById('scale-min-value');
+
+        const scaleMaxSlider = document.getElementById('scale-max-slider');
+        const scaleMaxInput = document.getElementById('scale-max-input');
+        const scaleMaxValue = document.getElementById('scale-max-value');
+
+        const easeX1Slider = document.getElementById('ease-x1-slider');
+        const easeX1Input = document.getElementById('ease-x1-input');
+        const easeX1Value = document.getElementById('ease-x1-value');
+
+        const easeY1Slider = document.getElementById('ease-y1-slider');
+        const easeY1Input = document.getElementById('ease-y1-input');
+        const easeY1Value = document.getElementById('ease-y1-value');
+
+        const easeX2Slider = document.getElementById('ease-x2-slider');
+        const easeX2Input = document.getElementById('ease-x2-input');
+        const easeX2Value = document.getElementById('ease-x2-value');
+
+        const easeY2Slider = document.getElementById('ease-y2-slider');
+        const easeY2Input = document.getElementById('ease-y2-input');
+        const easeY2Value = document.getElementById('ease-y2-value');
+
+        const glowColorInput = document.getElementById('glow-color-input');
+        const glowBlurMinSlider = document.getElementById('glow-blur-min-slider');
+        const glowBlurMinInput = document.getElementById('glow-blur-min-input');
+        const glowBlurMinValue = document.getElementById('glow-blur-min-value');
+        const glowBlurMaxSlider = document.getElementById('glow-blur-max-slider');
+        const glowBlurMaxInput = document.getElementById('glow-blur-max-input');
+        const glowBlurMaxValue = document.getElementById('glow-blur-max-value');
+        const glowOpacityMinSlider = document.getElementById('glow-opacity-min-slider');
+        const glowOpacityMinInput = document.getElementById('glow-opacity-min-input');
+        const glowOpacityMinValue = document.getElementById('glow-opacity-min-value');
+        const glowOpacityMaxSlider = document.getElementById('glow-opacity-max-slider');
+        const glowOpacityMaxInput = document.getElementById('glow-opacity-max-input');
+        const glowOpacityMaxValue = document.getElementById('glow-opacity-max-value');
+
+        const poemText = document.getElementById('poem-text');
+        const cssCode = document.getElementById('css-code');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // 將顏色轉換為 RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // 更新動畫
+        function updateAnimation() {
+            const duration = parseFloat(durationSlider.value);
+            const opacityMin = parseFloat(opacityMinSlider.value);
+            const opacityMax = parseFloat(opacityMaxSlider.value);
+            const scaleMin = parseFloat(scaleMinSlider.value);
+            const scaleMax = parseFloat(scaleMaxSlider.value);
+            const easeX1 = parseFloat(easeX1Slider.value);
+            const easeY1 = parseFloat(easeY1Slider.value);
+            const easeX2 = parseFloat(easeX2Slider.value);
+            const easeY2 = parseFloat(easeY2Slider.value);
+            
+            // 發光效果參數
+            const glowColor = glowColorInput.value;
+            const glowBlurMin = parseFloat(glowBlurMinSlider.value);
+            const glowBlurMax = parseFloat(glowBlurMaxSlider.value);
+            const glowOpacityMin = parseFloat(glowOpacityMinSlider.value);
+            const glowOpacityMax = parseFloat(glowOpacityMaxSlider.value);
+            
+            const rgb = hexToRgb(glowColor);
+            const glowColorRgb = rgb ? `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` : glowColor;
+            
+            // 生成 text-shadow
+            const glowShadowMin = `0 0 ${glowBlurMin}px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${glowOpacityMin}), 0 0 ${glowBlurMin * 1.5}px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${glowOpacityMin * 0.6})`;
+            const glowShadowMax = `0 0 ${glowBlurMax}px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${glowOpacityMax}), 0 0 ${glowBlurMax * 1.5}px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${glowOpacityMax * 0.6})`;
+
+            // 設置 CSS 變量
+            poemText.style.setProperty('--duration', `${duration}s`);
+            poemText.style.setProperty('--opacity-min', opacityMin);
+            poemText.style.setProperty('--opacity-max', opacityMax);
+            poemText.style.setProperty('--scale-min', scaleMin);
+            poemText.style.setProperty('--scale-max', scaleMax);
+            poemText.style.setProperty('--glow-shadow-min', glowShadowMin);
+            poemText.style.setProperty('--glow-shadow-max', glowShadowMax);
+            poemText.style.animationTimingFunction = `cubic-bezier(${easeX1}, ${easeY1}, ${easeX2}, ${easeY2})`;
+
+            // 更新顯示值
+            durationValue.textContent = `${duration}秒`;
+            opacityMinValue.textContent = opacityMin.toFixed(2);
+            opacityMaxValue.textContent = opacityMax.toFixed(2);
+            scaleMinValue.textContent = scaleMin.toFixed(3);
+            scaleMaxValue.textContent = scaleMax.toFixed(3);
+            easeX1Value.textContent = easeX1.toFixed(2);
+            easeY1Value.textContent = easeY1.toFixed(2);
+            easeX2Value.textContent = easeX2.toFixed(2);
+            easeY2Value.textContent = easeY2.toFixed(2);
+            glowBlurMinValue.textContent = `${glowBlurMin}px`;
+            glowBlurMaxValue.textContent = `${glowBlurMax}px`;
+            glowOpacityMinValue.textContent = glowOpacityMin.toFixed(2);
+            glowOpacityMaxValue.textContent = glowOpacityMax.toFixed(2);
+
+            // 生成 CSS 代碼
+            const css = `/* 呼吸動畫關鍵幀 - 模擬自然呼吸節奏 */
+/* ${duration}秒一個週期，每分鐘約${Math.round(60 / duration)}次 */
+@keyframes breathe {
+  0% {
+    opacity: ${opacityMin};
+    transform: scale(${scaleMin});
+    text-shadow: ${glowShadowMin};
+  }
+  33% {
+    opacity: ${opacityMax};
+    transform: scale(${scaleMax});
+    text-shadow: ${glowShadowMax};
+  }
+  100% {
+    opacity: ${opacityMin};
+    transform: scale(${scaleMin});
+    text-shadow: ${glowShadowMin};
+  }
+}
+
+.poem-text {
+  /* 其他樣式... */
+  animation: breathe ${duration}s ease-in-out infinite;
+  animation-timing-function: cubic-bezier(${easeX1}, ${easeY1}, ${easeX2}, ${easeY2});
+  will-change: opacity, transform, text-shadow;
+  transform-origin: center center;
+}`;
+
+            cssCode.textContent = css;
+        }
+
+        // 同步滑塊和輸入框
+        function syncSliderInput(slider, input, valueDisplay) {
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+                if (valueDisplay) {
+                    const val = parseFloat(slider.value);
+                    if (slider.id.includes('duration')) {
+                        valueDisplay.textContent = `${val}秒`;
+                    } else if (slider.id.includes('glow-blur')) {
+                        valueDisplay.textContent = `${val}px`;
+                    } else if (slider.id.includes('opacity') || slider.id.includes('ease') || slider.id.includes('glow-opacity')) {
+                        valueDisplay.textContent = val.toFixed(2);
+                    } else {
+                        valueDisplay.textContent = val.toFixed(3);
+                    }
+                }
+                updateAnimation();
+            });
+
+            input.addEventListener('input', () => {
+                const val = parseFloat(input.value);
+                const min = parseFloat(input.min);
+                const max = parseFloat(input.max);
+                if (val >= min && val <= max) {
+                    slider.value = val;
+                    if (valueDisplay) {
+                        if (slider.id.includes('duration')) {
+                            valueDisplay.textContent = `${val}秒`;
+                        } else if (slider.id.includes('glow-blur')) {
+                            valueDisplay.textContent = `${val}px`;
+                        } else if (slider.id.includes('opacity') || slider.id.includes('ease') || slider.id.includes('glow-opacity')) {
+                            valueDisplay.textContent = val.toFixed(2);
+                        } else {
+                            valueDisplay.textContent = val.toFixed(3);
+                        }
+                    }
+                    updateAnimation();
+                }
+            });
+        }
+        
+        // 同步顏色選擇器
+        glowColorInput.addEventListener('input', () => {
+            updateAnimation();
+        });
+
+        // 綁定所有控制
+        syncSliderInput(durationSlider, durationInput, durationValue);
+        syncSliderInput(opacityMinSlider, opacityMinInput, opacityMinValue);
+        syncSliderInput(opacityMaxSlider, opacityMaxInput, opacityMaxValue);
+        syncSliderInput(scaleMinSlider, scaleMinInput, scaleMinValue);
+        syncSliderInput(scaleMaxSlider, scaleMaxInput, scaleMaxValue);
+        syncSliderInput(easeX1Slider, easeX1Input, easeX1Value);
+        syncSliderInput(easeY1Slider, easeY1Input, easeY1Value);
+        syncSliderInput(easeX2Slider, easeX2Input, easeX2Value);
+        syncSliderInput(easeY2Slider, easeY2Input, easeY2Value);
+        syncSliderInput(glowBlurMinSlider, glowBlurMinInput, glowBlurMinValue);
+        syncSliderInput(glowBlurMaxSlider, glowBlurMaxInput, glowBlurMaxValue);
+        syncSliderInput(glowOpacityMinSlider, glowOpacityMinInput, glowOpacityMinValue);
+        syncSliderInput(glowOpacityMaxSlider, glowOpacityMaxInput, glowOpacityMaxValue);
+
+        // 重置按鈕
+        resetBtn.addEventListener('click', () => {
+            durationSlider.value = 5.5;
+            durationInput.value = 5.5;
+            opacityMinSlider.value = 0.92;
+            opacityMinInput.value = 0.92;
+            opacityMaxSlider.value = 1;
+            opacityMaxInput.value = 1;
+            scaleMinSlider.value = 0.985;
+            scaleMinInput.value = 0.985;
+            scaleMaxSlider.value = 1.008;
+            scaleMaxInput.value = 1.008;
+            easeX1Slider.value = 0.45;
+            easeX1Input.value = 0.45;
+            easeY1Slider.value = 0.05;
+            easeY1Input.value = 0.05;
+            easeX2Slider.value = 0.55;
+            easeX2Input.value = 0.55;
+            easeY2Slider.value = 0.95;
+            easeY2Input.value = 0.95;
+            glowColorInput.value = '#ffffff';
+            glowBlurMinSlider.value = 8;
+            glowBlurMinInput.value = 8;
+            glowBlurMaxSlider.value = 20;
+            glowBlurMaxInput.value = 20;
+            glowOpacityMinSlider.value = 0.3;
+            glowOpacityMinInput.value = 0.3;
+            glowOpacityMaxSlider.value = 0.8;
+            glowOpacityMaxInput.value = 0.8;
+            updateAnimation();
+        });
+
+        // 初始化
+        updateAnimation();
+    </script>
+</body>
+</html>
+
