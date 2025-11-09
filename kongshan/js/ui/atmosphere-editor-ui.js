@@ -183,6 +183,12 @@ export function hideAtmosphereEditor() {
     cancelAutoPreview();
     stopRecording(true);
     cleanupRecordingState();
+    
+    // 停止所有正在播放的音效
+    if (window.AppState && window.AppState.soundMixer) {
+      window.AppState.soundMixer.stopAll();
+    }
+    
     editor.classList.remove('visible');
     setTimeout(() => editor.remove(), 300);
   }
