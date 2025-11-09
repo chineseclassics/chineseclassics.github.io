@@ -257,5 +257,42 @@ export class AudioEngine {
     }
     return this.masterGainNode;
   }
+
+  /**
+   * 完全關閉音頻引擎
+   * 停止所有音效並關閉 AudioContext
+   */
+  async close() {
+    try {
+      // 停止所有音效
+      this.stopAll();
+      
+      // 斷開主音量節點
+      if (this.masterGainNode) {
+        try {
+          this.masterGainNode.disconnect();
+        } catch (error) {
+          // 忽略斷開錯誤
+        }
+        this.masterGainNode = null;
+      }
+      
+      // 關閉 AudioContext
+      if (this.audioContext) {
+        if (this.audioContext.state !== 'closed') {
+          await this.audioContext.close();
+        }
+        this.audioContext = null;
+      }
+      
+      // 清理緩存
+      this.buffers.clear();
+      this.initialized = false;
+      
+      console.log('🔇 音頻引擎已關閉');
+    } catch (error) {
+      console.warn('關閉音頻引擎時發生錯誤:', error);
+    }
+  }
 }
 

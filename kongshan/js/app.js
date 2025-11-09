@@ -96,6 +96,28 @@ function resetAtmosphereEnvironment() {
 }
 
 /**
+ * 完全清理音效和音頻資源
+ * 用於頁面卸載時確保音效完全停止
+ */
+async function cleanupAudioResources() {
+  try {
+    // 清理音效混音器
+    if (AppState.soundMixer) {
+      AppState.soundMixer.clear();
+    }
+    
+    // 關閉音頻引擎
+    if (AppState.audioEngine) {
+      await AppState.audioEngine.close();
+    }
+    
+    console.log('✅ 音頻資源已清理');
+  } catch (error) {
+    console.warn('清理音頻資源時發生錯誤:', error);
+  }
+}
+
+/**
  * 更新太虛幻境切換器可見性
  */
 function updateAppSwitcherVisibility() {
@@ -1504,7 +1526,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 設置頁面卸載和可見性監聽器，確保音效正確清理
+  setupPageUnloadListeners();
 });
+
+/**
+ * 設置頁面卸載和可見性監聽器
+ * 確保在頁面卸載或隱藏時清理音效
+ */
+function setupPageUnloadListeners() {
+  // 頁面卸載事件（beforeunload - 同步清理）
+  window.addEventListener('beforeunload', () => {
+    // beforeunload 中只能執行同步操作
+    if (AppState.soundMixer) {
+      AppState.soundMixer.stopAll();
+    }
+    if (AppState.audioEngine) {
+      AppState.audioEngine.stopAll();
+    }
+  });
+
+  // 頁面卸載事件（pagehide - 支持異步清理）
+  window.addEventListener('pagehide', (event) => {
+    // pagehide 支持異步操作，但時間有限
+    // 使用 sendBeacon 或同步清理確保執行
+    cleanupAudioResources().catch(() => {
+      // 如果異步失敗，至少同步停止
+      if (AppState.soundMixer) {
+        AppState.soundMixer.stopAll();
+      }
+      if (AppState.audioEngine) {
+        AppState.audioEngine.stopAll();
+      }
+    });
+  });
+
+  // 頁面可見性變化（當頁面切換到後台時暫停音效）
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // 頁面隱藏時清理音效
+      resetAtmosphereEnvironment();
+      console.log('📱 頁面已隱藏，已清理音效');
+    }
+  });
+
+  console.log('✅ 頁面卸載監聽器已設置');
+}
 
 // 導出全局狀態（用於調試）
 window.AppState = AppState;
