@@ -47,7 +47,6 @@ export async function renderAdminLogs(container, { adminManager }) {
       <header class="admin-section-header">
         <div>
           <h2 class="admin-section-title">操作日誌</h2>
-          <p class="admin-description">查看所有管理員的操作記錄，支持按操作類型和目標類型篩選。</p>
         </div>
         <div class="admin-inline-actions">
           <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="refresh">

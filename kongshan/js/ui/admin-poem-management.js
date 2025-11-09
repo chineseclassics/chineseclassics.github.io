@@ -20,7 +20,6 @@ export async function renderPoemManagement(container, { adminManager, getCurrent
       <header class="admin-section-header">
         <div>
           <h2 class="admin-section-title">詩句庫管理</h2>
-          <p class="admin-description">維護系統中的詩篇，新增或調整後會立即對旅人顯示。</p>
         </div>
         <div class="admin-inline-actions">
           <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="refresh">

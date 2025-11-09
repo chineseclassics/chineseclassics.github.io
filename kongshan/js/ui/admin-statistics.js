@@ -22,7 +22,6 @@ export async function renderStatistics(container, { adminManager }) {
       <header class="admin-section-header">
         <div>
           <h2 class="admin-section-title">數據統計</h2>
-          <p class="admin-description">查看空山的數據概覽與趨勢分析，時間範圍以月為單位。</p>
         </div>
         <div class="admin-inline-actions">
           <label for="statistics-month-select" class="sr-only">選擇月份</label>

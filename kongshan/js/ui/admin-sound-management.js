@@ -21,7 +21,6 @@ export async function renderSoundManagement(container, { adminManager, getCurren
       <header class="admin-section-header">
         <div>
           <h2 class="admin-section-title">系統音效庫</h2>
-          <p class="admin-description">管理空山內建音效及公開的旅人音效，可新增、編輯或刪除音效。刪除後將一併移除使用該音效的聲色意境。</p>
         </div>
         <div class="admin-inline-actions">
           <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="refresh">

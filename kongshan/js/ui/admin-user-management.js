@@ -21,7 +21,6 @@ export async function renderUserManagement(container, { adminManager, getCurrent
       <header class="admin-section-header">
         <div>
           <h2 class="admin-section-title">用戶管理</h2>
-          <p class="admin-description">管理空山的旅人帳號。刪除用戶時，其創作的聲色意境將保留但匿名化處理。僅超級管理員可任命或撤銷管理員權限。</p>
         </div>
         <div class="admin-inline-actions">
           <button class="admin-btn admin-btn-secondary admin-btn-small" type="button" data-action="refresh">
