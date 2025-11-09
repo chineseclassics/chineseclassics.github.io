@@ -347,48 +347,19 @@ export async function renderSoundManagement(container, { adminManager, getCurren
             <input type="text" id="sound-name-input" class="admin-form-input" maxlength="120" required placeholder="例如：夜雨松風">
           </div>
           <div class="admin-form-group">
-            <label class="admin-form-label" for="sound-description-input">簡短描述（選填）</label>
-            <textarea id="sound-description-input" class="admin-form-textarea" rows="3" placeholder="介紹音效的氛圍、使用情境等"></textarea>
+            <label class="admin-form-label" for="sound-file-input">${isEdit ? '上傳音效文件（選填，留空則保留原文件）' : '上傳音效文件（必填）'}</label>
+            <input type="file" id="sound-file-input" class="admin-form-input" accept="audio/*" ${isEdit ? '' : 'required'}>
+            <div class="admin-form-hint">支持 MP3、WAV、OGG 等音頻格式。上傳後將自動保存到 system/ 路徑，時長會自動解析。</div>
           </div>
           <div class="admin-form-group">
-            <label class="admin-form-label" for="sound-url-input">音效網址 / Supabase 公開網址</label>
-            <input type="url" id="sound-url-input" class="admin-form-input" placeholder="https://... 或上傳文件">
-            <div class="admin-form-hint">或直接上傳音效文件到 Supabase Storage</div>
-          </div>
-          <div class="admin-form-group">
-            <label class="admin-form-label" for="sound-file-input">上傳音效文件（選填）</label>
-            <input type="file" id="sound-file-input" class="admin-form-input" accept="audio/*">
-            <div class="admin-form-hint">支持 MP3、WAV、OGG 等音頻格式。上傳後將自動保存到 system/ 路徑。</div>
-          </div>
-          <div class="admin-form-group admin-form-dual">
-            <div>
-              <label class="admin-form-label" for="sound-duration-input">時長（秒，選填）</label>
-              <input type="number" id="sound-duration-input" class="admin-form-input" min="0" step="1" placeholder="例如：120">
-            </div>
-            <div>
-              <label class="admin-form-label" for="sound-tags-input">標籤（以逗號分隔，可留空）</label>
-              <input type="text" id="sound-tags-input" class="admin-form-input" placeholder="雨聲, 森林, 夜晚">
-            </div>
-          </div>
-          <div class="admin-form-group admin-form-dual">
-            <div>
-              <label class="admin-form-label" for="sound-source-input">來源</label>
-              <select id="sound-source-input" class="admin-form-select">
-                <option value="system">系統音效</option>
-                <option value="user">旅人音效</option>
-              </select>
-            </div>
-            <div>
-              <label class="admin-form-label" for="sound-status-input">狀態</label>
-              <select id="sound-status-input" class="admin-form-select">
-                <option value="approved">已公開</option>
-                <option value="pending">待審核</option>
-                <option value="private">僅管理員可見</option>
-                <option value="rejected">已退回</option>
-              </select>
-            </div>
+            <label class="admin-form-label" for="sound-tags-input">標籤（以逗號分隔，可留空）</label>
+            <input type="text" id="sound-tags-input" class="admin-form-input" placeholder="雨聲, 森林, 夜晚">
           </div>
           <p class="admin-error-text admin-hidden" data-role="form-error"></p>
+          <div id="sound-duration-info" class="admin-form-hint admin-hidden" style="color: #666; margin-top: -10px; margin-bottom: 10px;">
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
+            正在解析音頻時長...
+          </div>
           <div class="admin-modal-actions">
             <button type="button" class="admin-btn admin-btn-secondary admin-btn-small" data-action="cancel">取消</button>
             <button type="submit" class="admin-btn admin-btn-primary admin-btn-small">${isEdit ? '儲存變更' : '新增音效'}</button>
@@ -403,33 +374,87 @@ export async function renderSoundManagement(container, { adminManager, getCurren
   const errorEl = overlay.querySelector('[data-role="form-error"]');
 
   const nameInput = overlay.querySelector('#sound-name-input');
-  const descriptionInput = overlay.querySelector('#sound-description-input');
-  const urlInput = overlay.querySelector('#sound-url-input');
   const fileInput = overlay.querySelector('#sound-file-input');
-  const durationInput = overlay.querySelector('#sound-duration-input');
   const tagsInput = overlay.querySelector('#sound-tags-input');
-  const sourceSelect = overlay.querySelector('#sound-source-input');
-  const statusSelect = overlay.querySelector('#sound-status-input');
+  const durationInfo = overlay.querySelector('#sound-duration-info');
+  
+  let detectedDuration = null; // 自動解析的時長
 
   if (isEdit) {
     nameInput.value = sound.name || '';
-    descriptionInput.value = sound.description || '';
-    urlInput.value = sound.file_url || '';
-    durationInput.value = Number.isFinite(sound.duration) ? String(sound.duration) : '';
     tagsInput.value = Array.isArray(sound.tags) ? sound.tags.join(', ') : '';
-    sourceSelect.value = (sound.source || 'system');
-    statusSelect.value = (sound.status || 'approved');
-  } else {
-    sourceSelect.value = 'system';
-    statusSelect.value = 'approved';
+    detectedDuration = Number.isFinite(sound.duration) ? sound.duration : null;
   }
 
-  // 文件上傳時，清空 URL 輸入框
-  fileInput?.addEventListener('change', () => {
+  // 自動解析音頻時長
+  async function detectAudioDuration(audioSource) {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      
+      audio.addEventListener('loadedmetadata', () => {
+        const duration = Math.round(audio.duration);
+        if (duration && duration > 0 && isFinite(duration)) {
+          resolve(duration);
+        } else {
+          resolve(null);
+        }
+      });
+      
+      audio.addEventListener('error', () => {
+        resolve(null);
+      });
+      
+      // 設置超時（10秒）
+      setTimeout(() => {
+        resolve(null);
+      }, 10000);
+      
+      if (audioSource instanceof File) {
+        // 文件對象
+        audio.src = URL.createObjectURL(audioSource);
+      } else if (typeof audioSource === 'string') {
+        // URL 字符串
+        audio.src = audioSource;
+      } else {
+        resolve(null);
+      }
+    });
+  }
+
+  // 顯示時長解析狀態
+  function showDurationInfo(text, isError = false) {
+    if (durationInfo) {
+      durationInfo.textContent = text;
+      durationInfo.style.color = isError ? '#dc3545' : '#666';
+      durationInfo.classList.remove('admin-hidden');
+    }
+  }
+
+  function hideDurationInfo() {
+    if (durationInfo) {
+      durationInfo.classList.add('admin-hidden');
+    }
+  }
+
+  // 文件上傳時，自動解析時長
+  fileInput?.addEventListener('change', async () => {
     if (fileInput.files && fileInput.files.length > 0) {
-      urlInput.required = false;
+      const file = fileInput.files[0];
+      
+      showDurationInfo('正在解析音頻時長...');
+      detectedDuration = await detectAudioDuration(file);
+      
+      if (detectedDuration) {
+        showDurationInfo(`✓ 已解析時長：${formatDuration(detectedDuration)}`);
+        // 3秒後自動隱藏
+        setTimeout(hideDurationInfo, 3000);
+      } else {
+        showDurationInfo('無法解析時長，將使用默認值', true);
+        setTimeout(hideDurationInfo, 3000);
+      }
     } else {
-      urlInput.required = true;
+      detectedDuration = null;
+      hideDurationInfo();
     }
   });
 
@@ -450,7 +475,7 @@ export async function renderSoundManagement(container, { adminManager, getCurren
     event.preventDefault();
     hideMessage(errorEl);
 
-    let fileUrl = urlInput.value.trim();
+    let fileUrl = null;
     let uploadedFilePath = null;
 
     // 如果有上傳文件，先上傳到 Supabase Storage
@@ -487,21 +512,39 @@ export async function renderSoundManagement(container, { adminManager, getCurren
         showMessage(errorEl, uploadError.message || '上傳文件時發生錯誤，請稍後再試。');
         return;
       }
+    } else {
+      // 沒有上傳新文件
+      if (!isEdit) {
+        // 新增模式：必須上傳文件
+        showMessage(errorEl, '請上傳音效文件。');
+        return;
+      } else {
+        // 編輯模式：保留原文件
+        fileUrl = sound.file_url || null;
+        if (!fileUrl) {
+          showMessage(errorEl, '請上傳音效文件或確保原文件存在。');
+          return;
+        }
+      }
     }
 
-    if (!fileUrl) {
-      showMessage(errorEl, '請提供音效網址或上傳音效文件。');
-      return;
+    // 確定最終使用的時長
+    // 如果用戶上傳了新文件，使用自動解析的時長
+    // 否則（編輯模式且未上傳新文件），保留原有時長
+    let finalDuration = detectedDuration;
+    if (isEdit && sound && !fileInput?.files?.length) {
+      // 編輯模式且未上傳新文件，保留原有時長
+      finalDuration = Number.isFinite(sound.duration) ? sound.duration : null;
     }
 
     const payload = {
       name: nameInput.value.trim(),
-      description: descriptionInput.value.trim() || null,
+      description: null,
       file_url: fileUrl,
-      duration: parseDuration(durationInput.value),
+      duration: finalDuration,
       tags: parseTags(tagsInput.value),
-      source: sourceSelect.value || 'system',
-      status: statusSelect.value || 'approved'
+      source: 'system',
+      status: 'approved'
     };
 
     if (!payload.name) {
