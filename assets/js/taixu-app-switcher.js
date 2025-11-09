@@ -159,6 +159,16 @@
             description: '基於欽定詞譜的古典填詞工具，用傳統格律創作你的詞章，還能生成精美的古風壁紙'
         },
         {
+            id: 'kongshan',
+            category: 'qiangu',
+            name: '空山',
+            icon: 'fas fa-mountain-sun',
+            gradient: 'from-emerald-600 to-green-400',
+            url: '/kongshan/index.html',
+            description: '以聲音與色彩編織詩歌意境，錄音混音、自訂背景共創聲色兼備的古典體驗',
+            isNew: true
+        },
+        {
             id: 'shicizuju',
             category: 'qiangu',
             name: '詩詞組句遊戲',
