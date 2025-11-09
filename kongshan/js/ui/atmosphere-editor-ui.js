@@ -14,6 +14,9 @@ const MIME_CANDIDATES = [
   'audio/webm'
 ];
 
+// 分頁配置
+const ITEMS_PER_PAGE = 10;
+
 let mediaRecorder = null;
 let recordingStream = null;
 let recordingChunks = [];
@@ -76,6 +79,9 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
         <div id="sound-selector" class="sound-selector">
           <!-- 音效列表將動態生成 -->
         </div>
+        <div id="sound-selector-pagination" class="pagination-container">
+          <!-- 分頁控件將動態生成 -->
+        </div>
       </div>
 
       <!-- 錄音功能 -->
@@ -87,6 +93,9 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
         <!-- 已發布的旅人錄音列表 -->
         <div id="traveler-recordings-selector" class="sound-selector" style="margin-bottom: 12px;">
           <!-- 旅人錄音卡片將動態生成 -->
+        </div>
+        <div id="traveler-recordings-pagination" class="pagination-container">
+          <!-- 分頁控件將動態生成 -->
         </div>
         <div class="recording-inline">
           <button class="recording-toggle" id="recording-toggle-btn" type="button" aria-label="開始錄音">
@@ -197,11 +206,159 @@ export function hideAtmosphereEditor(shouldStopSounds = true) {
 }
 
 /**
- * 初始化音效選擇器（只加載系統音效）
+ * 創建分頁控件
+ * @param {number} currentPage - 當前頁碼（從 1 開始）
+ * @param {number} totalPages - 總頁數
+ * @param {function} onPageChange - 頁碼變更回調函數
+ * @returns {HTMLElement} 分頁控件元素
+ */
+function createPagination(currentPage, totalPages, onPageChange) {
+  const pagination = document.createElement('div');
+  pagination.className = 'pagination';
+  
+  if (totalPages <= 1) {
+    // 只有一頁或沒有內容時，不顯示分頁控件
+    return pagination;
+  }
+
+  // 上一頁按鈕
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'pagination-btn pagination-btn-nav';
+  prevBtn.innerHTML = '<i class="fas fa-chevron-left" aria-hidden="true"></i>';
+  prevBtn.setAttribute('aria-label', '上一頁');
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+    }
+  });
+  pagination.appendChild(prevBtn);
+
+  // 頁碼按鈕
+  const pageNumbers = [];
+  
+  // 計算顯示的頁碼範圍
+  let startPage = Math.max(1, currentPage - 1);
+  let endPage = Math.min(totalPages, currentPage + 1);
+  
+  // 確保至少顯示 3 個頁碼（如果總頁數足夠）
+  if (endPage - startPage < 2 && totalPages >= 3) {
+    if (startPage === 1) {
+      endPage = Math.min(3, totalPages);
+    } else if (endPage === totalPages) {
+      startPage = Math.max(1, totalPages - 2);
+    }
+  }
+
+  // 第一頁
+  if (startPage > 1) {
+    const firstBtn = document.createElement('button');
+    firstBtn.className = 'pagination-btn pagination-btn-page';
+    firstBtn.textContent = '1';
+    firstBtn.addEventListener('click', () => onPageChange(1));
+    pagination.appendChild(firstBtn);
+    
+    if (startPage > 2) {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'pagination-ellipsis';
+      ellipsis.textContent = '...';
+      pagination.appendChild(ellipsis);
+    }
+  }
+
+  // 中間頁碼
+  for (let i = startPage; i <= endPage; i++) {
+    const pageBtn = document.createElement('button');
+    pageBtn.className = 'pagination-btn pagination-btn-page';
+    if (i === currentPage) {
+      pageBtn.classList.add('active');
+    }
+    pageBtn.textContent = i.toString();
+    pageBtn.addEventListener('click', () => onPageChange(i));
+    pagination.appendChild(pageBtn);
+  }
+
+  // 最後一頁
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'pagination-ellipsis';
+      ellipsis.textContent = '...';
+      pagination.appendChild(ellipsis);
+    }
+    
+    const lastBtn = document.createElement('button');
+    lastBtn.className = 'pagination-btn pagination-btn-page';
+    lastBtn.textContent = totalPages.toString();
+    lastBtn.addEventListener('click', () => onPageChange(totalPages));
+    pagination.appendChild(lastBtn);
+  }
+
+  // 下一頁按鈕
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'pagination-btn pagination-btn-nav';
+  nextBtn.innerHTML = '<i class="fas fa-chevron-right" aria-hidden="true"></i>';
+  nextBtn.setAttribute('aria-label', '下一頁');
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+    }
+  });
+  pagination.appendChild(nextBtn);
+
+  return pagination;
+}
+
+/**
+ * 渲染分頁內容
+ * @param {HTMLElement} container - 容器元素
+ * @param {Array} items - 所有項目
+ * @param {number} currentPage - 當前頁碼
+ * @param {function} createItemElement - 創建單個項目的函數
+ */
+function renderPaginatedItems(container, items, currentPage, createItemElement) {
+  container.innerHTML = '';
+  
+  if (items.length === 0) {
+    container.innerHTML = '<div class="loading-text">暫無內容</div>';
+    return;
+  }
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, items.length);
+  const pageItems = items.slice(startIndex, endIndex);
+
+  // 獲取已選中的音效 ID 列表
+  const selectedContainer = document.getElementById('selected-sounds');
+  const selectedSoundIds = selectedContainer 
+    ? Array.from(selectedContainer.querySelectorAll('.selected-sound-item'))
+        .map(item => item.dataset.soundId)
+    : [];
+
+  pageItems.forEach(item => {
+    const element = createItemElement(item);
+    // 如果該音效已選中，添加 selected 類
+    if (selectedSoundIds.includes(item.id?.toString() || item.id)) {
+      element.classList.add('selected');
+    }
+    container.appendChild(element);
+  });
+}
+
+/**
+ * 初始化音效選擇器（只加載系統音效，帶分頁）
  */
 function initializeSoundSelector() {
   const container = document.getElementById('sound-selector');
+  const paginationContainer = document.getElementById('sound-selector-pagination');
+  
+  if (!container) return Promise.resolve();
+  
   container.innerHTML = '<div class="loading-text">加載音效庫...</div>';
+  if (paginationContainer) {
+    paginationContainer.innerHTML = '';
+  }
 
   return new Promise(async (resolve) => {
     // 從數據庫加載系統音效列表
@@ -240,19 +397,36 @@ function initializeSoundSelector() {
       }
     }
     
-    // 如果數據庫中沒有音效，顯示空列表（系統音效必須從 Supabase Storage 上傳）
+    // 如果數據庫中沒有音效，顯示空列表
     if (sounds.length === 0) {
       container.innerHTML = '<div class="loading-text">暫無系統音效，請管理員上傳</div>';
+      if (paginationContainer) {
+        paginationContainer.innerHTML = '';
+      }
       resolve();
       return;
     }
 
-    container.innerHTML = '';
-    sounds.forEach(sound => {
-      const soundCard = createSoundCard(sound);
-      container.appendChild(soundCard);
-    });
+    // 初始化分頁狀態
+    let currentPage = 1;
+    const totalPages = Math.ceil(sounds.length / ITEMS_PER_PAGE);
 
+    // 渲染第一頁
+    const renderPage = (page) => {
+      currentPage = page;
+      renderPaginatedItems(container, sounds, currentPage, (sound) => createSoundCard(sound));
+      
+      // 更新分頁控件
+      if (paginationContainer) {
+        paginationContainer.innerHTML = '';
+        if (totalPages > 1) {
+          const pagination = createPagination(currentPage, totalPages, renderPage);
+          paginationContainer.appendChild(pagination);
+        }
+      }
+    };
+
+    renderPage(1);
     resolve();
   });
 }
@@ -353,32 +527,57 @@ async function loadPublishedRecordings() {
 }
 
 /**
- * 初始化旅人錄音選擇器（顯示在旅人錄音區域）
+ * 初始化旅人錄音選擇器（顯示在旅人錄音區域，帶分頁）
  */
 function initializeTravelerRecordings() {
   const container = document.getElementById('traveler-recordings-selector');
+  const paginationContainer = document.getElementById('traveler-recordings-pagination');
+  
   if (!container) {
     return;
   }
 
   container.innerHTML = '<div class="loading-text">加載旅人錄音...</div>';
+  if (paginationContainer) {
+    paginationContainer.innerHTML = '';
+  }
 
   loadPublishedRecordings().then(travelerSounds => {
-    container.innerHTML = '';
-    
+    // 如果沒有旅人錄音，顯示空狀態
     if (travelerSounds.length === 0) {
-      // 如果沒有旅人錄音，顯示空狀態（可選）
+      container.innerHTML = '';
+      if (paginationContainer) {
+        paginationContainer.innerHTML = '';
+      }
       return;
     }
 
-    // 按時間排序（最新的在前）- loadPublishedRecordings 已經按 created_at DESC 排序
-    travelerSounds.forEach(sound => {
-      const soundCard = createSoundCard(sound);
-      container.appendChild(soundCard);
-    });
+    // 初始化分頁狀態
+    let currentPage = 1;
+    const totalPages = Math.ceil(travelerSounds.length / ITEMS_PER_PAGE);
+
+    // 渲染第一頁
+    const renderPage = (page) => {
+      currentPage = page;
+      renderPaginatedItems(container, travelerSounds, currentPage, (sound) => createSoundCard(sound));
+      
+      // 更新分頁控件
+      if (paginationContainer) {
+        paginationContainer.innerHTML = '';
+        if (totalPages > 1) {
+          const pagination = createPagination(currentPage, totalPages, renderPage);
+          paginationContainer.appendChild(pagination);
+        }
+      }
+    };
+
+    renderPage(1);
   }).catch(error => {
     console.warn('初始化旅人錄音選擇器失敗:', error);
     container.innerHTML = '';
+    if (paginationContainer) {
+      paginationContainer.innerHTML = '';
+    }
   });
 }
 
