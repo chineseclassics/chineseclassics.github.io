@@ -4,10 +4,10 @@
 
 /**
  * 規範化音效文件 URL
- * 支持三種來源：
- * 1. 系統預設音效：Supabase Storage 路徑（system/）或 GitHub Pages 路徑
- * 2. 審核通過的錄音：Supabase Storage 路徑（approved/）
- * 3. 用戶上傳音效：Supabase Storage URL（pending/ 需要簽名 URL）
+ * 僅支持 Supabase Storage：
+ * 1. 系統預設音效：Storage 路徑（system/）
+ * 2. 審核通過的錄音：Storage 路徑（approved/）
+ * 3. 待審核錄音：Storage 路徑（pending/，需要簽名 URL，簽名邏輯在上層處理）
  * 
  * @param {string} fileUrl - 原始文件 URL
  * @param {object} supabaseClient - Supabase 客戶端（可選，用於構建公開 URL）
@@ -27,17 +27,17 @@ export function normalizeSoundUrl(fileUrl, supabaseClient = null) {
       const projectUrl = supabaseClient.supabaseUrl.replace('/rest/v1', '');
       return `${projectUrl}/storage/v1/object/public/kongshan_recordings/${fileUrl}`;
     }
-    // 如果沒有 supabaseClient，返回原路徑（調用方需要處理）
+    // 如果沒有 supabaseClient，返回原路徑（由上層補全或避免直接請求）
     return fileUrl;
   }
   
-  // 如果是相對路徑（GitHub Pages），確保以 / 開頭
-  if (fileUrl.startsWith('/')) {
+  // pending/ 路徑需簽名，上層負責生成簽名 URL，這裡直接返回原值以便上層識別
+  if (fileUrl.startsWith('pending/')) {
     return fileUrl;
   }
-  
-  // 如果不是以 / 開頭，添加 /kongshan/assets/sounds/ 前綴（兼容舊的 GitHub Pages 路徑）
-  return `/kongshan/assets/sounds/${fileUrl}`;
+
+  // 其他情況：不再提供 GitHub Pages 後備邏輯，直接返回（由上層決定是否處理）
+  return fileUrl;
 }
 
 /**
@@ -48,13 +48,11 @@ export function normalizeSoundUrl(fileUrl, supabaseClient = null) {
 export function isSystemSound(fileUrl) {
   if (!fileUrl) return false;
   
-  // Supabase Storage 路徑（system/）
-  if (fileUrl.startsWith('system/')) {
-    return true;
-  }
-  
-  // GitHub Pages 路徑
-  return fileUrl.startsWith('/') || fileUrl.includes('/assets/sounds/');
+  // Supabase Storage 路徑（system/）或已構建的公開 URL
+  return (
+    fileUrl.startsWith('system/') ||
+    fileUrl.includes('/storage/v1/object/public/kongshan_recordings/system/')
+  );
 }
 
 /**
@@ -70,8 +68,8 @@ export function isUserUploadedSound(fileUrl) {
     return true;
   }
   
-  // 用戶上傳音效：Supabase Storage URL（包含 supabase.co/storage）
-  return fileUrl.includes('supabase.co/storage');
+  // 用戶上傳音效：Supabase Storage URL
+  return fileUrl.includes('/storage/v1/object/');
 }
 
 /**
@@ -97,7 +95,7 @@ export function needsSignedUrl(fileUrl) {
     return false;
   }
   
-  // 其他情況（如舊的 GitHub Pages 路徑）不需要簽名
+  // 其他情況（不支援 GitHub Pages 路徑）默認不需要簽名
   return false;
 }
 

@@ -235,10 +235,10 @@ function initializeSoundSelector() {
     // 如果數據庫中沒有音效，使用默認列表（基於實際文件）
     if (sounds.length === 0) {
       sounds = [
-        { id: 'wind', name: '風聲', tags: ['自然', '寧靜'], file_url: '/kongshan/assets/sounds/wind.mp3', sourceType: 'system' },
-        { id: 'stream', name: '流水', tags: ['自然', '放鬆'], file_url: '/kongshan/assets/sounds/stream.mp3', sourceType: 'system' },
-        { id: 'birds', name: '鳥鳴', tags: ['自然', '早晨'], file_url: '/kongshan/assets/sounds/birds.mp3', sourceType: 'system' },
-        { id: 'night', name: '夜晚', tags: ['自然', '寧靜'], file_url: '/kongshan/assets/sounds/night.mp3', sourceType: 'system' }
+        { id: 'wind', name: '風聲', tags: ['自然', '寧靜'], file_url: 'system/wind.mp3', sourceType: 'system' },
+        { id: 'stream', name: '流水', tags: ['自然', '放鬆'], file_url: 'system/stream.mp3', sourceType: 'system' },
+        { id: 'birds', name: '鳥鳴', tags: ['自然', '早晨'], file_url: 'system/birds.mp3', sourceType: 'system' },
+        { id: 'night', name: '夜晚', tags: ['自然', '寧靜'], file_url: 'system/night.mp3', sourceType: 'system' }
       ];
     }
 
@@ -1315,6 +1315,19 @@ async function autoPreviewSelectedSounds() {
       }
     }
 
+    // 系統音效：將 Storage 路徑補全為公開 URL
+    if (sourceType === 'system') {
+      try {
+        const normalized = normalizeSoundUrl(fileUrl || '', window.AppState?.supabase);
+        if (normalized) {
+          fileUrl = normalized;
+          item.dataset.fileUrl = fileUrl;
+        }
+      } catch (e) {
+        // 忽略規範化錯誤
+      }
+    }
+
     if (!fileUrl) {
       console.warn(`音效 ${soundId} 缺少對應的文件 URL，略過自動播放`);
       continue;
@@ -1717,11 +1730,6 @@ async function previewAtmosphere(poem) {
               } catch (signedError) {
                 console.warn('生成錄音簽名網址失敗:', signedError);
               }
-            }
-
-            // 如果仍然沒有 file_url，且不是錄音文件，使用後備路徑（僅限系統音效）
-            if ((!fileUrl || fileUrl === '') && sourceType === 'system') {
-              fileUrl = `/kongshan/assets/sounds/${name}.mp3`;
             }
 
             return {

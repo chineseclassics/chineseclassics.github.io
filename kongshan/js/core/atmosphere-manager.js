@@ -159,7 +159,7 @@ export class AtmosphereManager {
             id: effect.id,
             name: effect.name,
             description: effect.description,
-            file_url: normalizeSoundUrl(effect.file_url),
+            file_url: normalizeSoundUrl(effect.file_url, this.supabase),
             duration: effect.duration,
             tags: effect.tags,
             volume: config.volume !== undefined ? config.volume : 1.0,
@@ -201,9 +201,9 @@ export class AtmosphereManager {
           // 優先使用數據庫中的最新 storage_path，如果沒有則使用配置中的 recording_path
           const recordingInfo = recordingsMap.get(recordingId);
           const recordingPath = recordingInfo?.storage_path || config.recording_path || '';
-          let fileUrl = config.file_url || '';
+          let fileUrl = '';
 
-          if ((!fileUrl || fileUrl === '') && recordingPath) {
+          if (recordingPath) {
             // 根據路徑判斷是否需要簽名 URL
             // approved/ 和 system/ 路徑可以直接訪問，pending/ 路徑需要簽名 URL
             if (recordingPath.startsWith('approved/') || recordingPath.startsWith('system/')) {
@@ -227,6 +227,11 @@ export class AtmosphereManager {
                 console.warn('生成錄音簽名網址失敗:', signedError);
               }
             }
+          }
+
+          // 後備：若無法根據 recording_path 構建 URL，再使用配置中的 file_url（可能是完整的 HTTP URL）
+          if (!fileUrl) {
+            fileUrl = normalizeSoundUrl(config.file_url || '', this.supabase);
           }
 
           sounds.push({
