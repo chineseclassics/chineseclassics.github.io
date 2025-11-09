@@ -42,6 +42,9 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
     window.AppState.isPreviewMode = false;
   }
 
+  // 清除之前的背景預覽（如果有的話）
+  clearBackgroundPreview();
+
   // 檢查是否已存在編輯器
   let editor = document.getElementById('atmosphere-editor');
   if (editor) {
@@ -198,6 +201,12 @@ export function hideAtmosphereEditor(shouldStopSounds = true) {
     // 預覽模式下應該保留音效播放
     if (shouldStopSounds && window.AppState && window.AppState.soundMixer) {
       window.AppState.soundMixer.stopAll();
+    }
+    
+    // 清除背景預覽，恢復默認背景
+    // 只有在非預覽模式下才清除（預覽模式下保留背景）
+    if (!window.AppState || !window.AppState.isPreviewMode) {
+      clearBackgroundPreview();
     }
     
     editor.classList.remove('visible');
@@ -1767,6 +1776,71 @@ function initializeBackgroundSelector() {
 }
 
 /**
+ * 立即應用背景配置（編輯器預覽模式）
+ * @param {string} bgId - 背景配色 ID
+ */
+function applyBackgroundPreview(bgId) {
+  if (!window.AppState || !window.AppState.backgroundRenderer) {
+    return;
+  }
+
+  // 背景配色方案映射
+  const backgroundSchemes = {
+    'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
+    'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
+    'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
+    'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
+    'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
+    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
+  };
+
+  const bgScheme = backgroundSchemes[bgId];
+  if (!bgScheme) {
+    return;
+  }
+
+  const backgroundConfig = {
+    color_scheme: {
+      id: bgId,
+      colors: bgScheme.colors,
+      direction: bgScheme.direction
+    },
+    abstract_elements: []
+  };
+
+  try {
+    const { backgroundRenderer } = window.AppState;
+    if (typeof backgroundRenderer.setConfig === 'function') {
+      backgroundRenderer.setConfig(backgroundConfig);
+      // 應用對應的文字顏色
+      applyBackgroundTextColor(backgroundConfig);
+    }
+  } catch (error) {
+    console.warn('應用背景預覽失敗:', error);
+  }
+}
+
+/**
+ * 清除背景預覽（恢復默認）
+ */
+function clearBackgroundPreview() {
+  if (!window.AppState || !window.AppState.backgroundRenderer) {
+    return;
+  }
+
+  try {
+    const { backgroundRenderer } = window.AppState;
+    if (typeof backgroundRenderer.clear === 'function') {
+      backgroundRenderer.clear();
+    }
+    // 恢復默認文字顏色
+    applyBackgroundTextColor(null);
+  } catch (error) {
+    console.warn('清除背景預覽失敗:', error);
+  }
+}
+
+/**
  * 創建背景卡片
  */
 function createBackgroundCard(background) {
@@ -1782,6 +1856,8 @@ function createBackgroundCard(background) {
   card.addEventListener('click', () => {
     document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
+    // 立即應用背景預覽
+    applyBackgroundPreview(background.id);
   });
 
   return card;
@@ -1935,10 +2011,13 @@ async function loadAtmosphereData(atmosphere) {
     if (bgCard) {
       document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
       bgCard.classList.add('selected');
+      // 立即應用背景預覽
+      applyBackgroundPreview(bgId);
     }
   } else {
-    // 如果沒有背景配置，清除所有選中狀態
+    // 如果沒有背景配置，清除所有選中狀態和背景預覽
     document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
+    clearBackgroundPreview();
   }
 }
 
