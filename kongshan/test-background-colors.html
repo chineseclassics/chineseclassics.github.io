@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景配色方案預覽測試</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background: #1a1a2e;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .control-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .preview-area {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .background-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .poem-content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        /* 呼吸動畫 */
+        @keyframes breathe {
+            0% {
+                opacity: 0.92;
+                transform: scale(0.985);
+                text-shadow: var(--glow-shadow-min);
+            }
+            33% {
+                opacity: 1;
+                transform: scale(1.008);
+                text-shadow: var(--glow-shadow-max);
+            }
+            100% {
+                opacity: 0.92;
+                transform: scale(0.985);
+                text-shadow: var(--glow-shadow-min);
+            }
+        }
+
+        .poem-text {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 3rem;
+            line-height: 2.5;
+            letter-spacing: 0.4em;
+            color: var(--poem-text-color, #fff);
+            font-weight: 400;
+            white-space: nowrap;
+            animation: breathe 8s ease-in-out infinite;
+            animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            will-change: opacity, transform, text-shadow;
+            transform-origin: center center;
+            transition: color 0.4s ease;
+        }
+
+        .info-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .info-card h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .info-card p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        .color-preview {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .color-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .text-color-box {
+            width: 60px;
+            height: 40px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>背景配色方案預覽測試</h1>
+
+        <div class="controls">
+            <button class="control-btn" data-bg="none">無背景（系統默認）</button>
+            <button class="control-btn active" data-bg="night">夜色</button>
+            <button class="control-btn" data-bg="dawn">晨曦</button>
+            <button class="control-btn" data-bg="autumn">秋色</button>
+            <button class="control-btn" data-bg="spring">春意</button>
+            <button class="control-btn" data-bg="sunset">暮色</button>
+            <button class="control-btn" data-bg="bamboo">竹林</button>
+        </div>
+
+        <div class="preview-area" id="preview-area">
+            <canvas class="background-canvas" id="background-canvas"></canvas>
+            <div class="poem-content">
+                <div class="poem-text" id="poem-text">
+                    今夕何夕<br>見此良人
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>當前背景方案</h3>
+                <p id="current-bg-name">夜色</p>
+            </div>
+            <div class="info-card">
+                <h3>背景漸變顏色</h3>
+                <div class="color-preview" id="bg-colors">
+                    <div class="color-box" style="background: #1A1A2E;"></div>
+                    <div class="color-box" style="background: #16213E;"></div>
+                </div>
+            </div>
+            <div class="info-card">
+                <h3>文字顏色</h3>
+                <div class="color-preview">
+                    <div class="text-color-box" id="text-color-box" style="background: #FFFFFF;">
+                        <span style="color: #000;">文字</span>
+                    </div>
+                    <span id="text-color-code">#FFFFFF</span>
+                </div>
+            </div>
+            <div class="info-card">
+                <h3>發光顏色</h3>
+                <div class="color-preview">
+                    <div class="text-color-box" id="glow-color-box" style="background: #FFFFFF;">
+                        <span style="color: #000;">發光</span>
+                    </div>
+                    <span id="glow-color-code">#FFFFFF</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 背景配色方案配置
+        const backgroundConfigs = {
+            'night': {
+                name: '夜色',
+                colors: ['#1A1A2E', '#16213E'],
+                direction: 'diagonal',
+                textColor: '#FFFFFF',
+                glowColor: '#FFFFFF'
+            },
+            'dawn': {
+                name: '晨曦',
+                colors: ['#FFE5B4', '#FFDAB9'],
+                direction: 'vertical',
+                textColor: '#2C3E50',
+                glowColor: '#2C3E50'
+            },
+            'autumn': {
+                name: '秋色',
+                colors: ['#2F4F4F', '#708090'],
+                direction: 'vertical',
+                textColor: '#FFFFFF',
+                glowColor: '#FFFFFF'
+            },
+            'spring': {
+                name: '春意',
+                colors: ['#E8F4F8', '#D4E8F0'],
+                direction: 'diagonal',
+                textColor: '#2C3E50',
+                glowColor: '#2C3E50'
+            },
+            'sunset': {
+                name: '暮色',
+                colors: ['#FF6B6B', '#FFA07A'],
+                direction: 'diagonal',
+                textColor: '#FFFFFF',
+                glowColor: '#FFFFFF'
+            },
+            'bamboo': {
+                name: '竹林',
+                colors: ['#2D5016', '#4A7C2E'],
+                direction: 'diagonal',
+                textColor: '#FFFFFF',
+                glowColor: '#FFFFFF'
+            }
+        };
+
+        const canvas = document.getElementById('background-canvas');
+        const ctx = canvas.getContext('2d');
+        const poemText = document.getElementById('poem-text');
+        const controlBtns = document.querySelectorAll('.control-btn');
+        const currentBgName = document.getElementById('current-bg-name');
+        const bgColors = document.getElementById('bg-colors');
+        const textColorBox = document.getElementById('text-color-box');
+        const textColorCode = document.getElementById('text-color-code');
+        const glowColorBox = document.getElementById('glow-color-box');
+        const glowColorCode = document.getElementById('glow-color-code');
+
+        // 調整 Canvas 大小
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 渲染漸變背景
+        function renderGradient(colors, direction) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            let gradient;
+            if (direction === 'diagonal') {
+                gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            } else if (direction === 'vertical') {
+                gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            } else {
+                gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            }
+            
+            colors.forEach((color, index) => {
+                gradient.addColorStop(index / (colors.length - 1), color);
+            });
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 將顏色轉換為 RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // 應用背景方案
+        function applyBackground(bgId) {
+            // 更新按鈕狀態
+            controlBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.bg === bgId) {
+                    btn.classList.add('active');
+                }
+            });
+
+            if (bgId === 'none') {
+                // 無背景：使用系統默認
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                poemText.style.setProperty('--poem-text-color', 'var(--color-text-primary, #2C3E50)');
+                poemText.style.setProperty('--poem-glow-color', 'var(--color-text-primary, #2C3E50)');
+                
+                currentBgName.textContent = '系統默認';
+                bgColors.innerHTML = '<p style="color: rgba(255,255,255,0.5);">無背景漸變</p>';
+                textColorBox.style.background = '#2C3E50';
+                textColorBox.querySelector('span').style.color = '#fff';
+                textColorCode.textContent = '系統默認';
+                glowColorBox.style.background = '#2C3E50';
+                glowColorBox.querySelector('span').style.color = '#fff';
+                glowColorCode.textContent = '系統默認';
+                
+                // 更新發光效果
+                updateGlowEffect('var(--color-text-primary, #2C3E50)');
+                return;
+            }
+
+            const config = backgroundConfigs[bgId];
+            if (!config) return;
+
+            // 渲染背景
+            renderGradient(config.colors, config.direction);
+
+            // 應用文字顏色
+            poemText.style.setProperty('--poem-text-color', config.textColor);
+            poemText.style.setProperty('--poem-glow-color', config.glowColor);
+
+            // 更新信息面板
+            currentBgName.textContent = config.name;
+            bgColors.innerHTML = config.colors.map(color => 
+                `<div class="color-box" style="background: ${color};"></div>`
+            ).join('');
+            
+            textColorBox.style.background = config.textColor;
+            // 判斷文字顏色是深色還是淺色，決定對比文字顏色
+            const rgb = hexToRgb(config.textColor);
+            const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+            textColorBox.querySelector('span').style.color = brightness > 128 ? '#000' : '#fff';
+            textColorCode.textContent = config.textColor;
+            
+            glowColorBox.style.background = config.glowColor;
+            const glowRgb = hexToRgb(config.glowColor);
+            const glowBrightness = (glowRgb.r * 299 + glowRgb.g * 587 + glowRgb.b * 114) / 1000;
+            glowColorBox.querySelector('span').style.color = glowBrightness > 128 ? '#000' : '#fff';
+            glowColorCode.textContent = config.glowColor;
+
+            // 更新發光效果
+            updateGlowEffect(config.glowColor);
+        }
+
+        // 更新發光效果
+        function updateGlowEffect(glowColor) {
+            const rgb = hexToRgb(glowColor);
+            if (!rgb) {
+                // 如果是 CSS 變量，使用默認值
+                rgb = { r: 255, g: 255, b: 255 };
+            }
+            
+            const glowShadowMin = `0 0 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 0 12px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
+            const glowShadowMax = `0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8), 0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.48)`;
+            
+            poemText.style.setProperty('--glow-shadow-min', glowShadowMin);
+            poemText.style.setProperty('--glow-shadow-max', glowShadowMax);
+        }
+
+        // 綁定按鈕事件
+        controlBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyBackground(btn.dataset.bg);
+            });
+        });
+
+        // 初始化：應用夜色背景
+        applyBackground('night');
+    </script>
+</body>
+</html>
+

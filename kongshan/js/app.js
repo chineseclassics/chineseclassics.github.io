@@ -75,8 +75,16 @@ function resetAtmosphereEnvironment() {
     if (AppState.backgroundRenderer) {
       if (AppState.baseBackgroundConfig) {
         AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
+        // 應用基礎背景的文字顏色
+        if (window.applyBackgroundTextColor) {
+          window.applyBackgroundTextColor(AppState.baseBackgroundConfig);
+        }
       } else {
         AppState.backgroundRenderer.clear();
+        // 恢復默認文字顏色
+        if (window.applyBackgroundTextColor) {
+          window.applyBackgroundTextColor(null);
+        }
       }
     }
   } catch (resetError) {
@@ -843,8 +851,21 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
     if (AppState.backgroundRenderer) {
       if (atmosphere.background_config) {
         AppState.backgroundRenderer.setConfig(atmosphere.background_config);
+        // 應用對應的文字顏色
+        if (window.applyBackgroundTextColor) {
+          window.applyBackgroundTextColor(atmosphere.background_config);
+        }
       } else if (AppState.baseBackgroundConfig) {
         AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
+        // 應用基礎背景的文字顏色
+        if (window.applyBackgroundTextColor) {
+          window.applyBackgroundTextColor(AppState.baseBackgroundConfig);
+        }
+      } else {
+        // 沒有背景配置，恢復默認文字顏色
+        if (window.applyBackgroundTextColor) {
+          window.applyBackgroundTextColor(null);
+        }
       }
     }
 

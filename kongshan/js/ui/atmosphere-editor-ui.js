@@ -1467,6 +1467,83 @@ function updateEmptyState() {
 }
 
 /**
+ * 背景文字顏色映射表
+ * 根據背景配色方案自動設置文字顏色和發光顏色
+ */
+const backgroundTextColorMap = {
+  'night': '#FFFFFF',    // 夜色：白色文字
+  'dawn': '#2C3E50',     // 晨曦：深色文字
+  'autumn': '#FFFFFF',   // 秋色：白色文字
+  'spring': '#2C3E50',   // 春意：深色文字
+  'sunset': '#FFFFFF',   // 暮色：白色文字
+  'bamboo': '#FFFFFF'    // 竹林：白色文字
+};
+
+/**
+ * 應用背景對應的文字顏色
+ * @param {object} backgroundConfig - 背景配置對象
+ */
+function applyBackgroundTextColor(backgroundConfig) {
+  const root = document.documentElement;
+  
+  if (!backgroundConfig || !backgroundConfig.color_scheme || !backgroundConfig.color_scheme.id) {
+    // 沒有背景配置，使用系統默認
+    root.style.setProperty('--poem-text-color', 'var(--color-text-primary, #2C3E50)');
+    root.style.setProperty('--poem-glow-color', 'var(--color-text-primary, #2C3E50)');
+    updatePoemTextGlow('var(--color-text-primary, #2C3E50)');
+    return;
+  }
+
+  const bgId = backgroundConfig.color_scheme.id;
+  const textColor = backgroundTextColorMap[bgId];
+  
+  if (textColor) {
+    root.style.setProperty('--poem-text-color', textColor);
+    root.style.setProperty('--poem-glow-color', textColor);
+    updatePoemTextGlow(textColor);
+  } else {
+    // 未知的背景 ID，使用系統默認
+    root.style.setProperty('--poem-text-color', 'var(--color-text-primary, #2C3E50)');
+    root.style.setProperty('--poem-glow-color', 'var(--color-text-primary, #2C3E50)');
+    updatePoemTextGlow('var(--color-text-primary, #2C3E50)');
+  }
+}
+
+// 暴露到全局，供 app.js 使用
+window.applyBackgroundTextColor = applyBackgroundTextColor;
+
+/**
+ * 更新詩句文字的發光效果
+ * @param {string} glowColor - 發光顏色（十六進制或 CSS 變量）
+ */
+function updatePoemTextGlow(glowColor) {
+  // 如果是 CSS 變量，無法直接轉換為 RGB，使用默認的白色
+  if (glowColor.startsWith('var(')) {
+    glowColor = '#FFFFFF';
+  }
+  
+  // 將十六進制顏色轉換為 RGB
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 255, g: 255, b: 255 };
+  };
+  
+  const rgb = hexToRgb(glowColor);
+  
+  // 生成發光陰影
+  const glowShadowMin = `0 0 8px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 0 0 12px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
+  const glowShadowMax = `0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8), 0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.48)`;
+  
+  const root = document.documentElement;
+  root.style.setProperty('--poem-glow-shadow-min', glowShadowMin);
+  root.style.setProperty('--poem-glow-shadow-max', glowShadowMax);
+}
+
+/**
  * 初始化背景選擇器
  */
 function initializeBackgroundSelector() {
@@ -1801,14 +1878,17 @@ async function previewAtmosphere(poem) {
       if (data.background_config && typeof backgroundRenderer.setConfig === 'function') {
         try {
           backgroundRenderer.setConfig(data.background_config);
+          // 應用對應的文字顏色
+          applyBackgroundTextColor(data.background_config);
         } catch (bgError) {
           console.warn('應用背景配置失敗:', bgError);
         }
       } else {
-        // 如果沒有背景配置，清除背景
+        // 如果沒有背景配置，清除背景並恢復默認文字顏色
         if (typeof backgroundRenderer.clear === 'function') {
           backgroundRenderer.clear();
         }
+        applyBackgroundTextColor(null);
       }
     }
 
