@@ -529,6 +529,12 @@ async function showPoemListScreen() {
   if (viewerScreen) viewerScreen.style.display = 'none';
   if (adminScreen) adminScreen.style.display = 'none';
   AppState.activeScreen = 'list';
+  
+  // 清除任何正在進行的聲色意境載入操作
+  if (AppState.atmosphereContext) {
+    AppState.atmosphereContext.pendingToken = null;
+  }
+  
   resetAtmosphereEnvironment();
   updateAppSwitcherVisibility();
   
@@ -830,22 +836,49 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
       return;
     }
 
+    // 檢查是否還在正確的狀態（用戶可能已經離開）
+    if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+      return;
+    }
+
     if (AppState.soundMixer) {
       AppState.soundMixer.clear();
       const loadedTracks = [];
       for (const sound of sounds) {
+        // 在每次載入前檢查狀態，如果用戶已經離開，停止載入
+        if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+          return;
+        }
+        
         const track = await AppState.soundMixer.addTrack({
           ...sound,
           volume: sound.volume !== undefined ? sound.volume : 0.7,
           loop: sound.loop !== undefined ? sound.loop : true
         });
+        
+        // 載入完成後再次檢查狀態
+        if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+          // 如果用戶已經離開，清除已載入的音效
+          if (AppState.soundMixer) {
+            AppState.soundMixer.clear();
+          }
+          return;
+        }
+        
         if (track) {
           loadedTracks.push(track);
         }
       }
-      if (loadedTracks.length > 0) {
+      
+      // 播放前最後一次檢查狀態
+      if (context.pendingToken === token && AppState.activeScreen === 'viewer' && loadedTracks.length > 0) {
         await AppState.soundMixer.playAll();
       }
+    }
+
+    // 應用背景前檢查狀態
+    if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+      return;
     }
 
     if (AppState.backgroundRenderer) {

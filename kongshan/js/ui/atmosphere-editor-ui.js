@@ -1852,14 +1852,40 @@ async function previewAtmosphere(poem) {
 
         // 添加到混音器
         for (const sound of sounds) {
+          // 檢查編輯器是否還存在（用戶可能已經關閉）
+          const editor = document.getElementById('atmosphere-editor');
+          if (!editor || !editor.classList.contains('visible')) {
+            // 編輯器已關閉，停止載入
+            if (soundMixer) {
+              soundMixer.clear();
+            }
+            return;
+          }
+          
           if (sound.file_url) {
             await soundMixer.addTrack(sound);
+            
+            // 每次載入後再次檢查編輯器狀態
+            const editorStillExists = document.getElementById('atmosphere-editor');
+            if (!editorStillExists || !editorStillExists.classList.contains('visible')) {
+              // 編輯器已關閉，停止載入
+              if (soundMixer) {
+                soundMixer.clear();
+              }
+              return;
+            }
           }
         }
 
-        // 預覽模式下自動播放音效
-        if (soundMixer.getTracks().length > 0) {
+        // 播放前最後檢查編輯器狀態
+        const editor = document.getElementById('atmosphere-editor');
+        if (editor && editor.classList.contains('visible') && soundMixer.getTracks().length > 0) {
           await soundMixer.playAll();
+        } else {
+          // 編輯器已關閉，清除音效
+          if (soundMixer) {
+            soundMixer.clear();
+          }
         }
 
         // 預覽模式下隱藏音效控制面板
@@ -1873,28 +1899,40 @@ async function previewAtmosphere(poem) {
       }
     }
 
-    // 應用背景配置
-    if (backgroundRenderer) {
-      if (data.background_config && typeof backgroundRenderer.setConfig === 'function') {
-        try {
-          backgroundRenderer.setConfig(data.background_config);
-          // 應用對應的文字顏色
-          applyBackgroundTextColor(data.background_config);
-        } catch (bgError) {
-          console.warn('應用背景配置失敗:', bgError);
+    // 應用背景配置（檢查編輯器是否還存在）
+    const editor = document.getElementById('atmosphere-editor');
+    if (editor && editor.classList.contains('visible')) {
+      if (backgroundRenderer) {
+        if (data.background_config && typeof backgroundRenderer.setConfig === 'function') {
+          try {
+            backgroundRenderer.setConfig(data.background_config);
+            // 應用對應的文字顏色
+            applyBackgroundTextColor(data.background_config);
+          } catch (bgError) {
+            console.warn('應用背景配置失敗:', bgError);
+          }
+        } else {
+          // 如果沒有背景配置，清除背景並恢復默認文字顏色
+          if (typeof backgroundRenderer.clear === 'function') {
+            backgroundRenderer.clear();
+          }
+          applyBackgroundTextColor(null);
         }
-      } else {
-        // 如果沒有背景配置，清除背景並恢復默認文字顏色
-        if (typeof backgroundRenderer.clear === 'function') {
-          backgroundRenderer.clear();
-        }
-        applyBackgroundTextColor(null);
       }
-    }
 
-    // 保存當前編輯狀態，以便返回編輯
-    window.AppState.previewAtmosphereData = data;
-    window.AppState.isPreviewMode = true; // 標記為預覽模式
+      // 保存當前編輯狀態，以便返回編輯
+      window.AppState.previewAtmosphereData = data;
+      window.AppState.isPreviewMode = true; // 標記為預覽模式
+    } else {
+      // 編輯器已關閉，清除音效和背景
+      if (soundMixer) {
+        soundMixer.clear();
+      }
+      if (backgroundRenderer && typeof backgroundRenderer.clear === 'function') {
+        backgroundRenderer.clear();
+      }
+      applyBackgroundTextColor(null);
+    }
   }
 
   // 關閉編輯器，但不停止音效（因為預覽需要播放音效）
