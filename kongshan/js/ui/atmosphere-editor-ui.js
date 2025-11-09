@@ -1518,40 +1518,53 @@ async function loadAtmosphereData(atmosphere) {
     }
   }
 
+  // 使用 getAtmosphereSounds 獲取正確的音效信息（包括最新的 URL）
+  // 這樣可以重用首頁已經處理好的邏輯，避免重複查詢
+  let sounds = [];
+  if (window.AppState?.atmosphereManager && atmosphere.sound_combination) {
+    try {
+      sounds = await window.AppState.atmosphereManager.getAtmosphereSounds(atmosphere);
+    } catch (error) {
+      console.warn('獲取音效信息失敗:', error);
+    }
+  }
+
   // 載入已選音效
   if (atmosphere.sound_combination && atmosphere.sound_combination.length > 0) {
     const selectedContainer = document.getElementById('selected-sounds');
     selectedContainer.innerHTML = '';
     
+    // 創建音效 ID 到正確 URL 的映射
+    const soundUrlMap = new Map();
+    sounds.forEach(sound => {
+      soundUrlMap.set(sound.id, sound.file_url);
+    });
+    
     for (const config of atmosphere.sound_combination) {
       const sourceType = config.source_type || 'system';
       const displayName = config.display_name || config.name || '音效';
       const volumeValue = Math.round((config.volume || 0.7) * 100);
+      const soundId = config.recording_id || config.sound_id;
+      
+      // 優先使用 getAtmosphereSounds 返回的正確 URL
+      let fileUrl = soundUrlMap.get(soundId) || config.file_url || '';
+      
+      // 如果是錄音，從 sounds 中獲取最新的 recording_path
+      let recordingPath = config.recording_path || '';
+      if (sourceType === 'recording') {
+        const soundInfo = sounds.find(s => s.id === soundId);
+        if (soundInfo?.recording_path) {
+          recordingPath = soundInfo.recording_path;
+        }
+      }
 
       if (sourceType === 'recording') {
-        const recordingId = config.recording_id || config.sound_id;
-        const recordingPath = config.recording_path || '';
-        let fileUrl = config.file_url || '';
-
-        if ((!fileUrl || fileUrl === '') && window.AppState?.supabase && recordingPath) {
-          try {
-            const { data: signedData, error: signedError } = await window.AppState.supabase
-              .storage
-              .from('kongshan_recordings')
-              .createSignedUrl(recordingPath, 3600);
-            if (!signedError && signedData?.signedUrl) {
-              fileUrl = signedData.signedUrl;
-            }
-          } catch (signedError) {
-            console.warn('取得錄音簽名網址失敗:', signedError);
-          }
-        }
-
+        const recordingId = soundId;
         const item = createSelectedSoundItem({
           id: recordingId,
           name: displayName,
           display_name: displayName,
-          file_url: fileUrl || '',
+          file_url: fileUrl,
           sourceType: 'recording',
           recordingPath,
           recordingId,
@@ -1587,14 +1600,14 @@ async function loadAtmosphereData(atmosphere) {
       if (soundCard) {
         soundCard.classList.add('selected');
         
-        // 創建已選音效項
+        // 創建已選音效項，優先使用 getAtmosphereSounds 返回的正確 URL
         const soundName = soundCard.querySelector('.sound-card-name').textContent;
-        const fileUrl = soundCard.dataset.fileUrl || '';
+        const finalFileUrl = fileUrl || soundCard.dataset.fileUrl || '';
         const item = createSelectedSoundItem({
           id: config.sound_id,
           name: soundName,
           display_name: soundName,
-          file_url: fileUrl,
+          file_url: finalFileUrl,
           tags: [],
           sourceType
         });
@@ -1609,12 +1622,13 @@ async function loadAtmosphereData(atmosphere) {
         }
         
         selectedContainer.appendChild(item);
-      } else if (config.file_url) {
+      } else if (fileUrl) {
+        // 如果找不到音效卡片，但已經有正確的 URL，直接創建項目
         const item = createSelectedSoundItem({
           id: config.sound_id,
           name: displayName,
           display_name: displayName,
-          file_url: config.file_url,
+          file_url: fileUrl,
           sourceType
         });
 
