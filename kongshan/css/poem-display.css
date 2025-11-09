@@ -81,6 +81,24 @@
   box-sizing: border-box;
 }
 
+/* 呼吸動畫關鍵幀 - 模擬自然呼吸節奏 */
+/* 4秒一個週期，每分鐘15次，符合自然呼吸頻率 */
+/* 吸氣約1.3秒（33%），呼氣約2.7秒（67%） */
+@keyframes breathe {
+  0% {
+    opacity: 0.97;
+    transform: scale(0.998);
+  }
+  33% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.97;
+    transform: scale(0.998);
+  }
+}
+
 /* 詩歌正文 - 豎排版從右到左，完全居中 */
 .poem-text {
   writing-mode: vertical-rl; /* 豎排版，從右到左 */
@@ -93,6 +111,10 @@
   font-weight: 400;
   white-space: nowrap;
   /* 完全居中，無需額外定位 */
+  
+  /* 呼吸效果動畫 - 優雅微妙的冥想效果 */
+  animation: breathe 4s ease-in-out infinite;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95); /* 平滑自然的緩動曲線 */
 }
 
 /* 詩歌標題和作者容器 - 相對於內容區域定位 */
