@@ -1487,8 +1487,7 @@ function initializeBackgroundSelector() {
     container.appendChild(bgCard);
   });
 
-  // 默認選擇第一個
-  container.querySelector('.background-card').classList.add('selected');
+  // 不設置默認選擇，讓用戶自己選擇
 }
 
 /**
@@ -1661,6 +1660,9 @@ async function loadAtmosphereData(atmosphere) {
       document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
       bgCard.classList.add('selected');
     }
+  } else {
+    // 如果沒有背景配置，清除所有選中狀態
+    document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
   }
 }
 
