@@ -638,12 +638,15 @@ function setupSearchAndScrollDetection() {
     return;
   }
   
+  // 追蹤搜索框焦點狀態
+  let isSearchFocused = false;
+  
   // 滾動檢測：顯示/隱藏搜索框
   let isScrolling = false;
   
   poemList.addEventListener('scroll', () => {
-    // 如果搜索框有內容，保持顯示
-    if (searchInput.value.trim()) {
+    // 如果搜索框有內容或處於焦點狀態，保持顯示
+    if (searchInput.value.trim() || isSearchFocused) {
       if (!searchContainer.classList.contains('visible')) {
         searchContainer.classList.remove('hidden');
         searchContainer.classList.add('visible');
@@ -663,10 +666,11 @@ function setupSearchAndScrollDetection() {
       clearTimeout(AppState.scrollTimeout);
     }
     
-    // 停止滾動 1.5 秒後隱藏
+    // 停止滾動 1.5 秒後隱藏（但不在焦點狀態時）
     AppState.scrollTimeout = setTimeout(() => {
       isScrolling = false;
-      if (!searchInput.value.trim()) {
+      // 只有在沒有內容且不在焦點狀態時才隱藏
+      if (!searchInput.value.trim() && !isSearchFocused) {
         searchContainer.classList.remove('visible');
         searchContainer.classList.add('hidden');
       }
@@ -688,10 +692,76 @@ function setupSearchAndScrollDetection() {
     }, 300);
   });
   
-  // 確保搜索框在 focus 時顯示
+  poemList.addEventListener('scroll', () => {
+    // 如果搜索框有內容或處於焦點狀態，保持顯示
+    if (searchInput.value.trim() || isSearchFocused) {
+      if (!searchContainer.classList.contains('visible')) {
+        searchContainer.classList.add('visible');
+      }
+      return;
+    }
+    
+    // 顯示搜索框
+    if (!isScrolling) {
+      isScrolling = true;
+      searchContainer.classList.add('visible');
+    }
+    
+    // 清除之前的定時器
+    if (AppState.scrollTimeout) {
+      clearTimeout(AppState.scrollTimeout);
+    }
+    
+    // 停止滾動 1.5 秒後隱藏（但不在焦點狀態時）
+    AppState.scrollTimeout = setTimeout(() => {
+      isScrolling = false;
+      // 只有在沒有內容且不在焦點狀態時才隱藏
+      if (!searchInput.value.trim() && !isSearchFocused) {
+        searchContainer.classList.remove('visible');
+      }
+    }, 1500);
+  });
+  
+  // 搜索功能
+  searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.trim();
+    
+    // 清除之前的搜索定時器
+    if (AppState.searchTimeout) {
+      clearTimeout(AppState.searchTimeout);
+    }
+    
+    // 防抖：300ms 後執行搜索
+    AppState.searchTimeout = setTimeout(() => {
+      filterPoems(searchTerm);
+    }, 300);
+  });
+  
+  // 搜索框獲得焦點時：保持顯示
   searchInput.addEventListener('focus', () => {
-    searchContainer.classList.remove('hidden');
+    isSearchFocused = true;
     searchContainer.classList.add('visible');
+    
+    // 清除滾動隱藏定時器
+    if (AppState.scrollTimeout) {
+      clearTimeout(AppState.scrollTimeout);
+      AppState.scrollTimeout = null;
+    }
+  });
+  
+  // 搜索框失去焦點時：允許隱藏（如果沒有內容）
+  searchInput.addEventListener('blur', () => {
+    isSearchFocused = false;
+    
+    // 如果沒有內容，延遲隱藏（給用戶一點時間）
+    if (!searchInput.value.trim()) {
+      setTimeout(() => {
+        // 再次檢查是否獲得焦點（防止快速切換）
+        if (!isSearchFocused && !searchInput.value.trim()) {
+          searchContainer.classList.remove('visible');
+        }
+      }, 200);
+    }
   });
 }
 
@@ -1446,10 +1516,12 @@ async function setupAdminPanel() {
   if (isAuthenticated) {
     userPanelBtn.hidden = false;
     
-    // 顯示搜索框容器（但保持隱藏狀態，等待滾動時顯示）
+    // 顯示搜索框容器（始終存在，只通過 CSS 類控制可見性）
     const searchContainer = document.getElementById('poem-search-container');
     if (searchContainer) {
-      searchContainer.hidden = false;
+      // 移除 hidden 屬性，確保容器始終佔據空間
+      searchContainer.removeAttribute('hidden');
+      // 初始狀態不顯示（opacity: 0），等待滾動時顯示
     }
     
     if (!userPanelBtn.dataset.bound) {
