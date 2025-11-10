@@ -484,9 +484,9 @@ body {
   display: flex;
   justify-content: center;
   margin-top: 18px;
+  min-height: 44px; /* 預留固定高度，避免布局抖動 */
   opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity 300ms var(--ease-smooth), transform 300ms var(--ease-smooth);
+  transition: opacity 300ms var(--ease-smooth);
   pointer-events: none;
   visibility: hidden;
 }
@@ -497,7 +497,6 @@ body {
 
 .poem-search-container.visible {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 
