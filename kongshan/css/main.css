@@ -432,12 +432,38 @@ body {
 .recording-trim-handle {
   position: absolute;
   top: 0;
-  width: 4px;
+  width: 24px; /* 增大觸控區域到 24px */
   height: 100%;
   cursor: ew-resize;
   pointer-events: all;
   z-index: 20;
   transform: translateX(-50%);
+  touch-action: none; /* 防止瀏覽器默認觸控行為 */
+  -webkit-tap-highlight-color: transparent; /* 移除點擊高亮 */
+}
+
+/* 觸控區域指示（僅在移動設備上顯示） */
+.recording-trim-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-full);
+  background: transparent;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .recording-trim-handle::after {
+    background: rgba(120, 146, 98, 0.1);
+  }
+  
+  .recording-trim-handle:active::after {
+    background: rgba(120, 146, 98, 0.2);
+  }
 }
 
 .recording-trim-handle-line {
@@ -448,6 +474,18 @@ body {
   height: 100%;
   background: var(--color-primary);
   transform: translateX(-50%);
+  transition: width var(--duration-fast) var(--ease-smooth), background var(--duration-fast) var(--ease-smooth);
+}
+
+/* 拖動時的視覺反饋 */
+.recording-trim-handle.dragging .recording-trim-handle-line {
+  width: 3px;
+  background: var(--color-secondary);
+}
+
+.recording-trim-handle.dragging .recording-trim-handle-dot {
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: var(--shadow-md);
 }
 
 .recording-trim-handle-dot {
@@ -462,6 +500,16 @@ body {
   transform: translate(-50%, -50%);
   box-shadow: var(--shadow-sm);
   transition: var(--transition-fast);
+  z-index: 2; /* 確保在觸控區域之上 */
+}
+
+/* 移動端增大圓點觸控區域 */
+@media (max-width: 768px) {
+  .recording-trim-handle-dot {
+    width: 16px;
+    height: 16px;
+    border-width: 3px;
+  }
 }
 
 /* 拖動標記提示動畫 */

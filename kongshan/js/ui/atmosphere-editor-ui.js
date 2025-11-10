@@ -37,6 +37,8 @@ let trimEndRegion = null;
 let previewAudioContext = null;
 let previewAudioSource = null;
 let previewDebounceTimer = null;
+let previewTimeout = null; // 預覽播放的 timeout 引用
+let previewTimeUpdateHandler = null; // 預覽播放的時間更新監聽器
 const MIN_TRIM_DURATION = 2; // 最小剪切長度 2 秒
 const WAVEFORM_SAMPLE_RATE = 100; // 每 100ms 一個數據點
 
@@ -1043,6 +1045,13 @@ function initializeCustomTrimHandles(wavesurferInstance, totalDuration) {
   const startDrag = (handle, initialTime) => {
     isDragging = handle;
     dragStartTime = initialTime;
+    
+    // 添加拖動視覺反饋
+    if (handle === 'start') {
+      startHandle.classList.add('dragging');
+    } else {
+      endHandle.classList.add('dragging');
+    }
   };
 
   const onDrag = (clientX) => {
@@ -1069,6 +1078,10 @@ function initializeCustomTrimHandles(wavesurferInstance, totalDuration) {
 
   const endDrag = () => {
     if (isDragging) {
+      // 移除拖動視覺反饋
+      startHandle.classList.remove('dragging');
+      endHandle.classList.remove('dragging');
+      
       // 停止拖動後預覽
       if (previewDebounceTimer) {
         clearTimeout(previewDebounceTimer);
@@ -1177,23 +1190,81 @@ async function playTrimmedPreview() {
   const startTime = trimStartRegion.start || 0;
   const endTime = trimEndRegion.end || wavesurfer.getDuration();
 
-  // 停止當前播放
+  // 清除之前的播放和監聽器
   if (wavesurfer.isPlaying()) {
     wavesurfer.pause();
+  }
+  
+  // 清除之前的 timeout
+  if (previewTimeout) {
+    clearTimeout(previewTimeout);
+    previewTimeout = null;
+  }
+  
+  // 移除之前的事件監聽器
+  if (previewTimeUpdateHandler && wavesurfer) {
+    wavesurfer.un('timeupdate', previewTimeUpdateHandler);
+    previewTimeUpdateHandler = null;
   }
 
   // 設置播放範圍
   const totalDuration = wavesurfer.getDuration();
   wavesurfer.seekTo(startTime / totalDuration);
-  await wavesurfer.play();
   
-  // 在結束時間停止
-  const duration = endTime - startTime;
-  setTimeout(() => {
-    if (wavesurfer && wavesurfer.isPlaying()) {
-      wavesurfer.pause();
+  try {
+    await wavesurfer.play();
+    
+    // 計算播放時長
+    const duration = endTime - startTime;
+    
+    // 方法 1: 使用 timeupdate 事件監聽（主要方法）
+    previewTimeUpdateHandler = () => {
+      const currentTime = wavesurfer.getCurrentTime();
+      if (currentTime >= endTime) {
+        wavesurfer.pause();
+        // 清理監聽器
+        if (previewTimeUpdateHandler) {
+          wavesurfer.un('timeupdate', previewTimeUpdateHandler);
+          previewTimeUpdateHandler = null;
+        }
+        if (previewTimeout) {
+          clearTimeout(previewTimeout);
+          previewTimeout = null;
+        }
+      }
+    };
+    
+    wavesurfer.on('timeupdate', previewTimeUpdateHandler);
+    
+    // 方法 2: 設置 timeout 作為備份（防止事件未觸發）
+    // 添加 100ms 緩衝時間，考慮播放延遲
+    previewTimeout = setTimeout(() => {
+      if (wavesurfer && wavesurfer.isPlaying()) {
+        const currentTime = wavesurfer.getCurrentTime();
+        if (currentTime >= endTime - 0.1) { // 允許 0.1 秒誤差
+          wavesurfer.pause();
+        }
+      }
+      // 清理監聽器
+      if (previewTimeUpdateHandler) {
+        wavesurfer.un('timeupdate', previewTimeUpdateHandler);
+        previewTimeUpdateHandler = null;
+      }
+      previewTimeout = null;
+    }, (duration + 0.2) * 1000); // 添加 200ms 緩衝
+    
+  } catch (error) {
+    console.error('播放預覽失敗:', error);
+    // 清理資源
+    if (previewTimeUpdateHandler) {
+      wavesurfer.un('timeupdate', previewTimeUpdateHandler);
+      previewTimeUpdateHandler = null;
     }
-  }, duration * 1000);
+    if (previewTimeout) {
+      clearTimeout(previewTimeout);
+      previewTimeout = null;
+    }
+  }
 }
 
 /**
@@ -1205,8 +1276,28 @@ function cleanupWaveform() {
     previewDebounceTimer = null;
   }
 
+  // 清除預覽播放的 timeout
+  if (previewTimeout) {
+    clearTimeout(previewTimeout);
+    previewTimeout = null;
+  }
+  
+  // 移除預覽播放的事件監聽器
+  if (previewTimeUpdateHandler && wavesurfer) {
+    try {
+      wavesurfer.un('timeupdate', previewTimeUpdateHandler);
+    } catch (error) {
+      console.warn('移除時間更新監聽器失敗:', error);
+    }
+    previewTimeUpdateHandler = null;
+  }
+
   if (wavesurfer) {
     try {
+      // 停止播放
+      if (wavesurfer.isPlaying()) {
+        wavesurfer.pause();
+      }
       wavesurfer.destroy();
     } catch (error) {
       console.warn('清理波形圖時發生錯誤:', error);
