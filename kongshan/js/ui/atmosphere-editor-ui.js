@@ -964,19 +964,6 @@ async function initializeWaveform(audioUrl, duration) {
   const samples = Math.ceil(duration * 10); // duration * 10 = 每 100ms 一個點
 
   // 創建 WaveSurfer 實例
-  // 嘗試使用 Regions 插件（如果已載入）
-  const plugins = [];
-  
-  // 檢查是否有 Regions 插件可用
-  if (window.WaveSurferRegions || (window.WaveSurfer && window.WaveSurfer.Regions)) {
-    try {
-      const RegionsPlugin = window.WaveSurferRegions || window.WaveSurfer.Regions;
-      plugins.push(RegionsPlugin.create());
-    } catch (error) {
-      console.warn('無法初始化 Regions 插件:', error);
-    }
-  }
-  
   wavesurfer = WaveSurfer.create({
     container: waveformContainer,
     waveColor: getComputedStyle(document.documentElement).getPropertyValue('--color-text-tertiary').trim() || '#7a8574',
@@ -989,153 +976,15 @@ async function initializeWaveform(audioUrl, duration) {
     normalize: true,
     interact: true,
     backend: 'WebAudio',
-    mediaControls: false,
-    plugins: plugins.length > 0 ? plugins : undefined
+    mediaControls: false
   });
 
   // 載入音頻
   await wavesurfer.load(audioUrl);
 
-  // 創建剪切區域（開頭和結尾標記）
+  // 初始化自定義拖動標記系統
   const totalDuration = wavesurfer.getDuration();
-  
-  // WaveSurfer.js v7 的 Regions 功能
-  // 嘗試多種方式來創建可拖動的區域
-  let regionsCreated = false;
-  
-  // 方法 1: 檢查是否有 addRegion 方法（某些版本可能有）
-  if (typeof wavesurfer.addRegion === 'function') {
-    try {
-      trimStartRegion = wavesurfer.addRegion({
-        start: 0,
-        end: Math.min(MIN_TRIM_DURATION, totalDuration),
-        color: 'rgba(120, 146, 98, 0.3)',
-        drag: true,
-        resize: true
-      });
-      
-      const endStart = Math.max(0, totalDuration - MIN_TRIM_DURATION);
-      trimEndRegion = wavesurfer.addRegion({
-        start: endStart,
-        end: totalDuration,
-        color: 'rgba(120, 146, 98, 0.3)',
-        drag: true,
-        resize: true
-      });
-      
-      if (trimStartRegion && typeof trimStartRegion.on === 'function') {
-        trimStartRegion.on('update-end', () => handleRegionUpdate());
-      }
-      if (trimEndRegion && typeof trimEndRegion.on === 'function') {
-        trimEndRegion.on('update-end', () => handleRegionUpdate());
-      }
-      regionsCreated = true;
-    } catch (error) {
-      console.warn('使用 addRegion 方法失敗:', error);
-    }
-  }
-  
-  // 方法 2: 檢查是否有 regions 屬性（插件系統）
-  if (!regionsCreated && wavesurfer.regions) {
-    try {
-      if (typeof wavesurfer.regions.add === 'function') {
-        trimStartRegion = wavesurfer.regions.add({
-          start: 0,
-          end: Math.min(MIN_TRIM_DURATION, totalDuration),
-          color: 'rgba(120, 146, 98, 0.3)',
-          drag: true,
-          resize: true
-        });
-        
-        const endStart = Math.max(0, totalDuration - MIN_TRIM_DURATION);
-        trimEndRegion = wavesurfer.regions.add({
-          start: endStart,
-          end: totalDuration,
-          color: 'rgba(120, 146, 98, 0.3)',
-          drag: true,
-          resize: true
-        });
-        
-        if (trimStartRegion && typeof trimStartRegion.on === 'function') {
-          trimStartRegion.on('update-end', () => handleRegionUpdate());
-        }
-        if (trimEndRegion && typeof trimEndRegion.on === 'function') {
-          trimEndRegion.on('update-end', () => handleRegionUpdate());
-        }
-        regionsCreated = true;
-      }
-    } catch (error) {
-      console.warn('使用 regions.add 方法失敗:', error);
-    }
-  }
-  
-  // 方法 2.5: 檢查插件是否已註冊並可用
-  if (!regionsCreated) {
-    // 檢查所有已註冊的插件
-    const registeredPlugins = wavesurfer.getPlugins ? wavesurfer.getPlugins() : [];
-    for (const plugin of registeredPlugins) {
-      if (plugin && plugin.name === 'Regions' && typeof plugin.add === 'function') {
-        try {
-          trimStartRegion = plugin.add({
-            start: 0,
-            end: Math.min(MIN_TRIM_DURATION, totalDuration),
-            color: 'rgba(120, 146, 98, 0.3)',
-            drag: true,
-            resize: true
-          });
-          
-          const endStart = Math.max(0, totalDuration - MIN_TRIM_DURATION);
-          trimEndRegion = plugin.add({
-            start: endStart,
-            end: totalDuration,
-            color: 'rgba(120, 146, 98, 0.3)',
-            drag: true,
-            resize: true
-          });
-          
-          if (trimStartRegion && typeof trimStartRegion.on === 'function') {
-            trimStartRegion.on('update-end', () => handleRegionUpdate());
-          }
-          if (trimEndRegion && typeof trimEndRegion.on === 'function') {
-            trimEndRegion.on('update-end', () => handleRegionUpdate());
-          }
-          regionsCreated = true;
-          break;
-        } catch (error) {
-          console.warn('使用插件 add 方法失敗:', error);
-        }
-      }
-    }
-  }
-  
-  // 方法 3: 使用 enableDragSelection（v7 的新功能）
-  if (!regionsCreated && typeof wavesurfer.enableDragSelection === 'function') {
-    try {
-      // 啟用拖動選擇功能
-      wavesurfer.enableDragSelection({
-        color: 'rgba(120, 146, 98, 0.3)'
-      });
-      
-      // 監聽區域創建事件
-      wavesurfer.on('region-created', (region) => {
-        console.log('區域已創建:', region);
-      });
-      
-      // 由於 enableDragSelection 是讓用戶自己拖動創建區域，
-      // 我們需要手動創建兩個區域
-      // 但這個方法可能不支持直接創建區域，所以我們使用固定範圍
-      regionsCreated = false; // 這個方法不適合我們的用例
-    } catch (error) {
-      console.warn('使用 enableDragSelection 失敗:', error);
-    }
-  }
-  
-  // 如果所有方法都失敗，使用自定義拖動標記
-  if (!regionsCreated) {
-    console.log('使用自定義拖動標記系統');
-    // 初始化自定義拖動標記
-    initializeCustomTrimHandles(wavesurfer, totalDuration);
-  }
+  initializeCustomTrimHandles(wavesurfer, totalDuration);
 
   // 點擊波形圖播放/暫停
   wavesurfer.on('click', () => {
@@ -1296,82 +1145,14 @@ function initializeCustomTrimHandles(wavesurferInstance, totalDuration) {
 }
 
 /**
- * 處理區域更新（拖動或調整大小後）
- */
-function handleRegionUpdate() {
-  if (!trimStartRegion || !trimEndRegion || !wavesurfer) return;
-
-  const startTime = trimStartRegion.start;
-  const endTime = trimEndRegion.end;
-  const selectedDuration = endTime - startTime;
-
-  // 檢查最小長度限制
-  if (selectedDuration < MIN_TRIM_DURATION) {
-    // 如果選中區域小於最小長度，調整結尾標記
-    const newEndTime = startTime + MIN_TRIM_DURATION;
-    if (newEndTime <= wavesurfer.getDuration()) {
-      if (trimEndRegion.setOptions) {
-        trimEndRegion.setOptions({ end: newEndTime });
-      } else {
-        trimEndRegion.end = newEndTime;
-      }
-    } else {
-      // 如果超出總長度，調整開頭標記
-      const newStartTime = wavesurfer.getDuration() - MIN_TRIM_DURATION;
-      if (trimStartRegion.setOptions) {
-        trimStartRegion.setOptions({ start: Math.max(0, newStartTime) });
-      } else {
-        trimStartRegion.start = Math.max(0, newStartTime);
-      }
-    }
-  }
-
-  // 確保開頭標記在結尾標記之前
-  if (trimStartRegion.end > trimEndRegion.start) {
-    if (trimStartRegion.setOptions) {
-      trimStartRegion.setOptions({ end: trimEndRegion.start });
-    } else {
-      trimStartRegion.end = trimEndRegion.start;
-    }
-  }
-
-  // 更新時間顯示
-  updateTimeDisplay();
-
-  // 停止拖動後預覽（防抖處理）
-  if (previewDebounceTimer) {
-    clearTimeout(previewDebounceTimer);
-  }
-  previewDebounceTimer = setTimeout(() => {
-    playTrimmedPreview();
-  }, 300); // 停止拖動 300ms 後預覽
-}
-
-/**
  * 更新時間顯示
  */
 function updateTimeDisplay() {
   const { selectedTimeEl, totalTimeEl } = getRecordingElements();
   if (!trimStartRegion || !trimEndRegion || !wavesurfer) return;
 
-  // 處理自定義標記的情況
-  let startTime, endTime;
-  if (typeof trimStartRegion === 'object' && 'start' in trimStartRegion) {
-    startTime = trimStartRegion.start;
-  } else if (trimStartRegion && typeof trimStartRegion.getStart === 'function') {
-    startTime = trimStartRegion.getStart();
-  } else {
-    return;
-  }
-
-  if (typeof trimEndRegion === 'object' && 'end' in trimEndRegion) {
-    endTime = trimEndRegion.end;
-  } else if (trimEndRegion && typeof trimEndRegion.getEnd === 'function') {
-    endTime = trimEndRegion.getEnd();
-  } else {
-    return;
-  }
-
+  const startTime = trimStartRegion.start || 0;
+  const endTime = trimEndRegion.end || wavesurfer.getDuration();
   const selectedDuration = endTime - startTime;
   const totalDuration = wavesurfer.getDuration();
 
@@ -1389,23 +1170,8 @@ function updateTimeDisplay() {
 async function playTrimmedPreview() {
   if (!trimStartRegion || !trimEndRegion || !wavesurfer || !currentRecordingBlob) return;
 
-  // 獲取開始和結束時間
-  let startTime, endTime;
-  if (typeof trimStartRegion === 'object' && 'start' in trimStartRegion) {
-    startTime = trimStartRegion.start;
-  } else if (trimStartRegion && typeof trimStartRegion.getStart === 'function') {
-    startTime = trimStartRegion.getStart();
-  } else {
-    return;
-  }
-
-  if (typeof trimEndRegion === 'object' && 'end' in trimEndRegion) {
-    endTime = trimEndRegion.end;
-  } else if (trimEndRegion && typeof trimEndRegion.getEnd === 'function') {
-    endTime = trimEndRegion.getEnd();
-  } else {
-    return;
-  }
+  const startTime = trimStartRegion.start || 0;
+  const endTime = trimEndRegion.end || wavesurfer.getDuration();
 
   // 停止當前播放
   if (wavesurfer.isPlaying()) {
@@ -1804,31 +1570,14 @@ async function uploadRecording(displayName) {
   let trimmedDuration = currentRecordingDuration;
   
   if (trimStartRegion && trimEndRegion && wavesurfer) {
-    // 獲取開始和結束時間（支持自定義標記和插件標記）
-    let startTime, endTime;
-    if (typeof trimStartRegion === 'object' && 'start' in trimStartRegion) {
-      startTime = trimStartRegion.start;
-    } else if (trimStartRegion && typeof trimStartRegion.getStart === 'function') {
-      startTime = trimStartRegion.getStart();
-    } else {
-      startTime = 0;
-    }
-
-    if (typeof trimEndRegion === 'object' && 'end' in trimEndRegion) {
-      endTime = trimEndRegion.end;
-    } else if (trimEndRegion && typeof trimEndRegion.getEnd === 'function') {
-      endTime = trimEndRegion.getEnd();
-    } else {
-      endTime = wavesurfer.getDuration();
-    }
+    // 獲取開始和結束時間（自定義標記）
+    const startTime = trimStartRegion.start || 0;
+    const endTime = trimEndRegion.end || wavesurfer.getDuration();
     
     trimmedDuration = endTime - startTime;
     
     // 如果用戶調整了剪切範圍，進行音頻剪切
     if (startTime > 0 || endTime < wavesurfer.getDuration()) {
-      if (statusEl) {
-        statusEl.textContent = '正在處理音頻剪切...';
-      }
       trimmedBlob = await trimAudio(currentRecordingBlob, startTime, endTime);
     }
   }
