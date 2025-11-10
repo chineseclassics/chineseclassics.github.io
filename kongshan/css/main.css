@@ -379,6 +379,48 @@ body {
   width: 100%;
 }
 
+/* 波形圖容器 */
+.recording-waveform-container {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.recording-waveform {
+  width: 100%;
+  height: 80px;
+  background: var(--color-surface-soft);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-soft);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.recording-waveform:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+.recording-time-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.recording-time-separator {
+  color: var(--color-text-tertiary);
+}
+
+#recording-selected-time,
+#recording-total-time {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
 .recording-name-label {
   font-size: 0.8rem;
   letter-spacing: 0.06em;
@@ -435,6 +477,15 @@ body {
 
   .recording-name-panel {
     background: rgba(255, 255, 255, 0.05);
+  }
+
+  .recording-waveform {
+    background: rgba(70, 92, 76, 0.24);
+    border-color: var(--color-border-soft);
+  }
+
+  .recording-waveform:hover {
+    border-color: var(--color-primary);
   }
 
   .recording-action-secondary {

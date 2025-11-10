@@ -30,6 +30,16 @@ let currentRecordingDuration = 0;
 let currentRecordingMimeType = '';
 let isUploadingRecording = false;
 
+// 波形圖相關變量
+let wavesurfer = null;
+let trimStartRegion = null;
+let trimEndRegion = null;
+let previewAudioContext = null;
+let previewAudioSource = null;
+let previewDebounceTimer = null;
+const MIN_TRIM_DURATION = 5; // 最小剪切長度 5 秒
+const WAVEFORM_SAMPLE_RATE = 100; // 每 100ms 一個數據點
+
 /**
  * 創建並顯示聲色意境編輯器
  * @param {object} poem - 當前詩歌
@@ -108,7 +118,15 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
         </div>
         <div class="recording-status" id="recording-status"></div>
         <div class="recording-name-panel" id="recording-name-panel" hidden>
-          <audio id="recording-audio" controls></audio>
+          <!-- 波形圖容器 -->
+          <div class="recording-waveform-container">
+            <div id="recording-waveform" class="recording-waveform"></div>
+            <div class="recording-time-info">
+              <span id="recording-selected-time">已選取 0 秒</span>
+              <span class="recording-time-separator">/</span>
+              <span id="recording-total-time">總長度 0 秒</span>
+            </div>
+          </div>
           <label class="recording-name-label" for="recording-name-input">為錄音命名</label>
           <input type="text" id="recording-name-input" class="editor-input" maxlength="50" placeholder="例如：松風入夜">
           <div class="recording-name-actions">
@@ -632,7 +650,9 @@ function getRecordingElements() {
     timerEl: document.getElementById('recording-timer'),
     statusEl: document.getElementById('recording-status'),
     panel: document.getElementById('recording-name-panel'),
-    audioEl: document.getElementById('recording-audio'),
+    waveformContainer: document.getElementById('recording-waveform'),
+    selectedTimeEl: document.getElementById('recording-selected-time'),
+    totalTimeEl: document.getElementById('recording-total-time'),
     nameInput: document.getElementById('recording-name-input'),
     saveBtn: document.getElementById('recording-save-btn'),
     cancelBtn: document.getElementById('recording-cancel-btn')
@@ -709,7 +729,7 @@ function resetRecordingUI() {
     toggleBtn,
     statusEl,
     panel,
-    audioEl,
+    waveformContainer,
     nameInput,
     saveBtn,
     cancelBtn
@@ -727,19 +747,8 @@ function resetRecordingUI() {
     panel.hidden = true;
   }
 
-  if (audioEl) {
-    try {
-      audioEl.pause();
-    } catch (error) {
-      /* ignore */
-    }
-    audioEl.removeAttribute('src');
-    try {
-      audioEl.load();
-    } catch (error) {
-      /* ignore */
-    }
-  }
+  // 清理波形圖
+  cleanupWaveform();
 
   if (nameInput) {
     nameInput.value = '';
@@ -913,10 +922,384 @@ function handleRecordingDataAvailable(event) {
   }
 }
 
+/**
+ * 格式化時間顯示（秒數轉為 MM:SS）
+ */
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * 初始化波形圖
+ */
+async function initializeWaveform(audioUrl, duration) {
+  const { waveformContainer } = getRecordingElements();
+  if (!waveformContainer || typeof WaveSurfer === 'undefined') {
+    throw new Error('WaveSurfer.js 未載入');
+  }
+
+  // 清理舊的波形圖實例
+  if (wavesurfer) {
+    wavesurfer.destroy();
+    wavesurfer = null;
+  }
+
+  // 計算波形圖的採樣精度（每 100ms 一個點）
+  const samples = Math.ceil(duration * 10); // duration * 10 = 每 100ms 一個點
+
+  // 創建 WaveSurfer 實例
+  wavesurfer = WaveSurfer.create({
+    container: waveformContainer,
+    waveColor: getComputedStyle(document.documentElement).getPropertyValue('--color-text-tertiary').trim() || '#7a8574',
+    progressColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#789262',
+    cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#789262',
+    barWidth: 2,
+    barRadius: 1,
+    barGap: 1,
+    height: 80,
+    normalize: true,
+    interact: true,
+    backend: 'WebAudio',
+    mediaControls: false
+  });
+
+  // 載入音頻
+  await wavesurfer.load(audioUrl);
+
+  // 創建剪切區域（開頭和結尾標記）
+  const totalDuration = wavesurfer.getDuration();
+  
+  // 使用 Regions 插件（如果可用）
+  if (wavesurfer.regions) {
+    // 開頭標記（從 0 開始）
+    trimStartRegion = wavesurfer.regions.add({
+      start: 0,
+      end: Math.min(MIN_TRIM_DURATION, totalDuration),
+      color: 'rgba(120, 146, 98, 0.3)',
+      drag: true,
+      resize: true
+    });
+
+    // 結尾標記（從總長度減去最小長度開始）
+    const endStart = Math.max(0, totalDuration - MIN_TRIM_DURATION);
+    trimEndRegion = wavesurfer.regions.add({
+      start: endStart,
+      end: totalDuration,
+      color: 'rgba(120, 146, 98, 0.3)',
+      drag: true,
+      resize: true
+    });
+
+    // 監聽區域更新事件（拖動或調整大小）
+    trimStartRegion.on('update-end', () => handleRegionUpdate());
+    trimEndRegion.on('update-end', () => handleRegionUpdate());
+  } else {
+    // 如果沒有 Regions 插件，使用簡單的標記方式
+    console.warn('WaveSurfer Regions 插件未載入，使用簡化模式');
+    // 設置默認剪切範圍
+    trimStartRegion = { start: 0, end: Math.min(MIN_TRIM_DURATION, totalDuration) };
+    trimEndRegion = { start: Math.max(0, totalDuration - MIN_TRIM_DURATION), end: totalDuration };
+  }
+
+  // 點擊波形圖播放/暫停
+  wavesurfer.on('click', () => {
+    if (wavesurfer.isPlaying()) {
+      wavesurfer.pause();
+    } else {
+      playTrimmedPreview();
+    }
+  });
+
+  // 更新時間顯示
+  updateTimeDisplay();
+}
+
+/**
+ * 處理區域更新（拖動或調整大小後）
+ */
+function handleRegionUpdate() {
+  if (!trimStartRegion || !trimEndRegion || !wavesurfer) return;
+
+  const startTime = trimStartRegion.start;
+  const endTime = trimEndRegion.end;
+  const selectedDuration = endTime - startTime;
+
+  // 檢查最小長度限制
+  if (selectedDuration < MIN_TRIM_DURATION) {
+    // 如果選中區域小於最小長度，調整結尾標記
+    const newEndTime = startTime + MIN_TRIM_DURATION;
+    if (newEndTime <= wavesurfer.getDuration()) {
+      if (trimEndRegion.setOptions) {
+        trimEndRegion.setOptions({ end: newEndTime });
+      } else {
+        trimEndRegion.end = newEndTime;
+      }
+    } else {
+      // 如果超出總長度，調整開頭標記
+      const newStartTime = wavesurfer.getDuration() - MIN_TRIM_DURATION;
+      if (trimStartRegion.setOptions) {
+        trimStartRegion.setOptions({ start: Math.max(0, newStartTime) });
+      } else {
+        trimStartRegion.start = Math.max(0, newStartTime);
+      }
+    }
+  }
+
+  // 確保開頭標記在結尾標記之前
+  if (trimStartRegion.end > trimEndRegion.start) {
+    if (trimStartRegion.setOptions) {
+      trimStartRegion.setOptions({ end: trimEndRegion.start });
+    } else {
+      trimStartRegion.end = trimEndRegion.start;
+    }
+  }
+
+  // 更新時間顯示
+  updateTimeDisplay();
+
+  // 停止拖動後預覽（防抖處理）
+  if (previewDebounceTimer) {
+    clearTimeout(previewDebounceTimer);
+  }
+  previewDebounceTimer = setTimeout(() => {
+    playTrimmedPreview();
+  }, 300); // 停止拖動 300ms 後預覽
+}
+
+/**
+ * 更新時間顯示
+ */
+function updateTimeDisplay() {
+  const { selectedTimeEl, totalTimeEl } = getRecordingElements();
+  if (!trimStartRegion || !trimEndRegion || !wavesurfer) return;
+
+  const startTime = trimStartRegion.start;
+  const endTime = trimEndRegion.end;
+  const selectedDuration = endTime - startTime;
+  const totalDuration = wavesurfer.getDuration();
+
+  if (selectedTimeEl) {
+    selectedTimeEl.textContent = `已選取 ${formatTime(selectedDuration)}`;
+  }
+  if (totalTimeEl) {
+    totalTimeEl.textContent = `總長度 ${formatTime(totalDuration)}`;
+  }
+}
+
+/**
+ * 播放剪切後的預覽
+ */
+async function playTrimmedPreview() {
+  if (!trimStartRegion || !trimEndRegion || !wavesurfer || !currentRecordingBlob) return;
+
+  const startTime = trimStartRegion.start;
+  const endTime = trimEndRegion.end;
+
+  // 停止當前播放
+  if (wavesurfer.isPlaying()) {
+    wavesurfer.pause();
+  }
+
+  // 設置播放範圍
+  wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+  await wavesurfer.play();
+  
+  // 在結束時間停止
+  const duration = endTime - startTime;
+  setTimeout(() => {
+    if (wavesurfer && wavesurfer.isPlaying()) {
+      wavesurfer.pause();
+    }
+  }, duration * 1000);
+}
+
+/**
+ * 清理波形圖資源
+ */
+function cleanupWaveform() {
+  if (previewDebounceTimer) {
+    clearTimeout(previewDebounceTimer);
+    previewDebounceTimer = null;
+  }
+
+  if (wavesurfer) {
+    try {
+      wavesurfer.destroy();
+    } catch (error) {
+      console.warn('清理波形圖時發生錯誤:', error);
+    }
+    wavesurfer = null;
+  }
+
+  trimStartRegion = null;
+  trimEndRegion = null;
+
+  if (previewAudioContext) {
+    try {
+      previewAudioContext.close();
+    } catch (error) {
+      console.warn('關閉音頻上下文時發生錯誤:', error);
+    }
+    previewAudioContext = null;
+  }
+  previewAudioSource = null;
+}
+
+/**
+ * 剪切音頻（根據選中的區域）
+ */
+async function trimAudio(blob, startTime, endTime) {
+  if (!blob || startTime < 0 || endTime <= startTime) {
+    return blob;
+  }
+
+  try {
+    // 創建音頻上下文
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    // 計算要提取的樣本範圍
+    const sampleRate = audioBuffer.sampleRate;
+    const startSample = Math.floor(startTime * sampleRate);
+    const endSample = Math.floor(endTime * sampleRate);
+    const length = endSample - startSample;
+
+    // 創建新的音頻緩衝區
+    const trimmedBuffer = audioContext.createBuffer(
+      audioBuffer.numberOfChannels,
+      length,
+      sampleRate
+    );
+
+    // 複製選中的音頻數據
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+      const channelData = audioBuffer.getChannelData(channel);
+      const trimmedData = trimmedBuffer.getChannelData(channel);
+      for (let i = 0; i < length; i++) {
+        trimmedData[i] = channelData[startSample + i];
+      }
+    }
+
+    // 將 AudioBuffer 轉換為 WAV Blob
+    const wavBlob = audioBufferToWav(trimmedBuffer);
+    
+    // 關閉音頻上下文
+    await audioContext.close();
+
+    // 如果原始格式不是 WAV，需要轉換
+    if (blob.type && !blob.type.includes('wav')) {
+      // 使用 MediaRecorder 重新編碼為原始格式
+      return await encodeAudioBlob(wavBlob, blob.type);
+    }
+
+    return wavBlob;
+  } catch (error) {
+    console.error('剪切音頻失敗:', error);
+    // 如果剪切失敗，返回原始 blob
+    return blob;
+  }
+}
+
+/**
+ * 將 AudioBuffer 轉換為 WAV Blob
+ */
+function audioBufferToWav(buffer) {
+  const length = buffer.length;
+  const numberOfChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+  const view = new DataView(arrayBuffer);
+
+  // WAV 文件頭
+  const writeString = (offset, string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numberOfChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+  view.setUint16(32, numberOfChannels * 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, length * numberOfChannels * 2, true);
+
+  // 寫入音頻數據
+  let offset = 44;
+  for (let i = 0; i < length; i++) {
+    for (let channel = 0; channel < numberOfChannels; channel++) {
+      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([arrayBuffer], { type: 'audio/wav' });
+}
+
+/**
+ * 使用 MediaRecorder 重新編碼音頻
+ */
+async function encodeAudioBlob(wavBlob, targetMimeType) {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    const audioUrl = URL.createObjectURL(wavBlob);
+    audio.src = audioUrl;
+
+    audio.onloadeddata = () => {
+      const mediaRecorder = new MediaRecorder(audio.captureStream(), {
+        mimeType: targetMimeType
+      });
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        URL.revokeObjectURL(audioUrl);
+        const blob = new Blob(chunks, { type: targetMimeType });
+        resolve(blob);
+      };
+
+      mediaRecorder.onerror = (error) => {
+        URL.revokeObjectURL(audioUrl);
+        reject(error);
+      };
+
+      mediaRecorder.start();
+      audio.play();
+
+      audio.onended = () => {
+        mediaRecorder.stop();
+      };
+    };
+
+    audio.onerror = (error) => {
+      URL.revokeObjectURL(audioUrl);
+      reject(error);
+    };
+  });
+}
+
 async function handleRecordingStop() {
   const {
     panel,
-    audioEl,
+    waveformContainer,
+    selectedTimeEl,
+    totalTimeEl,
     nameInput,
     saveBtn,
     cancelBtn,
@@ -960,12 +1343,22 @@ async function handleRecordingStop() {
     panel.hidden = false;
   }
 
-  if (audioEl) {
-    audioEl.src = currentRecordingUrl;
+  // 初始化波形圖
+  if (waveformContainer && currentRecordingUrl) {
     try {
-      audioEl.load();
-    } catch (loadError) {
-      console.warn('重新載入錄音播放器失敗:', loadError);
+      await initializeWaveform(currentRecordingUrl, currentRecordingDuration);
+      if (totalTimeEl) {
+        totalTimeEl.textContent = `總長度 ${formatTime(currentRecordingDuration)}`;
+      }
+      if (selectedTimeEl) {
+        selectedTimeEl.textContent = `已選取 ${formatTime(currentRecordingDuration)}`;
+      }
+    } catch (error) {
+      console.error('初始化波形圖失敗:', error);
+      if (statusEl) {
+        statusEl.textContent = '波形圖載入失敗，但錄音已保存。';
+        statusEl.classList.add('recording-status-error');
+      }
     }
   }
 
@@ -978,7 +1371,7 @@ async function handleRecordingStop() {
   }
 
   if (statusEl) {
-    statusEl.textContent = '錄音完成，請命名後保存。';
+    statusEl.textContent = '錄音完成，請調整剪切範圍後命名保存。';
     statusEl.classList.remove('recording-status-error', 'recording-status-success');
   }
 
@@ -1095,14 +1488,32 @@ async function uploadRecording(displayName) {
     throw new Error('未能取得使用者身份，請重新整理頁面。');
   }
 
-  const rawMimeType = currentRecordingMimeType || currentRecordingBlob.type || getFallbackMimeType();
+  // 獲取剪切範圍
+  let trimmedBlob = currentRecordingBlob;
+  let trimmedDuration = currentRecordingDuration;
+  
+  if (trimStartRegion && trimEndRegion && wavesurfer) {
+    const startTime = trimStartRegion.start;
+    const endTime = trimEndRegion.end;
+    trimmedDuration = endTime - startTime;
+    
+    // 如果用戶調整了剪切範圍，進行音頻剪切
+    if (startTime > 0 || endTime < wavesurfer.getDuration()) {
+      if (statusEl) {
+        statusEl.textContent = '正在處理音頻剪切...';
+      }
+      trimmedBlob = await trimAudio(currentRecordingBlob, startTime, endTime);
+    }
+  }
+
+  const rawMimeType = currentRecordingMimeType || trimmedBlob.type || getFallbackMimeType();
   const normalizedMimeType = normalizeRecordingMimeType(rawMimeType);
   const extension = inferFileExtension(normalizedMimeType);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const safeBaseName = buildSafeStorageFileBase(displayName);
   const finalFileName = `${safeBaseName}_${timestamp}.${extension}`;
   const storagePath = `pending/${userId}/${finalFileName}`;
-  const uploadBlob = createUploadBlob(currentRecordingBlob, normalizedMimeType);
+  const uploadBlob = createUploadBlob(trimmedBlob, normalizedMimeType);
 
   if (!uploadBlob || uploadBlob.size === 0) {
     throw new Error('錄音資料為空，請重新錄製。');
@@ -1127,7 +1538,7 @@ async function uploadRecording(displayName) {
       owner_id: userId,
       display_name: displayName,
       storage_path: storagePath,
-      duration_seconds: currentRecordingDuration,
+      duration_seconds: Math.round(trimmedDuration),
       status: 'pending'
     })
     .select()
@@ -1272,7 +1683,6 @@ function cleanupRecordingState({ keepBlob = false, preserveUploaded = true } = {
 
   const {
     panel,
-    audioEl,
     saveBtn,
     cancelBtn
   } = getRecordingElements();
@@ -1283,19 +1693,8 @@ function cleanupRecordingState({ keepBlob = false, preserveUploaded = true } = {
     panel.hidden = true;
   }
 
-  if (audioEl) {
-    try {
-      audioEl.pause();
-    } catch (error) {
-      /* ignore */
-    }
-    audioEl.removeAttribute('src');
-    try {
-      audioEl.load();
-    } catch (error) {
-      /* ignore */
-    }
-  }
+  // 清理波形圖
+  cleanupWaveform();
 
   if (saveBtn) {
     saveBtn.disabled = true;
