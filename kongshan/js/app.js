@@ -1090,17 +1090,20 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
     if (AppState.soundMixer) {
       await AppState.soundMixer.clear(true, FADE_DURATION);
     }
-    // 過渡到基礎背景
-    if (AppState.backgroundRenderer && AppState.baseBackgroundConfig) {
-      await AppState.backgroundRenderer.setConfigWithTransition(
-        AppState.baseBackgroundConfig,
-        TRANSITION_DURATION
-      );
-      // 應用基礎背景的文字顏色
-      if (window.applyBackgroundTextColor) {
-        window.applyBackgroundTextColor(AppState.baseBackgroundConfig);
-      }
-    }
+    // 過渡到基礎背景和文字顏色
+    const baseBackgroundPromise = AppState.backgroundRenderer && AppState.baseBackgroundConfig
+      ? AppState.backgroundRenderer.setConfigWithTransition(
+          AppState.baseBackgroundConfig,
+          TRANSITION_DURATION
+        )
+      : Promise.resolve();
+    
+    const baseTextColorPromise = window.applyBackgroundTextColor
+      ? window.applyBackgroundTextColor(AppState.baseBackgroundConfig, TRANSITION_DURATION)
+      : Promise.resolve();
+    
+    // 等待背景和文字顏色過渡完成
+    await Promise.all([baseBackgroundPromise, baseTextColorPromise]);
     AppState.currentAtmosphere = null;
     updateLikeButtonUI(null);
     if (showStatus) {
@@ -1117,7 +1120,7 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
     // 確定目標背景配置
     const targetBackgroundConfig = atmosphere.background_config || AppState.baseBackgroundConfig || null;
     
-    // 同時開始：1) 淡出舊音效 2) 過渡背景
+    // 同時開始：1) 淡出舊音效 2) 過渡背景 3) 過渡文字顏色
     const soundFadeOutPromise = AppState.soundMixer 
       ? AppState.soundMixer.clear(true, FADE_DURATION)
       : Promise.resolve();
@@ -1126,8 +1129,12 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
       ? AppState.backgroundRenderer.setConfigWithTransition(targetBackgroundConfig, TRANSITION_DURATION)
       : Promise.resolve();
     
-    // 等待淡出和背景過渡完成
-    await Promise.all([soundFadeOutPromise, backgroundTransitionPromise]);
+    const textColorTransitionPromise = window.applyBackgroundTextColor && targetBackgroundConfig
+      ? window.applyBackgroundTextColor(targetBackgroundConfig, TRANSITION_DURATION)
+      : Promise.resolve();
+    
+    // 等待淡出、背景過渡和文字顏色過渡完成
+    await Promise.all([soundFadeOutPromise, backgroundTransitionPromise, textColorTransitionPromise]);
     
     // 檢查狀態是否還有效
     if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
@@ -1184,25 +1191,7 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
       return;
     }
 
-    // 應用對應的文字顏色（背景過渡已完成）
-    if (AppState.backgroundRenderer) {
-      if (atmosphere.background_config) {
-        // 應用對應的文字顏色
-        if (window.applyBackgroundTextColor) {
-          window.applyBackgroundTextColor(atmosphere.background_config);
-        }
-      } else if (AppState.baseBackgroundConfig) {
-        // 應用基礎背景的文字顏色
-        if (window.applyBackgroundTextColor) {
-          window.applyBackgroundTextColor(AppState.baseBackgroundConfig);
-        }
-      } else {
-        // 沒有背景配置，恢復默認文字顏色
-        if (window.applyBackgroundTextColor) {
-          window.applyBackgroundTextColor(null);
-        }
-      }
-    }
+    // 文字顏色過渡已在上面完成，這裡不需要再次設置
 
     AppState.currentAtmosphere = atmosphere;
     AppState.isPreviewMode = false;

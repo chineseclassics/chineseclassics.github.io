@@ -1723,20 +1723,86 @@ const backgroundTextColorMap = {
 };
 
 /**
- * 應用背景對應的文字顏色
- * @param {object} backgroundConfig - 背景配置對象
+ * 獲取當前文字顏色（從 CSS 變量或計算值）
  */
-function applyBackgroundTextColor(backgroundConfig) {
+function getCurrentTextColor() {
   const root = document.documentElement;
+  const computedStyle = getComputedStyle(root);
+  const currentColor = computedStyle.getPropertyValue('--poem-text-color').trim();
   
+  // 如果是 CSS 變量，嘗試解析
+  if (currentColor.startsWith('var(')) {
+    // 嘗試獲取實際值
+    const tempEl = document.createElement('div');
+    tempEl.style.color = currentColor;
+    document.body.appendChild(tempEl);
+    const actualColor = getComputedStyle(tempEl).color;
+    document.body.removeChild(tempEl);
+    
+    // 將 rgb() 轉換為十六進制
+    const rgbMatch = actualColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (rgbMatch) {
+      const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+      const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+      const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+      return `#${r}${g}${b}`.toUpperCase();
+    }
+    return '#2C3E50'; // 默認值
+  }
+  
+  // 如果已經是十六進制顏色，直接返回
+  if (currentColor.startsWith('#')) {
+    return currentColor;
+  }
+  
+  return '#2C3E50'; // 默認值
+}
+
+/**
+ * 將十六進制顏色轉換為 RGB 對象
+ */
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 44, g: 62, b: 80 }; // 默認 #2C3E50
+}
+
+/**
+ * 將 RGB 對象轉換為十六進制顏色
+ */
+function rgbToHex(rgb) {
+  const r = Math.round(rgb.r).toString(16).padStart(2, '0');
+  const g = Math.round(rgb.g).toString(16).padStart(2, '0');
+  const b = Math.round(rgb.b).toString(16).padStart(2, '0');
+  return `#${r}${g}${b}`.toUpperCase();
+}
+
+/**
+ * 在兩個顏色之間插值
+ */
+function interpolateColor(color1, color2, t) {
+  const rgb1 = hexToRgb(color1);
+  const rgb2 = hexToRgb(color2);
+  
+  const rgb = {
+    r: rgb1.r + (rgb2.r - rgb1.r) * t,
+    g: rgb1.g + (rgb2.g - rgb1.g) * t,
+    b: rgb1.b + (rgb2.b - rgb1.b) * t
+  };
+  
+  return rgbToHex(rgb);
+}
+
+/**
+ * 根據背景配置獲取目標文字顏色
+ */
+function getTargetTextColor(backgroundConfig) {
   if (!backgroundConfig || !backgroundConfig.color_scheme || !backgroundConfig.color_scheme.colors) {
     // 沒有背景配置，使用系統默認
-    const defaultColor = 'var(--color-text-primary, #2C3E50)';
-    root.style.setProperty('--poem-text-color', defaultColor);
-    root.style.setProperty('--poem-glow-color', defaultColor);
-    root.style.setProperty('--poem-meta-color', defaultColor);
-    updatePoemTextGlow('var(--color-text-primary, #2C3E50)');
-    return;
+    return '#2C3E50';
   }
 
   const bgId = backgroundConfig.color_scheme.id;
@@ -1744,25 +1810,128 @@ function applyBackgroundTextColor(backgroundConfig) {
   
   // 如果是自定義配色（沒有 id 或 id 以 custom- 開頭），根據亮度自動判斷
   if (!bgId || bgId.startsWith('custom-')) {
-    applyCustomBackgroundTextColor(colors);
-    return;
+    // 計算平均亮度
+    function getLuminance(hex) {
+      const rgb = hex.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+      if (!rgb) return 0;
+      
+      const r = parseInt(rgb[1], 16) / 255;
+      const g = parseInt(rgb[2], 16) / 255;
+      const b = parseInt(rgb[3], 16) / 255;
+      
+      // 使用相對亮度公式
+      const rLinear = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+      const gLinear = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+      const bLinear = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+      
+      return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+    }
+
+    const avgLuminance = colors.reduce((sum, color) => sum + getLuminance(color), 0) / colors.length;
+    return avgLuminance > 0.5 ? '#2C3E50' : '#FFFFFF';
   }
   
   // 預設配色：使用映射表
   const textColor = backgroundTextColorMap[bgId];
+  return textColor || '#2C3E50';
+}
+
+/**
+ * 應用文字顏色（帶過渡）
+ * @param {string} targetColor - 目標顏色（十六進制）
+ * @param {number} duration - 過渡時長（毫秒）
+ */
+function applyTextColorWithTransition(targetColor, duration = 600) {
+  const root = document.documentElement;
+  const currentColor = getCurrentTextColor();
   
-  if (textColor) {
-    root.style.setProperty('--poem-text-color', textColor);
-    root.style.setProperty('--poem-glow-color', textColor);
-    root.style.setProperty('--poem-meta-color', textColor); // Meta 信息使用相同顏色
-    updatePoemTextGlow(textColor);
+  // 如果顏色相同，直接設置
+  if (currentColor.toUpperCase() === targetColor.toUpperCase()) {
+    root.style.setProperty('--poem-text-color', targetColor);
+    root.style.setProperty('--poem-glow-color', targetColor);
+    root.style.setProperty('--poem-meta-color', targetColor);
+    updatePoemTextGlow(targetColor);
+    return Promise.resolve();
+  }
+  
+  // 設置 CSS transition
+  root.style.setProperty('--poem-text-color-transition', `${duration}ms ease-in-out`);
+  root.style.setProperty('--poem-glow-color-transition', `${duration}ms ease-in-out`);
+  root.style.setProperty('--poem-meta-color-transition', `${duration}ms ease-in-out`);
+  
+  // 開始過渡動畫
+  return new Promise((resolve) => {
+    const startTime = performance.now();
+    const startColor = hexToRgb(currentColor);
+    const endColor = hexToRgb(targetColor);
+    
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // 使用緩動函數（ease-in-out）
+      const easedProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      // 計算中間顏色
+      const interpolatedRgb = {
+        r: startColor.r + (endColor.r - startColor.r) * easedProgress,
+        g: startColor.g + (endColor.g - startColor.g) * easedProgress,
+        b: startColor.b + (endColor.b - startColor.b) * easedProgress
+      };
+      
+      const interpolatedColor = rgbToHex(interpolatedRgb);
+      
+      // 更新顏色
+      root.style.setProperty('--poem-text-color', interpolatedColor);
+      root.style.setProperty('--poem-glow-color', interpolatedColor);
+      root.style.setProperty('--poem-meta-color', interpolatedColor);
+      
+      // 更新發光效果
+      updatePoemTextGlow(interpolatedColor);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // 過渡完成，設置最終顏色
+        root.style.setProperty('--poem-text-color', targetColor);
+        root.style.setProperty('--poem-glow-color', targetColor);
+        root.style.setProperty('--poem-meta-color', targetColor);
+        updatePoemTextGlow(targetColor);
+        
+        // 清除 transition（避免影響後續的非過渡設置）
+        root.style.removeProperty('--poem-text-color-transition');
+        root.style.removeProperty('--poem-glow-color-transition');
+        root.style.removeProperty('--poem-meta-color-transition');
+        
+        resolve();
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  });
+}
+
+/**
+ * 應用背景對應的文字顏色
+ * @param {object} backgroundConfig - 背景配置對象
+ * @param {number} duration - 過渡時長（毫秒），0 表示無過渡
+ */
+function applyBackgroundTextColor(backgroundConfig, duration = 0) {
+  const targetColor = getTargetTextColor(backgroundConfig);
+  
+  if (duration > 0) {
+    // 使用過渡
+    return applyTextColorWithTransition(targetColor, duration);
   } else {
-    // 未知的背景 ID，使用系統默認
-    const defaultColor = 'var(--color-text-primary, #2C3E50)';
-    root.style.setProperty('--poem-text-color', defaultColor);
-    root.style.setProperty('--poem-glow-color', defaultColor);
-    root.style.setProperty('--poem-meta-color', defaultColor);
-    updatePoemTextGlow('var(--color-text-primary, #2C3E50)');
+    // 直接設置（無過渡）
+    const root = document.documentElement;
+    root.style.setProperty('--poem-text-color', targetColor);
+    root.style.setProperty('--poem-glow-color', targetColor);
+    root.style.setProperty('--poem-meta-color', targetColor);
+    updatePoemTextGlow(targetColor);
+    return Promise.resolve();
   }
 }
 
