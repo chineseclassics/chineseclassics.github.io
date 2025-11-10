@@ -56,8 +56,10 @@ class SoundTrack {
 
   /**
    * 播放音效
+   * @param {boolean} fadeIn - 是否淡入，默認 false
+   * @param {number} fadeInDuration - 淡入時長（毫秒），默認 500ms
    */
-  play() {
+  play(fadeIn = false, fadeInDuration = 500) {
     if (!this.audioBuffer) {
       console.warn('音頻未加載，無法播放');
       return;
@@ -85,7 +87,17 @@ class SoundTrack {
 
     // 創建音量節點
     this.gainNode = audioContext.createGain();
-    this.gainNode.gain.value = this.volume;
+    
+    // 根據是否需要淡入設置初始音量
+    if (fadeIn) {
+      this.gainNode.gain.value = 0;
+      const startTime = audioContext.currentTime;
+      const endTime = startTime + fadeInDuration / 1000;
+      this.gainNode.gain.setValueAtTime(0, startTime);
+      this.gainNode.gain.linearRampToValueAtTime(this.volume, endTime);
+    } else {
+      this.gainNode.gain.value = this.volume;
+    }
 
     // 連接節點：音源 -> 音量 -> 主音量 -> 目標
     this.sourceNode.connect(this.gainNode);
@@ -101,7 +113,7 @@ class SoundTrack {
     this.sourceNode.start(0);
     this.isPlaying = true;
 
-    console.log(`▶️ 播放音效: ${this.soundEffect.name}`);
+    console.log(`▶️ 播放音效: ${this.soundEffect.name}${fadeIn ? ' (淡入)' : ''}`);
   }
 
   /**
@@ -121,6 +133,23 @@ class SoundTrack {
   }
 
   /**
+   * 淡出並停止播放
+   * @param {number} duration - 淡出時長（毫秒），默認 500ms
+   */
+  async fadeOutAndStop(duration = 500) {
+    if (!this.isPlaying || !this.gainNode) {
+      this.stop();
+      return;
+    }
+    
+    // 淡出到 0
+    await this.fadeTo(0, duration);
+    
+    // 停止播放
+    this.stop();
+  }
+
+  /**
    * 設置音量
    * @param {number} volume - 音量值 (0.0 到 1.0)
    */
@@ -129,6 +158,43 @@ class SoundTrack {
     if (this.gainNode) {
       this.gainNode.gain.value = this.volume;
     }
+  }
+
+  /**
+   * 淡入淡出音量
+   * @param {number} targetVolume - 目標音量值 (0.0 到 1.0)
+   * @param {number} duration - 過渡時長（毫秒），默認 500ms
+   */
+  fadeTo(targetVolume, duration = 500) {
+    if (!this.gainNode) return Promise.resolve();
+    
+    const audioContext = this.audioEngine.getAudioContext();
+    const currentVolume = this.gainNode.gain.value;
+    const targetVol = Math.max(0, Math.min(1, targetVolume));
+    
+    // 如果目標音量與當前音量相同，直接返回
+    if (Math.abs(currentVolume - targetVol) < 0.001) {
+      return Promise.resolve();
+    }
+    
+    return new Promise((resolve) => {
+      const startTime = audioContext.currentTime;
+      const endTime = startTime + duration / 1000;
+      
+      // 設置初始音量
+      this.gainNode.gain.setValueAtTime(currentVolume, startTime);
+      
+      // 線性過渡到目標音量
+      this.gainNode.gain.linearRampToValueAtTime(targetVol, endTime);
+      
+      // 更新內部音量值
+      this.volume = targetVol;
+      
+      // 過渡完成後解析 Promise
+      setTimeout(() => {
+        resolve();
+      }, duration);
+    });
   }
 
   /**
@@ -207,8 +273,10 @@ export class SoundMixer {
 
   /**
    * 播放所有音效
+   * @param {boolean} fadeIn - 是否淡入，默認 false
+   * @param {number} fadeInDuration - 淡入時長（毫秒），默認 500ms
    */
-  async playAll() {
+  async playAll(fadeIn = false, fadeInDuration = 500) {
     if (this.tracks.size === 0) {
       console.warn('沒有音效可播放');
       return;
@@ -231,22 +299,33 @@ export class SoundMixer {
     }
 
     this.tracks.forEach(track => {
-      track.play();
+      track.play(fadeIn, fadeInDuration);
     });
 
     this.isPlaying = true;
-    console.log('▶️ 播放所有音效');
+    console.log(`▶️ 播放所有音效${fadeIn ? ' (淡入)' : ''}`);
   }
 
   /**
    * 停止所有音效
+   * @param {boolean} fadeOut - 是否淡出，默認 false
+   * @param {number} fadeOutDuration - 淡出時長（毫秒），默認 500ms
    */
-  stopAll() {
+  async stopAll(fadeOut = false, fadeOutDuration = 500) {
     if (this.tracks.size > 0) {
-      this.tracks.forEach(track => {
-        track.stop();
-      });
-      console.log('⏹️ 停止所有音效');
+      if (fadeOut) {
+        // 並行淡出所有音效
+        const fadePromises = Array.from(this.tracks.values()).map(track =>
+          track.fadeOutAndStop(fadeOutDuration)
+        );
+        await Promise.all(fadePromises);
+        console.log('⏹️ 淡出並停止所有音效');
+      } else {
+        this.tracks.forEach(track => {
+          track.stop();
+        });
+        console.log('⏹️ 停止所有音效');
+      }
     }
 
     this.isPlaying = false;
@@ -281,13 +360,19 @@ export class SoundMixer {
 
   /**
    * 清空所有音效軌道
+   * @param {boolean} fadeOut - 是否淡出，默認 false
+   * @param {number} fadeOutDuration - 淡出時長（毫秒），默認 500ms
    */
-  clear() {
+  async clear(fadeOut = false, fadeOutDuration = 500) {
     if (this.tracks.size > 0) {
-      this.stopAll();
+      if (fadeOut) {
+        await this.stopAll(true, fadeOutDuration);
+      } else {
+        this.stopAll();
+      }
       this.tracks.forEach(track => track.destroy());
       this.tracks.clear();
-      console.log('🗑️ 清空所有音效軌道');
+      console.log(`🗑️ 清空所有音效軌道${fadeOut ? ' (淡出)' : ''}`);
     }
   }
 

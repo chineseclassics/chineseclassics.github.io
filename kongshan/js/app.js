@@ -1081,12 +1081,25 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
     soundControlsEl.style.display = 'none';
   }
 
+  // 過渡時長配置
+  const TRANSITION_DURATION = 600; // 背景和聲音過渡時長（毫秒）
+  const FADE_DURATION = 500; // 聲音淡入淡出時長（毫秒）
+
   if (!entry || entry.type === 'placeholder') {
+    // 淡出舊音效
     if (AppState.soundMixer) {
-      AppState.soundMixer.clear();
+      await AppState.soundMixer.clear(true, FADE_DURATION);
     }
+    // 過渡到基礎背景
     if (AppState.backgroundRenderer && AppState.baseBackgroundConfig) {
-      AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
+      await AppState.backgroundRenderer.setConfigWithTransition(
+        AppState.baseBackgroundConfig,
+        TRANSITION_DURATION
+      );
+      // 應用基礎背景的文字顏色
+      if (window.applyBackgroundTextColor) {
+        window.applyBackgroundTextColor(AppState.baseBackgroundConfig);
+      }
     }
     AppState.currentAtmosphere = null;
     updateLikeButtonUI(null);
@@ -1100,6 +1113,28 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
 
   try {
     const atmosphere = entry.data;
+    
+    // 確定目標背景配置
+    const targetBackgroundConfig = atmosphere.background_config || AppState.baseBackgroundConfig || null;
+    
+    // 同時開始：1) 淡出舊音效 2) 過渡背景
+    const soundFadeOutPromise = AppState.soundMixer 
+      ? AppState.soundMixer.clear(true, FADE_DURATION)
+      : Promise.resolve();
+    
+    const backgroundTransitionPromise = AppState.backgroundRenderer && targetBackgroundConfig
+      ? AppState.backgroundRenderer.setConfigWithTransition(targetBackgroundConfig, TRANSITION_DURATION)
+      : Promise.resolve();
+    
+    // 等待淡出和背景過渡完成
+    await Promise.all([soundFadeOutPromise, backgroundTransitionPromise]);
+    
+    // 檢查狀態是否還有效
+    if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+      return;
+    }
+    
+    // 載入新音效
     const sounds = await AppState.atmosphereManager.getAtmosphereSounds(atmosphere);
     if (context.pendingToken !== token) {
       return;
@@ -1111,7 +1146,6 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
     }
 
     if (AppState.soundMixer) {
-      AppState.soundMixer.clear();
       const loadedTracks = [];
       for (const sound of sounds) {
         // 在每次載入前檢查狀態，如果用戶已經離開，停止載入
@@ -1139,26 +1173,25 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
         }
       }
       
-      // 播放前最後一次檢查狀態
+      // 播放前最後一次檢查狀態，使用淡入效果
       if (context.pendingToken === token && AppState.activeScreen === 'viewer' && loadedTracks.length > 0) {
-        await AppState.soundMixer.playAll();
+        await AppState.soundMixer.playAll(true, FADE_DURATION);
       }
     }
 
-    // 應用背景前檢查狀態
+    // 應用背景前檢查狀態（背景過渡已在上面完成）
     if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
       return;
     }
 
+    // 應用對應的文字顏色（背景過渡已完成）
     if (AppState.backgroundRenderer) {
       if (atmosphere.background_config) {
-        AppState.backgroundRenderer.setConfig(atmosphere.background_config);
         // 應用對應的文字顏色
         if (window.applyBackgroundTextColor) {
           window.applyBackgroundTextColor(atmosphere.background_config);
         }
       } else if (AppState.baseBackgroundConfig) {
-        AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
         // 應用基礎背景的文字顏色
         if (window.applyBackgroundTextColor) {
           window.applyBackgroundTextColor(AppState.baseBackgroundConfig);
