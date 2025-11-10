@@ -120,7 +120,21 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
         <div class="recording-name-panel" id="recording-name-panel" hidden>
           <!-- 波形圖容器 -->
           <div class="recording-waveform-container">
-            <div id="recording-waveform" class="recording-waveform"></div>
+            <div class="recording-waveform-wrapper">
+              <div id="recording-waveform" class="recording-waveform"></div>
+              <!-- 自定義拖動標記 -->
+              <div class="recording-trim-overlay">
+                <div class="recording-trim-selection" id="recording-trim-selection"></div>
+                <div class="recording-trim-handle recording-trim-handle-start" id="recording-trim-handle-start">
+                  <div class="recording-trim-handle-line"></div>
+                  <div class="recording-trim-handle-dot"></div>
+                </div>
+                <div class="recording-trim-handle recording-trim-handle-end" id="recording-trim-handle-end">
+                  <div class="recording-trim-handle-line"></div>
+                  <div class="recording-trim-handle-dot"></div>
+                </div>
+              </div>
+            </div>
             <div class="recording-time-info">
               <span id="recording-selected-time">已選取 0 秒</span>
               <span class="recording-time-separator">/</span>
@@ -1116,11 +1130,11 @@ async function initializeWaveform(audioUrl, duration) {
     }
   }
   
-  // 如果所有方法都失敗，使用固定範圍
+  // 如果所有方法都失敗，使用自定義拖動標記
   if (!regionsCreated) {
-    console.warn('無法創建可拖動的剪切區域，將使用固定剪切範圍');
-    trimStartRegion = { start: 0, end: Math.min(MIN_TRIM_DURATION, totalDuration) };
-    trimEndRegion = { start: Math.max(0, totalDuration - MIN_TRIM_DURATION), end: totalDuration };
+    console.log('使用自定義拖動標記系統');
+    // 初始化自定義拖動標記
+    initializeCustomTrimHandles(wavesurfer, totalDuration);
   }
 
   // 點擊波形圖播放/暫停
@@ -1134,6 +1148,151 @@ async function initializeWaveform(audioUrl, duration) {
 
   // 更新時間顯示
   updateTimeDisplay();
+}
+
+/**
+ * 初始化自定義拖動標記系統
+ */
+function initializeCustomTrimHandles(wavesurferInstance, totalDuration) {
+  const startHandle = document.getElementById('recording-trim-handle-start');
+  const endHandle = document.getElementById('recording-trim-handle-end');
+  const selection = document.getElementById('recording-trim-selection');
+  const wrapper = document.querySelector('.recording-waveform-wrapper');
+  
+  if (!startHandle || !endHandle || !selection || !wrapper) {
+    console.error('無法找到拖動標記元素');
+    return;
+  }
+
+  // 初始化範圍
+  let startTime = 0;
+  let endTime = Math.min(MIN_TRIM_DURATION, totalDuration);
+  
+  // 如果總長度大於最小長度，設置結尾標記
+  if (totalDuration > MIN_TRIM_DURATION) {
+    endTime = totalDuration;
+    startTime = Math.max(0, totalDuration - MIN_TRIM_DURATION);
+  }
+  
+  trimStartRegion = { start: startTime, end: startTime };
+  trimEndRegion = { start: endTime, end: endTime };
+
+  // 更新標記位置
+  const updateHandles = () => {
+    const wrapperWidth = wrapper.offsetWidth;
+    const startPercent = (startTime / totalDuration) * 100;
+    const endPercent = (endTime / totalDuration) * 100;
+    
+    startHandle.style.left = `${startPercent}%`;
+    endHandle.style.left = `${endPercent}%`;
+    selection.style.left = `${startPercent}%`;
+    selection.style.width = `${endPercent - startPercent}%`;
+    
+    // 更新時間顯示
+    updateTimeDisplay();
+  };
+
+  // 拖動處理
+  let isDragging = null;
+  let dragStartX = 0;
+  let dragStartTime = 0;
+
+  const startDrag = (handle, initialTime) => {
+    isDragging = handle;
+    dragStartTime = initialTime;
+  };
+
+  const onDrag = (clientX) => {
+    if (!isDragging || !wrapper) return;
+    
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const wrapperWidth = wrapperRect.width;
+    const x = clientX - wrapperRect.left;
+    const percent = Math.max(0, Math.min(100, (x / wrapperWidth) * 100));
+    const newTime = (percent / 100) * totalDuration;
+    
+    if (isDragging === 'start') {
+      const maxTime = endTime - MIN_TRIM_DURATION;
+      startTime = Math.max(0, Math.min(maxTime, newTime));
+      trimStartRegion.start = startTime;
+    } else if (isDragging === 'end') {
+      const minTime = startTime + MIN_TRIM_DURATION;
+      endTime = Math.min(totalDuration, Math.max(minTime, newTime));
+      trimEndRegion.end = endTime;
+    }
+    
+    updateHandles();
+  };
+
+  const endDrag = () => {
+    if (isDragging) {
+      // 停止拖動後預覽
+      if (previewDebounceTimer) {
+        clearTimeout(previewDebounceTimer);
+      }
+      previewDebounceTimer = setTimeout(() => {
+        playTrimmedPreview();
+      }, 300);
+    }
+    isDragging = null;
+  };
+
+  // 綁定事件
+  startHandle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startDrag('start', startTime);
+  });
+  
+  endHandle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startDrag('end', endTime);
+  });
+
+  // 觸摸事件支持
+  startHandle.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    startDrag('start', startTime);
+    dragStartX = touch.clientX;
+  });
+  
+  endHandle.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    startDrag('end', endTime);
+    dragStartX = touch.clientX;
+  });
+
+  // 全局拖動事件
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      onDrag(e.clientX);
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    endDrag();
+  });
+
+  document.addEventListener('touchmove', (e) => {
+    if (isDragging && e.touches.length > 0) {
+      e.preventDefault();
+      onDrag(e.touches[0].clientX);
+    }
+  });
+
+  document.addEventListener('touchend', () => {
+    endDrag();
+  });
+
+  // 初始更新
+  updateHandles();
+  
+  // 監聽波形圖容器大小變化
+  const resizeObserver = new ResizeObserver(() => {
+    updateHandles();
+  });
+  resizeObserver.observe(wrapper);
 }
 
 /**
@@ -1195,8 +1354,24 @@ function updateTimeDisplay() {
   const { selectedTimeEl, totalTimeEl } = getRecordingElements();
   if (!trimStartRegion || !trimEndRegion || !wavesurfer) return;
 
-  const startTime = trimStartRegion.start;
-  const endTime = trimEndRegion.end;
+  // 處理自定義標記的情況
+  let startTime, endTime;
+  if (typeof trimStartRegion === 'object' && 'start' in trimStartRegion) {
+    startTime = trimStartRegion.start;
+  } else if (trimStartRegion && typeof trimStartRegion.getStart === 'function') {
+    startTime = trimStartRegion.getStart();
+  } else {
+    return;
+  }
+
+  if (typeof trimEndRegion === 'object' && 'end' in trimEndRegion) {
+    endTime = trimEndRegion.end;
+  } else if (trimEndRegion && typeof trimEndRegion.getEnd === 'function') {
+    endTime = trimEndRegion.getEnd();
+  } else {
+    return;
+  }
+
   const selectedDuration = endTime - startTime;
   const totalDuration = wavesurfer.getDuration();
 
@@ -1214,8 +1389,23 @@ function updateTimeDisplay() {
 async function playTrimmedPreview() {
   if (!trimStartRegion || !trimEndRegion || !wavesurfer || !currentRecordingBlob) return;
 
-  const startTime = trimStartRegion.start;
-  const endTime = trimEndRegion.end;
+  // 獲取開始和結束時間
+  let startTime, endTime;
+  if (typeof trimStartRegion === 'object' && 'start' in trimStartRegion) {
+    startTime = trimStartRegion.start;
+  } else if (trimStartRegion && typeof trimStartRegion.getStart === 'function') {
+    startTime = trimStartRegion.getStart();
+  } else {
+    return;
+  }
+
+  if (typeof trimEndRegion === 'object' && 'end' in trimEndRegion) {
+    endTime = trimEndRegion.end;
+  } else if (trimEndRegion && typeof trimEndRegion.getEnd === 'function') {
+    endTime = trimEndRegion.getEnd();
+  } else {
+    return;
+  }
 
   // 停止當前播放
   if (wavesurfer.isPlaying()) {
@@ -1223,7 +1413,8 @@ async function playTrimmedPreview() {
   }
 
   // 設置播放範圍
-  wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+  const totalDuration = wavesurfer.getDuration();
+  wavesurfer.seekTo(startTime / totalDuration);
   await wavesurfer.play();
   
   // 在結束時間停止
@@ -1613,8 +1804,24 @@ async function uploadRecording(displayName) {
   let trimmedDuration = currentRecordingDuration;
   
   if (trimStartRegion && trimEndRegion && wavesurfer) {
-    const startTime = trimStartRegion.start;
-    const endTime = trimEndRegion.end;
+    // 獲取開始和結束時間（支持自定義標記和插件標記）
+    let startTime, endTime;
+    if (typeof trimStartRegion === 'object' && 'start' in trimStartRegion) {
+      startTime = trimStartRegion.start;
+    } else if (trimStartRegion && typeof trimStartRegion.getStart === 'function') {
+      startTime = trimStartRegion.getStart();
+    } else {
+      startTime = 0;
+    }
+
+    if (typeof trimEndRegion === 'object' && 'end' in trimEndRegion) {
+      endTime = trimEndRegion.end;
+    } else if (trimEndRegion && typeof trimEndRegion.getEnd === 'function') {
+      endTime = trimEndRegion.getEnd();
+    } else {
+      endTime = wavesurfer.getDuration();
+    }
+    
     trimmedDuration = endTime - startTime;
     
     // 如果用戶調整了剪切範圍，進行音頻剪切

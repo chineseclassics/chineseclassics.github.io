@@ -385,7 +385,8 @@ body {
   margin-bottom: 0.75rem;
 }
 
-.recording-waveform {
+.recording-waveform-wrapper {
+  position: relative;
   width: 100%;
   height: 80px;
   background: var(--color-surface-soft);
@@ -396,9 +397,82 @@ body {
   transition: var(--transition-fast);
 }
 
-.recording-waveform:hover {
+.recording-waveform-wrapper:hover {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+.recording-waveform {
+  width: 100%;
+  height: 100%;
+}
+
+/* 自定義拖動標記覆蓋層 */
+.recording-trim-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.recording-trim-selection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: rgba(120, 146, 98, 0.2);
+  pointer-events: none;
+  transition: left 0.1s ease, width 0.1s ease;
+}
+
+.recording-trim-handle {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  cursor: ew-resize;
+  pointer-events: all;
+  z-index: 20;
+  transform: translateX(-50%);
+}
+
+.recording-trim-handle-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--color-primary);
+  transform: translateX(-50%);
+}
+
+.recording-trim-handle-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary);
+  border: 2px solid var(--color-surface-raised);
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-fast);
+}
+
+.recording-trim-handle:hover .recording-trim-handle-dot,
+.recording-trim-handle:active .recording-trim-handle-dot {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: var(--shadow-md);
+}
+
+.recording-trim-handle:active .recording-trim-handle-line {
+  width: 3px;
+  background: var(--color-secondary);
 }
 
 .recording-time-info {
@@ -479,13 +553,26 @@ body {
     background: rgba(255, 255, 255, 0.05);
   }
 
-  .recording-waveform {
+  .recording-waveform-wrapper {
     background: rgba(70, 92, 76, 0.24);
     border-color: var(--color-border-soft);
   }
 
-  .recording-waveform:hover {
+  .recording-waveform-wrapper:hover {
     border-color: var(--color-primary);
+  }
+
+  .recording-trim-selection {
+    background: rgba(120, 146, 98, 0.15);
+  }
+
+  .recording-trim-handle-line {
+    background: var(--color-primary);
+  }
+
+  .recording-trim-handle-dot {
+    background: var(--color-primary);
+    border-color: var(--color-surface-raised);
   }
 
   .recording-action-secondary {
