@@ -1485,6 +1485,7 @@ function createSoundCard(sound) {
 }
 
 let autoPreviewTimer = null;
+let isAutoPreviewRunning = false; // 防止多個實例同時執行
 
 function scheduleAutoPreview() {
   if (!window.AppState || !window.AppState.soundMixer) {
@@ -1512,20 +1513,29 @@ function cancelAutoPreview() {
 async function autoPreviewSelectedSounds() {
   if (!window.AppState || !window.AppState.soundMixer) {
     autoPreviewTimer = null;
+    isAutoPreviewRunning = false;
+    return;
+  }
+
+  // 如果已經有實例在執行，取消本次執行
+  if (isAutoPreviewRunning) {
+    console.log('自動預覽已在執行中，跳過本次調用');
     return;
   }
 
   autoPreviewTimer = null;
+  isAutoPreviewRunning = true;
 
-  const soundMixer = window.AppState.soundMixer;
-  const selectedItems = Array.from(document.querySelectorAll('.selected-sound-item'));
+  try {
+    const soundMixer = window.AppState.soundMixer;
+    const selectedItems = Array.from(document.querySelectorAll('.selected-sound-item'));
 
-  // 清空既有音效
-  soundMixer.clear();
+    // 清空既有音效，確保等待完成
+    await soundMixer.clear();
 
-  if (selectedItems.length === 0) {
-    return;
-  }
+    if (selectedItems.length === 0) {
+      return;
+    }
 
   for (const item of selectedItems) {
     const soundId = item.dataset.soundId;
@@ -1594,8 +1604,12 @@ async function autoPreviewSelectedSounds() {
     }
   }
 
-  if (soundMixer.getTracks().length > 0) {
-    await soundMixer.playAll();
+    if (soundMixer.getTracks().length > 0) {
+      await soundMixer.playAll();
+    }
+  } finally {
+    // 確保標誌被重置
+    isAutoPreviewRunning = false;
   }
 }
 
@@ -1608,6 +1622,16 @@ function toggleSoundSelection(sound, card) {
 
   if (existingItem) {
     // 已選擇，取消選擇
+    // 立即停止對應音效，避免等待定時器
+    if (window.AppState && window.AppState.soundMixer) {
+      const soundMixer = window.AppState.soundMixer;
+      const soundId = sound.id;
+      // 如果該音效正在播放，立即停止
+      // 直接檢查 tracks Map，因為它是公開的
+      if (soundMixer.tracks && soundMixer.tracks.has(soundId)) {
+        soundMixer.removeTrack(soundId);
+      }
+    }
     existingItem.remove();
     card.classList.remove('selected');
   } else {
@@ -1679,6 +1703,16 @@ function createSelectedSoundItem(sound) {
   // 綁定移除按鈕
   const removeBtn = item.querySelector('.remove-btn');
   removeBtn.addEventListener('click', () => {
+    // 立即停止對應音效
+    if (window.AppState && window.AppState.soundMixer) {
+      const soundMixer = window.AppState.soundMixer;
+      const soundId = sound.id;
+      // 如果該音效正在播放，立即停止
+      // 直接檢查 tracks Map，因為它是公開的
+      if (soundMixer.tracks && soundMixer.tracks.has(soundId)) {
+        soundMixer.removeTrack(soundId);
+      }
+    }
     item.remove();
     const soundCard = document.querySelector(`.sound-card[data-sound-id="${sound.id}"]`);
     if (soundCard) soundCard.classList.remove('selected');
