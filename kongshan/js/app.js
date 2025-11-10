@@ -134,11 +134,63 @@ function updateAppSwitcherVisibility() {
 }
 
 /**
- * 初始化應用
+ * 防止移動端縮放和滾動
  */
+function preventMobileZoomAndScroll() {
+  // 防止雙擊縮放
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, false);
+
+  // 防止手勢縮放（雙指捏合）
+  document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+  });
+  
+  document.addEventListener('gesturechange', (e) => {
+    e.preventDefault();
+  });
+  
+  document.addEventListener('gestureend', (e) => {
+    e.preventDefault();
+  });
+
+  // 防止詩句展示頁面的滾動
+  const preventScroll = (e) => {
+    const poemViewerScreen = document.getElementById('poem-viewer-screen');
+    if (poemViewerScreen && poemViewerScreen.style.display !== 'none') {
+      // 允許按鈕點擊，但防止滾動
+      const target = e.target;
+      const isButton = target.tagName === 'BUTTON' || 
+                       target.closest('button') || 
+                       target.closest('.sound-controls') ||
+                       target.closest('.atmosphere-selector');
+      
+      if (!isButton) {
+        // 在詩句展示頁面時，防止滾動
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault(); // 多點觸控（縮放手勢）
+        }
+      }
+    }
+  };
+
+  // 監聽詩句展示頁面的觸摸事件
+  document.addEventListener('touchstart', preventScroll, { passive: false });
+  document.addEventListener('touchmove', preventScroll, { passive: false });
+}
+
 async function initializeApp() {
   try {
     console.log('🚀 空山應用初始化開始...');
+    
+    // 0. 防止移動端縮放和滾動
+    preventMobileZoomAndScroll();
     
     // 1. 驗證配置
     const configValid = validateConfig();
