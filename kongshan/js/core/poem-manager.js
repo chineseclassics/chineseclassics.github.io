@@ -22,8 +22,9 @@ export class PoemManager {
   async loadPoems() {
     try {
       if (!this.supabase) {
-        console.warn('Supabase 未配置，使用模擬數據');
-        return this.getMockPoems();
+        console.error('❌ Supabase 未配置，無法加載詩歌數據');
+        // 不返回模擬數據，返回空數組，讓前端顯示適當的錯誤提示
+        return [];
       }
       
       console.log('從 Supabase 加載詩歌...');
@@ -45,8 +46,9 @@ export class PoemManager {
       
       const allPoems = poemsResult.data || [];
       if (allPoems.length === 0) {
-        console.warn('數據庫中沒有詩歌，使用模擬數據');
-        return this.getMockPoems();
+        console.error('❌ 數據庫中沒有詩歌數據');
+        // 不返回模擬數據，返回空數組，讓前端顯示適當的錯誤提示
+        return [];
       }
       
       // 處理聲色意境查詢結果（即使失敗也不影響，只是沒有排序）
@@ -108,9 +110,10 @@ export class PoemManager {
       this.poems = sortedPoems;
       return sortedPoems;
     } catch (error) {
-      console.error('加載詩歌列表失敗:', error);
-      console.log('使用模擬數據作為降級方案');
-      return this.getMockPoems();
+      console.error('❌ 加載詩歌列表失敗:', error);
+      // 不返回模擬數據，返回空數組，讓前端顯示適當的錯誤提示
+      // 這樣可以避免用戶看到開發時期的測試數據
+      return [];
     }
   }
   
@@ -132,7 +135,8 @@ export class PoemManager {
   async loadPoemById(poemId) {
     try {
       if (!this.supabase) {
-        return this.getMockPoemById(poemId);
+        console.error('❌ Supabase 未配置，無法加載詩歌數據');
+        return null;
       }
       
       const { data, error } = await this.supabase
@@ -160,6 +164,7 @@ export class PoemManager {
   
   /**
    * 模擬數據（用於開發和測試）
+   * 注意：模擬數據應與實際數據格式一致（單句形式）
    */
   getMockPoems() {
     return [
@@ -168,14 +173,14 @@ export class PoemManager {
         title: '靜夜思',
         author: '李白',
         dynasty: '唐',
-        content: '床前明月光，\n疑是地上霜。\n舉頭望明月，\n低頭思故鄉。'
+        content: '床前明月光\n疑是地上霜'
       },
       {
         id: 'mock-2',
         title: '春曉',
         author: '孟浩然',
         dynasty: '唐',
-        content: '春眠不覺曉，\n處處聞啼鳥。\n夜來風雨聲，\n花落知多少。'
+        content: '春眠不覺曉\n處處聞啼鳥'
       }
     ];
   }

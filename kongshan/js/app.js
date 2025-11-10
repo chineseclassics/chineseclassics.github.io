@@ -660,6 +660,12 @@ async function loadPoemList() {
     const poems = await AppState.poemManager.loadPoems();
     console.log('加載到的詩歌:', poems);
     
+    // 檢查是否因為 Supabase 未配置而返回空數組
+    if (poems.length === 0 && !AppState.supabase) {
+      poemList.innerHTML = '<p class="placeholder-text">無法連接到數據庫，請檢查網絡連接或稍後再試</p>';
+      return;
+    }
+    
     // 保存所有詩句（用於搜索）
     AppState.allPoems = poems;
     
