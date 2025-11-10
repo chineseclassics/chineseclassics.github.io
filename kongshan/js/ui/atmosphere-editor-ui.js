@@ -950,6 +950,19 @@ async function initializeWaveform(audioUrl, duration) {
   const samples = Math.ceil(duration * 10); // duration * 10 = 每 100ms 一個點
 
   // 創建 WaveSurfer 實例
+  // 嘗試使用 Regions 插件（如果已載入）
+  const plugins = [];
+  
+  // 檢查是否有 Regions 插件可用
+  if (window.WaveSurferRegions || (window.WaveSurfer && window.WaveSurfer.Regions)) {
+    try {
+      const RegionsPlugin = window.WaveSurferRegions || window.WaveSurfer.Regions;
+      plugins.push(RegionsPlugin.create());
+    } catch (error) {
+      console.warn('無法初始化 Regions 插件:', error);
+    }
+  }
+  
   wavesurfer = WaveSurfer.create({
     container: waveformContainer,
     waveColor: getComputedStyle(document.documentElement).getPropertyValue('--color-text-tertiary').trim() || '#7a8574',
@@ -962,7 +975,8 @@ async function initializeWaveform(audioUrl, duration) {
     normalize: true,
     interact: true,
     backend: 'WebAudio',
-    mediaControls: false
+    mediaControls: false,
+    plugins: plugins.length > 0 ? plugins : undefined
   });
 
   // 載入音頻
@@ -971,60 +985,142 @@ async function initializeWaveform(audioUrl, duration) {
   // 創建剪切區域（開頭和結尾標記）
   const totalDuration = wavesurfer.getDuration();
   
-  // WaveSurfer.js v7 使用 Regions 插件
-  // 首先檢查是否有 Regions 插件可用
-  let regionsPlugin = null;
+  // WaveSurfer.js v7 的 Regions 功能
+  // 嘗試多種方式來創建可拖動的區域
+  let regionsCreated = false;
   
-  // 嘗試獲取 Regions 插件（不同版本的 API 可能不同）
-  if (wavesurfer.regions) {
-    regionsPlugin = wavesurfer.regions;
-  } else if (window.WaveSurfer && window.WaveSurfer.Regions) {
-    // 如果插件需要手動註冊
-    regionsPlugin = wavesurfer.registerPlugin(window.WaveSurfer.Regions.create());
-  } else {
-    console.warn('WaveSurfer Regions 插件未找到，將使用固定剪切範圍');
-  }
-
-  if (regionsPlugin) {
+  // 方法 1: 檢查是否有 addRegion 方法（某些版本可能有）
+  if (typeof wavesurfer.addRegion === 'function') {
     try {
-      // 開頭標記（從 0 開始）
-      trimStartRegion = regionsPlugin.add({
+      trimStartRegion = wavesurfer.addRegion({
         start: 0,
         end: Math.min(MIN_TRIM_DURATION, totalDuration),
         color: 'rgba(120, 146, 98, 0.3)',
         drag: true,
         resize: true
       });
-
-      // 結尾標記（從總長度減去最小長度開始）
+      
       const endStart = Math.max(0, totalDuration - MIN_TRIM_DURATION);
-      trimEndRegion = regionsPlugin.add({
+      trimEndRegion = wavesurfer.addRegion({
         start: endStart,
         end: totalDuration,
         color: 'rgba(120, 146, 98, 0.3)',
         drag: true,
         resize: true
       });
-
-      // 監聽區域更新事件（拖動或調整大小）
+      
       if (trimStartRegion && typeof trimStartRegion.on === 'function') {
         trimStartRegion.on('update-end', () => handleRegionUpdate());
       }
       if (trimEndRegion && typeof trimEndRegion.on === 'function') {
         trimEndRegion.on('update-end', () => handleRegionUpdate());
       }
+      regionsCreated = true;
     } catch (error) {
-      console.error('創建剪切區域失敗:', error);
-      // 如果創建失敗，使用固定範圍
-      trimStartRegion = { start: 0, end: Math.min(MIN_TRIM_DURATION, totalDuration) };
-      trimEndRegion = { start: Math.max(0, totalDuration - MIN_TRIM_DURATION), end: totalDuration };
+      console.warn('使用 addRegion 方法失敗:', error);
     }
-  } else {
-    // 如果沒有 Regions 插件，使用固定剪切範圍（用戶無法拖動調整）
-    // 這意味著用戶只能使用默認的剪切範圍，無法自定義
+  }
+  
+  // 方法 2: 檢查是否有 regions 屬性（插件系統）
+  if (!regionsCreated && wavesurfer.regions) {
+    try {
+      if (typeof wavesurfer.regions.add === 'function') {
+        trimStartRegion = wavesurfer.regions.add({
+          start: 0,
+          end: Math.min(MIN_TRIM_DURATION, totalDuration),
+          color: 'rgba(120, 146, 98, 0.3)',
+          drag: true,
+          resize: true
+        });
+        
+        const endStart = Math.max(0, totalDuration - MIN_TRIM_DURATION);
+        trimEndRegion = wavesurfer.regions.add({
+          start: endStart,
+          end: totalDuration,
+          color: 'rgba(120, 146, 98, 0.3)',
+          drag: true,
+          resize: true
+        });
+        
+        if (trimStartRegion && typeof trimStartRegion.on === 'function') {
+          trimStartRegion.on('update-end', () => handleRegionUpdate());
+        }
+        if (trimEndRegion && typeof trimEndRegion.on === 'function') {
+          trimEndRegion.on('update-end', () => handleRegionUpdate());
+        }
+        regionsCreated = true;
+      }
+    } catch (error) {
+      console.warn('使用 regions.add 方法失敗:', error);
+    }
+  }
+  
+  // 方法 2.5: 檢查插件是否已註冊並可用
+  if (!regionsCreated) {
+    // 檢查所有已註冊的插件
+    const registeredPlugins = wavesurfer.getPlugins ? wavesurfer.getPlugins() : [];
+    for (const plugin of registeredPlugins) {
+      if (plugin && plugin.name === 'Regions' && typeof plugin.add === 'function') {
+        try {
+          trimStartRegion = plugin.add({
+            start: 0,
+            end: Math.min(MIN_TRIM_DURATION, totalDuration),
+            color: 'rgba(120, 146, 98, 0.3)',
+            drag: true,
+            resize: true
+          });
+          
+          const endStart = Math.max(0, totalDuration - MIN_TRIM_DURATION);
+          trimEndRegion = plugin.add({
+            start: endStart,
+            end: totalDuration,
+            color: 'rgba(120, 146, 98, 0.3)',
+            drag: true,
+            resize: true
+          });
+          
+          if (trimStartRegion && typeof trimStartRegion.on === 'function') {
+            trimStartRegion.on('update-end', () => handleRegionUpdate());
+          }
+          if (trimEndRegion && typeof trimEndRegion.on === 'function') {
+            trimEndRegion.on('update-end', () => handleRegionUpdate());
+          }
+          regionsCreated = true;
+          break;
+        } catch (error) {
+          console.warn('使用插件 add 方法失敗:', error);
+        }
+      }
+    }
+  }
+  
+  // 方法 3: 使用 enableDragSelection（v7 的新功能）
+  if (!regionsCreated && typeof wavesurfer.enableDragSelection === 'function') {
+    try {
+      // 啟用拖動選擇功能
+      wavesurfer.enableDragSelection({
+        color: 'rgba(120, 146, 98, 0.3)'
+      });
+      
+      // 監聽區域創建事件
+      wavesurfer.on('region-created', (region) => {
+        console.log('區域已創建:', region);
+      });
+      
+      // 由於 enableDragSelection 是讓用戶自己拖動創建區域，
+      // 我們需要手動創建兩個區域
+      // 但這個方法可能不支持直接創建區域，所以我們使用固定範圍
+      regionsCreated = false; // 這個方法不適合我們的用例
+    } catch (error) {
+      console.warn('使用 enableDragSelection 失敗:', error);
+    }
+  }
+  
+  // 如果所有方法都失敗，使用固定範圍
+  if (!regionsCreated) {
+    console.warn('無法創建可拖動的剪切區域，將使用固定剪切範圍');
     trimStartRegion = { start: 0, end: Math.min(MIN_TRIM_DURATION, totalDuration) };
     trimEndRegion = { start: Math.max(0, totalDuration - MIN_TRIM_DURATION), end: totalDuration };
-    console.warn('使用固定剪切範圍模式：無法拖動調整，將使用默認範圍');
   }
 
   // 點擊波形圖播放/暫停
