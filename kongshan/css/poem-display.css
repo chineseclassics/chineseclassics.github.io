@@ -32,8 +32,8 @@
 /* 詩句卡片 Badge - 聲色意境標記 */
 .poem-card-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   width: 8px;
   height: 8px;
   display: flex;
