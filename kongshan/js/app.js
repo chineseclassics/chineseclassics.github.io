@@ -71,23 +71,20 @@ const ATMOSPHERE_STATUS_HIDE_DELAY = 360;
  */
 function resetAtmosphereEnvironment() {
   try {
+    // 強制清除預覽模式標記（優先執行，確保後續清理邏輯正確執行）
+    AppState.isPreviewMode = false;
+    
     if (AppState.soundMixer) {
       AppState.soundMixer.clear();
     }
 
     if (AppState.backgroundRenderer) {
-      if (AppState.baseBackgroundConfig) {
-        AppState.backgroundRenderer.setConfig(AppState.baseBackgroundConfig);
-        // 應用基礎背景的文字顏色
-        if (window.applyBackgroundTextColor) {
-          window.applyBackgroundTextColor(AppState.baseBackgroundConfig);
-        }
-      } else {
-        AppState.backgroundRenderer.clear();
-        // 恢復默認文字顏色
-        if (window.applyBackgroundTextColor) {
-          window.applyBackgroundTextColor(null);
-        }
+      // 返回首頁時，強制清除所有自定義背景色，恢復默認背景
+      // 不依賴 baseBackgroundConfig，確保首頁始終使用默認背景
+      AppState.backgroundRenderer.clear();
+      // 恢復默認文字顏色
+      if (window.applyBackgroundTextColor) {
+        window.applyBackgroundTextColor(null);
       }
     }
   } catch (resetError) {
@@ -95,7 +92,6 @@ function resetAtmosphereEnvironment() {
   }
 
   AppState.currentAtmosphere = null;
-  AppState.isPreviewMode = false;
 }
 
 /**
