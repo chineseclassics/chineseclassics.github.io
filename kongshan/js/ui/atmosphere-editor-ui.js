@@ -2764,6 +2764,45 @@ async function publishAtmosphere(poem, onSave) {
   const data = collectAtmosphereData(poem, 'pending');
   if (!data) return;
 
+  // 檢查該用戶在該詩句下是否已有意境
+  const userId = await ensureCurrentUserId();
+  if (userId && window.AppState?.supabase) {
+    try {
+      const { data: existingAtmospheres, error } = await window.AppState.supabase
+        .from('poem_atmospheres')
+        .select('id, status, created_at')
+        .eq('poem_id', poem.id)
+        .eq('created_by', userId);
+
+      if (error) {
+        console.warn('檢查舊意境失敗:', error);
+      } else if (existingAtmospheres && existingAtmospheres.length > 0) {
+        // 有舊意境，提示用戶確認覆蓋
+        const oldStatus = existingAtmospheres[0].status;
+        const statusText = {
+          'approved': '已發布',
+          'pending': '待審核',
+          'draft': '草稿',
+          'rejected': '已拒絕'
+        }[oldStatus] || '未知狀態';
+
+        const confirmed = confirm(
+          `你已經為這首詩創作過一個聲色意境（狀態：${statusText}）。\n\n` +
+          `發布新的意境將會覆蓋舊的意境，舊的意境將被刪除。\n\n` +
+          `確定要繼續發布嗎？`
+        );
+
+        if (!confirmed) {
+          // 用戶取消，不繼續發布
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn('檢查舊意境時發生錯誤:', error);
+      // 發生錯誤時繼續發布流程，不阻斷用戶操作
+    }
+  }
+
   if (data.status === 'approved') {
     alert('你的聲色意境已直接發佈！');
   } else {

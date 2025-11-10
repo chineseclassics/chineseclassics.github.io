@@ -904,7 +904,20 @@ async function handleAtmosphereSave(atmosphereData) {
       return;
     }
 
-    // 插入到數據庫
+    // 覆蓋機制：刪除該用戶在該詩句下的舊意境
+    // 這樣用戶在同一詩句下只能有一個意境，新意境會自動覆蓋舊的
+    const { error: deleteError } = await AppState.supabase
+      .from('poem_atmospheres')
+      .delete()
+      .eq('poem_id', atmosphereData.poem_id)
+      .eq('created_by', userId);
+
+    if (deleteError) {
+      console.warn('刪除舊意境時發生錯誤（可能沒有舊意境，可忽略）:', deleteError);
+      // 不中斷流程，繼續插入新意境
+    }
+
+    // 插入新意境到數據庫
     const { data, error } = await AppState.supabase
       .from('poem_atmospheres')
       .insert([{

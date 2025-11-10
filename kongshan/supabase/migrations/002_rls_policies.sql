@@ -84,6 +84,11 @@ CREATE POLICY "atmospheres_update_own_draft"
     AND status = 'draft'
   );
 
+-- 用戶可刪除自己創建的所有聲色意境（用於覆蓋機制）
+CREATE POLICY "atmospheres_delete_own"
+  ON poem_atmospheres FOR DELETE
+  USING (auth.uid() = created_by);
+
 -- =====================================================
 -- atmosphere_sounds 表策略
 -- =====================================================
