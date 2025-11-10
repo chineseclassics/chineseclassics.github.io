@@ -464,6 +464,53 @@ body {
   transition: var(--transition-fast);
 }
 
+/* 拖動標記提示動畫 */
+.recording-trim-handle.animate-hint .recording-trim-handle-dot {
+  animation: trimHandlePulse 3.5s ease-in-out;
+}
+
+.recording-trim-handle.animate-hint::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: trimHandleGlow 3.5s ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes trimHandlePulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  15%, 35%, 55%, 75% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  25%, 45%, 65% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes trimHandleGlow {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.6;
+  }
+  15%, 35%, 55%, 75% {
+    transform: translate(-50%, -50%) scale(2.5);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.5);
+    opacity: 0;
+  }
+}
+
 .recording-trim-handle:hover .recording-trim-handle-dot,
 .recording-trim-handle:active .recording-trim-handle-dot {
   transform: translate(-50%, -50%) scale(1.2);
@@ -573,6 +620,10 @@ body {
   .recording-trim-handle-dot {
     background: var(--color-primary);
     border-color: var(--color-surface-raised);
+  }
+
+  .recording-trim-handle.animate-hint::before {
+    background: var(--color-primary);
   }
 
   .recording-action-secondary {

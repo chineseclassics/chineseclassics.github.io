@@ -37,7 +37,7 @@ let trimEndRegion = null;
 let previewAudioContext = null;
 let previewAudioSource = null;
 let previewDebounceTimer = null;
-const MIN_TRIM_DURATION = 5; // 最小剪切長度 5 秒
+const MIN_TRIM_DURATION = 2; // 最小剪切長度 2 秒
 const WAVEFORM_SAMPLE_RATE = 100; // 每 100ms 一個數據點
 
 /**
@@ -1013,15 +1013,9 @@ function initializeCustomTrimHandles(wavesurferInstance, totalDuration) {
     return;
   }
 
-  // 初始化範圍
+  // 初始化範圍：默認選中整個錄音（從開頭到結尾）
   let startTime = 0;
-  let endTime = Math.min(MIN_TRIM_DURATION, totalDuration);
-  
-  // 如果總長度大於最小長度，設置結尾標記
-  if (totalDuration > MIN_TRIM_DURATION) {
-    endTime = totalDuration;
-    startTime = Math.max(0, totalDuration - MIN_TRIM_DURATION);
-  }
+  let endTime = totalDuration;
   
   trimStartRegion = { start: startTime, end: startTime };
   trimEndRegion = { start: endTime, end: endTime };
@@ -1136,6 +1130,16 @@ function initializeCustomTrimHandles(wavesurferInstance, totalDuration) {
 
   // 初始更新
   updateHandles();
+  
+  // 觸發動畫提示（錄音完成後提示用戶可以拖動）
+  startHandle.classList.add('animate-hint');
+  endHandle.classList.add('animate-hint');
+  
+  // 3.5 秒後移除動畫類（動畫結束後）
+  setTimeout(() => {
+    startHandle.classList.remove('animate-hint');
+    endHandle.classList.remove('animate-hint');
+  }, 3500);
   
   // 監聽波形圖容器大小變化
   const resizeObserver = new ResizeObserver(() => {
