@@ -272,6 +272,17 @@ body {
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: 0.75rem;
+  padding-top: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  border-top: 1px solid rgba(49, 64, 50, 0.08);
+  position: relative;
+}
+
+/* 暗色模式下的錄音標題欄 */
+@media (prefers-color-scheme: dark) {
+  .recording-header {
+    border-top-color: rgba(167, 187, 165, 0.12);
+  }
 }
 
 .recording-label {
