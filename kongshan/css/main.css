@@ -461,6 +461,7 @@ body {
   position: relative;
   width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   margin-bottom: 0;
@@ -474,6 +475,72 @@ body {
   margin: 0;
   flex: 1;
   text-align: center;
+}
+
+/* 搜索框容器 */
+.poem-search-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 300ms var(--ease-smooth), transform 300ms var(--ease-smooth);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.poem-search-container:not([hidden]) {
+  visibility: visible;
+}
+
+.poem-search-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.poem-search-input {
+  width: 100%;
+  max-width: 400px;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+  backdrop-filter: blur(14px) saturate(120%);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
+.poem-search-input::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+}
+
+.poem-search-input:focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface-raised);
+  box-shadow: 0 0 0 3px var(--color-primary-soft), var(--shadow-sm);
+}
+
+/* 響應式：移動端搜索框 */
+@media (max-width: 768px) {
+  .poem-search-container {
+    margin-top: 14px;
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .poem-search-input {
+    max-width: 100%;
+    height: 40px;
+    font-size: 0.85rem;
+  }
 }
 
 /* 管理後台按鈕 */

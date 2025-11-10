@@ -65,14 +65,21 @@ export function renderVerticalPoem(container, poem) {
 
 /**
  * 渲染詩歌列表
+ * @param {HTMLElement} container - 容器元素
+ * @param {Array} poems - 詩句數組
+ * @param {boolean} showEmptyMessage - 是否顯示空列表提示
  */
-export function renderPoemList(container, poems) {
-  if (!container || !poems || poems.length === 0) {
-    container.innerHTML = '<p class="placeholder-text">暫無詩歌</p>';
-    return;
-  }
+export function renderPoemList(container, poems, showEmptyMessage = true) {
+  if (!container) return;
   
   container.innerHTML = '';
+  
+  if (!poems || poems.length === 0) {
+    if (showEmptyMessage) {
+      container.innerHTML = '<p class="placeholder-text">暫無詩歌</p>';
+    }
+    return;
+  }
   
   poems.forEach((poem, index) => {
     const poemCard = document.createElement('div');

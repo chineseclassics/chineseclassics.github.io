@@ -57,7 +57,10 @@ const AppState = {
     userLikedAtmosphereId: null,
     pendingToken: null
   },
-  atmosphereStatusTimer: null
+  atmosphereStatusTimer: null,
+  allPoems: [], // 保存所有詩句（用於搜索）
+  searchTimeout: null, // 搜索防抖定時器
+  scrollTimeout: null // 滾動停止定時器
 };
 
 const ATMOSPHERE_STATUS_DURATION = 3000;
@@ -608,11 +611,133 @@ async function loadPoemList() {
     console.log('開始加載詩歌列表...');
     const poems = await AppState.poemManager.loadPoems();
     console.log('加載到的詩歌:', poems);
+    
+    // 保存所有詩句（用於搜索）
+    AppState.allPoems = poems;
+    
     renderPoemList(poemList, poems);
     console.log('詩歌列表渲染完成');
+    
+    // 初始化搜索和滾動檢測
+    setupSearchAndScrollDetection();
   } catch (error) {
     console.error('加載詩歌列表失敗:', error);
     poemList.innerHTML = '<p class="placeholder-text">加載失敗，請刷新頁面重試</p>';
+  }
+}
+
+/**
+ * 設置搜索和滾動檢測
+ */
+function setupSearchAndScrollDetection() {
+  const poemList = document.getElementById('poem-list');
+  const searchContainer = document.getElementById('poem-search-container');
+  const searchInput = document.getElementById('poem-search-input');
+  
+  if (!poemList || !searchContainer || !searchInput) {
+    return;
+  }
+  
+  // 滾動檢測：顯示/隱藏搜索框
+  let isScrolling = false;
+  
+  poemList.addEventListener('scroll', () => {
+    // 如果搜索框有內容，保持顯示
+    if (searchInput.value.trim()) {
+      if (!searchContainer.classList.contains('visible')) {
+        searchContainer.classList.remove('hidden');
+        searchContainer.classList.add('visible');
+      }
+      return;
+    }
+    
+    // 顯示搜索框
+    if (!isScrolling) {
+      isScrolling = true;
+      searchContainer.classList.remove('hidden');
+      searchContainer.classList.add('visible');
+    }
+    
+    // 清除之前的定時器
+    if (AppState.scrollTimeout) {
+      clearTimeout(AppState.scrollTimeout);
+    }
+    
+    // 停止滾動 1.5 秒後隱藏
+    AppState.scrollTimeout = setTimeout(() => {
+      isScrolling = false;
+      if (!searchInput.value.trim()) {
+        searchContainer.classList.remove('visible');
+        searchContainer.classList.add('hidden');
+      }
+    }, 1500);
+  });
+  
+  // 搜索功能
+  searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.trim();
+    
+    // 清除之前的搜索定時器
+    if (AppState.searchTimeout) {
+      clearTimeout(AppState.searchTimeout);
+    }
+    
+    // 防抖：300ms 後執行搜索
+    AppState.searchTimeout = setTimeout(() => {
+      filterPoems(searchTerm);
+    }, 300);
+  });
+  
+  // 確保搜索框在 focus 時顯示
+  searchInput.addEventListener('focus', () => {
+    searchContainer.classList.remove('hidden');
+    searchContainer.classList.add('visible');
+  });
+}
+
+/**
+ * 過濾詩句
+ */
+function filterPoems(searchTerm) {
+  const poemList = document.getElementById('poem-list');
+  if (!poemList) return;
+  
+  if (!searchTerm) {
+    // 沒有搜索詞，顯示所有詩句
+    renderPoemList(poemList, AppState.allPoems);
+    return;
+  }
+  
+  const searchLower = searchTerm.toLowerCase();
+  const filteredPoems = AppState.allPoems.filter(poem => {
+    // 搜索詩句內容
+    if (poem.content && poem.content.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    // 搜索標題
+    if (poem.title && poem.title.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    // 搜索作者
+    if (poem.author && poem.author.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    // 搜索朝代
+    if (poem.dynasty && poem.dynasty.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    return false;
+  });
+  
+  // 渲染過濾後的詩句
+  if (filteredPoems.length === 0) {
+    poemList.innerHTML = '<p class="placeholder-text">未找到匹配的詩句</p>';
+  } else {
+    renderPoemList(poemList, filteredPoems, false);
   }
 }
 
@@ -1320,6 +1445,13 @@ async function setupAdminPanel() {
   const isAuthenticated = AppState.authStatus === 'google' || AppState.authStatus === 'other';
   if (isAuthenticated) {
     userPanelBtn.hidden = false;
+    
+    // 顯示搜索框容器（但保持隱藏狀態，等待滾動時顯示）
+    const searchContainer = document.getElementById('poem-search-container');
+    if (searchContainer) {
+      searchContainer.hidden = false;
+    }
+    
     if (!userPanelBtn.dataset.bound) {
       userPanelBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
