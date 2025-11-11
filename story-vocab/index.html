@@ -71,18 +71,7 @@
                         <span class="btn-icon">🔐</span>
                         <div class="btn-text">
                             <span class="btn-main">使用 Google 登入</span>
-                            <span class="btn-hint">推薦 · 數據雲端保存，支持跨設備</span>
-                        </div>
-                    </div>
-                </button>
-                
-                <!-- 訪客試用 -->
-                <button class="login-btn login-btn-guest" onclick="continueAsGuest()">
-                    <div class="btn-content">
-                        <span class="btn-icon">👤</span>
-                        <div class="btn-text">
-                            <span class="btn-main">訪客試用</span>
-                            <span class="btn-hint">立即體驗 · 功能有限</span>
+                            <span class="btn-hint">僅限 @student.isf.edu.hk 及 @isf.edu.hk</span>
                         </div>
                     </div>
                 </button>
@@ -131,29 +120,18 @@
                 </div>
             </div>
             
-            <!-- 訪客登入提示（未登入時顯示）-->
+            <!-- 登入提示（未登入時顯示）-->
             <div id="guest-login-prompt" style="display: none; margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px;">
                 <p style="color: white; font-size: 13px; margin-bottom: 12px; text-align: center;">
-                    💡 選擇登入方式
+                    💡 請使用 Google 登入
                 </p>
                 
                 <!-- Google 登入 -->
                 <button onclick="loginWithGoogle()" 
-                        style="width: 100%; padding: 10px 12px; background: white; color: #667eea; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 8px; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;">
+                        style="width: 100%; padding: 10px 12px; background: white; color: #667eea; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;">
                     <span style="font-size: 14px; margin-bottom: 3px;">🔐 使用 Google 登入</span>
-                    <span style="font-size: 11px; color: #888; font-weight: normal;">推薦 - 數據雲端保存，支持跨設備</span>
+                    <span style="font-size: 11px; color: #888; font-weight: normal;">僅限 @student.isf.edu.hk 及 @isf.edu.hk</span>
                 </button>
-                
-                <!-- 訪客試用 -->
-                <button onclick="continueAsGuest()" 
-                        style="width: 100%; padding: 10px 12px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;">
-                    <span style="font-size: 14px; margin-bottom: 3px;">👤 訪客試用</span>
-                    <span style="font-size: 11px; color: rgba(255,255,255,0.8); font-weight: normal;">立即體驗，無需註冊</span>
-                </button>
-                
-                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin-top: 8px; text-align: center;">
-                    ℹ️ 訪客數據不支持跨設備
-                </p>
             </div>
             
             <!-- 用戶統計 -->

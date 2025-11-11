@@ -175,8 +175,24 @@ export class StandaloneAuth extends AuthService {
       console.log('🔐 認證狀態變化:', event);
       
       if (event === 'SIGNED_IN' && session?.user) {
-        await this.syncUserToDatabase(session.user);
-        callback(event, this.currentUser);
+        try {
+          await this.syncUserToDatabase(session.user);
+          callback(event, this.currentUser);
+        } catch (error) {
+          console.error('❌ 同步用戶失敗:', error);
+          // 如果是郵箱域名驗證失敗，顯示錯誤訊息
+          if (error.message && error.message.includes('ISF 學校郵箱')) {
+            callback('SIGNED_OUT', null);
+            // 錯誤訊息會通過全局錯誤處理顯示
+            if (window.showToast) {
+              window.showToast(`❌ ${error.message}`);
+            }
+          } else {
+            // 其他錯誤，登出用戶
+            await this.supabase.auth.signOut();
+            callback('SIGNED_OUT', null);
+          }
+        }
       } else if (event === 'SIGNED_OUT') {
         this.currentUser = null;
         callback(event, null);
@@ -198,6 +214,19 @@ export class StandaloneAuth extends AuthService {
    */
   async syncUserToDatabase(authUser) {
     try {
+      // 🔒 郵箱域名驗證（僅限 Google 登入）
+      if (!authUser.is_anonymous && authUser.email) {
+        const allowedDomains = ['@student.isf.edu.hk', '@isf.edu.hk'];
+        const emailDomain = '@' + authUser.email.split('@')[1];
+        
+        if (!allowedDomains.includes(emailDomain)) {
+          console.error('❌ 郵箱域名不符合要求:', authUser.email);
+          // 登出用戶
+          await this.supabase.auth.signOut();
+          throw new Error('此應用僅限 ISF 學校郵箱登入（@student.isf.edu.hk 或 @isf.edu.hk）');
+        }
+      }
+      
       // 判斷用戶類型
       const isAnonymous = authUser.is_anonymous || false;
       const provider = isAnonymous ? 'anonymous' : 'google';

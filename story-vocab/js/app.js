@@ -212,34 +212,6 @@ async function loginWithGoogle() {
 }
 
 /**
- * 訪客試用（匿名登入）
- */
-async function continueAsGuest() {
-    if (!authService) {
-        showToast('❌ 認證服務未初始化');
-        return;
-    }
-    
-    try {
-        showToast('正在創建訪客賬號...');
-        
-        const user = await authService.loginAnonymously();
-        
-        if (user) {
-            gameState.userId = user.id;
-            gameState.user = user;
-            updateUIForLoggedInUser(user);
-            showToast(`✅ 歡迎，${user.display_name}！`);
-        } else {
-            showToast('❌ 訪客登入失敗');
-        }
-    } catch (error) {
-        console.error('❌ 訪客登入異常:', error);
-        showToast('❌ 訪客登入失敗，請重試');
-    }
-}
-
-/**
  * 登出
  */
 async function logout() {
@@ -376,10 +348,10 @@ function mountGlobalFunctions() {
     
     // 认证相关
     window.loginWithGoogle = loginWithGoogle;
-    window.continueAsGuest = continueAsGuest;
     window.logout = logout;
     window.showLoginScreen = showLoginScreen;
     window.showMainInterface = showMainInterface;
+    window.showToast = showToast;
     
     // 弹窗管理
     window.showVocabModeSelector = showVocabModeSelector;
