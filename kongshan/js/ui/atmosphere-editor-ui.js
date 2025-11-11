@@ -74,7 +74,7 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
   // 只有在沒有當前聲色意境時才清除背景預覽
   // 如果有當前聲色意境，保留背景以便關閉編輯器時無縫恢復
   if (!currentAtmosphere) {
-    clearBackgroundPreview();
+  clearBackgroundPreview();
   }
 
   // 檢查是否已存在編輯器
@@ -316,10 +316,10 @@ export function hideAtmosphereEditor(shouldStopSounds = true) {
       // 清空編輯效果（停止音效，清除背景）
       if (window.AppState && window.AppState.soundMixer) {
         window.AppState.soundMixer.clear();
-      }
+    }
       if (window.AppState && window.AppState.backgroundRenderer) {
-        clearBackgroundPreview();
-      }
+      clearBackgroundPreview();
+    }
       
       // 恢復原始狀態
       if (originalEntry && originalEntry.type !== 'placeholder' && window.applyAtmosphereEntry) {
