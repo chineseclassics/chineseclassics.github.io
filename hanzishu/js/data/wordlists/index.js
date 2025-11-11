@@ -6,6 +6,7 @@ import { hongliElementaryWordlist } from './hongli-elementary.js';
 export { hongliPrepWordlist, hongliElementaryWordlist };
 
 export const systemWordlistsData = [
-    hongliPrepWordlist,
-    hongliElementaryWordlist
+    // 暫時隱藏弘立字表
+    // hongliPrepWordlist,
+    // hongliElementaryWordlist
 ];
