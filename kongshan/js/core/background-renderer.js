@@ -3,6 +3,8 @@
 // Canvas API 封裝
 // =====================================================
 
+import { ParticleRenderer } from './particle-renderer.js';
+
 /**
  * 背景渲染引擎
  * 負責抽象背景的生成和渲染
@@ -18,12 +20,42 @@ export class BackgroundRenderer {
     this.transitionDuration = 800; // 過渡時長（毫秒）
     this.transitionFromConfig = null;
     this.transitionToConfig = null;
+    this.particleRenderer = null; // 粒子渲染器實例
     
     if (canvas) {
       this.ctx = canvas.getContext('2d');
       this.resize();
       window.addEventListener('resize', () => this.resize());
+      
+      // 創建粒子渲染器容器（疊加在 Canvas 上方）
+      this.createParticleContainer();
     }
+  }
+  
+  /**
+   * 創建粒子渲染器容器
+   */
+  createParticleContainer() {
+    if (!this.canvas || !this.canvas.parentNode) return;
+    
+    // 創建容器元素
+    const container = document.createElement('div');
+    container.id = 'particle-container';
+    container.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    `;
+    
+    // 插入到 Canvas 後面
+    this.canvas.parentNode.insertBefore(container, this.canvas.nextSibling);
+    
+    // 初始化粒子渲染器
+    this.particleRenderer = new ParticleRenderer(container);
   }
   
   /**
@@ -34,6 +66,11 @@ export class BackgroundRenderer {
     
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
+    
+    // 調整粒子渲染器大小
+    if (this.particleRenderer) {
+      this.particleRenderer.resize();
+    }
     
     // 如果已有配置，重新渲染
     if (this.currentConfig) {
@@ -158,6 +195,32 @@ export class BackgroundRenderer {
         }
       });
     }
+    
+    // 處理粒子動畫
+    this.handleParticleAnimation(config);
+  }
+  
+  /**
+   * 處理粒子動畫
+   * @param {object} config - 背景配置
+   */
+  handleParticleAnimation(config) {
+    if (!this.particleRenderer) return;
+    
+    // 檢查是否有粒子動畫配置
+    if (config.particle_animation && config.particle_animation.preset) {
+      const preset = config.particle_animation.preset;
+      const animationConfig = config.particle_animation.config || {};
+      
+      // 設置並啟動粒子動畫
+      if (this.particleRenderer.setAnimation(preset, animationConfig)) {
+        this.particleRenderer.start();
+      }
+    } else {
+      // 沒有粒子動畫配置，停止並清除
+      this.particleRenderer.stop();
+      this.particleRenderer.clear();
+    }
   }
   
   /**
@@ -255,6 +318,21 @@ export class BackgroundRenderer {
         }
       });
     }
+    
+    // 處理粒子動畫過渡
+    // 當過渡完成時（t >= 1），粒子動畫會在最終 render 中設置
+    // 這裡我們在過渡過程中處理粒子動畫的切換
+    if (t >= 0.5) {
+      // 過渡過半時，開始新的粒子動畫
+      this.handleParticleAnimation(toConfig);
+    } else if (this.particleRenderer) {
+      // 過渡前半段，保持舊的粒子動畫（如果有的話）
+      // 或者清除粒子動畫
+      if (!fromConfig.particle_animation || !fromConfig.particle_animation.preset) {
+        this.particleRenderer.stop();
+        this.particleRenderer.clear();
+      }
+    }
   }
 
   /**
@@ -337,10 +415,34 @@ export class BackgroundRenderer {
       this.transitionAnimationId = null;
     }
     
+    // 停止並清除粒子動畫
+    if (this.particleRenderer) {
+      this.particleRenderer.stop();
+      this.particleRenderer.clear();
+    }
+    
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.currentConfig = null;
     this.transitionFromConfig = null;
     this.transitionToConfig = null;
+  }
+  
+  /**
+   * 清理所有資源
+   */
+  dispose() {
+    this.clear();
+    
+    if (this.particleRenderer) {
+      this.particleRenderer.dispose();
+      this.particleRenderer = null;
+    }
+    
+    // 移除粒子容器
+    const container = document.getElementById('particle-container');
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
   }
 }
 

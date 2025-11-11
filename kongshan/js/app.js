@@ -223,7 +223,7 @@ async function initializeApp() {
       AppState.audioEngine = new AudioEngine();
       AppState.soundMixer = new SoundMixer(AppState.audioEngine);
       
-      // 初始化背景渲染器
+      // 初始化背景渲染器（包含粒子渲染器）
       const canvas = document.getElementById('background-canvas');
       if (canvas) {
         AppState.backgroundRenderer = new BackgroundRenderer(canvas);

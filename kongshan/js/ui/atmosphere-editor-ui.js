@@ -2708,20 +2708,60 @@ function applyBackgroundPreview(bgId) {
   // 標記為有編輯操作
   hasEditorChanges = true;
 
-  // 背景配色方案映射
+  // 背景配色方案映射（包含粒子動畫配置）
   const backgroundSchemes = {
-    'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
+    'night': { 
+      colors: ['#1A1A2E', '#16213E'], 
+      direction: 'diagonal',
+      particle_animation: {
+        type: 'threejs',
+        preset: 'stardust',
+        config: {}
+      }
+    },
     'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
-    'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
+    'autumn': { 
+      colors: ['#2F4F4F', '#708090'], 
+      direction: 'vertical',
+      particle_animation: {
+        type: 'threejs',
+        preset: 'falling-leaves',
+        config: {}
+      }
+    },
     'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
     'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
     'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' },
-    'winter-snow': { colors: ['#F5F5F5', '#E0E0E0'], direction: 'diagonal' },
+    'winter-snow': { 
+      colors: ['#F5F5F5', '#E0E0E0'], 
+      direction: 'diagonal',
+      particle_animation: {
+        type: 'threejs',
+        preset: 'snowflakes',
+        config: {}
+      }
+    },
     'plum-blossom': { colors: ['#FFF3E0', '#FFE0B2'], direction: 'diagonal' },
-    'moonlight-night': { colors: ['#263238', '#37474F'], direction: 'diagonal' },
+    'moonlight-night': { 
+      colors: ['#263238', '#37474F'], 
+      direction: 'diagonal',
+      particle_animation: {
+        type: 'threejs',
+        preset: 'fireflies',
+        config: {}
+      }
+    },
     'green-mountain': { colors: ['#4A7C2E', '#6B8E23'], direction: 'diagonal' },
     'cloud-mist': { colors: ['#ECEFF1', '#CFD8DC'], direction: 'diagonal' },
-    'falling-flowers': { colors: ['#FFE5E8', '#FFCCD0'], direction: 'diagonal' }
+    'falling-flowers': { 
+      colors: ['#FFE5E8', '#FFCCD0'], 
+      direction: 'diagonal',
+      particle_animation: {
+        type: 'threejs',
+        preset: 'falling-petals',
+        config: {}
+      }
+    }
   };
 
   const bgScheme = backgroundSchemes[bgId];
@@ -2737,6 +2777,11 @@ function applyBackgroundPreview(bgId) {
     },
     abstract_elements: []
   };
+  
+  // 添加粒子動畫配置（如果存在）
+  if (bgScheme.particle_animation) {
+    backgroundConfig.particle_animation = bgScheme.particle_animation;
+  }
 
   try {
     const { backgroundRenderer } = window.AppState;
@@ -3564,25 +3609,76 @@ function collectAtmosphereData(poem, status) {
       }
     } else {
       // 預設配色：使用映射表
-  const backgroundSchemes = {
-    'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
-    'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
-    'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
-    'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
-    'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
-    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
-  };
-  
-  const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
-    
-    backgroundConfig = {
-      color_scheme: {
-        id: bgId,
-        colors: bgScheme.colors,
-        direction: bgScheme.direction
-      },
+      const backgroundSchemes = {
+        'night': { 
+          colors: ['#1A1A2E', '#16213E'], 
+          direction: 'diagonal',
+          particle_animation: {
+            type: 'threejs',
+            preset: 'stardust',
+            config: {}
+          }
+        },
+        'dawn': { colors: ['#FFE5B4', '#FFDAB9'], direction: 'vertical' },
+        'autumn': { 
+          colors: ['#2F4F4F', '#708090'], 
+          direction: 'vertical',
+          particle_animation: {
+            type: 'threejs',
+            preset: 'falling-leaves',
+            config: {}
+          }
+        },
+        'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
+        'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
+        'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' },
+        'winter-snow': { 
+          colors: ['#F5F5F5', '#E0E0E0'], 
+          direction: 'diagonal',
+          particle_animation: {
+            type: 'threejs',
+            preset: 'snowflakes',
+            config: {}
+          }
+        },
+        'plum-blossom': { colors: ['#FFF3E0', '#FFE0B2'], direction: 'diagonal' },
+        'moonlight-night': { 
+          colors: ['#263238', '#37474F'], 
+          direction: 'diagonal',
+          particle_animation: {
+            type: 'threejs',
+            preset: 'fireflies',
+            config: {}
+          }
+        },
+        'green-mountain': { colors: ['#4A7C2E', '#6B8E23'], direction: 'diagonal' },
+        'cloud-mist': { colors: ['#ECEFF1', '#CFD8DC'], direction: 'diagonal' },
+        'falling-flowers': { 
+          colors: ['#FFE5E8', '#FFCCD0'], 
+          direction: 'diagonal',
+          particle_animation: {
+            type: 'threejs',
+            preset: 'falling-petals',
+            config: {}
+          }
+        }
+      };
+      
+      const bgScheme = backgroundSchemes[bgId] || backgroundSchemes['night'];
+      
+      backgroundConfig = {
+        color_scheme: {
+          id: bgId,
+          colors: bgScheme.colors,
+          direction: bgScheme.direction
+        },
         abstract_elements: []
-    };
+      };
+      
+      // 添加粒子動畫配置（如果存在）
+      if (bgScheme.particle_animation) {
+        backgroundConfig.particle_animation = bgScheme.particle_animation;
+      }
     }
   }
 
