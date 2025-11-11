@@ -2737,7 +2737,7 @@ function applyBackgroundPreview(bgId) {
       colors: ['#F5F5F5', '#E0E0E0'], 
       direction: 'diagonal',
       particle_animation: {
-        type: 'threejs',
+        type: 'particlesjs',
         preset: 'snowflakes',
         config: {}
       }
@@ -3637,7 +3637,7 @@ function collectAtmosphereData(poem, status) {
           colors: ['#F5F5F5', '#E0E0E0'], 
           direction: 'diagonal',
           particle_animation: {
-            type: 'threejs',
+            type: 'particlesjs',
             preset: 'snowflakes',
             config: {}
           }

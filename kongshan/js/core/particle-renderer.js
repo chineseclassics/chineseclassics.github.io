@@ -189,19 +189,28 @@ export class ParticleRenderer {
           particles: {
             ...baseConfig.particles,
             number: {
-              value: this.isMobile ? 80 : 150,
-              density: baseConfig.particles.number.density
+              value: this.isMobile ? 120 : 200,
+              density: {
+                enable: true,
+                value_area: 800
+              }
             },
             color: {
-              value: ["#FFFFFF", "#F0F0F0"]
+              value: ["#FFFFFF", "#F0F0F0", "#E8E8E8"]
             },
             opacity: {
-              value: 0.9,
-              random: true
+              value: 1.0,
+              random: true,
+              anim: {
+                enable: false
+              }
             },
             size: {
-              value: 3,
-              random: true
+              value: 4,
+              random: true,
+              anim: {
+                enable: false
+              }
             },
             move: {
               enable: true,
