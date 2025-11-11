@@ -618,11 +618,226 @@ export class AdminManager {
   }
 
   // =====================================================
+  // 旅人錄音管理功能（用於音效管理界面）
+  // =====================================================
+
+  /**
+   * 獲取所有旅人錄音（分頁，可選狀態過濾）
+   * @param {number} page - 頁碼（從 1 開始）
+   * @param {number} limit - 每頁數量
+   * @param {string|null} statusFilter - 狀態過濾（'pending' | 'approved' | 'rejected' | null 表示全部）
+   * @returns {Promise<{data: Array, total: number}>}
+   */
+  async getAllRecordings(page = 1, limit = 50, statusFilter = null) {
+    if (!this.supabase) {
+      return { data: [], total: 0 };
+    }
+
+    try {
+      let query = this.supabase
+        .from('recordings')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data: recordings, error: recordingsError, count } = await query;
+
+      if (recordingsError) {
+        console.error('獲取旅人錄音列表失敗:', recordingsError);
+        return { data: [], total: 0 };
+      }
+
+      if (!recordings || recordings.length === 0) {
+        return {
+          data: [],
+          total: count || 0
+        };
+      }
+
+      // 獲取所有 owner_id
+      const ownerIds = [...new Set(recordings.map(r => r.owner_id).filter(Boolean))];
+      
+      // 查詢對應的 travelers 信息
+      let ownersMap = new Map();
+      if (ownerIds.length > 0) {
+        const { data: travelers, error: travelersError } = await this.supabase
+          .from('travelers')
+          .select('user_id, display_name, email')
+          .in('user_id', ownerIds);
+
+        if (!travelersError && Array.isArray(travelers)) {
+          travelers.forEach(t => {
+            ownersMap.set(t.user_id, {
+              display_name: t.display_name,
+              email: t.email
+            });
+          });
+        }
+      }
+
+      // 合併數據
+      const data = recordings.map(recording => ({
+        ...recording,
+        owner: ownersMap.get(recording.owner_id) || {
+          display_name: null,
+          email: null
+        }
+      }));
+
+      return {
+        data,
+        total: count || 0
+      };
+    } catch (error) {
+      console.error('獲取旅人錄音列表異常:', error);
+      return { data: [], total: 0 };
+    }
+  }
+
+  /**
+   * 更新旅人錄音（名稱、狀態等）
+   * @param {string} recordingId - 錄音 ID
+   * @param {object} recordingData - 錄音數據
+   * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+   */
+  async updateRecording(recordingId, recordingData) {
+    if (!recordingId || !recordingData || !this.supabase) {
+      return { success: false, error: '參數不完整' };
+    }
+
+    try {
+      const updateData = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (recordingData.display_name !== undefined) {
+        updateData.display_name = recordingData.display_name;
+      }
+      if (recordingData.status !== undefined) {
+        updateData.status = recordingData.status;
+      }
+
+      const { data, error } = await this.supabase
+        .from('recordings')
+        .update(updateData)
+        .eq('id', recordingId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('更新旅人錄音失敗:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('更新旅人錄音異常:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * 刪除旅人錄音
+   * @param {string} recordingId - 錄音 ID
+   * @param {string} adminId - 管理員 ID
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteRecording(recordingId, adminId) {
+    if (!recordingId || !adminId || !this.supabase) {
+      return { success: false, error: '參數不完整' };
+    }
+
+    try {
+      // 先獲取錄音信息（包括 storage_path）
+      const { data: recording, error: fetchError } = await this.supabase
+        .from('recordings')
+        .select('storage_path, owner_id')
+        .eq('id', recordingId)
+        .single();
+
+      if (fetchError) {
+        console.error('獲取錄音信息失敗:', fetchError);
+        return { success: false, error: '無法找到錄音記錄' };
+      }
+
+      // 查找使用該錄音的聲色意境
+      const { data: atmospheres } = await this.supabase
+        .from('poem_atmospheres')
+        .select('id, sound_combination')
+        .eq('status', 'approved');
+
+      const recordingIdStr = recordingId;
+      const atmospheresToDelete = atmospheres?.filter(atmosphere => {
+        if (!atmosphere.sound_combination || !Array.isArray(atmosphere.sound_combination)) {
+          return false;
+        }
+        return atmosphere.sound_combination.some(sound => {
+          return sound.source_type === 'recording' && sound.recording_id === recordingIdStr;
+        });
+      }) || [];
+
+      // 刪除使用該錄音的聲色意境
+      if (atmospheresToDelete.length > 0) {
+        const atmosphereIds = atmospheresToDelete.map(a => a.id);
+        await this.supabase
+          .from('poem_atmospheres')
+          .delete()
+          .in('id', atmosphereIds);
+      }
+
+      // 刪除錄音記錄
+      const { error } = await this.supabase
+        .from('recordings')
+        .delete()
+        .eq('id', recordingId);
+
+      if (error) {
+        console.error('刪除錄音失敗:', error);
+        return { success: false, error: error.message };
+      }
+
+      // 刪除 Storage 文件
+      if (recording?.storage_path) {
+        try {
+          const { error: storageError } = await this.supabase
+            .storage
+            .from('kongshan_recordings')
+            .remove([recording.storage_path]);
+
+          if (storageError) {
+            console.warn('刪除 Storage 文件失敗（可忽略）:', storageError);
+          }
+        } catch (storageError) {
+          console.warn('刪除 Storage 文件異常（可忽略）:', storageError);
+        }
+      }
+
+      // 記錄操作日誌
+      await this.logAdminAction(
+        adminId,
+        'delete_recording',
+        'recording',
+        recordingId,
+        { recording_id: recordingId }
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error('刪除錄音異常:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // =====================================================
   // 系統音效庫管理功能
   // =====================================================
 
   /**
-   * 獲取所有音效（分頁）
+   * 獲取所有系統音效（分頁）
    * @param {number} page - 頁碼（從 1 開始）
    * @param {number} limit - 每頁數量
    * @returns {Promise<{data: Array, total: number}>}
@@ -636,6 +851,7 @@ export class AdminManager {
       const { data, error, count } = await this.supabase
         .from('sound_effects')
         .select('*', { count: 'exact' })
+        .eq('source', 'system')
         .order('created_at', { ascending: false })
         .range((page - 1) * limit, page * limit - 1);
 

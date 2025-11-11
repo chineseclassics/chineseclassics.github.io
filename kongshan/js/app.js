@@ -1711,6 +1711,7 @@ async function handleAdminViewChange(viewName) {
       AppState.adminDrawer.setContent(container);
       await renderSoundManagement(container, {
         adminManager: AppState.adminManager,
+        supabase: AppState.supabase,
         getCurrentUserId
       });
       return;
