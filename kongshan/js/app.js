@@ -1854,14 +1854,9 @@ function setupPageUnloadListeners() {
     });
   });
 
-  // 頁面可見性變化（當頁面切換到後台時暫停音效）
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      // 頁面隱藏時清理音效
-      resetAtmosphereEnvironment();
-      console.log('📱 頁面已隱藏，已清理音效');
-    }
-  });
+  // 注意：不處理 visibilitychange 事件
+  // 切換標籤時不應該清空聲色意境，讓音效和背景保持連續運行
+  // 只有真正的頁面卸載（beforeunload、pagehide）才會清理資源
 
   console.log('✅ 頁面卸載監聽器已設置');
 }
