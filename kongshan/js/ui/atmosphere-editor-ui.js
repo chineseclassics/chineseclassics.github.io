@@ -302,9 +302,15 @@ export function hideAtmosphereEditor(shouldStopSounds = true) {
       return;
     }
     
-    // 如果不是預覽模式，檢查是否有編輯操作
-    if (hasEditorChanges && editorOriginalState) {
-      // 用戶進行了編輯但沒有點擊預覽，需要清空編輯效果並恢復原始狀態
+    // 檢查是否需要恢復原始狀態
+    // 1. 用戶進行了新的編輯（hasEditorChanges === true）
+    // 2. 或者頁面處於預覽狀態（previewAtmosphereData 存在）
+    // 這兩種情況都需要恢復原始狀態
+    const hasPreviewData = window.AppState?.previewAtmosphereData !== null && window.AppState?.previewAtmosphereData !== undefined;
+    const shouldRestoreOriginal = hasEditorChanges || hasPreviewData;
+    
+    if (shouldRestoreOriginal && editorOriginalState) {
+      // 需要恢復原始狀態
       const originalEntry = editorOriginalState.entry;
       
       // 清空編輯效果（停止音效，清除背景）
@@ -325,8 +331,13 @@ export function hideAtmosphereEditor(shouldStopSounds = true) {
         // 原來沒有聲色意境，保持清除狀態
         // 已經在上面清除了，不需要額外操作
       }
+      
+      // 清除預覽數據，因為已經恢復原始狀態了
+      if (window.AppState) {
+        window.AppState.previewAtmosphereData = null;
+      }
     } else {
-      // 用戶沒有進行編輯，保持原狀（什麼都不做）
+      // 用戶沒有進行編輯，且頁面不在預覽狀態，保持原狀（什麼都不做）
       // 因為編輯器打開時已經保持了原始狀態，所以關閉時不需要任何操作
     }
     
