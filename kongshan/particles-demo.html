@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particles.js 效果演示</title>
+    
+    <!-- particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .demo-container {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        .particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .controls h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .demo-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .demo-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .demo-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #fff;
+        }
+        
+        .info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        .info h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .info p {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div id="particles-js" class="particles-container"></div>
+        
+        <div class="controls">
+            <h1>Particles.js 效果演示</h1>
+            <div class="button-group">
+                <button class="demo-btn active" data-preset="stardust">星光</button>
+                <button class="demo-btn" data-preset="snow">雪花</button>
+                <button class="demo-btn" data-preset="network">連線網格</button>
+                <button class="demo-btn" data-preset="bubbles">氣泡</button>
+                <button class="demo-btn" data-preset="smoke">煙霧</button>
+                <button class="demo-btn" data-preset="flowers">落花</button>
+                <button class="demo-btn" data-preset="fireflies">螢火</button>
+                <button class="demo-btn" data-preset="codepen-stars">CodePen 星空</button>
+            </div>
+        </div>
+        
+        <div class="info">
+            <h2 id="effect-name">星光效果</h2>
+            <p id="effect-desc">金色和銀色的光點在深色背景中閃爍，營造出寧靜的夜空氛圍</p>
+        </div>
+    </div>
+    
+    <script>
+        // 效果配置集合
+        const presets = {
+            stardust: {
+                name: '星光效果',
+                desc: '金色和銀色的光點在深色背景中閃爍，營造出寧靜的夜空氛圍',
+                config: {
+                    particles: {
+                        number: {
+                            value: 200,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#FFD700", "#FFA500", "#FFFFFF", "#FFE5B4"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.8,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 0.5,
+                                opacity_min: 0.4,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 2,
+                            random: true,
+                            anim: {
+                                enable: false
+                            }
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.2,
+                            direction: "none",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: false
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+            
+            snow: {
+                name: '雪花效果',
+                desc: '白色粒子緩緩飄落，如同冬日雪花，帶來純淨寧靜的感覺',
+                config: {
+                    particles: {
+                        number: {
+                            value: 150,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#FFFFFF", "#F0F0F0", "#E8E8E8"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.9,
+                            random: true
+                        },
+                        size: {
+                            value: 3,
+                            random: true
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.5,
+                            direction: "bottom",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: false
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+            
+            network: {
+                name: '連線網格',
+                desc: '粒子之間形成連線，創造出科技感的網格效果',
+                config: {
+                    particles: {
+                        number: {
+                            value: 80,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: "#ffffff"
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.5,
+                            random: false
+                        },
+                        size: {
+                            value: 3,
+                            random: true
+                        },
+                        line_linked: {
+                            enable: true,
+                            distance: 150,
+                            color: "#ffffff",
+                            opacity: 0.4,
+                            width: 1
+                        },
+                        move: {
+                            enable: true,
+                            speed: 1,
+                            direction: "none",
+                            random: false,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: true,
+                                mode: "grab"
+                            },
+                            onclick: {
+                                enable: true,
+                                mode: "push"
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            grab: {
+                                distance: 140,
+                                line_linked: {
+                                    opacity: 1
+                                }
+                            },
+                            push: {
+                                particles_nb: 4
+                            }
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+            
+            bubbles: {
+                name: '氣泡效果',
+                desc: '輕盈的氣泡向上飄浮，帶來夢幻般的視覺體驗',
+                config: {
+                    particles: {
+                        number: {
+                            value: 60,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#87CEEB", "#B0E0E6", "#E0F6FF", "#FFFFFF"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.6,
+                            random: true
+                        },
+                        size: {
+                            value: 5,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 2,
+                                size_min: 0.5,
+                                sync: false
+                            }
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.3,
+                            direction: "top",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: false
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+            
+            smoke: {
+                name: '煙霧效果',
+                desc: '柔和的煙霧緩緩上升擴散，營造出神秘朦朧的氛圍',
+                config: {
+                    particles: {
+                        number: {
+                            value: 50,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#E8E8E8", "#D3D3D3", "#C0C0C0", "#FFFFFF"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.4,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 0.5,
+                                opacity_min: 0.1,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 8,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 1,
+                                size_min: 2,
+                                sync: false
+                            }
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.2,
+                            direction: "top",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: false
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+            
+            flowers: {
+                name: '落花效果',
+                desc: '粉色花瓣輕柔飄落，展現春日浪漫與詩意',
+                config: {
+                    particles: {
+                        number: {
+                            value: 100,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#FFB3BA", "#FFCCCB", "#FFE5E1", "#FFD1DC"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.8,
+                            random: true
+                        },
+                        size: {
+                            value: 4,
+                            random: true
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.8,
+                            direction: "bottom",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: false
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+            
+            fireflies: {
+                name: '螢火效果',
+                desc: '黃綠色的光點緩慢移動並閃爍，如同夜晚的螢火蟲',
+                config: {
+                    particles: {
+                        number: {
+                            value: 60,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#FFFF99", "#CCFF99", "#FFFFCC", "#E6FF99"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.9,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 1,
+                                opacity_min: 0.3,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 3,
+                            random: true
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.3,
+                            direction: "none",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: false
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+            
+            'codepen-stars': {
+                name: 'CodePen 星空效果',
+                desc: '來自 CodePen 的經典星空效果，粒子會閃爍和變化大小，滑鼠懸停時會產生氣泡效果',
+                config: {
+                    particles: {
+                        number: {
+                            value: 355,
+                            density: {
+                                enable: true,
+                                value_area: 789.15
+                            }
+                        },
+                        color: {
+                            value: "#ffffff"
+                        },
+                        shape: {
+                            type: "circle",
+                            stroke: {
+                                width: 0,
+                                color: "#000000"
+                            },
+                            polygon: {
+                                nb_sides: 5
+                            }
+                        },
+                        opacity: {
+                            value: 0.49,
+                            random: false,
+                            anim: {
+                                enable: true,
+                                speed: 0.25,
+                                opacity_min: 0,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 2,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 0.333,
+                                size_min: 0,
+                                sync: false
+                            }
+                        },
+                        line_linked: {
+                            enable: false,
+                            distance: 150,
+                            color: "#ffffff",
+                            opacity: 0.4,
+                            width: 1
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.1,
+                            direction: "none",
+                            random: true,
+                            straight: false,
+                            out_mode: "out",
+                            bounce: false,
+                            attract: {
+                                enable: false,
+                                rotateX: 600,
+                                rotateY: 1200
+                            }
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: {
+                                enable: true,
+                                mode: "bubble"
+                            },
+                            onclick: {
+                                enable: true,
+                                mode: "push"
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            grab: {
+                                distance: 400,
+                                line_linked: {
+                                    opacity: 1
+                                }
+                            },
+                            bubble: {
+                                distance: 83.9,
+                                size: 1,
+                                duration: 3,
+                                opacity: 1,
+                                speed: 3
+                            },
+                            repulse: {
+                                distance: 200,
+                                duration: 0.4
+                            },
+                            push: {
+                                particles_nb: 4
+                            },
+                            remove: {
+                                particles_nb: 2
+                            }
+                        }
+                    },
+                    retina_detect: true
+                }
+            }
+        };
+        
+        let currentParticles = null;
+        
+        // 初始化第一個效果
+        function initParticles(presetName) {
+            const preset = presets[presetName];
+            if (!preset) return;
+            
+            // 清除舊的粒子
+            if (currentParticles && window.pJSDom && window.pJSDom.length > 0) {
+                const index = window.pJSDom.findIndex(pJS => pJS.pJS.canvas.el.id === 'particles-js');
+                if (index !== -1) {
+                    window.pJSDom[index].pJS.fn.vendors.destroypJS();
+                    window.pJSDom.splice(index, 1);
+                }
+            }
+            
+            // 更新信息
+            document.getElementById('effect-name').textContent = preset.name;
+            document.getElementById('effect-desc').textContent = preset.desc;
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.demo-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-preset="${presetName}"]`).classList.add('active');
+            
+            // 初始化新粒子
+            particlesJS('particles-js', preset.config);
+            currentParticles = presetName;
+        }
+        
+        // 按鈕事件
+        document.querySelectorAll('.demo-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const presetName = btn.dataset.preset;
+                initParticles(presetName);
+            });
+        });
+        
+        // 初始化第一個效果
+        window.addEventListener('load', () => {
+            initParticles('stardust');
+        });
+    </script>
+</body>
+</html>
+

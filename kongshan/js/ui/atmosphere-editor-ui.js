@@ -2404,7 +2404,8 @@ const backgroundTextColorMap = {
   'bamboo': '#FFFFFF',   // 竹林：白色文字
   'winter-snow': '#2C3E50',     // 冬雪：深色文字
   'plum-blossom': '#2C3E50',   // 梅花：深色文字
-  'moonlight-night': '#FFFFFF', // 月夜：白色文字
+  'moonlight-night': '#FFFFFF', // 月夜：白色文字（已棄用，改為星夜）
+  'starry-night': '#FFFFFF', // 星夜：白色文字
   'green-mountain': '#FFFFFF',  // 青山：白色文字
   'cloud-mist': '#2C3E50',     // 雲霧：深色文字
   'falling-flowers': '#2C3E50' // 落花：深色文字
@@ -2672,7 +2673,7 @@ function initializeBackgroundSelector() {
     { id: 'bamboo', name: '竹林', colors: ['#2D5016', '#4A7C2E'] },
     { id: 'winter-snow', name: '冬雪', colors: ['#F5F5F5', '#E0E0E0'] },
     { id: 'plum-blossom', name: '梅花', colors: ['#FFF3E0', '#FFE0B2'] },
-    { id: 'moonlight-night', name: '月夜', colors: ['#263238', '#37474F'] },
+    { id: 'starry-night', name: '星夜', colors: ['#070825', '#0A0D2E'] },
     { id: 'green-mountain', name: '青山', colors: ['#4A7C2E', '#6B8E23'] },
     { id: 'cloud-mist', name: '雲霧', colors: ['#ECEFF1', '#CFD8DC'] },
     { id: 'falling-flowers', name: '落花', colors: ['#FFE5E8', '#FFCCD0'] }
@@ -2742,12 +2743,12 @@ function applyBackgroundPreview(bgId) {
       }
     },
     'plum-blossom': { colors: ['#FFF3E0', '#FFE0B2'], direction: 'diagonal' },
-    'moonlight-night': { 
-      colors: ['#263238', '#37474F'], 
+    'starry-night': { 
+      colors: ['#070825', '#0A0D2E'], 
       direction: 'diagonal',
       particle_animation: {
-        type: 'threejs',
-        preset: 'fireflies',
+        type: 'particlesjs',
+        preset: 'codepen-stars',
         config: {}
       }
     },
@@ -3642,12 +3643,12 @@ function collectAtmosphereData(poem, status) {
           }
         },
         'plum-blossom': { colors: ['#FFF3E0', '#FFE0B2'], direction: 'diagonal' },
-        'moonlight-night': { 
-          colors: ['#263238', '#37474F'], 
+        'starry-night': { 
+          colors: ['#070825', '#0A0D2E'], 
           direction: 'diagonal',
           particle_animation: {
-            type: 'threejs',
-            preset: 'fireflies',
+            type: 'particlesjs',
+            preset: 'codepen-stars',
             config: {}
           }
         },
