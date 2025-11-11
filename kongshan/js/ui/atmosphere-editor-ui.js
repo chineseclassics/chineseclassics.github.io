@@ -54,8 +54,28 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
     window.AppState.isPreviewMode = false;
   }
 
-  // 清除之前的背景預覽（如果有的話）
-  clearBackgroundPreview();
+  // 重置編輯狀態追蹤
+  hasEditorChanges = false;
+  
+  // 保存原始狀態（用於關閉時恢復）
+  const context = window.AppState?.atmosphereContext;
+  if (context && context.order && context.order.length > 0 && context.index >= 0) {
+    editorOriginalState = {
+      entry: context.order[context.index],
+      currentAtmosphere: window.AppState.currentAtmosphere
+    };
+  } else {
+    editorOriginalState = {
+      entry: null,
+      currentAtmosphere: null
+    };
+  }
+
+  // 只有在沒有當前聲色意境時才清除背景預覽
+  // 如果有當前聲色意境，保留背景以便關閉編輯器時無縫恢復
+  if (!currentAtmosphere) {
+    clearBackgroundPreview();
+  }
 
   // 檢查是否已存在編輯器
   let editor = document.getElementById('atmosphere-editor');
@@ -266,43 +286,44 @@ export function hideAtmosphereEditor(shouldStopSounds = true) {
     stopRecording(true);
     cleanupRecordingState();
     
-    // 只有在非預覽模式下才停止音效
-    // 預覽模式下應該保留音效播放
-    if (shouldStopSounds && window.AppState && window.AppState.soundMixer) {
-      window.AppState.soundMixer.stopAll();
+    // 如果是預覽模式，保留預覽效果（不恢復原始狀態）
+    if (window.AppState?.isPreviewMode) {
+      editor.classList.remove('visible');
+      setTimeout(() => editor.remove(), 300);
+      return;
     }
     
-    // 清除背景預覽，恢復默認背景
-    // 只有在非預覽模式下才清除（預覽模式下保留背景）
-    if (!window.AppState || !window.AppState.isPreviewMode) {
-      clearBackgroundPreview();
+    // 如果不是預覽模式，檢查是否有編輯操作
+    if (hasEditorChanges && editorOriginalState) {
+      // 用戶進行了編輯但沒有點擊預覽，需要清空編輯效果並恢復原始狀態
+      const originalEntry = editorOriginalState.entry;
       
-      // 如果不是預覽模式，且當前有聲色意境，恢復顯示原來的聲色意境
-      const context = window.AppState?.atmosphereContext;
-      if (context && 
-          context.order && 
-          context.order.length > 0 && 
-          context.index >= 0 && 
-          context.index < context.order.length &&
-          window.AppState.activeScreen === 'viewer') {
-        const currentEntry = context.order[context.index];
-        // 確保不是 placeholder 類型的 entry
-        if (currentEntry && currentEntry.type !== 'placeholder' && window.applyAtmosphereEntry) {
-          // 延遲恢復，確保編輯器動畫完成
-          setTimeout(() => {
-            // 再次檢查狀態，確保用戶還在查看頁面
-            if (window.AppState && 
-                window.AppState.activeScreen === 'viewer' && 
-                context.index >= 0 && 
-                context.index < context.order.length) {
-              window.applyAtmosphereEntry(currentEntry, { showStatus: true }).catch(error => {
-                console.warn('恢復聲色意境失敗:', error);
-              });
-            }
-          }, 350); // 略長於編輯器移除動畫時間（300ms）
-        }
+      // 清空編輯效果（停止音效，清除背景）
+      if (window.AppState && window.AppState.soundMixer) {
+        window.AppState.soundMixer.clear();
       }
+      if (window.AppState && window.AppState.backgroundRenderer) {
+        clearBackgroundPreview();
+      }
+      
+      // 恢復原始狀態
+      if (originalEntry && originalEntry.type !== 'placeholder' && window.applyAtmosphereEntry) {
+        // 恢復原始的聲色意境
+        window.applyAtmosphereEntry(originalEntry, { showStatus: true }).catch(error => {
+          console.warn('恢復原始聲色意境失敗:', error);
+        });
+      } else if (!originalEntry || originalEntry.type === 'placeholder') {
+        // 原來沒有聲色意境，保持清除狀態
+        // 已經在上面清除了，不需要額外操作
+      }
+    } else {
+      // 用戶沒有進行編輯，保持原狀（什麼都不做）
+      // 因為編輯器打開時已經保持了原始狀態，所以關閉時不需要任何操作
     }
+    
+    // 重置編輯狀態追蹤
+    hasEditorChanges = false;
+    editorOriginalState = null;
     
     editor.classList.remove('visible');
     setTimeout(() => editor.remove(), 300);
@@ -2083,6 +2104,10 @@ function createSoundCard(sound) {
 let autoPreviewTimer = null;
 let isAutoPreviewRunning = false; // 防止多個實例同時執行
 
+// 編輯狀態追蹤
+let editorOriginalState = null; // 保存編輯器打開時的原始狀態
+let hasEditorChanges = false; // 追蹤是否有編輯操作
+
 function scheduleAutoPreview() {
   if (!window.AppState || !window.AppState.soundMixer) {
     return;
@@ -2257,6 +2282,9 @@ function toggleSoundSelection(sound, card) {
     card.classList.add('selected');
   }
 
+  // 標記為有編輯操作
+  hasEditorChanges = true;
+
   // 更新空狀態
   updateEmptyState();
   scheduleAutoPreview();
@@ -2293,6 +2321,8 @@ function createSelectedSoundItem(sound) {
       if (window.AppState && window.AppState.soundMixer) {
         window.AppState.soundMixer.setTrackVolume(sound.id, volumeValue);
       }
+      // 標記為有編輯操作
+      hasEditorChanges = true;
     });
   }
 
@@ -2312,6 +2342,8 @@ function createSelectedSoundItem(sound) {
     item.remove();
     const soundCard = document.querySelector(`.sound-card[data-sound-id="${sound.id}"]`);
     if (soundCard) soundCard.classList.remove('selected');
+    // 標記為有編輯操作
+    hasEditorChanges = true;
     updateEmptyState();
     scheduleAutoPreview();
   });
@@ -2641,6 +2673,9 @@ function applyBackgroundPreview(bgId) {
     return;
   }
 
+  // 標記為有編輯操作
+  hasEditorChanges = true;
+
   // 背景配色方案映射
   const backgroundSchemes = {
     'night': { colors: ['#1A1A2E', '#16213E'], direction: 'diagonal' },
@@ -2915,6 +2950,9 @@ function applyCustomBackgroundPreview(colors, direction) {
   if (!window.AppState || !window.AppState.backgroundRenderer) {
     return;
   }
+
+  // 標記為有編輯操作
+  hasEditorChanges = true;
 
   const backgroundConfig = {
     color_scheme: {
