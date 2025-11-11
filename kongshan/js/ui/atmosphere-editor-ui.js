@@ -276,6 +276,32 @@ export function hideAtmosphereEditor(shouldStopSounds = true) {
     // 只有在非預覽模式下才清除（預覽模式下保留背景）
     if (!window.AppState || !window.AppState.isPreviewMode) {
       clearBackgroundPreview();
+      
+      // 如果不是預覽模式，且當前有聲色意境，恢復顯示原來的聲色意境
+      const context = window.AppState?.atmosphereContext;
+      if (context && 
+          context.order && 
+          context.order.length > 0 && 
+          context.index >= 0 && 
+          context.index < context.order.length &&
+          window.AppState.activeScreen === 'viewer') {
+        const currentEntry = context.order[context.index];
+        // 確保不是 placeholder 類型的 entry
+        if (currentEntry && currentEntry.type !== 'placeholder' && window.applyAtmosphereEntry) {
+          // 延遲恢復，確保編輯器動畫完成
+          setTimeout(() => {
+            // 再次檢查狀態，確保用戶還在查看頁面
+            if (window.AppState && 
+                window.AppState.activeScreen === 'viewer' && 
+                context.index >= 0 && 
+                context.index < context.order.length) {
+              window.applyAtmosphereEntry(currentEntry, { showStatus: true }).catch(error => {
+                console.warn('恢復聲色意境失敗:', error);
+              });
+            }
+          }, 350); // 略長於編輯器移除動畫時間（300ms）
+        }
+      }
     }
     
     editor.classList.remove('visible');

@@ -1872,3 +1872,6 @@ window.AppState = AppState;
 // 導出 renderSoundControls 供編輯器使用
 window.renderSoundControls = renderSoundControls;
 
+// 導出 applyAtmosphereEntry 供編輯器使用（恢復聲色意境）
+window.applyAtmosphereEntry = applyAtmosphereEntry;
+
