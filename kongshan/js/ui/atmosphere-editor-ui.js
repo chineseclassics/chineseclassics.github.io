@@ -2401,7 +2401,13 @@ const backgroundTextColorMap = {
   'autumn': '#FFFFFF',   // 秋色：白色文字
   'spring': '#2C3E50',   // 春意：深色文字
   'sunset': '#FFFFFF',   // 暮色：白色文字
-  'bamboo': '#FFFFFF'    // 竹林：白色文字
+  'bamboo': '#FFFFFF',   // 竹林：白色文字
+  'winter-snow': '#2C3E50',     // 冬雪：深色文字
+  'plum-blossom': '#2C3E50',   // 梅花：深色文字
+  'moonlight-night': '#FFFFFF', // 月夜：白色文字
+  'green-mountain': '#FFFFFF',  // 青山：白色文字
+  'cloud-mist': '#2C3E50',     // 雲霧：深色文字
+  'falling-flowers': '#2C3E50' // 落花：深色文字
 };
 
 /**
@@ -2663,7 +2669,13 @@ function initializeBackgroundSelector() {
     { id: 'autumn', name: '秋色', colors: ['#2F4F4F', '#708090'] },
     { id: 'spring', name: '春意', colors: ['#E8F4F8', '#D4E8F0'] },
     { id: 'sunset', name: '暮色', colors: ['#FF6B6B', '#FFA07A'] },
-    { id: 'bamboo', name: '竹林', colors: ['#2D5016', '#4A7C2E'] }
+    { id: 'bamboo', name: '竹林', colors: ['#2D5016', '#4A7C2E'] },
+    { id: 'winter-snow', name: '冬雪', colors: ['#F5F5F5', '#E0E0E0'] },
+    { id: 'plum-blossom', name: '梅花', colors: ['#FFF3E0', '#FFE0B2'] },
+    { id: 'moonlight-night', name: '月夜', colors: ['#263238', '#37474F'] },
+    { id: 'green-mountain', name: '青山', colors: ['#4A7C2E', '#6B8E23'] },
+    { id: 'cloud-mist', name: '雲霧', colors: ['#ECEFF1', '#CFD8DC'] },
+    { id: 'falling-flowers', name: '落花', colors: ['#FFE5E8', '#FFCCD0'] }
   ];
 
   container.innerHTML = '';
@@ -2703,7 +2715,13 @@ function applyBackgroundPreview(bgId) {
     'autumn': { colors: ['#2F4F4F', '#708090'], direction: 'vertical' },
     'spring': { colors: ['#E8F4F8', '#D4E8F0'], direction: 'diagonal' },
     'sunset': { colors: ['#FF6B6B', '#FFA07A'], direction: 'diagonal' },
-    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' }
+    'bamboo': { colors: ['#2D5016', '#4A7C2E'], direction: 'diagonal' },
+    'winter-snow': { colors: ['#F5F5F5', '#E0E0E0'], direction: 'diagonal' },
+    'plum-blossom': { colors: ['#FFF3E0', '#FFE0B2'], direction: 'diagonal' },
+    'moonlight-night': { colors: ['#263238', '#37474F'], direction: 'diagonal' },
+    'green-mountain': { colors: ['#4A7C2E', '#6B8E23'], direction: 'diagonal' },
+    'cloud-mist': { colors: ['#ECEFF1', '#CFD8DC'], direction: 'diagonal' },
+    'falling-flowers': { colors: ['#FFE5E8', '#FFCCD0'], direction: 'diagonal' }
   };
 
   const bgScheme = backgroundSchemes[bgId];
