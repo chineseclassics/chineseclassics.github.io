@@ -390,7 +390,7 @@ export async function renderSoundManagement(container, { adminManager, supabase,
       const editBtn = row.querySelector('[data-action="edit"]');
       const deleteBtn = row.querySelector('[data-action="delete"]');
       const approveBtn = row.querySelector('[data-action="approve"]');
-      const rejectBtn = row.querySelector('[data-action="reject"]);
+      const rejectBtn = row.querySelector('[data-action="reject"]');
 
       previewBtn?.addEventListener('click', () => openRecordingPreview(recording));
       editBtn?.addEventListener('click', () => openRecordingEditForm(recording));
