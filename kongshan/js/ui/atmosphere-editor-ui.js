@@ -81,6 +81,15 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
   let editor = document.getElementById('atmosphere-editor');
   if (editor) {
     editor.classList.add('visible');
+    // 如果編輯器已存在，也需要重新載入數據（特別是預覽數據）
+    if (currentAtmosphere) {
+      // 等待音效選擇器初始化完成後再載入數據
+      setTimeout(() => {
+        loadAtmosphereData(currentAtmosphere).catch(error => {
+          console.warn('載入聲色意境錄音資料時出現問題:', error);
+        });
+      }, 100);
+    }
     return;
   }
 
@@ -3020,45 +3029,21 @@ async function loadAtmosphereData(atmosphere) {
     }
   }
 
-  // 使用 getAtmosphereSounds 獲取正確的音效信息（包括最新的 URL）
-  // 這樣可以重用首頁已經處理好的邏輯，避免重複查詢
-  let sounds = [];
-  if (window.AppState?.atmosphereManager && atmosphere.sound_combination) {
-    try {
-      sounds = await window.AppState.atmosphereManager.getAtmosphereSounds(atmosphere);
-    } catch (error) {
-      console.warn('獲取音效信息失敗:', error);
-    }
-  }
+  // 編輯器打開時，只載入當前頁面的聲色意境狀態到界面
+  // 不重新從數據庫載入數據，不自動播放音樂，保持原頁面的狀態
 
-  // 載入已選音效
+  // 載入已選音效（使用傳入的 atmosphere 對象中的數據）
   if (atmosphere.sound_combination && atmosphere.sound_combination.length > 0) {
     const selectedContainer = document.getElementById('selected-sounds');
     selectedContainer.innerHTML = '';
-    
-    // 創建音效 ID 到正確 URL 的映射
-    const soundUrlMap = new Map();
-    sounds.forEach(sound => {
-      soundUrlMap.set(sound.id, sound.file_url);
-    });
     
     for (const config of atmosphere.sound_combination) {
       const sourceType = config.source_type || 'system';
       const displayName = config.display_name || config.name || '音效';
       const volumeValue = Math.round((config.volume || 0.7) * 100);
       const soundId = config.recording_id || config.sound_id;
-      
-      // 優先使用 getAtmosphereSounds 返回的正確 URL
-      let fileUrl = soundUrlMap.get(soundId) || config.file_url || '';
-      
-      // 如果是錄音，從 sounds 中獲取最新的 recording_path
-      let recordingPath = config.recording_path || '';
-      if (sourceType === 'recording') {
-        const soundInfo = sounds.find(s => s.id === soundId);
-        if (soundInfo?.recording_path) {
-          recordingPath = soundInfo.recording_path;
-        }
-      }
+      const fileUrl = config.file_url || '';
+      const recordingPath = config.recording_path || '';
 
       if (sourceType === 'recording') {
         const recordingId = soundId;
@@ -3083,9 +3068,7 @@ async function loadAtmosphereData(atmosphere) {
         const volumeSlider = item.querySelector('.volume-slider');
         if (volumeSlider) {
           volumeSlider.value = volumeValue;
-          if (window.AppState?.soundMixer) {
-            window.AppState.soundMixer.setTrackVolume(recordingId, Math.max(0, Math.min(1, volumeValue / 100)));
-          }
+          // 不設置音量到 soundMixer，保持原頁面的音量狀態
         }
 
         // 標記對應的旅人錄音卡片為選中狀態
@@ -3102,8 +3085,8 @@ async function loadAtmosphereData(atmosphere) {
       if (soundCard) {
         soundCard.classList.add('selected');
         
-        // 創建已選音效項，優先使用 getAtmosphereSounds 返回的正確 URL
-        const soundName = soundCard.querySelector('.sound-card-name').textContent;
+        // 創建已選音效項，使用傳入的數據
+        const soundName = soundCard.querySelector('.sound-card-name')?.textContent || displayName;
         const finalFileUrl = fileUrl || soundCard.dataset.fileUrl || '';
         const item = createSelectedSoundItem({
           id: config.sound_id,
@@ -3118,9 +3101,7 @@ async function loadAtmosphereData(atmosphere) {
         const volumeSlider = item.querySelector('.volume-slider');
         if (volumeSlider) {
           volumeSlider.value = volumeValue;
-          if (window.AppState && window.AppState.soundMixer) {
-            window.AppState.soundMixer.setTrackVolume(config.sound_id, (volumeValue / 100));
-          }
+          // 不設置音量到 soundMixer，保持原頁面的音量狀態
         }
         
         selectedContainer.appendChild(item);
@@ -3144,7 +3125,9 @@ async function loadAtmosphereData(atmosphere) {
     }
     
     updateEmptyState();
-    scheduleAutoPreview();
+    
+    // 編輯器打開時，不自動播放音樂，保持原頁面的音樂播放狀態
+    // 只有當用戶在編輯器中主動選擇/修改音效時，才會通過 scheduleAutoPreview() 播放預覽
   }
 
   // 載入背景配置
@@ -3158,8 +3141,8 @@ async function loadAtmosphereData(atmosphere) {
     if (bgCard) {
       document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
       bgCard.classList.add('selected');
-      // 立即應用背景預覽
-      applyBackgroundPreview(bgId);
+      // 不立即應用背景預覽，保持原頁面的背景狀態
+      // 背景已經在原頁面顯示了，編輯器打開時不需要重新應用
       }
     } else {
       // 自定義配色：創建卡片並選中
@@ -3188,7 +3171,7 @@ async function loadAtmosphereData(atmosphere) {
           // 使用現有卡片
           document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
           existingCard.classList.add('selected');
-          applyCustomBackgroundPreview(colors, direction);
+          // 不立即應用背景預覽，保持原頁面的背景狀態
         } else {
           // 創建新卡片
           const customCard = container.querySelector('.background-card-custom');
@@ -3202,14 +3185,14 @@ async function loadAtmosphereData(atmosphere) {
           
           document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
           newCard.classList.add('selected');
-          applyCustomBackgroundPreview(colors, direction);
+          // 不立即應用背景預覽，保持原頁面的背景狀態
         }
       }
     }
   } else {
-    // 如果沒有背景配置，清除所有選中狀態和背景預覽
+    // 如果沒有背景配置，清除所有選中狀態
+    // 但不清除背景預覽，保持原頁面的背景狀態
     document.querySelectorAll('.background-card').forEach(c => c.classList.remove('selected'));
-    clearBackgroundPreview();
   }
 }
 
