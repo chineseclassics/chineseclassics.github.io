@@ -158,7 +158,7 @@ export class ParticleRenderer {
     }
     
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors_array, 3));
+    geometry.setAttribute('particleColor', new THREE.BufferAttribute(colors_array, 3));
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     geometry.setAttribute('rotation', new THREE.BufferAttribute(rotations, 1));
     geometry.setAttribute('rotationSpeed', new THREE.BufferAttribute(rotationSpeeds, 1));
@@ -170,7 +170,7 @@ export class ParticleRenderer {
       },
       vertexShader: `
         attribute float size;
-        attribute vec3 color;
+        attribute vec3 particleColor;
         attribute float rotation;
         attribute float rotationSpeed;
         varying vec3 vColor;
@@ -178,7 +178,7 @@ export class ParticleRenderer {
         varying float vRotationSpeed;
         
         void main() {
-          vColor = color;
+          vColor = particleColor;
           vRotation = rotation;
           vRotationSpeed = rotationSpeed;
           
@@ -207,7 +207,6 @@ export class ParticleRenderer {
         }
       `,
       transparent: true,
-      vertexColors: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -265,7 +264,7 @@ export class ParticleRenderer {
     }
     
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors_array, 3));
+    geometry.setAttribute('particleColor', new THREE.BufferAttribute(colors_array, 3));
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
     
@@ -275,13 +274,13 @@ export class ParticleRenderer {
       },
       vertexShader: `
         attribute float size;
-        attribute vec3 color;
+        attribute vec3 particleColor;
         attribute float phase;
         varying vec3 vColor;
         varying float vPhase;
         
         void main() {
-          vColor = color;
+          vColor = particleColor;
           vPhase = phase;
           
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
@@ -311,7 +310,6 @@ export class ParticleRenderer {
         }
       `,
       transparent: true,
-      vertexColors: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -369,7 +367,7 @@ export class ParticleRenderer {
     }
     
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors_array, 3));
+    geometry.setAttribute('particleColor', new THREE.BufferAttribute(colors_array, 3));
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
     
@@ -379,13 +377,13 @@ export class ParticleRenderer {
       },
       vertexShader: `
         attribute float size;
-        attribute vec3 color;
+        attribute vec3 particleColor;
         attribute float phase;
         varying vec3 vColor;
         varying float vPhase;
         
         void main() {
-          vColor = color;
+          vColor = particleColor;
           vPhase = phase;
           
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
@@ -412,7 +410,6 @@ export class ParticleRenderer {
         }
       `,
       transparent: true,
-      vertexColors: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
