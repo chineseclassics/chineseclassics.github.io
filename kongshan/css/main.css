@@ -1487,6 +1487,129 @@ body {
   display: none;
 }
 
+/* ===== 聲音提醒 Toast ===== */
+.sound-reminder-toast {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translate3d(-50%, -20px, 0);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1000;
+  max-width: min(90vw, 480px);
+  transition: opacity var(--duration-normal) var(--ease-gentle), 
+              transform var(--duration-normal) var(--ease-gentle);
+}
+
+.sound-reminder-toast.visible {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
+  pointer-events: auto;
+}
+
+.sound-reminder-toast-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--gradient-soft-veil);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.4rem;
+  border: 1px solid rgba(120, 146, 98, 0.22);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-sans);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+  animation: toast-gentle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes toast-gentle-pulse {
+  0%, 100% {
+    box-shadow: var(--shadow-md);
+  }
+  50% {
+    box-shadow: 0 20px 40px -24px rgba(26, 42, 30, 0.4);
+  }
+}
+
+.sound-reminder-icon {
+  font-size: 1rem;
+  color: var(--color-primary);
+  opacity: 0.85;
+  flex-shrink: 0;
+  animation: icon-gentle-breathe 2.5s ease-in-out infinite;
+}
+
+@keyframes icon-gentle-breathe {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.sound-reminder-text {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-primary);
+  font-weight: 400;
+  flex: 1;
+  min-width: 0; /* 允許 flex 項目收縮 */
+}
+
+/* 移動端適配 */
+@media (max-width: 768px) {
+  .sound-reminder-toast {
+    top: 1.5rem;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  .sound-reminder-toast-inner {
+    padding: 0.75rem 1.2rem;
+    gap: 0.65rem;
+  }
+  
+  .sound-reminder-text {
+    font-size: 0.88rem;
+    white-space: normal;
+    line-height: 1.4;
+    text-align: center;
+  }
+  
+  .sound-reminder-toast-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .sound-reminder-icon {
+    font-size: 0.95rem;
+  }
+}
+
+/* 暗色模式適配 */
+@media (prefers-color-scheme: dark) {
+  .sound-reminder-toast-inner {
+    background: var(--gradient-soft-veil);
+    border-color: rgba(160, 191, 131, 0.28);
+  }
+  
+  .sound-reminder-icon {
+    color: var(--color-secondary);
+  }
+  
+  .sound-reminder-text {
+    color: var(--color-text-primary);
+  }
+}
+
 .atmosphere-like-button:disabled {
   cursor: default;
   opacity: 0.6;

@@ -589,6 +589,46 @@ function showError(message) {
   // TODO: 實現錯誤提示 UI
 }
 
+/**
+ * 顯示聲音提醒 Toast
+ * 在用戶登入後首次進入首頁時顯示
+ */
+function showSoundReminderToast() {
+  const toastEl = document.getElementById('sound-reminder-toast');
+  if (!toastEl) return;
+
+  // 檢查是否已經顯示過（使用 localStorage）
+  const STORAGE_KEY = 'kongshan_sound_reminder_shown';
+  const hasShown = localStorage.getItem(STORAGE_KEY);
+  if (hasShown) {
+    return; // 已經顯示過，不再顯示
+  }
+
+  // 標記為已顯示
+  localStorage.setItem(STORAGE_KEY, 'true');
+
+  // 顯示 toast
+  toastEl.hidden = false;
+  toastEl.classList.remove('visible');
+  
+  // 強制重排以觸發動畫
+  void toastEl.offsetWidth;
+  
+  // 添加 visible 類觸發淡入動畫
+  requestAnimationFrame(() => {
+    toastEl.classList.add('visible');
+  });
+
+  // 3.5 秒後自動隱藏
+  setTimeout(() => {
+    toastEl.classList.remove('visible');
+    // 動畫完成後隱藏元素
+    setTimeout(() => {
+      toastEl.hidden = true;
+    }, 400); // 與 CSS transition 時長一致
+  }, 3500);
+}
+
 
 /**
  * 顯示詩歌列表畫面
@@ -613,6 +653,14 @@ async function showPoemListScreen() {
   
   // 加載詩歌列表
   await loadPoemList();
+  
+  // 如果用戶已登入，顯示聲音提醒 toast（僅首次）
+  if (AppState.userId) {
+    // 延遲一小段時間，確保頁面已完全渲染
+    setTimeout(() => {
+      showSoundReminderToast();
+    }, 600);
+  }
 }
 
 /**
