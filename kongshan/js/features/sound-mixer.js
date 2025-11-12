@@ -282,10 +282,6 @@ export class SoundMixer {
       return;
     }
 
-    if (this.audioEngine && typeof this.audioEngine.unlockIOSAudio === 'function') {
-      await this.audioEngine.unlockIOSAudio();
-    }
-
     // 確保 AudioContext 已初始化（需要用戶交互）
     try {
       if (!this.audioEngine.initialized) {
