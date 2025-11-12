@@ -194,10 +194,19 @@ function preventMobileZoomAndScroll() {
 
   // 防止詩句展示頁面的滾動
   const preventScroll = (e) => {
+    // 排除調試面板區域，允許調試面板滾動
+    const debugPanel = document.getElementById('debug-panel');
+    const debugContent = document.getElementById('debug-content');
+    const target = e.target;
+    
+    // 如果觸摸事件發生在調試面板內，不阻止
+    if (debugPanel && (debugPanel.contains(target) || debugContent?.contains(target))) {
+      return; // 允許調試面板滾動
+    }
+    
     const poemViewerScreen = document.getElementById('poem-viewer-screen');
     if (poemViewerScreen && poemViewerScreen.style.display !== 'none') {
       // 允許按鈕點擊，但防止滾動
-      const target = e.target;
       const isButton = target.tagName === 'BUTTON' || 
                        target.closest('button') || 
                        target.closest('.sound-controls') ||

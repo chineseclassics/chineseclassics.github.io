@@ -312,6 +312,45 @@
                 logCount = 0;
             });
             
+            // 確保內容區域可以滾動（移動端修復）
+            // 防止觸摸事件被阻止
+            debugContent.addEventListener('touchstart', (e) => {
+                // 允許觸摸事件繼續傳播
+                e.stopPropagation();
+            }, { passive: true });
+            
+            debugContent.addEventListener('touchmove', (e) => {
+                // 允許滾動
+                e.stopPropagation();
+            }, { passive: true });
+            
+            debugContent.addEventListener('touchend', (e) => {
+                // 允許觸摸結束事件
+                e.stopPropagation();
+            }, { passive: true });
+            
+            // 確保面板打開時內容區域可以滾動
+            const ensureScrollable = () => {
+                if (debugPanel.style.display !== 'none') {
+                    // 強制重新計算樣式
+                    debugContent.style.display = 'block';
+                    // 確保有內容時可以滾動
+                    if (debugContent.scrollHeight > debugContent.clientHeight) {
+                        debugContent.style.overflowY = 'scroll';
+                    }
+                }
+            };
+            
+            // 監聽面板顯示
+            const observer = new MutationObserver(() => {
+                ensureScrollable();
+            });
+            
+            observer.observe(debugPanel, {
+                attributes: true,
+                attributeFilter: ['style']
+            });
+            
             console.log('🔧 調試面板已啟用');
         })();
     </script>
@@ -356,7 +395,6 @@
             flex-direction: column;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             overflow: hidden;
-            touch-action: none; /* 防止面板本身被拖動 */
         }
         
         .debug-header {
@@ -392,7 +430,7 @@
         
         .debug-content {
             flex: 1;
-            overflow-y: auto;
+            overflow-y: scroll;
             overflow-x: hidden;
             padding: 12px;
             font-family: 'Courier New', monospace;
@@ -400,9 +438,11 @@
             line-height: 1.5;
             color: #ccc;
             -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
-            touch-action: pan-y; /* 允許垂直滾動 */
+            touch-action: pan-y pinch-zoom; /* 允許垂直滾動和縮放 */
             overscroll-behavior: contain; /* 防止滾動鏈接 */
             min-height: 0; /* 確保 flex 子元素可以縮小 */
+            height: 100%; /* 明確設置高度 */
+            position: relative; /* 確保滾動上下文 */
         }
         
         .debug-log {
@@ -448,10 +488,12 @@
             
             .debug-content {
                 /* 移動端確保可以滾動 */
-                -webkit-overflow-scrolling: touch;
-                touch-action: pan-y;
-                overscroll-behavior: contain;
+                overflow-y: scroll !important;
+                -webkit-overflow-scrolling: touch !important;
+                touch-action: pan-y pinch-zoom !important;
+                overscroll-behavior: contain !important;
                 will-change: scroll-position; /* 優化滾動性能 */
+                height: 100% !important;
             }
             
             .debug-toggle-btn {
