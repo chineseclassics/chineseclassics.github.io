@@ -42,6 +42,9 @@ let previewTimeUpdateHandler = null; // 預覽播放的時間更新監聽器
 const MIN_TRIM_DURATION = 2; // 最小剪切長度 2 秒
 const WAVEFORM_SAMPLE_RATE = 100; // 每 100ms 一個數據點
 
+// 地點相關變量
+let currentRecordingLocation = null; // 當前錄音的地點名稱
+
 /**
  * 創建並顯示聲色意境編輯器
  * @param {object} poem - 當前詩歌
@@ -173,7 +176,12 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
             </div>
           </div>
           <label class="recording-name-label" for="recording-name-input">為錄音命名</label>
-          <input type="text" id="recording-name-input" class="editor-input" maxlength="50" placeholder="例如：松風入夜">
+          <div class="recording-name-input-group">
+            <input type="text" id="recording-name-input" class="editor-input" maxlength="50" placeholder="例如：松風入夜">
+            <button type="button" id="recording-location-btn" class="recording-location-btn" aria-label="添加地點信息">
+              <span class="recording-location-btn-text">📍 添加地點信息</span>
+            </button>
+          </div>
           <div class="recording-name-actions">
             <button class="recording-action-primary" id="recording-save-btn" type="button">保存錄音</button>
             <button class="recording-action-secondary" id="recording-cancel-btn" type="button">取消</button>
@@ -587,7 +595,7 @@ async function loadPublishedRecordings() {
 
     let query = supabaseClient
       .from('recordings')
-      .select('id, display_name, storage_path, created_at, owner_id, status')
+      .select('id, display_name, storage_path, created_at, owner_id, status, location_name')
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -645,7 +653,14 @@ async function loadPublishedRecordings() {
       }
 
       const statusLabel = (record.status || '').toLowerCase();
-      const tags = ['旅人錄音'];
+      const tags = [];
+      
+      // 如果有地點信息，添加到標籤
+      if (record.location_name && record.location_name.trim()) {
+        tags.push(record.location_name.trim());
+      }
+      
+      // 如果狀態不是已批准，添加待審核標籤
       if (statusLabel && statusLabel !== 'approved') {
         tags.push('待審核');
       }
@@ -660,7 +675,8 @@ async function loadPublishedRecordings() {
         recordingId: record.id,
         display_name: record.display_name || '旅人錄音',
         ownerId: record.owner_id || null,
-        recordingStatus: record.status || 'approved'
+        recordingStatus: record.status || 'approved',
+        location_name: record.location_name || null
       };
     }));
 
@@ -737,6 +753,7 @@ function getRecordingElements() {
     selectedTimeEl: document.getElementById('recording-selected-time'),
     totalTimeEl: document.getElementById('recording-total-time'),
     nameInput: document.getElementById('recording-name-input'),
+    locationBtn: document.getElementById('recording-location-btn'),
     saveBtn: document.getElementById('recording-save-btn'),
     cancelBtn: document.getElementById('recording-cancel-btn')
   };
@@ -805,6 +822,13 @@ function initializeRecordingSection() {
       }
     });
   }
+
+  // 初始化地點按鈕
+  const { locationBtn } = getRecordingElements();
+  if (locationBtn) {
+    locationBtn.addEventListener('click', handleLocationButtonClick);
+    updateLocationButton();
+  }
 }
 
 function resetRecordingUI() {
@@ -846,6 +870,10 @@ function resetRecordingUI() {
   }
 
   recordingRemainingSeconds = MAX_RECORDING_SECONDS;
+  
+  // 重置地點
+  currentRecordingLocation = null;
+  updateLocationButton();
 }
 
 function setRecordingButtonState(isRecording) {
@@ -878,6 +906,189 @@ function formatTimerSegment(seconds) {
   const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
   const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
   return `${mins}:${secs}`;
+}
+
+/**
+ * 獲取當前地理位置
+ * @returns {Promise<{lat: number, lon: number}>}
+ */
+function getCurrentLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('此瀏覽器不支援地理位置功能'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude
+        });
+      },
+      (error) => {
+        // 靜默失敗，不顯示錯誤
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
+}
+
+/**
+ * 使用 Nominatim API 進行逆地理編碼
+ * @param {number} lat - 緯度
+ * @param {number} lon - 經度
+ * @returns {Promise<string>} 地點名稱
+ */
+async function reverseGeocode(lat, lon) {
+  try {
+    // Nominatim API 端點
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&accept-language=zh-TW`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Kongshan-App/1.0' // Nominatim 要求設置 User-Agent
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API 請求失敗: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data || !data.address) {
+      throw new Error('無法解析地點信息');
+    }
+
+    // 提取地點名稱的策略
+    // 1. 優先使用 name 字段（如果包含地標名稱）
+    if (data.name && data.name.trim()) {
+      const name = data.name.trim();
+      // 如果 name 看起來像地標（不包含太多地址信息），直接使用
+      if (!name.match(/^\d+/) && name.length < 50) {
+        return name;
+      }
+    }
+
+    // 2. 從 address 對象中提取最相關的部分
+    const address = data.address;
+    
+    // 優先選擇地標、山名、公園名稱等
+    const priorityFields = [
+      'mountain', 'peak', 'hill', // 山
+      'park', 'reserve', 'forest', // 公園、保護區、森林
+      'attraction', 'monument', 'memorial', // 景點、紀念碑
+      'place', 'locality', 'neighbourhood' // 地點、區域
+    ];
+
+    for (const field of priorityFields) {
+      if (address[field] && address[field].trim()) {
+        return address[field].trim();
+      }
+    }
+
+    // 3. 如果沒有找到優先字段，組合城市和區域
+    const parts = [];
+    if (address.city || address.town || address.village) {
+      parts.push(address.city || address.town || address.village);
+    }
+    if (address.suburb || address.district) {
+      parts.push(address.suburb || address.district);
+    }
+    
+    if (parts.length > 0) {
+      return parts.join(' ');
+    }
+
+    // 4. 最後備選：使用 display_name 的第一部分
+    if (data.display_name) {
+      const parts = data.display_name.split(',');
+      if (parts.length > 0) {
+        return parts[0].trim();
+      }
+    }
+
+    throw new Error('無法提取有效的地點名稱');
+  } catch (error) {
+    console.warn('逆地理編碼失敗:', error);
+    throw error;
+  }
+}
+
+/**
+ * 更新地點按鈕的顯示狀態
+ */
+function updateLocationButton() {
+  const { locationBtn } = getRecordingElements();
+  if (!locationBtn) {
+    return;
+  }
+
+  const textEl = locationBtn.querySelector('.recording-location-btn-text');
+  if (!textEl) {
+    return;
+  }
+
+  if (currentRecordingLocation) {
+    // 有地點：顯示「✓ [地點名稱]」
+    locationBtn.classList.add('has-location');
+    locationBtn.disabled = false;
+    const displayText = `✓ ${currentRecordingLocation}`;
+    textEl.textContent = displayText;
+    locationBtn.title = currentRecordingLocation; // tooltip 顯示完整名稱
+  } else {
+    // 無地點：顯示「📍 添加地點信息」
+    locationBtn.classList.remove('has-location');
+    locationBtn.disabled = false;
+    textEl.textContent = '📍 添加地點信息';
+    locationBtn.title = '點擊添加當前地理位置';
+  }
+}
+
+/**
+ * 處理地點按鈕點擊
+ */
+async function handleLocationButtonClick() {
+  const { locationBtn } = getRecordingElements();
+  if (!locationBtn) {
+    return;
+  }
+
+  // 如果已經有地點，點擊則移除
+  if (currentRecordingLocation) {
+    currentRecordingLocation = null;
+    updateLocationButton();
+    return;
+  }
+
+  // 開始獲取地點
+  const textEl = locationBtn.querySelector('.recording-location-btn-text');
+  if (textEl) {
+    textEl.textContent = '📍 正在獲取地點...';
+  }
+  locationBtn.disabled = true;
+
+  try {
+    // 1. 獲取地理位置
+    const { lat, lon } = await getCurrentLocation();
+    
+    // 2. 進行逆地理編碼
+    const locationName = await reverseGeocode(lat, lon);
+    
+    // 3. 保存地點名稱
+    currentRecordingLocation = locationName;
+    updateLocationButton();
+  } catch (error) {
+    // 靜默失敗，恢復到初始狀態
+    currentRecordingLocation = null;
+    updateLocationButton();
+  }
 }
 
 async function startRecording() {
@@ -1777,7 +1988,8 @@ async function uploadRecording(displayName) {
       display_name: displayName,
       storage_path: storagePath,
       duration_seconds: Math.round(trimmedDuration),
-      status: 'pending'
+      status: 'pending',
+      location_name: currentRecordingLocation || null
     })
     .select()
     .single();
@@ -1804,7 +2016,8 @@ async function uploadRecording(displayName) {
     duration_seconds: insertData.duration_seconds,
     file_url: signedUrl,
     owner_id: insertData.owner_id || userId,
-    status: insertData.status || 'pending'
+    status: insertData.status || 'pending',
+    location_name: insertData.location_name || null
   };
 }
 

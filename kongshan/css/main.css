@@ -596,6 +596,73 @@ body {
   color: var(--color-text-secondary);
 }
 
+/* 錄音名稱輸入框組（包含輸入框和地點按鈕） */
+.recording-name-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.recording-name-input-group .editor-input {
+  flex: 1;
+  min-width: 0; /* 允許縮小 */
+}
+
+/* 地點按鈕 */
+.recording-location-btn {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recording-location-btn:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.recording-location-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.recording-location-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.recording-location-btn-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 地點按鈕成功狀態 */
+.recording-location-btn.has-location {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.recording-location-btn.has-location:hover {
+  background: var(--color-success);
+  color: var(--color-success-contrast);
+}
+
 .recording-name-actions {
   display: flex;
   gap: 0.75rem;
@@ -646,6 +713,29 @@ body {
 
   .recording-name-panel {
     background: rgba(255, 255, 255, 0.05);
+  }
+
+  .recording-location-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(232, 232, 232, 0.75);
+  }
+
+  .recording-location-btn:hover:not(:disabled) {
+    background: rgba(120, 146, 98, 0.2);
+    border-color: var(--color-primary);
+    color: rgba(232, 232, 232, 0.95);
+  }
+
+  .recording-location-btn.has-location {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.4);
+    color: rgba(129, 199, 132, 0.9);
+  }
+
+  .recording-location-btn.has-location:hover {
+    background: rgba(76, 175, 80, 0.3);
+    color: rgba(200, 230, 201, 1);
   }
 
   .recording-waveform-wrapper {
