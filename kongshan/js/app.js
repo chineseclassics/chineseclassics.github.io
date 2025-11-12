@@ -926,6 +926,18 @@ async function loadPoem(poemId) {
       AppState.currentPoem = poem;
       renderVerticalPoem(poemContent, poem);
       
+      // 確保 AudioContext 已初始化（移動端特別重要）
+      // 注意：這裡的初始化是在用戶點擊後，所以應該可以成功
+      if (AppState.audioEngine && !AppState.audioEngine.initialized) {
+        try {
+          await AppState.audioEngine.init(true); // forceResume = true
+          console.log('✅ 加載詩歌時初始化 AudioContext');
+        } catch (error) {
+          console.warn('⚠️ AudioContext 初始化失敗（將繼續嘗試）:', error);
+          // 不阻止繼續，可能在某些情況下仍能播放
+        }
+      }
+      
       // 加載聲色意境
       await loadAtmosphereSequence(poemId);
     }
@@ -1231,52 +1243,77 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
       return;
     }
     
+    // 確保 AudioContext 已初始化（移動端特別重要）
+    if (AppState.audioEngine) {
+      try {
+        await AppState.audioEngine.ensureInitialized(true); // 移動端需要用戶交互
+        console.log('✅ 播放前確認 AudioContext 已初始化');
+      } catch (error) {
+        console.warn('⚠️ AudioContext 初始化失敗（將繼續嘗試）:', error);
+        // 不阻止繼續，可能在某些情況下仍能播放
+      }
+    }
+    
     // 載入新音效
     const sounds = await AppState.atmosphereManager.getAtmosphereSounds(atmosphere);
-    if (context.pendingToken !== token) {
-      return;
-    }
-
-    // 檢查是否還在正確的狀態（用戶可能已經離開）
+    
+    // 檢查狀態（減少重複檢查）
     if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
       return;
     }
 
-    if (AppState.soundMixer) {
+    if (AppState.soundMixer && sounds.length > 0) {
       const loadedTracks = [];
+      let loadError = false;
+      
       for (const sound of sounds) {
-        // 在每次載入前檢查狀態，如果用戶已經離開，停止載入
+        // 檢查狀態（只在關鍵點檢查）
         if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
-          return;
+          loadError = true;
+          break;
         }
         
-        const track = await AppState.soundMixer.addTrack({
-          ...sound,
-          volume: sound.volume !== undefined ? sound.volume : 0.7,
-          loop: sound.loop !== undefined ? sound.loop : true
-        });
-        
-        // 載入完成後再次檢查狀態
-        if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
-          // 如果用戶已經離開，清除已載入的音效
-          if (AppState.soundMixer) {
-            AppState.soundMixer.clear();
+        try {
+          const track = await AppState.soundMixer.addTrack({
+            ...sound,
+            volume: sound.volume !== undefined ? sound.volume : 0.7,
+            loop: sound.loop !== undefined ? sound.loop : true
+          });
+          
+          if (track) {
+            loadedTracks.push(track);
+          } else {
+            console.warn('⚠️ 音效軌道加載失敗:', sound.name || sound.id);
           }
-          return;
-        }
-        
-        if (track) {
-          loadedTracks.push(track);
+        } catch (trackError) {
+          console.error('❌ 加載音效軌道時發生錯誤:', trackError);
+          // 繼續加載其他音效，不中斷整個流程
         }
       }
       
-      // 播放前最後一次檢查狀態，使用淡入效果
-      if (context.pendingToken === token && AppState.activeScreen === 'viewer' && loadedTracks.length > 0) {
-        await AppState.soundMixer.playAll(true, FADE_DURATION);
+      // 如果用戶已經離開，清除已載入的音效
+      if (loadError || context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+        if (AppState.soundMixer && loadedTracks.length > 0) {
+          AppState.soundMixer.clear();
+        }
+        return;
+      }
+      
+      // 播放音效（使用淡入效果）
+      if (loadedTracks.length > 0) {
+        try {
+          await AppState.soundMixer.playAll(true, FADE_DURATION);
+          console.log(`✅ 成功播放 ${loadedTracks.length} 個音效`);
+        } catch (playError) {
+          console.error('❌ 播放音效失敗:', playError);
+          // 不阻止狀態顯示，用戶應該知道聲色意境已加載
+        }
+      } else {
+        console.warn('⚠️ 沒有成功加載任何音效軌道');
       }
     }
 
-    // 應用背景前檢查狀態（背景過渡已在上面完成）
+    // 檢查狀態（確保還在正確的頁面）
     if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
       return;
     }
@@ -1287,6 +1324,7 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
     AppState.isPreviewMode = false;
     updateLikeButtonUI(entry);
 
+    // 確保狀態顯示（即使音效播放失敗，也要顯示聲色意境信息）
     if (showStatus) {
       const displayName = entry.authorName || '旅人';
       let statusNote = '';
@@ -1299,10 +1337,26 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
           statusNote = '（尚未公開）';
         }
       }
-      showAtmosphereStatus({
-        text: `${displayName} 的聲色意境${statusNote}`,
-        showLikeButton: entry.status === 'approved'
-      });
+      
+      // 確保狀態顯示（即使前面的流程有錯誤）
+      try {
+        showAtmosphereStatus({
+          text: `${displayName} 的聲色意境${statusNote}`,
+          showLikeButton: entry.status === 'approved'
+        });
+        console.log('✅ 聲色意境狀態已顯示:', displayName);
+      } catch (statusError) {
+        console.error('❌ 顯示聲色意境狀態失敗:', statusError);
+        // 嘗試再次顯示
+        setTimeout(() => {
+          if (context.pendingToken === token && AppState.activeScreen === 'viewer') {
+            showAtmosphereStatus({
+              text: `${displayName} 的聲色意境${statusNote}`,
+              showLikeButton: entry.status === 'approved'
+            });
+          }
+        }, 100);
+      }
     }
   } catch (error) {
     console.error('套用聲色意境失敗:', error);
@@ -1915,6 +1969,34 @@ function setupPageUnloadListeners() {
     }
   });
 
+  // 頁面可見性變化事件（移動端特別重要）
+  // 當頁面從後台切換回前台時，恢復 AudioContext
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && AppState.audioEngine && AppState.audioEngine.audioContext) {
+      // 頁面重新可見時，檢查並恢復 AudioContext
+      const audioContext = AppState.audioEngine.audioContext;
+      if (audioContext.state === 'suspended') {
+        console.log('🔄 頁面重新可見，嘗試恢復 AudioContext...');
+        audioContext.resume().catch(err => {
+          console.warn('⚠️ 恢復 AudioContext 失敗:', err);
+        });
+      }
+    }
+  });
+  
+  // 頁面獲焦事件（移動端特別重要）
+  window.addEventListener('focus', () => {
+    if (AppState.audioEngine && AppState.audioEngine.audioContext) {
+      const audioContext = AppState.audioEngine.audioContext;
+      if (audioContext.state === 'suspended') {
+        console.log('🔄 頁面獲焦，嘗試恢復 AudioContext...');
+        audioContext.resume().catch(err => {
+          console.warn('⚠️ 恢復 AudioContext 失敗:', err);
+        });
+      }
+    }
+  });
+  
   // 頁面卸載事件（pagehide - 支持異步清理）
   window.addEventListener('pagehide', (event) => {
     // pagehide 支持異步操作，但時間有限
@@ -1930,7 +2012,7 @@ function setupPageUnloadListeners() {
     });
   });
 
-  // 注意：不處理 visibilitychange 事件
+  // 注意：visibilitychange 事件已處理（用於恢復 AudioContext）
   // 切換標籤時不應該清空聲色意境，讓音效和背景保持連續運行
   // 只有真正的頁面卸載（beforeunload、pagehide）才會清理資源
 

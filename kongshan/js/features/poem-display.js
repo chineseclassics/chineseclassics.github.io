@@ -138,7 +138,19 @@ export function renderPoemList(container, poems, showEmptyMessage = true) {
       poemCard.appendChild(badge);
     }
     
-    poemCard.addEventListener('click', () => {
+    poemCard.addEventListener('click', async () => {
+      // 在用戶交互時初始化 AudioContext（移動端特別重要）
+      if (window.AppState && window.AppState.audioEngine) {
+        try {
+          // 在用戶點擊時強制初始化 AudioContext
+          await window.AppState.audioEngine.init(true); // forceResume = true
+          console.log('✅ 用戶交互觸發 AudioContext 初始化');
+        } catch (error) {
+          console.warn('⚠️ AudioContext 初始化失敗（將繼續嘗試）:', error);
+          // 不阻止繼續，可能在某些情況下仍能播放
+        }
+      }
+      
       // 觸發詩歌查看事件
       if (window.AppState && window.AppState.showPoemViewer) {
         window.AppState.showPoemViewer(poem.id);

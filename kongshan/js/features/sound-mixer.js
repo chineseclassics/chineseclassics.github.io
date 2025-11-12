@@ -59,7 +59,7 @@ class SoundTrack {
    * @param {boolean} fadeIn - 是否淡入，默認 false
    * @param {number} fadeInDuration - 淡入時長（毫秒），默認 500ms
    */
-  play(fadeIn = false, fadeInDuration = 500) {
+  async play(fadeIn = false, fadeInDuration = 500) {
     if (!this.audioBuffer) {
       console.warn('音頻未加載，無法播放');
       return;
@@ -70,14 +70,31 @@ class SoundTrack {
       this.stop();
     }
 
+    // 確保 AudioContext 已初始化並處於運行狀態
+    try {
+      await this.audioEngine.ensureInitialized(true); // 移動端需要用戶交互
+    } catch (error) {
+      console.warn('⚠️ AudioContext 初始化失敗，嘗試繼續播放:', error);
+      // 繼續嘗試，可能在某些情況下仍能播放
+    }
+
     // 確保 AudioContext 已初始化
     const audioContext = this.audioEngine.getAudioContext();
     
     // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
     if (audioContext.state === 'suspended') {
-      audioContext.resume().catch(err => {
-        console.warn('恢復 AudioContext 失敗:', err);
-      });
+      try {
+        await audioContext.resume();
+        console.log('✅ AudioContext 已恢復，狀態:', audioContext.state);
+      } catch (err) {
+        console.warn('⚠️ 恢復 AudioContext 失敗:', err);
+        // 不阻止播放，可能在某些情況下仍能播放
+      }
+    }
+    
+    // 如果狀態不是 running，記錄警告
+    if (audioContext.state !== 'running') {
+      console.warn(`⚠️ AudioContext 狀態為 ${audioContext.state}，可能影響播放`);
     }
     
     // 創建音源節點
@@ -282,25 +299,35 @@ export class SoundMixer {
       return;
     }
 
-    // 確保 AudioContext 已初始化（需要用戶交互）
+    // 確保 AudioContext 已初始化並處於運行狀態（移動端需要用戶交互）
     try {
-      if (!this.audioEngine.initialized) {
-        await this.audioEngine.init();
-      }
+      await this.audioEngine.ensureInitialized(true);
       
-      // 確保 AudioContext 處於運行狀態
+      // 再次確認 AudioContext 狀態
       const audioContext = this.audioEngine.getAudioContext();
       if (audioContext.state === 'suspended') {
+        console.log('🔄 AudioContext 處於 suspended 狀態，嘗試恢復...');
         await audioContext.resume();
       }
+      
+      // 如果狀態不是 running，記錄警告但不阻止播放
+      if (audioContext.state !== 'running') {
+        console.warn(`⚠️ AudioContext 狀態為 ${audioContext.state}，可能影響播放`);
+      }
     } catch (error) {
-      console.error('初始化 AudioContext 失敗:', error);
-      return;
+      console.error('❌ 初始化 AudioContext 失敗:', error);
+      // 不直接返回，嘗試繼續播放（可能在某些情況下仍能播放）
+      console.warn('⚠️ 將嘗試繼續播放，但可能無法正常播放');
     }
 
-    this.tracks.forEach(track => {
-      track.play(fadeIn, fadeInDuration);
-    });
+    // 並行播放所有音效軌道
+    const playPromises = Array.from(this.tracks.values()).map(track => 
+      track.play(fadeIn, fadeInDuration).catch(err => {
+        console.warn('⚠️ 播放音效軌道失敗:', err);
+      })
+    );
+    
+    await Promise.allSettled(playPromises);
 
     this.isPlaying = true;
     console.log(`▶️ 播放所有音效${fadeIn ? ' (淡入)' : ''}`);

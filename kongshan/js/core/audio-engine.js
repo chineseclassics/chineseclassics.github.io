@@ -18,42 +18,135 @@ export class AudioEngine {
     this.isMuted = false;
     this.masterVolume = 1.0;
     this.initialized = false;
+    this.initPromise = null; // 防止重複初始化
+    this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    this.stateCheckInterval = null; // AudioContext 狀態檢查定時器
   }
   
   /**
    * 初始化音頻上下文
+   * @param {boolean} forceResume - 強制恢復 AudioContext（用於用戶交互後）
    */
-  async init() {
-    if (this.initialized) return;
+  async init(forceResume = false) {
+    // 如果正在初始化，等待完成
+    if (this.initPromise) {
+      return this.initPromise;
+    }
     
-    try {
-      // 創建 AudioContext（需要用戶交互後才能創建）
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
-      if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
+    // 如果已經初始化且不需要強制恢復，直接返回
+    if (this.initialized && !forceResume) {
+      return;
+    }
+    
+    this.initPromise = (async () => {
+      try {
+        // 如果還沒有創建 AudioContext，創建一個
+        if (!this.audioContext) {
+          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          console.log('🎵 AudioContext 已創建，狀態:', this.audioContext.state);
+        }
+        
+        // 確保 AudioContext 處於運行狀態
+        if (this.audioContext.state === 'suspended' || forceResume) {
+          console.log('🔄 嘗試恢復 AudioContext...');
+          try {
+            await this.audioContext.resume();
+            console.log('✅ AudioContext 已恢復，狀態:', this.audioContext.state);
+          } catch (resumeError) {
+            console.warn('⚠️ AudioContext resume 失敗（可能需要用戶交互）:', resumeError);
+            // 不拋出錯誤，允許後續重試
+          }
+        }
+        
+        // 如果 AudioContext 狀態不是 running，記錄警告
+        if (this.audioContext.state !== 'running') {
+          console.warn(`⚠️ AudioContext 狀態為 ${this.audioContext.state}，可能需要用戶交互`);
+        }
+        
+        // 監聽狀態變化
+        this.audioContext.addEventListener('statechange', () => {
+          console.log('🎵 AudioContext 狀態變化:', this.audioContext.state);
+        });
+        
+        // 啟動狀態檢查（移動端特別重要）
+        this.startStateCheck();
+        
+        this.initialized = true;
+        console.log('✅ 音頻引擎初始化成功，狀態:', this.audioContext.state);
+      } catch (error) {
+        console.error('❌ 音頻引擎初始化失敗:', error);
+        this.initPromise = null;
+        throw error;
+      } finally {
+        this.initPromise = null;
       }
-      
-      this.initialized = true;
-      console.log('✅ 音頻引擎初始化成功');
-    } catch (error) {
-      console.error('❌ 音頻引擎初始化失敗:', error);
-      throw error;
+    })();
+    
+    return this.initPromise;
+  }
+  
+  /**
+   * 啟動 AudioContext 狀態檢查（移動端特別重要）
+   */
+  startStateCheck() {
+    // 如果已經有檢查定時器，先清除
+    if (this.stateCheckInterval) {
+      clearInterval(this.stateCheckInterval);
+    }
+    
+    // 每 2 秒檢查一次 AudioContext 狀態（移動端可能被自動暫停）
+    this.stateCheckInterval = setInterval(() => {
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        console.log('🔄 檢測到 AudioContext 被暫停，嘗試恢復...');
+        this.audioContext.resume().catch(err => {
+          console.warn('⚠️ 自動恢復 AudioContext 失敗:', err);
+        });
+      }
+    }, 2000);
+  }
+  
+  /**
+   * 停止狀態檢查
+   */
+  stopStateCheck() {
+    if (this.stateCheckInterval) {
+      clearInterval(this.stateCheckInterval);
+      this.stateCheckInterval = null;
     }
   }
   
   /**
-   * 確保音頻上下文已初始化
+   * 確保音頻上下文已初始化並處於運行狀態
+   * @param {boolean} requireUserInteraction - 是否需要用戶交互（移動端）
    */
-  async ensureInitialized() {
+  async ensureInitialized(requireUserInteraction = false) {
+    // 如果還沒有初始化，先初始化
     if (!this.initialized) {
-      await this.init();
+      await this.init(requireUserInteraction);
+    }
+    
+    // 確保 AudioContext 存在
+    if (!this.audioContext) {
+      await this.init(requireUserInteraction);
     }
     
     // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
-    if (this.audioContext && this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+        console.log('✅ AudioContext 已恢復，狀態:', this.audioContext.state);
+      } catch (error) {
+        console.warn('⚠️ 恢復 AudioContext 失敗（可能需要用戶交互）:', error);
+        // 移動端可能需要用戶交互才能恢復
+        if (this.isMobile && requireUserInteraction) {
+          throw new Error('AudioContext 需要用戶交互才能恢復');
+        }
+      }
+    }
+    
+    // 如果狀態不是 running，記錄警告
+    if (this.audioContext.state !== 'running') {
+      console.warn(`⚠️ AudioContext 狀態為 ${this.audioContext.state}，可能影響播放`);
     }
   }
   
@@ -234,12 +327,15 @@ export class AudioEngine {
 
   /**
    * 獲取 AudioContext 實例（供 SoundMixer 使用）
+   * 注意：此方法不會自動初始化，應該先調用 ensureInitialized()
    */
   getAudioContext() {
     if (!this.audioContext) {
-      // 如果還沒有初始化，創建一個新的 AudioContext
+      // 如果還沒有初始化，創建一個新的 AudioContext（但不標記為已初始化）
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      this.initialized = true;
+      console.log('🎵 AudioContext 已創建（通過 getAudioContext），狀態:', this.audioContext.state);
+      // 啟動狀態檢查
+      this.startStateCheck();
     }
     return this.audioContext;
   }
@@ -264,6 +360,9 @@ export class AudioEngine {
    */
   async close() {
     try {
+      // 停止狀態檢查
+      this.stopStateCheck();
+      
       // 停止所有音效
       this.stopAll();
       
@@ -288,6 +387,7 @@ export class AudioEngine {
       // 清理緩存
       this.buffers.clear();
       this.initialized = false;
+      this.initPromise = null;
       
       console.log('🔇 音頻引擎已關閉');
     } catch (error) {
