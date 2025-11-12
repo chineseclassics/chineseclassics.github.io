@@ -204,8 +204,249 @@
         </div>
     </div>
     
+    <!-- 調試面板（移動端控制台） -->
+    <div id="debug-panel" class="debug-panel" style="display: none;">
+        <div class="debug-header">
+            <h3>調試日誌</h3>
+            <button id="debug-clear-btn" class="debug-btn" type="button">清除</button>
+            <button id="debug-close-btn" class="debug-btn" type="button">關閉</button>
+        </div>
+        <div id="debug-content" class="debug-content"></div>
+    </div>
+    
+    <!-- 調試按鈕（浮動按鈕） -->
+    <button id="debug-toggle-btn" class="debug-toggle-btn" type="button" aria-label="顯示調試面板">
+        <i class="fas fa-bug"></i>
+    </button>
+    
     <!-- JavaScript 模塊 -->
     <script type="module" src="./js/app.js"></script>
+    
+    <!-- 調試面板腳本 -->
+    <script>
+        // 調試面板功能
+        (function() {
+            const debugPanel = document.getElementById('debug-panel');
+            const debugContent = document.getElementById('debug-content');
+            const debugToggleBtn = document.getElementById('debug-toggle-btn');
+            const debugCloseBtn = document.getElementById('debug-close-btn');
+            const debugClearBtn = document.getElementById('debug-clear-btn');
+            
+            let logCount = 0;
+            const maxLogs = 200; // 最多保留 200 條日誌
+            
+            // 捕獲所有 console 方法
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalError = console.error;
+            const originalInfo = console.info;
+            
+            function addLog(type, args) {
+                logCount++;
+                const logEntry = document.createElement('div');
+                logEntry.className = `debug-log debug-log-${type}`;
+                
+                const timestamp = new Date().toLocaleTimeString('zh-TW');
+                const prefix = `[${timestamp}] [${type.toUpperCase()}]`;
+                
+                // 將參數轉換為字符串
+                const message = Array.from(args).map(arg => {
+                    if (typeof arg === 'object') {
+                        try {
+                            return JSON.stringify(arg, null, 2);
+                        } catch (e) {
+                            return String(arg);
+                        }
+                    }
+                    return String(arg);
+                }).join(' ');
+                
+                logEntry.innerHTML = `<span class="debug-prefix">${prefix}</span> <span class="debug-message">${message}</span>`;
+                
+                debugContent.appendChild(logEntry);
+                
+                // 限制日誌數量
+                while (debugContent.children.length > maxLogs) {
+                    debugContent.removeChild(debugContent.firstChild);
+                }
+                
+                // 自動滾動到底部
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+            
+            // 重寫 console 方法
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                addLog('log', args);
+            };
+            
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                addLog('warn', args);
+            };
+            
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                addLog('error', args);
+            };
+            
+            console.info = function(...args) {
+                originalInfo.apply(console, args);
+                addLog('info', args);
+            };
+            
+            // 切換面板顯示
+            debugToggleBtn.addEventListener('click', () => {
+                const isVisible = debugPanel.style.display !== 'none';
+                debugPanel.style.display = isVisible ? 'none' : 'block';
+            });
+            
+            // 關閉面板
+            debugCloseBtn.addEventListener('click', () => {
+                debugPanel.style.display = 'none';
+            });
+            
+            // 清除日誌
+            debugClearBtn.addEventListener('click', () => {
+                debugContent.innerHTML = '';
+                logCount = 0;
+            });
+            
+            console.log('🔧 調試面板已啟用');
+        })();
+    </script>
+    
+    <!-- 調試面板樣式 -->
+    <style>
+        .debug-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .debug-toggle-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .debug-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: calc(100vw - 40px);
+            max-width: 500px;
+            max-height: calc(100vh - 120px);
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 8px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        .debug-header {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .debug-header h3 {
+            color: white;
+            font-size: 16px;
+            margin: 0;
+            flex: 1;
+        }
+        
+        .debug-btn {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .debug-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .debug-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #ccc;
+        }
+        
+        .debug-log {
+            margin-bottom: 8px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        
+        .debug-prefix {
+            color: #888;
+            margin-right: 8px;
+        }
+        
+        .debug-message {
+            color: #ccc;
+        }
+        
+        .debug-log-log .debug-message {
+            color: #ccc;
+        }
+        
+        .debug-log-info .debug-message {
+            color: #4fc3f7;
+        }
+        
+        .debug-log-warn .debug-message {
+            color: #ffb74d;
+        }
+        
+        .debug-log-error .debug-message {
+            color: #e57373;
+        }
+        
+        /* 移動端優化 */
+        @media (max-width: 768px) {
+            .debug-panel {
+                width: calc(100vw - 20px);
+                right: 10px;
+                bottom: 70px;
+                max-height: calc(100vh - 100px);
+            }
+            
+            .debug-toggle-btn {
+                bottom: 15px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+    </style>
 </body>
 </html>
 
