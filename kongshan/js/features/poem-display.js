@@ -3,7 +3,93 @@
 // =====================================================
 
 /**
- * 渲染豎排詩歌
+ * 打字機效果動畫 - 豎排排版專用
+ * @param {HTMLElement} contentEl - 詩句內容元素
+ * @param {string} content - 詩句內容
+ * @param {number} charDelay - 每個字符的延遲時間（毫秒），默認 150ms
+ */
+async function animateTypewriter(contentEl, content, charDelay = 150) {
+  if (!contentEl || !content) return;
+  
+  // 將詩句拆分為列（在豎排中，\n 分隔的是列）
+  const columns = content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+  
+  if (columns.length === 0) return;
+  
+  // 清空內容，準備逐字符添加
+  contentEl.innerHTML = '';
+  
+  // 保存原始內容供發光層使用
+  const originalContent = columns.join('\n');
+  contentEl.dataset.text = originalContent;
+  
+  // 在豎排中，writing-mode: vertical-rl 表示從右到左
+  // 第一列（數組第一個）會顯示在最右邊
+  // 我們需要從第一列開始，每列從上到下逐字符顯示
+  const totalColumns = columns.length;
+  
+  // 收集所有字符的顯示順序（從第一列到最後一列，每列從上到下）
+  const characters = [];
+  columns.forEach((column, colIndex) => {
+    for (let charIndex = 0; charIndex < column.length; charIndex++) {
+      characters.push({
+        char: column[charIndex],
+        columnIndex: colIndex,
+        charIndex: charIndex
+      });
+    }
+  });
+  
+  // 創建列容器結構（按順序，第一列在最右邊）
+  const columnContainers = [];
+  columns.forEach((column, index) => {
+    const colContainer = document.createElement('span');
+    colContainer.className = 'poem-column';
+    contentEl.appendChild(colContainer);
+    
+    // 如果不是最後一列，添加 <br> 分隔
+    if (index < columns.length - 1) {
+      const br = document.createElement('br');
+      contentEl.appendChild(br);
+    }
+    
+    columnContainers.push(colContainer);
+  });
+  
+  // 逐字符顯示動畫
+  let currentIndex = 0;
+  for (const charInfo of characters) {
+    const charSpan = document.createElement('span');
+    charSpan.className = 'poem-char';
+    charSpan.textContent = charInfo.char;
+    charSpan.style.opacity = '0';
+    
+    // 將字符添加到對應的列容器
+    columnContainers[charInfo.columnIndex].appendChild(charSpan);
+    
+    // 使用 setTimeout 控制顯示時機
+    await new Promise(resolve => {
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          charSpan.style.opacity = '1';
+          resolve();
+        });
+      }, currentIndex * charDelay);
+    });
+    
+    currentIndex++;
+  }
+  
+  // 打字機效果完成後，啟動呼吸動畫
+  await new Promise(resolve => setTimeout(resolve, charDelay));
+  contentEl.classList.add('poem-text-breathing');
+}
+
+/**
+ * 渲染豎排詩歌（帶打字機效果）
  */
 export function renderVerticalPoem(container, poem) {
   if (!container || !poem) return;
@@ -41,22 +127,17 @@ export function renderVerticalPoem(container, poem) {
   
   // 詩歌內容 - 放在最後（豎排版中會顯示在中間偏右）
   const contentEl = document.createElement('div');
-  contentEl.className = 'poem-text';
-  // 將詩句拆分為行，保留原始文字供發光層使用
+  contentEl.className = 'poem-text'; // 初始不添加 breathing 類，等打字機完成後再添加
+  
+  // 如果有內容，啟動打字機效果
   if (poem.content) {
-    const contentLines = poem.content
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-    
-    const originalContent = contentLines.join('\n');
-    // 以 <br> 呈現行距，同時為發光層提供 data-text 原文
-    contentEl.innerHTML = contentLines.join('<br>');
-    contentEl.dataset.text = originalContent;
+    // 異步啟動打字機動畫
+    animateTypewriter(contentEl, poem.content, 150); // 150ms 每個字符，速度適中
   } else {
     contentEl.textContent = '';
     contentEl.dataset.text = '';
   }
+  
   contentArea.appendChild(contentEl);
   
   poemWrapper.appendChild(contentArea);
