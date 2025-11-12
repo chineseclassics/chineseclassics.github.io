@@ -13,6 +13,7 @@ export class AudioEngine {
   constructor() {
     this.audioContext = null;
     this.masterGainNode = null; // 主音量節點（供 SoundMixer 使用）
+    this.analyserNode = null; // 音訊監測節點（供靜音偵測使用）
     this.sources = new Map(); // 存儲所有播放源 { soundId: { source, gainNode, buffer } }
     this.buffers = new Map(); // 音頻緩存 { url: AudioBuffer }
     this.isMuted = false;
@@ -36,6 +37,7 @@ export class AudioEngine {
       }
       
       this.initialized = true;
+      this.ensureOutputNodes();
       console.log('✅ 音頻引擎初始化成功');
     } catch (error) {
       console.error('❌ 音頻引擎初始化失敗:', error);
@@ -54,6 +56,7 @@ export class AudioEngine {
     // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
     if (this.audioContext && this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
+      this.ensureOutputNodes();
     }
   }
   
@@ -116,7 +119,7 @@ export class AudioEngine {
       
       // 連接節點
       source.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
+      gainNode.connect(this.getMasterGainNode());
       
       // 開始播放
       source.start(0);
@@ -240,6 +243,9 @@ export class AudioEngine {
       // 如果還沒有初始化，創建一個新的 AudioContext
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       this.initialized = true;
+      this.ensureOutputNodes();
+    } else {
+      this.ensureOutputNodes();
     }
     return this.audioContext;
   }
@@ -248,14 +254,54 @@ export class AudioEngine {
    * 獲取主音量節點（供 SoundMixer 使用）
    */
   getMasterGainNode() {
+    this.ensureOutputNodes();
+    return this.masterGainNode;
+  }
+
+  /**
+   * 取得分析節點（提供音量監測）
+   */
+  getAnalyserNode() {
+    this.ensureOutputNodes();
+    return this.analyserNode;
+  }
+
+  /**
+   * 確保輸出節點鏈路（主增益與分析節點）已建立
+   */
+  ensureOutputNodes() {
+    if (!this.audioContext) {
+      return;
+    }
+
+    const ctx = this.audioContext;
+
     if (!this.masterGainNode) {
-      // 創建主音量節點
-      const ctx = this.getAudioContext();
       this.masterGainNode = ctx.createGain();
       this.masterGainNode.gain.value = this.masterVolume;
-      this.masterGainNode.connect(ctx.destination);
     }
-    return this.masterGainNode;
+
+    if (!this.analyserNode) {
+      this.analyserNode = ctx.createAnalyser();
+      this.analyserNode.fftSize = 2048;
+      this.analyserNode.smoothingTimeConstant = 0.4;
+    }
+
+    // 重建連線：主增益 -> 分析節點 -> 目的地
+    try {
+      this.masterGainNode.disconnect();
+    } catch (error) {
+      // 忽略斷開錯誤
+    }
+
+    try {
+      this.analyserNode.disconnect();
+    } catch (error) {
+      // 忽略斷開錯誤
+    }
+
+    this.masterGainNode.connect(this.analyserNode);
+    this.analyserNode.connect(ctx.destination);
   }
 
   /**
@@ -275,6 +321,15 @@ export class AudioEngine {
           // 忽略斷開錯誤
         }
         this.masterGainNode = null;
+      }
+
+      if (this.analyserNode) {
+        try {
+          this.analyserNode.disconnect();
+        } catch (error) {
+          // 忽略斷開錯誤
+        }
+        this.analyserNode = null;
       }
       
       // 關閉 AudioContext
