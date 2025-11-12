@@ -2459,10 +2459,7 @@ async function autoPreviewSelectedSounds() {
   }
 
     if (soundMixer.getTracks().length > 0) {
-      const playResult = await soundMixer.playAll();
-      if (!playResult.success && playResult.needsInteraction) {
-        console.log('📱 自動預覽音效需要用戶交互或設備未靜音');
-      }
+      await soundMixer.playAll();
     }
   } finally {
     // 確保標誌被重置
@@ -3624,10 +3621,7 @@ async function previewAtmosphere(poem) {
         // 播放前最後檢查編輯器狀態
         const editor = document.getElementById('atmosphere-editor');
         if (editor && editor.classList.contains('visible') && soundMixer.getTracks().length > 0) {
-          const playResult = await soundMixer.playAll();
-          if (!playResult.success && playResult.needsInteraction) {
-            console.log('📱 預覽音效需要用戶交互或設備未靜音');
-          }
+          await soundMixer.playAll();
         } else {
           // 編輯器已關閉，清除音效
           if (soundMixer) {

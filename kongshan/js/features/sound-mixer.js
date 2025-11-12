@@ -275,12 +275,11 @@ export class SoundMixer {
    * 播放所有音效
    * @param {boolean} fadeIn - 是否淡入，默認 false
    * @param {number} fadeInDuration - 淡入時長（毫秒），默認 500ms
-   * @returns {Promise<{success: boolean, needsInteraction: boolean}>}
    */
   async playAll(fadeIn = false, fadeInDuration = 500) {
     if (this.tracks.size === 0) {
       console.warn('沒有音效可播放');
-      return { success: false, needsInteraction: false };
+      return;
     }
 
     // 確保 AudioContext 已初始化（需要用戶交互）
@@ -292,140 +291,19 @@ export class SoundMixer {
       // 確保 AudioContext 處於運行狀態
       const audioContext = this.audioEngine.getAudioContext();
       if (audioContext.state === 'suspended') {
-        const resumeResult = await audioContext.resume().catch(err => {
-          console.warn('恢復 AudioContext 失敗:', err);
-          return 'failed';
-        });
-        
-        // 如果恢復後仍然是 suspended 狀態，說明需要用戶交互
-        if (audioContext.state === 'suspended' || resumeResult === 'failed') {
-          console.warn('⚠️ AudioContext 處於 suspended 狀態，需要用戶交互');
-          this.showAudioUnlockHint();
-          return { success: false, needsInteraction: true };
-        }
+        await audioContext.resume();
       }
-      
-      // 再次嘗試解鎖（確保移動端能播放）
-      if (!this.audioEngine.unlocked) {
-        await this.audioEngine.unlockAudio();
-      }
-      
     } catch (error) {
       console.error('初始化 AudioContext 失敗:', error);
-      this.showAudioUnlockHint();
-      return { success: false, needsInteraction: true };
+      return;
     }
 
-    // 播放所有音效
-    let playedCount = 0;
     this.tracks.forEach(track => {
-      try {
-        track.play(fadeIn, fadeInDuration);
-        playedCount++;
-      } catch (error) {
-        console.error('播放音效失敗:', track.soundEffect?.name, error);
-      }
+      track.play(fadeIn, fadeInDuration);
     });
 
-    this.isPlaying = playedCount > 0;
-    
-    if (playedCount > 0) {
-      console.log(`▶️ 播放所有音效${fadeIn ? ' (淡入)' : ''} (${playedCount}/${this.tracks.size})`);
-      return { success: true, needsInteraction: false };
-    } else {
-      console.warn('⚠️ 沒有音效成功播放');
-      this.showAudioUnlockHint();
-      return { success: false, needsInteraction: true };
-    }
-  }
-  
-  /**
-   * 顯示音頻解鎖提示（移動端靜音模式等）
-   */
-  showAudioUnlockHint() {
-    // 檢測是否為移動設備
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
-    if (isMobile || isIOS) {
-      // 創建提示元素
-      const existingHint = document.getElementById('audio-unlock-hint');
-      if (existingHint) return; // 避免重複顯示
-      
-      const hint = document.createElement('div');
-      hint.id = 'audio-unlock-hint';
-      hint.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.9);
-        color: white;
-        padding: 20px 30px;
-        border-radius: 12px;
-        z-index: 10000;
-        text-align: center;
-        font-size: 16px;
-        line-height: 1.6;
-        max-width: 80%;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      `;
-      
-      if (isIOS) {
-        hint.innerHTML = `
-          <div style="margin-bottom: 15px;">📱</div>
-          <div>iOS 靜音模式下無法播放音效</div>
-          <div style="font-size: 14px; margin-top: 10px; color: #ccc;">
-            請關閉靜音開關後重新進入詩歌
-          </div>
-          <button id="audio-hint-close" style="
-            margin-top: 15px;
-            padding: 8px 20px;
-            background: #4CAF50;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-          ">知道了</button>
-        `;
-      } else {
-        hint.innerHTML = `
-          <div style="margin-bottom: 15px;">🔊</div>
-          <div>音效需要您的允許才能播放</div>
-          <div style="font-size: 14px; margin-top: 10px; color: #ccc;">
-            請確保設備未靜音
-          </div>
-          <button id="audio-hint-close" style="
-            margin-top: 15px;
-            padding: 8px 20px;
-            background: #4CAF50;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-          ">知道了</button>
-        `;
-      }
-      
-      document.body.appendChild(hint);
-      
-      // 點擊關閉按鈕
-      const closeBtn = document.getElementById('audio-hint-close');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          hint.remove();
-        });
-      }
-      
-      // 5 秒後自動關閉
-      setTimeout(() => {
-        if (hint && hint.parentElement) {
-          hint.remove();
-        }
-      }, 5000);
-    }
+    this.isPlaying = true;
+    console.log(`▶️ 播放所有音效${fadeIn ? ' (淡入)' : ''}`);
   }
 
   /**
