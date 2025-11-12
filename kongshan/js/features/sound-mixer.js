@@ -234,17 +234,6 @@ export class SoundMixer {
     this.audioEngine = audioEngine;
     this.tracks = new Map(); // Map<soundEffectId, SoundTrack>
     this.isPlaying = false;
-    this.silenceCheckTimer = null;
-    this.silenceCheckInterval = 800; // 毫秒
-    this.silenceCheckDelay = 1200; // 首次檢測延遲
-    this.silenceThreshold = 0.0008; // RMS 閾值
-    this.silenceConsecutiveChecks = 3; // 連續靜音次數才提示
-    this.silenceCheckCounter = 0;
-    this.silenceDetected = false;
-    this.silenceWarningDismissed = false;
-    this.silenceWarningSuppressed = false;
-    this.onSilenceDetected = null;
-    this.onAudioRecovered = null;
   }
 
   /**
@@ -314,10 +303,6 @@ export class SoundMixer {
     });
 
     this.isPlaying = true;
-    this.silenceDetected = false;
-    this.silenceCheckCounter = 0;
-    this.silenceWarningDismissed = false;
-    this.startSilenceMonitor();
     console.log(`▶️ 播放所有音效${fadeIn ? ' (淡入)' : ''}`);
   }
 
@@ -344,7 +329,6 @@ export class SoundMixer {
     }
 
     this.isPlaying = false;
-    this.clearSilenceMonitor(true);
   }
 
   /**
@@ -397,123 +381,6 @@ export class SoundMixer {
    */
   getIsPlaying() {
     return this.isPlaying;
-  }
-
-  /**
-   * 註冊靜音提示回呼
-   * @param {object} callbacks - 回呼設定
-   * @param {Function} callbacks.onSilenceDetected - 偵測靜音時觸發
-   * @param {Function} callbacks.onAudioRecovered - 音訊恢復時觸發
-   */
-  setSilenceWarningCallbacks(callbacks = {}) {
-    const { onSilenceDetected = null, onAudioRecovered = null } = callbacks;
-    this.onSilenceDetected = typeof onSilenceDetected === 'function' ? onSilenceDetected : null;
-    this.onAudioRecovered = typeof onAudioRecovered === 'function' ? onAudioRecovered : null;
-  }
-
-  /**
-   * 單次播放中忽略後續靜音提示
-   */
-  dismissSilenceWarningForCurrentPlayback() {
-    this.silenceWarningDismissed = true;
-  }
-
-  /**
-   * 在當前工作階段中停用靜音提示
-   */
-  suppressSilenceWarningForSession() {
-    this.silenceWarningSuppressed = true;
-    this.clearSilenceMonitor(true);
-    if (this.onAudioRecovered) {
-      this.onAudioRecovered();
-    }
-  }
-
-  /**
-   * 檢查是否已全域停用靜音提示
-   */
-  isSilenceWarningSuppressed() {
-    return this.silenceWarningSuppressed;
-  }
-
-  /**
-   * 開始靜音監測循環
-   */
-  startSilenceMonitor() {
-    this.clearSilenceMonitor();
-
-    if (this.silenceWarningSuppressed) {
-      return;
-    }
-
-    const analyser = this.audioEngine.getAnalyserNode();
-    if (!analyser) {
-      return;
-    }
-
-    const bufferLength = analyser.fftSize;
-    const dataArray = new Float32Array(bufferLength);
-
-    const checkSilence = () => {
-      if (!this.isPlaying || this.tracks.size === 0) {
-        this.clearSilenceMonitor(true);
-        return;
-      }
-
-      analyser.getFloatTimeDomainData(dataArray);
-
-      let sumSquares = 0;
-      for (let i = 0; i < bufferLength; i += 1) {
-        const sample = dataArray[i];
-        sumSquares += sample * sample;
-      }
-
-      const rms = Math.sqrt(sumSquares / bufferLength);
-      const isSilent = rms < this.silenceThreshold;
-
-      if (isSilent) {
-        this.silenceCheckCounter += 1;
-        if (!this.silenceDetected && !this.silenceWarningDismissed && this.silenceCheckCounter >= this.silenceConsecutiveChecks) {
-          this.silenceDetected = true;
-          if (this.onSilenceDetected) {
-            this.onSilenceDetected();
-          }
-        }
-      } else {
-        this.silenceCheckCounter = 0;
-        if (this.silenceDetected) {
-          this.silenceDetected = false;
-          this.silenceWarningDismissed = false;
-          if (this.onAudioRecovered) {
-            this.onAudioRecovered();
-          }
-        }
-      }
-
-      this.silenceCheckTimer = setTimeout(checkSilence, this.silenceCheckInterval);
-    };
-
-    this.silenceCheckTimer = setTimeout(checkSilence, this.silenceCheckDelay);
-  }
-
-  /**
-   * 停止靜音監測
-   * @param {boolean} notifyRecovery - 是否通知音訊恢復
-   */
-  clearSilenceMonitor(notifyRecovery = false) {
-    if (this.silenceCheckTimer) {
-      clearTimeout(this.silenceCheckTimer);
-      this.silenceCheckTimer = null;
-    }
-
-    this.silenceCheckCounter = 0;
-
-    if (notifyRecovery && this.silenceDetected) {
-      this.silenceDetected = false;
-      if (this.onAudioRecovered) {
-        this.onAudioRecovered();
-      }
-    }
   }
 }
 

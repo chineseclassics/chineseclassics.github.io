@@ -10,12 +10,7 @@
 export function renderSoundControls(container, soundMixer) {
   if (!container) return;
 
-  const existingBanner = container.querySelector('.silence-warning-banner');
   container.innerHTML = '';
-
-  if (existingBanner) {
-    container.appendChild(existingBanner);
-  }
 
   // 主控制按鈕容器
   const mainControls = document.createElement('div');

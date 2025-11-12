@@ -1000,14 +1000,33 @@ export class AdminManager {
       }
 
       // 刪除音效記錄
-      const { error } = await this.supabase
+      const { data: deletedData, error } = await this.supabase
         .from('sound_effects')
         .delete()
-        .eq('id', soundId);
+        .eq('id', soundId)
+        .select();
 
       if (error) {
         console.error('刪除音效失敗:', error);
         return { success: false, error: error.message };
+      }
+
+      // 驗證記錄是否真的被刪除（RLS 策略可能導致靜默失敗）
+      if (!deletedData || deletedData.length === 0) {
+        // 再次查詢確認記錄是否還存在
+        const { data: stillExists } = await this.supabase
+          .from('sound_effects')
+          .select('id')
+          .eq('id', soundId)
+          .single();
+        
+        if (stillExists) {
+          console.error('刪除音效失敗：RLS 策略不允許刪除');
+          return { 
+            success: false, 
+            error: '刪除失敗：權限不足。請確認您有管理員權限，或聯繫系統管理員。' 
+          };
+        }
       }
 
       // 如果 file_url 是 Supabase Storage 路徑（system/ 或 approved/），刪除文件

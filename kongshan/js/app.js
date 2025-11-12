@@ -22,7 +22,6 @@ import { renderStatistics } from './ui/admin-statistics.js';
 import { renderAdminLogs } from './ui/admin-logs.js';
 import { NotificationDropdown } from './ui/notification-dropdown.js';
 import { UserPanelModal } from './ui/user-panel-modal.js';
-import { SilenceWarningBanner } from './ui/silence-warning-banner.js';
 
 // 全局狀態
 const AppState = {
@@ -61,8 +60,7 @@ const AppState = {
   atmosphereStatusTimer: null,
   allPoems: [], // 保存所有詩句（用於搜索）
   searchTimeout: null, // 搜索防抖定時器
-  scrollTimeout: null, // 滾動停止定時器
-  silenceWarningBanner: null
+  scrollTimeout: null // 滾動停止定時器
 };
 
 const ATMOSPHERE_STATUS_DURATION = 3000;
@@ -94,45 +92,6 @@ function resetAtmosphereEnvironment() {
   }
 
   AppState.currentAtmosphere = null;
-}
-
-/**
- * 設置靜音提示橫幅與混音器回呼
- * @param {SoundMixer} soundMixer - 音效混音器實例
- */
-function setupSilenceWarningBanner(soundMixer) {
-  if (!soundMixer) {
-    return;
-  }
-
-  const container = document.getElementById('sound-controls');
-  if (!container) {
-    return;
-  }
-
-  if (!AppState.silenceWarningBanner) {
-    AppState.silenceWarningBanner = new SilenceWarningBanner(container);
-  }
-
-  AppState.silenceWarningBanner.setCallbacks({
-    onDismiss: () => {
-      soundMixer.dismissSilenceWarningForCurrentPlayback();
-    },
-    onDisable: () => {
-      soundMixer.suppressSilenceWarningForSession();
-    }
-  });
-
-  soundMixer.setSilenceWarningCallbacks({
-    onSilenceDetected: () => {
-      if (!soundMixer.isSilenceWarningSuppressed()) {
-        AppState.silenceWarningBanner?.show();
-      }
-    },
-    onAudioRecovered: () => {
-      AppState.silenceWarningBanner?.hide();
-    }
-  });
 }
 
 /**
@@ -263,12 +222,6 @@ async function initializeApp() {
       AppState.notificationManager = new NotificationManager(AppState.supabase);
       AppState.audioEngine = new AudioEngine();
       AppState.soundMixer = new SoundMixer(AppState.audioEngine);
-
-      const soundControlsContainer = document.getElementById('sound-controls');
-      if (soundControlsContainer) {
-        renderSoundControls(soundControlsContainer, AppState.soundMixer);
-        setupSilenceWarningBanner(AppState.soundMixer);
-      }
       
       // 初始化背景渲染器（包含粒子渲染器）
       const canvas = document.getElementById('background-canvas');
@@ -1940,12 +1893,7 @@ function setupPageUnloadListeners() {
 window.AppState = AppState;
 
 // 導出 renderSoundControls 供編輯器使用
-window.renderSoundControls = (container, soundMixer = AppState.soundMixer) => {
-  renderSoundControls(container, soundMixer);
-  if (soundMixer) {
-    setupSilenceWarningBanner(soundMixer);
-  }
-};
+window.renderSoundControls = renderSoundControls;
 
 // 導出 applyAtmosphereEntry 供編輯器使用（恢復聲色意境）
 window.applyAtmosphereEntry = applyAtmosphereEntry;
