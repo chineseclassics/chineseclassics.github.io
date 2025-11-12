@@ -20,7 +20,8 @@ export class AudioEngine {
     this.initialized = false;
     this.iosAudioUnlocked = false;
     this.iosUnlockInProgress = false;
-    this.silentAudioUrl = null;
+    this.unlockAudioUrl = null;
+    this.unlockAudioDuration = 0;
   }
   
   /**
@@ -277,12 +278,12 @@ export class AudioEngine {
   }
 
   /**
-   * 建立靜音音訊的 URL（用於喚醒 iOS 靜音模式）
+   * 建立極低音量的音訊（用於喚醒 iOS 靜音模式）
    * @param {number} durationMs - 持續時間（毫秒）
    */
-  createSilentAudioUrl(durationMs = 250) {
-    if (this.silentAudioUrl) {
-      return this.silentAudioUrl;
+  createUnlockAudioUrl(durationMs = 250) {
+    if (this.unlockAudioUrl) {
+      return this.unlockAudioUrl;
     }
 
     if (typeof window === 'undefined' || typeof Blob === 'undefined') {
@@ -299,6 +300,8 @@ export class AudioEngine {
     const buffer = new ArrayBuffer(44 + dataSize);
     const view = new DataView(buffer);
     let offset = 0;
+    const toneFrequency = 880; // Hz
+    const amplitude = 0.08; // 低音量避免驚擾
 
     const writeString = (str) => {
       for (let i = 0; i < str.length; i += 1) {
@@ -330,14 +333,23 @@ export class AudioEngine {
     writeUint16(bitsPerSample);
     writeString('data');
     writeUint32(dataSize);
-    // ArrayBuffer 預設為 0，無需手動填入靜音數據
+
+    // 寫入極短的正弦波音訊（保持音量極小但非 0）
+    for (let i = 0; i < frameCount; i += 1) {
+      const time = i / sampleRate;
+      const sample = Math.sin(2 * Math.PI * toneFrequency * time) * amplitude;
+      const intSample = Math.max(-1, Math.min(1, sample));
+      view.setInt16(offset, intSample * 0x7FFF, true);
+      offset += 2;
+    }
 
     try {
       const blob = new Blob([buffer], { type: 'audio/wav' });
-      this.silentAudioUrl = URL.createObjectURL(blob);
-      return this.silentAudioUrl;
+      this.unlockAudioUrl = URL.createObjectURL(blob);
+      this.unlockAudioDuration = durationMs;
+      return this.unlockAudioUrl;
     } catch (error) {
-      console.warn('建立靜音音訊 URL 失敗:', error);
+      console.warn('建立解鎖音訊 URL 失敗:', error);
       return null;
     }
   }
@@ -372,8 +384,8 @@ export class AudioEngine {
       await this.ensureInitialized();
 
       if (typeof document !== 'undefined') {
-        const silentUrl = this.createSilentAudioUrl();
-        if (silentUrl) {
+        const unlockUrl = this.createUnlockAudioUrl();
+        if (unlockUrl) {
           const audioElement = document.createElement('audio');
           audioElement.style.position = 'absolute';
           audioElement.style.width = '0';
@@ -383,8 +395,9 @@ export class AudioEngine {
           audioElement.setAttribute('playsinline', 'true');
           audioElement.setAttribute('webkit-playsinline', 'true');
           audioElement.preload = 'auto';
-          audioElement.src = silentUrl;
-          audioElement.volume = 1.0;
+          audioElement.src = unlockUrl;
+          audioElement.volume = 0.25;
+          audioElement.loop = true;
 
           document.body.appendChild(audioElement);
 
@@ -393,9 +406,13 @@ export class AudioEngine {
             if (playPromise && typeof playPromise.then === 'function') {
               await playPromise;
             }
+            await new Promise((resolve) => {
+              const playbackDuration = Math.max(250, Math.min(800, (this.unlockAudioDuration || 250) + 200));
+              setTimeout(resolve, playbackDuration);
+            });
             audioElement.pause();
           } catch (error) {
-            console.warn('播放靜音音訊以喚醒 iOS 失敗:', error);
+            console.warn('播放解鎖音訊以喚醒 iOS 失敗:', error);
           } finally {
             if (audioElement.parentNode) {
               audioElement.parentNode.removeChild(audioElement);
@@ -404,15 +421,25 @@ export class AudioEngine {
         }
       }
 
-      // 使用 Web Audio 播放極短的靜音 buffer
+      // 使用 Web Audio 播放極短的低音量音調
       if (this.audioContext) {
-        const buffer = this.audioContext.createBuffer(1, 1, 22050);
-        const source = this.audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(this.audioContext.destination);
-        source.start(0);
-        source.stop(0);
-        source.disconnect();
+        await this.audioContext.resume();
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.001, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.35);
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        const stopTime = this.audioContext.currentTime + 0.36;
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(stopTime);
+        await new Promise((resolve) => {
+          oscillator.onended = resolve;
+        });
+        oscillator.disconnect();
+        gainNode.disconnect();
       }
 
       this.iosAudioUnlocked = true;
@@ -457,13 +484,14 @@ export class AudioEngine {
       this.buffers.clear();
       this.initialized = false;
       this.iosAudioUnlocked = false;
-      if (this.silentAudioUrl) {
+      if (this.unlockAudioUrl) {
         try {
-          URL.revokeObjectURL(this.silentAudioUrl);
+          URL.revokeObjectURL(this.unlockAudioUrl);
         } catch (error) {
           // 忽略釋放錯誤
         }
-        this.silentAudioUrl = null;
+        this.unlockAudioUrl = null;
+        this.unlockAudioDuration = 0;
       }
       
       console.log('🔇 音頻引擎已關閉');

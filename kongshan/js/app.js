@@ -193,20 +193,36 @@ function setupIOSAudioUnlock() {
     return;
   }
 
+  const eventTypes = [];
+  const options = { passive: true };
+
   const cleanup = () => {
-    document.removeEventListener('touchend', unlockHandler);
-    document.removeEventListener('click', unlockHandler);
+    eventTypes.forEach(type => {
+      document.removeEventListener(type, unlockHandler, options);
+    });
   };
 
   const unlockHandler = async () => {
+    if (AppState.audioEngine.iosAudioUnlocked) {
+      cleanup();
+      return;
+    }
     const success = await AppState.audioEngine.unlockIOSAudio();
     if (success) {
       cleanup();
     }
   };
 
-  document.addEventListener('touchend', unlockHandler, { passive: true });
-  document.addEventListener('click', unlockHandler, { passive: true });
+  if (window.PointerEvent) {
+    eventTypes.push('pointerdown');
+  } else {
+    eventTypes.push('touchstart');
+  }
+  eventTypes.push('touchend', 'click');
+
+  eventTypes.forEach(type => {
+    document.addEventListener(type, unlockHandler, options);
+  });
 }
 
 async function initializeApp() {
