@@ -181,6 +181,34 @@ function preventMobileZoomAndScroll() {
   document.addEventListener('touchmove', preventScroll, { passive: false });
 }
 
+/**
+ * 設置 iOS 音訊解鎖流程
+ */
+function setupIOSAudioUnlock() {
+  if (!AppState.audioEngine || typeof AppState.audioEngine.unlockIOSAudio !== 'function') {
+    return;
+  }
+
+  if (!AppState.audioEngine.isIOSDevice || !AppState.audioEngine.isIOSDevice()) {
+    return;
+  }
+
+  const cleanup = () => {
+    document.removeEventListener('touchend', unlockHandler);
+    document.removeEventListener('click', unlockHandler);
+  };
+
+  const unlockHandler = async () => {
+    const success = await AppState.audioEngine.unlockIOSAudio();
+    if (success) {
+      cleanup();
+    }
+  };
+
+  document.addEventListener('touchend', unlockHandler, { passive: true });
+  document.addEventListener('click', unlockHandler, { passive: true });
+}
+
 async function initializeApp() {
   try {
     console.log('🚀 空山應用初始化開始...');
@@ -222,6 +250,7 @@ async function initializeApp() {
       AppState.notificationManager = new NotificationManager(AppState.supabase);
       AppState.audioEngine = new AudioEngine();
       AppState.soundMixer = new SoundMixer(AppState.audioEngine);
+      setupIOSAudioUnlock();
       
       // 初始化背景渲染器（包含粒子渲染器）
       const canvas = document.getElementById('background-canvas');
