@@ -18,6 +18,7 @@ export class AudioEngine {
     this.isMuted = false;
     this.masterVolume = 1.0;
     this.initialized = false;
+    this.unlocked = false; // 移動端音頻是否已解鎖
   }
   
   /**
@@ -35,11 +36,78 @@ export class AudioEngine {
         await this.audioContext.resume();
       }
       
+      // 嘗試解鎖移動端音頻（特別是 iOS 靜音模式）
+      await this.unlockAudio();
+      
       this.initialized = true;
       console.log('✅ 音頻引擎初始化成功');
     } catch (error) {
       console.error('❌ 音頻引擎初始化失敗:', error);
       throw error;
+    }
+  }
+  
+  /**
+   * 解鎖移動端音頻（處理 iOS 靜音模式等限制）
+   * 通過播放一個靜音的 HTMLAudioElement 來「解鎖」音頻系統
+   */
+  async unlockAudio() {
+    if (this.unlocked) return;
+    
+    try {
+      // 方法 1：使用 HTMLAudioElement 解鎖（最可靠）
+      // 創建一個短暫的靜音音頻來解鎖 iOS 靜音模式
+      const silentAudio = new Audio();
+      
+      // 創建一個 0.1 秒的靜音音頻數據 URL
+      // 這是一個 WAV 格式的靜音文件
+      const silentDataUrl = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+      silentAudio.src = silentDataUrl;
+      
+      // 設置為靜音播放
+      silentAudio.volume = 0.01;
+      
+      // 嘗試播放（可能需要用戶交互）
+      const playPromise = silentAudio.play();
+      
+      if (playPromise !== undefined) {
+        await playPromise.catch(err => {
+          // 靜默處理錯誤，因為這是解鎖嘗試
+          console.log('📱 音頻解鎖嘗試（正常，需要用戶交互）:', err.message);
+        });
+      }
+      
+      // 方法 2：使用 Web Audio API 解鎖
+      // 創建一個靜音的音頻緩衝區並播放
+      if (this.audioContext) {
+        const buffer = this.audioContext.createBuffer(1, 1, 22050);
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.audioContext.destination);
+        
+        // 播放這個靜音緩衝區
+        if (source.start) {
+          source.start(0);
+        } else if (source.noteOn) {
+          source.noteOn(0);
+        }
+        
+        // 立即停止
+        setTimeout(() => {
+          if (source.stop) {
+            source.stop(0);
+          } else if (source.noteOff) {
+            source.noteOff(0);
+          }
+        }, 100);
+      }
+      
+      this.unlocked = true;
+      console.log('📱 移動端音頻解鎖成功');
+      
+    } catch (error) {
+      // 解鎖失敗不應該阻止應用運行
+      console.log('📱 移動端音頻解鎖失敗（可能需要用戶交互）:', error.message);
     }
   }
   
@@ -54,6 +122,11 @@ export class AudioEngine {
     // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
     if (this.audioContext && this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
+    }
+    
+    // 如果還未解鎖，再次嘗試解鎖（用戶可能剛剛交互）
+    if (!this.unlocked) {
+      await this.unlockAudio();
     }
   }
   

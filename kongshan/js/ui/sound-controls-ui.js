@@ -29,8 +29,13 @@ export function renderSoundControls(container, soundMixer) {
       soundMixer.stopAll();
       playPauseBtn.innerHTML = createPlayIcon();
     } else {
-      await soundMixer.playAll();
-      playPauseBtn.innerHTML = createPauseIcon();
+      const playResult = await soundMixer.playAll();
+      if (playResult.success) {
+        playPauseBtn.innerHTML = createPauseIcon();
+      } else {
+        // 播放失敗，保持播放圖標
+        console.log('📱 音效播放失敗，可能需要用戶交互或設備未靜音');
+      }
     }
   });
 

@@ -1224,7 +1224,10 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
       
       // 播放前最後一次檢查狀態，使用淡入效果
       if (context.pendingToken === token && AppState.activeScreen === 'viewer' && loadedTracks.length > 0) {
-        await AppState.soundMixer.playAll(true, FADE_DURATION);
+        const playResult = await AppState.soundMixer.playAll(true, FADE_DURATION);
+        if (!playResult.success && playResult.needsInteraction) {
+          console.log('📱 音效播放需要用戶交互或設備未靜音');
+        }
       }
     }
 
