@@ -21,6 +21,8 @@ export class BackgroundRenderer {
     this.transitionFromConfig = null;
     this.transitionToConfig = null;
     this.particleRenderer = null; // 粒子渲染器實例
+    this.isCleared = false; // 標記是否已被清除（用於取消異步操作）
+    this.currentTransitionReject = null; // 當前過渡的 reject 函數
     
     if (canvas) {
       this.ctx = canvas.getContext('2d');
@@ -159,6 +161,11 @@ export class BackgroundRenderer {
    */
   render(config) {
     if (!this.ctx) return;
+    
+    // 如果已被清除，不執行渲染
+    if (this.isCleared) {
+      return;
+    }
     
     this.currentConfig = config;
     
@@ -341,13 +348,22 @@ export class BackgroundRenderer {
    * @param {number} duration - 過渡時長（毫秒），默認 800ms
    */
   setConfigWithTransition(config, duration = 800) {
-    if (!this.ctx) return;
+    if (!this.ctx) return Promise.reject(new Error('Canvas context not available'));
     
     // 取消正在進行的過渡
     if (this.transitionAnimationId) {
       cancelAnimationFrame(this.transitionAnimationId);
       this.transitionAnimationId = null;
     }
+    
+    // 如果有正在進行的 Promise，reject 它
+    if (this.currentTransitionReject) {
+      this.currentTransitionReject(new Error('Transition cancelled'));
+      this.currentTransitionReject = null;
+    }
+    
+    // 重置清除標記
+    this.isCleared = false;
     
     // 如果沒有當前配置，直接渲染
     if (!this.currentConfig) {
@@ -362,8 +378,21 @@ export class BackgroundRenderer {
     this.transitionStartTime = performance.now();
     
     // 開始過渡動畫
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      // 保存 reject 函數，以便在 clear() 時取消
+      this.currentTransitionReject = reject;
+      
       const animate = (currentTime) => {
+        // 檢查是否已被清除
+        if (this.isCleared) {
+          this.transitionAnimationId = null;
+          this.transitionFromConfig = null;
+          this.transitionToConfig = null;
+          this.currentTransitionReject = null;
+          reject(new Error('Transition cancelled by clear()'));
+          return;
+        }
+        
         const elapsed = currentTime - this.transitionStartTime;
         const progress = Math.min(elapsed / this.transitionDuration, 1);
         
@@ -377,12 +406,23 @@ export class BackgroundRenderer {
         if (progress < 1) {
           this.transitionAnimationId = requestAnimationFrame(animate);
         } else {
+          // 過渡完成前再次檢查是否已被清除
+          if (this.isCleared) {
+            this.transitionAnimationId = null;
+            this.transitionFromConfig = null;
+            this.transitionToConfig = null;
+            this.currentTransitionReject = null;
+            reject(new Error('Transition cancelled by clear()'));
+            return;
+          }
+          
           // 過渡完成，設置最終配置
           this.currentConfig = config;
           this.render(config);
           this.transitionAnimationId = null;
           this.transitionFromConfig = null;
           this.transitionToConfig = null;
+          this.currentTransitionReject = null;
           resolve();
         }
       };
@@ -400,6 +440,16 @@ export class BackgroundRenderer {
       cancelAnimationFrame(this.transitionAnimationId);
       this.transitionAnimationId = null;
     }
+    
+    // 如果有正在進行的 Promise，reject 它
+    if (this.currentTransitionReject) {
+      this.currentTransitionReject(new Error('Transition cancelled'));
+      this.currentTransitionReject = null;
+    }
+    
+    // 重置清除標記（因為要設置新配置）
+    this.isCleared = false;
+    
     this.render(config);
   }
 
@@ -409,10 +459,19 @@ export class BackgroundRenderer {
   clear() {
     if (!this.ctx) return;
     
+    // 設置清除標記，防止後續的 render() 執行
+    this.isCleared = true;
+    
     // 取消正在進行的過渡
     if (this.transitionAnimationId) {
       cancelAnimationFrame(this.transitionAnimationId);
       this.transitionAnimationId = null;
+    }
+    
+    // 如果有正在進行的 Promise，reject 它
+    if (this.currentTransitionReject) {
+      this.currentTransitionReject(new Error('Transition cancelled by clear()'));
+      this.currentTransitionReject = null;
     }
     
     // 停止並清除粒子動畫

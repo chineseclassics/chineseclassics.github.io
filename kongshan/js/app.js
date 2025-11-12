@@ -1101,24 +1101,43 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
   const FADE_DURATION = 500; // 聲音淡入淡出時長（毫秒）
 
   if (!entry || entry.type === 'placeholder') {
+    // 檢查是否還在正確的狀態（用戶可能已經離開）
+    if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+      return;
+    }
+    
     // 淡出舊音效
     if (AppState.soundMixer) {
       await AppState.soundMixer.clear(true, FADE_DURATION);
     }
-    // 過渡到基礎背景和文字顏色
-    const baseBackgroundPromise = AppState.backgroundRenderer && AppState.baseBackgroundConfig
+    
+    // 再次檢查狀態
+    if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+      return;
+    }
+    
+    // 過渡到基礎背景和文字顏色（只在詩句頁面執行）
+    const baseBackgroundPromise = AppState.backgroundRenderer && AppState.baseBackgroundConfig && AppState.activeScreen === 'viewer'
       ? AppState.backgroundRenderer.setConfigWithTransition(
           AppState.baseBackgroundConfig,
           TRANSITION_DURATION
-        )
+        ).catch(() => {
+          // 忽略取消錯誤（用戶可能已經離開）
+        })
       : Promise.resolve();
     
-    const baseTextColorPromise = window.applyBackgroundTextColor
+    const baseTextColorPromise = window.applyBackgroundTextColor && AppState.activeScreen === 'viewer'
       ? window.applyBackgroundTextColor(AppState.baseBackgroundConfig, TRANSITION_DURATION)
       : Promise.resolve();
     
     // 等待背景和文字顏色過渡完成
     await Promise.all([baseBackgroundPromise, baseTextColorPromise]);
+    
+    // 最終檢查狀態
+    if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+      return;
+    }
+    
     AppState.currentAtmosphere = null;
     updateLikeButtonUI(null);
     if (showStatus) {
@@ -1132,19 +1151,27 @@ async function applyAtmosphereEntry(entry, { showStatus = true } = {}) {
   try {
     const atmosphere = entry.data;
     
+    // 檢查是否還在正確的狀態（用戶可能已經離開）
+    if (context.pendingToken !== token || AppState.activeScreen !== 'viewer') {
+      return;
+    }
+    
     // 確定目標背景配置
     const targetBackgroundConfig = atmosphere.background_config || AppState.baseBackgroundConfig || null;
     
     // 同時開始：1) 淡出舊音效 2) 過渡背景 3) 過渡文字顏色
+    // 只在詩句頁面執行背景過渡
     const soundFadeOutPromise = AppState.soundMixer 
       ? AppState.soundMixer.clear(true, FADE_DURATION)
       : Promise.resolve();
     
-    const backgroundTransitionPromise = AppState.backgroundRenderer && targetBackgroundConfig
-      ? AppState.backgroundRenderer.setConfigWithTransition(targetBackgroundConfig, TRANSITION_DURATION)
+    const backgroundTransitionPromise = AppState.backgroundRenderer && targetBackgroundConfig && AppState.activeScreen === 'viewer'
+      ? AppState.backgroundRenderer.setConfigWithTransition(targetBackgroundConfig, TRANSITION_DURATION).catch(() => {
+          // 忽略取消錯誤（用戶可能已經離開）
+        })
       : Promise.resolve();
     
-    const textColorTransitionPromise = window.applyBackgroundTextColor && targetBackgroundConfig
+    const textColorTransitionPromise = window.applyBackgroundTextColor && targetBackgroundConfig && AppState.activeScreen === 'viewer'
       ? window.applyBackgroundTextColor(targetBackgroundConfig, TRANSITION_DURATION)
       : Promise.resolve();
     
