@@ -195,32 +195,14 @@
   position: relative; /* 為發光層建立定位上下文 */
   text-shadow: var(--poem-glow-shadow-min, 0 0 8px rgba(255, 255, 255, 0.3), 0 0 12px rgba(255, 255, 255, 0.18));
 
-  /* 初始狀態不啟動呼吸動畫，等打字機完成後再啟動 */
+  /* 呼吸效果動畫 - 優雅微妙的冥想效果（僅調整透明度與縮放） */
+  animation: breathe 8s ease-in-out infinite;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95); /* 平滑自然的緩動曲線 */
   will-change: opacity, transform; /* 僅宣告實際變化的屬性 */
   transform-origin: center center; /* 確保縮放以中心為基準 */
   
   /* 文字顏色平滑過渡 */
   transition: color 0.4s ease;
-}
-
-/* 打字機完成後，啟動呼吸效果動畫 */
-.poem-text.poem-text-breathing {
-  /* 呼吸效果動畫 - 優雅微妙的冥想效果（僅調整透明度與縮放） */
-  animation: breathe 8s ease-in-out infinite;
-  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95); /* 平滑自然的緩動曲線 */
-}
-
-/* 詩句列容器 */
-.poem-column {
-  display: inline-block;
-  /* 繼承父元素的 writing-mode，不需要重複設置 */
-}
-
-/* 打字機效果 - 單個字符 */
-.poem-char {
-  display: inline-block;
-  opacity: 0;
-  transition: opacity 0.3s ease-in;
 }
 
 /* 發光層：使用疊加元素持續顯示高亮陰影，以合成動畫調整強度 */
@@ -236,14 +218,9 @@
   color: transparent; /* 僅呈現光暈，不重複文字本體 */
   text-shadow: var(--poem-glow-shadow-max, 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.48));
   transform-origin: center center;
-  opacity: var(--poem-glow-opacity-min, 0.25);
-  /* 初始狀態不啟動動畫 */
-}
-
-/* 打字機完成後，啟動發光層動畫 */
-.poem-text.poem-text-breathing::after {
   animation: breathe-glow 8s ease-in-out infinite;
   animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  opacity: var(--poem-glow-opacity-min, 0.25);
 }
 
 /* 詩歌標題和作者容器 - 相對於內容區域定位 */
