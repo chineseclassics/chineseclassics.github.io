@@ -356,6 +356,7 @@
             flex-direction: column;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             overflow: hidden;
+            touch-action: none; /* 防止面板本身被拖動 */
         }
         
         .debug-header {
@@ -392,11 +393,16 @@
         .debug-content {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 12px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
             line-height: 1.5;
             color: #ccc;
+            -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+            touch-action: pan-y; /* 允許垂直滾動 */
+            overscroll-behavior: contain; /* 防止滾動鏈接 */
+            min-height: 0; /* 確保 flex 子元素可以縮小 */
         }
         
         .debug-log {
@@ -437,6 +443,15 @@
                 right: 10px;
                 bottom: 70px;
                 max-height: calc(100vh - 100px);
+                height: auto; /* 確保高度自動調整 */
+            }
+            
+            .debug-content {
+                /* 移動端確保可以滾動 */
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-y;
+                overscroll-behavior: contain;
+                will-change: scroll-position; /* 優化滾動性能 */
             }
             
             .debug-toggle-btn {
