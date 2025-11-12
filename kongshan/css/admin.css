@@ -1281,22 +1281,32 @@
 }
 
 @media (max-width: 768px) {
+  .admin-dashboard-screen {
+    padding: 0;
+  }
+
   .admin-dashboard {
     grid-template-columns: 1fr;
+    min-height: 100vh;
+    height: 100vh;
   }
 
   .admin-main {
-    height: auto;
-    min-height: 100vh;
-    overflow-y: auto;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     -webkit-overflow-scrolling: touch;
   }
 
   .admin-dashboard-content {
-    height: auto;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: var(--spacing-md);
     gap: var(--spacing-md);
     padding-bottom: calc(var(--spacing-xl) + var(--spacing-md));
+    -webkit-overflow-scrolling: touch;
   }
 
   .admin-sidebar {
