@@ -130,6 +130,42 @@ function updateAppSwitcherVisibility() {
 }
 
 /**
+ * 設置音頻解鎖（用於移動端靜音模式）
+ * 在用戶首次交互時自動解鎖音頻上下文
+ */
+function setupAudioUnlock() {
+  if (!AppState.audioEngine) {
+    console.warn('⚠️ AudioEngine 未初始化，無法設置音頻解鎖');
+    return;
+  }
+
+  // 解鎖音頻的函數
+  const unlockAudioOnce = async (event) => {
+    // 只在音頻尚未解鎖時執行
+    if (!AppState.audioEngine.audioUnlocked) {
+      try {
+        await AppState.audioEngine.unlockAudio();
+        console.log('🔓 音頻已通過用戶交互解鎖');
+      } catch (error) {
+        console.warn('⚠️ 解鎖音頻失敗:', error);
+      }
+    }
+
+    // 解鎖後移除所有監聽器（只執行一次）
+    document.removeEventListener('click', unlockAudioOnce, true);
+    document.removeEventListener('touchstart', unlockAudioOnce, true);
+    document.removeEventListener('touchend', unlockAudioOnce, true);
+  };
+
+  // 監聽多種用戶交互事件（使用 capture 階段確保優先捕獲）
+  document.addEventListener('click', unlockAudioOnce, { capture: true, once: true });
+  document.addEventListener('touchstart', unlockAudioOnce, { capture: true, once: true });
+  document.addEventListener('touchend', unlockAudioOnce, { capture: true, once: true });
+
+  console.log('🎵 已設置音頻解鎖監聽器（移動端靜音模式兼容）');
+}
+
+/**
  * 防止移動端縮放和滾動
  */
 function preventMobileZoomAndScroll() {
@@ -253,6 +289,9 @@ async function initializeApp() {
     
     // 6. 設置管理後台和通知按鈕
     await setupAdminPanel();
+    
+    // 7. 設置首次用戶交互時解鎖音頻（用於移動端靜音模式）
+    setupAudioUnlock();
     
     AppState.initialized = true;
     console.log('✅ 應用初始化完成');

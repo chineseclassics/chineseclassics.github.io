@@ -18,6 +18,7 @@ export class AudioEngine {
     this.isMuted = false;
     this.masterVolume = 1.0;
     this.initialized = false;
+    this.audioUnlocked = false; // 標記音頻是否已解鎖（用於移動端靜音模式）
   }
   
   /**
@@ -42,6 +43,65 @@ export class AudioEngine {
       throw error;
     }
   }
+
+  /**
+   * 解鎖音頻上下文（用於移動端靜音模式）
+   * 通過播放一個極短的無聲音頻來"解鎖"音頻上下文
+   * 這需要在用戶交互事件中調用（如點擊、觸摸）
+   */
+  async unlockAudio() {
+    // 如果已經解鎖，直接返回
+    if (this.audioUnlocked) {
+      return true;
+    }
+
+    try {
+      // 確保 AudioContext 已初始化
+      await this.ensureInitialized();
+      
+      if (!this.audioContext) {
+        console.warn('⚠️ AudioContext 未初始化，無法解鎖音頻');
+        return false;
+      }
+
+      // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      // 創建一個極短的無聲音頻緩衝區（0.1 秒）
+      const sampleRate = this.audioContext.sampleRate;
+      const buffer = this.audioContext.createBuffer(1, sampleRate * 0.1, sampleRate);
+      
+      // 創建播放源並播放無聲音頻
+      const source = this.audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.audioContext.destination);
+      
+      // 播放完成後標記為已解鎖
+      source.onended = () => {
+        this.audioUnlocked = true;
+        console.log('🔓 音頻上下文已解鎖（移動端靜音模式兼容）');
+      };
+      
+      source.start(0);
+      
+      // 等待播放完成（最多 200ms）
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          this.audioUnlocked = true;
+          resolve();
+        }, 200);
+      });
+
+      return true;
+    } catch (error) {
+      console.warn('⚠️ 解鎖音頻上下文失敗:', error);
+      // 即使失敗也標記為已嘗試，避免重複嘗試
+      this.audioUnlocked = true;
+      return false;
+    }
+  }
   
   /**
    * 確保音頻上下文已初始化
@@ -54,6 +114,12 @@ export class AudioEngine {
     // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
     if (this.audioContext && this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
+    }
+
+    // 如果音頻尚未解鎖，嘗試解鎖（用於移動端靜音模式）
+    if (!this.audioUnlocked && this.audioContext) {
+      // 注意：這裡不強制解鎖，因為需要用戶交互
+      // 真正的解鎖應該在用戶交互事件中調用 unlockAudio()
     }
   }
   

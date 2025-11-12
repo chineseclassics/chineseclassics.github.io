@@ -70,50 +70,64 @@ class SoundTrack {
       this.stop();
     }
 
-    // 確保 AudioContext 已初始化
-    const audioContext = this.audioEngine.getAudioContext();
-    
-    // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
-    if (audioContext.state === 'suspended') {
-      audioContext.resume().catch(err => {
-        console.warn('恢復 AudioContext 失敗:', err);
-      });
-    }
-    
-    // 創建音源節點
-    this.sourceNode = audioContext.createBufferSource();
-    this.sourceNode.buffer = this.audioBuffer;
-    this.sourceNode.loop = this.loop;
-
-    // 創建音量節點
-    this.gainNode = audioContext.createGain();
-    
-    // 根據是否需要淡入設置初始音量
-    if (fadeIn) {
-      this.gainNode.gain.value = 0;
-      const startTime = audioContext.currentTime;
-      const endTime = startTime + fadeInDuration / 1000;
-      this.gainNode.gain.setValueAtTime(0, startTime);
-      this.gainNode.gain.linearRampToValueAtTime(this.volume, endTime);
-    } else {
-      this.gainNode.gain.value = this.volume;
-    }
-
-    // 連接節點：音源 -> 音量 -> 主音量 -> 目標
-    this.sourceNode.connect(this.gainNode);
-    this.gainNode.connect(this.audioEngine.getMasterGainNode());
-
-    // 播放結束事件
-    this.sourceNode.onended = () => {
-      if (!this.loop) {
-        this.isPlaying = false;
+    try {
+      // 確保 AudioContext 已初始化
+      const audioContext = this.audioEngine.getAudioContext();
+      
+      // 如果 AudioContext 處於 suspended 狀態，嘗試恢復
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(err => {
+          console.warn('恢復 AudioContext 失敗:', err);
+          throw err; // 重新拋出錯誤，讓外層處理
+        });
       }
-    };
 
-    this.sourceNode.start(0);
-    this.isPlaying = true;
+      // 檢查 AudioContext 狀態
+      if (audioContext.state !== 'running') {
+        console.warn(`⚠️ AudioContext 狀態為 ${audioContext.state}，音頻可能無法播放`);
+        console.warn('💡 提示：在移動端，請確保設備未處於靜音模式，並進行一次點擊或觸摸操作');
+      }
+      
+      // 創建音源節點
+      this.sourceNode = audioContext.createBufferSource();
+      this.sourceNode.buffer = this.audioBuffer;
+      this.sourceNode.loop = this.loop;
 
-    console.log(`▶️ 播放音效: ${this.soundEffect.name}${fadeIn ? ' (淡入)' : ''}`);
+      // 創建音量節點
+      this.gainNode = audioContext.createGain();
+      
+      // 根據是否需要淡入設置初始音量
+      if (fadeIn) {
+        this.gainNode.gain.value = 0;
+        const startTime = audioContext.currentTime;
+        const endTime = startTime + fadeInDuration / 1000;
+        this.gainNode.gain.setValueAtTime(0, startTime);
+        this.gainNode.gain.linearRampToValueAtTime(this.volume, endTime);
+      } else {
+        this.gainNode.gain.value = this.volume;
+      }
+
+      // 連接節點：音源 -> 音量 -> 主音量 -> 目標
+      this.sourceNode.connect(this.gainNode);
+      this.gainNode.connect(this.audioEngine.getMasterGainNode());
+
+      // 播放結束事件
+      this.sourceNode.onended = () => {
+        if (!this.loop) {
+          this.isPlaying = false;
+        }
+      };
+
+      this.sourceNode.start(0);
+      this.isPlaying = true;
+
+      console.log(`▶️ 播放音效: ${this.soundEffect.name}${fadeIn ? ' (淡入)' : ''}`);
+    } catch (error) {
+      console.error(`❌ 播放音效失敗: ${this.soundEffect.name}`, error);
+      console.warn('💡 提示：在移動端，請確保設備未處於靜音模式，並進行一次點擊或觸摸操作');
+      this.isPlaying = false;
+      throw error; // 重新拋出錯誤，讓外層處理
+    }
   }
 
   /**
@@ -293,17 +307,44 @@ export class SoundMixer {
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
+
+      // 如果音頻尚未解鎖，嘗試解鎖（用於移動端靜音模式）
+      // 注意：這可能在用戶交互後才有效
+      if (!this.audioEngine.audioUnlocked) {
+        try {
+          await this.audioEngine.unlockAudio();
+        } catch (unlockError) {
+          console.warn('⚠️ 播放前解鎖音頻失敗（可能需要用戶交互）:', unlockError);
+          // 不阻止播放，繼續嘗試
+        }
+      }
     } catch (error) {
-      console.error('初始化 AudioContext 失敗:', error);
+      console.error('❌ 初始化 AudioContext 失敗:', error);
+      console.warn('💡 提示：在移動端，請確保設備未處於靜音模式，並進行一次點擊或觸摸操作');
       return;
     }
 
+    // 播放所有音效軌道
+    let playSuccessCount = 0;
+    let playErrorCount = 0;
+
     this.tracks.forEach(track => {
-      track.play(fadeIn, fadeInDuration);
+      try {
+        track.play(fadeIn, fadeInDuration);
+        playSuccessCount++;
+      } catch (error) {
+        console.error(`❌ 播放音效失敗: ${track.soundEffect.name}`, error);
+        playErrorCount++;
+      }
     });
 
-    this.isPlaying = true;
-    console.log(`▶️ 播放所有音效${fadeIn ? ' (淡入)' : ''}`);
+    if (playSuccessCount > 0) {
+      this.isPlaying = true;
+      console.log(`▶️ 播放所有音效${fadeIn ? ' (淡入)' : ''} - 成功: ${playSuccessCount}, 失敗: ${playErrorCount}`);
+    } else {
+      console.warn('⚠️ 所有音效播放失敗');
+      console.warn('💡 提示：在移動端，請確保設備未處於靜音模式，並進行一次點擊或觸摸操作');
+    }
   }
 
   /**
