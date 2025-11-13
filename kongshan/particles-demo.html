@@ -58,6 +58,11 @@
                     drop-shadow(0 0 48px rgba(255, 168, 76, 0.4));
         }
 
+        body[data-preset="rainfall"] #particles-js canvas {
+            filter: blur(0.2px) drop-shadow(0 0 12px rgba(120, 173, 255, 0.35));
+            mix-blend-mode: screen;
+        }
+
         body[data-preset="aurora-ribbon"] #particles-js canvas {
             mix-blend-mode: screen;
             filter: blur(0.5px) drop-shadow(0 0 10px rgba(120, 228, 255, 0.55));
@@ -79,6 +84,12 @@
             background: rgba(44, 20, 38, 0.78);
             border-color: rgba(255, 210, 160, 0.45);
             box-shadow: 0 25px 65px rgba(32, 9, 26, 0.65);
+        }
+
+        body[data-preset="rainfall"] .controls {
+            background: rgba(14, 22, 46, 0.82);
+            border-color: rgba(135, 162, 210, 0.35);
+            box-shadow: 0 22px 55px rgba(6, 12, 28, 0.6);
         }
 
         body[data-preset="aurora-ribbon"] .controls {
@@ -180,6 +191,7 @@
                 <button class="demo-btn" data-preset="flowers">落花</button>
                 <button class="demo-btn" data-preset="fireflies">螢火</button>
                 <button class="demo-btn" data-preset="codepen-stars">CodePen 星空</button>
+                <button class="demo-btn" data-preset="rainfall">雨幕</button>
                 <button class="demo-btn" data-preset="shanshui-mist">空山雲氣</button>
                 <button class="demo-btn" data-preset="ink-wash">墨韻流光</button>
                 <button class="demo-btn" data-preset="lantern-glow">山谷花燈</button>
@@ -1068,6 +1080,90 @@
                 }
             },
 
+            'rainfall': {
+                name: '雨幕微光',
+                desc: '細雨自夜色中斜斜飄落，輕敲林木與瓦檐，帶來靜謐清涼的意境',
+                background: 'linear-gradient(180deg, #0b132b 0%, #1b263b 40%, #415a77 100%)',
+                infoBackground: 'rgba(15, 25, 45, 0.78)',
+                infoTitleColor: '#d6e4ff',
+                infoTextColor: 'rgba(202, 218, 245, 0.95)',
+                infoTextOpacity: 1,
+                infoBorderColor: 'rgba(156, 185, 230, 0.38)',
+                infoShadow: '0 24px 60px rgba(10, 20, 35, 0.6)',
+                config: {
+                    particles: {
+                        number: {
+                            value: 180,
+                            density: {
+                                enable: true,
+                                value_area: 900
+                            }
+                        },
+                        color: {
+                            value: ['#9ac4ff', '#7aa9f7', '#b2d3ff']
+                        },
+                        shape: {
+                            type: 'circle'
+                        },
+                        opacity: {
+                            value: 0.55,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 1.5,
+                                opacity_min: 0.15,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 1.5,
+                            random: true,
+                            anim: {
+                                enable: false
+                            }
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 12,
+                            direction: 'bottom',
+                            random: false,
+                            straight: true,
+                            out_mode: 'out',
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: 'canvas',
+                        events: {
+                            onhover: {
+                                enable: true,
+                                mode: 'bubble'
+                            },
+                            onclick: {
+                                enable: true,
+                                mode: 'push'
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            bubble: {
+                                distance: 90,
+                                size: 2.8,
+                                duration: 0.3,
+                                opacity: 0.35
+                            },
+                            push: {
+                                particles_nb: 4
+                            }
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+
             'aurora-ribbon': {
                 name: '靈光霓影',
                 desc: '淡藍與青綠的光帶於空山夜幕中流動，帶來靈動的霧光',
@@ -1168,14 +1264,14 @@
         const infoBox = document.querySelector('.info');
         const effectNameEl = document.getElementById('effect-name');
         const effectDescEl = document.getElementById('effect-desc');
-
+        
         let currentParticles = null;
         
         // 初始化第一個效果
         function initParticles(presetName) {
             const preset = presets[presetName];
             if (!preset) return;
-
+            
             // 清除舊的粒子
             if (currentParticles && window.pJSDom && window.pJSDom.length > 0) {
                 const index = window.pJSDom.findIndex(pJS => pJS.pJS.canvas.el.id === 'particles-js');
@@ -1184,7 +1280,7 @@
                     window.pJSDom.splice(index, 1);
                 }
             }
-
+            
             // 更新展示資訊
             if (effectNameEl) {
                 effectNameEl.textContent = preset.name;
@@ -1207,7 +1303,7 @@
 
             document.body.dataset.preset = presetName;
             document.body.style.background = preset.background || defaultBackground;
-
+            
             // 更新按鈕狀態
             document.querySelectorAll('.demo-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -1216,7 +1312,7 @@
             if (activeBtn) {
                 activeBtn.classList.add('active');
             }
-
+            
             // 初始化新粒子
             particlesJS('particles-js', preset.config);
             currentParticles = presetName;

@@ -2622,7 +2622,8 @@ const backgroundTextColorMap = {
   'green-mountain': '#FFFFFF',  // 青山：白色文字
   'cloud-mist': '#2C3E50',     // 雲霧：深色文字
   'falling-flowers': '#2C3E50', // 落花：深色文字
-  'lantern-valley': '#FFFFFF'   // 元宵：白色文字
+  'lantern-valley': '#FFFFFF',  // 元宵：白色文字
+  'rainfall': '#FFFFFF'         // 雨幕：白色文字
 };
 
 /**
@@ -2889,6 +2890,7 @@ function initializeBackgroundSelector() {
     { id: 'plum-blossom', name: '梅花', colors: ['#FFF3E0', '#FFE0B2'] },
     { id: 'starry-night', name: '星夜', colors: ['#070825', '#0A0D2E'] },
     { id: 'lantern-valley', name: '元宵', colors: ['#1A0F1F', '#3A1F36'] },
+    { id: 'rainfall', name: '雨幕', colors: ['#0B132B', '#1F3558'] },
     { id: 'green-mountain', name: '青山', colors: ['#4A7C2E', '#6B8E23'] },
     { id: 'cloud-mist', name: '雲霧', colors: ['#ECEFF1', '#CFD8DC'] },
     { id: 'falling-flowers', name: '落花', colors: ['#FFE5E8', '#FFCCD0'] }
@@ -2973,6 +2975,15 @@ function applyBackgroundPreview(bgId) {
       particle_animation: {
         type: 'particlesjs',
         preset: 'lantern-glow',
+        config: {}
+      }
+    },
+    'rainfall': {
+      colors: ['#0b132b', '#1b263b', '#415a77'],
+      direction: 'vertical',
+      particle_animation: {
+        type: 'particlesjs',
+        preset: 'rainfall',
         config: {}
       }
     },
@@ -3882,6 +3893,15 @@ function collectAtmosphereData(poem, status) {
           particle_animation: {
             type: 'particlesjs',
             preset: 'lantern-glow',
+            config: {}
+          }
+        },
+        'rainfall': {
+          colors: ['#0b132b', '#1b263b', '#415a77'],
+          direction: 'vertical',
+          particle_animation: {
+            type: 'particlesjs',
+            preset: 'rainfall',
             config: {}
           }
         },
