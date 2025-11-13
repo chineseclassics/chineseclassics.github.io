@@ -232,6 +232,11 @@
             <stop offset="0.4" stop-color="#ffd167"/>
             <stop offset="1" stop-color="#f38335"/>
         </linearGradient>
+        <radialGradient id="edgeGradient" cx="0.5" cy="0.2" r="0.65">
+            <stop offset="0" stop-color="rgba(255, 245, 215, 0.55)"/>
+            <stop offset="0.65" stop-color="rgba(255, 200, 120, 0.25)"/>
+            <stop offset="1" stop-color="rgba(255, 180, 90, 0)"/>
+        </radialGradient>
         <radialGradient id="glow" cx="0.5" cy="0.68" r="0.35">
             <stop offset="0" stop-color="#fffbe0"/>
             <stop offset="0.5" stop-color="#ffe69a" stop-opacity="0.95"/>
@@ -261,15 +266,28 @@
                 <feMergeNode in="SourceGraphic"/>
             </feMerge>
         </filter>
+        <filter id="edgeGlow" x="-0.6" y="-0.6" width="2.2" height="2.2">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="blur"/>
+            <feColorMatrix in="blur" type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 0.45 0" result="softEdge"/>
+            <feMerge>
+                <feMergeNode in="softEdge"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
     </defs>
     <g filter="url(#softGlow)">
-        <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Q14 104 8 68 Q4 34 14 20 L44 6 Z" fill="url(#bodyGradient)" stroke="#ffe5a6" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Q14 104 8 68 Q4 34 14 20 L44 6 Z" fill="url(#bodyGradient)" stroke="rgba(255, 229, 166, 0.75)" stroke-width="2.4" stroke-linejoin="round"/>
         <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Z" fill="url(#highlightGradient)"/>
         <path d="M44 18 Q67 28 70 62 Q66 96 44 118" fill="none" stroke="rgba(255, 236, 188, 0.45)" stroke-width="1.8" stroke-linecap="round"/>
         <ellipse cx="44" cy="88" rx="24" ry="16" fill="url(#glow)"/>
         <ellipse cx="44" cy="96" rx="20" ry="11" fill="rgba(255, 221, 150, 0.38)"/>
         <ellipse cx="44" cy="102" rx="18" ry="9" fill="rgba(255, 206, 120, 0.2)"/>
     </g>
+    <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Q14 104 8 68 Q4 34 14 20 L44 6 Z" fill="none" stroke="url(#edgeGradient)" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" opacity="0.9" filter="url(#edgeGlow)"/>
     <path d="M42 118 Q44 138 36 150 L52 134 Q50 126 52 118 Z" fill="url(#tailGradient)" stroke="rgba(255, 214, 140, 0.8)" stroke-width="1.2" stroke-linejoin="round" filter="url(#tailGlow)"/>
 </svg>`;
         const lanternImageSrc = `data:image/svg+xml,${encodeURIComponent(lanternSVG)}`;
