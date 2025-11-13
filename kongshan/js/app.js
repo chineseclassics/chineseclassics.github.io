@@ -1416,25 +1416,25 @@ async function loadAtmosphereSequence(poemId) {
       return;
     }
 
-    // 🚀 優化：先創建基本 entries，立即顯示第一個聲色意境
+    // 🚀 優化：先創建基本 entries，立即應用第一個聲色意境（背景色和聲音）
     let entries = atmospheres.map(atmosphere => ({
       id: atmosphere.id,
       data: atmosphere,
       authorId: atmosphere.created_by || null,
-      authorName: '旅人', // 臨時名稱，稍後更新
+      authorName: null, // 稍後加載，不使用臨時名稱
       createdAt: atmosphere.created_at,
       likeCount: typeof atmosphere.like_count === 'number' ? atmosphere.like_count : 0,
       likedByCurrent: false,
       status: atmosphere.status || 'approved'
     }));
 
-    // 🚀 優化：先顯示第一個聲色意境（不等待完整數據）
+    // 🚀 優化：先應用第一個聲色意境（背景色和聲音），但不顯示狀態
     context.entries = entries;
     context.order = buildAtmosphereOrder(entries, AppState.userId);
     context.index = context.order.length > 0 ? 0 : -1;
     
-    // 立即應用第一個聲色意境，不等待其他數據
-    const firstEntryPromise = applyAtmosphereEntry(context.order[context.index] || null, { showStatus: true });
+    // 立即應用第一個聲色意境（背景色和聲音），但不顯示狀態（等名稱加載完成後再顯示）
+    const firstEntryPromise = applyAtmosphereEntry(context.order[context.index] || null, { showStatus: false });
 
     // 🚀 優化：並行加載旅人名稱和點讚資訊（在背景執行）
     if (AppState.supabase) {
@@ -1496,7 +1496,7 @@ async function loadAtmosphereSequence(poemId) {
 
       // 更新 entries 的完整數據
       entries = entries.map(entry => {
-        const authorName = nameMap.get(entry.authorId) || '旅人';
+        const authorName = nameMap.get(entry.authorId) || null;
         const likeInfo = likeMap.get(entry.id);
         
         const updatedEntry = {
@@ -1527,14 +1527,13 @@ async function loadAtmosphereSequence(poemId) {
       context.entries = entries;
       context.order = buildAtmosphereOrder(entries, AppState.userId);
       
-      // 如果當前顯示的聲色意境有更新，更新顯示（不重新加載音效）
+      // 名稱加載完成後，顯示第一個聲色意境的狀態（不重新加載音效和背景色）
       if (context.index >= 0 && context.order[context.index]) {
         const currentEntry = context.order[context.index];
         const updatedEntry = entries.find(e => e.id === currentEntry.id);
-        if (updatedEntry) {
-          // 只更新狀態顯示，不重新加載音效
+        if (updatedEntry && updatedEntry.authorName) {
+          // 名稱已加載，顯示狀態
           try {
-            const displayName = updatedEntry.authorName || '旅人';
             let statusNote = '';
             if (updatedEntry.status && updatedEntry.status !== 'approved' && updatedEntry.authorId === AppState.userId) {
               if (updatedEntry.status === 'pending') {
@@ -1546,17 +1545,19 @@ async function loadAtmosphereSequence(poemId) {
               }
             }
             showAtmosphereStatus({
-              text: `${displayName} 的聲色意境${statusNote}`,
+              text: `${updatedEntry.authorName} 的聲色意境${statusNote}`,
               showLikeButton: updatedEntry.status === 'approved'
             });
+            // 更新按讚按鈕狀態
+            updateLikeButtonUI(updatedEntry);
           } catch (e) {
-            // 忽略更新失敗，已經顯示了基本狀態
+            console.error('顯示聲色意境狀態失敗:', e);
           }
         }
       }
     }
 
-    // 等待第一個聲色意境應用完成
+    // 等待第一個聲色意境應用完成（背景色和聲音已加載）
     await firstEntryPromise;
     
   } catch (error) {
