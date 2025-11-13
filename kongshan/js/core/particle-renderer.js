@@ -458,7 +458,7 @@ export class ParticleRenderer {
             },
             move: {
               enable: true,
-              speed: 0.9,
+              speed: this.isMobile ? 1.0 : 1.3,
               direction: 'top',
               random: false,
               straight: false,
@@ -502,7 +502,7 @@ export class ParticleRenderer {
         return {
           particles: {
             number: {
-              value: this.isMobile ? 200 : 355,
+              value: this.isMobile ? 134 : 236,
               density: {
                 enable: true,
                 value_area: 789.15
@@ -522,12 +522,12 @@ export class ParticleRenderer {
               }
             },
             opacity: {
-              value: 0.49,
-              random: false,
+              value: 0.7,
+              random: true,
               anim: {
                 enable: true,
-                speed: 0.25,
-                opacity_min: 0,
+                speed: 0.35,
+                opacity_min: 0.25,
                 sync: false
               }
             },
@@ -536,8 +536,8 @@ export class ParticleRenderer {
               random: true,
               anim: {
                 enable: true,
-                speed: 0.333,
-                size_min: 0,
+                speed: 0.2,
+                size_min: 0.4,
                 sync: false
               }
             },
@@ -545,7 +545,7 @@ export class ParticleRenderer {
               enable: false,
               distance: 150,
               color: "#ffffff",
-              opacity: 0.4,
+              opacity: 0.2,
               width: 1
             },
             move: {
@@ -567,39 +567,72 @@ export class ParticleRenderer {
             detect_on: "canvas",
             events: {
               onhover: {
-                enable: true,
-                mode: "bubble"
+                enable: false
               },
               onclick: {
-                enable: true,
-                mode: "push"
+                enable: false
               },
               resize: true
-            },
-            modes: {
-              grab: {
-                distance: 400,
-                line_linked: {
-                  opacity: 1
-                }
-              },
-              bubble: {
-                distance: 83.9,
-                size: 1,
-                duration: 3,
-                opacity: 1,
-                speed: 3
-              },
-              repulse: {
-                distance: 200,
-                duration: 0.4
-              },
-              push: {
-                particles_nb: 4
-              },
-              remove: {
-                particles_nb: 2
+            }
+          },
+          retina_detect: true
+        };
+        
+      case 'rainfall':
+        return {
+          ...baseConfig,
+          particles: {
+            ...baseConfig.particles,
+            number: {
+              value: this.isMobile ? 120 : 180,
+              density: {
+                enable: true,
+                value_area: 900
               }
+            },
+            color: {
+              value: ['#9ac4ff', '#7aa9f7', '#b2d3ff']
+            },
+            opacity: {
+              value: 0.55,
+              random: true,
+              anim: {
+                enable: true,
+                speed: 1.5,
+                opacity_min: 0.15,
+                sync: false
+              }
+            },
+            size: {
+              value: 1.6,
+              random: true,
+              anim: {
+                enable: false
+              }
+            },
+            line_linked: {
+              enable: false
+            },
+            move: {
+              enable: true,
+              speed: this.isMobile ? 9 : 12,
+              direction: 'bottom',
+              random: false,
+              straight: true,
+              out_mode: 'out',
+              bounce: false
+            }
+          },
+          interactivity: {
+            detect_on: 'canvas',
+            events: {
+              onhover: {
+                enable: false
+              },
+              onclick: {
+                enable: false
+              },
+              resize: true
             }
           },
           retina_detect: true
