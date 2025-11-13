@@ -26,6 +26,9 @@ body {
   margin: 0;
   padding: 0;
   touch-action: manipulation; /* 防止雙擊縮放，但允許單擊和滾動 */
+  
+  /* 字體渲染優化 */
+  text-rendering: optimizeLegibility;
 }
 
 /* 背景 Canvas */
