@@ -196,7 +196,9 @@ export class AtmosphereManager {
           }
         }
 
-        for (const config of recordingConfigs) {
+        // 🚀 優化：並行生成所有錄音的 URL（特別是簽名 URL）
+        const projectUrl = this.supabase.supabaseUrl.replace('/rest/v1', '');
+        const urlPromises = recordingConfigs.map(async (config) => {
           const recordingId = config.recording_id || config.sound_id;
           // 優先使用數據庫中的最新 storage_path，如果沒有則使用配置中的 recording_path
           const recordingInfo = recordingsMap.get(recordingId);
@@ -208,7 +210,6 @@ export class AtmosphereManager {
             // approved/ 和 system/ 路徑可以直接訪問，pending/ 路徑需要簽名 URL
             if (recordingPath.startsWith('approved/') || recordingPath.startsWith('system/')) {
               // 公開路徑，直接構建 URL
-              const projectUrl = this.supabase.supabaseUrl.replace('/rest/v1', '');
               fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${recordingPath}`;
             } else if (recordingPath.startsWith('pending/')) {
               // pending/ 路徑，需要簽名 URL
@@ -234,19 +235,55 @@ export class AtmosphereManager {
             fileUrl = normalizeSoundUrl(config.file_url || '', this.supabase);
           }
 
-          sounds.push({
-            id: recordingId,
-            name: config.display_name || '錄音',
-            description: null,
-            file_url: fileUrl,
-            duration: config.duration_seconds || null,
-            tags: [],
-            volume: config.volume !== undefined ? config.volume : 1.0,
-            loop: config.loop !== undefined ? config.loop : true,
-            source_type: 'recording',
-            recording_path: recordingPath
-          });
-        }
+          return {
+            config,
+            recordingId,
+            recordingPath,
+            fileUrl
+          };
+        });
+
+        // 等待所有 URL 生成完成
+        const urlResults = await Promise.allSettled(urlPromises);
+        
+        // 構建 sounds 數組
+        urlResults.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            const { config, recordingId, recordingPath, fileUrl } = result.value;
+            sounds.push({
+              id: recordingId,
+              name: config.display_name || '錄音',
+              description: null,
+              file_url: fileUrl,
+              duration: config.duration_seconds || null,
+              tags: [],
+              volume: config.volume !== undefined ? config.volume : 1.0,
+              loop: config.loop !== undefined ? config.loop : true,
+              source_type: 'recording',
+              recording_path: recordingPath
+            });
+          } else {
+            // 如果 URL 生成失敗，使用後備方案
+            const config = recordingConfigs[index];
+            const recordingId = config.recording_id || config.sound_id;
+            const recordingInfo = recordingsMap.get(recordingId);
+            const recordingPath = recordingInfo?.storage_path || config.recording_path || '';
+            const fallbackUrl = normalizeSoundUrl(config.file_url || '', this.supabase);
+            
+            sounds.push({
+              id: recordingId,
+              name: config.display_name || '錄音',
+              description: null,
+              file_url: fallbackUrl,
+              duration: config.duration_seconds || null,
+              tags: [],
+              volume: config.volume !== undefined ? config.volume : 1.0,
+              loop: config.loop !== undefined ? config.loop : true,
+              source_type: 'recording',
+              recording_path: recordingPath
+            });
+          }
+        });
       }
 
       return sounds;

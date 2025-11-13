@@ -1403,9 +1403,12 @@ async function loadAtmosphereSequence(poemId) {
 
   try {
     const includeUserId = AppState.userId || null;
+    
+    // 🚀 優化：並行加載聲色意境列表
     const atmospheres = await AppState.atmosphereManager.loadAtmospheres(poemId, {
       includeUserId
     });
+    
     if (!Array.isArray(atmospheres) || atmospheres.length === 0) {
       context.order = buildAtmosphereOrder([], AppState.userId);
       context.index = context.order.length > 0 ? 0 : -1;
@@ -1413,48 +1416,68 @@ async function loadAtmosphereSequence(poemId) {
       return;
     }
 
+    // 🚀 優化：先創建基本 entries，立即顯示第一個聲色意境
     let entries = atmospheres.map(atmosphere => ({
       id: atmosphere.id,
       data: atmosphere,
       authorId: atmosphere.created_by || null,
-      authorName: '旅人',
+      authorName: '旅人', // 臨時名稱，稍後更新
       createdAt: atmosphere.created_at,
       likeCount: typeof atmosphere.like_count === 'number' ? atmosphere.like_count : 0,
       likedByCurrent: false,
       status: atmosphere.status || 'approved'
     }));
 
+    // 🚀 優化：先顯示第一個聲色意境（不等待完整數據）
+    context.entries = entries;
+    context.order = buildAtmosphereOrder(entries, AppState.userId);
+    context.index = context.order.length > 0 ? 0 : -1;
+    
+    // 立即應用第一個聲色意境，不等待其他數據
+    const firstEntryPromise = applyAtmosphereEntry(context.order[context.index] || null, { showStatus: true });
+
+    // 🚀 優化：並行加載旅人名稱和點讚資訊（在背景執行）
     if (AppState.supabase) {
       const authorIds = [...new Set(entries.map(entry => entry.authorId).filter(Boolean))];
-      if (authorIds.length > 0) {
-        const { data: travelerRows, error: travelerError } = await AppState.supabase
-          .from('travelers')
-          .select('user_id, display_name')
-          .in('user_id', authorIds);
-        if (travelerError) {
-          console.warn('載入旅人名稱時發生錯誤:', travelerError);
-        } else if (Array.isArray(travelerRows)) {
-          const nameMap = new Map(
+      const atmosphereIds = entries.map(entry => entry.id);
+
+      // 並行執行兩個查詢
+      const [travelerResult, likeResult] = await Promise.allSettled([
+        // 查詢旅人名稱
+        authorIds.length > 0
+          ? AppState.supabase
+              .from('travelers')
+              .select('user_id, display_name')
+              .in('user_id', authorIds)
+          : Promise.resolve({ data: [], error: null }),
+        
+        // 查詢點讚資訊
+        atmosphereIds.length > 0
+          ? AppState.supabase
+              .from('atmosphere_likes')
+              .select('atmosphere_id, user_id')
+              .in('atmosphere_id', atmosphereIds)
+          : Promise.resolve({ data: [], error: null })
+      ]);
+
+      // 處理旅人名稱結果
+      let nameMap = new Map();
+      if (travelerResult.status === 'fulfilled' && travelerResult.value) {
+        const { data: travelerRows, error: travelerError } = travelerResult.value;
+        if (!travelerError && Array.isArray(travelerRows)) {
+          nameMap = new Map(
             travelerRows.map(row => [row.user_id, (row.display_name || '').trim()])
           );
-          entries = entries.map(entry => ({
-            ...entry,
-            authorName: nameMap.get(entry.authorId) || '旅人'
-          }));
+        } else if (travelerError) {
+          console.warn('載入旅人名稱時發生錯誤:', travelerError);
         }
       }
 
-      const atmosphereIds = entries.map(entry => entry.id);
-      if (atmosphereIds.length > 0) {
-        const { data: likeRows, error: likeError } = await AppState.supabase
-          .from('atmosphere_likes')
-          .select('atmosphere_id, user_id')
-          .in('atmosphere_id', atmosphereIds);
-
-        if (likeError) {
-          console.warn('載入點讚資訊時發生錯誤:', likeError);
-        } else if (Array.isArray(likeRows)) {
-          const likeMap = new Map();
+      // 處理點讚資訊結果
+      let likeMap = new Map();
+      if (likeResult.status === 'fulfilled' && likeResult.value) {
+        const { data: likeRows, error: likeError } = likeResult.value;
+        if (!likeError && Array.isArray(likeRows)) {
           likeRows.forEach(row => {
             const targetId = row.atmosphere_id;
             if (!likeMap.has(targetId)) {
@@ -1466,37 +1489,76 @@ async function loadAtmosphereSequence(poemId) {
               info.likedByCurrent = true;
             }
           });
+        } else if (likeError) {
+          console.warn('載入點讚資訊時發生錯誤:', likeError);
+        }
+      }
 
-          entries = entries.map(entry => {
-            const info = likeMap.get(entry.id);
-            if (!info) {
-              return entry;
+      // 更新 entries 的完整數據
+      entries = entries.map(entry => {
+        const authorName = nameMap.get(entry.authorId) || '旅人';
+        const likeInfo = likeMap.get(entry.id);
+        
+        const updatedEntry = {
+          ...entry,
+          authorName
+        };
+
+        if (likeInfo) {
+          if (likeInfo.likedByCurrent) {
+            context.userLikedAtmosphereId = entry.id;
+          }
+          updatedEntry.likeCount = likeInfo.count;
+          updatedEntry.likedByCurrent = likeInfo.likedByCurrent;
+        }
+
+        return updatedEntry;
+      });
+
+      // 更新 userLikedAtmosphereId 的 likedByCurrent 狀態
+      if (context.userLikedAtmosphereId) {
+        entries = entries.map(entry => ({
+          ...entry,
+          likedByCurrent: entry.id === context.userLikedAtmosphereId
+        }));
+      }
+
+      // 更新 context
+      context.entries = entries;
+      context.order = buildAtmosphereOrder(entries, AppState.userId);
+      
+      // 如果當前顯示的聲色意境有更新，更新顯示（不重新加載音效）
+      if (context.index >= 0 && context.order[context.index]) {
+        const currentEntry = context.order[context.index];
+        const updatedEntry = entries.find(e => e.id === currentEntry.id);
+        if (updatedEntry) {
+          // 只更新狀態顯示，不重新加載音效
+          try {
+            const displayName = updatedEntry.authorName || '旅人';
+            let statusNote = '';
+            if (updatedEntry.status && updatedEntry.status !== 'approved' && updatedEntry.authorId === AppState.userId) {
+              if (updatedEntry.status === 'pending') {
+                statusNote = '（待審核）';
+              } else if (updatedEntry.status === 'rejected') {
+                statusNote = '（未通過審核）';
+              } else {
+                statusNote = '（尚未公開）';
+              }
             }
-            if (info.likedByCurrent) {
-              context.userLikedAtmosphereId = entry.id;
-            }
-            return {
-              ...entry,
-              likeCount: info.count,
-              likedByCurrent: info.likedByCurrent
-            };
-          });
+            showAtmosphereStatus({
+              text: `${displayName} 的聲色意境${statusNote}`,
+              showLikeButton: updatedEntry.status === 'approved'
+            });
+          } catch (e) {
+            // 忽略更新失敗，已經顯示了基本狀態
+          }
         }
       }
     }
 
-    if (context.userLikedAtmosphereId) {
-      entries = entries.map(entry => ({
-        ...entry,
-        likedByCurrent: entry.id === context.userLikedAtmosphereId
-      }));
-    }
-
-    context.entries = entries;
-    context.order = buildAtmosphereOrder(entries, AppState.userId);
-    context.index = context.order.length > 0 ? 0 : -1;
-
-    await applyAtmosphereEntry(context.order[context.index] || null, { showStatus: true });
+    // 等待第一個聲色意境應用完成
+    await firstEntryPromise;
+    
   } catch (error) {
     console.error('加載聲色意境列表失敗:', error);
     context.entries = [];
