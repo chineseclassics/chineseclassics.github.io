@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>明月離愁背景測試</title>
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Noto Serif TC", "PingFang TC", "Heiti TC", serif;
+            background: radial-gradient(circle at 20% 15%, #1e4265 0%, #0c1d37 45%, #050915 100%);
+            color: rgba(248, 244, 236, 0.92);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 12vh;
+            right: 12vw;
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95) 0%, rgba(253, 248, 226, 0.85) 45%, rgba(253, 248, 226, 0.6) 62%, rgba(253, 248, 226, 0.08) 100%);
+            box-shadow:
+                0 0 38px 18px rgba(255, 246, 215, 0.35),
+                0 0 120px 24px rgba(255, 246, 215, 0.2);
+            filter: blur(0.4px);
+            pointer-events: none;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: -60%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 55%) repeat;
+            background-size: 180px 180px;
+            animation: driftStars 24s linear infinite;
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
+        @keyframes driftStars {
+            from {
+                transform: translate3d(0, 0, 0) rotate(0deg);
+            }
+            to {
+                transform: translate3d(4%, 6%, 0) rotate(360deg);
+            }
+        }
+
+        .scene {
+            width: min(90vw, 960px);
+            aspect-ratio: 16 / 9;
+            border-radius: 30px;
+            position: relative;
+            padding: min(6vw, 72px);
+            background: linear-gradient(160deg, rgba(14, 27, 49, 0.92) 0%, rgba(11, 23, 43, 0.86) 42%, rgba(6, 15, 31, 0.92) 100%);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(182, 200, 222, 0.12);
+            box-shadow:
+                0 32px 70px rgba(3, 6, 14, 0.76),
+                inset 0 1px 0 rgba(233, 240, 250, 0.09),
+                inset 0 -2px 12px rgba(4, 9, 16, 0.4);
+            overflow: hidden;
+        }
+
+        .scene::before,
+        .scene::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .scene::before {
+            background: linear-gradient(120deg, rgba(255, 237, 205, 0.06) 0%, transparent 45%);
+            mix-blend-mode: screen;
+            opacity: 0.75;
+        }
+
+        .scene::after {
+            background:
+                radial-gradient(circle at 22% 38%, rgba(255, 237, 205, 0.18) 0%, transparent 55%),
+                radial-gradient(circle at 75% 70%, rgba(86, 155, 193, 0.12) 0%, transparent 52%);
+            mix-blend-mode: lighten;
+            opacity: 0.7;
+        }
+
+        .cloud,
+        .cloud::before,
+        .cloud::after {
+            position: absolute;
+            background: radial-gradient(circle at 50% 50%, rgba(226, 235, 242, 0.28) 0%, rgba(199, 213, 227, 0.16) 42%, transparent 70%);
+            filter: blur(18px);
+            border-radius: 50%;
+        }
+
+        .cloud {
+            width: 380px;
+            height: 160px;
+            opacity: 0.32;
+            animation: driftClouds 48s ease-in-out infinite;
+        }
+
+        .cloud::before {
+            content: "";
+            width: 240px;
+            height: 140px;
+            left: -120px;
+            top: 24px;
+        }
+
+        .cloud::after {
+            content: "";
+            width: 220px;
+            height: 120px;
+            right: -120px;
+            top: 32px;
+        }
+
+        .cloud-1 {
+            top: 16%;
+            left: -35%;
+            animation-duration: 52s;
+        }
+
+        .cloud-2 {
+            bottom: 8%;
+            right: -28%;
+            animation-duration: 44s;
+        }
+
+        @keyframes driftClouds {
+            0% {
+                transform: translateX(0);
+            }
+            50% {
+                transform: translateX(30%);
+            }
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        .petal-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .petal {
+            position: absolute;
+            top: -10vh;
+            width: 22px;
+            height: 34px;
+            background: radial-gradient(ellipse at 50% 35%, rgba(255, 215, 224, 0.95) 0%, rgba(255, 183, 202, 0.85) 45%, rgba(255, 183, 202, 0.4) 70%, rgba(255, 151, 182, 0.0) 100%);
+            border-radius: 58% 42% 62% 38%;
+            box-shadow:
+                inset 0 0 8px rgba(255, 194, 212, 0.5),
+                inset 0 0 18px rgba(255, 218, 229, 0.4);
+            opacity: 0;
+            transform-origin: center;
+            animation-name: fallPetal;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+        }
+
+        @keyframes fallPetal {
+            0% {
+                transform: translate3d(0, -20vh, 0) rotateZ(0deg) rotateY(0deg);
+                opacity: 0;
+            }
+            12% {
+                opacity: 0.9;
+            }
+            45% {
+                transform: translate3d(18vw, 35vh, 0) rotateZ(120deg) rotateY(25deg);
+            }
+            70% {
+                transform: translate3d(-15vw, 68vh, 0) rotateZ(220deg) rotateY(-15deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate3d(25vw, 112vh, 0) rotateZ(320deg) rotateY(35deg);
+                opacity: 0;
+            }
+        }
+
+        .content {
+            position: relative;
+            z-index: 3;
+            max-width: 520px;
+        }
+
+        .subtitle {
+            letter-spacing: 0.4em;
+            text-indent: 0.4em;
+            font-size: clamp(0.82rem, 0.8vw + 0.65rem, 1.1rem);
+            color: rgba(207, 222, 238, 0.78);
+            margin-bottom: clamp(0.8rem, 1.4vw, 1.6rem);
+        }
+
+        .title {
+            font-size: clamp(2.2rem, 2.4vw + 1.2rem, 3.4rem);
+            line-height: 1.28;
+            margin: 0 0 clamp(1.2rem, 1.6vw, 1.8rem);
+            text-shadow:
+                0 0 18px rgba(255, 235, 210, 0.52),
+                0 0 36px rgba(208, 228, 255, 0.25);
+        }
+
+        .poem {
+            font-size: clamp(1.05rem, 1.1vw + 0.8rem, 1.6rem);
+            line-height: 1.8;
+            color: rgba(225, 235, 248, 0.86);
+            margin: 0 0 clamp(1.4rem, 1.8vw, 2rem);
+            letter-spacing: 0.08em;
+        }
+
+        .note {
+            font-size: clamp(0.78rem, 0.6vw + 0.66rem, 0.95rem);
+            color: rgba(193, 206, 225, 0.72);
+        }
+
+        .divider {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255, 234, 212, 0) 0%, rgba(255, 234, 212, 0.9) 50%, rgba(255, 234, 212, 0) 100%);
+            margin: clamp(1.2rem, 1.4vw, 1.6rem) 0;
+        }
+
+        .glow-ring {
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 242, 224, 0.25);
+            top: -18%;
+            right: 10%;
+            mix-blend-mode: screen;
+            opacity: 0.6;
+            animation: pulseRing 18s ease-in-out infinite;
+        }
+
+        @keyframes pulseRing {
+            0%,
+            100% {
+                transform: scale(0.92);
+                opacity: 0.4;
+            }
+            40% {
+                transform: scale(1.02);
+                opacity: 0.7;
+            }
+        }
+
+        @media (max-width: 720px) {
+            body::before {
+                width: 220px;
+                height: 220px;
+                top: 8vh;
+                right: 6vw;
+            }
+
+            .scene {
+                padding: clamp(32px, 6vw, 48px);
+            }
+
+            .glow-ring {
+                width: 320px;
+                height: 320px;
+                top: -12%;
+                right: 4%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scene">
+        <div class="glow-ring"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="petal-layer"></div>
+
+        <div class="content">
+            <p class="subtitle">明月離愁 · 測試背景</p>
+            <h1 class="title">「孤帆遠影碧空盡，唯見長江天際流」</h1>
+            <p class="poem">
+                舉頭，明月洗盡天幕，雲影輕攏。<br>
+                低徊，水氣攜來幽香，花瓣夜行。<br>
+                離愁似霧，緩緩沉落，只在星河上游。
+            </p>
+            <div class="divider"></div>
+            <p class="note">以夜色、薄雲、月暈與飄落花瓣，呈現詩句中的離別氛圍。可作為詩詞庫「明月離愁」主題背景樣式基礎。</p>
+        </div>
+    </div>
+
+    <script>
+        // 動態生成花瓣（代表離愁飄散）
+        const petalLayer = document.querySelector(".petal-layer");
+        const petalTotal = 18;
+
+        for (let i = 0; i < petalTotal; i++) {
+            const petal = document.createElement("span");
+            petal.classList.add("petal");
+
+            const delay = (Math.random() * -18).toFixed(2);
+            const duration = (14 + Math.random() * 10).toFixed(2);
+            const horizontal = (Math.random() * 100).toFixed(2);
+            const rotateZ = (Math.random() * 360).toFixed(2);
+
+            petal.style.left = `${horizontal}%`;
+            petal.style.animationDelay = `${delay}s`;
+            petal.style.animationDuration = `${duration}s`;
+            petal.style.transform = `rotateZ(${rotateZ}deg)`;
+
+            petalLayer.appendChild(petal);
+        }
+    </script>
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>
+
