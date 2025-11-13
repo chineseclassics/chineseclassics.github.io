@@ -108,7 +108,7 @@ export class ParticleRenderer {
    * 初始化 particles.js
    */
   init() {
-    if (typeof particlesJS === 'undefined') {
+    if (typeof window === 'undefined' || typeof window.particlesJS !== 'function') {
       console.warn('particles.js 未載入，粒子動畫功能不可用');
       return false;
     }
@@ -156,7 +156,7 @@ export class ParticleRenderer {
     
     // 初始化 particles.js
     try {
-      particlesJS(this.canvasId, particlesConfig);
+      window.particlesJS(this.canvasId, particlesConfig);
       this.isAnimating = true;
       return true;
     } catch (error) {
