@@ -2889,6 +2889,7 @@ function initializeBackgroundSelector() {
     { id: 'winter-snow', name: '冬雪', colors: ['#F5F5F5', '#E0E0E0'] },
     { id: 'plum-blossom', name: '梅花', colors: ['#FFF3E0', '#FFE0B2'] },
     { id: 'starry-night', name: '星夜', colors: ['#070825', '#0A0D2E'] },
+    { id: 'rotating-stars', name: '旋轉星空', colors: ['#000000', '#0A0D2E'] },
     { id: 'lantern-valley', name: '元宵', colors: ['#1A0F1F', '#3A1F36'] },
     { id: 'rainfall', name: '雨幕', colors: ['#0B132B', '#1F3558'] },
     { id: 'green-mountain', name: '青山', colors: ['#4A7C2E', '#6B8E23'] },
@@ -2967,6 +2968,18 @@ function applyBackgroundPreview(bgId) {
         type: 'particlesjs',
         preset: 'codepen-stars',
         config: {}
+      }
+    },
+    'rotating-stars': {
+      colors: ['#000000', '#0A0D2E'],
+      direction: 'diagonal',
+      particle_animation: {
+        type: 'particlesjs',
+        preset: 'rotating-stars',
+        config: {
+          hue: 217,
+          maxStars: undefined // 使用默認值（移動設備 600，桌面 1400）
+        }
       }
     },
     'lantern-valley': {
@@ -3885,6 +3898,18 @@ function collectAtmosphereData(poem, status) {
             type: 'particlesjs',
             preset: 'codepen-stars',
             config: {}
+          }
+        },
+        'rotating-stars': {
+          colors: ['#000000', '#0A0D2E'],
+          direction: 'diagonal',
+          particle_animation: {
+            type: 'particlesjs',
+            preset: 'rotating-stars',
+            config: {
+              hue: 217,
+              maxStars: undefined // 使用默認值（移動設備 600，桌面 1400）
+            }
           }
         },
         'lantern-valley': {

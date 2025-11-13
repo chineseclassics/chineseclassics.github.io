@@ -1649,7 +1649,13 @@ body[data-preset="lotus-rain"] .controls {
                     instance.pJS.fn.vendors.destroypJS();
                 }
             });
-            window.pJSDom.length = 0;
+            
+            // 再次檢查，因為 destroypJS() 可能將 window.pJSDom 設為 null
+            if (Array.isArray(window.pJSDom)) {
+                window.pJSDom.length = 0;
+            } else {
+                window.pJSDom = [];
+            }
 
             const container = document.getElementById('particles-js');
             if (container) {
@@ -1718,6 +1724,9 @@ body[data-preset="lotus-rain"] .controls {
 
             const particlesContainer = document.getElementById('particles-js');
             if (preset.config && particlesContainer) {
+                if (!Array.isArray(window.pJSDom)) {
+                    window.pJSDom = [];
+                }
                 particlesJS('particles-js', preset.config);
             }
 

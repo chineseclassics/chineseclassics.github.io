@@ -99,6 +99,15 @@ export class ParticleRenderer {
     // 性能優化配置
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
+    // 自定義 Canvas 動畫相關
+    this.customCanvas = null;
+    this.customCtx = null;
+    this.customAnimationFrameId = null;
+    this.customStars = [];
+    this.customGradientCache = null;
+    this.customResizeHandler = null;
+    this.rotatingStarsConfig = null;
+    
     // 視窗可見性處理
     this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
@@ -122,14 +131,20 @@ export class ParticleRenderer {
    * @param {object} config - 動畫配置
    */
   setAnimation(preset, config = {}) {
-    if (!this.init()) {
-      return false;
-    }
-    
     // 清理舊的粒子系統
     this.clear();
     
     this.currentPreset = preset;
+    
+    // 檢查是否為自定義 Canvas 動畫
+    if (preset === 'rotating-stars') {
+      return this.initRotatingStars(config);
+    }
+    
+    // 使用 particles.js 的預設
+    if (!this.init()) {
+      return false;
+    }
     
     // 獲取對應的配置
     const particlesConfig = this.getPresetConfig(preset, config);
@@ -638,17 +653,223 @@ export class ParticleRenderer {
           retina_detect: true
         };
         
+      case 'rotating-stars':
+        // 這個預設使用自定義 Canvas 動畫，不在這裡返回配置
+        return null;
+        
       default:
         return null;
     }
   }
   
   /**
+   * 初始化旋轉星空動畫（自定義 Canvas）
+   * @param {object} config - 動畫配置
+   */
+  initRotatingStars(config = {}) {
+    try {
+      // 創建 Canvas 元素
+      this.customCanvas = document.createElement('canvas');
+      this.customCanvas.id = this.canvasId;
+      this.customCanvas.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      `;
+      this.container.appendChild(this.customCanvas);
+      
+      this.customCtx = this.customCanvas.getContext('2d');
+      this.resizeCustomCanvas();
+      
+      // 配置參數
+      const hue = config.hue !== undefined ? config.hue : 217;
+      const maxStars = config.maxStars !== undefined 
+        ? config.maxStars 
+        : (this.isMobile ? 600 : 1400);
+      
+      // 保存配置以便在 resize 時使用
+      this.rotatingStarsConfig = { hue, maxStars };
+      
+      // 緩存漸變（性能優化）
+      this.createGradientCache(hue);
+      
+      // 初始化星星
+      this.initStars(maxStars);
+      
+      // 開始動畫
+      this.isAnimating = true;
+      this.animateRotatingStars();
+      
+      // 監聽窗口大小變化（避免重複添加監聽器）
+      if (!this.customResizeHandler) {
+        this.customResizeHandler = () => {
+          if (this.isAnimating && this.customCanvas && this.currentPreset === 'rotating-stars') {
+            this.resizeCustomCanvas();
+            // 重新初始化星星以適應新尺寸
+            const savedConfig = this.rotatingStarsConfig || { maxStars: this.isMobile ? 600 : 1400 };
+            this.initStars(savedConfig.maxStars);
+          }
+        };
+        window.addEventListener('resize', this.customResizeHandler);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('初始化旋轉星空動畫失敗:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * 創建漸變緩存（性能優化）
+   */
+  createGradientCache(hue) {
+    const canvas2 = document.createElement('canvas');
+    const ctx2 = canvas2.getContext('2d');
+    canvas2.width = 100;
+    canvas2.height = 100;
+    
+    const half = canvas2.width / 2;
+    const gradient2 = ctx2.createRadialGradient(half, half, 0, half, half, half);
+    gradient2.addColorStop(0.025, '#fff');
+    gradient2.addColorStop(0.1, `hsl(${hue}, 61%, 33%)`);
+    gradient2.addColorStop(0.25, `hsl(${hue}, 64%, 6%)`);
+    gradient2.addColorStop(1, 'transparent');
+    
+    ctx2.fillStyle = gradient2;
+    ctx2.beginPath();
+    ctx2.arc(half, half, half, 0, Math.PI * 2);
+    ctx2.fill();
+    
+    this.customGradientCache = canvas2;
+  }
+  
+  /**
+   * 初始化星星數組
+   */
+  initStars(maxStars) {
+    this.customStars = [];
+    const w = this.customCanvas.width;
+    const h = this.customCanvas.height;
+    
+    const maxOrbit = (x, y) => {
+      const max = Math.max(x, y);
+      const diameter = Math.round(Math.sqrt(max * max + max * max));
+      return diameter / 2;
+    };
+    
+    const random = (min, max) => {
+      if (arguments.length < 2) {
+        max = min;
+        min = 0;
+      }
+      if (min > max) {
+        const hold = max;
+        max = min;
+        min = hold;
+      }
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+    
+    for (let i = 0; i < maxStars; i++) {
+      const orbitRadius = random(maxOrbit(w, h));
+      const star = {
+        orbitRadius: orbitRadius,
+        radius: random(60, orbitRadius) / 12,
+        orbitX: w / 2,
+        orbitY: h / 2,
+        timePassed: random(0, maxStars),
+        speed: random(orbitRadius) / 50000,
+        alpha: random(2, 10) / 10
+      };
+      this.customStars.push(star);
+    }
+  }
+  
+  /**
+   * 調整自定義 Canvas 大小
+   */
+  resizeCustomCanvas() {
+    if (!this.customCanvas) return;
+    this.customCanvas.width = window.innerWidth;
+    this.customCanvas.height = window.innerHeight;
+  }
+  
+  /**
+   * 動畫循環（旋轉星空）
+   */
+  animateRotatingStars() {
+    if (!this.isAnimating || !this.customCtx || !this.customCanvas) return;
+    
+    const w = this.customCanvas.width;
+    const h = this.customCanvas.height;
+    const hue = 217; // 可以從配置讀取
+    
+    // 繪製背景（半透明，形成拖尾效果）
+    this.customCtx.globalCompositeOperation = 'source-over';
+    this.customCtx.globalAlpha = 0.8;
+    this.customCtx.fillStyle = `hsla(${hue}, 64%, 6%, 1)`;
+    this.customCtx.fillRect(0, 0, w, h);
+    
+    // 繪製星星
+    this.customCtx.globalCompositeOperation = 'lighter';
+    
+    const random = (min, max) => {
+      if (arguments.length < 2) {
+        max = min;
+        min = 0;
+      }
+      if (min > max) {
+        const hold = max;
+        max = min;
+        min = hold;
+      }
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+    
+    for (let i = 0; i < this.customStars.length; i++) {
+      const star = this.customStars[i];
+      const x = Math.sin(star.timePassed) * star.orbitRadius + star.orbitX;
+      const y = Math.cos(star.timePassed) * star.orbitRadius + star.orbitY;
+      const twinkle = random(10);
+      
+      if (twinkle === 1 && star.alpha > 0) {
+        star.alpha -= 0.05;
+      } else if (twinkle === 2 && star.alpha < 1) {
+        star.alpha += 0.05;
+      }
+      
+      this.customCtx.globalAlpha = star.alpha;
+      if (this.customGradientCache) {
+        this.customCtx.drawImage(
+          this.customGradientCache,
+          x - star.radius / 2,
+          y - star.radius / 2,
+          star.radius,
+          star.radius
+        );
+      }
+      star.timePassed += star.speed;
+    }
+    
+    this.customAnimationFrameId = requestAnimationFrame(() => this.animateRotatingStars());
+  }
+  
+  /**
    * 開始動畫
    */
   start() {
-    // particles.js 會在 setAnimation 時自動開始
-    this.isAnimating = true;
+    // 如果是自定義 Canvas 動畫，重新啟動動畫循環
+    if (this.currentPreset === 'rotating-stars' && this.customCanvas && !this.isAnimating) {
+      this.isAnimating = true;
+      this.animateRotatingStars();
+    } else {
+      // particles.js 會在 setAnimation 時自動開始
+      this.isAnimating = true;
+    }
   }
   
   /**
@@ -656,6 +877,13 @@ export class ParticleRenderer {
    */
   stop() {
     this.isAnimating = false;
+    
+    // 停止自定義 Canvas 動畫
+    if (this.customAnimationFrameId) {
+      cancelAnimationFrame(this.customAnimationFrameId);
+      this.customAnimationFrameId = null;
+    }
+    
     // particles.js 沒有直接的停止方法，通過清除來停止
     this.clear();
   }
@@ -664,6 +892,11 @@ export class ParticleRenderer {
    * 響應視窗大小變化
    */
   resize() {
+    // 自定義 Canvas 動畫的 resize 已在 initRotatingStars 中處理
+    if (this.currentPreset === 'rotating-stars') {
+      return;
+    }
+    
     // particles.js 會自動處理 resize（通過 interactivity.resize: true）
     // 如果需要手動觸發，可以重新初始化
     if (this.currentPreset && this.isAnimating) {
@@ -705,6 +938,28 @@ export class ParticleRenderer {
   clear() {
     this.isAnimating = false;
     
+    // 停止自定義 Canvas 動畫
+    if (this.customAnimationFrameId) {
+      cancelAnimationFrame(this.customAnimationFrameId);
+      this.customAnimationFrameId = null;
+    }
+    
+    // 清除自定義 Canvas
+    if (this.customCanvas && this.customCanvas.parentNode) {
+      this.customCanvas.parentNode.removeChild(this.customCanvas);
+      this.customCanvas = null;
+      this.customCtx = null;
+      this.customStars = [];
+      this.customGradientCache = null;
+      this.rotatingStarsConfig = null;
+    }
+    
+    // 移除 resize 監聽器
+    if (this.customResizeHandler) {
+      window.removeEventListener('resize', this.customResizeHandler);
+      this.customResizeHandler = null;
+    }
+    
     // 清除 particles.js 實例
     if (window.pJSDom && Array.isArray(window.pJSDom)) {
       const pJSIndex = window.pJSDom.findIndex(pJS => {
@@ -729,7 +984,7 @@ export class ParticleRenderer {
       }
     }
     
-    // 移除 canvas 元素
+    // 移除 canvas 元素（particles.js 使用的）
     const canvasElement = document.getElementById(this.canvasId);
     if (canvasElement && canvasElement.parentNode) {
       canvasElement.parentNode.removeChild(canvasElement);
