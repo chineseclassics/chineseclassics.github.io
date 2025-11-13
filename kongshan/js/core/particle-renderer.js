@@ -7,6 +7,69 @@
  * 粒子動畫渲染器
  * 使用 particles.js 實現粒子動畫效果
  */
+
+// =====================================================
+// 自定義粒子素材
+// =====================================================
+const LANTERN_SVG_MARKUP = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 150">
+  <defs>
+    <linearGradient id="bodyGradient" x1="0.5" x2="0.5" y1="0" y2="1">
+      <stop offset="0" stop-color="#e2593d"/>
+      <stop offset="0.25" stop-color="#f37438"/>
+      <stop offset="0.65" stop-color="#ff9f3b"/>
+      <stop offset="1" stop-color="#ffce5a"/>
+    </linearGradient>
+    <linearGradient id="highlightGradient" x1="0.8" y1="0.1" x2="0.3" y2="0.7">
+      <stop offset="0" stop-color="rgba(255, 255, 255, 0.6)"/>
+      <stop offset="0.35" stop-color="rgba(255, 255, 255, 0.3)"/>
+      <stop offset="0.8" stop-color="rgba(255, 255, 255, 0)"/>
+    </linearGradient>
+    <linearGradient id="tailGradient" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#ffeb9c"/>
+      <stop offset="0.4" stop-color="#ffd167"/>
+      <stop offset="1" stop-color="#f38335"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.68" r="0.35">
+      <stop offset="0" stop-color="#fffbe0"/>
+      <stop offset="0.5" stop-color="#ffe69a" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-0.6" y="-0.6" width="2.2" height="2.2">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.65 0" result="soft"/>
+      <feMerge>
+        <feMergeNode in="soft"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="tailGlow" x="-0.8" y="-0.2" width="2.4" height="2">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="tailBlur"/>
+      <feColorMatrix in="tailBlur" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.55 0" result="tailSoft"/>
+      <feMerge>
+        <feMergeNode in="tailSoft"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#softGlow)">
+    <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Q14 104 8 68 Q4 34 14 20 L44 6 Z" fill="url(#bodyGradient)" stroke="#ffe5a6" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Z" fill="url(#highlightGradient)"/>
+    <path d="M44 18 Q67 28 70 62 Q66 96 44 118" fill="none" stroke="rgba(255, 236, 188, 0.45)" stroke-width="1.8" stroke-linecap="round"/>
+    <ellipse cx="44" cy="88" rx="24" ry="16" fill="url(#glow)"/>
+    <ellipse cx="44" cy="96" rx="20" ry="11" fill="rgba(255, 221, 150, 0.38)"/>
+    <ellipse cx="44" cy="102" rx="18" ry="9" fill="rgba(255, 206, 120, 0.2)"/>
+  </g>
+  <path d="M42 118 Q44 138 36 150 L52 134 Q50 126 52 118 Z" fill="url(#tailGradient)" stroke="rgba(255, 214, 140, 0.8)" stroke-width="1.2" stroke-linejoin="round" filter="url(#tailGlow)"/>
+</svg>`;
+const LANTERN_IMAGE_SRC = `data:image/svg+xml,${encodeURIComponent(LANTERN_SVG_MARKUP)}`;
 export class ParticleRenderer {
   constructor(container) {
     this.container = container;
@@ -328,6 +391,91 @@ export class ParticleRenderer {
               straight: false,
               out_mode: "out",
               bounce: false
+            }
+          }
+        };
+        
+      case 'lantern-glow':
+        return {
+          ...baseConfig,
+          particles: {
+            ...baseConfig.particles,
+            number: {
+              value: this.isMobile ? 24 : 45,
+              density: baseConfig.particles.number.density
+            },
+            color: {
+              value: ['#ffb347', '#ffd384', '#ffe9a7', '#ffdf8e']
+            },
+            shape: {
+              type: 'image',
+              image: {
+                src: LANTERN_IMAGE_SRC,
+                width: 90,
+                height: 150
+              }
+            },
+            opacity: {
+              value: 0.85,
+              random: true,
+              anim: {
+                enable: true,
+                speed: 1.2,
+                opacity_min: 0.35,
+                sync: false
+              }
+            },
+            size: {
+              value: this.isMobile ? 16 : 20,
+              random: true,
+              anim: {
+                enable: true,
+                speed: 1,
+                size_min: this.isMobile ? 9 : 12,
+                sync: false
+              }
+            },
+            line_linked: {
+              enable: false
+            },
+            move: {
+              enable: true,
+              speed: 0.9,
+              direction: 'top',
+              random: false,
+              straight: false,
+              out_mode: 'out',
+              bounce: false,
+              attract: {
+                enable: true,
+                rotateX: 300,
+                rotateY: 600
+              }
+            }
+          },
+          interactivity: {
+            detect_on: 'canvas',
+            events: {
+              onhover: {
+                enable: true,
+                mode: 'bubble'
+              },
+              onclick: {
+                enable: true,
+                mode: 'push'
+              },
+              resize: true
+            },
+            modes: {
+              bubble: {
+                distance: 120,
+                size: this.isMobile ? 16 : 20,
+                duration: 2,
+                opacity: 1
+              },
+              push: {
+                particles_nb: 2
+              }
             }
           }
         };

@@ -20,6 +20,7 @@
             background: #1a1a2e;
             color: #fff;
             overflow-x: hidden;
+            transition: background 1.5s ease;
         }
         
         .demo-container {
@@ -36,6 +37,55 @@
             height: 100%;
             z-index: 1;
         }
+
+        /* 粒子畫布轉場與特效調整 */
+        #particles-js canvas {
+            transition: filter 1.2s ease, opacity 1.2s ease, mix-blend-mode 1.2s ease;
+        }
+
+        body[data-preset="shanshui-mist"] #particles-js canvas {
+            filter: blur(1.5px) saturate(120%);
+            opacity: 0.92;
+        }
+
+        body[data-preset="ink-wash"] #particles-js canvas {
+            filter: contrast(115%) saturate(75%);
+        }
+
+        body[data-preset="lantern-glow"] #particles-js canvas {
+            mix-blend-mode: screen;
+            filter: drop-shadow(0 0 18px rgba(255, 204, 128, 0.65))
+                    drop-shadow(0 0 48px rgba(255, 168, 76, 0.4));
+        }
+
+        body[data-preset="aurora-ribbon"] #particles-js canvas {
+            mix-blend-mode: screen;
+            filter: blur(0.5px) drop-shadow(0 0 10px rgba(120, 228, 255, 0.55));
+        }
+
+        body[data-preset="shanshui-mist"] .controls {
+            background: rgba(18, 28, 45, 0.78);
+            border-color: rgba(198, 212, 235, 0.35);
+            box-shadow: 0 25px 60px rgba(8, 12, 20, 0.65);
+        }
+
+        body[data-preset="ink-wash"] .controls {
+            background: rgba(12, 19, 31, 0.82);
+            border-color: rgba(148, 163, 184, 0.35);
+            box-shadow: 0 25px 55px rgba(6, 10, 16, 0.6);
+        }
+
+        body[data-preset="lantern-glow"] .controls {
+            background: rgba(44, 20, 38, 0.78);
+            border-color: rgba(255, 210, 160, 0.45);
+            box-shadow: 0 25px 65px rgba(32, 9, 26, 0.65);
+        }
+
+        body[data-preset="aurora-ribbon"] .controls {
+            background: rgba(7, 24, 41, 0.84);
+            border-color: rgba(93, 235, 255, 0.35);
+            box-shadow: 0 30px 70px rgba(6, 30, 54, 0.65);
+        }
         
         .controls {
             position: fixed;
@@ -47,6 +97,9 @@
             padding: 20px;
             border-radius: 10px;
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+            transition: background 1.2s ease, border 1.2s ease, box-shadow 1.2s ease;
         }
         
         .controls h1 {
@@ -95,6 +148,9 @@
             backdrop-filter: blur(10px);
             text-align: center;
             max-width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+            transition: background 1.2s ease, color 1.2s ease, border 1.2s ease, box-shadow 1.2s ease;
         }
         
         .info h2 {
@@ -124,6 +180,10 @@
                 <button class="demo-btn" data-preset="flowers">落花</button>
                 <button class="demo-btn" data-preset="fireflies">螢火</button>
                 <button class="demo-btn" data-preset="codepen-stars">CodePen 星空</button>
+                <button class="demo-btn" data-preset="shanshui-mist">空山雲氣</button>
+                <button class="demo-btn" data-preset="ink-wash">墨韻流光</button>
+                <button class="demo-btn" data-preset="lantern-glow">山谷花燈</button>
+                <button class="demo-btn" data-preset="aurora-ribbon">靈光霓影</button>
             </div>
         </div>
         
@@ -134,6 +194,74 @@
     </div>
     
     <script>
+        const defaultBackground = '#1a1a2e';
+        const defaultInfoBoxBackground = 'rgba(0, 0, 0, 0.7)';
+        const defaultInfoTitleColor = '#ffffff';
+        const defaultInfoTextColor = 'rgba(255, 255, 255, 0.9)';
+        const defaultInfoTextOpacity = 0.9;
+        const defaultInfoBorderColor = 'rgba(255, 255, 255, 0.12)';
+        const defaultInfoShadow = '0 20px 45px rgba(0, 0, 0, 0.35)';
+        // 依照參考圖製作更貼近孔明燈比例與亮度的 SVG
+        const lanternSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 150">
+    <defs>
+        <linearGradient id="bodyGradient" x1="0.5" x2="0.5" y1="0" y2="1">
+            <stop offset="0" stop-color="#e2593d"/>
+            <stop offset="0.25" stop-color="#f37438"/>
+            <stop offset="0.65" stop-color="#ff9f3b"/>
+            <stop offset="1" stop-color="#ffce5a"/>
+        </linearGradient>
+        <linearGradient id="highlightGradient" x1="0.8" y1="0.1" x2="0.3" y2="0.7">
+            <stop offset="0" stop-color="rgba(255, 255, 255, 0.6)"/>
+            <stop offset="0.35" stop-color="rgba(255, 255, 255, 0.3)"/>
+            <stop offset="0.8" stop-color="rgba(255, 255, 255, 0)"/>
+        </linearGradient>
+        <linearGradient id="tailGradient" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0" stop-color="#ffeb9c"/>
+            <stop offset="0.4" stop-color="#ffd167"/>
+            <stop offset="1" stop-color="#f38335"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="0.5" cy="0.68" r="0.35">
+            <stop offset="0" stop-color="#fffbe0"/>
+            <stop offset="0.5" stop-color="#ffe69a" stop-opacity="0.95"/>
+            <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="softGlow" x="-0.6" y="-0.6" width="2.2" height="2.2">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blur"/>
+            <feColorMatrix in="blur" type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 0.65 0" result="soft"/>
+            <feMerge>
+                <feMergeNode in="soft"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <filter id="tailGlow" x="-0.8" y="-0.2" width="2.4" height="2">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="tailBlur"/>
+            <feColorMatrix in="tailBlur" type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 0.55 0" result="tailSoft"/>
+            <feMerge>
+                <feMergeNode in="tailSoft"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    <g filter="url(#softGlow)">
+        <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Q14 104 8 68 Q4 34 14 20 L44 6 Z" fill="url(#bodyGradient)" stroke="#ffe5a6" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M44 6 L74 20 Q84 34 80 68 Q74 104 44 126 Z" fill="url(#highlightGradient)"/>
+        <path d="M44 18 Q67 28 70 62 Q66 96 44 118" fill="none" stroke="rgba(255, 236, 188, 0.45)" stroke-width="1.8" stroke-linecap="round"/>
+        <ellipse cx="44" cy="88" rx="24" ry="16" fill="url(#glow)"/>
+        <ellipse cx="44" cy="96" rx="20" ry="11" fill="rgba(255, 221, 150, 0.38)"/>
+        <ellipse cx="44" cy="102" rx="18" ry="9" fill="rgba(255, 206, 120, 0.2)"/>
+    </g>
+    <path d="M42 118 Q44 138 36 150 L52 134 Q50 126 52 118 Z" fill="url(#tailGradient)" stroke="rgba(255, 214, 140, 0.8)" stroke-width="1.2" stroke-linejoin="round" filter="url(#tailGlow)"/>
+</svg>`;
+        const lanternImageSrc = `data:image/svg+xml,${encodeURIComponent(lanternSVG)}`;
+
         // 效果配置集合
         const presets = {
             stardust: {
@@ -679,16 +807,375 @@
                     },
                     retina_detect: true
                 }
+            },
+
+            'shanshui-mist': {
+                name: '空山雲氣',
+                desc: '淡淡雲霧於山谷間緩慢升騰，呈現水墨山水的靜謐意境',
+                background: 'linear-gradient(180deg, #0f172a 0%, #253146 55%, #1b1f34 100%)',
+                infoBackground: 'rgba(18, 27, 43, 0.78)',
+                infoTitleColor: '#e8f1ff',
+                infoTextColor: 'rgba(216, 226, 243, 0.9)',
+                infoTextOpacity: 0.95,
+                infoBorderColor: 'rgba(203, 217, 239, 0.4)',
+                infoShadow: '0 25px 60px rgba(8, 12, 20, 0.65)',
+                config: {
+                    particles: {
+                        number: {
+                            value: 40,
+                            density: {
+                                enable: true,
+                                value_area: 900
+                            }
+                        },
+                        color: {
+                            value: ['#f7f9fc', '#e9eff7', '#d7e2f3']
+                        },
+                        shape: {
+                            type: 'circle'
+                        },
+                        opacity: {
+                            value: 0.28,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 0.25,
+                                opacity_min: 0.05,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 90,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 2,
+                                size_min: 30,
+                                sync: false
+                            }
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.25,
+                            direction: 'top-left',
+                            random: true,
+                            straight: false,
+                            out_mode: 'out',
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: 'canvas',
+                        events: {
+                            onhover: {
+                                enable: false
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+
+            'ink-wash': {
+                name: '墨韻流光',
+                desc: '深淺墨點交錯流動，如墨汁在宣紙上自然暈染',
+                background: 'radial-gradient(circle at center, #111827 0%, #0b1120 60%, #05070c 100%)',
+                infoBackground: 'rgba(10, 16, 26, 0.78)',
+                infoTitleColor: '#f4f4f5',
+                infoTextColor: 'rgba(199, 210, 222, 0.92)',
+                infoTextOpacity: 1,
+                infoBorderColor: 'rgba(148, 163, 184, 0.35)',
+                infoShadow: '0 22px 55px rgba(6, 10, 16, 0.65)',
+                config: {
+                    particles: {
+                        number: {
+                            value: 120,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ['#f8fafc', '#cbd5f5', '#94a3b8', '#475569']
+                        },
+                        shape: {
+                            type: 'polygon',
+                            polygon: {
+                                nb_sides: 5
+                            }
+                        },
+                        opacity: {
+                            value: 0.35,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 0.4,
+                                opacity_min: 0.1,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 6,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 1.5,
+                                size_min: 1,
+                                sync: false
+                            }
+                        },
+                        line_linked: {
+                            enable: true,
+                            distance: 180,
+                            color: '#9aa5ce',
+                            opacity: 0.08,
+                            width: 1
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.75,
+                            direction: 'none',
+                            random: true,
+                            straight: false,
+                            out_mode: 'out',
+                            bounce: false
+                        }
+                    },
+                    interactivity: {
+                        detect_on: 'canvas',
+                        events: {
+                            onhover: {
+                                enable: true,
+                                mode: 'repulse'
+                            },
+                            onclick: {
+                                enable: false
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            repulse: {
+                                distance: 90,
+                                duration: 0.6
+                            }
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+
+            'lantern-glow': {
+                name: '山谷花燈',
+                desc: '暖色花燈沿山谷緩緩上升，點亮夜色中的寂靜空山',
+                background: 'linear-gradient(180deg, #120c1c 0%, #2d1b3d 55%, #3a283b 100%)',
+                infoBackground: 'rgba(36, 16, 35, 0.78)',
+                infoTitleColor: '#ffe1b7',
+                infoTextColor: 'rgba(255, 221, 183, 0.9)',
+                infoTextOpacity: 1,
+                infoBorderColor: 'rgba(255, 210, 160, 0.45)',
+                infoShadow: '0 28px 65px rgba(40, 12, 28, 0.6)',
+                config: {
+                    particles: {
+                        number: {
+                            value: 45,
+                            density: {
+                                enable: true,
+                                value_area: 700
+                            }
+                        },
+                        color: {
+                            value: ['#ffb347', '#ffd384', '#ffe9a7', '#ffdf8e']
+                        },
+                        shape: {
+                            type: 'image',
+                            image: {
+                                src: lanternImageSrc,
+                                width: 64,
+                                height: 96
+                            }
+                        },
+                        opacity: {
+                            value: 0.85,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 1.2,
+                                opacity_min: 0.35,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 20,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 1,
+                                size_min: 12,
+                                sync: false
+                            }
+                        },
+                        line_linked: {
+                            enable: false
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.9,
+                            direction: 'top',
+                            random: false,
+                            straight: false,
+                            out_mode: 'out',
+                            bounce: false,
+                            attract: {
+                                enable: true,
+                                rotateX: 300,
+                                rotateY: 600
+                            }
+                        }
+                    },
+                    interactivity: {
+                        detect_on: 'canvas',
+                        events: {
+                            onhover: {
+                                enable: true,
+                                mode: 'bubble'
+                            },
+                            onclick: {
+                                enable: true,
+                                mode: 'push'
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            bubble: {
+                                distance: 120,
+                                size: 20,
+                                duration: 2,
+                                opacity: 1
+                            },
+                            push: {
+                                particles_nb: 2
+                            }
+                        }
+                    },
+                    retina_detect: true
+                }
+            },
+
+            'aurora-ribbon': {
+                name: '靈光霓影',
+                desc: '淡藍與青綠的光帶於空山夜幕中流動，帶來靈動的霧光',
+                background: 'linear-gradient(180deg, #03111f 0%, #052033 50%, #061629 100%)',
+                infoBackground: 'rgba(7, 22, 37, 0.78)',
+                infoTitleColor: '#bbf7ff',
+                infoTextColor: 'rgba(207, 244, 255, 0.95)',
+                infoTextOpacity: 1,
+                infoBorderColor: 'rgba(126, 247, 255, 0.4)',
+                infoShadow: '0 30px 70px rgba(6, 30, 54, 0.65)',
+                config: {
+                    particles: {
+                        number: {
+                            value: 110,
+                            density: {
+                                enable: true,
+                                value_area: 750
+                            }
+                        },
+                        color: {
+                            value: ['#7ddfff', '#38bdf8', '#a855f7']
+                        },
+                        shape: {
+                            type: 'circle'
+                        },
+                        opacity: {
+                            value: 0.5,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 0.6,
+                                opacity_min: 0.15,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 3,
+                            random: true,
+                            anim: {
+                                enable: true,
+                                speed: 1.5,
+                                size_min: 1,
+                                sync: false
+                            }
+                        },
+                        line_linked: {
+                            enable: true,
+                            distance: 160,
+                            color: '#59f5ff',
+                            opacity: 0.35,
+                            width: 1.2
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.7,
+                            direction: 'top',
+                            random: true,
+                            straight: false,
+                            out_mode: 'out',
+                            bounce: false,
+                            attract: {
+                                enable: true,
+                                rotateX: 2000,
+                                rotateY: 2000
+                            }
+                        }
+                    },
+                    interactivity: {
+                        detect_on: 'canvas',
+                        events: {
+                            onhover: {
+                                enable: true,
+                                mode: 'grab'
+                            },
+                            onclick: {
+                                enable: true,
+                                mode: 'push'
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            grab: {
+                                distance: 180,
+                                line_linked: {
+                                    opacity: 0.9
+                                }
+                            },
+                            push: {
+                                particles_nb: 3
+                            }
+                        }
+                    },
+                    retina_detect: true
+                }
             }
         };
         
+        const infoBox = document.querySelector('.info');
+        const effectNameEl = document.getElementById('effect-name');
+        const effectDescEl = document.getElementById('effect-desc');
+
         let currentParticles = null;
         
         // 初始化第一個效果
         function initParticles(presetName) {
             const preset = presets[presetName];
             if (!preset) return;
-            
+
             // 清除舊的粒子
             if (currentParticles && window.pJSDom && window.pJSDom.length > 0) {
                 const index = window.pJSDom.findIndex(pJS => pJS.pJS.canvas.el.id === 'particles-js');
@@ -697,17 +1184,39 @@
                     window.pJSDom.splice(index, 1);
                 }
             }
-            
-            // 更新信息
-            document.getElementById('effect-name').textContent = preset.name;
-            document.getElementById('effect-desc').textContent = preset.desc;
-            
+
+            // 更新展示資訊
+            if (effectNameEl) {
+                effectNameEl.textContent = preset.name;
+                effectNameEl.style.color = preset.infoTitleColor || defaultInfoTitleColor;
+            }
+
+            if (effectDescEl) {
+                effectDescEl.textContent = preset.desc;
+                effectDescEl.style.color = preset.infoTextColor || defaultInfoTextColor;
+                const opacityValue = preset.infoTextOpacity !== undefined ? preset.infoTextOpacity : defaultInfoTextOpacity;
+                effectDescEl.style.opacity = opacityValue;
+            }
+
+            if (infoBox) {
+                infoBox.style.background = preset.infoBackground || defaultInfoBoxBackground;
+                infoBox.style.color = preset.infoTextColor || defaultInfoTextColor;
+                infoBox.style.borderColor = preset.infoBorderColor || defaultInfoBorderColor;
+                infoBox.style.boxShadow = preset.infoShadow || defaultInfoShadow;
+            }
+
+            document.body.dataset.preset = presetName;
+            document.body.style.background = preset.background || defaultBackground;
+
             // 更新按鈕狀態
             document.querySelectorAll('.demo-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            document.querySelector(`[data-preset="${presetName}"]`).classList.add('active');
-            
+            const activeBtn = document.querySelector(`[data-preset="${presetName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+
             // 初始化新粒子
             particlesJS('particles-js', preset.config);
             currentParticles = presetName;
