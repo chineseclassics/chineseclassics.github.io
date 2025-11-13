@@ -419,7 +419,7 @@ export class ParticleRenderer {
           particles: {
             ...baseConfig.particles,
             number: {
-              value: this.isMobile ? 24 : 45,
+              value: this.isMobile ? 12 : 22,
               density: baseConfig.particles.number.density
             },
             color: {
@@ -711,7 +711,9 @@ export class ParticleRenderer {
         if (!pJS || !pJS.pJS || !pJS.pJS.canvas || !pJS.pJS.canvas.el) {
           return false;
         }
-        return pJS.pJS.canvas.el.id === this.canvasId;
+        const canvasElement = pJS.pJS.canvas.el;
+        const containerElement = canvasElement.parentNode;
+        return containerElement && containerElement.id === this.canvasId;
       });
       
       if (pJSIndex !== -1) {
