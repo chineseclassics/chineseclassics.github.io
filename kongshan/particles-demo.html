@@ -1638,18 +1638,18 @@ body[data-preset="lotus-rain"] .controls {
         }
 
         function destroyParticles() {
-            const instances = Array.isArray(window.pJSDom) ? window.pJSDom : null;
-            if (instances && instances.length) {
-                while (instances.length) {
-                    const instance = instances.pop();
-                    if (instance && instance.pJS && instance.pJS.fn && instance.pJS.fn.vendors && instance.pJS.fn.vendors.destroypJS) {
-                        instance.pJS.fn.vendors.destroypJS();
-                    }
-                }
-                if (Array.isArray(window.pJSDom)) {
-                    window.pJSDom.length = 0;
-                }
+            if (!Array.isArray(window.pJSDom)) {
+                window.pJSDom = [];
+                return;
             }
+
+            const instances = window.pJSDom.slice();
+            instances.forEach(instance => {
+                if (instance && instance.pJS && instance.pJS.fn && instance.pJS.fn.vendors && instance.pJS.fn.vendors.destroypJS) {
+                    instance.pJS.fn.vendors.destroypJS();
+                }
+            });
+            window.pJSDom.length = 0;
 
             const container = document.getElementById('particles-js');
             if (container) {
