@@ -107,6 +107,7 @@ export class ParticleRenderer {
     this.customGradientCache = null;
     this.customResizeHandler = null;
     this.rotatingStarsConfig = null;
+    this.rotatingStarsVisualConfig = null;
     
     // 視窗可見性處理
     this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
@@ -693,11 +694,43 @@ export class ParticleRenderer {
         ? config.maxStars 
         : (this.isMobile ? 600 : 1400);
       
+      const palette = Array.isArray(config.starColorPalette) && config.starColorPalette.length > 0
+        ? config.starColorPalette
+        : ['#fff9e6', '#cfe8ff', '#ffe0ff', '#f4ffd2'];
+      
+      const backgroundColor = config.backgroundColor || `hsla(${hue}, 72%, 5%, 1)`;
+      const backgroundAlpha = typeof config.backgroundAlpha === 'number'
+        ? Math.min(Math.max(config.backgroundAlpha, 0.3), 0.95)
+        : 0.68;
+      const starSizeMultiplier = typeof config.starSizeMultiplier === 'number'
+        ? config.starSizeMultiplier
+        : 1.15;
+      const starIntensity = typeof config.starIntensity === 'number'
+        ? config.starIntensity
+        : 1.1;
+      const brightnessRangeRaw = Array.isArray(config.brightnessRange) && config.brightnessRange.length === 2
+        ? config.brightnessRange
+        : [0.4, 0.95];
+      const minAlpha = Math.min(brightnessRangeRaw[0], brightnessRangeRaw[1]);
+      const maxAlpha = Math.max(brightnessRangeRaw[0], brightnessRangeRaw[1]);
+      
+      this.rotatingStarsVisualConfig = {
+        backgroundColor,
+        backgroundAlpha,
+        starSizeMultiplier,
+        starIntensity,
+        starColorPalette: palette,
+        brightnessRange: [
+          Math.min(Math.max(minAlpha, 0.1), 0.95),
+          Math.min(Math.max(maxAlpha, 0.2), 1)
+        ]
+      };
+      
       // 保存配置以便在 resize 時使用
       this.rotatingStarsConfig = { hue, maxStars };
       
       // 緩存漸變（性能優化）
-      this.createGradientCache(hue);
+      this.createGradientCache(hue, palette);
       
       // 初始化星星
       this.initStars(maxStars);
@@ -729,25 +762,34 @@ export class ParticleRenderer {
   /**
    * 創建漸變緩存（性能優化）
    */
-  createGradientCache(hue) {
-    const canvas2 = document.createElement('canvas');
-    const ctx2 = canvas2.getContext('2d');
-    canvas2.width = 100;
-    canvas2.height = 100;
+  createGradientCache(hue, palette = []) {
+    const colors = Array.isArray(palette) && palette.length > 0
+      ? palette
+      : [null];
     
-    const half = canvas2.width / 2;
-    const gradient2 = ctx2.createRadialGradient(half, half, 0, half, half, half);
-    gradient2.addColorStop(0.025, '#fff');
-    gradient2.addColorStop(0.1, `hsl(${hue}, 61%, 33%)`);
-    gradient2.addColorStop(0.25, `hsl(${hue}, 64%, 6%)`);
-    gradient2.addColorStop(1, 'transparent');
-    
-    ctx2.fillStyle = gradient2;
-    ctx2.beginPath();
-    ctx2.arc(half, half, half, 0, Math.PI * 2);
-    ctx2.fill();
-    
-    this.customGradientCache = canvas2;
+    this.customGradientCache = colors.map(color => {
+      const canvas2 = document.createElement('canvas');
+      const ctx2 = canvas2.getContext('2d');
+      canvas2.width = 120;
+      canvas2.height = 120;
+      
+      const half = canvas2.width / 2;
+      const gradient2 = ctx2.createRadialGradient(half, half, 0, half, half, half);
+      const accent = color || `hsl(${hue}, 78%, 72%)`;
+      
+      gradient2.addColorStop(0.015, 'rgba(255, 255, 255, 0.98)');
+      gradient2.addColorStop(0.08, accent);
+      gradient2.addColorStop(0.25, `hsla(${hue}, 65%, 35%, 0.85)`);
+      gradient2.addColorStop(0.5, `hsla(${hue}, 70%, 15%, 0.45)`);
+      gradient2.addColorStop(1, 'transparent');
+      
+      ctx2.fillStyle = gradient2;
+      ctx2.beginPath();
+      ctx2.arc(half, half, half, 0, Math.PI * 2);
+      ctx2.fill();
+      
+      return canvas2;
+    });
   }
   
   /**
@@ -757,6 +799,19 @@ export class ParticleRenderer {
     this.customStars = [];
     const w = this.customCanvas.width;
     const h = this.customCanvas.height;
+    const visualConfig = this.rotatingStarsVisualConfig || {};
+    const sizeMultiplier = typeof visualConfig.starSizeMultiplier === 'number'
+      ? visualConfig.starSizeMultiplier
+      : 1;
+    const brightnessRange = Array.isArray(visualConfig.brightnessRange) && visualConfig.brightnessRange.length === 2
+      ? visualConfig.brightnessRange
+      : [0.35, 1];
+    const minAlpha = Math.min(brightnessRange[0], brightnessRange[1]);
+    const maxAlpha = Math.max(brightnessRange[0], brightnessRange[1]);
+    const gradientCacheLength = Array.isArray(this.customGradientCache)
+      ? this.customGradientCache.length
+      : (this.customGradientCache ? 1 : 0);
+    const paletteLength = gradientCacheLength > 0 ? gradientCacheLength : 1;
     
     const maxOrbit = (x, y) => {
       const max = Math.max(x, y);
@@ -779,14 +834,16 @@ export class ParticleRenderer {
     
     for (let i = 0; i < maxStars; i++) {
       const orbitRadius = random(maxOrbit(w, h));
+      const normalizedRange = Math.max(maxAlpha - minAlpha, 0.01);
       const star = {
         orbitRadius: orbitRadius,
-        radius: random(60, orbitRadius) / 12,
+        radius: (random(60, orbitRadius) / 12) * sizeMultiplier,
         orbitX: w / 2,
         orbitY: h / 2,
         timePassed: random(0, maxStars),
         speed: random(orbitRadius) / 50000,
-        alpha: random(2, 10) / 10
+        alpha: minAlpha + Math.random() * normalizedRange,
+        gradientIndex: Math.floor(Math.random() * paletteLength)
       };
       this.customStars.push(star);
     }
@@ -809,12 +866,28 @@ export class ParticleRenderer {
     
     const w = this.customCanvas.width;
     const h = this.customCanvas.height;
-    const hue = 217; // 可以從配置讀取
+    const hue = this.rotatingStarsConfig?.hue ?? 217;
+    const visualConfig = this.rotatingStarsVisualConfig || {};
+    const backgroundAlpha = typeof visualConfig.backgroundAlpha === 'number'
+      ? visualConfig.backgroundAlpha
+      : 0.8;
+    const backgroundColor = visualConfig.backgroundColor || `hsla(${hue}, 64%, 6%, 1)`;
+    const [minAlphaLimit, maxAlphaLimit] = Array.isArray(visualConfig.brightnessRange) && visualConfig.brightnessRange.length === 2
+      ? visualConfig.brightnessRange
+      : [0.35, 1];
+    const minAlpha = Math.min(minAlphaLimit, maxAlphaLimit);
+    const maxAlpha = Math.max(minAlphaLimit, maxAlphaLimit);
+    const starIntensity = typeof visualConfig.starIntensity === 'number'
+      ? visualConfig.starIntensity
+      : 1;
+    const gradientCache = Array.isArray(this.customGradientCache)
+      ? this.customGradientCache
+      : (this.customGradientCache ? [this.customGradientCache] : []);
     
     // 繪製背景（半透明，形成拖尾效果）
     this.customCtx.globalCompositeOperation = 'source-over';
-    this.customCtx.globalAlpha = 0.8;
-    this.customCtx.fillStyle = `hsla(${hue}, 64%, 6%, 1)`;
+    this.customCtx.globalAlpha = Math.min(Math.max(backgroundAlpha, 0.1), 0.95);
+    this.customCtx.fillStyle = backgroundColor;
     this.customCtx.fillRect(0, 0, w, h);
     
     // 繪製星星
@@ -839,21 +912,31 @@ export class ParticleRenderer {
       const y = Math.cos(star.timePassed) * star.orbitRadius + star.orbitY;
       const twinkle = random(10);
       
-      if (twinkle === 1 && star.alpha > 0) {
-        star.alpha -= 0.05;
-      } else if (twinkle === 2 && star.alpha < 1) {
-        star.alpha += 0.05;
+      if (twinkle === 1 && star.alpha > minAlpha) {
+        star.alpha = Math.max(minAlpha, star.alpha - 0.05);
+      } else if (twinkle === 2 && star.alpha < maxAlpha) {
+        star.alpha = Math.min(maxAlpha, star.alpha + 0.05);
       }
       
-      this.customCtx.globalAlpha = star.alpha;
-      if (this.customGradientCache) {
+      const paletteIndex = gradientCache.length > 0
+        ? gradientCache[star.gradientIndex % gradientCache.length]
+        : null;
+      const drawSize = star.radius * starIntensity;
+      this.customCtx.globalAlpha = Math.min(star.alpha * starIntensity, 1);
+      
+      if (paletteIndex) {
         this.customCtx.drawImage(
-          this.customGradientCache,
-          x - star.radius / 2,
-          y - star.radius / 2,
-          star.radius,
-          star.radius
+          paletteIndex,
+          x - drawSize / 2,
+          y - drawSize / 2,
+          drawSize,
+          drawSize
         );
+      } else {
+        this.customCtx.fillStyle = '#ffffff';
+        this.customCtx.beginPath();
+        this.customCtx.arc(x, y, drawSize / 2, 0, Math.PI * 2);
+        this.customCtx.fill();
       }
       star.timePassed += star.speed;
     }
@@ -955,6 +1038,7 @@ export class ParticleRenderer {
       this.customStars = [];
       this.customGradientCache = null;
       this.rotatingStarsConfig = null;
+      this.rotatingStarsVisualConfig = null;
     }
     
     // 移除 resize 監聽器
