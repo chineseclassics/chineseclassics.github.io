@@ -171,6 +171,9 @@ export class ParticleRenderer {
     
     // 初始化 particles.js
     try {
+      if (!Array.isArray(window.pJSDom)) {
+        window.pJSDom = [];
+      }
       window.particlesJS(this.canvasId, particlesConfig);
       this.isAnimating = true;
       return true;
@@ -981,6 +984,10 @@ export class ParticleRenderer {
         } catch (error) {
           console.warn('清理 particles.js 實例時出錯:', error);
         }
+      }
+
+      if (!Array.isArray(window.pJSDom)) {
+        window.pJSDom = [];
       }
     }
     
