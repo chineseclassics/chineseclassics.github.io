@@ -643,7 +643,7 @@ export class ParticleRenderer {
             },
             move: {
               enable: true,
-              speed: this.isMobile ? 9 : 12,
+              speed: this.isMobile ? 6 : 8,
               direction: 'bottom',
               random: false,
               straight: true,

@@ -2619,6 +2619,7 @@ const backgroundTextColorMap = {
   'plum-blossom': '#2C3E50',   // 梅花：深色文字
   'moonlight-night': '#FFFFFF', // 月夜：白色文字（已棄用，改為星夜）
   'starry-night': '#FFFFFF', // 星夜：白色文字
+  'rotating-stars': '#FDF7FF', // 星移：高亮白色文字
   'green-mountain': '#FFFFFF',  // 青山：白色文字
   'cloud-mist': '#2C3E50',     // 雲霧：深色文字
   'falling-flowers': '#2C3E50', // 落花：深色文字
@@ -2889,7 +2890,7 @@ function initializeBackgroundSelector() {
     { id: 'winter-snow', name: '冬雪', colors: ['#F5F5F5', '#E0E0E0'] },
     { id: 'plum-blossom', name: '梅花', colors: ['#FFF3E0', '#FFE0B2'] },
     { id: 'starry-night', name: '星夜', colors: ['#070825', '#0A0D2E'] },
-    { id: 'rotating-stars', name: '旋轉星空', colors: ['#000000', '#0A0D2E'] },
+    { id: 'rotating-stars', name: '星移', colors: ['#000000', '#0A0D2E'] },
     { id: 'twinkling-stars', name: '靜夜星空', colors: ['#02040d', '#0a1230'] },
     { id: 'lantern-valley', name: '元宵', colors: ['#1A0F1F', '#3A1F36'] },
     { id: 'rainfall', name: '雨幕', colors: ['#0B132B', '#1F3558'] },
