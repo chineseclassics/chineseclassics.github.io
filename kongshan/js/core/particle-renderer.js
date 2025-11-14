@@ -153,39 +153,21 @@ export class ParticleRenderer {
       return false;
     }
     
-    // 確保容器存在
-    if (!this.container) {
-      console.warn('粒子容器不存在，無法初始化粒子動畫');
-      return false;
-    }
-    
-    // 確保 window.pJSDom 是數組（清理後可能被設為 null）
-    if (!Array.isArray(window.pJSDom)) {
-      window.pJSDom = [];
-    }
-    
     // 創建 canvas 元素（如果不存在）
     let canvasElement = document.getElementById(this.canvasId);
-    if (canvasElement) {
-      // 如果元素已存在，先移除它（確保乾淨的狀態）
-      if (canvasElement.parentNode) {
-        canvasElement.parentNode.removeChild(canvasElement);
-      }
-      canvasElement = null;
+    if (!canvasElement) {
+      canvasElement = document.createElement('div');
+      canvasElement.id = this.canvasId;
+      canvasElement.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      `;
+      this.container.appendChild(canvasElement);
     }
-    
-    // 創建新的 canvas 容器元素
-    canvasElement = document.createElement('div');
-    canvasElement.id = this.canvasId;
-    canvasElement.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    `;
-    this.container.appendChild(canvasElement);
     
     // 初始化 particles.js
     try {
@@ -194,10 +176,6 @@ export class ParticleRenderer {
       return true;
     } catch (error) {
       console.error('初始化粒子動畫失敗:', error);
-      // 如果初始化失敗，清理已創建的元素
-      if (canvasElement && canvasElement.parentNode) {
-        canvasElement.parentNode.removeChild(canvasElement);
-      }
       return false;
     }
   }
@@ -983,101 +961,33 @@ export class ParticleRenderer {
     }
     
     // 清除 particles.js 實例
-    // 改進清理邏輯：清理所有與當前容器相關的實例，確保狀態一致
     if (window.pJSDom && Array.isArray(window.pJSDom)) {
-      // 先找到所有需要清理的實例索引（倒序，避免索引變化問題）
-      const indicesToRemove = [];
+      const pJSIndex = window.pJSDom.findIndex(pJS => {
+        if (!pJS || !pJS.pJS || !pJS.pJS.canvas || !pJS.pJS.canvas.el) {
+          return false;
+        }
+        const canvasElement = pJS.pJS.canvas.el;
+        const containerElement = canvasElement.parentNode;
+        return containerElement && containerElement.id === this.canvasId;
+      });
       
-      for (let i = window.pJSDom.length - 1; i >= 0; i--) {
-        const pJS = window.pJSDom[i];
-        if (!pJS || !pJS.pJS) {
-          // 無效的實例，標記為需要移除
-          indicesToRemove.push(i);
-          continue;
-        }
-        
-        // 檢查是否屬於當前容器
-        let shouldRemove = false;
-        
-        // 方法1：通過 canvasId 匹配
-        if (pJS.pJS.canvas && pJS.pJS.canvas.el) {
-          const canvasElement = pJS.pJS.canvas.el;
-          const containerElement = canvasElement.parentNode;
-          if (containerElement && containerElement.id === this.canvasId) {
-            shouldRemove = true;
-          }
-        }
-        
-        // 方法2：檢查容器是否屬於當前的 particle-container
-        if (!shouldRemove && this.container) {
-          try {
-            const canvasElement = pJS.pJS.canvas?.el;
-            if (canvasElement) {
-              const containerElement = canvasElement.parentNode;
-              // 檢查是否在當前的 particle-container 內
-              if (containerElement && this.container.contains(containerElement)) {
-                shouldRemove = true;
-              }
-            }
-          } catch (error) {
-            // 如果檢查出錯，可能是 DOM 已被移除，標記為需要清理
-            shouldRemove = true;
-          }
-        }
-        
-        if (shouldRemove) {
-          indicesToRemove.push(i);
-        }
-      }
-      
-      // 清理找到的實例
-      indicesToRemove.forEach(index => {
+      if (pJSIndex !== -1) {
         try {
-          const pJSInstance = window.pJSDom[index];
-          if (pJSInstance && pJSInstance.pJS && pJSInstance.pJS.fn && pJSInstance.pJS.fn.vendors) {
+          const pJSInstance = window.pJSDom[pJSIndex];
+          if (pJSInstance.pJS && pJSInstance.pJS.fn && pJSInstance.pJS.fn.vendors) {
             pJSInstance.pJS.fn.vendors.destroypJS();
           }
+          window.pJSDom.splice(pJSIndex, 1);
         } catch (error) {
           console.warn('清理 particles.js 實例時出錯:', error);
         }
-      });
-      
-      // 從數組中移除（倒序移除，避免索引變化）
-      indicesToRemove.forEach(index => {
-        window.pJSDom.splice(index, 1);
-      });
-      
-      // 確保 window.pJSDom 仍然是數組（destroypJS 可能將其設為 null）
-      if (!Array.isArray(window.pJSDom)) {
-        window.pJSDom = [];
       }
-    } else {
-      // 如果 window.pJSDom 不是數組，初始化為空數組
-      window.pJSDom = [];
     }
     
     // 移除 canvas 元素（particles.js 使用的）
-    // 清理容器內所有可能的粒子 canvas 元素
-    if (this.container) {
-      // 移除當前 canvasId 對應的元素
-      const canvasElement = document.getElementById(this.canvasId);
-      if (canvasElement && canvasElement.parentNode) {
-        canvasElement.parentNode.removeChild(canvasElement);
-      }
-      
-      // 清理容器內所有殘留的 canvas 元素（particles.js 創建的）
-      const allCanvases = this.container.querySelectorAll('canvas');
-      allCanvases.forEach(canvas => {
-        // 只移除 particles.js 創建的 canvas（通常有特定的父容器）
-        const parent = canvas.parentNode;
-        if (parent && parent.id && parent.id.startsWith('particles-js-canvas-')) {
-          try {
-            parent.removeChild(canvas);
-          } catch (error) {
-            // 忽略已移除的元素
-          }
-        }
-      });
+    const canvasElement = document.getElementById(this.canvasId);
+    if (canvasElement && canvasElement.parentNode) {
+      canvasElement.parentNode.removeChild(canvasElement);
     }
     
     this.currentPreset = null;
