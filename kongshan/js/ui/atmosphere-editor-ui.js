@@ -2890,6 +2890,7 @@ function initializeBackgroundSelector() {
     { id: 'plum-blossom', name: '梅花', colors: ['#FFF3E0', '#FFE0B2'] },
     { id: 'starry-night', name: '星夜', colors: ['#070825', '#0A0D2E'] },
     { id: 'rotating-stars', name: '旋轉星空', colors: ['#000000', '#0A0D2E'] },
+    { id: 'twinkling-stars', name: '靜夜星空', colors: ['#02040d', '#0a1230'] },
     { id: 'lantern-valley', name: '元宵', colors: ['#1A0F1F', '#3A1F36'] },
     { id: 'rainfall', name: '雨幕', colors: ['#0B132B', '#1F3558'] },
     { id: 'green-mountain', name: '青山', colors: ['#4A7C2E', '#6B8E23'] },
@@ -2982,6 +2983,26 @@ function applyBackgroundPreview(bgId) {
         }
       }
     },
+        'twinkling-stars': {
+          colors: ['#02040d', '#050b1f', '#0e1839'],
+          direction: 'diagonal',
+          particle_animation: {
+            type: 'canvas',
+            preset: 'twinkling-stars',
+            config: {
+              maxStars: undefined, // 使用預設（移動端較少，桌面較多）
+              backgroundColor: '#030510',
+              backgroundAlpha: 0.82,
+              starIntensity: 1.2,
+              starSizeMultiplier: 1.08,
+              brightnessRange: [0.35, 0.95],
+              twinkleSpeedRange: [0.006, 0.02],
+              sparkleChance: 0.03,
+              sparkleBoost: 0.22,
+              starColorPalette: ['#fefefe', '#cfe8ff', '#ffe7c4', '#ffd2c2', '#c7d8ff']
+            }
+          }
+        },
     'lantern-valley': {
       colors: ['#120C1C', '#2D1B3D', '#3A283B'],
       direction: 'vertical',
@@ -3909,6 +3930,26 @@ function collectAtmosphereData(poem, status) {
             config: {
               hue: 217,
               maxStars: undefined // 使用默認值（移動設備 600，桌面 1400）
+            }
+          }
+        },
+        'twinkling-stars': {
+          colors: ['#02040d', '#050b1f', '#0e1839'],
+          direction: 'diagonal',
+          particle_animation: {
+            type: 'canvas',
+            preset: 'twinkling-stars',
+            config: {
+              maxStars: undefined, // 使用預設（移動端較少，桌面較多）
+              backgroundColor: '#030510',
+              backgroundAlpha: 0.82,
+              starIntensity: 1.2,
+              starSizeMultiplier: 1.08,
+              brightnessRange: [0.35, 0.95],
+              twinkleSpeedRange: [0.006, 0.02],
+              sparkleChance: 0.03,
+              sparkleBoost: 0.22,
+              starColorPalette: ['#fefefe', '#cfe8ff', '#ffe7c4', '#ffd2c2', '#c7d8ff']
             }
           }
         },

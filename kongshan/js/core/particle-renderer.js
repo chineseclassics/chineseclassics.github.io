@@ -106,8 +106,12 @@ export class ParticleRenderer {
     this.customStars = [];
     this.customGradientCache = null;
     this.customResizeHandler = null;
-    this.rotatingStarsConfig = null;
-    this.rotatingStarsVisualConfig = null;
+    this.customAnimationType = null;
+    this.starfieldConfig = null;
+    this.starfieldVisualConfig = null;
+    this.lastPreset = null;
+    this.lastConfig = null;
+    this.wasAnimatingBeforeHide = false;
     
     // 視窗可見性處理
     this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
@@ -136,10 +140,15 @@ export class ParticleRenderer {
     this.clear();
     
     this.currentPreset = preset;
+    this.lastPreset = preset;
+    this.lastConfig = this.cloneConfig(config);
     
     // 檢查是否為自定義 Canvas 動畫
     if (preset === 'rotating-stars') {
       return this.initRotatingStars(config);
+    }
+    if (preset === 'twinkling-stars') {
+      return this.initTwinklingStars(config);
     }
     
     // 使用 particles.js 的預設
@@ -660,6 +669,9 @@ export class ParticleRenderer {
       case 'rotating-stars':
         // 這個預設使用自定義 Canvas 動畫，不在這裡返回配置
         return null;
+      case 'twinkling-stars':
+        // 這個預設也使用自定義 Canvas 動畫
+        return null;
         
       default:
         return null;
@@ -714,7 +726,7 @@ export class ParticleRenderer {
       const minAlpha = Math.min(brightnessRangeRaw[0], brightnessRangeRaw[1]);
       const maxAlpha = Math.max(brightnessRangeRaw[0], brightnessRangeRaw[1]);
       
-      this.rotatingStarsVisualConfig = {
+      this.starfieldVisualConfig = {
         backgroundColor,
         backgroundAlpha,
         starSizeMultiplier,
@@ -727,7 +739,7 @@ export class ParticleRenderer {
       };
       
       // 保存配置以便在 resize 時使用
-      this.rotatingStarsConfig = { hue, maxStars };
+      this.starfieldConfig = { hue, maxStars };
       
       // 緩存漸變（性能優化）
       this.createGradientCache(hue, palette);
@@ -735,26 +747,120 @@ export class ParticleRenderer {
       // 初始化星星
       this.initStars(maxStars);
       
+      this.customAnimationType = 'rotating-stars';
+      
       // 開始動畫
       this.isAnimating = true;
       this.animateRotatingStars();
       
-      // 監聽窗口大小變化（避免重複添加監聽器）
-      if (!this.customResizeHandler) {
-        this.customResizeHandler = () => {
-          if (this.isAnimating && this.customCanvas && this.currentPreset === 'rotating-stars') {
-            this.resizeCustomCanvas();
-            // 重新初始化星星以適應新尺寸
-            const savedConfig = this.rotatingStarsConfig || { maxStars: this.isMobile ? 600 : 1400 };
-            this.initStars(savedConfig.maxStars);
-          }
-        };
-        window.addEventListener('resize', this.customResizeHandler);
-      }
+      // 綁定 resize 處理
+      this.setupCustomResizeHandler();
       
       return true;
     } catch (error) {
       console.error('初始化旋轉星空動畫失敗:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * 初始化靜態閃爍星空動畫（自定義 Canvas）
+   * @param {object} config - 動畫配置
+   */
+  initTwinklingStars(config = {}) {
+    try {
+      // 創建 Canvas 元素
+      this.customCanvas = document.createElement('canvas');
+      this.customCanvas.id = this.canvasId;
+      this.customCanvas.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      `;
+      this.container.appendChild(this.customCanvas);
+      
+      this.customCtx = this.customCanvas.getContext('2d');
+      this.resizeCustomCanvas();
+      
+      // 配置參數
+      const hue = config.hue !== undefined ? config.hue : 225;
+      const maxStars = config.maxStars !== undefined 
+        ? config.maxStars 
+        : (this.isMobile ? 420 : 950);
+      
+      const palette = Array.isArray(config.starColorPalette) && config.starColorPalette.length > 0
+        ? config.starColorPalette
+        : ['#fefefe', '#cfe8ff', '#ffe7c4', '#ffd8d0', '#c7d8ff'];
+      
+      const backgroundColor = config.backgroundColor || '#03060f';
+      const backgroundAlpha = typeof config.backgroundAlpha === 'number'
+        ? Math.min(Math.max(config.backgroundAlpha, 0.25), 0.9)
+        : 0.78;
+      const starSizeMultiplier = typeof config.starSizeMultiplier === 'number'
+        ? config.starSizeMultiplier
+        : 1.05;
+      const starIntensity = typeof config.starIntensity === 'number'
+        ? config.starIntensity
+        : 1.2;
+      const brightnessRangeRaw = Array.isArray(config.brightnessRange) && config.brightnessRange.length === 2
+        ? config.brightnessRange
+        : [0.35, 0.95];
+      const twinkleSpeedRangeRaw = Array.isArray(config.twinkleSpeedRange) && config.twinkleSpeedRange.length === 2
+        ? config.twinkleSpeedRange
+        : [0.006, 0.02];
+      const sparkleChance = typeof config.sparkleChance === 'number'
+        ? Math.min(Math.max(config.sparkleChance, 0), 0.2)
+        : 0.025;
+      const sparkleBoost = typeof config.sparkleBoost === 'number'
+        ? Math.min(Math.max(config.sparkleBoost, 0.05), 0.4)
+        : 0.2;
+      
+      const minAlpha = Math.min(brightnessRangeRaw[0], brightnessRangeRaw[1]);
+      const maxAlpha = Math.max(brightnessRangeRaw[0], brightnessRangeRaw[1]);
+      const twinkleMin = Math.min(twinkleSpeedRangeRaw[0], twinkleSpeedRangeRaw[1]);
+      const twinkleMax = Math.max(twinkleSpeedRangeRaw[0], twinkleSpeedRangeRaw[1]);
+      
+      this.starfieldVisualConfig = {
+        backgroundColor,
+        backgroundAlpha,
+        starSizeMultiplier,
+        starIntensity,
+        starColorPalette: palette,
+        brightnessRange: [
+          Math.min(Math.max(minAlpha, 0.15), 0.95),
+          Math.min(Math.max(maxAlpha, 0.25), 1)
+        ],
+        twinkleSpeedRange: [
+          Math.min(Math.max(twinkleMin, 0.001), 0.05),
+          Math.min(Math.max(twinkleMax, 0.002), 0.08)
+        ],
+        sparkleChance,
+        sparkleBoost
+      };
+      
+      this.starfieldConfig = { hue, maxStars };
+      
+      // 緩存漸變（性能優化）
+      this.createGradientCache(hue, palette);
+      
+      // 初始化星星
+      this.initTwinklingStarfield(maxStars);
+      
+      this.customAnimationType = 'twinkling-stars';
+      
+      // 開始動畫
+      this.isAnimating = true;
+      this.animateTwinklingStars();
+      
+      // 綁定 resize 處理
+      this.setupCustomResizeHandler();
+      
+      return true;
+    } catch (error) {
+      console.error('初始化靜態星空動畫失敗:', error);
       return false;
     }
   }
@@ -793,13 +899,13 @@ export class ParticleRenderer {
   }
   
   /**
-   * 初始化星星數組
+   * 初始化旋轉星空的星星數據
    */
   initStars(maxStars) {
     this.customStars = [];
     const w = this.customCanvas.width;
     const h = this.customCanvas.height;
-    const visualConfig = this.rotatingStarsVisualConfig || {};
+    const visualConfig = this.starfieldVisualConfig || {};
     const sizeMultiplier = typeof visualConfig.starSizeMultiplier === 'number'
       ? visualConfig.starSizeMultiplier
       : 1;
@@ -850,6 +956,54 @@ export class ParticleRenderer {
   }
   
   /**
+   * 初始化靜態閃爍星空的星星數據
+   */
+  initTwinklingStarfield(maxStars) {
+    this.customStars = [];
+    const w = this.customCanvas?.width || window.innerWidth;
+    const h = this.customCanvas?.height || window.innerHeight;
+    const visualConfig = this.starfieldVisualConfig || {};
+    const sizeMultiplier = typeof visualConfig.starSizeMultiplier === 'number'
+      ? visualConfig.starSizeMultiplier
+      : 1;
+    const brightnessRange = Array.isArray(visualConfig.brightnessRange) && visualConfig.brightnessRange.length === 2
+      ? visualConfig.brightnessRange
+      : [0.35, 0.95];
+    const twinkleRange = Array.isArray(visualConfig.twinkleSpeedRange) && visualConfig.twinkleSpeedRange.length === 2
+      ? visualConfig.twinkleSpeedRange
+      : [0.006, 0.02];
+    const minAlpha = Math.min(brightnessRange[0], brightnessRange[1]);
+    const maxAlpha = Math.max(brightnessRange[0], brightnessRange[1]);
+    const twinkleMin = Math.min(twinkleRange[0], twinkleRange[1]);
+    const twinkleMax = Math.max(twinkleRange[0], twinkleRange[1]);
+    const gradientCacheLength = Array.isArray(this.customGradientCache)
+      ? this.customGradientCache.length
+      : (this.customGradientCache ? 1 : 0);
+    const paletteLength = gradientCacheLength > 0 ? gradientCacheLength : 1;
+    
+    const randomRadius = () => {
+      const base = Math.pow(Math.random(), 1.6);
+      return (0.6 + base * 2.4) * sizeMultiplier;
+    };
+    
+    for (let i = 0; i < maxStars; i++) {
+      const localMin = minAlpha + Math.random() * 0.1;
+      const localMax = Math.min(maxAlpha + Math.random() * 0.05, 1);
+      
+      this.customStars.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        radius: randomRadius(),
+        twinklePhase: Math.random() * Math.PI * 2,
+        twinkleSpeed: twinkleMin + Math.random() * (twinkleMax - twinkleMin || 0.001),
+        minAlpha: Math.min(localMin, localMax - 0.05),
+        maxAlpha: localMax,
+        gradientIndex: Math.floor(Math.random() * paletteLength)
+      });
+    }
+  }
+  
+  /**
    * 調整自定義 Canvas 大小
    */
   resizeCustomCanvas() {
@@ -859,15 +1013,62 @@ export class ParticleRenderer {
   }
   
   /**
+   * 綁定自定義星空動畫的 resize 處理
+   */
+  setupCustomResizeHandler() {
+    if (this.customResizeHandler) {
+      window.removeEventListener('resize', this.customResizeHandler);
+      this.customResizeHandler = null;
+    }
+    
+    this.customResizeHandler = () => {
+      if (!this.isAnimating || !this.customCanvas) {
+        return;
+      }
+      
+      if (!this.currentPreset || this.customAnimationType !== this.currentPreset) {
+        return;
+      }
+      
+      this.resizeCustomCanvas();
+      const savedConfig = this.starfieldConfig || {};
+      const fallback = this.isMobile ? 500 : 1100;
+      const maxStars = savedConfig.maxStars || fallback;
+      
+      if (this.customAnimationType === 'rotating-stars') {
+        this.initStars(maxStars);
+      } else if (this.customAnimationType === 'twinkling-stars') {
+        this.initTwinklingStarfield(maxStars);
+      }
+    };
+    
+    window.addEventListener('resize', this.customResizeHandler);
+  }
+  
+  /**
+   * 暫停 particles.js 動畫（保留配置以便恢復）
+   */
+  pauseParticlesAnimation() {
+    if (this.customAnimationType || !this.currentPreset) {
+      this.isAnimating = false;
+      return;
+    }
+    
+    this.isAnimating = false;
+    this.clear(false);
+  }
+  
+  /**
    * 動畫循環（旋轉星空）
    */
   animateRotatingStars() {
     if (!this.isAnimating || !this.customCtx || !this.customCanvas) return;
+    if (this.customAnimationType !== 'rotating-stars') return;
     
     const w = this.customCanvas.width;
     const h = this.customCanvas.height;
-    const hue = this.rotatingStarsConfig?.hue ?? 217;
-    const visualConfig = this.rotatingStarsVisualConfig || {};
+    const hue = this.starfieldConfig?.hue ?? 217;
+    const visualConfig = this.starfieldVisualConfig || {};
     const backgroundAlpha = typeof visualConfig.backgroundAlpha === 'number'
       ? visualConfig.backgroundAlpha
       : 0.8;
@@ -945,13 +1146,98 @@ export class ParticleRenderer {
   }
   
   /**
+   * 動畫循環（靜態閃爍星空）
+   */
+  animateTwinklingStars() {
+    if (!this.isAnimating || !this.customCtx || !this.customCanvas) return;
+    if (this.customAnimationType !== 'twinkling-stars') return;
+    
+    const w = this.customCanvas.width;
+    const h = this.customCanvas.height;
+    const hue = this.starfieldConfig?.hue ?? 220;
+    const visualConfig = this.starfieldVisualConfig || {};
+    const backgroundAlpha = typeof visualConfig.backgroundAlpha === 'number'
+      ? visualConfig.backgroundAlpha
+      : 0.78;
+    const backgroundColor = visualConfig.backgroundColor || `hsla(${hue}, 62%, 6%, 1)`;
+    const starIntensity = typeof visualConfig.starIntensity === 'number'
+      ? visualConfig.starIntensity
+      : 1.2;
+    const sparkleChance = typeof visualConfig.sparkleChance === 'number'
+      ? visualConfig.sparkleChance
+      : 0.02;
+    const sparkleBoost = typeof visualConfig.sparkleBoost === 'number'
+      ? visualConfig.sparkleBoost
+      : 0.2;
+    const gradientCache = Array.isArray(this.customGradientCache)
+      ? this.customGradientCache
+      : (this.customGradientCache ? [this.customGradientCache] : []);
+    
+    // 背景層（保留拖尾）
+    this.customCtx.globalCompositeOperation = 'source-over';
+    this.customCtx.globalAlpha = Math.min(Math.max(backgroundAlpha, 0.2), 0.95);
+    this.customCtx.fillStyle = backgroundColor;
+    this.customCtx.fillRect(0, 0, w, h);
+    
+    // 加上淡淡的藍紫色漸層，增加層次
+    const gradientOverlay = this.customCtx.createLinearGradient(0, 0, 0, h);
+    gradientOverlay.addColorStop(0, 'rgba(8, 14, 35, 0.35)');
+    gradientOverlay.addColorStop(1, 'rgba(2, 4, 10, 0.65)');
+    this.customCtx.globalAlpha = 0.3;
+    this.customCtx.fillStyle = gradientOverlay;
+    this.customCtx.fillRect(0, 0, w, h);
+    
+    // 星星層
+    this.customCtx.globalCompositeOperation = 'lighter';
+    
+    for (let i = 0; i < this.customStars.length; i++) {
+      const star = this.customStars[i];
+      star.twinklePhase += star.twinkleSpeed;
+      
+      const twinkle = (Math.sin(star.twinklePhase) + 1) * 0.5;
+      let alpha = star.minAlpha + twinkle * (star.maxAlpha - star.minAlpha);
+      
+      if (Math.random() < sparkleChance) {
+        alpha = Math.min(alpha + sparkleBoost, 1);
+      }
+      
+      const paletteIndex = gradientCache.length > 0
+        ? gradientCache[star.gradientIndex % gradientCache.length]
+        : null;
+      const drawSize = star.radius * starIntensity;
+      this.customCtx.globalAlpha = Math.min(alpha * starIntensity, 1);
+      
+      if (paletteIndex) {
+        this.customCtx.drawImage(
+          paletteIndex,
+          star.x - drawSize / 2,
+          star.y - drawSize / 2,
+          drawSize,
+          drawSize
+        );
+      } else {
+        this.customCtx.fillStyle = '#ffffff';
+        this.customCtx.beginPath();
+        this.customCtx.arc(star.x, star.y, drawSize / 2, 0, Math.PI * 2);
+        this.customCtx.fill();
+      }
+    }
+    
+    this.customAnimationFrameId = requestAnimationFrame(() => this.animateTwinklingStars());
+  }
+  
+  /**
    * 開始動畫
    */
   start() {
     // 如果是自定義 Canvas 動畫，重新啟動動畫循環
-    if (this.currentPreset === 'rotating-stars' && this.customCanvas && !this.isAnimating) {
+    if (this.customCanvas && this.customAnimationType && !this.isAnimating) {
       this.isAnimating = true;
-      this.animateRotatingStars();
+      if (this.customAnimationType === 'rotating-stars') {
+        this.animateRotatingStars();
+      } else if (this.customAnimationType === 'twinkling-stars') {
+        this.animateTwinklingStars();
+      }
     } else {
       // particles.js 會在 setAnimation 時自動開始
       this.isAnimating = true;
@@ -962,24 +1248,27 @@ export class ParticleRenderer {
    * 停止動畫
    */
   stop() {
+    if (!this.customAnimationType) {
+      this.isAnimating = false;
+      this.clear();
+      return;
+    }
+    
     this.isAnimating = false;
     
-    // 停止自定義 Canvas 動畫
+    // 停止自定義 Canvas 動畫（但保留畫布，方便恢復）
     if (this.customAnimationFrameId) {
       cancelAnimationFrame(this.customAnimationFrameId);
       this.customAnimationFrameId = null;
     }
-    
-    // particles.js 沒有直接的停止方法，通過清除來停止
-    this.clear();
   }
   
   /**
    * 響應視窗大小變化
    */
   resize() {
-    // 自定義 Canvas 動畫的 resize 已在 initRotatingStars 中處理
-    if (this.currentPreset === 'rotating-stars') {
+    // 自定義 Canvas 動畫的 resize 已在專屬邏輯中處理
+    if (this.customAnimationType) {
       return;
     }
     
@@ -997,16 +1286,34 @@ export class ParticleRenderer {
    */
   handleVisibilityChange() {
     if (document.hidden) {
-      // 頁面隱藏時暫停動畫（通過清除）
-      if (this.isAnimating) {
+      if (!this.isAnimating) {
+        this.wasAnimatingBeforeHide = false;
+        return;
+      }
+      
+      this.wasAnimatingBeforeHide = true;
+      
+      if (this.customAnimationType) {
         this.stop();
+      } else {
+        this.pauseParticlesAnimation();
       }
-    } else {
-      // 頁面顯示時恢復動畫
-      if (this.currentPreset && !this.isAnimating) {
-        this.setAnimation(this.currentPreset, {});
-        this.start();
-      }
+      return;
+    }
+    
+    if (!this.wasAnimatingBeforeHide) {
+      return;
+    }
+    
+    this.wasAnimatingBeforeHide = false;
+    
+    if (this.customAnimationType) {
+      this.start();
+      return;
+    }
+    
+    if (this.lastPreset) {
+      this.setAnimation(this.lastPreset, this.lastConfig || {});
     }
   }
   
@@ -1017,11 +1324,34 @@ export class ParticleRenderer {
     this.clear();
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
   }
+
+  /**
+   * 複製配置物件（避免引用影響）
+   */
+  cloneConfig(config) {
+    if (!config || typeof config !== 'object') {
+      return {};
+    }
+    
+    if (typeof structuredClone === 'function') {
+      try {
+        return structuredClone(config);
+      } catch (error) {
+        // 瀏覽器不支援或資料含不可序列化內容時退回其他方法
+      }
+    }
+    
+    try {
+      return JSON.parse(JSON.stringify(config));
+    } catch (error) {
+      return { ...config };
+    }
+  }
   
   /**
    * 清除當前粒子動畫
    */
-  clear() {
+  clear(resetPreset = true) {
     this.isAnimating = false;
     
     // 停止自定義 Canvas 動畫
@@ -1037,8 +1367,11 @@ export class ParticleRenderer {
       this.customCtx = null;
       this.customStars = [];
       this.customGradientCache = null;
-      this.rotatingStarsConfig = null;
-      this.rotatingStarsVisualConfig = null;
+      this.starfieldConfig = null;
+      this.starfieldVisualConfig = null;
+      if (resetPreset) {
+        this.customAnimationType = null;
+      }
     }
     
     // 移除 resize 監聽器
@@ -1081,6 +1414,10 @@ export class ParticleRenderer {
       canvasElement.parentNode.removeChild(canvasElement);
     }
     
-    this.currentPreset = null;
+    if (resetPreset) {
+      this.currentPreset = null;
+      this.lastPreset = null;
+      this.lastConfig = null;
+    }
   }
 }
