@@ -837,7 +837,7 @@
                 id: 'hanmo',
                 name: '翰墨齋',
                 subtitle: '現代中文體驗',
-                icon: '📝',
+                icon: 'fas fa-pen-nib',
                 accentColor: 'border-l-blue-500',
                 titleColor: 'text-blue-600 dark:text-blue-400'
             },
@@ -845,7 +845,7 @@
                 id: 'qiangu',
                 name: '千古堂',
                 subtitle: '古代經典體驗',
-                icon: '🏛️',
+                icon: 'fas fa-landmark',
                 accentColor: 'border-l-amber-500',
                 titleColor: 'text-amber-700 dark:text-amber-400'
             },
@@ -853,7 +853,7 @@
                 id: 'jinxiu',
                 name: '錦繡坊',
                 subtitle: '中華文化體驗',
-                icon: '🎨',
+                icon: 'fas fa-palette',
                 accentColor: 'border-l-rose-500',
                 titleColor: 'text-rose-700 dark:text-rose-400'
             },
@@ -861,7 +861,7 @@
                 id: 'yunwai',
                 name: '雲外樓',
                 subtitle: '實驗與跨界體驗',
-                icon: '☁️',
+                icon: 'fas fa-cloud',
                 accentColor: 'border-l-cyan-500',
                 titleColor: 'text-cyan-700 dark:text-cyan-400'
             }
@@ -883,7 +883,7 @@
                 id: 'cilong',
                 category: 'hanmo',
                 name: '貪吃龍',
-                icon: '🐉',
+                icon: 'fas fa-dragon',
                 gradient: 'from-lime-400 to-green-500',
                 url: '/cilong.html',
                 description: '在經典的貪吃蛇玩法中，操控呆萌龍寶收集漢字，組成詞語，挑戰你的詞彙量和反應速度。'
@@ -1038,15 +1038,6 @@
                 description: '基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。'
             },
             {
-                id: 'honglou-xuantimu',
-                category: 'qiangu',
-                name: '《紅樓夢》論文選題',
-                icon: 'fas fa-project-diagram',
-                gradient: 'from-purple-600 to-pink-600',
-                url: '/honglou-xuantimu/index.html',
-                description: '互動式思維導圖展示論文選題的正確流程：從文本細讀出發，避免理念先行，幫助學生理解如何從具象的 primary sources 生發出獨特的研究觀點'
-            },
-            {
                 id: 'shuyuanclassicchat',
                 category: 'qiangu',
                 name: '太虛幻聊',
@@ -1099,7 +1090,7 @@
                 id: 'shuangshe',
                 category: 'yunwai',
                 name: '雙蛇大戰',
-                icon: '🐍',
+                icon: 'fas fa-snake',
                 gradient: 'from-emerald-600 to-teal-500',
                 url: '/2snakes.html',
                 description: '史上最刺激的雙人蛇類對戰遊戲！兩條蛇在同一戰場展開生死較量，使用特殊道具和策略技巧擊敗對手，支援WASD+方向鍵雙人即時對戰'
@@ -1359,6 +1350,17 @@
             `;
         }
 
+        function getRealmIconHtml(icon, sizeClass = '') {
+            if (!icon) return '';
+            const baseClass = ['inline-flex', 'items-center', 'justify-center', sizeClass].filter(Boolean).join(' ').trim();
+            const isFaIcon = typeof icon === 'string' && (icon.startsWith('fas ') || icon.includes('fa-'));
+            if (isFaIcon) {
+                const iconClasses = `${icon} ${baseClass}`.trim();
+                return `<i class="${iconClasses}" aria-hidden="true"></i>`;
+            }
+            return `<span class="${baseClass}">${icon}</span>`;
+        }
+
         // 注：返回主页按钮现在在标题栏中，不再需要单独渲染
 
         // 獲取體驗標籤樣式（根據境地主題色）
@@ -1425,7 +1427,7 @@
                         
                         <!-- 标题行 -->
                         <div class="flex items-center gap-3 mb-2">
-                            <span class="text-2xl">${realm.icon}</span>
+                            ${getRealmIconHtml(realm.icon, 'text-2xl')}
                             <h2 class="text-xl font-bold ${realm.titleColor}">${realm.name}</h2>
                             <span class="text-sm text-gray-400">·</span>
                             <span class="text-sm text-gray-500 dark:text-gray-400">${realm.subtitle}</span>
@@ -1486,7 +1488,7 @@
                     html += `
                         <div class="col-span-full ${index > 0 ? 'mt-3' : ''} mb-1 px-1">
                             <div class="flex items-center gap-1.5">
-                                <span class="text-xs">${realm.icon}</span>
+                                ${getRealmIconHtml(realm.icon, 'text-xs')}
                                 <span class="text-[10px] font-semibold ${realm.titleColor}">${realm.name}</span>
                                 <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                             </div>
