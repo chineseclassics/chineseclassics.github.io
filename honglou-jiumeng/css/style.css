@@ -142,6 +142,10 @@
             transition: color 0.3s ease;
         }
         
+        .status-value.ap-warning {
+            color: #d97706;
+        }
+        
         /* 資源足夠時顯示高亮 */
         .status-value.sufficient {
             color: #4CAF50;
@@ -167,6 +171,10 @@
             
             .status-value.insufficient {
                 color: #E57373;
+            }
+            
+            .status-value.ap-warning {
+                color: #f0b66d;
             }
         }
         

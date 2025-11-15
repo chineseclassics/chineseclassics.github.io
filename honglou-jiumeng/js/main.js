@@ -1,385 +1,7 @@
-// 遊戲數據
-        const gameData = {
-            cycle: 1,
-            jieqiIndex: 0,
-            resources: {
-                stone: 5,      // 靈石 - 用於建造大觀園的建築，通過尋找寶玉的領悟而獲得
-                tear: 1,       // 絳珠 - 林黛玉的淚水，用於澆灌花魂
-                memory: 0
-            },
-            jieqi: [
-                {name: "立春", icon: "🌱", season: "春"},
-                {name: "雨水", icon: "🌧️", season: "春"},
-                {name: "驚蟄", icon: "⚡", season: "春"},
-                {name: "春分", icon: "☯️", season: "春"},
-                {name: "清明", icon: "🌿", season: "春"},
-                {name: "穀雨", icon: "💧", season: "春"},
-                {name: "立夏", icon: "☀️", season: "夏"},
-                {name: "小滿", icon: "🌾", season: "夏"},
-                {name: "芒種", icon: "👨‍🌾", season: "夏"},
-                {name: "夏至", icon: "🔆", season: "夏"},
-                {name: "小暑", icon: "🔥", season: "夏"},
-                {name: "大暑", icon: "🌡️", season: "夏"},
-                {name: "立秋", icon: "🍂", season: "秋"},
-                {name: "處暑", icon: "⛅", season: "秋"},
-                {name: "白露", icon: "💦", season: "秋"},
-                {name: "秋分", icon: "☯️", season: "秋"},
-                {name: "寒露", icon: "❄️", season: "秋"},
-                {name: "霜降", icon: "⚪", season: "秋"},
-                {name: "立冬", icon: "🧣", season: "冬"},
-                {name: "小雪", icon: "🌨️", season: "冬"},
-                {name: "大雪", icon: "❄️", season: "冬"},
-                {name: "冬至", icon: "⚫", season: "冬"},
-                {name: "小寒", icon: "🥶", season: "冬"},
-                {name: "大寒", icon: "⛄", season: "冬"}
-            ],
-            tears: [
-                {
-                    id: "last-tear",
-                    name: "最後一滴淚",
-                    icon: "💧",
-                    description: "黛玉臨終前的最後一滴淚水",
-                    potency: 5,
-                    collected: true,
-                    scene: "黛玉在半夢半醒之間，眼角流下最後一滴清淚。"
-                },
-                {
-                    id: "burial-tear",
-                    name: "葬花淚",
-                    icon: "💧",
-                    description: "黛玉葬花時的淚水",
-                    potency: 3,
-                    collected: false,
-                    scene: "花謝花飛飛滿天，紅消香斷有誰憐？",
-                    relatedMemory: "daiyu-burial"
-                },
-                {
-                    id: "parting-tear",
-                    name: "離別淚",
-                    icon: "💧",
-                    description: "黛玉離開姑蘇，與寶玉初別時的淚水",
-                    potency: 2,
-                    collected: false,
-                    scene: "黛玉道：\"寶玉，你好生在家裡念書，不要想著我。\"說著，眼淚不覺流下。",
-                    relatedMemory: "first-meeting"
-                },
-                {
-                    id: "poem-tear",
-                    name: "詩詞淚",
-                    icon: "💧",
-                    description: "黛玉吟詩落淚時的淚水",
-                    potency: 3,
-                    collected: false,
-                    scene: "一年三百六十日，風刀霜劍嚴相逼。明媚鮮妍能幾時，一朝漂泊難尋覓。",
-                    relatedMemory: "daiyu-poem"
-                },
-                {
-                    id: "jealousy-tear",
-                    name: "醋意淚",
-                    icon: "💧",
-                    description: "黛玉因醋意而落下的淚水",
-                    potency: 2,
-                    collected: false,
-                    scene: "莫叫金玉堆成案，展放芙蓉軟十三。\"說到此處，不覺滴下淚來。",
-                    relatedMemory: "daiyu-jealousy"
-                },
-                {
-                    id: "misunderstanding-tear",
-                    name: "誤會淚",
-                    icon: "💧",
-                    description: "黛玉與寶玉因誤會而流下的淚水",
-                    potency: 3,
-                    collected: false,
-                    scene: "我何曾說過一句，半句輕薄的話？你就拿著我的話去取笑。",
-                    relatedMemory: "misunderstanding"
-                },
-                {
-                    id: "promise-tear",
-                    name: "盟誓淚",
-                    icon: "💧",
-                    description: "黛玉與寶玉盟誓時的淚水",
-                    potency: 4,
-                    collected: false,
-                    scene: "天盡頭，海盡頭，在那裡握別久長候。",
-                    relatedMemory: "promise-memory"
-                },
-                {
-                    id: "destruction-tear",
-                    name: "焚稿淚",
-                    icon: "💧",
-                    description: "黛玉焚毀詩稿時的淚水",
-                    potency: 5,
-                    collected: false,
-                    scene: "黛玉心中自思道:\"我死了，這些墨寶還在，豈不大為世人恥笑。\"於是便命丫環將前所作之詩稿盡行燒毀。",
-                    relatedMemory: "burn-manuscripts"
-                },
-                {
-                    id: "first-tear",
-                    name: "初遇淚",
-                    icon: "💧",
-                    description: "黛玉初到榮國府落下的第一滴淚",
-                    potency: 2,
-                    collected: false,
-                    scene: "黛玉道:\"我來了幾日，也覺這裡的景致好，物件新奇，人也接風。但我少什麼不好，又沒人不疼，怎麼捨得回去呢。\"說著就有淚眼了。",
-                    relatedMemory: "first-tear"
-                }
-            ],
-            buildings: [
-                {
-                    id: "base-camp",
-                    name: "警幻仙閣",
-                    icon: "🏯",
-                    description: "輪迴起點，神瑛侍者的居所",
-                    cost: {stone: 0, tear: 0},
-                    unlocked: true,
-                    built: true,
-                    position: 12,
-                    decayRate: 0,
-                    status: "完好"
-                },
-                {
-                    id: "xiao-xiang",
-                    name: "瀟湘館",
-                    icon: "🏠",
-                    description: "黛玉的居所，四面環竹，幽雅別致",
-                    cost: {stone: 10, tear: 1},
-                    unlocked: true,
-                    built: false,
-                    position: 6,
-                    decayRate: 0.2,
-                    relatedFlower: "daiyu-flower",
-                    status: "未建造"
-                },
-                {
-                    id: "yi-hong",
-                    name: "怡紅院",
-                    icon: "🏡",
-                    description: "寶玉的居所，桂、薔、棣棠等花環繞",
-                    cost: {stone: 10, tear: 1},
-                    unlocked: true,
-                    built: false,
-                    position: 8,
-                    decayRate: 0.15,
-                    relatedFlower: "baoyu-flower",
-                    status: "未建造"
-                },
-                {
-                    id: "heng-wu",
-                    name: "蘅蕪苑",
-                    icon: "🏣",
-                    description: "寶釵的居所，香草遍植，清雅別致",
-                    cost: {stone: 10, tear: 1},
-                    unlocked: true,
-                    built: false,
-                    position: 16,
-                    decayRate: 0.1,
-                    relatedFlower: "baochai-flower",
-                    status: "未建造"
-                },
-                {
-                    id: "hai-tang",
-                    name: "海棠社",
-                    icon: "🏛️",
-                    description: "湘雲居所，梨花開遍",
-                    cost: {stone: 15, tear: 1},
-                    unlocked: false,
-                    built: false,
-                    position: 18,
-                    decayRate: 0.25,
-                    relatedFlower: "xiangyun-flower",
-                    status: "未解鎖"
-                },
-                {
-                    id: "tan-chun",
-                    name: "秋爽齋",
-                    icon: "🏘️",
-                    description: "探春的居所，整潔素雅",
-                    cost: {stone: 15, tear: 1},
-                    unlocked: false,
-                    built: false,
-                    position: 2,
-                    decayRate: 0.2,
-                    relatedFlower: "tanchun-flower",
-                    status: "未解鎖"
-                }
-            ],
-            flowers: [
-                {
-                    id: "daiyu-flower",
-                    name: "芙蓉",
-                    character: "林黛玉",
-                    icon: "🌺",
-                    description: "嬌艷如黛玉，花開易飄零",
-                    level: 0,
-                    maxLevel: 5,
-                    growth: 0,
-                    unlocked: false,
-                    position: -1,
-                    needsBuilding: "xiao-xiang",
-                    specialCare: "需用葬花淚澆灌",
-                    seasonalGrowth: {春: 1.5, 夏: 1, 秋: 0.5, 冬: 0.2},
-                    tearPreference: ["burial-tear", "destruction-tear"],
-                    judgmentPoem: "可嘆停機德，堪憐詠絮才。玉帶林中掛，金簪雪裡埋。",
-                    memories: [],
-                    status: "未解鎖"
-                },
-                {
-                    id: "baochai-flower",
-                    name: "牡丹",
-                    character: "薛寶釵",
-                    icon: "🌹",
-                    description: "雍容華貴如寶釵，四季常青",
-                    level: 0,
-                    maxLevel: 5,
-                    growth: 0,
-                    unlocked: false,
-                    position: -1,
-                    needsBuilding: "heng-wu",
-                    specialCare: "需用醋意淚澆灌",
-                    seasonalGrowth: {春: 1, 夏: 1, 秋: 1, 冬: 0.8},
-                    tearPreference: ["jealousy-tear", "misunderstanding-tear"],
-                    judgmentPoem: "可嘆停機德，堪憐詠絮才。玉帶林中掛，金簪雪裡埋。",
-                    memories: [],
-                    status: "未解鎖"
-                },
-                {
-                    id: "xiangyun-flower",
-                    name: "海棠",
-                    character: "史湘雲",
-                    icon: "🌸",
-                    description: "如醉如痴如湘雲，需以酒水澆灌",
-                    level: 0,
-                    maxLevel: 5,
-                    growth: 0,
-                    unlocked: false,
-                    position: -1,
-                    needsBuilding: "hai-tang",
-                    specialCare: "雨季生長加速",
-                    seasonalGrowth: {春: 1.2, 夏: 0.8, 秋: 1, 冬: 0.5},
-                    tearPreference: ["poem-tear", "parting-tear"],
-                    judgmentPoem: "富貴又何為？襁褓之間父母違。展眼弔斜暉，湘江水逝楚雲飛。",
-                    memories: [],
-                    status: "未解鎖"
-                },
-                {
-                    id: "tanchun-flower",
-                    name: "薔薇",
-                    character: "探春",
-                    icon: "🌷",
-                    description: "風姿俊逸如探春，自有一番風骨",
-                    level: 0,
-                    maxLevel: 5,
-                    growth: 0,
-                    unlocked: false,
-                    position: -1,
-                    needsBuilding: "tan-chun",
-                    specialCare: "秋季需額外照料",
-                    seasonalGrowth: {春: 1, 夏: 1.2, 秋: 0.7, 冬: 0.3},
-                    tearPreference: ["first-tear", "promise-tear"],
-                    judgmentPoem: "才自精明志自高，生於末世運偏消。清明涕送江邊望，千里東風一夢遙。",
-                    memories: [],
-                    status: "未解鎖"
-                }
-            ],
-            birds: [
-                {
-                    id: "xiren-bird",
-                    name: "喜鵲",
-                    character: "襲人",
-                    icon: "🐦",
-                    description: "勤勞似襲人，每日自動收集淚水",
-                    level: 0,
-                    unlocked: false,
-                    relatedFlower: "baoyu-flower",
-                    abilities: ["每日自動收集淚水", "驅散部分衰敗"],
-                    status: "未解鎖"
-                },
-                {
-                    id: "qingwen-bird",
-                    name: "金翅雀",
-                    character: "晴雯",
-                    icon: "🐤",
-                    description: "靈巧如晴雯，能修復破損之物",
-                    level: 0,
-                    unlocked: false,
-                    relatedFlower: "baoyu-flower",
-                    abilities: ["修復破損建築", "提高淚水保存"],
-                    status: "未解鎖"
-                },
-                {
-                    id: "pinger-bird",
-                    name: "畫眉",
-                    character: "平兒",
-                    icon: "🐧",
-                    description: "圓融如平兒，調解花魂衝突",
-                    level: 0,
-                    unlocked: false,
-                    relatedFlower: "baochai-flower",
-                    abilities: ["收集額外淚水", "調解花魂衝突"],
-                    status: "未解鎖"
-                }
-            ],
-            memories: [
-                // 黛玉流淚的記憶 - 用於獲取絳珠
-                {
-                    id: "daiyu-burial",
-                    name: "葬花記憶",
-                    icon: "💮",
-                    description: "黛玉葬花的記憶碎片",
-                    collected: false,
-                    requiredJieqi: "清明",
-                    content: "花謝花飛飛滿天，紅消香斷有誰憐？游絲軟系飄春榭，落絮輕沾撲繡簾。閨中女兒惜春暮，愁緒滿懷無釋處。手把花鋤出繡閨，忍踏落花來復去。",
-                    relatedTear: "burial-tear",
-                    type: "tear"
-                },
-                // 其他記憶保持不變...
-            ],
-            cells: Array(25).fill().map((_, i) => ({
-                id: i,
-                type: "empty",
-                buildingId: null,
-                flowerId: null,
-                memoryId: null,
-                decayValue: 0,
-                unlocked: i === 12 || [6, 7, 8, 11, 13, 16, 17, 18].includes(i)
-            })),
-            events: [
-                {
-                    id: "warning-dream",
-                    title: "警幻入夢",
-                    description: "警幻仙子託夢，講述大觀園的前世",
-                    triggered: false,
-                    requiredCycle: 1,
-                    requiredJieqi: "冬至",
-                    content: "警幻道：'神瑛，今你已回來，攜著絳珠的最後一滴淚水。她幾世輪迴，為還你當年的一盆水，流盡萬千淚水。如今你可願用她的淚，反哺眾花魂？'"
-                },
-                {
-                    id: "white-ground",
-                    title: "白茫茫結局",
-                    description: "終極結局，一切歸於虛無",
-                    triggered: false,
-                    requiredCycle: 3,
-                    requiredJieqi: "大寒",
-                    content: "白茫茫大地一片真乾淨！"
-                }
-            ],
-            suggestedActions: {
-                nextBuildingId: null,  // 建議下一步建造的建築
-                nextFlowerId: null,    // 建議下一步種植的花魂
-                nextAction: null       // 建議下一步執行的操作 (collect-tears, search-memories, advance-jieqi)
-            },
-            tutorialCompleted: false,
-            tutorialStep: 0,
-            idleTime: 0,              // 用戶閒置時間
-            lastActionTime: Date.now() // 上次操作時間
-        };
-        
-        // 等待頁面加載完成
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeGame();
-        });
-        
-        function initializeGame() {
+import { gameData, featureFlags, config, actionCosts } from './state.js';
+
+// 遊戲主流程
+export function initializeGame() {
             // 安全地初始化DOM元素引用
             const elements = {
                 // 基本狀態顯示
@@ -389,6 +11,7 @@
                 tearCount: document.getElementById('tear-count'),
                 stoneCount: document.getElementById('stone-count'),
                 memoryCount: document.getElementById('memory-count'),
+                actionPointsCount: document.getElementById('action-points-count'),
                 cycleProgressBar: document.getElementById('cycle-progress-bar'),
                 
                 // 計數器
@@ -409,6 +32,7 @@
                 advanceJieqiBtn: document.getElementById('advance-jieqi'),
                 collectTearsBtn: document.getElementById('collect-tears'),
                 searchMemoriesBtn: document.getElementById('search-memories'),
+                actionsPanel: document.getElementById('actions-panel'),
                 
                 // 面板幫助按鈕
                 actionsHelp: document.getElementById('actions-help'),
@@ -460,6 +84,11 @@
                 actionSuggestion: document.getElementById('action-suggestion'),
                 bubbleClose: document.getElementById('bubble-close')
             };
+            
+            let lowActionPointHintShown = false;
+
+            initializeActionCostLabels();
+            updateActionPointsUI();
             
             try {
                 // 設置初始建築
@@ -523,6 +152,105 @@
             } catch (error) {
                 console.error("遊戲初始化錯誤:", error);
                 showHint('錯誤', '遊戲初始化失敗，請刷新頁面重試', '❌');
+            }
+            
+            function initializeActionCostLabels() {
+                if (!elements.actionsPanel) return;
+                const advanceCost = document.querySelector('#advance-jieqi .action-cost');
+                if (advanceCost) {
+                    advanceCost.innerHTML = '<span class="cost-icon">⏱️</span>推進後重置行動力';
+                }
+                
+                if (!featureFlags.actionPoints) return;
+                
+                const collectCost = document.querySelector('#collect-tears .action-cost');
+                if (collectCost) {
+                    collectCost.innerHTML = `<span class="cost-icon">⚡</span>消耗: ${actionCosts.collectTears} 行動力`;
+                }
+                
+                const searchCost = document.querySelector('#search-memories .action-cost');
+                if (searchCost) {
+                    searchCost.innerHTML = `
+                        <span class="cost-icon">⚡</span>${actionCosts.searchMemories} 行動力
+                        · <span class="cost-icon">💧</span>2 絳珠
+                    `;
+                }
+            }
+            
+            function updateActionPointsUI(options = {}) {
+                if (!featureFlags.actionPoints) return;
+                
+                if (elements.actionPointsCount) {
+                    elements.actionPointsCount.textContent = `${gameData.currentActionPoints}/${gameData.actionPointsPerJieqi}`;
+                    elements.actionPointsCount.classList.toggle('ap-warning', gameData.currentActionPoints <= config.actionPointWarningThreshold);
+                    
+                    if (options.animate) {
+                        elements.actionPointsCount.classList.add('resource-change');
+                        setTimeout(() => elements.actionPointsCount?.classList.remove('resource-change'), 500);
+                    }
+                }
+                
+                updateActionButtonsState();
+            }
+            
+            function updateActionButtonsState() {
+                if (!featureFlags.actionPoints) return;
+                
+                const toggleButton = (button, cost) => {
+                    if (!button) return;
+                    const disabled = gameData.currentActionPoints < cost;
+                    button.disabled = disabled;
+                    button.classList.toggle('disabled', disabled);
+                    button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+                };
+                
+                toggleButton(elements.collectTearsBtn, actionCosts.collectTears);
+                toggleButton(elements.searchMemoriesBtn, actionCosts.searchMemories);
+            }
+            
+            function consumeActionPoints(cost = 0, contextLabel) {
+                if (!featureFlags.actionPoints || cost <= 0) {
+                    return true;
+                }
+                
+                if (gameData.currentActionPoints < cost) {
+                    handleActionPointDepletion(contextLabel);
+                    return false;
+                }
+                
+                gameData.currentActionPoints -= cost;
+                updateActionPointsUI();
+                
+                if (gameData.currentActionPoints <= config.actionPointWarningThreshold && !lowActionPointHintShown) {
+                    showHint('行動力將盡', '行動力即將耗盡，可先安排收尾或推進節氣', '⚠️');
+                    lowActionPointHintShown = true;
+                }
+                
+                return true;
+            }
+            
+            function handleActionPointDepletion(contextLabel) {
+                if (!featureFlags.actionPoints) return;
+                
+                const message = contextLabel ? `${contextLabel}需要行動力，請推進節氣恢復。` : '行動力不足，推進節氣可恢復。';
+                showHint('行動力不足', message, '⏳');
+                
+                if (elements.advanceJieqiBtn) {
+                    elements.advanceJieqiBtn.classList.add('recommended');
+                    setTimeout(() => elements.advanceJieqiBtn?.classList.remove('recommended'), 2000);
+                }
+            }
+            
+            function resetActionPoints(showToast = false) {
+                if (!featureFlags.actionPoints) return;
+                gameData.actionPointsPerJieqi = config.actionPointsPerJieqi;
+                gameData.currentActionPoints = config.actionPointsPerJieqi;
+                lowActionPointHintShown = false;
+                updateActionPointsUI({ animate: true });
+                
+                if (showToast) {
+                    showHint('行動力恢復', '新節氣開始，行動力已回滿。', '✨');
+                }
             }
             
             // 初始化園林格子
@@ -826,8 +554,10 @@
                     item.addEventListener('click', () => {
                         const tearId = item.dataset.tearId;
                         const cellId = parseInt(item.dataset.cellId);
-                        waterFlowerWithTear(cellId, tearId);
-                        hideDialog();
+                        const success = waterFlowerWithTear(cellId, tearId);
+                        if (success) {
+                            hideDialog();
+                        }
                     });
                 });
             }
@@ -835,12 +565,16 @@
             // 用淚水澆灌花魂 - 改進版
             function waterFlowerWithTear(cellId, tearId) {
                 const cell = gameData.cells[cellId];
-                if (!cell.flowerId) return;
+                if (!cell.flowerId) return false;
                 
                 const flower = gameData.flowers.find(f => f.id === cell.flowerId);
                 const tear = gameData.tears.find(t => t.id === tearId);
                 
-                if (!flower || !tear) return;
+                if (!flower || !tear) return false;
+                
+                if (!consumeActionPoints(actionCosts.waterFlower, '澆灌花魂')) {
+                    return false;
+                }
                 
                 // 更新最後操作時間
                 gameData.lastActionTime = Date.now();
@@ -981,6 +715,8 @@
                         ${seasonMultiplier > 1 ? `<p style="color: #4CAF50; margin-top: 10px;">當前季節 (${currentSeason}) 對此花魂成長有利！</p>` : ''}
                     </div>`
                 });
+                
+                return true;
             }
             
             // 顯示建造對話框 - 改進版
@@ -1217,6 +953,10 @@
                     return;
                 }
                 
+                if (!consumeActionPoints(actionCosts.plantFlower, '種植花魂')) {
+                    return;
+                }
+                
                 // 更新花魂和單元格狀態
                 flower.position = cellId;
                 flower.status = "生長中";
@@ -1287,6 +1027,15 @@
                             </p>
                         </div>`
                     });
+                    return;
+                }
+                
+                const repairApCost = Math.min(
+                    actionCosts.repairBuildingMax, 
+                    Math.max(actionCosts.repairBuildingMin, Math.ceil(decayValue * 3))
+                );
+                
+                if (!consumeActionPoints(repairApCost, '修復建築')) {
                     return;
                 }
                 
@@ -1504,6 +1253,8 @@
                 gameData.jieqiIndex = (gameData.jieqiIndex + 1) % 24;
                 const newJieqi = gameData.jieqi[gameData.jieqiIndex];
                 
+                resetActionPoints(true);
+                
                 // 播放節氣變化動畫
                 const jieqiIcon = document.querySelector('.jieqi-icon');
                 const jieqiIndicator = elements.jieqiIndicator || document.querySelector('#jieqi-indicator');
@@ -1660,6 +1411,10 @@
             
             // 收集絳珠 - 改進版
             function collectTears() {
+                if (!consumeActionPoints(actionCosts.collectTears, '尋找絳珠')) {
+                    return;
+                }
+                
                 // 更新最後操作時間
                 gameData.lastActionTime = Date.now();
                 
@@ -1790,16 +1545,6 @@
             
             // 尋找寶玉領悟 - 改進版
             function searchMemories() {
-                // 更新最後操作時間
-                gameData.lastActionTime = Date.now();
-                
-                // 記錄按鈕點擊類型，用於引導生成寶玉領悟類型的記憶
-                try {
-                    localStorage.setItem('lastButtonClicked', 'search-memories');
-                } catch (e) {
-                    console.log("無法存儲按鈕點擊信息:", e);
-                }
-                
                 if (gameData.resources.tear < 2) {
                     showMemoryDialog({
                         title: '絳珠不足',
@@ -1811,6 +1556,20 @@
                         </div>`
                     });
                     return;
+                }
+                
+                if (!consumeActionPoints(actionCosts.searchMemories, '尋找寶玉領悟')) {
+                    return;
+                }
+                
+                // 更新最後操作時間
+                gameData.lastActionTime = Date.now();
+                
+                // 記錄按鈕點擊類型，用於引導生成寶玉領悟類型的記憶
+                try {
+                    localStorage.setItem('lastButtonClicked', 'search-memories');
+                } catch (e) {
+                    console.log("無法存儲按鈕點擊信息:", e);
                 }
                 
                 // 扣除資源
