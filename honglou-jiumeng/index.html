@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="紅樓舊夢是以《紅樓夢》為背景的互動養成遊戲，透過節氣輪迴、資源管理與記憶收集，重建大觀園並完成還淚之旅。">
+    <title>紅樓舊夢 · 還淚緣</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">紅樓舊夢·還淚緣</h1>
+            <p class="subtitle">神瑛侍者的還淚之旅</p>
+        </div>
+        
+        <div class="game-status">
+            <div class="cycle-progress">
+                <div class="cycle-progress-bar" id="cycle-progress-bar" style="width: 4.2%"></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">
+                    <span class="status-icon">🔄</span>輪迴週期
+                </div>
+                <div class="status-value" id="cycle-count">1</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">
+                    <span class="status-icon">🌱</span>節氣
+                </div>
+                <div class="status-value" id="jieqi-value">立春</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">
+                    <span class="status-icon">🪨</span>靈石
+                </div>
+                <div class="status-value" id="stone-count">5</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">
+                    <span class="status-icon">💧</span>絳珠
+                </div>
+                <div class="status-value" id="tear-count">1</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">
+                    <span class="status-icon">🧠</span>記憶碎片
+                </div>
+                <div class="status-value" id="memory-count">0</div>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="garden-area">
+                <div class="garden-grid" id="garden-grid">
+                    <!-- 動態生成園林格子 -->
+                </div>
+                <div class="jieqi-indicator" id="jieqi-indicator">
+                    <span class="jieqi-icon">🌱</span>
+                    <span id="jieqi-label">立春</span>
+                </div>
+            </div>
+            
+            <div class="control-area">
+                <div class="panel" id="actions-panel">
+                    <h3 class="panel-title">
+                        <span class="panel-title-icon">⚡</span>
+                        行動
+                        <span class="panel-help" id="actions-help">?</span>
+                    </h3>
+                    <div class="action-buttons">
+                        <button class="action-button" id="advance-jieqi">
+                            <span><span class="action-icon">🌱</span>推進節氣</span>
+                            <span class="action-cost"><span class="cost-icon">⏱️</span>消耗: 0</span>
+                        </button>
+                        <button class="action-button" id="collect-tears">
+                            <span><span class="action-icon">💧</span>尋找絳珠</span>
+                            <span class="action-cost"><span class="cost-icon">⏱️</span>等待: 0</span>
+                        </button>
+                        <button class="action-button" id="search-memories">
+                            <span><span class="action-icon">🧠</span>尋找寶玉領悟</span>
+                            <span class="action-cost"><span class="cost-icon">💧</span>消耗: 2絳珠</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="panel" id="flowers-panel">
+                    <h3 class="panel-title">
+                        <span class="panel-title-icon">🌺</span>
+                        花魂 <span class="counter-badge" id="flower-count">0/12</span>
+                        <span class="panel-help" id="flowers-help">?</span>
+                    </h3>
+                    <div class="flowers-list" id="flowers-list">
+                        <!-- 動態生成花魂列表 -->
+                    </div>
+                </div>
+                
+                <div class="panel" id="tears-panel">
+                    <h3 class="panel-title">
+                        <span class="panel-title-icon">💧</span>
+                        絳珠 <span class="counter-badge" id="collected-tear-count">1/12</span>
+                        <span class="panel-help" id="tears-help">?</span>
+                    </h3>
+                    <div class="tears-list" id="tears-list">
+                        <!-- 動態生成淚水列表 -->
+                    </div>
+                </div>
+                
+                <div class="panel" id="birds-panel">
+                    <h3 class="panel-title">
+                        <span class="panel-title-icon">🐦</span>
+                        鳥靈 <span class="counter-badge" id="bird-count">0/12</span>
+                        <span class="panel-help" id="birds-help">?</span>
+                    </h3>
+                    <div class="birds-list" id="birds-list">
+                        <!-- 動態生成鳥靈列表 -->
+                    </div>
+                </div>
+                
+                <div class="panel" id="memories-panel">
+                    <h3 class="panel-title">
+                        <span class="panel-title-icon">🧠</span>
+                        記憶收集 <span class="counter-badge" id="collected-memory-count">0/24</span>
+                        <span class="panel-help" id="memories-help">?</span>
+                    </h3>
+                    <div class="memories-list" id="memories-list">
+                        <!-- 動態生成記憶列表 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 對話框模板 -->
+    <div class="dialog-overlay" id="dialog-overlay">
+        <div class="dialog" id="dialog">
+            <span class="dialog-close" id="dialog-close">×</span>
+            <h3 class="dialog-title" id="dialog-title">對話標題</h3>
+            <div class="dialog-content" id="dialog-content">
+                對話內容
+            </div>
+            <div class="dialog-actions">
+                <button class="dialog-button secondary" id="dialog-cancel">取消</button>
+                <button class="dialog-button primary" id="dialog-confirm">確認</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 記憶閃回對話框 -->
+    <div class="dialog-overlay" id="memory-dialog-overlay">
+        <div class="dialog memory-dialog" id="memory-dialog">
+            <h3 class="dialog-title" id="memory-dialog-title">記憶閃回</h3>
+            <div class="memory-content" id="memory-dialog-content">
+                記憶內容
+            </div>
+            <div class="dialog-actions">
+                <button class="dialog-button primary" id="memory-dialog-close">繼續</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- RPG風格對話框 -->
+    <div class="rpg-dialog-overlay" id="rpg-dialog-overlay">
+        <div class="rpg-dialog">
+            <div class="rpg-character">
+                <div class="rpg-portrait" id="rpg-portrait">👸</div>
+                <div class="rpg-name" id="rpg-speaker">警幻仙子</div>
+            </div>
+            <div class="rpg-textbox">
+                <p class="rpg-text" id="rpg-text"></p>
+                <div class="rpg-indicator">▼</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 白茫茫效果 -->
+    <div class="white-fade" id="white-fade">
+        <div class="white-fade-text">白茫茫大地一片真乾淨</div>
+    </div>
+    
+    <!-- 教學系統覆蓋層 -->
+    <div class="tutorial-overlay" id="tutorial-overlay">
+        <div class="tutorial-highlight" id="tutorial-highlight"></div>
+        <div class="tutorial-tooltip" id="tutorial-tooltip">
+            <div class="tutorial-tooltip-title" id="tutorial-tooltip-title">
+                <span class="tutorial-tooltip-icon">💡</span>
+                <span id="tutorial-title-text">歡迎來到紅樓舊夢</span>
+            </div>
+            <div class="tutorial-tooltip-content" id="tutorial-tooltip-content">
+                這是一個關於記憶與淚水的故事。讓我們一步步了解如何重建大觀園。
+            </div>
+            <div class="tutorial-actions">
+                <div class="tutorial-progress" id="tutorial-progress">1/8</div>
+                <div>
+                    <button class="tutorial-button skip" id="tutorial-skip">跳過教學</button>
+                    <button class="tutorial-button" id="tutorial-next">下一步</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 提示容器 -->
+    <div class="hint-container" id="hint-container">
+        <!-- 動態生成提示 -->
+    </div>
+    
+    <!-- 主選單和推薦行動 -->
+    <div class="main-menu" id="main-menu">
+        <div class="menu-toggle" id="menu-toggle">
+            <span>≡</span>
+        </div>
+        <div class="menu-items">
+            <div class="menu-item" id="menu-tutorial">
+                <div class="menu-item-icon">💡</div>
+                <div class="menu-item-text">重新開始教學</div>
+            </div>
+            <div class="menu-item" id="menu-targets">
+                <div class="menu-item-icon">🎯</div>
+                <div class="menu-item-text">當前目標</div>
+            </div>
+            <div class="menu-item" id="menu-restart">
+                <div class="menu-item-icon">🔄</div>
+                <div class="menu-item-text">重新開始遊戲</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 動態生成推薦行動氣泡 -->
+    <div class="action-bubble" id="action-suggestion" style="display: none; top: 100px; left: 100px;">
+        <div class="bubble-icon">💡</div>
+        <div class="bubble-text">推薦的下一步行動：收集絳珠來澆灌花魂</div>
+        <div class="bubble-close" id="bubble-close">×</div>
+    </div>
+    <script src="js/main.js"></script>
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>

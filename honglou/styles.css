@@ -1,0 +1,48 @@
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.typing-effect {
+    white-space: pre-wrap;
+    overflow: hidden;
+    border-right: 2px solid;
+    animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: currentColor; }
+}
+
+.thought {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* 捲軸樣式 */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 20px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.5);
+}
+
+/* 增加中文字體樣式 */
+.font-kai {
+    font-family: KaiTi, SimKai, FangSong, STKaiti, serif;
+}
+
+.font-song {
+    font-family: SimSun, STSong, serif;
+} 

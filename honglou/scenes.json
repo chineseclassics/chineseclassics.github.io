@@ -1,0 +1,290 @@
+{
+    "error_scene": {
+        "text": "【系統提示】發生了一些錯誤，場景無法載入。",
+        "innerThought": "通靈寶玉微微發涼，似乎在示警。前路不明，你覺得應該回到安全之處重新考慮。",
+        "choices": [
+            { "text": "返回開始處", "nextScene": "start" },
+            { "text": "繼續遊戲", "nextScene": "default_ending" }
+        ]
+    },
+    "start": {
+        "text": "薄霧籠罩著大觀園，一縷陽光穿透雲層，灑在你的窗前。你睜開眼睛，感到微微的頭痛——昨夜與寶釵、黛玉等人在瀟湘館共賞梅花，飲了些酒。\n\n丫環襲人輕輕推門而入：「二爺醒了？老太太派人來問，說今兒個要賞梅，問你可去不去？」\n\n【遊戲目標】：在大觀園中的選擇將影響你與眾人的關係，最終決定你的人生道路。通過收集「意象」來理解人生真諦。",
+        "innerThought": "你感到有些疲倦，昨夜的酒意尚未完全消散。你腦海中浮現出黛玉在月下吟詩的身影，還有寶釵那意味深長的目光。通靈寶玉微微發熱，似乎在預示著重要的一天即將開始。",
+        "choices": [
+            { "text": "「這些俗事，著實無趣。就說我身子不適，不去了。」", "nextScene": "refuse_invite" },
+            { "text": "「好的，我這就梳洗更衣。」", "nextScene": "accept_invite" },
+            { "text": "「今日黛玉可去？」", "nextScene": "ask_about_daiyu" },
+            { "text": "檢查通靈寶玉", "nextScene": "check_jade" }
+        ]
+    },
+    "refuse_invite": {
+        "text": "襲人微微蹙眉：「二爺，老太太特意安排的，不去恐怕不好。況且聽說林姑娘也要去呢。」\n\n你聽到林黛玉的名字，心下一動。",
+        "innerThought": "通靈寶玉在你胸前微微發熱——自從你生來就佩戴的這塊玉石似乎有著奇特的靈性，常常能感應你的情緒變化。此刻，它彷彿在提醒你什麼。",
+        "choices": [
+            { "text": "「既然黛玉也去，那我也去吧。」", "nextScene": "accept_invite" },
+            { "text": "「不了，我真的不舒服。請黛玉過來看我好嗎？」", "nextScene": "ask_for_daiyu" },
+            { "text": "「那裡人多嘴雜，我不喜歡。」（堅持拒絕）", "nextScene": "insist_refuse" }
+        ]
+    },
+    "ask_for_daiyu": {
+        "text": "襲人聽到你的請求，面露難色：「二爺，這...恐怕不太合適。老太太特意安排的賞梅活動，您不去也就罷了，還要請林姑娘來看您，這...傳出去不好聽啊。」\n\n你皺了皺眉，知道襲人說的有理，但心中仍是惦記著黛玉。",
+        "innerThought": "通靈寶玉此刻微微發熱——你與黛玉之間似乎有種莫名的感應。你知道她體弱多病，尤其是昨夜的寒風可能會加重她的病情。",
+        "choices": [
+            { "text": "「那好吧，我還是去賞梅罷。」", "nextScene": "accept_invite", "modifyAttributes": { "etiquette": 1 } },
+            { "text": "「不必多說，我自有主張。」偷偷前往瀟湘館", "nextScene": "secret_visit_daiyu", "modifyAttributes": { "etiquette": -1, "emotion": 1 } },
+            { "text": "「那就請她派個人去問問黛玉的情況。」", "nextScene": "check_on_daiyu", "modifyAttributes": { "etiquette": 1 } }
+        ]
+    },
+    "insist_refuse": {
+        "text": "「那裡人多嘴雜，我著實無心應酬。」你堅持道。\n\n襲人聽你如此說，也不好再勸，只得嘆息著去回老太太。不多時，賈璉從門外走進來：「老太太說，既然你身子不適，那就在房中好好歇著。只是讓我囑咐你，別擅自出門惹事。」\n\n賈璉離開後，房中越發安靜。",
+        "innerThought": "你感到一絲輕鬆，避開了那些繁文縟節。但通靈寶玉卻微微發涼，似乎在提醒你，逃避並不能解決所有問題。",
+        "addThought": {
+            "title": "逃避世俗",
+            "description": "你選擇遠離那些應酬和規矩，但內心深處明白，這樣的逃避或許只是暫時的安寧。"
+        },
+        "choices": [
+            { "text": "翻開《會真記》細讀消遣", "nextScene": "read_poetry", "modifyAttributes": { "poetry": 1, "etiquette": -1 } },
+            { "text": "趁無人注意，偷偷溜去瀟湘館", "nextScene": "secret_visit_daiyu", "modifyAttributes": { "etiquette": -2, "emotion": 2 } },
+            { "text": "靜坐思考人生", "nextScene": "contemplation", "modifyAttributes": { "insight": 2 } }
+        ]
+    },
+    "accept_invite": {
+        "text": "你起身梳洗，襲人和麝月幫你換上新做的湖藍色錦緞便服。\n\n來到賞梅處，只見老太太已在主位就座，周圍圍坐著王熙鳳、薛姨媽等人。你的目光掃過人群，卻不見黛玉的身影。\n\n薛寶釵向你微微頷首致意，她今日穿著淡粉色的衣裙，發間簪著一支白玉梅花簪，端莊秀麗。",
+        "innerThought": "沒看到黛玉，你心中有些失落。寶釵的打扮恰到好處，如同她的為人一般——但你卻總覺得缺少了些什麼。通靈寶玉微微發涼，是因為心緒的變化嗎？",
+        "choices": [
+            { "text": "向老太太請安，然後找個角落靜坐", "nextScene": "greeting_grandma" },
+            { "text": "上前與寶釵交談", "nextScene": "talk_to_baochai" },
+            { "text": "悄悄詢問王熙鳳黛玉的去向", "nextScene": "ask_xifeng" },
+            { "text": "藉口離開，去找黛玉", "nextScene": "look_for_daiyu" }
+        ]
+    },
+    "ask_xifeng": {
+        "text": "趁著大家都在賞花，你悄悄地走到王熙鳳身邊：「鳳姐姐，不知黛玉妹妹今日為何未來？」\n\n王熙鳳斜睨了你一眼，嘴角帶著一絲揶揄的笑：「林妹妹昨晚著了風寒，正在瀟湘館歇著呢。怎麼，二弟弟這才見不到人，就掛念起來了？」",
+        "innerThought": "鳳姐的話總帶著幾分刺人的意味，但你更關心的是黛玉的身體狀況。通靈寶玉似乎有些不安。",
+        "choices": [
+            { "text": "「我這就去看看她。」", "nextScene": "leave_for_daiyu", "modifyAttributes": { "etiquette": -1, "emotion": 1 }, "modifyRelationships": { "xifeng": -1, "daiyu": 1 } },
+            { "text": "「只是問問罷了，鳳姐姐何必取笑。」", "nextScene": "deflect_xifeng", "modifyRelationships": { "xifeng": 1 } },
+            { "text": "「聽說老太太特意安排的活動，黛玉不來恐怕不好。」", "nextScene": "concerned_about_protocol", "modifyAttributes": { "etiquette": 1 }, "modifyRelationships": { "xifeng": 1 } }
+        ]
+    },
+    "look_for_daiyu": {
+        "text": "你找了個合適的時機，向老太太告辭：「我忽然想起有事要辦，先告退了。」\n\n老太太慈祥地點點頭：「去吧，年輕人總有自己的事情。」\n\n王熙鳳在一旁意味深長地笑著，你趕緊告別，向瀟湘館方向走去。",
+        "innerThought": "你終於可以去看黛玉了。通靈寶玉微微發熱，似乎也對即將到來的重逢感到期待。",
+        "choices": [
+            { "text": "徑直前往瀟湘館", "nextScene": "visit_daiyu_first", "modifyAttributes": { "emotion": 1 }, "modifyRelationships": { "daiyu": 2 } },
+            { "text": "順路去廚房取些點心給黛玉", "nextScene": "bring_food_to_daiyu", "modifyAttributes": { "etiquette": 1 }, "modifyRelationships": { "daiyu": 3 } }
+        ]
+    },
+    "ask_about_daiyu": {
+        "text": "襲人微微一笑：「林姑娘身子不太爽利，聽說昨夜咳了半宿。不過老太太特意派了人去請，說是賞梅要詩社里的人都到齊。」\n\n你聽聞黛玉身子不適，心中一陣牽掛。",
+        "innerThought": "通靈寶玉在你胸前微微發熱——黛玉的病一直是你心頭的一根刺。你曾經聽老醫生說過，她的病與心境有關。",
+        "choices": [
+            { "text": "「我先去瀟湘館看看黛玉，再一同去賞梅。」", "nextScene": "visit_daiyu_first" },
+            { "text": "「知道了，我這就梳洗更衣去賞梅。」", "nextScene": "accept_invite" },
+            { "text": "「黛玉若身子不適，便不該勉強。我去和老太太說說。」", "nextScene": "speak_for_daiyu" }
+        ]
+    },
+    "speak_for_daiyu": {
+        "text": "你決定為黛玉的健康考慮。「襲人，你去回老太太，就說我認為黛玉身子不適，不宜出門受風，讓她好好休息。我也留在府中照看。」\n\n襲人點頭：「二爺想得周到，我這就去回話。」",
+        "innerThought": "為黛玉著想是對的，但你也知道這樣做可能會讓老太太不悅。通靈寶玉溫暖地貼在胸前，似乎贊同你的選擇。",
+        "addThought": {
+            "title": "護花之心",
+            "description": "你願意為了黛玉的健康而違背長輩的意願，這份真心難能可貴。"
+        },
+        "choices": [
+            { "text": "去瀟湘館看望黛玉", "nextScene": "visit_daiyu_first", "modifyAttributes": { "emotion": 2 }, "modifyRelationships": { "daiyu": 3 } },
+            { "text": "在自己房中等消息", "nextScene": "wait_in_room", "modifyAttributes": { "etiquette": 1 } }
+        ]
+    },
+    "check_jade": {
+        "text": "你取下掛在脖子上的通靈寶玉，端詳著這塊溫潤如水的玉石。玉上隱約可見「莫失莫忘，仙壽恆昌」的字樣。\n\n這塊玉伴隨你多年，彷彿有著自己的靈性。此刻，它在你手中散發著微微的溫暖。",
+        "innerThought": "這塊玉是你的另一個自己，它知曉你心中所有的秘密。你時常感覺，它不僅僅是一塊石頭，而是有意識的存在。",
+        "choices": [
+            { "text": "將玉石貼近耳朵，似乎想聆聽它的低語", "nextScene": "listen_to_jade" },
+            { "text": "繼續端詳玉石，思考它與自己的聯繫", "nextScene": "ponder_jade_connection" },
+            { "text": "重新戴好玉石，準備去參加賞梅活動", "nextScene": "accept_invite" }
+        ]
+    },
+    "listen_to_jade": {
+        "text": "你將通靈寶玉貼近耳朵，靜靜地聆聽。開始時，你只聽到自己的心跳聲，但漸漸地，似乎有一種奇特的韻律從玉中傳來——不是聲音，而是一種感覺。\n\n「空虛...虛幻...如夢...夢幻...」\n\n這些詞語在你心中迴響。",
+        "innerThought": "你想起了那個關於通靈寶玉的傳說：它原本是女媧補天剩下的一塊石頭，有靈性，能通曉人間情愛。",
+        "addThought": {
+            "title": "空虛幻夢",
+            "description": "玉石向你展示了世間虛幻如夢的本質。或許，執著於情愛也只是一場空。"
+        },
+        "choices": [
+            { "text": "深思玉石傳達的訊息，感到一絲悲涼", "nextScene": "contemplation", "modifyAttributes": { "insight": 2, "emotion": -1 } },
+            { "text": "決定去找黛玉，與她分享這個奇特的經歷", "nextScene": "visit_daiyu_first", "modifyAttributes": { "emotion": 1 } },
+            { "text": "感悟人生無常，決定出家修行", "nextScene": "enlightenment_path", "modifyAttributes": { "insight": 3, "emotion": -2 } }
+        ]
+    },
+    "ponder_jade_connection": {
+        "text": "你仔細端詳這塊玉石，思考它與自己的奇妙聯繫。這塊玉似乎承載著太多的秘密和使命。\n\n忽然間，你感受到一股暖流從玉石傳來，彷彿在告訴你什麼重要的事情。你想起了前世今生的因緣際會，想起了與黛玉之間那份超越凡俗的情感。",
+        "innerThought": "通靈寶玉不僅僅是裝飾品，它是你生命的一部分，是你與這個世界聯繫的紐帶。或許，理解了它，就理解了自己的命運。",
+        "addThought": {
+            "title": "玉石情緣",
+            "description": "通靈寶玉承載著前世今生的因緣，它的存在提醒你珍惜眼前的情感和緣分。"
+        },
+        "choices": [
+            { "text": "帶著這份領悟去找黛玉", "nextScene": "visit_daiyu_first", "modifyAttributes": { "insight": 1, "emotion": 2 }, "modifyRelationships": { "daiyu": 2 } },
+            { "text": "決定珍惜與所有人的緣分，去參加賞梅", "nextScene": "accept_invite", "modifyAttributes": { "insight": 1, "etiquette": 1 } }
+        ]
+    },
+    "visit_daiyu_first": {
+        "text": "你決定先去瀟湘館看望黛玉。推開竹籬小門，瀟湘館裡一派清雅。紫鵑見你來了，忙迎上前來：「二爺來了，姑娘正在房中看書呢。」\n\n走進內室，只見黛玉靠在美人榻上，手中捧著一本《詩經》，蒼白的臉龐在晨光中顯得更加清麗脫俗。",
+        "innerThought": "看到黛玉安靜讀書的模樣，你心中的牽掛稍減。通靈寶玉此刻微微發熱，似乎也為這次相見而歡喜。",
+        "choices": [
+            { "text": "「黛玉，我來看你了。」輕聲招呼", "nextScene": "gentle_greeting" },
+            { "text": "悄悄走近，看她在讀什麼書", "nextScene": "quiet_approach" },
+            { "text": "詢問她的身體狀況", "nextScene": "inquire_health" }
+        ]
+    },
+    "gentle_greeting": {
+        "text": "「黛玉，我來看你了。」你輕聲呼喚道，聲音柔和如春風拂面。\n\n黛玉驚訝地轉過身來，臉上閃過一絲喜色，卻又很快收斂起來：「你來了？」她的聲音還帶著一絲倦意，「不是在賞梅嗎？」\n\n你走到她身邊，仔細打量著她蒼白的臉色：「我擔心你一個人悶著，特地來看看。身子可好些了？」",
+        "innerThought": "黛玉的眼神總能讓你心中一動。即使她掩飾得再好，你也能看出她見到你時那一剎那的欣喜。通靈寶玉在此刻也微微發熱。",
+        "choices": [
+            { "text": "「我讓廚房做了些清淡的點心，你吃些好嗎？」", "nextScene": "offer_food", "modifyAttributes": { "emotion": 1 }, "modifyRelationships": { "daiyu": 2 } },
+            { "text": "走近窗邊，與她一同欣賞窗外的景色", "nextScene": "share_view", "modifyAttributes": { "poetry": 1 }, "modifyRelationships": { "daiyu": 3 } },
+            { "text": "「你在看什麼書？可以與我說說嗎？」", "nextScene": "discuss_literature", "modifyAttributes": { "insight": 1 }, "modifyRelationships": { "daiyu": 2 } }
+        ]
+    },
+    "quiet_approach": {
+        "text": "你悄悄走到黛玉身邊，好奇地探頭看她在讀什麼書。\n\n黛玉全神貫注地閱讀著，纖細的手指輕輕翻過書頁。你看清了，她手中捧著的是《詩經》，正讀到「關關雎鳩，在河之洲」那一篇。\n\n忽然，她感覺到了身後的氣息，驚得微微一顫，迅速轉身。見是你，眼中先是驚訝，繼而露出嗔意：「你怎麼悄悄來了？嚇我一跳。」",
+        "innerThought": "黛玉的驚慌一閃而過，但你分明看到了她眼中的喜色。通靈寶玉微微震動，彷彿也因這無預期的重逢而興奮。",
+        "choices": [
+            { "text": "「對不起，我看你讀得如此投入，不想打擾。」", "nextScene": "apologize_for_sneaking", "modifyAttributes": { "etiquette": 1 }, "modifyRelationships": { "daiyu": 1 } },
+            { "text": "「我不忍驚擾你，你讀書時的樣子太過專注。」", "nextScene": "compliment_focus", "modifyAttributes": { "poetry": 1 }, "modifyRelationships": { "daiyu": 3 } }
+        ]
+    },
+    "inquire_health": {
+        "text": "「黛玉，你的病好些了嗎？需要請大夫來看看嗎？」你關切地問道。\n\n黛玉輕咳了一聲，搖搖頭：「不過是些小病，不礙事的。你怎麼不去賞梅，反倒來看我這病人？」\n\n她的話語中帶著一絲自嘲，但眼中的溫暖卻掩飾不住。",
+        "innerThought": "黛玉總是不願意讓人為她擔心，但你知道她的身子確實不好。通靈寶玉微微發涼，似乎也感受到了她的病氣。",
+        "choices": [
+            { "text": "「你的身體比什麼都重要，我怎能放心去賞梅？」", "nextScene": "express_deep_concern", "modifyAttributes": { "emotion": 2 }, "modifyRelationships": { "daiyu": 4 } },
+            { "text": "「我陪你一起休息，有什麼需要的儘管說。」", "nextScene": "offer_companionship", "modifyAttributes": { "emotion": 1 }, "modifyRelationships": { "daiyu": 3 } }
+        ]
+    },
+    "talk_to_baochai": {
+        "text": "你走到寶釵身邊坐下。她微微一笑：「二哥哥今兒起得倒早。」\n\n「昨夜風大，睡得不踏實。」你隨口應道，「今兒梅花開得如何？」\n\n寶釵輕搖摺扇，平靜地回答：「才是花信，還沒全開。料想再過幾日，就能賞到滿枝繁花了。」她的說話端莊有序，不疾不徐。",
+        "innerThought": "寶釵的性格與黛玉截然不同，一個如同春天的湖水，平靜深邃；一個似是秋日的風雨，變幻多端。通靈寶玉微微發熱。",
+        "choices": [
+            { "text": "「寶姐姐的詩文造詣日漸精進，不知近來可有新作？」", "nextScene": "discuss_poetry_with_baochai", "modifyAttributes": { "poetry": 1 }, "modifyRelationships": { "baochai": 2 } },
+            { "text": "「看寶姐姐今日這般打扮，倒像是梅花仙子下凡。」", "nextScene": "compliment_baochai", "modifyRelationships": { "baochai": 3 } },
+            { "text": "「今日可見黛玉了嗎？」", "nextScene": "ask_baochai_about_daiyu", "modifyRelationships": { "baochai": -1 } }
+        ]
+    },
+    "greeting_grandma": {
+        "text": "你上前向賈母請了安。老太太笑著說：「這孩子總算來了。看你這般精神，今日想必心情不錯。」眾人聞言都笑了起來。\n\n你有些不好意思，找了個位置坐下，看著園中繁花，心緒卻不知飄向何處。",
+        "innerThought": "這些應酬雖然有些乏味，但老太太的慈愛讓你感到溫暖。若是黛玉在此，你們還可以低聲交談些詩詞曲賦。",
+        "choices": [
+            { "text": "認真參與賞梅活動", "nextScene": "participate_actively", "modifyAttributes": { "etiquette": 1 } },
+            { "text": "起身向老太太告退", "nextScene": "excuse_yourself", "modifyAttributes": { "etiquette": 1 } },
+            { "text": "聽見有人提到黛玉，豎起耳朵", "nextScene": "overhear_daiyu", "modifyAttributes": { "insight": 1 } }
+        ]
+    },
+    "contemplation": {
+        "text": "你靜靜地坐在房中，思考著人生的種種。通靈寶玉在胸前微微發涼，似乎在提醒你世事無常的道理。\n\n你想起了《好了歌》中的詞句：「世人都曉神仙好，惟有功名忘不了！古今將相在何方？荒冢一堆草沒了。」\n\n這些富貴榮華，這些兒女情長，到底意味著什麼呢？",
+        "innerThought": "在這樣的思考中，你感到自己的心境變得更加澄澈。或許，真正的智慧就在於看破這些虛幻的表象，找到生命的真諦。",
+        "addThought": {
+            "title": "看破紅塵",
+            "description": "你開始思考人生的真正意義，富貴功名皆如浮雲，唯有真情可貴。"
+        },
+        "choices": [
+            { "text": "決定出家修行，尋求真正的解脫", "nextScene": "enlightenment_path", "modifyAttributes": { "insight": 3, "emotion": -2 } },
+            { "text": "雖然看透世情，但仍要珍惜眼前人", "nextScene": "cherish_present", "modifyAttributes": { "insight": 2, "emotion": 1 } },
+            { "text": "起身去找黛玉，與她分享這些感悟", "nextScene": "visit_daiyu_first", "modifyAttributes": { "insight": 1, "emotion": 1 } }
+        ]
+    },
+    "enlightenment_path": {
+        "text": "經過深思熟慮，你感到自己已經看透了紅塵世事的虛幻。富貴榮華如過眼雲煙，唯有修行才能獲得真正的解脫。\n\n你決定離開這個充滿束縛的世界，去尋找心靈的自由。通靈寶玉在此刻散發出一種超然的光芒。",
+        "innerThought": "這或許就是你一直在尋找的答案。脫離這些塵世的糾纷，去追求更高境界的存在。雖然會放棄很多，但心靈的平靜是無價的。",
+        "addThought": {
+            "title": "超脫紅塵",
+            "description": "你選擇了出家修行的道路，追求心靈的解脫和真正的自由。"
+        },
+        "choices": [
+            { "text": "正式宣布出家決定", "nextScene": "monk_ending", "modifyAttributes": { "insight": 5 } },
+            { "text": "最後再去見黛玉一面", "nextScene": "final_farewell_daiyu", "modifyAttributes": { "emotion": 2 } }
+        ]
+    },
+    "cherish_present": {
+        "text": "雖然你已經看透了世事的虛幻，但你也明白，正因為生命短暫，更應該珍惜眼前的真情。\n\n富貴功名固然如浮雲，但與黛玉、寶釵等人的情感卻是真實而珍貴的。你決定用一種更加豁達的心態去面對生活。",
+        "innerThought": "真正的智慧不是逃避，而是在明白了生命的無常後，仍然選擇去愛、去珍惜。通靈寶玉溫暖地貼在胸前，似乎贊同你的選擇。",
+        "addThought": {
+            "title": "珍惜當下",
+            "description": "你明白了生命的可貴，決定用更豁達的心態珍惜身邊的每一個人、每一份情感。"
+        },
+        "choices": [
+            { "text": "去找黛玉，告訴她你的感悟", "nextScene": "share_wisdom_daiyu", "modifyAttributes": { "emotion": 2 }, "modifyRelationships": { "daiyu": 3 } },
+            { "text": "回到賞梅處，用新的心態與眾人相處", "nextScene": "return_to_gathering", "modifyAttributes": { "insight": 1, "etiquette": 1 } }
+        ]
+    },
+    "monk_ending": {
+        "text": "數月後，大觀園中傳來消息：賈寶玉在一個月圓之夜，悄然離開了府邸，從此再無音訊。\n\n有人說在終南山見過一位年輕的僧人，身邊總是帶著一塊溫潤的玉石，但問及姓名，他只是微笑不語。\n\n黛玉聞訊，終日以淚洗面，不久便香消玉殞。寶釵則嫁入他家，過著平淡的生活。\n\n而你，在深山古寺中找到了內心的平靜，雖然放棄了塵世的一切，但心靈卻獲得了真正的自由。",
+        "innerThought": "這就是你選擇的道路。雖然孤獨，但心境澄澈如明鏡。通靈寶玉已經不再發熱發涼，它與你一起，達到了超脫的境界。",
+        "addThought": {
+            "title": "得道成仙",
+            "description": "你最終選擇了修行之路，雖然失去了世俗的情感，但獲得了心靈的解脫。"
+        },
+        "choices": [
+            { "text": "重新開始遊戲", "nextScene": "start" },
+            { "text": "查看其他結局", "nextScene": "ending_gallery" }
+        ]
+    },
+    "daiyu_love_ending": {
+        "text": "歲月流轉，你與黛玉的感情日漸深厚。雖然面對家族的阻撓和世俗的偏見，但你們的愛情如松柏般堅貞不渝。\n\n最終，在一個春暖花開的日子，你們私奔離開了大觀園，在江南的一個小鎮定居下來。雖然失去了富貴，但擁有了真愛。\n\n黛玉的身體在你的悉心照料下漸漸好轉，你們過著簡單而幸福的生活。通靈寶玉也不再神秘莫測，它見證了你們純真的愛情。",
+        "innerThought": "這就是你一直渴望的生活——與心愛的人在一起，遠離塵世的紛擾。雖然物質貧乏，但精神富足。",
+        "addThought": {
+            "title": "情深缘浅终成眷属",
+            "description": "你選擇了愛情，與黛玉共度此生，雖然失去了世俗的地位，但獲得了心靈的滿足。"
+        },
+        "choices": [
+            { "text": "重新開始遊戲", "nextScene": "start" },
+            { "text": "查看其他結局", "nextScene": "ending_gallery" }
+        ]
+    },
+    "baochai_marriage_ending": {
+        "text": "遵循家族的安排，你與寶釵結為夫妻。寶釵的賢德和智慧讓這段婚姻和睦美滿，雖然缺少激情，但充滿了溫暖的陪伴。\n\n你逐漸承擔起了家族的責任，在寶釵的輔助下，賈家的事業蒸蒸日上。你們育有一子一女，過著富足而安穩的生活。\n\n黛玉在你成婚後不久便病逝了，這成為你心中永遠的痛。但寶釵的理解和包容讓你漸漸釋懷。",
+        "innerThought": "這是一個理性的選擇。雖然沒有轟轟烈烈的愛情，但有穩定的幸福。通靈寶玉見證了你的成長和責任感。",
+        "addThought": {
+            "title": "金玉良緣",
+            "description": "你選擇了責任和穩定，與寶釵共同建立了一個和諧的家庭。"
+        },
+        "choices": [
+            { "text": "重新開始遊戲", "nextScene": "start" },
+            { "text": "查看其他結局", "nextScene": "ending_gallery" }
+        ]
+    },
+    "tragic_ending": {
+        "text": "由於種種錯誤的選擇，你漸漸失去了所有人的信任和愛護。黛玉對你失望透頂，寶釵也與你漸行漸遠，就連賈母也對你搖頭嘆息。\n\n最終，你被逐出了賈府，流落街頭。通靈寶玉在某個冬夜神秘失踪，你失去了最後的依靠。\n\n多年後，你成為了一個瘋癲的乞丐，經常在大觀園外徘徊，喃喃自語著一些讓人聽不懂的話語。",
+        "innerThought": "這就是任性和不負責任的代價。如果能重來，你會做出不同的選擇嗎？",
+        "addThought": {
+            "title": "眾叛親離",
+            "description": "錯誤的選擇導致了悲劇的結局，失去了所有珍貴的東西。"
+        },
+        "choices": [
+            { "text": "重新開始遊戲", "nextScene": "start" },
+            { "text": "查看其他結局", "nextScene": "ending_gallery" }
+        ]
+    },
+    "ending_gallery": {
+        "text": "【結局回顧】\n\n在《紅樓夢境》中，根據你的選擇，可能達成以下結局：\n\n🧘 **超脫紅塵結局**：選擇出家修行，追求心靈解脫\n💕 **情深緣淺結局**：與黛玉私奔，追求真愛\n💍 **金玉良緣結局**：與寶釵成婚，承擔家族責任\n😢 **悲劇結局**：因錯誤選擇而眾叛親離\n🌟 **圓滿結局**：平衡各種關係，獲得內心平和\n\n每一種結局都反映了不同的人生哲學和價值觀。你會如何選擇自己的人生道路呢？",
+        "innerThought": "通靈寶玉見證了所有可能的人生軌跡。每一次選擇都是一次成長，每一個結局都有其意義。",
+        "choices": [
+            { "text": "重新開始遊戲", "nextScene": "start" },
+            { "text": "嘗試不同的選擇路線", "nextScene": "start" }
+        ]
+    },
+    "default_ending": {
+        "text": "時光荏苒，大觀園中的故事漸入尾聲。通過這段旅程，你體會了人世間的情感與無常，最終明白了通靈寶玉一直在提醒你的道理——人生如夢，情愛如幻，但正是這些虛幻的美好，構成了生命中最珍貴的回憶。\n\n在平衡了各種關係和責任後，你找到了屬於自己的人生道路，既沒有完全脫離世俗，也沒有完全沉溺其中。",
+        "innerThought": "通靈寶玉靜靜躺在你胸前，不再發熱發涼。它已經完成了自己的使命，幫助你理解了人生的真諦。",
+        "addThought": {
+            "title": "人生如夢",
+            "description": "你理解了生命的真諦：珍惜當下，平衡情感與責任，在虛幻的世界中尋找真實的意義。"
+        },
+        "choices": [
+            { "text": "重新開始遊戲", "nextScene": "start" },
+            { "text": "查看所有結局", "nextScene": "ending_gallery" }
+        ]
+    }
+} 

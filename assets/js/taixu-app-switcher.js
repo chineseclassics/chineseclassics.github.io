@@ -186,6 +186,16 @@
             description: '尋找三個與詩詞意象最相關的emoji進行配對'
         },
         {
+            id: 'yinniang',
+            category: 'qiangu',
+            name: '聶隱娘傳奇',
+            icon: 'fas fa-fan',
+            gradient: 'from-rose-500 to-amber-400',
+            url: '/yinniang/index.html',
+            description: '以思想內閣與八德一智雙系統體驗聶隱娘的一生，在互動式故事中做出品格抉擇並累積文言詞彙',
+            isNew: true
+        },
+        {
             id: 'cikeyishou',
             category: 'qiangu',
             name: '刺客之道 1.0',
@@ -211,6 +221,16 @@
             gradient: 'from-purple-500 to-pink-500',
             url: '/honglourenwu.html',
             description: '基於 d3.js 的《紅樓夢》人物關係互動圖，幫助學生快速理解四大家族與主要角色關係。'
+        },
+        {
+            id: 'honglou-jiumeng',
+            category: 'qiangu',
+            name: '紅樓舊夢',
+            icon: 'fas fa-fan',
+            gradient: 'from-rose-400 to-purple-500',
+            url: '/honglou-jiumeng/index.html',
+            description: '化身神瑛侍者，在節氣輪迴中收集絳珠、重建大觀園，喚醒花魂與鳥靈完成還淚之旅。',
+            isNew: true
         },
         {
             id: 'shuyuanclassicchat',
