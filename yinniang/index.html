@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你的傳奇：羈絆與超脫 - 完整版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        ancient: {
+                            paper: '#F5F1E8',
+                            ink: '#2D3748',
+                            gold: '#D69E2E',
+                            red: '#E53E3E'
+                        }
+                    },
+                    fontFamily: {
+                        'chinese': ['SimSun', 'serif']
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+    <link rel="stylesheet" href="./css/style.css">
+
+    
+</head>
+<body class="font-chinese ancient-bg min-h-screen">
+
+    <!-- 游戏容器 -->
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        
+        <!-- 游戏标题 -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                你的傳奇
+            </h1>
+            <p class="text-lg text-gray-600 dark:text-gray-300 mb-4">你的羈絆與超脫</p>
+            
+            <!-- 章节和进度指示器 -->
+            <div class="flex justify-center items-center space-x-4 mb-6">
+                <div id="chapterIndicator" class="chapter-indicator text-white px-6 py-2 rounded-full text-sm font-bold">
+                    第一章：初心之問
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">進度</span>
+                    <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div id="globalProgress" class="bg-gradient-to-r from-primary to-purple-600 h-2 rounded-full transition-all duration-500" style="width: 5%"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主游戏区域 -->
+        <div class="grid lg:grid-cols-4 gap-6">
+            
+            <!-- 思想内阁面板 -->
+            <div class="lg:col-span-1 order-2 lg:order-1">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sticky top-6">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 text-center">
+                        💭 思想內閣
+                    </h3>
+                    
+                    <!-- 声音列表 -->
+                    <div class="space-y-4" id="voicesPanel">
+                        <!-- 孝女之心 -->
+                        <div class="voice-item" data-voice="filialPiety">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="flex items-center text-sm font-semibold text-pink-600 dark:text-pink-400">
+                                    💝 <span class="ml-2">孝女之心</span>
+                                </span>
+                                <span class="voice-level bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200 px-2 py-1 rounded text-xs">
+                                    Lv.<span class="level-number">3</span>
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                                <div class="progress-bar bg-pink-500 h-2 rounded-full" style="width: 30%"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 voice-quote italic">
+                                "父親養育之恩，豈可輕忘？"
+                            </p>
+                        </div>
+
+                        <!-- 师门之训 -->
+                        <div class="voice-item" data-voice="masterTraining">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400">
+                                    ⚡ <span class="ml-2">師門之訓</span>
+                                </span>
+                                <span class="voice-level bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs">
+                                    Lv.<span class="level-number">1</span>
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                                <div class="progress-bar bg-gray-500 h-2 rounded-full" style="width: 10%"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 voice-quote italic">
+                                "服從是唯一的選擇..."
+                            </p>
+                        </div>
+
+                        <!-- 柔情之意 -->
+                        <div class="voice-item" data-voice="tenderness">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-400">
+                                    💕 <span class="ml-2">柔情之意</span>
+                                </span>
+                                <span class="voice-level bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs">
+                                    Lv.<span class="level-number">2</span>
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                                <div class="progress-bar bg-purple-500 h-2 rounded-full" style="width: 20%"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 voice-quote italic">
+                                "若能有一處安穩的家..."
+                            </p>
+                        </div>
+
+                        <!-- 忠义之念 -->
+                        <div class="voice-item" data-voice="loyalty">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="flex items-center text-sm font-semibold text-red-600 dark:text-red-400">
+                                    ⚔️ <span class="ml-2">忠義之念</span>
+                                </span>
+                                <span class="voice-level bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-2 py-1 rounded text-xs">
+                                    Lv.<span class="level-number">1</span>
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                                <div class="progress-bar bg-red-500 h-2 rounded-full" style="width: 10%"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 voice-quote italic">
+                                "既受恩惠，當以命報之..."
+                            </p>
+                        </div>
+
+                        <!-- 山水求道 -->
+                        <div class="voice-item" data-voice="seekingDao">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                    🌊 <span class="ml-2">山水求道</span>
+                                </span>
+                                <span class="voice-level bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs">
+                                    Lv.<span class="level-number">1</span>
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                                <div class="progress-bar bg-blue-500 h-2 rounded-full" style="width: 15%"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 voice-quote italic">
+                                "山中有真意，但識者幾人？"
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 词汇笔记 -->
+                    <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📝 詞彙筆記</h4>
+                        <div id="learnedWords" class="flex flex-wrap gap-1">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">暫無收集詞彙</span>
+                        </div>
+                    </div>
+
+                    <!-- 成就系统 -->
+                    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">🏆 成就</h4>
+                        <div id="achievements" class="space-y-1">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">暫無解鎖成就</span>
+                        </div>
+                    </div>
+
+                    <!-- 结局收集 -->
+                    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📚 結局收集</h4>
+                        <div id="endingsCollection" class="space-y-1">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">尚未達成任何結局</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主要故事区域 -->
+            <div class="lg:col-span-3 order-1 lg:order-2">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                    
+                    <!-- 章节进度条 -->
+                    <div class="bg-gradient-to-r from-primary to-purple-600 h-3 relative">
+                        <div id="chapterProgress" class="bg-white h-full transition-all duration-500" style="width: 10%"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="progressText" class="text-xs font-bold text-white opacity-75">10%</span>
+                        </div>
+                    </div>
+
+                    <!-- 故事内容 -->
+                    <div class="p-6 md:p-8">
+                        <div id="storyContent" class="prose max-w-none dark:prose-invert">
+                            <!-- 初始内容将由JavaScript填充 -->
+                        </div>
+
+                        <!-- 选择区域 -->
+                        <div id="choicesContainer" class="mt-6 space-y-3">
+                            <!-- 选择将由JavaScript动态生成 -->
+                        </div>
+
+
+
+                        <!-- 特殊事件提示 -->
+                        <div id="specialEvent" class="mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg p-4 hidden">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">⚡</span>
+                                <div>
+                                    <h4 class="font-bold">特殊事件觸發！</h4>
+                                    <p id="specialEventText" class="text-sm opacity-90"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 游戏控制面板 -->
+                <div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button id="saveGameBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                            💾 儲存進度
+                        </button>
+                        <button id="loadGameBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            📁 載入進度
+                        </button>
+                        <button id="restartBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                            🔄 重新開始
+                        </button>
+                        <button id="endingsBtn" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                            📖 結局圖鑑
+                        </button>
+                        <button id="helpBtn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            ❓ 遊戲說明
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部信息 -->
+        <footer class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>基於裴鉶《聶隱娘》創作 | 互動式古典文學教育遊戲</p>
+            <p class="mt-1">遊戲版本: v2.0 完整版 | 包含7章節 · 18種結局 · 完整學習系統</p>
+        </footer>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modalTitle" class="text-xl font-bold text-gray-800 dark:text-gray-100"></h3>
+                    <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">×</button>
+                </div>
+                <div id="modalContent" class="text-gray-600 dark:text-gray-300">
+                    <!-- 动态内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/main.js" defer></script>
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>

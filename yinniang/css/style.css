@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+.font-chinese {
+    font-family: 'Noto Serif SC', 'SimSun', serif;
+}
+
+.voice-icon {
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.voice-active {
+    transform: scale(1.05);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+}
+
+.choice-hover:hover {
+    background: linear-gradient(135deg, rgba(93, 92, 222, 0.1), rgba(93, 92, 222, 0.05));
+    transform: translateY(-2px);
+}
+
+.voice-text-hidden {
+    opacity: 0.3;
+}
+
+.voice-text-hidden .voice-text {
+    opacity: 0;
+}
+
+.ancient-bg {
+    background: linear-gradient(135deg, #F5F1E8 0%, #E8DCC0 100%);
+}
+
+.dark .ancient-bg {
+    background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+}
+
+.word-tooltip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted #5D5CDE;
+}
+
+.word-tooltip .tooltip-content {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2D3748;
+    color: white;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.word-tooltip:hover .tooltip-content {
+    visibility: visible;
+    opacity: 1;
+}
+
+.progress-bar {
+    transition: width 0.5s ease;
+}
+
+.chapter-indicator {
+    background: linear-gradient(45deg, #5D5CDE, #8B5CF6);
+}
+
+.ending-badge {
+    box-shadow: 0 0 15px rgba(236, 72, 153, 0.7);
+}
+.quote-text {
+    border-left: 3px solid #fde68a; /* A gold-like color */
+    padding-left: 1rem;
+    margin: 1rem 0;
+    background-color: rgba(254, 249, 195, 0.1);
+    font-style: italic;
+    color: #d1d5db; /* Lighter text for dark mode */
+}
+[data-theme="light"] .quote-text {
+    border-left-color: #facc15;
+    background-color: rgba(254, 249, 195, 0.3);
+    color: #4b5563; /* Darker text for light mode */
+}
+
+.achievement-notification {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
