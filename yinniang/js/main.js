@@ -243,6 +243,34 @@ class GameState {
         }, 4000);
     }
 
+    // 建立漂浮提示訊息（儲存、載入等狀態提示）
+    createFloatingMessage(text) {
+        if (!text) return;
+
+        const message = document.createElement('div');
+        message.className = 'floating-message';
+        message.textContent = text;
+        document.body.appendChild(message);
+
+        requestAnimationFrame(() => {
+            message.classList.add('floating-message--visible');
+        });
+
+        const removeMessage = () => {
+            message.classList.remove('floating-message--visible');
+            message.classList.add('floating-message--hide');
+            const cleanup = () => {
+                if (message.parentNode) {
+                    message.parentNode.removeChild(message);
+                }
+            };
+            message.addEventListener('transitionend', cleanup, { once: true });
+            setTimeout(cleanup, 800); // 保險機制，避免 transitionend 未觸發
+        };
+
+        setTimeout(removeMessage, 2200);
+    }
+
     updateAchievementsDisplay() {
         const container = document.getElementById('achievements');
         if (this.achievements.length === 0) {
@@ -2966,6 +2994,41 @@ const storyScenes = {
 // 游戏实例
 let game = new GameState();
 let typingSkipRequested = false; // 打字機跳過請求標誌
+
+// 通用打字機輔助函式
+function typeText(targetElement, fullText = '', speed = 40, onComplete = () => {}) {
+    if (!targetElement) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+    }
+
+    const text = `${fullText || ''}`;
+    targetElement.textContent = '';
+
+    if (typingSkipRequested || speed <= 0 || text.length === 0) {
+        targetElement.textContent = text;
+        if (typeof onComplete === 'function') onComplete();
+        return;
+    }
+
+    let index = 0;
+    const timer = setInterval(() => {
+        if (typingSkipRequested) {
+            clearInterval(timer);
+            targetElement.textContent = text;
+            if (typeof onComplete === 'function') onComplete();
+            return;
+        }
+
+        targetElement.textContent += text.charAt(index);
+        index += 1;
+
+        if (index >= text.length) {
+            clearInterval(timer);
+            if (typeof onComplete === 'function') onComplete();
+        }
+    }, speed);
+}
 
 //（已改為逐段人工改寫第二人稱，移除機械轉換）
 

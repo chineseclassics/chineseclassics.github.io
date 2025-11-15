@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗境魔方 - Poetry Cube 3D</title>
+    
+    <!-- Three.js (使用兼容版本) -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- GSAP 动画库 -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    
+    <!-- Excel 导入导出 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- 應用樣式 -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <h1>🏮 诗境魔方</h1>
+        <div class="top-bar-buttons">
+            <button class="icon-btn" id="soundBtn" title="音效">🔊</button>
+            <button class="icon-btn" id="settingsBtn" title="设置">⚙️</button>
+        </div>
+    </div>
+    
+    <!-- 主游戏区域 -->
+    <div class="game-container">
+        <!-- 提示信息 -->
+        <div class="hint-area">
+            <div class="poem-hint" id="poemHint">
+                <span id="poemName">静夜思</span> · 
+                <span id="poemAuthor">李白</span> · 
+                <span id="charCount">5字</span>
+            </div>
+            <div style="margin-top: 10px; color: white; font-size: 14px; text-align: center;">
+                💡 左键点击汉字选择 | 右键或 Shift+左键点击魔方可旋转该层
+            </div>
+        </div>
+        
+        <!-- 3D 魔方容器 -->
+        <div id="cube-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>正在加载魔方...</p>
+            </div>
+        </div>
+        
+        <!-- 答题区 -->
+        <div class="answer-area">
+            <div class="answer-boxes" id="answerBoxes">
+                <!-- 动态生成答题框 -->
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-secondary" id="clearBtn">清空</button>
+                <button class="btn btn-primary" id="submitBtn">提交答案</button>
+                <button class="btn btn-secondary" id="skipBtn">跳过</button>
+            </div>
+        </div>
+        
+        <!-- 进度信息 -->
+        <div class="progress-area">
+            <p>已完成: <span id="completedCount">0</span> / <span id="totalCount">100</span> 首 ⭐⭐⭐</p>
+        </div>
+    </div>
+    
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 游戏设置</h2>
+                <button class="close-btn" id="closeSettings">&times;</button>
+            </div>
+            
+            <div class="setting-item">
+                <label>📚 诗词库</label>
+                <select id="poemLibrarySelect">
+                    <option value="all">全部诗词</option>
+                    <option value="唐诗">唐诗</option>
+                    <option value="宋词">宋词</option>
+                    <option value="小学生诗词">小学生诗词</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>💡 智能提示</label>
+                <select id="hintLevel">
+                    <option value="none">无提示（⭐⭐⭐）</option>
+                    <option value="highlight">高亮提示（⭐⭐）</option>
+                    <option value="auto">自动旋转（⭐）</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>🔊 音效音量</label>
+                <input type="range" id="volumeSlider" min="0" max="100" value="70">
+            </div>
+            
+            <div class="setting-item">
+                <h4>📊 数据管理</h4>
+                <button class="btn btn-secondary" id="exportExcel" style="width: 100%; margin-bottom: 10px;">📥 导出诗词库（Excel）</button>
+                <button class="btn btn-secondary" id="importExcel" style="width: 100%; margin-bottom: 10px;">📤 导入诗词库（Excel）</button>
+                <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;">
+                <button class="btn btn-secondary" id="downloadTemplate" style="width: 100%;">📄 下载模板</button>
+            </div>
+            
+            <div class="setting-item">
+                <h4>📈 游戏统计</h4>
+                <p>总完成数: <span id="totalCompleted">0</span></p>
+                <p>总用时: <span id="totalTime">0</span> 分钟</p>
+                <button class="btn btn-secondary" id="resetProgress" style="width: 100%; margin-top: 10px;">🔄 重置进度</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 完成动画覆盖层 -->
+    <div class="completion-overlay" id="completionOverlay">
+        <div class="completion-card">
+            <h2>🎉 恭喜完成！</h2>
+            <div class="poem-full" id="poemFull"></div>
+            <div class="stars" id="starsDisplay">⭐⭐⭐</div>
+            <p>用时: <span id="timeSpent">0</span> 秒</p>
+            <button class="btn btn-primary" id="nextRoundBtn" style="margin-top: 20px;">下一首</button>
+        </div>
+    </div>
+
+    <!-- 遊戲主程式 -->
+    <script src="js/main.js"></script>
+
+    <!-- 太虛幻境應用切換器 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>
+
+

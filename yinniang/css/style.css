@@ -97,3 +97,36 @@
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
+
+/* 漂浮提示訊息樣式 */
+.floating-message {
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
+    transform: translate(-50%, -12px);
+    background: rgba(45, 55, 72, 0.95);
+    color: #fff;
+    padding: 0.65rem 1.5rem;
+    border-radius: 9999px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    font-size: 0.95rem;
+    z-index: 60;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.dark .floating-message {
+    background: rgba(245, 241, 232, 0.95);
+    color: #1a202c;
+}
+
+.floating-message--visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.floating-message--hide {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+}
