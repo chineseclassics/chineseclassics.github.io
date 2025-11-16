@@ -63,14 +63,77 @@
       ],
       "seasonalCycles": 1,
       "startJieqiIndex": 23
+    },
+    {
+      "chapter": 5,
+      "title": "游幻境指迷十二釵 飲仙醪曲演紅樓夢",
+      "memories": [
+        "baoyu-dream-taihuan"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 1
+    },
+    {
+      "chapter": 19,
+      "title": "情切切良宵花解語 意綿綿靜日玉生香",
+      "memories": [
+        "baoyu-xiren-conversation"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 3
+    },
+    {
+      "chapter": 27,
+      "title": "滴翠亭楊妃戲彩蝶 埋香塚飛燕泣殘紅",
+      "memories": [
+        "daiyu-burial-poem"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 5
+    },
+    {
+      "chapter": 32,
+      "title": "訴肺腑心迷活寶玉 含恥辱情烈死金釧",
+      "memories": [
+        "baoyu-confess-heart"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 8
+    },
+    {
+      "chapter": 33,
+      "title": "手足耽耽小動唇舌 不肖種種大承笞撻",
+      "memories": [
+        "baoyu-beaten"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 9
+    },
+    {
+      "chapter": 45,
+      "title": "金蘭契互剖金蘭語 風雨夕悶制風雨詞",
+      "memories": [
+        "daiyu-autumn-rain"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 14
+    },
+    {
+      "chapter": 48,
+      "title": "濫情人情誤思遊藝 慕雅女雅集苦吟詩",
+      "memories": [
+        "xiangling-learn-poetry"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 15
     }
   ],
   "metadata": {
     "version": "1.0.0",
     "description": "紅樓舊夢回目與節氣對應關係數據庫",
     "created": "2025-01-XX",
-    "totalChapters": 7,
-    "totalMemories": 8
+    "totalChapters": 14,
+    "totalMemories": 15
   }
 }
 

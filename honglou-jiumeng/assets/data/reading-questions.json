@@ -208,15 +208,204 @@
         }
       ],
       "seasonalCycles": 1
+    },
+    {
+      "chapter": 5,
+      "title": "游幻境指迷十二釵 飲仙醪曲演紅樓夢",
+      "memories": [
+        {
+          "id": "baoyu-dream-taihuan",
+          "questions": [
+            {
+              "question": "警幻仙子告訴寶玉，太虛幻境位於哪裡？",
+              "options": ["離恨天之上，灌愁海之中", "大觀園內", "榮國府中", "青埂峰下"],
+              "correct": 0
+            },
+            {
+              "question": "寶玉在太虛幻境中看到的『金陵十二釵正冊』中，第一個出現的是誰的判詞？",
+              "options": ["林黛玉", "薛寶釵", "賈元春", "史湘雲"],
+              "correct": 0
+            },
+            {
+              "question": "警幻仙子讓寶玉飲的『仙醪』是什麼？",
+              "options": ["萬艷同杯", "千紅一窟", "群芳髓", "百花露"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 19,
+      "title": "情切切良宵花解語 意綿綿靜日玉生香",
+      "memories": [
+        {
+          "id": "baoyu-xiren-conversation",
+          "questions": [
+            {
+              "question": "寶玉對襲人說，他化成飛灰後還要怎樣？",
+              "options": ["重新投胎", "灰還有形有跡，還有知識", "完全消失", "變成石頭"],
+              "correct": 1
+            },
+            {
+              "question": "襲人用什麼方法勸寶玉改掉壞習慣？",
+              "options": ["直接責罵", "說自己要離開", "告訴賈政", "告訴王夫人"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，寶玉和黛玉一起聞到什麼香味？",
+              "options": ["花香", "冷香", "藥香", "墨香"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 27,
+      "title": "滴翠亭楊妃戲彩蝶 埋香塚飛燕泣殘紅",
+      "memories": [
+        {
+          "id": "daiyu-burial-poem",
+          "questions": [
+            {
+              "question": "黛玉葬花詞中，『爾今死去儂收葬，未卜儂身何日喪？』表達了什麼情感？",
+              "options": ["對花的憐惜", "對自己命運的預感", "對春天的留戀", "對寶玉的思念"],
+              "correct": 1
+            },
+            {
+              "question": "葬花詞中，黛玉說『他年葬儂知是誰？』這句話的深層含義是什麼？",
+              "options": ["擔心沒有人為自己送葬", "感嘆人生無常", "預感自己會孤獨死去", "以上都是"],
+              "correct": 3
+            },
+            {
+              "question": "這回中，寶釵在滴翠亭做了什麼事？",
+              "options": ["撲蝶", "賞花", "讀書", "作詩"],
+              "correct": 0
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 32,
+      "title": "訴肺腑心迷活寶玉 含恥辱情烈死金釧",
+      "memories": [
+        {
+          "id": "baoyu-confess-heart",
+          "questions": [
+            {
+              "question": "寶玉對黛玉說：'我為你也弄了一身的病在這裡'，這裡的『病』指的是什麼？",
+              "options": ["身體疾病", "相思病", "心病", "以上都是"],
+              "correct": 2
+            },
+            {
+              "question": "寶玉說『只等你的病好了，只怕我的病才得好呢』，這句話表達了什麼？",
+              "options": ["關心黛玉的身體", "兩人的命運緊密相連", "希望黛玉快點好", "以上都是"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，襲人聽到寶玉的話後，為什麼『嚇得魂消魄散』？",
+              "options": ["擔心寶玉生病", "擔心寶黛的關係被發現", "擔心自己受牽連", "擔心賈政責怪"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 33,
+      "title": "手足耽耽小動唇舌 不肖種種大承笞撻",
+      "memories": [
+        {
+          "id": "baoyu-beaten",
+          "questions": [
+            {
+              "question": "賈政打寶玉的原因不包括以下哪一項？",
+              "options": ["在外流蕩優伶", "表贈私物", "在家荒疏學業", "與黛玉私會"],
+              "correct": 3
+            },
+            {
+              "question": "賈政打寶玉時，說了什麼話？",
+              "options": ["堵起嘴來，著實打死", "給我打", "打死這個不肖子", "不許求情"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，誰來救寶玉，讓賈政停手？",
+              "options": ["王夫人", "賈母", "襲人", "以上都是"],
+              "correct": 3
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 45,
+      "title": "金蘭契互剖金蘭語 風雨夕悶制風雨詞",
+      "memories": [
+        {
+          "id": "daiyu-autumn-rain",
+          "questions": [
+            {
+              "question": "黛玉在秋雨夜寫的詩詞名稱是什麼？",
+              "options": ["《代別離》", "《秋窗風雨夕》", "《春江花月夜》", "《風雨詞》"],
+              "correct": 1
+            },
+            {
+              "question": "黛玉的《秋窗風雨夕》是擬哪首詩的格？",
+              "options": ["《代別離》", "《春江花月夜》", "《長恨歌》", "《琵琶行》"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，寶釵和黛玉互剖金蘭語，指的是什麼？",
+              "options": ["互相贈送蘭花", "互相傾訴心事，和解", "互相作詩", "互相送禮"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 48,
+      "title": "濫情人情誤思遊藝 慕雅女雅集苦吟詩",
+      "memories": [
+        {
+          "id": "xiangling-learn-poetry",
+          "questions": [
+            {
+              "question": "黛玉對香菱說：'既要作詩，你就拜我作師'，這句話體現了什麼？",
+              "options": ["黛玉的謙虛", "黛玉的自信", "黛玉的幽默", "黛玉的無奈"],
+              "correct": 1
+            },
+            {
+              "question": "黛玉教香菱學詩時，首先讓她讀誰的詩？",
+              "options": ["王維", "杜甫", "李白", "陶淵明"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，香菱學詩的過程體現了什麼？",
+              "options": ["她對詩歌的熱愛", "她的勤奮好學", "黛玉的教學能力", "以上都是"],
+              "correct": 3
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
     }
   ],
   "metadata": {
     "version": "1.0.0",
     "description": "紅樓舊夢閱讀問題數據庫 - MVP 階段（前 20 回）",
     "created": "2025-01-XX",
-    "totalChapters": 7,
-    "totalMemories": 8,
-    "totalQuestions": 24
+    "totalChapters": 14,
+    "totalMemories": 15,
+    "totalQuestions": 45
   }
 }
 

@@ -56,24 +56,22 @@ export async function getAvailableMemoriesForCurrentJieqi() {
         }
         
         if (isInChapterRange) {
-            // 計算當前節氣對應的回憶索引
-            const relativeJieqiIndex = currentJieqiIndex - startJieqi;
-            console.log(`回目 ${chapter.chapter}: relativeJieqiIndex=${relativeJieqiIndex}, memories.length=${chapter.memories.length}`);
-            
-            if (relativeJieqiIndex >= 0 && relativeJieqiIndex < chapter.memories.length) {
-                const memoryId = chapter.memories[relativeJieqiIndex];
+            // 返回該回目的所有未解鎖記憶（支持同一回中 stone 和 tear 類型並存）
+            chapter.memories.forEach((memoryId, index) => {
                 const memory = gameData.memories.find(m => m.id === memoryId);
                 
-                if (memory) {
+                if (memory && !memory.unlocked && !memory.collected) {
                     availableMemories.push({
                         memory: memory,
                         chapter: chapter
                     });
-                    console.log(`找到記憶: ${memory.name} (${memoryId})`);
+                    console.log(`找到記憶: ${memory.name} (${memoryId}), 類型: ${memory.type}`);
+                } else if (memory && (memory.unlocked || memory.collected)) {
+                    console.log(`記憶已解鎖，跳過: ${memory.name} (${memoryId})`);
                 } else {
                     console.warn(`記憶不存在: ${memoryId}`);
                 }
-            }
+            });
         }
     });
     
