@@ -2341,6 +2341,92 @@ let isAutoPreviewRunning = false; // 防止多個實例同時執行
 let editorOriginalState = null; // 保存編輯器打開時的原始狀態
 let hasEditorChanges = false; // 追蹤是否有編輯操作
 
+const recordingInfoCache = new Map();
+const RECORDING_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function fetchRecordingInfos(recordingIds = []) {
+  if (!window.AppState?.supabase || !Array.isArray(recordingIds) || recordingIds.length === 0) {
+    return new Map();
+  }
+
+  const normalizedIds = recordingIds
+    .filter(id => typeof id === 'string')
+    .map(id => id.trim())
+    .filter(id => RECORDING_ID_PATTERN.test(id));
+
+  if (normalizedIds.length === 0) {
+    return new Map();
+  }
+
+  const idsToQuery = normalizedIds.filter(id => !recordingInfoCache.has(id));
+
+  if (idsToQuery.length > 0) {
+    try {
+      const { data, error } = await window.AppState.supabase
+        .from('recordings')
+        .select('id, storage_path, status')
+        .in('id', idsToQuery);
+
+      if (!error && Array.isArray(data)) {
+        data.forEach(record => {
+          recordingInfoCache.set(record.id, {
+            storage_path: record.storage_path || '',
+            status: record.status || ''
+          });
+        });
+      }
+    } catch (fetchError) {
+      console.warn('載入錄音資訊失敗:', fetchError);
+    }
+  }
+
+  const result = new Map();
+  normalizedIds.forEach(id => {
+    if (recordingInfoCache.has(id)) {
+      result.set(id, recordingInfoCache.get(id));
+    }
+  });
+
+  return result;
+}
+
+async function getRecordingInfo(recordingId) {
+  if (!recordingId || typeof recordingId !== 'string') {
+    return null;
+  }
+  const infos = await fetchRecordingInfos([recordingId]);
+  return infos.get(recordingId) || null;
+}
+
+async function resolveRecordingFileUrl(recordingPath) {
+  if (!recordingPath || !window.AppState?.supabase) {
+    return '';
+  }
+
+  const supabaseClient = window.AppState.supabase;
+
+  if (recordingPath.startsWith('approved/') || recordingPath.startsWith('system/')) {
+    const projectUrl = supabaseClient.supabaseUrl.replace('/rest/v1', '');
+    return `${projectUrl}/storage/v1/object/public/kongshan_recordings/${recordingPath}`;
+  }
+
+  if (recordingPath.startsWith('pending/')) {
+    try {
+      const { data: signedData, error: signedError } = await supabaseClient
+        .storage
+        .from('kongshan_recordings')
+        .createSignedUrl(recordingPath, 3600);
+      if (!signedError && signedData?.signedUrl) {
+        return signedData.signedUrl;
+      }
+    } catch (signedUrlError) {
+      console.warn('取得錄音簽名網址失敗:', signedUrlError);
+    }
+  }
+
+  return '';
+}
+
 function scheduleAutoPreview() {
   if (!window.AppState || !window.AppState.soundMixer) {
     return;
@@ -2399,36 +2485,24 @@ async function autoPreviewSelectedSounds() {
     const volume = volumeSlider ? Math.max(0, Math.min(1, parseFloat(volumeSlider.value) / 100)) : 0.7;
     const sourceType = item.dataset.sourceType || 'system';
 
-    if ((!fileUrl || fileUrl === '') && sourceType === 'recording' && window.AppState?.supabase) {
-      const recordingPath = item.dataset.recordingPath;
-      if (recordingPath) {
-        // 根據路徑判斷是否需要簽名 URL
-        // approved/ 和 system/ 路徑可以直接訪問，pending/ 路徑需要簽名 URL
-        if (recordingPath.startsWith('approved/') || recordingPath.startsWith('system/')) {
-          // 公開路徑，直接構建 URL
-          const projectUrl = window.AppState.supabase.supabaseUrl.replace('/rest/v1', '');
-          fileUrl = `${projectUrl}/storage/v1/object/public/kongshan_recordings/${recordingPath}`;
-          item.dataset.fileUrl = fileUrl;
-        } else {
-          // pending/ 路徑，需要簽名 URL
-          try {
-            const { data: signedData, error: signedError } = await window.AppState.supabase
-              .storage
-              .from('kongshan_recordings')
-              .createSignedUrl(recordingPath, 3600);
-            if (!signedError && signedData?.signedUrl) {
-              fileUrl = signedData.signedUrl;
-              item.dataset.fileUrl = fileUrl;
-            }
-          } catch (signedUrlError) {
-            console.warn('取得錄音播放鏈接失敗:', signedUrlError);
-          }
+    if (sourceType === 'recording') {
+      let recordingPath = item.dataset.recordingPath || '';
+      if (!recordingPath && soundId) {
+        const recordingInfo = await getRecordingInfo(soundId);
+        if (recordingInfo?.storage_path) {
+          recordingPath = recordingInfo.storage_path;
+          item.dataset.recordingPath = recordingPath;
         }
       }
-    }
 
-    // 系統音效：將 Storage 路徑補全為公開 URL
-    if (sourceType === 'system') {
+      if ((!fileUrl || fileUrl === '') && recordingPath) {
+        const resolvedUrl = await resolveRecordingFileUrl(recordingPath);
+        if (resolvedUrl) {
+          fileUrl = resolvedUrl;
+          item.dataset.fileUrl = resolvedUrl;
+        }
+      }
+    } else if (sourceType === 'system') {
       try {
         const normalized = normalizeSoundUrl(fileUrl || '', window.AppState?.supabase);
         if (normalized) {
@@ -3382,6 +3456,20 @@ async function loadAtmosphereData(atmosphere) {
     const selectedContainer = document.getElementById('selected-sounds');
     selectedContainer.innerHTML = '';
     
+    let recordingInfoMap = new Map();
+    const recordingConfigs = atmosphere.sound_combination.filter(
+      config => (config.source_type || 'system') === 'recording'
+    );
+
+    if (recordingConfigs.length > 0) {
+      const recordingIds = recordingConfigs
+        .map(config => config.recording_id || config.sound_id)
+        .filter(Boolean);
+      if (recordingIds.length > 0) {
+        recordingInfoMap = await fetchRecordingInfos(recordingIds);
+      }
+    }
+    
     for (const config of atmosphere.sound_combination) {
       const sourceType = config.source_type || 'system';
       const displayName = config.display_name || config.name || '音效';
@@ -3392,20 +3480,36 @@ async function loadAtmosphereData(atmosphere) {
 
       if (sourceType === 'recording') {
         const recordingId = soundId;
+        const recordingInfo = recordingInfoMap.get(recordingId);
+        let resolvedRecordingPath = recordingPath;
+        if (!resolvedRecordingPath && recordingInfo?.storage_path) {
+          resolvedRecordingPath = recordingInfo.storage_path;
+        }
+
+        let resolvedFileUrl = fileUrl;
+        if ((!resolvedFileUrl || resolvedFileUrl === '') && resolvedRecordingPath) {
+          resolvedFileUrl = await resolveRecordingFileUrl(resolvedRecordingPath);
+        } else if (!resolvedFileUrl) {
+          resolvedFileUrl = normalizeSoundUrl(fileUrl || '', window.AppState?.supabase);
+        }
+
         const item = createSelectedSoundItem({
           id: recordingId,
           name: displayName,
           display_name: displayName,
-          file_url: fileUrl,
+          file_url: resolvedFileUrl,
           sourceType: 'recording',
-          recordingPath,
+          recordingPath: resolvedRecordingPath,
           recordingId,
           ownerId: config.recording_owner_id || '',
           recordingStatus: config.recording_status || ''
         });
 
-        if (item.dataset.fileUrl === '' && fileUrl) {
-          item.dataset.fileUrl = fileUrl;
+        if (resolvedFileUrl) {
+          item.dataset.fileUrl = resolvedFileUrl;
+        }
+        if (resolvedRecordingPath) {
+          item.dataset.recordingPath = resolvedRecordingPath;
         }
 
         selectedContainer.appendChild(item);
