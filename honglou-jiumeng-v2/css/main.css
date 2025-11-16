@@ -1,0 +1,362 @@
+/* 紅樓舊夢 - 主樣式表 */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', '微軟雅黑', 'SimSun', '宋體', sans-serif;
+    background: #f5f1e8; /* 米色紙張背景 */
+    color: #3d3528;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 狀態列 */
+.status-bar {
+    background: #e8ddd4;
+    padding: 1rem 2rem;
+    display: flex;
+    gap: 2rem;
+    border-bottom: 2px solid #d4c4b0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-label {
+    font-weight: 600;
+    color: #6b5d47;
+}
+
+.status-value {
+    font-size: 1.1rem;
+    color: #2d2418;
+    font-weight: 700;
+}
+
+/* 主遊戲容器 */
+.game-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* 園林區域 */
+.garden-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #5a4a3a;
+    text-align: center;
+}
+
+/* 園林格子地圖 */
+.garden-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    aspect-ratio: 1;
+}
+
+.garden-cell {
+    background: #f9f7f4;
+    border: 2px solid #d4c4b0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    min-height: 80px;
+}
+
+.garden-cell:hover {
+    border-color: #8b7355;
+    background: #f5f1e8;
+}
+
+.garden-cell.unlocked {
+    background: #e8f4e8;
+    border-color: #7a9c7a;
+}
+
+.garden-cell.has-flower {
+    background: #fff4e6;
+    border-color: #d4a574;
+}
+
+.garden-cell-name {
+    font-size: 0.85rem;
+    color: #6b5d47;
+    text-align: center;
+    padding: 0.25rem;
+}
+
+.garden-cell-locked {
+    opacity: 0.5;
+    font-size: 0.75rem;
+    color: #999;
+}
+
+/* 資訊面板 */
+.info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.panel-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.panel-title {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #5a4a3a;
+    border-bottom: 2px solid #d4c4b0;
+    padding-bottom: 0.5rem;
+}
+
+/* 花魂詳情 */
+.flower-details {
+    min-height: 150px;
+}
+
+.flower-card {
+    background: #fff4e6;
+    border: 2px solid #d4a574;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.flower-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #8b5a2b;
+    margin-bottom: 0.5rem;
+}
+
+.flower-level {
+    font-size: 0.9rem;
+    color: #6b5d47;
+    margin-bottom: 0.5rem;
+}
+
+.flower-growth {
+    width: 100%;
+    height: 20px;
+    background: #e8ddd4;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.flower-growth-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #d4a574, #c89664);
+    transition: width 0.3s;
+}
+
+/* 記憶列表 */
+.memory-list {
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.memory-item {
+    background: #f9f7f4;
+    border-left: 3px solid #8b7355;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+}
+
+.memory-item.unlocked {
+    background: #fff4e6;
+    border-left-color: #d4a574;
+}
+
+.memory-name {
+    font-weight: 600;
+    color: #5a4a3a;
+    margin-bottom: 0.25rem;
+}
+
+.memory-status {
+    font-size: 0.85rem;
+    color: #999;
+}
+
+/* 行動選單 */
+.action-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    padding: 0.75rem 1rem;
+    border: 2px solid #8b7355;
+    background: #fff;
+    color: #5a4a3a;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.action-btn:hover:not(:disabled) {
+    background: #f5f1e8;
+    border-color: #6b5d47;
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-btn-primary {
+    background: #8b7355;
+    color: #fff;
+    border-color: #6b5d47;
+}
+
+.action-btn-primary:hover:not(:disabled) {
+    background: #6b5d47;
+}
+
+/* 模態框 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h2 {
+    font-size: 1.8rem;
+    color: #5a4a3a;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.ending-summary {
+    line-height: 1.8;
+    color: #3d3528;
+    margin-bottom: 1.5rem;
+}
+
+.empty-message {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+}
+
+/* 淚水詳情 */
+.tears-details {
+    min-height: 100px;
+}
+
+.tear-item {
+    background: #f9f7f4;
+    border-left: 3px solid #d4a574;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tear-item.unlocked {
+    background: #fff4e6;
+    border-left-color: #c89664;
+}
+
+.tear-item.locked {
+    opacity: 0.5;
+    border-left-color: #999;
+}
+
+.tear-name {
+    font-weight: 600;
+    color: #5a4a3a;
+}
+
+.tear-count {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #8b5a2b;
+}
+
+.tear-description {
+    font-size: 0.85rem;
+    color: #6b5d47;
+    margin-top: 0.25rem;
+}
+
+.status-bar .tears-detail {
+    margin-left: auto;
+    font-size: 0.9rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+    .game-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .garden-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.25rem;
+    }
+}
+

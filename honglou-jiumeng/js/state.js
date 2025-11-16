@@ -343,8 +343,62 @@ export const gameData = {
                     status: "未解鎖"
                 }
             ],
+            // 劇情線定義
+            storyLines: {
+                "daiyu_main": {
+                    id: "daiyu_main",
+                    name: "黛玉一生悲歡輪廓",
+                    character: "林黛玉",
+                    description: "從初入榮府到病重，黛玉一生的關鍵記憶",
+                    milestones: [
+                        { segments: 2, reward: { tear: 5, stone: 2 }, message: "你回憶起黛玉初入榮府的時光..." },
+                        { segments: 3, reward: { tear: 10, stone: 5 }, message: "葬花時節，記憶變得更加清晰..." },
+                        { segments: 5, reward: { tear: 20, stone: 10, flowerBoost: "daiyu-flower" }, message: "完整的記憶線浮現，黛玉花魂獲得成長加成！" }
+                    ]
+                },
+                "daiyu_jealousy": {
+                    id: "daiyu_jealousy",
+                    name: "黛玉的酸楚與妒意",
+                    character: "林黛玉",
+                    description: "金玉良緣帶來的酸楚與試探",
+                    milestones: [
+                        { segments: 2, reward: { tear: 8, stone: 3 }, message: "你感受到黛玉內心的酸楚..." },
+                        { segments: 3, reward: { tear: 15, stone: 8 }, message: "完整的酸楚記憶被喚醒..." }
+                    ]
+                }
+            },
             memories: [
-                // 黛玉流淚的記憶 - 用於獲取絳珠
+                // 黛玉主線劇情
+                {
+                    id: "daiyu-first-entry",
+                    name: "初入榮府",
+                    icon: "🏛️",
+                    description: "黛玉初到榮國府的記憶",
+                    collected: false,
+                    requiredJieqi: null, // 自動解鎖
+                    content: "黛玉道：'我來了幾日，也覺這裡的景致好，物件新奇，人也接風。但我少什麼不好，又沒人不疼，怎麼捨得回去呢。'",
+                    relatedTear: "first-tear",
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 1,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "榮國府"
+                },
+                {
+                    id: "daiyu-baoyu-meet",
+                    name: "與寶玉相知",
+                    icon: "💕",
+                    description: "黛玉與寶玉初次相見的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "寶玉笑道：'這個妹妹我曾見過的。'黛玉聽了，不覺一驚，心中暗想：'好生奇怪，倒像在那裡見過一般，何等眼熟到如此！'",
+                    relatedTear: "first-tear",
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 2,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "榮國府"
+                },
                 {
                     id: "daiyu-burial",
                     name: "葬花記憶",
@@ -354,9 +408,88 @@ export const gameData = {
                     requiredJieqi: "清明",
                     content: "花謝花飛飛滿天，紅消香斷有誰憐？游絲軟系飄春榭，落絮輕沾撲繡簾。閨中女兒惜春暮，愁緒滿懷無釋處。手把花鋤出繡閨，忍踏落花來復去。",
                     relatedTear: "burial-tear",
-                    type: "tear"
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 3,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "大觀園"
                 },
-                // 其他記憶保持不變...
+                {
+                    id: "daiyu-burn-manuscripts",
+                    name: "焚稿",
+                    icon: "🔥",
+                    description: "黛玉焚毀詩稿的記憶",
+                    collected: false,
+                    requiredJieqi: "大寒",
+                    content: "黛玉心中自思道：'我死了，這些墨寶還在，豈不大為世人恥笑。'於是便命丫環將前所作之詩稿盡行燒毀。",
+                    relatedTear: "destruction-tear",
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 4,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "瀟湘館"
+                },
+                {
+                    id: "daiyu-illness",
+                    name: "病重",
+                    icon: "🌙",
+                    description: "黛玉病重時的記憶",
+                    collected: false,
+                    requiredJieqi: "大寒",
+                    content: "黛玉病重，氣息奄奄，心中卻還記掛著寶玉，只是說不出話來。",
+                    relatedTear: "last-tear",
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 5,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "瀟湘館"
+                },
+                // 黛玉酸楚線
+                {
+                    id: "daiyu-golden-jade",
+                    name: "聽聞金玉良緣",
+                    icon: "💎",
+                    description: "黛玉聽聞金玉良緣時的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "黛玉聽聞'金玉良緣'之說，心中不覺一酸，暗想：'既有金玉之說，又何必有我？'",
+                    relatedTear: "jealousy-tear",
+                    type: "tear",
+                    storyLineId: "daiyu_jealousy",
+                    orderIndex: 1,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "大觀園"
+                },
+                {
+                    id: "daiyu-baochai-conflict",
+                    name: "與寶釵言語交鋒",
+                    icon: "⚔️",
+                    description: "黛玉與寶釵言語交鋒的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "黛玉冷笑道：'我當是誰，原來是寶姐姐。'寶釵笑道：'妹妹這話從何說起？'",
+                    relatedTear: "jealousy-tear",
+                    type: "tear",
+                    storyLineId: "daiyu_jealousy",
+                    orderIndex: 2,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "大觀園"
+                },
+                {
+                    id: "daiyu-after-search",
+                    name: "抄檢大觀園後的冷清",
+                    icon: "❄️",
+                    description: "抄檢大觀園後黛玉的孤寂",
+                    collected: false,
+                    requiredJieqi: "霜降",
+                    content: "抄檢大觀園後，園中冷清許多，黛玉獨自坐在瀟湘館中，心中淒涼。",
+                    relatedTear: "parting-tear",
+                    type: "tear",
+                    storyLineId: "daiyu_jealousy",
+                    orderIndex: 3,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "瀟湘館"
+                }
             ],
             cells: Array(25).fill().map((_, i) => ({
                 id: i,

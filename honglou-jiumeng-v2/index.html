@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紅樓舊夢 - 大觀園記憶重建</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- 狀態列 -->
+    <header class="status-bar">
+        <div class="status-item">
+            <span class="status-label">節氣：</span>
+            <span id="current-season" class="status-value">立春</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">行動力：</span>
+            <span id="action-points" class="status-value">4 / 4</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">靈石：</span>
+            <span id="spirit-stones" class="status-value">0</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">絳珠淚：</span>
+            <span id="tears-total" class="status-value">0</span>
+        </div>
+        <div class="status-item tears-detail" id="tears-detail" style="display: none;">
+            <span class="status-label">詳情：</span>
+            <span id="tears-breakdown" class="status-value"></span>
+        </div>
+    </header>
+
+    <!-- 主遊戲區域 -->
+    <main class="game-container">
+        <!-- 左側：園林地圖 -->
+        <section class="garden-section">
+            <h2 class="section-title">大觀園</h2>
+            <div id="garden-grid" class="garden-grid">
+                <!-- 5×5 格子地圖將由 JS 動態生成 -->
+            </div>
+        </section>
+
+        <!-- 右側：資訊面板 -->
+        <aside class="info-panel">
+            <!-- 花魂詳情 -->
+            <div class="panel-section">
+                <h3 class="panel-title">花魂</h3>
+                <div id="flower-details" class="flower-details">
+                    <p class="empty-message">尚未種植花魂</p>
+                </div>
+            </div>
+
+            <!-- 記憶列表 -->
+            <div class="panel-section">
+                <h3 class="panel-title">記憶</h3>
+                <div id="memory-list" class="memory-list">
+                    <p class="empty-message">尚未收集記憶</p>
+                </div>
+            </div>
+
+            <!-- 淚水詳情 -->
+            <div class="panel-section">
+                <h3 class="panel-title">絳珠淚詳情</h3>
+                <div id="tears-details" class="tears-details">
+                    <p class="empty-message">尚未獲得淚水</p>
+                </div>
+            </div>
+
+            <!-- 行動選單 -->
+            <div class="panel-section">
+                <h3 class="panel-title">行動</h3>
+                <div id="action-menu" class="action-menu">
+                    <button id="btn-water-flower" class="action-btn" disabled>澆灌花魂 (1 點)</button>
+                    <button id="btn-plant-flower" class="action-btn" disabled>種植花魂 (2 點)</button>
+                    <button id="btn-search-memory" class="action-btn">搜尋記憶 (1-2 點)</button>
+                    <button id="btn-next-season" class="action-btn action-btn-primary">進入下一節氣</button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 終局總結模態框 -->
+    <div id="ending-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>《石頭記》已鐫刻完成</h2>
+            <div id="ending-summary" class="ending-summary"></div>
+            <button id="btn-restart" class="action-btn action-btn-primary">重新開始</button>
+        </div>
+    </div>
+
+    <!-- 引入應用切換器 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+    
+    <!-- 遊戲模組 -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
+

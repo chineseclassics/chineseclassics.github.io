@@ -625,6 +625,31 @@ export function initializeGame() {
                 const seasonMultiplier = flower.seasonalGrowth[currentSeason] || 1;
                 growthIncrease *= seasonMultiplier;
                 
+                // 情境共鳴機制：建築加成
+                let buildingMultiplier = 1;
+                let buildingBonusMessage = '';
+                const cellBuilding = gameData.buildings.find(b => b.position === cellId && b.built);
+                if (cellBuilding && cellBuilding.relatedFlower === flower.id) {
+                    // 花魂在對應建築中，獲得額外加成
+                    buildingMultiplier = 1.5;
+                    buildingBonusMessage = `在${cellBuilding.name}中，這株花似乎格外精神！`;
+                }
+                growthIncrease *= buildingMultiplier;
+                
+                // 情境共鳴機制：節氣與淚水類型的特殊組合（例如：清明+葬花淚）
+                let specialResonance = 1;
+                let resonanceMessage = '';
+                const currentJieqi = gameData.jieqi[gameData.jieqiIndex].name;
+                
+                // 黛玉花魂的特殊共鳴：清明+葬花淚
+                if (flower.id === 'daiyu-flower' && 
+                    currentJieqi === '清明' && 
+                    tear.id === 'burial-tear') {
+                    specialResonance = 2;
+                    resonanceMessage = '春風裡，這株花似乎對「葬花時的淚」格外敏感。';
+                }
+                growthIncrease *= specialResonance;
+                
                 // 更新花魂成長
                 const oldGrowth = flower.growth;
                 flower.growth += growthIncrease;
@@ -706,13 +731,26 @@ export function initializeGame() {
                 }
                 
                 // 使用記憶對話框展示結果，更具沉浸感
+                const bonusMessages = [];
+                if (isPreferred) {
+                    bonusMessages.push('<p style="color: #4CAF50; margin-top: 10px;">這是她偏好的淚水，效果加倍！</p>');
+                }
+                if (seasonMultiplier > 1) {
+                    bonusMessages.push(`<p style="color: #4CAF50; margin-top: 10px;">當前季節 (${currentSeason}) 對此花魂成長有利！</p>`);
+                }
+                if (buildingMultiplier > 1) {
+                    bonusMessages.push(`<p style="color: #5D5CDE; margin-top: 10px; font-style: italic;">${buildingBonusMessage}</p>`);
+                }
+                if (specialResonance > 1) {
+                    bonusMessages.push(`<p style="color: #9C27B0; margin-top: 10px; font-style: italic;">${resonanceMessage}</p>`);
+                }
+                
                 showMemoryDialog({
                     title: '淚水澆灌',
                     content: `<div style="text-align: center;">
                         <p>你用<strong>${tear.name}</strong>澆灌了${flower.character}的花魂。</p>
                         <p style="margin-top: 15px;">${resultMessage}</p>
-                        ${isPreferred ? '<p style="color: #4CAF50; margin-top: 15px;">這是她偏好的淚水，效果加倍！</p>' : ''}
-                        ${seasonMultiplier > 1 ? `<p style="color: #4CAF50; margin-top: 10px;">當前季節 (${currentSeason}) 對此花魂成長有利！</p>` : ''}
+                        ${bonusMessages.join('')}
                     </div>`
                 });
                 
@@ -1159,7 +1197,77 @@ export function initializeGame() {
                 });
             }
             
-            // 收集記憶碎片 - 改進版
+            // 檢查劇情線里程碑
+            function checkStoryLineMilestones(storyLineId) {
+                if (!storyLineId || !gameData.storyLines[storyLineId]) return;
+                
+                const storyLine = gameData.storyLines[storyLineId];
+                const collectedMemories = gameData.memories.filter(
+                    m => m.storyLineId === storyLineId && m.collected
+                );
+                
+                // 按順序排序
+                collectedMemories.sort((a, b) => a.orderIndex - b.orderIndex);
+                
+                // 檢查連續收集的段數（從 orderIndex 1 開始）
+                let consecutiveCount = 0;
+                for (let i = 0; i < collectedMemories.length; i++) {
+                    if (collectedMemories[i].orderIndex === consecutiveCount + 1) {
+                        consecutiveCount++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // 檢查是否達到里程碑（只觸發一次）
+                if (!gameData.storyLineMilestones) {
+                    gameData.storyLineMilestones = {};
+                }
+                
+                for (const milestone of storyLine.milestones) {
+                    const milestoneKey = `${storyLineId}_${milestone.segments}`;
+                    if (consecutiveCount >= milestone.segments && 
+                        !gameData.storyLineMilestones[milestoneKey]) {
+                        
+                        // 標記已觸發
+                        gameData.storyLineMilestones[milestoneKey] = true;
+                        
+                        // 發放獎勵
+                        if (milestone.reward.tear) {
+                            gameData.resources.tear += milestone.reward.tear;
+                            if (elements.tearCount) {
+                                elements.tearCount.classList.add('resource-change');
+                                setTimeout(() => elements.tearCount?.classList.remove('resource-change'), 500);
+                            }
+                        }
+                        if (milestone.reward.stone) {
+                            gameData.resources.stone += milestone.reward.stone;
+                            if (elements.stoneCount) {
+                                elements.stoneCount.classList.add('resource-change');
+                                setTimeout(() => elements.stoneCount?.classList.remove('resource-change'), 500);
+                            }
+                        }
+                        if (milestone.reward.flowerBoost) {
+                            // 花魂成長加成
+                            const flower = gameData.flowers.find(f => f.id === milestone.reward.flowerBoost);
+                            if (flower) {
+                                flower.growth += 30; // 一次性成長加成
+                                showHint('花魂成長', `${flower.name}獲得劇情線成長加成！`, '✨');
+                            }
+                        }
+                        
+                        // 顯示里程碑對話
+                        setTimeout(() => {
+                            showRpgDialog([milestone.message], "👸", "警幻仙子");
+                        }, 500);
+                        
+                        updateResourceDisplay();
+                        updateLists();
+                    }
+                }
+            }
+            
+            // 收集記憶碎片 - 改進版（支持劇情線）
             function collectMemory(memoryId) {
                 const memory = gameData.memories.find(m => m.id === memoryId);
                 if (!memory || memory.collected) return;
@@ -1228,6 +1336,11 @@ export function initializeGame() {
                         title: memory.name,
                         content: `<div class="poem">${memory.content}</div>`
                     });
+                }
+                
+                // 檢查劇情線里程碑
+                if (memory.storyLineId) {
+                    checkStoryLineMilestones(memory.storyLineId);
                 }
                 
                 // 移除記憶碎片
@@ -2262,7 +2375,7 @@ export function initializeGame() {
                         }
                     }
                     
-                    // 更新記憶列表
+                    // 更新記憶列表（支持劇情線分組）
                     if (elements.memoriesList) {
                         elements.memoriesList.innerHTML = '';
                         
@@ -2271,41 +2384,70 @@ export function initializeGame() {
                         if (collectedMemories.length === 0) {
                             elements.memoriesList.innerHTML = '<div style="text-align: center; padding: 15px; color: #999;">尚未收集記憶碎片</div>';
                         } else {
-                            // 按類型分組排序
-                            const stoneMemories = collectedMemories.filter(m => m.type === "stone");
-                            const tearMemories = collectedMemories.filter(m => m.type === "tear");
+                            // 按劇情線分組
+                            const memoriesByStoryLine = {};
+                            const standaloneMemories = [];
                             
-                            // 先顯示靈石類記憶
-                            if (stoneMemories.length > 0) {
-                                const typeHeader = document.createElement('div');
-                                typeHeader.className = 'memory-type-header';
-                                typeHeader.innerHTML = `<div style="padding: 5px 10px; margin: 5px 0; background: rgba(93, 92, 222, 0.1); border-radius: 5px;">
-                                    <span style="font-weight: bold; color: #5D5CDE;">寶玉領悟 (${stoneMemories.length})</span>
-                                </div>`;
-                                elements.memoriesList.appendChild(typeHeader);
+                            collectedMemories.forEach(memory => {
+                                if (memory.storyLineId && gameData.storyLines[memory.storyLineId]) {
+                                    if (!memoriesByStoryLine[memory.storyLineId]) {
+                                        memoriesByStoryLine[memory.storyLineId] = [];
+                                    }
+                                    memoriesByStoryLine[memory.storyLineId].push(memory);
+                                } else {
+                                    standaloneMemories.push(memory);
+                                }
+                            });
+                            
+                            // 顯示劇情線記憶（按劇情線分組）
+                            Object.keys(memoriesByStoryLine).forEach(storyLineId => {
+                                const storyLine = gameData.storyLines[storyLineId];
+                                const lineMemories = memoriesByStoryLine[storyLineId].sort((a, b) => a.orderIndex - b.orderIndex);
                                 
-                                stoneMemories.forEach(memory => {
-                                    createMemoryItem(memory);
+                                // 計算劇情線進度
+                                const totalSegments = gameData.memories.filter(m => m.storyLineId === storyLineId).length;
+                                const collectedSegments = lineMemories.length;
+                                const progressPercent = Math.floor((collectedSegments / totalSegments) * 100);
+                                
+                                // 劇情線標題
+                                const storyLineHeader = document.createElement('div');
+                                storyLineHeader.className = 'storyline-header';
+                                storyLineHeader.innerHTML = `
+                                    <div style="padding: 8px 12px; margin: 8px 0; background: rgba(93, 92, 222, 0.15); border-radius: 6px; border-left: 3px solid #5D5CDE;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                            <span style="font-weight: bold; color: #5D5CDE;">${storyLine.name}</span>
+                                            <span style="font-size: 12px; color: #666;">${collectedSegments}/${totalSegments}</span>
+                                        </div>
+                                        <div style="background: rgba(0,0,0,0.1); height: 4px; border-radius: 2px; margin-top: 4px; overflow: hidden;">
+                                            <div style="background: #5D5CDE; height: 100%; width: ${progressPercent}%; transition: width 0.3s;"></div>
+                                        </div>
+                                    </div>
+                                `;
+                                elements.memoriesList.appendChild(storyLineHeader);
+                                
+                                // 顯示該劇情線的記憶
+                                lineMemories.forEach(memory => {
+                                    createMemoryItem(memory, storyLineId);
                                 });
-                            }
+                            });
                             
-                            // 再顯示淚水類記憶
-                            if (tearMemories.length > 0) {
+                            // 顯示獨立記憶（無劇情線）
+                            if (standaloneMemories.length > 0) {
                                 const typeHeader = document.createElement('div');
                                 typeHeader.className = 'memory-type-header';
-                                typeHeader.innerHTML = `<div style="padding: 5px 10px; margin: 5px 0; background: rgba(139, 69, 19, 0.1); border-radius: 5px;">
-                                    <span style="font-weight: bold; color: #8B4513;">黛玉記憶 (${tearMemories.length})</span>
+                                typeHeader.innerHTML = `<div style="padding: 5px 10px; margin: 8px 0; background: rgba(139, 69, 19, 0.1); border-radius: 5px;">
+                                    <span style="font-weight: bold; color: #8B4513;">其他記憶 (${standaloneMemories.length})</span>
                                 </div>`;
                                 elements.memoriesList.appendChild(typeHeader);
                                 
-                                tearMemories.forEach(memory => {
+                                standaloneMemories.forEach(memory => {
                                     createMemoryItem(memory);
                                 });
                             }
                         }
                         
-                        // 創建記憶項目的函數
-                        function createMemoryItem(memory) {
+                        // 創建記憶項目的函數（支持劇情線標記）
+                        function createMemoryItem(memory, storyLineId = null) {
                             const memoryItem = document.createElement('div');
                             memoryItem.className = 'memory-item';
                             
@@ -2318,12 +2460,21 @@ export function initializeGame() {
                                 typeInfo = `<span style="color: #8B4513;">獲得 ${relatedTear?.name || '絳珠'}</span>`;
                             }
                             
+                            // 劇情線標記
+                            let storylineBadge = '';
+                            if (storyLineId && memory.orderIndex) {
+                                storylineBadge = `<div style="font-size: 10px; color: #5D5CDE; margin-top: 2px;">
+                                    <span style="background: rgba(93, 92, 222, 0.2); padding: 2px 6px; border-radius: 3px;">第${memory.orderIndex}段</span>
+                                </div>`;
+                            }
+                            
                             memoryItem.innerHTML = `
                                 <div class="memory-item-icon">${memory.icon}</div>
                                 <div class="memory-item-details">
                                     <div class="item-name">${memory.name}</div>
                                     <div class="item-description">${memory.description}</div>
                                     ${typeInfo ? `<div style="font-size: 11px; margin-top: 3px;">${typeInfo}</div>` : ''}
+                                    ${storylineBadge}
                                 </div>
                             `;
                             
