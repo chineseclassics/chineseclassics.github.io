@@ -3,97 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紅樓舊夢 - 大觀園記憶重建</title>
+    <title>紅樓舊夢 - 大觀園記憶重建（Demo）</title>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
+    <main id="game-container">
     <!-- 狀態列 -->
-    <header class="status-bar">
+        <div class="status-bar">
         <div class="status-item">
-            <span class="status-label">節氣：</span>
-            <span id="current-season" class="status-value">立春</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">行動力：</span>
-            <span id="action-points" class="status-value">4 / 4</span>
+                <span class="label">節氣：</span>
+                <span id="seasonal-cycle">立春</span>
         </div>
         <div class="status-item">
-            <span class="status-label">靈石：</span>
-            <span id="spirit-stones" class="status-value">0</span>
+                <span class="label">行動力：</span>
+                <span id="action-points">4</span> / 4
         </div>
         <div class="status-item">
-            <span class="status-label">絳珠淚：</span>
-            <span id="tears-total" class="status-value">0</span>
+                <span class="label">絳珠：</span>
+                <span id="pearl-count">0</span>
         </div>
-        <div class="status-item tears-detail" id="tears-detail" style="display: none;">
-            <span class="status-label">詳情：</span>
-            <span id="tears-breakdown" class="status-value"></span>
+        <div class="status-item">
+                <span class="label">靈石：</span>
+                <span id="stone-count">0</span>
         </div>
-    </header>
+        </div>
 
-    <!-- 主遊戲區域 -->
-    <main class="game-container">
-        <!-- 左側：園林地圖 -->
-        <section class="garden-section">
-            <h2 class="section-title">大觀園</h2>
-            <div id="garden-grid" class="garden-grid">
-                <!-- 5×5 格子地圖將由 JS 動態生成 -->
+        <!-- 園林地圖 -->
+        <div class="garden-section">
+            <h2>大觀園地圖</h2>
+            <div id="garden-map" class="garden-map">
+                <!-- 5×5 地圖將由 JavaScript 動態生成 -->
             </div>
-        </section>
+        </div>
 
-        <!-- 右側：資訊面板 -->
-        <aside class="info-panel">
-            <!-- 花魂詳情 -->
-            <div class="panel-section">
-                <h3 class="panel-title">花魂</h3>
-                <div id="flower-details" class="flower-details">
-                    <p class="empty-message">尚未種植花魂</p>
+        <!-- 記憶列表 -->
+        <div class="memory-section">
+            <h2>記憶列表</h2>
+            <div id="memory-list" class="memory-list">
+                <!-- 記憶項目將由 JavaScript 動態生成 -->
+            </div>
+        </div>
+
+        <!-- 花魂列表 -->
+        <div class="flower-section">
+            <h2>花魂列表</h2>
+            <div id="flower-list" class="flower-list">
+                <!-- 花魂項目將由 JavaScript 動態生成 -->
+            </div>
+        </div>
+
+        <!-- 答題模態框 -->
+        <div id="question-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="question-title">第 3 回的記憶 - 黛玉初入榮府</h3>
+                    <button class="close-btn" id="close-modal">×</button>
                 </div>
+                <div class="question-info">
+                    <div class="timer">
+                        <span>剩餘時間：</span>
+                        <span id="timer-display">30</span> 秒
+                    </div>
+                    <div class="error-count">
+                        <span>答錯次數：</span>
+                        <span id="error-count-display">0</span>
             </div>
-
-            <!-- 記憶列表 -->
-            <div class="panel-section">
-                <h3 class="panel-title">記憶</h3>
-                <div id="memory-list" class="memory-list">
-                    <p class="empty-message">尚未收集記憶</p>
                 </div>
+                <div class="question-container">
+                    <div id="question-progress">
+                        <span>題目 <span id="current-question">1</span> / 3</span>
             </div>
-
-            <!-- 淚水詳情 -->
-            <div class="panel-section">
-                <h3 class="panel-title">絳珠淚詳情</h3>
-                <div id="tears-details" class="tears-details">
-                    <p class="empty-message">尚未獲得淚水</p>
+                    <div id="question-text" class="question-text"></div>
+                    <div id="question-options" class="question-options"></div>
                 </div>
+                <div id="resource-preview" class="resource-preview"></div>
+                <div id="question-result" class="question-result hidden"></div>
             </div>
-
-            <!-- 行動選單 -->
-            <div class="panel-section">
-                <h3 class="panel-title">行動</h3>
-                <div id="action-menu" class="action-menu">
-                    <button id="btn-water-flower" class="action-btn" disabled>澆灌花魂 (1 點)</button>
-                    <button id="btn-plant-flower" class="action-btn" disabled>種植花魂 (2 點)</button>
-                    <button id="btn-search-memory" class="action-btn">搜尋記憶 (1-2 點)</button>
-                    <button id="btn-next-season" class="action-btn action-btn-primary">進入下一節氣</button>
                 </div>
-            </div>
-        </aside>
-    </main>
 
-    <!-- 終局總結模態框 -->
-    <div id="ending-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>《石頭記》已鐫刻完成</h2>
-            <div id="ending-summary" class="ending-summary"></div>
-            <button id="btn-restart" class="action-btn action-btn-primary">重新開始</button>
+        <!-- 行動面板 -->
+        <div class="action-section">
+            <h2>行動</h2>
+            <div class="action-buttons">
+                <button id="unlock-building" class="action-btn" disabled>解鎖建築（需要 20 靈石）</button>
+                <button id="plant-flower" class="action-btn" disabled>種植花魂（消耗 2 行動力）</button>
+                <button id="water-flower" class="action-btn" disabled>澆灌花魂（消耗 1 行動力，5 絳珠）</button>
+            </div>
+        </div>
+
+        <!-- 日誌區域 -->
+        <div class="log-section">
+            <h2>遊戲日誌</h2>
+            <div id="game-log" class="game-log">
+                <div class="log-entry">遊戲開始！</div>
         </div>
     </div>
 
+        <!-- 下一節氣按鈕 -->
+        <div class="next-cycle-section">
+            <button id="next-cycle-btn" class="next-cycle-btn hidden">進入下一節氣</button>
+        </div>
+    </main>
+
     <!-- 引入應用切換器 -->
-    <script src="/assets/js/taixu-app-switcher.js"></script>
-    
-    <!-- 遊戲模組 -->
+    <script src="../../assets/js/taixu-app-switcher.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
-

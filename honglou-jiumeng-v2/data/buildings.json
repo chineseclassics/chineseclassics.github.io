@@ -1,0 +1,13 @@
+[
+    {
+        "id": "xiaoxiang_guan",
+        "name": "瀟湘館",
+        "relatedFlower": "daiyu_flower",
+        "position": {
+            "x": 2,
+            "y": 3
+        },
+        "stoneCost": 20
+    }
+]
+

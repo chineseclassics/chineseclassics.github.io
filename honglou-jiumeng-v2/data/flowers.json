@@ -1,0 +1,10 @@
+[
+    {
+        "id": "daiyu_flower",
+        "name": "黛玉芙蓉魂",
+        "character": "林黛玉",
+        "buildingId": "xiaoxiang_guan",
+        "initialGrowthToNext": 100
+    }
+]
+
