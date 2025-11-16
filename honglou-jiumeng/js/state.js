@@ -13,8 +13,7 @@ export const config = {
 };
 
 export const actionCosts = {
-    collectTears: 1,
-    searchMemories: 2,
+    // 移除 collectTears 和 searchMemories（答題解鎖記憶不消耗行動力）
     waterFlower: 1,
     plantFlower: 2,
     repairBuildingMin: 2,
@@ -377,12 +376,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: null, // 自動解鎖
                     content: "黛玉道：'我來了幾日，也覺這裡的景致好，物件新奇，人也接風。但我少什麼不好，又沒人不疼，怎麼捨得回去呢。'",
-                    relatedTear: "first-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_main",
                     orderIndex: 1,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "榮國府"
+                    relatedScene: "榮國府",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 3, // 第3回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 10,
+                    tearReward: 10 // 根據記憶類型給予絳珠
                 },
                 {
                     id: "daiyu-baoyu-meet",
@@ -392,12 +398,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: null,
                     content: "寶玉笑道：'這個妹妹我曾見過的。'黛玉聽了，不覺一驚，心中暗想：'好生奇怪，倒像在那裡見過一般，何等眼熟到如此！'",
-                    relatedTear: "first-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_main",
                     orderIndex: 2,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "榮國府"
+                    relatedScene: "榮國府",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 3, // 第3回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 10,
+                    tearReward: 10
                 },
                 {
                     id: "daiyu-burial",
@@ -407,12 +420,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: "清明",
                     content: "花謝花飛飛滿天，紅消香斷有誰憐？游絲軟系飄春榭，落絮輕沾撲繡簾。閨中女兒惜春暮，愁緒滿懷無釋處。手把花鋤出繡閨，忍踏落花來復去。",
-                    relatedTear: "burial-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_main",
                     orderIndex: 3,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "大觀園"
+                    relatedScene: "大觀園",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 23, // 第23回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 15,
+                    tearReward: 15
                 },
                 {
                     id: "daiyu-burn-manuscripts",
@@ -422,12 +442,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: "大寒",
                     content: "黛玉心中自思道：'我死了，這些墨寶還在，豈不大為世人恥笑。'於是便命丫環將前所作之詩稿盡行燒毀。",
-                    relatedTear: "destruction-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_main",
                     orderIndex: 4,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "瀟湘館"
+                    relatedScene: "瀟湘館",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 97, // 第97回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 20,
+                    tearReward: 20
                 },
                 {
                     id: "daiyu-illness",
@@ -437,12 +464,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: "大寒",
                     content: "黛玉病重，氣息奄奄，心中卻還記掛著寶玉，只是說不出話來。",
-                    relatedTear: "last-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_main",
                     orderIndex: 5,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "瀟湘館"
+                    relatedScene: "瀟湘館",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 98, // 第98回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 25,
+                    tearReward: 25
                 },
                 // 黛玉酸楚線
                 {
@@ -453,12 +487,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: null,
                     content: "黛玉聽聞'金玉良緣'之說，心中不覺一酸，暗想：'既有金玉之說，又何必有我？'",
-                    relatedTear: "jealousy-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_jealousy",
                     orderIndex: 1,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "大觀園"
+                    relatedScene: "大觀園",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 28, // 第28回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 12,
+                    tearReward: 12
                 },
                 {
                     id: "daiyu-baochai-conflict",
@@ -468,12 +509,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: null,
                     content: "黛玉冷笑道：'我當是誰，原來是寶姐姐。'寶釵笑道：'妹妹這話從何說起？'",
-                    relatedTear: "jealousy-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_jealousy",
                     orderIndex: 2,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "大觀園"
+                    relatedScene: "大觀園",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 30, // 第30回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 12,
+                    tearReward: 12
                 },
                 {
                     id: "daiyu-after-search",
@@ -483,12 +531,19 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: "霜降",
                     content: "抄檢大觀園後，園中冷清許多，黛玉獨自坐在瀟湘館中，心中淒涼。",
-                    relatedTear: "parting-tear",
-                    type: "tear",
+                    type: "tear", // 黛玉相關，獲得絳珠
                     storyLineId: "daiyu_jealousy",
                     orderIndex: 3,
                     relatedCharacter: "林黛玉",
-                    relatedScene: "瀟湘館"
+                    relatedScene: "瀟湘館",
+                    // 新增屬性：對齊設計文檔
+                    relatedChapter: 74, // 第74回
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 15,
+                    tearReward: 15
                 }
             ],
             cells: Array(25).fill().map((_, i) => ({
@@ -523,7 +578,7 @@ export const gameData = {
             suggestedActions: {
                 nextBuildingId: null,  // 建議下一步建造的建築
                 nextFlowerId: null,    // 建議下一步種植的花魂
-                nextAction: null       // 建議下一步執行的操作 (collect-tears, search-memories, advance-jieqi)
+                nextAction: null       // 建議下一步執行的操作 (unlock-memory, advance-jieqi)
             },
             tutorialCompleted: false,
             tutorialStep: 0,

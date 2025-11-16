@@ -1,0 +1,76 @@
+{
+  "chapters": [
+    {
+      "chapter": 3,
+      "title": "賈雨村夤緣復舊職 林黛玉拋父進京都",
+      "memories": [
+        "daiyu-first-entry",
+        "daiyu-baoyu-meet"
+      ],
+      "seasonalCycles": 2,
+      "startJieqiIndex": 0
+    },
+    {
+      "chapter": 23,
+      "title": "西廂記妙詞通戲語 牡丹亭艷曲警芳心",
+      "memories": [
+        "daiyu-burial"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 4
+    },
+    {
+      "chapter": 28,
+      "title": "蔣玉菡情贈茜香羅 薛寶釵羞籠紅麝串",
+      "memories": [
+        "daiyu-golden-jade"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 6
+    },
+    {
+      "chapter": 30,
+      "title": "寶釵借扇機帶雙敲 齡官劃薔癡及局外",
+      "memories": [
+        "daiyu-baochai-conflict"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 7
+    },
+    {
+      "chapter": 74,
+      "title": "惑奸讒抄檢大觀園 矢孤介杜絕寧國府",
+      "memories": [
+        "daiyu-after-search"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 17
+    },
+    {
+      "chapter": 97,
+      "title": "林黛玉焚稿斷癡情 薛寶釵出閨成大禮",
+      "memories": [
+        "daiyu-burn-manuscripts"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 23
+    },
+    {
+      "chapter": 98,
+      "title": "苦絳珠魂歸離恨天 病神瑛淚灑相思地",
+      "memories": [
+        "daiyu-illness"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 23
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "description": "紅樓舊夢回目與節氣對應關係數據庫",
+    "created": "2025-01-XX",
+    "totalChapters": 7,
+    "totalMemories": 8
+  }
+}
+

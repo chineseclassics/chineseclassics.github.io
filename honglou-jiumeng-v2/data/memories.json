@@ -1,0 +1,194 @@
+[
+    {
+        "id": "memory_daiyu_001",
+        "name": "黛玉初入榮府",
+        "chapter": 3,
+        "type": "pearl",
+        "baseReward": 10,
+        "questions": [
+            {
+                "question": "這回中，黛玉初入榮國府時，第一個見到的主要人物是誰？",
+                "options": ["賈寶玉", "王夫人", "賈母", "賈政"],
+                "correct": 2
+            },
+            {
+                "question": "黛玉在榮國府的第一餐，因為什麼原因沒有吃飽？",
+                "options": ["飯菜不合口味", "不敢多吃", "身體不適", "被其他人打擾"],
+                "correct": 1
+            },
+            {
+                "question": "這回中，黛玉初見寶玉時，寶玉說了什麼話？",
+                "options": ["這個妹妹我曾見過的", "這個妹妹好生面熟", "這個妹妹我見過", "這個妹妹我認識"],
+                "correct": 0
+            }
+        ]
+    },
+    {
+        "id": "memory_daiyu_002",
+        "name": "黛玉初見寶玉",
+        "chapter": 3,
+        "type": "pearl",
+        "baseReward": 12,
+        "questions": [
+            {
+                "question": "這回中，寶玉初見黛玉時，說了什麼話？",
+                "options": ["這個妹妹我曾見過的", "這個妹妹好生面熟", "這個妹妹我見過", "這個妹妹我認識"],
+                "correct": 0
+            },
+            {
+                "question": "這回中，寶玉因為什麼原因要摔玉？",
+                "options": ["因為黛玉沒有玉", "因為黛玉有玉", "因為其他人有玉", "因為玉不好看"],
+                "correct": 0
+            },
+            {
+                "question": "這回中，黛玉初見寶玉後，有什麼反應？",
+                "options": ["很開心", "很害怕", "很驚訝", "很生氣"],
+                "correct": 2
+            }
+        ]
+    },
+    {
+        "id": "memory_building_001",
+        "name": "大觀園初建",
+        "chapter": 16,
+        "type": "stone",
+        "baseReward": 15,
+        "questions": [
+            {
+                "question": "大觀園是為了什麼而建造的？",
+                "options": ["賈母生日", "元妃省親", "寶玉成親", "黛玉生日"],
+                "correct": 1
+            },
+            {
+                "question": "大觀園的設計圖是由誰負責的？",
+                "options": ["賈政", "賈珍", "山子野", "賈璉"],
+                "correct": 2
+            },
+            {
+                "question": "這回中，誰負責監督大觀園的建造？",
+                "options": ["賈政", "賈珍", "賈璉", "賈蓉"],
+                "correct": 2
+            }
+        ]
+    },
+    {
+        "id": "memory_building_002",
+        "name": "瀟湘館命名",
+        "chapter": 17,
+        "type": "stone",
+        "baseReward": 12,
+        "questions": [
+            {
+                "question": "瀟湘館是為誰準備的住所？",
+                "options": ["黛玉", "寶釵", "探春", "迎春"],
+                "correct": 0
+            },
+            {
+                "question": "瀟湘館的名字是誰起的？",
+                "options": ["賈政", "寶玉", "黛玉", "元妃"],
+                "correct": 3
+            },
+            {
+                "question": "瀟湘館的特色是什麼？",
+                "options": ["種滿竹子", "種滿梅花", "種滿桃花", "種滿菊花"],
+                "correct": 0
+            }
+        ]
+    },
+    {
+        "id": "memory_pearl_001",
+        "name": "寶玉夢遊太虛",
+        "chapter": 5,
+        "type": "pearl",
+        "baseReward": 15,
+        "questions": [
+            {
+                "question": "這回中，寶玉在夢中到了什麼地方？",
+                "options": ["太虛幻境", "大觀園", "榮國府", "寧國府"],
+                "correct": 0
+            },
+            {
+                "question": "夢中，誰帶寶玉遊覽太虛幻境？",
+                "options": ["警幻仙子", "黛玉", "寶釵", "元妃"],
+                "correct": 0
+            },
+            {
+                "question": "這回中，寶玉看到了什麼重要的冊子？",
+                "options": ["金陵十二釵正冊", "詩詞集", "家譜", "賬本"],
+                "correct": 0
+            }
+        ]
+    },
+    {
+        "id": "memory_pearl_002",
+        "name": "黛玉葬花",
+        "chapter": 23,
+        "type": "pearl",
+        "baseReward": 18,
+        "questions": [
+            {
+                "question": "這回中，黛玉在什麼地方葬花？",
+                "options": ["大觀園", "瀟湘館", "沁芳橋邊", "怡紅院"],
+                "correct": 2
+            },
+            {
+                "question": "黛玉葬花時念了什麼詩？",
+                "options": ["葬花吟", "桃花行", "秋窗風雨夕", "五美吟"],
+                "correct": 0
+            },
+            {
+                "question": "這回中，誰看到了黛玉葬花？",
+                "options": ["寶玉", "寶釵", "探春", "襲人"],
+                "correct": 0
+            }
+        ]
+    },
+    {
+        "id": "memory_stone_001",
+        "name": "怡紅院命名",
+        "chapter": 17,
+        "type": "stone",
+        "baseReward": 12,
+        "questions": [
+            {
+                "question": "怡紅院是為誰準備的住所？",
+                "options": ["寶玉", "黛玉", "寶釵", "探春"],
+                "correct": 0
+            },
+            {
+                "question": "怡紅院的名字是誰起的？",
+                "options": ["賈政", "寶玉", "元妃", "賈母"],
+                "correct": 2
+            },
+            {
+                "question": "怡紅院的特色是什麼？",
+                "options": ["種滿海棠", "種滿竹子", "種滿梅花", "種滿桃花"],
+                "correct": 0
+            }
+        ]
+    },
+    {
+        "id": "memory_pearl_003",
+        "name": "寶黛共讀西廂",
+        "chapter": 23,
+        "type": "pearl",
+        "baseReward": 15,
+        "questions": [
+            {
+                "question": "這回中，寶玉和黛玉一起讀了什麼書？",
+                "options": ["西廂記", "紅樓夢", "水滸傳", "三國演義"],
+                "correct": 0
+            },
+            {
+                "question": "他們在哪裡讀這本書？",
+                "options": ["大觀園", "瀟湘館", "沁芳橋邊", "怡紅院"],
+                "correct": 2
+            },
+            {
+                "question": "這回中，寶玉用書中的話對黛玉說了什麼？",
+                "options": ["我是個多愁多病身", "你是個傾國傾城貌", "我們是天生一對", "我們是知己"],
+                "correct": 1
+            }
+        ]
+    }
+]

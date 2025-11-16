@@ -1,141 +1,151 @@
-// 遊戲狀態管理
+// 遊戲狀態管理模組
+// 負責遊戲狀態的結構、更新和持久化
 
+/**
+ * 遊戲狀態結構
+ */
+export const createInitialState = () => ({
+    // 節氣系統
+    seasonalCycle: 1,              // 當前節氣序號（1-24）
+    seasonalCycleName: '立春',      // 當前節氣名稱
+    actionPoints: 4,                // 當前行動力
+    maxActionPoints: 4,             // 最大行動力（每節氣 4 點）
+    
+    // 資源系統
+    pearls: 0,                      // 絳珠數量
+    stones: 0,                     // 靈石數量
+    
+    // 記憶系統
+    memories: [],                   // 記憶列表（從數據文件加載）
+    
+    // 園林建築系統
+    buildings: [],                  // 建築列表
+    
+    // 花魂系統
+    flowers: [],                    // 花魂列表
+    
+    // 答題狀態（臨時）
+    currentMemory: null,            // 當前答題的記憶
+    currentQuestionIndex: 0,        // 當前題目索引
+    questionTimer: null,            // 答題計時器
+    timeRemaining: 30,              // 剩餘時間
+    errorCount: 0,                  // 答錯次數
+    questionStartTime: null,        // 題目開始時間
+    questionRewards: []             // 當前記憶的資源獎勵列表
+});
+
+/**
+ * 狀態管理類
+ */
 export class GameState {
     constructor() {
-        this.reset();
+        this.state = this.loadState() || createInitialState();
     }
-
-    reset() {
-        // 節氣系統
-        this.seasons = [
-            '立春', '雨水', '驚蟄', '春分', '清明', '穀雨',
-            '立夏', '小滿', '芒種', '夏至', '小暑', '大暑',
-            '立秋', '處暑', '白露', '秋分', '寒露', '霜降',
-            '立冬', '小雪', '大雪', '冬至', '小寒', '大寒'
-        ];
-        this.currentSeasonIndex = 0;
-        this.currentSeason = this.seasons[0];
-        
-        // 行動力
-        this.maxActionPoints = 4;
-        this.actionPoints = 4;
-        
-        // 資源
-        this.spiritStones = 0;
-        this.tears = {}; // { '孤弱之淚': 10, '葬花之淚': 0, ... }
-        
-        // 建築解鎖狀態
-        this.buildings = {
-            xiaoxiang_guan: { unlocked: false, cost: 50 }
-        };
-        
-        // 已解鎖的記憶
-        this.unlockedMemories = [];
+    
+    /**
+     * 從 localStorage 加載狀態
+     */
+    loadState() {
+        try {
+            const saved = localStorage.getItem('honglou-jiumeng-state');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (error) {
+            console.error('加載遊戲狀態失敗：', error);
+        }
+        return null;
     }
-
-    // 節氣相關
-    getCurrentSeason() {
-        return this.currentSeason;
+    
+    /**
+     * 保存狀態到 localStorage
+     */
+    saveState() {
+        try {
+            // 不保存臨時答題狀態
+            const stateToSave = {
+                ...this.state,
+                currentMemory: null,
+                currentQuestionIndex: 0,
+                questionTimer: null,
+                timeRemaining: 30,
+                errorCount: 0,
+                questionStartTime: null,
+                questionRewards: []
+            };
+            localStorage.setItem('honglou-jiumeng-state', JSON.stringify(stateToSave));
+        } catch (error) {
+            console.error('保存遊戲狀態失敗：', error);
+        }
     }
-
-    nextSeason() {
-        this.currentSeasonIndex = (this.currentSeasonIndex + 1) % this.seasons.length;
-        this.currentSeason = this.seasons[this.currentSeasonIndex];
-        this.actionPoints = this.maxActionPoints; // 恢復行動力
+    
+    /**
+     * 獲取狀態
+     */
+    getState() {
+        return this.state;
     }
-
-    // 行動力相關
-    getActionPoints() {
-        return this.actionPoints;
+    
+    /**
+     * 更新狀態
+     */
+    updateState(updates) {
+        this.state = { ...this.state, ...updates };
+        this.saveState();
     }
-
-    getMaxActionPoints() {
-        return this.maxActionPoints;
+    
+    /**
+     * 重置狀態（用於新遊戲）
+     */
+    resetState() {
+        this.state = createInitialState();
+        this.saveState();
     }
-
-    consumeActionPoints(amount) {
-        this.actionPoints = Math.max(0, this.actionPoints - amount);
+    
+    /**
+     * 添加絳珠
+     * @param {number} amount - 絳珠數量
+     */
+    addPearls(amount) {
+        const current = this.state.pearls || 0;
+        this.updateState({ pearls: current + amount });
     }
-
-    hasActionPoints(amount) {
-        return this.actionPoints >= amount;
-    }
-
-    // 靈石相關
-    getSpiritStones() {
-        return this.spiritStones;
-    }
-
-    addSpiritStones(amount) {
-        this.spiritStones += amount;
-    }
-
-    consumeSpiritStones(amount) {
-        if (this.spiritStones >= amount) {
-            this.spiritStones -= amount;
+    
+    /**
+     * 消耗絳珠
+     * @param {number} amount - 絳珠數量
+     * @returns {boolean} 是否成功消耗
+     */
+    consumePearls(amount) {
+        const current = this.state.pearls || 0;
+        if (current >= amount) {
+            this.updateState({ pearls: current - amount });
             return true;
         }
         return false;
     }
-
-    // 絳珠淚相關
-    addTears(type, amount) {
-        if (!this.tears[type]) {
-            this.tears[type] = 0;
-        }
-        this.tears[type] += amount;
+    
+    /**
+     * 添加靈石
+     * @param {number} amount - 靈石數量
+     */
+    addStones(amount) {
+        const current = this.state.stones || 0;
+        this.updateState({ stones: current + amount });
     }
-
-    consumeTears(type, amount) {
-        if (this.getTearCount(type) >= amount) {
-            this.tears[type] -= amount;
+    
+    /**
+     * 消耗靈石
+     * @param {number} amount - 靈石數量
+     * @returns {boolean} 是否成功消耗
+     */
+    consumeStones(amount) {
+        const current = this.state.stones || 0;
+        if (current >= amount) {
+            this.updateState({ stones: current - amount });
             return true;
         }
         return false;
-    }
-
-    getTearCount(type) {
-        return this.tears[type] || 0;
-    }
-
-    getAllTears() {
-        return this.tears;
-    }
-
-    getTotalTears() {
-        return Object.values(this.tears).reduce((sum, count) => sum + count, 0);
-    }
-
-    // 建築相關
-    isBuildingUnlocked(buildingId) {
-        return this.buildings[buildingId]?.unlocked || false;
-    }
-
-    unlockBuilding(buildingId) {
-        if (this.buildings[buildingId]) {
-            this.buildings[buildingId].unlocked = true;
-            return true;
-        }
-        return false;
-    }
-
-    getBuildingCost(buildingId) {
-        return this.buildings[buildingId]?.cost || 0;
-    }
-
-    // 記憶相關
-    unlockMemory(memoryId) {
-        if (!this.unlockedMemories.includes(memoryId)) {
-            this.unlockedMemories.push(memoryId);
-        }
-    }
-
-    isMemoryUnlocked(memoryId) {
-        return this.unlockedMemories.includes(memoryId);
-    }
-
-    getUnlockedMemories() {
-        return this.unlockedMemories;
     }
 }
 

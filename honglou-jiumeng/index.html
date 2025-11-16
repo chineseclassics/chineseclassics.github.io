@@ -75,17 +75,13 @@
                         <span class="panel-help" id="actions-help">?</span>
                     </h3>
                     <div class="action-buttons">
+                        <button class="action-button" id="search-memories">
+                            <span><span class="action-icon">🧠</span>尋找記憶</span>
+                            <span class="action-cost"><span class="cost-icon">⏱️</span>不消耗行動力</span>
+                        </button>
                         <button class="action-button" id="advance-jieqi">
                             <span><span class="action-icon">🌱</span>推進節氣</span>
-                            <span class="action-cost"><span class="cost-icon">⏱️</span>消耗: 0</span>
-                        </button>
-                        <button class="action-button" id="collect-tears">
-                            <span><span class="action-icon">💧</span>尋找絳珠</span>
-                            <span class="action-cost"><span class="cost-icon">⏱️</span>等待: 0</span>
-                        </button>
-                        <button class="action-button" id="search-memories">
-                            <span><span class="action-icon">🧠</span>尋找寶玉領悟</span>
-                            <span class="action-cost"><span class="cost-icon">💧</span>消耗: 2絳珠</span>
+                            <span class="action-cost"><span class="cost-icon">⏱️</span>推進後重置行動力</span>
                         </button>
                     </div>
                 </div>
@@ -165,6 +161,47 @@
         </div>
     </div>
     
+    <!-- 記憶選擇對話框 -->
+    <div class="dialog-overlay" id="memory-select-dialog-overlay" style="display: none;">
+        <div class="dialog memory-select-dialog" id="memory-select-dialog">
+            <h3 class="dialog-title" id="memory-select-dialog-title">當前節氣的記憶</h3>
+            <div class="memory-select-content" id="memory-select-content">
+                <!-- 動態生成記憶列表 -->
+            </div>
+            <div class="dialog-actions">
+                <button class="dialog-button secondary" id="memory-select-cancel">關閉</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 答題驗證對話框 -->
+    <div class="dialog-overlay" id="quiz-dialog-overlay" style="display: none;">
+        <div class="dialog quiz-dialog" id="quiz-dialog">
+            <h3 class="dialog-title" id="quiz-dialog-title">第 X 回的記憶 - 回憶名稱</h3>
+            <div class="quiz-content" id="quiz-content">
+                <div class="quiz-progress" id="quiz-progress">
+                    <span>題目 <span id="quiz-current">1</span>/<span id="quiz-total">3</span></span>
+                    <span class="quiz-timer" id="quiz-timer">剩餘時間：30 秒</span>
+                </div>
+                <div class="quiz-progress-bar">
+                    <div class="quiz-progress-bar-fill" id="quiz-progress-bar-fill" style="width: 0%"></div>
+                </div>
+                <div class="quiz-question" id="quiz-question">
+                    問題內容
+                </div>
+                <div class="quiz-options" id="quiz-options">
+                    <!-- 動態生成選項按鈕 -->
+                </div>
+                <div class="quiz-feedback" id="quiz-feedback" style="display: none;">
+                    <!-- 答題反饋 -->
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button class="dialog-button secondary" id="quiz-cancel">取消</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- RPG風格對話框 -->
     <div class="rpg-dialog-overlay" id="rpg-dialog-overlay">
         <div class="rpg-dialog">
@@ -232,7 +269,7 @@
     </div>
     
     <!-- 動態生成推薦行動氣泡 -->
-    <div class="action-bubble" id="action-suggestion" style="display: none; top: 100px; left: 100px;">
+    <div class="action-bubble" id="action-suggestion" style="display: none !important; top: 100px; left: 100px;">
         <div class="bubble-icon">💡</div>
         <div class="bubble-text">推薦的下一步行動：收集絳珠來澆灌花魂</div>
         <div class="bubble-close" id="bubble-close">×</div>

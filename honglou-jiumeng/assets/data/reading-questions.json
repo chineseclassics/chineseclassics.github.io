@@ -1,0 +1,222 @@
+{
+  "chapters": [
+    {
+      "chapter": 3,
+      "title": "賈雨村夤緣復舊職 林黛玉拋父進京都",
+      "memories": [
+        {
+          "id": "daiyu-first-entry",
+          "questions": [
+            {
+              "question": "這回中，黛玉初入榮國府時，第一個見到的主要人物是誰？",
+              "options": ["賈寶玉", "王夫人", "賈母", "賈政"],
+              "correct": 2
+            },
+            {
+              "question": "黛玉在榮國府的第一餐，因為什麼原因沒有吃飽？",
+              "options": ["飯菜不合口味", "不敢多吃", "身體不適", "被其他人打擾"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，黛玉初見寶玉時，寶玉說了什麼話？",
+              "options": ["這個妹妹我曾見過的", "妹妹從哪裡來", "妹妹好", "妹妹請坐"],
+              "correct": 0
+            }
+          ]
+        },
+        {
+          "id": "daiyu-baoyu-meet",
+          "questions": [
+            {
+              "question": "寶玉初見黛玉時，為什麼說『這個妹妹我曾見過的』？",
+              "options": ["因為他們前世有緣", "因為寶玉記錯了", "因為黛玉長得像別人", "因為寶玉開玩笑"],
+              "correct": 0
+            },
+            {
+              "question": "黛玉聽到寶玉的話後，心中有什麼想法？",
+              "options": ["覺得寶玉很無禮", "覺得很奇怪，好像在哪裡見過", "覺得寶玉很親切", "覺得寶玉在說謊"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，寶玉因為什麼原因要摔玉？",
+              "options": ["因為黛玉沒有玉", "因為玉不好看", "因為別人都有玉", "因為玉太重"],
+              "correct": 0
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 2
+    },
+    {
+      "chapter": 23,
+      "title": "西廂記妙詞通戲語 牡丹亭艷曲警芳心",
+      "memories": [
+        {
+          "id": "daiyu-burial",
+          "questions": [
+            {
+              "question": "黛玉葬花時，她為什麼要葬花？",
+              "options": ["因為花很髒", "因為花會污染環境", "因為她憐惜落花，不忍花被踐踏", "因為她無聊"],
+              "correct": 2
+            },
+            {
+              "question": "黛玉葬花時念的詩句『花謝花飛飛滿天』出自哪裡？",
+              "options": ["葬花吟", "紅樓夢曲", "西廂記", "牡丹亭"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，黛玉聽到什麼曲子後感到傷心？",
+              "options": ["西廂記", "牡丹亭", "桃花扇", "長生殿"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 28,
+      "title": "蔣玉菡情贈茜香羅 薛寶釵羞籠紅麝串",
+      "memories": [
+        {
+          "id": "daiyu-golden-jade",
+          "questions": [
+            {
+              "question": "黛玉聽聞『金玉良緣』之說後，心中有什麼感受？",
+              "options": ["很高興", "很生氣", "很酸楚，覺得自己多餘", "無所謂"],
+              "correct": 2
+            },
+            {
+              "question": "『金玉良緣』指的是什麼？",
+              "options": ["寶玉和黛玉的緣分", "寶玉和寶釵的緣分", "寶玉和湘雲的緣分", "寶玉和襲人的緣分"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，寶釵因為什麼原因羞籠紅麝串？",
+              "options": ["因為天氣熱", "因為寶玉看她", "因為元妃賞賜", "因為她喜歡"],
+              "correct": 2
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 30,
+      "title": "寶釵借扇機帶雙敲 齡官劃薔癡及局外",
+      "memories": [
+        {
+          "id": "daiyu-baochai-conflict",
+          "questions": [
+            {
+              "question": "黛玉與寶釵言語交鋒時，黛玉說了什麼話？",
+              "options": ["我當是誰，原來是寶姐姐", "寶姐姐好", "寶姐姐請坐", "寶姐姐從哪裡來"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，寶釵借扇機帶雙敲，指的是什麼？",
+              "options": ["借扇子", "用扇子敲打", "用言語諷刺寶玉和黛玉", "用扇子遮臉"],
+              "correct": 2
+            },
+            {
+              "question": "齡官劃薔時，寶玉為什麼癡及局外？",
+              "options": ["因為他喜歡齡官", "因為他被齡官的癡情感動", "因為他無聊", "因為他想幫忙"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 74,
+      "title": "惑奸讒抄檢大觀園 矢孤介杜絕寧國府",
+      "memories": [
+        {
+          "id": "daiyu-after-search",
+          "questions": [
+            {
+              "question": "抄檢大觀園後，園中變得怎麼樣？",
+              "options": ["更熱鬧", "更冷清", "更美麗", "更混亂"],
+              "correct": 1
+            },
+            {
+              "question": "抄檢大觀園的原因是什麼？",
+              "options": ["因為丟了東西", "因為有人告密", "因為要整頓", "因為要搬家"],
+              "correct": 1
+            },
+            {
+              "question": "抄檢大觀園後，黛玉獨自坐在哪裡？",
+              "options": ["怡紅院", "瀟湘館", "蘅蕪苑", "秋爽齋"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 97,
+      "title": "林黛玉焚稿斷癡情 薛寶釵出閨成大禮",
+      "memories": [
+        {
+          "id": "daiyu-burn-manuscripts",
+          "questions": [
+            {
+              "question": "黛玉為什麼要焚毀詩稿？",
+              "options": ["因為詩稿不好", "因為她死了，不想讓這些墨寶被世人恥笑", "因為她生氣", "因為她無聊"],
+              "correct": 1
+            },
+            {
+              "question": "黛玉焚稿時，心中想的是什麼？",
+              "options": ["要報仇", "要重新寫", "我死了，這些墨寶還在，豈不大為世人恥笑", "要送給別人"],
+              "correct": 2
+            },
+            {
+              "question": "這回中，薛寶釵出閨成大禮，指的是什麼？",
+              "options": ["寶釵出嫁", "寶釵過生日", "寶釵搬家", "寶釵升官"],
+              "correct": 0
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 98,
+      "title": "苦絳珠魂歸離恨天 病神瑛淚灑相思地",
+      "memories": [
+        {
+          "id": "daiyu-illness",
+          "questions": [
+            {
+              "question": "黛玉病重時，心中還記掛著誰？",
+              "options": ["寶釵", "湘雲", "寶玉", "襲人"],
+              "correct": 2
+            },
+            {
+              "question": "黛玉病重時，她的狀態如何？",
+              "options": ["還能說話", "氣息奄奄，說不出話來", "很精神", "很開心"],
+              "correct": 1
+            },
+            {
+              "question": "這回的回目『苦絳珠魂歸離恨天』中的『絳珠』指的是誰？",
+              "options": ["寶釵", "黛玉", "湘雲", "襲人"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "description": "紅樓舊夢閱讀問題數據庫 - MVP 階段（前 20 回）",
+    "created": "2025-01-XX",
+    "totalChapters": 7,
+    "totalMemories": 8,
+    "totalQuestions": 24
+  }
+}
+
