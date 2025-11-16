@@ -189,7 +189,7 @@
             id: 'yinniang',
             category: 'qiangu',
             name: '聶隱娘傳奇',
-            icon: 'fas fa-fan',
+            icon: 'fas fa-feather',
             gradient: 'from-rose-500 to-amber-400',
             url: '/yinniang/index.html',
             description: '以思想內閣與八德一智雙系統體驗聶隱娘的一生，在互動式故事中做出品格抉擇並累積文言詞彙',
