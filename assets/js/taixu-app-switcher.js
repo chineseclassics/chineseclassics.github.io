@@ -930,38 +930,73 @@
         });
     }
     
+    // 檢查並加載 Font Awesome
+    function ensureFontAwesome() {
+        // 檢查是否已經加載 Font Awesome
+        const hasFontAwesome = document.querySelector('link[href*="font-awesome"]') ||
+                               document.querySelector('link[href*="fontawesome"]') ||
+                               (window.FontAwesome && window.FontAwesome.config);
+        
+        if (!hasFontAwesome) {
+            console.log('📦 Font Awesome 未檢測到，正在自動加載...');
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+            link.id = 'taixu-fontawesome';
+            document.head.appendChild(link);
+            console.log('✅ Font Awesome 已加載');
+            // 等待 Font Awesome 加載完成後再繼續
+            return new Promise((resolve) => {
+                link.onload = () => {
+                    console.log('✅ Font Awesome 加載完成');
+                    resolve();
+                };
+                link.onerror = () => {
+                    console.warn('⚠️ Font Awesome 加載失敗，圖標可能無法顯示');
+                    resolve(); // 即使失敗也繼續，避免阻塞
+                };
+                // 設置超時，避免無限等待
+                setTimeout(resolve, 2000);
+            });
+        }
+        return Promise.resolve();
+    }
+    
     // 初始化切换器
     function initAppSwitcher() {
         console.log('🔄 開始初始化太虛幻境應用切換器...');
         
-        // 插入样式
-        if (!document.getElementById('taixu-switcher-styles')) {
-            document.head.insertAdjacentHTML('beforeend', createSwitcherStyles());
-            console.log('✅ 樣式已插入');
-        }
-        
-        // 插入浮动 Logo
-        if (!document.getElementById('taixuFloatingLogo')) {
-            document.body.insertAdjacentHTML('beforeend', createFloatingLogoHTML());
-            console.log('✅ 浮動 Logo 已插入');
-        }
-        
-        // 插入切换器模态框
-        if (!document.getElementById('taixuAppSwitcherModal')) {
-            document.body.insertAdjacentHTML('beforeend', createSwitcherModalHTML());
-            console.log('✅ 切換器模態框已插入');
-        }
-        
-        // 使用 requestAnimationFrame 确保 DOM 已渲染
-        requestAnimationFrame(() => {
-            // 绑定事件
-            bindEvents();
+        // 確保 Font Awesome 已加載
+        ensureFontAwesome().then(() => {
+            // 插入样式
+            if (!document.getElementById('taixu-switcher-styles')) {
+                document.head.insertAdjacentHTML('beforeend', createSwitcherStyles());
+                console.log('✅ 樣式已插入');
+            }
             
-            // 渲染应用网格
-            renderAppGrid();
+            // 插入浮动 Logo
+            if (!document.getElementById('taixuFloatingLogo')) {
+                document.body.insertAdjacentHTML('beforeend', createFloatingLogoHTML());
+                console.log('✅ 浮動 Logo 已插入');
+            }
             
-            console.log('✅ 太虛幻境應用切換器初始化完成');
-            applyFloatingLogoVisibility();
+            // 插入切换器模态框
+            if (!document.getElementById('taixuAppSwitcherModal')) {
+                document.body.insertAdjacentHTML('beforeend', createSwitcherModalHTML());
+                console.log('✅ 切換器模態框已插入');
+            }
+            
+            // 使用 requestAnimationFrame 确保 DOM 已渲染
+            requestAnimationFrame(() => {
+                // 绑定事件
+                bindEvents();
+                
+                // 渲染应用网格
+                renderAppGrid();
+                
+                console.log('✅ 太虛幻境應用切換器初始化完成');
+                applyFloatingLogoVisibility();
+            });
         });
     }
     
