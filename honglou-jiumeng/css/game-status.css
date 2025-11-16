@@ -1,0 +1,129 @@
+/* 遊戲狀態區域 - 增強版 */
+.game-status {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+/* 添加輪迴進度條 */
+.cycle-progress {
+    position: absolute;
+    top: -10px;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.cycle-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, #5D5CDE, #A5A4FF);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+    .game-status {
+        background: rgba(40, 40, 40, 0.8);
+        border: 1px solid #444;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
+    
+    .cycle-progress {
+        background-color: #333;
+    }
+}
+
+.status-item {
+    text-align: center;
+    padding: 5px 15px;
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+/* 資源項目懸停效果 */
+.status-item:hover {
+    transform: translateY(-3px);
+}
+
+/* 資源變化動畫 */
+@keyframes resourceChange {
+    0% {
+        transform: scale(1);
+        color: inherit;
+    }
+    50% {
+        transform: scale(1.2);
+        color: #5D5CDE;
+        font-weight: bold;
+    }
+    100% {
+        transform: scale(1);
+        color: inherit;
+    }
+}
+
+.resource-change {
+    animation: resourceChange 0.5s ease;
+}
+
+.status-label {
+    font-size: 14px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.status-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #8B4513;
+    transition: color 0.3s ease;
+}
+
+.status-value.ap-warning {
+    color: #d97706;
+}
+
+/* 資源足夠時顯示高亮 */
+.status-value.sufficient {
+    color: #4CAF50;
+}
+
+/* 資源不足時顯示警告 */
+.status-value.insufficient {
+    color: #F44336;
+}
+
+@media (prefers-color-scheme: dark) {
+    .status-label {
+        color: #aaa;
+    }
+    
+    .status-value {
+        color: #d4b483;
+    }
+    
+    .status-value.sufficient {
+        color: #81C784;
+    }
+    
+    .status-value.insufficient {
+        color: #E57373;
+    }
+    
+    .status-value.ap-warning {
+        color: #f0b66d;
+    }
+}
+

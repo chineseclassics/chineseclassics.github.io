@@ -1,0 +1,516 @@
+/* 控制面板 - 改進設計 */
+.panel {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 面板呼吸效果 */
+.panel.highlight {
+    animation: panelHighlight 2s infinite;
+}
+
+@keyframes panelHighlight {
+    0% { box-shadow: 0 3px 10px rgba(93, 92, 222, 0.2); }
+    50% { box-shadow: 0 3px 15px rgba(93, 92, 222, 0.6); }
+    100% { box-shadow: 0 3px 10px rgba(93, 92, 222, 0.2); }
+}
+
+.panel-title {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #5a3921;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.panel-title-icon {
+    margin-right: 8px;
+    font-size: 20px;
+}
+
+.panel-help {
+    font-size: 16px;
+    color: #5D5CDE;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.panel-help:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 改進按鈕樣式 */
+.action-button {
+    padding: 12px;
+    background: #8B4513;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 按鈕波紋效果 */
+.action-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.action-button:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+
+/* 突出顯示推薦操作 */
+.action-button.recommended {
+    background: #5D5CDE;
+    animation: pulse 2s infinite;
+}
+
+.action-button:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.action-button.recommended:hover {
+    background: #7170E3;
+}
+
+.action-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.action-cost {
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.action-icon {
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .panel {
+        background: rgba(40, 40, 40, 0.8);
+        border: 1px solid #444;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
+    
+    .panel-title {
+        color: #d4b483;
+        border-bottom: 1px solid #444;
+    }
+    
+    .action-button {
+        background: #5D5CDE;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    
+    .action-button:hover {
+        background: #7170E3;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+    
+    .action-button.recommended {
+        background: #8B4513;
+    }
+    
+    .action-button.recommended:hover {
+        background: #a0522d;
+    }
+    
+    .action-button:disabled {
+        background: #555555;
+    }
+}
+
+/* 列表改進 */
+.flowers-list, .birds-list, .memories-list, .tears-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+    scrollbar-width: thin;
+    scrollbar-color: #8B4513 #f0f0f0;
+}
+
+.flowers-list::-webkit-scrollbar, 
+.birds-list::-webkit-scrollbar, 
+.memories-list::-webkit-scrollbar, 
+.tears-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.flowers-list::-webkit-scrollbar-thumb, 
+.birds-list::-webkit-scrollbar-thumb, 
+.memories-list::-webkit-scrollbar-thumb, 
+.tears-list::-webkit-scrollbar-thumb {
+    background-color: #8B4513;
+    border-radius: 3px;
+}
+
+.flowers-list::-webkit-scrollbar-track, 
+.birds-list::-webkit-scrollbar-track, 
+.memories-list::-webkit-scrollbar-track, 
+.tears-list::-webkit-scrollbar-track {
+    background-color: #f0f0f0;
+    border-radius: 3px;
+}
+
+.flower-item, .bird-item, .memory-item, .tear-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    margin-bottom: 5px;
+}
+
+.flower-item:hover, .bird-item:hover, .memory-item:hover, .tear-item:hover {
+    background: rgba(230, 230, 230, 0.5);
+    transform: translateX(5px);
+}
+
+/* 記憶狀態樣式 */
+.memory-item.memory-locked {
+    opacity: 0.7;
+    border-left: 3px solid #ff4444;
+}
+
+.memory-item.memory-unlocked {
+    border-left: 3px solid #4CAF50;
+}
+
+/* 新增項目效果 */
+.new-item {
+    animation: newItem 2s ease;
+}
+
+@keyframes newItem {
+    0% { background-color: rgba(93, 92, 222, 0.2); }
+    100% { background-color: transparent; }
+}
+
+.flower-item-icon, .bird-item-icon, .memory-item-icon, .tear-item-icon {
+    font-size: 22px;
+    margin-right: 12px;
+    width: 30px;
+    text-align: center;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.flower-item-details, .bird-item-details, .memory-item-details, .tear-item-details {
+    flex: 1;
+}
+
+.item-name {
+    font-size: 15px;
+    font-weight: bold;
+    color: #5a3921;
+    margin-bottom: 3px;
+}
+
+.item-level, .item-description {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* 添加項目統計計數器樣式 */
+.counter-badge {
+    background-color: #5D5CDE;
+    color: white;
+    border-radius: 12px;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+    .flowers-list, .birds-list, .memories-list, .tears-list {
+        scrollbar-color: #5D5CDE #333;
+    }
+    
+    .flowers-list::-webkit-scrollbar-thumb, 
+    .birds-list::-webkit-scrollbar-thumb, 
+    .memories-list::-webkit-scrollbar-thumb, 
+    .tears-list::-webkit-scrollbar-thumb {
+        background-color: #5D5CDE;
+    }
+    
+    .flowers-list::-webkit-scrollbar-track, 
+    .birds-list::-webkit-scrollbar-track, 
+    .memories-list::-webkit-scrollbar-track, 
+    .tears-list::-webkit-scrollbar-track {
+        background-color: #333;
+    }
+    
+    .flower-item, .bird-item, .memory-item, .tear-item {
+        border-bottom: 1px solid #444;
+    }
+    
+    .flower-item:hover, .bird-item:hover, .memory-item:hover, .tear-item:hover {
+        background: rgba(60, 60, 60, 0.5);
+    }
+    
+    .item-name {
+        color: #d4b483;
+    }
+    
+    .item-level, .item-description {
+        color: #aaa;
+    }
+    
+    .counter-badge {
+        background-color: #8B4513;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+}
+
+/* 進度條改進 */
+.progress-container {
+    width: 100%;
+    height: 12px;
+    background: rgba(230, 230, 230, 0.5);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 5px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.progress-label {
+    position: absolute;
+    top: -18px;
+    right: 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, #8B4513, #d4b483);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+/* 進度條閃光效果 */
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to right, 
+                    transparent 0%, 
+                    rgba(255,255,255,0.4) 50%, 
+                    transparent 100%);
+    animation: shine 2s infinite;
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* 淚水進度條特殊樣式 */
+.tear-progress-bar {
+    background: linear-gradient(to right, #5D5CDE, #A5A4FF); 
+}
+
+@media (prefers-color-scheme: dark) {
+    .progress-container {
+        background: rgba(60, 60, 60, 0.5);
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+    }
+    
+    .progress-label {
+        color: #aaa;
+    }
+    
+    .progress-bar {
+        background: linear-gradient(to right, #a0522d, #d4b483);
+    }
+    
+    .tear-progress-bar {
+        background: linear-gradient(to right, #5D5CDE, #A5A4FF);
+    }
+}
+
+/* 建造菜單改進 */
+.build-menu {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.build-item {
+    padding: 12px;
+    background: rgba(255, 245, 230, 0.8);
+    border: 1px solid #d4b483;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.build-item:hover {
+    background: rgba(255, 245, 230, 1);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* 推薦選擇的項目 */
+.build-item.recommended {
+    box-shadow: 0 0 0 2px #5D5CDE, 0 2px 5px rgba(0,0,0,0.1);
+    animation: recommendPulse 2s infinite;
+}
+
+@keyframes recommendPulse {
+    0% { box-shadow: 0 0 0 2px rgba(93, 92, 222, 0.5), 0 2px 5px rgba(0,0,0,0.1); }
+    50% { box-shadow: 0 0 0 3px rgba(93, 92, 222, 1), 0 5px 15px rgba(0,0,0,0.2); }
+    100% { box-shadow: 0 0 0 2px rgba(93, 92, 222, 0.5), 0 2px 5px rgba(0,0,0,0.1); }
+}
+
+.build-item.disabled {
+    background: #eee;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+.build-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: #5a3921;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+}
+
+.build-name {
+    font-size: 14px;
+    text-align: center;
+    color: #5a3921;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.build-cost {
+    font-size: 11px;
+    color: #666;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,255,255,0.5);
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
+.build-cost-icon {
+    font-size: 13px;
+}
+
+/* 建築足夠資源顯示 */
+.build-item:not(.disabled) .build-cost {
+    color: #4CAF50;
+}
+
+@media (prefers-color-scheme: dark) {
+    .build-item {
+        background: rgba(70, 60, 45, 0.8);
+        border: 1px solid #a08463;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .build-item:hover {
+        background: rgba(80, 70, 55, 1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    .build-item.disabled {
+        background: #444;
+        opacity: 0.5;
+    }
+    
+    .build-icon {
+        color: #d4b483;
+    }
+    
+    .build-name {
+        color: #d4b483;
+    }
+    
+    .build-cost {
+        color: #aaa;
+        background: rgba(0,0,0,0.2);
+    }
+    
+    .build-item:not(.disabled) .build-cost {
+        color: #81C784;
+    }
+}
+
