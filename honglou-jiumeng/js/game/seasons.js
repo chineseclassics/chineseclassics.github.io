@@ -46,23 +46,24 @@ async function checkMemoryDiscovery() {
       }
       
       if (isInChapterRange) {
-        // 計算當前節氣對應的回憶索引
-        const relativeJieqiIndex = currentJieqiIndex - startJieqi;
-        if (relativeJieqiIndex >= 0 && relativeJieqiIndex < chapter.memories.length) {
-          const memoryId = chapter.memories[relativeJieqiIndex];
+        // 檢查該回目的所有未解鎖記憶（支持同一回中 stone 和 tear 類型並存）
+        const newMemories = [];
+        chapter.memories.forEach((memoryId, index) => {
           const memory = gameData.memories.find(m => m.id === memoryId);
           
           if (memory && !memory.unlocked && !memory.collected) {
-            // 記憶自動出現在 UI 中（不消耗行動力）
-            // 記憶已經在記憶列表中顯示，這裡只需要確保它可見
-            updateLists();
-            
-            // 可選：顯示記憶發現提示
-            if (relativeJieqiIndex === 0) {
-              // 只在第一個記憶出現時提示
-              showHint('記憶發現', `第 ${chapter.chapter} 回的記憶已出現`, '✨');
-            }
+            newMemories.push(memory);
           }
+        });
+        
+        if (newMemories.length > 0) {
+          // 記憶自動出現在 UI 中（不消耗行動力）
+          // 記憶已經在記憶列表中顯示，這裡只需要確保它可見
+          updateLists();
+          
+          // 顯示記憶發現提示
+          const memoryTypes = newMemories.map(m => m.type === 'stone' ? '靈石' : '絳珠').join('、');
+          showHint('記憶發現', `第 ${chapter.chapter} 回的記憶已出現（${memoryTypes}）`, '✨');
         }
       }
     });

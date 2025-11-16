@@ -1,0 +1,61 @@
+/* 基礎樣式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'PMingLiU', 'MingLiU', serif;
+}
+
+body {
+    background: #f5f5f5 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.1"><path d="M0,0 L200,200 M200,0 L0,200" stroke="black" stroke-width="1"/></svg>');
+    color: #333;
+    overflow-x: hidden;
+}
+
+/* 暗黑模式 */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #181818 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.05"><path d="M0,0 L200,200 M200,0 L0,200" stroke="white" stroke-width="1"/></svg>');
+        color: #eee;
+    }
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.title {
+    font-size: 36px;
+    margin-bottom: 10px;
+    font-weight: normal;
+    color: #8B4513;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    letter-spacing: 5px;
+}
+
+.subtitle {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+    .title {
+        color: #d4b483;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .subtitle {
+        color: #aaa;
+    }
+}
+

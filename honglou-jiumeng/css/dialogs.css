@@ -1,0 +1,517 @@
+/* 對話框改進 */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.dialog-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dialog {
+    background: white;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 25px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.dialog-overlay.active .dialog {
+    transform: scale(1);
+}
+
+.dialog-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.3s ease;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.05);
+    z-index: 1010;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    touch-action: manipulation;
+}
+
+.dialog-close:hover {
+    color: #000;
+    background: rgba(0,0,0,0.1);
+}
+
+.dialog-close:active {
+    transform: scale(0.95);
+    background: rgba(0,0,0,0.15);
+}
+
+.dialog-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #5a3921;
+    text-align: center;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.dialog-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 30%;
+    right: 30%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #5D5CDE, transparent);
+}
+
+.dialog-content {
+    margin-bottom: 25px;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+/* 改進按鈕樣式 */
+.dialog-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 15px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.dialog-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.dialog-button:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+.dialog-button.primary {
+    background: #8B4513;
+    color: white;
+}
+
+.dialog-button.primary:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.dialog-button.secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.dialog-button.secondary:hover {
+    background: #ddd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .dialog-overlay {
+        backdrop-filter: blur(5px);
+    }
+    
+    .dialog {
+        background: #282828;
+        color: #eee;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    
+    .dialog-close {
+        color: #aaa;
+    }
+    
+    .dialog-close:hover {
+        color: #fff;
+        background: rgba(255,255,255,0.1);
+    }
+    
+    .dialog-title {
+        color: #d4b483;
+    }
+    
+    .dialog-title::after {
+        background: linear-gradient(to right, transparent, #8B4513, transparent);
+    }
+    
+    .dialog-button.primary {
+        background: #5D5CDE;
+    }
+    
+    .dialog-button.primary:hover {
+        background: #7170E3;
+    }
+    
+    .dialog-button.secondary {
+        background: #444;
+        color: #eee;
+    }
+    
+    .dialog-button.secondary:hover {
+        background: #555;
+    }
+}
+
+/* 記憶閃回對話框 */
+.memory-dialog {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid #d4b483;
+}
+
+.memory-content {
+    padding: 20px;
+    font-size: 16px;
+    line-height: 1.8;
+    text-align: center;
+    font-style: italic;
+    color: #5a3921;
+    position: relative;
+}
+
+/* 添加裝飾性引號 */
+.memory-content::before,
+.memory-content::after {
+    font-family: serif;
+    position: absolute;
+    color: rgba(90, 57, 33, 0.1);
+    font-size: 60px;
+    line-height: 1;
+}
+
+.memory-content::before {
+    content: '"';
+    top: -10px;
+    left: 0;
+}
+
+.memory-content::after {
+    content: '"';
+    bottom: -30px;
+    right: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    .memory-dialog {
+        background: rgba(40, 40, 40, 0.95);
+        border: 1px solid #a08463;
+    }
+    
+    .memory-content {
+        color: #d4b483;
+    }
+    
+    .memory-content::before,
+    .memory-content::after {
+        color: rgba(212, 180, 131, 0.1);
+    }
+}
+
+/* 記憶選擇對話框 */
+.memory-select-dialog {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border: 2px solid #5D5CDE;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.memory-select-content {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+    .memory-select-dialog {
+        background: rgba(40, 40, 40, 0.98);
+        border: 2px solid #7170E3;
+    }
+}
+
+/* 答題驗證對話框 */
+.quiz-dialog {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border: 2px solid #5D5CDE;
+    max-width: 700px;
+}
+
+.quiz-content {
+    padding: 20px;
+}
+
+.quiz-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.quiz-timer {
+    font-weight: bold;
+    color: #5D5CDE;
+}
+
+.quiz-question {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #5D5CDE;
+}
+
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.quiz-option-button {
+    padding: 15px 20px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.quiz-option-button:hover {
+    border-color: #5D5CDE;
+    background: #f0f0ff;
+    transform: translateX(5px);
+}
+
+.quiz-option-button:active {
+    transform: translateX(2px);
+}
+
+.quiz-feedback {
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: center;
+    border: 2px solid;
+    transition: all 0.3s ease;
+}
+
+.quiz-feedback.correct {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+}
+
+.quiz-feedback.wrong {
+    border-color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+/* 答題進度條 */
+.quiz-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+.quiz-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #5D5CDE, #7170E3);
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .quiz-dialog {
+        background: rgba(40, 40, 40, 0.98);
+        border: 2px solid #7170E3;
+    }
+    
+    .quiz-progress {
+        background: #333;
+    }
+    
+    .quiz-question {
+        background: #2a2a2a;
+        border-left-color: #7170E3;
+    }
+    
+    .quiz-option-button {
+        background: #333;
+        border-color: #555;
+        color: #eee;
+    }
+    
+    .quiz-option-button:hover {
+        border-color: #7170E3;
+        background: #3a3a4a;
+    }
+}
+
+/* RPG風格對話框 */
+.rpg-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.rpg-dialog-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.rpg-dialog {
+    width: 85%;
+    max-width: 600px;
+    background-color: rgba(20, 20, 30, 0.9);
+    border: 2px solid #8B4513;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.rpg-dialog-overlay.active .rpg-dialog {
+    transform: translateY(0);
+}
+
+.rpg-character {
+    display: flex;
+    align-items: center;
+    background-color: rgba(139, 69, 19, 0.8);
+    padding: 10px 15px;
+    border-bottom: 2px solid #5D5CDE;
+}
+
+.rpg-portrait {
+    font-size: 32px;
+    margin-right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.rpg-name {
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.rpg-textbox {
+    padding: 25px;
+    background-color: rgba(20, 20, 30, 0.95);
+    color: white;
+    min-height: 120px;
+    position: relative;
+}
+
+.rpg-text {
+    font-size: 18px;
+    line-height: 1.6;
+    margin: 0;
+    min-height: 100px;
+}
+
+.rpg-indicator {
+    position: absolute;
+    right: 15px;
+    bottom: 10px;
+    color: #5D5CDE;
+    animation: bounce 1s infinite;
+    font-size: 20px;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+@media (prefers-color-scheme: dark) {
+    .rpg-character {
+        background-color: rgba(93, 92, 222, 0.8);
+        border-bottom: 2px solid #8B4513;
+    }
+}
+

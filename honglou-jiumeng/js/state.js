@@ -364,6 +364,17 @@ export const gameData = {
                         { segments: 2, reward: { tear: 8, stone: 3 }, message: "你感受到黛玉內心的酸楚..." },
                         { segments: 3, reward: { tear: 15, stone: 8 }, message: "完整的酸楚記憶被喚醒..." }
                     ]
+                },
+                "baoyu_main": {
+                    id: "baoyu_main",
+                    name: "寶玉的成長與領悟",
+                    character: "賈寶玉",
+                    description: "從神游太虛到訴說心事，寶玉的成長軌跡",
+                    milestones: [
+                        { segments: 2, reward: { tear: 3, stone: 10 }, message: "你回憶起寶玉的幻境之旅..." },
+                        { segments: 4, reward: { tear: 5, stone: 20 }, message: "寶玉的成長記憶更加完整..." },
+                        { segments: 5, reward: { tear: 10, stone: 30, flowerBoost: "baoyu-flower" }, message: "完整的記憶線浮現，寶玉花魂獲得成長加成！" }
+                    ]
                 }
             },
             memories: [
@@ -398,10 +409,10 @@ export const gameData = {
                     collected: false,
                     requiredJieqi: null,
                     content: "寶玉笑道：'這個妹妹我曾見過的。'黛玉聽了，不覺一驚，心中暗想：'好生奇怪，倒像在那裡見過一般，何等眼熟到如此！'",
-                    type: "tear", // 黛玉相關，獲得絳珠
+                    type: "stone", // 寶玉視角，獲得靈石
                     storyLineId: "daiyu_main",
                     orderIndex: 2,
-                    relatedCharacter: "林黛玉",
+                    relatedCharacter: "賈寶玉",
                     relatedScene: "榮國府",
                     // 新增屬性：對齊設計文檔
                     relatedChapter: 3, // 第3回
@@ -410,7 +421,7 @@ export const gameData = {
                     unlocked: false,
                     questions: [], // 將從 reading-questions.json 載入
                     baseReward: 10,
-                    tearReward: 10
+                    stoneReward: 10 // 根據記憶類型給予靈石
                 },
                 {
                     id: "daiyu-burial",
@@ -542,6 +553,160 @@ export const gameData = {
                     readingVerified: false,
                     unlocked: false,
                     questions: [], // 將從 reading-questions.json 載入
+                    baseReward: 15,
+                    tearReward: 15
+                },
+                // 新增記憶：第5回 - 寶玉神游太虛幻境
+                {
+                    id: "baoyu-dream-taihuan",
+                    name: "神游太虛幻境",
+                    icon: "🌙",
+                    description: "寶玉神游太虛幻境的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "警幻仙子道：'此離恨天之上，灌愁海之中，乃放春山遣香洞太虛幻境也。'",
+                    type: "stone", // 寶玉視角，獲得靈石
+                    storyLineId: "baoyu_main",
+                    orderIndex: 1,
+                    relatedCharacter: "賈寶玉",
+                    relatedScene: "太虛幻境",
+                    relatedChapter: 5,
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [],
+                    baseReward: 15,
+                    stoneReward: 15
+                },
+                // 第19回 - 寶玉與襲人
+                {
+                    id: "baoyu-xiren-conversation",
+                    name: "與襲人論情",
+                    icon: "💬",
+                    description: "寶玉與襲人談論情理的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "寶玉道：'只求你們同看著我，守著我，等我有一日化成了飛灰，飛灰還不好，灰還有形有跡，還有知識。等我化成一股輕煙，風一吹便散了的時候，你們也管不得我，我也顧不得你們了。'",
+                    type: "stone",
+                    storyLineId: "baoyu_main",
+                    orderIndex: 2,
+                    relatedCharacter: "賈寶玉",
+                    relatedScene: "怡紅院",
+                    relatedChapter: 19,
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [],
+                    baseReward: 12,
+                    stoneReward: 12
+                },
+                // 第27回 - 黛玉葬花詞
+                {
+                    id: "daiyu-burial-poem",
+                    name: "葬花詞",
+                    icon: "🌸",
+                    description: "黛玉吟誦葬花詞的記憶",
+                    collected: false,
+                    requiredJieqi: "穀雨",
+                    content: "爾今死去儂收葬，未卜儂身何日喪？儂今葬花人笑癡，他年葬儂知是誰？",
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 4,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "大觀園",
+                    relatedChapter: 27,
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [],
+                    baseReward: 18,
+                    tearReward: 18
+                },
+                // 第32回 - 寶玉訴肺腑
+                {
+                    id: "baoyu-confess-heart",
+                    name: "訴肺腑",
+                    icon: "💝",
+                    description: "寶玉向黛玉訴說心事的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "寶玉道：'好妹妹，我的這心事，從來也不敢說，今兒我大膽說出來，死也甘心！我為你也弄了一身的病在這裡，又不敢告訴人，只好掩著。只等你的病好了，只怕我的病才得好呢。'",
+                    type: "stone",
+                    storyLineId: "baoyu_main",
+                    orderIndex: 3,
+                    relatedCharacter: "賈寶玉",
+                    relatedScene: "大觀園",
+                    relatedChapter: 32,
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [],
+                    baseReward: 15,
+                    stoneReward: 15
+                },
+                // 第33回 - 寶玉挨打
+                {
+                    id: "baoyu-beaten",
+                    name: "寶玉挨打",
+                    icon: "⚡",
+                    description: "寶玉被父親責打的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "賈政一見，眼都紅紫了，也不暇問他在外流蕩優伶，表贈私物，在家荒疏學業，淫辱母婢等語，只喝令：'堵起嘴來，著實打死！'",
+                    type: "stone",
+                    storyLineId: "baoyu_main",
+                    orderIndex: 4,
+                    relatedCharacter: "賈寶玉",
+                    relatedScene: "榮國府",
+                    relatedChapter: 33,
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [],
+                    baseReward: 15,
+                    stoneReward: 15
+                },
+                // 第45回 - 黛玉秋雨夜
+                {
+                    id: "daiyu-autumn-rain",
+                    name: "秋雨夜",
+                    icon: "🌧️",
+                    description: "黛玉秋雨夜獨坐的記憶",
+                    collected: false,
+                    requiredJieqi: "寒露",
+                    content: "黛玉不覺心有所感，亦不禁發於章句，遂成《代別離》一首，擬《春江花月夜》之格，乃名其詞曰《秋窗風雨夕》。",
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 5,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "瀟湘館",
+                    relatedChapter: 45,
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [],
+                    baseReward: 18,
+                    tearReward: 18
+                },
+                // 第48回 - 香菱學詩
+                {
+                    id: "xiangling-learn-poetry",
+                    name: "香菱學詩",
+                    icon: "📚",
+                    description: "香菱向黛玉學詩的記憶",
+                    collected: false,
+                    requiredJieqi: null,
+                    content: "黛玉笑道：'既要作詩，你就拜我作師。我雖不通，大略也還教得起你。'",
+                    type: "tear",
+                    storyLineId: "daiyu_main",
+                    orderIndex: 6,
+                    relatedCharacter: "林黛玉",
+                    relatedScene: "瀟湘館",
+                    relatedChapter: 48,
+                    readingRequired: true,
+                    readingVerified: false,
+                    unlocked: false,
+                    questions: [],
                     baseReward: 15,
                     tearReward: 15
                 }

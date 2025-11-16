@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="紅樓舊夢是以《紅樓夢》為背景的互動養成遊戲，透過節氣輪迴、資源管理與記憶收集，重建大觀園並完成還淚之旅。">
     <title>紅樓舊夢 · 還淚緣</title>
-    <link rel="stylesheet" href="css/style.css">
+    <!-- CSS 模塊化拆分 -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/game-status.css">
+    <link rel="stylesheet" href="css/garden.css">
+    <link rel="stylesheet" href="css/panels.css">
+    <link rel="stylesheet" href="css/dialogs.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/ui-components.css">
+    <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <div class="container">
@@ -230,7 +238,7 @@
                 <span id="tutorial-title-text">歡迎來到紅樓舊夢</span>
             </div>
             <div class="tutorial-tooltip-content" id="tutorial-tooltip-content">
-                這是一個關於記憶與淚水的故事。讓我們一步步了解如何重建大觀園。
+                你是青埂峰下的頑石，身處記憶空間。用絳珠灌溉花魂，在時間抹平一切之前，保留那些美好的記憶。
             </div>
             <div class="tutorial-actions">
                 <div class="tutorial-progress" id="tutorial-progress">1/8</div>
