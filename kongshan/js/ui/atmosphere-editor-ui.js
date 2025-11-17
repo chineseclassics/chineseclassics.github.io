@@ -84,15 +84,35 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
   let editor = document.getElementById('atmosphere-editor');
   if (editor) {
     editor.classList.add('visible');
-    // 如果編輯器已存在，也需要重新載入數據（特別是預覽數據）
-    if (currentAtmosphere) {
-      // 等待音效選擇器初始化完成後再載入數據
-      setTimeout(() => {
-        loadAtmosphereData(currentAtmosphere).catch(error => {
-          console.warn('載入聲色意境錄音資料時出現問題:', error);
-        });
-      }, 100);
+    
+    // 從當前聲色意境中提取音效 ID 列表（用於排序）
+    let currentSystemSoundIds = [];
+    let currentRecordingIds = [];
+    
+    if (currentAtmosphere && currentAtmosphere.sound_combination && Array.isArray(currentAtmosphere.sound_combination)) {
+      currentAtmosphere.sound_combination.forEach(config => {
+        const sourceType = config.source_type || 'system';
+        if (sourceType === 'system' && config.sound_id) {
+          currentSystemSoundIds.push(config.sound_id);
+        } else if (sourceType === 'recording' && (config.recording_id || config.sound_id)) {
+          currentRecordingIds.push(config.recording_id || config.sound_id);
+        }
+      });
     }
+    
+    // 如果編輯器已存在，重新初始化音效選擇器以更新排序
+    initializeSoundSelector(currentSystemSoundIds).then(() => {
+      initializeTravelerRecordings(currentRecordingIds);
+      
+      // 等待音效選擇器初始化完成後再載入數據
+      if (currentAtmosphere) {
+        setTimeout(() => {
+          loadAtmosphereData(currentAtmosphere).catch(error => {
+            console.warn('載入聲色意境錄音資料時出現問題:', error);
+          });
+        }, 100);
+      }
+    });
     return;
   }
 
@@ -268,9 +288,24 @@ export function showAtmosphereEditor(poem, currentAtmosphere, onSave) {
     }
   });
 
+  // 從當前聲色意境中提取音效 ID 列表（用於排序）
+  let currentSystemSoundIds = [];
+  let currentRecordingIds = [];
+  
+  if (currentAtmosphere && currentAtmosphere.sound_combination && Array.isArray(currentAtmosphere.sound_combination)) {
+    currentAtmosphere.sound_combination.forEach(config => {
+      const sourceType = config.source_type || 'system';
+      if (sourceType === 'system' && config.sound_id) {
+        currentSystemSoundIds.push(config.sound_id);
+      } else if (sourceType === 'recording' && (config.recording_id || config.sound_id)) {
+        currentRecordingIds.push(config.recording_id || config.sound_id);
+      }
+    });
+  }
+
   // 初始化內容（異步）
-  initializeSoundSelector().then(() => {
-    initializeTravelerRecordings(); // 初始化旅人錄音選擇器
+  initializeSoundSelector(currentSystemSoundIds).then(() => {
+    initializeTravelerRecordings(currentRecordingIds); // 初始化旅人錄音選擇器
     initializeRecordingSection();
     initializeBackgroundSelector();
     
@@ -501,8 +536,9 @@ function renderPaginatedItems(container, items, currentPage, createItemElement) 
 
 /**
  * 初始化音效選擇器（只加載系統音效，帶分頁）
+ * @param {Array<string>} currentSoundIds - 當前使用的音效 ID 列表（用於排序，排在前面）
  */
-function initializeSoundSelector() {
+function initializeSoundSelector(currentSoundIds = []) {
   const container = document.getElementById('sound-selector');
   const paginationContainer = document.getElementById('sound-selector-pagination');
   
@@ -544,6 +580,21 @@ function initializeSoundSelector() {
               sourceType: 'system'
             };
           });
+          
+          // 如果有當前使用的音效 ID，將它們排在前面
+          if (currentSoundIds && currentSoundIds.length > 0) {
+            sounds.sort((a, b) => {
+              const aIsCurrent = currentSoundIds.includes(a.id);
+              const bIsCurrent = currentSoundIds.includes(b.id);
+              
+              // 當前使用的音效排在前面
+              if (aIsCurrent && !bIsCurrent) return -1;
+              if (!aIsCurrent && bIsCurrent) return 1;
+              
+              // 同類音效按名稱排序
+              return a.name.localeCompare(b.name, 'zh-TW');
+            });
+          }
         }
       } catch (error) {
         console.warn('從數據庫加載音效失敗:', error);
@@ -690,7 +741,11 @@ async function loadPublishedRecordings() {
 /**
  * 初始化旅人錄音選擇器（顯示在旅人錄音區域，帶分頁）
  */
-function initializeTravelerRecordings() {
+/**
+ * 初始化旅人錄音選擇器
+ * @param {Array<string>} currentRecordingIds - 當前使用的錄音 ID 列表（用於排序，排在前面）
+ */
+function initializeTravelerRecordings(currentRecordingIds = []) {
   const container = document.getElementById('traveler-recordings-selector');
   const paginationContainer = document.getElementById('traveler-recordings-pagination');
   
@@ -711,6 +766,21 @@ function initializeTravelerRecordings() {
         paginationContainer.innerHTML = '';
       }
       return;
+    }
+
+    // 如果有當前使用的錄音 ID，將它們排在前面
+    if (currentRecordingIds && currentRecordingIds.length > 0) {
+      travelerSounds.sort((a, b) => {
+        const aIsCurrent = currentRecordingIds.includes(a.id);
+        const bIsCurrent = currentRecordingIds.includes(b.id);
+        
+        // 當前使用的錄音排在前面
+        if (aIsCurrent && !bIsCurrent) return -1;
+        if (!aIsCurrent && bIsCurrent) return 1;
+        
+        // 同類錄音按創建時間降序排序（最新的在前）
+        return 0; // 保持原有的時間排序
+      });
     }
 
     // 初始化分頁狀態
