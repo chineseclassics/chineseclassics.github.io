@@ -837,7 +837,7 @@
                 id: 'hanmo',
                 name: '翰墨齋',
                 subtitle: '現代中文體驗',
-                icon: 'fas fa-pen-nib',
+                icon: '',
                 accentColor: 'border-l-blue-500',
                 titleColor: 'text-blue-600 dark:text-blue-400'
             },
@@ -845,7 +845,7 @@
                 id: 'qiangu',
                 name: '千古堂',
                 subtitle: '古代經典體驗',
-                icon: 'fas fa-landmark',
+                icon: '',
                 accentColor: 'border-l-amber-500',
                 titleColor: 'text-amber-700 dark:text-amber-400'
             },
@@ -853,7 +853,7 @@
                 id: 'jinxiu',
                 name: '錦繡坊',
                 subtitle: '中華文化體驗',
-                icon: 'fas fa-palette',
+                icon: '',
                 accentColor: 'border-l-rose-500',
                 titleColor: 'text-rose-700 dark:text-rose-400'
             },
@@ -861,7 +861,7 @@
                 id: 'yunwai',
                 name: '雲外樓',
                 subtitle: '實驗與跨界體驗',
-                icon: 'fas fa-cloud',
+                icon: '',
                 accentColor: 'border-l-cyan-500',
                 titleColor: 'text-cyan-700 dark:text-cyan-400'
             }
@@ -1220,17 +1220,24 @@
             const textSize = 'text-xs';
             const iconFontSize = 'text-2xl';
 
-            const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
+            // 檢查圖標是否存在且有效
+            if (!app.icon || app.icon.trim() === '') {
+                console.warn(`⚠️ 應用 ${app.name} (${app.id}) 缺少圖標`);
+            }
+
+            const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.startsWith('fa-') || app.icon.includes('fa-'));
             const iconHtml = isFaIcon
                 ? `<i class="${app.icon} text-white ${iconFontSize}" aria-hidden="true"></i>`
-                : `<span class="${iconFontSize} text-white">${app.icon}</span>`;
+                : app.icon 
+                    ? `<span class="${iconFontSize} text-white">${app.icon}</span>`
+                    : '<span class="text-white text-lg">📱</span>'; // 默認圖標
             
             // 角标（新/推荐）
             let badge = '';
             if (app.isNew) {
-                badge = '<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">新</span>';
+                badge = '<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm z-10">新</span>';
             } else if (app.isFeatured) {
-                badge = '<span class="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">荐</span>';
+                badge = '<span class="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm z-10">荐</span>';
             }
             
             return `
@@ -1352,10 +1359,17 @@
 
         // 渲染切换器应用图标（超紧凑版）
         function renderSwitcherAppIcon(app) {
-            const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
+            // 檢查圖標是否存在且有效
+            if (!app.icon || app.icon.trim() === '') {
+                console.warn(`⚠️ 應用 ${app.name} (${app.id}) 缺少圖標`);
+            }
+
+            const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.startsWith('fa-') || app.icon.includes('fa-'));
             const iconHtml = isFaIcon
                 ? `<i class="${app.icon} text-white text-sm"></i>`
-                : `<span class="text-sm text-white">${app.icon}</span>`;
+                : app.icon 
+                    ? `<span class="text-sm text-white">${app.icon}</span>`
+                    : '<span class="text-white text-xs">📱</span>'; // 默認圖標
 
             return `
                 <div class="switcher-app-icon text-center flex flex-col items-center justify-start w-full h-full min-h-0" 
@@ -1371,7 +1385,7 @@
         }
 
         function getRealmIconHtml(icon, sizeClass = '') {
-            if (!icon) return '';
+            if (!icon || icon.trim() === '') return '';
             const baseClass = ['inline-flex', 'items-center', 'justify-center', sizeClass].filter(Boolean).join(' ').trim();
             const isFaIcon = typeof icon === 'string' && (icon.startsWith('fas ') || icon.includes('fa-'));
             if (isFaIcon) {

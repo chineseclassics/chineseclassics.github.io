@@ -12,7 +12,7 @@
             id: 'hanmo',
             name: '翰墨齋',
             subtitle: '現代中文體驗',
-            icon: '📝',
+            icon: '',
             accentColor: 'border-l-blue-500',
             titleColor: 'text-blue-600 dark:text-blue-400'
         },
@@ -20,7 +20,7 @@
             id: 'qiangu',
             name: '千古堂',
             subtitle: '古代經典體驗',
-            icon: '🏛️',
+            icon: '',
             accentColor: 'border-l-amber-500',
             titleColor: 'text-amber-700 dark:text-amber-400'
         },
@@ -28,7 +28,7 @@
             id: 'jinxiu',
             name: '錦繡坊',
             subtitle: '中華文化體驗',
-            icon: '🎨',
+            icon: '',
             accentColor: 'border-l-rose-500',
             titleColor: 'text-rose-700 dark:text-rose-400'
         },
@@ -36,7 +36,7 @@
             id: 'yunwai',
             name: '雲外樓',
             subtitle: '實驗與跨界體驗',
-            icon: '☁️',
+            icon: '',
             accentColor: 'border-l-cyan-500',
             titleColor: 'text-cyan-700 dark:text-cyan-400'
         }
@@ -776,10 +776,17 @@
             return '';
         }
         
-        const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.includes('fa-'));
+        // 檢查圖標是否存在且有效
+        if (!app.icon || app.icon.trim() === '') {
+            console.warn(`⚠️ 應用 ${app.name} (${app.id}) 缺少圖標`);
+        }
+        
+        const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.startsWith('fa-') || app.icon.includes('fa-'));
         const iconHtml = isFaIcon
             ? `<i class="${app.icon}" style="color: white; font-size: 20px;"></i>`
-            : `<span style="font-size: 20px; color: white;">${app.icon || '📱'}</span>`;
+            : app.icon && app.icon.trim() !== ''
+                ? `<span style="font-size: 20px; color: white;">${app.icon}</span>`
+                : '<span style="font-size: 20px; color: white;">📱</span>'; // 默認圖標
         
         const gradientStyle = convertGradient(app.gradient);
 
