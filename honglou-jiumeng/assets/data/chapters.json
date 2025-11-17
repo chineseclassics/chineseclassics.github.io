@@ -126,14 +126,149 @@
       ],
       "seasonalCycles": 1,
       "startJieqiIndex": 15
+    },
+    {
+      "chapter": 8,
+      "title": "比通靈金鶯微露意 探寶釵黛玉半含酸",
+      "memories": [
+        "baoyu-baochai-compare-jade"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 2
+    },
+    {
+      "chapter": 17,
+      "title": "大觀園試才題對額 榮國府歸省慶元宵",
+      "memories": [
+        "baoyu-garden-inscriptions"
+      ],
+      "seasonalCycles": 2,
+      "startJieqiIndex": 2
+    },
+    {
+      "chapter": 20,
+      "title": "王熙鳳正言彈妒意 林黛玉俏語謔嬌音",
+      "memories": [
+        "baoyu-daiyu-quarrel"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 3
+    },
+    {
+      "chapter": 26,
+      "title": "蜂腰橋設言傳心事 瀟湘館春困發幽情",
+      "memories": [
+        "daiyu-heartfelt-words"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 5
+    },
+    {
+      "chapter": 29,
+      "title": "享福人福深還禱福 癡情女情重愈斟情",
+      "memories": [
+        "baoyu-daiyu-temple"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 6
+    },
+    {
+      "chapter": 34,
+      "title": "情中情因情感妹妹 錯裡錯以錯勸哥哥",
+      "memories": [
+        "daiyu-visit-baoyu"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 10
+    },
+    {
+      "chapter": 36,
+      "title": "繡鴛鴦夢兆絳芸軒 識分定情悟梨香院",
+      "memories": [
+        "baoyu-dream-murmur"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 11
+    },
+    {
+      "chapter": 37,
+      "title": "秋爽齋偶結海棠社 蘅蕪苑夜擬菊花題",
+      "memories": [
+        "daiyu-begonia-poetry"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 12
+    },
+    {
+      "chapter": 38,
+      "title": "林瀟湘魁奪菊花詩 薛蘅蕪諷和螃蟹詠",
+      "memories": [
+        "daiyu-chrysanthemum-poetry"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 13
+    },
+    {
+      "chapter": 57,
+      "title": "慧紫鵑情辭試忙玉 慈姨媽愛語慰癡顰",
+      "memories": [
+        "daiyu-ziyuan-test"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 16
+    },
+    {
+      "chapter": 62,
+      "title": "憨湘雲醉眠芍藥裀 呆香菱情解石榴裙",
+      "memories": [
+        "baoyu-birthday"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 18
+    },
+    {
+      "chapter": 64,
+      "title": "幽淑女悲題五美吟 浪蕩子情遺九龍珮",
+      "memories": [
+        "daiyu-five-beauties"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 19
+    },
+    {
+      "chapter": 70,
+      "title": "林黛玉重建桃花社 史湘雲偶填柳絮詞",
+      "memories": [
+        "daiyu-peach-poetry-society"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 20
+    },
+    {
+      "chapter": 76,
+      "title": "凸碧堂品笛感淒清 凹晶館聯詩悲寂寞",
+      "memories": [
+        "daiyu-mid-autumn-poetry"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 22
+    },
+    {
+      "chapter": 87,
+      "title": "感深秋撫琴悲往事 坐禪寂走火入邪魔",
+      "memories": [
+        "daiyu-play-qin"
+      ],
+      "seasonalCycles": 1,
+      "startJieqiIndex": 24
     }
   ],
   "metadata": {
     "version": "1.0.0",
     "description": "紅樓舊夢回目與節氣對應關係數據庫",
     "created": "2025-01-XX",
-    "totalChapters": 14,
-    "totalMemories": 15
+    "totalChapters": 29,
+    "totalMemories": 30
   }
 }
 

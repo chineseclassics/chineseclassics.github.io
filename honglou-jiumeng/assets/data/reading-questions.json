@@ -397,15 +397,420 @@
         }
       ],
       "seasonalCycles": 1
+    },
+    {
+      "chapter": 8,
+      "title": "比通靈金鶯微露意 探寶釵黛玉半含酸",
+      "memories": [
+        {
+          "id": "baoyu-baochai-compare-jade",
+          "questions": [
+            {
+              "question": "寶釵看寶玉的通靈玉時，念出的字是什麼？",
+              "options": ["莫失莫忘，仙壽恆昌", "不離不棄，芳齡永繼", "通靈寶玉，莫失莫忘", "仙壽恆昌，不離不棄"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，黛玉為什麼『半含酸』？",
+              "options": ["因為身體不舒服", "因為看到寶玉和寶釵比通靈，心中酸楚", "因為天氣冷", "因為無聊"],
+              "correct": 1
+            },
+            {
+              "question": "寶釵的金鎖上刻的是什麼字？",
+              "options": ["莫失莫忘，仙壽恆昌", "不離不棄，芳齡永繼", "通靈寶玉", "金玉良緣"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 17,
+      "title": "大觀園試才題對額 榮國府歸省慶元宵",
+      "memories": [
+        {
+          "id": "baoyu-garden-inscriptions",
+          "questions": [
+            {
+              "question": "賈政讓寶玉題對額時，對寶玉的態度如何？",
+              "options": ["很讚賞", "表面責罵，內心欣賞", "完全否定", "無所謂"],
+              "correct": 1
+            },
+            {
+              "question": "寶玉為『有鳳來儀』題的對聯是什麼？",
+              "options": ["寶鼎茶閒煙尚綠，幽窗棋罷指猶涼", "繞堤柳借三篙翠，隔岸花分一脈香", "新漲綠添浣葛處，好雲香護采芹人", "吟成豆蔻才猶艷，睡足酴醾夢也香"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，賈政對寶玉的才華有什麼評價？",
+              "options": ["完全否定", "表面責罵但內心認可", "非常讚賞", "無所謂"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 2
+    },
+    {
+      "chapter": 20,
+      "title": "王熙鳳正言彈妒意 林黛玉俏語謔嬌音",
+      "memories": [
+        {
+          "id": "baoyu-daiyu-quarrel",
+          "questions": [
+            {
+              "question": "黛玉對寶玉說：'我作踐壞了身子，我死，與你何干！'這句話表達了什麼？",
+              "options": ["真的想死", "生氣時的氣話，表達對寶玉的在意", "開玩笑", "無所謂"],
+              "correct": 1
+            },
+            {
+              "question": "寶玉回應黛玉時說了什麼？",
+              "options": ["你別生氣", "何苦來，大正月裡，死了活了的", "我錯了", "你別這樣"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，王熙鳳為什麼要『正言彈妒意』？",
+              "options": ["因為她無聊", "因為她要調解寶黛之間的誤會", "因為她要責罵黛玉", "因為她要責罵寶玉"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 26,
+      "title": "蜂腰橋設言傳心事 瀟湘館春困發幽情",
+      "memories": [
+        {
+          "id": "daiyu-heartfelt-words",
+          "questions": [
+            {
+              "question": "黛玉對寶玉說：'你只怨人行動嗔怪了你，你再不知道你自己慪人難受'，這句話的含義是什麼？",
+              "options": ["責怪寶玉", "表達對寶玉的關心和在意", "開玩笑", "無所謂"],
+              "correct": 1
+            },
+            {
+              "question": "黛玉提到寶玉脫了『青肷披風』，這體現了什麼？",
+              "options": ["黛玉對寶玉的細心觀察", "黛玉的無聊", "黛玉的記性好", "黛玉的隨意"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，『蜂腰橋設言傳心事』指的是什麼？",
+              "options": ["小紅傳話", "寶玉傳話", "襲人傳話", "晴雯傳話"],
+              "correct": 0
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 29,
+      "title": "享福人福深還禱福 癡情女情重愈斟情",
+      "memories": [
+        {
+          "id": "baoyu-daiyu-temple",
+          "questions": [
+            {
+              "question": "寶玉對黛玉說：'你這個明白人，難道連「親不間疏，先不僭後」也不知道？'這句話的含義是什麼？",
+              "options": ["責怪黛玉", "解釋自己對黛玉的感情更深", "開玩笑", "無所謂"],
+              "correct": 1
+            },
+            {
+              "question": "『親不間疏，先不僭後』這句話的意思是什麼？",
+              "options": ["親近的人不會被疏遠的人離間，先來的不會被後來的超越", "親人不會疏遠", "先來後到", "親疏有別"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，寶玉和黛玉在清虛觀發生了什麼？",
+              "options": ["吵架", "和解", "一起看戲", "以上都是"],
+              "correct": 3
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 34,
+      "title": "情中情因情感妹妹 錯裡錯以錯勸哥哥",
+      "memories": [
+        {
+          "id": "daiyu-visit-baoyu",
+          "questions": [
+            {
+              "question": "黛玉探望挨打後的寶玉時，說了什麼話？",
+              "options": ["你疼嗎", "你從此可都改了罷", "你為什麼被打", "你別難過"],
+              "correct": 1
+            },
+            {
+              "question": "黛玉說『你從此可都改了罷』這句話的深層含義是什麼？",
+              "options": ["真的希望寶玉改變", "心疼寶玉，但又知道寶玉不會改變", "責怪寶玉", "開玩笑"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，寶玉送給黛玉什麼東西？",
+              "options": ["手帕", "詩稿", "花", "書"],
+              "correct": 0
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 36,
+      "title": "繡鴛鴦夢兆絳芸軒 識分定情悟梨香院",
+      "memories": [
+        {
+          "id": "baoyu-dream-murmur",
+          "questions": [
+            {
+              "question": "寶玉在夢中喊罵說：'什麼是金玉姻緣，我偏說是木石姻緣！'這句話表達了什麼？",
+              "options": ["寶玉的夢話", "寶玉內心深處對木石姻緣的堅持", "寶玉的無意識", "以上都是"],
+              "correct": 3
+            },
+            {
+              "question": "『木石姻緣』指的是什麼？",
+              "options": ["寶玉和寶釵", "寶玉和黛玉", "寶玉和湘雲", "寶玉和襲人"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，誰在繡鴛鴦時聽到寶玉的夢話？",
+              "options": ["襲人", "晴雯", "寶釵", "黛玉"],
+              "correct": 2
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 37,
+      "title": "秋爽齋偶結海棠社 蘅蕪苑夜擬菊花題",
+      "memories": [
+        {
+          "id": "daiyu-begonia-poetry",
+          "questions": [
+            {
+              "question": "黛玉在海棠詩社中，作詩的速度如何？",
+              "options": ["很慢", "很快，提筆一揮而就", "需要思考很久", "不會作詩"],
+              "correct": 1
+            },
+            {
+              "question": "海棠詩社的社長是誰？",
+              "options": ["黛玉", "寶釵", "李紈", "探春"],
+              "correct": 2
+            },
+            {
+              "question": "這回中，眾人對黛玉的詩有什麼評價？",
+              "options": ["不好", "很好，但略遜於寶釵", "最好", "一般"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 38,
+      "title": "林瀟湘魁奪菊花詩 薛蘅蕪諷和螃蟹詠",
+      "memories": [
+        {
+          "id": "daiyu-chrysanthemum-poetry",
+          "questions": [
+            {
+              "question": "李紈評菊花詩時，哪三首詩排名前三？",
+              "options": ["《詠菊》《問菊》《菊夢》", "《詠菊》《畫菊》《對菊》", "《問菊》《對菊》《供菊》", "《詠菊》《對菊》《問菊》"],
+              "correct": 0
+            },
+            {
+              "question": "這三首詩都是誰寫的？",
+              "options": ["寶釵", "黛玉", "湘雲", "探春"],
+              "correct": 1
+            },
+            {
+              "question": "黛玉奪得菊花詩魁，這體現了什麼？",
+              "options": ["她的詩才", "她的運氣", "她的努力", "以上都是"],
+              "correct": 0
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 57,
+      "title": "慧紫鵑情辭試忙玉 慈姨媽愛語慰癡顰",
+      "memories": [
+        {
+          "id": "daiyu-ziyuan-test",
+          "questions": [
+            {
+              "question": "紫鵑對寶玉說黛玉要回蘇州，寶玉的反應如何？",
+              "options": ["很高興", "很生氣", "嚇得魂消魄散，失去知覺", "無所謂"],
+              "correct": 2
+            },
+            {
+              "question": "紫鵑為什麼要試探寶玉？",
+              "options": ["因為她無聊", "因為她想確認寶玉對黛玉的心意", "因為她想害寶玉", "因為她想開玩笑"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，寶玉對紫鵑說：'活著，咱們一處活著；不活著，咱們一處化灰化煙'，這表達了什麼？",
+              "options": ["對黛玉的深情", "對紫鵑的愛", "開玩笑", "無所謂"],
+              "correct": 0
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 62,
+      "title": "憨湘雲醉眠芍藥裀 呆香菱情解石榴裙",
+      "memories": [
+        {
+          "id": "baoyu-birthday",
+          "questions": [
+            {
+              "question": "寶玉生日這天，眾人做了什麼？",
+              "options": ["開夜宴", "作詩", "賞花", "以上都是"],
+              "correct": 3
+            },
+            {
+              "question": "這回中，湘雲因為什麼原因醉眠芍藥裀？",
+              "options": ["因為她無聊", "因為她喝醉了", "因為她累了", "因為她開心"],
+              "correct": 1
+            },
+            {
+              "question": "寶玉生日這天，眾人玩的遊戲是什麼？",
+              "options": ["射覆", "行酒令", "作詩", "以上都是"],
+              "correct": 3
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 64,
+      "title": "幽淑女悲題五美吟 浪蕩子情遺九龍珮",
+      "memories": [
+        {
+          "id": "daiyu-five-beauties",
+          "questions": [
+            {
+              "question": "黛玉作《五美吟》，選擇了哪五位古代女子？",
+              "options": ["西施、虞姬、明妃、綠珠、紅拂", "西施、王昭君、貂蟬、楊貴妃、趙飛燕", "西施、虞姬、王昭君、綠珠、紅拂", "以上都不對"],
+              "correct": 0
+            },
+            {
+              "question": "黛玉為什麼要作《五美吟》？",
+              "options": ["因為她無聊", "因為她想寄託感慨，感嘆這些女子的命運", "因為她要參加詩社", "因為她要送給寶玉"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，寶玉看到黛玉的《五美吟》後，有什麼反應？",
+              "options": ["很生氣", "很讚賞", "無所謂", "很擔心"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 70,
+      "title": "林黛玉重建桃花社 史湘雲偶填柳絮詞",
+      "memories": [
+        {
+          "id": "daiyu-peach-poetry-society",
+          "questions": [
+            {
+              "question": "黛玉為什麼要重建桃花社？",
+              "options": ["因為她無聊", "因為四月初一日是她的生日", "因為她要和寶釵競爭", "因為她要展示才華"],
+              "correct": 1
+            },
+            {
+              "question": "桃花社的主題是什麼？",
+              "options": ["詠桃花", "詠柳絮", "詠春", "以上都是"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，眾人對黛玉重建桃花社的態度如何？",
+              "options": ["反對", "支持", "無所謂", "嘲笑"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 76,
+      "title": "凸碧堂品笛感淒清 凹晶館聯詩悲寂寞",
+      "memories": [
+        {
+          "id": "daiyu-mid-autumn-poetry",
+          "questions": [
+            {
+              "question": "黛玉和湘雲在中秋夜聯詩時，說了什麼話？",
+              "options": ["倒要試試咱們誰強誰弱，只是沒有紙筆記", "我們一起作詩", "我們比賽", "我們隨便寫寫"],
+              "correct": 0
+            },
+            {
+              "question": "這回中，黛玉和湘雲聯詩的最後一句是什麼？",
+              "options": ["寒塘渡鶴影，冷月葬花魂", "冷月葬花魂", "寒塘渡鶴影", "以上都不對"],
+              "correct": 0
+            },
+            {
+              "question": "『冷月葬花魂』這句話的深層含義是什麼？",
+              "options": ["描寫夜景", "預示黛玉的命運", "感嘆人生", "以上都是"],
+              "correct": 3
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
+    },
+    {
+      "chapter": 87,
+      "title": "感深秋撫琴悲往事 坐禪寂走火入邪魔",
+      "memories": [
+        {
+          "id": "daiyu-play-qin",
+          "questions": [
+            {
+              "question": "黛玉撫琴時，彈的是什麼曲子？",
+              "options": ["《高山流水》", "《陽關三疊》", "《梅花三弄》", "文中未明確說明"],
+              "correct": 3
+            },
+            {
+              "question": "黛玉為什麼要撫琴？",
+              "options": ["因為她無聊", "因為她感深秋，悲往事", "因為她要表演", "因為她要練習"],
+              "correct": 1
+            },
+            {
+              "question": "這回中，黛玉撫琴時的心情如何？",
+              "options": ["很開心", "很悲傷", "很平靜", "很激動"],
+              "correct": 1
+            }
+          ]
+        }
+      ],
+      "seasonalCycles": 1
     }
   ],
   "metadata": {
     "version": "1.0.0",
     "description": "紅樓舊夢閱讀問題數據庫 - MVP 階段（前 20 回）",
     "created": "2025-01-XX",
-    "totalChapters": 14,
-    "totalMemories": 15,
-    "totalQuestions": 45
+    "totalChapters": 29,
+    "totalMemories": 30,
+    "totalQuestions": 90
   }
 }
 
