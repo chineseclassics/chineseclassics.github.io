@@ -1397,7 +1397,10 @@ export class ParticleRenderer {
           if (pJSInstance.pJS && pJSInstance.pJS.fn && pJSInstance.pJS.fn.vendors) {
             pJSInstance.pJS.fn.vendors.destroypJS();
           }
-          window.pJSDom.splice(pJSIndex, 1);
+          // 再次檢查 window.pJSDom，因為 destroypJS() 可能會將其設置為 null
+          if (window.pJSDom && Array.isArray(window.pJSDom)) {
+            window.pJSDom.splice(pJSIndex, 1);
+          }
         } catch (error) {
           console.warn('清理 particles.js 實例時出錯:', error);
         }
