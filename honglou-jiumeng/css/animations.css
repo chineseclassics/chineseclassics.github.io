@@ -79,3 +79,128 @@
     100% { transform: scale(0.95); opacity: 0.7; }
 }
 
+/* --- 粒子系統樣式 --- */
+
+#particle-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1; /* 在背景之上，但在 UI 之下 */
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    top: -20px; /* 從頂部上方開始 */
+    user-select: none;
+    will-change: transform, opacity;
+}
+
+/* 春：花瓣 */
+.particle-petal {
+    color: #FFB7C5;
+    opacity: 0.8;
+    animation: fall-sway 10s linear infinite;
+}
+
+/* 夏：螢火蟲 */
+.particle-firefly {
+    background: #FFFFA0;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #FFFFA0, 0 0 20px #FFFFA0;
+    top: 100%; /* 從底部升起 */
+    animation: float-up 15s ease-in-out infinite;
+    opacity: 0;
+}
+
+/* 秋：落葉 */
+.particle-leaf {
+    color: #E26A2C;
+    opacity: 0.9;
+    animation: fall-rotate 12s linear infinite;
+}
+
+/* 冬：雪花 */
+.particle-snow {
+    color: #FFF;
+    opacity: 0.7;
+    animation: fall-direct 15s linear infinite;
+    text-shadow: 0 0 5px rgba(255,255,255,0.8);
+}
+
+/* 粒子動畫關鍵幀 */
+
+/* 飄落並搖擺 (花瓣) */
+@keyframes fall-sway {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(100vh) translateX(100px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* 旋轉飄落 (落葉) */
+@keyframes fall-rotate {
+    0% {
+        transform: translateY(0) translateX(0) rotateX(0) rotateY(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.9;
+    }
+    100% {
+        transform: translateY(100vh) translateX(-50px) rotateX(360deg) rotateY(360deg);
+        opacity: 0;
+    }
+}
+
+/* 浮動上升 (螢火蟲) */
+@keyframes float-up {
+    0% {
+        transform: translateY(0) translateX(0) scale(0.8);
+        opacity: 0;
+        top: 100%;
+    }
+    10% {
+        opacity: 0.6;
+    }
+    50% {
+        transform: translateY(-50vh) translateX(50px) scale(1.2);
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.6;
+    }
+    100% {
+        transform: translateY(-110vh) translateX(-30px) scale(0.8);
+        opacity: 0;
+        top: 100%;
+    }
+}
+
+/* 直接飄落 (雪花) */
+@keyframes fall-direct {
+    0% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(100vh) translateX(20px);
+        opacity: 0;
+    }
+}

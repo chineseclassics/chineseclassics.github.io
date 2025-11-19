@@ -5,6 +5,7 @@
 
 import { gameData } from '../state.js';
 import { getElements } from '../core/elements.js';
+import { particleSystem } from './particles.js';
 
 /**
  * 更新資源顯示
@@ -13,6 +14,9 @@ export function updateResourceDisplay() {
   const elements = getElements();
   
   try {
+    // 更新季節粒子效果
+    particleSystem.updateSeason();
+
     // 更新基本資源
     if (elements.cycleCount) elements.cycleCount.textContent = gameData.cycle;
     if (elements.jieqiValue) elements.jieqiValue.textContent = gameData.jieqi[gameData.jieqiIndex].name;

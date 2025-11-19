@@ -17,11 +17,15 @@ import { showMemorySelectionDialog } from './game/memory-discovery.js';
 import { checkEvents, triggerWhiteFade } from './game/events.js';
 import { updateSuggestedActions, showSuggestion, executeRecommendedAction } from './utils/suggestions.js';
 import { detectDarkMode } from './utils/helpers.js';
+import { particleSystem } from './ui/particles.js';
 
 // 遊戲主流程
 export function initializeGame() {
             // 使用新的元素管理器
             const elements = initElements();
+
+            // 初始化粒子系統
+            particleSystem.init('particle-container');
 
             initializeActionCostLabels();
             updateActionPointsUI();
