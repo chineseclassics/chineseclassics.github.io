@@ -1,0 +1,144 @@
+/* 紅樓九夢 UI 設計系統 - CSS 變數定義 */
+
+:root {
+    /* ========== 色彩系統 ========== */
+    /* 主色：胭脂紅 - 用於標題、主要 CTA */
+    --color-primary: #C93C4A;
+    --color-primary-light: #E85A6A;
+    --color-primary-dark: #A82D3A;
+    --color-primary-hover: #B83542;
+    
+    /* 輔色：松煙墨 - 用於背景、文字主色 */
+    --color-secondary: #1F1B24;
+    --color-secondary-light: #2A2530;
+    --color-secondary-dark: #151218;
+    
+    /* 提亮：霽雪白 - 用於卡片與內容背景 */
+    --color-light: #F8F7F2;
+    --color-light-hover: #F0EFE8;
+    
+    /* 襯色：松石綠 - 用於次要按鈕、進度 */
+    --color-accent: #5BA199;
+    --color-accent-light: #6FB3AB;
+    --color-accent-dark: #4A8A83;
+    --color-accent-hover: #52A098;
+    
+    /* 點綴：金粉 - 用於徽章、道具、稀有提示 */
+    --color-gold: #F2C14E;
+    --color-gold-light: #F5D075;
+    --color-gold-dark: #E0B03A;
+    
+    /* 功能色彩 */
+    --color-success: #4CAF50;
+    --color-warning: #FF9800;
+    --color-error: #F44336;
+    --color-info: #2196F3;
+    
+    /* 文字色彩 */
+    --color-text-primary: #1F1B24;
+    --color-text-secondary: #666;
+    --color-text-light: #999;
+    --color-text-on-primary: #FFFFFF;
+    --color-text-on-dark: #F8F7F2;
+    
+    /* 背景色彩 */
+    --color-bg-primary: #F8F7F2;
+    --color-bg-secondary: #FFFFFF;
+    --color-bg-card: rgba(255, 255, 255, 0.9);
+    --color-bg-overlay: rgba(0, 0, 0, 0.7);
+    
+    /* 邊框色彩 */
+    --color-border: #E0E0E0;
+    --color-border-light: #F0F0F0;
+    --color-border-dark: #CCCCCC;
+    
+    /* ========== 字體系統 ========== */
+    /* 字體家族 */
+    --font-heading: 'Noto Serif TC', 'PMingLiU', 'MingLiU', serif;
+    --font-body: 'Noto Sans TC', 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+    
+    /* 字體大小 */
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-base: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 24px;
+    --font-size-2xl: 32px;
+    --font-size-3xl: 36px;
+    
+    /* 字體粗細 */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+    
+    /* 行高 */
+    --line-height-tight: 1.2;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.8;
+    
+    /* ========== 間距系統 ========== */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 24px;
+    --spacing-3xl: 32px;
+    --spacing-4xl: 40px;
+    
+    /* ========== 圓角系統 ========== */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+    
+    /* ========== 陰影系統 ========== */
+    --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 5px 15px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --shadow-inner: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    
+    /* ========== 動畫系統 ========== */
+    --transition-fast: 150ms ease-out;
+    --transition-base: 200ms ease-out;
+    --transition-slow: 300ms ease-out;
+    --transition-slower: 500ms ease-out;
+    
+    /* ========== Z-index 層級 ========== */
+    --z-base: 1;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-overlay: 1000;
+    --z-modal: 2000;
+    --z-tooltip: 3000;
+}
+
+/* 暗黑模式色彩覆蓋 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* 文字色彩 */
+        --color-text-primary: #F8F7F2;
+        --color-text-secondary: #AAA;
+        --color-text-light: #888;
+        
+        /* 背景色彩 */
+        --color-bg-primary: #1F1B24;
+        --color-bg-secondary: #2A2530;
+        --color-bg-card: rgba(42, 37, 48, 0.9);
+        --color-bg-overlay: rgba(0, 0, 0, 0.85);
+        
+        /* 邊框色彩 */
+        --color-border: #444;
+        --color-border-light: #333;
+        --color-border-dark: #555;
+        
+        /* 陰影調整（暗黑模式下更明顯） */
+        --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 5px 15px rgba(0, 0, 0, 0.5);
+        --shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+}
+

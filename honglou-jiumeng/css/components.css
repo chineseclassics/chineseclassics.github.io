@@ -1,0 +1,478 @@
+/* 紅樓九夢 UI 設計系統 - 元件樣式 */
+
+/* ========== 按鈕系統 ========== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+}
+
+/* 主要按鈕 */
+.btn-primary {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 次要按鈕 */
+.btn-secondary {
+    background: var(--color-accent);
+    color: var(--color-text-on-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 文字按鈕 */
+.btn-text {
+    background: transparent;
+    color: var(--color-primary);
+    box-shadow: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.btn-text:hover:not(:disabled) {
+    background: rgba(201, 60, 74, 0.1);
+    transform: none;
+}
+
+/* 禁用狀態 */
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* 按鈕尺寸變體 */
+.btn-sm {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    font-size: var(--font-size-lg);
+}
+
+/* ========== 卡片系統 ========== */
+.card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-base);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.card-title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.card-body {
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-relaxed);
+}
+
+/* ========== 面板系統 ========== */
+.panel {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.panel.highlight {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(201, 60, 74, 0.2), var(--shadow-md);
+}
+
+.panel-title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.panel-title-icon {
+    font-size: var(--font-size-xl);
+    margin-right: var(--spacing-sm);
+}
+
+/* ========== 徽章系統 ========== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+}
+
+.badge-primary {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+}
+
+.badge-accent {
+    background: var(--color-accent);
+    color: var(--color-text-on-primary);
+}
+
+.badge-gold {
+    background: var(--color-gold);
+    color: var(--color-text-primary);
+}
+
+.counter-badge {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+    border-radius: var(--radius-full);
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    display: inline-block;
+    margin-left: var(--spacing-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ========== 進度條系統 ========== */
+.progress-container {
+    width: 100%;
+    height: 12px;
+    background: var(--color-border-light);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    box-shadow: var(--shadow-inner);
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--color-primary), var(--color-primary-light));
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to right, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 100%);
+    animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ========== 對話框系統 ========== */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-bg-overlay);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-base);
+}
+
+.dialog-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dialog {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: var(--spacing-2xl);
+    position: relative;
+    box-shadow: var(--shadow-xl);
+    transform: scale(0.95);
+    transition: transform var(--transition-base);
+}
+
+.dialog-overlay.active .dialog {
+    transform: scale(1);
+}
+
+.dialog-close {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    z-index: var(--z-base);
+}
+
+.dialog-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--color-text-primary);
+    transform: scale(1.1);
+}
+
+.dialog-title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+    position: relative;
+    padding-bottom: var(--spacing-md);
+}
+
+.dialog-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 30%;
+    right: 30%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--color-primary), transparent);
+}
+
+.dialog-content {
+    margin-bottom: var(--spacing-xl);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-secondary);
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+}
+
+.dialog-button {
+    padding: var(--spacing-md) var(--spacing-xl);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    box-shadow: var(--shadow-sm);
+}
+
+.dialog-button.primary {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+}
+
+.dialog-button.primary:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.dialog-button.secondary {
+    background: var(--color-border-light);
+    color: var(--color-text-primary);
+}
+
+.dialog-button.secondary:hover {
+    background: var(--color-border);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ========== 列表項目系統 ========== */
+.list-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-xs);
+}
+
+.list-item:hover {
+    background: var(--color-light-hover);
+    transform: translateX(4px);
+}
+
+.list-item-icon {
+    font-size: var(--font-size-xl);
+    margin-right: var(--spacing-md);
+    width: 32px;
+    text-align: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.list-item-details {
+    flex: 1;
+}
+
+.list-item-name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.list-item-description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-normal);
+}
+
+/* ========== 輸入框系統 ========== */
+.input {
+    width: 100%;
+    padding: var(--spacing-md);
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-base);
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(201, 60, 74, 0.1);
+}
+
+.input::placeholder {
+    color: var(--color-text-light);
+}
+
+/* ========== 工具提示系統 ========== */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-content {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-secondary);
+    color: var(--color-text-on-dark);
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-md);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-base);
+    z-index: var(--z-tooltip);
+    box-shadow: var(--shadow-md);
+}
+
+.tooltip:hover .tooltip-content {
+    opacity: 1;
+}
+
+/* ========== 響應式調整 ========== */
+@media (max-width: 768px) {
+    .btn {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        font-size: var(--font-size-sm);
+    }
+    
+    .card {
+        padding: var(--spacing-lg);
+    }
+    
+    .dialog {
+        width: 95%;
+        padding: var(--spacing-lg);
+    }
+    
+    .panel {
+        padding: var(--spacing-md);
+    }
+}
+

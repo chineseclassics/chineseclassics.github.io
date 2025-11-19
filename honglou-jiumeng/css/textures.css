@@ -1,0 +1,253 @@
+/* 紅樓九夢 UI 設計系統 - 紋理與背景效果 */
+
+/* ========== 背景紋理系統 ========== */
+/* 宣紙紋理背景 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(31, 27, 36, 0.01) 2px,
+            rgba(31, 27, 36, 0.01) 4px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 2px,
+            rgba(31, 27, 36, 0.01) 2px,
+            rgba(31, 27, 36, 0.01) 4px
+        );
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.3;
+}
+
+/* 雲紋裝飾效果 */
+.card::before,
+.panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(201, 60, 74, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(91, 161, 153, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.5;
+}
+
+/* 暗黑模式紋理調整 */
+@media (prefers-color-scheme: dark) {
+    body::before {
+        background-image: 
+            repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(248, 247, 242, 0.01) 2px,
+                rgba(248, 247, 242, 0.01) 4px
+            ),
+            repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                rgba(248, 247, 242, 0.01) 2px,
+                rgba(248, 247, 242, 0.01) 4px
+            );
+    }
+    
+    .card::before,
+    .panel::before {
+        background-image: 
+            radial-gradient(circle at 20% 30%, rgba(201, 60, 74, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(91, 161, 153, 0.05) 0%, transparent 50%);
+    }
+}
+
+/* ========== 互動動畫系統 ========== */
+/* 按鈕點擊動畫 */
+@keyframes buttonClick {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+.btn:active,
+.action-button:active,
+.dialog-button:active {
+    animation: buttonClick var(--transition-fast);
+}
+
+/* 卡片展開動畫 */
+@keyframes cardExpand {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.card,
+.panel {
+    animation: cardExpand var(--transition-base) ease-out;
+}
+
+/* 淡入動畫 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.dialog-overlay.active .dialog,
+.tutorial-overlay.active .tutorial-tooltip {
+    animation: fadeIn var(--transition-base) ease-out;
+}
+
+/* 脈衝動畫（用於推薦操作） */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(201, 60, 74, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(201, 60, 74, 0);
+    }
+}
+
+.action-button.recommended,
+.garden-cell.interactive {
+    animation: pulse 2s infinite;
+}
+
+/* 閃爍動畫（用於記憶碎片） */
+@keyframes glimmer {
+    0%, 100% {
+        opacity: 1;
+        filter: brightness(1);
+    }
+    50% {
+        opacity: 0.8;
+        filter: brightness(1.2);
+    }
+}
+
+.garden-cell.has-memory {
+    animation: glimmer 3s infinite;
+}
+
+/* 懸浮動畫 */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.jieqi-indicator:hover,
+.menu-toggle:hover {
+    animation: float 2s infinite;
+}
+
+/* ========== 過渡效果 ========== */
+/* 平滑過渡 */
+* {
+    transition-property: background-color, border-color, color, transform, opacity, box-shadow;
+    transition-duration: var(--transition-base);
+    transition-timing-function: ease-out;
+}
+
+/* 快速過渡（用於互動元素） */
+.btn,
+.action-button,
+.dialog-button,
+.list-item,
+.garden-cell {
+    transition-duration: var(--transition-fast);
+}
+
+/* 慢速過渡（用於背景和大型元素） */
+body,
+.container,
+.game-status {
+    transition-duration: var(--transition-slow);
+}
+
+/* ========== 特殊效果 ========== */
+/* 光暈效果（用於重要元素） */
+.glow {
+    box-shadow: 
+        0 0 10px rgba(201, 60, 74, 0.3),
+        0 0 20px rgba(201, 60, 74, 0.2),
+        0 0 30px rgba(201, 60, 74, 0.1);
+}
+
+/* 金粉閃爍效果 */
+.gold-sparkle {
+    position: relative;
+}
+
+.gold-sparkle::after {
+    content: '✨';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: var(--font-size-sm);
+    animation: sparkle 2s infinite;
+    opacity: 0.8;
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        opacity: 0.8;
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2) rotate(180deg);
+    }
+}
+
+/* 水墨暈染效果（用於對話框） */
+.memory-dialog,
+.quiz-dialog {
+    position: relative;
+}
+
+.memory-dialog::before,
+.quiz-dialog::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+        135deg,
+        rgba(201, 60, 74, 0.1) 0%,
+        rgba(91, 161, 153, 0.1) 50%,
+        rgba(201, 60, 74, 0.1) 100%
+    );
+    border-radius: inherit;
+    z-index: -1;
+    filter: blur(4px);
+    opacity: 0.5;
+}
+
