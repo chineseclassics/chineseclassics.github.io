@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="yinniang-gradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f472b6"/>
+      <stop offset="1" stop-color="#fb923c"/>
+    </linearGradient>
+    <linearGradient id="yinniang-feather" x1="22" y1="8" x2="46" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff8f5" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffe4e6" stop-opacity="0.75"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#yinniang-gradient)"/>
+  <path d="M42 10C32 15 25 25 23 35C22 40 22 45 16 51L15 50C19 44 19 39 20 34C22 24 29 14 38 9Z"
+        fill="url(#yinniang-feather)" opacity="0.9"/>
+  <path d="M46 14C38 18 33 24 30 31C28 35 28 40 24 45C22 47 21 48 19 50L21 52C24 49 27 46 30 42C35 36 38 30 42 24C44 20 46 16 46 14Z"
+        fill="white" opacity="0.9"/>
+  <path d="M27 44C32 42 37 39 41 35" stroke="#fda4af" stroke-width="2" stroke-linecap="round"/>
+  <path d="M30 38C34 36 38 34 42 30" stroke="#fecdd3" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
+

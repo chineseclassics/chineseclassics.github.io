@@ -190,6 +190,7 @@
             category: 'qiangu',
             name: '聶隱娘傳奇',
             icon: 'fas fa-feather',
+            iconImage: '/assets/images/optimized/icon-yinniang.svg',
             gradient: 'from-rose-500 to-amber-400',
             url: '/yinniang/index.html',
             description: '以思想內閣與八德一智雙系統體驗聶隱娘的一生，在互動式故事中做出品格抉擇並累積文言詞彙',
@@ -280,6 +281,16 @@
             gradient: 'from-yellow-400 to-orange-400',
             url: '/caishuzi.html',
             description: '從 1 到 100 的神秘盒子猜數字，依提示與範圍指示推理，累積分數並解鎖徽章'
+        },
+        {
+            id: 'pacman-earth',
+            category: 'yunwai',
+            name: '地球吃豆人 3D',
+            icon: 'fas fa-globe-asia',
+            gradient: 'from-blue-500 to-green-400',
+            url: '/pacman-earth/index.html',
+            description: '在3D地球表面暢玩的吃豆人遊戲！控制角色環繞地球移動，收集豆子並躲避障礙，體驗全新的球面操作樂趣',
+            isNew: true
         },
         {
             id: 'shuangshe',
@@ -782,11 +793,16 @@
         }
         
         const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.startsWith('fa-') || app.icon.includes('fa-'));
-        const iconHtml = isFaIcon
-            ? `<i class="${app.icon}" style="color: white; font-size: 20px;"></i>`
-            : app.icon && app.icon.trim() !== ''
-                ? `<span style="font-size: 20px; color: white;">${app.icon}</span>`
-                : '<span style="font-size: 20px; color: white;">📱</span>'; // 默認圖標
+        let iconHtml = '';
+        if (app.iconImage) {
+            iconHtml = `<img src="${app.iconImage}" alt="${app.name} 圖標" style="width: 26px; height: 26px; object-fit: contain;" loading="lazy" decoding="async">`;
+        } else if (isFaIcon) {
+            iconHtml = `<i class="${app.icon}" style="color: white; font-size: 20px;"></i>`;
+        } else if (app.icon && app.icon.trim() !== '') {
+            iconHtml = `<span style="font-size: 20px; color: white;">${app.icon}</span>`;
+        } else {
+            iconHtml = '<span style="font-size: 20px; color: white;">📱</span>'; // 默認圖標
+        }
         
         const gradientStyle = convertGradient(app.gradient);
 

@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* 簡單的 UI 樣式 */
+#ui-layer {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: white;
+    pointer-events: none;
+    z-index: 5;
+}
+
