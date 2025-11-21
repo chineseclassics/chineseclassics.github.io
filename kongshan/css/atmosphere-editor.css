@@ -377,6 +377,7 @@
   gap: 6px;
   flex-grow: 1;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .volume-label {
@@ -386,34 +387,58 @@
   flex-shrink: 0;
 }
 
-.volume-slider {
+.selected-sound-item .volume-slider {
   flex-grow: 1;
   min-width: 60px;
-  height: 3px;
+  height: 28px;
   border-radius: var(--radius-full);
-  background: var(--color-border-soft);
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  cursor: pointer;
-}
-
-.volume-slider::-moz-range-thumb {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  cursor: pointer;
+  background: linear-gradient(var(--color-border-soft), var(--color-border-soft)) center/100% 4px no-repeat;
   border: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  cursor: pointer;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: box-shadow var(--transition-fast);
+}
+
+.selected-sound-item .volume-slider:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+.selected-sound-item .volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  border: 2px solid var(--color-surface-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.selected-sound-item .volume-slider::-webkit-slider-thumb:active {
+  transform: scale(1.08);
+}
+
+.selected-sound-item .volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-surface-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease;
+}
+
+.selected-sound-item .volume-slider::-moz-range-thumb:active {
+  transform: scale(1.08);
 }
 
 .remove-btn {
@@ -436,6 +461,30 @@
 .remove-btn:hover {
   background: var(--color-critical);
   color: var(--color-text-contrast);
+}
+
+@media (max-width: 768px) {
+  .sound-item-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .selected-sound-item .volume-slider {
+    width: 100%;
+    height: 44px;
+    background-size: 100% 6px;
+  }
+
+  .selected-sound-item .remove-btn {
+    align-self: flex-end;
+  }
+
+  .selected-sound-item .volume-slider::-webkit-slider-thumb,
+  .selected-sound-item .volume-slider::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+  }
 }
 
 /* 背景選擇器 */
