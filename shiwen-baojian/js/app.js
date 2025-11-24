@@ -11,6 +11,7 @@ import { SUPABASE_CONFIG, RUN_MODE } from './config/supabase-config.js';
 import { initializeEssayEditor } from './student/essay-writer.js';
 import TeacherDashboard from './teacher/teacher-dashboard.js';
 import toast from './ui/toast.js';
+import { exportEssayAsDocx } from './student/essay-exporter.js';
 
 // ================================
 // 全局狀態管理
@@ -1596,6 +1597,14 @@ async function displayTeacherGrading(essayId) {
                     </div>
                 ` : ''}
                 
+                <div class="border-t border-gray-200 p-4 bg-white">
+                    <button id="export-docx-btn" class="export-docx-btn w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 text-white py-2.5 font-semibold shadow hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
+                        <i class="fas fa-file-word"></i>
+                        導出 Word（含批註）
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">可直接在 Google Docs 或 Microsoft Word 中開啟，保留所有老師批註與總評。</p>
+                </div>
+
                 <!-- 批改時間 -->
                 <div class="border-t border-gray-200 px-4 py-3 bg-gray-50">
                     <p class="text-xs text-gray-600 text-center">
@@ -1617,6 +1626,10 @@ async function displayTeacherGrading(essayId) {
                 </div>
             </div>
         `;
+        const exportBtn = sidebar.querySelector('#export-docx-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => handleDocxExportClick(exportBtn, essayId, grade));
+        }
         // 安全填充老師總評內容，避免 XSS
         try {
           const oc = document.getElementById('teacher-overall-comment');
@@ -1628,6 +1641,38 @@ async function displayTeacherGrading(essayId) {
     } catch (error) {
         console.error('❌ 顯示老師評分失敗:', error);
     }
+}
+
+async function handleDocxExportClick(button, essayId, grade) {
+    if (!AppState?.supabase) {
+        toast.error('尚未連線 Supabase，請重新整理頁面');
+        return;
+    }
+    const originalLabel = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+    try {
+        await exportEssayAsDocx({
+            supabase: AppState.supabase,
+            essayId,
+            studentName: getCurrentStudentName(),
+            studentEmail: AppState.currentUser?.email || null,
+            prefetchedGrade: grade
+        });
+        toast.success('已下載 Word 檔案，批註與總評均已保留。');
+    } catch (error) {
+        console.error('❌ DOCX 導出失敗:', error);
+        const message = error?.message || '生成檔案失敗，請稍後再試。';
+        toast.error(`導出失敗：${message}`);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalLabel;
+    }
+}
+
+function getCurrentStudentName() {
+    const meta = AppState.currentUser?.user_metadata || {};
+    return meta.full_name || meta.display_name || AppState.currentUser?.email || '學生';
 }
 
 // 等待 DOM 加載完成後初始化應用
