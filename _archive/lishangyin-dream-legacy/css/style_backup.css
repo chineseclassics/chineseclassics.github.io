@@ -1,0 +1,651 @@
+/* =====================================
+   碧城・煉夢錄 - 樣式文件
+   碧城主題：青綠色調、雲霧、玉石質感
+   ===================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* 碧城配色 */
+    --jade-primary: #4a9b7f;
+    --jade-dark: #2d5f4e;
+    --jade-light: #7fc4a8;
+    --jade-bg: #e8f5f0;
+    --jade-text: #1a3d2e;
+    
+    /* 雲霧效果 */
+    --cloud-white: rgba(255, 255, 255, 0.3);
+    --cloud-shadow: rgba(0, 0, 0, 0.1);
+    
+    /* 玉石質感 */
+    --jade-glow: rgba(74, 155, 127, 0.3);
+}
+
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+    background: linear-gradient(135deg, var(--jade-bg) 0%, #d4e8e0 100%);
+    color: var(--jade-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* 背景雲霧動畫 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 50%, var(--cloud-white) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, var(--cloud-white) 0%, transparent 50%);
+    animation: cloudMove 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes cloudMove {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(20px, -20px); }
+}
+
+/* 主容器 */
+.game-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* 標題區域 */
+.game-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px var(--cloud-shadow);
+    backdrop-filter: blur(10px);
+}
+
+.game-title {
+    font-size: 2.5em;
+    color: var(--jade-dark);
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px var(--cloud-shadow);
+}
+
+.game-subtitle {
+    font-size: 1.1em;
+    color: var(--jade-primary);
+    font-style: italic;
+}
+
+/* 進度顯示 */
+.stage-info {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    color: var(--jade-dark);
+    font-weight: 500;
+}
+
+/* 主遊戲區域 */
+.game-main {
+    display: grid;
+    grid-template-columns: 250px 1fr 250px;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* 拾遺囊（意象池） */
+.imagery-pool {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px var(--cloud-shadow);
+    backdrop-filter: blur(10px);
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.imagery-pool h3 {
+    color: var(--jade-dark);
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.2em;
+}
+
+.imagery-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    cursor: grab;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    user-select: none;
+}
+
+.imagery-item:hover {
+    background: rgba(74, 155, 127, 0.2);
+    border-color: var(--jade-primary);
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px var(--jade-glow);
+}
+
+.imagery-item:active {
+    cursor: grabbing;
+}
+
+.imagery-emoji {
+    font-size: 1.5em;
+}
+
+.imagery-name {
+    font-weight: 500;
+    color: var(--jade-dark);
+}
+
+/* 靈犀爐（合成區） */
+.furnace-area {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 15px var(--cloud-shadow);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.furnace {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.furnace-title {
+    font-size: 1.5em;
+    color: var(--jade-dark);
+    margin-bottom: 20px;
+}
+
+.furnace-slots {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    justify-content: center;
+}
+
+.furnace-slot {
+    flex: 1;
+    min-height: 150px;
+    border: 3px dashed var(--jade-primary);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(74, 155, 127, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.furnace-slot:hover {
+    border-color: var(--jade-light);
+    background: rgba(74, 155, 127, 0.2);
+    box-shadow: 0 0 20px var(--jade-glow);
+}
+
+.furnace-slot.filled {
+    border-style: solid;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.slot-placeholder {
+    color: var(--jade-primary);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.furnace-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+}
+
+.furnace-item .imagery-emoji {
+    font-size: 2.5em;
+}
+
+.furnace-item .imagery-name {
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+/* 按鈕 */
+.game-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px var(--cloud-shadow);
+}
+
+.btn-primary {
+    background: var(--jade-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--jade-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px var(--jade-glow);
+}
+
+.btn-primary.ready {
+    background: var(--jade-light);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 4px 10px var(--cloud-shadow); }
+    50% { box-shadow: 0 4px 20px var(--jade-glow); }
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--jade-dark);
+    border: 2px solid var(--jade-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--jade-bg);
+}
+
+/* 消息提示 */
+.message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-size: 1.1em;
+    font-weight: 500;
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px var(--cloud-shadow);
+}
+
+.message.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.message.info {
+    background: var(--jade-primary);
+    color: white;
+}
+
+.message.warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.message.error {
+    background: #ef4444;
+    color: white;
+}
+
+/* 震動效果 */
+.shake {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+/* 記憶閃回模態框 */
+.memory-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.memory-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.memory-content {
+    background: linear-gradient(135deg, #fff 0%, var(--jade-bg) 100%);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+
+.memory-modal.active .memory-content {
+    transform: scale(1);
+}
+
+.memory-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--jade-primary);
+}
+
+.memory-title {
+    font-size: 2em;
+    color: var(--jade-dark);
+    margin-bottom: 20px;
+}
+
+.memory-poem {
+    font-size: 1.3em;
+    line-height: 2;
+    color: var(--jade-text);
+    font-style: italic;
+}
+
+.memory-poem p {
+    margin: 5px 0;
+}
+
+.memory-narrative {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    border-left: 4px solid var(--jade-primary);
+}
+
+.narrative-text {
+    font-size: 1.1em;
+    line-height: 1.8;
+    color: var(--jade-text);
+    margin-bottom: 15px;
+}
+
+.imagery-label {
+    font-size: 0.9em;
+    color: var(--jade-primary);
+    font-weight: 600;
+}
+
+.close-memory-btn {
+    margin-top: 30px;
+    width: 100%;
+    padding: 15px;
+    background: var(--jade-primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.close-memory-btn:hover {
+    background: var(--jade-dark);
+    transform: translateY(-2px);
+}
+
+/* 圖鑑模態框 */
+.collection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.collection-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.collection-content {
+    background: linear-gradient(135deg, #fff 0%, var(--jade-bg) 100%);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.collection-section {
+    margin-bottom: 30px;
+}
+
+.collection-section h3 {
+    color: var(--jade-dark);
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.poem-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.poem-card {
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid var(--jade-primary);
+    transition: all 0.3s ease;
+}
+
+.poem-card.discovered {
+    background: rgba(74, 155, 127, 0.1);
+}
+
+.poem-card.undiscovered {
+    background: rgba(0, 0, 0, 0.05);
+    opacity: 0.6;
+}
+
+.poem-card h4 {
+    color: var(--jade-dark);
+    margin-bottom: 10px;
+}
+
+.poem-lines {
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: var(--jade-text);
+    margin-bottom: 10px;
+}
+
+.imagery-tag {
+    font-size: 0.8em;
+    color: var(--jade-primary);
+    font-weight: 600;
+}
+
+.hint {
+    font-style: italic;
+    color: #999;
+}
+
+.close-collection-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 15px;
+    background: var(--jade-primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 結局模態框 */
+.ending-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s ease;
+}
+
+.ending-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.ending-content {
+    text-align: center;
+    padding: 50px;
+    background: linear-gradient(135deg, #fff 0%, var(--jade-bg) 100%);
+    border-radius: 20px;
+    max-width: 600px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.ending-content h2 {
+    font-size: 2.5em;
+    color: var(--jade-dark);
+    margin-bottom: 30px;
+}
+
+.ending-text {
+    font-size: 1.2em;
+    line-height: 2;
+    color: var(--jade-text);
+    margin-bottom: 20px;
+}
+
+.restart-btn {
+    margin-top: 30px;
+    padding: 15px 40px;
+    background: var(--jade-primary);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.restart-btn:hover {
+    background: var(--jade-dark);
+    transform: translateY(-2px);
+}
+
+/* 記憶閃回特效 */
+body.memory-flashback {
+    animation: flashback 1s ease;
+}
+
+@keyframes flashback {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+    .game-main {
+        grid-template-columns: 200px 1fr;
+    }
+    
+    .imagery-pool {
+        max-height: 400px;
+    }
+    
+    .furnace-slots {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-main {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-title {
+        font-size: 1.8em;
+    }
+    
+    .furnace-area {
+        min-height: 300px;
+    }
+    
+    .memory-content,
+    .collection-content {
+        padding: 20px;
+        max-width: 90%;
+    }
+}
+

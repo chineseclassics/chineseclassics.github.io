@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碧城・煉夢錄 - 李商隱意象合成遊戲</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <!-- 太虛幻境應用切換器組件 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 標題區域 -->
+        <div class="game-header">
+            <h1 class="game-title">碧城・煉夢錄</h1>
+            <p class="game-subtitle">你是碧城的掌燈人，修復無題詩人破碎的記憶</p>
+        </div>
+
+        <!-- 進度顯示 -->
+        <div class="stage-info">
+            <span id="stage-progress">初入碧城 (0/10)</span>
+        </div>
+
+        <!-- 主遊戲區域 -->
+        <div class="game-main">
+            <!-- 拾遺囊（意象池） -->
+            <div class="imagery-pool">
+                <h3>拾遺囊</h3>
+                <div id="imagery-pool" class="imagery-list">
+                    <!-- 動態生成 -->
+                </div>
+            </div>
+
+            <!-- 靈犀爐（合成區） -->
+            <div class="furnace-area">
+                <h3 class="furnace-title">靈犀爐</h3>
+                <div class="furnace">
+                    <div class="furnace-slots">
+                        <div class="furnace-slot" data-slot-index="0">
+                            <span class="slot-placeholder">放入意象</span>
+                        </div>
+                        <div class="furnace-slot" data-slot-index="1">
+                            <span class="slot-placeholder">放入意象</span>
+                        </div>
+                    </div>
+                    <div class="game-buttons">
+                        <button id="refine-btn" class="btn btn-primary">煉化記憶</button>
+                        <button id="clear-btn" class="btn btn-secondary">清空</button>
+                        <button id="collection-btn" class="btn btn-secondary">無題卷</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側提示區域（可選） -->
+            <div class="hint-area" style="display: none;">
+                <!-- 未來可添加提示 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="message" class="message"></div>
+
+    <!-- 記憶閃回模態框 -->
+    <div id="memory-modal" class="memory-modal">
+        <div id="memory-content" class="memory-content">
+            <!-- 動態生成 -->
+        </div>
+    </div>
+
+    <!-- 圖鑑模態框 -->
+    <div id="collection-modal" class="collection-modal">
+        <div id="collection-content" class="collection-content">
+            <!-- 動態生成 -->
+        </div>
+    </div>
+
+    <!-- 結局模態框 -->
+    <div id="ending-modal" class="ending-modal">
+        <div id="ending-content" class="ending-content">
+            <!-- 動態生成 -->
+        </div>
+    </div>
+
+    <!-- 遊戲腳本 -->
+    <script src="./js/data.js"></script>
+    <script src="./js/game.js"></script>
+</body>
+</html>
+
