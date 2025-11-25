@@ -104,6 +104,17 @@
         
         // 千古堂 - 古代經典體驗
         {
+            id: 'judou',
+            category: 'qiangu',
+            name: '句豆',
+            icon: '',
+            iconImage: '/judou/assets/images/judou-logo.png',
+            gradient: 'from-lime-500 to-green-400',
+            url: '/judou/',
+            description: '古文斷句練習應用，通過互動練習幫助學生掌握文言文的句讀技巧，支持班級管理和學習記錄',
+            isNew: true
+        },
+        {
             id: 'wanwuxiaoyao',
             category: 'qiangu',
             name: '萬物逍遙',
