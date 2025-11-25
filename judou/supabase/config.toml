@@ -1,0 +1,28 @@
+# 句豆 Supabase 配置
+# Project ID: zpmhxprltmzoaptvczgt
+
+[project]
+id = "zpmhxprltmzoaptvczgt"
+
+[api]
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "https://chineseclassics.github.io/judou/"
+additional_redirect_urls = [
+  "https://chineseclassics.github.io/judou/",
+  "http://localhost:5173/judou/"
+]
+jwt_expiry = 604800
+enable_signup = true
+
