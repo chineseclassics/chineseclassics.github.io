@@ -208,11 +208,22 @@ export const useTextsStore = defineStore('texts', () => {
     texts.value = texts.value.filter((item) => item.id !== id)
   }
 
-  async function recordPracticeResult(payload: PracticeResultPayload) {
-    if (!supabase) return
+  async function recordPracticeResult(payload: PracticeResultPayload): Promise<string | null> {
+    if (!supabase) return null
     const username = payload.username ?? 'anonymous_user'
     const display_name = payload.display_name ?? '匿名學員'
-    await supabase.from('practice_records').insert({ ...payload, username, display_name })
+    const { data, error } = await supabase
+      .from('practice_records')
+      .insert({ ...payload, username, display_name })
+      .select('id')
+      .single()
+    
+    if (error) {
+      console.error('記錄練習結果失敗:', error)
+      return null
+    }
+    
+    return data?.id || null
   }
 
   function getRandomText() {

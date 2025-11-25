@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 import { useUserStatsStore } from '../../stores/userStatsStore'
+import { useAssignmentStore } from '../../stores/assignmentStore'
 
 interface NavItem {
   label: string
@@ -14,11 +15,13 @@ interface NavItem {
 
 const authStore = useAuthStore()
 const userStatsStore = useUserStatsStore()
+const assignmentStore = useAssignmentStore()
 const router = useRouter()
 
 const primaryNav: NavItem[] = [
   { label: '主頁', description: '最新資訊', to: { name: 'home' } },
   { label: '練習', description: '自主練習', to: { name: 'practice' } },
+  { label: '我的班級', description: authStore.isTeacher ? '管理班級' : '查看作業', to: { name: 'my-classes' } },
   { label: '排行榜', description: '豆點排名', to: { name: 'leaderboard' } },
   { label: '歷史紀錄', description: '練習足跡', to: { name: 'history' } },
 ]
@@ -29,7 +32,6 @@ const secondaryNav: NavItem[] = [
 ]
 
 const adminNav: NavItem[] = [
-  { label: '班級管理', description: '管理班級成員', to: { name: 'admin-classes' }, teacherOnly: true },
   { label: '文章管理', description: '建立/編輯練習', to: { name: 'admin-texts' }, teacherOnly: true },
 ]
 
@@ -77,6 +79,9 @@ function handleUserClick() {
   }
 }
 
+// 待完成作業數量（學生）
+const pendingCount = ref(0)
+
 // 監聽認證狀態，載入用戶統計
 watch(
   () => authStore.isAuthenticated,
@@ -84,10 +89,29 @@ watch(
     if (isAuth) {
       console.log('[Sidebar] 用戶已登入，載入統計')
       userStatsStore.fetchStats()
+      if (authStore.isStudent) {
+        assignmentStore.fetchStudentAssignments().then(() => {
+          assignmentStore.getPendingCount().then(count => {
+            pendingCount.value = count
+          })
+        })
+      }
+    } else {
+      pendingCount.value = 0
     }
   },
   { immediate: true }
 )
+
+onMounted(() => {
+  if (authStore.isAuthenticated && authStore.isStudent) {
+    assignmentStore.fetchStudentAssignments().then(() => {
+      assignmentStore.getPendingCount().then(count => {
+        pendingCount.value = count
+      })
+    })
+  }
+})
 </script>
 
 <template>
@@ -140,7 +164,12 @@ watch(
             :to="item.to"
           >
             <div>
-              <p class="item-title">{{ item.label }}</p>
+              <p class="item-title">
+                {{ item.label }}
+                <span v-if="item.label === '我的班級' && authStore.isStudent && pendingCount > 0" class="badge">
+                  {{ pendingCount }}
+                </span>
+              </p>
               <p class="item-desc">{{ item.description }}</p>
             </div>
           </router-link>
@@ -403,6 +432,21 @@ watch(
   margin-top: auto;
   font-size: var(--text-sm);
   color: var(--color-neutral-500);
+}
+
+.badge {
+  display: inline-block;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--color-error);
+  color: white;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+  margin-left: 0.5rem;
 }
 
 @media (max-width: 960px) {

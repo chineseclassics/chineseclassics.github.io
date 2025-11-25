@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
+import { useAssignmentStore } from '@/stores/assignmentStore'
+import { useAuthStore } from '@/stores/authStore'
 import type { PracticeText } from '@/types/text'
 
 interface SlotStatus {
@@ -9,8 +12,15 @@ interface SlotStatus {
   state: 'pending' | 'correct' | 'missed' | 'extra'
 }
 
+const route = useRoute()
 const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
+const assignmentStore = useAssignmentStore()
+const authStore = useAuthStore()
+
+// 作業相關
+const assignmentId = computed(() => route.query.assignmentId as string | undefined)
+const textId = computed(() => route.query.textId as string | undefined)
 
 // 練習狀態
 const currentText = ref<PracticeText | null>(null)
@@ -233,7 +243,7 @@ function pickRandomText() {
   selectText(candidate)
 }
 
-function ensureDataLoaded() {
+async function ensureDataLoaded() {
   const promises: Promise<void>[] = []
   
   if (!textsStore.texts.length) {
@@ -243,18 +253,27 @@ function ensureDataLoaded() {
     promises.push(libraryStore.fetchLibrary())
   }
   
-  Promise.all(promises).then(() => {
-    if (!currentText.value && textsStore.texts.length) {
-      pickRandomText()
+  await Promise.all(promises)
+  
+  // 如果 URL 中有 textId 和 assignmentId，載入該文章
+  if (textId.value && assignmentId.value) {
+    const text = textsStore.texts.find(t => t.id === textId.value)
+    if (text) {
+      selectText(text)
+      return
     }
-    // 預設選中第一個年級
-    if (!selectedGradeId.value && gradeOptions.value.length) {
-      const firstGrade = gradeOptions.value[0]
-      if (firstGrade) {
-        selectedGradeId.value = firstGrade.id
-      }
+  }
+  
+  if (!currentText.value && textsStore.texts.length) {
+    pickRandomText()
+  }
+  // 預設選中第一個年級
+  if (!selectedGradeId.value && gradeOptions.value.length) {
+    const firstGrade = gradeOptions.value[0]
+    if (firstGrade) {
+      selectedGradeId.value = firstGrade.id
     }
-  })
+  }
 }
 
 function toggleBreak(index: number) {
@@ -459,7 +478,9 @@ async function submitResult() {
   if (isComplete) {
     try {
       isSubmitting.value = true
-      await textsStore.recordPracticeResult({
+      
+      // 記錄練習結果
+      const practiceRecordId = await textsStore.recordPracticeResult({
         text_id: currentText.value.id,
         score,
         accuracy: firstAttemptAccuracy.value,
@@ -469,6 +490,16 @@ async function submitResult() {
         username: visitorUsername.value,
         display_name: visitorDisplayName.value,
       })
+      
+      // 如果是作業，記錄到 assignment_completions
+      if (assignmentId.value && authStore.isAuthenticated && practiceRecordId) {
+        await assignmentStore.recordCompletion(
+          assignmentId.value,
+          practiceRecordId,
+          score,
+          firstAttemptAccuracy.value * 100
+        )
+      }
     } catch (error) {
       console.warn('記錄練習結果失敗', error)
     } finally {

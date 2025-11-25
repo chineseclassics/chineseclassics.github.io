@@ -46,12 +46,17 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'my-classes',
+        name: 'my-classes',
+        component: () => import('../pages/MyClassesPage.vue'),
+        meta: {
+          title: '句豆 - 我的班級',
+        },
+      },
+      {
         path: 'admin/classes',
         name: 'admin-classes',
-        component: () => import('../pages/AdminClassesPage.vue'),
-        meta: {
-          title: '句豆 - 班級管理',
-        },
+        redirect: { name: 'my-classes' },
       },
       {
         path: 'profile',
