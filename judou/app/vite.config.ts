@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,6 +18,14 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // 開發環境中映射 /assets 到根目錄的 assets
+      '/assets': path.resolve(__dirname, '../../assets'),
+    },
+  },
+  server: {
+    fs: {
+      // 允許訪問父目錄
+      allow: ['..', '../..'],
     },
   },
 })

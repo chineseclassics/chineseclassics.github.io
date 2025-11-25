@@ -45,6 +45,14 @@ const routes: RouteRecordRaw[] = [
           title: '句豆 - 文章管理',
         },
       },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('../pages/UserProfilePage.vue'),
+        meta: {
+          title: '句豆 - 個人中心',
+        },
+      },
     ],
   },
 ]

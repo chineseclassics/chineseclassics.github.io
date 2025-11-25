@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
+import { useUserStatsStore } from '../../stores/userStatsStore'
 
 interface NavItem {
   label: string
@@ -12,6 +13,8 @@ interface NavItem {
 }
 
 const authStore = useAuthStore()
+const userStatsStore = useUserStatsStore()
+const router = useRouter()
 
 const primaryNav: NavItem[] = [
   { label: '主頁', description: '最新資訊', to: { name: 'home' } },
@@ -54,11 +57,9 @@ const initials = computed(() => {
   return displayName.value.charAt(0)
 })
 
-// 角色標籤
-const roleLabel = computed(() => {
-  if (!authStore.isAuthenticated) return '未登入'
-  return authStore.isTeacher ? '老師' : '學生'
-})
+// 用戶統計
+const beans = computed(() => userStatsStore.stats?.beans ?? 0)
+const level = computed(() => userStatsStore.level)
 
 // 登入/登出
 const showUserMenu = ref(false)
@@ -67,29 +68,57 @@ async function handleLogin() {
   await authStore.loginWithGoogle()
 }
 
-async function handleLogout() {
-  await authStore.logout()
-  showUserMenu.value = false
+// 點擊用戶區域
+function handleUserClick() {
+  if (!authStore.isAuthenticated) {
+    showUserMenu.value = !showUserMenu.value
+  } else {
+    router.push({ name: 'profile' })
+  }
 }
+
+// 監聽認證狀態，載入用戶統計
+watch(
+  () => authStore.isAuthenticated,
+  (isAuth) => {
+    if (isAuth) {
+      console.log('[Sidebar] 用戶已登入，載入統計')
+      userStatsStore.fetchStats()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
   <aside class="sidebar-shell edamame-sidebar edamame-glass">
     <!-- 用戶區域 -->
-    <div class="sidebar-brand" @click="showUserMenu = !showUserMenu">
+    <div class="sidebar-brand" @click="handleUserClick">
       <div class="brand-avatar" :class="{ 'has-avatar': authStore.avatarUrl }">
         <img v-if="authStore.avatarUrl" :src="authStore.avatarUrl" :alt="displayName" />
         <span v-else>{{ initials }}</span>
+        <!-- 等級徽章 -->
+        <div v-if="authStore.isAuthenticated" class="level-badge">{{ level }}</div>
       </div>
       <div class="brand-info">
         <p class="brand-title">{{ displayName }}</p>
-        <p class="brand-subtitle">{{ roleLabel }}</p>
+        <!-- 已登入：顯示豆子數量 -->
+        <p v-if="authStore.isAuthenticated" class="brand-stats">
+          <span class="beans-display">🫘 {{ beans }}</span>
+          <span class="level-display">Lv.{{ level }}</span>
+        </p>
+        <!-- 未登入：顯示登入提示 -->
+        <p v-else class="brand-subtitle">點擊登入</p>
       </div>
+      <!-- 箭頭指示 -->
+      <svg v-if="authStore.isAuthenticated" class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
     </div>
 
-    <!-- 用戶選單 -->
-    <div v-if="showUserMenu" class="user-menu-dropdown">
-      <button v-if="!authStore.isAuthenticated" class="login-btn" @click="handleLogin">
+    <!-- 未登入時的登入選單 -->
+    <div v-if="showUserMenu && !authStore.isAuthenticated" class="user-menu-dropdown">
+      <button class="login-btn" @click="handleLogin">
         <svg class="google-icon" viewBox="0 0 24 24" width="16" height="16">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -97,9 +126,6 @@ async function handleLogout() {
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
         使用 Google 登入
-      </button>
-      <button v-else class="logout-btn" @click="handleLogout">
-        登出
       </button>
     </div>
 
@@ -225,8 +251,57 @@ async function handleLogout() {
   object-fit: cover;
 }
 
+.level-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+}
+
+.brand-avatar {
+  position: relative;
+}
+
 .brand-info {
   flex: 1;
+}
+
+.brand-stats {
+  margin: 0;
+  display: flex;
+  gap: 0.75rem;
+  font-size: var(--text-sm);
+}
+
+.beans-display {
+  color: var(--color-primary-600);
+  font-weight: 500;
+}
+
+.level-display {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.arrow-icon {
+  color: var(--color-neutral-400);
+  transition: transform 0.2s;
+}
+
+.sidebar-brand:hover .arrow-icon {
+  transform: translateX(2px);
+  color: var(--color-primary-500);
 }
 
 /* 用戶選單下拉 */

@@ -58,22 +58,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      // 處理 OAuth 回調
-      await handleCallback()
-
-      // 獲取會話
-      const { data, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError) {
-        error.value = sessionError.message
-      } else if (data.session) {
-        session.value = data.session
-        user.value = data.session.user
-        await syncUser(data.session.user)
-      }
-
-      // 監聽變化
-      supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      // 先設置監聽器，確保能捕獲所有狀態變化
+      supabase.auth.onAuthStateChange(async (event, newSession) => {
+        console.log('[Auth] 狀態變化:', event, newSession?.user?.email)
         session.value = newSession
         user.value = newSession?.user ?? null
         
@@ -82,28 +69,41 @@ export const useAuthStore = defineStore('auth', () => {
         }
       })
 
+      // 檢查 URL 是否有 OAuth 回調參數
+      const hash = window.location.hash
+      const hasOAuthCallback = hash.includes('access_token') || hash.includes('error')
+      
+      if (hasOAuthCallback) {
+        console.log('[Auth] 檢測到 OAuth 回調')
+      }
+
+      // 獲取會話（這會自動處理 URL 中的 token）
+      const { data, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('[Auth] 獲取會話錯誤:', sessionError)
+        error.value = sessionError.message
+      } else if (data.session) {
+        console.log('[Auth] 已獲取會話:', data.session.user.email)
+        session.value = data.session
+        user.value = data.session.user
+        await syncUser(data.session.user)
+      } else {
+        console.log('[Auth] 無會話')
+      }
+
+      // 清理 URL（在處理完成後）
+      if (hasOAuthCallback) {
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+
       initialized.value = true
     } catch (e) {
+      console.error('[Auth] 初始化錯誤:', e)
       error.value = (e as Error).message
     } finally {
       loading.value = false
     }
-  }
-
-  // 處理 OAuth 回調
-  async function handleCallback() {
-    const hash = window.location.hash
-    if (!hash.includes('access_token') && !hash.includes('error')) return
-
-    const params = new URLSearchParams(hash.substring(1))
-    const callbackError = params.get('error')
-    
-    if (callbackError) {
-      error.value = params.get('error_description') || callbackError
-    }
-
-    // 清理 URL
-    window.history.replaceState(null, '', window.location.pathname)
   }
 
   // Google 登入
