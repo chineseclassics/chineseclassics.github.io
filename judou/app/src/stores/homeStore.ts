@@ -1,9 +1,16 @@
 import { defineStore } from 'pinia'
-import type { Poem } from '../types/poem'
 import { useSupabase } from '../composables/useSupabase'
 
+interface PracticeText {
+  id: string
+  title: string
+  author: string | null
+  source: string | null
+  created_at: string
+}
+
 interface HomeState {
-  topPoems: Poem[]
+  topPoems: PracticeText[]
   poemsLoading: boolean
   poemsError: string | null
 }
@@ -22,8 +29,8 @@ export const useHomeStore = defineStore('home', {
       try {
         const client = useSupabase()
         const { data, error } = await client
-          .from('poems')
-          .select('id,title,author,dynasty,content,created_at')
+          .from('practice_texts')
+          .select('id, title, author, source, created_at')
           .order('created_at', { ascending: false })
           .limit(limit)
 

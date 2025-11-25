@@ -29,7 +29,7 @@ const secondaryNav: NavItem[] = [
 ]
 
 const adminNav: NavItem[] = [
-  { label: '班級管理', description: '管理班級成員', to: { name: 'admin-texts' }, teacherOnly: true },
+  { label: '班級管理', description: '管理班級成員', to: { name: 'admin-classes' }, teacherOnly: true },
   { label: '文章管理', description: '建立/編輯練習', to: { name: 'admin-texts' }, teacherOnly: true },
 ]
 

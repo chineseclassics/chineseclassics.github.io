@@ -46,6 +46,14 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'admin/classes',
+        name: 'admin-classes',
+        component: () => import('../pages/AdminClassesPage.vue'),
+        meta: {
+          title: '句豆 - 班級管理',
+        },
+      },
+      {
         path: 'profile',
         name: 'profile',
         component: () => import('../pages/UserProfilePage.vue'),

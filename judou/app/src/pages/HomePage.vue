@@ -71,8 +71,8 @@ onMounted(() => {
             <p class="poem-title edamame-text-level-subtitle">{{ poem.title }}</p>
             <p class="poem-author edamame-text-level-detail">{{ poem.author || '佚名' }}</p>
           </li>
-          <li v-if="!topPoems.length" class="poem-item">
-            <p class="edamame-text-level-detail">Supabase 尚未有資料，請先寫入 poems 表。</p>
+          <li v-if="!topPoems.length && !poemsLoading" class="poem-item">
+            <p class="edamame-text-level-detail">暫無練習文章</p>
           </li>
         </ul>
       </article>

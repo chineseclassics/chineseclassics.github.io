@@ -23,6 +23,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5173,        // 固定端口
+    strictPort: true,  // 如果端口被佔用則報錯，而不是換端口
     fs: {
       // 允許訪問父目錄
       allow: ['..', '../..'],
