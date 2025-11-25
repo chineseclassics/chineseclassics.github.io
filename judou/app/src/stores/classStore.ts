@@ -33,6 +33,22 @@ export interface ClassMember {
   }
 }
 
+export interface PendingStudent {
+  id: string
+  class_id: string
+  email: string
+  added_by: string
+  added_at: string
+}
+
+export interface BatchAddResult {
+  validEmails: number
+  invalidEmails: number
+  duplicates: number
+  added: number
+  invalidList: string[]
+}
+
 export const useClassStore = defineStore('class', () => {
   const authStore = useAuthStore()
 
@@ -40,8 +56,12 @@ export const useClassStore = defineStore('class', () => {
   const classes = ref<ClassInfo[]>([])
   const currentClass = ref<ClassInfo | null>(null)
   const classMembers = ref<ClassMember[]>([])
+  const pendingStudents = ref<PendingStudent[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  // 學生郵箱驗證模式（ISF 學生郵箱）
+  const STUDENT_EMAIL_PATTERN = /^[a-zA-Z0-9._-]+@student\.isf\.edu\.hk$/i
 
   // 計算屬性
   const myClasses = computed(() => classes.value)
@@ -258,6 +278,160 @@ export const useClassStore = defineStore('class', () => {
   }
 
   /**
+   * 解析郵箱列表文本
+   */
+  function parseEmailList(text: string): string[] {
+    if (!text) return []
+    return text
+      .split(/[\n,;]/)
+      .map(email => email.trim().toLowerCase())
+      .filter(email => email !== '')
+  }
+
+  /**
+   * 驗證郵箱列表
+   */
+  function validateEmails(emails: string[]): { validEmails: string[], invalidEmails: string[] } {
+    const validEmails: string[] = []
+    const invalidEmails: string[] = []
+
+    emails.forEach(email => {
+      if (STUDENT_EMAIL_PATTERN.test(email)) {
+        validEmails.push(email)
+      } else {
+        invalidEmails.push(email)
+      }
+    })
+
+    return { validEmails, invalidEmails }
+  }
+
+  /**
+   * 批量添加學生到班級
+   * @param classId 班級 ID
+   * @param emailListText 郵箱列表文本（換行、逗號或分號分隔）
+   */
+  async function batchAddStudents(classId: string, emailListText: string): Promise<BatchAddResult> {
+    if (!supabase || !authStore.isTeacher || !authStore.user) {
+      throw new Error('無權限')
+    }
+
+    // 解析和驗證郵箱
+    const emails = parseEmailList(emailListText)
+    const { validEmails, invalidEmails } = validateEmails(emails)
+
+    if (validEmails.length === 0) {
+      throw new Error('沒有有效的學生郵箱地址。請使用 @student.isf.edu.hk 格式')
+    }
+
+    // 檢查已存在的成員（已激活 + 待激活）
+    const { data: activeMembers } = await supabase
+      .from('class_members')
+      .select('student:users!class_members_student_id_fkey(email)')
+      .eq('class_id', classId)
+
+    const { data: existingPending } = await supabase
+      .from('pending_students')
+      .select('email')
+      .eq('class_id', classId)
+
+    const existingEmails = new Set([
+      ...(activeMembers?.map(m => (m.student as unknown as { email: string } | null)?.email).filter(Boolean) || []),
+      ...(existingPending?.map(p => p.email) || [])
+    ])
+
+    const duplicates = validEmails.filter(email => existingEmails.has(email))
+    const newEmails = validEmails.filter(email => !existingEmails.has(email))
+
+    // 添加新郵箱到 pending_students
+    let addedCount = 0
+    for (const email of newEmails) {
+      try {
+        const { error: addError } = await supabase
+          .from('pending_students')
+          .insert({
+            class_id: classId,
+            email: email,
+            added_by: authStore.user.id
+          })
+
+        if (addError) {
+          if (addError.code === '23505') {
+            // 唯一約束衝突，郵箱已存在
+            console.log(`郵箱 ${email} 已在待加入列表中`)
+          } else {
+            console.warn(`添加郵箱 ${email} 失敗:`, addError)
+          }
+          continue
+        }
+        addedCount++
+      } catch (e) {
+        console.warn(`處理郵箱 ${email} 時出錯:`, e)
+      }
+    }
+
+    return {
+      validEmails: validEmails.length,
+      invalidEmails: invalidEmails.length,
+      duplicates: duplicates.length,
+      added: addedCount,
+      invalidList: invalidEmails
+    }
+  }
+
+  /**
+   * 獲取班級的待激活學生列表
+   */
+  async function fetchPendingStudents(classId: string): Promise<void> {
+    if (!supabase) return
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('pending_students')
+        .select('*')
+        .eq('class_id', classId)
+        .order('added_at', { ascending: false })
+
+      if (fetchError) {
+        console.error('獲取待激活學生失敗:', fetchError)
+        return
+      }
+
+      pendingStudents.value = data || []
+    } catch (e) {
+      console.error('獲取待激活學生失敗:', e)
+    }
+  }
+
+  /**
+   * 移除待激活學生
+   */
+  async function removePendingStudent(pendingId: string): Promise<boolean> {
+    if (!supabase || !authStore.isTeacher) {
+      error.value = '無權限'
+      return false
+    }
+
+    try {
+      const { error: removeError } = await supabase
+        .from('pending_students')
+        .delete()
+        .eq('id', pendingId)
+
+      if (removeError) {
+        error.value = removeError.message
+        return false
+      }
+
+      pendingStudents.value = pendingStudents.value.filter(p => p.id !== pendingId)
+      return true
+    } catch (e) {
+      error.value = (e as Error).message
+      return false
+    }
+  }
+
+  /**
    * 更新班級信息
    */
   async function updateClass(classId: string, updates: Partial<ClassInfo>): Promise<boolean> {
@@ -402,6 +576,7 @@ export const useClassStore = defineStore('class', () => {
     classes,
     currentClass,
     classMembers,
+    pendingStudents,
     loading,
     error,
 
@@ -417,6 +592,9 @@ export const useClassStore = defineStore('class', () => {
     removeStudent,
     updateClass,
     deleteClass,
+    batchAddStudents,
+    fetchPendingStudents,
+    removePendingStudent,
 
     // 學生方法
     fetchStudentClasses,
