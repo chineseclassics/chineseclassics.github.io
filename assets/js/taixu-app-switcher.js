@@ -816,7 +816,7 @@
         const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.startsWith('fa-') || app.icon.includes('fa-'));
         let iconHtml = '';
         if (app.iconImage) {
-            iconHtml = `<img src="${app.iconImage}" alt="${app.name} 圖標" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px;" loading="lazy" decoding="async">`;
+            iconHtml = `<img src="${app.iconImage}" alt="${app.name} 圖標" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px;" loading="lazy" decoding="async">`;
         } else if (isFaIcon) {
             iconHtml = `<i class="${app.icon}" style="color: white; font-size: 20px;"></i>`;
         } else if (app.icon && app.icon.trim() !== '') {

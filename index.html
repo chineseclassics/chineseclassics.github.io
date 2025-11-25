@@ -1260,7 +1260,7 @@
             const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.startsWith('fa-') || app.icon.includes('fa-'));
             let iconHtml = '';
             if (app.iconImage) {
-                iconHtml = `<img src="${app.iconImage}" alt="${app.name} 圖標" class="w-12 h-12 object-cover rounded-lg drop-shadow-md" loading="lazy" decoding="async">`;
+                iconHtml = `<img src="${app.iconImage}" alt="${app.name} 圖標" class="w-14 h-14 object-cover rounded-lg drop-shadow-md" loading="lazy" decoding="async">`;
             } else if (isFaIcon) {
                 iconHtml = `<i class="${app.icon} text-white ${iconFontSize}" aria-hidden="true"></i>`;
             } else if (app.icon) {
@@ -1404,7 +1404,7 @@
             const isFaIcon = typeof app.icon === 'string' && (app.icon.startsWith('fas ') || app.icon.startsWith('fa-') || app.icon.includes('fa-'));
             let iconHtml = '';
             if (app.iconImage) {
-                iconHtml = `<img src="${app.iconImage}" alt="${app.name} 圖標" class="w-8 h-8 object-cover rounded-md" loading="lazy" decoding="async">`;
+                iconHtml = `<img src="${app.iconImage}" alt="${app.name} 圖標" class="w-9 h-9 object-cover rounded-md" loading="lazy" decoding="async">`;
             } else if (isFaIcon) {
                 iconHtml = `<i class="${app.icon} text-white text-sm"></i>`;
             } else if (app.icon) {
