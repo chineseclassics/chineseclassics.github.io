@@ -16,10 +16,20 @@ const AUTH_CONFIG = {
   redirectTo: window.location.origin + '/judou/'
 }
 
+export interface UserProfile {
+  id: string
+  email: string
+  display_name: string
+  avatar_url: string | null
+  role: 'teacher' | 'student'
+  is_admin: boolean
+}
+
 export const useAuthStore = defineStore('auth', () => {
   // 狀態
   const user = ref<User | null>(null)
   const session = ref<Session | null>(null)
+  const userProfile = ref<UserProfile | null>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const initialized = ref(false)
@@ -37,7 +47,14 @@ export const useAuthStore = defineStore('auth', () => {
   const isTeacher = computed(() => userRole.value === 'teacher')
   const isStudent = computed(() => userRole.value === 'student')
   
+  const isAdmin = computed(() => {
+    return userProfile.value?.is_admin === true
+  })
+  
   const displayName = computed(() => {
+    if (userProfile.value) {
+      return userProfile.value.display_name
+    }
     if (!user.value) return ''
     return user.value.user_metadata?.full_name || 
            user.value.email?.split('@')[0] || 
@@ -45,6 +62,9 @@ export const useAuthStore = defineStore('auth', () => {
   })
   
   const avatarUrl = computed(() => {
+    if (userProfile.value?.avatar_url) {
+      return userProfile.value.avatar_url
+    }
     return user.value?.user_metadata?.avatar_url || null
   })
 
@@ -67,6 +87,9 @@ export const useAuthStore = defineStore('auth', () => {
         // 不等待 syncUser，避免阻塞
         if (newSession?.user) {
           syncUser(newSession.user).catch(e => console.warn('[Auth] syncUser 錯誤:', e))
+          fetchUserProfile(newSession.user.id).catch(e => console.warn('[Auth] fetchUserProfile 錯誤:', e))
+        } else {
+          userProfile.value = null
         }
       })
 
@@ -91,8 +114,10 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = data.session.user
         // 不等待 syncUser，避免阻塞應用啟動
         syncUser(data.session.user).catch(e => console.warn('[Auth] syncUser 錯誤:', e))
+        fetchUserProfile(data.session.user.id).catch(e => console.warn('[Auth] fetchUserProfile 錯誤:', e))
       } else {
         console.log('[Auth] 無會話')
+        userProfile.value = null
       }
 
       // 清理 URL（在處理完成後）
@@ -151,6 +176,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     user.value = null
     session.value = null
+    userProfile.value = null
     return true
   }
 
@@ -170,12 +196,36 @@ export const useAuthStore = defineStore('auth', () => {
       role: role,
       last_login: new Date().toISOString()
     }, { onConflict: 'id' })
+    
+    // 同步後立即獲取用戶資料（包括 is_admin）
+    await fetchUserProfile(authUser.id)
+  }
+
+  // 獲取用戶資料（包括 is_admin）
+  async function fetchUserProfile(userId: string) {
+    if (!supabase) return
+
+    const { data, error: fetchError } = await supabase
+      .from('users')
+      .select('id, email, display_name, avatar_url, role, is_admin')
+      .eq('id', userId)
+      .single()
+
+    if (fetchError) {
+      console.warn('[Auth] 獲取用戶資料失敗:', fetchError)
+      return
+    }
+
+    if (data) {
+      userProfile.value = data as UserProfile
+    }
   }
 
   return {
     // 狀態
     user,
     session,
+    userProfile,
     loading,
     error,
     initialized,
@@ -185,13 +235,15 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     isTeacher,
     isStudent,
+    isAdmin,
     displayName,
     avatarUrl,
     
     // 方法
     init,
     loginWithGoogle,
-    logout
+    logout,
+    fetchUserProfile
   }
 })
 

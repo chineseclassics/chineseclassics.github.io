@@ -2,11 +2,13 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
+import { useAuthStore } from '@/stores/authStore'
 import type { PracticeText } from '@/types/text'
 import type { PracticeCategory } from '@/types/practiceLibrary'
 
 const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
+const authStore = useAuthStore()
 
 // 當前選中的分類
 const selectedCategoryId = ref<string | null>(null)
@@ -67,9 +69,25 @@ const breadcrumb = computed(() => {
 
 const textsInCategory = computed(() => {
   if (!selectedCategoryId.value) return []
-  return textsStore.texts
-    .filter((t) => t.category_id === selectedCategoryId.value)
-    .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+  let filtered = textsStore.texts.filter((t) => t.category_id === selectedCategoryId.value)
+  
+  // 根據角色過濾：
+  // - 管理員：顯示所有系統文章
+  // - 老師：只顯示自己的私有文章
+  if (authStore.isAdmin) {
+    // 管理員看所有系統文章
+    filtered = filtered.filter(t => t.is_system === true)
+  } else if (authStore.isTeacher) {
+    // 老師只看自己創建的私有文章
+    filtered = filtered.filter(t => 
+      t.is_system === false && t.created_by === authStore.user?.id
+    )
+  } else {
+    // 學生不應該看到這個頁面，但以防萬一
+    filtered = []
+  }
+  
+  return filtered.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
 })
 
 // 模擬儲存時的內容處理：標點轉斷句符號
@@ -175,8 +193,11 @@ async function handleTextSubmit() {
     if (editingTextId.value) {
       await textsStore.updateText(editingTextId.value, payload)
     } else {
-      await textsStore.addText(payload)
+      // 根據角色決定創建系統文章還是私有文章
+      const isSystem = authStore.isAdmin
+      await textsStore.addText(payload, isSystem)
     }
+    await textsStore.fetchTexts() // 重新獲取文章列表
     isTextFormOpen.value = false
   } catch (error: any) {
     feedback.value = error?.message ?? '儲存失敗'
@@ -248,6 +269,7 @@ async function handleDelete() {
     isSubmitting.value = true
     if (confirmTarget.value.type === 'text') {
       await textsStore.deleteText(confirmTarget.value.item.id)
+      await textsStore.fetchTexts() // 重新獲取文章列表
     } else {
       await libraryStore.deleteCategory(confirmTarget.value.item.id)
       if (selectedCategoryId.value === confirmTarget.value.item.id) {
@@ -301,8 +323,12 @@ onMounted(async () => {
   <div class="admin-shell">
     <header class="admin-header">
       <div>
-        <p class="edamame-text-level-detail">管理員 · 文章資料庫</p>
-        <h1 class="edamame-heading-gradient">句豆練習素材</h1>
+        <p class="edamame-text-level-detail">
+          {{ authStore.isAdmin ? '超級管理員' : '老師' }} · 文章資料庫
+        </p>
+        <h1 class="edamame-heading-gradient">
+          {{ authStore.isAdmin ? '系統內建文章' : '我的私有文章' }}
+        </h1>
       </div>
       <div class="header-actions">
         <button
@@ -459,7 +485,11 @@ onMounted(async () => {
               <tbody>
                 <tr v-for="text in textsInCategory" :key="text.id">
                   <td>
-                    <p class="text-title">{{ text.title }}</p>
+                    <p class="text-title">
+                      {{ text.title }}
+                      <span v-if="text.is_system" class="text-type-badge system">系統</span>
+                      <span v-else class="text-type-badge private">私有</span>
+                    </p>
                     <p class="text-summary">{{ text.summary || text.content.replace(/\|/g, '').slice(0, 40) + '...' }}</p>
                   </td>
                   <td>{{ text.author || '佚名' }}</td>
@@ -1165,6 +1195,27 @@ th, td {
 .text-title {
   margin: 0;
   font-weight: var(--font-medium);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.text-type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+}
+
+.text-type-badge.system {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1e40af;
+}
+
+.text-type-badge.private {
+  background: rgba(168, 85, 247, 0.15);
+  color: #6b21a8;
 }
 
 .text-summary {

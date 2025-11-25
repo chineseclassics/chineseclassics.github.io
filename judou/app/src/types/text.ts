@@ -14,6 +14,8 @@ export interface PracticeText {
   content: string
   difficulty: number
   word_count?: number | null
+  is_system?: boolean
+  created_by?: string | null
   created_at?: string
   updated_at?: string
 }
