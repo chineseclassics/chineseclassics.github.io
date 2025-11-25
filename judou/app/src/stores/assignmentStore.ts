@@ -49,12 +49,21 @@ export interface AssignmentCompletion {
   }
 }
 
+export interface AssignmentStats {
+  assignment_id: string
+  total_students: number
+  completed_count: number
+  average_score: number | null
+  average_accuracy: number | null
+}
+
 export const useAssignmentStore = defineStore('assignment', () => {
   const authStore = useAuthStore()
 
   // 狀態
   const assignments = ref<ClassAssignment[]>([])
   const completions = ref<AssignmentCompletion[]>([])
+  const assignmentStats = ref<Map<string, AssignmentStats>>(new Map())
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -229,6 +238,71 @@ export const useAssignmentStore = defineStore('assignment', () => {
     }
   }
 
+  /**
+   * 獲取班級所有作業的統計信息（完成人數、平均分）
+   */
+  async function fetchAssignmentStats(classId: string, totalStudents: number): Promise<void> {
+    if (!supabase) return
+
+    try {
+      // 獲取該班級所有作業的完成記錄
+      const { data: classAssignments } = await supabase
+        .from('class_assignments')
+        .select('id')
+        .eq('class_id', classId)
+
+      if (!classAssignments || classAssignments.length === 0) return
+
+      const assignmentIds = classAssignments.map(a => a.id)
+
+      // 獲取所有完成記錄
+      const { data: allCompletions } = await supabase
+        .from('assignment_completions')
+        .select('assignment_id, score, accuracy')
+        .in('assignment_id', assignmentIds)
+
+      // 計算每個作業的統計信息
+      const statsMap = new Map<string, AssignmentStats>()
+      
+      for (const assignmentId of assignmentIds) {
+        const completionsForAssignment = (allCompletions || []).filter(
+          c => c.assignment_id === assignmentId
+        )
+        
+        const completedCount = completionsForAssignment.length
+        const scores = completionsForAssignment
+          .map(c => c.score)
+          .filter((s): s is number => s !== null)
+        const accuracies = completionsForAssignment
+          .map(c => c.accuracy)
+          .filter((a): a is number => a !== null)
+
+        statsMap.set(assignmentId, {
+          assignment_id: assignmentId,
+          total_students: totalStudents,
+          completed_count: completedCount,
+          average_score: scores.length > 0 
+            ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) 
+            : null,
+          average_accuracy: accuracies.length > 0 
+            ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) 
+            : null
+        })
+      }
+
+      assignmentStats.value = statsMap
+    } catch (e) {
+      console.error('獲取作業統計失敗:', e)
+    }
+  }
+
+  /**
+   * 獲取單個作業的統計信息
+   */
+  function getAssignmentStats(assignmentId: string): AssignmentStats | null {
+    return assignmentStats.value.get(assignmentId) || null
+  }
+
   // ================== 學生功能 ==================
 
   /**
@@ -302,7 +376,7 @@ export const useAssignmentStore = defineStore('assignment', () => {
       .select('id')
       .eq('assignment_id', assignmentId)
       .eq('student_id', authStore.user.id)
-      .single()
+      .maybeSingle()
 
     return !!data
   }
@@ -390,6 +464,7 @@ export const useAssignmentStore = defineStore('assignment', () => {
     // 狀態
     assignments,
     completions,
+    assignmentStats,
     loading,
     error,
 
@@ -398,6 +473,8 @@ export const useAssignmentStore = defineStore('assignment', () => {
     createAssignment,
     deleteAssignment,
     fetchAssignmentCompletions,
+    fetchAssignmentStats,
+    getAssignmentStats,
 
     // 學生方法
     fetchStudentAssignments,

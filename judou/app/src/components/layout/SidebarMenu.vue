@@ -19,26 +19,26 @@ const assignmentStore = useAssignmentStore()
 const router = useRouter()
 
 const primaryNav: NavItem[] = [
-  { label: '主頁', description: '最新資訊', to: { name: 'home' } },
-  { label: '練習', description: '自主練習', to: { name: 'practice' } },
-  { label: '我的班級', description: authStore.isTeacher ? '管理班級' : '查看作業', to: { name: 'my-classes' } },
-  { label: '排行榜', description: '豆點排名', to: { name: 'leaderboard' } },
-  { label: '歷史紀錄', description: '練習足跡', to: { name: 'history' } },
-]
-
-const secondaryNav: NavItem[] = [
-  { label: '設定', description: '敬請期待', disabled: true },
-  { label: '反饋', description: '敬請期待', disabled: true },
+  { label: '主頁', to: { name: 'home' } },
+  { label: '練習', to: { name: 'practice' } },
+  { label: '我的班級', to: { name: 'my-classes' } },
+  { label: '歷史紀錄', to: { name: 'history' } },
+  { label: '自訂練習', to: { name: 'my-texts' }, teacherOnly: true },
 ]
 
 const adminNav: NavItem[] = [
-  { label: '文章管理', description: '建立/編輯練習', to: { name: 'admin-texts' }, teacherOnly: true },
+  { label: '系統文庫', to: { name: 'admin-texts' } },
 ]
 
-// 過濾管理導航（只有老師可見）
+// 過濾常用功能導航（老師專屬項目）
+const visiblePrimaryNav = computed(() => {
+  return primaryNav.filter(item => !item.teacherOnly || authStore.isTeacher)
+})
+
+// 過濾管理導航（只有管理員可見）
 const visibleAdminNav = computed(() => {
-  if (!authStore.isAuthenticated) return []
-  return adminNav.filter(item => !item.teacherOnly || authStore.isTeacher)
+  if (!authStore.isAuthenticated || !authStore.isAdmin) return []
+  return adminNav
 })
 
 const route = useRoute()
@@ -59,9 +59,10 @@ const initials = computed(() => {
   return displayName.value.charAt(0)
 })
 
-// 用戶統計
-const beans = computed(() => userStatsStore.stats?.beans ?? 0)
+// 用戶統計（使用新的 profile 系統）
+const beans = computed(() => userStatsStore.profile?.total_beans ?? 0)
 const level = computed(() => userStatsStore.level)
+const streakDays = computed(() => userStatsStore.profile?.streak_days ?? 0)
 
 // 登入/登出
 const showUserMenu = ref(false)
@@ -82,13 +83,13 @@ function handleUserClick() {
 // 待完成作業數量（學生）
 const pendingCount = ref(0)
 
-// 監聽認證狀態，載入用戶統計
+// 監聯認證狀態，載入用戶 Profile
 watch(
   () => authStore.isAuthenticated,
   (isAuth) => {
     if (isAuth) {
-      console.log('[Sidebar] 用戶已登入，載入統計')
-      userStatsStore.fetchStats()
+      console.log('[Sidebar] 用戶已登入，載入 Profile')
+      userStatsStore.fetchProfile()
       if (authStore.isStudent) {
         assignmentStore.fetchStudentAssignments().then(() => {
           assignmentStore.getPendingCount().then(count => {
@@ -112,6 +113,7 @@ onMounted(() => {
     })
   }
 })
+
 </script>
 
 <template>
@@ -126,10 +128,11 @@ onMounted(() => {
       </div>
       <div class="brand-info">
         <p class="brand-title">{{ displayName }}</p>
-        <!-- 已登入：顯示豆子數量 -->
+        <!-- 已登入：顯示豆子數量、等級和連續天數 -->
         <p v-if="authStore.isAuthenticated" class="brand-stats">
-          <span class="beans-display">🫘 {{ beans }}</span>
+          <span class="beans-display"><span class="bean-dot"></span> {{ beans }}</span>
           <span class="level-display">Lv.{{ level }}</span>
+          <span v-if="streakDays > 0" class="streak-display">🔥 {{ streakDays }}天</span>
         </p>
         <!-- 未登入：顯示登入提示 -->
         <p v-else class="brand-subtitle">點擊登入</p>
@@ -156,28 +159,22 @@ onMounted(() => {
     <nav class="sidebar-section">
       <p class="section-label">常用功能</p>
       <ul>
-        <li v-for="item in primaryNav" :key="item.label">
+        <li v-for="item in visiblePrimaryNav" :key="item.label">
           <router-link
             v-if="item.to && !item.disabled"
             class="edamame-sidebar-item"
             :class="{ active: isActive(item) }"
             :to="item.to"
           >
-            <div>
-              <p class="item-title">
-                {{ item.label }}
-                <span v-if="item.label === '我的班級' && authStore.isStudent && pendingCount > 0" class="badge">
-                  {{ pendingCount }}
-                </span>
-              </p>
-              <p class="item-desc">{{ item.description }}</p>
-            </div>
+            <p class="item-title">
+              {{ item.label }}
+              <span v-if="item.label === '我的班級' && authStore.isStudent && pendingCount > 0" class="badge">
+                {{ pendingCount }}
+              </span>
+            </p>
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
-            <div>
-              <p class="item-title">{{ item.label }}</p>
-              <p class="item-desc">{{ item.description }}</p>
-            </div>
+            <p class="item-title">{{ item.label }}</p>
           </div>
         </li>
       </ul>
@@ -194,30 +191,10 @@ onMounted(() => {
             :class="{ active: isActive(item) }"
             :to="item.to"
           >
-            <div>
-              <p class="item-title">{{ item.label }}</p>
-              <p class="item-desc">{{ item.description }}</p>
-            </div>
+            <p class="item-title">{{ item.label }}</p>
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
-            <div>
-              <p class="item-title">{{ item.label }}</p>
-              <p class="item-desc">{{ item.description }}</p>
-            </div>
-          </div>
-        </li>
-      </ul>
-    </nav>
-
-    <nav class="sidebar-section">
-      <p class="section-label">更多</p>
-      <ul>
-        <li v-for="item in secondaryNav" :key="item.label">
-          <div class="edamame-sidebar-item disabled">
-            <div>
-              <p class="item-title">{{ item.label }}</p>
-              <p class="item-desc">{{ item.description }}</p>
-            </div>
+            <p class="item-title">{{ item.label }}</p>
           </div>
         </li>
       </ul>
@@ -240,6 +217,7 @@ onMounted(() => {
   position: sticky;
   top: 0;
   height: 100vh;
+  font-family: var(--font-ui, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
 }
 
 .sidebar-brand {
@@ -316,10 +294,30 @@ onMounted(() => {
 .beans-display {
   color: var(--color-primary-600);
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 綠色毛豆圓點 */
+.bean-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #a8d45a 0%, #7cb342 50%, #558b2f 100%);
+  box-shadow: 
+    0 1px 2px rgba(85, 139, 47, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
 .level-display {
   color: #d97706;
+  font-weight: 500;
+}
+
+.streak-display {
+  color: #dc2626;
   font-weight: 500;
 }
 
@@ -405,22 +403,18 @@ onMounted(() => {
 }
 
 .section-label {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-neutral-500);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--color-neutral-400);
   margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .item-title {
   margin: 0;
   font-weight: var(--font-medium);
-}
-
-.item-desc {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--color-neutral-500);
+  font-size: 0.95rem;
+  font-family: var(--font-ui, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
 }
 
 .edamame-sidebar-item.disabled {

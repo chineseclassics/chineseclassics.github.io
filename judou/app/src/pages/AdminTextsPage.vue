@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAuthStore } from '@/stores/authStore'
 import type { PracticeText } from '@/types/text'
 import type { PracticeCategory } from '@/types/practiceLibrary'
 
+const route = useRoute()
 const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
 const authStore = useAuthStore()
+
+// 判斷當前模式：admin（系統文庫）或 teacher（自訂練習）
+const isAdminMode = computed(() => route.meta.mode === 'admin')
+const pageTitle = computed(() => isAdminMode.value ? '系統文庫' : '自訂練習')
+const pageSubtitle = computed(() => isAdminMode.value ? '管理系統內建的練習文章' : '管理我的自訂練習文章')
 
 // 當前選中的分類
 const selectedCategoryId = ref<string | null>(null)
@@ -69,22 +76,19 @@ const breadcrumb = computed(() => {
 
 const textsInCategory = computed(() => {
   if (!selectedCategoryId.value) return []
+  
+  // 過濾屬於當前分類的文章
   let filtered = textsStore.texts.filter((t) => t.category_id === selectedCategoryId.value)
   
-  // 根據角色過濾：
-  // - 管理員：顯示所有系統文章
-  // - 老師：只顯示自己的私有文章
-  if (authStore.isAdmin) {
-    // 管理員看所有系統文章
+  // 根據頁面模式過濾：
+  if (isAdminMode.value) {
+    // 系統文庫模式：只顯示系統文章
     filtered = filtered.filter(t => t.is_system === true)
-  } else if (authStore.isTeacher) {
-    // 老師只看自己創建的私有文章
+  } else {
+    // 自訂練習模式：只顯示自己創建的私有文章
     filtered = filtered.filter(t => 
       t.is_system === false && t.created_by === authStore.user?.id
     )
-  } else {
-    // 學生不應該看到這個頁面，但以防萬一
-    filtered = []
   }
   
   return filtered.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
@@ -193,9 +197,8 @@ async function handleTextSubmit() {
     if (editingTextId.value) {
       await textsStore.updateText(editingTextId.value, payload)
     } else {
-      // 根據角色決定創建系統文章還是私有文章
-      const isSystem = authStore.isAdmin
-      await textsStore.addText(payload, isSystem)
+      // 根據頁面模式決定創建系統文章還是私有文章
+      await textsStore.addText(payload, isAdminMode.value)
     }
     await textsStore.fetchTexts() // 重新獲取文章列表
     isTextFormOpen.value = false
@@ -324,10 +327,10 @@ onMounted(async () => {
     <header class="admin-header">
       <div>
         <p class="edamame-text-level-detail">
-          {{ authStore.isAdmin ? '超級管理員' : '老師' }} · 文章資料庫
+          {{ pageSubtitle }}
         </p>
         <h1 class="edamame-heading-gradient">
-          {{ authStore.isAdmin ? '系統內建文章' : '我的私有文章' }}
+          {{ pageTitle }}
         </h1>
       </div>
       <div class="header-actions">
@@ -343,7 +346,7 @@ onMounted(async () => {
           @click="openCreateText"
           :disabled="!selectedCategory || selectedCategory.level !== 2"
         >
-          新增文章
+          新增練習
         </button>
       </div>
     </header>

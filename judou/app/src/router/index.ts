@@ -21,15 +21,7 @@ const routes: RouteRecordRaw[] = [
           title: '句豆 - 練習',
         },
       },
-              {
-                path: 'leaderboard',
-                name: 'leaderboard',
-                component: () => import('../pages/LeaderboardPage.vue'),
-                meta: {
-                  title: '句豆 - 排行榜',
-                },
-              },
-              {
+      {
                 path: 'history',
                 name: 'history',
                 component: () => import('../pages/HistoryPage.vue'),
@@ -38,11 +30,21 @@ const routes: RouteRecordRaw[] = [
                 },
               },
       {
+        path: 'my-texts',
+        name: 'my-texts',
+        component: () => import('../pages/AdminTextsPage.vue'),
+        meta: {
+          title: '句豆 - 自訂練習',
+          mode: 'teacher',
+        },
+      },
+      {
         path: 'admin/texts',
         name: 'admin-texts',
         component: () => import('../pages/AdminTextsPage.vue'),
         meta: {
-          title: '句豆 - 文章管理',
+          title: '句豆 - 系統文庫',
+          mode: 'admin',
         },
       },
       {

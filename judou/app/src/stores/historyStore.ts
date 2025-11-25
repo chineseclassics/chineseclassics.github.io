@@ -23,7 +23,7 @@ export const useHistoryStore = defineStore('history', () => {
     try {
       const { data, error: fetchError } = await supabase
         .from('practice_records')
-        .select('id, display_name, username, score, accuracy, elapsed_seconds, created_at, texts(name, category)')
+        .select('id, display_name, username, score, accuracy, elapsed_seconds, created_at, practice_texts(title, practice_categories(name))')
         .order('created_at', { ascending: false })
         .limit(limit.value)
 
@@ -32,8 +32,11 @@ export const useHistoryStore = defineStore('history', () => {
       }
 
       entries.value =
-        (data || []).map((item) => {
-          const textInfo = Array.isArray(item.texts) ? item.texts[0] : item.texts
+        (data || []).map((item: any) => {
+          const textInfo = Array.isArray(item.practice_texts) ? item.practice_texts[0] : item.practice_texts
+          // 從嵌套的 practice_categories 中獲取分類名稱
+          const categoryInfo = textInfo?.practice_categories
+          const categoryName = Array.isArray(categoryInfo) ? categoryInfo[0]?.name : categoryInfo?.name
           return {
             id: item.id,
             display_name: item.display_name,
@@ -42,7 +45,7 @@ export const useHistoryStore = defineStore('history', () => {
             accuracy: item.accuracy,
             elapsed_seconds: item.elapsed_seconds,
             created_at: item.created_at,
-            text: textInfo ? { title: textInfo.name, category_name: textInfo.category } : null,
+            text: textInfo ? { title: textInfo.title, category_name: categoryName || null } : null,
           }
         }) ?? []
     } catch (err: any) {

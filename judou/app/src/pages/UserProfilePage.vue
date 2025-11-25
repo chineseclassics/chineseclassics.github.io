@@ -12,12 +12,11 @@ const avatarUrl = computed(() => authStore.avatarUrl)
 const email = computed(() => authStore.user?.email || '')
 const roleLabel = computed(() => authStore.isTeacher ? '老師' : '學生')
 
-// 統計數據
-const stats = computed(() => userStatsStore.stats)
+// 統計數據（使用新的 profile 系統）
+const profile = computed(() => userStatsStore.profile)
 const level = computed(() => userStatsStore.level)
 const levelProgress = computed(() => userStatsStore.levelProgress)
-const expToNextLevel = computed(() => userStatsStore.expToNextLevel)
-const accuracy = computed(() => userStatsStore.accuracy)
+const beansToNextLevel = computed(() => userStatsStore.beansToNextLevel)
 
 // 登出
 async function handleLogout() {
@@ -26,8 +25,8 @@ async function handleLogout() {
 }
 
 onMounted(() => {
-  if (authStore.isAuthenticated && !stats.value) {
-    userStatsStore.fetchStats()
+  if (authStore.isAuthenticated && !profile.value) {
+    userStatsStore.fetchProfile()
   }
 })
 </script>
@@ -58,10 +57,14 @@ onMounted(() => {
     <!-- 豆子和等級 -->
     <section class="stats-section">
       <div class="stat-card edamame-glass beans-card">
-        <div class="stat-icon">🫘</div>
+        <div class="stat-icon bean-icon">
+          <span class="edamame"></span>
+          <span class="edamame"></span>
+          <span class="edamame"></span>
+        </div>
         <div class="stat-content">
           <p class="stat-label">我的豆子</p>
-          <p class="stat-value">{{ stats?.beans ?? 0 }}</p>
+          <p class="stat-value">{{ profile?.total_beans ?? 0 }}</p>
         </div>
       </div>
 
@@ -73,7 +76,7 @@ onMounted(() => {
           <div class="level-progress-bar">
             <div class="level-progress-fill" :style="{ width: levelProgress + '%' }"></div>
           </div>
-          <p class="stat-detail">距離下一級還需 {{ expToNextLevel }} 經驗</p>
+          <p class="stat-detail">距離下一級還需 {{ beansToNextLevel }} 豆</p>
         </div>
       </div>
     </section>
@@ -84,33 +87,39 @@ onMounted(() => {
       
       <div class="stats-grid">
         <div class="mini-stat">
-          <p class="mini-stat-value">{{ stats?.total_practices ?? 0 }}</p>
-          <p class="mini-stat-label">總練習次數</p>
+          <p class="mini-stat-value">{{ profile?.total_beans ?? 0 }}</p>
+          <p class="mini-stat-label">總豆子數</p>
         </div>
         
         <div class="mini-stat">
-          <p class="mini-stat-value">{{ stats?.correct_count ?? 0 }}</p>
-          <p class="mini-stat-label">正確次數</p>
+          <p class="mini-stat-value">{{ profile?.weekly_beans ?? 0 }}</p>
+          <p class="mini-stat-label">本周獲得</p>
         </div>
         
         <div class="mini-stat">
-          <p class="mini-stat-value">{{ accuracy }}%</p>
-          <p class="mini-stat-label">正確率</p>
+          <p class="mini-stat-value">{{ profile?.monthly_beans ?? 0 }}</p>
+          <p class="mini-stat-label">本月獲得</p>
         </div>
         
         <div class="mini-stat">
-          <p class="mini-stat-value">{{ stats?.streak_days ?? 0 }}</p>
+          <p class="mini-stat-value">{{ profile?.streak_days ?? 0 }}</p>
           <p class="mini-stat-label">連續學習天數</p>
         </div>
       </div>
     </section>
 
-    <!-- 總經驗值 -->
-    <section class="exp-section edamame-glass">
-      <h2 class="section-title">經驗值</h2>
-      <div class="exp-display">
-        <span class="exp-value">{{ stats?.total_exp ?? 0 }}</span>
-        <span class="exp-label">EXP</span>
+    <!-- 連續天數紀錄 -->
+    <section class="streak-section edamame-glass">
+      <h2 class="section-title">🔥 連續學習</h2>
+      <div class="streak-display">
+        <div class="streak-current">
+          <span class="streak-value">{{ profile?.streak_days ?? 0 }}</span>
+          <span class="streak-label">當前連續天數</span>
+        </div>
+        <div class="streak-max">
+          <span class="streak-value">{{ profile?.max_streak ?? 0 }}</span>
+          <span class="streak-label">最高紀錄</span>
+        </div>
       </div>
     </section>
 
@@ -243,6 +252,24 @@ onMounted(() => {
   font-size: 2.5rem;
 }
 
+/* 綠色毛豆圖標 */
+.stat-icon.bean-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+}
+
+.edamame {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #a8d45a 0%, #7cb342 50%, #558b2f 100%);
+  box-shadow: 
+    0 2px 4px rgba(85, 139, 47, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
 .stat-content {
   flex: 1;
 }
@@ -323,30 +350,38 @@ onMounted(() => {
   color: var(--color-neutral-500);
 }
 
-/* 經驗值區域 */
-.exp-section {
+/* 連續天數區域 */
+.streak-section {
   padding: 1.5rem;
 }
 
-.exp-display {
+.streak-display {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  gap: 2rem;
+  justify-content: center;
 }
 
-.exp-value {
+.streak-current,
+.streak-max {
+  text-align: center;
+}
+
+.streak-value {
+  display: block;
   font-size: 2.5rem;
   font-weight: bold;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #dc2626;
 }
 
-.exp-label {
-  font-size: 1rem;
+.streak-max .streak-value {
+  color: #f59e0b;
+}
+
+.streak-label {
+  display: block;
+  font-size: 0.875rem;
   color: var(--color-neutral-500);
-  font-weight: 500;
+  margin-top: 0.25rem;
 }
 
 /* 登入提示 */
@@ -393,6 +428,10 @@ onMounted(() => {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .streak-display {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 </style>
-

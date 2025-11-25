@@ -199,6 +199,62 @@ export const useAuthStore = defineStore('auth', () => {
     
     // 同步後立即獲取用戶資料（包括 is_admin）
     await fetchUserProfile(authUser.id)
+    
+    // 學生登入時，自動激活待加入的班級
+    if (role === 'student' && authUser.email) {
+      await activatePendingClasses(authUser.id, authUser.email)
+    }
+  }
+
+  // 激活學生的待加入班級
+  async function activatePendingClasses(userId: string, email: string) {
+    if (!supabase) return
+
+    try {
+      // 查找該郵箱在 pending_students 中的所有記錄
+      const { data: pendingRecords, error: fetchError } = await supabase
+        .from('pending_students')
+        .select('id, class_id, added_by')
+        .eq('email', email.toLowerCase())
+
+      if (fetchError || !pendingRecords || pendingRecords.length === 0) {
+        return // 沒有待激活的班級
+      }
+
+      console.log(`[Auth] 發現 ${pendingRecords.length} 個待激活班級`)
+
+      // 將每個待激活記錄轉移到 class_members
+      for (const pending of pendingRecords) {
+        // 添加到 class_members
+        const { error: addError } = await supabase
+          .from('class_members')
+          .insert({
+            class_id: pending.class_id,
+            student_id: userId,
+            added_by: pending.added_by
+          })
+
+        if (addError) {
+          if (addError.code === '23505') {
+            // 已經是成員，跳過
+            console.log(`[Auth] 學生已在班級 ${pending.class_id} 中`)
+          } else {
+            console.warn(`[Auth] 添加到班級失敗:`, addError)
+            continue
+          }
+        }
+
+        // 刪除 pending_students 記錄
+        await supabase
+          .from('pending_students')
+          .delete()
+          .eq('id', pending.id)
+      }
+
+      console.log('[Auth] 班級激活完成')
+    } catch (e) {
+      console.warn('[Auth] 激活班級失敗:', e)
+    }
   }
 
   // 獲取用戶資料（包括 is_admin）

@@ -49,6 +49,20 @@ export interface BatchAddResult {
   invalidList: string[]
 }
 
+export interface StudentProgress {
+  student_id: string
+  display_name: string
+  email: string
+  avatar_url: string | null
+  beans: number
+  total_exp: number
+  total_practices: number
+  correct_count: number
+  streak_days: number
+  last_practice_at: string | null
+  level: number
+}
+
 export const useClassStore = defineStore('class', () => {
   const authStore = useAuthStore()
 
@@ -57,6 +71,7 @@ export const useClassStore = defineStore('class', () => {
   const currentClass = ref<ClassInfo | null>(null)
   const classMembers = ref<ClassMember[]>([])
   const pendingStudents = ref<PendingStudent[]>([])
+  const studentProgress = ref<StudentProgress[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -432,6 +447,77 @@ export const useClassStore = defineStore('class', () => {
   }
 
   /**
+   * 計算等級（根據經驗值）
+   */
+  function calculateLevel(totalExp: number): number {
+    // 每100經驗升一級，最低1級
+    return Math.max(1, Math.floor(totalExp / 100) + 1)
+  }
+
+  /**
+   * 獲取班級學生的學習進度數據
+   */
+  async function fetchStudentProgress(classId: string): Promise<void> {
+    if (!supabase || !authStore.isTeacher) return
+
+    loading.value = true
+    error.value = null
+
+    try {
+      // 獲取班級成員的學生 ID
+      const { data: members } = await supabase
+        .from('class_members')
+        .select('student_id')
+        .eq('class_id', classId)
+
+      if (!members || members.length === 0) {
+        studentProgress.value = []
+        return
+      }
+
+      const studentIds = members.map(m => m.student_id)
+
+      // 獲取學生基本信息
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, display_name, email, avatar_url')
+        .in('id', studentIds)
+
+      // 獲取學生統計數據
+      const { data: stats } = await supabase
+        .from('user_stats')
+        .select('user_id, beans, total_exp, total_practices, correct_count, streak_days, last_practice_at')
+        .in('user_id', studentIds)
+
+      // 合併數據
+      const progressList: StudentProgress[] = (users || []).map(user => {
+        const userStats = stats?.find(s => s.user_id === user.id)
+        return {
+          student_id: user.id,
+          display_name: user.display_name || user.email?.split('@')[0] || '未知',
+          email: user.email || '',
+          avatar_url: user.avatar_url,
+          beans: userStats?.beans || 0,
+          total_exp: userStats?.total_exp || 0,
+          total_practices: userStats?.total_practices || 0,
+          correct_count: userStats?.correct_count || 0,
+          streak_days: userStats?.streak_days || 0,
+          last_practice_at: userStats?.last_practice_at || null,
+          level: calculateLevel(userStats?.total_exp || 0)
+        }
+      })
+
+      // 按豆子數量排序
+      studentProgress.value = progressList.sort((a, b) => b.beans - a.beans)
+    } catch (e) {
+      console.error('獲取學生進度失敗:', e)
+      error.value = (e as Error).message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * 更新班級信息
    */
   async function updateClass(classId: string, updates: Partial<ClassInfo>): Promise<boolean> {
@@ -577,6 +663,7 @@ export const useClassStore = defineStore('class', () => {
     currentClass,
     classMembers,
     pendingStudents,
+    studentProgress,
     loading,
     error,
 
@@ -595,6 +682,7 @@ export const useClassStore = defineStore('class', () => {
     batchAddStudents,
     fetchPendingStudents,
     removePendingStudent,
+    fetchStudentProgress,
 
     // 學生方法
     fetchStudentClasses,

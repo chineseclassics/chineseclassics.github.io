@@ -5,6 +5,7 @@ import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAssignmentStore } from '@/stores/assignmentStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useUserStatsStore, type ScoreBreakdown } from '@/stores/userStatsStore'
 import type { PracticeText } from '@/types/text'
 
 interface SlotStatus {
@@ -17,6 +18,7 @@ const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
 const assignmentStore = useAssignmentStore()
 const authStore = useAuthStore()
+const userStatsStore = useUserStatsStore()
 
 // 作業相關
 const assignmentId = computed(() => route.query.assignmentId as string | undefined)
@@ -33,6 +35,10 @@ const evaluation = ref<{
   elapsed: number
   score: number
   isComplete: boolean  // 是否全對
+  breakdown?: ScoreBreakdown  // 得分明細
+  beansEarned?: number  // 實際獲得的豆子（最高分制）
+  isNewRecord?: boolean  // 是否創下新紀錄
+  isFirstClear?: boolean  // 是否首次完成
 } | null>(null)
 const timer = ref(0)
 const toast = ref<string | null>(null)
@@ -376,28 +382,15 @@ function getContentPreview(text: PracticeText) {
   return text.content.replace(/\|/g, '').slice(0, 30) + '...'
 }
 
-// 計算得分（混合制）
-function calculateScore(accuracy: number, elapsed: number, attempts: number): number {
-  const totalBreaks = correctBreaks.value.size
-  const baseScore = totalBreaks * 10  // 基礎分 = 斷句數 × 10
-  
-  // 嘗試係數：1 / (1 + 0.25 × (attempts - 1))
-  // 第1次: 100%, 第2次: 80%, 第3次: 67%, 第4次: 57%...
-  const attemptFactor = 1 / (1 + 0.25 * (attempts - 1))
-  
-  // 時間獎勵：根據平均每字用時
-  // < 2秒/字: 1.2倍, 2-4秒/字: 1.0倍, > 4秒/字: 0.8倍
-  const avgTimePerChar = elapsed / Math.max(1, characters.value.length)
-  let timeFactor = 1.0
-  if (avgTimePerChar < 2) {
-    timeFactor = 1.2
-  } else if (avgTimePerChar > 4) {
-    timeFactor = 0.8
-  }
-  
-  // 最終得分 = 基礎分 × 正確率 × 嘗試係數 × 時間獎勵
-  const finalScore = Math.round(baseScore * accuracy * attemptFactor * timeFactor)
-  return Math.max(0, finalScore)
+// 計算得分（使用新的積分系統）
+function calculateScoreWithBreakdown(elapsed: number, attempts: number, isFirstClear: boolean): { score: number; breakdown: ScoreBreakdown } {
+  return userStatsStore.calculateScore({
+    breakCount: correctBreaks.value.size,
+    charCount: characters.value.length,
+    elapsedSeconds: elapsed,
+    attemptCount: attempts,
+    isFirstClear
+  })
 }
 
 async function submitResult() {
@@ -452,9 +445,17 @@ async function submitResult() {
   
   // 計算得分（只在全對時計算最終得分）
   const elapsed = firstAttemptTime.value || timer.value
-  const score = isComplete 
-    ? calculateScore(firstAttemptAccuracy.value, elapsed, attemptCount.value)
-    : 0
+  
+  // 檢查是否首次完成該文章（用於首次完成加成）
+  let isFirstClear = false
+  if (isComplete && authStore.isAuthenticated) {
+    isFirstClear = await userStatsStore.checkFirstClear(currentText.value.id)
+  }
+  
+  // 使用新的計分系統
+  const { score, breakdown } = isComplete 
+    ? calculateScoreWithBreakdown(elapsed, attemptCount.value, isFirstClear)
+    : { score: 0, breakdown: undefined as ScoreBreakdown | undefined }
   
   evaluation.value = {
     statuses,
@@ -462,14 +463,24 @@ async function submitResult() {
     elapsed,
     score,
     isComplete,
+    breakdown,
+    isFirstClear
   }
   
   // 播放反饋音效
   if (isComplete) {
     playSuccessSound()
-    toast.value = attemptCount.value === 1 
+    
+    // 構建提示訊息
+    let toastMsg = attemptCount.value === 1 
       ? '🎉 一次過關！太厲害了！' 
       : `✅ 完成！共嘗試 ${attemptCount.value} 次`
+    
+    if (isFirstClear) {
+      toastMsg += ' 🌟 首次完成獎勵！'
+    }
+    
+    toast.value = toastMsg
   } else {
     toast.value = `還有 ${missedCount} 個遺漏、${extraCount} 個多餘，請修正後再次提交`
   }
@@ -479,7 +490,15 @@ async function submitResult() {
     try {
       isSubmitting.value = true
       
-      // 記錄練習結果
+      // 記錄練習結果到 practice_records
+      // 優先使用已登入用戶的真實信息，否則使用訪客信息
+      const recordUsername = authStore.isAuthenticated 
+        ? (authStore.user?.email?.split('@')[0] || 'user')
+        : visitorUsername.value
+      const recordDisplayName = authStore.isAuthenticated 
+        ? authStore.displayName 
+        : visitorDisplayName.value
+      
       const practiceRecordId = await textsStore.recordPracticeResult({
         text_id: currentText.value.id,
         score,
@@ -487,9 +506,30 @@ async function submitResult() {
         elapsed_seconds: elapsed,
         user_breaks: userBreaks.value.size,
         correct_breaks: correctBreaks.value.size,
-        username: visitorUsername.value,
-        display_name: visitorDisplayName.value,
+        username: recordUsername,
+        display_name: recordDisplayName,
       })
+      
+      // 如果用戶已登入，記錄到新的積分系統
+      if (authStore.isAuthenticated) {
+        const result = await userStatsStore.recordPracticeScore({
+          textId: currentText.value.id,
+          score,
+          isFirstClear
+        })
+        
+        // 更新評估結果
+        if (evaluation.value) {
+          evaluation.value.beansEarned = result.beansEarned
+          evaluation.value.isNewRecord = result.isNewRecord
+        }
+        
+        // 顯示獲得的豆子
+        if (result.beansEarned > 0) {
+          const bonusMsg = result.isNewRecord ? ' (新紀錄!)' : ''
+          toast.value = `${toast.value} 獲得 ${result.beansEarned} 豆${bonusMsg}`
+        }
+      }
       
       // 如果是作業，記錄到 assignment_completions
       if (assignmentId.value && authStore.isAuthenticated && practiceRecordId) {
@@ -735,7 +775,12 @@ onBeforeUnmount(() => {
           {{ evaluation?.isComplete ? formatScore(evaluation.score) : '--' }}
         </p>
         <p class="result-desc">
-          <template v-if="evaluation?.isComplete && attemptCount > 1">
+          <template v-if="evaluation?.isComplete && evaluation?.beansEarned !== undefined">
+            <span v-if="evaluation.isNewRecord" class="new-record">🏆 新紀錄！</span>
+            <span v-else>已是最高分</span>
+            +{{ evaluation.beansEarned }} 豆
+          </template>
+          <template v-else-if="evaluation?.isComplete && attemptCount > 1">
             嘗試 {{ attemptCount }} 次後完成
           </template>
           <template v-else>
@@ -763,7 +808,10 @@ onBeforeUnmount(() => {
           {{ attemptCount > 0 ? `${firstAttemptTime} 秒` : '--' }}
         </p>
         <p class="result-desc">
-          <template v-if="attemptCount > 0">
+          <template v-if="evaluation?.isComplete && evaluation?.breakdown">
+            時間係數：×{{ evaluation.breakdown.timeFactor }}
+          </template>
+          <template v-else-if="attemptCount > 0">
             首次提交時記錄
           </template>
           <template v-else>
@@ -777,7 +825,10 @@ onBeforeUnmount(() => {
           {{ attemptCount > 0 ? attemptCount : '--' }}
         </p>
         <p class="result-desc">
-          <template v-if="evaluation?.isComplete">
+          <template v-if="evaluation?.isComplete && evaluation?.breakdown">
+            嘗試係數：×{{ evaluation.breakdown.attemptFactor }}
+          </template>
+          <template v-else-if="evaluation?.isComplete">
             {{ attemptCount === 1 ? '一次過關！' : '堅持就是勝利' }}
           </template>
           <template v-else>
@@ -785,6 +836,38 @@ onBeforeUnmount(() => {
           </template>
         </p>
       </article>
+    </section>
+    
+    <!-- 得分明細（僅在完成後顯示） -->
+    <section v-if="evaluation?.isComplete && evaluation?.breakdown" class="score-breakdown edamame-glass">
+      <h3 class="breakdown-title">📊 得分明細</h3>
+      <div class="breakdown-grid">
+        <div class="breakdown-item">
+          <span class="breakdown-label">基礎分</span>
+          <span class="breakdown-value">{{ evaluation.breakdown.baseScore }}</span>
+          <span class="breakdown-formula">{{ correctBreaks.size }} 斷句 × 2</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-label">時間係數</span>
+          <span class="breakdown-value">×{{ evaluation.breakdown.timeFactor }}</span>
+          <span class="breakdown-formula">{{ evaluation.breakdown.avgTimePerChar }} 秒/字</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-label">嘗試係數</span>
+          <span class="breakdown-value">×{{ evaluation.breakdown.attemptFactor }}</span>
+          <span class="breakdown-formula">第 {{ attemptCount }} 次</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-label">連續天數</span>
+          <span class="breakdown-value">×{{ evaluation.breakdown.streakFactor }}</span>
+          <span class="breakdown-formula">{{ userStatsStore.profile?.streak_days || 0 }} 天</span>
+        </div>
+        <div v-if="evaluation.isFirstClear" class="breakdown-item highlight">
+          <span class="breakdown-label">首次完成</span>
+          <span class="breakdown-value">×{{ evaluation.breakdown.firstClearFactor }}</span>
+          <span class="breakdown-formula">🌟 首通獎勵</span>
+        </div>
+      </div>
     </section>
   </div>
 </template>
@@ -1388,10 +1471,79 @@ onBeforeUnmount(() => {
   color: var(--color-neutral-400);
 }
 
+/* 新紀錄標記 */
+.new-record {
+  color: var(--color-warning, #f59e0b);
+  font-weight: var(--font-semibold);
+}
+
+/* 得分明細區域 */
+.score-breakdown {
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+.breakdown-title {
+  margin: 0 0 1rem 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-neutral-700);
+}
+
+.breakdown-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.breakdown-item {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  text-align: center;
+}
+
+.breakdown-item.highlight {
+  background: rgba(139, 178, 79, 0.1);
+  border-color: var(--color-primary-200);
+}
+
+.breakdown-label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+  margin-bottom: 0.25rem;
+}
+
+.breakdown-value {
+  display: block;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-primary-700);
+}
+
+.breakdown-formula {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-neutral-400);
+  margin-top: 0.25rem;
+}
+
 /* 響應式 */
 @media (max-width: 1024px) {
   .results-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .breakdown-grid {
+    flex-wrap: wrap;
+  }
+  
+  .breakdown-item {
+    min-width: calc(50% - 0.375rem);
   }
 }
 
@@ -1415,6 +1567,10 @@ onBeforeUnmount(() => {
 
   .board-actions {
     flex-wrap: wrap;
+  }
+  
+  .breakdown-item {
+    min-width: 100%;
   }
 }
 </style>
