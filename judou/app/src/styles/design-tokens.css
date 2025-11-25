@@ -1,0 +1,222 @@
+/**
+ * 句豆設計系統 2.0 - Design Tokens
+ * 主題：種豆南山下，悠然見成長
+ */
+
+/* ============================================
+   方案 A：嫩芽初生（默認）
+   ============================================ */
+:root {
+  /* 主色 - 柔和黃綠（降低飽和度，更護眼） */
+  --color-primary-50: #f8faf5;
+  --color-primary-100: #eff6e5;
+  --color-primary-200: #deedc4;
+  --color-primary-300: #c5dd9a;
+  --color-primary-400: #a8c870;
+  --color-primary-500: #8bb24f;
+  --color-primary-600: #6f9638;
+  --color-primary-700: #587a2b;
+  --color-primary-800: #456124;
+  --color-primary-900: #3a5020;
+  
+  /* 輔色 - 柔和豆殼黃（降低飽和度） */
+  --color-secondary-50: #fdfaf3;
+  --color-secondary-100: #fbf5e3;
+  --color-secondary-200: #f6eac4;
+  --color-secondary-300: #eed89a;
+  --color-secondary-400: #e3c26f;
+  --color-secondary-500: #d4a84a;
+  --color-secondary-600: #b88d36;
+  
+  /* 中性 - 泥土大地 */
+  --color-neutral-50: #fafaf9;
+  --color-neutral-100: #f5f5f4;
+  --color-neutral-200: #e7e5e4;
+  --color-neutral-300: #d6d3d1;
+  --color-neutral-400: #a8a29e;
+  --color-neutral-500: #78716c;
+  --color-neutral-600: #57534e;
+  --color-neutral-700: #44403c;
+  --color-neutral-800: #292524;
+  --color-neutral-900: #1c1917;
+  
+  /* 功能色 - 柔和版本 */
+  --color-success: #8bb24f;
+  --color-warning: #e3a63d;
+  --color-error: #dc6b6b;
+  --color-info: #5ba8b8;
+  
+  /* 毛豆角色專用 */
+  --color-bean-body: #8bb24f;
+  --color-bean-outline: #587a2b;
+  --color-bean-eye: #3a3a38;
+  --color-bean-blush: #f5d1d1;
+  --color-bean-shadow: rgba(111, 150, 56, 0.18);
+  
+  /* 豐收金 */
+  --color-harvest: #e3a63d;
+  --color-harvest-glow: #f0c575;
+  
+  /* 間距 - 8px 基準 */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  
+  /* 圓角 */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-full: 9999px;
+  --radius-bean: 50% 50% 50% 20%;
+  
+  /* 陰影 - 更柔和 */
+  --shadow-xs: 0 1px 2px rgba(88, 122, 43, 0.06);
+  --shadow-sm: 0 2px 4px rgba(88, 122, 43, 0.08);
+  --shadow-md: 0 4px 12px rgba(88, 122, 43, 0.10);
+  --shadow-lg: 0 8px 24px rgba(88, 122, 43, 0.12);
+  --shadow-xl: 0 12px 32px rgba(88, 122, 43, 0.14);
+  --shadow-2xl: 0 16px 48px rgba(88, 122, 43, 0.16);
+  --shadow-inner: inset 0 2px 4px rgba(88, 122, 43, 0.06);
+  
+  /* 發光 - 柔和光暈 */
+  --glow-soft: 0 0 20px rgba(168, 200, 112, 0.25);
+  --glow-strong: 0 0 40px rgba(168, 200, 112, 0.4);
+  
+  /* 字體 */
+  --font-main: 'hanserif', 'Noto Serif SC', serif;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* 字重 */
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* 字號 */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  
+  /* 行高 */
+  --leading-tight: 1.25;
+  --leading-normal: 1.75;
+  --leading-relaxed: 2;
+  
+  /* 動畫時長 */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+  
+  /* 緩動曲線 */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-grow: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-sprout: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* ============================================
+   活力版（原始鮮豔配色）- 對比用
+   ============================================ */
+[data-theme="vivid"] {
+  --color-primary-50: #f7fee7;
+  --color-primary-100: #ecfccb;
+  --color-primary-200: #d9f99d;
+  --color-primary-300: #bef264;
+  --color-primary-400: #a3e635;
+  --color-primary-500: #84cc16;
+  --color-primary-600: #65a30d;
+  --color-primary-700: #4d7c0f;
+  --color-primary-800: #3f6212;
+  --color-primary-900: #365314;
+  
+  --color-secondary-400: #facc15;
+  --color-bean-body: #84cc16;
+  --color-bean-outline: #4d7c0f;
+  --color-bean-shadow: rgba(101, 163, 13, 0.2);
+  
+  --shadow-sm: 0 2px 4px rgba(132, 204, 22, 0.08);
+  --shadow-md: 0 4px 12px rgba(132, 204, 22, 0.12);
+  --shadow-lg: 0 8px 24px rgba(132, 204, 22, 0.15);
+  
+  --glow-soft: 0 0 20px rgba(163, 230, 53, 0.4);
+  --glow-strong: 0 0 40px rgba(163, 230, 53, 0.6);
+}
+
+/* ============================================
+   方案 B：田園清晨
+   ============================================ */
+[data-theme="morning"] {
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-200: #99f6e4;
+  --color-primary-300: #5eead4;
+  --color-primary-400: #2dd4bf;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-800: #115e59;
+  --color-primary-900: #134e4a;
+  
+  --color-secondary-400: #34d399;
+  --color-secondary-600: #059669;
+  
+  --color-bean-body: #14b8a6;
+  --color-bean-outline: #0f766e;
+  --color-bean-shadow: rgba(13, 148, 136, 0.2);
+  
+  --shadow-sm: 0 2px 4px rgba(13, 148, 136, 0.08);
+  --shadow-md: 0 4px 12px rgba(13, 148, 136, 0.12);
+  --shadow-lg: 0 8px 24px rgba(13, 148, 136, 0.15);
+  
+  --glow-soft: 0 0 20px rgba(20, 184, 166, 0.3);
+  --glow-strong: 0 0 40px rgba(20, 184, 166, 0.5);
+}
+
+/* ============================================
+   方案 C：四季豆田
+   ============================================ */
+[data-theme="seasons"] {
+  --color-primary-600: #22c55e;
+  --color-secondary-600: #3b82f6;
+  
+  /* 可根據季節動態切換 */
+  --color-season-spring: #22c55e;
+  --color-season-summer: #10b981;
+  --color-season-autumn: #f59e0b;
+  --color-season-winter: #6b7280;
+}
+
+/* ============================================
+   深色模式
+   ============================================ */
+.dark {
+  --color-neutral-50: #1c1917;
+  --color-neutral-100: #292524;
+  --color-neutral-200: #44403c;
+  --color-neutral-600: #d6d3d1;
+  --color-neutral-700: #e7e5e4;
+  --color-neutral-900: #fafaf9;
+}
+

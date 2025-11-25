@@ -1,0 +1,1091 @@
+/**
+ * 句豆 UI 組件庫 2.0
+ * 基於柔和版設計系統
+ * 使用前需引入 design-tokens.css
+ */
+
+/* ============================================
+   全局樣式
+   ============================================ */
+
+@font-face {
+    font-family: main_font;
+    src: url(/font/hanserif.otf);
+    font-display: swap;
+}
+
+@font-face {
+    font-family: inter_ui;
+    src: url(/font/main.ttf);
+    font-display: swap;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-main);
+    color: var(--color-neutral-700);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   背景系統 - 田園意境
+   ============================================ */
+
+.edamame-bg {
+    background: 
+        radial-gradient(
+            ellipse 1200px 400px at 50% 0%,
+            rgba(239, 246, 229, 0.4),
+            transparent 70%
+        ),
+        radial-gradient(
+            ellipse 1000px 350px at 80% 100%,
+            rgba(253, 250, 243, 0.5),
+            transparent 65%
+        ),
+        linear-gradient(180deg, #fafaf9, #f5f5f4);
+    min-height: 100vh;
+}
+
+.edamame-bg-simple {
+    background: var(--color-neutral-50);
+}
+
+/* ============================================
+   玻璃態面板 - 青瓷釉質
+   ============================================ */
+
+.edamame-glass {
+    /* 降級背景（不支持 backdrop-filter 時使用） */
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(239, 246, 229, 0.85) 50%,
+        rgba(255, 255, 255, 0.9) 100%
+    );
+    /* 性能優化：使用 will-change 提示瀏覽器 */
+    will-change: backdrop-filter;
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(111, 150, 56, 0.15);
+    box-shadow: 
+        0 8px 32px rgba(88, 122, 43, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        inset 0 -1px 0 rgba(88, 122, 43, 0.05);
+    border-radius: var(--radius-2xl);
+}
+
+/* 低性能設備降級 */
+@media (prefers-reduced-motion: reduce) {
+    .edamame-glass {
+        backdrop-filter: blur(10px) saturate(120%);
+        -webkit-backdrop-filter: blur(10px) saturate(120%);
+    }
+}
+
+/* 不支持 backdrop-filter 的瀏覽器 */
+@supports not (backdrop-filter: blur(20px)) {
+    .edamame-glass {
+        background: rgba(255, 255, 255, 0.95);
+    }
+}
+
+.dark .edamame-glass {
+    background: linear-gradient(
+        135deg,
+        rgba(31, 41, 55, 0.85) 0%,
+        rgba(58, 80, 32, 0.65) 50%,
+        rgba(31, 41, 55, 0.85) 100%
+    );
+    border: 1px solid rgba(168, 200, 112, 0.15);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(168, 200, 112, 0.1);
+}
+
+/* ============================================
+   按鈕系統 - 豆子彈跳
+   ============================================ */
+
+.edamame-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    border: none;
+    border-radius: var(--radius-full);
+    font-family: var(--font-main);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    transition: all var(--duration-base) var(--ease-out);
+    position: relative;
+    overflow: hidden;
+}
+
+.edamame-btn:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+}
+
+/* 主要按鈕 */
+.edamame-btn-primary {
+    background: linear-gradient(
+        135deg,
+        var(--color-primary-500),
+        var(--color-primary-600)
+    );
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.edamame-btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 255, 255, 0.3),
+        transparent 70%
+    );
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.edamame-btn-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+.edamame-btn-primary:hover::before {
+    opacity: 1;
+}
+
+.edamame-btn-primary:active {
+    transform: translateY(0) scale(0.98);
+    transition-duration: var(--duration-fast);
+}
+
+/* 次要按鈕 */
+.edamame-btn-secondary {
+    background: var(--color-secondary-100);
+    color: var(--color-primary-700);
+    border: 2px solid var(--color-secondary-200);
+}
+
+.edamame-btn-secondary:hover {
+    background: var(--color-secondary-200);
+    border-color: var(--color-secondary-400);
+    transform: translateY(-2px);
+}
+
+.edamame-btn-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    border: 2px solid rgba(239, 68, 68, 0.4);
+}
+
+.edamame-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.6);
+    transform: translateY(-2px);
+}
+
+/* 輪廓按鈕 */
+.edamame-btn-outline {
+    background: transparent;
+    color: var(--color-primary-600);
+    border: 2px solid var(--color-primary-400);
+}
+
+.edamame-btn-outline:hover {
+    background: var(--color-primary-50);
+    border-color: var(--color-primary-600);
+}
+
+/* 尺寸變體 */
+.edamame-btn-sm {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+.edamame-btn-lg {
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-lg);
+}
+
+/* ============================================
+   卡片系統
+   ============================================ */
+
+.edamame-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--color-primary-100);
+    transition: all var(--duration-base) var(--ease-out);
+    position: relative;
+    overflow: hidden;
+}
+
+.edamame-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--color-primary-400),
+        var(--color-primary-500)
+    );
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-base) var(--ease-out);
+}
+
+.edamame-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--color-primary-300);
+}
+
+.edamame-card:hover::before {
+    transform: scaleX(1);
+}
+
+/* ============================================
+   輸入框系統
+   ============================================ */
+
+.edamame-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--color-neutral-200);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-main);
+    font-size: var(--text-base);
+    color: var(--color-neutral-800);
+    background: white;
+    transition: all var(--duration-base) var(--ease-out);
+}
+
+.edamame-input::placeholder {
+    color: var(--color-neutral-400);
+}
+
+.edamame-input:focus {
+    outline: none;
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 3px rgba(139, 178, 79, 0.15);
+}
+
+.edamame-input.error {
+    border-color: var(--color-error);
+}
+
+.edamame-input.success {
+    border-color: var(--color-success);
+}
+
+/* ============================================
+   標題系統
+   ============================================ */
+
+.edamame-heading {
+    font-family: var(--font-main);
+    font-weight: var(--font-bold);
+    color: var(--color-neutral-900);
+    line-height: var(--leading-tight);
+}
+
+.edamame-heading-xl {
+    font-size: var(--text-5xl);
+}
+
+.edamame-heading-lg {
+    font-size: var(--text-4xl);
+}
+
+.edamame-heading-md {
+    font-size: var(--text-3xl);
+}
+
+.edamame-heading-sm {
+    font-size: var(--text-2xl);
+}
+
+/* 漸變標題 */
+.edamame-heading-gradient {
+    background: linear-gradient(
+        120deg,
+        var(--color-primary-700) 0%,
+        var(--color-primary-400) 50%,
+        var(--color-primary-600) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 降級支援 */
+@supports not (background-clip: text) {
+    .edamame-heading-gradient {
+        color: var(--color-primary-600);
+    }
+}
+
+/* ============================================
+   文字樣式系統 - 等級和統計信息
+   ============================================ */
+
+/* 等級標題 - 主要信息 */
+.edamame-text-level-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    font-family: var(--font-main);
+    background: linear-gradient(
+        120deg,
+        var(--color-primary-700) 0%,
+        var(--color-primary-400) 50%,
+        var(--color-primary-600) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: var(--leading-tight);
+}
+
+/* 降級支援 */
+@supports not (background-clip: text) {
+    .edamame-text-level-title {
+        color: var(--color-primary-600);
+    }
+}
+
+/* 次要信息 - 下一級等 */
+.edamame-text-level-subtitle {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    font-family: var(--font-main);
+    color: var(--color-neutral-700);
+    line-height: var(--leading-normal);
+}
+
+/* 詳情信息 - 進度詳情等 */
+.edamame-text-level-detail {
+    font-size: var(--text-sm);
+    font-weight: var(--font-regular);
+    font-family: var(--font-main);
+    color: var(--color-neutral-600);
+    line-height: var(--leading-normal);
+}
+
+/* 統計數據 - 分數、點數等 */
+.edamame-text-stat {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    font-family: var(--font-main);
+    color: var(--color-neutral-700);
+    line-height: var(--leading-normal);
+}
+
+/* ============================================
+   側邊欄系統 - Flexbox 優化版
+   ============================================ */
+
+.edamame-sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding: var(--space-6);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* 防止整體滾動 */
+    /* 性能優化：硬體加速 */
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* 設置控制區域 */
+.edamame-sidebar-settings {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.edamame-sidebar-settings-toggle {
+    height: 40px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: background var(--duration-fast) var(--ease-out);
+}
+
+.edamame-sidebar-settings-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.edamame-sidebar-settings-btn {
+    height: 40px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: background var(--duration-fast) var(--ease-out);
+}
+
+.edamame-sidebar-settings-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Logo 和用戶信息區域 */
+.edamame-sidebar-header {
+    flex-shrink: 0;
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(239, 246, 229, 0.75) 50%,
+        rgba(255, 255, 255, 0.85) 100%
+    );
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(111, 150, 56, 0.15);
+    box-shadow: 
+        0 8px 32px rgba(88, 122, 43, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.edamame-sidebar-logo {
+    width: 90%;
+    height: auto;
+    max-height: 150px;
+    object-fit: contain;
+    margin-bottom: var(--space-2);
+    border-radius: var(--radius-lg);
+}
+
+.edamame-sidebar-rank {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary-600);
+    font-family: var(--font-main);
+    margin-bottom: var(--space-1);
+}
+
+.edamame-sidebar-score {
+    font-size: var(--text-lg);
+    color: var(--color-neutral-700);
+    font-family: var(--font-main);
+    text-align: center;
+}
+
+/* 可滾動導航區域 */
+.edamame-sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0; /* 關鍵：允許 flex 子元素收縮 */
+    padding-right: var(--space-2);
+    margin-bottom: var(--space-2);
+    /* 性能優化：GPU 加速滾動 */
+    -webkit-overflow-scrolling: touch;
+    /* 減少重繪 */
+    contain: layout style paint;
+    /* 自定義滾動條樣式 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary-300) transparent;
+}
+
+.edamame-sidebar-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.edamame-sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.edamame-sidebar-scroll::-webkit-scrollbar-thumb {
+    background: var(--color-primary-300);
+    border-radius: var(--radius-full);
+    transition: background var(--duration-fast) var(--ease-out);
+}
+
+.edamame-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-400);
+}
+
+/* 導航項目 */
+.edamame-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-1);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.65),
+        rgba(255, 255, 255, 0.3)
+    );
+    color: var(--color-neutral-700);
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    font-family: inter_ui, main_font;
+    cursor: pointer;
+    /* 性能優化：只動畫需要的屬性 */
+    transition: transform var(--duration-base) var(--ease-out),
+                box-shadow var(--duration-base) var(--ease-out),
+                background var(--duration-base) var(--ease-out);
+    text-decoration: none;
+    /* 硬體加速 */
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+.edamame-sidebar-item:hover {
+    transform: translateX(4px) translateZ(0);
+    box-shadow: var(--shadow-md);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.85),
+        rgba(255, 255, 255, 0.5)
+    );
+}
+
+.edamame-sidebar-item.active {
+    background: linear-gradient(
+        135deg,
+        var(--color-primary-100),
+        var(--color-primary-50)
+    );
+    border-color: var(--color-primary-300);
+    color: var(--color-primary-700);
+    border-left: 3px solid var(--color-primary-600);
+}
+
+.edamame-sidebar-item svg,
+.edamame-sidebar-item img {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    opacity: 0.8;
+    transition: opacity var(--duration-base) var(--ease-out),
+                transform var(--duration-base) var(--ease-out);
+}
+
+.edamame-sidebar-item:hover svg,
+.edamame-sidebar-item:hover img {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.edamame-sidebar-item p {
+    margin: 0;
+    line-height: 1.4;
+    flex: 1;
+}
+
+/* 底部操作區域 */
+.edamame-sidebar-footer {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+/* 底部品牌信息 */
+.edamame-sidebar-bottom {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(239, 246, 229, 0.75) 50%,
+        rgba(255, 255, 255, 0.85) 100%
+    );
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(111, 150, 56, 0.15);
+    box-shadow: 
+        0 8px 32px rgba(88, 122, 43, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    color: var(--color-neutral-700);
+}
+
+.edamame-sidebar-bottom-logo {
+    height: 40px;
+    width: auto;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+}
+
+.edamame-sidebar-bottom-text {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--font-main);
+}
+
+.edamame-sidebar-version {
+    color: var(--color-primary-600);
+}
+
+.dark .edamame-sidebar-version {
+    color: var(--color-primary-400);
+}
+
+/* 深色模式適配 */
+.dark .edamame-sidebar-item {
+    border-color: rgba(148, 163, 184, 0.25);
+    background: linear-gradient(
+        135deg,
+        rgba(31, 41, 55, 0.55),
+        rgba(31, 41, 55, 0.35)
+    );
+    color: var(--color-neutral-200);
+}
+
+.dark .edamame-sidebar-item:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(31, 41, 55, 0.75),
+        rgba(31, 41, 55, 0.55)
+    );
+}
+
+.dark .edamame-sidebar-item.active {
+    background: linear-gradient(
+        135deg,
+        rgba(139, 178, 79, 0.15),
+        rgba(139, 178, 79, 0.05)
+    );
+    border-left-color: var(--color-primary-400);
+}
+
+/* ============================================
+   進度條 - 豆莢填充
+   ============================================ */
+
+.edamame-progress {
+    width: 100%;
+    height: 40px;
+    background: var(--color-neutral-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow-inner);
+}
+
+.edamame-progress-fill {
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        var(--color-primary-400),
+        var(--color-primary-500)
+    );
+    border-radius: var(--radius-full);
+    transition: width 0.6s var(--ease-grow);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: var(--space-4);
+    color: white;
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    position: relative;
+}
+
+/* 豆子圖案紋理 */
+.edamame-progress-fill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 35px,
+            rgba(255, 255, 255, 0.15) 35px,
+            rgba(255, 255, 255, 0.15) 40px
+        );
+    pointer-events: none;
+}
+
+/* 接近完成時發光 */
+.edamame-progress-fill[data-progress*="8"],
+.edamame-progress-fill[data-progress*="9"],
+.edamame-progress-fill[data-progress="100"] {
+    animation: progressGlow 2s ease-in-out infinite;
+}
+
+@keyframes progressGlow {
+    0%, 100% {
+        box-shadow: var(--glow-soft);
+    }
+    50% {
+        box-shadow: var(--glow-strong);
+    }
+}
+
+/* ============================================
+   文字樣式
+   ============================================ */
+
+.edamame-text-primary {
+    color: var(--color-neutral-900);
+}
+
+.edamame-text-secondary {
+    color: var(--color-neutral-600);
+}
+
+.edamame-text-muted {
+    color: var(--color-neutral-500);
+}
+
+.edamame-text-accent {
+    color: var(--color-primary-600);
+}
+
+/* ============================================
+   通用工具類
+   ============================================ */
+
+.hide {
+    display: none !important;
+}
+
+.fade-in {
+    animation: fadeIn var(--duration-slow) var(--ease-out);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sprout-up {
+    animation: sproutUp var(--duration-slow) var(--ease-sprout);
+}
+
+@keyframes sproutUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ============================================
+   原有樣式兼容 - 逐步遷移
+   ============================================ */
+
+/* 覆蓋原有 gradient-bg */
+.gradient-bg {
+    background: 
+        radial-gradient(
+            ellipse 1200px 400px at 50% 0%,
+            rgba(239, 246, 229, 0.4),
+            transparent 70%
+        ),
+        radial-gradient(
+            ellipse 1000px 350px at 80% 100%,
+            rgba(253, 250, 243, 0.5),
+            transparent 65%
+        ),
+        linear-gradient(180deg, #fafaf9, #f5f5f4);
+}
+
+/* 覆蓋原有 gradient-text */
+.gradient-text {
+    background: linear-gradient(
+        120deg,
+        var(--color-primary-700),
+        var(--color-primary-400),
+        var(--color-primary-600)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 覆蓋原有 glass-panel */
+.glass-panel {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(239, 246, 229, 0.75) 50%,
+        rgba(255, 255, 255, 0.85) 100%
+    );
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(111, 150, 56, 0.15);
+    box-shadow: 
+        0 8px 32px rgba(88, 122, 43, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        inset 0 -1px 0 rgba(88, 122, 43, 0.05);
+}
+
+/* 覆蓋原有 card */
+.card {
+    border-radius: var(--radius-xl);
+    background: white;
+    box-shadow: var(--shadow-md);
+    transition: all var(--duration-base) var(--ease-out);
+    border: 2px solid var(--color-primary-100);
+}
+
+.card:hover,
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--color-primary-300);
+}
+
+/* 覆蓋原有 btn */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    padding: var(--space-3) var(--space-6);
+    font-weight: var(--font-semibold);
+    transition: all var(--duration-base) var(--ease-out);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-main);
+}
+
+.btn-primary {
+    color: white;
+    background: linear-gradient(
+        135deg,
+        var(--color-primary-500),
+        var(--color-primary-600)
+    );
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    color: var(--color-primary-700);
+    background: var(--color-secondary-100);
+    border: 2px solid var(--color-secondary-200);
+}
+
+.btn-secondary:hover {
+    background: var(--color-secondary-200);
+}
+
+/* 覆蓋原有 sidebar-button */
+.sidebar-button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    transition: all var(--duration-base) var(--ease-out);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.65),
+        rgba(255, 255, 255, 0.3)
+    );
+    cursor: pointer;
+}
+
+.sidebar-button:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateX(4px);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.85),
+        rgba(255, 255, 255, 0.5)
+    );
+}
+
+.dark .sidebar-button {
+    border-color: rgba(148, 163, 184, 0.25);
+    background: linear-gradient(
+        135deg,
+        rgba(31, 41, 55, 0.55),
+        rgba(31, 41, 55, 0.35)
+    );
+}
+
+.dark .sidebar-button:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(31, 41, 55, 0.75),
+        rgba(31, 41, 55, 0.55)
+    );
+}
+
+/* ============================================
+   閱讀區域 - 極簡無干擾
+   ============================================ */
+
+.edamame-reading-area {
+    background: #fafaf9;
+    padding: var(--space-8);
+    border-radius: var(--radius-2xl);
+    border: 2px solid var(--color-neutral-200);
+    box-shadow: var(--shadow-inner);
+    transition: border-color var(--duration-base) var(--ease-out);
+}
+
+.edamame-reading-area:focus-within {
+    border-color: var(--color-primary-300);
+}
+
+.edamame-reading-text {
+    font-size: var(--text-lg);
+    line-height: var(--leading-relaxed);
+    color: var(--color-neutral-800);
+    font-family: var(--font-main);
+}
+
+/* ============================================
+   響應式工具
+   ============================================ */
+
+/* ============================================
+   響應式設計
+   ============================================ */
+
+@media (max-width: 768px) {
+    .edamame-sidebar {
+        width: 100%;
+        max-width: 280px;
+        transform: translateX(-100%) translateZ(0);
+        transition: transform var(--duration-base) var(--ease-out);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+    }
+    
+    .edamame-sidebar.mobile-open {
+        transform: translateX(0) translateZ(0);
+    }
+    
+    .edamame-sidebar-header {
+        padding: var(--space-3);
+    }
+    
+    .edamame-sidebar-logo {
+        max-height: 120px;
+    }
+}
+
+/* 減少動畫（用戶偏好） */
+@media (prefers-reduced-motion: reduce) {
+    .edamame-sidebar-item,
+    .edamame-sidebar-item svg,
+    .edamame-sidebar-item img {
+        transition: none;
+    }
+    
+    .edamame-sidebar-item:hover {
+        transform: none;
+    }
+}
+
+/* ============================================
+   動畫庫
+   ============================================ */
+
+/* 豆芽生長 */
+@keyframes sproutGrow {
+    from {
+        transform: translateY(100%) scaleY(0);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scaleY(1);
+        opacity: 1;
+    }
+}
+
+/* 水滴落下 */
+@keyframes waterDrop {
+    0% {
+        transform: translateY(-20px) scale(1);
+        opacity: 1;
+    }
+    90% {
+        transform: translateY(50px) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(50px) scale(0);
+        opacity: 0;
+    }
+}
+
+/* 星星閃爍 */
+@keyframes sparkle {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(0);
+        opacity: 1;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--tx, 20px), var(--ty, -30px)) rotate(360deg) scale(1);
+        opacity: 0;
+    }
+}
+

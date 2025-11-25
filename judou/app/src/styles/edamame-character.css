@@ -1,0 +1,505 @@
+/**
+ * 毛豆角色系統
+ * 可愛的卡通毛豆動畫
+ */
+
+/* ============================================
+   毛豆基礎形狀
+   ============================================ */
+.bean-character {
+  width: 80px;
+  height: 100px;
+  background: linear-gradient(
+    135deg,
+    #a8c870 0%,
+    var(--color-bean-body) 50%,
+    #6f9638 100%
+  );
+  border-radius: var(--radius-bean);
+  position: relative;
+  transition: all var(--duration-base) var(--ease-out);
+  cursor: pointer;
+  
+  /* 絨毛質感 - 更柔和 */
+  box-shadow: 
+    var(--shadow-lg),
+    inset 0 2px 8px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 輪廓線 */
+.bean-character::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  background: var(--color-bean-outline);
+  border-radius: inherit;
+  z-index: -1;
+}
+
+/* 高光 */
+.bean-character::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 25%;
+  width: 20px;
+  height: 25px;
+  background: radial-gradient(
+    ellipse,
+    rgba(255, 255, 255, 0.8),
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ============================================
+   眼睛
+   ============================================ */
+.bean-eye {
+  width: 12px;
+  height: 16px;
+  background: var(--color-bean-eye);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  position: absolute;
+  top: 35%;
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.bean-eye-left { left: 25%; }
+.bean-eye-right { right: 25%; }
+
+/* 眼睛內的高光 */
+.bean-eye::before {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 5px;
+  background: white;
+  border-radius: 50%;
+  top: 3px;
+  left: 2px;
+}
+
+/* ============================================
+   嘴巴
+   ============================================ */
+.bean-mouth {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 15px;
+  border: 3px solid var(--color-bean-eye);
+  border-top: none;
+  border-radius: 0 0 100% 100%;
+  transition: all var(--duration-base) var(--ease-bounce);
+}
+
+/* ============================================
+   腮紅
+   ============================================ */
+.bean-blush {
+  position: absolute;
+  width: 18px;
+  height: 12px;
+  background: var(--color-bean-blush);
+  border-radius: 50%;
+  top: 48%;
+  opacity: 0.6;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.bean-blush-left { left: 10%; }
+.bean-blush-right { right: 10%; }
+
+/* ============================================
+   手臂（可選）
+   ============================================ */
+.bean-arm {
+  width: 6px;
+  height: 25px;
+  background: var(--color-bean-body);
+  border-radius: var(--radius-full);
+  position: absolute;
+  top: 45%;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.bean-arm-left {
+  left: -3px;
+  transform: rotate(-30deg);
+  transform-origin: top center;
+}
+
+.bean-arm-right {
+  right: -3px;
+  transform: rotate(30deg);
+  transform-origin: top center;
+}
+
+/* ============================================
+   狀態變化
+   ============================================ */
+
+/* 閒置 - 偶爾眨眼 */
+.bean-character.idle .bean-eye {
+  animation: blink 4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  93%, 96% { transform: scaleY(0.1); }
+}
+
+/* 開心 - 瞇眼笑 */
+.bean-character.happy .bean-eye {
+  height: 6px;
+  border-radius: 50%;
+  transform: scaleY(0.3);
+}
+
+.bean-character.happy .bean-mouth {
+  width: 40px;
+  height: 20px;
+}
+
+.bean-character.happy .bean-blush {
+  opacity: 0.8;
+}
+
+/* 興奮 - 彈跳 */
+.bean-character.excited {
+  animation: bounce 0.6s var(--ease-bounce) infinite;
+}
+
+.bean-character.excited .bean-eye {
+  height: 18px;
+}
+
+.bean-character.excited .bean-mouth {
+  width: 35px;
+  height: 18px;
+}
+
+.bean-character.excited .bean-arm-left {
+  transform: rotate(-60deg);
+}
+
+.bean-character.excited .bean-arm-right {
+  transform: rotate(60deg);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+/* 驚訝 - 眼睛變大 */
+.bean-character.surprised .bean-eye {
+  height: 20px;
+  animation: eyeWiden 0.3s var(--ease-bounce);
+}
+
+.bean-character.surprised .bean-mouth {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid var(--color-bean-eye);
+}
+
+@keyframes eyeWiden {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* 錯誤 - 搖頭 */
+.bean-character.error {
+  animation: shake 0.5s ease-in-out;
+}
+
+.bean-character.error .bean-eye {
+  height: 8px;
+  transform: scaleY(0.4);
+}
+
+.bean-character.error .bean-mouth {
+  border-bottom: none;
+  border-top: 3px solid var(--color-bean-eye);
+  border-radius: 100% 100% 0 0;
+  top: 60%;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(8deg); }
+}
+
+/* 思考 - 眼睛轉動 */
+.bean-character.thinking .bean-eye::before {
+  animation: eyeMove 2s ease-in-out infinite;
+}
+
+@keyframes eyeMove {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(2px, -1px); }
+  50% { transform: translate(-2px, 0); }
+  75% { transform: translate(0, 1px); }
+}
+
+/* 生長 - 從小到大 */
+.bean-character.growing {
+  animation: grow 0.8s var(--ease-grow);
+}
+
+@keyframes grow {
+  0% {
+    transform: scale(0.5) translateY(20px);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1) translateY(-5px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 睡覺 */
+.bean-character.sleeping .bean-eye {
+  height: 4px;
+  border-radius: var(--radius-full);
+}
+
+.bean-character.sleeping .bean-mouth {
+  width: 15px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Z 字 */
+.bean-character.sleeping::before {
+  content: 'z';
+  position: absolute;
+  top: -20px;
+  right: 10px;
+  font-size: 20px;
+  color: var(--color-neutral-400);
+  animation: sleepZ 2s ease-in-out infinite;
+}
+
+@keyframes sleepZ {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+}
+
+/* 慶祝 - 煙花 */
+.bean-character.celebrate {
+  animation: 
+    popOut 0.6s var(--ease-bounce),
+    wiggle 0.3s ease-in-out 0.6s 3;
+}
+
+.bean-character.celebrate .bean-arm-left,
+.bean-character.celebrate .bean-arm-right {
+  animation: wave 0.4s ease-in-out infinite;
+}
+
+@keyframes popOut {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.3) translateY(-20px) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
+@keyframes wave {
+  0%, 100% { transform: rotate(-30deg); }
+  50% { transform: rotate(-80deg); }
+}
+
+/* ============================================
+   尺寸變體
+   ============================================ */
+.bean-character.small {
+  width: 50px;
+  height: 60px;
+}
+
+.bean-character.small .bean-eye {
+  width: 8px;
+  height: 10px;
+}
+
+.bean-character.small .bean-mouth {
+  width: 20px;
+  height: 10px;
+}
+
+.bean-character.large {
+  width: 120px;
+  height: 150px;
+}
+
+.bean-character.large .bean-eye {
+  width: 18px;
+  height: 24px;
+}
+
+.bean-character.large .bean-mouth {
+  width: 45px;
+  height: 22px;
+}
+
+/* ============================================
+   Hover 互動
+   ============================================ */
+.bean-character:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 
+    var(--shadow-xl),
+    inset 0 2px 8px rgba(255, 255, 255, 0.6);
+}
+
+.bean-character:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--duration-fast);
+}
+
+/* ============================================
+   成長階段
+   ============================================ */
+
+/* 種子 */
+.seed {
+  width: 30px;
+  height: 40px;
+  background: linear-gradient(135deg, #92400e, #78350f);
+  border-radius: 50% 50% 50% 20%;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  animation: seedWiggle 2s ease-in-out infinite;
+}
+
+@keyframes seedWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+/* 發芽 */
+.sprout {
+  width: 50px;
+  height: 60px;
+  position: relative;
+  animation: sproutGrow 1s var(--ease-sprout);
+}
+
+.sprout-stem {
+  width: 4px;
+  height: 30px;
+  background: var(--color-primary-600);
+  margin: 0 auto;
+  border-radius: var(--radius-full);
+}
+
+.sprout-leaf {
+  width: 20px;
+  height: 30px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-300),
+    var(--color-primary-400)
+  );
+  border-radius: 50% 0 50% 50%;
+  position: absolute;
+  bottom: 20px;
+}
+
+.sprout-leaf-left {
+  left: 0;
+  transform: rotate(-30deg);
+}
+
+.sprout-leaf-right {
+  right: 0;
+  transform: rotate(30deg) scaleX(-1);
+}
+
+@keyframes sproutGrow {
+  0% {
+    transform: translateY(100%) scaleY(0);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* 豆莢 */
+.pod {
+  width: 120px;
+  height: 50px;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-400),
+    var(--color-primary-500)
+  );
+  border-radius: 50px 50px 50px 10px;
+  position: relative;
+  box-shadow: 
+    0 4px 12px var(--color-bean-shadow),
+    inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  animation: podRipen 2s ease-in-out infinite;
+}
+
+.pod::before {
+  content: '';
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  top: 7px;
+  left: 15px;
+}
+
+.pod::after {
+  content: '';
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  top: 7px;
+  left: 50px;
+}
+
+@keyframes podRipen {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+

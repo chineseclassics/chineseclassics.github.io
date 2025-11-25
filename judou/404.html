@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>句豆</title>
+  <script>
+    // GitHub Pages SPA 路由處理
+    // 將 404 請求重定向到首頁，並保留路徑信息
+    const path = window.location.pathname;
+    const search = window.location.search;
+    const hash = window.location.hash;
+    
+    // 重定向到首頁，使用 session storage 保存路徑
+    sessionStorage.setItem('redirect', path + search + hash);
+    window.location.replace('/judou/');
+  </script>
+</head>
+<body>
+  <p>正在重定向...</p>
+</body>
+</html>
+

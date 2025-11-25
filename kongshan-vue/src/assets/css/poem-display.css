@@ -1,0 +1,276 @@
+/* ===== 詩歌卡片樣式 ===== */
+
+.poem-card {
+  background: var(--color-surface-soft);
+  backdrop-filter: blur(14px) saturate(120%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-sm);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  border: 1px solid var(--color-border-soft);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  width: 100%;
+  max-width: 360px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  position: relative; /* 為 badge 定位提供上下文 */
+}
+
+.poem-card:hover {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-strong);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: var(--shadow-md);
+}
+
+/* 詩句卡片 Badge - 聲色意境標記 */
+.poem-card-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 10;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.poem-card-badge-dot {
+  width: 100%;
+  height: 100%;
+  background: rgba(120, 146, 98, 0.65); /* --color-primary 65% 透明度 */
+  border-radius: var(--radius-full);
+  display: block;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  box-shadow: 0 1px 3px rgba(120, 146, 98, 0.2);
+}
+
+.poem-card-badge-icon {
+  display: none;
+  font-size: 12px;
+  color: var(--color-primary);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-smooth);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+/* Hover 狀態：顯示圖標，圓點擴大成背景 */
+.poem-card:hover .poem-card-badge {
+  width: 24px;
+  height: 24px;
+}
+
+.poem-card:hover .poem-card-badge-dot {
+  width: 24px;
+  height: 24px;
+  background: var(--color-primary-soft);
+  box-shadow: var(--shadow-sm);
+  opacity: 1; /* 保持可見作為背景 */
+}
+
+.poem-card:hover .poem-card-badge-icon {
+  display: block;
+  opacity: 1;
+}
+
+/* 詩句 - 突出顯示 */
+.poem-card-verse {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  line-height: 2;
+  letter-spacing: 0.12em;
+  margin-bottom: 0;
+  overflow: visible;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-line; /* 保留換行 */
+  display: block;
+}
+
+/* ===== 詩歌內容顯示（豎排版） ===== */
+
+.poem-content {
+  flex-grow: 1;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1; /* 確保在背景之上，但在工具欄之下 */
+}
+
+/* 詩歌包裝容器 - 豎排版布局 */
+.poem-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+  height: 100vh;
+  width: 100vw;
+  padding: 0;
+  overflow: visible; /* 改為 visible 允許內容顯示 */
+  touch-action: manipulation; /* 防止雙擊縮放和手勢滾動 */
+}
+
+/* 詩歌內容區域 - 包裹文本和元數據 */
+.poem-content-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--spacing-xl);
+  box-sizing: border-box;
+  overflow: hidden;
+  touch-action: manipulation; /* 防止雙擊縮放和手勢滾動 */
+}
+
+/* 呼吸動畫關鍵幀 - 模擬自然呼吸節奏 */
+/* 8秒一個週期，每分鐘約7.5次，更慢更放鬆的呼吸頻率 */
+@keyframes breathe {
+  0% {
+    opacity: 0.92;
+    transform: scale(0.985);
+  }
+  33% {
+    opacity: 1;
+    transform: scale(1.008);
+  }
+  100% {
+    opacity: 0.92;
+    transform: scale(0.985);
+  }
+}
+
+/* 發光層動畫：透過合成屬性調整強弱，避免逐幀重繪 text-shadow */
+@keyframes breathe-glow {
+  0% {
+    opacity: var(--poem-glow-opacity-min, 0.25);
+    transform: scale(var(--poem-glow-scale-min, 0.99));
+  }
+  33% {
+    opacity: var(--poem-glow-opacity-max, 0.85);
+    transform: scale(var(--poem-glow-scale-max, 1.015));
+  }
+  100% {
+    opacity: var(--poem-glow-opacity-min, 0.25);
+    transform: scale(var(--poem-glow-scale-min, 0.99));
+  }
+}
+
+/* 詩歌正文 - 豎排版從右到左，完全居中 */
+.poem-text {
+  writing-mode: vertical-rl; /* 豎排版，從右到左 */
+  text-orientation: mixed; /* 文字方向，中文豎排 */
+  font-family: var(--font-serif);
+  font-size: 3rem; /* 更大的字體突出正文 */
+  line-height: 2.5; /* 行高，控制字與字之間的距離 */
+  letter-spacing: 0.4em; /* 字距 */
+  color: var(--poem-text-color, var(--color-text-primary, #2C3E50)); /* 使用 CSS 變量，支持動態切換 */
+  font-weight: 400;
+  white-space: nowrap;
+  position: relative; /* 為發光層建立定位上下文 */
+  text-shadow: var(--poem-glow-shadow-min, 0 0 8px rgba(255, 255, 255, 0.3), 0 0 12px rgba(255, 255, 255, 0.18));
+
+  /* 呼吸效果動畫 - 優雅微妙的冥想效果（僅調整透明度與縮放） */
+  animation: breathe 8s ease-in-out infinite;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95); /* 平滑自然的緩動曲線 */
+  will-change: opacity, transform; /* 僅宣告實際變化的屬性 */
+  transform-origin: center center; /* 確保縮放以中心為基準 */
+  
+  /* 文字顏色平滑過渡 */
+  transition: color 0.4s ease;
+}
+
+/* 發光層：使用疊加元素持續顯示高亮陰影，以合成動畫調整強度 */
+.poem-text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  display: block;
+  writing-mode: inherit;
+  text-orientation: inherit;
+  pointer-events: none;
+  white-space: pre-line;
+  color: transparent; /* 僅呈現光暈，不重複文字本體 */
+  text-shadow: var(--poem-glow-shadow-max, 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.48));
+  transform-origin: center center;
+  animation: breathe-glow 8s ease-in-out infinite;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  opacity: var(--poem-glow-opacity-min, 0.25);
+}
+
+/* 詩歌標題和作者容器 - 相對於內容區域定位 */
+.poem-meta {
+  position: absolute;
+  bottom: var(--spacing-xl);
+  left: var(--spacing-xl);
+  font-family: var(--font-serif);
+  writing-mode: vertical-rl; /* 豎排版 */
+  text-orientation: mixed;
+  color: var(--poem-meta-color, var(--color-text-tertiary)); /* 使用動態顏色，與詩句文字一致但更低調 */
+  font-size: 1.2rem; /* 較小字體 */
+  letter-spacing: 0.2em;
+  opacity: 0.7; /* 降低透明度，更加低調 */
+  white-space: nowrap;
+  z-index: 10; /* 確保在詩歌正文之上 */
+  max-height: calc(100vh - var(--spacing-xl) * 2);
+  overflow: hidden;
+  transition: color 0.4s ease; /* 顏色平滑過渡，與詩句文字同步 */
+}
+
+/* ===== 移動端細緻調整 ===== */
+@media (max-width: 768px) {
+  .poem-wrapper {
+    padding: clamp(2.5rem, 10vh, 4rem) clamp(1.5rem, 6vw, 2.75rem) clamp(6rem, 18vh, 8.5rem);
+  }
+
+  .poem-content-area {
+    padding: var(--spacing-md);
+  }
+
+  .poem-text {
+    font-size: clamp(1.8rem, 6.2vw, 2.35rem);
+    line-height: 2.05;
+    letter-spacing: 0.26em;
+    /* 保持呼吸動畫效果 */
+    animation: breathe 8s ease-in-out infinite;
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  }
+
+  .poem-meta {
+    bottom: calc(var(--spacing-sm) + 60px + var(--spacing-md));
+    left: calc(var(--spacing-sm) + 52px);
+    font-size: 0.95rem;
+    letter-spacing: 0.18em;
+    opacity: 0.82;
+    max-height: calc(100vh - var(--spacing-sm) - 60px - var(--spacing-md) - var(--spacing-md));
+    overflow: hidden;
+  }
+}
+
+/* 暗色模式 - 不需要額外樣式，保持純淨 */

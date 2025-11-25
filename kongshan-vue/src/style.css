@@ -1,0 +1,9 @@
+/* 導入原版空山的完整樣式系統 */
+@import './assets/css/variables.css';
+@import './assets/css/main.css';
+@import './assets/css/poem-display.css';
+@import './assets/css/sound-controls.css';
+@import './assets/css/atmosphere-editor.css';
+@import './assets/css/admin.css';
+@import './assets/css/responsive.css';
+
