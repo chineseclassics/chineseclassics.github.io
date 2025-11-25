@@ -58,14 +58,15 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      // 先設置監聽器，確保能捕獲所有狀態變化
-      supabase.auth.onAuthStateChange(async (event, newSession) => {
+      // 先設置監聯器，確保能捕獲所有狀態變化
+      supabase.auth.onAuthStateChange((event, newSession) => {
         console.log('[Auth] 狀態變化:', event, newSession?.user?.email)
         session.value = newSession
         user.value = newSession?.user ?? null
         
+        // 不等待 syncUser，避免阻塞
         if (newSession?.user) {
-          await syncUser(newSession.user)
+          syncUser(newSession.user).catch(e => console.warn('[Auth] syncUser 錯誤:', e))
         }
       })
 
@@ -78,6 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       // 獲取會話（這會自動處理 URL 中的 token）
+      console.log('[Auth] 獲取會話...')
       const { data, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError) {
@@ -87,7 +89,8 @@ export const useAuthStore = defineStore('auth', () => {
         console.log('[Auth] 已獲取會話:', data.session.user.email)
         session.value = data.session
         user.value = data.session.user
-        await syncUser(data.session.user)
+        // 不等待 syncUser，避免阻塞應用啟動
+        syncUser(data.session.user).catch(e => console.warn('[Auth] syncUser 錯誤:', e))
       } else {
         console.log('[Auth] 無會話')
       }
@@ -98,6 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       initialized.value = true
+      console.log('[Auth] 初始化完成')
     } catch (e) {
       console.error('[Auth] 初始化錯誤:', e)
       error.value = (e as Error).message
