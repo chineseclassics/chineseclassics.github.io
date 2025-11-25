@@ -91,7 +91,7 @@ watch(
 </script>
 
 <template>
-  <aside class="sidebar-shell edamame-sidebar edamame-glass">
+  <aside class="sidebar-shell edamame-glass">
     <!-- 用戶區域 -->
     <div class="sidebar-brand" @click="handleUserClick">
       <div class="brand-avatar" :class="{ 'has-avatar': authStore.avatarUrl }">
