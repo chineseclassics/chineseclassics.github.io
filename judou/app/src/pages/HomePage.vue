@@ -27,24 +27,6 @@ onMounted(() => {
 
 <template>
   <main class="judou-container edamame-bg">
-    <section class="judou-hero edamame-glass fade-in">
-      <div>
-        <p class="edamame-text-level-detail">種豆南山下 · Vue 版本</p>
-        <h1 class="edamame-heading-gradient hero-title">句豆 2.0 設計系統</h1>
-        <p class="hero-subtitle">
-          重新以 Vue + Supabase 打造的學習體驗，保留毛豆美學、動畫靈魂與遊戲化精神，並為未來
-          PWA／原生應用鋪路。
-        </p>
-        <div class="hero-actions">
-          <button class="edamame-btn edamame-btn-primary edamame-btn-lg">啟動設計樣板</button>
-          <button class="edamame-btn edamame-btn-outline edamame-btn-lg">查看 UI Showcase</button>
-        </div>
-      </div>
-      <div class="hero-card edamame-character idle">
-        <div class="bean-shadow"></div>
-      </div>
-    </section>
-
     <section class="judou-grid">
       <article class="edamame-glass hover-lift judou-card">
         <p class="edamame-text-level-subtitle">快速進入</p>
@@ -108,40 +90,6 @@ onMounted(() => {
   position: relative;
 }
 
-.judou-hero {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: clamp(1rem, 2vw, 2.5rem);
-  padding: clamp(1.5rem, 3vw, 3rem);
-  align-items: center;
-}
-
-.hero-title {
-  font-size: clamp(2rem, 5vw, 3.25rem);
-  margin: 0.2rem 0;
-}
-
-.hero-subtitle {
-  font-size: var(--text-lg);
-  color: var(--color-neutral-600);
-  max-width: 36rem;
-  margin: 0.5rem 0 1.5rem;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.hero-card {
-  min-height: 240px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
 .judou-card {
   padding: clamp(1.25rem, 2vw, 2rem);
   display: flex;
@@ -183,12 +131,6 @@ onMounted(() => {
 .stat-value {
   font-size: clamp(1.5rem, 3vw, 2.5rem);
   margin: 0.2rem 0;
-}
-
-@media (max-width: 600px) {
-  .hero-actions {
-    flex-direction: column;
-  }
 }
 
 .poem-header {
