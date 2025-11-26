@@ -21,6 +21,7 @@ const router = useRouter()
 const primaryNav: NavItem[] = [
   { label: '主頁', to: { name: 'home' } },
   { label: '練習', to: { name: 'practice' } },
+  { label: '閱讀', to: { name: 'reading-list' } },
   { label: '我的班級', to: { name: 'my-classes' } },
   { label: '歷史紀錄', to: { name: 'history' } },
   { label: '自訂練習', to: { name: 'my-texts' }, teacherOnly: true },
@@ -124,6 +125,9 @@ onMounted(() => {
     })
   }
 })
+
+// Logo URL（使用 BASE_URL 確保路徑正確）
+const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
 
 </script>
 
@@ -232,8 +236,14 @@ onMounted(() => {
     </nav>
 
     <div class="sidebar-footer">
-      <p>版本 2.0 Vue</p>
-      <p class="item-desc">Supabase + PWA Ready</p>
+      <div class="footer-brand">
+        <img :src="logoUrl" alt="句豆" class="footer-logo" />
+        <span class="footer-title">句豆 2.0</span>
+      </div>
+      <div class="footer-credits">
+        <p>開發：汪涵屹、張老師</p>
+        <p>美術：丁奕辰、徐揚洋</p>
+      </div>
     </div>
   </aside>
 </template>
@@ -475,6 +485,38 @@ onMounted(() => {
   margin-top: auto;
   font-size: var(--text-sm);
   color: var(--color-neutral-500);
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.footer-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.footer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary-700, #3d7c47);
+}
+
+.footer-credits {
+  font-size: 0.7rem;
+  color: var(--color-neutral-400);
+  line-height: 1.5;
+}
+
+.footer-credits p {
+  margin: 0;
 }
 
 .badge {

@@ -76,6 +76,23 @@ const routes: RouteRecordRaw[] = [
           title: '句豆 - 個人中心',
         },
       },
+      // 閱讀模式路由
+      {
+        path: 'reading',
+        name: 'reading-list',
+        component: () => import('../pages/ReadingListPage.vue'),
+        meta: {
+          title: '句豆 - 閱讀文庫',
+        },
+      },
+      {
+        path: 'reading/:id',
+        name: 'reading-detail',
+        component: () => import('../pages/ReadingDetailPage.vue'),
+        meta: {
+          title: '句豆 - 閱讀',
+        },
+      },
     ],
   },
 ]
