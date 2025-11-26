@@ -25,11 +25,11 @@ const primaryNav: NavItem[] = [
   { label: '我的班級', to: { name: 'my-classes' } },
   { label: '歷史紀錄', to: { name: 'history' } },
   { label: '自訂練習', to: { name: 'my-texts' }, teacherOnly: true },
-  { label: '閱讀文庫', to: { name: 'admin-reading' }, teacherOnly: true },
 ]
 
 const adminNav: NavItem[] = [
-  { label: '系統文庫', to: { name: 'admin-texts' } },
+  { label: '練習文庫', to: { name: 'admin-texts' } },
+  { label: '閱讀文庫', to: { name: 'admin-reading' } },
 ]
 
 // 超級管理員導航
