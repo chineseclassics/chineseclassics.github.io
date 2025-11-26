@@ -72,6 +72,9 @@ const searchQuery = ref('')
 const visitorUsername = ref(localStorage.getItem('judou_username') || 'guest')
 const visitorDisplayName = ref(localStorage.getItem('judou_display_name') || '訪客學員')
 
+// TTS 朗讀狀態
+const isPlayingTTS = ref(false)
+
 let timerId: number | null = null
 
 // 音效 - 使用 Web Audio API 生成簡單音效
@@ -604,6 +607,78 @@ function playSuccessSound() {
   oscillator.stop(ctx.currentTime + 0.3)
 }
 
+// TTS 朗讀功能
+function getTextWithPauses(): string {
+  if (!characters.value.length) return ''
+  
+  let result = ''
+  let lastBreakPos = -1
+  
+  for (let i = 0; i < characters.value.length; i++) {
+    result += characters.value[i]
+    
+    // 在斷句位置添加停頓標記
+    if (correctBreaks.value.has(i)) {
+      const sentenceLength = i - lastBreakPos
+      lastBreakPos = i
+      
+      // 根據句子長度選擇標點
+      if (sentenceLength >= 8) {
+        result += '。'
+      } else if (sentenceLength >= 4) {
+        result += '，'
+      } else {
+        result += '、'
+      }
+    }
+  }
+  
+  // 結尾添加句號
+  if (!result.endsWith('。') && !result.endsWith('，') && !result.endsWith('、')) {
+    result += '。'
+  }
+  
+  return result
+}
+
+function stopTTS() {
+  if (typeof window !== 'undefined' && (window as any).taixuStopSpeak) {
+    (window as any).taixuStopSpeak()
+  }
+  isPlayingTTS.value = false
+}
+
+async function toggleReadText() {
+  if (!characters.value.length) return
+  
+  // 如果正在播放，則停止
+  if (isPlayingTTS.value) {
+    stopTTS()
+    return
+  }
+  
+  // 檢查 Azure TTS 是否可用
+  if (typeof window === 'undefined' || !(window as any).taixuSpeak) {
+    alert('語音朗讀功能暫時不可用，請稍後再試')
+    return
+  }
+  
+  isPlayingTTS.value = true
+  const text = getTextWithPauses()
+  
+  try {
+    await (window as any).taixuSpeak(text, { 
+      voice: 'zh-CN-XiaoxiaoNeural',
+      rate: 0.7  // Azure TTS 語速 (-30%)，適合古文朗讀
+    })
+  } catch (e) {
+    console.error('TTS 播放失敗:', e)
+    alert('語音朗讀失敗，請稍後再試')
+  } finally {
+    isPlayingTTS.value = false
+  }
+}
+
 function resetPractice() {
   if (currentText.value) {
     resetBoard(currentText.value)
@@ -616,6 +691,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopTimer()
+  stopTTS()  // 停止朗讀
 })
 </script>
 
@@ -738,6 +814,15 @@ onBeforeUnmount(() => {
         <div class="board-header">
           <p class="board-hint">點擊字間空隙種下句豆來斷句</p>
           <div class="board-header-right">
+            <!-- 朗讀按鈕（完成後顯示） -->
+            <button 
+              v-if="evaluation?.isComplete"
+              class="tts-btn-small"
+              :class="{ playing: isPlayingTTS }"
+              @click="toggleReadText"
+            >
+              {{ isPlayingTTS ? '⏹ 停止' : '🔊 朗讀' }}
+            </button>
             <!-- 橫向豆列 -->
             <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
               <span
@@ -871,38 +956,6 @@ onBeforeUnmount(() => {
           </template>
         </p>
       </article>
-    </section>
-    
-    <!-- 得分明細（僅在完成後顯示） -->
-    <section v-if="evaluation?.isComplete && evaluation?.breakdown" class="score-breakdown edamame-glass">
-      <h3 class="breakdown-title">📊 得分明細</h3>
-      <div class="breakdown-grid">
-        <div class="breakdown-item">
-          <span class="breakdown-label">基礎分</span>
-          <span class="breakdown-value">{{ evaluation.breakdown.baseScore }}</span>
-          <span class="breakdown-formula">{{ correctBreaks.size }} 斷句 × 2</span>
-        </div>
-        <div class="breakdown-item">
-          <span class="breakdown-label">時間係數</span>
-          <span class="breakdown-value">×{{ evaluation.breakdown.timeFactor }}</span>
-          <span class="breakdown-formula">{{ evaluation.breakdown.avgTimePerChar }} 秒/字</span>
-        </div>
-        <div class="breakdown-item">
-          <span class="breakdown-label">嘗試係數</span>
-          <span class="breakdown-value">×{{ evaluation.breakdown.attemptFactor }}</span>
-          <span class="breakdown-formula">第 {{ attemptCount }} 次</span>
-        </div>
-        <div class="breakdown-item">
-          <span class="breakdown-label">連續天數</span>
-          <span class="breakdown-value">×{{ evaluation.breakdown.streakFactor }}</span>
-          <span class="breakdown-formula">{{ userStatsStore.profile?.streak_days || 0 }} 天</span>
-        </div>
-        <div v-if="evaluation.isFirstClear" class="breakdown-item highlight">
-          <span class="breakdown-label">首次完成</span>
-          <span class="breakdown-value">×{{ evaluation.breakdown.firstClearFactor }}</span>
-          <span class="breakdown-formula">🌟 首通獎勵</span>
-        </div>
-      </div>
     </section>
   </div>
 </template>
@@ -1195,6 +1248,32 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* 朗讀小按鈕 */
+.tts-btn-small {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: rgba(139, 178, 79, 0.15);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-primary-700);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tts-btn-small:hover {
+  background: rgba(139, 178, 79, 0.25);
+}
+
+.tts-btn-small.playing {
+  background: var(--color-primary-500);
+  color: white;
+}
+
+.tts-btn-small.playing:hover {
+  background: var(--color-primary-600);
 }
 
 /* 橫向豆列 */
@@ -1525,73 +1604,10 @@ onBeforeUnmount(() => {
   font-weight: var(--font-semibold);
 }
 
-/* 得分明細區域 */
-.score-breakdown {
-  padding: 1.25rem;
-  margin-top: 1rem;
-}
-
-.breakdown-title {
-  margin: 0 0 1rem 0;
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  color: var(--color-neutral-700);
-}
-
-.breakdown-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.breakdown-item {
-  flex: 1;
-  min-width: 100px;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  text-align: center;
-}
-
-.breakdown-item.highlight {
-  background: rgba(139, 178, 79, 0.1);
-  border-color: var(--color-primary-200);
-}
-
-.breakdown-label {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-neutral-500);
-  margin-bottom: 0.25rem;
-}
-
-.breakdown-value {
-  display: block;
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  color: var(--color-primary-700);
-}
-
-.breakdown-formula {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-neutral-400);
-  margin-top: 0.25rem;
-}
-
 /* 響應式 */
 @media (max-width: 1024px) {
   .results-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .breakdown-grid {
-    flex-wrap: wrap;
-  }
-  
-  .breakdown-item {
-    min-width: calc(50% - 0.375rem);
   }
 }
 
@@ -1615,10 +1631,6 @@ onBeforeUnmount(() => {
 
   .board-actions {
     flex-wrap: wrap;
-  }
-  
-  .breakdown-item {
-    min-width: 100%;
   }
 }
 </style>
