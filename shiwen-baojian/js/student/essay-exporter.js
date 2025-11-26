@@ -29,11 +29,24 @@ export async function exportEssayAsDocx({ supabase, essayId, studentName, studen
 
   const exportData = await fetchExportData({ supabase, essayId, prefetchedGrade });
   const docx = await loadDocxLib();
-  const document = buildDocxDocument(docx, {
-    studentName,
-    studentEmail,
-    ...exportData
-  });
+  
+  let document;
+  try {
+    document = buildDocxDocument(docx, {
+      studentName,
+      studentEmail,
+      ...exportData
+    });
+  } catch (buildError) {
+    console.warn('⚠️ 完整文檔構建失敗，嘗試不含批註的版本：', buildError);
+    // 嘗試不含批註的簡化版本
+    document = buildDocxDocumentSimple(docx, {
+      studentName,
+      studentEmail,
+      ...exportData
+    });
+  }
+  
   const blob = await docx.Packer.toBlob(document);
   const filename = buildFilename({
     assignmentTitle: exportData.assignment?.title,
@@ -228,18 +241,137 @@ function buildDocxDocument(docx, { essay, assignment, student, studentName, stud
     ]
   };
 
-  if (commentEntries.length > 0) {
-    docOptions.comments = new docx.Comments({
-      children: commentEntries.map(entry => new docx.Comment({
-        id: entry.docxId,
-        author: entry.authorName || '老師',
-        date: entry.created_at ? new Date(entry.created_at) : new Date(),
-        children: entry.commentParagraphs
-      }))
-    });
+  // 構建批註（Word Comments）
+  // docx 8.x 版本需要使用 new Comments() 來實例化
+  if (commentEntries.length > 0 && docx.Comments) {
+    try {
+      const validCommentObjects = commentEntries
+        .filter(entry => {
+          // 過濾無效的批註
+          const hasValidId = typeof entry.docxId === 'number';
+          const hasContent = entry.commentParagraphs && entry.commentParagraphs.length > 0;
+          return hasValidId && hasContent;
+        })
+        .map(entry => {
+          const authorName = String(entry.authorName || '老師');
+          // 生成作者縮寫：取中文名第一個字，或英文名首字母
+          const initials = authorName.charAt(0).toUpperCase() || 'T';
+          // 確保日期有效
+          let commentDate;
+          try {
+            commentDate = entry.created_at ? new Date(entry.created_at) : new Date();
+            if (isNaN(commentDate.getTime())) commentDate = new Date();
+          } catch (_) {
+            commentDate = new Date();
+          }
+          
+          return new docx.Comment({
+            id: entry.docxId,
+            author: authorName,
+            initials: initials,
+            date: commentDate,
+            children: entry.commentParagraphs
+          });
+        });
+      
+      if (validCommentObjects.length > 0) {
+        // 使用 new Comments() 實例化
+        docOptions.comments = new docx.Comments({
+          children: validCommentObjects
+        });
+      }
+    } catch (commentError) {
+      console.warn('⚠️ 批註構建失敗，將不包含批註：', commentError);
+      // 不中斷導出，只是不包含批註
+    }
   }
 
   return new docx.Document(docOptions);
+}
+
+/**
+ * 簡化版文檔構建（不含批註）
+ * 當完整版失敗時作為備用方案
+ */
+function buildDocxDocumentSimple(docx, { essay, assignment, student, studentName, studentEmail, grade, annotations }) {
+  const contentJSON = parseContentJSON(essay?.content_json);
+  if (!contentJSON) throw new Error('文章內容缺失或格式錯誤，請重新保存後再導出');
+
+  const structure = collectParagraphStructure(contentJSON);
+
+  // 不帶批註的段落節點
+  const paragraphNodes = structure.paragraphs.map((paragraph) => {
+    return buildSimpleParagraphNode(docx, paragraph);
+  });
+
+  const metaParagraphs = buildMetadataSection(docx, {
+    essay,
+    assignment,
+    student,
+    studentName,
+    studentEmail,
+    grade
+  });
+
+  const summaryParagraphs = buildSummarySection(docx, {
+    grade,
+    orphanAnnotations: annotations || [] // 將所有批註放入附錄
+  });
+
+  // 添加提示：此版本不含內嵌批註
+  const { Paragraph, TextRun } = docx;
+  const noticeParagraph = new Paragraph({
+    spacing: { before: 200, after: 200 },
+    children: [
+      new TextRun({ 
+        text: '【提示：由於技術原因，此版本不包含內嵌批註，老師的批註已移至附錄】', 
+        italics: true,
+        color: '666666'
+      })
+    ]
+  });
+
+  return new docx.Document({
+    sections: [
+      {
+        properties: {},
+        children: [
+          ...metaParagraphs,
+          noticeParagraph,
+          ...paragraphNodes,
+          ...summaryParagraphs
+        ]
+      }
+    ]
+  });
+}
+
+/**
+ * 簡化版段落節點（不含批註）
+ */
+function buildSimpleParagraphNode(docx, paragraph) {
+  const { Paragraph, TextRun } = docx;
+  const children = [];
+
+  paragraph.runs.forEach(run => {
+    if (!run.text) return;
+    children.push(new TextRun({
+      text: run.text,
+      bold: run.marks.bold,
+      italics: run.marks.italic,
+      underline: run.marks.underline ? {} : undefined
+    }));
+  });
+
+  if (!children.length) {
+    children.push(new TextRun({ text: '' }));
+  }
+
+  return new Paragraph({
+    children,
+    spacing: { after: 200 },
+    heading: paragraph.type === 'heading' ? determineHeading(paragraph.level, docx) : undefined
+  });
 }
 
 function parseContentJSON(raw) {
